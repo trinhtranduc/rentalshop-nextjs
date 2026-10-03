@@ -16,6 +16,14 @@ export interface OutletOperationsOrder {
   itemCount: number;
   productNames: string;
   daysOverdue?: number;
+  /** To collect at the counter now (#362) */
+  amountDue?: number;
+  /** Collateral money to hand back at return (#362) */
+  refundDue?: number;
+  /** Days past the planned hand-over or return; a note, not a status (#362) */
+  lateDays?: number;
+  /** Items with their order snapshot name (#362) */
+  items?: { name: string | null; quantity: number }[];
 }
 
 export interface OutletOperationsList {
@@ -24,7 +32,7 @@ export interface OutletOperationsList {
 }
 
 export interface OutletOperations {
-  /** Vietnam civil day `YYYY-MM-DD` */
+  /** Civil day `YYYY-MM-DD` (Vietnam, or the `timeZone` sent) */
   date: string;
   outletIds: number[];
   pickupsToday: OutletOperationsList;
@@ -39,6 +47,9 @@ export interface OutletOperations {
   newOrdersByDay: { date: string; count: number }[];
   /** Tomorrow's planned hand-overs (RESERVED) and returns (PICKUPED) */
   tomorrow?: { pickups: number; returns: number } | null;
+  /** Tomorrow's hand-overs and returns as lists (#362) */
+  tomorrowPickups?: OutletOperationsList | null;
+  tomorrowReturns?: OutletOperationsList | null;
   /** Managers only */
   cash: {
     depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };

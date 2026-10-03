@@ -17,8 +17,14 @@ const orderRowSelect = {
   depositAmount: true,
   securityDeposit: true,
   isReadyToDeliver: true,
+  // Money due at the counter and the item list for the mobile "Việc cần làm" (#362)
+  orderType: true,
+  status: true,
+  lateFee: true,
+  damageFee: true,
+  payments: { select: { amount: true, status: true, notes: true } },
   customer: { select: { firstName: true, lastName: true, phone: true } },
-  orderItems: { select: { quantity: true, product: { select: { name: true } } } },
+  orderItems: { select: { quantity: true, productName: true, product: { select: { name: true } } } },
 } as const;
 
 export interface OutletOperationsQuery {
@@ -30,7 +36,7 @@ export interface OutletOperationsQuery {
   includeCash: boolean;
   /** Civil days (oldest first) for `newOrdersByDay`; omitted → empty series */
   trendDays?: { dateKey: string; start: Date; end: Date }[];
-  /** Tomorrow's civil-day bounds for the "tomorrow" counts; omitted → `tomorrow: null` */
+  /** Tomorrow's civil-day bounds for the "tomorrow" counts and lists; omitted → `tomorrow`, lists `null` */
   tomorrowStart?: Date;
   tomorrowEnd?: Date;
 }
@@ -56,7 +62,9 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
   const doneBase = { ...base, status: { not: 'CANCELLED' as const } };
 
   const hasTomorrow = Boolean(tomorrowStart && tomorrowEnd);
-  const [pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, pickedUpToday, returnedToday, newOrderCounts, tomorrowCounts] =
+  const tomorrowPickupsWhere = { ...base, status: 'RESERVED' as const, pickupPlanAt: { gte: tomorrowStart, lte: tomorrowEnd } };
+  const tomorrowReturnsWhere = { ...base, status: 'PICKUPED' as const, returnPlanAt: { gte: tomorrowStart, lte: tomorrowEnd } };
+  const [pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, pickedUpToday, returnedToday, newOrderCounts, tomorrowLists] =
     await Promise.all([
       listWithCount(pickupsTodayWhere, { pickupPlanAt: 'asc' }),
       listWithCount(returnsTodayWhere, { returnPlanAt: 'asc' }),
@@ -71,21 +79,23 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
           prisma.order.count({ where: { outletId: { in: outletIds }, deletedAt: null, createdAt: { gte: day.start, lte: day.end } } })
         )
       ),
-      // Tomorrow's hand-overs and returns, to prepare at the end of the day
+      // Tomorrow's hand-overs and returns, to prepare at the end of the day (counts for the web, lists for mobile)
       hasTomorrow
         ? Promise.all([
-            prisma.order.count({ where: { ...base, status: 'RESERVED' as const, pickupPlanAt: { gte: tomorrowStart, lte: tomorrowEnd } } }),
-            prisma.order.count({ where: { ...base, status: 'PICKUPED' as const, returnPlanAt: { gte: tomorrowStart, lte: tomorrowEnd } } }),
+            listWithCount(tomorrowPickupsWhere, { pickupPlanAt: 'asc' }),
+            listWithCount(tomorrowReturnsWhere, { returnPlanAt: 'asc' }),
           ])
         : Promise.resolve(null),
     ]);
-  const tomorrow = tomorrowCounts ? { pickups: tomorrowCounts[0], returns: tomorrowCounts[1] } : null;
+  const tomorrowPickups = tomorrowLists ? tomorrowLists[0] : null;
+  const tomorrowReturns = tomorrowLists ? tomorrowLists[1] : null;
+  const tomorrow = tomorrowLists ? { pickups: tomorrowLists[0].count, returns: tomorrowLists[1].count } : null;
 
   const doneToday = { pickups: pickedUpToday, returns: returnedToday };
   const newOrdersByDay = trendDays.map((day, i) => ({ date: day.dateKey, count: newOrderCounts[i] }));
 
   if (!includeCash) {
-    return { pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, doneToday, newOrdersByDay, tomorrow, cash: null };
+    return { pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, doneToday, newOrdersByDay, tomorrow, tomorrowPickups, tomorrowReturns, cash: null };
   }
 
   const depositSum = { depositAmount: true, securityDeposit: true } as const;
@@ -112,6 +122,8 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
     doneToday,
     newOrdersByDay,
     tomorrow,
+    tomorrowPickups,
+    tomorrowReturns,
     cash: {
       depositsHeld: {
         depositAmount: held._sum.depositAmount ?? 0,
