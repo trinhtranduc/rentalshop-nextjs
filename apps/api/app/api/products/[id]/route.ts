@@ -592,20 +592,27 @@ export async function PUT(
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
         console.log('🔄 Preparing outlet stock nested write:', outletStock);
         
-        // Verify all outlets exist first using db API
-        const validOutletStock = [];
+        // Units out on rent stay rented (#359): keep each outlet's `renting`, available = stock − renting,
+        // and leave outlets that are not in the payload untouched.
+        const rentingByOutlet = new Map<number, number>(
+          (existingProduct.outletStock || []).map((row: any) => [row.outletId, row.renting || 0])
+        );
+        const outletStockUpserts = [];
         for (const stock of outletStock) {
           if (stock.outletId && typeof stock.stock === 'number') {
-            console.log(`🔍 Verifying outlet ID: ${stock.outletId}`);
             const outlet = await db.outlets.findById(stock.outletId);
             if (outlet) {
-              console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
-              // For nested write, we need to use outlet's database ID (number)
-              validOutletStock.push({
-                outletId: outlet.id, // Use id (number) for nested write
-                stock: stock.stock,
-                available: stock.stock,
-                renting: 0
+              const renting = rentingByOutlet.get(outlet.id) || 0;
+              if (stock.stock < renting) {
+                return NextResponse.json(
+                  ResponseBuilder.error('STOCK_BELOW_RENTED'),
+                  { status: 400 }
+                );
+              }
+              outletStockUpserts.push({
+                where: { productId_outletId: { productId, outletId: outlet.id } },
+                update: { stock: stock.stock, available: stock.stock - renting },
+                create: { outletId: outlet.id, stock: stock.stock, available: stock.stock, renting: 0 }
               });
             } else {
               console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
@@ -615,13 +622,8 @@ export async function PUT(
           }
         }
         
-        if (validOutletStock.length > 0) {
-          // Use nested write to replace all outlet stock
-          finalUpdateData.outletStock = {
-            deleteMany: {}, // Delete all existing outlet stock
-            create: validOutletStock // Create new ones
-          };
-          console.log('✅ Prepared outletStock nested write:', finalUpdateData.outletStock);
+        if (outletStockUpserts.length > 0) {
+          finalUpdateData.outletStock = { upsert: outletStockUpserts };
         }
       } else {
         console.log('ℹ️ No outletStock provided or empty array');

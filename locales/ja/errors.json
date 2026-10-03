@@ -9,6 +9,7 @@
   "TOKEN_INVALIDATED_PASSWORD_CHANGED": "パスワードが変更されました。再度ログインしてください。",
   "TOKEN_INVALIDATED_PERMISSIONS_CHANGED": "権限が変更されました。再度ログインしてください。",
   "MERCHANT_DUPLICATE": "このメールアドレスまたは電話番号の事業者が既に存在します。別のメールアドレスまたは電話番号を使用してください。",
-  "INVALID_ORDER_STATUS": "この注文ではこのステータス変更はできません。"
+  "INVALID_ORDER_STATUS": "この注文ではこのステータス変更はできません。",
+  "STOCK_BELOW_RENTED": "在庫数は現在レンタル中の数量より少なくできません。"
 }
 

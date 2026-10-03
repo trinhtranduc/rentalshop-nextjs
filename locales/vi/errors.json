@@ -208,6 +208,7 @@
   "OUTLET_NAME_EXISTS": "Cửa hàng với tên này đã tồn tại cho doanh nghiệp",
   "CATEGORY_NAME_EXISTS": "Danh mục với tên này đã tồn tại",
   "PRODUCT_NAME_EXISTS": "Sản phẩm với tên này đã tồn tại. Vui lòng chọn tên khác.",
+  "STOCK_BELOW_RENTED": "Tồn kho không được thấp hơn số lượng đang cho thuê.",
   "PLAN_NAME_EXISTS": "Gói với tên này đã tồn tại",
   "MERCHANT_DUPLICATE": "Doanh nghiệp với email hoặc số điện thoại này đã tồn tại. Vui lòng sử dụng email hoặc số điện thoại khác.",
   "EMAIL_ALREADY_EXISTS": "Email đã tồn tại",

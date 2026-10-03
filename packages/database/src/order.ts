@@ -511,6 +511,28 @@ export async function updateOrder(
     updateData.outlet = { connect: { id: inputOutletId } };
   }
   
+  // Old order before update: status/items for stock updates and timestamp auto-setting,
+  // item snapshots for re-created items (#359)
+  const oldOrder = await prisma.order.findUnique({
+    where: { id },
+    select: {
+      orderType: true,
+      status: true,
+      outletId: true,
+      pickedUpAt: true, // Include để kiểm tra khi auto-set
+      returnedAt: true, // Include để kiểm tra khi auto-set
+      orderItems: {
+        select: {
+          productId: true,
+          quantity: true,
+          productName: true,
+          productBarcode: true,
+          productImages: true,
+        },
+      },
+    },
+  });
+
   // Handle order items separately if provided
   if (inputOrderItems && inputOrderItems.length > 0) {
     console.log('🔧 Processing', inputOrderItems.length, 'order items');
@@ -541,11 +563,43 @@ export async function updateOrder(
       }
     }
 
+    // Same product snapshot as POST /api/orders (#359); fall back to the old item's snapshot
+    const snapshotProductIds = [...new Set(inputOrderItems.map((item) => item.productId).filter(Boolean))];
+    const snapshotProducts = snapshotProductIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: snapshotProductIds } },
+          select: { id: true, name: true, barcode: true, images: true },
+        })
+      : [];
+    const productById = new Map(snapshotProducts.map((product) => [product.id, product]));
+    const oldSnapshotByProductId = new Map(
+      (oldOrder?.orderItems || [])
+        .filter((item) => item.productId)
+        .map((item) => [item.productId as number, item])
+    );
+    const snapshotFor = (productId: number) => {
+      const product = productById.get(productId);
+      if (product) {
+        return {
+          productName: product.name || null,
+          productBarcode: product.barcode || null,
+          productImages: product.images ?? undefined,
+        };
+      }
+      const old = oldSnapshotByProductId.get(productId);
+      return {
+        productName: old?.productName ?? null,
+        productBarcode: old?.productBarcode ?? null,
+        productImages: old?.productImages ?? undefined,
+      };
+    };
+
     updateData.orderItems = {
       // Delete all existing order items
       deleteMany: {},
       // Create new order items
       create: inputOrderItems.map(item => ({
+        ...snapshotFor(item.productId),
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -569,24 +623,6 @@ export async function updateOrder(
     hasOutlet: !!updateData.outlet
   });
   
-  // Get old order status before update (for stock/renting updates and timestamp auto-setting)
-  const oldOrder = await prisma.order.findUnique({
-    where: { id },
-    select: {
-      orderType: true,
-      status: true,
-      outletId: true,
-      pickedUpAt: true, // Include để kiểm tra khi auto-set
-      returnedAt: true, // Include để kiểm tra khi auto-set
-      orderItems: {
-        select: {
-          productId: true,
-          quantity: true,
-        },
-      },
-    },
-  });
-
   const oldStatus = oldOrder?.status || null;
   const newStatus = updateData.status;
   const orderType = (updateData.orderType || oldOrder?.orderType) as 'RENT' | 'SALE' | undefined;

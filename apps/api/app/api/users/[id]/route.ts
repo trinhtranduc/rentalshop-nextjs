@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withPermissions } from '@rentalshop/auth/server';
+import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../../lib/user-scope';
 
 /**
  * GET /api/users/[id]
@@ -38,7 +39,8 @@ export async function GET(
       // Get user using the simplified database API
       const foundUser = await db.users.findById(userId);
 
-      if (!foundUser) {
+      // Out of the caller's merchant/outlet → answered as not found
+      if (!foundUser || !canAccessUser(user, userScope, foundUser)) {
         console.log('❌ User not found in database for userId:', userId);
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
@@ -46,11 +48,9 @@ export async function GET(
         );
       }
 
-      console.log('✅ User found:', foundUser);
-
       return NextResponse.json({
         success: true,
-        data: foundUser,
+        data: toPublicUser(foundUser),
         code: 'USER_RETRIEVED_SUCCESS',
         message: 'User retrieved successfully'
       });
@@ -108,22 +108,40 @@ export async function PUT(
         );
       }
 
-      // Check if user exists
+      // Check if user exists and is in the caller's merchant/outlet
       const existingUser = await db.users.findById(userId);
-      if (!existingUser) {
+      if (!existingUser || !canAccessUser(user, userScope, existingUser)) {
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
         );
       }
 
-      // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
+      // Role and placement the caller may give
+      if (parsed.data.role !== undefined && !canAssignRole(user, parsed.data.role, existingUser.role)) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+      const placementAllowed = await isAllowedPlacement(
+        user,
+        userScope,
+        { merchantId: parsed.data.merchantId, outletId: parsed.data.outletId },
+        (outletId) => db.outlets.findById(outletId)
+      );
+      if (!placementAllowed) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
 
       // Check if user is being deactivated (isActive changed from true to false)
       const isBeingDeactivated = existingUser.isActive && parsed.data.isActive === false;
 
       // Handle emailVerified: also set emailVerifiedAt timestamp
       const updateData: any = { ...parsed.data };
+      // Never store a plain password
+      if (typeof updateData.password === 'string' && updateData.password.length > 0) {
+        updateData.password = await hashPassword(updateData.password);
+      } else {
+        delete updateData.password;
+      }
       if (updateData.emailVerified === true && !existingUser.emailVerified) {
         updateData.emailVerifiedAt = new Date();
       } else if (updateData.emailVerified === false) {
@@ -132,7 +150,6 @@ export async function PUT(
 
       // Update the user using the simplified database API (use parsed data)
       const updatedUser = await db.users.update(userId, updateData);
-      console.log('✅ User updated successfully:', updatedUser);
 
       // If user is being deactivated, invalidate all their sessions to force logout
       if (isBeingDeactivated) {
@@ -142,7 +159,7 @@ export async function PUT(
 
       return NextResponse.json({
         success: true,
-        data: updatedUser,
+        data: toPublicUser(updatedUser),
         code: 'USER_UPDATED_SUCCESS',
         message: 'User updated successfully'
       });
@@ -187,9 +204,9 @@ export async function DELETE(
 
       const userId = parseInt(id);
 
-      // Check if user exists
+      // Check if user exists and is in the caller's merchant/outlet
       const existingUser = await db.users.findById(userId);
-      if (!existingUser) {
+      if (!existingUser || !canAccessUser(user, userScope, existingUser)) {
         return NextResponse.json(
           ResponseBuilder.error('USER_NOT_FOUND'),
           { status: API.STATUS.NOT_FOUND }
@@ -212,7 +229,7 @@ export async function DELETE(
         
         return NextResponse.json({
           success: true,
-          data: deletedUser,
+          data: toPublicUser(deletedUser),
           code: 'ACCOUNT_DELETED_SUCCESS',
           message: 'Your account has been deleted successfully'
         });

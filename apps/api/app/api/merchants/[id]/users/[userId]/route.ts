@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { withPermissions, validateMerchantAccess, hashPassword } from '@rentalshop/auth/server';
+import { handleApiError, ResponseBuilder, userUpdateSchema } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../../../../lib/user-scope';
 
 /**
  * GET /api/merchants/[id]/users/[userId]
@@ -36,13 +37,14 @@ export async function GET(
       const merchant = validation.merchant!;
 
       const foundUser = await db.users.findById(userPublicId);
-      if (!foundUser) {
+      // The user must belong to this merchant and to the caller's scope
+      if (!foundUser || foundUser.merchantId !== merchant.id || !canAccessUser(user, userScope, foundUser)) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
-      return NextResponse.json({ success: true, data: foundUser });
+      return NextResponse.json({ success: true, data: toPublicUser(foundUser) });
     } catch (error) {
       console.error('Error fetching user:', error);
       return NextResponse.json(
@@ -85,16 +87,39 @@ export async function PUT(
       const merchant = validation.merchant!;
 
       const existing = await db.users.findById(userPublicId);
-      if (!existing) {
+      // The user must belong to this merchant and to the caller's scope
+      if (!existing || existing.merchantId !== merchant.id || !canAccessUser(user, userScope, existing)) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
       // Note: Hard delete - if user doesn't exist, findById will return null and we handle it above
 
-      const body = await request.json();
-      const updatedUser = await db.users.update(userPublicId, body);
+      const parsed = userUpdateSchema.safeParse(await request.json());
+      if (!parsed.success) {
+        return NextResponse.json(ResponseBuilder.validationError(parsed.error.flatten()), { status: 400 });
+      }
+      if (parsed.data.role !== undefined && !canAssignRole(user, parsed.data.role, existing.role)) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+      const placementAllowed = await isAllowedPlacement(
+        user,
+        userScope,
+        { merchantId: parsed.data.merchantId, outletId: parsed.data.outletId },
+        (outletId) => db.outlets.findById(outletId)
+      );
+      if (!placementAllowed) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+      const updateData: any = { ...parsed.data };
+      // Never store a plain password
+      if (typeof updateData.password === 'string' && updateData.password.length > 0) {
+        updateData.password = await hashPassword(updateData.password);
+      } else {
+        delete updateData.password;
+      }
+      const updatedUser = await db.users.update(userPublicId, updateData);
 
-      return NextResponse.json({ success: true, data: updatedUser });
+      return NextResponse.json({ success: true, data: toPublicUser(updatedUser) });
     } catch (error) {
       console.error('Error updating user:', error);
       return NextResponse.json(
@@ -137,7 +162,8 @@ export async function DELETE(
       const merchant = validation.merchant!;
 
       const existing = await db.users.findById(userPublicId);
-      if (!existing) {
+      // The user must belong to this merchant and to the caller's scope
+      if (!existing || existing.merchantId !== merchant.id || !canAccessUser(user, userScope, existing)) {
         return NextResponse.json(ResponseBuilder.error('USER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
@@ -167,7 +193,7 @@ export async function DELETE(
         success: true,
         code: 'USER_DELETED_SUCCESS',
         message: 'User deleted successfully',
-        data: deletedUser
+        data: toPublicUser(deletedUser)
       });
     } catch (error) {
       console.error('Error deleting user:', error);

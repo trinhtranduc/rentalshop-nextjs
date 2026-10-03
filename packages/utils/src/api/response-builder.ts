@@ -112,6 +112,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'OUTLET_NAME_EXISTS': 'An outlet with this name already exists for this merchant',
   'CATEGORY_NAME_EXISTS': 'Category with this name already exists',
   'PRODUCT_NAME_EXISTS': 'A product with this name already exists. Please choose a different name.',
+  'STOCK_BELOW_RENTED': 'Stock cannot be lower than the number of units currently rented out.',
   
   // Business Rules
   'PRODUCT_NO_STOCK_ENTRY': 'Product must have at least one outlet stock entry',
