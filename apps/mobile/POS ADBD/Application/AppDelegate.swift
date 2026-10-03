@@ -65,8 +65,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            "UseFloatingTabBar": false,
 //          ])
         
-        // Load appropriate view based on user status
-        if let user = User.account() {
+        // Load appropriate view based on user status; a build below the minimum version stays blocked (#370)
+        if let cached = AppConfigService.shared.cached, cached.updateRequired(currentVersion: AppVersion.current) {
+            showUpdateRequired(storeUrl: cached.ios.storeUrl)
+        } else if let user = User.account() {
             // Log user login event
             FirebaseManager.shared.logUserLogin(
                 userId: String(user.id),
@@ -81,6 +83,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if let remote = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
             PushNotificationManager.shared.handleNotificationData(remote)
         }
+
+        checkAppConfig()
         
         return true
     }
@@ -118,6 +122,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func applicationWillEnterForeground(_ application: UIApplication) {
         DraftOrderReminder.shared.cancel()
+        // The minimum version or screen flags may have changed while the app was in the background
+        checkAppConfig()
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
@@ -182,6 +188,7 @@ extension AppDelegate {
     }
     
     func loadLogin() {
+        guard !AppConfigGate.isBlocked else { return }
         let loginViewController = LoginViewController()
         let navigationController = UINavigationController.init(rootViewController: loginViewController)
         navigationController.isNavigationBarHidden = true
@@ -216,6 +223,7 @@ extension AppDelegate {
     }
     
     func loadMainUserView(forceMain: Bool = false) {
+        guard !AppConfigGate.isBlocked else { return }
         if !forceMain && !Utils.hasCompletedOnboarding() {
             window?.rootViewController = OnboardingViewController()
             window?.makeKeyAndVisible()
@@ -245,6 +253,34 @@ extension AppDelegate {
         window.makeKeyAndVisible()
         PushNotificationManager.shared.consumePendingOrderIfNeeded()
     }
-    
-    
+
+    // MARK: - App config (#370)
+
+    /// Fetches the app config; applies the screen flags and blocks the app when this build is too old.
+    /// A failed call keeps the app usable (cached config or nothing).
+    private func checkAppConfig() {
+        AppConfigService.shared.fetch { [weak self] config in
+            guard let self, let config else { return }
+            FeatureFlags.shared.update(config.features)
+            if config.updateRequired(currentVersion: AppVersion.current) {
+                self.showUpdateRequired(storeUrl: config.ios.storeUrl)
+            } else if AppConfigGate.isBlocked {
+                // The minimum went back down: open the app as usual
+                AppConfigGate.isBlocked = false
+                if User.account() != nil { self.loadMainUserView() } else { self.loadLogin() }
+            }
+        }
+    }
+
+    private func showUpdateRequired(storeUrl: String?) {
+        AppConfigGate.isBlocked = true
+        guard !(window?.rootViewController is UpdateRequiredViewController) else { return }
+        window?.rootViewController = UpdateRequiredViewController(storeUrl: storeUrl)
+        window?.makeKeyAndVisible()
+    }
+}
+
+/// While true, nothing replaces the update screen (login, onboarding, push, draft reminder, logout)
+enum AppConfigGate {
+    static var isBlocked = false
 }

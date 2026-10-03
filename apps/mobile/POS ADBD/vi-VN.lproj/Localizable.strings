@@ -1510,3 +1510,7 @@
 "notifications.deleteRead" = "Xóa đã đọc";
 "notifications.deleteRead.confirm" = "Xóa tất cả thông báo đã đọc?";
 "notifications.more" = "Thêm";
+
+// MARK: - App config (#370)
+"Update required" = "Cần cập nhật ứng dụng";
+"A new version of AnyRent is needed to keep working. Please update the app." = "Cần phiên bản AnyRent mới để tiếp tục sử dụng. Vui lòng cập nhật ứng dụng.";

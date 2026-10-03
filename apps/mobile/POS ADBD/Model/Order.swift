@@ -12,6 +12,9 @@ import Foundation
 
 enum OrderStatus: String, Codable, CaseIterable {
     case draft, reserved, pickuped, returned, completed, cancelled
+    /// A status this build does not know (added on the server later). Decoding never fails on it, so one
+    /// unknown order cannot empty a whole list (#370). Read-only: never sent back to the API.
+    case unknown
     
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -32,12 +35,7 @@ enum OrderStatus: String, Codable, CaseIterable {
         case "CANCELLED":
             self = .cancelled
         default:
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(
-                    codingPath: decoder.codingPath,
-                    debugDescription: "Cannot initialize OrderStatus from invalid String value \(rawValue)"
-                )
-            )
+            self = .unknown
         }
     }
     
@@ -55,6 +53,8 @@ enum OrderStatus: String, Codable, CaseIterable {
             return "Completed".localized().uppercased()
         case .cancelled:
             return "Cancelled".localized().uppercased()
+        case .unknown:
+            return "Unknown".localized().uppercased()
         }
     }
     
@@ -73,6 +73,8 @@ enum OrderStatus: String, Codable, CaseIterable {
             return "Completed".localized()
         case .cancelled:
             return "Cancelled".localized()
+        case .unknown:
+            return "Unknown".localized()
         }
     }
 
@@ -87,7 +89,8 @@ enum OrderStatus: String, Codable, CaseIterable {
         case "RETURNED":                       return .returned
         case "COMPLETED":                      return .completed
         case "CANCELLED":                      return .cancelled
-        default:                               return nil
+        case "":                               return nil
+        default:                               return .unknown
         }
     }
 }

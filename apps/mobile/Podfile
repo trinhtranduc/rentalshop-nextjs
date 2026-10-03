@@ -19,6 +19,11 @@ target 'POS ADBD' do
   pod 'RealmSwift', :modular_headers => true
   # RevenueCat — App Store IAP for MERCHANT subscription renewals
   pod 'RevenueCat'
+
+  # Unit tests (#370) run inside the app and see its pods
+  target 'POS ADBDTests' do
+    inherit! :search_paths
+  end
 end
 
 post_install do |installer|

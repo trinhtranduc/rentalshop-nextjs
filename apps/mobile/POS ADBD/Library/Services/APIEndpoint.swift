@@ -58,6 +58,9 @@ enum APIEndpoint {
     }
 
     enum Path {
+        // Mobile app config: minimum version and new-screen flags (#370)
+        static let appConfig = "/api/mobile/app-config"
+
         // Authentication - Updated according to API documentation
         static let login = "/api/auth/login"
         static let logout = "/api/auth/logout"

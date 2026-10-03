@@ -371,22 +371,9 @@ extension String {
     /// Localize order status string (from API response)
     /// Converts status strings like "RESERVED", "PICKUPED", "RETURNED", etc. to localized strings
     func localizedStatus() -> String {
-        switch self.uppercased() {
-        case "DRAFT":
-            return "Draft".localized().uppercased()
-        case "RESERVED":
-            return "Reserved".localized().uppercased()
-        case "PICKUPED", "PICKUP", "PICKED_UP":
-            return "Picked Up".localized().uppercased()
-        case "RETURNED":
-            return "Returned".localized().uppercased()
-        case "COMPLETED":
-            return "Completed".localized().uppercased()
-        case "CANCELLED":
-            return "Cancelled".localized().uppercased()
-        default:
-            return self.uppercased()
-        }
+        // One mapping with OrderStatus (#370); a status this build does not know keeps its raw text
+        guard let status = OrderStatus.from(apiString: self), status != .unknown else { return self.uppercased() }
+        return status.inString()
     }
 
 }

@@ -1512,3 +1512,7 @@
 "notifications.deleteRead" = "Delete read";
 "notifications.deleteRead.confirm" = "Delete all read notifications?";
 "notifications.more" = "More";
+
+// MARK: - App config (#370)
+"Update required" = "Update required";
+"A new version of AnyRent is needed to keep working. Please update the app." = "A new version of AnyRent is needed to keep working. Please update the app.";
