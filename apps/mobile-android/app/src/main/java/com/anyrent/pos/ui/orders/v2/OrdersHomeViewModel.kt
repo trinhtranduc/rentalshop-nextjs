@@ -48,14 +48,14 @@ sealed interface OrdersRow {
 
 enum class SectionKind { LATE, TODAY, TOMORROW, DAY, PLAIN }
 
-data class OrdersSection(val kind: SectionKind, val rows: List<OrdersRow>, val dayLabel: String? = null) {
+/** [day]: the civil day of a sale-day band (VL-ban) */
+data class OrdersSection(
+    val kind: SectionKind,
+    val rows: List<OrdersRow>,
+    val dayLabel: String? = null,
+    val day: Instant? = null,
+) {
     val key: String get() = dayLabel?.let { "$kind-$it" } ?: kind.name
-}
-
-/** Rent list filter (sheet) */
-data class RentOrdersFilter(val status: String? = null, val sortByPickup: Boolean = true) {
-    val isDefault get() = status == null && sortByPickup
-    val sortBy get() = if (sortByPickup) "pickupPlanAt" else "createdAt"
 }
 
 data class OrdersHomeState(
@@ -68,6 +68,10 @@ data class OrdersHomeState(
     val refreshing: Boolean = false,
     val error: String? = null,
     val hasMore: Boolean = false,
+    /** Orders matching the current list or search (API `total`); null for "Việc cần làm" */
+    val total: Int? = null,
+    /** Red badge of "Việc cần làm", kept while another list shows */
+    val todayBadge: Int = 0,
 ) {
     val isSearching get() = OrdersHomeLogic.isSearch(query)
 }
@@ -120,7 +124,7 @@ object OrdersHomeLogic {
         rows.groupBy { row -> parseInstant(row.order.createdAt)?.let { dayKey(it, zone) } ?: "" }
             .map { (_, group) ->
                 val day = parseInstant(group.first().order.createdAt)
-                OrdersSection(SectionKind.DAY, group, dayLabel = day?.let { formatDayShort(it, zone) } ?: "—")
+                OrdersSection(SectionKind.DAY, group, dayLabel = day?.let { formatDayShort(it, zone) } ?: "—", day = day)
             }
 
     fun parseInstant(value: String?): Instant? =
@@ -129,19 +133,22 @@ object OrdersHomeLogic {
 
 /** One page of `GET /api/orders`; replaceable in tests */
 fun interface OrdersPageLoader {
-    suspend fun load(q: String?, orderType: String?, status: String?, sortBy: String, page: Int): Result<PageResult<OrderSummary>>
+    suspend fun load(query: OrdersQuery): Result<PageResult<OrderSummary>>
 }
 
-val LiveOrdersPageLoader = OrdersPageLoader { q, orderType, status, sortBy, page ->
+val LiveOrdersPageLoader = OrdersPageLoader { query ->
     withContext(Dispatchers.IO) {
         ApiClient.get().searchOrders(
-            page = page,
+            page = query.page,
             limit = OrdersHomeViewModel.PAGE_SIZE,
-            q = q,
-            status = status,
-            orderType = orderType,
-            sortBy = sortBy,
+            q = query.q,
+            status = query.status,
+            orderType = query.orderType,
+            startDate = query.startDate,
+            endDate = query.endDate,
+            sortBy = query.sortBy,
             sortOrder = "desc",
+            dateField = query.dateField,
         )
     }
 }
@@ -177,9 +184,17 @@ class OrdersHomeViewModel(
     }
 
     fun applyFilter(filter: RentOrdersFilter) {
+        if (filter == _state.value.filter) return
         _state.update { it.copy(filter = filter) }
         if (_state.value.segment == OrdersSegment.RENT && !_state.value.isSearching) reload()
     }
+
+    /** Status chip of "Tất cả đơn" */
+    fun selectStatus(status: String?) = applyFilter(_state.value.filter.copy(status = status))
+
+    /** "Xem N đơn" of the filter sheet: the size of the rent list with [filter] (the caller cancels older requests) */
+    suspend fun count(filter: RentOrdersFilter): Int? =
+        orders.load(OrdersBoardLogic.rentQuery(filter, now = now(), zone = zone())).getOrNull()?.total
 
     /** Search as you type; waits [searchDelayMs] after the last change */
     fun onQueryChange(text: String) {
@@ -209,6 +224,7 @@ class OrdersHomeViewModel(
                 refreshing = fromPull,
                 error = null,
                 hasMore = false,
+                total = if (keepRows) it.total else null,
             )
         }
         val current = _state.value
@@ -230,8 +246,14 @@ class OrdersHomeViewModel(
     private suspend fun loadToday() {
         todayWork.load()
             .onSuccess { work ->
+                val sections = OrdersHomeLogic.todaySections(work)
                 _state.update {
-                    it.copy(sections = OrdersHomeLogic.todaySections(work), loading = false, refreshing = false)
+                    it.copy(
+                        sections = sections,
+                        loading = false,
+                        refreshing = false,
+                        todayBadge = OrdersBoardLogic.badgeCount(sections),
+                    )
                 }
             }
             .onFailure { error ->
@@ -249,19 +271,12 @@ class OrdersHomeViewModel(
     private suspend fun loadPage(pageToLoad: Int) {
         val current = _state.value
         val searching = current.isSearching
-        val orderType = when {
-            searching -> null
-            current.segment == OrdersSegment.SALE -> "SALE"
-            else -> "RENT"
+        val query = when {
+            searching -> OrdersQuery(q = current.query.trim(), page = pageToLoad)
+            current.segment == OrdersSegment.SALE -> OrdersQuery(orderType = "SALE", page = pageToLoad)
+            else -> OrdersBoardLogic.rentQuery(current.filter, pageToLoad, now(), zone())
         }
-        val rentList = !searching && current.segment != OrdersSegment.SALE
-        orders.load(
-            q = if (searching) current.query.trim() else null,
-            orderType = orderType,
-            status = if (rentList) current.filter.status else null,
-            sortBy = if (rentList) current.filter.sortBy else "createdAt",
-            page = pageToLoad,
-        ).onSuccess { result ->
+        orders.load(query).onSuccess { result ->
             val known = loaded.map { it.id }.toSet()
             loaded = if (pageToLoad == 1) result.items else loaded + result.items.filter { it.id !in known }
             page = pageToLoad
@@ -271,6 +286,7 @@ class OrdersHomeViewModel(
                     loading = false,
                     refreshing = false,
                     hasMore = result.hasMore,
+                    total = result.total,
                 )
             }
         }.onFailure { error ->

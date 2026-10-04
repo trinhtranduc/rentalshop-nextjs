@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,26 +15,34 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -42,20 +52,28 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,24 +81,39 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.domain.orders.TodayWorkRow
-import com.anyrent.pos.ui.common.AppFilterChip
+import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.AppFormSheet
-import com.anyrent.pos.ui.common.AppPrimaryButton
-import com.anyrent.pos.ui.common.AppSearchField
-import com.anyrent.pos.ui.common.AppSheetHeader
+import com.anyrent.pos.ui.common.AppIcons
 import com.anyrent.pos.ui.common.LoadingBox
-import com.anyrent.pos.ui.common.OrderStatusStyle
-import com.anyrent.pos.ui.common.StatusBadge
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
-import com.anyrent.pos.ui.common.maskedPhoneNumber
+import com.anyrent.pos.ui.home.BarcodeMode
+import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.navigation.MainTabRouter
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.flow.distinctUntilChanged
+import java.time.Instant
+import java.time.ZoneId
+
+/** Board colours not in `DS` */
+private object BoardColors {
+    val Track = Color(0xFFF1F5F9)
+    val ChipBorder = Color(0xFFE2E8F0)
+    val Outline = Color(0xFFCBD5E1)
+    val Items = Color(0xFF334155)
+    val Chevron = Color(0xFF94A3B8)
+    val LateBand = Color(0xFFFEF2F2)
+    val Band = Color(0xFFF8FAFC)
+    val Badge = Color(0xFFB91C1C)
+    val SelectedFill = Color(0xFFEFF6FF)
+    val SelectedText = Color(0xFF1E40AF)
+}
+
+private val ChipStatuses = listOf(null, "RESERVED", "PICKUPED", "RETURNED", "CANCELLED")
 
 /**
- * Redesigned orders tab (#371), shown when the `newOrders` feature is on:
- * "Việc cần làm" | "Tất cả đơn" (rent) | "Đơn bán", and one search across rent and sale.
+ * Redesigned orders tab (#371), shown when the `newOrders` feature is on. Boards (#401): Main ("Việc cần làm"),
+ * VL-tat-ca ("Tất cả đơn"), VL-ban ("Đơn bán", via the header button), VL-tim (search), Loc (filter sheet).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -91,13 +124,18 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
     )
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val focus = LocalFocusManager.current
     var showFilter by remember { mutableStateOf(false) }
+    var showScan by remember { mutableStateOf(false) }
+    var searchMode by rememberSaveable { mutableStateOf(false) }
+    var rentSegment by rememberSaveable { mutableStateOf(OrdersSegment.TODAY) }
     val listState = rememberLazyListState()
+    val texts = boardTexts()
 
     LaunchedEffect(Unit) { viewModel.onShown() }
     // After create-order success: MainTabRouter switches to this tab and asks for a reload
     LaunchedEffect(Unit) { MainTabRouter.refreshOrders.collect { viewModel.reload(keepRows = true) } }
-    LaunchedEffect(state.segment, state.isSearching) { listState.scrollToItem(0) }
+    LaunchedEffect(state.segment, state.isSearching, state.filter) { listState.scrollToItem(0) }
     // Next page when the last rows show
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -106,59 +144,89 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
         }.distinctUntilChanged().collect { nearEnd -> if (nearEnd) viewModel.loadMore() }
     }
 
-    val segments = OrdersSegment.entries.filter { it != OrdersSegment.TODAY || state.todayAvailable }
     val call: (String) -> Unit = { phone ->
         context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
     }
+    val saleMode = state.segment == OrdersSegment.SALE
+    val cancelSearch = {
+        viewModel.onQueryChange("")
+        focus.clearFocus()
+        searchMode = false
+    }
 
-    Column(Modifier.fillMaxSize().background(DS.Colors.Background)) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = DS.Spacing.lg, end = DS.Spacing.sm, top = DS.Spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
+    Column(Modifier.fillMaxSize().background(DS.Colors.Surface)) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = if (searchMode) 10.dp else 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            AppSearchField(
-                value = state.query,
-                onValueChange = viewModel::onQueryChange,
-                placeholder = stringResource(R.string.order_search_hint),
-                onClear = { viewModel.onQueryChange("") },
-                modifier = Modifier.weight(1f),
-                leadingIconSize = DS.Icon.Sm,
-            )
-            if (!state.isSearching && state.segment == OrdersSegment.RENT) {
-                IconButton(onClick = { showFilter = true }, modifier = Modifier.size(DS.TouchTarget)) {
-                    Icon(
-                        Icons.Outlined.FilterList,
-                        contentDescription = stringResource(R.string.order_filter),
-                        tint = if (state.filter.isDefault) DS.Colors.Text else DS.Colors.Primary,
-                        modifier = Modifier.size(DS.Icon.Md),
+            if (!searchMode) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(if (saleMode) R.string.orders_v2_title_sale else R.string.orders_v2_title_rent),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DS.Colors.Text,
+                        modifier = Modifier.weight(1f),
                     )
-                }
-            } else {
-                Spacer(Modifier.size(DS.Spacing.sm))
-            }
-        }
-        if (!state.isSearching) {
-            TabRow(
-                selectedTabIndex = segments.indexOf(state.segment).coerceAtLeast(0),
-                containerColor = DS.Colors.Background,
-                contentColor = DS.Colors.Primary,
-                modifier = Modifier.padding(top = DS.Spacing.xs),
-            ) {
-                segments.forEach { segment ->
-                    Tab(
-                        selected = segment == state.segment,
-                        onClick = { viewModel.select(segment) },
-                        text = {
-                            Text(
-                                stringResource(segment.titleRes()),
-                                fontWeight = if (segment == state.segment) FontWeight.Bold else FontWeight.Medium,
-                                color = if (segment == state.segment) DS.Colors.Text else DS.Colors.TextMuted,
-                                maxLines = 1,
-                            )
+                    OutlinedPill(
+                        text = stringResource(if (saleMode) R.string.orders_v2_title_rent else R.string.orders_v2_title_sale),
+                        onClick = {
+                            if (saleMode) {
+                                viewModel.select(if (state.todayAvailable) rentSegment else OrdersSegment.RENT)
+                            } else {
+                                rentSegment = state.segment
+                                viewModel.select(OrdersSegment.SALE)
+                            }
                         },
                     )
                 }
             }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SearchBox(
+                    query = state.query,
+                    active = searchMode,
+                    onQueryChange = viewModel::onQueryChange,
+                    onFocus = { searchMode = true },
+                    onClear = { viewModel.onQueryChange("") },
+                    onScan = { showScan = true },
+                    modifier = Modifier.weight(1f),
+                )
+                if (searchMode) {
+                    Box(
+                        Modifier.height(44.dp).clickable { cancelSearch() }.padding(horizontal = 4.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            stringResource(R.string.orders_v2_search_cancel),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = DS.Colors.Primary,
+                        )
+                    }
+                }
+            }
+            if (!searchMode && !saleMode && state.todayAvailable) {
+                SegmentBar(
+                    todaySelected = state.segment == OrdersSegment.TODAY,
+                    badge = state.todayBadge,
+                    onToday = { viewModel.select(OrdersSegment.TODAY) },
+                    onAll = { viewModel.select(OrdersSegment.RENT) },
+                )
+            }
+        }
+        HorizontalDivider(color = DS.Colors.Border)
+
+        if (!searchMode && state.segment == OrdersSegment.RENT) {
+            ListControls(state, onStatus = viewModel::selectStatus, onSort = { showFilter = true })
+        }
+        if (searchMode && state.isSearching && state.total != null) {
+            Text(
+                stringResource(R.string.orders_v2_search_summary, state.total ?: 0, state.query.trim()),
+                fontSize = 13.sp,
+                color = DS.Colors.TextMuted,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
+            )
+            HorizontalDivider(color = DS.Colors.Divider)
         }
 
         PullToRefreshBox(
@@ -184,18 +252,30 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     state.sections.forEach { section ->
-                        if (section.kind != SectionKind.PLAIN) {
-                            stickyHeader(key = "header-${section.key}") { SectionHeader(section) }
-                        } else {
-                            item(key = "top-${section.key}") { Spacer(Modifier.height(DS.Spacing.sm)) }
+                        if (section.kind != SectionKind.PLAIN && !state.isSearching) {
+                            stickyHeader(key = "header-${section.key}") { SectionBand(section) }
                         }
                         items(section.rows, key = { "${section.key}-${it.key}" }) { row ->
-                            OrderRowCard(
-                                row = row,
-                                showsType = state.isSearching,
-                                onClick = { onOpenOrder(row.orderId) },
-                                onCall = call,
-                            )
+                            when (row) {
+                                is OrdersRow.Work -> WorkRow(
+                                    row.row,
+                                    row.kind,
+                                    isLate = section.kind == SectionKind.LATE,
+                                    texts = texts,
+                                    onClick = { onOpenOrder(row.orderId) },
+                                    onCall = call,
+                                )
+                                is OrdersRow.Order -> OrderRow(
+                                    row,
+                                    context = when {
+                                        state.isSearching -> RowContext.SEARCH
+                                        section.kind == SectionKind.DAY -> RowContext.SALE
+                                        else -> RowContext.LIST
+                                    },
+                                    texts = texts,
+                                    onClick = { onOpenOrder(row.orderId) },
+                                )
+                            }
                         }
                     }
                 }
@@ -204,8 +284,9 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
     }
 
     if (showFilter) {
-        RentFilterSheet(
+        FilterSheet(
             initial = state.filter,
+            count = viewModel::count,
             onApply = {
                 viewModel.applyFilter(it)
                 showFilter = false
@@ -213,198 +294,461 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
             onDismiss = { showFilter = false },
         )
     }
-}
-
-private fun OrdersSegment.titleRes(): Int = when (this) {
-    OrdersSegment.TODAY -> R.string.orders_to_do
-    OrdersSegment.RENT -> R.string.orders_all
-    OrdersSegment.SALE -> R.string.orders_sale
-}
-
-@Composable
-private fun SectionHeader(section: OrdersSection) {
-    val title = when (section.kind) {
-        SectionKind.LATE -> stringResource(R.string.orders_section_late)
-        SectionKind.TODAY -> stringResource(R.string.orders_section_today)
-        SectionKind.TOMORROW -> stringResource(R.string.orders_section_tomorrow)
-        else -> section.dayLabel.orEmpty()
+    if (showScan) {
+        AppFormSheet(onDismiss = { showScan = false }) {
+            CameraBarcodeScreen(
+                mode = BarcodeMode.CODE,
+                onBack = { showScan = false },
+                onCode = { code ->
+                    showScan = false
+                    // A scanned code becomes the search (rent and sale, every status)
+                    searchMode = true
+                    viewModel.onQueryChange(code.trim())
+                },
+                embeddedInSheet = true,
+            )
+        }
     }
-    Text(
-        "${title.uppercase()} · ${section.rows.size}",
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(DS.Colors.Background)
-            .padding(start = DS.Spacing.lg + DS.Spacing.xs, end = DS.Spacing.lg, top = DS.Spacing.md, bottom = DS.Spacing.xs),
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.Bold,
-        color = if (section.kind == SectionKind.LATE) DS.Status.Late.text else DS.Colors.TextMuted,
-    )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun OrderRowCard(row: OrdersRow, showsType: Boolean, onClick: () -> Unit, onCall: (String) -> Unit) {
+private fun boardTexts() = OrdersBoardTexts(
+    days = stringResource(R.string.orders_v2_when_days),
+    handOverDue = stringResource(R.string.orders_v2_when_hand_over_due),
+    returnDue = stringResource(R.string.orders_v2_when_return_due),
+    createdToday = stringResource(R.string.orders_v2_when_created_today),
+    created = stringResource(R.string.orders_v2_when_created),
+    due = stringResource(R.string.orders_v2_when_due),
+    cancelled = stringResource(R.string.orders_v2_when_cancelled),
+    returns = stringResource(R.string.orders_v2_when_returns),
+    sold = stringResource(R.string.orders_v2_when_sold),
+)
+
+@Composable
+private fun OutlinedPill(text: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(DS.Radius.card),
+        shape = RoundedCornerShape(10.dp),
         color = DS.Colors.Surface,
-        border = BorderStroke(1.dp, DS.Colors.Border),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = DS.Spacing.lg, vertical = DS.Spacing.xs),
+        border = BorderStroke(1.dp, BoardColors.ChipBorder),
+        modifier = Modifier.height(40.dp),
     ) {
-        Column(Modifier.padding(DS.Spacing.md), verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
-            when (row) {
-                is OrdersRow.Work -> WorkRowContent(row.row, row.kind, onCall)
-                is OrdersRow.Order -> OrderRowContent(row, showsType, onCall)
+        Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+            Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+        }
+    }
+}
+
+/** Grey field with the scan button (board Main); blue outline and a clear button while searching (VL-tim) */
+@Composable
+private fun SearchBox(
+    query: String,
+    active: Boolean,
+    onQueryChange: (String) -> Unit,
+    onFocus: () -> Unit,
+    onClear: () -> Unit,
+    onScan: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val placeholder = stringResource(R.string.orders_v2_search_placeholder)
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier
+            .height(44.dp)
+            .clip(shape)
+            .background(if (active) DS.Colors.Surface else BoardColors.Track)
+            .then(if (active) Modifier.border(2.dp, DS.Colors.Primary, shape) else Modifier)
+            .padding(start = 12.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(DS.Icon.Sm))
+        Spacer(Modifier.size(8.dp))
+        Box(Modifier.weight(1f)) {
+            if (query.isEmpty()) {
+                Text(placeholder, color = DS.Colors.TextMuted, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = TextStyle(fontSize = if (active) 16.sp else 15.sp, color = DS.Colors.Text),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = {}),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { if (it.isFocused) onFocus() }
+                    .semantics { contentDescription = placeholder },
+            )
+        }
+        if (active) {
+            if (query.isNotEmpty()) {
+                val label = stringResource(R.string.orders_v2_search_clear)
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(BoardColors.ChipBorder)
+                        .clickable(onClick = onClear)
+                        .semantics { contentDescription = label; role = Role.Button },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Outlined.Close, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(14.dp)) }
+            }
+        } else {
+            val label = stringResource(R.string.camera_scan)
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clickable(onClick = onScan)
+                    .semantics { contentDescription = label; role = Role.Button },
+                contentAlignment = Alignment.Center,
+            ) { Icon(AppIcons.Barcode, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Sm)) }
+        }
+    }
+}
+
+/** Two pill segments (board Main): "Việc cần làm" with its red badge, "Tất cả đơn" */
+@Composable
+private fun SegmentBar(todaySelected: Boolean, badge: Int, onToday: () -> Unit, onAll: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(BoardColors.Track).padding(4.dp),
+    ) {
+        SegmentPill(stringResource(R.string.orders_to_do), todaySelected, badge.takeIf { it > 0 }, onToday, Modifier.weight(1f))
+        SegmentPill(stringResource(R.string.orders_all), !todaySelected, null, onAll, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun SegmentPill(text: String, selected: Boolean, badge: Int?, onClick: () -> Unit, modifier: Modifier) {
+    val shape = RoundedCornerShape(9.dp)
+    Row(
+        modifier
+            .height(40.dp)
+            .then(if (selected) Modifier.shadow(1.dp, shape) else Modifier)
+            .clip(shape)
+            .background(if (selected) DS.Colors.Surface else Color.Transparent)
+            .clickable(onClick = onClick)
+            .semantics { role = Role.Tab; this.selected = selected },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
+            maxLines = 1,
+        )
+        if (badge != null) {
+            Spacer(Modifier.size(6.dp))
+            Box(
+                Modifier
+                    .heightIn(min = 20.dp)
+                    .widthIn(min = 22.dp)
+                    .background(BoardColors.Badge, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text("$badge", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        }
+    }
+}
+
+/** Status chips, sort selector and order count of "Tất cả đơn" (board VL-tat-ca) */
+@Composable
+private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, onSort: () -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(top = 10.dp),
+    ) {
+        items(ChipStatuses) { status ->
+            Chip(
+                text = stringResource(chipLabel(status)),
+                selected = state.filter.status == status,
+                height = 36,
+                fontSize = 13,
+                onClick = { onStatus(status) },
+            )
+        }
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            Modifier.defaultMinSize(minHeight = 36.dp).clickable(onClick = onSort),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(sortLabel(state.filter.sort)), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+            Spacer(Modifier.size(4.dp))
+            Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
+        }
+        Spacer(Modifier.weight(1f))
+        state.total?.let {
+            Text(stringResource(R.string.orders_v2_count, it), fontSize = 13.sp, color = DS.Colors.TextMuted)
+        }
+    }
+    HorizontalDivider(color = DS.Colors.Divider)
+}
+
+private fun chipLabel(status: String?): Int = when (status) {
+    "RESERVED" -> R.string.orders_v2_status_reserved
+    "PICKUPED" -> R.string.orders_v2_status_renting
+    "RETURNED" -> R.string.orders_v2_status_returned
+    "CANCELLED" -> R.string.orders_v2_status_cancelled
+    else -> R.string.orders_v2_status_all
+}
+
+private fun sortLabel(sort: OrdersSort): Int = when (sort) {
+    OrdersSort.CREATED -> R.string.orders_v2_sort_created
+    OrdersSort.PICKUP -> R.string.orders_v2_sort_pickup
+    OrdersSort.RETURN -> R.string.orders_v2_sort_return
+}
+
+@Composable
+private fun Chip(text: String, selected: Boolean, height: Int, fontSize: Int, onClick: () -> Unit, icon: ImageVector? = null) {
+    val shape = RoundedCornerShape(999.dp)
+    Row(
+        Modifier
+            .height(height.dp)
+            .clip(shape)
+            .background(if (selected) DS.Colors.Text else DS.Colors.Surface)
+            .then(if (selected) Modifier else Modifier.border(1.dp, BoardColors.ChipBorder, shape))
+            .clickable(onClick = onClick)
+            .semantics { this.selected = selected; role = Role.Button }
+            .padding(horizontal = if (height > 36) 14.dp else 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = if (selected) Color.White else DS.Colors.Text, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.size(6.dp))
+        }
+        Text(
+            text,
+            fontSize = fontSize.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) Color.White else DS.Colors.Text,
+            maxLines = 1,
+        )
+    }
+}
+
+/** Band over a group: "TRỄ HẠN · 3" on pink, others on light grey, with "giao N · trả M" or "N đơn · X" */
+@Composable
+private fun SectionBand(section: OrdersSection) {
+    val now = Instant.now()
+    val zone = ZoneId.systemDefault()
+    val late = section.kind == SectionKind.LATE
+    val title = when (section.kind) {
+        SectionKind.LATE -> "${stringResource(R.string.orders_section_late)} · ${section.rows.size}"
+        SectionKind.TODAY -> "${stringResource(R.string.orders_section_today)} · ${formatDayShort(now, zone)}"
+        SectionKind.TOMORROW -> "${stringResource(R.string.orders_section_tomorrow)} · ${formatDayShort(now.plusSeconds(86_400), zone)}"
+        else -> {
+            val day = section.day
+            val word = day?.let { OrdersBoardLogic.dayWord(it, now, zone) } ?: DayWord.NONE
+            val label = section.dayLabel.orEmpty()
+            when (word) {
+                DayWord.TODAY -> "${stringResource(R.string.orders_section_today)} · $label"
+                DayWord.YESTERDAY -> "${stringResource(R.string.orders_v2_yesterday)} · $label"
+                else -> label
             }
         }
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TopLine(orderNumber: String, pills: @Composable () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            "#$orderNumber",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = DS.Colors.Text,
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(DS.Spacing.xs)) { pills() }
-    }
-}
-
-@Composable
-private fun WorkRowContent(work: TodayWorkRow, kind: WorkKind, onCall: (String) -> Unit) {
-    TopLine(work.orderNumber) {
-        if (kind == WorkKind.HAND_OVER && !work.isReadyToDeliver) {
-            Pill(stringResource(R.string.orders_not_prepared), DS.Status.Waiting)
+    val summary = when (section.kind) {
+        SectionKind.LATE, SectionKind.TODAY, SectionKind.TOMORROW -> {
+            val (handOver, takeBack) = OrdersBoardLogic.bandCounts(section.rows)
+            stringResource(R.string.orders_v2_band_work, handOver, takeBack)
         }
-        if (kind == WorkKind.HAND_OVER) {
-            Pill(stringResource(R.string.orders_hand_over), DS.Status.HandOver)
-        } else {
-            Pill(stringResource(R.string.orders_take_back), DS.Status.Return)
+        else -> {
+            val (count, amount) = OrdersBoardLogic.saleDaySummary(section.rows)
+            "${stringResource(R.string.orders_v2_count, count)} · ${formatMoneyVnd(amount)}"
         }
     }
-    CustomerLine(work.customerName, work.customerPhone, onCall)
-    if (work.productNames.isNotBlank()) {
-        Text(
-            work.productNames,
-            style = MaterialTheme.typography.bodySmall,
-            color = DS.Colors.TextMuted,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-    val planned = if (kind == WorkKind.HAND_OVER) work.pickupPlanAt else work.returnPlanAt
-    val (amount, color) = when {
-        work.refundDue > 0 -> stringResource(R.string.orders_refund, formatMoneyVnd(work.refundDue)) to DS.Status.Return.text
-        work.amountDue > 0 -> stringResource(R.string.orders_collect, formatMoneyVnd(work.amountDue)) to DS.Colors.Text
-        else -> null to DS.Colors.Text
-    }
-    BottomLine(planned?.let { formatDayShort(it) }.orEmpty(), amount, color, work.lateDays)
-}
-
-@Composable
-private fun OrderRowContent(row: OrdersRow.Order, showsType: Boolean, onCall: (String) -> Unit) {
-    val order = row.order
-    val isRent = order.orderType.equals("RENT", ignoreCase = true)
-    TopLine(order.orderNumber) {
-        if (showsType) {
-            Pill(
-                stringResource(if (isRent) R.string.rent else R.string.sale),
-                DS.Pill(DS.Colors.TextMuted, DS.Colors.Divider),
-            )
-        }
-        StatusBadge(order.status)
-    }
-    CustomerLine(order.customerName, order.customerPhone, onCall)
-    Text(
-        stringResource(R.string.item_count, order.itemCount),
-        style = MaterialTheme.typography.bodySmall,
-        color = DS.Colors.TextMuted,
-    )
-    val date = if (isRent) {
-        val from = OrdersHomeLogic.parseInstant(order.pickupPlanAt)?.let { formatDayShort(it) } ?: "—"
-        val to = OrdersHomeLogic.parseInstant(order.returnPlanAt)?.let { formatDayShort(it) } ?: "—"
-        "$from → $to"
-    } else {
-        OrdersHomeLogic.parseInstant(order.createdAt)?.let { formatDayShort(it) }.orEmpty()
-    }
-    BottomLine(date, formatMoneyVnd(order.totalAmount), DS.Colors.Text, row.lateDays)
-}
-
-@Composable
-private fun CustomerLine(name: String?, phone: String?, onCall: (String) -> Unit) {
-    val trimmedPhone = phone?.filterNot { it.isWhitespace() }.orEmpty()
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
+    Column(Modifier.fillMaxWidth().background(if (late) BoardColors.LateBand else BoardColors.Band)) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
             Text(
-                name?.takeIf { it.isNotBlank() } ?: "N/A",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = DS.Colors.Text,
+                title.uppercase(),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (late) DS.Status.Late.text else BoardColors.Items,
+                modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (trimmedPhone.isNotEmpty()) {
-                Text(
-                    maskedPhoneNumber(trimmedPhone),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = DS.Colors.TextMuted,
-                )
-            }
+            Text(summary, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1)
         }
-        if (trimmedPhone.isNotEmpty()) {
-            val label = stringResource(R.string.call_customer)
-            IconButton(
-                onClick = { onCall(trimmedPhone) },
-                modifier = Modifier
-                    .size(DS.TouchTarget)
-                    .background(DS.Status.HandOver.fill, CircleShape)
-                    .semantics { contentDescription = label },
-            ) {
-                Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
-            }
-        }
+        HorizontalDivider(color = DS.Colors.Divider)
     }
 }
 
+private enum class RowContext { LIST, SALE, SEARCH }
+
 @Composable
-private fun BottomLine(date: String, amount: String?, amountColor: Color, lateDays: Int = 0) {
-    // "Trễ N ngày" follows the date in red (a note, not a status)
-    val late = if (lateDays > 0) stringResource(R.string.orders_late_days, lateDays) else null
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            buildAnnotatedString {
-                append(date)
-                if (late != null) {
-                    withStyle(SpanStyle(color = DS.Status.Late.text, fontWeight = FontWeight.Bold)) {
-                        append(if (date.isEmpty()) late else " · $late")
+private fun WorkRow(
+    work: TodayWorkRow,
+    kind: WorkKind,
+    isLate: Boolean,
+    texts: OrdersBoardTexts,
+    onClick: () -> Unit,
+    onCall: (String) -> Unit,
+) {
+    val handOver = kind == WorkKind.HAND_OVER
+    val pills = buildList {
+        if (handOver && !work.isReadyToDeliver) add(stringResource(R.string.orders_v2_not_prepared) to DS.Status.Waiting)
+        if (work.lateDays > 0) add(stringResource(R.string.orders_late_days, work.lateDays) to DS.Status.Late)
+    }
+    val pay = when (val line = OrdersBoardLogic.payLine(work.amountDue, work.refundDue)) {
+        is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(line.amount)) to DS.Status.Return.text
+        is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(line.amount)) to DS.Status.Waiting.text
+        PayLine.Paid -> stringResource(R.string.orders_v2_pay_paid) to DS.Status.Done.text
+    }
+    val phone = work.customerPhone?.filterNot { it.isWhitespace() }.orEmpty()
+    BoardRow(
+        tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
+            (if (handOver) DS.Status.HandOver else DS.Status.Return),
+        name = work.customerName,
+        items = work.productNames,
+        line = "#${OrdersBoardLogic.shortNumber(work.orderNumber)} · " +
+            OrdersBoardLogic.workWhen(work, kind, isLate, texts = texts),
+        pills = pills,
+        total = formatMoneyVnd(work.totalAmount),
+        struck = false,
+        pay = pay,
+        // Board Main: the call button only on TRỄ HẠN rows
+        phone = phone.takeIf { isLate && it.isNotEmpty() },
+        onClick = onClick,
+        onCall = onCall,
+    )
+}
+
+@Composable
+private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoardTexts, onClick: () -> Unit) {
+    val order = row.order
+    val tagKind = OrdersBoardLogic.statusTag(order.status)
+    val (tagRes, colors) = when (tagKind) {
+        RowTag.RESERVED -> R.string.orders_v2_status_reserved to DS.Status.HandOver
+        RowTag.RENTING -> R.string.orders_v2_status_renting to DS.Status.Return
+        RowTag.RETURNED -> R.string.orders_v2_status_returned to DS.Status.Done
+        RowTag.COMPLETED -> R.string.orders_v2_status_completed to DS.Status.Done
+        else -> R.string.orders_v2_status_cancelled to DS.Status.Cancelled
+    }
+    val isSale = !order.orderType.equals("RENT", ignoreCase = true)
+    val tagText = stringResource(tagRes).let {
+        if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
+    }
+    val number = "#${OrdersBoardLogic.shortNumber(order.orderNumber)}"
+    val line = when (context) {
+        RowContext.SALE -> number
+        RowContext.SEARCH -> "$number · ${OrdersBoardLogic.searchWhen(order, row.lateDays, texts = texts)}"
+        RowContext.LIST -> "$number · ${OrdersBoardLogic.listWhen(order, row.lateDays, texts = texts)}"
+    }
+    BoardRow(
+        tag = tagText to colors,
+        name = order.customerName,
+        items = order.itemsSummary,
+        line = line,
+        pills = if (row.lateDays > 0) listOf(stringResource(R.string.orders_late_days, row.lateDays) to DS.Status.Late) else emptyList(),
+        total = formatMoneyVnd(order.totalAmount),
+        struck = tagKind == RowTag.CANCELLED,
+        // The list API has no per-step payments: the total only (no "còn thu")
+        pay = null,
+        phone = null,
+        onClick = onClick,
+        onCall = {},
+    )
+}
+
+/** Flat row (boards Main / VL-tat-ca / VL-ban / VL-tim): no card, a thin divider under it */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BoardRow(
+    tag: Pair<String, DS.Pill>,
+    name: String?,
+    items: String,
+    line: String,
+    pills: List<Pair<String, DS.Pill>>,
+    total: String,
+    struck: Boolean,
+    pay: Pair<String, Color>?,
+    phone: String?,
+    onClick: () -> Unit,
+    onCall: (String) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Tag(tag.first, tag.second, bold = true)
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        name?.takeIf { it.isNotBlank() } ?: "N/A",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DS.Colors.Text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (items.isNotBlank()) {
+                    Text(items, fontSize = 13.sp, color = BoardColors.Items, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Text(line, fontSize = 12.sp, color = DS.Colors.TextMuted)
+                if (pills.isNotEmpty()) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
+                        pills.forEach { (text, colors) -> Tag(text, colors, bold = false) }
                     }
                 }
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = DS.Colors.TextMuted,
-            modifier = Modifier.weight(1f),
-        )
-        if (amount != null) {
-            Text(amount, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = amountColor)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    total,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
+                    textDecoration = if (struck) TextDecoration.LineThrough else null,
+                    maxLines = 1,
+                )
+                if (pay != null) {
+                    Text(pay.first, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = pay.second, maxLines = 1)
+                }
+            }
+            if (phone != null) {
+                val label = stringResource(R.string.call_customer)
+                Box(
+                    Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, BoardColors.Outline, RoundedCornerShape(10.dp))
+                        .clickable { onCall(phone) }
+                        .semantics { contentDescription = label; role = Role.Button },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Sm)) }
+            }
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = BoardColors.Chevron,
+                modifier = Modifier.size(DS.Icon.Sm),
+            )
         }
+        HorizontalDivider(color = DS.Colors.Divider)
     }
 }
 
 @Composable
-private fun Pill(text: String, colors: DS.Pill) {
+private fun Tag(text: String, colors: DS.Pill, bold: Boolean) {
     Box(
         Modifier
-            .background(colors.fill, RoundedCornerShape(DS.Radius.pill))
-            .padding(horizontal = 9.dp, vertical = 4.dp),
+            .background(colors.fill, RoundedCornerShape(DS.Radius.chip))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
-        Text(text, color = colors.text, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(text, color = colors.text, fontSize = 11.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -415,7 +759,7 @@ private fun StateMessage(message: String, onRetry: (() -> Unit)? = null) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(message, style = MaterialTheme.typography.bodyLarge, color = DS.Colors.TextMuted)
+        Text(message, fontSize = 15.sp, color = DS.Colors.TextMuted)
         if (onRetry != null) {
             TextButton(onClick = onRetry, modifier = Modifier.height(DS.TouchTarget)) {
                 Text(stringResource(R.string.retry), fontWeight = FontWeight.Bold, color = DS.Colors.Primary)
@@ -424,53 +768,167 @@ private fun StateMessage(message: String, onRetry: (() -> Unit)? = null) {
     }
 }
 
+/** "Lọc & sắp xếp" (board Loc): sort, date range and "Xem N đơn" */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RentFilterSheet(initial: RentOrdersFilter, onApply: (RentOrdersFilter) -> Unit, onDismiss: () -> Unit) {
+private fun FilterSheet(
+    initial: RentOrdersFilter,
+    count: suspend (RentOrdersFilter) -> Int?,
+    onApply: (RentOrdersFilter) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var filter by remember { mutableStateOf(initial) }
-    val statuses = listOf(null, "RESERVED", "PICKUPED", "RETURNED", "CANCELLED")
+    var total by remember { mutableStateOf<Int?>(null) }
+    var pickDates by remember { mutableStateOf(false) }
+    // A new choice cancels the previous count request
+    LaunchedEffect(filter) {
+        total = null
+        total = count(filter)
+    }
     AppFormSheet(onDismiss = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = DS.Spacing.lg).padding(bottom = DS.Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(DS.Spacing.md),
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            AppSheetHeader(stringResource(R.string.order_filter))
-            Text(stringResource(R.string.status_filter), color = DS.Colors.TextMuted, fontWeight = FontWeight.Medium)
-            ChipGrid(statuses) { status ->
-                AppFilterChip(
-                    label = status?.let { OrderStatusStyle.labelRes(it)?.let { res -> stringResource(res) } }
-                        ?: stringResource(R.string.all),
-                    selected = filter.status == status,
-                    onClick = { filter = filter.copy(status = status) },
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.orders_v2_filter_title),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DS.Colors.Text,
                     modifier = Modifier.weight(1f),
                 )
+                TextButton(onClick = { filter = RentOrdersFilter(status = filter.status) }) {
+                    Text(stringResource(R.string.reset), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                }
             }
-            Text(stringResource(R.string.sort_by), color = DS.Colors.TextMuted, fontWeight = FontWeight.Medium)
-            ChipGrid(listOf(true, false)) { byPickup ->
-                AppFilterChip(
-                    label = stringResource(if (byPickup) R.string.sort_pickup_date else R.string.sort_book_date),
-                    selected = filter.sortByPickup == byPickup,
-                    onClick = { filter = filter.copy(sortByPickup = byPickup) },
-                    modifier = Modifier.weight(1f),
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SheetLabel(stringResource(R.string.orders_v2_filter_sort))
+                Spacer(Modifier.height(0.dp))
+                OrdersSort.entries.chunked(2).forEach { line ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        line.forEach { sort ->
+                            SortOption(stringResource(sortLabel(sort)), filter.sort == sort, Modifier.weight(1f)) {
+                                filter = filter.copy(sort = sort)
+                            }
+                        }
+                        if (line.size < 2) Spacer(Modifier.weight(1f))
+                    }
+                }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DS.Spacing.md)) {
-                TextButton(onClick = { filter = RentOrdersFilter() }) { Text(stringResource(R.string.reset)) }
-                AppPrimaryButton(text = stringResource(R.string.confirm), onClick = { onApply(filter) }, modifier = Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SheetLabel(stringResource(R.string.orders_v2_filter_range))
+                Spacer(Modifier.height(0.dp))
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(BoardColors.Track).padding(4.dp)) {
+                    DateBasis.entries.forEach { basis ->
+                        val selected = filter.basis == basis
+                        val shape = RoundedCornerShape(9.dp)
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(36.dp)
+                                .then(if (selected) Modifier.shadow(1.dp, shape) else Modifier)
+                                .clip(shape)
+                                .background(if (selected) DS.Colors.Surface else Color.Transparent)
+                                .clickable { filter = filter.copy(basis = basis) }
+                                .semantics { this.selected = selected; role = Role.RadioButton },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(
+                                    when (basis) {
+                                        DateBasis.CREATED -> R.string.orders_v2_basis_created
+                                        DateBasis.PICKED_UP -> R.string.orders_v2_basis_pickup
+                                        DateBasis.RETURNED -> R.string.orders_v2_basis_return
+                                    },
+                                ),
+                                fontSize = 13.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
+                            )
+                        }
+                    }
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        DateRangeChoice.Any to R.string.orders_v2_range_any,
+                        DateRangeChoice.Today to R.string.orders_v2_range_today,
+                        DateRangeChoice.Next7Days to R.string.orders_v2_range_next7,
+                        DateRangeChoice.ThisMonth to R.string.orders_v2_range_month,
+                    ).forEach { (range, label) ->
+                        Chip(stringResource(label), filter.range == range, height = 40, fontSize = 14, onClick = { filter = filter.copy(range = range) })
+                    }
+                    val custom = filter.range as? DateRangeChoice.Custom
+                    Chip(
+                        text = custom?.let { "%02d/%02d – %02d/%02d".format(it.from.dayOfMonth, it.from.monthValue, it.to.dayOfMonth, it.to.monthValue) }
+                            ?: stringResource(R.string.select_date),
+                        selected = custom != null,
+                        height = 40,
+                        fontSize = 14,
+                        icon = Icons.Outlined.CalendarMonth,
+                        onClick = { pickDates = true },
+                    )
+                }
+            }
+            Surface(
+                onClick = { onApply(filter) },
+                shape = RoundedCornerShape(14.dp),
+                color = DS.Colors.Primary,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        total?.let { stringResource(R.string.orders_v2_filter_show_count, it) } ?: stringResource(R.string.orders_v2_filter_show),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+                }
             }
         }
     }
+    if (pickDates) {
+        val custom = filter.range as? DateRangeChoice.Custom
+        AppDateRangePickerSheet(
+            title = stringResource(R.string.select_date),
+            subtitle = "",
+            startLabel = stringResource(R.string.orders_v2_range_from),
+            endLabel = stringResource(R.string.orders_v2_range_to),
+            initialStart = custom?.from,
+            initialEnd = custom?.to,
+            onDismiss = { pickDates = false },
+            onConfirm = { from, to ->
+                filter = filter.copy(range = DateRangeChoice.Custom(from, to))
+                pickDates = false
+            },
+        )
+    }
 }
 
-/** Three chips per row */
 @Composable
-private fun <T> ChipGrid(values: List<T>, chip: @Composable androidx.compose.foundation.layout.RowScope.(T) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
-        values.chunked(3).forEach { line ->
-            Row(horizontalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
-                line.forEach { chip(it) }
-                repeat(3 - line.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
+private fun SheetLabel(text: String) {
+    Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = DS.Colors.TextMuted)
+}
+
+@Composable
+private fun SortOption(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Box(
+        modifier
+            .height(44.dp)
+            .clip(shape)
+            .background(if (selected) BoardColors.SelectedFill else DS.Colors.Surface)
+            .border(if (selected) 2.dp else 1.dp, if (selected) DS.Colors.Primary else BoardColors.Outline, shape)
+            .clickable(onClick = onClick)
+            .semantics { this.selected = selected; role = Role.RadioButton },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) BoardColors.SelectedText else DS.Colors.Text,
+            maxLines = 1,
+        )
     }
 }

@@ -1178,8 +1178,20 @@ class ApiClient(
                     ?: createdBy?.nullableString("name")
                     ?: createdBy?.nullableString("email")
             },
+            updatedAt = o.nullableString("updatedAt"),
+            itemsSummary = orderItemsSummary(o.optJSONArray("orderItems")),
         )
     }
+
+    /** "Áo dài trắng ×2, Cà vạt lụa" from the list's `orderItems` (#401) */
+    private fun orderItemsSummary(items: JSONArray?): String =
+        (0 until (items?.length() ?: 0)).mapNotNull { index ->
+            val item = items?.optJSONObject(index) ?: return@mapNotNull null
+            val name = item.nullableString("productName") ?: item.optJSONObject("product")?.nullableString("name")
+            if (name.isNullOrBlank()) return@mapNotNull null
+            val quantity = item.optInt("quantity", 1)
+            if (quantity > 1) "$name ×$quantity" else name
+        }.joinToString(", ")
 
     private fun parseOrderDetail(o: JSONObject): OrderDetail {
         // Some payloads nest the order under `data` again; unwrap if needed.

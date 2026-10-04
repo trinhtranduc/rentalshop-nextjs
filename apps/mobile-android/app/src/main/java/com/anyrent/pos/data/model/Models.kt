@@ -91,6 +91,9 @@ data class OrderSummary(
     val isReadyToDeliver: Boolean = false,
     val itemCount: Int = 0,
     val createdByName: String? = null,
+    val updatedAt: String? = null,
+    /** Item names with quantity, from the list's `orderItems` (#401) */
+    val itemsSummary: String = "",
 )
 
 data class OrderItem(
