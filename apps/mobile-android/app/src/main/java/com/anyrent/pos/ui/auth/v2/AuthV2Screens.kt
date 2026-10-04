@@ -1,7 +1,6 @@
 package com.anyrent.pos.ui.auth.v2
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,16 +19,17 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -58,10 +58,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -96,7 +94,6 @@ import com.anyrent.pos.domain.auth.RegisterDraft
 import com.anyrent.pos.domain.auth.ResendCooldown
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.push.PushRegistrar
-import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,12 +101,11 @@ import kotlinx.coroutines.withContext
 
 // #386 — boards Dang-nhap, Dang-ky, Dang-ky-2, Quen-mat-khau, Quen-mat-khau-da-gui (flag `newAuth`)
 
-private val FieldBorder = Color(0xFFCBD5E1)
-private val ErrorRed = Color(0xFFB91C1C)
-private val ChipBorder = Color(0xFFE2E8F0)
-private val Track = Color(0xFFE5E7EB)
-private val TermsText = Color(0xFF334155)
-private val MaxWidth = 480.dp
+private val FieldBorder = AuthV2Style.FieldBorder
+private val ErrorRed = AuthV2Style.Error
+private val ChipBorder = AuthV2Style.ChipBorder
+private val TermsText = AuthV2Style.TermsText
+private val MaxWidth = AuthV2Style.MaxWidth
 
 // MARK: - Building blocks
 
@@ -119,9 +115,11 @@ private fun AuthPage(
     header: (@Composable () -> Unit)?,
     footer: @Composable ColumnScope.() -> Unit,
     contentTop: Int,
+    blobs: AuthV2Style.BlobScale,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(Modifier.fillMaxSize(), color = Color.White) {
+    Box(Modifier.fillMaxSize().background(AuthV2Style.PageBackground)) {
+        AuthBlobs(blobs)
         Column(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -133,7 +131,7 @@ private fun AuthPage(
                     .widthIn(max = MaxWidth)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(start = 24.dp, end = 24.dp, top = contentTop.dp, bottom = 16.dp),
+                    .padding(start = AuthV2Style.SideInset, end = AuthV2Style.SideInset, top = contentTop.dp, bottom = 16.dp),
                 content = content,
             )
             Column(
@@ -145,46 +143,51 @@ private fun AuthPage(
 }
 
 @Composable
-private fun AuthTitle(title: String, subtitle: String) {
+private fun AuthTitle(title: String, subtitle: String, size: Int = 30) {
     Text(
         title,
         modifier = Modifier.semantics { heading() },
-        color = DS.Colors.Text,
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Bold,
+        color = AuthV2Style.Text,
+        fontSize = size.sp,
+        lineHeight = (size + 8).sp,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = AuthV2Style.HeadingLetterSpacing,
     )
     Spacer(Modifier.height(6.dp))
-    Text(subtitle, color = DS.Colors.TextMuted, fontSize = 15.sp, lineHeight = 22.sp)
+    Text(subtitle, color = AuthV2Style.TextMuted, fontSize = AuthV2Style.SubtitleSize, lineHeight = 23.sp)
 }
 
+/** Round 44dp back button, white at 0.9 over the blobs */
 @Composable
-private fun AuthBackHeader(onBack: () -> Unit, step: Int? = null, total: Int = 2) {
-    Column {
-        Row(Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.authv2_back), tint = DS.Colors.Text)
-            }
-            Spacer(Modifier.weight(1f))
-            if (step != null) {
-                Text(
-                    stringResource(R.string.authv2_step, step, total),
-                    modifier = Modifier.padding(end = 24.dp),
-                    color = DS.Colors.TextMuted,
-                    fontSize = 13.sp,
-                )
-            }
+private fun AuthBackHeader(onBack: () -> Unit) {
+    Box(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp)) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.size(44.dp).background(AuthV2Style.BackButtonFill, CircleShape),
+        ) {
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.authv2_back),
+                tint = AuthV2Style.Text,
+                modifier = Modifier.size(22.dp),
+            )
         }
-        if (step != null) {
-            Box(
-                Modifier.padding(horizontal = 24.dp).padding(top = 4.dp).fillMaxWidth().height(4.dp)
-                    .background(Track, RoundedCornerShape(2.dp)),
-            ) {
-                Box(
-                    Modifier.fillMaxWidth(step.toFloat() / total).height(4.dp)
-                        .background(DS.Colors.Primary, RoundedCornerShape(2.dp)),
-                )
-            }
+    }
+}
+
+/** 6dp progress bar with "Bước n/2" on its right */
+@Composable
+private fun AuthProgress(step: Int, total: Int = 2) {
+    val label = stringResource(R.string.authv2_step, step, total)
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = label },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.weight(1f).height(6.dp).background(AuthV2Style.ProgressTrack, CircleShape)) {
+            Box(Modifier.fillMaxWidth(step.toFloat() / total).height(6.dp).background(AuthV2Style.Primary, CircleShape))
         }
+        Spacer(Modifier.width(10.dp))
+        Text(label, color = AuthV2Style.Primary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -207,22 +210,22 @@ private fun AuthField(
     var visible by rememberSaveable { mutableStateOf(false) }
     val focus = LocalFocusManager.current
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, color = DS.Colors.Text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = AuthV2Style.Text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 52.dp)
+                .heightIn(min = AuthV2Style.FieldHeight)
                 .semantics {
                     contentDescription = label
                     if (error != null) error(error)
                 },
-            placeholder = placeholder?.let { { Text(it, color = DS.Colors.TextMuted, fontSize = 16.sp) } },
+            placeholder = placeholder?.let { { Text(it, color = AuthV2Style.TextMuted, fontSize = 16.sp) } },
             singleLine = true,
             isError = error != null,
-            textStyle = TextStyle(fontSize = 16.sp, color = DS.Colors.Text),
-            shape = RoundedCornerShape(12.dp),
+            textStyle = TextStyle(fontSize = 16.sp, color = AuthV2Style.Text),
+            shape = RoundedCornerShape(AuthV2Style.FieldRadius),
             visualTransformation = if (password && !visible) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(
                 keyboardType = if (password) KeyboardType.Password else keyboardType,
@@ -242,23 +245,24 @@ private fun AuthField(
                         Icon(
                             if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                             contentDescription = stringResource(if (visible) R.string.authv2_password_hide else R.string.authv2_password_show),
-                            tint = DS.Colors.TextMuted,
+                            tint = AuthV2Style.TextMuted,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
             } else null,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                errorContainerColor = Color.White,
-                focusedBorderColor = DS.Colors.Primary,
+                focusedContainerColor = AuthV2Style.FieldBackground,
+                unfocusedContainerColor = AuthV2Style.FieldBackground,
+                errorContainerColor = AuthV2Style.FieldBackground,
+                focusedBorderColor = AuthV2Style.Primary,
                 unfocusedBorderColor = FieldBorder,
                 errorBorderColor = ErrorRed,
-                cursorColor = DS.Colors.Primary,
+                cursorColor = AuthV2Style.Primary,
                 errorCursorColor = ErrorRed,
             ),
         )
-        if (hint != null && error == null) Text(hint, color = DS.Colors.TextMuted, fontSize = 13.sp)
+        if (hint != null && error == null) Text(hint, color = AuthV2Style.TextMuted, fontSize = 13.sp)
         if (error != null) Text(error, color = ErrorRed, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
@@ -268,18 +272,19 @@ private fun AuthButton(text: String, loading: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         enabled = !loading,
-        modifier = Modifier.fillMaxWidth().height(52.dp),
-        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth().height(AuthV2Style.ButtonHeight),
+        shape = RoundedCornerShape(AuthV2Style.ButtonRadius),
         colors = ButtonDefaults.buttonColors(
-            containerColor = DS.Colors.Primary,
-            disabledContainerColor = DS.Colors.Primary.copy(alpha = .6f),
-            disabledContentColor = Color.White,
+            containerColor = AuthV2Style.Primary,
+            contentColor = AuthV2Style.OnPrimary,
+            disabledContainerColor = AuthV2Style.Primary.copy(alpha = .6f),
+            disabledContentColor = AuthV2Style.OnPrimary,
         ),
     ) {
         if (loading) {
             CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
         } else {
-            Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -289,7 +294,7 @@ private fun AuthLink(text: String, onClick: () -> Unit, enabled: Boolean = true)
     TextButton(onClick = onClick, enabled = enabled, modifier = Modifier.heightIn(min = 48.dp)) {
         Text(
             text,
-            color = if (enabled) DS.Colors.Primary else DS.Colors.TextMuted,
+            color = if (enabled) AuthV2Style.Primary else AuthV2Style.TextMuted,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
         )
@@ -354,27 +359,17 @@ fun LoginV2Screen(
 
     AuthPage(
         header = null,
-        contentTop = 56,
+        contentTop = 240,
+        blobs = AuthV2Style.BlobScale.LOGIN,
         footer = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.authv2_no_store), color = DS.Colors.TextMuted, fontSize = 15.sp)
+                Text(stringResource(R.string.authv2_no_store), color = AuthV2Style.TextMuted, fontSize = 15.sp)
                 AuthLink(stringResource(R.string.authv2_create_store), onRegister)
             }
         },
     ) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(R.drawable.anyrent_logo),
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                contentScale = ContentScale.Fit,
-            )
-            Spacer(Modifier.height(12.dp))
-            Text("AnyRent", color = DS.Colors.Text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.height(40.dp))
         AuthTitle(stringResource(R.string.authv2_login_title), stringResource(R.string.authv2_login_subtitle))
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
         AuthField(
             label = stringResource(R.string.authv2_email),
             value = email,
@@ -383,7 +378,7 @@ fun LoginV2Screen(
             placeholder = stringResource(R.string.authv2_email_placeholder),
             keyboardType = KeyboardType.Email,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
         AuthField(
             label = stringResource(R.string.authv2_password),
             value = password,
@@ -475,8 +470,9 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: () -> Unit) {
     androidx.activity.compose.BackHandler(enabled = step == 2) { back() }
 
     AuthPage(
-        header = { AuthBackHeader(onBack = { back() }, step = step) },
-        contentTop = 20,
+        header = { AuthBackHeader(onBack = { back() }) },
+        contentTop = 52,
+        blobs = AuthV2Style.BlobScale.REGISTER,
         footer = {
             generalError?.let { Text(it, color = ErrorRed, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp)) }
             AuthButton(
@@ -485,10 +481,12 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: () -> Unit) {
             ) { primary() }
         },
     ) {
+        AuthProgress(step)
+        Spacer(Modifier.height(16.dp))
         if (step == 1) {
-            AuthTitle(stringResource(R.string.authv2_store_title), stringResource(R.string.authv2_store_subtitle))
-            Spacer(Modifier.height(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            AuthTitle(stringResource(R.string.authv2_store_title), stringResource(R.string.authv2_store_subtitle), size = 26)
+            Spacer(Modifier.height(16.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 AuthField(
                     label = stringResource(R.string.authv2_store_name),
                     value = draft.storeName,
@@ -515,11 +513,11 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: () -> Unit) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)) {
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = AuthV2Style.Text)) {
                                 append(stringResource(R.string.authv2_rent_what))
                             }
                             append(" ")
-                            withStyle(SpanStyle(color = DS.Colors.TextMuted)) { append(stringResource(R.string.authv2_rent_what_hint)) }
+                            withStyle(SpanStyle(color = AuthV2Style.TextMuted)) { append(stringResource(R.string.authv2_rent_what_hint)) }
                         },
                         fontSize = 14.sp,
                     )
@@ -535,9 +533,9 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: () -> Unit) {
                 }
             }
         } else {
-            AuthTitle(stringResource(R.string.authv2_owner_title), stringResource(R.string.authv2_owner_subtitle))
-            Spacer(Modifier.height(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AuthTitle(stringResource(R.string.authv2_owner_title), stringResource(R.string.authv2_owner_subtitle), size = 26)
+            Spacer(Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AuthField(
                     label = stringResource(R.string.authv2_full_name),
                     value = draft.fullName,
@@ -586,14 +584,14 @@ private fun TagChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(999.dp),
-        color = if (selected) DS.Colors.Text else Color.White,
+        color = if (selected) AuthV2Style.ChipOn else AuthV2Style.ChipOff,
         border = if (selected) null else BorderStroke(1.dp, ChipBorder),
         modifier = Modifier.heightIn(min = 40.dp).semantics { contentDescription = label },
     ) {
         Box(Modifier.heightIn(min = 40.dp).padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
             Text(
                 label,
-                color = if (selected) Color.White else DS.Colors.Text,
+                color = if (selected) AuthV2Style.ChipOnText else AuthV2Style.ChipOffText,
                 fontSize = 14.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
@@ -603,10 +601,10 @@ private fun TagChip(label: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun TermsRow(checked: Boolean, error: String?, onToggle: () -> Unit) {
-    val terms = stringResource(R.string.authv2_terms_of_use)
+    val terms = stringResource(R.string.authv2_terms_link)
     val privacy = stringResource(R.string.authv2_privacy_policy)
     val full = stringResource(R.string.authv2_terms, terms, privacy)
-    val linkStyle = TextLinkStyles(SpanStyle(color = DS.Colors.Primary, fontWeight = FontWeight.SemiBold))
+    val linkStyle = TextLinkStyles(SpanStyle(color = AuthV2Style.Primary, fontWeight = FontWeight.SemiBold))
     val text = buildAnnotatedString {
         append(full)
         full.indexOf(terms).takeIf { it >= 0 }?.let {
@@ -629,7 +627,7 @@ private fun TermsRow(checked: Boolean, error: String?, onToggle: () -> Unit) {
                 onCheckedChange = null,
                 modifier = Modifier.padding(top = 12.dp, end = 12.dp),
                 colors = CheckboxDefaults.colors(
-                    checkedColor = DS.Colors.Primary,
+                    checkedColor = AuthV2Style.Primary,
                     uncheckedColor = if (error != null) ErrorRed else FieldBorder,
                 ),
             )
@@ -666,19 +664,20 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
 
     AuthPage(
         header = { AuthBackHeader(onBack) },
-        contentTop = 24,
+        contentTop = 200,
+        blobs = AuthV2Style.BlobScale.FORGOT,
         footer = {
             Text(
                 stringResource(R.string.authv2_forgot_staff_note),
                 modifier = Modifier.fillMaxWidth(),
-                color = DS.Colors.TextMuted,
+                color = AuthV2Style.TextMuted,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
             )
         },
     ) {
         AuthTitle(stringResource(R.string.authv2_forgot_title), stringResource(R.string.authv2_forgot_text))
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(18.dp))
         AuthField(
             label = stringResource(R.string.authv2_email),
             value = email,
@@ -689,7 +688,7 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
             imeAction = ImeAction.Send,
             onImeAction = { send() },
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         AuthButton(stringResource(R.string.authv2_forgot_send), loading) { send() }
     }
 }
@@ -719,7 +718,8 @@ fun EmailSentV2Screen(email: String, onBackToLogin: () -> Unit) {
 
     AuthPage(
         header = { AuthBackHeader(onBackToLogin) },
-        contentTop = 24,
+        contentTop = 150,
+        blobs = AuthV2Style.BlobScale.FORGOT,
         footer = {
             error?.let { Text(it, color = ErrorRed, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp)) }
             AuthButton(stringResource(R.string.authv2_back_to_login), loading = false, onClick = onBackToLogin)
@@ -743,19 +743,16 @@ fun EmailSentV2Screen(email: String, onBackToLogin: () -> Unit) {
             }
         },
     ) {
-        Box(
-            Modifier.size(56.dp).background(DS.Status.Done.fill, RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Outlined.Email, contentDescription = null, tint = DS.Status.Done.text, modifier = Modifier.size(28.dp))
-        }
-        Spacer(Modifier.height(20.dp))
+        AuthFloatingMailIcon()
+        Spacer(Modifier.height(18.dp))
         Text(
             stringResource(R.string.authv2_sent_title),
             modifier = Modifier.semantics { heading() },
-            color = DS.Colors.Text,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            color = AuthV2Style.Text,
+            fontSize = 30.sp,
+            lineHeight = 38.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = AuthV2Style.HeadingLetterSpacing,
         )
         Spacer(Modifier.height(6.dp))
         val full = stringResource(R.string.authv2_sent_reset, email)
@@ -763,12 +760,12 @@ fun EmailSentV2Screen(email: String, onBackToLogin: () -> Unit) {
             buildAnnotatedString {
                 append(full)
                 full.indexOf(email).takeIf { it >= 0 && email.isNotEmpty() }?.let {
-                    addStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text), it, it + email.length)
+                    addStyle(SpanStyle(fontWeight = FontWeight.Bold, color = AuthV2Style.Text), it, it + email.length)
                 }
             },
-            color = DS.Colors.TextMuted,
-            fontSize = 15.sp,
-            lineHeight = 22.sp,
+            color = AuthV2Style.TextMuted,
+            fontSize = 16.sp,
+            lineHeight = 23.sp,
         )
     }
 }

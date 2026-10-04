@@ -170,6 +170,10 @@ fun AnyRentNavHost(
 
     LaunchedEffect(rootNavController) {
         SessionStore.sessionExpired.collect {
+            // #386: a wrong password is a 401 too; the new login is already on screen and shows it inline,
+            // so do not rebuild it (that would wipe the message and the typed email)
+            val onNewLogin = rootNavController.currentDestination?.route == Routes.Login && isNewAuthOn()
+            if (onNewLogin) return@collect
             rootNavController.navigate(Routes.Login) {
                 popUpTo(rootNavController.graph.id) { inclusive = true }
                 launchSingleTop = true

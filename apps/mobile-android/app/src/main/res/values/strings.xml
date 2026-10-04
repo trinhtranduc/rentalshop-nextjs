@@ -765,8 +765,8 @@
     <string name="api_error_password_min_length">The new password needs at least 6 characters</string>
     <string name="settings_v2_password_done">Password changed. Please sign in again.</string>
     <!-- #386 new auth screens (newAuth) -->
-    <string name="authv2_login_title">Sign in</string>
-    <string name="authv2_login_subtitle">Manage your shop\'s rentals.</string>
+    <string name="authv2_login_title">Hello</string>
+    <string name="authv2_login_subtitle">Sign in to your shop.</string>
     <string name="authv2_email">Email</string>
     <string name="authv2_email_placeholder">name@yourshop.com</string>
     <string name="authv2_password">Password</string>
@@ -795,12 +795,12 @@
     <string name="authv2_tag_other">Other</string>
     <string name="authv2_continue">Continue</string>
     <string name="authv2_owner_title">Owner account</string>
-    <string name="authv2_owner_subtitle">You sign in with this email. We send an activation email.</string>
+    <string name="authv2_owner_subtitle">You sign in with this email.</string>
     <string name="authv2_full_name">Full name</string>
     <string name="authv2_password_hint">At least 6 characters.</string>
     <string name="authv2_confirm_password">Re-enter password</string>
     <string name="authv2_terms">I agree to the %1$s and the %2$s.</string>
-    <string name="authv2_terms_of_use">Terms of Service</string>
+    <string name="authv2_terms_link">Terms</string>
     <string name="authv2_privacy_policy">Privacy Policy</string>
     <string name="authv2_create_store_button">Create shop</string>
     <string name="authv2_forgot_title">Forgot password</string>
