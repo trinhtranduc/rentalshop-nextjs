@@ -809,6 +809,7 @@
     <string name="authv2_forgot_staff_note">Staff who forgot a password: ask the shop owner to reset it in Settings › Users.</string>
     <string name="authv2_sent_title">Check your email</string>
     <string name="authv2_sent_reset">We sent a password reset link to %1$s. No email? Check your spam folder too.</string>
+    <string name="authv2_sent_verify">We sent an activation email to %1$s. No email? Check your spam folder too.</string>
     <string name="authv2_back_to_login">Back to sign in</string>
     <string name="authv2_resend">Resend email</string>
     <string name="authv2_resend_in">Resend email (%1$ds)</string>

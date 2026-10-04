@@ -52,16 +52,24 @@ enum AuthV2Style {
         case register = 0.55
     }
 
+    /// Lowest point of the blobs from the top of the screen, drift included (dot: y 230, 70pt, drifts ≤ 12pt).
+    /// Content starts below it, so a blob never sits on text on any device.
+    static func blobClearance(_ scale: BlobScale) -> CGFloat {
+        (230 + 70) * scale.rawValue + 16
+    }
+
     static var reduceMotion: Bool { UIAccessibilityIsReduceMotionEnabled() }
 
     /// Puts the three blobs behind everything in `view`
-    static func installBlobs(in view: UIView, scale: BlobScale) {
+    @discardableResult
+    static func installBlobs(in view: UIView, scale: BlobScale) -> UIView {
         let layer = AuthV2BlobLayer(scale: scale.rawValue)
         layer.isUserInteractionEnabled = false
         layer.isAccessibilityElement = false
         layer.accessibilityElementsHidden = true
         view.insertSubview(layer, at: 0)
         layer.snp.makeConstraints { $0.edges.equalToSuperview() }
+        return layer
     }
 
     /// White rounded square with a soft blue shadow and a mail icon that floats up and down (board Sent-E)

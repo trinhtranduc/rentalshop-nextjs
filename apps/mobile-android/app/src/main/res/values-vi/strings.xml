@@ -808,6 +808,7 @@
     <string name="authv2_forgot_staff_note">Nhân viên quên mật khẩu: nhờ chủ cửa hàng đặt lại trong Cài đặt › Người dùng.</string>
     <string name="authv2_sent_title">Kiểm tra email</string>
     <string name="authv2_sent_reset">Đã gửi liên kết đặt lại mật khẩu đến %1$s. Không thấy thư? Xem cả mục thư rác.</string>
+    <string name="authv2_sent_verify">Đã gửi thư kích hoạt đến %1$s. Không thấy thư? Xem cả mục thư rác.</string>
     <string name="authv2_back_to_login">Về đăng nhập</string>
     <string name="authv2_resend">Gửi lại email</string>
     <string name="authv2_resend_in">Gửi lại email (%1$ds)</string>

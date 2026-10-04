@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.auth.v2
 
+import com.anyrent.pos.domain.auth.EmailSentKind
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -118,8 +122,13 @@ private fun AuthPage(
     blobs: AuthV2Style.BlobScale,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val scrollState = rememberScrollState()
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val headerHeight = if (header != null) AuthV2Style.HeaderHeight else 0.dp
+    val top = maxOf(contentTop.dp, AuthV2Style.blobClearance(blobs) - statusTop - headerHeight)
     Box(Modifier.fillMaxSize().background(AuthV2Style.PageBackground)) {
-        AuthBlobs(blobs)
+        // The blobs move with the content (keyboard up, scrolling), so they never slide over the text
+        AuthBlobs(blobs, scrollOffset = { scrollState.value })
         Column(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -130,8 +139,8 @@ private fun AuthPage(
                     .weight(1f)
                     .widthIn(max = MaxWidth)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = AuthV2Style.SideInset, end = AuthV2Style.SideInset, top = contentTop.dp, bottom = 16.dp),
+                    .verticalScroll(scrollState)
+                    .padding(start = AuthV2Style.SideInset, end = AuthV2Style.SideInset, top = top, bottom = 16.dp),
                 content = content,
             )
             Column(
@@ -417,7 +426,7 @@ private val RegisterDraftSaver = listSaver<RegisterDraft, Any>(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: () -> Unit) {
+fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> Unit) {
     var step by rememberSaveable { mutableIntStateOf(1) }
     var draft by rememberSaveable(stateSaver = RegisterDraftSaver) { mutableStateOf(RegisterDraft()) }
     var errors by remember { mutableStateOf<Map<AuthField, String>>(emptyMap()) }
@@ -457,7 +466,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: () -> Unit) {
                 )
             }
             loading = false
-            result.onSuccess { onRegistered() }.onFailure { failure ->
+            result.onSuccess { onRegistered(request.email) }.onFailure { failure ->
                 val message = errorText(failure)
                 when (val placement = AuthErrorMapping.register(AppError.from(failure).code)) {
                     is AuthErrorMapping.Placement.Field -> errors = errors + (placement.field to message)
@@ -696,7 +705,7 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
 // MARK: - Email sent (Quen-mat-khau-da-gui)
 
 @Composable
-fun EmailSentV2Screen(email: String, onBackToLogin: () -> Unit) {
+fun EmailSentV2Screen(email: String, kind: EmailSentKind = EmailSentKind.RESET, onBackToLogin: () -> Unit) {
     var cooldownEnd by rememberSaveable { mutableLongStateOf(0L) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var sending by remember { mutableStateOf(false) }
@@ -732,7 +741,12 @@ fun EmailSentV2Screen(email: String, onBackToLogin: () -> Unit) {
                         sending = true
                         error = null
                         scope.launch {
-                            val result = withContext(Dispatchers.IO) { ApiClient.get().forgotPassword(email) }
+                            val result = withContext(Dispatchers.IO) {
+                                when (kind) {
+                                    EmailSentKind.RESET -> ApiClient.get().forgotPassword(email)
+                                    EmailSentKind.ACTIVATION -> ApiParity.resendVerification(email)
+                                }
+                            }
                             sending = false
                             result.onSuccess {
                                 cooldownEnd = ResendCooldown().start(System.currentTimeMillis()).endsAtMillis ?: 0L
@@ -755,7 +769,10 @@ fun EmailSentV2Screen(email: String, onBackToLogin: () -> Unit) {
             letterSpacing = AuthV2Style.HeadingLetterSpacing,
         )
         Spacer(Modifier.height(6.dp))
-        val full = stringResource(R.string.authv2_sent_reset, email)
+        val full = when (kind) {
+            EmailSentKind.RESET -> stringResource(R.string.authv2_sent_reset, email)
+            EmailSentKind.ACTIVATION -> stringResource(R.string.authv2_sent_verify, email)
+        }
         Text(
             buildAnnotatedString {
                 append(full)

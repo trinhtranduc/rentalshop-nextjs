@@ -190,4 +190,11 @@ class AuthFormsTest {
         assertEquals(1, running.remaining(t0 + 59_500))
         assertTrue(running.canResend(t0 + 60_000))
     }
+
+    @Test
+    fun emailSentKindRoundTripsAndDefaultsToReset() {
+        EmailSentKind.entries.forEach { assertEquals(it, EmailSentKind.parse(it.key)) }
+        assertEquals(EmailSentKind.RESET, EmailSentKind.parse(null))
+        assertEquals(EmailSentKind.RESET, EmailSentKind.parse("other"))
+    }
 }

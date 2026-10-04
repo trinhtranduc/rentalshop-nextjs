@@ -320,8 +320,14 @@ extension BaseViewControler {
     /// White scrolling page centred at a max width on iPad. Returns the content stack.
     func authV2Page(header: UIView?, footer: UIView?, contentInsetTop: CGFloat, blobs: AuthV2Style.BlobScale) -> UIStackView {
         view.backgroundColor = AuthV2Style.pageBackground
-        AuthV2Style.installBlobs(in: view, scale: blobs)
-        let scroll = UIScrollView()
+        let blobLayer = AuthV2Style.installBlobs(in: view, scale: blobs)
+        // The blobs move with the content (keyboard up, scrolling), so they never slide over the text
+        let scroll = AuthV2ScrollView()
+        scroll.minStackTop = contentInsetTop
+        scroll.blobClearance = AuthV2Style.blobClearance(blobs)
+        scroll.onOffsetChange = { [weak blobLayer] scroll in
+            blobLayer?.transform = CGAffineTransform(translationX: 0, y: -(scroll.contentOffset.y + scroll.adjustedContentInset.top))
+        }
         scroll.backgroundColor = .clear
         scroll.alwaysBounceVertical = true
         // Dragging dismisses the keyboard. No tap-to-dismiss: with IQKeyboardManager the view moves back on
@@ -359,7 +365,7 @@ extension BaseViewControler {
         stack.spacing = 16
         scroll.addSubview(stack)
         stack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(contentInsetTop)
+            scroll.stackTop = make.top.equalToSuperview().offset(contentInsetTop).constraint
             make.bottom.equalToSuperview().inset(16)
             make.centerX.equalToSuperview()
             make.width.lessThanOrEqualTo(AuthV2Style.maxWidth - 2 * AuthV2Style.sideInset)
@@ -373,5 +379,33 @@ extension BaseViewControler {
         let alert = UIAlertController(title: "Error".localized(), message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
         present(alert, animated: true)
+    }
+}
+
+/// Reports every content offset change (user scroll, IQKeyboardManager, programmatic)
+final class AuthV2ScrollView: UIScrollView {
+    var onOffsetChange: ((UIScrollView) -> Void)?
+    var stackTop: Constraint?
+    var minStackTop: CGFloat = 0
+    var blobClearance: CGFloat = 0
+    private var appliedTop: CGFloat = -1
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // The scroll's top depends on the safe area and the header; keep the content below the blobs
+        let top = max(minStackTop, blobClearance - frame.minY)
+        if top != appliedTop {
+            appliedTop = top
+            stackTop?.update(offset: top)
+        }
+    }
+
+    override var contentOffset: CGPoint {
+        didSet { onOffsetChange?(self) }
+    }
+
+    override func adjustedContentInsetDidChange() {
+        super.adjustedContentInsetDidChange()
+        onOffsetChange?(self)
     }
 }

@@ -61,6 +61,7 @@ import com.anyrent.pos.ui.auth.LoginScreen
 import com.anyrent.pos.ui.auth.OnboardingScreen
 import com.anyrent.pos.ui.auth.RegisterStoreScreen
 import com.anyrent.pos.ui.auth.v2.EmailSentV2Screen
+import com.anyrent.pos.domain.auth.EmailSentKind
 import com.anyrent.pos.ui.auth.v2.ForgotPasswordV2Screen
 import com.anyrent.pos.ui.auth.v2.LoginV2Screen
 import com.anyrent.pos.ui.auth.v2.RegisterStoreV2Screen
@@ -103,7 +104,7 @@ object Routes {
     const val CheckEmail = "check-email/{email}"
     // #386 redesigned forgot password and its email-sent screen (flag newAuth)
     const val ForgotV2 = "forgot-v2?email={email}"
-    const val EmailSentV2 = "email-sent-v2/{email}"
+    const val EmailSentV2 = "email-sent-v2/{email}?kind={kind}"
     const val Onboarding = "onboarding"
     const val CameraBarcode = "camera-barcode/{mode}"
     const val StoreInfo = "store-info"
@@ -418,9 +419,9 @@ fun AnyRentNavHost(
             if (remember(features) { isNewAuthOn() }) {
                 RegisterStoreV2Screen(
                     onBack = { rootNavController.popBackStack() },
-                    // Same landing as the current sign-up: back to login
-                    onRegistered = {
-                        rootNavController.navigate(Routes.Login) {
+                    // Like iOS: the "Kiểm tra email" screen for the activation email; back goes to login
+                    onRegistered = { email ->
+                        rootNavController.navigate("email-sent-v2/${Uri.encode(email)}?kind=${EmailSentKind.ACTIVATION.key}") {
                             popUpTo(Routes.Register) { inclusive = true }
                         }
                     },
@@ -447,10 +448,17 @@ fun AnyRentNavHost(
         }
         composable(
             Routes.EmailSentV2,
-            arguments = listOf(navArgument("email") { type = NavType.StringType }),
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("kind") {
+                    type = NavType.StringType
+                    defaultValue = EmailSentKind.RESET.key
+                },
+            ),
         ) { entry ->
             EmailSentV2Screen(
                 email = entry.arguments?.getString("email").orEmpty(),
+                kind = EmailSentKind.parse(entry.arguments?.getString("kind")),
                 onBackToLogin = { rootNavController.popBackStack(Routes.Login, inclusive = false) },
             )
         }

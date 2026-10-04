@@ -83,6 +83,13 @@ object AuthV2Style {
 
     /** Blob size per screen (board: login 1, forgot and sent 0.8, register 0.55) */
     enum class BlobScale(val factor: Float) { LOGIN(1f), FORGOT(.8f), REGISTER(.55f) }
+
+    /** Lowest point of the blobs from the top of the screen, drift included (dot: y 230, 70dp, drifts ≤ 12dp).
+     *  Content starts below it, so a blob never sits on text on any device. */
+    fun blobClearance(scale: BlobScale): Dp = (230 + 70).dp * scale.factor + 16.dp
+
+    /** Height of the back-button header (12 top + 44) */
+    val HeaderHeight = 56.dp
 }
 
 /** System "remove animations" (animator duration scale 0) turns the motion off */
@@ -108,7 +115,7 @@ private data class Blob(
 
 /** Three decorative blobs behind the content; each drifts and scales on a 12 s loop */
 @Composable
-fun AuthBlobs(scale: AuthV2Style.BlobScale) {
+fun AuthBlobs(scale: AuthV2Style.BlobScale, scrollOffset: () -> Int = { 0 }) {
     val f = scale.factor
     val blobs = listOf(
         Blob(AuthV2Style.BlobBlue, 260.dp * f, RoundedCornerShape(42, 58, 55, 45), (-70).dp * f, (-60).dp * f, false, 0),
@@ -116,7 +123,13 @@ fun AuthBlobs(scale: AuthV2Style.BlobScale) {
         Blob(AuthV2Style.BlobDot, 70.dp * f, CircleShape, 60.dp * f, 230.dp * f, false, 8000),
     )
     val reduceMotion = rememberReduceMotion()
-    BoxWithConstraints(Modifier.fillMaxSize().clipToBounds().clearAndSetSemantics { }) {
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .clipToBounds()
+            .graphicsLayer { translationY = -scrollOffset().toFloat() }
+            .clearAndSetSemantics { },
+    ) {
         val width = maxWidth
         blobs.forEach { blob ->
             // No running transition at all with reduced motion (it would still draw frames)

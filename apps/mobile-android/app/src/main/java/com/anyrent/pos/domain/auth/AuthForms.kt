@@ -213,3 +213,17 @@ data class ResendCooldown(val seconds: Int = DEFAULT_SECONDS, val endsAtMillis: 
         const val DEFAULT_SECONDS = 60
     }
 }
+
+/** Which email the "Kiểm tra email" screen talks about, and which call its "Gửi lại email" makes */
+enum class EmailSentKind(val key: String) {
+    /** Forgot password: reset link, resend = forgot-password */
+    RESET("reset"),
+
+    /** After sign-up: activation email, resend = resend-verification */
+    ACTIVATION("activation");
+
+    companion object {
+        /** Unknown or missing keeps the forgot-password meaning */
+        fun parse(key: String?): EmailSentKind = entries.firstOrNull { it.key == key } ?: RESET
+    }
+}
