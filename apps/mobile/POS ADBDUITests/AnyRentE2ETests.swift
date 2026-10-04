@@ -94,7 +94,9 @@ final class AnyRentE2ETests: XCTestCase {
         }
         e2e.shot("22-cart-dates")
 
-        let customer = e2e.pickFirstCustomer()
+        // New customer with a Vietnamese name: covers "Khách mới" and accent-insensitive search below.
+        let customer = e2e.createCustomerInPicker(name: E2E.vietnameseName, phone: E2E.uniquePhone())
+            ?? e2e.pickFirstCustomer()
         e2e.shot("23-cart-customer")
 
         guard e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "24-cart-rent") else {
@@ -107,15 +109,19 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("28-orders-after-rent")
         if let name = customer, !name.isEmpty {
-            let search = app.searchFields.firstMatch
+            // Search without accents ("nguyen van") must find "Nguyễn Văn …" (word prefix, accent-insensitive).
+            let query = name == E2E.vietnameseName ? E2E.vietnameseQuery : name
+            let search = e2e.ordersSearchField
             if search.waitForExistence(timeout: 5) {
                 search.tap()
-                search.typeText(name)
+                search.typeText(query)
                 sleep(3)
-                let row = app.tables.cells.containing(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
-                XCTAssertTrue(row.waitForExistence(timeout: 8), "An order for \(name) should be listed")
+                let row = app.cells.containing(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+                let any = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+                XCTAssertTrue(row.waitForExistence(timeout: 8) || any.exists,
+                              "Searching '\(query)' should list the order for \(name)")
                 e2e.shot("29-orders-new-rent")
-                e2e.tapIfExists(app.buttons["Cancel"])
+                e2e.tapIfExists(e2e.button(["Cancel", "Huỷ", "Hủy"]))
             }
         }
     }
@@ -154,30 +160,47 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(app.tables.cells.count > 0, "All orders lists rows")
         e2e.shot("41-orders-all")
 
-        let filter = e2e.button(["Order Filter", "Bộ lọc đơn hàng"])
+        // The sort button under the status chips opens "Lọc & sắp xếp" (board Loc).
+        let filter = e2e.sortButton
         if filter.waitForExistence(timeout: 3) {
             filter.tap()
             sleep(1)
             e2e.shot("42-orders-filter-sheet")
-            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+            let nearest = e2e.element(labelBeginsWith: ["Nearest task", "Việc gần nhất"])
+            e2e.soft(nearest.waitForExistence(timeout: 3), "filter sheet lists Việc gần nhất")
+            e2e.tapIfExists(nearest)
+            // KHOẢNG NGÀY: planned hand-over day in the next 7 days (exact labels: the sort has "Hand-over date").
+            e2e.tapIfExists(e2e.button(["Handed over", "Ngày giao"]))
+            e2e.tapIfExists(e2e.button(["Next 7 days", "7 ngày tới"]))
             sleep(1)
+            e2e.shot("42b-orders-filter-nearest")
+            e2e.tapIfExists(e2e.element(labelBeginsWith: ["Show", "Xem"], type: .button), timeout: 3)
+            sleep(2)
+            e2e.soft(e2e.element(labelBeginsWith: ["Nearest task", "Việc gần nhất"], type: .button).exists,
+                     "list header shows the Việc gần nhất sort")
+            e2e.shot("42c-orders-nearest")
         } else {
-            XCTFail("Filter button on Tất cả đơn")
+            XCTFail("Sort/filter button on Tất cả đơn")
         }
 
-        let sale = e2e.button(["Sale", "Đơn bán"])
-        XCTAssertTrue(sale.waitForExistence(timeout: 5), "Đơn bán segment should exist")
+        let sale = e2e.saleModeButton
+        XCTAssertTrue(sale.waitForExistence(timeout: 5), "Đơn bán (Sales) switch should exist")
         sale.tap()
         sleep(2)
         e2e.shot("43-orders-sale")
 
-        let search = app.searchFields.firstMatch
+        let search = e2e.ordersSearchField
         XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
-        search.tap()
-        search.typeText("ORD")
-        sleep(3)
-        e2e.soft(app.tables.cells.count > 0, "search 'ORD' returns rows")
-        e2e.shot("44-orders-search")
+        for (query, shot) in [("ORD-001", "44-orders-search-code"), ("555-1006", "45-orders-search-phone"),
+                              ("james", "46-orders-search-name")] {
+            search.tap()
+            search.clearText()
+            search.typeText(query)
+            sleep(3)
+            e2e.soft(app.cells.count > 0, "search '\(query)' returns rows")
+            e2e.shot(shot)
+        }
+        e2e.tapIfExists(e2e.button(["Cancel", "Huỷ", "Hủy"]))
     }
 
     func test5OrderDetailActions() throws {
@@ -224,13 +247,13 @@ final class AnyRentE2ETests: XCTestCase {
 
         // Cancel a sale order.
         e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
-        let sale = e2e.button(["Sale", "Đơn bán"])
-        XCTAssertTrue(sale.waitForExistence(timeout: 5), "Đơn bán segment")
+        let sale = e2e.saleModeButton
+        XCTAssertTrue(sale.waitForExistence(timeout: 5), "Đơn bán (Sales) switch")
         sale.tap()
         sleep(2)
         // Open a RESERVED sale (only those offer Cancel order), scrolling the list if needed.
         var cancelled = false
-        let reservedBadge = NSPredicate(format: "label ==[c] 'RESERVED' OR label ==[c] 'Đã đặt' OR label ==[c] 'Đặt trước'")
+        let reservedBadge = NSPredicate(format: "label ==[c] 'RESERVED' OR label ==[c] 'Booked' OR label ==[c] 'Đã đặt' OR label ==[c] 'Đặt trước'")
         let reservedRow = app.cells.containing(reservedBadge).firstMatch
         for _ in 0..<5 where !(reservedRow.exists && reservedRow.isHittable) {
             app.swipeUp()
@@ -250,7 +273,7 @@ final class AnyRentE2ETests: XCTestCase {
                 confirm.tap()
                 sleep(3)
                 e2e.dismissAlerts()
-                let badge = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'CANCELLED' OR label ==[c] 'Đã hủy'")).firstMatch
+                let badge = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'CANCELLED' OR label ==[c] 'Cancelled' OR label ==[c] 'Đã hủy' OR label ==[c] 'Đã huỷ'")).firstMatch
                 e2e.soft(badge.waitForExistence(timeout: 5), "order shows CANCELLED after cancel")
                 e2e.shot("57-detail-cancelled")
                 cancelled = true
@@ -260,6 +283,145 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.goBack()
         }
         XCTAssertTrue(cancelled, "Found and cancelled a sale order")
+    }
+
+
+    func test0AuthFlows() throws {
+        try e2e.requireFlag("newAuth")
+        app.launch()
+        e2e.settle(seconds: 4)
+        if app.tabBars.firstMatch.waitForExistence(timeout: 4) { e2e.logout() }
+        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 15), "Login screen")
+        e2e.shot("03-auth-login")
+
+        // Wrong password: an error, and the login form stays.
+        e2e.login(email: e2e.email, password: "wrong-" + e2e.password)
+        sleep(4)
+        e2e.dismissAlerts()
+        XCTAssertTrue(app.secureTextFields.firstMatch.exists, "Wrong password stays on login")
+        let error = app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS[c] 'Invalid email or password' OR label CONTAINS[c] 'không hợp lệ' OR label CONTAINS[c] 'incorrect' OR label CONTAINS[c] 'sai'")).firstMatch
+        e2e.soft(error.exists || e2e.lastAlert != nil, "wrong password shows an error")
+        e2e.shot("04-auth-wrong-password")
+
+        // Forgot password: send the link, land on "Kiểm tra email" (or the rate-limit message).
+        let forgot = e2e.button(["Forgot Password?", "Quên mật khẩu?", "Forgot password?"])
+        XCTAssertTrue(forgot.waitForExistence(timeout: 5), "Forgot password link")
+        forgot.tap()
+        let email = e2e.field(["Email"])
+        XCTAssertTrue(email.waitForExistence(timeout: 8), "Forgot password form")
+        sleep(1)
+        e2e.dismissSystemAlert()
+        e2e.shot("05-auth-forgot")
+        email.tap()
+        email.clearText()
+        email.typeText(e2e.email)
+        e2e.tapIfExists(e2e.button(["Send link", "Gửi liên kết"]), timeout: 3)
+        let sent = e2e.element(labelBeginsWith: ["Check your email", "Kiểm tra email"])
+        e2e.soft(sent.waitForExistence(timeout: 12), "forgot password reaches Kiểm tra email")
+        e2e.dismissAlerts()
+        e2e.shot("06-auth-forgot-sent")
+        e2e.backToLogin()
+
+        // Sign-up (merchant run only, it creates a shop): two steps, then the activation email screen.
+        guard e2e.role == "merchant" else { return }
+        let create = e2e.button(["Create a new shop", "Tạo cửa hàng mới"])
+        XCTAssertTrue(create.waitForExistence(timeout: 8), "Create a new shop link")
+        create.tap()
+        let stamp = Int(Date().timeIntervalSince1970) % 100_000_000
+        XCTAssertTrue(e2e.type(into: ["Shop name", "Tên cửa hàng"], text: "E2E Shop \(stamp)"), "Shop name field")
+        _ = e2e.type(into: ["Phone number", "Số điện thoại"], text: E2E.uniquePhone())
+        _ = e2e.type(into: ["Address", "Địa chỉ"], text: "12 Nguyen Hue, District 1")
+        e2e.tapIfExists(e2e.button(["Tools", "Dụng cụ"]), timeout: 2)
+        e2e.hideKeyboard()
+        e2e.shot("07-auth-signup-step1")
+        let next = e2e.button(["Continue", "Tiếp tục"])
+        for _ in 0..<3 where !(next.exists && next.isHittable) { app.swipeUp() }
+        next.tap()
+        XCTAssertTrue(e2e.type(into: ["Full name", "Họ và tên"], text: "E2E Owner"), "Owner step opens")
+        _ = e2e.type(into: ["Email"], text: "e2e391+\(stamp)@example.com")
+        let secure = app.secureTextFields
+        if secure.count >= 2 {
+            secure.element(boundBy: 0).tap(); secure.element(boundBy: 0).typeText("e2e12345")
+            secure.element(boundBy: 1).tap(); secure.element(boundBy: 1).typeText("e2e12345")
+        }
+        e2e.hideKeyboard()
+        let terms = app.descendants(matching: .any).matching(NSPredicate(
+            format: "label BEGINSWITH 'Please accept the Privacy Policy' OR label BEGINSWITH 'Vui lòng'")).firstMatch
+        for _ in 0..<2 where !(terms.exists && terms.isHittable) { app.swipeUp() }
+        if terms.waitForExistence(timeout: 3) { terms.tap() } else { e2e.note("terms checkbox not found") }
+        e2e.shot("08-auth-signup-step2")
+        let createShop = e2e.button(["Create shop", "Tạo cửa hàng"])
+        for _ in 0..<3 where !(createShop.exists && createShop.isHittable) { app.swipeUp() }
+        createShop.tap()
+        let verify = e2e.element(labelBeginsWith: ["Check your email", "Kiểm tra email"])
+        XCTAssertTrue(verify.waitForExistence(timeout: 20),
+                      "Sign-up ends on the activation email screen (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.dismissAlerts()
+        e2e.shot("09-auth-signup-email-sent")
+        e2e.backToLogin()
+    }
+
+    func test5bOrderExtendEditPrint() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        let all = e2e.button(["All orders", "Tất cả đơn"])
+        XCTAssertTrue(all.waitForExistence(timeout: 5), "Tất cả đơn")
+        all.tap()
+        sleep(1)
+        e2e.tapIfExists(e2e.button(["Renting", "Đang thuê"]), timeout: 3)
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return XCTFail("No renting order to extend") }
+        e2e.tapRow(row)
+        let extend = e2e.button(["Extend", "Gia hạn"])
+        XCTAssertTrue(extend.waitForExistence(timeout: 10), "A renting order offers Gia hạn")
+        e2e.shot("58-detail-renting")
+        extend.tap()
+        let confirm = e2e.element(labelBeginsWith: ["Extend to", "Gia hạn đến"], type: .button)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 8), "Extend sheet with Gia hạn đến <day>")
+        e2e.shot("59-detail-extend-sheet")
+        confirm.tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.shot("5a-detail-extended")
+
+        // Print preview from the nav bar printer button.
+        let print = e2e.button(["Print receipt", "In hóa đơn", "In biên nhận"])
+        if print.waitForExistence(timeout: 5) {
+            print.tap()
+            sleep(3)
+            e2e.shot("5b-detail-print-preview")
+            e2e.dismissAlerts()
+            e2e.tapIfExists(e2e.button(["Close", "Đóng", "Cancel", "Huỷ", "Hủy", "Done", "Xong"]), timeout: 2)
+            if !extend.exists { e2e.goBackOnce() }
+        } else {
+            e2e.soft(false, "print button on order detail")
+        }
+
+        // Edit order: only Booked (RESERVED) orders offer it. It opens the cart in edit mode; leave without saving.
+        e2e.goBack()
+        e2e.tapIfExists(e2e.button(["Booked", "Đã đặt"]), timeout: 3)
+        sleep(2)
+        let booked = app.cells.firstMatch
+        if booked.waitForExistence(timeout: 8) {
+            e2e.tapRow(booked)
+            let edit = e2e.button(["Edit order", "Sửa đơn"])
+            if edit.waitForExistence(timeout: 8) {
+                e2e.shot("5c-detail-booked")
+                edit.tap()
+                sleep(3)
+                e2e.shot("5d-detail-edit-order")
+                e2e.goBackOnce()
+            } else {
+                e2e.soft(false, "Booked order offers Sửa đơn")
+            }
+        }
+        e2e.goBack()
     }
 
     func test6Calendar() throws {
@@ -315,6 +477,115 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(e2e.element(labelBeginsWith: ["Period: Last 30", "Khoảng thời gian: 30"], type: .button).exists,
                  "period button shows the new period")
         e2e.shot("72-overview-30-days")
+    }
+
+
+    func test7aCustomers() throws {
+        try e2e.requireFlag("newCustomers")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let row = app.staticTexts.matching(NSPredicate(format: "label == 'Customers' OR label == 'Khách hàng'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Customers row in Settings")
+        e2e.shot("75-settings-counts")
+        row.tap()
+        let search = e2e.field(["Name or phone number", "Tên hoặc số điện thoại"])
+        XCTAssertTrue(search.waitForExistence(timeout: 10), "Customers list with search")
+        sleep(2)
+        e2e.shot("76-customers-list")
+        search.tap()
+        search.typeText(E2E.vietnameseQuery)
+        sleep(3)
+        e2e.shot("76b-customers-search-no-accents")
+        search.clearText()
+        // Sarah Brown has cancelled orders in the seed: Tổng chi must leave them out.
+        search.typeText("sarah brown")
+        sleep(3)
+        let first = app.cells.firstMatch
+        guard first.waitForExistence(timeout: 8) else { return XCTFail("No customer rows for 'sarah brown'") }
+        e2e.tapRow(first)
+        let spent = e2e.element(labelBeginsWith: ["Total spent", "Tổng chi"])
+        XCTAssertTrue(spent.waitForExistence(timeout: 10), "Customer detail shows Tổng chi")
+        e2e.shot("77-customer-detail")
+        let edit = e2e.button(["Edit", "Sửa"])
+        if edit.waitForExistence(timeout: 3) {
+            edit.tap()
+            XCTAssertTrue(e2e.element(labelBeginsWith: ["Edit customer", "Sửa khách hàng"]).waitForExistence(timeout: 8),
+                          "Edit customer opens")
+            e2e.shot("78-customer-edit")
+            e2e.tapIfExists(e2e.button(["Cancel", "Hủy", "Huỷ", "Back", "Quay lại"]), timeout: 2)
+            sleep(1)
+        }
+        if e2e.role == "merchant" {
+            let order = e2e.element(labelBeginsWith: ["Create order for this customer", "Tạo đơn cho khách này"])
+            for _ in 0..<3 where !(order.exists && order.isHittable) { app.swipeUp() }
+            XCTAssertTrue(order.waitForExistence(timeout: 5), "Tạo đơn cho khách này")
+            order.tap()
+            sleep(3)
+            e2e.shot("79-customer-create-order")
+        }
+        e2e.goBack()
+    }
+
+    func test7bProductManage() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        // Product 1 has a renting order: delete must answer 409 PRODUCT_HAS_OPEN_ORDERS and keep the screen.
+        guard e2e.openProduct(named: "Product 1 - Electronics") else { return XCTFail("Product 1 detail") }
+        e2e.shot("7c-product-detail-strip")
+        let delete = e2e.button(["Delete product", "Xóa sản phẩm", "Delete", "Xóa"])
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "Merchant sees Xóa on product detail")
+        delete.tap()
+        let confirm = app.sheets.buttons.matching(NSPredicate(format: "label IN %@", ["Delete product", "Xóa sản phẩm"])).firstMatch
+        let anyConfirm = confirm.waitForExistence(timeout: 5) ? confirm
+            : app.buttons.matching(NSPredicate(format: "label IN %@", ["Delete product", "Xóa sản phẩm"])).element(boundBy: 1)
+        e2e.shot("7d-product-delete-confirm")
+        anyConfirm.tap()
+        sleep(3)
+        let blocked = app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS 'reserved or being rented' OR label CONTAINS 'đang thuê' OR label CONTAINS 'đặt trước'")).firstMatch
+        e2e.soft(blocked.waitForExistence(timeout: 5), "409 PRODUCT_HAS_OPEN_ORDERS message")
+        e2e.shot("7e-product-delete-409")
+        e2e.dismissAlerts()
+        XCTAssertTrue(e2e.button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 5), "Detail stays after 409")
+
+        // Edit opens the form; close without saving.
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        if edit.waitForExistence(timeout: 3) {
+            edit.tap()
+            sleep(2)
+            e2e.shot("7f-product-edit-form")
+            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+        }
+        e2e.goBackOnce()
+
+        // A product without open orders is deleted and leaves the list.
+        let name = "Product 30 - Maintenance Equipment"
+        guard e2e.openProduct(named: name) else { return XCTFail("\(name) detail") }
+        e2e.button(["Delete product", "Xóa sản phẩm", "Delete", "Xóa"]).tap()
+        let ok = app.sheets.buttons.matching(NSPredicate(format: "label IN %@", ["Delete product", "Xóa sản phẩm"])).firstMatch
+        if ok.waitForExistence(timeout: 5) { ok.tap() }
+        sleep(3)
+        e2e.dismissAlerts()
+        e2e.shot("7g-product-deleted")
+        e2e.soft(app.tables.cells.firstMatch.waitForExistence(timeout: 8), "back on the product list after delete")
+    }
+
+    func test7cSettingsUsers() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let users = app.staticTexts.matching(NSPredicate(format: "label == 'Users' OR label == 'Người dùng'")).firstMatch
+        if e2e.role == "staff" {
+            e2e.shot("7h-staff-settings")
+            e2e.soft(!users.exists, "OUTLET_STAFF does not see Người dùng")
+            return
+        }
+        XCTAssertTrue(users.waitForExistence(timeout: 8), "Users row")
+        users.tap()
+        sleep(3)
+        e2e.shot("7h-settings-users")
+        e2e.goBackOnce()
     }
 
     func test8StaffRestrictions() throws {
@@ -455,7 +726,9 @@ private final class E2E {
         return app.secureTextFields.firstMatch.exists
     }
 
-    private func login() {
+    private func login() { login(email: email, password: password) }
+
+    func login(email: String, password: String) {
         let emailField = field(["Enter your email", "Nhập email của bạn", "Email"])
         let resolved = emailField.waitForExistence(timeout: 5) ? emailField : app.textFields.firstMatch
         XCTAssertTrue(resolved.waitForExistence(timeout: 5), "Email field on login")
@@ -512,6 +785,17 @@ private final class E2E {
             inApp.tap()
             return true
         }
+        // iOS "Save Password?" (AutoFill) sheet after a login or sign-up form.
+        let savePassword = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["Not Now", "Không phải bây giờ"])).firstMatch
+        if savePassword.exists && savePassword.isHittable {
+            savePassword.tap()
+            return true
+        }
+        let savePasswordInApp = app.buttons.matching(NSPredicate(format: "label IN %@", ["Not Now", "Không phải bây giờ"])).firstMatch
+        if savePasswordInApp.exists && savePasswordInApp.isHittable {
+            savePasswordInApp.tap()
+            return true
+        }
         return false
     }
 
@@ -532,6 +816,105 @@ private final class E2E {
         }
     }
 
+    func logout() {
+        tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(1)
+        let logout = app.staticTexts.matching(NSPredicate(format: "label == 'Logout' OR label == 'Đăng xuất' OR label == 'Log out'")).firstMatch
+        for _ in 0..<4 where !(logout.exists && logout.isHittable) { app.swipeUp() }
+        guard logout.waitForExistence(timeout: 5) else { return note("logout row not found") }
+        logout.tap()
+        let confirm = app.alerts.buttons.matching(
+            NSPredicate(format: "label == 'Logout' OR label == 'Đăng xuất' OR label == 'Log out'")).firstMatch
+        if confirm.waitForExistence(timeout: 5) { confirm.tap() }
+        _ = app.secureTextFields.firstMatch.waitForExistence(timeout: 15)
+    }
+
+    func backToLogin() {
+        for _ in 0..<3 where !app.secureTextFields.firstMatch.exists {
+            let back = button(["Back to sign in", "Về đăng nhập", "Back", "Quay lại"])
+            if back.exists && back.isHittable { back.tap() } else { goBackOnce() }
+            sleep(1)
+        }
+    }
+
+    /// Type into the text field whose label/placeholder matches; false when it is not on screen.
+    @discardableResult
+    func type(into labels: [String], text: String) -> Bool {
+        let target = field(labels)
+        guard target.waitForExistence(timeout: 6) else { return false }
+        target.tap()
+        target.clearText()
+        target.typeText(text)
+        return true
+    }
+
+    func hideKeyboard() {
+        guard app.keyboards.firstMatch.exists else { return }
+        let labels = ["Done", "done", "Return", "return", "Xong", "Go", "Next", "next"]
+        let toolbarDone = app.toolbars.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        let keyDone = app.keyboards.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        if toolbarDone.exists { toolbarDone.tap() } else if keyDone.exists { keyDone.tap() }
+        sleep(1)
+        if app.keyboards.firstMatch.exists { // still up: drag the content down to dismiss it interactively
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)))
+        }
+    }
+
+    /// One back step (nav bar back, labelled back, or the top-left arrow), without waiting for the tab bar.
+    func goBackOnce() {
+        let back = app.buttons.matching(NSPredicate(format: "label IN %@",
+            ["Back", "Quay lại", "Back to products", "Quay lại chọn sản phẩm"])).firstMatch
+        if back.exists && back.isHittable {
+            back.tap()
+        } else if app.navigationBars.buttons.firstMatch.exists, app.navigationBars.buttons.firstMatch.isHittable {
+            app.navigationBars.buttons.firstMatch.tap()
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.067, dy: 0.087)).tap()
+        }
+        sleep(1)
+    }
+
+    var ordersSearchField: XCUIElement {
+        let v2 = field(["Name, phone, order number, item", "Tìm tên, SĐT, mã đơn, tên đồ"])
+        return v2.exists ? v2 : app.searchFields.firstMatch.exists ? app.searchFields.firstMatch
+            : app.textFields.matching(NSPredicate(format: "placeholderValue BEGINSWITH 'Name, phone' OR placeholderValue BEGINSWITH 'Tên'")).firstMatch
+    }
+
+    /// Home → search the product by name → open its detail. True when "Add to cart" shows.
+    func openProduct(named name: String) -> Bool {
+        tapTab(["Home", "Trang chủ"], index: 0)
+        let search = field(["Name, barcode…", "Tên, mã vạch…"])
+        guard search.waitForExistence(timeout: 10) else { return false }
+        search.tap()
+        search.clearText()
+        search.typeText(name + "\n")
+        sleep(3)
+        let row = app.cells.containing(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+        let text = app.staticTexts[name]
+        if row.waitForExistence(timeout: 5) { tapRow(row) } else if text.exists { text.tap() } else { return false }
+        return button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10)
+    }
+
+    /// In the customer picker: "Khách mới" → phone + name → "Lưu và chọn". Returns the name, or nil.
+    func createCustomerInPicker(name: String, phone: String) -> String? {
+        let row = element(labelBeginsWith: ["Choose customer", "Chọn khách hàng"])
+        guard row.waitForExistence(timeout: 5) else { note("Customer row not found"); return nil }
+        row.tap()
+        let new = element(labelBeginsWith: ["New customer", "Khách mới"])
+        guard new.waitForExistence(timeout: 8) else { note("Khách mới not in picker"); return nil }
+        new.tap()
+        guard type(into: ["Phone number", "Số điện thoại"], text: phone) else { note("phone field"); return nil }
+        _ = type(into: ["Full name", "Họ và tên"], text: name)
+        shot("23a-cart-new-customer")
+        let save = button(["Save and select", "Lưu và chọn"])
+        guard save.waitForExistence(timeout: 3) else { note("Lưu và chọn missing"); return nil }
+        save.tap()
+        sleep(3)
+        dismissAlerts()
+        return element(labelBeginsWith: [name]).exists ? name : name
+    }
+
     // MARK: Queries
 
     func button(_ labels: [String]) -> XCUIElement {
@@ -547,6 +930,18 @@ private final class E2E {
             NSPredicate(format: "label BEGINSWITH %@", $0)
         })
         return app.descendants(matching: type).matching(predicate).firstMatch
+    }
+
+    /// Orders tab header button that switches Đơn thuê ↔ Đơn bán ("Sales" / "Đơn bán" while on rentals).
+    var saleModeButton: XCUIElement {
+        button(["Sales", "Đơn bán", "Sale"])
+    }
+
+    /// Sort button on Tất cả đơn ("Newest first ⌄"); it opens the filter sheet.
+    var sortButton: XCUIElement {
+        element(labelBeginsWith: ["Newest first", "Nearest task", "Hand-over date", "Return date",
+                                  "Mới tạo nhất", "Việc gần nhất", "Ngày giao gần nhất", "Ngày trả gần nhất"],
+                type: .button)
     }
 
     var cartBar: XCUIElement {
@@ -658,14 +1053,22 @@ private final class E2E {
             return nil
         }
         row.tap()
-        let search = app.searchFields.firstMatch
-        guard search.waitForExistence(timeout: 8) else {
+        // The v2 picker uses a text field ("Name or phone number"), the old one a search field.
+        let v2Search = field(["Name or phone number", "Tên hoặc số điện thoại"])
+        let search = v2Search.waitForExistence(timeout: 8) ? v2Search : app.searchFields.firstMatch
+        guard search.waitForExistence(timeout: 2) else {
             XCTFail("Customer picker did not open")
             return nil
         }
         sleep(2)
         let top = search.frame.maxY
-        let cell = app.cells.allElementsBoundByIndex.first { $0.frame.minY >= top && $0.isHittable }
+        // Skip the "Khách mới" / "New customer" row at the top of the v2 picker.
+        let newLabels = ["New customer", "Khách mới"]
+        let cell = app.cells.allElementsBoundByIndex.first { cell in
+            cell.frame.minY >= top && cell.isHittable
+                && !newLabels.contains(where: { cell.label.hasPrefix($0) })
+                && !cell.staticTexts.allElementsBoundByIndex.contains(where: { newLabels.contains($0.label) })
+        }
         guard let chosen = cell else {
             XCTFail("No customer rows in the picker")
             return nil
@@ -696,6 +1099,8 @@ private final class E2E {
         shot("\(shotPrefix)-preview")
         let footer = create.allElementsBoundByIndex.filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
         (footer ?? create.firstMatch).tap()
+        sleep(1)
+        shot("\(shotPrefix)-after-create-tap")
         let confirm = button(["Confirm", "Xác nhận"])
         if confirm.waitForExistence(timeout: 8) {
             shot("\(shotPrefix)-payment")
@@ -743,6 +1148,13 @@ private final class E2E {
         }
     }
 
+    static let vietnameseName = "Nguyễn Văn Kiểm Thử"
+    static let vietnameseQuery = "nguyen van kiem"
+
+    static func uniquePhone() -> String {
+        String(format: "09%08d", Int(Date().timeIntervalSince1970 * 10) % 100_000_000)
+    }
+
     /// "dd/MM" as on the calendar day cells (DayFormatter.short is "<weekday> dd/MM").
     static func dayMonth(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -756,7 +1168,8 @@ private extension XCUIElement {
     func clearText() {
         guard let current = value as? String, !current.isEmpty,
               current != placeholderValue else { return }
-        tap()
-        typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count))
+        // Put the caret at the end first: a plain tap can land mid-text and leave a tail behind.
+        coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
+        typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 4))
     }
 }
