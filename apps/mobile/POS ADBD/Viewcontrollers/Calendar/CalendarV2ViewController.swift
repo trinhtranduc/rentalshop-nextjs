@@ -170,7 +170,7 @@ final class CalendarV2ViewController: BaseViewControler {
 
     private func arrowButton(_ symbol: String, label: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)), for: .normal)
+        button.setImage(DS.symbol(symbol, DS.Icon.md, weight: .semibold), for: .normal)
         button.tintColor = DS.Color.text
         button.accessibilityLabel = label
         button.addTarget(self, action: action, for: .touchUpInside)
@@ -499,10 +499,10 @@ final class CalendarDayRowCell: UITableViewCell {
         let right = UIStackView(arrangedSubviews: [totalLabel, noteLabel])
         right.axis = .vertical
         right.alignment = .trailing
-        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
         chevron.tintColor = UIColor(hexString: "94A3B8")
-        chevron.contentMode = .scaleAspectFit
-        chevron.snp.makeConstraints { make in make.width.height.equalTo(14) }
+        chevron.contentMode = .center
+        chevron.snp.makeConstraints { make in make.width.height.equalTo(DS.Icon.sm) }
         let row = UIStackView(arrangedSubviews: [left, right, chevron])
         row.spacing = DS.Spacing.md
         row.alignment = .center

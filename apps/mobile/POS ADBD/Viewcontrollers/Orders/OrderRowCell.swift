@@ -67,7 +67,7 @@ final class OrderRowCell: UITableViewCell {
         customerColumn.axis = .vertical
         customerColumn.spacing = 2
 
-        callButton.setImage(UIImage(systemName: "phone.fill"), for: .normal)
+        callButton.setImage(DS.symbol("phone", DS.Icon.sm), for: .normal)
         callButton.tintColor = DS.Color.primary
         callButton.backgroundColor = DS.Status.handOver.fill
         callButton.layer.cornerRadius = DS.touchTarget / 2

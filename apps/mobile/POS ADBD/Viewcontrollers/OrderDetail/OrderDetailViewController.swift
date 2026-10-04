@@ -37,11 +37,11 @@ final class OrderDetailViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         let navBar = setupCustomNavigationBar(title: "", hideBackButton: false)
-        printButton.setImage(UIImage(systemName: "printer"), for: .normal)
+        printButton.setImage(DS.symbol("printer", DS.Icon.md), for: .normal)
         printButton.tintColor = DS.Color.text
         printButton.accessibilityLabel = "Print receipt".localized()
         printButton.addTarget(self, action: #selector(printTapped), for: .touchUpInside)
-        moreButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
+        moreButton.setImage(DS.symbol("ellipsis", DS.Icon.md), for: .normal)
         moreButton.tintColor = DS.Color.text
         moreButton.accessibilityLabel = "More actions".localized()
         moreButton.showsMenuAsPrimaryAction = true
@@ -196,7 +196,7 @@ final class OrderDetailViewController: BaseViewControler {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
         if let phone = detail.customer.phone?.removeWhiteSpace(), !phone.isEmpty {
-            let call = makeButton(title: phone, style: .tinted, symbol: "phone.fill")
+            let call = makeButton(title: phone, style: .tinted, symbol: "phone")
             call.addAction(UIAction { _ in
                 if let url = URL(string: "tel://\(phone)") { UIApplication.shared.open(url) }
             }, for: .touchUpInside)
@@ -210,7 +210,7 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     private func lateBanner(_ detail: OrderDetail, days: Int) -> UIView {
-        let icon = UIImageView(image: UIImage(systemName: "exclamationmark.triangle"))
+        let icon = UIImageView(image: DS.symbol("exclamationmark.triangle", DS.Icon.md))
         icon.tintColor = DS.Status.late.text
         icon.setContentHuggingPriority(.required, for: .horizontal)
         let title = UILabel()
@@ -808,9 +808,9 @@ final class OrderDetailViewController: BaseViewControler {
         }
         config.titleLineBreakMode = .byTruncatingTail
         if let symbol {
-            config.image = UIImage(systemName: symbol)
+            // Board CT-gon: the call glyph is a 16px outline
+            config.image = DS.symbol(symbol, 16)
             config.imagePadding = 6
-            config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 14)
         }
         return UIButton(configuration: config)
     }

@@ -24,8 +24,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -122,13 +122,15 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                 placeholder = stringResource(R.string.order_search_hint),
                 onClear = { viewModel.onQueryChange("") },
                 modifier = Modifier.weight(1f),
+                leadingIconSize = DS.Icon.Sm,
             )
             if (!state.isSearching && state.segment == OrdersSegment.RENT) {
                 IconButton(onClick = { showFilter = true }, modifier = Modifier.size(DS.TouchTarget)) {
                     Icon(
-                        Icons.Default.FilterList,
+                        Icons.Outlined.FilterList,
                         contentDescription = stringResource(R.string.order_filter),
                         tint = if (state.filter.isDefault) DS.Colors.Text else DS.Colors.Primary,
+                        modifier = Modifier.size(DS.Icon.Md),
                     )
                 }
             } else {
@@ -365,7 +367,7 @@ private fun CustomerLine(name: String?, phone: String?, onCall: (String) -> Unit
                     .background(DS.Status.HandOver.fill, CircleShape)
                     .semantics { contentDescription = label },
             ) {
-                Icon(Icons.Default.Phone, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
             }
         }
     }
