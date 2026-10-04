@@ -764,6 +764,7 @@
     <string name="settings_v2_password_mismatch">Mật khẩu nhập lại không khớp</string>
     <string name="api_error_current_password_incorrect">Mật khẩu hiện tại không đúng</string>
     <string name="api_error_password_min_length">Mật khẩu mới cần ít nhất 6 ký tự</string>
+    <string name="api_error_rate_limit_exceeded">Bạn thao tác quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.</string>
     <string name="settings_v2_password_done">Đã đổi mật khẩu. Vui lòng đăng nhập lại.</string>
 
     <!-- #387 onboarding and customers (newAuth, newCustomers) -->
