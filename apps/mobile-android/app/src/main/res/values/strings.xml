@@ -761,5 +761,7 @@
     <string name="settings_v2_password_missing_current">Enter your current password</string>
     <string name="settings_v2_password_too_short">The new password needs at least 6 characters</string>
     <string name="settings_v2_password_mismatch">The passwords do not match</string>
+    <string name="api_error_current_password_incorrect">Current password is incorrect</string>
+    <string name="api_error_password_min_length">The new password needs at least 6 characters</string>
     <string name="settings_v2_password_done">Password changed. Please sign in again.</string>
 </resources>

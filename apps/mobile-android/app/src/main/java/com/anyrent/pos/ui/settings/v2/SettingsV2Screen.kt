@@ -48,6 +48,8 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.error.ApiErrorMessages
+import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.settings.PasswordProblem
 import com.anyrent.pos.domain.settings.SettingsGroup
 import com.anyrent.pos.domain.settings.SettingsItem
@@ -245,7 +247,7 @@ fun SettingsV2Screen(
                     result.onSuccess {
                         showPassword = false
                         passwordDone = true
-                    }.onFailure { passwordError = it.message ?: "" }
+                    }.onFailure { passwordError = ApiErrorMessages.resolve(context, AppError.from(it).code, it.message.orEmpty()) }
                 }
             },
         )

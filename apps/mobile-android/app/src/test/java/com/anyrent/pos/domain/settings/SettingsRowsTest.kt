@@ -1,5 +1,7 @@
 package com.anyrent.pos.domain.settings
 
+import com.anyrent.pos.R
+import com.anyrent.pos.domain.error.ApiErrorMessages
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,5 +52,11 @@ class SettingsRowsTest {
         assertEquals(PasswordProblem.TOO_SHORT, SettingsRows.validatePassword("old", "abc", "abc"))
         assertEquals(PasswordProblem.MISMATCH, SettingsRows.validatePassword("old", "abcdef", "abcdeg"))
         assertNull(SettingsRows.validatePassword("old", "abcdef", "abcdef"))
+    }
+
+    @Test
+    fun passwordErrorCodesAreTranslated() {
+        assertEquals(R.string.api_error_current_password_incorrect, ApiErrorMessages.stringId("CURRENT_PASSWORD_INCORRECT"))
+        assertEquals(R.string.api_error_password_min_length, ApiErrorMessages.stringId("PASSWORD_MIN_LENGTH"))
     }
 }

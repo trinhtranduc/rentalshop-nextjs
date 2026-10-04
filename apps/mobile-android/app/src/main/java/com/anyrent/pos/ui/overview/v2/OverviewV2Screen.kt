@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -276,8 +277,16 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier) {
                     )
                 }
                 Spacer(Modifier.height(6.dp))
+                // Labels are wider than thin bars: the first grows right, the last grows left, the others both ways
+                val labelAlign = when {
+                    bars.size <= 7 -> Alignment.CenterHorizontally
+                    index == 0 -> Alignment.Start
+                    last -> Alignment.End
+                    else -> Alignment.CenterHorizontally
+                }
                 Text(
-                    if (index % labelEvery == 0 || last) bar.label else "",
+                    if (last || (index % labelEvery == 0 && bars.lastIndex - index >= (labelEvery + 1) / 2)) bar.label else "",
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(align = labelAlign, unbounded = true),
                     fontSize = 11.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible,
                     fontWeight = if (last) FontWeight.Bold else FontWeight.Normal,
                     color = if (last) DS.Colors.Text else DS.Colors.TextMuted,

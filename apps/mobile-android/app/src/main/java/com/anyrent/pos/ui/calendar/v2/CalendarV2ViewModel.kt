@@ -45,10 +45,12 @@ class CalendarV2ViewModel(
     val state: StateFlow<CalendarV2State> = _state.asStateFlow()
     private var monthJob: Job? = null
     private var dayJob: Job? = null
+    private var loadedKey: String? = null
 
     val todayKey: String get() = today().toString()
 
-    init {
+    /** Called each time the tab is shown (first show, back from an order): marks and the day list again */
+    fun onShown() {
         loadMonth()
         loadDay()
     }
@@ -92,7 +94,9 @@ class CalendarV2ViewModel(
     private fun loadDay() {
         dayJob?.cancel()
         val key = _state.value.selectedKey
-        _state.update { it.copy(dayLoading = true, dayError = null, rows = emptyList()) }
+        // Same day again (back from an order): keep the rows on screen while they reload
+        val sameDay = key == loadedKey && _state.value.dayError == null
+        _state.update { it.copy(dayLoading = !sameDay, dayError = null, rows = if (sameDay) it.rows else emptyList()) }
         dayJob = viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
@@ -106,6 +110,7 @@ class CalendarV2ViewModel(
             }
             if (result.exceptionOrNull() is CancellationException || _state.value.selectedKey != key) return@launch
             result.onSuccess { rows ->
+                loadedKey = key
                 _state.update { it.copy(rows = rows, dayLoading = false, refreshing = false) }
             }.onFailure { error ->
                 _state.update { it.copy(dayLoading = false, dayError = error.message ?: "", refreshing = false) }

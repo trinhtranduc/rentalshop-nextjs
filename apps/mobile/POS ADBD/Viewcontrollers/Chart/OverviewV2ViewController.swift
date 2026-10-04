@@ -279,7 +279,10 @@ final class OverviewV2ViewController: BaseViewControler {
         let times = V2.label(String(format: "overview.v2.rentals".localized(), product.rentalCount), size: 13, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, times])
         texts.axis = .vertical
+        texts.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let revenue = V2.label(MoneyFormatter.format(product.totalRevenue), size: 15, weight: .bold)
+        revenue.textAlignment = .right
+        revenue.setContentHuggingPriority(.required, for: .horizontal)
         revenue.setContentCompressionResistancePriority(.required, for: .horizontal)
         let row = UIStackView(arrangedSubviews: [thumb, texts, revenue])
         row.spacing = DS.Spacing.md
@@ -363,15 +366,15 @@ final class OverviewBarsView: UIView {
             fill.backgroundColor = isLast ? DS.Color.primary : UIColor(hexString: "BFDBFE")
             fill.layer.cornerRadius = bars.count <= 14 ? 5 : 2
             fill.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            let label = V2.label(index % labelEvery == 0 || isLast ? bar.label : "", size: 11,
+            let showsLabel = isLast || (index % labelEvery == 0 && bars.count - 1 - index >= (labelEvery + 1) / 2)
+            let label = V2.label(showsLabel ? bar.label : "", size: 11,
                                  weight: isLast ? .bold : .regular, color: isLast ? DS.Color.text : DS.Color.textMuted)
             label.textAlignment = .center
-            label.adjustsFontSizeToFitWidth = true
-            label.minimumScaleFactor = 0.7
             column.addSubview(fill)
             column.addSubview(label)
+            // Centred under its bar and free to run over the unlabelled neighbours ("01/09" under a thin bar)
             label.snp.makeConstraints { make in
-                make.leading.trailing.bottom.equalToSuperview()
+                make.centerX.bottom.equalToSuperview()
                 make.height.equalTo(14)
             }
             fill.snp.makeConstraints { make in
@@ -384,7 +387,6 @@ final class OverviewBarsView: UIView {
             column.accessibilityLabel = "\(bar.label): \(MoneyFormatter.format(bar.value))"
             columns.addArrangedSubview(column)
         }
-        // Columns wider than the labels need room: let labels overflow into neighbours
         addSubview(columns)
         columns.snp.makeConstraints { make in make.edges.equalToSuperview() }
         accessibilityLabel = "overview.v2.bars".localized()

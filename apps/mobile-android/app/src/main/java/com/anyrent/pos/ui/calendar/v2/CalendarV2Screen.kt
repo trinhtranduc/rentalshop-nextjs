@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -78,6 +79,8 @@ fun CalendarV2Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val todayKey = viewModel.todayKey
+    // Again on every show, so a hand-over or return done in the order detail shows up when coming back
+    LaunchedEffect(Unit) { viewModel.onShown() }
     val grid = CalendarLogic.monthGrid(state.month, todayKey)
 
     PullToRefreshBox(
