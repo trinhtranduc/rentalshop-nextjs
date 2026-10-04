@@ -192,6 +192,8 @@ class DefaultAvailabilityRepositoryBatchTest {
         return DefaultAvailabilityRepository(
             api = api,
             outletIdProvider = { outletId },
+            // These tests sign in as a merchant; a merchant without an outlet lets the API pick it (#411)
+            roleProvider = { "MERCHANT" },
             ioDispatcher = Dispatchers.Unconfined,
         )
     }

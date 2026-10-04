@@ -22,6 +22,7 @@ import java.time.LocalDate
 class DefaultAvailabilityRepository(
     private val api: ApiClient = ApiClient.get(),
     private val outletIdProvider: () -> Int? = { SessionStore.outletId },
+    private val roleProvider: () -> String? = { SessionStore.role },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AvailabilityRepository {
     override suspend fun searchProducts(query: String): List<AvailabilityProduct> =
@@ -67,8 +68,7 @@ class DefaultAvailabilityRepository(
         if (quantity < 1) {
             throw AppError.Validation("Quantity must be at least 1")
         }
-        // A merchant login has no outlet: the API then uses the merchant's default outlet (#402)
-        val outletId = outletIdProvider()
+        val outletId = outletParam()
         runCatching {
             val path = buildString {
                 append("/api/products/$productId/availability")
@@ -76,7 +76,7 @@ class DefaultAvailabilityRepository(
                 append("?startDate=${OrderPlanDays.pickupInstant(startDate)}")
                 append("&endDate=${OrderPlanDays.returnInstant(endDate)}")
                 append("&quantity=$quantity")
-                if (outletId != null) append("&outletId=$outletId")
+                outletId?.let { append("&outletId=$it") }
                 append("&includeAllOrders=true")
             }
             val json = api.authedGet(path)
@@ -92,9 +92,7 @@ class DefaultAvailabilityRepository(
         validateBatch(requests, startDate, endDate)
         if (requests.isEmpty()) return@withContext emptyMap()
 
-        // A merchant login has no outlet: the API then uses the merchant's default outlet (#402),
-        // as iOS sends `outletId` only when it has one
-        val outletId = outletIdProvider()
+        val outletId = outletParam()
         val normalized = requests
             .groupBy { it.productId }
             .mapValues { (_, values) -> values.sumOf { it.quantity } }
@@ -110,7 +108,7 @@ class DefaultAvailabilityRepository(
             // Same window the cart sends as pickupPlanAt / returnPlanAt (#413), as iOS does
             .put("startDate", OrderPlanDays.pickupInstant(startDate))
             .put("endDate", OrderPlanDays.returnInstant(endDate))
-            .apply { if (outletId != null) put("outletId", outletId) }
+            .apply { outletId?.let { put("outletId", it) } }
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
@@ -145,6 +143,18 @@ class DefaultAvailabilityRepository(
         } catch (error: Throwable) {
             throw AppError.from(error)
         }
+    }
+
+    /**
+     * Outlet sent with an availability request (#411):
+     * - the session outlet when there is one (any role);
+     * - none for a MERCHANT without one: the API picks the merchant's default outlet (#398);
+     * - otherwise refuse here: ADMIN must name an outlet, and an outlet user without one is a broken session.
+     */
+    private fun outletParam(): Int? {
+        outletIdProvider()?.let { return it }
+        if (roleProvider() == "MERCHANT") return null
+        throw AppError.Validation("An outlet is required to check availability")
     }
 
     private fun validateBatch(
@@ -282,10 +292,10 @@ class DefaultAvailabilityRepository(
         from: LocalDate,
         to: LocalDate,
     ): Map<LocalDate, Int> = withContext(ioDispatcher) {
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         runCatching {
-            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to&outletId=$outletId"
+            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to" +
+                (outletId?.let { "&outletId=$it" } ?: "")
             val json = api.authedGet(path)
             val data = json.optJSONObject("data") ?: json
             val days = data.optJSONArray("days") ?: JSONArray()
