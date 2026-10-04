@@ -137,7 +137,7 @@ if first_of "Tên, mã vạch…" "Name, barcode…"; then
   step 11-home-search
   ui back || true
 fi
-step 12-home-detail first_of "~₫"
+step 12-home-detail first_of "~/lần" "~/rental"
 if [ "$E2E_ACCOUNT" = staff ]; then
   if ui has "Sửa" || ui has "Edit"; then echo "FAIL  staff sees Edit on product detail"; MISSES=$((MISSES + 1)); fi
 fi
