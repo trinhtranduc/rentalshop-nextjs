@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */; };
 		040085082F00DDC500DF5C81 /* RatingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040085072F00DDC500DF5C81 /* RatingManager.swift */; };
 		040330DD2EA747F7003BC33E /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040330DC2EA747F7003BC33E /* Category.swift */; };
 		040330DF2EA74857003BC33E /* CategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040330DE2EA74857003BC33E /* CategoryService.swift */; };
@@ -425,6 +426,7 @@
 		048839B02D79F11900069257 /* LoyaltyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyService.swift; sourceTree = "<group>"; };
 		048F67962ED1EDC40053985A /* CheckEmailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckEmailViewController.swift; sourceTree = "<group>"; };
 		048F67982ED1EE2A0053985A /* ErrorCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorCodes.swift; sourceTree = "<group>"; };
+		049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnyRentE2ETests.swift; sourceTree = "<group>"; };
 		04A1B0002F7A000100000001 /* PurchasesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesManager.swift; sourceTree = "<group>"; };
 		04A1B0102F7A000100000010 /* SubscriptionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionViewController.swift; sourceTree = "<group>"; };
 		04A1B0102F7A000100000012 /* SubscriptionAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAPIService.swift; sourceTree = "<group>"; };
@@ -1295,6 +1297,7 @@
 			children = (
 				C9B3296D240D6FDE00FEB650 /* POS_ADBDUITests.swift */,
 				C9B3296F240D6FDE00FEB650 /* Info.plist */,
+				049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */,
 			);
 			path = "POS ADBDUITests";
 			sourceTree = "<group>";
@@ -1893,6 +1896,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C9B3297C240D728B00FEB650 /* POS_ADBDUITests.swift in Sources */,
+				021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
