@@ -22,4 +22,24 @@ describe('applyOrderDateRange', () => {
     applyOrderDateRange(where, new Date('2026-10-02'), new Date('2026-10-02'), 'createdAt');
     expect(where.createdAt).toEqual({ gte: new Date('2026-10-02T00:00:00.000Z'), lte: new Date('2026-10-02T23:59:59.999Z') });
   });
+
+  // #389 — planned-date ranges for the mobile filter sheet (Loc)
+  it('filters planned pickups with exact Vietnam-day bounds and skips orders without a plan', () => {
+    const where: any = {};
+    applyOrderDateRange(where, start, end, 'pickupPlanAt', true);
+    expect(where.pickupPlanAt).toEqual({ gte: start, lte: end, not: null });
+    expect(where.createdAt).toBeUndefined();
+  });
+
+  it('filters planned returns, open-ended when only one bound is sent', () => {
+    const where: any = {};
+    applyOrderDateRange(where, undefined, end, 'returnPlanAt', true);
+    expect(where.returnPlanAt).toEqual({ lte: end, not: null });
+  });
+
+  it('an unknown field still falls back to createdAt', () => {
+    const where: any = {};
+    applyOrderDateRange(where, start, end, 'bogus', true);
+    expect(where.createdAt).toEqual({ gte: start, lte: end });
+  });
 });
