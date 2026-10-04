@@ -3,7 +3,7 @@
 //  POS ADBD
 //
 //  "Gia hạn" of a rental (#390): a later return day, checked over the added days only with the batch availability
-//  call, then saved as `returnPlanAt`. Days are device-zone days, like the cart: the new return day ends at its last
+//  call, then saved as `returnPlanAt` with the new day count and, when the staff typed extra rent, the new total (#425). Days are device-zone days, like the cart: the new return day ends at its last
 //  second (`endOfDay`), so a one-day extension still occupies that day.
 //
 
@@ -67,5 +67,25 @@ enum RentalExtension {
             let name = items.first { $0.productId == result.productId }?.productName
             return [name, result.productName].compactMap { $0 }.first { !$0.isEmpty } ?? "#\(result.productId)"
         }
+    }
+
+    /// Old total plus the extra rent the staff typed (#425); nil when there is no extra
+    static func newTotal(oldTotal: Double, extra: Double?) -> Double? {
+        guard let extra, extra > 0 else { return nil }
+        return oldTotal + extra
+    }
+
+    /// Inclusive days from the pickup day to the new return day, as the cart counts them; nil without a pickup day
+    static func rentalDuration(pickup: Date?, newDay: Date, timeZone: TimeZone = .current) -> Int? {
+        guard let pickup else { return nil }
+        return CartV2Logic.rentalDays(pickup: pickup, return: newDay, timeZone: timeZone)
+    }
+
+    /// The `PUT /api/orders/{id}` body: new return day, new day count, and the new total only with extra rent
+    static func updateRequest(pickup: Date?, newDay: Date, oldTotal: Double, extra: Double?,
+                              timeZone: TimeZone = .current) -> UpdateOrderRequest {
+        UpdateOrderRequest(totalAmount: newTotal(oldTotal: oldTotal, extra: extra),
+                           returnPlanAt: returnPlanAt(newDay, timeZone: timeZone).dateServerISOString(),
+                           rentalDuration: rentalDuration(pickup: pickup, newDay: newDay, timeZone: timeZone))
     }
 }

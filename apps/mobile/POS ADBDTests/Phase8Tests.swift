@@ -174,4 +174,52 @@ final class Phase8Tests: XCTestCase {
         XCTAssertEqual(RentalExtension.unavailableNames(parsed, items: decoded), ["Vest"])
         XCTAssertEqual(RentalExtension.unavailableNames(Array(parsed.suffix(1)), items: decoded), [])
     }
+
+    // MARK: #425 — extra rent on Gia hạn
+
+    private func json(_ request: UpdateOrderRequest) throws -> [String: Any] {
+        let data = try JSONEncoder().encode(request)
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+    }
+
+    func testNewTotalOnlyWhenExtraAboveZero() {
+        XCTAssertNil(RentalExtension.newTotal(oldTotal: 300_000, extra: nil))
+        XCTAssertNil(RentalExtension.newTotal(oldTotal: 300_000, extra: 0))
+        XCTAssertEqual(RentalExtension.newTotal(oldTotal: 300_000, extra: 50), 300_050)
+    }
+
+    func testRentalDurationCountsPickupToNewDayInclusive() {
+        // Pickup 04/10 00:00 Vietnam, new return day 08/10 → 5 days
+        let pickup = iso.date(from: "2026-10-03T17:00:00.000Z")!
+        let newDay = iso.date(from: "2026-10-08T03:00:00.000Z")!
+        XCTAssertEqual(RentalExtension.rentalDuration(pickup: pickup, newDay: newDay, timeZone: vietnam), 5)
+        // Same instants in UTC: pickup is 03/10 there → 6 days
+        XCTAssertEqual(RentalExtension.rentalDuration(pickup: pickup, newDay: newDay, timeZone: utc), 6)
+        XCTAssertNil(RentalExtension.rentalDuration(pickup: nil, newDay: newDay, timeZone: vietnam))
+    }
+
+    func testUpdateWithoutExtraSendsNoTotal() throws {
+        let pickup = iso.date(from: "2026-10-03T17:00:00.000Z")!
+        let newDay = iso.date(from: "2026-10-08T03:00:00.000Z")!
+        let body = try json(RentalExtension.updateRequest(pickup: pickup, newDay: newDay, oldTotal: 300_000,
+                                                          extra: 0, timeZone: vietnam))
+        XCTAssertEqual(body["returnPlanAt"] as? String, "2026-10-08T16:59:59.000Z")
+        XCTAssertEqual(body["rentalDuration"] as? Int, 5)
+        XCTAssertNil(body["totalAmount"])
+        XCTAssertEqual(Set(body.keys), ["returnPlanAt", "rentalDuration"])
+    }
+
+    func testUpdateWithExtraAddsItToTheTotal() throws {
+        let pickup = iso.date(from: "2026-10-03T17:00:00.000Z")!
+        let newDay = iso.date(from: "2026-10-06T03:00:00.000Z")!
+        let body = try json(RentalExtension.updateRequest(pickup: pickup, newDay: newDay, oldTotal: 300_000,
+                                                          extra: 50, timeZone: vietnam))
+        XCTAssertEqual(body["totalAmount"] as? Double, 300_050)
+        XCTAssertEqual(body["rentalDuration"] as? Int, 3)
+        XCTAssertEqual(Set(body.keys), ["returnPlanAt", "rentalDuration", "totalAmount"])
+        // No pickup day: only the return day and the total
+        let noPickup = try json(RentalExtension.updateRequest(pickup: nil, newDay: newDay, oldTotal: 300_000,
+                                                              extra: 100, timeZone: vietnam))
+        XCTAssertEqual(Set(noPickup.keys), ["returnPlanAt", "totalAmount"])
+    }
 }
