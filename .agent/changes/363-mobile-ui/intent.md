@@ -45,6 +45,8 @@ https://claude.ai/artifact/DY4DRyDH8Kps9gAw9FExLx):
 
 ## Decision log
 
+- 2026-10-03 — Full plan with 5 phase issues #370–#374; new screens are new files behind app-config flags (Trinh Tran)
+- 2026-10-03 — Each phase gets its own plan pass before coding; phases 0 → 1 → 2, phase 3 in parallel, phase 4 after #355 (Trinh Tran)
 - 2026-10-03 — Release per phase (Trinh Tran)
 - 2026-10-03 — Late list includes RESERVED past pickup day as "Giao · trễ N ngày"; a PICKUPED rental can be cancelled from its detail (Trinh Tran)
 - 2026-10-03 — No stage tabs; "Việc cần làm | Tất cả đơn" + Đơn bán switch (Trinh Tran)

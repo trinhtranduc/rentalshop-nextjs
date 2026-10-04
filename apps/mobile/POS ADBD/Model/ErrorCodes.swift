@@ -122,6 +122,7 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case merchantNotFound = "MERCHANT_NOT_FOUND"
     case outletNotFound = "OUTLET_NOT_FOUND"
     case productNotFound = "PRODUCT_NOT_FOUND"
+    case stockBelowRented = "STOCK_BELOW_RENTED"
     case orderNotFound = "ORDER_NOT_FOUND"
     case customerNotFound = "CUSTOMER_NOT_FOUND"
     case categoryNotFound = "CATEGORY_NOT_FOUND"
@@ -702,6 +703,7 @@ struct APIErrorMessages {
         .merchantNotFound: "Merchant not found",
         .outletNotFound: "Outlet not found",
         .productNotFound: "Product not found",
+        .stockBelowRented: "Quantity cannot be lower than the units out on rent.",
         .orderNotFound: "Order not found",
         .customerNotFound: "Customer not found",
         .categoryNotFound: "Category not found",
@@ -1055,6 +1057,7 @@ struct APIErrorStatusCodes {
         .merchantNotFound: 404,
         .outletNotFound: 404,
         .productNotFound: 404,
+        .stockBelowRented: 400,
         .orderNotFound: 404,
         .customerNotFound: 404,
         .categoryNotFound: 404,

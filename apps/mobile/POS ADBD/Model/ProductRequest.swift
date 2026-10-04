@@ -394,6 +394,8 @@ extension UpdateProductRequest {
             formData["outletStock"] = outletStockArray
         }
         if let isActive = isActive { formData["isActive"] = isActive }
+        // Kept photo URLs (the API adds uploaded files after them). nil = not sent, as before.
+        if let images = images { formData["images"] = images }
         if let pricingType = pricingType { formData["pricingType"] = pricingType }
         if let durationConfig = durationConfig { formData["durationConfig"] = durationConfig }
         if let pricingOptions = pricingOptions {
@@ -423,6 +425,7 @@ extension CreateProductRequest {
         // Convert outletStock array to array of dictionaries
         let outletStockArray = outletStock.map { ["outletId": $0.outletId, "stock": $0.stock] }
         formData["outletStock"] = outletStockArray
+        if let images = images, !images.isEmpty { formData["images"] = images }
 
         if let pricingType = pricingType { formData["pricingType"] = pricingType }
         if let durationConfig = durationConfig { formData["durationConfig"] = durationConfig }
