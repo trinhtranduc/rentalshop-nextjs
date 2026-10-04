@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
+import com.anyrent.pos.ui.common.AppIcon
 import com.anyrent.pos.ui.theme.DS
 
 private data class OnboardingStep(val icon: ImageVector?, val title: Int, val body: Int)
@@ -238,7 +239,7 @@ private fun StepIcon(icon: ImageVector?, motion: Boolean) {
         contentAlignment = Alignment.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(60.dp))
+            AppIcon(icon, contentDescription = null, size = 60.dp, tint = DS.Colors.Primary)
         } else {
             DressGlyph()
         }

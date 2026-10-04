@@ -66,11 +66,11 @@ final class CustomersV2ListViewController: BaseViewControler {
             lead.snp.makeConstraints { make in make.width.equalTo(8) }
             [lead, titleLabel, UIView(), close].forEach(header.addArrangedSubview)
         case .browse:
-            let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), pointSize: 18)
+            let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), size: DS.Icon.lg)
             back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
             [back, titleLabel].forEach(header.addArrangedSubview)
             if PermissionManager.shared.canManageCustomers() {
-                let add = CustomersV2UI.iconButton("plus", label: "customers.v2.add".localized(), pointSize: 15)
+                let add = CustomersV2UI.iconButton("plus", label: "customers.v2.add".localized(), size: DS.Icon.sm)
                 add.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
                 header.addArrangedSubview(add)
             }

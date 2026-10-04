@@ -193,8 +193,7 @@ final class OnboardingV2ViewController: BaseViewControler {
             dressLayer.isHidden = false
         case .person, .calendar:
             dressLayer.isHidden = true
-            iconView.image = UIImage(systemName: step.glyph == .person ? "person" : "calendar",
-                                     withConfiguration: UIImage.SymbolConfiguration(pointSize: 48, weight: .regular))
+            iconView.image = DS.symbol(step.glyph == .person ? "person" : "calendar", 60)
         }
         stepLabel.attributedText = NSAttributedString(
             string: String(format: "onboarding.v2.step".localized(), index + 1, steps.count).uppercased(),

@@ -61,7 +61,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
 
         let top = UIView()
         top.backgroundColor = .white
-        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), pointSize: 18)
+        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), size: DS.Icon.lg)
         back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         let bar = UIStackView(arrangedSubviews: [back, UIView()])
         bar.alignment = .center
@@ -71,7 +71,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
             bar.addArrangedSubview(edit)
         }
 
-        callButton.setImage(UIImage(systemName: "phone", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)), for: .normal)
+        callButton.setImage(DS.symbol("phone", DS.Icon.sm), for: .normal)
         callButton.tintColor = DS.Color.primary
         callButton.backgroundColor = CustomersV2UI.avatarFill
         callButton.layer.cornerRadius = DS.touchTarget / 2

@@ -46,7 +46,7 @@ enum CustomersV2UI {
         let box = UIView()
         box.backgroundColor = V2.chipFill
         box.layer.cornerRadius = 12
-        let glass = UIImageView(image: UIImage(systemName: "magnifyingglass", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)))
+        let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
         glass.tintColor = DS.Color.textMuted
         glass.contentMode = .center
         field.placeholder = placeholder
@@ -70,9 +70,10 @@ enum CustomersV2UI {
         return box
     }
 
-    static func iconButton(_ systemName: String, label: String, pointSize: CGFloat) -> UIButton {
+    /// `size` is the board icon box (`DS.Icon.*`)
+    static func iconButton(_ systemName: String, label: String, size: CGFloat) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: systemName, withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)), for: .normal)
+        button.setImage(DS.symbol(systemName, size), for: .normal)
         button.tintColor = DS.Color.text
         button.accessibilityLabel = label
         button.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
@@ -97,7 +98,7 @@ final class CustomerV2Cell: UITableViewCell {
     private let nameLabel = V2.label(size: 16, weight: .bold)
     private let tierPill = CustomersV2UI.tierPill()
     private let subtitleLabel = V2.label(size: 13, color: DS.Color.textMuted)
-    private let chevron = UIImageView(image: UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .regular)))
+    private let chevron = UIImageView(image: DS.symbol("chevron.right", 16))
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -158,7 +159,7 @@ final class NewCustomerRowCell: UITableViewCell {
         dash.lineWidth = 1.5
         dash.lineDashPattern = [4, 3]
         circle.layer.addSublayer(dash)
-        let plus = UIImageView(image: UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)))
+        let plus = UIImageView(image: DS.symbol("plus", DS.Icon.sm))
         plus.tintColor = DS.Color.primary
         circle.addSubview(plus)
         plus.snp.makeConstraints { make in make.center.equalToSuperview() }

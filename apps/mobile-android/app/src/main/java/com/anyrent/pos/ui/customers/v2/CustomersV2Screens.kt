@@ -98,6 +98,7 @@ import com.anyrent.pos.domain.customers.CustomerRow
 import com.anyrent.pos.domain.customers.CustomerRules
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppFormSheet
+import com.anyrent.pos.ui.common.AppIcon
 import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
@@ -210,7 +211,7 @@ private fun CustomersListContent(
                 }
             } else {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text, modifier = Modifier.size(22.dp))
+                    AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), size = DS.Icon.Lg, tint = DS.Colors.Text)
                 }
                 Text(
                     buildAnnotatedString {
@@ -226,7 +227,7 @@ private fun CustomersListContent(
                 )
                 if (canAdd) {
                     IconButton(onClick = { onNew("") }) {
-                        Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.customers_v2_add), tint = DS.Colors.Text, modifier = Modifier.size(18.dp))
+                        AppIcon(Icons.Outlined.Add, contentDescription = stringResource(R.string.customers_v2_add), size = DS.Icon.Sm, tint = DS.Colors.Text)
                     }
                 }
             }
@@ -290,7 +291,7 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(Icons.Outlined.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+        AppIcon(Icons.Outlined.Search, contentDescription = null, size = DS.Icon.Sm, tint = DS.Colors.TextMuted)
         Box(Modifier.weight(1f)) {
             if (value.isEmpty()) Text(stringResource(R.string.customers_v2_search_placeholder), fontSize = 16.sp, color = DS.Colors.TextMuted)
             androidx.compose.foundation.text.BasicTextField(
@@ -323,7 +324,7 @@ private fun NewCustomerRow(onClick: () -> Unit) {
                 },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
+                AppIcon(Icons.Outlined.Add, contentDescription = null, size = DS.Icon.Sm, tint = DS.Colors.Primary)
             }
             Text(stringResource(R.string.customers_v2_new), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
         }
@@ -367,7 +368,7 @@ private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: ()
                 }
                 Text(subtitle, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1)
             }
-            if (showsChevron) Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Chevron, modifier = Modifier.size(16.dp))
+            if (showsChevron) AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, size = 16.dp, tint = Chevron)
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
@@ -422,7 +423,7 @@ fun NewCustomerContent(
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface).imePadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text, modifier = Modifier.size(22.dp))
+                AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), size = DS.Icon.Lg, tint = DS.Colors.Text)
             }
             Text(stringResource(R.string.customers_v2_new_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
                 modifier = Modifier.semantics { heading() })
@@ -595,7 +596,7 @@ fun CustomerDetailV2Screen(
         Column(Modifier.fillMaxWidth().background(DS.Colors.Surface).statusBarsPadding().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text, modifier = Modifier.size(22.dp))
+                    AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), size = DS.Icon.Lg, tint = DS.Colors.Text)
                 }
                 Spacer(Modifier.weight(1f))
                 if (canEdit && shown != null) {
@@ -622,7 +623,7 @@ fun CustomerDetailV2Screen(
                         },
                         modifier = Modifier.size(DS.TouchTarget).clip(CircleShape).background(AvatarFill).semantics { contentDescription = callLabel },
                     ) {
-                        Icon(Icons.Outlined.Call, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
+                        AppIcon(Icons.Outlined.Call, contentDescription = null, size = DS.Icon.Sm, tint = DS.Colors.Primary)
                     }
                 }
             }

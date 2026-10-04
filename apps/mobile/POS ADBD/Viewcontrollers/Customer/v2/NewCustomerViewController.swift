@@ -76,7 +76,7 @@ final class NewCustomerViewController: BaseViewControler {
 
     override func setupUI() {
         view.backgroundColor = .white
-        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), pointSize: 18)
+        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), size: DS.Icon.lg)
         back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         let title = V2.label("customers.v2.newTitle".localized(), size: 20, weight: .bold)
         let header = UIStackView(arrangedSubviews: [back, title])
