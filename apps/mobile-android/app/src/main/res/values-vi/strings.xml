@@ -552,7 +552,6 @@
     <string name="v2_search_placeholder">Tên, mã vạch…</string>
     <string name="v2_search_empty">Không có sản phẩm nào khớp</string>
     <string name="v2_products_empty">Chưa có sản phẩm</string>
-    <string name="v2_category_all">Tất cả</string>
     <string name="v2_stock_free">Còn %1$d</string>
     <string name="v2_stock_none_today">Hết hôm nay</string>
     <string name="v2_stock_summary">Đang cho thuê %1$d · còn trống %2$d · tổng %3$d</string>
@@ -563,6 +562,7 @@
     <string name="v2_price_sale">Giá bán</string>
     <string name="v2_price_sale_short">bán %1$s</string>
     <string name="v2_add_to_cart_named">Thêm %1$s vào giỏ</string>
+    <string name="v2_add_in_cart_named">%1$s: %2$d trong giỏ, thêm 1</string>
     <string name="v2_added_to_cart">Đã thêm vào giỏ hàng</string>
     <string name="v2_scan_not_found">Không tìm thấy sản phẩm có mã %1$s</string>
     <string name="v2_stepper_minus">Bớt 1</string>

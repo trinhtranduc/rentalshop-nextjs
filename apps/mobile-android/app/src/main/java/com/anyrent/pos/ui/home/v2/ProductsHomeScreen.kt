@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,7 +59,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -76,17 +74,16 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
-import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.products.AddButtonState
 import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductPricing
-import com.anyrent.pos.domain.products.ProductStock
-import com.anyrent.pos.domain.products.barcodeText
+import com.anyrent.pos.domain.products.ProductRowLogic
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoneyVnd
@@ -102,8 +99,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search, barcode scan,
- * category chips, "+" to the cart and a floating cart bar.
+ * Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search with image search and
+ * barcode scan inside the field, "+" (or the cart count) to the cart and a floating cart bar (#383).
  */
 @OptIn(FlowPreview::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +115,6 @@ fun ProductsHomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
-    var categories by remember { mutableStateOf<List<ApiParity.Category>>(emptyList()) }
     var unread by remember { mutableIntStateOf(0) }
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
@@ -129,7 +125,6 @@ fun ProductsHomeScreen(
 
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
-        categories = withContext(Dispatchers.IO) { ApiParity.listCategories().getOrDefault(emptyList()) }
         unread = withContext(Dispatchers.IO) { ApiClient.get().getUnreadCount().getOrDefault(0) }
     }
     LaunchedEffect(Unit) {
@@ -144,7 +139,7 @@ fun ProductsHomeScreen(
 
     fun findByBarcode(code: String) {
         scope.launch {
-            val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code, null) }
+            val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code) }
             val match = page.getOrNull()?.let { BarcodeMatch.exact(code, it.items) }
             if (match != null) onOpenProduct(match.id)
             else Toast.makeText(context, notFound.format(code), Toast.LENGTH_LONG).show()
@@ -178,14 +173,15 @@ fun ProductsHomeScreen(
                         }
                     }
                 }
-                Row(Modifier.padding(end = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Board SP-dong: image search and barcode scan are icon buttons at the trailing end inside the field
+                Row(Modifier.padding(end = 8.dp)) {
                     Row(
                         Modifier
                             .weight(1f)
-                            .height(44.dp)
+                            .height(48.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(V2Colors.Chip)
-                            .padding(horizontal = 12.dp),
+                            .padding(start = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(Icons.Default.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
@@ -210,20 +206,8 @@ fun ProductsHomeScreen(
                                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close), modifier = Modifier.size(16.dp))
                             }
                         }
-                    }
-                    SquareIcon(Icons.Default.PhotoCamera, stringResource(R.string.image_search)) { showImageSearch = true }
-                    SquareIcon(Icons.Default.QrCodeScanner, stringResource(R.string.camera_scan)) { showScan = true }
-                }
-            }
-            if (categories.isNotEmpty()) {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 12.dp),
-                ) {
-                    item { CategoryChip(stringResource(R.string.v2_category_all), state.categoryId == null) { viewModel.setCategory(null) } }
-                    items(categories, key = { it.id }) { category ->
-                        CategoryChip(category.name, state.categoryId == category.id) { viewModel.setCategory(category.id) }
+                        FieldIcon(Icons.Default.PhotoCamera, stringResource(R.string.image_search)) { showImageSearch = true }
+                        FieldIcon(Icons.Default.QrCodeScanner, stringResource(R.string.camera_scan)) { showScan = true }
                     }
                 }
             }
@@ -249,6 +233,7 @@ fun ProductsHomeScreen(
                         items(state.products, key = { it.id }) { product ->
                             ProductRow(
                                 product = product,
+                                inCart = ProductRowLogic.cartCount(product.id, lines),
                                 onOpen = { onOpenProduct(product.id) },
                                 onAdd = {
                                     CartStore.addProduct(product)
@@ -313,46 +298,37 @@ fun ProductsHomeScreen(
     }
 }
 
+/** An icon button inside the search field (48dp tap target) */
 @Composable
-private fun SquareIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+private fun FieldIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(V2Colors.Chip)
+            .size(48.dp)
             .clickable(onClick = onClick)
             .semantics { contentDescription = label; role = Role.Button },
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text) }
+    ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(22.dp)) }
 }
 
-@Composable
-private fun CategoryChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .heightIn(min = 40.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(if (selected) DS.Colors.Text else Color.White)
-            .border(if (selected) 0.dp else 1.dp, V2Colors.Line, RoundedCornerShape(999.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp)
-            .semantics { this.selected = selected; role = Role.Tab },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = if (selected) Color.White else DS.Colors.Text)
-    }
-}
+/** The + of a product already in the cart: the count on a darker blue (board SP-dong) */
+private val InCartFill = Color(0xFF1E3A8A)
 
 @Composable
-private fun ProductRow(product: Product, onOpen: () -> Unit, onAdd: () -> Unit) {
-    val free = ProductStock.freeToday(product)
+private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd: () -> Unit) {
+    val subtitle = ProductRowLogic.subtitle(product)
+    val free = subtitle.free
+    val addState = ProductRowLogic.addState(free, inCart)
     val perRental = ProductPricing.perRental(product)
     val perDay = ProductPricing.perDay(product)
     val sale = ProductPricing.sale(product)
     val unitRental = stringResource(R.string.v2_unit_per_rental)
     val unitDay = stringResource(R.string.v2_unit_per_day)
     val saleShort = stringResource(R.string.v2_price_sale_short)
-    val addLabel = stringResource(R.string.v2_add_to_cart_named, product.name)
+    val addLabel = if (addState is AddButtonState.InCart) {
+        stringResource(R.string.v2_add_in_cart_named, product.name, addState.count)
+    } else {
+        stringResource(R.string.v2_add_to_cart_named, product.name)
+    }
     Column(Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(horizontal = 16.dp, vertical = 10.dp),
@@ -363,9 +339,8 @@ private fun ProductRow(product: Product, onOpen: () -> Unit, onAdd: () -> Unit) 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(product.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val meta = listOfNotNull(product.categoryName, product.barcodeText).filter { it.isNotBlank() }.joinToString(" · ")
-                    if (meta.isNotBlank()) {
-                        Text(meta, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    subtitle.code?.let { code ->
+                        Text(code, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     }
                     Text(
                         "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
@@ -397,17 +372,28 @@ private fun ProductRow(product: Product, onOpen: () -> Unit, onAdd: () -> Unit) 
                 }
                 Text(text, maxLines = 2)
             }
+            val out = addState is AddButtonState.Out
             Box(
                 Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (free > 0) DS.Colors.Primary else V2Colors.Section)
-                    .border(if (free > 0) 0.dp else 1.dp, V2Colors.Line, RoundedCornerShape(12.dp))
+                    .background(
+                        when (addState) {
+                            is AddButtonState.InCart -> InCartFill
+                            AddButtonState.Out -> V2Colors.Section
+                            AddButtonState.Add -> DS.Colors.Primary
+                        },
+                    )
+                    .border(if (out) 1.dp else 0.dp, V2Colors.Line, RoundedCornerShape(12.dp))
                     .clickable(onClick = onAdd)
                     .semantics { contentDescription = addLabel; role = Role.Button },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = if (free > 0) Color.White else DS.Colors.TextMuted)
+                if (addState is AddButtonState.InCart) {
+                    Text(addState.count.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                } else {
+                    Icon(Icons.Default.Add, contentDescription = null, tint = if (out) DS.Colors.TextMuted else Color.White)
+                }
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
@@ -423,9 +409,9 @@ private fun CartBar(count: Int, total: Double, onClick: () -> Unit, modifier: Mo
             .padding(12.dp)
             .fillMaxWidth()
             .height(56.dp)
-            .shadow(10.dp, RoundedCornerShape(16.dp))
+            .shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = DS.Colors.Primary, spotColor = DS.Colors.Primary)
             .clip(RoundedCornerShape(16.dp))
-            .background(DS.Colors.Text)
+            .background(DS.Colors.Primary)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp)
             .semantics(mergeDescendants = true) { role = Role.Button },

@@ -553,7 +553,6 @@
     <string name="v2_search_placeholder">Name, barcode…</string>
     <string name="v2_search_empty">No matching products</string>
     <string name="v2_products_empty">No products yet</string>
-    <string name="v2_category_all">All</string>
     <string name="v2_stock_free">%1$d free</string>
     <string name="v2_stock_none_today">None free today</string>
     <string name="v2_stock_summary">On rent %1$d · free %2$d · total %3$d</string>
@@ -564,6 +563,7 @@
     <string name="v2_price_sale">Sale price</string>
     <string name="v2_price_sale_short">sale %1$s</string>
     <string name="v2_add_to_cart_named">Add %1$s to cart</string>
+    <string name="v2_add_in_cart_named">%1$s: %2$d in cart, add 1</string>
     <string name="v2_added_to_cart">Added to cart</string>
     <string name="v2_scan_not_found">No product with code %1$s</string>
     <string name="v2_stepper_minus">One less</string>

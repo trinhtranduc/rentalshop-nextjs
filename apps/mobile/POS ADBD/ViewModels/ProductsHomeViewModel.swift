@@ -14,16 +14,15 @@ struct ProductsPage {
 
 /// Loads one page of products (replaceable in tests)
 protocol ProductsHomeDataSource {
-    func loadProducts(query: String?, categoryId: Int?, page: Int, limit: Int,
+    func loadProducts(query: String?, page: Int, limit: Int,
                       completion: @escaping (ProductsPage?, NSError?) -> Void)
 }
 
 struct LiveProductsHomeDataSource: ProductsHomeDataSource {
-    func loadProducts(query: String?, categoryId: Int?, page: Int, limit: Int,
+    func loadProducts(query: String?, page: Int, limit: Int,
                       completion: @escaping (ProductsPage?, NSError?) -> Void) {
         var params: [String: Any] = ["page": page, "limit": limit, "sortBy": "createdAt", "sortOrder": "desc"]
         if let query, !query.isEmpty { params["q"] = query }
-        if let categoryId { params["categoryId"] = categoryId }
         if let outletId = User.current()?.outlet?.id ?? User.current()?.outletId { params["outletId"] = outletId }
         ProductService.shared.performGET(path: APIEndpoint.Path.products, parameters: params,
                                          responseType: APIProductsResponse.self,
@@ -48,7 +47,6 @@ final class ProductsHomeViewModel {
     private(set) var hasMore = false
     private(set) var isLoading = false
     private(set) var query: String?
-    private(set) var categoryId: Int?
     private var page = 1
     /// Bumped on every new query; an answer for an older one is dropped
     private var generation = 0
@@ -72,12 +70,6 @@ final class ProductsHomeViewModel {
         load(page: 1)
     }
 
-    func setCategory(_ id: Int?) {
-        guard id != categoryId else { return }
-        categoryId = id
-        load(page: 1)
-    }
-
     func loadMore() {
         guard hasMore, !isLoading else { return }
         load(page: page + 1)
@@ -98,7 +90,7 @@ final class ProductsHomeViewModel {
         if nextPage == 1 { generation += 1 }
         let token = generation
         isLoading = true
-        dataSource.loadProducts(query: query, categoryId: categoryId, page: nextPage, limit: Self.pageSize) { [weak self] result, error in
+        dataSource.loadProducts(query: query, page: nextPage, limit: Self.pageSize) { [weak self] result, error in
             DispatchQueue.main.async {
                 guard let self, token == self.generation else { return }
                 self.isLoading = false

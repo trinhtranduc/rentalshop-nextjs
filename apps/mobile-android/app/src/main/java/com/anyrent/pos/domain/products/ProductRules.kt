@@ -94,6 +94,36 @@ object ProductStock {
             ?: (merchantOutlets.firstOrNull { it.second } ?: merchantOutlets.firstOrNull())?.first
 }
 
+// ---------------------------------------------------------------------------------------------
+// Home row (#383)
+// ---------------------------------------------------------------------------------------------
+
+/** The + button on a Home row: add, already in the cart (shows the count), or out today (grey) */
+sealed class AddButtonState {
+    object Add : AddButtonState()
+    data class InCart(val count: Int) : AddButtonState()
+    object Out : AddButtonState()
+}
+
+/** The line under the name: the product code and today's free count (no category) */
+data class ProductRowSubtitle(val code: String?, val free: Int)
+
+object ProductRowLogic {
+    /** Units of this product already in the cart */
+    fun cartCount(productId: Int, lines: List<CartLine>): Int =
+        lines.filter { it.product.id == productId }.sumOf { it.quantity }
+
+    fun subtitle(product: Product): ProductRowSubtitle =
+        ProductRowSubtitle(code = product.barcodeText, free = ProductStock.freeToday(product))
+
+    /** Out today wins over the cart count, so the button stays grey as before */
+    fun addState(free: Int, inCart: Int): AddButtonState = when {
+        free <= 0 -> AddButtonState.Out
+        inCart > 0 -> AddButtonState.InCart(inCart)
+        else -> AddButtonState.Add
+    }
+}
+
 object BarcodeMatch {
     /** The product whose barcode equals [code] (trimmed, case-insensitive); the search API also matches names */
     fun exact(code: String, products: List<Product>): Product? {

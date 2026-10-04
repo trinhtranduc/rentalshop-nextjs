@@ -16,15 +16,14 @@ import java.net.URLEncoder
 object ProductsV2Api {
     private val imageMedia = "image/jpeg".toMediaType()
 
-    /** `GET /api/products` with the user's outlet (so the list gets today's free count) and an optional category */
-    fun listProducts(page: Int, limit: Int, q: String?, categoryId: Int?): Result<ApiClient.PageResult<Product>> = runCatching {
+    /** `GET /api/products` with the user's outlet (so the list gets today's free count) */
+    fun listProducts(page: Int, limit: Int, q: String?): Result<ApiClient.PageResult<Product>> = runCatching {
         val query = buildList {
             add("page=$page")
             add("limit=$limit")
             add("sortBy=createdAt")
             add("sortOrder=desc")
             if (!q.isNullOrBlank()) add("q=" + URLEncoder.encode(q, "UTF-8"))
-            if (categoryId != null) add("categoryId=$categoryId")
             SessionStore.outletId?.let { add("outletId=$it") }
         }.joinToString("&")
         val json = ApiClient.get().authedGet("/api/products?$query")

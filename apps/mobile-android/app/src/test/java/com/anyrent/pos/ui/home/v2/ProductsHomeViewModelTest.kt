@@ -32,7 +32,7 @@ class ProductsHomeViewModelTest {
     @Test
     fun `stale search is dropped and pages dedupe`() = runTest(dispatcher) {
         val calls = mutableListOf<Pair<String?, CompletableDeferred<ApiClient.PageResult<Product>>>>()
-        val vm = ProductsHomeViewModel { page, query, _ ->
+        val vm = ProductsHomeViewModel { page, query ->
             val answer = CompletableDeferred<ApiClient.PageResult<Product>>()
             calls += (query + "#" + page) to answer
             answer.await()
