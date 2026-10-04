@@ -6,6 +6,7 @@ import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +14,6 @@ import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 /**
@@ -507,22 +507,9 @@ object CartStore {
         }
     }
 
-    private fun parseOrderDate(raw: String?): LocalDate? {
-        if (raw.isNullOrBlank()) return null
-        val trimmed = raw.trim()
-        return runCatching { LocalDate.parse(trimmed.take(10)) }.getOrNull()
-            ?: runCatching {
-                java.time.OffsetDateTime.parse(trimmed).toLocalDate()
-            }.getOrNull()
-            ?: runCatching {
-                java.time.Instant.parse(trimmed).atZone(java.time.ZoneOffset.UTC).toLocalDate()
-            }.getOrNull()
-            ?: runCatching {
-                // "2024-01-15 00:00:00" style
-                LocalDate.parse(trimmed.take(10).replace(' ', 'T').take(10))
-            }.getOrNull()
-    }
+    /** Day in the device zone, the same zone the cart sends with `isoPickup` / `isoReturn` (#413) */
+    private fun parseOrderDate(raw: String?): LocalDate? = OrderPlanDays.dayOf(raw)
 
-    fun isoPickup(): String = _pickupDate.value.atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
-    fun isoReturn(): String = _returnDate.value.atTime(23, 59).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
+    fun isoPickup(): String = OrderPlanDays.pickupInstant(_pickupDate.value)
+    fun isoReturn(): String = OrderPlanDays.returnInstant(_returnDate.value)
 }

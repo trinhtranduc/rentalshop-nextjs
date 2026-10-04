@@ -9,6 +9,7 @@ import com.anyrent.pos.domain.availability.AvailabilityRequest
 import com.anyrent.pos.domain.availability.AvailabilityRepository
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -71,8 +72,9 @@ class DefaultAvailabilityRepository(
         runCatching {
             val path = buildString {
                 append("/api/products/$productId/availability")
-                append("?startDate=${startDate}T00:00:00Z")
-                append("&endDate=${endDate}T23:59:59Z")
+                // Same window the cart sends as pickupPlanAt / returnPlanAt (#413)
+                append("?startDate=${OrderPlanDays.pickupInstant(startDate)}")
+                append("&endDate=${OrderPlanDays.returnInstant(endDate)}")
                 append("&quantity=$quantity")
                 outletId?.let { append("&outletId=$it") }
                 append("&includeAllOrders=true")
@@ -103,8 +105,9 @@ class DefaultAvailabilityRepository(
                     JSONObject().put("productId", it.productId).put("quantity", it.quantity)
                 }),
             )
-            .put("startDate", "${startDate}T00:00:00Z")
-            .put("endDate", "${endDate}T23:59:59Z")
+            // Same window the cart sends as pickupPlanAt / returnPlanAt (#413), as iOS does
+            .put("startDate", OrderPlanDays.pickupInstant(startDate))
+            .put("endDate", OrderPlanDays.returnInstant(endDate))
             .apply { outletId?.let { put("outletId", it) } }
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -174,6 +177,18 @@ class DefaultAvailabilityRepository(
         data: JSONObject,
         request: AvailabilityRequest,
     ): ProductAvailability {
+        // Current API: data.results[] (iOS BatchAvailabilityData.results). An entry with `error`
+        // (product or outlet stock not found) is a real failure: the caller checks it singly.
+        data.optJSONArray("results")?.let { results ->
+            val entry = (0 until results.length())
+                .mapNotNull(results::optJSONObject)
+                .firstOrNull { it.optInt("productId") == request.productId }
+            if (entry != null && !entry.has("error")) return parseAvailability(entry)
+            throw AppError.InvalidResponse(
+                entry?.optString("error")?.takeIf { it.isNotBlank() }
+                    ?: "Availability response is missing product ${request.productId}",
+            )
+        }
         val key = request.productId.toString()
         val directConflicts = data.optJSONArray(key)
         val item = data.optJSONObject(key)
