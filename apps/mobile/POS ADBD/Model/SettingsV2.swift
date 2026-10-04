@@ -10,7 +10,7 @@ import Foundation
 
 enum SettingsV2Item: Equatable {
     case storeInfo, receiptNote, printer
-    case users, export
+    case customers, users, export
     case plan, language, password, appInfo, deleteAccount
 }
 
@@ -29,14 +29,18 @@ struct SettingsV2Section: Equatable {
 }
 
 enum SettingsV2Logic {
-    /// Sections for a role. iOS has no customer list screen, so "Khách hàng" is not listed here.
+    /// Sections for a role.
+    /// - customers: the redesigned list (#387) when `showsCustomers` (flag `newCustomers`) and any customer right
     /// - users: `users.manage` (as today)
     /// - export: any export right and never OUTLET_STAFF (as today)
     /// - plan: shown once `subscriptions/status` answered
-    static func sections(role: Role?, permissions: [String], hasPlan: Bool) -> [SettingsV2Section] {
+    static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
         let store = SettingsV2Section(group: .store, items: [.storeInfo, .receiptNote, .printer])
 
         var management: [SettingsV2Item] = []
+        if showsCustomers, permissions.contains(where: { ["customers.view", "customers.manage"].contains($0) }) {
+            management.append(.customers)
+        }
         if permissions.contains("users.manage") { management.append(.users) }
         let exportRights = ["products.export", "products.manage", "orders.export", "orders.manage",
                             "customers.export", "customers.manage", "analytics.export", "analytics.view"]

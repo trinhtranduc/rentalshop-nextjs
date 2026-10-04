@@ -66,6 +66,9 @@ import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.customers.CustomersScreen
+import com.anyrent.pos.ui.customers.v2.CustomerPickerSheet
+import com.anyrent.pos.data.FeatureFlags
+import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -239,7 +242,18 @@ fun CartV2Screen(
         }
     }
 
-    if (showCustomer) {
+    if (showCustomer && FeatureFlags.isOn(MobileFeature.NEW_CUSTOMERS)) {
+        // #387: redesigned picker behind `newCustomers`; sets the customer the same way as the current one
+        AppFormSheet(onDismiss = { showCustomer = false }) {
+            CustomerPickerSheet(
+                onPicked = { picked ->
+                    CartStore.setCustomer(picked)
+                    showCustomer = false
+                },
+                onClose = { showCustomer = false },
+            )
+        }
+    } else if (showCustomer) {
         AppFormSheet(onDismiss = { showCustomer = false }) {
             CustomersScreen(
                 pickMode = true,

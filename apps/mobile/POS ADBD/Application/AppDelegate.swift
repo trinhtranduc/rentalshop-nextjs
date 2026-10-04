@@ -226,7 +226,8 @@ extension AppDelegate {
     func loadMainUserView(forceMain: Bool = false) {
         guard !AppConfigGate.isBlocked else { return }
         if !forceMain && !Utils.hasCompletedOnboarding() {
-            window?.rootViewController = OnboardingViewController()
+            // #387: redesigned onboarding behind `newAuth`; same "show once" storage
+            window?.rootViewController = FeatureFlags.shared.isOn(.newAuth) ? OnboardingV2ViewController() : OnboardingViewController()
             window?.makeKeyAndVisible()
             return
         }
@@ -240,7 +241,7 @@ extension AppDelegate {
         
         // Cross-dissolve when leaving onboarding so the heavy first tab load
         // doesn't feel like a freeze on the tab bar buttons.
-        if forceMain, window.rootViewController is OnboardingViewController {
+        if forceMain, window.rootViewController is OnboardingViewController || window.rootViewController is OnboardingV2ViewController {
             UIView.transition(
                 with: window,
                 duration: 0.25,

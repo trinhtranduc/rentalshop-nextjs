@@ -71,6 +71,10 @@ import com.anyrent.pos.ui.calendar.CalendarScreen
 import com.anyrent.pos.ui.calendar.v2.CalendarV2Screen
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.customers.CustomersScreen
+import com.anyrent.pos.ui.customers.v2.CustomerDetailV2Screen
+import com.anyrent.pos.ui.customers.v2.CustomersListV2Screen
+import com.anyrent.pos.ui.customers.v2.EditCustomerV2Screen
+import com.anyrent.pos.ui.onboarding.OnboardingV2Screen
 import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.CartCheckoutScreen
@@ -129,6 +133,9 @@ object Routes {
     const val ProductDetailV2 = "product-v2/{productId}"
     const val CartV2 = "cart-v2"
     const val CartV2Preview = "cart-v2-preview"
+    // #387 redesigned customer detail (flag newCustomers)
+    const val CustomerDetailV2 = "customer-v2/{customerId}"
+    const val CustomerEditV2 = "customer-v2-edit/{customerId}"
 
     fun orderDetail(id: Int) = "order/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
@@ -136,6 +143,8 @@ object Routes {
         "overview-orders/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
     fun productDetailV2(id: Int) = "product-v2/$id"
+    fun customerDetailV2(id: Int) = "customer-v2/$id"
+    fun customerEditV2(id: Int) = "customer-v2-edit/$id"
 
     /** The cart the user works in: the redesigned one behind `newProducts`, else the current one */
     fun cart(): String = if (FeatureFlags.isOn(MobileFeature.NEW_PRODUCTS)) CartV2 else Cart
@@ -463,13 +472,19 @@ fun AnyRentNavHost(
             )
         }
         composable(Routes.Onboarding) {
-            OnboardingScreen(onFinished = {
+            val finish = {
                 SessionStore.onboardingDone = true
                 rootNavController.navigate(Routes.Main) {
                     popUpTo(Routes.Onboarding) { inclusive = true }
                     launchSingleTop = true
                 }
-            })
+            }
+            // #387: redesigned onboarding behind `newAuth`; same "show once" storage
+            if (FeatureFlags.isOn(MobileFeature.NEW_AUTH)) {
+                OnboardingV2Screen(onFinished = finish)
+                return@composable
+            }
+            OnboardingScreen(onFinished = finish)
         }
         composable(Routes.StoreInfo) {
             StoreInfoScreen(onBack = { rootNavController.popBackStack() })
@@ -478,10 +493,54 @@ fun AnyRentNavHost(
             SubscriptionScreen(onBack = { rootNavController.popBackStack() })
         }
         composable(Routes.Customers) {
+            // #387: redesigned list behind `newCustomers`
+            val features by FeatureFlags.enabled.collectAsState()
+            if (MobileFeature.NEW_CUSTOMERS in features) {
+                CustomersListV2Screen(
+                    onBack = { rootNavController.popBackStack() },
+                    onOpen = { row -> rootNavController.navigate(Routes.customerDetailV2(row.id)) },
+                )
+                return@composable
+            }
             CustomersScreen(
                 onBack = { rootNavController.popBackStack() },
                 onViewOrders = { customer ->
                     rootNavController.navigate(Routes.analyticsOrders("customer", customer.id))
+                },
+            )
+        }
+        composable(
+            Routes.CustomerDetailV2,
+            arguments = listOf(navArgument("customerId") { type = NavType.IntType }),
+        ) { entry ->
+            val customerId = entry.arguments?.getInt("customerId") ?: 0
+            val edits by entry.savedStateHandle.getStateFlow("customerEdits", 0).collectAsState()
+            CustomerDetailV2Screen(
+                customerId = customerId,
+                refreshToken = edits,
+                onEdit = { rootNavController.navigate(Routes.customerEditV2(customerId)) },
+                onBack = { rootNavController.popBackStack() },
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onCreateOrder = { customer ->
+                    // A new cart for this customer: an order being edited is dropped first
+                    if (CartStore.isEditing) CartStore.clear()
+                    CartStore.setCustomer(customer)
+                    rootNavController.navigate(Routes.cart())
+                },
+            )
+        }
+        composable(
+            Routes.CustomerEditV2,
+            arguments = listOf(navArgument("customerId") { type = NavType.IntType }),
+        ) { entry ->
+            EditCustomerV2Screen(
+                customerId = entry.arguments?.getInt("customerId") ?: 0,
+                onBack = { rootNavController.popBackStack() },
+                onSaved = {
+                    rootNavController.previousBackStackEntry?.savedStateHandle?.let { handle ->
+                        handle["customerEdits"] = (handle.get<Int>("customerEdits") ?: 0) + 1
+                    }
+                    rootNavController.popBackStack()
                 },
             )
         }

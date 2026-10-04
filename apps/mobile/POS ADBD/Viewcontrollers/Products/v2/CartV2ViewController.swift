@@ -437,6 +437,16 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     @objc private func pickCustomer() {
+        // #387: redesigned picker behind `newCustomers`; it sets the customer the same way as the current one
+        if FeatureFlags.shared.isOn(.newCustomers) {
+            let picker = CustomersV2ListViewController(mode: .pick)
+            picker.onPicked = { [weak picker] customer in
+                CartStore.shared.setCustomer(customer)
+                picker?.dismiss(animated: true)
+            }
+            presentWithHiddenNavigationBar(picker)
+            return
+        }
         let picker = SuggestionTextField()
         picker.delegate = self
         presentWithHiddenNavigationBar(picker)

@@ -766,6 +766,64 @@
     <string name="api_error_password_min_length">Mật khẩu mới cần ít nhất 6 ký tự</string>
     <string name="settings_v2_password_done">Đã đổi mật khẩu. Vui lòng đăng nhập lại.</string>
 
+    <!-- #387 onboarding and customers (newAuth, newCustomers) -->
+    <string name="customers_v2_title">Khách hàng</string>
+    <string name="customers_v2_tile_orders">Số đơn</string>
+    <string name="customers_v2_tile_spent">Tổng chi</string>
+    <string name="customers_v2_tile_renting">Đang thuê</string>
+    <string name="customers_v2_search">Tìm khách</string>
+    <string name="customers_v2_search_placeholder">Tên hoặc số điện thoại</string>
+    <string name="customers_v2_new">Khách mới</string>
+    <string name="customers_v2_pick_title">Chọn khách hàng</string>
+    <string name="customers_v2_close">Đóng</string>
+    <string name="customers_v2_add">Thêm khách</string>
+    <string name="customers_v2_empty">Chưa có khách hàng</string>
+    <string name="customers_v2_no_match">Không tìm thấy khách</string>
+    <string name="customers_v2_recent">GẦN ĐÂY</string>
+    <string name="customers_v2_new_title">Khách mới</string>
+    <string name="customers_v2_save_and_pick">Lưu và chọn</string>
+    <string name="customers_v2_phone">Số điện thoại</string>
+    <string name="customers_v2_name">Họ và tên</string>
+    <string name="customers_v2_note">Ghi chú</string>
+    <string name="customers_v2_optional">(không bắt buộc)</string>
+    <string name="customers_v2_note_placeholder">VD: size M, cưới 12/10</string>
+    <string name="customers_v2_hint">Địa chỉ, CCCD, ngày sinh thêm sau trong hồ sơ khách.</string>
+    <string name="customers_v2_duplicate">Số này đã có khách:</string>
+    <string name="customers_v2_use_existing">Chọn khách này</string>
+    <string name="customers_v2_open_existing">Xem khách này</string>
+    <string name="customers_v2_need_phone">Nhập số điện thoại</string>
+    <string name="customers_v2_need_name">Nhập họ và tên</string>
+    <string name="customers_v2_edit">Sửa</string>
+    <string name="customers_v2_call">Gọi khách</string>
+    <string name="customers_v2_recent_orders">Đơn gần đây</string>
+    <string name="customers_v2_no_orders">Chưa có đơn</string>
+    <string name="customers_v2_create_order">Tạo đơn cho khách này</string>
+    <string name="onboarding_v2_step">Bước %1$d/%2$d</string>
+    <string name="onboarding_v2_product_title">Thêm đồ cho thuê</string>
+    <string name="onboarding_v2_product_body">Chụp ảnh, đặt giá và số lượng. Nhân viên tìm hoặc quét mã là thấy ngay khi tạo đơn.</string>
+    <string name="onboarding_v2_customer_title">Lưu khách hàng</string>
+    <string name="onboarding_v2_customer_body">Lưu khách một lần, dùng lại cho mọi đơn thuê và đơn bán.</string>
+    <string name="onboarding_v2_order_title">Tạo đơn</string>
+    <string name="onboarding_v2_order_body">Chọn khách, thêm đồ, chọn ngày thuê và xong đơn trong vài chạm.</string>
+    <string name="onboarding_v2_skip">Bỏ qua</string>
+    <string name="onboarding_v2_next">Tiếp</string>
+    <string name="onboarding_v2_start">Bắt đầu</string>
+    <plurals name="customers_v2_orders">
+        <item quantity="other">%d đơn</item>
+    </plurals>
+    <plurals name="customers_v2_items">
+        <item quantity="other">%d món</item>
+    </plurals>
+    <string name="customers_v2_cancel">Hủy</string>
+    <string name="customers_v2_edit_title">Sửa khách hàng</string>
+    <string name="customers_v2_email_placeholder">lan@email.com</string>
+    <string name="customers_v2_more_info">Thông tin thêm</string>
+    <string name="customers_v2_id_number">CCCD / giấy tờ</string>
+    <string name="customers_v2_date_of_birth">Ngày sinh</string>
+    <string name="customers_v2_address">Địa chỉ</string>
+    <string name="customers_v2_bad_email">Email không hợp lệ</string>
+    <string name="customers_v2_bad_date">Nhập ngày sinh theo dạng dd/MM/yyyy</string>
+    <string name="customers_v2_phone_taken">Số điện thoại này đã thuộc khách khác</string>
     <!-- Orders tab boards (#401) -->
     <string name="orders_v2_title_rent">Đơn thuê</string>
     <string name="orders_v2_title_sale">Đơn bán</string>

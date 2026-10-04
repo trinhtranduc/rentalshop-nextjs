@@ -63,7 +63,8 @@ final class SettingsV2ViewController: BaseViewControler {
     private func rebuild() {
         let role = user?.role
         let hasPlan = plan != nil && role != .admin
-        groups = SettingsV2Logic.sections(role: role, permissions: user?.permissions ?? [], hasPlan: hasPlan)
+        groups = SettingsV2Logic.sections(role: role, permissions: user?.permissions ?? [], hasPlan: hasPlan,
+                                          showsCustomers: FeatureFlags.shared.isOn(.newCustomers))
         listView.reloadData()
     }
 
@@ -94,6 +95,7 @@ final class SettingsV2ViewController: BaseViewControler {
         case .storeInfo: return "Store Information".localized()
         case .receiptNote: return "settings.v2.receiptNote".localized()
         case .printer: return "settings.v2.printer".localized()
+        case .customers: return "customers.v2.title".localized()
         case .users: return "settings.v2.users".localized()
         case .export: return "Export Data".localized()
         case .plan: return "settings.v2.plan".localized()
@@ -129,6 +131,10 @@ final class SettingsV2ViewController: BaseViewControler {
             navigationController?.pushViewController(AccountViewController(), animated: true)
         case .receiptNote, .printer:
             navigationController?.pushViewController(PrinterConfigurationViewController(), animated: true)
+        case .customers:
+            let list = CustomersV2ListViewController(mode: .browse)
+            list.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(list, animated: true)
         case .users:
             navigationController?.pushViewController(UserManagementViewController(), animated: true)
         case .export:
