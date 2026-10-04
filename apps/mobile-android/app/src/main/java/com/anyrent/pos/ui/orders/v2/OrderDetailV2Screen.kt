@@ -32,11 +32,11 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -240,7 +240,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                     actions = menu,
                     expanded = menuOpen,
                     onExpandedChange = { menuOpen = it },
-                    icon = Icons.Outlined.MoreVert,
+                    icon = Icons.Outlined.MoreHoriz,
                     iconSize = DS.Icon.Md,
                     iconTint = DS.Colors.Text,
                 )
@@ -443,7 +443,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon(Icons.Outlined.Warning, contentDescription = null, tint = DS.Status.Late.text, modifier = Modifier.size(DS.Icon.Md))
+                Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = DS.Status.Late.text, modifier = Modifier.size(DS.Icon.Md))
                 Column {
                     Text(
                         stringResource(if (returning) R.string.detail_late_return else R.string.detail_late_hand_over, lateDays),
