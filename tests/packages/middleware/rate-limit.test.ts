@@ -78,7 +78,8 @@ describe('@rentalshop/middleware - Rate Limiting', () => {
       const result = limiter(request);
       expect(result).not.toBeNull();
       expect(result!.status).toBe(429);
-      expect(result!.body.error).toBe('Too many requests');
+      expect(result!.body.success).toBe(false);
+      expect(result!.body.code).toBe('RATE_LIMIT_EXCEEDED');
     });
 
     it('should reset after the time window expires', () => {
