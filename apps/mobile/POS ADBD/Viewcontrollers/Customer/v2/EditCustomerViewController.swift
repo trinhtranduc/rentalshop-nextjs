@@ -26,6 +26,7 @@ final class EditCustomerViewController: BaseViewControler {
     private let cancelButton = V2.secondaryButton("customers.v2.cancel".localized())
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
     private var keyboardManagerWasEnabled = true
+    private let formScroll = CustomerFormScrollView()
 
     /// Called after a successful save (the detail reloads itself)
     var onSaved: (() -> Void)?
@@ -115,7 +116,7 @@ final class EditCustomerViewController: BaseViewControler {
         form.spacing = 14
         form.setCustomSpacing(20, after: form.arrangedSubviews[1])
 
-        let scroll = UIScrollView()
+        let scroll = formScroll
         scroll.keyboardDismissMode = .interactive
         scroll.addSubview(form)
 
@@ -273,6 +274,10 @@ final class EditCustomerViewController: BaseViewControler {
 }
 
 extension EditCustomerViewController: UITextFieldDelegate {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        DispatchQueue.main.async { self.formScroll.revealFocusedField() }
+    }
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         let order: [UITextField] = [phoneField, nameField, emailField, addressField, idField, dobField, notesField]
         if let index = order.firstIndex(where: { $0 === textField }), index + 1 < order.count {

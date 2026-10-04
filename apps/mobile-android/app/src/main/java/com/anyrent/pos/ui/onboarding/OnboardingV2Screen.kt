@@ -10,7 +10,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -50,14 +50,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -71,7 +65,7 @@ import com.anyrent.pos.R
 import com.anyrent.pos.ui.common.AppIcon
 import com.anyrent.pos.ui.theme.DS
 
-private data class OnboardingStep(val icon: ImageVector?, val title: Int, val body: Int)
+private data class OnboardingStep(val icon: ImageVector, val title: Int, val body: Int)
 
 private val BlobBlue = Color(0xFFDBEAFE)
 private val BlobPeach = Color(0xFFFFEDD5)
@@ -86,7 +80,7 @@ private val DotOff = Color(0xFFBFDBFE)
 fun OnboardingV2Screen(onFinished: () -> Unit) {
     val steps = remember {
         listOf(
-            OnboardingStep(null, R.string.onboarding_v2_product_title, R.string.onboarding_v2_product_body),
+            OnboardingStep(Icons.Outlined.Checkroom, R.string.onboarding_v2_product_title, R.string.onboarding_v2_product_body),
             OnboardingStep(Icons.Outlined.Person, R.string.onboarding_v2_customer_title, R.string.onboarding_v2_customer_body),
             OnboardingStep(Icons.Outlined.CalendarMonth, R.string.onboarding_v2_order_title, R.string.onboarding_v2_order_body),
         )
@@ -220,7 +214,7 @@ private fun BoxScope.Blob(color: Color, size: Dp, align: Alignment, x: Dp, y: Dp
 
 /** 120dp white rounded card with a soft blue shadow; floats 8dp on a 4.2 s loop */
 @Composable
-private fun StepIcon(icon: ImageVector?, motion: Boolean) {
+private fun StepIcon(icon: ImageVector, motion: Boolean) {
     var lift = 0f
     if (motion) {
         val transition = rememberInfiniteTransition(label = "float")
@@ -238,22 +232,6 @@ private fun StepIcon(icon: ImageVector?, motion: Boolean) {
             .background(Color.White, RoundedCornerShape(36.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        if (icon != null) {
-            AppIcon(icon, contentDescription = null, size = 60.dp, tint = DS.Colors.Primary)
-        } else {
-            DressGlyph()
-        }
-    }
-}
-
-/** Board glyph "M9 3h6l-1 4 5 13H5l5-13z" on a 24 grid, stroked at 60dp */
-@Composable
-private fun DressGlyph() {
-    val path = remember { PathParser().parsePathString("M9 3h6l-1 4 5 13H5l5-13z").toPath() }
-    Canvas(Modifier.size(60.dp)) {
-        val s = size.width / 24f
-        withTransform({ scale(s, s, pivot = Offset.Zero) }) {
-            drawPath(path, DS.Colors.Primary, style = Stroke(width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        }
+        AppIcon(icon, contentDescription = null, size = 60.dp, tint = DS.Colors.Primary)
     }
 }

@@ -27,6 +27,7 @@ final class NewCustomerViewController: BaseViewControler {
     private let existingSubtitle = V2.label(size: 13, color: DS.Color.textMuted)
     private var existing: Customer?
     private var keyboardManagerWasEnabled = true
+    private let formScroll = CustomerFormScrollView()
 
     /// The created or chosen customer
     var onDone: ((Customer) -> Void)?
@@ -114,7 +115,7 @@ final class NewCustomerViewController: BaseViewControler {
         form.axis = .vertical
         form.spacing = 16
 
-        let scroll = UIScrollView()
+        let scroll = formScroll
         scroll.keyboardDismissMode = .interactive
         scroll.addSubview(form)
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
@@ -245,6 +246,11 @@ final class NewCustomerViewController: BaseViewControler {
 }
 
 extension NewCustomerViewController: UITextFieldDelegate {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        // After the keyboard has resized the scroll view
+        DispatchQueue.main.async { self.formScroll.revealFocusedField() }
+    }
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField === nameField {
             noteField.becomeFirstResponder()

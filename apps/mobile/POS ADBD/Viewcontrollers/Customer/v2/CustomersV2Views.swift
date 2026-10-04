@@ -219,3 +219,36 @@ final class CustomersV2SectionLabel: UITableViewHeaderFooterView {
         fatalError("init(coder:) has not been implemented")
     }
 }
+
+/// Form scroll view that, when a field takes focus, shows its whole block (label + input) with a top inset,
+/// instead of only the input UIKit asks for
+final class CustomerFormScrollView: UIScrollView {
+    private let topInset: CGFloat = 12
+
+    override func scrollRectToVisible(_ rect: CGRect, animated: Bool) {
+        super.scrollRectToVisible(fieldBlockRect() ?? rect, animated: animated)
+    }
+
+    /// Call after the keyboard or focus changes
+    func revealFocusedField(animated: Bool = true) {
+        guard let block = fieldBlockRect() else { return }
+        super.scrollRectToVisible(block, animated: animated)
+    }
+
+    private func fieldBlockRect() -> CGRect? {
+        guard let responder = firstResponder(in: self), let block = responder.superview else { return nil }
+        var rect = block.convert(block.bounds, to: self)
+        rect.origin.y -= topInset
+        rect.size.height += topInset
+        // Too tall to fit: keep the top (label) in view
+        let visible = bounds.height - adjustedContentInset.top - adjustedContentInset.bottom
+        if rect.height > visible { rect.size.height = max(visible, 1) }
+        return rect
+    }
+
+    private func firstResponder(in view: UIView) -> UIView? {
+        if view.isFirstResponder { return view }
+        for sub in view.subviews { if let found = firstResponder(in: sub) { return found } }
+        return nil
+    }
+}

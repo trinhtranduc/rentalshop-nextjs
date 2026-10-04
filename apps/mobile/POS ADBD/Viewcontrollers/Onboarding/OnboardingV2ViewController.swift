@@ -11,7 +11,7 @@ import UIKit
 import SnapKit
 
 final class OnboardingV2ViewController: BaseViewControler {
-    private enum Glyph { case dress, person, calendar }
+    private enum Glyph { case garment, person, calendar }
 
     private struct Step {
         let glyph: Glyph
@@ -20,7 +20,7 @@ final class OnboardingV2ViewController: BaseViewControler {
     }
 
     private let steps = [
-        Step(glyph: .dress, titleKey: "onboarding.v2.product.title", bodyKey: "onboarding.v2.product.body"),
+        Step(glyph: .garment, titleKey: "onboarding.v2.product.title", bodyKey: "onboarding.v2.product.body"),
         Step(glyph: .person, titleKey: "onboarding.v2.customer.title", bodyKey: "onboarding.v2.customer.body"),
         Step(glyph: .calendar, titleKey: "onboarding.v2.order.title", bodyKey: "onboarding.v2.order.body"),
     ]
@@ -30,7 +30,6 @@ final class OnboardingV2ViewController: BaseViewControler {
     private let skipButton = UIButton(type: .system)
     private let iconCard = UIView()
     private let iconView = UIImageView()
-    private let dressLayer = CAShapeLayer()
     private let stepLabel = V2.label(size: 13, weight: .bold, color: DS.Color.primary)
     private let titleLabel = UILabel()
     private let bodyLabel = V2.label(size: 16, color: DS.Color.textMuted, lines: 0)
@@ -58,18 +57,6 @@ final class OnboardingV2ViewController: BaseViewControler {
         super.viewDidLayoutSubviews()
         let rect = iconCard.bounds
         iconCard.layer.shadowPath = UIBezierPath(roundedRect: rect, cornerRadius: 36).cgPath
-        // Board glyph "M9 3h6l-1 4 5 13H5l5-13z" on a 24 grid, drawn at 60pt
-        let s: CGFloat = 60 / 24
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 9 * s, y: 3 * s))
-        path.addLine(to: CGPoint(x: 15 * s, y: 3 * s))
-        path.addLine(to: CGPoint(x: 14 * s, y: 7 * s))
-        path.addLine(to: CGPoint(x: 19 * s, y: 20 * s))
-        path.addLine(to: CGPoint(x: 5 * s, y: 20 * s))
-        path.addLine(to: CGPoint(x: 10 * s, y: 7 * s))
-        path.close()
-        dressLayer.path = path.cgPath
-        dressLayer.frame = CGRect(x: (rect.width - 60) / 2, y: (rect.height - 60) / 2, width: 60, height: 60)
     }
 
     override func setupUI() {
@@ -118,12 +105,6 @@ final class OnboardingV2ViewController: BaseViewControler {
         iconCard.isAccessibilityElement = false
         iconView.tintColor = DS.Color.primary
         iconView.contentMode = .scaleAspectFit
-        dressLayer.strokeColor = DS.Color.primary.cgColor
-        dressLayer.fillColor = UIColor.clear.cgColor
-        dressLayer.lineWidth = 1.5 * 60 / 24
-        dressLayer.lineJoin = kCALineJoinRound
-        dressLayer.lineCap = kCALineCapRound
-        iconCard.layer.addSublayer(dressLayer)
         iconCard.addSubview(iconView)
         iconView.snp.makeConstraints { make in
             make.center.equalToSuperview()
@@ -187,14 +168,14 @@ final class OnboardingV2ViewController: BaseViewControler {
     private func render() {
         let step = steps[index]
         let isLast = index == steps.count - 1
+        // Board: hanger (step 1), user (2), calendar (3). `hanger` is iOS 16+; deployment target is 15
+        let name: String
         switch step.glyph {
-        case .dress:
-            iconView.image = nil
-            dressLayer.isHidden = false
-        case .person, .calendar:
-            dressLayer.isHidden = true
-            iconView.image = DS.symbol(step.glyph == .person ? "person" : "calendar", 60)
+        case .garment: name = UIImage(systemName: "hanger") != nil ? "hanger" : "tshirt"
+        case .person: name = "person"
+        case .calendar: name = "calendar"
         }
+        iconView.image = DS.symbol(name, 60)
         stepLabel.attributedText = NSAttributedString(
             string: String(format: "onboarding.v2.step".localized(), index + 1, steps.count).uppercased(),
             attributes: [NSAttributedString.Key.kern: 0.5])
