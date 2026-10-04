@@ -1,5 +1,16 @@
 package com.anyrent.pos.data.model
 
+import org.json.JSONObject
+
+/** A money field the API may not send (older servers): absent, null or not a number reads as null (#390) */
+internal fun optionalAmount(o: JSONObject, key: String): Double? {
+    if (!o.has(key) || o.isNull(key)) return null
+    return when (val value = o.opt(key)) {
+        is Number -> value.toDouble()
+        else -> null
+    }
+}
+
 data class UserProfile(
     val id: Int,
     val email: String,
@@ -96,6 +107,9 @@ data class OrderSummary(
     val itemsSummary: String = "",
     /** Units per product id, from the list's `orderItems` (#388) */
     val productQuantities: Map<Int, Int> = emptyMap(),
+    /** Still to collect / to give back, from `computeOrderBalance` (#389); null on an older API */
+    val amountDue: Double? = null,
+    val refundDue: Double? = null,
 )
 
 data class OrderItem(
@@ -128,6 +142,8 @@ data class OrderDetail(
     val discountAmount: Double = 0.0,
     /** Store name on the order — preferred over SessionStore for receipt header. */
     val outletName: String? = null,
+    /** Outlet of the order (public id): availability for an extension is checked there (#390) */
+    val outletId: Int? = null,
     /** Nested customer from GET /api/orders/:id — preferred when editing into cart. */
     val customer: Customer? = null,
 )

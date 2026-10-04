@@ -963,4 +963,20 @@
     <string name="v2_detail_state_pickup_on">Hand over %1$s</string>
     <string name="v2_detail_state_return_today">Return today</string>
     <string name="v2_detail_state_return_on">Return %1$s</string>
+    <!-- #390 phase 8 -->
+    <string name="orders_v2_sort_nearest">Nearest task</string>
+    <string name="orders_v2_sort_nearest_hint">Nearest task: late returns first, then the next hand-overs and returns.</string>
+    <string name="calendar_v2_fee">fee %1$s</string>
+    <string name="v2_product_deleted">Product deleted</string>
+    <string name="extend_rental">Extend</string>
+    <string name="extend_rental_title">Extend rental</string>
+    <string name="extend_rental_current">Due back %1$s</string>
+    <plurals name="extend_rental_extra_days">
+        <item quantity="one">%1$d more day</item>
+        <item quantity="other">%1$d more days</item>
+    </plurals>
+    <string name="extend_rental_pick">Pick a later return day</string>
+    <string name="extend_rental_confirm">Extend to %1$s</string>
+    <string name="extend_rental_unavailable">Not enough stock on the added days: %1$s</string>
+    <string name="extend_rental_done">Extended to %1$s</string>
 </resources>

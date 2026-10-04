@@ -9,14 +9,16 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-/** Rent list sort of the "Lọc & sắp xếp" sheet (board Loc) */
-enum class OrdersSort(val apiField: String) { CREATED("createdAt"), PICKUP("pickupPlanAt"), RETURN("returnPlanAt") }
-
 /**
- * Which date the range applies to. The list API filters actual hand-over / return dates (`pickedUpAt`, `returnedAt`);
- * it has no planned-date range.
+ * Rent list sort of the "Lọc & sắp xếp" sheet (board Loc). `nearestTask` (#389): late tasks first, then the nearest
+ * planned hand-over or return, then closed orders.
  */
-enum class DateBasis(val apiField: String) { CREATED("createdAt"), PICKED_UP("pickedUpAt"), RETURNED("returnedAt") }
+enum class OrdersSort(val apiField: String) {
+    NEAREST_TASK("nearestTask"), CREATED("createdAt"), PICKUP("pickupPlanAt"), RETURN("returnPlanAt")
+}
+
+/** Which date the range applies to: created, or the planned hand-over / return day (#389, Vietnam days in the API) */
+enum class DateBasis(val apiField: String) { CREATED("createdAt"), PICKUP_PLAN("pickupPlanAt"), RETURN_PLAN("returnPlanAt") }
 
 sealed interface DateRangeChoice {
     data object Any : DateRangeChoice
@@ -86,6 +88,16 @@ object OrdersBoardLogic {
         refundDue > 0 -> PayLine.Refund(refundDue)
         amountDue > 0 -> PayLine.Due(amountDue)
         else -> PayLine.Paid
+    }
+
+    /**
+     * Pay line of a "Tất cả đơn" / search row from the list balances (#390). Null when the API sent neither field
+     * (older server) or the order is cancelled.
+     */
+    fun listPayLine(order: OrderSummary): PayLine? {
+        if (order.status.equals("CANCELLED", ignoreCase = true)) return null
+        if (order.amountDue == null && order.refundDue == null) return null
+        return payLine(order.amountDue ?: 0.0, order.refundDue ?: 0.0)
     }
 
     /** "giao N · trả M" of a band: hand-over count to take-back count */

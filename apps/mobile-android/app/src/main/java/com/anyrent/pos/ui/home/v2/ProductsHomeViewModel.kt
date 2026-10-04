@@ -23,6 +23,16 @@ data class ProductsHomeState(
     val error: String? = null,
 )
 
+/** Products deleted from the detail screen (#390): the list drops them when it shows again */
+object DeletedProducts {
+    private val _ids = MutableStateFlow<Set<Int>>(emptySet())
+    val ids: StateFlow<Set<Int>> = _ids.asStateFlow()
+
+    fun add(id: Int) {
+        _ids.value = _ids.value + id
+    }
+}
+
 /** Loads one page (replaceable in tests) */
 fun interface ProductsPageSource {
     suspend fun load(page: Int, query: String?): ApiClient.PageResult<Product>
@@ -67,6 +77,12 @@ class ProductsHomeViewModel(
             products = if (list.any { it.id == product.id }) list.map { if (it.id == product.id) product else it }
             else listOf(product) + list,
         )
+    }
+
+    /** Drop a deleted product without a reload */
+    fun remove(productId: Int) {
+        val list = _state.value.products
+        if (list.any { it.id == productId }) _state.value = _state.value.copy(products = list.filterNot { it.id == productId })
     }
 
     private fun load(nextPage: Int, fromPull: Boolean) {

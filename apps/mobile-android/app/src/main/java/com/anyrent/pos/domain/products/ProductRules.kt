@@ -20,6 +20,10 @@ object ProductAccess {
     fun canEdit(role: UserRole): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
 
+    /** `DELETE /api/products/{id}` needs `products.manage`: never OUTLET_STAFF (#390) */
+    fun canDelete(role: UserRole): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+
     /** Price fields in the form and price edits in the cart */
     fun showsPriceFields(role: UserRole): Boolean = canEdit(role)
 }

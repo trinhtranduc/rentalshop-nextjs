@@ -127,6 +127,8 @@ fun ProductsHomeScreen(
         if (state.products.isEmpty()) viewModel.reload()
         unread = withContext(Dispatchers.IO) { ApiClient.get().getUnreadCount().getOrDefault(0) }
     }
+    val deleted by DeletedProducts.ids.collectAsState()
+    LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
     LaunchedEffect(Unit) {
         snapshotFlow { draft }.debounce(300).distinctUntilChanged().collect { viewModel.setQuery(it) }
     }

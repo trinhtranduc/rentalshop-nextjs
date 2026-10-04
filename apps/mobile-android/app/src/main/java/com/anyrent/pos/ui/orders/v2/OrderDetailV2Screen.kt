@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreHoriz
@@ -76,6 +77,7 @@ import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
 import com.anyrent.pos.domain.orders.DetailPrimary
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.orders.RentalExtension
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -129,6 +131,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
     var menuOpen by remember { mutableStateOf(false) }
     var confirmCancel by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var extending by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
     var previewImage by remember { mutableStateOf<Any?>(null) }
     // Notes draft lives here so the gallery round-trip cannot drop it with the sheet
@@ -189,6 +192,10 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
             PermissionManager.canDeleteCancelledOrders(),
         )
     }
+    // #390: "Gia hạn" for open rentals (orders.update, OUTLET_STAFF included; the API checks the outlet)
+    val canExtend = detail?.let {
+        RentalExtension.canExtend(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
+    } == true
 
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface).statusBarsPadding()) {
         // Top bar: back, order code, print, ⋯
@@ -224,6 +231,9 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                                 }
                             }
                         }))
+                    }
+                    if (canExtend) {
+                        add(AppMenuAction(stringResource(R.string.extend_rental), Icons.Outlined.EditCalendar, { extending = true }))
                     }
                     add(AppMenuAction(stringResource(R.string.detail_edit_notes), Icons.Outlined.EditNote, { openNotes(detail) }))
                     add(AppMenuAction(stringResource(R.string.share_order), Icons.Outlined.Share, {
@@ -269,6 +279,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                     primary = actions!!.primary,
                     canEdit = actions.canEdit,
                     canCancel = actions.canCancel,
+                    canExtend = canExtend,
                     busy = state.busy || editing,
                     onHandOver = {
                         paymentVm.clearError()
@@ -289,6 +300,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                     },
                     onCancel = { confirmCancel = true },
                     onPrint = { print(detail) },
+                    onExtend = { extending = true },
                 )
             }
         }
@@ -363,6 +375,19 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
             )
             null -> Unit
         }
+    }
+
+    if (extending && detail != null) {
+        val doneTemplate = stringResource(R.string.extend_rental_done)
+        OrderExtendSheet(
+            detail = detail,
+            onDismiss = { extending = false },
+            onExtended = { day ->
+                extending = false
+                toast(doneTemplate.format(formatDayShort(day.atStartOfDay(ZoneId.systemDefault()).toInstant())))
+                vm.load()
+            },
+        )
     }
 
     if (confirmCancel) {
@@ -617,12 +642,14 @@ private fun DetailBottomBar(
     primary: DetailPrimary,
     canEdit: Boolean,
     canCancel: Boolean,
+    canExtend: Boolean,
     busy: Boolean,
     onHandOver: () -> Unit,
     onReturn: () -> Unit,
     onEdit: () -> Unit,
     onCancel: () -> Unit,
     onPrint: () -> Unit,
+    onExtend: () -> Unit,
 ) {
     val isSale = detail.summary.orderType.equals("SALE", ignoreCase = true)
     HorizontalDivider(color = DS.Colors.Border)
@@ -648,8 +675,10 @@ private fun DetailBottomBar(
                     onHandOver,
                 )
             }
-            primary == DetailPrimary.TAKE_RETURN ->
-                PrimaryBarButton(stringResource(R.string.detail_take_return), Modifier.weight(1f), !busy, onReturn)
+            primary == DetailPrimary.TAKE_RETURN -> {
+                if (canExtend) SecondaryBarButton(stringResource(R.string.extend_rental), Modifier.weight(1f), !busy, onClick = onExtend)
+                PrimaryBarButton(stringResource(R.string.detail_take_return), Modifier.weight(if (canExtend) 2f else 1f), !busy, onReturn)
+            }
             isSale && canCancel -> {
                 SecondaryBarButton(stringResource(R.string.cancel_order), Modifier.weight(1f), !busy, destructive = true, onClick = onCancel)
                 PrimaryBarButton(stringResource(R.string.detail_print_receipt), Modifier.weight(2f), true, onPrint)

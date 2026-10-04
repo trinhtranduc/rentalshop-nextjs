@@ -59,6 +59,7 @@ import com.anyrent.pos.domain.calendar.CalendarCell
 import com.anyrent.pos.domain.calendar.CalendarDayMarks
 import com.anyrent.pos.domain.calendar.CalendarDayRow
 import com.anyrent.pos.domain.calendar.CalendarLogic
+import com.anyrent.pos.domain.calendar.CalendarNote
 import com.anyrent.pos.domain.calendar.CalendarRowKind
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
@@ -287,8 +288,18 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(formatMoneyVnd(row.order.totalAmount), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-            if (row.lateDays > 0) {
-                Text(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger)
+            // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
+            val note = when (val n = CalendarLogic.note(row)) {
+                is CalendarNote.Late -> {
+                    val late = pluralStringResource(R.plurals.orders_late_days, n.days, n.days)
+                    (n.fee?.let { "$late · ${stringResource(R.string.calendar_v2_fee, formatMoneyVnd(it))}" } ?: late) to V2Colors.Danger
+                }
+                is CalendarNote.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(n.amount)) to DS.Status.Return.text
+                is CalendarNote.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(n.amount)) to DS.Status.Waiting.text
+                CalendarNote.None -> null
+            }
+            note?.let { (text, color) ->
+                Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
             }
         }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = OtherMonth, modifier = Modifier.size(DS.Icon.Sm))

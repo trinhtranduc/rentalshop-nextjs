@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.calendar
 
+import com.anyrent.pos.data.model.optionalAmount
 import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -21,7 +22,20 @@ data class CalendarDayOrder(
     val orderType: String?,
     val totalAmount: Double,
     val itemsSummary: String,
+    /** Balances and the stored late fee (#389); null on an older API */
+    val amountDue: Double? = null,
+    val refundDue: Double? = null,
+    val lateFee: Double? = null,
 )
+
+/** Note under a day row's total (board Lich, #390) */
+sealed interface CalendarNote {
+    /** "Trễ N ngày", plus " · phí X" when a fee is stored */
+    data class Late(val days: Int, val fee: Double?) : CalendarNote
+    data class Refund(val amount: Double) : CalendarNote
+    data class Due(val amount: Double) : CalendarNote
+    data object None : CalendarNote
+}
 
 data class CalendarDayMarks(val handOver: Boolean = false, val returning: Boolean = false, val lateReturn: Boolean = false) {
     companion object {
@@ -72,6 +86,23 @@ object CalendarLogic {
     }
 
     /** Day selected when a month opens: today in its own month, else the first day */
+    /** Late days first (with the fee), then what to give back, then what is still to collect; else nothing */
+    fun note(row: CalendarDayRow, hidesMoney: Boolean = false): CalendarNote {
+        val order = row.order
+        if (row.lateDays > 0) {
+            val fee = order.lateFee?.takeIf { it > 0 && !hidesMoney }
+            return CalendarNote.Late(row.lateDays, fee)
+        }
+        if (hidesMoney) return CalendarNote.None
+        val refund = order.refundDue ?: 0.0
+        val due = order.amountDue ?: 0.0
+        return when {
+            refund > 0 -> CalendarNote.Refund(refund)
+            due > 0 -> CalendarNote.Due(due)
+            else -> CalendarNote.None
+        }
+    }
+
     fun defaultSelection(month: YearMonth, todayKey: String): String =
         if (YearMonth.from(LocalDate.parse(todayKey)) == month) todayKey else month.atDay(1).toString()
 
@@ -108,6 +139,9 @@ object CalendarLogic {
                 orderType = text("orderType"),
                 totalAmount = o.optDouble("totalAmount").let { if (it.isNaN()) 0.0 else it },
                 itemsSummary = summary,
+                amountDue = optionalAmount(o, "amountDue"),
+                refundDue = optionalAmount(o, "refundDue"),
+                lateFee = optionalAmount(o, "lateFee"),
             )
         }
     }
