@@ -3,7 +3,8 @@
 //  POS ADBD
 //
 //  "Gia hạn" of a rental (#390): pick a later return day, check the added days with the batch availability call at
-//  the order's outlet, then PUT /api/orders/{id} with the new `returnPlanAt`. Nothing is saved when an item is short.
+//  the order's outlet, then PUT /api/orders/{id} with the new `returnPlanAt` and day count, plus the new total when
+//  the staff typed extra rent (#425). Nothing is saved when an item is short.
 //
 
 import UIKit
@@ -17,6 +18,8 @@ final class OrderExtendSheetViewController: UIViewController {
     private let currentReturn: Date
     private let picker = UIDatePicker()
     private let extraLabel = V2.label(size: 14, weight: .bold)
+    private let extraField = UITextField()
+    private let newTotalLabel = V2.label(size: 14, weight: .bold)
     private let errorLabel = V2.label(size: 14, color: DS.Status.late.text, lines: 0)
     private let confirmButton = V2.primaryButton("")
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .white)
@@ -54,6 +57,24 @@ final class OrderExtendSheetViewController: UIViewController {
         picker.tintColor = DS.Color.primary
         picker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
 
+        let extraTitle = V2.label("order.extend.extraRent".localized(), size: 14, weight: .bold)
+        extraField.placeholder = "0"
+        extraField.font = Utils.regularFont(size: 16)
+        extraField.textColor = DS.Color.text
+        extraField.keyboardType = .numberPad
+        extraField.accessibilityLabel = "order.extend.extraRent".localized()
+        extraField.addTarget(self, action: #selector(extraChanged), for: .editingChanged)
+        let extraBox = UIView()
+        extraBox.layer.cornerRadius = 12
+        extraBox.layer.borderWidth = 1
+        extraBox.layer.borderColor = V2.border.cgColor
+        extraBox.addSubview(extraField)
+        extraBox.snp.makeConstraints { make in make.height.equalTo(48) }
+        extraField.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.top.bottom.equalToSuperview()
+        }
+
         errorLabel.isHidden = true
         confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
         confirmButton.addSubview(spinner)
@@ -62,11 +83,13 @@ final class OrderExtendSheetViewController: UIViewController {
             make.trailing.equalToSuperview().inset(DS.Spacing.lg)
         }
 
-        let stack = UIStackView(arrangedSubviews: [title, current, picker, extraLabel, errorLabel, confirmButton])
+        let stack = UIStackView(arrangedSubviews: [title, current, picker, extraLabel, extraTitle, extraBox,
+                                                   newTotalLabel, errorLabel, confirmButton])
         stack.axis = .vertical
         stack.spacing = DS.Spacing.sm
         stack.setCustomSpacing(DS.Spacing.lg, after: errorLabel)
         let scroll = UIScrollView()
+        scroll.keyboardDismissMode = .onDrag
         view.addSubview(scroll)
         scroll.addSubview(stack)
         scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
@@ -87,6 +110,9 @@ final class OrderExtendSheetViewController: UIViewController {
         extraLabel.text = extra == 1 ? "order.extend.extraDay".localized()
             : String(format: "order.extend.extraDays".localized(), extra)
         extraLabel.isHidden = extra == 0
+        let newTotal = RentalExtension.newTotal(oldTotal: detail.totalAmount, extra: MoneyInput.parse(extraField.text))
+        newTotalLabel.text = newTotal.map { String(format: "order.extend.newTotal".localized(), MoneyFormatter.format($0)) }
+        newTotalLabel.isHidden = newTotal == nil
         let title = window == nil ? "order.extend.pick".localized()
             : String(format: "order.extend.confirm".localized(), DayFormatter.short(picker.date))
         confirmButton.setTitle(title, for: .normal)
@@ -99,6 +125,7 @@ final class OrderExtendSheetViewController: UIViewController {
         busy = value
         isModalInPresentation = value
         picker.isEnabled = !value
+        extraField.isEnabled = !value
         refresh()
     }
 
@@ -113,8 +140,14 @@ final class OrderExtendSheetViewController: UIViewController {
         refresh()
     }
 
+    @objc private func extraChanged() {
+        extraField.text = MoneyInput.display(MoneyInput.parse(extraField.text))
+        refresh()
+    }
+
     @objc private func confirmTapped() {
         guard !busy, let window else { return }
+        view.endEditing(true)
         let newDay = picker.date
         let items = detail.orderItems
         setBusy(true)
@@ -139,7 +172,8 @@ final class OrderExtendSheetViewController: UIViewController {
     }
 
     private func save(_ newDay: Date) {
-        let request = UpdateOrderRequest(returnPlanAt: RentalExtension.returnPlanAt(newDay).dateServerISOString())
+        let request = RentalExtension.updateRequest(pickup: detail.pickupPlanAt, newDay: newDay, oldTotal: detail.totalAmount,
+                                                    extra: MoneyInput.parse(extraField.text))
         OrderService.shared.updateOrder(orderId: detail.id, request: request) { [weak self] _, error in
             DispatchQueue.main.async {
                 guard let self else { return }

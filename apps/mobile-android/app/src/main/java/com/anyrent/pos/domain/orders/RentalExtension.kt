@@ -2,12 +2,24 @@ package com.anyrent.pos.domain.orders
 
 import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.domain.availability.RentalCartLine
+import com.anyrent.pos.domain.products.CartV2Logic
+import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
+/** What Gia hạn sends with `PUT /api/orders/{id}` (#425); null fields are left out */
+data class ExtensionUpdate(val returnPlanAt: String, val rentalDuration: Int?, val totalAmount: Double?) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("returnPlanAt", returnPlanAt)
+        rentalDuration?.let { put("rentalDuration", it) }
+        totalAmount?.let { put("totalAmount", it) }
+    }
+}
+
 /**
- * "Gia hạn" of a rental (#390): a later return day, checked over the added days only, saved as `returnPlanAt`.
+ * "Gia hạn" of a rental (#390): a later return day, checked over the added days only, saved as `returnPlanAt`
+ * with the new day count and, when the staff typed extra rent, the new total (#425).
  * Days are device-zone days, like the cart ([OrderPlanDays]); the new return day ends at its last second, so a
  * one-day extension still occupies that day.
  */
@@ -46,4 +58,23 @@ object RentalExtension {
                 quantity = group.sumOf { it.quantity },
             )
         }
+
+    /** Old total plus the extra rent the staff typed (#425); null when there is no extra */
+    fun newTotal(oldTotal: Double, extra: Double?): Double? = extra?.takeIf { it > 0 }?.let { oldTotal + it }
+
+    /** Inclusive days from the pickup day to the new return day, as the cart counts them; null without a pickup day */
+    fun rentalDuration(pickupPlanAt: String?, newDay: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Int? =
+        OrderPlanDays.dayOf(pickupPlanAt, zone)?.let { CartV2Logic.rentalDays(it, newDay) }
+
+    fun update(
+        pickupPlanAt: String?,
+        newDay: LocalDate,
+        oldTotal: Double,
+        extra: Double?,
+        zone: ZoneId = ZoneId.systemDefault(),
+    ) = ExtensionUpdate(
+        returnPlanAt = returnPlanAt(newDay, zone),
+        rentalDuration = rentalDuration(pickupPlanAt, newDay, zone),
+        totalAmount = newTotal(oldTotal, extra),
+    )
 }

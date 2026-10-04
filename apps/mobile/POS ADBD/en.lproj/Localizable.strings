@@ -1924,3 +1924,5 @@
 "order.handOver.papers" = "Papers left";
 "order.handOver.papersHint" = "e.g. ID card, driver's license";
 "order.handOver.deposit" = "Security deposit";
+"order.extend.extraRent" = "Extra rent";
+"order.extend.newTotal" = "New total: %@";

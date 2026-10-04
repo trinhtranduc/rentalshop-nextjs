@@ -196,4 +196,44 @@ class Phase8LogicTest {
         assertEquals(listOf(1 to 3, 2 to 2), lines.map { it.productId to it.quantity })
         assertEquals("Vest", lines.first().productName)
     }
+
+    // #425 — extra rent on Gia hạn
+
+    @Test
+    fun `new total only when the extra is above zero`() {
+        assertNull(RentalExtension.newTotal(300000.0, null))
+        assertNull(RentalExtension.newTotal(300000.0, 0.0))
+        assertEquals(300050.0, RentalExtension.newTotal(300000.0, 50.0)!!, 0.0)
+    }
+
+    @Test
+    fun `rental duration counts pickup day to new day inclusive`() {
+        // Pickup 04/10 00:00 in Vietnam (03/10 in UTC)
+        val pickup = "2026-10-03T17:00:00.000Z"
+        assertEquals(5, RentalExtension.rentalDuration(pickup, LocalDate.of(2026, 10, 8), vietnam))
+        assertEquals(6, RentalExtension.rentalDuration(pickup, LocalDate.of(2026, 10, 8), utc))
+        assertNull(RentalExtension.rentalDuration(null, LocalDate.of(2026, 10, 8), vietnam))
+    }
+
+    @Test
+    fun `update without extra sends no total`() {
+        val body = RentalExtension.update("2026-10-03T17:00:00.000Z", LocalDate.of(2026, 10, 8), 300000.0, 0.0, vietnam).toJson()
+        assertEquals("2026-10-08T16:59:59.000Z", body.getString("returnPlanAt"))
+        assertEquals(5, body.getInt("rentalDuration"))
+        assertFalse(body.has("totalAmount"))
+        assertEquals(setOf("returnPlanAt", "rentalDuration"), body.keys().asSequence().toSet())
+    }
+
+    @Test
+    fun `update with extra adds it to the total`() {
+        val update = RentalExtension.update("2026-10-03T17:00:00.000Z", LocalDate.of(2026, 10, 6), 300000.0, 50.0, vietnam)
+        assertEquals(300050.0, update.totalAmount!!, 0.0)
+        assertEquals(3, update.rentalDuration)
+        val body = update.toJson()
+        assertEquals(300050.0, body.getDouble("totalAmount"), 0.0)
+        assertEquals(setOf("returnPlanAt", "rentalDuration", "totalAmount"), body.keys().asSequence().toSet())
+        // No pickup day: only the return day and the total
+        val noPickup = RentalExtension.update(null, LocalDate.of(2026, 10, 6), 300000.0, 100.0, vietnam).toJson()
+        assertEquals(setOf("returnPlanAt", "totalAmount"), noPickup.keys().asSequence().toSet())
+    }
 }

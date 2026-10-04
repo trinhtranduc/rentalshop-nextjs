@@ -982,4 +982,6 @@
     <string name="detail_hand_over_papers">Papers left</string>
     <string name="detail_hand_over_papers_hint">e.g. ID card, driver\'s license</string>
     <string name="detail_hand_over_deposit">Security deposit</string>
+    <string name="extend_rental_extra_rent">Extra rent</string>
+    <string name="extend_rental_new_total">New total: %1$s</string>
 </resources>

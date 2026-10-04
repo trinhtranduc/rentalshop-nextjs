@@ -1922,3 +1922,5 @@
 "order.handOver.papers" = "Giấy tờ để lại";
 "order.handOver.papersHint" = "VD: CCCD, GPLX";
 "order.handOver.deposit" = "Cọc thế chân";
+"order.extend.extraRent" = "Tiền thuê thêm";
+"order.extend.newTotal" = "Tổng mới: %@";
