@@ -42,6 +42,7 @@ object ApiErrorMessages {
         "UNAUTHORIZED", "SESSION_EXPIRED", "TOKEN_EXPIRED", "INVALID_TOKEN" ->
             R.string.api_error_session_expired
         "SESSION_REPLACED" -> R.string.api_error_session_replaced
+        "INVALID_ORDER_STATUS" -> R.string.api_error_invalid_order_status
         else -> 0
     }
 

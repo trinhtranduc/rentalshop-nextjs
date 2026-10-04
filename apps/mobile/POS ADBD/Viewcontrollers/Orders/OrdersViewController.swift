@@ -187,6 +187,14 @@ final class OrdersViewController: BaseViewControler {
 
     /// Same flow as a push notification: load the detail by numeric id, then the current detail screen
     private func openOrder(id: Int) {
+        if OrderDetailRouter.usesNewDetail {
+            // The new detail loads the order itself
+            needsReloadOnAppear = true
+            let detail = OrderDetailViewController(orderId: id)
+            detail.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(detail, animated: true)
+            return
+        }
         showProgressText(text: "Loading...".localized())
         OrderService.shared.loadOrderDetail(orderId: id) { [weak self] detail, error in
             DispatchQueue.main.async {
@@ -197,9 +205,7 @@ final class OrdersViewController: BaseViewControler {
                     return
                 }
                 guard let detail else { return }
-                let preview = PreviewViewController(order: Order.from(detail: detail))
-                preview.hidesBottomBarWhenPushed = true
-                preview.delegate = self
+                let preview = OrderDetailRouter.detailController(for: Order.from(detail: detail), delegate: self)
                 self.needsReloadOnAppear = true
                 self.navigationController?.pushViewController(preview, animated: true)
             }

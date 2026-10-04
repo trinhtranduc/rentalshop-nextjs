@@ -390,9 +390,7 @@ final class ProductDetailViewController: BaseViewControler {
                     return
                 }
                 guard let detail else { return }
-                let preview = PreviewViewController(order: Order.from(detail: detail))
-                preview.hidesBottomBarWhenPushed = true
-                preview.delegate = self
+                let preview = OrderDetailRouter.detailController(for: Order.from(detail: detail), delegate: self)
                 self.navigationController?.pushViewController(preview, animated: true)
             }
         }

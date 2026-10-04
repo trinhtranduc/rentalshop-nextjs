@@ -96,8 +96,10 @@ object PaymentPolicy {
                 )
             }
             "PICKUPED" -> {
-                // iOS: damageFee - securityDeposit (negative = refund). Also include lateFee.
-                val adjustment = order.damageFee + order.lateFee - order.securityDeposit
+                // API rule (computeOrderBalance): damage + late - collateral money - settled at return;
+                // negative = refund
+                val adjustment = order.damageFee + order.lateFee - order.securityDeposit -
+                    completedAmount(order, PaymentPurpose.RETURN_ADJUSTMENT)
                 val collateral = order.collateralDetails?.takeIf { it.isNotBlank() }
                 when {
                     adjustment > 0.0 -> PaymentAction(

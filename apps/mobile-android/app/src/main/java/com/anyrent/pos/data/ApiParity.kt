@@ -4,6 +4,9 @@ import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.NotesStep
+import com.anyrent.pos.domain.orders.OrderDetailLogic
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.Request
@@ -210,31 +213,63 @@ object ApiParity {
         )
     }
 
+    /**
+     * PUT /api/orders/:id with settings and/or notes (docs/API_ORDER_NOTES_IMAGES.md).
+     * [keptNoteImageUrls] is the list left after the user removed photos (null = photos untouched);
+     * when it differs from [existingNoteImageUrls] a JSON request sets it first, then new
+     * [noteImages] go as multipart (the API appends uploads to the stored list).
+     */
     fun updateOrderDetails(
         id: Int,
         collateralDetails: String? = null,
         securityDeposit: Double? = null,
         notes: String? = null,
         noteImages: List<ByteArray> = emptyList(),
-        @Suppress("UNUSED_PARAMETER")
         existingNoteImageUrls: List<String> = emptyList(),
+        keptNoteImageUrls: List<String>? = null,
+        maxNoteImages: Int = Int.MAX_VALUE,
     ): Result<Unit> = runCatching {
-        val data = JSONObject().apply {
+        val steps = OrderDetailLogic.notesPlan(
+            notes = notes,
+            original = existingNoteImageUrls,
+            kept = keptNoteImageUrls ?: existingNoteImageUrls,
+            newFileCount = noteImages.size,
+            max = maxNoteImages,
+        ) ?: throw AppError.Validation("Too many note photos")
+
+        fun fields(stepNotes: String?) = JSONObject().apply {
             collateralDetails?.let { put("collateralDetails", it) }
             securityDeposit?.let { put("securityDeposit", it) }
-            notes?.let { put("notes", it) }
+            stepNotes?.let { put("notes", it) }
         }
 
-        // iOS OrderService: text-only → JSON; add photos → multipart PUT
-        // (field "data" + "notesImages"). Never /api/upload/image.
-        if (noteImages.isEmpty()) {
-            ApiClient.get().authedPut(
-                "/api/orders/$id",
-                data.toString().toRequestBody(jsonMedia),
-            )
-            return@runCatching
+        steps.forEachIndexed { index, step ->
+            when (step) {
+                is NotesStep.Json -> {
+                    val data = fields(step.notes).apply {
+                        step.imageUrls?.let { put("notesImages", JSONArray(it)) }
+                    }
+                    ApiClient.get().authedPut("/api/orders/$id", data.toString().toRequestBody(jsonMedia))
+                }
+                is NotesStep.Upload -> {
+                    // Other fields only travel with the first request
+                    val data = if (index == 0) fields(step.notes) else JSONObject()
+                    uploadNoteImages(id, data, noteImages)
+                }
+            }
         }
+        Unit
+    }
 
+    /** Late and damage fees set at return (existing order fields) */
+    fun updateOrderFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit> = runCatching {
+        val data = JSONObject().put("lateFee", lateFee).put("damageFee", damageFee)
+        ApiClient.get().authedPut("/api/orders/$id", data.toString().toRequestBody(jsonMedia))
+        Unit
+    }
+
+    // iOS OrderService: add photos → multipart PUT (field "data" + "notesImages"). Never /api/upload/image.
+    private fun uploadNoteImages(id: Int, data: JSONObject, noteImages: List<ByteArray>) {
         val tempFiles = noteImages.mapIndexed { index, bytes ->
             requireJpeg(bytes)
             File.createTempFile("notes_image_$index", ".jpg").also { it.writeBytes(bytes) }
@@ -258,7 +293,6 @@ object ApiParity {
         } finally {
             tempFiles.forEach { runCatching { it.delete() } }
         }
-        Unit
     }
 
     private fun requireJpeg(bytes: ByteArray) {
