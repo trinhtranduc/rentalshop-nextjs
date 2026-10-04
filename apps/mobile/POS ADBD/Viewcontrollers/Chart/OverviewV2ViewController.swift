@@ -415,7 +415,7 @@ final class OverviewPeriodSheet: UIViewController {
         view.backgroundColor = DS.Color.surface
         let title = V2.label("overview.v2.period.title".localized(), size: 18, weight: .bold)
         let close = UIButton(type: .system)
-        close.setImage(DS.symbol("xmark", DS.Icon.md, weight: .semibold), for: .normal)
+        close.setImage(DS.symbol("xmark", DS.Icon.md), for: .normal)
         close.tintColor = DS.Color.textMuted
         close.accessibilityLabel = "Close".localized()
         close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)

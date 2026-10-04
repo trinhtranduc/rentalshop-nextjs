@@ -21,6 +21,7 @@ final class IconTokensTests: XCTestCase {
         XCTAssertEqual(DS.symbolPointSize(for: DS.Icon.md, name: "camera"), 12.5)
         XCTAssertEqual(DS.symbolPointSize(for: DS.Icon.md, name: "camera.fill"), 12.5)
         XCTAssertEqual(DS.symbolPointSize(for: DS.Icon.md, name: "barcode.viewfinder"), 15.5)
+        XCTAssertEqual(DS.symbolPointSize(for: DS.Icon.sm, name: "chevron.right"), 12.5)
     }
 
     func testSymbolIsSmallerThanTheOldFontSizedGlyph() throws {

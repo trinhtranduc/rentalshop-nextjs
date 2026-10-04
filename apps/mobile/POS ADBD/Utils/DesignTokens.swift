@@ -57,8 +57,8 @@ enum DS {
         static let lg: CGFloat = 22
         /// SF Symbol point size per canvas px, measured against the boards' outline icons
         static let pointFactor: CGFloat = 0.78
-        /// Glyphs much wider than the boards' at the same point size
-        static let opticalCorrection: [String: CGFloat] = ["camera": 0.8]
+        /// Glyphs that draw >10% larger than the boards' at the same point size (camera +26%, chevrons +13%)
+        static let opticalCorrection: [String: CGFloat] = ["camera": 0.8, "chevron": 0.88]
     }
 
     /// SF Symbol point size that draws like a board icon of `size` px
