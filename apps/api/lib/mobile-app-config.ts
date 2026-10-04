@@ -11,6 +11,8 @@ export const MOBILE_FEATURE_KEYS = [
   'newCalendar',
   'newOverview',
   'newSettings',
+  'newAuth',
+  'newCustomers',
 ] as const;
 
 export type MobileFeatureKey = (typeof MOBILE_FEATURE_KEYS)[number];

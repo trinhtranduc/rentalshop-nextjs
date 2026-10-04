@@ -1,7 +1,7 @@
 import XCTest
 @testable import POS_ADBD
 
-/// #370 — day labels in the device time zone, Vietnamese money
+/// #370 — day labels in the device time zone; #399 — money without a currency symbol
 final class FormattersTests: XCTestCase {
     private let vietnam = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
     private let tokyo = TimeZone(identifier: "Asia/Tokyo")!
@@ -17,8 +17,13 @@ final class FormattersTests: XCTestCase {
     }
 
     func testMoney() {
-        XCTAssertEqual(MoneyFormatter.format(1_150_000), "1.150.000đ")
-        XCTAssertEqual(MoneyFormatter.format(0), "0đ")
-        XCTAssertEqual(MoneyFormatter.format(-50_000), "−50.000đ")
+        XCTAssertEqual(MoneyFormatter.format(1_150_000), "1.150.000")
+        XCTAssertEqual(MoneyFormatter.format(0), "0")
+        XCTAssertEqual(MoneyFormatter.format(-50_000), "−50.000")
+        XCTAssertEqual(MoneyFormatter.format(-1_150_000), "−1.150.000")
+        XCTAssertEqual(MoneyFormatter.format(1_234_567_890), "1.234.567.890")
+        XCTAssertEqual(MoneyFormatter.format(999), "999")
+        XCTAssertEqual(MoneyFormatter.format(1_000.4), "1.000")
+        XCTAssertEqual(MoneyFormatter.format(-0.4), "0")
     }
 }

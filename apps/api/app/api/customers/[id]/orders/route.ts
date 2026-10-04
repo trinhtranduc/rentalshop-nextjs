@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import {
   fetchCustomerLoyaltySnapshot,
   fetchMerchantLoyaltyStatus,
@@ -17,7 +17,8 @@ import {
  * Response includes:
  * - orders (paginated, role-scoped)
  * - customer snapshot + loyalty tier (Kim Cương, …)
- * - summary.totalOrders / summary.totalAmount for the same scope
+ * - summary.totalOrders: every listed order in scope (cancelled included, equals `total`)
+ * - summary.totalAmount: money over the same scope, CANCELLED orders excluded (#405)
  *
  * Security (role scope):
  * - ADMIN: all merchants / outlets
@@ -131,10 +132,12 @@ export async function GET(
         'searchFilters': JSON.stringify(searchFilters, null, 2)
       });
 
-      // Same scope as list search — used for accurate totalAmount in header
+      // Same scope as list search — used for accurate totalAmount in header.
+      // Money excludes CANCELLED orders (revenue rule, #405); the order count (`total`) still includes them.
       const aggregateWhere: any = {
         deletedAt: null,
         customerId,
+        status: { not: ORDER_STATUS.CANCELLED },
       };
       if (searchFilters.outletId) {
         aggregateWhere.outletId = searchFilters.outletId;

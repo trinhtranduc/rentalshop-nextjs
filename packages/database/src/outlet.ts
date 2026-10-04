@@ -504,6 +504,30 @@ export const simplifiedOutlets = {
   },
 
   /**
+   * Outlet a MERCHANT login works in when the client sends no outletId (#398).
+   * The merchant's active default outlet; else its only active outlet; else null (caller answers
+   * OUTLET_REQUIRED). Always scoped to `merchantId`. An inactive default is never returned.
+   */
+  findDefaultForMerchant: async (merchantId: number | null | undefined) => {
+    if (!merchantId) return null;
+    const select = { id: true, name: true, merchantId: true, isDefault: true, isActive: true };
+    const defaultOutlet = await prisma.outlet.findFirst({
+      where: { merchantId, isDefault: true, isActive: true },
+      select,
+      orderBy: { id: 'asc' },
+    });
+    if (defaultOutlet) return defaultOutlet;
+
+    const activeOutlets = await prisma.outlet.findMany({
+      where: { merchantId, isActive: true },
+      select,
+      orderBy: { id: 'asc' },
+      take: 2,
+    });
+    return activeOutlets.length === 1 ? activeOutlets[0] : null;
+  },
+
+  /**
    * Create new outlet (simplified API)
    */
   create: async (data: any) => {

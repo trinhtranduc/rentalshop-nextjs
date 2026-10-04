@@ -7,7 +7,8 @@ Public, no token. Read by iOS and Android at launch and when the app comes back 
   "ios":     { "minVersion": "0.0.0", "latestVersion": "1.1.3", "storeUrl": null },
   "android": { "minVersion": "0.0.0", "latestVersion": "0.1.3", "storeUrl": "https://play.google.com/store/apps/details?id=anyrent.shop" },
   "features": { "newOrders": false, "newOrderDetail": false, "newProducts": false,
-                "newCalendar": false, "newOverview": false, "newSettings": false } } }
+                "newCalendar": false, "newOverview": false, "newSettings": false,
+                "newAuth": false, "newCustomers": false } } }
 ```
 
 ## Set on Railway (API service)

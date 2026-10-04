@@ -32,7 +32,7 @@ struct PlatformConfig: Codable, Equatable {
 
 /// New screens that can be switched on from the server (`MOBILE_FEATURES` on the API)
 enum MobileFeature: String, CaseIterable, Codable {
-    case newOrders, newOrderDetail, newProducts, newCalendar, newOverview, newSettings
+    case newOrders, newOrderDetail, newProducts, newCalendar, newOverview, newSettings, newAuth, newCustomers
 }
 
 struct AppConfig: Codable, Equatable {

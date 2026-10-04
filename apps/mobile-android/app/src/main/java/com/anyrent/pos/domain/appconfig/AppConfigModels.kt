@@ -28,6 +28,8 @@ enum class MobileFeature(val key: String) {
     NEW_CALENDAR("newCalendar"),
     NEW_OVERVIEW("newOverview"),
     NEW_SETTINGS("newSettings"),
+    NEW_AUTH("newAuth"),
+    NEW_CUSTOMERS("newCustomers"),
 }
 
 object AppVersion {
