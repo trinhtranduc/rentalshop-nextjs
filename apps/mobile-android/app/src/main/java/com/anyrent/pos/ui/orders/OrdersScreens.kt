@@ -99,6 +99,9 @@ import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.payment.PaymentPolicy
+import com.anyrent.pos.domain.error.ApiErrorMessages
+import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.payment.PaymentViewModel
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.AppAlertConfirm
@@ -886,6 +889,8 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
     // does not dispose the ActivityResult launcher (images would never attach).
     var notesSelectedImages by remember { mutableStateOf<List<java.io.File>>(emptyList()) }
     var notesPickingImages by remember { mutableStateOf(false) }
+    // Stored note photos the user keeps in the editor; null = untouched (#372: removal reaches the API)
+    var notesKeptImages by remember { mutableStateOf<List<String>?>(null) }
     // Coil model (URL String or File) for full-screen note image preview.
     var previewNoteImage by remember { mutableStateOf<Any?>(null) }
     var showCollateralEditor by remember { mutableStateOf(false) }
@@ -899,8 +904,13 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
     var pendingNextStatus by remember { mutableStateOf<String?>(null) }
     var statusSubmitting by remember { mutableStateOf(false) }
     var actionMessage by remember { mutableStateOf<String?>(null) }
+    // A rejected status change (e.g. INVALID_ORDER_STATUS) is shown in a dialog (#372)
+    var statusError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    fun showStatusFailure(error: Throwable) {
+        statusError = ApiErrorMessages.resolve(context, AppError.from(error).code, error.message.orEmpty())
+    }
     val notesImagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents(),
     ) { uris ->
@@ -909,7 +919,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         // Copy while the picker grant is still valid — later openInputStream often fails.
         scope.launch {
-            val existingCount = detail?.notesImages?.size ?: 0
+            val existingCount = (notesKeptImages ?: detail?.notesImages)?.size ?: 0
             val slots = (MAX_NOTE_IMAGES - existingCount - notesSelectedImages.size).coerceAtLeast(0)
             val copied = withContext(Dispatchers.IO) {
                 uris.take(slots).mapNotNull { uri ->
@@ -1027,7 +1037,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                                         statusSubmitting = true
                                         withContext(Dispatchers.IO) {
                                             ApiClient.get().updateOrderStatus(orderId, status)
-                                        }
+                                        }.onFailure { showStatusFailure(it) }
                                         statusSubmitting = false
                                         load()
                                     }
@@ -1494,11 +1504,9 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     }
                     scope.launch {
                         statusSubmitting = true
-                        runCatching {
-                            withContext(Dispatchers.IO) {
-                                ApiClient.get().updateOrderStatus(orderId, next)
-                            }
-                        }.onFailure { actionMessage = it.message }
+                        withContext(Dispatchers.IO) {
+                            ApiClient.get().updateOrderStatus(orderId, next)
+                        }.onFailure { showStatusFailure(it) }
                         statusSubmitting = false
                         showPaymentSheet = false
                         pendingNextStatus = null
@@ -1526,7 +1534,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     statusSubmitting = true
                     withContext(Dispatchers.IO) {
                         ApiClient.get().updateOrderStatus(orderId, "CANCELLED")
-                    }.onFailure { actionMessage = it.message }
+                    }.onFailure { showStatusFailure(it) }
                     statusSubmitting = false
                     load()
                 }
@@ -1560,10 +1568,12 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
             orderId = orderId,
             initialNotes = notes,
             existingImages = detail!!.notesImages,
+            keptImages = notesKeptImages ?: detail!!.notesImages,
+            onKeptImagesChange = { notesKeptImages = it },
             selectedImages = notesSelectedImages,
             onSelectedImagesChange = { notesSelectedImages = it },
             onPickImages = {
-                val existingCount = detail?.notesImages?.size ?: 0
+                val existingCount = (notesKeptImages ?: detail?.notesImages)?.size ?: 0
                 val slots = (MAX_NOTE_IMAGES - existingCount - notesSelectedImages.size).coerceAtLeast(0)
                 if (slots > 0) {
                     notesPickingImages = true
@@ -1576,15 +1586,21 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     showNotesEditor = false
                     notesSelectedImages.forEach { runCatching { it.delete() } }
                     notesSelectedImages = emptyList()
+                    notesKeptImages = null
                 }
             },
             onSaved = {
                 showNotesEditor = false
                 notesSelectedImages.forEach { runCatching { it.delete() } }
                 notesSelectedImages = emptyList()
+                notesKeptImages = null
                 load()
             },
         )
+    }
+
+    statusError?.let { message ->
+        AppAlertError(message = message, onDismiss = { statusError = null })
     }
 
     previewNoteImage?.let { model ->
@@ -1720,6 +1736,8 @@ private fun OrderNotesEditorSheet(
     orderId: Int,
     initialNotes: String,
     existingImages: List<String>,
+    keptImages: List<String>,
+    onKeptImagesChange: (List<String>) -> Unit,
     selectedImages: List<java.io.File>,
     onSelectedImagesChange: (List<java.io.File>) -> Unit,
     onPickImages: () -> Unit,
@@ -1731,7 +1749,7 @@ private fun OrderNotesEditorSheet(
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val canAddMore = existingImages.size + selectedImages.size < MAX_NOTE_IMAGES
+    val canAddMore = keptImages.size + selectedImages.size < MAX_NOTE_IMAGES
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1800,19 +1818,27 @@ private fun OrderNotesEditorSheet(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    existingImages.take(MAX_NOTE_IMAGES).forEach { url ->
-                        AsyncImage(
-                            model = url,
-                            contentDescription = stringResource(R.string.notes),
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(86.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(10.dp),
-                                )
-                                .clickable { onPreviewImage(url) },
-                        )
+                    keptImages.forEach { url ->
+                        Box {
+                            AsyncImage(
+                                model = url,
+                                contentDescription = stringResource(R.string.notes),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(86.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(10.dp),
+                                    )
+                                    .clickable { onPreviewImage(url) },
+                            )
+                            IconButton(
+                                onClick = { onKeptImagesChange(keptImages - url) },
+                                modifier = Modifier.align(Alignment.TopEnd).size(36.dp),
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.delete))
+                            }
+                        }
                     }
                     selectedImages.forEach { file ->
                         Box {
@@ -1864,6 +1890,7 @@ private fun OrderNotesEditorSheet(
                                         notes = text.trim(),
                                         noteImages = bytes,
                                         existingNoteImageUrls = existingImages,
+                                        keptNoteImageUrls = keptImages,
                                     ).getOrThrow()
                                 }
                             }

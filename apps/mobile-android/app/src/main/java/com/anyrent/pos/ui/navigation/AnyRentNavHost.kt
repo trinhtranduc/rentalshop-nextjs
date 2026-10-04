@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
+import com.anyrent.pos.ui.orders.v2.OrderDetailV2Screen
 import com.anyrent.pos.ui.orders.v2.OrdersHomeScreen
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -186,6 +187,22 @@ fun AnyRentNavHost(
             arguments = listOf(navArgument("orderId") { type = NavType.IntType }),
         ) { entry ->
             val id = entry.arguments?.getInt("orderId") ?: return@composable
+            // Redesigned detail behind the server flag (#372); the current screen otherwise
+            val features by FeatureFlags.enabled.collectAsState()
+            if (MobileFeature.NEW_ORDER_DETAIL in features) {
+                OrderDetailV2Screen(
+                    orderId = id,
+                    onBack = { rootNavController.popBackStack() },
+                    onEditInCart = {
+                        MainTabRouter.openHome()
+                        rootNavController.navigate(Routes.Cart) {
+                            popUpTo(Routes.Main)
+                            launchSingleTop = true
+                        }
+                    },
+                )
+                return@composable
+            }
             OrderDetailScreen(orderId = id, onBack = { rootNavController.popBackStack() })
         }
         composable(Routes.OrderCheck) { entry ->
@@ -379,6 +396,17 @@ fun AnyRentNavHost(
     LaunchedOpenDraftCart(rootNavController)
 }
 
+/**
+ * Edit order = load it into the cart (same as the list swipe "Sửa"). Shared by the orders list and the
+ * new order detail (#372). Fetch on IO, cart on the caller's thread.
+ */
+internal suspend fun loadOrderIntoCart(orderId: Int): Result<Unit> {
+    val detail = withContext(Dispatchers.IO) { ApiClient.get().getOrder(orderId) }
+        .getOrElse { return Result.failure(Exception(it.message ?: "Could not load order", it)) }
+    return runCatching { CartStore.loadFromOrderDetail(detail) }
+        .recoverCatching { throw Exception(it.message ?: "Could not load order into cart", it) }
+}
+
 @Composable
 private fun MainTabs(
     rootNavController: NavHostController,
@@ -401,21 +429,16 @@ private fun MainTabs(
         scope.launch {
             editOrderLoading = true
             editOrderError = null
-            val result = withContext(Dispatchers.IO) { ApiClient.get().getOrder(orderId) }
+            val result = loadOrderIntoCart(orderId)
             editOrderLoading = false
-            result.fold(
-                onSuccess = { detail ->
-                    runCatching { CartStore.loadFromOrderDetail(detail) }
-                        .onSuccess {
-                            MainTabRouter.openHome()
-                            rootNavController.navigate(Routes.Cart) {
-                                launchSingleTop = true
-                            }
-                        }
-                        .onFailure { editOrderError = it.message ?: "Could not load order into cart" }
-                },
-                onFailure = { editOrderError = it.message ?: "Could not load order" },
-            )
+            result
+                .onSuccess {
+                    MainTabRouter.openHome()
+                    rootNavController.navigate(Routes.Cart) {
+                        launchSingleTop = true
+                    }
+                }
+                .onFailure { editOrderError = it.message }
         }
     }
 
