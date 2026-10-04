@@ -532,7 +532,7 @@ final class CalendarDayRowCell: UITableViewCell {
         itemsLabel.text = items.isEmpty ? row.order.orderNumber : items
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
-        noteLabel.text = row.lateDays > 0 ? String(format: "Late %d days".localized(), row.lateDays) : nil
+        noteLabel.text = row.lateDays > 0 ? LateText.days(row.lateDays) : nil
         noteLabel.isHidden = row.lateDays == 0
     }
 }

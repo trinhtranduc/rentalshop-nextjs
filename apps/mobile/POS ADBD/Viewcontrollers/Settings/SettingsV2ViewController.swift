@@ -19,6 +19,8 @@ final class SettingsV2ViewController: BaseViewControler {
     private let listView = UITableView(frame: .zero, style: .plain)
     private var groups: [SettingsV2Section] = []
     private var plan: SettingsPlan?
+    /// Totals next to Khách hàng / Người dùng (#388)
+    private var counts: [SettingsV2Item: Int] = [:]
 
     private var user: User? { User.account() }
 
@@ -32,6 +34,7 @@ final class SettingsV2ViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         rebuild()
         loadPlan()
+        loadCounts()
     }
 
     override func setupUI() {
@@ -79,6 +82,21 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
+    /// Only for the rows this role sees; a failed call leaves the row without a value
+    private func loadCounts() {
+        for item in groups.flatMap({ $0.items }) {
+            guard let path = SettingsListTotal.path(for: item) else { continue }
+            TabsV2APIService.shared.performGET(path: path, parameters: ["limit": 1, "page": 1], responseType: SettingsListTotal.self,
+                                     context: "SettingsV2.count") { [weak self] response, _ in
+                DispatchQueue.main.async {
+                    guard let self, let total = response?.total, self.counts[item] != total else { return }
+                    self.counts[item] = total
+                    self.listView.reloadData()
+                }
+            }
+        }
+    }
+
     // MARK: - Rows
 
     /// Section 0 profile, then the groups, then Đăng xuất
@@ -112,6 +130,8 @@ final class SettingsV2ViewController: BaseViewControler {
             return Utils.loadNotePrinter().replacingOccurrences(of: "\n", with: " ")
         case .printer:
             return Utils.loadBillPrinter()
+        case .customers, .users:
+            return counts[item].map(String.init)
         case .plan:
             return plan.map(SettingsV2Logic.planText)
         case .language:

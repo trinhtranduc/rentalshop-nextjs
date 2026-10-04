@@ -98,6 +98,7 @@ import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.domain.payment.PaymentPolicy
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
@@ -156,8 +157,17 @@ private fun fetchScopedOrders(
     endDate: String? = null,
     sortByPickup: Boolean = false,
     snapshotKind: String? = null,
+    lateOnly: Boolean = false,
 ): Result<ApiClient.PageResult<OrderSummary>> {
     val api = ApiClient.get()
+    // #388 overview "Trễ hạn": rentals out, by return day, cut at the first one not late
+    if (lateOnly) {
+        return api.searchOrders(page = page, q = q, status = "PICKUPED", orderType = "RENT", sortBy = "returnPlanAt", sortOrder = "asc")
+            .map { result ->
+                val (late, more) = OverviewLinks.latePage(result.items, result.hasMore)
+                result.copy(items = late, hasMore = more, total = null)
+            }
+    }
     val snapshotStatus = snapshotIncomeStatus(snapshotKind)
     if (snapshotStatus != null && !startDate.isNullOrBlank() && !endDate.isNullOrBlank()) {
         return api.searchIncomeOrders(
@@ -188,6 +198,10 @@ private fun fetchScopedOrders(
                 sortBy = sortBy,
                 sortOrder = "desc",
             )
+        // #388 overview top product: its orders created in the overview period
+        productId != null && productId > 0 && !startDate.isNullOrBlank() && !endDate.isNullOrBlank() ->
+            api.searchOrders(page = page, q = q, status = status, productId = productId, startDate = startDate, endDate = endDate,
+                sortBy = "createdAt", sortOrder = "desc")
         productId != null && productId > 0 ->
             api.searchProductOrders(
                 productId = productId,
@@ -244,6 +258,7 @@ fun OrdersScreen(
     endDate: String? = null,
     filteredTitle: String? = null,
     onBack: (() -> Unit)? = null,
+    lateOnly: Boolean = false,
 ) {
     var draftQuery by remember { mutableStateOf("") }
     var appliedQuery by remember { mutableStateOf("") }
@@ -288,6 +303,7 @@ fun OrdersScreen(
                     endDate = endDate,
                     sortByPickup = effectiveSortByPickup,
                     snapshotKind = snapshotKind,
+                    lateOnly = lateOnly,
                 )
             }
             if (appliedQuery.trim() != requestedQuery) return@launch
@@ -341,6 +357,7 @@ fun OrdersScreen(
                     endDate = endDate,
                     sortByPickup = effectiveSortByPickup,
                     snapshotKind = snapshotKind,
+                    lateOnly = lateOnly,
                 )
             }
             loadingMore = false
@@ -511,7 +528,10 @@ fun OrdersScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        val sortedOrders = if (!isSaleTab && sortByPickup) {
+                        // #388 "Trễ hạn": keep the API order (most late first)
+                        val sortedOrders = if (lateOnly) {
+                            orders
+                        } else if (!isSaleTab && sortByPickup) {
                             orders.sortedByDescending { it.pickupPlanAt.orEmpty() }
                         } else {
                             orders.sortedByDescending { it.createdAt.orEmpty() }

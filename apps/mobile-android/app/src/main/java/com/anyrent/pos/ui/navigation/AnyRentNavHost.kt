@@ -86,6 +86,7 @@ import com.anyrent.pos.ui.inbox.InboxScreen
 import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
 import com.anyrent.pos.ui.orders.OrdersScreen
+import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
 import com.anyrent.pos.ui.settings.AppInfoScreen
@@ -117,7 +118,8 @@ object Routes {
     const val OrderDetail = "order/{orderId}"
     const val OrderCheck = "order-check"
     const val FindOrder = "find-order"
-    const val AnalyticsOrders = "analytics-orders/{entityType}/{entityId}"
+    // #388: optional period (overview top product); without it, every order of the entity
+    const val AnalyticsOrders = "analytics-orders/{entityType}/{entityId}?start={start}&end={end}"
     const val OverviewStatusOrders = "overview-orders/{kind}/{startDate}/{endDate}"
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
@@ -139,6 +141,8 @@ object Routes {
 
     fun orderDetail(id: Int) = "order/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
+    fun analyticsOrders(entityType: String, entityId: Int, start: String, end: String) =
+        "analytics-orders/$entityType/$entityId?start=$start&end=$end"
     fun overviewStatusOrders(kind: String, startDate: String, endDate: String) =
         "overview-orders/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
@@ -301,6 +305,8 @@ fun AnyRentNavHost(
             arguments = listOf(
                 navArgument("entityType") { type = NavType.StringType },
                 navArgument("entityId") { type = NavType.IntType },
+                navArgument("start") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("end") { type = NavType.StringType; nullable = true; defaultValue = null },
             ),
         ) { entry ->
             val entityType = entry.arguments?.getString("entityType") ?: return@composable
@@ -310,6 +316,8 @@ fun AnyRentNavHost(
                 onOrderCheck = {},
                 productId = entityId.takeIf { entityType == "product" },
                 customerId = entityId.takeIf { entityType == "customer" },
+                startDate = entry.arguments?.getString("start"),
+                endDate = entry.arguments?.getString("end"),
                 filteredTitle = stringResource(
                     if (entityType == "product") R.string.product_orders
                     else R.string.customer_orders,
@@ -333,16 +341,22 @@ fun AnyRentNavHost(
                 "pickup" -> R.string.in_progress
                 "return" -> R.string.completed
                 "cancelled" -> R.string.cancelled
+                OverviewLinks.RENTED -> R.string.overview_v2_rented_out
+                OverviewLinks.LATE -> R.string.overview_v2_late_returns
                 else -> R.string.orders
             }
+            // #388: "rented" / "late" are lists of now, not of the period
+            val now = kind == OverviewLinks.RENTED || kind == OverviewLinks.LATE
             OrdersScreen(
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                 onOrderCheck = {},
-                snapshotKind = kind,
-                startDate = startDate,
-                endDate = endDate,
+                initialStatus = "PICKUPED".takeIf { now },
+                snapshotKind = kind.takeUnless { now },
+                startDate = startDate.takeUnless { now },
+                endDate = endDate.takeUnless { now },
                 filteredTitle = stringResource(titleRes),
                 onBack = { rootNavController.popBackStack() },
+                lateOnly = kind == OverviewLinks.LATE,
             )
         }
         composable(Routes.Cart) {
@@ -371,6 +385,7 @@ fun AnyRentNavHost(
                 onBack = { rootNavController.popBackStack() },
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                 onOpenCalendar = { id -> rootNavController.navigate(Routes.productAvailability(id)) },
+                onOpenAllOrders = { id -> rootNavController.navigate(Routes.analyticsOrders("product", id)) },
             )
         }
         composable(Routes.CartV2) {
@@ -730,7 +745,10 @@ private fun MainTabs(
             // #374: redesigned overview behind `newOverview`
             val features by FeatureFlags.enabled.collectAsState()
             if (MobileFeature.NEW_OVERVIEW in features) {
-                OverviewV2Screen()
+                OverviewV2Screen(
+                    onOpenList = { kind, start, end -> rootNavController.navigate(Routes.overviewStatusOrders(kind, start, end)) },
+                    onOpenProduct = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("product", id, start, end)) },
+                )
                 return@composable
             }
             OverviewScreen(

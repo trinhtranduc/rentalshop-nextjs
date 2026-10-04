@@ -11,6 +11,8 @@ final class AppConfigService: BaseService {
     static let shared = AppConfigService()
 
     private let cacheKey = "AppConfigCache"
+    /// The API answers with `max-age=300`; skipping `URLCache` makes a flag change apply on the next launch (#388)
+    static let cachePolicy: URLRequest.CachePolicy = .reloadIgnoringLocalCacheData
 
     /// Last good config from a previous call (kept across logouts so a forced update survives them)
     var cached: AppConfig? {
@@ -22,7 +24,8 @@ final class AppConfigService: BaseService {
         performGET(
             path: APIEndpoint.Path.appConfig,
             responseType: APIResponse<AppConfig>.self,
-            context: "AppConfigService.fetch"
+            context: "AppConfigService.fetch",
+            cachePolicy: Self.cachePolicy
         ) { [weak self] response, _ in
             guard let self else { return }
             let config: AppConfig?

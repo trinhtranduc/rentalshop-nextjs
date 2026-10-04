@@ -142,22 +142,28 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(revenueSection())
         }
 
-        var stats: [(String, String, UIColor)] = []
+        // #388: each figure opens its list
+        var stats: [(String, String, UIColor, OverviewRankingOrdersFilter?)] = []
         if showsRevenue, let newOrders = report?.newOrders {
-            stats.append(("overview.v2.newOrders".localized(), "\(newOrders)", DS.Color.text))
+            let title = "overview.v2.newOrders".localized()
+            stats.append((title, "\(newOrders)", DS.Color.text, .snapshot(.newOrders, title: title)))
         }
         if let rentedOut = now?.rentedOut {
-            stats.append(("overview.v2.rentedOut".localized(), "\(rentedOut)", DS.Color.text))
+            let title = "overview.v2.rentedOut".localized()
+            stats.append((title, "\(rentedOut)", DS.Color.text, .rentedOut(title: title)))
         }
         if showsOperations, let now {
-            stats.append(("overview.v2.lateReturns".localized(), "\(now.lateReturns)", now.lateReturns > 0 ? V2.danger : DS.Color.text))
+            let title = "overview.v2.lateReturns".localized()
+            stats.append((title, "\(now.lateReturns)", now.lateReturns > 0 ? V2.danger : DS.Color.text, .lateReturns(title: title)))
         }
         if let held = now?.collateralHeld {
-            stats.append(("overview.v2.collateralHeld".localized(), MoneyFormatter.format(held), DS.Color.text))
+            // The collateral is held by the orders out now: the same list as Đang cho thuê
+            stats.append(("overview.v2.collateralHeld".localized(), MoneyFormatter.format(held), DS.Color.text,
+                          .rentedOut(title: "overview.v2.rentedOut".localized())))
         }
         if !stats.isEmpty {
             contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.orders".localized()))
-            stats.forEach { contentStack.addArrangedSubview(statRow($0.0, value: $0.1, color: $0.2)) }
+            stats.forEach { contentStack.addArrangedSubview(statRow($0.0, value: $0.1, color: $0.2, opens: $0.3)) }
         }
 
         if showsRevenue, let top = report?.topProducts, !top.isEmpty {
@@ -238,13 +244,21 @@ final class OverviewV2ViewController: BaseViewControler {
         return padded(stack)
     }
 
-    private func statRow(_ label: String, value: String, color: UIColor) -> UIView {
+    private func statRow(_ label: String, value: String, color: UIColor, opens filter: OverviewRankingOrdersFilter?) -> UIView {
         let title = V2.label(label, size: 15)
         let number = V2.label(value, size: 16, weight: .bold, color: color)
         number.textAlignment = .right
         let row = UIStackView(arrangedSubviews: [title, number])
         row.alignment = .center
-        let wrapper = UIView()
+        row.spacing = DS.Spacing.md
+        row.isUserInteractionEnabled = false
+        let wrapper = OverviewLinkRow()
+        if let filter {
+            row.addArrangedSubview(chevron())
+            wrapper.filter = filter
+            wrapper.addTarget(self, action: #selector(linkTapped(_:)), for: .touchUpInside)
+            wrapper.accessibilityTraits = UIAccessibilityTraitButton
+        }
         wrapper.addSubview(row)
         row.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
@@ -287,7 +301,15 @@ final class OverviewV2ViewController: BaseViewControler {
         let row = UIStackView(arrangedSubviews: [thumb, texts, revenue])
         row.spacing = DS.Spacing.md
         row.alignment = .center
-        let wrapper = UIView()
+        row.isUserInteractionEnabled = false
+        let wrapper = OverviewLinkRow()
+        if let id = product.id {
+            wrapper.filter = .product(id: id, name: product.name)
+            wrapper.addTarget(self, action: #selector(linkTapped(_:)), for: .touchUpInside)
+            wrapper.isAccessibilityElement = true
+            wrapper.accessibilityTraits = UIAccessibilityTraitButton
+            wrapper.accessibilityLabel = [product.name, times.text, revenue.text].compactMap { $0 }.joined(separator: ", ")
+        }
         wrapper.addSubview(row)
         row.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg))
@@ -296,6 +318,32 @@ final class OverviewV2ViewController: BaseViewControler {
         wrapper.addSubview(line)
         line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
         return wrapper
+    }
+
+    private func chevron() -> UIView {
+        let image = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
+        image.tintColor = UIColor(hexString: "94A3B8")
+        image.setContentHuggingPriority(.required, for: .horizontal)
+        return image
+    }
+
+    /// The same period as the figures for Đơn mới and a top product; "now" for the others
+    @objc private func linkTapped(_ sender: OverviewLinkRow) {
+        guard let filter = sender.filter else { return }
+        let range = self.range
+        let dated: Bool
+        switch filter {
+        case .snapshot, .product: dated = true
+        default: dated = false
+        }
+        let list = OverviewRankingOrdersViewController(
+            filter: filter,
+            startDate: dated ? OverviewLogic.date(of: range.start) : nil,
+            endDate: dated ? OverviewLogic.date(of: range.end) : nil,
+            periodSubtitle: dated ? OverviewLogic.longRange(range) : DayFormatter.short(Date())
+        )
+        list.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(list, animated: true)
     }
 
     // MARK: - Period sheet
@@ -346,6 +394,15 @@ private extension UIView {
         let view = UIView()
         view.snp.makeConstraints { make in make.height.equalTo(height) }
         return view
+    }
+}
+
+/// A tappable overview row that knows which list it opens
+final class OverviewLinkRow: UIControl {
+    var filter: OverviewRankingOrdersFilter?
+
+    override var isHighlighted: Bool {
+        didSet { backgroundColor = isHighlighted && filter != nil ? V2.chipFill : .clear }
     }
 }
 

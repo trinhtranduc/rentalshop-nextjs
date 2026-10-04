@@ -121,3 +121,33 @@ struct SettingsPlanResponse: Decodable {
     let success: Bool
     let data: SettingsPlan?
 }
+
+/// `total` of a list endpoint called with `limit=1` (#388): customers answer `data.total`, users `pagination.total`
+struct SettingsListTotal: Codable {
+    let total: Int?
+
+    private enum Keys: String, CodingKey { case data, pagination }
+    private enum TotalKeys: String, CodingKey { case total }
+
+    init(total: Int?) { self.total = total }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Keys.self)
+        func read(_ key: Keys) -> Int? {
+            guard let nested = try? c.nestedContainer(keyedBy: TotalKeys.self, forKey: key) else { return nil }
+            return (try? nested.decodeIfPresent(Int.self, forKey: .total)) ?? nil
+        }
+        total = read(.data) ?? read(.pagination)
+    }
+
+    func encode(to encoder: Encoder) throws {}
+
+    /// The list that gives the count next to a settings row
+    static func path(for item: SettingsV2Item) -> String? {
+        switch item {
+        case .customers: return "/api/customers"
+        case .users: return "/api/users"
+        default: return nil
+        }
+    }
+}

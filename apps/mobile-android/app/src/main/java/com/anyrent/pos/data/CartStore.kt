@@ -62,6 +62,12 @@ object CartStore {
     private val _depositAmount = MutableStateFlow(0.0)
     val depositAmount: StateFlow<Double> = _depositAmount.asStateFlow()
 
+    /**
+     * The user typed the deposit, or it came from an order being edited: item changes keep it (iOS
+     * `Cart.isDepositManuallyOverridden`). Otherwise the deposit follows the items (#388).
+     */
+    private var depositManual = false
+
     private val _securityDeposit = MutableStateFlow(0.0)
     val securityDeposit: StateFlow<Double> = _securityDeposit.asStateFlow()
 
@@ -143,7 +149,15 @@ object CartStore {
     }
     fun setDeposit(value: Double) {
         _depositAmount.value = value
+        depositManual = true
         persist()
+    }
+
+    /** iOS `Cart.depositAmount`: Σ item deposit × quantity */
+    fun autoDeposit(lines: List<CartLine>): Double = lines.sumOf { it.product.deposit * it.quantity }
+
+    private fun refreshAutoDeposit() {
+        if (!depositManual) _depositAmount.value = autoDeposit(_lines.value)
     }
     fun setSecurityDeposit(value: Double) {
         _securityDeposit.value = value
@@ -179,11 +193,7 @@ object CartStore {
                 current + CartLine(product = product, quantity = quantity, rentalDays = days, isSale = sale)
             }
         }
-        // Auto deposit = sum of item deposits for rent
-        if (!sale) {
-            val auto = _lines.value.sumOf { it.product.deposit * it.quantity }
-            if (_depositAmount.value <= 0) _depositAmount.value = auto
-        }
+        refreshAutoDeposit()
         persist()
     }
 
@@ -195,6 +205,7 @@ object CartStore {
         _lines.update { list ->
             list.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         }
+        refreshAutoDeposit()
         persist()
     }
 
@@ -240,6 +251,7 @@ object CartStore {
 
     fun remove(productId: Int) {
         _lines.update { it.filterNot { line -> line.product.id == productId } }
+        refreshAutoDeposit()
         persist()
     }
 
@@ -251,6 +263,7 @@ object CartStore {
         _discount.value = 0.0
         _discountType.value = DiscountType.AMOUNT
         _depositAmount.value = 0.0
+        depositManual = false
         _securityDeposit.value = 0.0
         _collateralDetails.value = ""
         _pickupDate.value = LocalDate.now()
@@ -334,6 +347,7 @@ object CartStore {
         _notes.value = summary.notes.orEmpty()
         _collateralDetails.value = detail.collateralDetails.orEmpty()
         _depositAmount.value = summary.depositAmount.takeUnless { it.isNaN() } ?: 0.0
+        depositManual = true
         _securityDeposit.value = detail.securityDeposit.takeUnless { it.isNaN() } ?: 0.0
         _discount.value = when {
             detail.discountValue > 0 -> detail.discountValue
@@ -434,6 +448,7 @@ object CartStore {
             .put("discount", _discount.value)
             .put("discountType", _discountType.value.name)
             .put("deposit", _depositAmount.value)
+            .put("depositManual", depositManual)
             .put("security", _securityDeposit.value)
             .put("collateral", _collateralDetails.value)
             .put("customer", customerJson ?: JSONObject.NULL)
@@ -505,6 +520,9 @@ object CartStore {
                 unitPriceOverride = override,
             )
         }
+        // A draft saved before #388 has no flag: keep its deposit when it differs from the items' sum
+        depositManual = if (json.has("depositManual")) json.optBoolean("depositManual")
+        else _depositAmount.value != autoDeposit(_lines.value)
     }
 
     /** Day in the device zone, the same zone the cart sends with `isoPickup` / `isoReturn` (#413) */

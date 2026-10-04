@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.domain.overview.DayRange
+import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.domain.overview.OverviewBar
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewPeriod
@@ -94,7 +96,13 @@ private fun presetTitle(preset: OverviewPreset): String = stringResource(
 /** Redesigned overview tab (#374, boards Tong-quan, Tong-quan-chon), shown when `newOverview` is on */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OverviewV2Screen(viewModel: OverviewV2ViewModel = viewModel(factory = OverviewV2ViewModel.Factory())) {
+fun OverviewV2Screen(
+    viewModel: OverviewV2ViewModel = viewModel(factory = OverviewV2ViewModel.Factory()),
+    /** #388: (kind, start, end) of the `overview-orders` route */
+    onOpenList: (String, String, String) -> Unit = { _, _, _ -> },
+    /** #388: (product id, start, end) */
+    onOpenProduct: (Int, String, String) -> Unit = { _, _, _ -> },
+) {
     val state by viewModel.state.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
@@ -137,23 +145,29 @@ fun OverviewV2Screen(viewModel: OverviewV2ViewModel = viewModel(factory = Overvi
                         RevenueSection(state.report, state.loading, state.reportError, range, onRetry = viewModel::load)
                     }
                 }
+                // #388: each figure opens its list (the kind of the `overview-orders` route)
                 val stats = buildList {
-                    state.report?.newOrders?.takeIf { state.showsRevenue }?.let { add(Triple(R.string.overview_v2_new_orders, it.toString(), DS.Colors.Text)) }
-                    state.now?.rentedOut?.let { add(Triple(R.string.overview_v2_rented_out, it.toString(), DS.Colors.Text)) }
+                    state.report?.newOrders?.takeIf { state.showsRevenue }?.let { add(StatRowData(R.string.overview_v2_new_orders, it.toString(), DS.Colors.Text, OverviewLinks.NEW)) }
+                    state.now?.rentedOut?.let { add(StatRowData(R.string.overview_v2_rented_out, it.toString(), DS.Colors.Text, OverviewLinks.RENTED)) }
                     state.now?.takeIf { state.showsOperations }?.let {
-                        add(Triple(R.string.overview_v2_late_returns, it.lateReturns.toString(), if (it.lateReturns > 0) V2Colors.Danger else DS.Colors.Text))
+                        add(StatRowData(R.string.overview_v2_late_returns, it.lateReturns.toString(), if (it.lateReturns > 0) V2Colors.Danger else DS.Colors.Text, OverviewLinks.LATE))
                     }
-                    state.now?.collateralHeld?.let { add(Triple(R.string.overview_v2_collateral_held, formatMoneyVnd(it), DS.Colors.Text)) }
+                    // The collateral is held by the orders out now: the same list as Đang cho thuê
+                    state.now?.collateralHeld?.let { add(StatRowData(R.string.overview_v2_collateral_held, formatMoneyVnd(it), DS.Colors.Text, OverviewLinks.RENTED)) }
                 }
                 if (stats.isNotEmpty()) {
                     item(key = "orders-band") { SectionBand(stringResource(R.string.overview_v2_orders)) }
-                    items(stats, key = { it.first }) { (label, value, color) ->
+                    items(stats, key = { it.label }) { stat ->
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp),
+                            Modifier.fillMaxWidth()
+                                .then(if (stat.kind != null) Modifier.clickable { onOpenList(stat.kind, range.start.toString(), range.end.toString()) } else Modifier)
+                                .heightIn(min = 48.dp).padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text(stringResource(label), fontSize = 15.sp, color = DS.Colors.Text, modifier = Modifier.weight(1f))
-                            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color)
+                            Text(stringResource(stat.label), fontSize = 15.sp, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+                            Text(stat.value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = stat.color)
+                            if (stat.kind != null) Chevron()
                         }
                         ThinDivider()
                     }
@@ -161,7 +175,9 @@ fun OverviewV2Screen(viewModel: OverviewV2ViewModel = viewModel(factory = Overvi
                 val top = state.report?.topProducts.orEmpty()
                 if (state.showsRevenue && top.isNotEmpty()) {
                     item(key = "top-band") { SectionBand(stringResource(R.string.overview_v2_top_rented)) }
-                    items(top, key = { "top-${it.id}-${it.name}" }) { TopRow(it) }
+                    items(top, key = { "top-${it.id}-${it.name}" }) { product ->
+                        TopRow(product, onClick = product.id?.let { id -> { onOpenProduct(id, range.start.toString(), range.end.toString()) } })
+                    }
                 }
                 if (!state.showsRevenue && !state.showsOperations) {
                     item(key = "no-access") {
@@ -296,10 +312,18 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier) {
     }
 }
 
+private data class StatRowData(val label: Int, val value: String, val color: Color, val kind: String?)
+
 @Composable
-private fun TopRow(product: OverviewReport.TopProduct) {
+private fun Chevron() {
+    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
+}
+
+@Composable
+private fun TopRow(product: OverviewReport.TopProduct, onClick: (() -> Unit)?) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 6.dp),
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

@@ -69,6 +69,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -609,7 +610,7 @@ private fun WorkRow(
     val handOver = kind == WorkKind.HAND_OVER
     val pills = buildList {
         if (handOver && !work.isReadyToDeliver) add(stringResource(R.string.orders_v2_not_prepared) to DS.Status.Waiting)
-        if (work.lateDays > 0) add(stringResource(R.string.orders_late_days, work.lateDays) to DS.Status.Late)
+        if (work.lateDays > 0) add(pluralStringResource(R.plurals.orders_late_days, work.lateDays, work.lateDays) to DS.Status.Late)
     }
     val pay = when (val line = OrdersBoardLogic.payLine(work.amountDue, work.refundDue)) {
         is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(line.amount)) to DS.Status.Return.text
@@ -661,7 +662,7 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoa
         name = order.customerName,
         items = order.itemsSummary,
         line = line,
-        pills = if (row.lateDays > 0) listOf(stringResource(R.string.orders_late_days, row.lateDays) to DS.Status.Late) else emptyList(),
+        pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // The list API has no per-step payments: the total only (no "còn thu")

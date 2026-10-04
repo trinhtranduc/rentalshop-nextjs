@@ -94,6 +94,8 @@ data class OrderSummary(
     val updatedAt: String? = null,
     /** Item names with quantity, from the list's `orderItems` (#401) */
     val itemsSummary: String = "",
+    /** Units per product id, from the list's `orderItems` (#388) */
+    val productQuantities: Map<Int, Int> = emptyMap(),
 )
 
 data class OrderItem(

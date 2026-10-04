@@ -105,6 +105,18 @@ fun SettingsV2Screen(
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
     val sections = SettingsRows.sections(role, hasPlan = plan != null)
 
+    // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing
+    var counts by remember { mutableStateOf<Map<SettingsItem, Int>>(emptyMap()) }
+    LaunchedEffect(role) {
+        val visible = sections.flatMap { it.items }
+        counts = withContext(Dispatchers.IO) {
+            visible.mapNotNull { item ->
+                val path = SettingsRows.countPath(item) ?: return@mapNotNull null
+                runCatching { SettingsRows.listTotal(ApiClient.get().authedGet(path)) }.getOrNull()?.let { item to it }
+            }.toMap()
+        }
+    }
+
     fun signOut() {
         scope.launch {
             withContext(Dispatchers.IO) {
@@ -159,6 +171,7 @@ fun SettingsV2Screen(
                     SettingsItem.RECEIPT_NOTE -> prefs.getString("printerNote", ThermalPrinter.DEFAULT_PRINTER_NOTE).orEmpty()
                         .ifBlank { ThermalPrinter.DEFAULT_PRINTER_NOTE }.replace('\n', ' ')
                     SettingsItem.PRINTER -> prefs.getString("printerIp", "").orEmpty().ifBlank { stringResource(R.string.settings_v2_printer_none) }
+                    SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
                     else -> null

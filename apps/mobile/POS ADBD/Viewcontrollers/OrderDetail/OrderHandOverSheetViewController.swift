@@ -207,7 +207,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
         var parts = [name, "#\(detail.orderNumber)"]
         if mode == .takeReturn && lateDays > 0 {
-            parts.append(String(format: "Returned %d days late".localized(), lateDays))
+            parts.append(LateText.returned(lateDays))
         } else if let from = detail.pickupPlanAt, let to = detail.returnPlanAt {
             parts.append("\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to))")
         }
