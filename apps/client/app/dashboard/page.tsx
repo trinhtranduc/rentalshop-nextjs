@@ -36,11 +36,29 @@ import { useAuth, useDashboardTranslations, useCommonTranslations } from '@renta
 import { usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, ordersApi, customersApi, productsApi, categoriesApi, outletsApi } from '@rentalshop/utils';
 // Plain formatters, not the useFormatted* hooks: these run inside loops (#349, Rules of Hooks)
-import { formatMonthOnlyByLocale, formatDailyByLocale } from '@rentalshop/utils';
+import {
+  formatMonthOnlyByLocale,
+  formatDailyByLocale,
+  formatDateKeyInTimeZone,
+  addDaysToDateKey,
+  SHOP_TIMEZONE
+} from '@rentalshop/utils';
 import { useLocale as useNextIntlLocale } from 'next-intl';
 import { ORDER_STATUS_COLORS, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { OutletOperationsPanel, ShiftCashCard, Sparkline, UpcomingReturnsCard, useOutletOperations } from './OutletOperationsPanel';
 import type { CustomerCreateInput, ProductCreateInput } from '@rentalshop/types';
+
+/**
+ * Day keys (`YYYY-MM-DD`) of the shop's civil days (Asia/Ho_Chi_Minh), which the analytics API and the
+ * order list read as Vietnam days (#355). `toISOString().split('T')[0]` gave the UTC day: yesterday
+ * before 7 am, and one day early for local-midnight month bounds.
+ */
+const shopTodayKey = () => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE);
+const shopMonthKeys = (todayKey: string) => {
+  const startKey = `${todayKey.slice(0, 7)}-01`;
+  const nextMonthStartKey = `${addDaysToDateKey(startKey, 31).slice(0, 7)}-01`;
+  return { startKey, endKey: addDaysToDateKey(nextMonthStartKey, -1) };
+};
 
 // ============================================================================
 // TYPES
@@ -486,56 +504,43 @@ export default function DashboardPage() {
       
       setLoadingCharts(true);
 
-      // Dynamic date calculation based on time period
-      const today = new Date();
+      // Dynamic date calculation based on time period (shop civil days, #355)
+      const todayKey = shopTodayKey();
       let startDate: string;
       let endDate: string;
       let groupBy: 'day' | 'month';
 
       switch (timePeriod) {
         case 'today': {
-          const todayStr = today.toISOString().split('T')[0];
-          startDate = todayStr;
-          endDate = todayStr;
+          startDate = todayKey;
+          endDate = todayKey;
           groupBy = 'day';
           break;
         }
         case '7d': {
-          const start = new Date(today);
-          start.setDate(today.getDate() - 6);
-          startDate = start.toISOString().split('T')[0];
-          endDate = today.toISOString().split('T')[0];
+          startDate = addDaysToDateKey(todayKey, -6);
+          endDate = todayKey;
           groupBy = 'day';
           break;
         }
         case '30d': {
-          const start = new Date(today);
-          start.setDate(today.getDate() - 29);
-          startDate = start.toISOString().split('T')[0];
-          endDate = today.toISOString().split('T')[0];
-          groupBy = 'day';
-          break;
-        }
-        case 'month': {
-          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-          const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-          startDate = monthStart.toISOString().split('T')[0];
-          endDate = monthEnd.toISOString().split('T')[0];
+          startDate = addDaysToDateKey(todayKey, -29);
+          endDate = todayKey;
           groupBy = 'day';
           break;
         }
         case 'year': {
-          const currentYear = today.getFullYear();
+          const currentYear = todayKey.slice(0, 4);
           startDate = `${currentYear}-01-01`;
           endDate = `${currentYear}-12-31`;
           groupBy = 'month';
           break;
         }
+        case 'month':
         default: {
-          const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
-          const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-          startDate = defaultStart.toISOString().split('T')[0];
-          endDate = defaultEnd.toISOString().split('T')[0];
+          const month = shopMonthKeys(todayKey);
+          startDate = month.startKey;
+          endDate = month.endKey;
           groupBy = 'day';
         }
       }
@@ -1156,14 +1161,8 @@ export default function DashboardPage() {
   const currentTopProducts = getTopProducts();
   const currentTopCustomers = getTopCustomers();
 
-  // Helper function to get today's date in YYYY-MM-DD format
-  const getTodayDateString = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // Today's shop civil day (YYYY-MM-DD), the day the order list filter reads (#355)
+  const getTodayDateString = () => shopTodayKey();
 
   // Navigation handlers for stat cards
   const handleViewActiveRentals = () => {
@@ -1187,14 +1186,13 @@ export default function DashboardPage() {
       endDate = currentDateRange.endDate;
     } else {
       // Fallback: calculate from timePeriod
-      const today = new Date();
+      const todayKey = shopTodayKey();
       if (timePeriod === 'month') {
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        startDate = monthStart.toISOString().split('T')[0];
-        endDate = monthEnd.toISOString().split('T')[0];
+        const month = shopMonthKeys(todayKey);
+        startDate = month.startKey;
+        endDate = month.endKey;
       } else if (timePeriod === 'year') {
-        const currentYear = today.getFullYear();
+        const currentYear = todayKey.slice(0, 4);
         startDate = `${currentYear}-01-01`;
         endDate = `${currentYear}-12-31`;
       } else {

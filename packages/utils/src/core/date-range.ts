@@ -233,6 +233,147 @@ export function getCalendarDayRangeInTimeZone(
   return { dateKey: `${y}-${pad2(m + 1)}-${pad2(d)}`, start, end };
 }
 
+// ============================================================================
+// CIVIL DAY KEYS (analytics, dashboard, order filters) — #355
+// ============================================================================
+
+/** Shop zone for day keys. Same value as `SHOP_TIMEZONE` in `./date` (kept literal: this file has no imports). */
+const DEFAULT_CIVIL_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const DATE_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function parseDateKey(key: string): CivilDate | null {
+  const match = DATE_KEY_PATTERN.exec(key);
+  if (!match) return null;
+  const parts = { y: Number(match[1]), m: Number(match[2]) - 1, d: Number(match[3]) };
+  const check = new Date(Date.UTC(parts.y, parts.m, parts.d));
+  if (check.getUTCFullYear() !== parts.y || check.getUTCMonth() !== parts.m || check.getUTCDate() !== parts.d) {
+    return null;
+  }
+  return parts;
+}
+
+function formatCivilDate(parts: CivilDate): string {
+  return `${parts.y}-${pad2(parts.m + 1)}-${pad2(parts.d)}`;
+}
+
+/** `YYYY-MM-DD` plus `days` calendar days (pure calendar arithmetic, no time zone). */
+export function addDaysToDateKey(key: string, days: number): string {
+  const parts = parseDateKey(key);
+  if (!parts) throw new Error(`Invalid date key: ${key}`);
+  return formatCivilDate(addDays(parts, days));
+}
+
+/**
+ * Day key of a query value in `timeZone`: a `YYYY-MM-DD` key is kept as written; an ISO instant
+ * becomes the civil day that contains it. Returns null when the value is not a date.
+ */
+export function toDateKeyInTimeZone(
+  value: string | Date | null | undefined,
+  timeZone: string = DEFAULT_CIVIL_TIME_ZONE
+): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (DATE_KEY_PATTERN.test(trimmed)) return parseDateKey(trimmed) ? trimmed : null;
+    const parsed = new Date(trimmed);
+    return Number.isNaN(parsed.getTime()) ? null : formatDateKeyInTimeZone(parsed, timeZone);
+  }
+  return Number.isNaN(value.getTime()) ? null : formatDateKeyInTimeZone(value, timeZone);
+}
+
+/** One civil day (`YYYY-MM-DD`) of `timeZone` as UTC instants. */
+function civilDayForKey(key: string, timeZone: string): ZonedCalendarDay {
+  const parts = parseDateKey(key);
+  if (!parts) throw new Error(`Invalid date key: ${key}`);
+  // Noon UTC of the key is on that calendar date or one day off in any zone; correct by the difference.
+  const reference = new Date(Date.UTC(parts.y, parts.m, parts.d, 12));
+  const day = getCalendarDayRangeInTimeZone(reference, timeZone);
+  if (day.dateKey === key) return day;
+  const shift = Math.round((Date.UTC(parts.y, parts.m, parts.d) - Date.parse(`${day.dateKey}T00:00:00Z`)) / DAY_MS);
+  return getCalendarDayRangeInTimeZone(reference, timeZone, shift);
+}
+
+/**
+ * UTC bounds of the civil days `from`..`to` (inclusive, `YYYY-MM-DD`) in `timeZone` (default Vietnam).
+ *
+ * @example
+ * getUtcRangeForDateKeys({ from: '2026-10-02' })
+ * // { start: 2026-10-01T17:00:00.000Z, end: 2026-10-02T16:59:59.999Z }
+ */
+export function getUtcRangeForDateKeys(
+  range: { from: string; to?: string | null },
+  timeZone: string = DEFAULT_CIVIL_TIME_ZONE
+): { start: Date; end: Date } {
+  const to = range.to || range.from;
+  return {
+    start: civilDayForKey(range.from, timeZone).start,
+    end: civilDayForKey(to, timeZone).end,
+  };
+}
+
+/** Every civil day from `fromKey` to `toKey` (inclusive) with its UTC bounds. */
+export function listCivilDays(
+  fromKey: string,
+  toKey: string,
+  timeZone: string = DEFAULT_CIVIL_TIME_ZONE
+): ZonedCalendarDay[] {
+  const days: ZonedCalendarDay[] = [];
+  for (let key = fromKey; key <= toKey; key = addDaysToDateKey(key, 1)) {
+    days.push(civilDayForKey(key, timeZone));
+  }
+  return days;
+}
+
+export interface CivilMonth {
+  year: number;
+  /** 1-12 */
+  month: number;
+  /** First and last day of the month (`YYYY-MM-DD`) */
+  startKey: string;
+  endKey: string;
+  start: Date;
+  end: Date;
+}
+
+/** Every civil month touched by `fromKey`..`toKey`, each as its whole month in `timeZone`. */
+export function listCivilMonths(
+  fromKey: string,
+  toKey: string,
+  timeZone: string = DEFAULT_CIVIL_TIME_ZONE
+): CivilMonth[] {
+  const from = parseDateKey(fromKey);
+  const to = parseDateKey(toKey);
+  if (!from || !to) throw new Error(`Invalid date keys: ${fromKey}..${toKey}`);
+  const months: CivilMonth[] = [];
+  let y = from.y;
+  let m = from.m;
+  while (y < to.y || (y === to.y && m <= to.m)) {
+    const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    const startKey = formatCivilDate({ y, m, d: 1 });
+    const endKey = formatCivilDate({ y, m, d: lastDay });
+    months.push({ year: y, month: m + 1, startKey, endKey, ...getUtcRangeForDateKeys({ from: startKey, to: endKey }, timeZone) });
+    m += 1;
+    if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+  }
+  return months;
+}
+
+/**
+ * Bucket labels of an instant's civil day, in the formats analytics responses have always used:
+ * `date` = `YYYY/MM/DD`, `dateISO` = that calendar date at `00:00:00.000Z`.
+ */
+export function civilDayBucket(
+  instant: Date | string,
+  timeZone: string = DEFAULT_CIVIL_TIME_ZONE
+): { dateKey: string; date: string; dateISO: string } {
+  const dateKey = formatDateKeyInTimeZone(new Date(instant), timeZone);
+  return { dateKey, date: dateKey.replace(/-/g, '/'), dateISO: `${dateKey}T00:00:00.000Z` };
+}
+
 /**
  * Get date range from period option
  *
