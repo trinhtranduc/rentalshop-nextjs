@@ -167,6 +167,7 @@
 		4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */; };
 		4C1E7AD24480CC24122D7DF9 /* AppConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628848789A17EEF1ECD704C3 /* AppConfigService.swift */; };
 		506BFF4372513384679B2314 /* NewCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */; };
+		5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */; };
 		523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */; };
 		57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */; };
 		607E5D13DAD404F7F526AA2C /* CustomersV2ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */; };
@@ -495,8 +496,8 @@
 		15E19ED151DD6F782E5777FB /* OrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersViewController.swift; sourceTree = "<group>"; };
 		16733093F5AD2CBACB593E6B /* CalendarV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2.swift; sourceTree = "<group>"; };
 		1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ViewModel.swift; sourceTree = "<group>"; };
-		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
 		286EED8E25240975FDF5D455 /* IconTokensTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IconTokensTests.swift; sourceTree = "<group>"; };
+		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
 		32451210261D4A00E83FEBAA /* OrderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderStatusTests.swift; sourceTree = "<group>"; };
 		371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2ViewController.swift; sourceTree = "<group>"; };
 		42DC389596269843419D1B18 /* OrdersHomeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeTests.swift; sourceTree = "<group>"; };
@@ -567,6 +568,7 @@
 		8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		928C3E8D4BF3A29D647F9A0B /* Pods-POS ADBDTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.release.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.release.xcconfig"; sourceTree = "<group>"; };
 		97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogic.swift; sourceTree = "<group>"; };
+		9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditCustomerViewController.swift; sourceTree = "<group>"; };
 		9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Tests.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000011 /* DraftOrderAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderAttributes.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000012 /* DraftOrderLiveActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityView.swift; sourceTree = "<group>"; };
@@ -1342,6 +1344,7 @@
 				2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */,
 				D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */,
 				57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */,
+				9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */,
 			);
 			name = v2;
 			path = v2;
@@ -1913,6 +1916,7 @@
 				506BFF4372513384679B2314 /* NewCustomerViewController.swift in Sources */,
 				8BC77D064D622C3C87D1C5D9 /* CustomerDetailV2ViewController.swift in Sources */,
 				66D5C9154CEE12049C3B85DD /* OnboardingV2ViewController.swift in Sources */,
+				5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

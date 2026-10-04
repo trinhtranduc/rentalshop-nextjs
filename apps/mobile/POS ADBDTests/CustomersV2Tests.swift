@@ -210,6 +210,51 @@ final class CustomersV2Tests: XCTestCase {
         XCTAssertEqual(CustomersV2Logic.orderDates(sale, timeZone: vn), DayFormatter.short(ret, timeZone: vn))
     }
 
+    // MARK: - Edit (KH-sua)
+
+    func testEditFormFromProfileKeepsTheStoredDate() throws {
+        let json = #"{"success":true,"data":{"id":64,"firstName":"Trần","lastName":"Văn Minh","phone":"0901387002","email":null,"address":"12 Lê Lợi","idNumber":null,"dateOfBirth":"1990-05-12T00:00:00.000Z","notes":"VIP"}}"#
+        let profile = try XCTUnwrap(try JSONDecoder.shared.decode(CustomerProfileResponse.self, from: json.data(using: .utf8)!).data)
+        let form = CustomerEditLogic.form(from: profile)
+        XCTAssertEqual(form.name, "Trần Văn Minh")
+        XCTAssertEqual(form.email, "")
+        XCTAssertEqual(form.dateOfBirth, "12/05/1990")
+        XCTAssertEqual(form.notes, "VIP")
+        // Missing optional fields
+        let bare = try XCTUnwrap(try JSONDecoder.shared.decode(CustomerProfileResponse.self, from: #"{"success":true,"data":{"id":1}}"#.data(using: .utf8)!).data)
+        XCTAssertEqual(CustomerEditLogic.form(from: bare), CustomerEditForm())
+    }
+
+    func testEditValidation() {
+        var form = CustomerEditForm(phone: "0901", name: "Lan")
+        XCTAssertNil(CustomerEditLogic.validate(form))
+        form.phone = " "
+        XCTAssertEqual(CustomerEditLogic.validate(form), .missingPhone)
+        form.phone = "0901"; form.name = ""
+        XCTAssertEqual(CustomerEditLogic.validate(form), .missingName)
+        form.name = "Lan"; form.email = "lan@"
+        XCTAssertEqual(CustomerEditLogic.validate(form), .badEmail)
+        form.email = "lan@email.com"; form.dateOfBirth = "31/02/1990"
+        XCTAssertEqual(CustomerEditLogic.validate(form), .badDate)
+        form.dateOfBirth = "29/02/2024"
+        XCTAssertNil(CustomerEditLogic.validate(form))
+    }
+
+    func testEditPayloadClearsEmptiedFields() {
+        let form = CustomerEditForm(phone: " 0901 387 002 ", name: "Trần Văn Minh", email: "", address: "12 Lê Lợi",
+                                    idNumber: "", dateOfBirth: "12/05/1990", notes: " ")
+        let body = CustomerEditLogic.updatePayload(form)
+        XCTAssertEqual(body["firstName"] as? String, "Trần")
+        XCTAssertEqual(body["lastName"] as? String, "Văn Minh")
+        XCTAssertEqual(body["phone"] as? String, "0901 387 002")
+        XCTAssertEqual(body["email"] as? String, "")
+        XCTAssertEqual(body["idNumber"] as? String, "")
+        XCTAssertEqual(body["notes"] as? String, "")
+        XCTAssertEqual(body["dateOfBirth"] as? String, "1990-05-12T00:00:00.000Z")
+        XCTAssertEqual(CustomerEditLogic.updatePayload(CustomerEditForm(phone: "1", name: "A"))["dateOfBirth"] as? String, "")
+        XCTAssertEqual(CustomerEditLogic.updatePayload(CustomerEditForm(phone: "1", name: "A"))["lastName"] as? String, "")
+    }
+
     // MARK: - Fake
 
     private final class FakeSource: CustomersV2DataSource {
@@ -241,6 +286,14 @@ final class CustomersV2Tests: XCTestCase {
         }
 
         func countRenting(customerId: Int, completion: @escaping (Int?) -> Void) {
+            completion(nil)
+        }
+
+        func loadProfile(customerId: Int, completion: @escaping (CustomerProfile?, NSError?) -> Void) {
+            completion(nil, nil)
+        }
+
+        func updateCustomer(customerId: Int, params: [String: Any], completion: @escaping (NSError?) -> Void) {
             completion(nil)
         }
     }

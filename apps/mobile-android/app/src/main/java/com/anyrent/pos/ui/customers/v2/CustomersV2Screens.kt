@@ -102,7 +102,6 @@ import com.anyrent.pos.ui.common.AppIcon
 import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
-import com.anyrent.pos.ui.customers.CustomerFormScreen
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -553,6 +552,9 @@ fun CustomerDetailV2Screen(
     onBack: () -> Unit,
     onOpenOrder: (Int) -> Unit,
     onCreateOrder: (Customer) -> Unit,
+    onEdit: () -> Unit,
+    /** Bumped by the edit screen after a save, so the detail reloads */
+    refreshToken: Int = 0,
 ) {
     val context = LocalContext.current
     val initial = remember(customerId) { CustomersV2Selection.row?.takeIf { it.id == customerId } }
@@ -561,11 +563,10 @@ fun CustomerDetailV2Screen(
     var renting by remember { mutableStateOf<Int?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var reloadKey by remember { mutableIntStateOf(0) }
-    var editing by remember { mutableStateOf(false) }
+    // customers.manage: MERCHANT, OUTLET_ADMIN and OUTLET_STAFF (as the API)
     val canEdit = PermissionManager.role != UserRole.UNKNOWN
 
-    LaunchedEffect(customerId, reloadKey) {
+    LaunchedEffect(customerId, refreshToken) {
         loading = true
         val rentingCall = async(Dispatchers.IO) { CustomersV2Api.rentingCount(customerId).getOrNull() }
         withContext(Dispatchers.IO) { CustomersV2Api.orders(customerId, CustomerRules.PAGE_SIZE) }
@@ -600,7 +601,7 @@ fun CustomerDetailV2Screen(
                 }
                 Spacer(Modifier.weight(1f))
                 if (canEdit && shown != null) {
-                    TextButton(onClick = { editing = true }, modifier = Modifier.heightIn(min = DS.TouchTarget)) {
+                    TextButton(onClick = onEdit, modifier = Modifier.heightIn(min = DS.TouchTarget)) {
                         Text(stringResource(R.string.customers_v2_edit), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                     }
                 }
@@ -675,21 +676,6 @@ fun CustomerDetailV2Screen(
                     onClick = { shown?.let { onCreateOrder(it.toCustomer()) } },
                 )
             }
-        }
-    }
-
-    if (editing && shown != null) {
-        AppFormSheet(onDismiss = { editing = false }) {
-            CustomerFormScreen(
-                initial = shown.toCustomer(),
-                onBack = { editing = false },
-                onSaved = {
-                    editing = false
-                    reloadKey += 1
-                },
-                // #387: OUTLET_STAFF never sees delete
-                allowDelete = PermissionManager.canDeleteCustomers(),
-            )
         }
     }
 }

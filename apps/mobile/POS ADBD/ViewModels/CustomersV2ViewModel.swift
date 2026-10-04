@@ -13,6 +13,8 @@ protocol CustomersV2DataSource {
     func createCustomer(_ params: [String: Any], completion: @escaping (Customer?, NSError?) -> Void)
     func loadOrders(customerId: Int, limit: Int, completion: @escaping (CustomerOrdersV2?, NSError?) -> Void)
     func countRenting(customerId: Int, completion: @escaping (Int?) -> Void)
+    func loadProfile(customerId: Int, completion: @escaping (CustomerProfile?, NSError?) -> Void)
+    func updateCustomer(customerId: Int, params: [String: Any], completion: @escaping (NSError?) -> Void)
 }
 
 struct LiveCustomersV2DataSource: CustomersV2DataSource {
@@ -59,6 +61,30 @@ struct LiveCustomersV2DataSource: CustomersV2DataSource {
                                        responseType: OrdersTotalResponse.self,
                                        context: "CustomersV2.countRenting") { response, _ in
             completion(response?.success == true ? response?.data?.total : nil)
+        }
+    }
+}
+
+extension LiveCustomersV2DataSource {
+    func loadProfile(customerId: Int, completion: @escaping (CustomerProfile?, NSError?) -> Void) {
+        CustomerService.shared.performGET(path: "\(APIEndpoint.Path.customers)/\(customerId)", parameters: nil,
+                                          responseType: CustomerProfileResponse.self,
+                                          context: "CustomersV2.loadProfile") { response, error in
+            if let error {
+                completion(nil, error)
+            } else if let response, response.success, let data = response.data {
+                completion(data, nil)
+            } else {
+                completion(nil, CustomerService.shared.createErrorFromResponse(
+                    success: false, code: response?.code, message: response?.message, error: nil))
+            }
+        }
+    }
+
+    /// The existing update endpoint; a 409 (same phone) comes back as an error with code 409
+    func updateCustomer(customerId: Int, params: [String: Any], completion: @escaping (NSError?) -> Void) {
+        CustomerService.shared.updateCustomer(customerId: customerId, withValues: params) { _, error in
+            completion(error)
         }
     }
 }

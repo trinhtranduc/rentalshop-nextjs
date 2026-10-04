@@ -812,4 +812,14 @@
     <plurals name="customers_v2_items">
         <item quantity="other">%d món</item>
     </plurals>
+    <string name="customers_v2_cancel">Hủy</string>
+    <string name="customers_v2_edit_title">Sửa khách hàng</string>
+    <string name="customers_v2_email_placeholder">lan@email.com</string>
+    <string name="customers_v2_more_info">Thông tin thêm</string>
+    <string name="customers_v2_id_number">CCCD / giấy tờ</string>
+    <string name="customers_v2_date_of_birth">Ngày sinh</string>
+    <string name="customers_v2_address">Địa chỉ</string>
+    <string name="customers_v2_bad_email">Email không hợp lệ</string>
+    <string name="customers_v2_bad_date">Nhập ngày sinh theo dạng dd/MM/yyyy</string>
+    <string name="customers_v2_phone_taken">Số điện thoại này đã thuộc khách khác</string>
 </resources>

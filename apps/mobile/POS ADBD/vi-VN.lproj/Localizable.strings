@@ -1783,3 +1783,13 @@
 "onboarding.v2.skip" = "Bỏ qua";
 "onboarding.v2.next" = "Tiếp";
 "onboarding.v2.start" = "Bắt đầu";
+"customers.v2.cancel" = "Hủy";
+"customers.v2.editTitle" = "Sửa khách hàng";
+"customers.v2.emailPlaceholder" = "lan@email.com";
+"customers.v2.moreInfo" = "Thông tin thêm";
+"customers.v2.idNumber" = "CCCD / giấy tờ";
+"customers.v2.dateOfBirth" = "Ngày sinh";
+"customers.v2.address" = "Địa chỉ";
+"customers.v2.badEmail" = "Email không hợp lệ";
+"customers.v2.badDate" = "Nhập ngày sinh theo dạng dd/MM/yyyy";
+"customers.v2.phoneTaken" = "Số điện thoại này đã thuộc khách khác";

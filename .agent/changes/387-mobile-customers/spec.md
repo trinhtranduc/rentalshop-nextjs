@@ -42,9 +42,17 @@ Issue: #387 · Status: accepted · Intent: ./intent.md
 15. "Tạo đơn cho khách này": sets the customer on the cart and opens it. Draft items stay; an order being edited is
     dropped first.
 
+### Edit customer (board KH-sua, added by the owner)
+16a. "Sửa" on the detail opens "Sửa khách hàng": phone and full name (required), then "THÔNG TIN THÊM (không bắt buộc)":
+     email, address, CCCD / giấy tờ (`idNumber`) and date of birth (dd/MM/yyyy) side by side, notes. Hủy / Lưu.
+16b. Loads `GET /api/customers/{id}`; saves with `PUT /api/customers/{id}` (firstName/lastName split as in create,
+     phone, email, address, idNumber, notes, dateOfBirth as `YYYY-MM-DDT00:00:00.000Z`; an emptied field is sent as "").
+16c. HTTP 409 (phone of another customer, DB unique `merchantId+phone`) shows "Số điện thoại này đã thuộc khách khác"
+     under the phone field. After a save the detail reloads.
+
 ### Roles
-16. Every role with `customers.view` sees the list and detail; `customers.manage` gives + and Sửa. No new screen has
-    delete; Android's edit form opened from the detail hides Xóa for OUTLET_STAFF.
+16. Every role with `customers.view` sees the list and detail; `customers.manage` (MERCHANT, OUTLET_ADMIN,
+    OUTLET_STAFF) gives +, Khách mới and Sửa. No new screen has delete.
 
 ## Out of scope
 

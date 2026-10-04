@@ -185,7 +185,12 @@ final class CustomerDetailV2ViewController: BaseViewControler {
                     // The snapshot has the current tier; keep fields it does not carry
                     self.customer.loyalty = snapshot.loyalty
                     self.customer.loyaltyStatus = snapshot.loyaltyStatus
-                    if let phone = snapshot.phone { self.customer.phone = phone }
+                    self.customer.phone = snapshot.phone
+                    if let first = snapshot.firstName {
+                        self.customer.firstName = first
+                        self.customer.lastName = snapshot.lastName
+                        self.customer.full_name = nil
+                    }
                 }
                 self.renderHeader()
                 self.renderTiles()
@@ -313,10 +318,10 @@ final class CustomerDetailV2ViewController: BaseViewControler {
     }
 
     @objc private func editTapped() {
-        let controller = CustomerViewController()
-        controller.customer = customer
-        controller.delegate = self
-        presentWithHiddenNavigationBar(controller)
+        let edit = EditCustomerViewController(customerId: customerId, dataSource: dataSource)
+        edit.hidesBottomBarWhenPushed = true
+        edit.onSaved = { [weak self] in self?.load() }
+        navigationController?.pushViewController(edit, animated: true)
     }
 
     @objc private func orderTapped(_ sender: UIControl) {
@@ -340,21 +345,5 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         // Current Home: the cart lives on the first tab
         navigationController?.popToRootViewController(animated: false)
         (appDelegate.window?.rootViewController as? UITabBarController)?.selectedIndex = 0
-    }
-}
-
-extension CustomerDetailV2ViewController: CustomerViewControllerDelegate {
-    func didCreateCustomer(customer: Customer, sender: CustomerViewController) {}
-
-    func didUpdateCustomer(customer updated: Customer, sender: CustomerViewController) {
-        DispatchQueue.main.async {
-            // The update answer has no order count or loyalty; keep ours
-            var merged = updated
-            merged.orderCount = self.customer.orderCount
-            merged.loyalty = updated.loyalty ?? self.customer.loyalty
-            merged.loyaltyStatus = updated.loyaltyStatus ?? self.customer.loyaltyStatus
-            self.customer = merged
-            self.renderHeader()
-        }
     }
 }

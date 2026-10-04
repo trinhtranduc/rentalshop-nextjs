@@ -472,8 +472,6 @@ fun CustomerFormScreen(
     initial: Customer?,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    /** false hides Xóa (the redesigned detail passes it for OUTLET_STAFF, #387); current callers keep it */
-    allowDelete: Boolean = true,
 ) {
     val context = LocalContext.current
     // Treat JSON/"null" placeholders as empty so edit fields stay blank.
@@ -573,7 +571,7 @@ fun CustomerFormScreen(
                 }
             }
 
-            if (initial != null && allowDelete) {
+            if (initial != null) {
                 AppSecondaryButton(
                     text = stringResource(R.string.delete),
                     onClick = {

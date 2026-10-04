@@ -259,3 +259,99 @@ enum CustomersV2Logic {
         return isoFractional.date(from: raw) ?? iso.date(from: raw)
     }
 }
+
+// MARK: - Edit (board KH-sua)
+
+/// `GET /api/customers/{id}` fields the edit form shows
+struct CustomerProfile: Codable, Equatable {
+    var id: Int
+    var firstName: String?
+    var lastName: String?
+    var phone: String?
+    var email: String?
+    var address: String?
+    var idNumber: String?
+    var dateOfBirth: String?
+    var notes: String?
+}
+
+struct CustomerProfileResponse: Codable {
+    let success: Bool
+    let code: String?
+    let message: String?
+    let data: CustomerProfile?
+}
+
+/// The edit form's text, as typed
+struct CustomerEditForm: Equatable {
+    var phone = ""
+    var name = ""
+    var email = ""
+    var address = ""
+    var idNumber = ""
+    /// dd/MM/yyyy
+    var dateOfBirth = ""
+    var notes = ""
+}
+
+enum CustomerEditLogic {
+    enum Problem: Equatable { case missingPhone, missingName, badEmail, badDate }
+
+    static func form(from profile: CustomerProfile) -> CustomerEditForm {
+        let name = [profile.firstName, profile.lastName].compactMap { $0?.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: " ")
+        return CustomerEditForm(phone: profile.phone ?? "", name: name, email: profile.email ?? "",
+                                address: profile.address ?? "", idNumber: profile.idNumber ?? "",
+                                dateOfBirth: displayDate(profile.dateOfBirth), notes: profile.notes ?? "")
+    }
+
+    /// The first problem, in field order
+    static func validate(_ form: CustomerEditForm) -> Problem? {
+        if let problem = CustomersV2Logic.validate(name: form.name, phone: form.phone) {
+            return problem == .missingPhone ? .missingPhone : .missingName
+        }
+        let email = form.email.trimmingCharacters(in: .whitespaces)
+        if !email.isEmpty {
+            let parts = email.split(separator: "@", omittingEmptySubsequences: false)
+            if parts.count != 2 || parts[0].isEmpty || !parts[1].contains(".") || email.contains(" ") { return .badEmail }
+        }
+        if !form.dateOfBirth.trimmingCharacters(in: .whitespaces).isEmpty, isoDate(form.dateOfBirth) == nil { return .badDate }
+        return nil
+    }
+
+    /// `PUT /api/customers/{id}` body: every field the form shows. An emptied field is sent as "" so the API clears it.
+    static func updatePayload(_ form: CustomerEditForm) -> [String: Any] {
+        let split = CustomersV2Logic.splitName(form.name)
+        func clean(_ s: String) -> String { s.trimmingCharacters(in: .whitespacesAndNewlines) }
+        return [
+            "firstName": split.firstName,
+            "lastName": split.lastName,
+            "phone": clean(form.phone),
+            "email": clean(form.email),
+            "address": clean(form.address),
+            "idNumber": clean(form.idNumber),
+            "notes": clean(form.notes),
+            "dateOfBirth": isoDate(form.dateOfBirth) ?? "",
+        ]
+    }
+
+    /// "12/05/1990" → "1990-05-12T00:00:00.000Z" (a civil date, kept as UTC midnight); nil when not a real date
+    static func isoDate(_ text: String) -> String? {
+        let parts = text.trimmingCharacters(in: .whitespaces).split(separator: "/").map(String.init)
+        guard parts.count == 3, let d = Int(parts[0]), let m = Int(parts[1]), let y = Int(parts[2]),
+              parts[2].count == 4, (1...12).contains(m), d >= 1 else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        guard let date = calendar.date(from: DateComponents(year: y, month: m, day: d)),
+              calendar.component(.day, from: date) == d, calendar.component(.month, from: date) == m else { return nil }
+        return String(format: "%04d-%02d-%02dT00:00:00.000Z", y, m, d)
+    }
+
+    /// "1990-05-12T00:00:00.000Z" → "12/05/1990" (the date part as stored, no time-zone shift)
+    static func displayDate(_ iso: String?) -> String {
+        guard let iso, iso.count >= 10 else { return "" }
+        let parts = iso.prefix(10).split(separator: "-")
+        guard parts.count == 3 else { return "" }
+        return "\(parts[2])/\(parts[1])/\(parts[0])"
+    }
+}

@@ -815,4 +815,14 @@
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>
     </plurals>
+    <string name="customers_v2_cancel">Cancel</string>
+    <string name="customers_v2_edit_title">Edit customer</string>
+    <string name="customers_v2_email_placeholder">name@email.com</string>
+    <string name="customers_v2_more_info">More details</string>
+    <string name="customers_v2_id_number">ID / document</string>
+    <string name="customers_v2_date_of_birth">Date of birth</string>
+    <string name="customers_v2_address">Address</string>
+    <string name="customers_v2_bad_email">Invalid email</string>
+    <string name="customers_v2_bad_date">Enter the date as dd/MM/yyyy</string>
+    <string name="customers_v2_phone_taken">This phone number belongs to another customer</string>
 </resources>

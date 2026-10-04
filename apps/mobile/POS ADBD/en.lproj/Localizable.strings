@@ -1785,3 +1785,13 @@
 "onboarding.v2.skip" = "Skip";
 "onboarding.v2.next" = "Next";
 "onboarding.v2.start" = "Get started";
+"customers.v2.cancel" = "Cancel";
+"customers.v2.editTitle" = "Edit customer";
+"customers.v2.emailPlaceholder" = "name@email.com";
+"customers.v2.moreInfo" = "More details";
+"customers.v2.idNumber" = "ID / document";
+"customers.v2.dateOfBirth" = "Date of birth";
+"customers.v2.address" = "Address";
+"customers.v2.badEmail" = "Invalid email";
+"customers.v2.badDate" = "Enter the date as dd/MM/yyyy";
+"customers.v2.phoneTaken" = "This phone number belongs to another customer";

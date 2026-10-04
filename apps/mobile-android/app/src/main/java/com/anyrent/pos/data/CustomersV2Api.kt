@@ -31,6 +31,18 @@ object CustomersV2Api {
         CustomerRules.parseRow(json.optJSONObject("data") ?: JSONObject())
     }
 
+    /** `GET /api/customers/{id}` as the edit form */
+    fun profile(customerId: Int): Result<com.anyrent.pos.domain.customers.CustomerEditForm> = runCatching {
+        val json = ApiClient.get().authedGet("/api/customers/$customerId")
+        com.anyrent.pos.domain.customers.CustomerEditRules.formFrom(json.optJSONObject("data") ?: JSONObject())
+    }
+
+    /** The existing update endpoint; a phone that belongs to another customer fails with HTTP 409 */
+    fun update(customerId: Int, payload: JSONObject): Result<Unit> = runCatching {
+        ApiClient.get().authedPut("/api/customers/$customerId", payload.toString().toRequestBody(jsonMedia))
+        Unit
+    }
+
     /** First page of `GET /api/customers/{id}/orders` with its `summary` */
     fun orders(customerId: Int, limit: Int): Result<CustomerOrders> = runCatching {
         val json = ApiClient.get().authedGet("/api/customers/$customerId/orders?page=1&limit=$limit")
