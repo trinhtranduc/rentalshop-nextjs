@@ -28,23 +28,22 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
     }
 
     override func setupUI() {
-        let header = AuthV2Header(showsProgress: false)
+        let header = AuthV2Header()
         header.backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
 
         let note = UILabel()
         note.text = "authv2.forgot.staffNote".localized()
         note.font = Utils.regularFont(size: 14)
-        note.textColor = DS.Color.textMuted
+        note.textColor = AuthV2Style.textMuted
         note.textAlignment = .center
         note.numberOfLines = 0
 
-        let content = authV2Page(header: header, footer: note, contentInsetTop: 24)
+        let content = authV2Page(header: header, footer: note, contentInsetTop: 200, blobs: .forgot)
 
         emailField.text = prefilledEmail ?? ""
         emailField.textField.keyboardType = .emailAddress
         emailField.textField.autocapitalizationType = .none
         emailField.textField.autocorrectionType = .no
-        emailField.textField.textContentType = .username
         emailField.textField.returnKeyType = .send
         emailField.textField.delegate = self
         emailField.onChange = { [weak self] in self?.emailField.setError(nil) }
@@ -52,8 +51,7 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
 
         let title = authV2TitleBlock(title: "authv2.forgot.title".localized(), subtitle: "authv2.forgot.text".localized())
         [title, emailField, sendButton].forEach(content.addArrangedSubview)
-        content.setCustomSpacing(24, after: title)
-        content.setCustomSpacing(20, after: emailField)
+        content.setCustomSpacing(18, after: title)
     }
 
     @objc private func backTapped() {

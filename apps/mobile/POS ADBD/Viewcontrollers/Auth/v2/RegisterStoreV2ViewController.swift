@@ -19,7 +19,8 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     private var step: Step = .store
     private var draft = RegisterDraft()
 
-    private let header = AuthV2Header(showsProgress: true)
+    private let header = AuthV2Header()
+    private let progress = AuthV2Progress()
     private let primaryButton = AuthV2PrimaryButton(title: "authv2.continue".localized())
     private var storeStack = UIStackView()
     private var ownerStack = UIStackView()
@@ -38,12 +39,23 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     private let confirmField = AuthV2Field(title: "authv2.confirmPassword".localized(), secure: true)
     private let termsCheck = UIButton(type: .custom)
     private let termsError = UILabel()
+    private let termsText = UITextView()
+    private var termsWidth: CGFloat = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setStatusBarStyle(.darkContent)
         show(.store)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // A non-scrolling text view sizes itself before it knows its width; re-measure once it does
+        if termsText.bounds.width != termsWidth {
+            termsWidth = termsText.bounds.width
+            termsText.invalidateIntrinsicContentSize()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -54,10 +66,17 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     override func setupUI() {
         header.backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         primaryButton.addTarget(self, action: #selector(primaryTapped), for: .touchUpInside)
-        let content = authV2Page(header: header, footer: primaryButton, contentInsetTop: 20)
+        let content = authV2Page(header: header, footer: primaryButton, contentInsetTop: 64, blobs: .register)
+        content.addArrangedSubview(progress)
 
         storeStack = makeStoreStep()
         ownerStack = makeOwnerStep()
+
+        // Return moves to the next field; the last field of a step closes the keyboard
+        let chain = [storeNameField, phoneField, addressField, nameField, emailField, passwordField, confirmField]
+        chain.forEach { $0.textField.delegate = self }
+        [addressField, confirmField].forEach { $0.textField.returnKeyType = .done }
+        [storeNameField, nameField, emailField, passwordField].forEach { $0.textField.returnKeyType = .next }
         content.addArrangedSubview(storeStack)
         content.addArrangedSubview(ownerStack)
     }
@@ -74,11 +93,11 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         let legend = UILabel()
         let attributed = NSMutableAttributedString(
             string: "authv2.rentWhat".localized() + " ",
-            attributes: [NSAttributedString.Key.font: Utils.boldFont(size: 14), NSAttributedString.Key.foregroundColor: DS.Color.text]
+            attributes: [NSAttributedString.Key.font: Utils.boldFont(size: 14), NSAttributedString.Key.foregroundColor: AuthV2Style.text]
         )
         attributed.append(NSAttributedString(
             string: "authv2.rentWhat.hint".localized(),
-            attributes: [NSAttributedString.Key.font: Utils.regularFont(size: 14), NSAttributedString.Key.foregroundColor: DS.Color.textMuted]
+            attributes: [NSAttributedString.Key.font: Utils.regularFont(size: 14), NSAttributedString.Key.foregroundColor: AuthV2Style.textMuted]
         ))
         legend.attributedText = attributed
         legend.numberOfLines = 0
@@ -97,12 +116,12 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         tagsStack.spacing = 10
 
         let stack = UIStackView(arrangedSubviews: [
-            authV2TitleBlock(title: "authv2.store.title".localized(), subtitle: "authv2.store.subtitle".localized()),
+            authV2TitleBlock(title: "authv2.store.title".localized(), subtitle: "authv2.store.subtitle".localized(), size: 26),
             storeNameField, phoneField, addressField, tagsStack
         ])
         stack.axis = .vertical
-        stack.spacing = 16
-        stack.setCustomSpacing(20, after: stack.arrangedSubviews[0])
+        stack.spacing = 14
+        stack.setCustomSpacing(16, after: stack.arrangedSubviews[0])
         return stack
     }
 
@@ -112,36 +131,33 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         emailField.textField.keyboardType = .emailAddress
         emailField.textField.autocapitalizationType = .none
         emailField.textField.autocorrectionType = .no
-        emailField.textField.textContentType = .username
-        passwordField.textField.textContentType = .newPassword
-        confirmField.textField.textContentType = .newPassword
         nameField.onChange = { [weak self] in self?.nameField.setError(nil) }
         emailField.onChange = { [weak self] in self?.emailField.setError(nil) }
         passwordField.onChange = { [weak self] in self?.passwordField.setError(nil) }
         confirmField.onChange = { [weak self] in self?.confirmField.setError(nil) }
 
         let stack = UIStackView(arrangedSubviews: [
-            authV2TitleBlock(title: "authv2.owner.title".localized(), subtitle: "authv2.owner.subtitle".localized()),
+            authV2TitleBlock(title: "authv2.owner.title".localized(), subtitle: "authv2.owner.subtitle".localized(), size: 26),
             nameField, emailField, passwordField, confirmField, makeTermsRow()
         ])
         stack.axis = .vertical
-        stack.spacing = 14
-        stack.setCustomSpacing(20, after: stack.arrangedSubviews[0])
+        stack.spacing = 12
+        stack.setCustomSpacing(14, after: stack.arrangedSubviews[0])
         return stack
     }
 
     private func makeTermsRow() -> UIView {
-        termsCheck.tintColor = DS.Color.primary
+        termsCheck.tintColor = AuthV2Style.primary
         termsCheck.addTarget(self, action: #selector(termsTapped), for: .touchUpInside)
         termsCheck.accessibilityLabel = "Please accept the Privacy Policy and Terms of Service to continue.".localized()
         updateTermsCheck()
 
-        let terms = "Terms of Service".localized()
+        let terms = "authv2.terms.link".localized()
         let privacy = "Privacy Policy".localized()
         let full = String(format: "authv2.terms".localized(), terms, privacy)
         let text = NSMutableAttributedString(string: full, attributes: [
             NSAttributedString.Key.font: Utils.regularFont(size: 14),
-            NSAttributedString.Key.foregroundColor: UIColor(hexString: "334155")
+            NSAttributedString.Key.foregroundColor: AuthV2Style.termsText
         ])
         if let range = full.range(of: terms) {
             text.addAttributes([NSAttributedString.Key.link: URL(string: AppLegalLinks.termsURL)!,
@@ -151,14 +167,14 @@ final class RegisterStoreV2ViewController: BaseViewControler {
             text.addAttributes([NSAttributedString.Key.link: URL(string: AppLegalLinks.privacyURL)!,
                                 NSAttributedString.Key.font: Utils.boldFont(size: 14)], range: NSRange(range, in: full))
         }
-        let textView = UITextView()
+        let textView = termsText
         textView.attributedText = text
         textView.isEditable = false
         textView.isScrollEnabled = false
         textView.backgroundColor = .clear
         textView.textContainerInset = UIEdgeInsets(top: 11, left: 0, bottom: 0, right: 0)
         textView.textContainer.lineFragmentPadding = 0
-        textView.tintColor = DS.Color.primary
+        textView.tintColor = AuthV2Style.primary
         textView.delegate = self
 
         termsError.font = Utils.mediumFont(size: 13)
@@ -191,7 +207,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         step = next
         storeStack.isHidden = next != .store
         ownerStack.isHidden = next != .owner
-        header.setStep(next.rawValue, of: 2)
+        progress.setStep(next.rawValue, of: 2)
         primaryButton.setTitle((next == .store ? "authv2.continue" : "authv2.createStoreButton").localized(), for: .normal)
         UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil)
     }
@@ -257,8 +273,8 @@ final class RegisterStoreV2ViewController: BaseViewControler {
 
     private func updateTermsCheck() {
         let name = draft.termsAccepted ? "checkmark.square.fill" : "square"
-        termsCheck.setImage(UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 22)), for: .normal)
-        termsCheck.tintColor = draft.termsAccepted ? DS.Color.primary : AuthV2Style.fieldBorder
+        termsCheck.setImage(UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)), for: .normal)
+        termsCheck.tintColor = draft.termsAccepted ? AuthV2Style.primary : AuthV2Style.fieldBorder
         termsCheck.accessibilityTraits = draft.termsAccepted
             ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
     }
@@ -294,6 +310,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
                 return
             }
             // Same as today: the "check your email" screen for the activation mail
+            self.view.endEditing(true)
             let sent = EmailSentV2ViewController(email: request.loginName, purpose: .verification)
             self.navigationController?.pushViewController(sent, animated: true)
         }
@@ -304,5 +321,22 @@ extension RegisterStoreV2ViewController: UITextViewDelegate {
     func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
         present(SFSafariViewController(url: URL), animated: true)
         return false
+    }
+}
+
+extension RegisterStoreV2ViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        let next: [UITextField: UITextField] = [
+            storeNameField.textField: phoneField.textField,
+            nameField.textField: emailField.textField,
+            emailField.textField: passwordField.textField,
+            passwordField.textField: confirmField.textField
+        ]
+        if let target = next[textField] {
+            target.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+        }
+        return true
     }
 }

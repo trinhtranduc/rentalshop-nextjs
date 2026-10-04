@@ -1740,7 +1740,8 @@
 "settings.v2.password.done" = "Đã đổi mật khẩu. Vui lòng đăng nhập lại.";
 
 /* #386 — new auth screens (newAuth) */
-"authv2.login.subtitle" = "Quản lý đơn thuê của cửa hàng bạn.";
+"authv2.login.title" = "Xin chào";
+"authv2.login.subtitle" = "Đăng nhập để vào cửa hàng của bạn.";
 "authv2.email.placeholder" = "ten@cuahang.vn";
 "authv2.password.show" = "Hiện mật khẩu";
 "authv2.password.hide" = "Ẩn mật khẩu";
@@ -1763,12 +1764,13 @@
 "authv2.tag.EQUIPMENT" = "Dụng cụ";
 "authv2.continue" = "Tiếp tục";
 "authv2.owner.title" = "Tài khoản chủ cửa hàng";
-"authv2.owner.subtitle" = "Dùng email này để đăng nhập. Chúng tôi gửi thư kích hoạt.";
+"authv2.owner.subtitle" = "Dùng email này để đăng nhập.";
 "authv2.fullName" = "Họ và tên";
 "authv2.password.hint" = "Ít nhất 6 ký tự.";
 "authv2.confirmPassword" = "Nhập lại mật khẩu";
 "authv2.passwordsMismatch" = "Mật khẩu nhập lại chưa khớp.";
 "authv2.terms" = "Tôi đồng ý với %@ và %@.";
+"authv2.terms.link" = "Điều khoản";
 "authv2.createStoreButton" = "Tạo cửa hàng";
 "authv2.forgot.title" = "Quên mật khẩu";
 "authv2.forgot.text" = "Nhập email đăng nhập. Chúng tôi gửi liên kết để bạn đặt mật khẩu mới.";

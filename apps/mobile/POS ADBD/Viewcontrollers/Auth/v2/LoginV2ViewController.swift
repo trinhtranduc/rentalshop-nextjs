@@ -32,31 +32,15 @@ final class LoginV2ViewController: BaseViewControler {
 
     override func setupUI() {
         let footer = makeFooter()
-        let content = authV2Page(header: nil, footer: footer, contentInsetTop: 48)
+        let content = authV2Page(header: nil, footer: footer, contentInsetTop: 240, blobs: .login)
 
-        let logo = UIImageView(image: UIImage(named: "anyrent-brandmark-ribbon")?.withRenderingMode(.alwaysOriginal))
-        logo.contentMode = .scaleAspectFit
-        logo.snp.makeConstraints { $0.width.height.equalTo(64) }
-        let brand = UILabel()
-        brand.text = "AnyRent"
-        brand.font = Utils.boldFont(size: 22)
-        brand.textColor = DS.Color.text
-        let brandStack = UIStackView(arrangedSubviews: [logo, brand])
-        brandStack.axis = .vertical
-        brandStack.alignment = .center
-        brandStack.spacing = 12
-        brandStack.isAccessibilityElement = true
-        brandStack.accessibilityLabel = "AnyRent"
-
-        let title = authV2TitleBlock(title: "Login".localized(), subtitle: "authv2.login.subtitle".localized())
+        let title = authV2TitleBlock(title: "authv2.login.title".localized(), subtitle: "authv2.login.subtitle".localized())
 
         emailField.textField.keyboardType = .emailAddress
         emailField.textField.autocapitalizationType = .none
         emailField.textField.autocorrectionType = .no
-        emailField.textField.textContentType = .username
         emailField.textField.returnKeyType = .next
         emailField.textField.delegate = self
-        passwordField.textField.textContentType = .password
         passwordField.textField.returnKeyType = .go
         passwordField.textField.delegate = self
         emailField.onChange = { [weak self] in self?.emailField.setError(nil) }
@@ -69,10 +53,9 @@ final class LoginV2ViewController: BaseViewControler {
 
         loginButton.addTarget(self, action: #selector(loginTapped), for: .touchUpInside)
 
-        [brandStack, title, emailField, passwordField, forgotRow, loginButton].forEach(content.addArrangedSubview)
-        content.setCustomSpacing(40, after: brandStack)
-        content.setCustomSpacing(24, after: title)
-        content.setCustomSpacing(0, after: passwordField)
+        [title, emailField, passwordField, forgotRow, loginButton].forEach(content.addArrangedSubview)
+        content.setCustomSpacing(16, after: title)
+        content.setCustomSpacing(4, after: passwordField)
         content.setCustomSpacing(4, after: forgotRow)
     }
 
@@ -80,7 +63,7 @@ final class LoginV2ViewController: BaseViewControler {
         let label = UILabel()
         label.text = "authv2.noStore".localized()
         label.font = Utils.regularFont(size: 15)
-        label.textColor = DS.Color.textMuted
+        label.textColor = AuthV2Style.textMuted
         let button = authV2LinkButton("authv2.createStore".localized())
         button.addTarget(self, action: #selector(registerTapped), for: .touchUpInside)
         let row = UIStackView(arrangedSubviews: [label, button])
@@ -100,12 +83,14 @@ final class LoginV2ViewController: BaseViewControler {
     // MARK: - Actions
 
     @objc private func forgotTapped() {
+        view.endEditing(true)
         let forgot = ForgotPasswordV2ViewController()
         forgot.prefilledEmail = AuthValidation.trimmed(emailField.text)
         navigationController?.pushViewController(forgot, animated: true)
     }
 
     @objc private func registerTapped() {
+        view.endEditing(true)
         navigationController?.pushViewController(RegisterStoreV2ViewController(), animated: true)
     }
 

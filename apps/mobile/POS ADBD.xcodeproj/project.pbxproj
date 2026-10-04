@@ -230,6 +230,7 @@
 		88FFF5CE2F2DA33B00FD0A26 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FFF5CD2F2DA33B00FD0A26 /* ToastView.swift */; };
 		89DD03B3852E10B9B3B1EF17 /* Pods_POS_ADBDTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */; };
 		8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */; };
+		91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */; };
 		9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */; };
 		941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */; };
 		9B1605DA8A6665412EED39EB /* OrderDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */; };
@@ -606,6 +607,7 @@
 		C9ECAD4624AC813C0090FAC4 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		C9EFF5B0237BF75E00A6CB57 /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
 		D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmailSentV2ViewController.swift; sourceTree = "<group>"; };
+		D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthV2Style.swift; sourceTree = "<group>"; };
 		D4A0C2121B33928148F209CE /* TabsV2APIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TabsV2APIService.swift; sourceTree = "<group>"; };
 		D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderHandOverSheetViewController.swift; sourceTree = "<group>"; };
 		D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderNotesEditorViewController.swift; sourceTree = "<group>"; };
@@ -1268,6 +1270,7 @@
 				1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */,
 				EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */,
 				D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */,
+				D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */,
 			);
 			name = v2;
 			path = v2;
@@ -1902,6 +1905,7 @@
 				B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */,
 				CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */,
 				3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */,
+				91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

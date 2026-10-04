@@ -54,35 +54,27 @@ final class EmailSentV2ViewController: BaseViewControler {
     }
 
     override func setupUI() {
-        let header = AuthV2Header(showsProgress: false)
+        let header = AuthV2Header()
         header.backButton.addTarget(self, action: #selector(backToLogin), for: .touchUpInside)
 
         let backButton = AuthV2PrimaryButton(title: "authv2.backToLogin".localized())
         backButton.addTarget(self, action: #selector(backToLogin), for: .touchUpInside)
         resendButton.addTarget(self, action: #selector(resendTapped), for: .touchUpInside)
-        resendButton.setTitleColor(DS.Color.textMuted, for: .disabled)
+        resendButton.setTitleColor(AuthV2Style.textMuted, for: .disabled)
         let footer = UIStackView(arrangedSubviews: [backButton, resendButton])
         footer.axis = .vertical
         footer.spacing = 8
 
-        let content = authV2Page(header: header, footer: footer, contentInsetTop: 24)
+        let content = authV2Page(header: header, footer: footer, contentInsetTop: 142, blobs: .forgot)
 
-        let icon = UIImageView(image: UIImage(systemName: "envelope", withConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .semibold)))
-        icon.tintColor = DS.Status.done.text
-        icon.contentMode = .center
-        let iconBox = UIView()
-        iconBox.backgroundColor = DS.Status.done.fill
-        iconBox.layer.cornerRadius = 16
-        iconBox.addSubview(icon)
-        icon.snp.makeConstraints { $0.edges.equalToSuperview() }
-        iconBox.snp.makeConstraints { $0.width.height.equalTo(56) }
-        let iconRow = UIStackView(arrangedSubviews: [iconBox, UIView()])
-        iconRow.axis = .horizontal
+        let iconRow = AuthV2Style.makeSentIcon()
 
         let title = UILabel()
-        title.text = "authv2.sent.title".localized()
-        title.font = Utils.boldFont(size: 24)
-        title.textColor = DS.Color.text
+        title.attributedText = NSAttributedString(string: "authv2.sent.title".localized(), attributes: [
+            NSAttributedString.Key.font: Utils.extraBoldFont(size: 30),
+            NSAttributedString.Key.foregroundColor: AuthV2Style.text,
+            NSAttributedString.Key.kern: AuthV2Style.headingKern
+        ])
         title.accessibilityTraits = UIAccessibilityTraitHeader
 
         let format = (purpose == .passwordReset ? "authv2.sent.reset" : "authv2.sent.verify").localized()
@@ -90,25 +82,26 @@ final class EmailSentV2ViewController: BaseViewControler {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = 4
         let body = NSMutableAttributedString(string: full, attributes: [
-            NSAttributedString.Key.font: Utils.regularFont(size: 15),
-            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+            NSAttributedString.Key.font: Utils.regularFont(size: 16),
+            NSAttributedString.Key.foregroundColor: AuthV2Style.textMuted,
             NSAttributedString.Key.paragraphStyle: paragraph
         ])
         if let range = full.range(of: email) {
-            body.addAttributes([NSAttributedString.Key.font: Utils.boldFont(size: 15),
-                                NSAttributedString.Key.foregroundColor: DS.Color.text], range: NSRange(range, in: full))
+            body.addAttributes([NSAttributedString.Key.font: Utils.boldFont(size: 16),
+                                NSAttributedString.Key.foregroundColor: AuthV2Style.text], range: NSRange(range, in: full))
         }
         let bodyLabel = UILabel()
         bodyLabel.attributedText = body
         bodyLabel.numberOfLines = 0
 
         [iconRow, title, bodyLabel].forEach(content.addArrangedSubview)
-        content.setCustomSpacing(20, after: iconRow)
+        content.setCustomSpacing(2, after: iconRow)
         content.setCustomSpacing(6, after: title)
         updateResendButton()
     }
 
     @objc private func backToLogin() {
+        view.endEditing(true)
         navigationController?.popToRootViewController(animated: true)
     }
 

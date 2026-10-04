@@ -1742,7 +1742,8 @@
 "settings.v2.password.done" = "Password changed. Please sign in again.";
 
 /* #386 — new auth screens (newAuth) */
-"authv2.login.subtitle" = "Manage your shop's rentals.";
+"authv2.login.title" = "Hello";
+"authv2.login.subtitle" = "Sign in to your shop.";
 "authv2.email.placeholder" = "name@yourshop.com";
 "authv2.password.show" = "Show password";
 "authv2.password.hide" = "Hide password";
@@ -1765,12 +1766,13 @@
 "authv2.tag.EQUIPMENT" = "Tools";
 "authv2.continue" = "Continue";
 "authv2.owner.title" = "Owner account";
-"authv2.owner.subtitle" = "You sign in with this email. We send an activation email.";
+"authv2.owner.subtitle" = "You sign in with this email.";
 "authv2.fullName" = "Full name";
 "authv2.password.hint" = "At least 6 characters.";
 "authv2.confirmPassword" = "Re-enter password";
 "authv2.passwordsMismatch" = "The passwords don't match.";
 "authv2.terms" = "I agree to the %@ and the %@.";
+"authv2.terms.link" = "Terms";
 "authv2.createStoreButton" = "Create shop";
 "authv2.forgot.title" = "Forgot password";
 "authv2.forgot.text" = "Enter your sign-in email. We'll send a link to set a new password.";

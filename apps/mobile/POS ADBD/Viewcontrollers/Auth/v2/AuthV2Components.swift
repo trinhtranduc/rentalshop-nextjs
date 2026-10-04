@@ -2,21 +2,12 @@
 //  AuthV2Components.swift
 //  POS ADBD
 //
-//  #386 — building blocks of the new auth boards (Dang-nhap, Dang-ky, Quen-mat-khau): white page,
-//  52pt fields with the label above and the error below, a blue 52pt button, back + "Bước n/2" header.
+//  #386 — building blocks of the new auth boards (Dang-nhap, Dang-ky, Quen-mat-khau): page, 52pt fields with
+//  the label above and the error below, the 52pt button, back + "Bước n/2" header. Colours come from AuthV2Style.
 //
 
 import UIKit
 import SnapKit
-
-enum AuthV2Style {
-    static let fieldBorder = UIColor(hexString: "CBD5E1")
-    static let error = UIColor(hexString: "B91C1C")
-    static let chipBorder = UIColor(hexString: "E2E8F0")
-    static let track = UIColor(hexString: "E5E7EB")
-    static let sideInset: CGFloat = 24
-    static let maxWidth: CGFloat = 480
-}
 
 /// Label above, 52pt field, optional hint and an inline error below
 final class AuthV2Field: UIView {
@@ -33,15 +24,15 @@ final class AuthV2Field: UIView {
         super.init(frame: .zero)
         titleLabel.text = title
         titleLabel.font = Utils.boldFont(size: 14)
-        titleLabel.textColor = DS.Color.text
+        titleLabel.textColor = AuthV2Style.text
 
-        box.layer.cornerRadius = 12
+        box.layer.cornerRadius = AuthV2Style.fieldRadius
         box.layer.borderWidth = 1
         box.layer.borderColor = AuthV2Style.fieldBorder.cgColor
-        box.backgroundColor = .white
+        box.backgroundColor = AuthV2Style.fieldBackground
 
         textField.font = Utils.regularFont(size: 16)
-        textField.textColor = DS.Color.text
+        textField.textColor = AuthV2Style.text
         textField.placeholder = placeholder
         textField.isSecureTextEntry = secure
         textField.accessibilityLabel = title
@@ -49,7 +40,7 @@ final class AuthV2Field: UIView {
 
         hintLabel.text = hint
         hintLabel.font = Utils.regularFont(size: 13)
-        hintLabel.textColor = DS.Color.textMuted
+        hintLabel.textColor = AuthV2Style.textMuted
         hintLabel.numberOfLines = 0
         hintLabel.isHidden = hint == nil
 
@@ -65,10 +56,10 @@ final class AuthV2Field: UIView {
         stack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         box.addSubview(textField)
-        box.snp.makeConstraints { $0.height.equalTo(52) }
+        box.snp.makeConstraints { $0.height.equalTo(AuthV2Style.fieldHeight) }
         if secure {
             let button = UIButton(type: .system)
-            button.tintColor = DS.Color.textMuted
+            button.tintColor = AuthV2Style.textMuted
             button.addTarget(self, action: #selector(toggleSecure), for: .touchUpInside)
             box.addSubview(button)
             button.snp.makeConstraints { make in
@@ -124,7 +115,7 @@ final class AuthV2Field: UIView {
 
     private func updateToggle() {
         let hidden = textField.isSecureTextEntry
-        toggleButton?.setImage(UIImage(systemName: hidden ? "eye" : "eye.slash"), for: .normal)
+        toggleButton?.setImage(UIImage(systemName: hidden ? "eye" : "eye.slash", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)), for: .normal)
         toggleButton?.accessibilityLabel = (hidden ? "authv2.password.show" : "authv2.password.hide").localized()
     }
 }
@@ -134,12 +125,12 @@ final class AuthV2PrimaryButton: UIButton {
     init(title: String) {
         super.init(frame: .zero)
         setTitle(title, for: .normal)
-        setTitleColor(.white, for: .normal)
-        setTitleColor(UIColor.white.withAlphaComponent(0.7), for: .disabled)
+        setTitleColor(AuthV2Style.onPrimary, for: .normal)
+        setTitleColor(AuthV2Style.onPrimary.withAlphaComponent(0.7), for: .disabled)
         titleLabel?.font = Utils.boldFont(size: 16)
-        backgroundColor = DS.Color.primary
-        layer.cornerRadius = 14
-        snp.makeConstraints { $0.height.equalTo(52) }
+        backgroundColor = AuthV2Style.primary
+        layer.cornerRadius = AuthV2Style.buttonRadius
+        snp.makeConstraints { $0.height.equalTo(AuthV2Style.buttonHeight) }
     }
 
     required init?(coder: NSCoder) {
@@ -155,59 +146,65 @@ final class AuthV2PrimaryButton: UIButton {
 func authV2LinkButton(_ title: String, size: CGFloat = 15) -> UIButton {
     let button = UIButton(type: .system)
     button.setTitle(title, for: .normal)
-    button.setTitleColor(DS.Color.primary, for: .normal)
+    button.setTitleColor(AuthV2Style.primary, for: .normal)
     button.titleLabel?.font = Utils.boldFont(size: size)
     button.snp.makeConstraints { $0.height.greaterThanOrEqualTo(DS.touchTarget) }
     return button
 }
 
-/// Back chevron, optional "Bước n/2" on the right and a progress bar under it
+/// Round 44pt back button, white at 0.9 over the blobs (style E)
 final class AuthV2Header: UIView {
     let backButton = UIButton(type: .system)
-    private let stepLabel = UILabel()
-    private let track = UIView()
-    private let fill = UIView()
-    private var fillWidth: Constraint?
 
-    init(showsProgress: Bool) {
+    init() {
         super.init(frame: .zero)
-        backButton.setImage(UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)), for: .normal)
-        backButton.tintColor = DS.Color.text
+        backButton.setImage(UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)), for: .normal)
+        backButton.tintColor = AuthV2Style.text
+        backButton.backgroundColor = AuthV2Style.backButtonFill
+        backButton.layer.cornerRadius = DS.touchTarget / 2
         backButton.accessibilityLabel = "Back".localized()
         addSubview(backButton)
         backButton.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(8)
-            make.leading.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(16)
+            make.bottom.equalToSuperview()
             make.width.height.equalTo(DS.touchTarget)
-            if !showsProgress { make.bottom.equalToSuperview() }
         }
-        guard showsProgress else { return }
+    }
 
-        stepLabel.font = Utils.regularFont(size: 13)
-        stepLabel.textColor = DS.Color.textMuted
-        stepLabel.textAlignment = .right
-        addSubview(stepLabel)
-        stepLabel.snp.makeConstraints { make in
-            make.centerY.equalTo(backButton)
-            make.trailing.equalToSuperview().inset(AuthV2Style.sideInset)
-        }
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
 
-        track.backgroundColor = AuthV2Style.track
-        track.layer.cornerRadius = 2
-        fill.backgroundColor = DS.Color.primary
-        fill.layer.cornerRadius = 2
+/// 6pt progress bar with "Bước n/2" on its right (board Register1-E / Register2-E)
+final class AuthV2Progress: UIView {
+    private let label = UILabel()
+    private let track = UIView()
+    private let fill = UIView()
+
+    init() {
+        super.init(frame: .zero)
+        track.backgroundColor = AuthV2Style.progressTrack
+        track.layer.cornerRadius = 3
+        fill.backgroundColor = AuthV2Style.primary
+        fill.layer.cornerRadius = 3
+        label.font = Utils.boldFont(size: 13)
+        label.textColor = AuthV2Style.primary
+        label.setContentHuggingPriority(.required, for: .horizontal)
         addSubview(track)
         track.addSubview(fill)
+        addSubview(label)
+        label.snp.makeConstraints { make in
+            make.trailing.top.bottom.equalToSuperview()
+        }
         track.snp.makeConstraints { make in
-            make.top.equalTo(backButton.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(AuthV2Style.sideInset)
-            make.height.equalTo(4)
-            make.bottom.equalToSuperview()
+            make.leading.equalToSuperview()
+            make.trailing.equalTo(label.snp.leading).offset(-10)
+            make.centerY.equalTo(label)
+            make.height.equalTo(6)
         }
-        fill.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-            fillWidth = make.width.equalToSuperview().multipliedBy(0.5).constraint
-        }
+        isAccessibilityElement = true
     }
 
     required init?(coder: NSCoder) {
@@ -215,28 +212,30 @@ final class AuthV2Header: UIView {
     }
 
     func setStep(_ step: Int, of total: Int) {
-        stepLabel.text = String(format: "authv2.step".localized(), step, total)
+        label.text = String(format: "authv2.step".localized(), step, total)
+        accessibilityLabel = label.text
         fill.snp.remakeConstraints { make in
             make.leading.top.bottom.equalToSuperview()
             make.width.equalToSuperview().multipliedBy(CGFloat(step) / CGFloat(max(total, 1)))
         }
-        accessibilityElements = [backButton, stepLabel]
     }
 }
 
-/// Title (24 bold) + muted subtitle
-func authV2TitleBlock(title: String, subtitle: String) -> UIStackView {
+/// Big heading (weight 800, tight spacing) + grey 16pt subtitle
+func authV2TitleBlock(title: String, subtitle: String, size: CGFloat = 30) -> UIStackView {
     let titleLabel = UILabel()
-    titleLabel.text = title
-    titleLabel.font = Utils.boldFont(size: 24)
-    titleLabel.textColor = DS.Color.text
+    titleLabel.attributedText = NSAttributedString(string: title, attributes: [
+        NSAttributedString.Key.font: Utils.extraBoldFont(size: size),
+        NSAttributedString.Key.foregroundColor: AuthV2Style.text,
+        NSAttributedString.Key.kern: AuthV2Style.headingKern
+    ])
     titleLabel.numberOfLines = 0
     titleLabel.accessibilityTraits = UIAccessibilityTraitHeader
 
     let subtitleLabel = UILabel()
     subtitleLabel.text = subtitle
-    subtitleLabel.font = Utils.regularFont(size: 15)
-    subtitleLabel.textColor = DS.Color.textMuted
+    subtitleLabel.font = Utils.regularFont(size: 16)
+    subtitleLabel.textColor = AuthV2Style.textMuted
     subtitleLabel.numberOfLines = 0
 
     let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
@@ -309,9 +308,9 @@ final class AuthV2Chip: UIButton {
     }
 
     func setOn(_ on: Bool) {
-        backgroundColor = on ? DS.Color.text : .white
-        setTitleColor(on ? .white : DS.Color.text, for: .normal)
-        layer.borderColor = (on ? DS.Color.text : AuthV2Style.chipBorder).cgColor
+        backgroundColor = on ? AuthV2Style.chipOn : AuthV2Style.chipOff
+        setTitleColor(on ? AuthV2Style.chipOnText : AuthV2Style.chipOffText, for: .normal)
+        layer.borderColor = (on ? AuthV2Style.chipOn : AuthV2Style.chipBorder).cgColor
         titleLabel?.font = on ? Utils.boldFont(size: 14) : Utils.mediumFont(size: 14)
         accessibilityTraits = on ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
     }
@@ -319,11 +318,15 @@ final class AuthV2Chip: UIButton {
 
 extension BaseViewControler {
     /// White scrolling page centred at a max width on iPad. Returns the content stack.
-    func authV2Page(header: UIView?, footer: UIView?, contentInsetTop: CGFloat) -> UIStackView {
-        view.backgroundColor = .white
+    func authV2Page(header: UIView?, footer: UIView?, contentInsetTop: CGFloat, blobs: AuthV2Style.BlobScale) -> UIStackView {
+        view.backgroundColor = AuthV2Style.pageBackground
+        AuthV2Style.installBlobs(in: view, scale: blobs)
         let scroll = UIScrollView()
+        scroll.backgroundColor = .clear
         scroll.alwaysBounceVertical = true
-        scroll.keyboardDismissMode = .interactive
+        // Dragging dismisses the keyboard. No tap-to-dismiss: with IQKeyboardManager the view moves back on
+        // the touch-up and the tapped button never gets its action.
+        scroll.keyboardDismissMode = .onDrag
         view.addSubview(scroll)
 
         if let header {
@@ -363,9 +366,6 @@ extension BaseViewControler {
             make.width.equalTo(scroll.frameLayoutGuide).offset(-2 * AuthV2Style.sideInset).priority(.high)
         }
 
-        let tap = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing(_:)))
-        tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
         return stack
     }
 
