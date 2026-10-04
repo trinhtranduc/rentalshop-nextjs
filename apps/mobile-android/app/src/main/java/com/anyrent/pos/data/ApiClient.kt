@@ -21,6 +21,7 @@ import com.anyrent.pos.data.repository.appConfigFromJson
 import com.anyrent.pos.domain.appconfig.AppConfig
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.products.PricingTypes
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -363,7 +364,7 @@ class ApiClient(
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
-            val pricingType = pricingTypesByProduct[productId] ?: "FIXED"
+            val pricingType = PricingTypes.normalize(pricingTypesByProduct[productId])
             val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -436,7 +437,7 @@ class ApiClient(
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
-            val pricingType = pricingTypesByProduct[productId] ?: "FIXED"
+            val pricingType = PricingTypes.normalize(pricingTypesByProduct[productId])
             val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -1082,13 +1083,13 @@ class ApiClient(
             ?: o.optString("categoryName").takeIf { it.isNotBlank() },
         imageUrl = firstProductImageUrl(o),
         deposit = o.optDouble("deposit", 0.0),
-        pricingType = o.optString("pricingType", "FIXED").uppercase(),
+        pricingType = PricingTypes.normalize(o.optString("pricingType")),
         pricingOptions = o.optJSONArray("pricingOptions")?.let { options ->
             (0 until options.length()).mapNotNull { index ->
                 options.optJSONObject(index)?.let { option ->
                     PricingOption(
                         id = option.optInt("id").takeIf { option.has("id") },
-                        type = option.optString("type", "FIXED").uppercase(),
+                        type = PricingTypes.normalize(option.optString("type")),
                         price = option.optDouble("price"),
                         isDefault = option.optBoolean("isDefault"),
                     )

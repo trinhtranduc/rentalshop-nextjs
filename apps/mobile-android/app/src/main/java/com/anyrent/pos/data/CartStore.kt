@@ -7,6 +7,7 @@ import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.orders.OrderPlanDays
+import com.anyrent.pos.domain.products.PricingTypes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -487,7 +488,7 @@ object CartStore {
                 val option = optionsArray.optJSONObject(optionIndex) ?: return@mapNotNull null
                 PricingOption(
                     id = option.optInt("id", 0).takeIf { it > 0 },
-                    type = option.optString("type"),
+                    type = PricingTypes.normalize(option.optString("type")),
                     price = option.optDouble("price", 0.0),
                     isDefault = option.optBoolean("isDefault"),
                 )
@@ -506,7 +507,7 @@ object CartStore {
                 categoryName = productJson.optString("categoryName").takeIf { it.isNotBlank() && it != "null" },
                 imageUrl = productJson.optString("imageUrl").takeIf { it.isNotBlank() && it != "null" },
                 deposit = productJson.optDouble("deposit", 0.0),
-                pricingType = productJson.optString("pricingType").ifBlank { "FIXED" },
+                pricingType = PricingTypes.normalize(productJson.optString("pricingType")),
                 pricingOptions = options,
                 note = productJson.optString("note").takeIf { it.isNotBlank() && it != "null" },
             )
@@ -516,7 +517,7 @@ object CartStore {
                 quantity = line.optInt("quantity", 1).coerceAtLeast(1),
                 rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),
                 isSale = line.optBoolean("isSale"),
-                pricingType = line.optString("pricingType").ifBlank { product.pricingType },
+                pricingType = PricingTypes.normalize(line.optString("pricingType").ifBlank { product.pricingType }),
                 unitPriceOverride = override,
             )
         }

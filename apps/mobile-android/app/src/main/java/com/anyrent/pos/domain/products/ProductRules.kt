@@ -29,6 +29,13 @@ enum class PricingMode(val apiType: String) {
     PER_DAY("DAILY"),
 }
 
+/** #418 — the pricing types `POST /api/orders` accepts; null, blank or unknown read as FIXED (iOS `?? "FIXED"`) */
+object PricingTypes {
+    private val known = setOf("FIXED", "HOURLY", "DAILY")
+
+    fun normalize(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known } ?: "FIXED"
+}
+
 data class PricingOptionInput(val type: String, val price: Double, val isDefault: Boolean)
 
 object ProductPricing {
