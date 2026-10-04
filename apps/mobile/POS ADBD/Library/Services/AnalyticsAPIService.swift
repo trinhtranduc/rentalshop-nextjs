@@ -901,6 +901,46 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
     }
 }
 
+// MARK: - Outlet Operations (#371)
+extension AnalyticsAPIService {
+    /// GET /api/analytics/outlet-operations for the device day. A user without the dashboard permission gets an
+    /// error with code 403, so the caller can hide "Việc cần làm".
+    func loadOutletOperations(timeZone: String = DeviceTimeZone.identifier,
+                              completion: @escaping (TodayWork?, NSError?) -> Void) -> DataRequest {
+        let fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.outletOperations
+        return AF.request(fullURL, method: .get, parameters: ["timeZone": timeZone], headers: BaseService.jsonHeader)
+            .responseData { response in
+                let statusCode = response.response?.statusCode
+                switch response.result {
+                case .success(let data):
+                    do {
+                        let apiResponse = try JSONDecoder.shared.decode(TodayWorkResponse.self, from: data)
+                        if apiResponse.success, let work = apiResponse.data {
+                            completion(work, nil)
+                        } else {
+                            completion(nil, self.createErrorFromResponse(
+                                success: apiResponse.success,
+                                code: apiResponse.code,
+                                message: apiResponse.message,
+                                error: apiResponse.error,
+                                httpStatusCode: statusCode,
+                                defaultMessage: "Failed to load today's work"
+                            ))
+                        }
+                    } catch {
+                        if let statusCode, statusCode >= 400 {
+                            completion(nil, NSError(domain: "RC", code: statusCode))
+                        } else {
+                            completion(nil, error as NSError)
+                        }
+                    }
+                case .failure(let error):
+                    completion(nil, error as NSError)
+                }
+            }
+    }
+}
+
 // MARK: - Singleton Instance
 extension AnalyticsAPIService {
     static let shared = AnalyticsAPIService()

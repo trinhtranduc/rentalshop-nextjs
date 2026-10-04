@@ -1612,3 +1612,19 @@
 "products.cart.bar" = "Cart · %d items";
 "products.cart.removeTitle" = "Remove this item from the cart?";
 "products.cart.remove" = "Remove";
+// MARK: - Orders tab (#371)
+"To do" = "To do";
+"All orders" = "All orders";
+"Late section" = "Late";
+"Today section" = "Today";
+"Tomorrow section" = "Tomorrow";
+"Late %d days" = "%d days late";
+"Not prepared" = "Not prepared";
+"Hand over" = "Hand over";
+"Take back" = "Take back";
+"Collect %@" = "Collect %@";
+"Refund %@" = "Refund %@";
+"Call customer" = "Call customer";
+"Nothing to do today" = "Nothing to do today";
+"Retry" = "Retry";
+"Something went wrong" = "Something went wrong";

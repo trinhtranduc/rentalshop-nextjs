@@ -1610,3 +1610,19 @@
 "products.cart.bar" = "Giỏ hàng · %d món";
 "products.cart.removeTitle" = "Bỏ món này khỏi giỏ?";
 "products.cart.remove" = "Bỏ";
+// MARK: - Orders tab (#371)
+"To do" = "Việc cần làm";
+"All orders" = "Tất cả đơn";
+"Late section" = "Trễ hạn";
+"Today section" = "Hôm nay";
+"Tomorrow section" = "Ngày mai";
+"Late %d days" = "Trễ %d ngày";
+"Not prepared" = "Chưa soạn";
+"Hand over" = "Giao";
+"Take back" = "Nhận lại";
+"Collect %@" = "Thu %@";
+"Refund %@" = "Trả cọc %@";
+"Call customer" = "Gọi khách";
+"Nothing to do today" = "Không có việc hôm nay";
+"Retry" = "Thử lại";
+"Something went wrong" = "Đã có lỗi xảy ra";
