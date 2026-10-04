@@ -56,9 +56,14 @@ final class AnyRentE2ETests: XCTestCase {
         }
 
         XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 10), "Rows after clearing search")
-        e2e.tapRow(app.tables.cells.firstMatch)
         let addToCart = e2e.button(["Add to cart", "Thêm vào giỏ"])
-        XCTAssertTrue(addToCart.waitForExistence(timeout: 10), "Product detail should open with Add to cart")
+        // The list reloads after the search is cleared; a tap during the reload is lost, so retry.
+        for _ in 0..<3 where !addToCart.exists {
+            sleep(1)
+            app.tables.cells.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
+            _ = addToCart.waitForExistence(timeout: 5)
+        }
+        XCTAssertTrue(addToCart.waitForExistence(timeout: 5), "Product detail should open with Add to cart")
         if e2e.role == "merchant" {
             e2e.soft(e2e.button(["Edit product", "Sửa sản phẩm"]).exists, "merchant sees Edit on product detail")
         }
@@ -93,7 +98,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("23-cart-customer")
 
         guard e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "24-cart-rent") else {
-            return XCTFail("Rent order was not created")
+            return XCTFail("Rent order was not created (last alert: \(e2e.lastAlert ?? "none"))")
         }
 
         // The created order shows up in the Orders tab (search by the customer we picked).
@@ -128,7 +133,7 @@ final class AnyRentE2ETests: XCTestCase {
         _ = e2e.pickFirstCustomer()
         e2e.shot("31-cart-sale-customer")
         XCTAssertTrue(e2e.createOrderFromCart(cta: ["Sell & collect", "Bán & thu tiền"], shotPrefix: "32-cart-sale"),
-                      "Sale order was not created")
+                      "Sale order was not created (last alert: \(e2e.lastAlert ?? "none"))")
     }
 
     func test4OrdersTab() throws {
@@ -223,14 +228,19 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(sale.waitForExistence(timeout: 5), "Đơn bán segment")
         sale.tap()
         sleep(2)
+        // Open a RESERVED sale (only those offer Cancel order), scrolling the list if needed.
         var cancelled = false
-        for index in 0..<6 where !cancelled {
-            let cells = app.tables.cells
-            guard cells.count > index else { break }
-            e2e.tapRow(cells.element(boundBy: index))
+        let reservedBadge = NSPredicate(format: "label ==[c] 'RESERVED' OR label ==[c] 'Đã đặt' OR label ==[c] 'Đặt trước'")
+        let reservedRow = app.cells.containing(reservedBadge).firstMatch
+        for _ in 0..<5 where !(reservedRow.exists && reservedRow.isHittable) {
+            app.swipeUp()
+            sleep(1)
+        }
+        if reservedRow.exists {
+            e2e.tapRow(reservedRow)
             sleep(2)
             let cancel = e2e.button(["Cancel order", "Hủy đơn", "Hủy đơn hàng"])
-            if cancel.waitForExistence(timeout: 4), cancel.isHittable {
+            if cancel.waitForExistence(timeout: 5), cancel.isHittable {
                 e2e.shot("55-detail-sale")
                 cancel.tap()
                 let confirm = app.alerts.buttons.matching(
@@ -240,8 +250,12 @@ final class AnyRentE2ETests: XCTestCase {
                 confirm.tap()
                 sleep(3)
                 e2e.dismissAlerts()
+                let badge = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'CANCELLED' OR label ==[c] 'Đã hủy'")).firstMatch
+                e2e.soft(badge.waitForExistence(timeout: 5), "order shows CANCELLED after cancel")
                 e2e.shot("57-detail-cancelled")
                 cancelled = true
+            } else {
+                e2e.shot("55-detail-sale-no-cancel")
             }
             e2e.goBack()
         }
@@ -402,7 +416,17 @@ private final class E2E {
     func start() throws {
         app.launch()
         if isLoginScreen(timeout: 8) {
-            login()
+            // The secure field sometimes drops the typed password (keyboard switch after the email field),
+            // leaving Login disabled. Retry while the login form is still showing.
+            for attempt in 1...3 {
+                login()
+                if !app.secureTextFields.firstMatch.waitForNonExistence(timeout: 8) {
+                    shot("00-login-retry-\(attempt)", attachOnly: true)
+                    dismissAlerts()
+                    continue
+                }
+                break
+            }
             settle(seconds: 15)
             if !AnyRentE2ETests.relaunchedAfterLogin {
                 AnyRentE2ETests.relaunchedAfterLogin = true
@@ -422,8 +446,10 @@ private final class E2E {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if app.secureTextFields.firstMatch.exists { return true }
-            if app.tabBars.firstMatch.exists { return false }
+            if app.tabBars.firstMatch.exists && !app.alerts.firstMatch.exists { return false }
             dismissSystemAlert()
+            // "Signed in on another device" (single-session API) shows an app alert, then the login form.
+            if app.alerts.firstMatch.exists { dismissAlerts() }
             sleep(1)
         }
         return app.secureTextFields.firstMatch.exists
@@ -440,6 +466,10 @@ private final class E2E {
         pass.tap()
         pass.clearText()
         pass.typeText(password)
+        if let typed = pass.value as? String, typed.isEmpty || typed == pass.placeholderValue {
+            pass.tap()
+            pass.typeText(password)
+        }
         shot("01-login-filled", attachOnly: true)
         let loginButton = button(["Login", "Đăng nhập", "Log in"])
         XCTAssertTrue(loginButton.waitForExistence(timeout: 5), "Login button")
@@ -486,14 +516,19 @@ private final class E2E {
     }
 
     /// In-app error/info alerts after an action: record them, then close them.
+    /// Text of the last app alert dismissed (for failure messages).
+    var lastAlert: String?
+
     func dismissAlerts() {
         dismissSystemAlert()
         let alert = app.alerts.firstMatch
-        if alert.exists {
-            note("Alert: \(alert.label) \(alert.staticTexts.allElementsBoundByIndex.map { $0.label }.joined(separator: " | "))")
+        if alert.waitForExistence(timeout: 0.5) {
+            lastAlert = "\(alert.label) \(alert.staticTexts.allElementsBoundByIndex.map { $0.label }.joined(separator: " | "))"
+            note("Alert: \(lastAlert ?? "")")
             shot("alert-\(Int(Date().timeIntervalSince1970))")
             let ok = alert.buttons.matching(NSPredicate(format: "label IN %@", ["OK", "Đóng", "Close"])).firstMatch
-            (ok.exists ? ok : alert.buttons.firstMatch).tap()
+            let target = ok.exists ? ok : alert.buttons.firstMatch
+            if target.exists { target.tap() } // the alert may close on its own
         }
     }
 
@@ -553,18 +588,29 @@ private final class E2E {
         if element.waitForExistence(timeout: timeout), element.isHittable { element.tap() }
     }
 
+    /// Leave a pushed screen. Order and calendar details hide the tab bar and use an unlabeled arrow, so
+    /// when the tab bar is hidden keep trying (labeled back, nav bar, top-left arrow, edge swipe) until it shows.
     func goBack() {
+        let tabBar = app.tabBars.firstMatch
+        let tabBarWasVisible = tabBar.exists && tabBar.isHittable
         let back = app.buttons.matching(NSPredicate(format: "label IN %@",
             ["Back", "Quay lại", "Back to products", "Quay lại chọn sản phẩm"])).firstMatch
-        if back.exists && back.isHittable {
-            back.tap()
-        } else if app.navigationBars.buttons.firstMatch.exists && app.navigationBars.buttons.firstMatch.isHittable {
-            app.navigationBars.buttons.firstMatch.tap()
-        } else {
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.0, dy: 0.5))
-                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
+        for attempt in 0..<4 {
+            if back.exists && back.isHittable && attempt == 0 {
+                back.tap()
+            } else if attempt <= 1, app.navigationBars.buttons.firstMatch.exists,
+                      app.navigationBars.buttons.firstMatch.isHittable {
+                app.navigationBars.buttons.firstMatch.tap()
+            } else if attempt == 2 {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.067, dy: 0.087)).tap()
+            } else {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+                    .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
+            }
+            sleep(1)
+            if tabBarWasVisible || (tabBar.exists && tabBar.isHittable) { return }
         }
-        sleep(1)
+        note("goBack: tab bar still hidden after 4 attempts")
     }
 
     /// Home → make sure one product with stock is in the cart → open the cart.
@@ -661,7 +707,9 @@ private final class E2E {
         dismissAlerts()
         let backHome = app.tabBars.firstMatch.waitForExistence(timeout: 15)
         shot("\(shotPrefix)-created")
-        return backHome && !cartBar.exists
+        let created = backHome && !cartBar.exists
+        if !created, let alert = lastAlert { note("Order not created; last alert: \(alert)") }
+        return created
     }
 
     // MARK: Reporting
