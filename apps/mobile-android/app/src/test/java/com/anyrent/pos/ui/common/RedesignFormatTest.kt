@@ -7,7 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** #370 — day labels in the device time zone, Vietnamese money, status labels for unknown values */
+/** #370 — day labels in the device time zone, status labels for unknown values; #399 — money without a currency symbol */
 class RedesignFormatTest {
     private val vn = ZoneId.of("Asia/Ho_Chi_Minh")
     private val tokyo = ZoneId.of("Asia/Tokyo")
@@ -23,10 +23,15 @@ class RedesignFormatTest {
     }
 
     @Test
-    fun `money uses dot grouping and the dong sign`() {
-        assertEquals("1.150.000đ", formatMoneyVnd(1_150_000.0))
-        assertEquals("0đ", formatMoneyVnd(0.0))
-        assertEquals("−50.000đ", formatMoneyVnd(-50_000.0))
+    fun `money uses dot grouping and no currency symbol`() {
+        assertEquals("1.150.000", formatMoneyVnd(1_150_000.0))
+        assertEquals("0", formatMoneyVnd(0.0))
+        assertEquals("−50.000", formatMoneyVnd(-50_000.0))
+        assertEquals("−1.150.000", formatMoneyVnd(-1_150_000.0))
+        assertEquals("1.234.567.890", formatMoneyVnd(1_234_567_890.0))
+        assertEquals("999", formatMoneyVnd(999.0))
+        assertEquals("1.000", formatMoneyVnd(1_000.4))
+        assertEquals("0", formatMoneyVnd(-0.4))
     }
 
     @Test

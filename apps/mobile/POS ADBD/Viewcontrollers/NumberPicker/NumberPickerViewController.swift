@@ -67,8 +67,12 @@ class NumberPickerViewController: UIViewController {
         makeFilterChoiceButton(title: "đ", action: #selector(amountTapped))
     }()
 
+    /// Title of the fixed-amount choice; the redesigned cart sets it so no currency symbol shows (#399)
+    var amountChoiceTitle: String?
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        if let amountChoiceTitle { amountButton.setTitle(amountChoiceTitle, for: .normal) }
         setupUI()
         refreshValueLabel()
     }

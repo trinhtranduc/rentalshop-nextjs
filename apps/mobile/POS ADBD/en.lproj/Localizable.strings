@@ -1600,6 +1600,7 @@
 "products.cart.money" = "Money";
 "products.cart.rentSubtotal" = "Rental";
 "products.cart.saleSubtotal" = "Items";
+"products.cart.discountAmount" = "Amount";
 "products.cart.discount" = "Discount";
 "products.cart.total" = "Order total";
 "products.cart.deposit" = "Deposit paid now";

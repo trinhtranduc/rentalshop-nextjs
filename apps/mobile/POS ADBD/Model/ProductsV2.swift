@@ -256,7 +256,7 @@ enum ProductFormValidator {
 
 // MARK: - Cart
 
-/// What one cart line costs and how the cart explains it ("150.000đ/ngày × 3 ngày")
+/// What one cart line costs and how the cart explains it ("150.000/ngày × 3 ngày")
 struct CartLineCalc: Equatable {
     enum Unit: Equatable { case perRental, perDay(days: Int), sale }
     let unitPrice: Double
@@ -332,8 +332,7 @@ enum MoneyInput {
     /// 1250000 → "1.250.000"
     static func display(_ value: Double?) -> String {
         guard let value else { return "" }
-        let money = MoneyFormatter.format(value)
-        return String(money.dropLast())
+        return MoneyFormatter.format(value)
     }
 }
 
