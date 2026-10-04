@@ -25,7 +25,11 @@ Issue: #413 · Status: approved · Spec: ./spec.md
 - `apps/mobile-android/app/src/main/java/com/anyrent/pos/domain/orders/OrderPlanDays.kt` (new)
 - `apps/mobile-android/app/src/main/java/com/anyrent/pos/data/CartStore.kt` (date lines only)
 - `apps/mobile-android/app/src/main/java/com/anyrent/pos/data/repository/DefaultAvailabilityRepository.kt`
+- `apps/mobile-android/app/src/main/java/com/anyrent/pos/ui/orders/OrderDetailActions.kt` (same
+  `T00:00:00Z` / `T23:59:00Z` pattern in the old order detail's date edit; found during the fix)
 - `apps/mobile-android/app/src/test/java/com/anyrent/pos/data/CartPlanDatesTest.kt` (new)
+- `apps/mobile-android/app/src/test/java/com/anyrent/pos/domain/orders/OrderPlanDaysTest.kt` (new, read
+  side; `CartStore.loadFromOrderDetail` calls `android.util.Log`, which plain JVM tests cannot run)
 
 ## API compatibility (installed apps)
 

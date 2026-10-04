@@ -9,6 +9,7 @@ import com.anyrent.pos.domain.availability.AvailabilityRequest
 import com.anyrent.pos.domain.availability.AvailabilityRepository
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -71,8 +72,9 @@ class DefaultAvailabilityRepository(
         runCatching {
             val path = buildString {
                 append("/api/products/$productId/availability")
-                append("?startDate=${startDate}T00:00:00Z")
-                append("&endDate=${endDate}T23:59:59Z")
+                // Same window the cart sends as pickupPlanAt / returnPlanAt (#413)
+                append("?startDate=${OrderPlanDays.pickupInstant(startDate)}")
+                append("&endDate=${OrderPlanDays.returnInstant(endDate)}")
                 append("&quantity=$quantity")
                 append("&outletId=$outletId")
                 append("&includeAllOrders=true")
@@ -104,8 +106,9 @@ class DefaultAvailabilityRepository(
                     JSONObject().put("productId", it.productId).put("quantity", it.quantity)
                 }),
             )
-            .put("startDate", "${startDate}T00:00:00Z")
-            .put("endDate", "${endDate}T23:59:59Z")
+            // Same window the cart sends as pickupPlanAt / returnPlanAt (#413), as iOS does
+            .put("startDate", OrderPlanDays.pickupInstant(startDate))
+            .put("endDate", OrderPlanDays.returnInstant(endDate))
             .put("outletId", outletId)
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
