@@ -1,7 +1,7 @@
 import XCTest
 @testable import POS_ADBD
 
-/// #371 — orders tab: today's work, late days, sale day groups, stale search
+/// #371 — orders tab: today's work, late days, sale day groups, stale search; #401 — board texts
 final class OrdersHomeTests: XCTestCase {
     private let vietnam = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
     private let utc = TimeZone(identifier: "UTC")!
@@ -15,7 +15,7 @@ final class OrdersHomeTests: XCTestCase {
         """
         {"id":\(id),"orderNumber":"ORD-1-\(id)","customerName":"Lan","customerPhone":"0901234099",
          "pickupPlanAt":"2026-10-03T02:00:00.000Z","returnPlanAt":"2026-10-05T02:00:00.000Z",
-         "isReadyToDeliver":false,"productNames":"Áo dài","amountDue":500000,"refundDue":0,"lateDays":\(lateDays),
+         "isReadyToDeliver":false,"productNames":"Áo dài","totalAmount":800000,"amountDue":500000,"refundDue":0,"lateDays":\(lateDays),
          "items":[{"name":"Áo dài đỏ","quantity":2}]}
         """
     }
@@ -41,7 +41,8 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(sections[2].rows.map(\.orderId), [4])
         if case .work(let first, let kind) = sections[0].rows[0] {
             XCTAssertEqual(kind, .handOver)
-            XCTAssertEqual(first.productNames, "Áo dài đỏ x2")
+            XCTAssertEqual(first.productNames, "Áo dài đỏ ×2")
+            XCTAssertEqual(first.totalAmount, 800000)
             XCTAssertEqual(first.amountDue, 500000)
         } else {
             XCTFail("expected a work row")
@@ -156,6 +157,161 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(source.orderCalls[1].page, 1)
     }
 
+    // MARK: Board texts (#401)
+
+    private let vi = Locale(identifier: "vi")
+
+    private func work(_ id: Int, kind: WorkKind) -> OrdersRow {
+        .work(TodayWorkRow(id: id, orderNumber: "ORD-1-\(id)"), kind: kind)
+    }
+
+    private func order(status: String, type: String = "RENT", created: String = "2026-10-02T03:00:00.000Z",
+                       updated: String = "2026-10-02T03:00:00.000Z", pickup: String = "2026-10-04T02:00:00.000Z",
+                       returns: String = "2026-10-05T02:00:00.000Z") throws -> Order {
+        let json = #"{"id":1,"orderNumber":"ORD-1-0062","orderType":"\#(type)","status":"\#(status)","createdAt":"\#(created)","updatedAt":"\#(updated)","pickupPlanAt":"\#(pickup)","returnPlanAt":"\#(returns)","customerName":"Tâm","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":380000,"orderItems":[{"id":1,"quantity":2,"unitPrice":1,"totalPrice":2,"productName":"Vest xám kẻ"},{"id":2,"quantity":1,"unitPrice":1,"totalPrice":1,"productName":"Cà vạt lụa"}]}"#
+        return try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+    }
+
+    func testBandCountsAndBadge() {
+        let sections = [
+            OrdersSection(kind: .late, rows: [work(1, kind: .handOver), work(2, kind: .takeBack), work(3, kind: .takeBack)]),
+            OrdersSection(kind: .today, rows: [work(4, kind: .handOver), work(5, kind: .handOver)]),
+            OrdersSection(kind: .tomorrow, rows: [work(6, kind: .takeBack)]),
+        ]
+        let late = OrdersHomeLogic.bandCounts(sections[0].rows)
+        XCTAssertEqual(late.handOver, 1)
+        XCTAssertEqual(late.takeBack, 2)
+        // Badge: late + today, not tomorrow
+        XCTAssertEqual(OrdersHomeLogic.badgeCount(sections), 5)
+    }
+
+    func testPayLineChoice() {
+        XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 600000, refundDue: 0), .due(600000))
+        XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 0, refundDue: 200000), .refund(200000))
+        XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 50000, refundDue: 200000), .refund(200000), "a refund wins")
+        XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 0, refundDue: 0), .paid)
+    }
+
+    func testShortNumber() {
+        XCTAssertEqual(OrdersHomeLogic.shortNumber("ORD-1-0053"), "0053")
+        XCTAssertEqual(OrdersHomeLogic.shortNumber("ORD-001-20250115-0001"), "0001")
+        XCTAssertEqual(OrdersHomeLogic.shortNumber("ORD00112345"), "ORD00112345")
+        XCTAssertEqual(OrdersHomeLogic.shortNumber("702293"), "702293")
+    }
+
+    func testWorkDateLine() {
+        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0057",
+                               pickupPlanAt: iso.date(from: "2026-10-02T17:30:00Z"), // 03/10 00:30 in Vietnam
+                               returnPlanAt: iso.date(from: "2026-10-05T02:00:00Z"))
+        // Today / tomorrow: span with inclusive days in the device zone
+        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .handOver, isLate: false, timeZone: vietnam, locale: vi),
+                       "03/10 → 05/10 · " + String(format: "orders.v2.when.days".localized(), 3))
+        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .handOver, isLate: false, timeZone: utc, locale: vi),
+                       "02/10 → 05/10 · " + String(format: "orders.v2.when.days".localized(), 4))
+        // Late: the missed day with its weekday
+        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .handOver, isLate: true, timeZone: vietnam, locale: vi),
+                       String(format: "orders.v2.when.handOverDue".localized(), "T7 03/10"))
+        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .takeBack, isLate: true, timeZone: vietnam, locale: vi),
+                       String(format: "orders.v2.when.returnDue".localized(), "T2 05/10"))
+        // Same-day rental is one day
+        XCTAssertEqual(OrdersHomeLogic.inclusiveDays(from: iso.date(from: "2026-10-03T01:00:00Z")!,
+                                                     to: iso.date(from: "2026-10-03T10:00:00Z")!, timeZone: vietnam), 1)
+    }
+
+    func testListDateLine() throws {
+        let now = iso.date(from: "2026-10-04T05:00:00Z")!
+        let booked = try order(status: "RESERVED")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(booked, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "02/10") + " · 04/10 → 05/10")
+        let today = try order(status: "RESERVED", created: "2026-10-03T18:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(today, lateDays: 0, now: now, timeZone: vietnam),
+                       "orders.v2.when.createdToday".localized() + " · 04/10 → 05/10")
+        let late = try order(status: "PICKUPED", returns: "2026-10-02T02:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(late, lateDays: 2, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "02/10") + " · "
+                       + String(format: "orders.v2.when.due".localized(), "02/10"))
+        let cancelled = try order(status: "CANCELLED", updated: "2026-10-03T03:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(cancelled, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "02/10") + " · "
+                       + String(format: "orders.v2.when.cancelled".localized(), "03/10"))
+        XCTAssertEqual(booked.itemsSummary, "Vest xám kẻ ×2, Cà vạt lụa")
+        XCTAssertEqual(OrdersHomeLogic.statusTag(booked), RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver))
+        let sale = try order(status: "COMPLETED", type: "SALE")
+        XCTAssertEqual(OrdersHomeLogic.statusTag(sale, inSearch: true).text,
+                       String(format: "orders.v2.tag.sale".localized(), "orders.v2.status.completed".localized()))
+        XCTAssertEqual(OrdersHomeLogic.searchWhen(sale, lateDays: 0, timeZone: vietnam, locale: vi),
+                       String(format: "orders.v2.when.sold".localized(), "T6 02/10"))
+    }
+
+    func testSectionTitlesAndSaleSums() throws {
+        let now = iso.date(from: "2026-10-03T05:00:00Z")! // Saturday 03/10
+        let late = OrdersSection(kind: .late, rows: [work(1, kind: .handOver), work(2, kind: .takeBack)])
+        XCTAssertEqual(OrdersHomeLogic.sectionTitle(late, now: now, timeZone: vietnam, locale: vi),
+                       "\("Late section".localized()) · 2".uppercased(with: vi))
+        XCTAssertEqual(OrdersHomeLogic.sectionTitle(OrdersSection(kind: .tomorrow, rows: []), now: now, timeZone: vietnam, locale: vi),
+                       "\("Tomorrow section".localized()) · CN 04/10".uppercased(with: vi))
+        let yesterday = OrdersSection(kind: .day(iso.date(from: "2026-10-02T05:00:00Z")!), rows: [])
+        XCTAssertEqual(OrdersHomeLogic.sectionTitle(yesterday, now: now, timeZone: vietnam, locale: vi),
+                       "\("orders.v2.yesterday".localized()) · T6 02/10".uppercased(with: vi))
+        XCTAssertNil(OrdersHomeLogic.sectionTitle(OrdersSection(kind: .plain, rows: [])))
+
+        let rows: [OrdersRow] = [.order(try order(status: "COMPLETED", type: "SALE"), lateDays: 0),
+                                 .order(try order(status: "CANCELLED", type: "SALE"), lateDays: 0)]
+        let sum = OrdersHomeLogic.saleDaySummary(rows)
+        XCTAssertEqual(sum.count, 1, "cancelled orders are not counted")
+        XCTAssertEqual(sum.amount, 380000)
+    }
+
+    func testDateRangePresetsAndQuery() {
+        let now = iso.date(from: "2026-10-03T18:30:00Z")! // 04/10 01:30 in Vietnam
+        let key: (Date) -> String = { DayFormatter.key($0, timeZone: self.vietnam) }
+        XCTAssertNil(OrdersHomeLogic.dayBounds(.any, now: now, timeZone: vietnam))
+        let today = OrdersHomeLogic.dayBounds(.today, now: now, timeZone: vietnam)!
+        XCTAssertEqual([key(today.start), key(today.end)], ["2026-10-04", "2026-10-04"])
+        let week = OrdersHomeLogic.dayBounds(.next7Days, now: now, timeZone: vietnam)!
+        XCTAssertEqual([key(week.start), key(week.end)], ["2026-10-04", "2026-10-10"])
+        let month = OrdersHomeLogic.dayBounds(.thisMonth, now: now, timeZone: vietnam)!
+        XCTAssertEqual([key(month.start), key(month.end)], ["2026-10-01", "2026-10-31"])
+
+        var filter = RentOrdersFilter()
+        XCTAssertEqual(OrdersHomeLogic.rentQuery(filter, now: now, timeZone: vietnam).sortBy, "createdAt")
+        XCTAssertNil(OrdersHomeLogic.rentQuery(filter, now: now, timeZone: vietnam).startDate)
+        filter.status = .pickuped
+        filter.sort = .returnDate
+        filter.dateBasis = .pickedUp
+        filter.dateRange = .today
+        let query = OrdersHomeLogic.rentQuery(filter, page: 2, now: now, timeZone: vietnam)
+        XCTAssertEqual(query.orderType, .rent)
+        XCTAssertEqual(query.status, .pickuped)
+        XCTAssertEqual(query.sortBy, "returnPlanAt")
+        XCTAssertEqual(query.dateField, "pickedUpAt")
+        XCTAssertEqual(query.page, 2)
+        XCTAssertEqual(query.startDate.map(key), "2026-10-04")
+    }
+
+    func testStatusChipReloadsTheRentList() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        model.selectStatus(.cancelled)
+        XCTAssertEqual(source.orderCalls.map(\.query.status), [nil, .cancelled])
+        source.completeOrders(at: 1, ids: [3])
+        XCTAssertEqual(model.total, 1)
+    }
+
+    func testFilterCountDropsOlderAnswers() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        var counts: [Int?] = []
+        var first = RentOrdersFilter()
+        first.dateRange = .today
+        model.count(for: first) { counts.append($0) }
+        model.count(for: RentOrdersFilter()) { counts.append($0) }
+        source.completeOrders(at: 1, ids: [1, 2])
+        source.completeOrders(at: 0, ids: [1])
+        XCTAssertEqual(counts, [2])
+    }
+
     private func drainMain() {
         let done = expectation(description: "main queue")
         DispatchQueue.main.async { done.fulfill() }
@@ -165,10 +321,11 @@ final class OrdersHomeTests: XCTestCase {
 
 private final class FakeSource: OrdersHomeDataSource {
     struct Call {
-        let keyword: String?
-        let orderType: OrderType?
-        let page: Int
+        let query: OrdersQuery
         let completion: (OrdersData?, NSError?) -> Void
+        var keyword: String? { query.keyword }
+        var orderType: OrderType? { query.orderType }
+        var page: Int { query.page }
     }
 
     var todayCompletion: ((TodayWork?, NSError?) -> Void)?
@@ -178,9 +335,8 @@ private final class FakeSource: OrdersHomeDataSource {
         todayCompletion = completion
     }
 
-    func loadOrders(keyword: String?, orderType: OrderType?, status: OrderStatus?, sortBy: String, page: Int,
-                    completion: @escaping (OrdersData?, NSError?) -> Void) {
-        orderCalls.append(Call(keyword: keyword, orderType: orderType, page: page, completion: completion))
+    func loadOrders(_ query: OrdersQuery, completion: @escaping (OrdersData?, NSError?) -> Void) {
+        orderCalls.append(Call(query: query, completion: completion))
     }
 
     func completeOrders(at index: Int, ids: [Int]) {

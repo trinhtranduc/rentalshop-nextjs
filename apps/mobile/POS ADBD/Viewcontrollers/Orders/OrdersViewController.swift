@@ -2,24 +2,56 @@
 //  OrdersViewController.swift
 //  POS ADBD
 //
-//  Redesigned orders tab (#371), shown when the `newOrders` feature is on:
-//  "Việc cần làm" | "Tất cả đơn" (rent) | "Đơn bán", and one search across rent and sale.
+//  Redesigned orders tab (#371), shown when the `newOrders` feature is on. Boards (#401):
+//  Main ("Việc cần làm"), VL-tat-ca ("Tất cả đơn"), VL-ban ("Đơn bán", via the header button), VL-tim (search), Loc.
 //
 
 import UIKit
 import SnapKit
+import QRCodeReader
+import AVFoundation
+import AudioToolbox
 
 final class OrdersViewController: BaseViewControler {
+    private static let chipBorder = UIColor(hexString: "E2E8F0")
+    private static let trackFill = UIColor(hexString: "F1F5F9")
+    private static let statuses: [OrderStatus?] = [nil, .reserved, .pickuped, .returned, .cancelled]
+
     private let viewModel = OrdersHomeViewModel()
-    private var visibleSegments: [OrdersSegment] = OrdersSegment.allCases
     private var needsReloadOnAppear = false
     private var isPullRefreshing = false
+    /// Search mode (board VL-tim): the field has focus or holds a query
+    private var isSearchMode = false
+    /// The rent segment to go back to from "Đơn bán"
+    private var rentSegment: OrdersSegment = .today
 
-    private let listView = UITableView(frame: .zero, style: .grouped)
-    private let searchBar = UISearchBar()
-    private let segmentedControl = UISegmentedControl()
-    private let filterButton = UIButton(type: .system)
+    private let headerStack = UIStackView()
+    private let titleLabel = UILabel()
+    private let modeButton = UIButton(type: .system)
+    private let titleRow = UIStackView()
+    private let searchBox = UIView()
+    private let searchField = UITextField()
+    private let scanButton = UIButton(type: .system)
+    private let clearButton = UIButton(type: .system)
+    private let cancelButton = UIButton(type: .system)
+    private let segmentBar = UIStackView()
+    private let todaySegment = OrdersSegmentPill()
+    private let allSegment = OrdersSegmentPill()
+    private let listControls = UIStackView()
+    private var chipButtons: [UIButton] = []
+    private let sortButton = UIButton(type: .system)
+    private let countLabel = UILabel()
+    private let searchSummary = UIView()
+    private let searchSummaryLabel = UILabel()
+    private let listView = UITableView(frame: .zero, style: .plain)
     private let stateView = OrdersStateView()
+
+    private lazy var reader: QRCodeReaderViewController = {
+        let builder = QRCodeReaderViewControllerBuilder {
+            $0.reader = QRCodeReader(metadataObjectTypes: [.code39, .code128, .qr], captureDevicePosition: .back)
+        }
+        return QRCodeReaderViewController(builder: builder)
+    }()
 
     private var hidesMoney: Bool {
         OrdersHomeLogic.hidesMoney(role: User.current()?.role, hideForStaff: Utils.shouldHideFinancialDataForStaff())
@@ -27,7 +59,7 @@ final class OrdersViewController: BaseViewControler {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupCustomNavigationBar(title: "My Order".localized())
+        navigationController?.setNavigationBarHidden(true, animated: false)
         setupUI()
         viewModel.onChange = { [weak self] in self?.render() }
         viewModel.reload()
@@ -35,52 +67,29 @@ final class OrdersViewController: BaseViewControler {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
         if needsReloadOnAppear {
             needsReloadOnAppear = false
             viewModel.reload()
         }
     }
 
+    // MARK: - Layout
+
     override func setupUI() {
-        view.backgroundColor = DS.Color.background
+        view.backgroundColor = DS.Color.surface
+        let header = buildHeader()
+        buildListControls()
+        buildSearchSummary()
 
-        searchBar.searchBarStyle = .minimal
-        searchBar.placeholder = "Order number, name, phone number...".localized()
-        searchBar.delegate = self
-        searchBar.searchTextField.autocorrectionType = .no
-        searchBar.searchTextField.autocapitalizationType = .none
-        searchBar.searchTextField.backgroundColor = DS.Color.surface
-        searchBar.searchTextField.font = Utils.regularFont(size: 16)
-        searchBar.setImage(DS.symbol("magnifyingglass", DS.Icon.sm), for: .search, state: .normal)
-
-        filterButton.setImage(DS.symbol("line.3.horizontal.decrease", DS.Icon.md), for: .normal)
-        filterButton.tintColor = DS.Color.text
-        filterButton.accessibilityLabel = "Order Filter".localized()
-        filterButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)
-        filterButton.snp.makeConstraints { make in make.size.equalTo(DS.touchTarget) }
-
-        let searchRow = UIStackView(arrangedSubviews: [searchBar, filterButton])
-        searchRow.alignment = .center
-        searchRow.spacing = 0
-
-        rebuildSegments()
-        segmentedControl.selectedSegmentTintColor = DS.Color.surface
-        segmentedControl.setTitleTextAttributes([NSAttributedString.Key.font: Utils.mediumFont(size: 14), NSAttributedString.Key.foregroundColor: DS.Color.textMuted], for: .normal)
-        segmentedControl.setTitleTextAttributes([NSAttributedString.Key.font: Utils.boldFont(size: 14), NSAttributedString.Key.foregroundColor: DS.Color.text], for: .selected)
-        segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
-
-        let header = UIStackView(arrangedSubviews: [searchRow, segmentedControl])
-        header.axis = .vertical
-        header.spacing = DS.Spacing.sm
-        header.isLayoutMarginsRelativeArrangement = true
-        header.layoutMargins = UIEdgeInsets(top: DS.Spacing.sm, left: DS.Spacing.sm, bottom: DS.Spacing.sm, right: DS.Spacing.sm)
-        segmentedControl.snp.makeConstraints { make in make.height.equalTo(36) }
-
-        listView.backgroundColor = DS.Color.background
+        listView.backgroundColor = DS.Color.surface
         listView.separatorStyle = .none
         listView.rowHeight = UITableViewAutomaticDimension
-        listView.estimatedRowHeight = 150
+        listView.estimatedRowHeight = 110
+        listView.sectionHeaderHeight = UITableViewAutomaticDimension
+        listView.estimatedSectionHeaderHeight = 36
         listView.sectionFooterHeight = 0
+        if #available(iOS 15.0, *) { listView.sectionHeaderTopPadding = 0 }
         listView.keyboardDismissMode = .onDrag
         listView.dataSource = self
         listView.delegate = self
@@ -89,21 +98,208 @@ final class OrdersViewController: BaseViewControler {
         listView.contentInset.bottom = DS.Spacing.lg
         stateView.onRetry = { [weak self] in self?.viewModel.reload() }
 
-        view.addSubview(header)
+        let column = UIStackView(arrangedSubviews: [header, listControls, searchSummary])
+        column.axis = .vertical
+        view.addSubview(column)
         view.addSubview(listView)
-        header.snp.makeConstraints { make in
-            if let navBar = customNavBar {
-                make.top.equalTo(navBar.snp.bottom)
-            } else {
-                make.top.equalTo(view.safeAreaLayoutGuide)
-            }
+        column.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
         }
         listView.snp.makeConstraints { make in
-            make.top.equalTo(header.snp.bottom)
+            make.top.equalTo(column.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: listView)
+        updateHeader()
+    }
+
+    private func buildHeader() -> UIView {
+        titleLabel.font = Utils.boldFont(size: 24)
+        titleLabel.textColor = DS.Color.text
+        modeButton.titleLabel?.font = Utils.boldFont(size: 14)
+        modeButton.setTitleColor(DS.Color.text, for: .normal)
+        modeButton.layer.cornerRadius = 10
+        modeButton.layer.borderWidth = 1
+        modeButton.layer.borderColor = Self.chipBorder.cgColor
+        modeButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        modeButton.addTarget(self, action: #selector(modeTapped), for: .touchUpInside)
+        modeButton.snp.makeConstraints { make in make.height.equalTo(40) }
+        titleRow.addArrangedSubview(titleLabel)
+        titleRow.addArrangedSubview(UIView())
+        titleRow.addArrangedSubview(modeButton)
+        titleRow.alignment = .center
+
+        // Search field with the scan button inside (board Main); clear button while searching (VL-tim)
+        searchBox.layer.cornerRadius = 12
+        searchBox.layer.borderColor = DS.Color.primary.cgColor
+        let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
+        glass.tintColor = DS.Color.textMuted
+        glass.contentMode = .center
+        searchField.font = Utils.regularFont(size: 15)
+        searchField.textColor = DS.Color.text
+        searchField.attributedPlaceholder = NSAttributedString(string: "orders.v2.search.placeholder".localized(), attributes: [
+            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+            NSAttributedString.Key.font: Utils.regularFont(size: 15),
+        ])
+        searchField.accessibilityLabel = "orders.v2.search.placeholder".localized()
+        searchField.autocorrectionType = .no
+        searchField.autocapitalizationType = .none
+        searchField.returnKeyType = .search
+        searchField.delegate = self
+        searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
+        searchField.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        scanButton.setImage(DS.symbol("barcode.viewfinder", DS.Icon.sm), for: .normal)
+        scanButton.tintColor = DS.Color.text
+        scanButton.accessibilityLabel = "common.action.scanBarcode".localized()
+        scanButton.addTarget(self, action: #selector(scanTapped), for: .touchUpInside)
+        clearButton.setImage(DS.symbol("xmark", 14, weight: .semibold), for: .normal)
+        clearButton.tintColor = DS.Color.text
+        clearButton.backgroundColor = Self.chipBorder
+        clearButton.layer.cornerRadius = 18
+        clearButton.accessibilityLabel = "orders.v2.search.clear".localized()
+        clearButton.addTarget(self, action: #selector(clearTapped), for: .touchUpInside)
+        let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, scanButton, clearButton])
+        fieldRow.alignment = .center
+        fieldRow.spacing = DS.Spacing.sm
+        searchBox.addSubview(fieldRow)
+        glass.snp.makeConstraints { make in make.size.equalTo(DS.Icon.sm) }
+        searchField.snp.makeConstraints { make in make.height.equalTo(40) }
+        scanButton.snp.makeConstraints { make in make.size.equalTo(40) }
+        clearButton.snp.makeConstraints { make in make.size.equalTo(36) }
+        fieldRow.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.trailing.equalToSuperview().offset(-2)
+            make.centerY.equalToSuperview()
+        }
+        searchBox.snp.makeConstraints { make in make.height.equalTo(44) }
+        cancelButton.setTitle("orders.v2.search.cancel".localized(), for: .normal)
+        cancelButton.setTitleColor(DS.Color.primary, for: .normal)
+        cancelButton.titleLabel?.font = Utils.mediumFont(size: 15)
+        cancelButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
+        cancelButton.addTarget(self, action: #selector(cancelSearchTapped), for: .touchUpInside)
+        cancelButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        cancelButton.snp.makeConstraints { make in make.height.equalTo(44) }
+        let searchRow = UIStackView(arrangedSubviews: [searchBox, cancelButton])
+        searchRow.spacing = DS.Spacing.sm
+        searchRow.alignment = .center
+
+        // Two pill segments (board Main): "Việc cần làm" with its red badge, "Tất cả đơn"
+        todaySegment.title = "To do".localized()
+        allSegment.title = "All orders".localized()
+        todaySegment.addTarget(self, action: #selector(todayTapped), for: .touchUpInside)
+        allSegment.addTarget(self, action: #selector(allTapped), for: .touchUpInside)
+        segmentBar.addArrangedSubview(todaySegment)
+        segmentBar.addArrangedSubview(allSegment)
+        segmentBar.distribution = .fillEqually
+        segmentBar.backgroundColor = Self.trackFill
+        segmentBar.layer.cornerRadius = 12
+        segmentBar.isLayoutMarginsRelativeArrangement = true
+        segmentBar.layoutMargins = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
+
+        headerStack.axis = .vertical
+        headerStack.spacing = 10
+        headerStack.isLayoutMarginsRelativeArrangement = true
+        headerStack.layoutMargins = UIEdgeInsets(top: DS.Spacing.lg, left: DS.Spacing.lg, bottom: DS.Spacing.md, right: DS.Spacing.lg)
+        [titleRow, searchRow, segmentBar].forEach { headerStack.addArrangedSubview($0) }
+
+        let header = UIView()
+        header.backgroundColor = DS.Color.surface
+        header.addSubview(headerStack)
+        let line = UIView()
+        line.backgroundColor = DS.Color.border
+        header.addSubview(line)
+        headerStack.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
+        line.snp.makeConstraints { make in
+            make.top.equalTo(headerStack.snp.bottom)
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(1)
+        }
+        return header
+    }
+
+    /// Status chips, the sort selector and the order count of "Tất cả đơn" (board VL-tat-ca)
+    private func buildListControls() {
+        chipButtons = Self.statuses.enumerated().map { index, status in
+            let chip = UIButton(type: .system)
+            chip.tag = index
+            chip.setTitle(Self.chipTitle(status), for: .normal)
+            chip.layer.cornerRadius = 18
+            chip.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+            chip.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
+            chip.snp.makeConstraints { make in make.height.equalTo(36) }
+            return chip
+        }
+        let chips = UIStackView(arrangedSubviews: chipButtons)
+        chips.spacing = DS.Spacing.sm
+        let scroll = UIScrollView()
+        scroll.showsHorizontalScrollIndicator = false
+        scroll.addSubview(chips)
+        chips.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: DS.Spacing.lg, bottom: 0, right: DS.Spacing.lg))
+            make.height.equalToSuperview()
+        }
+        scroll.snp.makeConstraints { make in make.height.equalTo(36) }
+
+        sortButton.titleLabel?.font = Utils.boldFont(size: 13)
+        sortButton.setTitleColor(DS.Color.primary, for: .normal)
+        sortButton.tintColor = DS.Color.primary
+        sortButton.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
+        sortButton.semanticContentAttribute = .forceRightToLeft
+        sortButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: -4)
+        sortButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
+        sortButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)
+        sortButton.snp.makeConstraints { make in make.height.equalTo(36) }
+        countLabel.font = Utils.regularFont(size: 13)
+        countLabel.textColor = DS.Color.textMuted
+        let sortRow = UIStackView(arrangedSubviews: [sortButton, UIView(), countLabel])
+        sortRow.alignment = .center
+        sortRow.isLayoutMarginsRelativeArrangement = true
+        sortRow.layoutMargins = UIEdgeInsets(top: 6, left: DS.Spacing.lg, bottom: 6, right: DS.Spacing.lg)
+
+        let divider = UIView()
+        divider.backgroundColor = DS.Color.divider
+        divider.snp.makeConstraints { make in make.height.equalTo(1) }
+
+        let chipsWrap = UIView()
+        chipsWrap.addSubview(scroll)
+        scroll.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        listControls.axis = .vertical
+        [chipsWrap, sortRow, divider].forEach { listControls.addArrangedSubview($0) }
+        listControls.backgroundColor = DS.Color.surface
+    }
+
+    private func buildSearchSummary() {
+        searchSummaryLabel.font = Utils.regularFont(size: 13)
+        searchSummaryLabel.textColor = DS.Color.textMuted
+        searchSummaryLabel.numberOfLines = 2
+        searchSummary.addSubview(searchSummaryLabel)
+        searchSummaryLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-6)
+        }
+        let divider = UIView()
+        divider.backgroundColor = DS.Color.divider
+        searchSummary.addSubview(divider)
+        divider.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(1)
+        }
+    }
+
+    private static func chipTitle(_ status: OrderStatus?) -> String {
+        switch status {
+        case .none: return "orders.v2.status.all".localized()
+        case .some(.reserved): return "orders.v2.status.reserved".localized()
+        case .some(.pickuped): return "orders.v2.status.renting".localized()
+        case .some(.returned): return "orders.v2.status.returned".localized()
+        case .some(.cancelled): return "orders.v2.status.cancelled".localized()
+        case .some(let other): return other.localizedDisplayName()
+        }
     }
 
     override func startRefresh(_ sender: Any) {
@@ -111,34 +307,48 @@ final class OrdersViewController: BaseViewControler {
         viewModel.reload()
     }
 
-    private func rebuildSegments() {
-        visibleSegments = OrdersSegment.allCases.filter { $0 != .today || viewModel.todayAvailable }
-        segmentedControl.removeAllSegments()
-        for (index, segment) in visibleSegments.enumerated() {
-            segmentedControl.insertSegment(withTitle: title(of: segment), at: index, animated: false)
-        }
-        segmentedControl.selectedSegmentIndex = visibleSegments.firstIndex(of: viewModel.segment) ?? 0
-    }
-
-    private func title(of segment: OrdersSegment) -> String {
-        switch segment {
-        case .today: return "To do".localized()
-        case .rent: return "All orders".localized()
-        case .sale: return "Sale".localized()
-        }
-    }
-
     // MARK: - Render
 
-    private func render() {
-        if visibleSegments.contains(.today) != viewModel.todayAvailable {
-            rebuildSegments()
-        }
-        segmentedControl.isEnabled = !viewModel.isSearching
-        segmentedControl.alpha = viewModel.isSearching ? 0.5 : 1
-        filterButton.isHidden = viewModel.isSearching || viewModel.segment != .rent
-        filterButton.tintColor = viewModel.filter.isDefault ? DS.Color.text : DS.Color.primary
+    private var isSaleMode: Bool { viewModel.segment == .sale }
 
+    /// Title, mode button, segments and chips for the current mode
+    private func updateHeader() {
+        titleLabel.text = isSaleMode ? "orders.v2.title.sale".localized() : "orders.v2.title.rent".localized()
+        modeButton.setTitle(isSaleMode ? "orders.v2.title.rent".localized() : "orders.v2.title.sale".localized(), for: .normal)
+        titleRow.isHidden = isSearchMode
+        segmentBar.isHidden = isSearchMode || isSaleMode || !viewModel.todayAvailable
+        listControls.isHidden = isSearchMode || viewModel.segment != .rent
+        searchSummary.isHidden = !isSearchMode || !viewModel.isSearching || viewModel.total == nil
+        cancelButton.isHidden = !isSearchMode
+        scanButton.isHidden = isSearchMode
+        clearButton.isHidden = !isSearchMode || (searchField.text ?? "").isEmpty
+        searchBox.backgroundColor = isSearchMode ? DS.Color.surface : Self.trackFill
+        searchBox.layer.borderWidth = isSearchMode ? 2 : 0
+        searchField.font = Utils.regularFont(size: isSearchMode ? 16 : 15)
+        headerStack.layoutMargins.bottom = isSearchMode ? 10 : DS.Spacing.md
+
+        todaySegment.isSelected = viewModel.segment == .today
+        allSegment.isSelected = viewModel.segment == .rent
+        todaySegment.badge = viewModel.todayBadge > 0 ? "\(viewModel.todayBadge)" : nil
+
+        for (index, chip) in chipButtons.enumerated() {
+            let selected = Self.statuses[index] == viewModel.filter.status
+            chip.backgroundColor = selected ? DS.Color.text : DS.Color.surface
+            chip.layer.borderWidth = selected ? 0 : 1
+            chip.layer.borderColor = Self.chipBorder.cgColor
+            chip.setTitleColor(selected ? .white : DS.Color.text, for: .normal)
+            chip.titleLabel?.font = selected ? Utils.boldFont(size: 13) : Utils.regularFont(size: 13)
+            chip.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
+        }
+        sortButton.setTitle(OrdersFilterSheet.sortTitle(viewModel.filter.sort), for: .normal)
+        countLabel.text = viewModel.total.map { String(format: "orders.v2.count".localized(), $0) }
+        if let total = viewModel.total {
+            searchSummaryLabel.text = String(format: "orders.v2.search.summary".localized(), total, viewModel.searchText)
+        }
+    }
+
+    private func render() {
+        updateHeader()
         listView.reloadData()
         switch viewModel.state {
         case .loading where !isPullRefreshing:
@@ -168,17 +378,91 @@ final class OrdersViewController: BaseViewControler {
 
     // MARK: - Actions
 
-    @objc private func segmentChanged() {
-        let index = segmentedControl.selectedSegmentIndex
-        guard visibleSegments.indices.contains(index) else { return }
-        viewModel.select(visibleSegments[index])
+    @objc private func modeTapped() {
+        if isSaleMode {
+            viewModel.select(viewModel.todayAvailable ? rentSegment : .rent)
+        } else {
+            rentSegment = viewModel.segment
+            viewModel.select(.sale)
+        }
+        listView.setContentOffset(.zero, animated: false)
+        updateHeader()
+    }
+
+    @objc private func todayTapped() {
+        viewModel.select(.today)
+        listView.setContentOffset(.zero, animated: false)
+    }
+
+    @objc private func allTapped() {
+        viewModel.select(.rent)
+        listView.setContentOffset(.zero, animated: false)
+    }
+
+    @objc private func chipTapped(_ sender: UIButton) {
+        viewModel.selectStatus(Self.statuses[sender.tag])
         listView.setContentOffset(.zero, animated: false)
     }
 
     @objc private func filterTapped() {
         let sheet = OrdersFilterSheet(filter: viewModel.filter)
         sheet.onApply = { [weak self] filter in self?.viewModel.applyFilter(filter) }
+        sheet.countProvider = { [weak self] filter, completion in self?.viewModel.count(for: filter, completion: completion) }
         present(sheet, animated: true)
+    }
+
+    @objc private func searchChanged() {
+        viewModel.updateSearch(searchField.text ?? "")
+        updateHeader()
+    }
+
+    @objc private func clearTapped() {
+        searchField.text = ""
+        searchChanged()
+        searchField.becomeFirstResponder()
+    }
+
+    @objc private func cancelSearchTapped() {
+        searchField.text = ""
+        searchField.resignFirstResponder()
+        isSearchMode = false
+        viewModel.updateSearch("")
+        updateHeader()
+    }
+
+    private func enterSearchMode() {
+        guard !isSearchMode else { return }
+        isSearchMode = true
+        updateHeader()
+    }
+
+    @objc private func scanTapped() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                if granted { DispatchQueue.main.async { self.scanTapped() } }
+            }
+        case .authorized:
+            reader.delegate = self
+            reader.modalPresentationStyle = .formSheet
+            present(reader, animated: true)
+        default:
+            let alert = UIAlertController(title: "common.permission.camera.title".localized(),
+                                          message: "common.permission.camera.settingsMessage".localized(), preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "common.action.settings".localized(), style: .default) { _ in
+                if let url = URL(string: UIApplicationOpenSettingsURLString) { UIApplication.shared.open(url) }
+            })
+            alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+            present(alert, animated: true)
+        }
+    }
+
+    /// A scanned code becomes the search (rent and sale, every status)
+    private func search(code: String) {
+        isSearchMode = true
+        searchField.text = code
+        viewModel.updateSearch(code)
+        updateHeader()
     }
 
     private func call(_ phone: String) {
@@ -212,6 +496,31 @@ final class OrdersViewController: BaseViewControler {
             }
         }
     }
+
+    private func context(for section: OrdersSection) -> OrderRowContext {
+        if viewModel.isSearching { return .search }
+        switch section.kind {
+        case .late: return .work(isLate: true)
+        case .today, .tomorrow: return .work(isLate: false)
+        case .day: return .sale
+        case .plain: return .list
+        }
+    }
+
+    /// "giao 1 · trả 2" on a work band, "3 đơn · 1.630.000" on a sale day
+    private func summary(for section: OrdersSection) -> String? {
+        switch section.kind {
+        case .late, .today, .tomorrow:
+            let counts = OrdersHomeLogic.bandCounts(section.rows)
+            return String(format: "orders.v2.band.work".localized(), counts.handOver, counts.takeBack)
+        case .day:
+            let sum = OrdersHomeLogic.saleDaySummary(section.rows)
+            let count = String(format: "orders.v2.count".localized(), sum.count)
+            return hidesMoney ? count : "\(count) · \(MoneyFormatter.format(sum.amount))"
+        case .plain:
+            return nil
+        }
+    }
 }
 
 // MARK: - Table
@@ -227,22 +536,23 @@ extension OrdersViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = listView.dequeueReusableCell(withIdentifier: OrderRowCell.reuseId, for: indexPath) as! OrderRowCell
-        cell.configure(viewModel.sections[indexPath.section].rows[indexPath.row],
-                       showsType: viewModel.isSearching, hidesMoney: hidesMoney)
+        let section = viewModel.sections[indexPath.section]
+        cell.configure(section.rows[indexPath.row], context: context(for: section), hidesMoney: hidesMoney)
         cell.onCall = { [weak self] phone in self?.call(phone) }
         return cell
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let data = viewModel.sections[section]
-        guard let title = data.title else { return nil }
+        guard !viewModel.isSearching, let title = OrdersHomeLogic.sectionTitle(data) else { return nil }
         let header = listView.dequeueReusableHeaderFooterView(withIdentifier: OrdersSectionHeaderView.reuseId) as? OrdersSectionHeaderView
-        header?.configure(title: title, count: data.rows.count, style: data.style)
+        header?.configure(title: title, summary: summary(for: data), style: data.style)
         return header
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        viewModel.sections[section].title == nil ? DS.Spacing.sm : UITableViewAutomaticDimension
+        let data = viewModel.sections[section]
+        return viewModel.isSearching || data.kind == .plain ? 0 : UITableViewAutomaticDimension
     }
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
@@ -250,7 +560,7 @@ extension OrdersViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        .leastNormalMagnitude
+        0
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -260,19 +570,37 @@ extension OrdersViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
         openOrder(id: viewModel.sections[indexPath.section].rows[indexPath.row].orderId)
     }
 }
 
 // MARK: - Search
 
-extension OrdersViewController: UISearchBarDelegate {
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        viewModel.updateSearch(searchText)
+extension OrdersViewController: UITextFieldDelegate {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        enterSearchMode()
     }
 
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+}
+
+extension OrdersViewController: QRCodeReaderViewControllerDelegate {
+    func readerDidCancel(_ reader: QRCodeReaderViewController) {
+        dismiss(animated: true)
+    }
+
+    func reader(_ reader: QRCodeReaderViewController, didScanResult result: QRCodeReaderResult) {
+        reader.stopScanning()
+        AudioServicesPlaySystemSound(1016)
+        let code = result.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        dismiss(animated: true) { [weak self] in
+            guard !code.isEmpty else { return }
+            self?.search(code: code)
+        }
     }
 }
 
@@ -281,6 +609,84 @@ extension OrdersViewController: UISearchBarDelegate {
 extension OrdersViewController: PreviewViewControllerDelegate {
     func didCompleteOrder(sender: PreviewViewController, updatedOrder: Order?) {
         needsReloadOnAppear = true
+    }
+}
+
+// MARK: - Segment pill
+
+/// One segment of the pill control (board Main): white with a soft shadow when selected, optional red badge
+final class OrdersSegmentPill: UIControl {
+    private static let badgeFill = UIColor(hexString: "B91C1C")
+    private let label = UILabel()
+    private let badgeLabel = UILabel()
+
+    var title: String? {
+        get { label.text }
+        set { label.text = newValue; accessibilityLabel = newValue }
+    }
+
+    var badge: String? {
+        didSet {
+            badgeLabel.text = badge
+            badgeLabel.isHidden = badge == nil
+        }
+    }
+
+    override var isSelected: Bool {
+        didSet { applyState() }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        layer.cornerRadius = 9
+        label.font = Utils.mediumFont(size: 14)
+        badgeLabel.font = Utils.boldFont(size: 12)
+        badgeLabel.textColor = .white
+        badgeLabel.backgroundColor = Self.badgeFill
+        badgeLabel.textAlignment = .center
+        badgeLabel.layer.cornerRadius = 10
+        badgeLabel.layer.masksToBounds = true
+        badgeLabel.isHidden = true
+        let stack = UIStackView(arrangedSubviews: [label, badgeLabel])
+        stack.spacing = 6
+        stack.alignment = .center
+        stack.isUserInteractionEnabled = false
+        addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().offset(4)
+        }
+        badgeLabel.snp.makeConstraints { make in
+            make.height.equalTo(20)
+            make.width.greaterThanOrEqualTo(22)
+        }
+        snp.makeConstraints { make in make.height.equalTo(40) }
+        isAccessibilityElement = true
+        applyState()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Badge text gets 6pt side padding
+        if let text = badgeLabel.text {
+            let width = (text as NSString).size(withAttributes: [NSAttributedString.Key.font: badgeLabel.font as Any]).width + 12
+            badgeLabel.snp.updateConstraints { make in make.width.greaterThanOrEqualTo(max(22, width)) }
+        }
+    }
+
+    private func applyState() {
+        backgroundColor = isSelected ? DS.Color.surface : .clear
+        label.textColor = isSelected ? DS.Color.text : DS.Color.textMuted
+        label.font = isSelected ? Utils.boldFont(size: 14) : Utils.mediumFont(size: 14)
+        layer.shadowColor = DS.Color.text.cgColor
+        layer.shadowOpacity = isSelected ? 0.1 : 0
+        layer.shadowRadius = 1
+        layer.shadowOffset = CGSize(width: 0, height: 1)
+        accessibilityTraits = isSelected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
     }
 }
 
