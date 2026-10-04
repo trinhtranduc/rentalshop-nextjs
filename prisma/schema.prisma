@@ -256,6 +256,7 @@ model Product {
   costPrice            Float?
   pricingType          PricingType?
   durationConfig       String?
+  deletedAt            DateTime? // Soft delete (#389); hidden from lists, kept for orders
   orderItems           OrderItem[]
   outletStock          OutletStock[]
   embeddingJobs        EmbeddingJob[]
