@@ -166,7 +166,7 @@
   "MISSING_PRODUCT_DATA": "Thiếu dữ liệu sản phẩm",
   "MISSING_STAGING_KEYS": "Thiếu staging keys",
   "NO_VALID_FIELDS": "Không có trường hợp lệ để cập nhật",
-  "OUTLET_REQUIRED": "ID cửa hàng là bắt buộc",
+  "OUTLET_REQUIRED": "Vui lòng chọn cửa hàng, hoặc đặt một cửa hàng mặc định.",
   "MULTIPLE_ENTITIES_FOUND": "Nhiều thực thể được tìm thấy với cùng định danh",
   "INVALID_ACTION": "Hành động không hợp lệ",
   "INVALID_REQUEST": "Định dạng yêu cầu không hợp lệ",

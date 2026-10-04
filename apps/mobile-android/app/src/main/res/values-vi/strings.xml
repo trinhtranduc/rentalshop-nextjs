@@ -629,6 +629,7 @@
     <string name="v2_cart_rent_subtotal">Tiền thuê</string>
     <string name="v2_cart_sale_subtotal">Tiền hàng</string>
     <string name="v2_cart_discount">Giảm giá</string>
+    <string name="v2_cart_discount_amount">Số tiền</string>
     <string name="v2_cart_total">Tổng đơn</string>
     <string name="v2_cart_deposit">Cọc trả trước</string>
     <string name="v2_cart_note">Ghi chú</string>
@@ -657,6 +658,7 @@
     <string name="something_went_wrong">Đã có lỗi xảy ra</string>
     <!-- Order detail (#372) -->
     <string name="api_error_invalid_order_status">Không thể đổi sang trạng thái này. Đơn có thể vừa được cập nhật.</string>
+    <string name="api_error_outlet_required">Vui lòng chọn cửa hàng, hoặc đặt một cửa hàng mặc định.</string>
     <string name="detail_more_actions">Thêm thao tác</string>
     <string name="detail_print_receipt">In hóa đơn</string>
     <string name="detail_call">Gọi</string>

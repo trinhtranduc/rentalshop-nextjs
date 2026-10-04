@@ -466,6 +466,7 @@ final class CartV2ViewController: BaseViewControler {
     @objc private func editDiscount() {
         let picker = NumberPickerViewController.instance()
         picker.delegate = self
+        picker.amountChoiceTitle = "products.cart.discountAmount".localized()
         picker.configure(initialValue: cart.discount, mode: .discount(type: cart.discountType == .percentage ? .percentage : .amount))
         present(picker, animated: true)
     }

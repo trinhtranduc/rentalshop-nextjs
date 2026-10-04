@@ -630,6 +630,7 @@
     <string name="v2_cart_rent_subtotal">Rental</string>
     <string name="v2_cart_sale_subtotal">Items</string>
     <string name="v2_cart_discount">Discount</string>
+    <string name="v2_cart_discount_amount">Amount</string>
     <string name="v2_cart_total">Order total</string>
     <string name="v2_cart_deposit">Deposit paid now</string>
     <string name="v2_cart_note">Note</string>
@@ -658,6 +659,7 @@
     <string name="something_went_wrong">Something went wrong</string>
     <!-- Order detail (#372) -->
     <string name="api_error_invalid_order_status">This status change is not allowed for this order. It may have just been updated.</string>
+    <string name="api_error_outlet_required">Choose an outlet, or set a default outlet for your shop.</string>
     <string name="detail_more_actions">More actions</string>
     <string name="detail_print_receipt">Print receipt</string>
     <string name="detail_call">Call</string>

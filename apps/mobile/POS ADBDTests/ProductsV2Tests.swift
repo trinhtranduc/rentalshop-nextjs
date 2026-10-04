@@ -114,6 +114,7 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(MoneyInput.parse(""))
         XCTAssertNil(MoneyInput.parse(nil))
         XCTAssertEqual(MoneyInput.display(1_250_000), "1.250.000")
+        XCTAssertEqual(MoneyInput.display(0), "0")
         XCTAssertEqual(MoneyInput.display(nil), "")
     }
 
