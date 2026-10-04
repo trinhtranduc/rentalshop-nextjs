@@ -46,4 +46,13 @@ object DS {
 
     /** Minimum touch target */
     val TouchTarget = 44.dp
+
+    /**
+     * Icon box sizes of the boards (canvas px = icon box). Use with `Icons.Outlined.*` at the same dp (#396).
+     */
+    object Icon {
+        val Sm = 18.dp
+        val Md = 20.dp
+        val Lg = 22.dp
+    }
 }

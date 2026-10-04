@@ -24,13 +24,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,6 +84,7 @@ import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductRowLogic
 import com.anyrent.pos.ui.common.AppFormSheet
+import com.anyrent.pos.ui.common.AppIcons
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
@@ -164,12 +164,12 @@ fun ProductsHomeScreen(
                     }
                     if (ProductAccess.canCreate(PermissionManager.role)) {
                         IconButton(onClick = { showForm = true }) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_product))
+                            Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.new_product), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
                     IconButton(onClick = onOpenInbox) {
                         BadgedBox(badge = { if (unread > 0) Badge { Text(unread.coerceAtMost(99).toString()) } }) {
-                            Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notifications))
+                            Icon(Icons.Outlined.Notifications, contentDescription = stringResource(R.string.notifications), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
                 }
@@ -184,7 +184,7 @@ fun ProductsHomeScreen(
                             .padding(start = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(DS.Icon.Sm))
                         Spacer(Modifier.size(8.dp))
                         Box(Modifier.weight(1f)) {
                             if (draft.isEmpty()) {
@@ -203,11 +203,11 @@ fun ProductsHomeScreen(
                         }
                         if (draft.isNotEmpty()) {
                             IconButton(onClick = { draft = "" }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.close), modifier = Modifier.size(16.dp))
                             }
                         }
-                        FieldIcon(Icons.Default.PhotoCamera, stringResource(R.string.image_search)) { showImageSearch = true }
-                        FieldIcon(Icons.Default.QrCodeScanner, stringResource(R.string.camera_scan)) { showScan = true }
+                        FieldIcon(Icons.Outlined.PhotoCamera, stringResource(R.string.image_search)) { showImageSearch = true }
+                        FieldIcon(AppIcons.Barcode, stringResource(R.string.camera_scan)) { showScan = true }
                     }
                 }
             }
@@ -307,7 +307,7 @@ private fun FieldIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
             .clickable(onClick = onClick)
             .semantics { contentDescription = label; role = Role.Button },
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(22.dp)) }
+    ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md)) }
 }
 
 /** The + of a product already in the cart: the count on a darker blue (board SP-dong) */
@@ -392,7 +392,7 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
                 if (addState is AddButtonState.InCart) {
                     Text(addState.count.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 } else {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = if (out) DS.Colors.TextMuted else Color.White)
+                    Icon(Icons.Outlined.Add, contentDescription = null, tint = if (out) DS.Colors.TextMuted else Color.White, modifier = Modifier.size(DS.Icon.Sm))
                 }
             }
         }
@@ -422,6 +422,6 @@ private fun CartBar(count: Int, total: Double, onClick: () -> Unit, modifier: Mo
             Text(formatMoneyVnd(total), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
         Text(create, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White)
+        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
     }
 }
