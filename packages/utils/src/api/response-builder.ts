@@ -145,6 +145,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'EMAIL_ALREADY_VERIFIED': 'Email has already been verified',
   'EMAIL_SEND_FAILED': 'Failed to send email',
   'TOKEN_REQUIRED': 'Token is required',
+  'RATE_LIMIT_EXCEEDED': 'Too many requests. Please wait a few minutes and try again.',
   
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
