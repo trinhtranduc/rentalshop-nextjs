@@ -6,14 +6,14 @@ import com.anyrent.pos.R
 object LegacyRegisterTags {
     data class Chip(val apiValue: String, val labelRes: Int)
 
-    /** On-screen order */
+    /** On-screen order; values are `registerSchema.businessTags` (packages/utils/src/core/validation-schemas.ts) */
     val chips = listOf(
         Chip("AO_DAI", R.string.tag_ao_dai),
         Chip("COSTUME", R.string.tag_costume),
-        Chip("WEDDING", R.string.tag_wedding),
+        Chip("WEDDING_DRESS", R.string.tag_wedding),
         Chip("EQUIPMENT", R.string.tag_equipment),
         Chip("VEHICLE", R.string.tag_vehicle),
-        Chip("FILM", R.string.tag_film),
+        Chip("FILM_EQUIPMENT", R.string.tag_film),
         Chip("OTHER", R.string.tag_other),
     )
 
