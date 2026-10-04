@@ -33,3 +33,7 @@ All Android users who check a rent cart (old cart and `CartV2`). No API change.
 
 - 2026-10-04 — An entry with `error` (`PRODUCT_NOT_FOUND`, `PRODUCT_OUTLET_NOT_FOUND`) falls back
   to the single check, which reports the real error, instead of being read as "available".
+- 2026-10-04 — Found during the manual check: with `merchant2` (no outlet) the repository refused to
+  check at all, so checkout failed before any request. The batch and single checks now omit
+  `outletId` when the session has none (API #402 resolves the default outlet). `occupancyCalendar`
+  is unchanged.

@@ -67,8 +67,8 @@ class DefaultAvailabilityRepository(
         if (quantity < 1) {
             throw AppError.Validation("Quantity must be at least 1")
         }
+        // A merchant login has no outlet: the API then uses the merchant's default outlet (#402)
         val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
         runCatching {
             val path = buildString {
                 append("/api/products/$productId/availability")
@@ -76,7 +76,7 @@ class DefaultAvailabilityRepository(
                 append("?startDate=${OrderPlanDays.pickupInstant(startDate)}")
                 append("&endDate=${OrderPlanDays.returnInstant(endDate)}")
                 append("&quantity=$quantity")
-                append("&outletId=$outletId")
+                if (outletId != null) append("&outletId=$outletId")
                 append("&includeAllOrders=true")
             }
             val json = api.authedGet(path)
@@ -92,8 +92,9 @@ class DefaultAvailabilityRepository(
         validateBatch(requests, startDate, endDate)
         if (requests.isEmpty()) return@withContext emptyMap()
 
+        // A merchant login has no outlet: the API then uses the merchant's default outlet (#402),
+        // as iOS sends `outletId` only when it has one
         val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
         val normalized = requests
             .groupBy { it.productId }
             .mapValues { (_, values) -> values.sumOf { it.quantity } }
@@ -109,7 +110,7 @@ class DefaultAvailabilityRepository(
             // Same window the cart sends as pickupPlanAt / returnPlanAt (#413), as iOS does
             .put("startDate", OrderPlanDays.pickupInstant(startDate))
             .put("endDate", OrderPlanDays.returnInstant(endDate))
-            .put("outletId", outletId)
+            .apply { if (outletId != null) put("outletId", outletId) }
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 

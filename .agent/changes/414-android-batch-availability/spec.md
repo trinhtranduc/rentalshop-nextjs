@@ -10,7 +10,10 @@ Issue: #414 · Status: approved · Intent: ./intent.md
 2. No `GET /api/products/{id}/availability` call when every product is in `results` without `error`.
 3. A product missing from `results`, or whose entry has `error`, is checked with the single call.
 4. HTTP 404/405 on the batch route still falls back to single checks; other HTTP errors still throw.
-5. The older keys (`data[<id>]`, `availability`, `availabilityByProduct`, `products`) still parse.
+5. A login without an outlet (MERCHANT) sends no `outletId`; the API uses the merchant's default
+   outlet (#402), as iOS sends `outletId` only when it has one. Before, the repository threw
+   "An outlet is required" and merchant logins could not create a rent order on Android.
+6. The older keys (`data[<id>]`, `availability`, `availabilityByProduct`, `products`) still parse.
 
 ## Out of scope
 
