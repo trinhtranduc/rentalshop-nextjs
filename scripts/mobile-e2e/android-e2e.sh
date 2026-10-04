@@ -75,6 +75,11 @@ else
   fi
 fi
 
+launch_app() { # monkey aborts on emulators without hardware keys (exit 251), so start the launcher activity
+  local activity
+  activity="$(adb_s shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$PKG" | tail -1 | tr -d '\r')"
+  adb_s shell am start -W -n "$activity" >/dev/null
+}
 # --- 2. build + install --------------------------------------------------------------------------
 if [ "$BUILD" = 1 ]; then
   export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
@@ -84,7 +89,7 @@ fi
 if [ "$FRESH" = 1 ]; then adb_s uninstall "$PKG" >/dev/null 2>&1 || true; fi
 adb_s install -r -g "$APK"   # -g grants runtime permissions (no notification prompt)
 adb_s shell am force-stop "$PKG"
-adb_s shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
+launch_app
 
 # --- 3. scenario ---------------------------------------------------------------------------------
 MISSES=0
@@ -122,7 +127,7 @@ fi
 # Relaunch once so the app-config flags apply.
 sleep 3
 adb_s shell am force-stop "$PKG"
-adb_s shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
+launch_app
 ui wait "~Trang chủ" 20 || ui wait "Home" 2 || echo "MISS  main shell"
 
 # 1. Home / products
