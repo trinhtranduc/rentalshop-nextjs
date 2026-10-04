@@ -47,6 +47,7 @@ object ApiErrorMessages {
         "OUTLET_REQUIRED" -> R.string.api_error_outlet_required
         "CURRENT_PASSWORD_INCORRECT" -> R.string.api_error_current_password_incorrect
         "PASSWORD_MIN_LENGTH" -> R.string.api_error_password_min_length
+        "RATE_LIMIT_EXCEEDED" -> R.string.api_error_rate_limit_exceeded
         else -> 0
     }
 

@@ -120,7 +120,7 @@
   "EMAIL_VERIFIED_SUCCESS": "Email verified successfully",
   "VERIFICATION_EMAIL_SENT": "Verification email has been sent",
   "EMAIL_SEND_FAILED": "Failed to send email",
-  "RATE_LIMIT_EXCEEDED": "Rate limit exceeded. Please try again later",
+  "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a few minutes and try again.",
   
   "_comment_validation": "Validation Errors",
   "INVALID_QUERY": "Invalid query parameters",

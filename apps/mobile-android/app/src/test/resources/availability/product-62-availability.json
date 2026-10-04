@@ -1,0 +1,76 @@
+{
+  "success": true,
+  "code": "AVAILABILITY_CHECKED",
+  "message": "AVAILABILITY_CHECKED",
+  "data": {
+    "productId": 62,
+    "productName": "P373 \u00c1o d\u00e0i test",
+    "totalStock": 3,
+    "totalAvailableStock": 1,
+    "totalRenting": 2,
+    "requestedQuantity": 2,
+    "rentalPeriod": {
+      "startDate": "2026-10-05T00:00:00.000Z",
+      "endDate": "2026-10-05T23:59:59.000Z",
+      "startDateLocal": "10/5/2026, 07:00:00",
+      "endDateLocal": "10/6/2026, 06:59:59",
+      "durationMs": 86399000,
+      "durationHours": 24,
+      "durationDays": 1,
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "includeTimePrecision": true
+    },
+    "isAvailable": false,
+    "stockAvailable": true,
+    "hasNoConflicts": false,
+    "availabilityByOutlet": [
+      {
+        "outletId": 2,
+        "outletName": "Outdoor Equipment Co. - Main Branch",
+        "stock": 3,
+        "available": 1,
+        "renting": 2,
+        "conflictingQuantity": 2,
+        "reservedConflictQuantity": 2,
+        "effectivelyAvailable": 1,
+        "canFulfillRequest": false,
+        "conflicts": [
+          {
+            "orderNumber": "786100",
+            "customerName": "Brian Clark",
+            "pickupDate": "2026-10-04T00:00:00.000Z",
+            "returnDate": "2026-10-05T23:59:00.000Z",
+            "pickupDateLocal": "10/4/2026, 07:00:00",
+            "returnDateLocal": "10/6/2026, 06:59:00",
+            "quantity": 2,
+            "conflictDuration": 86340000,
+            "conflictHours": 23.98,
+            "conflictType": "period_overlap"
+          }
+        ]
+      }
+    ],
+    "bestOutlet": {
+      "outletId": 2,
+      "outletName": "Outdoor Equipment Co. - Main Branch",
+      "effectivelyAvailable": 1
+    },
+    "totalConflictsFound": 1,
+    "orders": [
+      {
+        "id": 128,
+        "orderNumber": "786100",
+        "orderType": "RENT",
+        "status": "RESERVED",
+        "customerName": "Brian Clark",
+        "customerPhone": "+1-555-1026",
+        "createdAt": "2026-10-04T03:44:50.878Z",
+        "pickupPlanAt": "2026-10-04T00:00:00.000Z",
+        "returnPlanAt": "2026-10-05T23:59:00.000Z",
+        "quantity": 2,
+        "isConflict": true
+      }
+    ],
+    "message": "Stock available but conflicts during requested period (24 hours)"
+  }
+}

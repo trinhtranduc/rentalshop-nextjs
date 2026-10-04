@@ -606,7 +606,7 @@ struct APIErrorMessages {
         
         // Verification Errors
         .verificationEmailSent: "Verification email has been sent successfully.",
-        .rateLimitExceeded: "Too many requests. Please wait a few minutes before requesting another verification email.",
+        .rateLimitExceeded: "Too many requests. Please wait a few minutes and try again.",
         .emailSendFailed: "Failed to send verification email. Please try again later.",
         
         // Validation Errors

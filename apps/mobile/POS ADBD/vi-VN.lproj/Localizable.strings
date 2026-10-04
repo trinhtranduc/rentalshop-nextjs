@@ -1197,6 +1197,7 @@
 "PRODUCT_UPDATED_SUCCESS" = "Đã cập nhật sản phẩm thành công";
 "PROFILE_UPDATED_SUCCESS" = "Đã cập nhật hồ sơ thành công";
 "QR_CODE_GENERATION_FAILED" = "Không thể tạo mã QR";
+"RATE_LIMIT_EXCEEDED" = "Bạn thao tác quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.";
 "RECENT_OPERATIONS_WITHOUT_LOGS" = "Tìm thấy thao tác gần đây không có nhật ký kiểm toán tương ứng";
 "RETRIEVE_USERS_FAILED" = "Không thể lấy người dùng";
 "SESSION_CANNOT_BE_RESUMED" = "Không thể tiếp tục phiên";

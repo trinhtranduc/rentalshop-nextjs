@@ -120,7 +120,7 @@
   "EMAIL_VERIFIED_SUCCESS": "Xác thực email thành công",
   "VERIFICATION_EMAIL_SENT": "Email xác thực đã được gửi",
   "EMAIL_SEND_FAILED": "Không thể gửi email",
-  "RATE_LIMIT_EXCEEDED": "Vượt quá giới hạn. Vui lòng thử lại sau",
+  "RATE_LIMIT_EXCEEDED": "Bạn thao tác quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.",
   
   "_comment_validation": "Lỗi xác thực",
   "INVALID_QUERY": "Tham số truy vấn không hợp lệ",
