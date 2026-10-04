@@ -35,6 +35,10 @@ export interface CalendarOrderSummary {
   isReadyToDeliver?: boolean; // Whether the order is ready to deliver
   isOverdue?: boolean;
   duration?: number;
+  /** What the counter collects / hands back now, and the stored late fee (#389) */
+  amountDue?: number;
+  refundDue?: number;
+  lateFee?: number;
   // Product summary for calendar display
   productName?: string;
   productCount?: number;

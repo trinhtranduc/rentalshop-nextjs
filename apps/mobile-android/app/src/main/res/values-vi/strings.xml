@@ -533,6 +533,7 @@
     <string name="request_failed">Đã có lỗi. Vui lòng thử lại.</string>
     <string name="api_error_plan_limit_exceeded">Đã vượt giới hạn gói. Nâng cấp gói để thêm nữa.</string>
     <string name="api_error_product_name_exists">Đã có sản phẩm cùng tên. Vui lòng chọn tên khác.</string>
+    <string name="api_error_product_has_open_orders">Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá.</string>
     <string name="api_error_customer_duplicate">Khách hàng với email hoặc số điện thoại này đã tồn tại.</string>
     <string name="api_error_email_exists">Email này đã được đăng ký.</string>
     <string name="api_error_phone_exists">Số điện thoại này đã được đăng ký.</string>

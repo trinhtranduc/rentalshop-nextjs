@@ -374,5 +374,6 @@
   "TEST_API_WORKING": "API kiểm thử đang hoạt động",
   "TEST_POST_WORKING": "POST kiểm thử đang hoạt động",
   "API_KEYS_WORKING": "Endpoint API Keys đang hoạt động!",
-  "AWS_S3_TEST_FAILED": "Kiểm thử AWS S3 thất bại"
+  "AWS_S3_TEST_FAILED": "Kiểm thử AWS S3 thất bại",
+  "PRODUCT_HAS_OPEN_ORDERS": "Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá."
 }

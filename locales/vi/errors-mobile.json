@@ -381,5 +381,6 @@
   "DEPOSIT_AUTO_CALCULATED": "Tiền cọc được tính tự động từ sản phẩm",
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "Không thể chỉnh sửa tiền cọc sau khi đơn hàng đã được tạo",
   "DEPOSIT_EDIT_SUCCESS": "Chỉnh sửa tiền cọc thành công",
-  "DEPOSIT_EDIT_FAILED": "Chỉnh sửa tiền cọc thất bại"
+  "DEPOSIT_EDIT_FAILED": "Chỉnh sửa tiền cọc thất bại",
+  "PRODUCT_HAS_OPEN_ORDERS": "Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá."
 }

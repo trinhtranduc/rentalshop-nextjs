@@ -28,6 +28,7 @@ object ApiErrorMessages {
     internal fun stringId(code: String?): Int = when (code?.uppercase()) {
         "PLAN_LIMIT_EXCEEDED" -> R.string.api_error_plan_limit_exceeded
         "PRODUCT_NAME_EXISTS" -> R.string.api_error_product_name_exists
+        "PRODUCT_HAS_OPEN_ORDERS" -> R.string.api_error_product_has_open_orders
         "STOCK_BELOW_RENTED" -> R.string.api_error_stock_below_rented
         "CUSTOMER_DUPLICATE" -> R.string.api_error_customer_duplicate
         "EMAIL_EXISTS" -> R.string.api_error_email_exists
