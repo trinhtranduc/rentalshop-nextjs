@@ -105,7 +105,7 @@ MOBILE_FEATURES=newOrders,newOrderDetail
   - `*_LATEST_VERSION`: newest version in the store (for an optional "update available" hint)
   - `*_STORE_URL`: link the update screen opens
   - `MOBILE_FEATURES`: comma-separated new screens to turn on: `newOrders`, `newOrderDetail`, `newProducts`,
-    `newCalendar`, `newOverview`, `newSettings`. Unknown keys are ignored
+    `newCalendar`, `newOverview`, `newSettings`, `newAuth`, `newCustomers`. Unknown keys are ignored
 - **Default**: min `0.0.0` (never forces an update), latest = current release, iOS store URL empty,
   every feature off. Changes reach devices within 5 minutes (response cache)
 
