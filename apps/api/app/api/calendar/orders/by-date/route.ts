@@ -7,6 +7,7 @@ import type { CalendarOrderSummary } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
 import { calendarDayKey, calendarScopeWhere, isValidTimeZone } from '../../../../../lib/calendar-scope';
 import { API } from '@rentalshop/constants';
+import { attachOrderBalances, loadCompletedPaymentSums } from '../../../../../lib/order-balance-batch';
 
 // Validation schema for orders by date query
 const ordersByDateQuerySchema = z.object({
@@ -41,6 +42,7 @@ const ordersByDateQuerySchema = z.object({
  * - For other statuses: filters by createdAt (ngày tạo đơn)
  * - Supports filtering by outlet, merchant, orderType, and status
  * - Optimized for daily calendar view
+ * - Rows carry amountDue / refundDue / lateFee (#389, additive)
  */
 export const GET = withReadOnlyAuth(async (
   request: NextRequest,
@@ -141,7 +143,10 @@ export const GET = withReadOnlyAuth(async (
     const currentPage = page || 1;
     const startIndex = (currentPage - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+    // #389: amountDue / refundDue per row, from one grouped payment query for the page shown
+    const pageOrders = filteredOrders.slice(startIndex, endIndex);
+    const paymentSums = await loadCompletedPaymentSums(db.prisma, pageOrders.map((order: any) => order.id));
+    const paginatedOrders = attachOrderBalances(pageOrders, paymentSums);
 
     // Transform orders to CalendarOrderSummary format (only paginated orders)
     const orderSummaries: CalendarOrderSummary[] = paginatedOrders.map((order: any) => {
@@ -169,6 +174,10 @@ export const GET = withReadOnlyAuth(async (
         pickedUpAt: order.pickedUpAt ? new Date(order.pickedUpAt).toISOString() : undefined,
         createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : undefined, // Order creation date (book date)
         isReadyToDeliver: order.isReadyToDeliver || false,
+        // Mobile calendar rows: "còn thu" / "trả cọc" / late fee (#389)
+        amountDue: order.amountDue,
+        refundDue: order.refundDue,
+        lateFee: order.lateFee || 0,
         // Product summary for calendar display
         productName: firstProduct?.name || 'Multiple Products',
         productCount: totalProductCount,
