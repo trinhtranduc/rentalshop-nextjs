@@ -474,7 +474,7 @@ final class ProductFormViewController: BaseViewControler {
     /// A code already used by another product shows a warning; the shop decides
     private func checkBarcode(_ code: String) {
         let ownId = product.map { $0.id ?? $0.product_id }
-        LiveProductsHomeDataSource().loadProducts(query: code, categoryId: nil, page: 1, limit: 20) { [weak self] page, _ in
+        LiveProductsHomeDataSource().loadProducts(query: code, page: 1, limit: 20) { [weak self] page, _ in
             DispatchQueue.main.async {
                 guard let self, self.barcodeField.text == code else { return }
                 if let match = BarcodeMatch.exact(code, in: page?.products ?? []), (match.id ?? match.product_id) != ownId {

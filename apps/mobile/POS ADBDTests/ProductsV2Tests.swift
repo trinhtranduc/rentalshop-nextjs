@@ -203,11 +203,40 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(BarcodeMatch.exact("  ", in: [exact]))
     }
 
+    // MARK: - Home row (#383)
+
+    func testCartCountSumsTheLinesOfOneProduct() throws {
+        let other = CartItem(productId: 7, productName: "Vest", barcode: nil, quantity: 3, price: 100, deposit: 0,
+                             originalRentPrice: 100, originalSalePrice: 0)
+        let items = [item(price: 100, qty: 2), other]
+        XCTAssertEqual(ProductRowLogic.cartCount(productId: 1, in: items), 2)
+        XCTAssertEqual(ProductRowLogic.cartCount(productId: 7, in: items), 3)
+        XCTAssertEqual(ProductRowLogic.cartCount(productId: 99, in: items), 0)
+        XCTAssertEqual(ProductRowLogic.cartCount(productId: 1, in: []), 0)
+        XCTAssertEqual(ProductRowLogic.cartId(try product(#"{"id":12,"name":"A"}"#)), 12)
+    }
+
+    func testRowSubtitleIsCodeAndStockWithoutCategory() throws {
+        let withCode = try product(#"{"id":1,"name":"Áo dài","barcode":" AD-012 ","category":{"id":3,"name":"Áo dài"},"available":3,"stock":3}"#)
+        let subtitle = ProductRowLogic.subtitle(withCode)
+        XCTAssertEqual(subtitle, ProductRowSubtitle(code: "AD-012", free: 3))
+        XCTAssertNil(ProductRowLogic.subtitle(try product(#"{"id":2,"name":"B","barcode":"  ","available":0}"#)).code)
+        XCTAssertNil(ProductRowLogic.subtitle(try product(#"{"id":3,"name":"C","barcode":"null"}"#)).code)
+        XCTAssertEqual(ProductRowLogic.subtitle(try product(#"{"id":4,"name":"D","available":0}"#)).free, 0)
+    }
+
+    func testAddButtonState() {
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0), .add)
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 2), .inCart(2))
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 0), .out)
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 2), .out)
+    }
+
     // MARK: - List paging
 
     private final class FakeSource: ProductsHomeDataSource {
         var calls: [(query: String?, page: Int, completion: (ProductsPage?, NSError?) -> Void)] = []
-        func loadProducts(query: String?, categoryId: Int?, page: Int, limit: Int,
+        func loadProducts(query: String?, page: Int, limit: Int,
                           completion: @escaping (ProductsPage?, NSError?) -> Void) {
             calls.append((query, page, completion))
         }

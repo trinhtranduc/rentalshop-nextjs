@@ -196,4 +196,32 @@ class ProductRulesTest {
         assertNull(BarcodeMatch.exact("AD-01", listOf(byName, exact)))
         assertNull(BarcodeMatch.exact(" ", listOf(exact)))
     }
+
+    // Home row (#383)
+
+    @Test
+    fun `cart count sums the lines of one product`() {
+        val lines = listOf(CartLine(product(id = 1), quantity = 2), CartLine(product(id = 7), quantity = 3))
+        assertEquals(2, ProductRowLogic.cartCount(1, lines))
+        assertEquals(3, ProductRowLogic.cartCount(7, lines))
+        assertEquals(0, ProductRowLogic.cartCount(99, lines))
+        assertEquals(0, ProductRowLogic.cartCount(1, emptyList()))
+    }
+
+    @Test
+    fun `row subtitle is the code and stock without the category`() {
+        val withCategory = product(barcode = " AD-012 ", available = 3).copy(categoryId = 3, categoryName = "Áo dài")
+        assertEquals(ProductRowSubtitle("AD-012", 3), ProductRowLogic.subtitle(withCategory))
+        assertNull(ProductRowLogic.subtitle(product(barcode = "  ")).code)
+        assertNull(ProductRowLogic.subtitle(product(barcode = "null")).code)
+        assertEquals(0, ProductRowLogic.subtitle(product(available = 0)).free)
+    }
+
+    @Test
+    fun `add button state`() {
+        assertEquals(AddButtonState.Add, ProductRowLogic.addState(free = 3, inCart = 0))
+        assertEquals(AddButtonState.InCart(2), ProductRowLogic.addState(free = 3, inCart = 2))
+        assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 0))
+        assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 2))
+    }
 }

@@ -135,6 +135,45 @@ enum ProductStock {
     }
 }
 
+// MARK: - Home row (#383)
+
+/// The + button on a Home row: add, already in the cart (shows the count), or out today (grey)
+enum ProductAddState: Equatable {
+    case add
+    case inCart(Int)
+    case out
+}
+
+/// The line under the name: the product code and today's free count (no category)
+struct ProductRowSubtitle: Equatable {
+    let code: String?
+    let free: Int
+}
+
+enum ProductRowLogic {
+    /// The id the cart stores for this product (same rule as `CartItem(from:)`)
+    static func cartId(_ product: Product) -> Int {
+        product.product_id != 0 ? product.product_id : (product.id ?? 0)
+    }
+
+    /// Units of this product already in the cart
+    static func cartCount(productId: Int, in items: [CartItem]) -> Int {
+        items.filter { $0.productId == productId }.reduce(0) { $0 + $1.quantity }
+    }
+
+    static func subtitle(_ product: Product) -> ProductRowSubtitle {
+        let code = product.barcode?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let valid = code.flatMap { $0.isEmpty || $0.lowercased() == "null" ? nil : $0 }
+        return ProductRowSubtitle(code: valid, free: ProductStock.freeToday(product))
+    }
+
+    /// Out today wins over the cart count, so the button stays grey as before
+    static func addState(free: Int, inCart: Int) -> ProductAddState {
+        if free <= 0 { return .out }
+        return inCart > 0 ? .inCart(inCart) : .add
+    }
+}
+
 // MARK: - Barcode
 
 enum BarcodeMatch {

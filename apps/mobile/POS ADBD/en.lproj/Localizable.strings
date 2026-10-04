@@ -1523,7 +1523,6 @@
 "products.search.placeholder" = "Name, barcode…";
 "products.search.empty" = "No matching products";
 "products.empty" = "No products yet";
-"products.category.all" = "All";
 "products.stock.free" = "%d free";
 "products.stock.noneToday" = "None free today";
 "products.stock.summary" = "On rent %d · free %d · total %d";
@@ -1534,6 +1533,7 @@
 "products.price.sale" = "Sale price";
 "products.price.saleShort" = "sale %@";
 "products.add.accessibility" = "Add %@ to cart";
+"products.add.inCart.accessibility" = "% %d in cart, add 1";
 "products.scan.notFound" = "No product with code %@";
 "products.stepper.minus" = "One less";
 "products.stepper.plus" = "One more";

@@ -172,7 +172,7 @@ fun ProductFormV2Screen(
     fun checkBarcode(code: String) {
         if (code.isBlank() || code == initial?.barcode) return
         scope.launch {
-            val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code, null) }
+            val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code) }
             val match = page.getOrNull()?.let { BarcodeMatch.exact(code, it.items) }
             if (barcode == code && match != null && match.id != initial?.id) barcodeWarning = barcodeUsed.format(match.name)
         }

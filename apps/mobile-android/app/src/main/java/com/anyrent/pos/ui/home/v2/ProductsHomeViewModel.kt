@@ -17,7 +17,6 @@ import kotlinx.coroutines.withContext
 data class ProductsHomeState(
     val products: List<Product> = emptyList(),
     val query: String = "",
-    val categoryId: Int? = null,
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val hasMore: Boolean = false,
@@ -26,7 +25,7 @@ data class ProductsHomeState(
 
 /** Loads one page (replaceable in tests) */
 fun interface ProductsPageSource {
-    suspend fun load(page: Int, query: String?, categoryId: Int?): ApiClient.PageResult<Product>
+    suspend fun load(page: Int, query: String?): ApiClient.PageResult<Product>
 }
 
 /**
@@ -34,9 +33,9 @@ fun interface ProductsPageSource {
  * query never replaces a newer list.
  */
 class ProductsHomeViewModel(
-    private val source: ProductsPageSource = ProductsPageSource { page, query, categoryId ->
+    private val source: ProductsPageSource = ProductsPageSource { page, query ->
         withContext(Dispatchers.IO) {
-            ProductsV2Api.listProducts(page, PAGE_SIZE, query, categoryId).getOrThrow()
+            ProductsV2Api.listProducts(page, PAGE_SIZE, query).getOrThrow()
         }
     },
 ) : ViewModel() {
@@ -52,12 +51,6 @@ class ProductsHomeViewModel(
         val trimmed = text.trim()
         if (trimmed == _state.value.query) return
         _state.value = _state.value.copy(query = trimmed)
-        load(1, false)
-    }
-
-    fun setCategory(id: Int?) {
-        if (id == _state.value.categoryId) return
-        _state.value = _state.value.copy(categoryId = id)
         load(1, false)
     }
 
@@ -84,9 +77,8 @@ class ProductsHomeViewModel(
         }
         val token = generation
         val query = _state.value.query.ifBlank { null }
-        val categoryId = _state.value.categoryId
         job = viewModelScope.launch {
-            val result = runCatching { source.load(nextPage, query, categoryId) }
+            val result = runCatching { source.load(nextPage, query) }
             if (token != generation) return@launch
             result.onSuccess { page ->
                 val merged = if (nextPage == 1) page.items

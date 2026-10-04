@@ -2,8 +2,8 @@
 //  ProductsHomeViewController.swift
 //  POS ADBD
 //
-//  Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search, barcode scan,
-//  category chips, "+" to the cart and a floating cart bar.
+//  Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search with image search and
+//  barcode scan inside the field, "+" (or the cart count) to the cart and a floating cart bar (#383).
 //
 
 import UIKit
@@ -14,15 +14,12 @@ import AudioToolbox
 
 final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
-    private var categories: [Category] = []
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
     private let shopLabel = V2.label(size: 13, color: DS.Color.textMuted)
     private let titleLabel = V2.label("products.home.title".localized(), size: 24, weight: .bold)
     private let searchField = UITextField()
-    private let chipsScroll = UIScrollView()
-    private let chipsStack = UIStackView()
     private lazy var list: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
         table.dataSource = self
@@ -60,7 +57,6 @@ final class ProductsHomeViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
         viewModel.reload()
-        loadCategories()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -72,7 +68,6 @@ final class ProductsHomeViewController: BaseViewControler {
 
     override func startRefresh(_ sender: Any) {
         viewModel.reload()
-        loadCategories()
     }
 
     // MARK: - Layout
@@ -113,39 +108,30 @@ final class ProductsHomeViewController: BaseViewControler {
         searchField.accessibilityLabel = "products.search.placeholder".localized()
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
-        searchBox.addSubview(glass)
-        searchBox.addSubview(searchField)
-        glass.snp.makeConstraints { make in
+        // Board SP-dong: image search and barcode scan are icon buttons at the trailing end inside the field
+        let photoButton = iconButton("camera", label: "AI Image Search".localized(), action: #selector(imageSearch))
+        let scanButton = iconButton("barcode.viewfinder", label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
+        let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, photoButton, scanButton])
+        fieldRow.alignment = .center
+        fieldRow.spacing = 0
+        fieldRow.setCustomSpacing(8, after: glass)
+        fieldRow.setCustomSpacing(4, after: searchField)
+        searchField.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        searchBox.addSubview(fieldRow)
+        glass.snp.makeConstraints { make in make.width.height.equalTo(18) }
+        searchField.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
+        fieldRow.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
+            make.trailing.equalToSuperview().offset(-2)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(18)
         }
-        searchField.snp.makeConstraints { make in
-            make.leading.equalTo(glass.snp.trailing).offset(8)
-            make.trailing.equalToSuperview().offset(-8)
-            make.top.bottom.equalToSuperview()
-        }
-        let photoButton = squareButton("camera", label: "AI Image Search".localized(), action: #selector(imageSearch))
-        let scanButton = squareButton("barcode.viewfinder", label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
-        let searchRow = UIStackView(arrangedSubviews: [searchBox, photoButton, scanButton])
-        searchRow.spacing = 8
-        searchBox.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
+        searchBox.snp.makeConstraints { make in make.height.equalTo(48) }
 
-        chipsStack.axis = .horizontal
-        chipsStack.spacing = 8
-        chipsScroll.showsHorizontalScrollIndicator = false
-        chipsScroll.addSubview(chipsStack)
-        chipsStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: DS.Spacing.lg, bottom: 0, right: DS.Spacing.lg))
-            make.height.equalToSuperview()
-        }
-
-        let column = UIStackView(arrangedSubviews: [topRow, searchRow])
+        let column = UIStackView(arrangedSubviews: [topRow, searchBox])
         column.axis = .vertical
         column.spacing = 12
         header.backgroundColor = .white
         header.addSubview(column)
-        header.addSubview(chipsScroll)
         let bottomLine = V2.divider()
         bottomLine.backgroundColor = DS.Color.border
         header.addSubview(bottomLine)
@@ -158,16 +144,10 @@ final class ProductsHomeViewController: BaseViewControler {
             make.top.equalToSuperview().offset(12)
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
         }
-        chipsScroll.snp.makeConstraints { make in
-            make.top.equalTo(column.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(40)
-        }
         bottomLine.snp.makeConstraints { make in
-            make.top.equalTo(chipsScroll.snp.bottom).offset(12)
+            make.top.equalTo(column.snp.bottom).offset(12)
             make.leading.trailing.bottom.equalToSuperview()
         }
-        renderChips()
     }
 
     private func buildList() {
@@ -186,12 +166,12 @@ final class ProductsHomeViewController: BaseViewControler {
     }
 
     private func buildCartBar() {
-        cartBar.backgroundColor = DS.Color.text
+        cartBar.backgroundColor = DS.Color.primary
         cartBar.layer.cornerRadius = 16
-        cartBar.layer.shadowColor = UIColor.black.cgColor
-        cartBar.layer.shadowOpacity = 0.25
-        cartBar.layer.shadowRadius = 10
-        cartBar.layer.shadowOffset = CGSize(width: 0, height: 8)
+        cartBar.layer.shadowColor = DS.Color.primary.cgColor
+        cartBar.layer.shadowOpacity = 0.28
+        cartBar.layer.shadowRadius = 8
+        cartBar.layer.shadowOffset = CGSize(width: 0, height: 6)
         cartBar.addTarget(self, action: #selector(openCart), for: .touchUpInside)
         cartBar.isAccessibilityElement = true
         cartBar.accessibilityTraits = UIAccessibilityTraitButton
@@ -228,13 +208,6 @@ final class ProductsHomeViewController: BaseViewControler {
         return button
     }
 
-    private func squareButton(_ symbol: String, label: String, action: Selector) -> UIButton {
-        let button = iconButton(symbol, label: label, action: action)
-        button.backgroundColor = V2.chipFill
-        button.layer.cornerRadius = 12
-        return button
-    }
-
     // MARK: - Data
 
     private func bindViewModel() {
@@ -250,38 +223,6 @@ final class ProductsHomeViewController: BaseViewControler {
             self?.endRefresh()
             UIAlertController.errorAlert(parent: self, error: error)
         }
-    }
-
-    private func loadCategories() {
-        CategoryService.shared.loadCategories(keyword: nil, page: 1, limit: 100) { [weak self] response, _ in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.categories = (response?.categories ?? []).filter { $0.isActive != false && $0.id != nil }
-                self.renderChips()
-            }
-        }
-    }
-
-    private func renderChips() {
-        chipsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let items: [(Int?, String)] = [(nil, "products.category.all".localized())] + categories.map { ($0.id, $0.name ?? "") }
-        for (id, name) in items {
-            let chip = UIButton(type: .custom)
-            let on = id == viewModel.categoryId
-            chip.setTitle(name, for: .normal)
-            chip.titleLabel?.font = on ? Utils.boldFont(size: 14) : Utils.regularFont(size: 14)
-            chip.setTitleColor(on ? .white : DS.Color.text, for: .normal)
-            chip.backgroundColor = on ? DS.Color.text : .white
-            chip.layer.cornerRadius = 20
-            chip.layer.borderWidth = on ? 0 : 1
-            chip.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-            chip.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
-            chip.tag = id ?? -1
-            chip.accessibilityTraits = on ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
-            chip.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
-            chipsStack.addArrangedSubview(chip)
-        }
-        chipsScroll.isHidden = categories.isEmpty
     }
 
     private func updateCartBar() {
@@ -314,6 +255,7 @@ final class ProductsHomeViewController: BaseViewControler {
 
     @objc private func cartChanged() {
         updateCartBar()
+        list.reloadData() // the + buttons show the cart count
     }
 
     @objc private func searchChanged() {
@@ -321,11 +263,6 @@ final class ProductsHomeViewController: BaseViewControler {
         searchDebouncer.debounce { [weak self] in
             self?.viewModel.setQuery(text)
         }
-    }
-
-    @objc private func chipTapped(_ sender: UIButton) {
-        viewModel.setCategory(sender.tag < 0 ? nil : sender.tag)
-        renderChips()
     }
 
     @objc private func openInbox() {
@@ -379,7 +316,7 @@ final class ProductsHomeViewController: BaseViewControler {
     /// The search API also matches names; only an exact barcode opens a product
     private func findByBarcode(_ code: String) {
         showProgressText(text: "Loading...".localized())
-        LiveProductsHomeDataSource().loadProducts(query: code, categoryId: nil, page: 1, limit: 20) { [weak self] page, error in
+        LiveProductsHomeDataSource().loadProducts(query: code, page: 1, limit: 20) { [weak self] page, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.hideProgress()
@@ -431,7 +368,8 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ProductRowV2Cell.reuseId, for: indexPath) as! ProductRowV2Cell
         let product = viewModel.products[indexPath.row]
-        cell.bind(product)
+        let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
+        cell.bind(product, inCart: inCart)
         cell.onAdd = { [weak self] in self?.addToCart(product) }
         return cell
     }
@@ -481,6 +419,9 @@ final class ProductRowV2Cell: UITableViewCell {
     private let stockLabel = V2.label(size: 12, weight: .bold)
     private let priceLabel = V2.label(size: 15, lines: 2)
     private let addButton = UIButton(type: .system)
+    private let plusImage = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold))
+    /// The + of a product already in the cart: the count on a darker blue (board SP-dong)
+    private static let inCartFill = UIColor(hexString: "1E3A8A")
     var onAdd: (() -> Void)?
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -503,7 +444,9 @@ final class ProductRowV2Cell: UITableViewCell {
         texts.alignment = .fill
         texts.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         texts.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
-        addButton.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)), for: .normal)
+        addButton.setImage(plusImage, for: .normal)
+        addButton.titleLabel?.font = Utils.boldFont(size: 16)
+        addButton.setTitleColor(.white, for: .normal)
         addButton.layer.cornerRadius = 12
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
         addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
@@ -527,7 +470,7 @@ final class ProductRowV2Cell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func bind(_ product: Product) {
+    func bind(_ product: Product, inCart: Int) {
         nameLabel.text = product.name
         photo.image = V2.placeholder
         photo.contentMode = .center
@@ -536,9 +479,10 @@ final class ProductRowV2Cell: UITableViewCell {
                 if case .success = result { photo?.contentMode = .scaleAspectFill }
             }
         }
-        let meta = [product.category?.name, product.barcode].compactMap { $0 }.filter { !$0.isEmpty }
-        metaLabel.text = meta.joined(separator: " · ")
-        let free = ProductStock.freeToday(product)
+        let subtitle = ProductRowLogic.subtitle(product)
+        metaLabel.text = subtitle.code
+        metaLabel.isHidden = subtitle.code == nil
+        let free = subtitle.free
         if free > 0 {
             stockLabel.text = "● " + String(format: "products.stock.free".localized(), free)
             stockLabel.textColor = free == 1 ? V2.warn : V2.ok
@@ -569,12 +513,25 @@ final class ProductRowV2Cell: UITableViewCell {
         }
         priceLabel.attributedText = text
 
-        let available = free > 0
-        addButton.backgroundColor = available ? DS.Color.primary : V2.sectionFill
-        addButton.tintColor = available ? .white : DS.Color.textMuted
-        addButton.layer.borderWidth = available ? 0 : 1
+        let name = product.name ?? ""
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), product.name ?? "")
+        switch ProductRowLogic.addState(free: free, inCart: inCart) {
+        case .add, .out:
+            let available = free > 0
+            addButton.setImage(plusImage, for: .normal)
+            addButton.setTitle(nil, for: .normal)
+            addButton.backgroundColor = available ? DS.Color.primary : V2.sectionFill
+            addButton.tintColor = available ? .white : DS.Color.textMuted
+            addButton.layer.borderWidth = available ? 0 : 1
+            addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
+        case .inCart(let count):
+            addButton.setImage(nil, for: .normal)
+            addButton.setTitle("\(count)", for: .normal)
+            addButton.backgroundColor = Self.inCartFill
+            addButton.tintColor = .white
+            addButton.layer.borderWidth = 0
+            addButton.accessibilityLabel = String(format: "products.add.inCart.accessibility".localized(), name, count)
+        }
     }
 
     @objc private func addTapped() {
