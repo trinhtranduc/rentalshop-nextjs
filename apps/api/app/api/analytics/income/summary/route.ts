@@ -4,11 +4,13 @@ import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { computeIncomePeriodSummary } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
+import { readAnalyticsTimeZone, readCivilRange } from '../../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/income/summary
  * Period totals (startDate–endDate) + optional daily breakdown.
  * Supports any duration: single day, 7d, 30d, custom range, year.
+ * Days are civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` param (#355).
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(
   async (request, { userScope }) => {
@@ -23,14 +25,17 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         });
       }
 
-      const filterStart = new Date(startDate + 'T00:00:00.000Z');
-      const filterEnd = new Date(endDate + 'T23:59:59.999Z');
-      if (isNaN(filterStart.getTime()) || isNaN(filterEnd.getTime())) {
+      const timeZone = readAnalyticsTimeZone(searchParams);
+      if (!timeZone) {
+        return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
+      }
+      const range = readCivilRange(startDate, endDate, timeZone);
+      if (!range) {
         return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), {
           status: API.STATUS.BAD_REQUEST
         });
       }
-      if (filterStart > filterEnd) {
+      if (range.start > range.end) {
         return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), {
           status: API.STATUS.BAD_REQUEST
         });
@@ -51,7 +56,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         startDate,
         endDate,
         outletFilter,
-        includeDailyPeriods: true
+        includeDailyPeriods: true,
+        timeZone
       });
 
       return NextResponse.json(

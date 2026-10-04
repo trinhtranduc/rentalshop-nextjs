@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import {
+  handleApiError,
+  ResponseBuilder,
+  calculatePeriodRevenueBatch,
+  addDaysToDateKey,
+  formatDateKeyInTimeZone,
+  getUtcRangeForDateKeys,
+  toDateKeyInTimeZone,
+} from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
-import { civilDayRange, getOperationsDay } from '../../../../lib/outlet-operations-day';
+import { readAnalyticsTimeZone } from '../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/enhanced-dashboard - Get comprehensive dashboard analytics
@@ -19,42 +27,30 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
     
-    // Use provided dates or default to today/thisMonth
-    const now = new Date();
-    let today: Date;
-    let thisMonth: Date;
-    let lastMonth: Date;
-    let lastMonthEnd: Date;
-    
-    if (startDateParam && endDateParam) {
-      // Use provided date range
-      const start = new Date(startDateParam);
-      const end = new Date(endDateParam);
-      
-      // For "today" view (same start and end date)
-      today = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-      
-      // For "month" or "year" view
-      thisMonth = new Date(start.getFullYear(), start.getMonth(), 1);
-      const endDate = new Date(end);
-      
-      // Calculate last period for comparison
-      if (start.getMonth() === end.getMonth()) {
-        // Same month - compare with last month
-        lastMonth = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-        lastMonthEnd = new Date(start.getFullYear(), start.getMonth(), 0, 23, 59, 59);
-      } else {
-        // Year view - compare with last year
-        lastMonth = new Date(start.getFullYear() - 1, 0, 1);
-        lastMonthEnd = new Date(start.getFullYear() - 1, 11, 31, 23, 59, 59);
-      }
-    } else {
-      // Default to current dates
-      today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    // Days are civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` param (#355).
+    // `new Date('2026-10-02')` / local-midnight math used the server zone and missed orders made before 7 am.
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
     }
+    const todayKey = formatDateKeyInTimeZone(new Date(), timeZone);
+    const startKey = startDateParam ? toDateKeyInTimeZone(startDateParam, timeZone) : todayKey;
+    const endKey = endDateParam ? toDateKeyInTimeZone(endDateParam, timeZone) : startDateParam ? startKey : todayKey;
+    if (!startKey || !endKey || startKey > endKey) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
+    }
+    const { start, end } = getUtcRangeForDateKeys({ from: startKey, to: endKey }, timeZone);
+
+    // Comparison period: the previous month for a range inside one month, else the previous year
+    const isSameMonth = startKey.slice(0, 7) === endKey.slice(0, 7);
+    const startYear = Number(startKey.slice(0, 4));
+    const previousPeriod = isSameMonth
+      ? (() => {
+          const prevMonthLastKey = addDaysToDateKey(`${startKey.slice(0, 7)}-01`, -1);
+          return { from: `${prevMonthLastKey.slice(0, 7)}-01`, to: prevMonthLastKey };
+        })()
+      : { from: `${startYear - 1}-01-01`, to: `${startYear - 1}-12-31` };
+    const { start: lastMonth, end: lastMonthEnd } = getUtcRangeForDateKeys(previousPeriod, timeZone);
 
     // Apply role-based filtering (consistent with other APIs)
     let orderWhereClause: any = {};
@@ -106,18 +102,6 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       );
     }
 
-    // Determine date range based on parameters
-    // Vietnam civil days: `new Date('2026-10-02')` is 07:00 in Vietnam and missed orders made before 7 am
-    const isDayKey = (v: string | null) => Boolean(v && /^\d{4}-\d{2}-\d{2}$/.test(v));
-    const todayRange = getOperationsDay();
-    const { start, end } =
-      isDayKey(startDateParam) && isDayKey(endDateParam || startDateParam)
-        ? civilDayRange(startDateParam as string, (endDateParam || startDateParam) as string)
-        : {
-            start: startDateParam ? new Date(startDateParam) : todayRange.start,
-            end: endDateParam ? new Date(endDateParam) : todayRange.end,
-          };
-    
     // Get today's orders (for startDate to endDate range)
     const todayOrders = await db.orders.search({
       where: {
@@ -163,8 +147,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       where: {
         ...orderWhereClause,
         status: ORDER_STATUS.PICKUPED,
+        // From 00:00 of the first civil day
         pickedUpAt: {
-          gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          gte: start
         }
       },
       limit: 1000
@@ -256,8 +241,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       revenueGrowth,
       ordersGrowth,
       activeRentalsTotal: activeRentals.total,
-      periodType: start.getMonth() === end.getMonth() ? 'month' : 'year',
-      comparisonPeriod: start.getMonth() === end.getMonth() ? 'last month' : 'last year'
+      timeZone,
+      periodType: isSameMonth ? 'month' : 'year',
+      comparisonPeriod: isSameMonth ? 'last month' : 'last year'
     });
 
     const dashboardData = {

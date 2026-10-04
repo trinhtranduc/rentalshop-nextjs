@@ -102,7 +102,7 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: '2026-01-16T10:00:00Z',
           pickedUpAt: null,
-          returnedAt: '2026-01-16T18:00:00Z' // same day
+          returnedAt: '2026-01-16T16:00:00Z' // same day
         };
 
         const revenue = calculateOrderRevenueByStatus(order);
@@ -174,7 +174,7 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: '2026-01-16T10:00:00Z',
           pickedUpAt: '2026-01-16T14:00:00Z', // same day
-          returnedAt: '2026-01-16T18:00:00Z' // same day
+          returnedAt: '2026-01-16T16:00:00Z' // same day
         };
 
         const revenue = calculateOrderRevenueByStatus(order);
@@ -765,8 +765,8 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: new Date('2026-01-16T10:00:00Z'),
           pickedUpAt: new Date('2026-01-16T14:00:00Z'), // same day
-          returnedAt: new Date('2026-01-16T18:00:00Z'), // same day return
-          updatedAt: new Date('2026-01-16T18:00:00Z')
+          returnedAt: new Date('2026-01-16T16:00:00Z'), // same day return
+          updatedAt: new Date('2026-01-16T16:00:00Z')
         };
 
         const events = getOrderRevenueEvents(order, startDate, endDate);
@@ -800,8 +800,8 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: new Date('2026-01-16T10:00:00Z'),
           pickedUpAt: new Date('2026-01-16T14:00:00Z'),
-          returnedAt: new Date('2026-01-16T18:00:00Z'), // all same day
-          updatedAt: new Date('2026-01-16T18:00:00Z')
+          returnedAt: new Date('2026-01-16T16:00:00Z'), // all same day
+          updatedAt: new Date('2026-01-16T16:00:00Z')
         };
 
         const events = getOrderRevenueEvents(order, startDate, endDate);
@@ -878,8 +878,8 @@ describe('Revenue Calculator Utility', () => {
         damageFee: 50000,
         createdAt: new Date('2026-01-16T10:00:00Z'),
         pickedUpAt: new Date('2026-01-16T14:00:00Z'),
-        returnedAt: new Date('2026-01-16T18:00:00Z'), // same day
-        updatedAt: new Date('2026-01-16T18:00:00Z')
+        returnedAt: new Date('2026-01-16T16:00:00Z'), // same day
+        updatedAt: new Date('2026-01-16T16:00:00Z')
       };
 
       const totalRevenue = calculateOrderRevenue(order);
@@ -950,8 +950,8 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: new Date('2026-01-16T10:00:00Z'),
           pickedUpAt: new Date('2026-01-16T14:00:00Z'), // same day
-          returnedAt: new Date('2026-01-16T18:00:00Z'), // same day return
-          updatedAt: new Date('2026-01-16T18:00:00Z')
+          returnedAt: new Date('2026-01-16T16:00:00Z'), // same day return
+          updatedAt: new Date('2026-01-16T16:00:00Z')
         };
 
         // targetDate = returnedAt (ngày trả hàng)

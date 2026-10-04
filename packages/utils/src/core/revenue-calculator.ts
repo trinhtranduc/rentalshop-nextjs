@@ -32,7 +32,18 @@
  */
 
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { getUTCDateKey } from './date';
+import { SHOP_TIMEZONE } from './date';
+import { formatDateKeyInTimeZone, getUtcRangeForDateKeys } from './date-range';
+
+/** Vietnam civil day (`YYYY-MM-DD`) of an instant: "same day" and "today" are shop days, not UTC days (#355). */
+function shopDayKey(date: Date): string {
+  return formatDateKeyInTimeZone(date, SHOP_TIMEZONE);
+}
+
+/** UTC bounds of the shop day that contains `date`. */
+function shopDayBounds(date: Date): { start: Date; end: Date } {
+  return getUtcRangeForDateKeys({ from: shopDayKey(date) }, SHOP_TIMEZONE);
+}
 
 export interface OrderRevenueData {
   orderType: string;
@@ -57,13 +68,13 @@ export interface RevenueEvent {
 }
 
 /**
- * Check if two dates are on the same day (using UTC date key)
+ * Check if two dates are on the same shop day (Vietnam civil day)
  */
 function isSameDay(date1: Date | string | null, date2: Date | string | null): boolean {
   if (!date1 || !date2) return false;
   const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
   const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
-  return getUTCDateKey(d1) === getUTCDateKey(d2);
+  return shopDayKey(d1) === shopDayKey(d2);
 }
 
 /**
@@ -393,12 +404,8 @@ export function getRevenueByDate(
   order: OrderRevenueData,
   targetDate: Date
 ): RevenueEvent[] {
-  // Calculate start and end of target date
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Shop day (Vietnam) that contains targetDate, whatever the server TZ is
+  const { start: startOfDay, end: endOfDay } = shopDayBounds(targetDate);
 
   // Get real revenue events (đã xảy ra)
   const realEvents = getOrderRevenueEvents(order, startOfDay, endOfDay);
@@ -453,8 +460,8 @@ export function getOrderRevenueForDate(
   targetDate: Date
 ): number {
   const now = new Date();
-  const targetDateKey = getUTCDateKey(targetDate);
-  const nowDateKey = getUTCDateKey(now);
+  const targetDateKey = shopDayKey(targetDate);
+  const nowDateKey = shopDayKey(now);
 
   // Convert dates to Date objects
   const createdAt = order.createdAt ? new Date(order.createdAt) : null;
@@ -472,7 +479,7 @@ export function getOrderRevenueForDate(
   // CASE 1: Order đã RETURNED và returnedAt < targetDate (quá khứ)
   // ============================================================================
   if (order.status === ORDER_STATUS.RETURNED && returnedAt) {
-    const returnedAtKey = getUTCDateKey(returnedAt);
+    const returnedAtKey = shopDayKey(returnedAt);
     
     // Nếu order đã trả và targetDate sau ngày trả → return tổng doanh thu thực tế
     if (returnedAtKey < targetDateKey) {
@@ -505,7 +512,7 @@ export function getOrderRevenueForDate(
     if (order.orderType === ORDER_TYPE.RENT && 
         order.status === ORDER_STATUS.RESERVED && 
         pickupPlanAt) {
-      const pickupPlanAtKey = getUTCDateKey(pickupPlanAt);
+      const pickupPlanAtKey = shopDayKey(pickupPlanAt);
       if (pickupPlanAtKey === targetDateKey) {
         // Future pickup revenue = totalAmount - depositAmount
         futureRevenue += totalAmount - depositAmount;
@@ -516,7 +523,7 @@ export function getOrderRevenueForDate(
     if (order.orderType === ORDER_TYPE.RENT && 
         order.status === ORDER_STATUS.PICKUPED && 
         returnPlanAt) {
-      const returnPlanAtKey = getUTCDateKey(returnPlanAt);
+      const returnPlanAtKey = shopDayKey(returnPlanAt);
       if (returnPlanAtKey === targetDateKey) {
         // Future return revenue = damageFee - securityDeposit
         futureRevenue += damageFee - securityDeposit;
@@ -529,12 +536,8 @@ export function getOrderRevenueForDate(
   // ============================================================================
   // CASE 3: targetDate trong quá khứ hoặc hiện tại (chưa return hoặc đang trong quá trình)
   // ============================================================================
-  // Tính real events đã xảy ra trong ngày đó
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Tính real events đã xảy ra trong ngày đó (ngày theo giờ Việt Nam)
+  const { start: startOfDay, end: endOfDay } = shopDayBounds(targetDate);
 
   const events = getOrderRevenueEvents(order, startOfDay, endOfDay);
   return events.reduce((sum, event) => sum + event.revenue, 0);
@@ -562,7 +565,7 @@ export function calculatePeriodRevenue(
   periodEnd: Date
 ): { realIncome: number; futureIncome: number } {
   const now = new Date();
-  const nowDateKey = getUTCDateKey(now);
+  const nowDateKey = shopDayKey(now);
 
   // Get real revenue events in period
   const realEvents = getOrderRevenueEvents(order, periodStart, periodEnd);
@@ -575,7 +578,7 @@ export function calculatePeriodRevenue(
 
   // Sum real income (events that have already occurred)
   for (const event of realEvents) {
-    const eventDateKey = getUTCDateKey(event.date);
+    const eventDateKey = shopDayKey(event.date);
     
     if (eventDateKey <= nowDateKey) {
       // Past or current date: real income
