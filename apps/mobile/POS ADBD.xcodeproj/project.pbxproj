@@ -291,6 +291,7 @@
 		D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */; };
 		D471767BB75A2DAE01AA6CEC /* FormattersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8174E6BA337B4B259DD6569 /* FormattersTests.swift */; };
 		DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 286EED8E25240975FDF5D455 /* IconTokensTests.swift */; };
+		A424B0010000000000000001 /* TypeScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A424B0010000000000000002 /* TypeScaleTests.swift */; };
 		DED3B23637CAEA6ED6DC027C /* SettingsV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */; };
 		E4524B2B978D3134644DADCB /* OrderRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C466A2A395154AD70553624A /* OrderRowCell.swift */; };
 		E6844B2830F8361BAA9CEFC4 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */; };
@@ -514,6 +515,7 @@
 		1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ViewModel.swift; sourceTree = "<group>"; };
 		1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RegisterStoreV2ViewController.swift; sourceTree = "<group>"; };
 		286EED8E25240975FDF5D455 /* IconTokensTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IconTokensTests.swift; sourceTree = "<group>"; };
+		A424B0010000000000000002 /* TypeScaleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TypeScaleTests.swift; sourceTree = "<group>"; };
 		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
 		32451210261D4A00E83FEBAA /* OrderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderStatusTests.swift; sourceTree = "<group>"; };
 		371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2ViewController.swift; sourceTree = "<group>"; };
@@ -957,6 +959,7 @@
 				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
 				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
 				286EED8E25240975FDF5D455 /* IconTokensTests.swift */,
+				A424B0010000000000000002 /* TypeScaleTests.swift */,
 				C1128874207B931039540DAB /* Phase7GapsTests.swift */,
 				A430F0000000000000000001 /* Issue430Tests.swift */,
 				C68665233AF9D666CE7E723C /* Phase8Tests.swift */,
@@ -1751,6 +1754,7 @@
 				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
 				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
 				DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */,
+				A424B0010000000000000001 /* TypeScaleTests.swift in Sources */,
 				039E4564507EC2529E6A9529 /* Phase7GapsTests.swift in Sources */,
 				A430B0000000000000000001 /* Issue430Tests.swift in Sources */,
 				00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */,
