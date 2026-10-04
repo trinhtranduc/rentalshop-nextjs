@@ -1,6 +1,7 @@
 package com.anyrent.pos.ui.orders.v2
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
@@ -42,8 +45,10 @@ import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.RentalExtension
+import com.anyrent.pos.domain.products.MoneyInput
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.formatDayShort
+import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -55,7 +60,8 @@ import java.time.ZoneOffset
 
 /**
  * "Gia hạn" (#390): pick a later return day, check the added days with the batch availability call at the order's
- * outlet, then `PUT /api/orders/{id}` with the new `returnPlanAt`. Nothing is saved when an item is short.
+ * outlet, then `PUT /api/orders/{id}` with the new `returnPlanAt` and day count, plus the new total when the staff
+ * typed extra rent (#425). Nothing is saved when an item is short.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,6 +88,9 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
     val chosen = picker.selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var extraText by remember { mutableStateOf("") }
+    val extra = MoneyInput.parse(extraText)
+    val newTotal = RentalExtension.newTotal(detail.summary.totalAmount, extra)
     fun dayText(day: LocalDate) = formatDayShort(day.atStartOfDay(zone).toInstant(), zone)
     val window = chosen?.let { RentalExtension.window(current, it) }
     val unavailableTemplate = stringResource(R.string.extend_rental_unavailable)
@@ -113,6 +122,19 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
                 val extra = RentalExtension.extraDays(current, chosen)
                 Text(pluralStringResource(R.plurals.extend_rental_extra_days, extra, extra), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
             }
+            OutlinedTextField(
+                value = extraText,
+                onValueChange = { extraText = MoneyInput.display(MoneyInput.parse(it.filter(Char::isDigit).take(12))) },
+                label = { Text(stringResource(R.string.extend_rental_extra_rent)) },
+                placeholder = { Text("0") },
+                singleLine = true,
+                enabled = !busy,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            newTotal?.let {
+                Text(stringResource(R.string.extend_rental_new_total, formatMoneyVnd(it)), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+            }
             error?.let { Text(it, fontSize = 14.sp, color = DS.Status.Late.text) }
             AppPrimaryButton(
                 text = chosen?.takeIf { window != null }?.let { stringResource(R.string.extend_rental_confirm, dayText(it)) }
@@ -133,12 +155,9 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
                                 unavailableTemplate.format(blocked.joinToString(", ") { it.productName })
                             } else {
                                 withContext(Dispatchers.IO) {
-                                    ApiParity.updateOrderFull(
+                                    ApiParity.extendOrder(
                                         id = detail.summary.id,
-                                        notes = null,
-                                        depositAmount = null,
-                                        pickupPlanAt = null,
-                                        returnPlanAt = RentalExtension.returnPlanAt(day, zone),
+                                        update = RentalExtension.update(detail.summary.pickupPlanAt, day, detail.summary.totalAmount, extra, zone),
                                     ).getOrThrow()
                                 }
                                 null

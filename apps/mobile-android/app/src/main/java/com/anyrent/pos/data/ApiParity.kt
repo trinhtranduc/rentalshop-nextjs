@@ -5,6 +5,7 @@ import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.ExtensionUpdate
 import com.anyrent.pos.domain.orders.NotesStep
 import com.anyrent.pos.domain.orders.OrderDetailLogic
 import okhttp3.MediaType.Companion.toMediaType
@@ -211,6 +212,12 @@ object ApiParity {
             depositAmount = data.optDouble("depositAmount", depositAmount ?: 0.0),
             status = data.optString("status").ifBlank { status ?: "" },
         )
+    }
+
+    /** Gia hạn (#425): PUT /api/orders/:id with the new return day, day count and, with extra rent, the new total */
+    fun extendOrder(id: Int, update: ExtensionUpdate): Result<Unit> = runCatching {
+        ApiClient.get().authedPut("/api/orders/$id", update.toJson().toString().toRequestBody(jsonMedia))
+        Unit
     }
 
     /**
