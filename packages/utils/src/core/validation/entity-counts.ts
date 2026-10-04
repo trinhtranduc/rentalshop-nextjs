@@ -67,7 +67,7 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<Entity
     const [outlets, users, products, customers, orders] = await Promise.all([
       prisma.outlet.count({ where: { merchantId } }),
       countMerchantUsersForPlanLimit(merchantId),
-      prisma.product.count({ where: { merchantId } }),
+      prisma.product.count({ where: { merchantId, deletedAt: null } }), // #389 soft-deleted products free their slot
       prisma.customer.count({ where: { merchantId } }),
       prisma.order.count({ where: { outlet: { merchantId } } }),
     ]);

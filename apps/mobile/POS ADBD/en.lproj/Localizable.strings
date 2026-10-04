@@ -1085,6 +1085,7 @@
 "CUSTOMER_CREATED_SUCCESS" = "Customer created successfully";
 "CUSTOMER_DELETED_SUCCESS" = "Customer deleted successfully";
 "CUSTOMER_HAS_ACTIVE_ORDERS" = "Cannot delete customer with active orders. Please complete or cancel these orders first.";
+"PRODUCT_HAS_OPEN_ORDERS" = "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.";
 "CUSTOMER_RETRIEVED_SUCCESS" = "Customer retrieved successfully";
 "CUSTOMER_UPDATED_SUCCESS" = "Customer updated successfully";
 "DASHBOARD_DATA_SUCCESS" = "Enhanced dashboard data retrieved successfully";

@@ -11,6 +11,6 @@
   "MERCHANT_DUPLICATE": "使用此电子邮件或电话号码的商户已存在。请使用不同的电子邮件或电话号码。",
   "INVALID_ORDER_STATUS": "此订单不能更改为该状态。",
   "STOCK_BELOW_RENTED": "库存不能少于当前正在出租的数量。",
-  "OUTLET_REQUIRED": "请选择门店，或为您的店铺设置默认门店。"
+  "OUTLET_REQUIRED": "请选择门店，或为您的店铺设置默认门店。",
+  "PRODUCT_HAS_OPEN_ORDERS": "该商品在已预订或租赁中的订单里。删除前请先完成或取消这些订单。"
 }
-

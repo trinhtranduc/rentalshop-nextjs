@@ -1083,6 +1083,7 @@
 "CUSTOMER_CREATED_SUCCESS" = "Đã tạo khách hàng thành công";
 "CUSTOMER_DELETED_SUCCESS" = "Đã xóa khách hàng thành công";
 "CUSTOMER_HAS_ACTIVE_ORDERS" = "Không thể xóa khách hàng có đơn hàng đang hoạt động. Vui lòng hoàn thành hoặc hủy các đơn hàng này trước.";
+"PRODUCT_HAS_OPEN_ORDERS" = "Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá.";
 "CUSTOMER_RETRIEVED_SUCCESS" = "Đã lấy khách hàng thành công";
 "CUSTOMER_UPDATED_SUCCESS" = "Đã cập nhật khách hàng thành công";
 "DASHBOARD_DATA_SUCCESS" = "Đã lấy dữ liệu bảng điều khiển nâng cao thành công";

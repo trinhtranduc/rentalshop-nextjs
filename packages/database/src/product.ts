@@ -65,6 +65,7 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
       SELECT id FROM "Product"
       WHERE ${nameCondition}
       ${merchantFilter}
+      AND "deletedAt" IS NULL
       LIMIT 1000
     `;
     return rows.map((r) => Number(r.id));
@@ -133,7 +134,8 @@ export async function getProductById(id: number, merchantId: number) {
   return await prisma.product.findFirst({
     where: { 
       id,
-      merchantId: merchant.id // Use CUID for merchant isolation
+      merchantId: merchant.id, // Use CUID for merchant isolation
+      deletedAt: null, // #389 soft-deleted products are gone
     },
     include: {
       merchant: {
@@ -185,7 +187,8 @@ export async function getProductByBarcode(barcode: string, merchantId: number) {
   return await prisma.product.findFirst({
     where: { 
       barcode,
-      merchantId: merchant.id // Use CUID for merchant isolation
+      merchantId: merchant.id, // Use CUID for merchant isolation
+      deletedAt: null,
     },
     include: {
       merchant: {
@@ -253,6 +256,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
   // Build where clause
   const where: any = {
     isActive,
+    deletedAt: null, // #389 soft-deleted products never list
   };
 
   if (merchantId) {
@@ -746,7 +750,7 @@ export async function getProductsByMerchant(merchantId: number) {
   }
 
   return await prisma.product.findMany({
-    where: { merchantId: merchant.id }, // Use CUID
+    where: { merchantId: merchant.id, deletedAt: null }, // Use CUID
     include: {
       category: {
         select: {
@@ -774,7 +778,7 @@ export async function getProductsByCategory(categoryId: number) {
   }
 
   return await prisma.product.findMany({
-    where: { categoryId: category.id }, // Use number ID (Category uses Int id)
+    where: { categoryId: category.id, deletedAt: null }, // Use number ID (Category uses Int id)
     include: {
       merchant: {
         select: {
@@ -1200,8 +1204,9 @@ export const simplifiedProducts = {
    * Find product by ID (simplified API)
    */
   findById: async (id: number) => {
-    return await prisma.product.findUnique({
-      where: { id },
+    // Soft-deleted products (#389) are gone for detail, edit, availability and order create
+    return await prisma.product.findFirst({
+      where: { id, deletedAt: null },
       include: {
         merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
@@ -1239,8 +1244,8 @@ export const simplifiedProducts = {
    * Find product by barcode (simplified API)
    */
   findByBarcode: async (barcode: string) => {
-    return await prisma.product.findUnique({
-      where: { barcode },
+    return await prisma.product.findFirst({
+      where: { barcode, deletedAt: null },
       include: {
         merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
@@ -1261,7 +1266,7 @@ export const simplifiedProducts = {
     if (ids.length === 0) return [];
     
     return await prisma.product.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, deletedAt: null },
       include: {
         merchant: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
@@ -1455,7 +1460,8 @@ export const simplifiedProducts = {
 
     // Build where clause
     const where: any = {
-      isActive: whereFilters.isActive !== undefined ? whereFilters.isActive : true
+      isActive: whereFilters.isActive !== undefined ? whereFilters.isActive : true,
+      deletedAt: null, // #389 soft-deleted products never list, whatever the isActive filter
     };
     
     // Convert merchantId (public ID) to CUID

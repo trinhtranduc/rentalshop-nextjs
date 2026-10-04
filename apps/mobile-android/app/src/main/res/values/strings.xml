@@ -534,6 +534,7 @@
     <string name="request_failed">Something went wrong. Please try again.</string>
     <string name="api_error_plan_limit_exceeded">Plan limit exceeded. Upgrade your subscription to add more.</string>
     <string name="api_error_product_name_exists">A product with this name already exists. Please choose a different name.</string>
+    <string name="api_error_product_has_open_orders">This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.</string>
     <string name="api_error_customer_duplicate">A customer with this email or phone already exists.</string>
     <string name="api_error_email_exists">This email is already registered.</string>
     <string name="api_error_phone_exists">This phone number is already registered.</string>

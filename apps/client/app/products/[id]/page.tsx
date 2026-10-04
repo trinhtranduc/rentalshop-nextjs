@@ -126,7 +126,10 @@ export default function ProductViewPage() {
   const confirmDelete = async () => {
     setIsDeleting(true);
     try {
-      await productsApi.deleteProduct(productId);
+      const response = await productsApi.deleteProduct(productId);
+      // A refused delete (e.g. 409 PRODUCT_HAS_OPEN_ORDERS, #389) comes back as success=false and is shown by
+      // useGlobalErrorHandler; stay on the page then.
+      if (!response.success) return;
       toastSuccess(tc('messages.deleteSuccess'), t('messages.deleteSuccess'));
       router.push('/products');
     } catch (err) {

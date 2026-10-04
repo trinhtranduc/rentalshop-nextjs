@@ -374,5 +374,6 @@
   "TEST_API_WORKING": "Test API working",
   "TEST_POST_WORKING": "Test POST working",
   "API_KEYS_WORKING": "API Keys endpoint is working!",
-  "AWS_S3_TEST_FAILED": "AWS S3 test failed"
+  "AWS_S3_TEST_FAILED": "AWS S3 test failed",
+  "PRODUCT_HAS_OPEN_ORDERS": "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it."
 }
