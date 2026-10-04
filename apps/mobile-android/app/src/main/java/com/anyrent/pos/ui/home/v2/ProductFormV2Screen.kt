@@ -26,11 +26,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -87,6 +86,7 @@ import com.anyrent.pos.domain.products.ProductStock
 import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppFormSheet
+import com.anyrent.pos.ui.common.AppIcons
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.copyUriToCacheFile
 import com.anyrent.pos.ui.common.fileToProductJpegFile
@@ -238,7 +238,7 @@ fun ProductFormV2Screen(
 
     Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close)) }
+            IconButton(onClick = onBack) { Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.close), modifier = Modifier.size(DS.Icon.Lg)) }
             Text(
                 stringResource(if (initial == null) R.string.v2_form_add_title else R.string.v2_form_edit_title),
                 fontSize = 20.sp, fontWeight = FontWeight.Bold,
@@ -267,7 +267,7 @@ fun ProductFormV2Screen(
                             )
                         }
                         IconButton(onClick = { photos.removeAt(index) }, modifier = Modifier.align(Alignment.TopEnd).size(44.dp)) {
-                            Icon(Icons.Default.Cancel, contentDescription = stringResource(R.string.v2_form_remove_photo), tint = Color.White)
+                            Icon(Icons.Filled.Cancel, contentDescription = stringResource(R.string.v2_form_remove_photo), tint = Color.White)
                         }
                     }
                 }
@@ -280,7 +280,7 @@ fun ProductFormV2Screen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            Icon(Icons.Default.PhotoCamera, contentDescription = null, tint = DS.Colors.Primary)
+                            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Lg))
                             Text(stringResource(R.string.v2_form_add_photo), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                         }
                     }
@@ -299,7 +299,7 @@ fun ProductFormV2Screen(
             ) {
                 Text(stringResource(R.string.v2_form_category), fontSize = 15.sp, modifier = Modifier.weight(1f))
                 Text(categoryName ?: stringResource(R.string.v2_form_choose), fontSize = 15.sp, color = DS.Colors.TextMuted)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8))
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
             }
             HorizontalDivider(color = DS.Colors.Divider)
             FormField(
@@ -309,7 +309,7 @@ fun ProductFormV2Screen(
                 onDone = { checkBarcode(barcode.trim()) },
                 trailing = {
                     IconButton(onClick = { showScan = true }) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.camera_scan))
+                        Icon(AppIcons.Barcode, contentDescription = stringResource(R.string.camera_scan), modifier = Modifier.size(DS.Icon.Md))
                     }
                 },
             )

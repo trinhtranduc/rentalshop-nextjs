@@ -21,9 +21,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -125,7 +125,7 @@ fun OverviewV2Screen(viewModel: OverviewV2ViewModel = viewModel(factory = Overvi
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(periodTitle, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -325,7 +325,7 @@ private fun PeriodSheet(
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.overview_v2_period_title), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
             IconButton(onClick = onClose) {
-                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close), tint = DS.Colors.TextMuted)
+                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.close), tint = DS.Colors.TextMuted, modifier = Modifier.size(DS.Icon.Md))
             }
         }
         ThinDivider()
@@ -353,7 +353,7 @@ private fun PeriodSheet(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(20.dp))
+            Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Md))
             val custom = (selected as? OverviewPeriod.Custom)?.let { "  ${OverviewLogic.shortRange(it.range)}" }.orEmpty()
             Text(stringResource(R.string.overview_v2_period_custom) + custom, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
         }

@@ -51,7 +51,9 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")
+            // Local e2e (#395): ./gradlew :app:assembleDebug -PapiBaseUrl=http://10.0.2.2:3180
+            val apiBaseUrl = (project.findProperty("apiBaseUrl") as String?) ?: "https://dev-api.anyrent.shop"
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
             buildConfigField("String", "REVENUECAT_API_KEY", "\"${revenueCatKey("REVENUECAT_ANDROID_API_KEY")}\"")
         }
         release {

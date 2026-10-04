@@ -173,7 +173,7 @@ final class ProductDetailViewController: BaseViewControler {
     private func roundButton(symbol: String?, title: String?, label: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
         if let symbol {
-            button.setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .bold)), for: .normal)
+            button.setImage(DS.symbol(symbol, DS.Icon.md, weight: .semibold), for: .normal)
         }
         if let title {
             button.setTitle(title, for: .normal)
