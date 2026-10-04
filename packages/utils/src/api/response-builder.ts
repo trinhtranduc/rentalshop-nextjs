@@ -62,6 +62,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PRODUCT_ID_REQUIRED': 'Product ID is required',
   'MERCHANT_ID_REQUIRED': 'Merchant ID is required',
   'OUTLET_ID_REQUIRED': 'Outlet ID is required',
+  'OUTLET_REQUIRED': 'Choose an outlet, or set a default outlet for your shop.',
   'PLAN_ID_REQUIRED': 'Plan ID is required',
   'INVALID_AMOUNT': 'Amount must be greater than 0',
   'INVALID_CUSTOMER_ID_FORMAT': 'Invalid customer ID format',
