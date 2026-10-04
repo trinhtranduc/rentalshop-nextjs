@@ -283,7 +283,7 @@ fun CartV2Screen(
             if (editor == "DISCOUNT") {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     AppFilterChip("%", discountType == CartStore.DiscountType.PERCENT, { CartStore.setDiscountType(CartStore.DiscountType.PERCENT) }, Modifier.weight(1f))
-                    AppFilterChip("đ", discountType == CartStore.DiscountType.AMOUNT, { CartStore.setDiscountType(CartStore.DiscountType.AMOUNT) }, Modifier.weight(1f))
+                    AppFilterChip(stringResource(R.string.v2_cart_discount_amount), discountType == CartStore.DiscountType.AMOUNT, { CartStore.setDiscountType(CartStore.DiscountType.AMOUNT) }, Modifier.weight(1f))
                 }
             }
         }

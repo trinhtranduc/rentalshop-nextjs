@@ -319,9 +319,9 @@ fun ProductFormV2Screen(
                 SectionBand(stringResource(R.string.v2_form_prices))
                 Row {
                     FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, unit = "đ", modifier = Modifier.weight(1f), end = 6.dp)
+                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), end = 6.dp)
                     FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, unit = "đ", modifier = Modifier.weight(1f), start = 6.dp)
+                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), start = 6.dp)
                 }
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.v2_form_default_pricing), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -335,9 +335,9 @@ fun ProductFormV2Screen(
                 }
                 Row {
                     FormField(stringResource(R.string.v2_form_sale_price), value = sale, onChange = { sale = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = stringResource(R.string.v2_form_not_for_sale), numeric = true, unit = "đ", modifier = Modifier.weight(1f), end = 6.dp)
+                        placeholder = stringResource(R.string.v2_form_not_for_sale), numeric = true, modifier = Modifier.weight(1f), end = 6.dp)
                     FormField(stringResource(R.string.v2_form_deposit), value = deposit, onChange = { deposit = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, unit = "đ", modifier = Modifier.weight(1f), start = 6.dp)
+                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), start = 6.dp)
                 }
             }
 

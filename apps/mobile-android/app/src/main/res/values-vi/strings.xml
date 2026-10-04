@@ -629,6 +629,7 @@
     <string name="v2_cart_rent_subtotal">Tiền thuê</string>
     <string name="v2_cart_sale_subtotal">Tiền hàng</string>
     <string name="v2_cart_discount">Giảm giá</string>
+    <string name="v2_cart_discount_amount">Số tiền</string>
     <string name="v2_cart_total">Tổng đơn</string>
     <string name="v2_cart_deposit">Cọc trả trước</string>
     <string name="v2_cart_note">Ghi chú</string>
