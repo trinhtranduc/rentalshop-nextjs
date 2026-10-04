@@ -36,3 +36,7 @@ API: `POST /api/auth/login`, `/api/auth/register`, `/api/auth/forgot-password`, 
 - 2026-10-04 — Boards approved; issue #386 opened under round 2 (#385) (Trinh Tran)
 - 2026-10-04 — Password minimum stays 6 (what the current screens and the API require); the board hint reads 8,
   the screen says 6 so the hint matches the rule (agent)
+- 2026-10-04 — Owner approved visual style E (white, drifting blobs, no cards; boards Login-E, Register1-E,
+  Register2-E, Forgot-E, Sent-E). It lives in one style file per platform (iOS `AuthV2Style.swift`,
+  Android `ui/auth/v2/AuthV2Style.kt`); blobs and the floating mail icon stop with Reduce Motion /
+  animations off (coordinator)

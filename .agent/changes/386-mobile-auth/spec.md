@@ -52,3 +52,12 @@ provider it logs the mail (`EMAIL_PROVIDER=console`). It is rate limited to 3 ca
 - [ ] Manual check on both apps against a local API with screenshots: login OK, wrong password, new store end to end,
       validation errors, forgot → sent, flag off shows the old screens.
 - [ ] New strings in iOS `vi-VN`/`en` and Android `values`/`values-vi`.
+
+## Changes after review (style E)
+
+- Login heading "Xin chào", subtitle "Đăng nhập để vào cửa hàng của bạn.", no logo. Round 44pt back button,
+  6pt progress bar with "Bước n/2" in the content, 54pt buttons, blue selected chips, floating mail icon.
+- Android: a wrong password is a 401 that also expires the session; with the new login on screen the
+  NavHost does not rebuild the login, so the inline message and the typed email stay. Flag off: unchanged.
+- iOS: no tap-to-dismiss on the auth pages (with IQKeyboardManager it swallowed the first button tap);
+  Return moves through the sign-up fields; the keyboard closes before pushing a screen.
