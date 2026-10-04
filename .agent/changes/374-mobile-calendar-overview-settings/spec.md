@@ -50,7 +50,7 @@ change, new sub-screens other than the password dialog.
 ## API and data
 
 Reads only, plus the existing change-password call. Numeric ids only. `timeZone` sent to calendar and
-outlet-operations; `analytics/period` takes device-zone date keys.
+outlet-operations; `analytics/period` takes device-zone date keys and `timeZone` (after #355).
 
 ## Acceptance
 

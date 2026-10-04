@@ -96,7 +96,8 @@ class TabbarViewController: UITabBarController {
         )
         child_1.navigationItem.title = child1Title
         
-        let child_2 = CalendarViewController()
+        // #374: redesigned calendar, overview and settings behind their flags; off keeps the current tabs
+        let child_2: UIViewController = FeatureFlags.shared.isOn(.newCalendar) ? CalendarV2ViewController() : CalendarViewController()
         child_2.navigationItem.title = child2Title
         child_2.tabBarItem = UITabBarItem(
             title: child2Title,
@@ -104,7 +105,7 @@ class TabbarViewController: UITabBarController {
             selectedImage: UIImage(systemName: "calendar.fill")?.withConfiguration(symbolConfig)
         )
         
-        let child_3 = OverviewViewController()
+        let child_3: UIViewController = FeatureFlags.shared.isOn(.newOverview) ? OverviewV2ViewController() : OverviewViewController()
         child_3.navigationItem.title = child3Title
         child_3.tabBarItem = UITabBarItem(
             title: child3Title,
@@ -112,7 +113,7 @@ class TabbarViewController: UITabBarController {
             selectedImage: UIImage(systemName: "chart.bar.fill")?.withConfiguration(symbolConfig)
         )
         
-        let child_5 = SettingsViewController()
+        let child_5: UIViewController = FeatureFlags.shared.isOn(.newSettings) ? SettingsV2ViewController() : SettingsViewController()
         child_5.navigationItem.title = child4Title
         child_5.tabBarItem = UITabBarItem(
             title: child4Title,
