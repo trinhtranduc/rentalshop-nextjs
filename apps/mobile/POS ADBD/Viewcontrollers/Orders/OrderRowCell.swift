@@ -190,7 +190,7 @@ final class OrderRowCell: UITableViewCell {
             addPill("orders.v2.notPrepared".localized(), DS.Status.waiting)
         }
         if work.lateDays > 0 {
-            addPill(String(format: "Late %d days".localized(), work.lateDays), DS.Status.late)
+            addPill(LateText.days(work.lateDays), DS.Status.late)
         }
 
         setTotal(work.totalAmount, struck: false)
@@ -224,7 +224,7 @@ final class OrderRowCell: UITableViewCell {
             whenLabel.text = number + " · " + OrdersHomeLogic.listWhen(order, lateDays: lateDays)
         }
         if lateDays > 0 {
-            addPill(String(format: "Late %d days".localized(), lateDays), DS.Status.late)
+            addPill(LateText.days(lateDays), DS.Status.late)
         }
         // The list API has no per-step payments: the total only (no "còn thu")
         setTotal(order.totalAmount, struck: order.status == .cancelled)

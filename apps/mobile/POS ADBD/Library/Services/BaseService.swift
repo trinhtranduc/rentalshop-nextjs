@@ -63,6 +63,7 @@ class BaseService {
         parameters: [String: Any]? = nil,
         responseType: T.Type,
         context: String = "API Request",
+        cachePolicy: URLRequest.CachePolicy? = nil,
         completion: @escaping (T?, NSError?) -> Void
     ) {
         let fullURL = path.hasPrefix("http") ? path : APIEndpoint.currentBaseURL + path
@@ -77,7 +78,8 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .get, parameters: requestParams, headers: BaseService.jsonHeader)
+        AF.request(fullURL, method: .get, parameters: requestParams, headers: BaseService.jsonHeader,
+                   requestModifier: { request in if let cachePolicy { request.cachePolicy = cachePolicy } })
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
