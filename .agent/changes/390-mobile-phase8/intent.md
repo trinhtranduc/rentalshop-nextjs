@@ -50,3 +50,8 @@ The API now sends what the boards VL-tat-ca, VL-tim, Loc and Lich need (#389), b
 - 2026-10-04 — Issue #390 under the round 2 plan #385; API contract from PR #416 (Trinh Tran)
 - 2026-10-04 — "Gia hạn" is gated on `orders.update` (OUTLET_STAFF has it; the API checks outlet scope), Xóa on
   `products.manage` (the DELETE route's permission) (agent)
+- 2026-10-04 — Manual check found that iOS dropped every batch-availability answer with a conflict: `ConflictInfo`
+  decoded `conflictHours` / `conflictDuration` as Int while the API sends fractions (26.57). They are Double now
+  (also fixes the CartV2 availability badge); unit test added (agent)
+- 2026-10-04 — Open: `PUT /api/orders/{id}` with only `returnPlanAt` keeps `totalAmount` and `rentalDuration`, so
+  DAILY items are not repriced and the iOS detail "N ngày" (from `rentalDuration`) stays the old count (agent)

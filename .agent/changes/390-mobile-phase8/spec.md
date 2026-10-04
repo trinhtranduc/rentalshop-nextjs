@@ -53,8 +53,8 @@ All fields read are optional: `GET /api/orders` rows `amountDue`, `refundDue`; b
 
 ## Acceptance
 
-- [ ] Unit tests: pay line from optional balances (absent, cancelled, refund, due, paid); calendar note; filter →
+- [x] Unit tests: pay line from optional balances (absent, cancelled, refund, due, paid); calendar note; filter →
   query (`nearestTask`, planned `dateField`); extension window / min day / instants / availability verdict /
   allowed statuses; delete permission; 409 → message.
-- [ ] iOS `POS ADBDTests` and Android `:app:testDebugUnitTest :app:assembleDebug` green.
-- [ ] Manual check of the 5 items on both apps against a local API (merchant and staff), screenshots.
+- [x] iOS `POS ADBDTests` and Android `:app:testDebugUnitTest :app:assembleDebug` green.
+- [x] Manual check of the 5 items on both apps against a local API (merchant and staff), screenshots.
