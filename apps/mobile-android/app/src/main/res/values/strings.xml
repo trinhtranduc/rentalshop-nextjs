@@ -799,7 +799,7 @@
     <string name="customers_v2_create_order">Create order for this customer</string>
     <string name="onboarding_v2_step">Step %1$d/%2$d</string>
     <string name="onboarding_v2_product_title">Add rental items</string>
-    <string name="onboarding_v2_product_body">Add a photo, rental price and stock. Search or scan to find it when you create an order.</string>
+    <string name="onboarding_v2_product_body">Add a photo, price and stock. Your team finds it by search or scan when creating an order.</string>
     <string name="onboarding_v2_customer_title">Save customers</string>
     <string name="onboarding_v2_customer_body">Save a customer once and reuse them for every rental and sale.</string>
     <string name="onboarding_v2_order_title">Create orders</string>

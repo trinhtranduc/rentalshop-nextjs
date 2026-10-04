@@ -1775,7 +1775,7 @@
 "customers.v2.createOrder" = "Tạo đơn cho khách này";
 "onboarding.v2.step" = "Bước %d/%d";
 "onboarding.v2.product.title" = "Thêm đồ cho thuê";
-"onboarding.v2.product.body" = "Chụp ảnh, đặt giá thuê và số lượng. Tìm hoặc quét mã là thấy ngay khi tạo đơn.";
+"onboarding.v2.product.body" = "Chụp ảnh, đặt giá và số lượng. Nhân viên tìm hoặc quét mã là thấy ngay khi tạo đơn.";
 "onboarding.v2.customer.title" = "Lưu khách hàng";
 "onboarding.v2.customer.body" = "Lưu khách một lần, dùng lại cho mọi đơn thuê và đơn bán.";
 "onboarding.v2.order.title" = "Tạo đơn";

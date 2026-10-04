@@ -8,6 +8,7 @@
 
 import UIKit
 import SnapKit
+import IQKeyboardManagerSwift
 
 final class NewCustomerViewController: BaseViewControler {
     enum Mode { case pick, browse }
@@ -25,6 +26,7 @@ final class NewCustomerViewController: BaseViewControler {
     private let existingTier = CustomersV2UI.tierPill()
     private let existingSubtitle = V2.label(size: 13, color: DS.Color.textMuted)
     private var existing: Customer?
+    private var keyboardManagerWasEnabled = true
 
     /// The created or chosen customer
     var onDone: ((Customer) -> Void)?
@@ -57,6 +59,14 @@ final class NewCustomerViewController: BaseViewControler {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        // The button follows the keyboard itself; IQKeyboardManager would also shift the form
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -66,7 +76,7 @@ final class NewCustomerViewController: BaseViewControler {
 
     override func setupUI() {
         view.backgroundColor = .white
-        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized())
+        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), pointSize: 18)
         back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         let title = V2.label("customers.v2.newTitle".localized(), size: 20, weight: .bold)
         let header = UIStackView(arrangedSubviews: [back, title])
@@ -127,9 +137,9 @@ final class NewCustomerViewController: BaseViewControler {
         }
         saveButton.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-            make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).offset(-12)
         }
-        saveButton.bottomAnchor.constraint(lessThanOrEqualTo: view.keyboardLayoutGuide.topAnchor, constant: -12).isActive = true
+        // Sits on the keyboard when it is up, else on the safe area
+        saveButton.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -12).isActive = true
     }
 
     private func field(_ title: String?, _ input: UITextField, attributedTitle: NSAttributedString? = nil) -> UIView {

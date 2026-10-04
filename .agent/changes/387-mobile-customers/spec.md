@@ -5,8 +5,10 @@ Issue: #387 · Status: accepted · Intent: ./intent.md
 ## Behavior
 
 ### Onboarding (`newAuth`)
-1. Three steps: Thêm đồ cho thuê, Lưu khách hàng, Tạo đơn. Blue rounded tile with an icon, "Bước n/3", title,
-   short body, dots (active one wide), Bỏ qua (top right, hidden on the last step), Tiếp / Bắt đầu.
+1. Three steps: Thêm đồ cho thuê, Lưu khách hàng, Tạo đơn, in the approved style E (board `Onboarding-E`): three
+   drifting blobs (12 s loop), a floating 120pt white icon card (dress / user / calendar, 4.2 s loop), "BƯỚC n/3",
+   28pt heading, grey body, Bỏ qua pill (hidden on the last step), dots on the left and Tiếp / Bắt đầu on the right.
+   No motion with Reduce Motion (iOS) or animations off (Android).
 2. Same "show once" rule and storage as today: iOS `HasCompletedOnboarding` (`Utils.hasCompletedOnboarding`),
    Android `SessionStore.onboardingDone`. Flag off: the current onboarding.
 
@@ -34,9 +36,11 @@ Issue: #387 · Status: accepted · Intent: ./intent.md
 12. Header: back, Sửa (the existing edit form), initials, name, tier, phone, call button (hidden without phone).
 13. Tiles: Số đơn = `summary.totalOrders`, Tổng chi = `summary.totalAmount`, Đang thuê = `total` of
     `GET /api/orders?customerId=&status=PICKUPED&limit=1`. Money hidden for staff when the shop hides it.
-14. "ĐƠN GẦN ĐÂY": first 20 orders: "#number · first item (+n)", dates (rent: pickup → return; sale: created),
-    status pill, total. Tapping opens the order detail through the existing router.
-15. "Tạo đơn cho khách này": sets the customer on the cart (an order being edited is dropped first) and opens the cart.
+14. "ĐƠN GẦN ĐÂY": first 20 orders: "#number · N món" (the list rows carry no item names), dates (rent: pickup →
+    return, one date when both fall on the same civil day; sale: created), status pill in the board colors, total.
+    Tapping opens the order detail through the existing router.
+15. "Tạo đơn cho khách này": sets the customer on the cart and opens it. Draft items stay; an order being edited is
+    dropped first.
 
 ### Roles
 16. Every role with `customers.view` sees the list and detail; `customers.manage` gives + and Sửa. No new screen has

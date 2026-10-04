@@ -61,7 +61,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
 
         let top = UIView()
         top.backgroundColor = .white
-        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized())
+        let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), pointSize: 18)
         back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         let bar = UIStackView(arrangedSubviews: [back, UIView()])
         bar.alignment = .center
@@ -71,7 +71,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
             bar.addArrangedSubview(edit)
         }
 
-        callButton.setImage(UIImage(systemName: "phone.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)), for: .normal)
+        callButton.setImage(UIImage(systemName: "phone", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)), for: .normal)
         callButton.tintColor = DS.Color.primary
         callButton.backgroundColor = CustomersV2UI.avatarFill
         callButton.layer.cornerRadius = DS.touchTarget / 2
@@ -143,16 +143,15 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         let cta = V2.primaryButton("customers.v2.createOrder".localized())
         cta.addTarget(self, action: #selector(createOrderTapped), for: .touchUpInside)
         [line, cta].forEach(bottom.addSubview)
+        let statusFill = UIView()
+        statusFill.backgroundColor = .white
+        [statusFill, scroll, bottom].forEach(view.addSubview)
         line.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         cta.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
         }
-
-        let statusFill = UIView()
-        statusFill.backgroundColor = .white
-        [statusFill, scroll, bottom].forEach(view.addSubview)
         statusFill.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -262,6 +261,20 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         texts.isUserInteractionEnabled = false
         let pill = OrderStatusPillLabel()
         pill.apply(status: row.status)
+        // Board pill colors: reserved blue, out purple, done green, cancelled grey
+        let colors: DS.Pill
+        switch row.status {
+        case .reserved, .draft: colors = DS.Status.handOver
+        case .pickuped: colors = DS.Status.returning
+        case .returned, .completed: colors = DS.Status.done
+        case .cancelled, .unknown: colors = DS.Status.cancelled
+        }
+        pill.textColor = colors.text
+        pill.backgroundColor = colors.fill
+        pill.font = Utils.boldFont(size: 12)
+        // Sentence case as on the board ("Đang thuê", not "ĐANG THUÊ")
+        let lower = (pill.text ?? "").lowercased()
+        pill.text = lower.prefix(1).uppercased() + lower.dropFirst()
         let amount = V2.label(hidesMoney ? nil : MoneyFormatter.format(row.totalAmount), size: 14, weight: .bold)
         let right = UIStackView(arrangedSubviews: [pill, amount])
         right.axis = .vertical

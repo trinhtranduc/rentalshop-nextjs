@@ -1777,7 +1777,7 @@
 "customers.v2.createOrder" = "Create order for this customer";
 "onboarding.v2.step" = "Step %d/%d";
 "onboarding.v2.product.title" = "Add rental items";
-"onboarding.v2.product.body" = "Add a photo, rental price and stock. Search or scan to find it when you create an order.";
+"onboarding.v2.product.body" = "Add a photo, price and stock. Your team finds it by search or scan when creating an order.";
 "onboarding.v2.customer.title" = "Save customers";
 "onboarding.v2.customer.body" = "Save a customer once and reuse them for every rental and sale.";
 "onboarding.v2.order.title" = "Create orders";

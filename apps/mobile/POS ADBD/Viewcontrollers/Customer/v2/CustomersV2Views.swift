@@ -46,8 +46,9 @@ enum CustomersV2UI {
         let box = UIView()
         box.backgroundColor = V2.chipFill
         box.layer.cornerRadius = 12
-        let glass = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        let glass = UIImageView(image: UIImage(systemName: "magnifyingglass", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)))
         glass.tintColor = DS.Color.textMuted
+        glass.contentMode = .center
         field.placeholder = placeholder
         field.font = Utils.regularFont(size: 16)
         field.clearButtonMode = .whileEditing
@@ -69,9 +70,9 @@ enum CustomersV2UI {
         return box
     }
 
-    static func iconButton(_ systemName: String, label: String, pointSize: CGFloat = 18) -> UIButton {
+    static func iconButton(_ systemName: String, label: String, pointSize: CGFloat) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: systemName, withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: .bold)), for: .normal)
+        button.setImage(UIImage(systemName: systemName, withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)), for: .normal)
         button.tintColor = DS.Color.text
         button.accessibilityLabel = label
         button.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
@@ -96,7 +97,7 @@ final class CustomerV2Cell: UITableViewCell {
     private let nameLabel = V2.label(size: 16, weight: .bold)
     private let tierPill = CustomersV2UI.tierPill()
     private let subtitleLabel = V2.label(size: 13, color: DS.Color.textMuted)
-    private let chevron = UIImageView(image: UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)))
+    private let chevron = UIImageView(image: UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .regular)))
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -118,11 +119,11 @@ final class CustomerV2Cell: UITableViewCell {
         row.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
             make.top.bottom.equalToSuperview().inset(10)
+            make.height.greaterThanOrEqualTo(44)
         }
         let line = V2.divider()
         contentView.addSubview(line)
         line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
-        contentView.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(64) }
     }
 
     required init?(coder: NSCoder) {
@@ -157,7 +158,7 @@ final class NewCustomerRowCell: UITableViewCell {
         dash.lineWidth = 1.5
         dash.lineDashPattern = [4, 3]
         circle.layer.addSublayer(dash)
-        let plus = UIImageView(image: UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)))
+        let plus = UIImageView(image: UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)))
         plus.tintColor = DS.Color.primary
         circle.addSubview(plus)
         plus.snp.makeConstraints { make in make.center.equalToSuperview() }

@@ -41,7 +41,6 @@ final class CustomersV2ListViewController: BaseViewControler {
         viewModel.onChange = { [weak self] in self?.render() }
         viewModel.onError = { [weak self] error in
             guard let self else { return }
-            self.endRefresh()
             UIAlertController.errorAlert(parent: self, error: error)
         }
         spinner.startAnimating()
@@ -67,11 +66,11 @@ final class CustomersV2ListViewController: BaseViewControler {
             lead.snp.makeConstraints { make in make.width.equalTo(8) }
             [lead, titleLabel, UIView(), close].forEach(header.addArrangedSubview)
         case .browse:
-            let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized())
+            let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), pointSize: 18)
             back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
             [back, titleLabel].forEach(header.addArrangedSubview)
             if PermissionManager.shared.canManageCustomers() {
-                let add = CustomersV2UI.iconButton("plus", label: "customers.v2.add".localized())
+                let add = CustomersV2UI.iconButton("plus", label: "customers.v2.add".localized(), pointSize: 15)
                 add.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
                 header.addArrangedSubview(add)
             }
@@ -115,7 +114,6 @@ final class CustomersV2ListViewController: BaseViewControler {
             make.top.equalTo(line.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
-        if mode == .browse { configPullToRefresh(tableview: listView) }
 
         emptyLabel.textAlignment = .center
         [emptyLabel, spinner].forEach(view.addSubview)
@@ -131,7 +129,6 @@ final class CustomersV2ListViewController: BaseViewControler {
     }
 
     private func render() {
-        endRefresh()
         if mode == .browse {
             let count = NSMutableAttributedString(string: "customers.v2.title".localized(), attributes: [
                 NSAttributedString.Key.font: Utils.boldFont(size: 20),
@@ -169,10 +166,6 @@ final class CustomersV2ListViewController: BaseViewControler {
     @objc private func searchChanged() {
         let text = searchField.text
         searchDebouncer.debounce { [weak self] in self?.viewModel.setQuery(text) }
-    }
-
-    override func startRefresh(_ sender: Any) {
-        viewModel.reload()
     }
 
     private func openNewCustomer() {

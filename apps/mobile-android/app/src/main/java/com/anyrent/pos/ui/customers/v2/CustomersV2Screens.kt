@@ -31,11 +31,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,7 +98,7 @@ import com.anyrent.pos.domain.customers.CustomerRow
 import com.anyrent.pos.domain.customers.CustomerRules
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppFormSheet
-import com.anyrent.pos.ui.common.StatusBadge
+import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.customers.CustomerFormScreen
@@ -210,7 +210,7 @@ private fun CustomersListContent(
                 }
             } else {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text)
+                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text, modifier = Modifier.size(22.dp))
                 }
                 Text(
                     buildAnnotatedString {
@@ -226,7 +226,7 @@ private fun CustomersListContent(
                 )
                 if (canAdd) {
                     IconButton(onClick = { onNew("") }) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.customers_v2_add), tint = DS.Colors.Text)
+                        Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.customers_v2_add), tint = DS.Colors.Text, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -290,7 +290,7 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(Icons.Default.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+        Icon(Icons.Outlined.Search, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
         Box(Modifier.weight(1f)) {
             if (value.isEmpty()) Text(stringResource(R.string.customers_v2_search_placeholder), fontSize = 16.sp, color = DS.Colors.TextMuted)
             androidx.compose.foundation.text.BasicTextField(
@@ -323,7 +323,7 @@ private fun NewCustomerRow(onClick: () -> Unit) {
                 },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
             }
             Text(stringResource(R.string.customers_v2_new), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
         }
@@ -367,7 +367,7 @@ private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: ()
                 }
                 Text(subtitle, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1)
             }
-            if (showsChevron) Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Chevron)
+            if (showsChevron) Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Chevron, modifier = Modifier.size(16.dp))
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
@@ -422,7 +422,7 @@ fun NewCustomerContent(
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface).imePadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text)
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text, modifier = Modifier.size(22.dp))
             }
             Text(stringResource(R.string.customers_v2_new_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
                 modifier = Modifier.semantics { heading() })
@@ -595,7 +595,7 @@ fun CustomerDetailV2Screen(
         Column(Modifier.fillMaxWidth().background(DS.Colors.Surface).statusBarsPadding().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text)
+                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), tint = DS.Colors.Text, modifier = Modifier.size(22.dp))
                 }
                 Spacer(Modifier.weight(1f))
                 if (canEdit && shown != null) {
@@ -622,7 +622,7 @@ fun CustomerDetailV2Screen(
                         },
                         modifier = Modifier.size(DS.TouchTarget).clip(CircleShape).background(AvatarFill).semantics { contentDescription = callLabel },
                     ) {
-                        Icon(Icons.Default.Call, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Call, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -710,10 +710,26 @@ private fun OrderRowItem(order: CustomerOrderRow, onClick: () -> Unit) {
                 if (dates.isNotEmpty()) Text(dates, fontSize = 13.sp, color = DS.Colors.TextMuted)
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                StatusBadge(order.status)
+                StatusPill(order.status)
                 Text(formatMoneyVnd(order.totalAmount), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
+}
+
+/** Board pill colors: reserved blue, out purple, done green, cancelled grey */
+@Composable
+private fun StatusPill(status: String) {
+    val colors = when (status.uppercase()) {
+        "RESERVED" -> DS.Status.HandOver
+        "PICKUPED", "PICKED_UP" -> DS.Status.Return
+        "RETURNED", "COMPLETED" -> DS.Status.Done
+        else -> DS.Status.Cancelled
+    }
+    val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
+    Text(
+        label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = colors.text, maxLines = 1,
+        modifier = Modifier.clip(RoundedCornerShape(DS.Radius.pill)).background(colors.fill).padding(horizontal = 9.dp, vertical = 3.dp),
+    )
 }

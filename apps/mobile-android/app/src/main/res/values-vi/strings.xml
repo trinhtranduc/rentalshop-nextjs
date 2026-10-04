@@ -798,7 +798,7 @@
     <string name="customers_v2_create_order">Tạo đơn cho khách này</string>
     <string name="onboarding_v2_step">Bước %1$d/%2$d</string>
     <string name="onboarding_v2_product_title">Thêm đồ cho thuê</string>
-    <string name="onboarding_v2_product_body">Chụp ảnh, đặt giá thuê và số lượng. Tìm hoặc quét mã là thấy ngay khi tạo đơn.</string>
+    <string name="onboarding_v2_product_body">Chụp ảnh, đặt giá và số lượng. Nhân viên tìm hoặc quét mã là thấy ngay khi tạo đơn.</string>
     <string name="onboarding_v2_customer_title">Lưu khách hàng</string>
     <string name="onboarding_v2_customer_body">Lưu khách một lần, dùng lại cho mọi đơn thuê và đơn bán.</string>
     <string name="onboarding_v2_order_title">Tạo đơn</string>
