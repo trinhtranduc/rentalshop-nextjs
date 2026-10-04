@@ -42,6 +42,20 @@ class PaymentPolicyTest {
     }
 
     @Test
+    fun `picked up rent subtracts return adjustment already paid like the API`() {
+        val order = order(
+            type = "RENT",
+            status = "PICKUPED",
+            security = 0.0,
+            damage = 100_000.0,
+            late = 50_000.0,
+            payments = listOf(PaymentEntry(1, 150_000.0, "CASH", "COMPLETED", "RETURN_ADJUSTMENT")),
+        )
+
+        assertEquals(0.0, PaymentPolicy.actionFor(order)!!.amount, 0.0)
+    }
+
+    @Test
     fun `sale subtracts completed ledger payments`() {
         val order = order(
             type = "SALE",

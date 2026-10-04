@@ -599,8 +599,7 @@ extension OverviewRankingOrdersViewController: UITableViewDataSource, UITableVie
                     return
                 }
                 guard let detail = orderDetail else { return }
-                let preview = PreviewViewController(order: Order.from(detail: detail))
-                preview.hidesBottomBarWhenPushed = true
+                let preview = OrderDetailRouter.detailController(for: Order.from(detail: detail), delegate: nil)
                 self?.navigationController?.pushViewController(preview, animated: true)
             }
         }

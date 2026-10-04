@@ -201,8 +201,7 @@ final class PushNotificationManager: NSObject {
                 }
                 guard let detail = orderDetail else { return }
                 let fullOrder = Order.from(detail: detail)
-                let preview = PreviewViewController(order: fullOrder)
-                preview.hidesBottomBarWhenPushed = true
+                let preview = OrderDetailRouter.detailController(for: fullOrder, delegate: nil)
                 navigationController.pushViewController(preview, animated: true)
             }
         }

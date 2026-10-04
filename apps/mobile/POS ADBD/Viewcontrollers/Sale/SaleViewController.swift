@@ -639,9 +639,8 @@ extension SaleViewController : UITableViewDataSource, UITableViewDelegate{
         guard indexPath.row < orders.count else { return }
         
         let order = orders[indexPath.row]
-        let orderViewController = PreviewViewController(order: order)
-        orderViewController.hidesBottomBarWhenPushed = true
-        orderViewController.delegate = self // Set delegate to reload orders after update
+        // Delegate reloads orders after update
+        let orderViewController = OrderDetailRouter.detailController(for: order, delegate: self)
         self.navigationController?.pushViewController(orderViewController, animated: true)
     }
     
@@ -662,37 +661,8 @@ extension SaleViewController : UITableViewDataSource, UITableViewDelegate{
         // No need to reload product model for new API Order
         print (order)
         let updateContext = UIContextualAction(style: .normal, title: "Update Order".localized().uppercased()) {  (contextualAction, view, boolValue) in
-            if let tabbarController = appDelegate.window?.rootViewController as? TabbarViewController{
-                // Create a copy of the order for editing
-                // Convert Order API model to Cart
-                let cart = Cart.fromOrder(order)
-                
-                // Ensure cart customer has complete information (including id)
-                if var cartCustomer = cart.customer {
-                    cartCustomer.id = order.customerId
-                    cartCustomer.customer_id = order.customerId
-                    cart.customer = cartCustomer
-                }
-                
-                CartStore.shared.replaceCart(with: cart)
-                tabbarController.selectedIndex = 0
-                
-                // Find MainViewController in the navigation stack to update cart badge and reload cart
-                if let navigationController = tabbarController.viewControllers?.first as? UINavigationController {
-                    for viewController in navigationController.viewControllers {
-                        if let mainVC = viewController as? MainViewController {
-                            mainVC.updateCartBadge()
-                            break
-                        }
-                    }
-                }
-                
-                // Log order update event
-                FirebaseManager.shared.logOrderUpdated(
-                    orderId: String(order.id),
-                    totalAmount: order.totalAmount
-                )
-            }
+            // Convert Order API model to Cart and open the sales tab
+            OrderEditLauncher.startEditing(order)
         }
         let swipeActions = UISwipeActionsConfiguration(actions: [updateContext])
         
