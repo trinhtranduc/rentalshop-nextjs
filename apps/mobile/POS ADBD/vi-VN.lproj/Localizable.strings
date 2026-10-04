@@ -1538,7 +1538,7 @@
 "products.detail.edit" = "Sửa";
 "products.detail.deposit" = "cọc %@";
 "products.detail.orders" = "Đơn của sản phẩm";
-"products.detail.ordersCount" = "Tất cả %d";
+"products.detail.ordersCount" = "Tất cả %d ›";
 "products.detail.noOrders" = "Chưa có đơn nào";
 "products.detail.freeCalendar" = "Lịch trống";
 "products.detail.addToCart" = "Thêm vào giỏ";
@@ -1885,3 +1885,16 @@
 "authv2.sent.verify" = "Đã gửi thư kích hoạt đến %@. Không thấy thư? Xem cả mục thư rác.";
 "authv2.backToLogin" = "Về đăng nhập";
 "authv2.resendIn" = "Gửi lại email (%ds)";
+
+/* #388 phase 7 gaps */
+"products.detail.chip.upcoming" = "Sắp tới";
+"products.detail.chip.renting" = "Đang thuê";
+"products.detail.chip.done" = "Đã xong";
+"products.detail.strip.caption" = "Số còn trống mỗi ngày · cửa hàng có %d bộ";
+"products.detail.strip.accessibility" = "Còn trống 7 ngày tới";
+"products.detail.state.pickupToday" = "Giao hôm nay";
+"products.detail.state.pickupOn" = "Giao %@";
+"products.detail.state.returnToday" = "Trả hôm nay";
+"products.detail.state.returnOn" = "Trả %@";
+"Late 1 day" = "Trễ 1 ngày";
+"Returned 1 day late" = "trả trễ 1 ngày";

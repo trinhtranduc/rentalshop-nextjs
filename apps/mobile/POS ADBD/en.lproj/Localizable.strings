@@ -1540,7 +1540,7 @@
 "products.detail.edit" = "Edit";
 "products.detail.deposit" = "deposit %@";
 "products.detail.orders" = "Orders of this product";
-"products.detail.ordersCount" = "All %d";
+"products.detail.ordersCount" = "All %d ›";
 "products.detail.noOrders" = "No orders yet";
 "products.detail.freeCalendar" = "Free days";
 "products.detail.addToCart" = "Add to cart";
@@ -1887,3 +1887,16 @@
 "authv2.sent.verify" = "We sent an activation link to %@. No email? Check your spam folder too.";
 "authv2.backToLogin" = "Back to sign in";
 "authv2.resendIn" = "Resend email (%ds)";
+
+/* #388 phase 7 gaps */
+"products.detail.chip.upcoming" = "Upcoming";
+"products.detail.chip.renting" = "Rented";
+"products.detail.chip.done" = "Done";
+"products.detail.strip.caption" = "Free units per day · %d in this shop";
+"products.detail.strip.accessibility" = "Free in the next 7 days";
+"products.detail.state.pickupToday" = "Hand over today";
+"products.detail.state.pickupOn" = "Hand over %@";
+"products.detail.state.returnToday" = "Return today";
+"products.detail.state.returnOn" = "Return %@";
+"Late 1 day" = "1 day late";
+"Returned 1 day late" = "Returned 1 day late";

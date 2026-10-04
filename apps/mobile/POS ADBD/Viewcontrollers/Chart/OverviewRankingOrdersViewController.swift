@@ -44,6 +44,10 @@ enum OverviewRankingOrdersFilter {
     case customer(id: Int, name: String)
     case product(id: Int, name: String)
     case snapshot(OverviewSnapshotKind, title: String)
+    /// #388 overview: orders out now (PICKUPED)
+    case rentedOut(title: String)
+    /// #388 overview: rentals past their return day
+    case lateReturns(title: String)
 
     var navigationTitle: String {
         switch self {
@@ -51,7 +55,7 @@ enum OverviewRankingOrdersFilter {
             return "Orders by customer".localized()
         case .product:
             return "Orders by product".localized()
-        case .snapshot(_, let title):
+        case .snapshot(_, let title), .rentedOut(let title), .lateReturns(let title):
             return title
         }
     }
@@ -60,7 +64,7 @@ enum OverviewRankingOrdersFilter {
         switch self {
         case .customer(_, let name), .product(_, let name):
             return name
-        case .snapshot(_, let title):
+        case .snapshot(_, let title), .rentedOut(let title), .lateReturns(let title):
             return title
         }
     }
@@ -427,6 +431,31 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
                 status: nil
             ) { [weak self] response, error in
                 self?.handleOrdersResponse(response, error: error, reset: reset)
+            }
+        case .rentedOut, .lateReturns:
+            let lateOnly: Bool
+            if case .lateReturns = filter { lateOnly = true } else { lateOnly = false }
+            OrderService.shared.loadOrders(
+                productIds: nil,
+                keyword: nil,
+                page: currentPage,
+                limit: 20,
+                orderType: lateOnly ? .rent : nil,
+                sortBy: "returnPlanAt",
+                sortOrder: "asc",
+                status: .pickuped
+            ) { [weak self] response, error in
+                guard let self else { return }
+                guard lateOnly else {
+                    self.handleOrdersResponse(response, error: error, reset: reset)
+                    return
+                }
+                let page = OverviewLateFilter.page(response?.data?.orders ?? [], hasMore: response?.data?.hasMore ?? false)
+                DispatchQueue.main.async {
+                    let loaded = reset ? 0 : self.orders.count
+                    self.handleMappedOrders(page.orders, total: loaded + page.orders.count, hasMore: page.hasMore,
+                                            error: error, reset: reset)
+                }
             }
         case .snapshot(let kind, _):
             AnalyticsAPIService.shared.loadIncomeOrders(
