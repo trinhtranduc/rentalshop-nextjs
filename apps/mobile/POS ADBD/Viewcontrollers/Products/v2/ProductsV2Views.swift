@@ -231,9 +231,9 @@ final class V2ValueRow: UIControl {
         valueLabel.textAlignment = .right
         addSubview(titleLabel)
         addSubview(valueLabel)
-        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
+        let arrow = UIImageView(image: DS.symbol("chevron.right", 16))
         arrow.tintColor = UIColor(hexString: "94A3B8")
-        arrow.contentMode = .scaleAspectFit
+        arrow.contentMode = .center
         arrow.isHidden = !chevron
         addSubview(arrow)
         snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
@@ -244,7 +244,7 @@ final class V2ValueRow: UIControl {
         arrow.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(chevron ? 14 : 0)
+            make.width.height.equalTo(chevron ? 16 : 0)
         }
         valueLabel.snp.makeConstraints { make in
             make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(DS.Spacing.sm)

@@ -95,7 +95,7 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
         }
         photoScroll.snp.makeConstraints { make in make.height.equalTo(72) }
 
-        addButton.setImage(UIImage(systemName: "plus"), for: .normal)
+        addButton.setImage(DS.symbol("camera", DS.Icon.md), for: .normal)
         addButton.tintColor = DS.Color.primary
         addButton.backgroundColor = DS.Color.background
         addButton.layer.cornerRadius = DS.Radius.card
