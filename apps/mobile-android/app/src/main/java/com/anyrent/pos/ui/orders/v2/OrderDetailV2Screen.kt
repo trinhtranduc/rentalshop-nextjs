@@ -77,7 +77,9 @@ import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
 import com.anyrent.pos.domain.orders.DetailPrimary
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.domain.orders.RentalExtension
+import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -543,7 +545,13 @@ private fun DetailBody(detail: OrderDetail, onPreview: (Any) -> Unit, onEditNote
     val status = summary.status.uppercase()
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         if (isRent) {
-            InfoRow(stringResource(R.string.detail_schedule), "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}")
+            // Day count after the dates, the cart's inclusive count (#425: it follows a Gia hạn)
+            val zone = ZoneId.systemDefault()
+            val days = OrderPlanDays.dayOf(summary.pickupPlanAt, zone)?.let { from ->
+                OrderPlanDays.dayOf(summary.returnPlanAt, zone)?.let { to -> CartV2Logic.rentalDays(from, to) }
+            }
+            val dates = "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}"
+            InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + stringResource(R.string.v2_cart_days, it) } ?: dates)
         } else {
             val day = OrdersHomeLogic.parseInstant(summary.createdAt)?.let { formatDayShort(it) } ?: "—"
             InfoRow(stringResource(R.string.detail_sale_day), listOfNotNull(day, summary.createdByName).joinToString(" · "))

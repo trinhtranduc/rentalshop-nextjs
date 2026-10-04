@@ -1919,3 +1919,5 @@
 "order.extend.confirm" = "Extend to %@";
 "order.extend.unavailable" = "Not enough stock on the added days: %@";
 "order.extend.done" = "Extended to %@";
+"order.extend.extraRent" = "Extra rent";
+"order.extend.newTotal" = "New total: %@";
