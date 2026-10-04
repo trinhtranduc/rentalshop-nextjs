@@ -14,7 +14,7 @@ Agent review is the first layer. A human still owns auth, payments, migrations, 
 2. Confirm `verify-change` output is in the test plan.
 3. Diff against the base. Drop files that are not in `plan.md`.
 4. Fill `.github/PULL_REQUEST_TEMPLATE.md`. Do not leave the HTML comments as the only text.
-5. Create the PR against `main` unless the human named another base. `gh pr create` only when
+5. Create the PR against `dev` unless the human named another base. `gh pr create` only when
    the user asked for a PR. Push with `-u` when the branch has no upstream.
 
 ## Review checklist
@@ -25,6 +25,7 @@ Agent review is the first layer. A human still owns auth, payments, migrations, 
 - No CUID leaks, no new `PrismaClient`, no edited applied migration.
 - New strings exist in `en`, `vi`, `ja`, `ko`, `zh`.
 - iOS and Android updated together when the contract changed.
+- API, shared-package, rule, migration, or API env change → the PR has the `api-compat-review` table, with no unresolved high risk.
 - `??` mixed with `||` is parenthesized.
 - Secrets and `.env*` are absent from the diff.
 
