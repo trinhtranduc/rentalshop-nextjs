@@ -68,13 +68,14 @@ struct TodayWorkRow: Codable {
     let returnPlanAt: Date?
     let isReadyToDeliver: Bool
     let productNames: String
+    let totalAmount: Double
     let amountDue: Double
     let refundDue: Double
     let lateDays: Int
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, customerPhone, pickupPlanAt, returnPlanAt
-        case isReadyToDeliver, productNames, amountDue, refundDue, lateDays, items
+        case isReadyToDeliver, productNames, totalAmount, amountDue, refundDue, lateDays, items
     }
 
     private struct Item: Codable {
@@ -84,7 +85,8 @@ struct TodayWorkRow: Codable {
 
     init(id: Int, orderNumber: String, customerName: String? = nil, customerPhone: String? = nil,
          pickupPlanAt: Date? = nil, returnPlanAt: Date? = nil, isReadyToDeliver: Bool = false,
-         productNames: String = "", amountDue: Double = 0, refundDue: Double = 0, lateDays: Int = 0) {
+         productNames: String = "", totalAmount: Double = 0, amountDue: Double = 0, refundDue: Double = 0,
+         lateDays: Int = 0) {
         self.id = id
         self.orderNumber = orderNumber
         self.customerName = customerName
@@ -93,6 +95,7 @@ struct TodayWorkRow: Codable {
         self.returnPlanAt = returnPlanAt
         self.isReadyToDeliver = isReadyToDeliver
         self.productNames = productNames
+        self.totalAmount = totalAmount
         self.amountDue = amountDue
         self.refundDue = refundDue
         self.lateDays = lateDays
@@ -107,14 +110,15 @@ struct TodayWorkRow: Codable {
         pickupPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .pickupPlanAt)) ?? nil
         returnPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .returnPlanAt)) ?? nil
         isReadyToDeliver = (try? c.decode(Bool.self, forKey: .isReadyToDeliver)) ?? false
+        totalAmount = (try? c.decode(Double.self, forKey: .totalAmount)) ?? 0
         amountDue = (try? c.decode(Double.self, forKey: .amountDue)) ?? 0
         refundDue = (try? c.decode(Double.self, forKey: .refundDue)) ?? 0
         lateDays = (try? c.decode(Int.self, forKey: .lateDays)) ?? 0
-        // Item names with quantity ("Áo dài x2") when the API sends them; otherwise the joined names
+        // Item names with quantity ("Áo dài ×2", board Main) when the API sends them; otherwise the joined names
         let items = (try? c.decode([Item].self, forKey: .items)) ?? []
         let fromItems = items.compactMap { item -> String? in
             guard let name = item.name, !name.isEmpty else { return nil }
-            return (item.quantity ?? 1) > 1 ? "\(name) x\(item.quantity ?? 1)" : name
+            return (item.quantity ?? 1) > 1 ? "\(name) ×\(item.quantity ?? 1)" : name
         }
         productNames = fromItems.isEmpty
             ? ((try? c.decode(String.self, forKey: .productNames)) ?? "")
@@ -131,6 +135,7 @@ struct TodayWorkRow: Codable {
         try c.encodeIfPresent(returnPlanAt, forKey: .returnPlanAt)
         try c.encode(isReadyToDeliver, forKey: .isReadyToDeliver)
         try c.encode(productNames, forKey: .productNames)
+        try c.encode(totalAmount, forKey: .totalAmount)
         try c.encode(amountDue, forKey: .amountDue)
         try c.encode(refundDue, forKey: .refundDue)
         try c.encode(lateDays, forKey: .lateDays)

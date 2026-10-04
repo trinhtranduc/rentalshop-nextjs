@@ -48,14 +48,14 @@ private fun todayWorkRowFromJson(o: JSONObject): TodayWorkRow {
     fun instant(key: String): Instant? = text(key)?.let { runCatching { Instant.parse(it) }.getOrNull() }
     fun number(key: String): Double = o.optDouble(key).let { if (it.isNaN()) 0.0 else it }
 
-    // Item names with quantity ("Áo dài x2") when the API sends them; otherwise the joined names
+    // Item names with quantity ("Áo dài ×2", board Main) when the API sends them; otherwise the joined names
     val items = o.optJSONArray("items")
     val fromItems = (0 until (items?.length() ?: 0)).mapNotNull { index ->
         val item = items?.optJSONObject(index) ?: return@mapNotNull null
         val name = if (item.isNull("name")) "" else item.optString("name")
         if (name.isBlank()) return@mapNotNull null
         val quantity = item.optInt("quantity", 1)
-        if (quantity > 1) "$name x$quantity" else name
+        if (quantity > 1) "$name ×$quantity" else name
     }
     return TodayWorkRow(
         id = o.optInt("id"),
@@ -66,6 +66,7 @@ private fun todayWorkRowFromJson(o: JSONObject): TodayWorkRow {
         returnPlanAt = instant("returnPlanAt"),
         isReadyToDeliver = o.optBoolean("isReadyToDeliver", false),
         productNames = if (fromItems.isNotEmpty()) fromItems.joinToString(", ") else text("productNames").orEmpty(),
+        totalAmount = number("totalAmount"),
         amountDue = number("amountDue"),
         refundDue = number("refundDue"),
         lateDays = o.optInt("lateDays", 0),

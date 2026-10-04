@@ -12,6 +12,7 @@ data class TodayWorkRow(
     val returnPlanAt: Instant? = null,
     val isReadyToDeliver: Boolean = false,
     val productNames: String = "",
+    val totalAmount: Double = 0.0,
     val amountDue: Double = 0.0,
     val refundDue: Double = 0.0,
     val lateDays: Int = 0,
