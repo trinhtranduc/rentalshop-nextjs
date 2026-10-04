@@ -125,6 +125,10 @@ enum ProductDetailV2Logic {
         switch chip {
         case .upcoming:
             guard let pickup = order.pickupPlanAt else { return .status }
+            // A hand-over past its day (still RESERVED) is late too
+            let late = OrdersHomeLogic.lateDays(orderType: order.orderType, status: order.status, pickupPlanAt: pickup,
+                                                returnPlanAt: order.returnPlanAt, now: now, timeZone: timeZone)
+            if late > 0 { return .late(late) }
             return DayFormatter.key(pickup, timeZone: timeZone) == todayKey ? .pickupToday : .pickupOn(dayMonth(pickup, timeZone: timeZone))
         case .renting:
             guard let ret = order.returnPlanAt else { return .status }

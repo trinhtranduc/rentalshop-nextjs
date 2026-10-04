@@ -88,8 +88,13 @@ object ProductDetailLogic {
         return when (chip) {
             ProductOrdersChip.UPCOMING -> {
                 val pickup = parse(order.pickupPlanAt) ?: return ProductOrderRowState.Status
-                if (pickup.atZone(zone).toLocalDate() == today) ProductOrderRowState.PickupToday
-                else ProductOrderRowState.PickupOn(dayMonth(pickup, zone))
+                // A hand-over past its day (still RESERVED) is late too
+                val late = OrdersHomeLogic.lateDays(order.orderType, order.status, pickup, parse(order.returnPlanAt), now, zone)
+                when {
+                    late > 0 -> ProductOrderRowState.Late(late)
+                    pickup.atZone(zone).toLocalDate() == today -> ProductOrderRowState.PickupToday
+                    else -> ProductOrderRowState.PickupOn(dayMonth(pickup, zone))
+                }
             }
             ProductOrdersChip.RENTING -> {
                 val ret = parse(order.returnPlanAt) ?: return ProductOrderRowState.Status

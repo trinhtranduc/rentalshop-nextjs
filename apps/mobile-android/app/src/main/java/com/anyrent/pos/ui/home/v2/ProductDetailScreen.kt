@@ -371,25 +371,23 @@ private fun OrderRow(order: OrderSummary, productId: Int, chip: ProductOrdersChi
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.width(4.dp).height(40.dp).clip(RoundedCornerShape(4.dp)).background(OrderStatusStyle.badgeColor(order.status)))
+            val state = ProductDetailLogic.rowState(order, chip)
+            val (text, color) = when (state) {
+                ProductOrderRowState.PickupToday -> stringResource(R.string.v2_detail_state_pickup_today) to DS.Status.HandOver.text
+                is ProductOrderRowState.PickupOn -> stringResource(R.string.v2_detail_state_pickup_on, state.dayMonth) to DS.Colors.TextMuted
+                is ProductOrderRowState.Late -> pluralStringResource(R.plurals.orders_late_days, state.days, state.days) to V2Colors.Danger
+                ProductOrderRowState.ReturnToday -> stringResource(R.string.v2_detail_state_return_today) to DS.Status.HandOver.text
+                is ProductOrderRowState.ReturnOn -> stringResource(R.string.v2_detail_state_return_on, state.dayMonth) to DS.Colors.TextMuted
+                ProductOrderRowState.Status -> "" to OrderStatusStyle.badgeColor(order.status)
+            }
+            // Board: the bar takes the colour of the row's state
+            Box(Modifier.width(4.dp).height(40.dp).clip(RoundedCornerShape(4.dp)).background(color))
             Column(Modifier.weight(1f)) {
                 Text(order.customerName.orEmpty(), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(ProductDetailLogic.meta(order, productId), fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            when (val state = ProductDetailLogic.rowState(order, chip)) {
-                ProductOrderRowState.Status -> StatusBadge(order.status)
-                else -> {
-                    val (text, color) = when (state) {
-                        ProductOrderRowState.PickupToday -> stringResource(R.string.v2_detail_state_pickup_today) to DS.Status.HandOver.text
-                        is ProductOrderRowState.PickupOn -> stringResource(R.string.v2_detail_state_pickup_on, state.dayMonth) to DS.Colors.TextMuted
-                        is ProductOrderRowState.Late -> pluralStringResource(R.plurals.orders_late_days, state.days, state.days) to V2Colors.Danger
-                        ProductOrderRowState.ReturnToday -> stringResource(R.string.v2_detail_state_return_today) to DS.Status.HandOver.text
-                        is ProductOrderRowState.ReturnOn -> stringResource(R.string.v2_detail_state_return_on, state.dayMonth) to DS.Colors.TextMuted
-                        ProductOrderRowState.Status -> "" to DS.Colors.TextMuted
-                    }
-                    Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
-                }
-            }
+            if (state == ProductOrderRowState.Status) StatusBadge(order.status)
+            else Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }

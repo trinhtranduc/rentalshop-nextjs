@@ -528,7 +528,10 @@ fun OrdersScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        val sortedOrders = if (!isSaleTab && sortByPickup) {
+                        // #388 "Trễ hạn": keep the API order (most late first)
+                        val sortedOrders = if (lateOnly) {
+                            orders
+                        } else if (!isSaleTab && sortByPickup) {
                             orders.sortedByDescending { it.pickupPlanAt.orEmpty() }
                         } else {
                             orders.sortedByDescending { it.createdAt.orEmpty() }

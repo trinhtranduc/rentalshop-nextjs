@@ -72,6 +72,8 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.rowState(today, chip: .upcoming, now: now, timeZone: vietnam), .pickupToday)
         let later = try order(status: "RESERVED", pickup: "2026-10-05T02:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(later, chip: .upcoming, now: now, timeZone: vietnam), .pickupOn("05/10"))
+        let noShow = try order(status: "RESERVED", pickup: "2026-10-01T02:00:00.000Z")
+        XCTAssertEqual(ProductDetailV2Logic.rowState(noShow, chip: .upcoming, now: now, timeZone: vietnam), .late(2))
         // 02/10 18:00 UTC is 03/10 in Vietnam but 02/10 in UTC
         let edge = try order(status: "PICKUPED", returns: "2026-10-02T18:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(edge, chip: .renting, now: now, timeZone: vietnam), .returnToday)

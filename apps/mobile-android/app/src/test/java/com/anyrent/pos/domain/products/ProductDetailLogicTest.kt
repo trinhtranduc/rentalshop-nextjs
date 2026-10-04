@@ -83,6 +83,8 @@ class ProductDetailLogicTest {
         assertEquals(ProductOrderRowState.PickupToday, ProductDetailLogic.rowState(today, ProductOrdersChip.UPCOMING, now, vietnam))
         val later = order(status = "RESERVED", pickup = "2026-10-05T02:00:00.000Z")
         assertEquals(ProductOrderRowState.PickupOn("05/10"), ProductDetailLogic.rowState(later, ProductOrdersChip.UPCOMING, now, vietnam))
+        val noShow = order(status = "RESERVED", pickup = "2026-10-01T02:00:00.000Z")
+        assertEquals(ProductOrderRowState.Late(2), ProductDetailLogic.rowState(noShow, ProductOrdersChip.UPCOMING, now, vietnam))
         // 02/10 18:00 UTC is 03/10 in Vietnam but 02/10 in UTC
         val edge = order(status = "PICKUPED", returns = "2026-10-02T18:00:00.000Z")
         assertEquals(ProductOrderRowState.ReturnToday, ProductDetailLogic.rowState(edge, ProductOrdersChip.RENTING, now, vietnam))
