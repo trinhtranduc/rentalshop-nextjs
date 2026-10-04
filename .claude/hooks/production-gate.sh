@@ -25,6 +25,26 @@ case "$TOOL" in
       fi
       log "ALLOW (RELEASE_APPROVED=1)"
     fi
+    # The seed wipes every business table: only against a DATABASE_URL on this machine, set on the same command.
+    # scripts/mobile-e2e/seed-local.sh refuses non-local URLs itself, so it is not matched here.
+    # Matches running it (yarn/npm/node), not reading it (cat, grep, sed on the file).
+    SEED_RE='(yarn|npm[[:space:]]+run|pnpm)[[:space:]]+([^|;&]*[[:space:]])?(db:regenerate-system|railway:seed)([[:space:]]|$)|(node|bun|tsx)[[:space:]]+[^|;&]*regenerate-entire-system-2025'
+    if printf '%s' "$CMD" | grep -Eq "$SEED_RE"; then
+      SEED_URLS="$(printf '%s' "$CMD" | grep -Eo '(^|[[:space:];&|(])DATABASE_URL=["'"'"']?[^[:space:]"'"'"']*' || true)"
+      SEED_OK=1
+      [ -n "$SEED_URLS" ] || SEED_OK=0
+      # Every DATABASE_URL on the line must be local; railway run would inject the remote one.
+      while IFS= read -r u; do
+        [ -z "$u" ] && continue
+        printf '%s' "$u" | grep -Eq '^[[:space:];&|(]?DATABASE_URL=["'"'"']?[a-z]+://([^@/]*@)?(127\.0\.0\.1|localhost)([:/]|$)' || SEED_OK=0
+      done <<< "$SEED_URLS"
+      printf '%s' "$CMD" | grep -Eq 'railway[[:space:]]+run' && SEED_OK=0
+      if [ "$SEED_OK" != 1 ]; then
+        block "seed script without a local DATABASE_URL" \
+          "The seed deletes all data. Set DATABASE_URL=postgresql://…@127.0.0.1:<port>/<db> on the same command, or use scripts/mobile-e2e/seed-local.sh (it checks the URL itself)."
+      fi
+      log "ALLOW (seed on local DATABASE_URL)"
+    fi
     # Secrets must not be printed or copied.
     if printf '%s' "$CMD" | grep -Eq '(^|[[:space:];&|])(cat|less|more|head|tail|cp|scp)[[:space:]]+[^|;&]*(\.env(\.[a-z]+)?([[:space:]]|$)|\.env\.local|keystore\.properties|\.p8([[:space:]]|$))'; then
       block "reading a secrets file" "Use env.example for variable names; never print .env*, keystore.properties or *.p8."

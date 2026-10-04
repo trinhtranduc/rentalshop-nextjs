@@ -108,6 +108,7 @@ Domain (`.claude/skills/`):
 - `i18n-keys` — user-facing string or error code
 - `mobile-parity` — API shape or business-rule change
 - `bug-fix-tdd` — any bug or hotfix
+- `mobile-e2e-local` — test the iOS/Android apps end to end on a simulator against a local seeded API
 
 ## Things agents get wrong
 
