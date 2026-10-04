@@ -91,6 +91,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'MERCHANT_NOT_FOUND': 'Merchant not found',
   'OUTLET_NOT_FOUND': 'Outlet not found',
   'PRODUCT_NOT_FOUND': 'Product not found',
+  'PRODUCT_HAS_OPEN_ORDERS': 'This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.',
   'PRODUCT_HAS_NO_IMAGES': 'Add at least one product photo before syncing image search',
   'ORDER_NOT_FOUND': 'Order not found',
   'INVALID_ORDER_STATUS': 'This status change is not allowed for this order.',

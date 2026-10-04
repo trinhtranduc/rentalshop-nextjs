@@ -7,6 +7,7 @@ import type {
   OrderSearchResponse
 } from '@rentalshop/types';
 import { applyOrderDateRange } from './order-date-range';
+import { findNearestTaskPageIds } from './order-nearest-task';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
@@ -1747,118 +1748,136 @@ export const simplifiedOrders = {
       where.outlet = outletFilter.outlet;
     }
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
+    const listSelect: Prisma.OrderSelect = {
+      id: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      lateFee: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      rentalDuration: true,
+      isReadyToDeliver: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      notesImages: true,
+      pickupNotes: true,
+      pickupNotesImages: true,
+      returnNotes: true,
+      returnNotesImages: true,
+      damageNotes: true,
+      damageNotesImages: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true, // Include deletedAt in response
+      outletId: true,
+      customerId: true,
+      createdById: true,
+      // Customer data
+      customer: {
         select: {
           id: true,
-          orderNumber: true,
-          orderType: true,
-          status: true,
-          totalAmount: true,
-          depositAmount: true,
-          securityDeposit: true,
-          damageFee: true,
-          lateFee: true,
-          discountType: true,
-          discountValue: true,
-          discountAmount: true,
-          pickupPlanAt: true,
-          returnPlanAt: true,
-          pickedUpAt: true,
-          returnedAt: true,
-          rentalDuration: true,
-          isReadyToDeliver: true,
-          collateralType: true,
-          collateralDetails: true,
-          notes: true,
-          notesImages: true,
-          pickupNotes: true,
-          pickupNotesImages: true,
-          returnNotes: true,
-          returnNotesImages: true,
-          damageNotes: true,
-          damageNotesImages: true,
-          createdAt: true,
-          updatedAt: true,
-          deletedAt: true, // Include deletedAt in response
-          outletId: true,
-          customerId: true,
-          createdById: true,
-          // Customer data
-          customer: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true
+        }
+      },
+      // Outlet data
+      outlet: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          merchant: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
-              phone: true,
-              email: true,
-              address: true,
-              city: true,
-              state: true,
-              zipCode: true,
-              country: true
+              name: true
             }
-          },
-          // Outlet data
-          outlet: {
+          }
+        }
+      },
+      // CreatedBy data
+      createdBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      // Include products for list view
+      orderItems: {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          notes: true,
+          productId: true,
+          rentalDays: true,
+          pricingType: true,
+          pricingOptionId: true,
+          product: {
             select: {
               id: true,
               name: true,
-              address: true,
-              phone: true,
-              city: true,
-              state: true,
-              zipCode: true,
-              country: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          },
-          // CreatedBy data
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true
-            }
-          },
-          // Include products for list view
-          orderItems: {
-            select: {
-              id: true,
-              quantity: true,
-              unitPrice: true,
-              totalPrice: true,
-              notes: true,
-              productId: true,
-              rentalDays: true,
-              pricingType: true,
-              pricingOptionId: true,
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  barcode: true,
-                  images: true,
-                  rentPrice: true,
-                  deposit: true
-                }
-              }
+              barcode: true,
+              images: true,
+              rentPrice: true,
+              deposit: true
             }
           }
-        },
-        orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit
-      }),
-      prisma.order.count({ where })
-    ]);
+        }
+      }
+    };
+
+    let orders: any[];
+    let total: number;
+    if (sortBy === 'nearestTask') {
+      // #389: late tasks first, then the nearest planned pickup / return, then closed orders (see ./order-nearest-task)
+      const [pageIds, count] = await Promise.all([
+        findNearestTaskPageIds(prisma, where, page, limit),
+        prisma.order.count({ where }),
+      ]);
+      const rows = pageIds.length > 0
+        ? await prisma.order.findMany({ where: { id: { in: pageIds } }, select: listSelect })
+        : [];
+      const rowById = new Map(rows.map((row: any) => [row.id, row]));
+      orders = pageIds.map((id) => rowById.get(id)).filter(Boolean);
+      total = count;
+    } else {
+      [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          select: listSelect,
+          orderBy: { [sortBy]: sortOrder },
+          skip: (page - 1) * limit,
+          take: limit
+        }),
+        prisma.order.count({ where })
+      ]);
+    }
 
     // Get summary counts for order items and payments (separate queries for performance)
     const orderIds = orders.map((o: { id: number }): number => o.id);

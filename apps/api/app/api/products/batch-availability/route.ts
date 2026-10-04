@@ -215,6 +215,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       const products = await db.prisma.product.findMany({
         where: {
           id: { in: productIdsList },
+          deletedAt: null, // #389 a soft-deleted product is not found
           ...(user.role !== USER_ROLE.ADMIN && userMerchantId ? { merchantId: userMerchantId } : {}),
         },
         select: {

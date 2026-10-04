@@ -37,6 +37,7 @@ import {
 } from '@rentalshop/loyalty';
 import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
+import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -54,6 +55,11 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
 /**
  * GET /api/orders
  * Get orders with filtering, pagination
+ *
+ * #389 (additive): rows carry `amountDue` / `refundDue` (computeOrderBalance); `sortBy=nearestTask` lists late
+ * tasks, then the nearest planned pickup/return, then closed orders; `dateField=pickupPlanAt|returnPlanAt` filters
+ * planned dates by civil days (startDate/endDate). Indexed: (status, outletId), (pickupPlanAt, returnPlanAt),
+ * Payment (orderId, status).
  * 
  * Authorization: All roles with 'orders.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
@@ -222,8 +228,13 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
     console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
+    // #389: what the counter collects / hands back per row, from one grouped payment query for this page
+    const pageOrders = result.data || [];
+    const paymentSums = await loadCompletedPaymentSums(prisma, pageOrders.map((order: any) => order.id));
+    const ordersWithBalance = attachOrderBalances(pageOrders as any[], paymentSums);
+
     // Normalize date fields in order list to UTC ISO strings using toISOString()
-    const normalizedOrders = (result.data || []).map(order => ({
+    const normalizedOrders = ordersWithBalance.map(order => ({
       ...order,
       createdAt: order.createdAt?.toISOString() || null,
       updatedAt: order.updatedAt?.toISOString() || null,

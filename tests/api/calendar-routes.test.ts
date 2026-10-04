@@ -13,7 +13,11 @@ jest.mock('@rentalshop/auth/server', () => ({
   withReadOnlyAuth: (handler: any) => (request: any) => handler(request, ctx),
 }));
 
-const mockDb = { orders: { search: jest.fn(), searchWithItems: jest.fn(), getStats: jest.fn() } };
+const mockDb = {
+  orders: { search: jest.fn(), searchWithItems: jest.fn(), getStats: jest.fn() },
+  // #389: by-date rows read grouped payments for amountDue / refundDue
+  prisma: { payment: { groupBy: jest.fn(async () => []) } },
+};
 jest.mock('@rentalshop/database', () => ({ db: mockDb }));
 jest.mock('@rentalshop/utils', () => {
   const date = jest.requireActual('../../packages/utils/src/core/date');

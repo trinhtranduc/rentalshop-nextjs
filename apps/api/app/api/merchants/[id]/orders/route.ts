@@ -65,7 +65,8 @@ export async function GET(
         merchantId: merchantPublicId,
         page: page || 1,
         limit: limit || 50,
-        sortBy: sortBy || 'createdAt',
+        // nearestTask (#389) is only planned by GET /api/orders; this list keeps a column sort
+        sortBy: sortBy && sortBy !== 'nearestTask' ? sortBy : 'createdAt',
         sortOrder: sortOrder || 'desc'
       };
 
