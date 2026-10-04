@@ -189,7 +189,8 @@ extension AppDelegate {
     
     func loadLogin() {
         guard !AppConfigGate.isBlocked else { return }
-        let loginViewController = LoginViewController()
+        // #386: the redesigned auth screens behind `newAuth`, read from the cached app config
+        let loginViewController: UIViewController = FeatureFlags.shared.isOn(.newAuth) ? LoginV2ViewController() : LoginViewController()
         let navigationController = UINavigationController.init(rootViewController: loginViewController)
         navigationController.isNavigationBarHidden = true
         window?.rootViewController = navigationController

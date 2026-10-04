@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -59,6 +60,12 @@ import com.anyrent.pos.ui.auth.ForgotPasswordScreen
 import com.anyrent.pos.ui.auth.LoginScreen
 import com.anyrent.pos.ui.auth.OnboardingScreen
 import com.anyrent.pos.ui.auth.RegisterStoreScreen
+import com.anyrent.pos.ui.auth.v2.EmailSentV2Screen
+import com.anyrent.pos.domain.auth.EmailSentKind
+import com.anyrent.pos.ui.auth.v2.ForgotPasswordV2Screen
+import com.anyrent.pos.ui.auth.v2.LoginV2Screen
+import com.anyrent.pos.ui.auth.v2.RegisterStoreV2Screen
+import com.anyrent.pos.data.repository.SessionStoreAppConfigCache
 import com.anyrent.pos.ui.availability.AvailabilityScreen
 import com.anyrent.pos.ui.calendar.CalendarScreen
 import com.anyrent.pos.ui.calendar.v2.CalendarV2Screen
@@ -99,6 +106,9 @@ object Routes {
     const val Forgot = "forgot"
     const val Register = "register"
     const val CheckEmail = "check-email/{email}"
+    // #386 redesigned forgot password and its email-sent screen (flag newAuth)
+    const val ForgotV2 = "forgot-v2?email={email}"
+    const val EmailSentV2 = "email-sent-v2/{email}?kind={kind}"
     const val Onboarding = "onboarding"
     const val CameraBarcode = "camera-barcode/{mode}"
     const val StoreInfo = "store-info"
@@ -170,6 +180,10 @@ fun AnyRentNavHost(
 
     LaunchedEffect(rootNavController) {
         SessionStore.sessionExpired.collect {
+            // #386: a wrong password is a 401 too; the new login is already on screen and shows it inline,
+            // so do not rebuild it (that would wipe the message and the typed email)
+            val onNewLogin = rootNavController.currentDestination?.route == Routes.Login && isNewAuthOn()
+            if (onNewLogin) return@collect
             rootNavController.navigate(Routes.Login) {
                 popUpTo(rootNavController.graph.id) { inclusive = true }
                 launchSingleTop = true
@@ -179,10 +193,32 @@ fun AnyRentNavHost(
 
     NavHost(navController = rootNavController, startDestination = start) {
         composable(Routes.Login) {
+            // #386: redesigned auth behind `newAuth`, from the cached app config (before any login); a first
+            // fetch that lands while the splash is up still applies
+            val features by FeatureFlags.enabled.collectAsState()
+            val newAuth = remember(features) { isNewAuthOn() }
+            if (newAuth) {
+                LoginV2Screen(
+                    onLoggedIn = { navigateAfterLogin() },
+                    onForgotPassword = { email -> rootNavController.navigate("forgot-v2?email=${Uri.encode(email)}") },
+                    onRegister = { rootNavController.navigate(Routes.Register) },
+                )
+                return@composable
+            }
             LoginScreen(
                 onLoggedIn = { navigateAfterLogin() },
                 onForgotPassword = { rootNavController.navigate(Routes.Forgot) },
                 onRegister = { rootNavController.navigate(Routes.Register) },
+            )
+        }
+        composable(
+            Routes.ForgotV2,
+            arguments = listOf(navArgument("email") { type = NavType.StringType; defaultValue = "" }),
+        ) { entry ->
+            ForgotPasswordV2Screen(
+                initialEmail = entry.arguments?.getString("email").orEmpty(),
+                onBack = { rootNavController.popBackStack() },
+                onSent = { email -> rootNavController.navigate("email-sent-v2/${Uri.encode(email)}") },
             )
         }
         composable(Routes.Forgot) {
@@ -388,6 +424,19 @@ fun AnyRentNavHost(
             )
         }
         composable(Routes.Register) {
+            val features by FeatureFlags.enabled.collectAsState()
+            if (remember(features) { isNewAuthOn() }) {
+                RegisterStoreV2Screen(
+                    onBack = { rootNavController.popBackStack() },
+                    // Like iOS: the "Kiểm tra email" screen for the activation email; back goes to login
+                    onRegistered = { email ->
+                        rootNavController.navigate("email-sent-v2/${Uri.encode(email)}?kind=${EmailSentKind.ACTIVATION.key}") {
+                            popUpTo(Routes.Register) { inclusive = true }
+                        }
+                    },
+                )
+                return@composable
+            }
             RegisterStoreScreen(
                 onBack = { rootNavController.popBackStack() },
                 onRegistered = {
@@ -404,6 +453,22 @@ fun AnyRentNavHost(
             CheckEmailScreen(
                 email = entry.arguments?.getString("email").orEmpty(),
                 onBack = { rootNavController.popBackStack() },
+            )
+        }
+        composable(
+            Routes.EmailSentV2,
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("kind") {
+                    type = NavType.StringType
+                    defaultValue = EmailSentKind.RESET.key
+                },
+            ),
+        ) { entry ->
+            EmailSentV2Screen(
+                email = entry.arguments?.getString("email").orEmpty(),
+                kind = EmailSentKind.parse(entry.arguments?.getString("kind")),
+                onBackToLogin = { rootNavController.popBackStack(Routes.Login, inclusive = false) },
             )
         }
         composable(Routes.Onboarding) {
@@ -741,6 +806,10 @@ private fun MainTabs(
     }
 }
 
+/** #386: `newAuth` from the cached app config (written on every successful fetch), else the live flags */
+private fun isNewAuthOn(): Boolean =
+    MobileFeature.NEW_AUTH in (SessionStoreAppConfigCache.read()?.features ?: FeatureFlags.enabled.value)
+
 @Composable
 private fun LaunchedOpenPendingOrder(navController: NavHostController, startOrderId: Int?) {
     androidx.compose.runtime.LaunchedEffect(startOrderId, SessionStore.pendingOrderId) {
@@ -763,7 +832,9 @@ private fun LaunchedOpenDraftCart(navController: NavHostController) {
             dest == Routes.Forgot ||
             dest == Routes.Register ||
             dest == Routes.Onboarding ||
-            dest.startsWith("check-email")
+            dest.startsWith("check-email") ||
+            dest == Routes.ForgotV2 ||
+            dest == Routes.EmailSentV2
         ) {
             return@LaunchedEffect
         }

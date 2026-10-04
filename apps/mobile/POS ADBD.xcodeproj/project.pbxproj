@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */; };
 		021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */; };
 		040085082F00DDC500DF5C81 /* RatingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040085072F00DDC500DF5C81 /* RatingManager.swift */; };
 		040330DD2EA747F7003BC33E /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040330DC2EA747F7003BC33E /* Category.swift */; };
@@ -162,6 +163,7 @@
 		17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A0C2121B33928148F209CE /* TabsV2APIService.swift */; };
 		219F5B5BC02CC3E14401DD74 /* ProductsV2Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */; };
 		372335F213185EFD8AC37259 /* OverviewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64454969BCB62EEB55223203 /* OverviewV2.swift */; };
+		3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */; };
 		3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */; };
 		3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */; };
 		4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */; };
@@ -169,6 +171,7 @@
 		506BFF4372513384679B2314 /* NewCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */; };
 		5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */; };
 		523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */; };
+		55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DFF664402F310DBDA0C7DD /* AuthForms.swift */; };
 		57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */; };
 		607E5D13DAD404F7F526AA2C /* CustomersV2ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */; };
 		61800AE4201230EA1EED530E /* TodayWork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07CC0B0BF772BE52542D13E /* TodayWork.swift */; };
@@ -177,6 +180,7 @@
 		6E5F77822E6F01D26CD3E7DC /* OrdersHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */; };
 		6F7DAC80E945C7A8AF3FD213 /* SettingsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44906268638CD53C3E41AD39 /* SettingsV2.swift */; };
 		75C21D317F5521D9A9958865 /* CustomersV2ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */; };
+		7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */; };
 		763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */; };
 		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
 		80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */; };
@@ -235,7 +239,9 @@
 		89DD03B3852E10B9B3B1EF17 /* Pods_POS_ADBDTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */; };
 		8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */; };
 		8BC77D064D622C3C87D1C5D9 /* CustomerDetailV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */; };
+		91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */; };
 		9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */; };
+		941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */; };
 		9B1605DA8A6665412EED39EB /* OrderDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */; };
 		9D1B768177A1200AC6AE8A9D /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */; };
 		A4B110012F1E0101000001 /* DraftOrderAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000011 /* DraftOrderAttributes.swift */; };
@@ -252,6 +258,7 @@
 		A4B110012F1E010100001F /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4B110012F1E010100001B /* ActivityKit.framework */; };
 		AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */; };
 		ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */; };
+		B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */; };
 		C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */; };
 		C2E7493E136407C5EA7E6D96 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */; };
 		C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */; };
@@ -273,6 +280,7 @@
 		C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D2ABB424B0D53C0028EAAC /* Localizable.strings */; };
 		C9EFF5B1237BF75E00A6CB57 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EFF5B0237BF75E00A6CB57 /* Customer.swift */; };
 		CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E19ED151DD6F782E5777FB /* OrdersViewController.swift */; };
+		CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */; };
 		D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */; };
 		D471767BB75A2DAE01AA6CEC /* FormattersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8174E6BA337B4B259DD6569 /* FormattersTests.swift */; };
 		DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 286EED8E25240975FDF5D455 /* IconTokensTests.swift */; };
@@ -491,15 +499,18 @@
 		04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCCustomNavigationBar.swift; sourceTree = "<group>"; };
 		072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.debug.xcconfig"; sourceTree = "<group>"; };
 		08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarOverviewSettingsV2Tests.swift; sourceTree = "<group>"; };
+		09DFF664402F310DBDA0C7DD /* AuthForms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthForms.swift; sourceTree = "<group>"; };
 		0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBD.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		15E19ED151DD6F782E5777FB /* OrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersViewController.swift; sourceTree = "<group>"; };
 		16733093F5AD2CBACB593E6B /* CalendarV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2.swift; sourceTree = "<group>"; };
 		1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ViewModel.swift; sourceTree = "<group>"; };
+		1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RegisterStoreV2ViewController.swift; sourceTree = "<group>"; };
 		286EED8E25240975FDF5D455 /* IconTokensTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IconTokensTests.swift; sourceTree = "<group>"; };
 		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
 		32451210261D4A00E83FEBAA /* OrderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderStatusTests.swift; sourceTree = "<group>"; };
 		371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2ViewController.swift; sourceTree = "<group>"; };
+		40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthFormsTests.swift; sourceTree = "<group>"; };
 		42DC389596269843419D1B18 /* OrdersHomeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeTests.swift; sourceTree = "<group>"; };
 		44906268638CD53C3E41AD39 /* SettingsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2.swift; sourceTree = "<group>"; };
 		49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailViewController.swift; sourceTree = "<group>"; };
@@ -565,6 +576,7 @@
 		88FF33772F2DAE6600FD0A26 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		88FF337F2F2DB19600FD0A26 /* POSADBD-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "POSADBD-Bridging-Header.h"; sourceTree = "<group>"; };
 		88FFF5CD2F2DA33B00FD0A26 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
+		8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginV2ViewController.swift; sourceTree = "<group>"; };
 		8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		928C3E8D4BF3A29D647F9A0B /* Pods-POS ADBDTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.release.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.release.xcconfig"; sourceTree = "<group>"; };
 		97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogic.swift; sourceTree = "<group>"; };
@@ -583,6 +595,7 @@
 		A4B110012F1E010100001B /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
 		A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartV2ViewController.swift; sourceTree = "<group>"; };
 		A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailRouter.swift; sourceTree = "<group>"; };
+		AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthV2Components.swift; sourceTree = "<group>"; };
 		B07CC0B0BF772BE52542D13E /* TodayWork.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayWork.swift; sourceTree = "<group>"; };
 		B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateRequiredViewController.swift; sourceTree = "<group>"; };
 		B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsHomeViewController.swift; sourceTree = "<group>"; };
@@ -614,6 +627,8 @@
 		C9D2ABB524B0D5410028EAAC /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		C9ECAD4624AC813C0090FAC4 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		C9EFF5B0237BF75E00A6CB57 /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
+		D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmailSentV2ViewController.swift; sourceTree = "<group>"; };
+		D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthV2Style.swift; sourceTree = "<group>"; };
 		D4A0C2121B33928148F209CE /* TabsV2APIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TabsV2APIService.swift; sourceTree = "<group>"; };
 		D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewCustomerViewController.swift; sourceTree = "<group>"; };
 		D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderHandOverSheetViewController.swift; sourceTree = "<group>"; };
@@ -621,6 +636,7 @@
 		DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2ViewController.swift; sourceTree = "<group>"; };
 		EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityCheckViews.swift; sourceTree = "<group>"; };
 		EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeViewModel.swift; sourceTree = "<group>"; };
+		EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ForgotPasswordV2ViewController.swift; sourceTree = "<group>"; };
 		F8174E6BA337B4B259DD6569 /* FormattersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FormattersTests.swift; sourceTree = "<group>"; };
 		FDAA71945D1F2C820062603E /* DesignTokens.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -768,6 +784,7 @@
 				048F67962ED1EDC40053985A /* CheckEmailViewController.swift */,
 				048838E82D78006200069256 /* RegisterAccountViewController.swift */,
 				048838E92D78006200069256 /* RegisterStoreViewController.swift */,
+				9645DFD9EEF72A06B76FEA72 /* v2 */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -924,6 +941,7 @@
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
+				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
 				286EED8E25240975FDF5D455 /* IconTokensTests.swift */,
 			);
 			name = "POS ADBDTests";
@@ -981,6 +999,7 @@
 				64454969BCB62EEB55223203 /* OverviewV2.swift */,
 				44906268638CD53C3E41AD39 /* SettingsV2.swift */,
 				B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */,
+				09DFF664402F310DBDA0C7DD /* AuthForms.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -1268,6 +1287,20 @@
 				88F3D8B921B0415D007CC30A /* CalendarProductCell.swift */,
 			);
 			path = Calendar;
+			sourceTree = "<group>";
+		};
+		9645DFD9EEF72A06B76FEA72 /* v2 */ = {
+			isa = PBXGroup;
+			children = (
+				AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */,
+				8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */,
+				1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */,
+				EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */,
+				D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */,
+				D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */,
+			);
+			name = v2;
+			path = v2;
 			sourceTree = "<group>";
 		};
 		A4B110012F1E0101000040 /* DraftOrderActivity */ = {
@@ -1695,6 +1728,7 @@
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
+				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
 				DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1917,6 +1951,13 @@
 				8BC77D064D622C3C87D1C5D9 /* CustomerDetailV2ViewController.swift in Sources */,
 				66D5C9154CEE12049C3B85DD /* OnboardingV2ViewController.swift in Sources */,
 				5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */,
+				55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */,
+				00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */,
+				941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */,
+				B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */,
+				CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */,
+				3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */,
+				91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
