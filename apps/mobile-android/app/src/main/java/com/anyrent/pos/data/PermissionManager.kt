@@ -42,6 +42,10 @@ object PermissionManager {
     fun canManageOrders(): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
 
+    /** #387: customer delete is hidden from OUTLET_STAFF (the API still decides) */
+    fun canDeleteCustomers(): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+
     /** iOS: delete cancelled orders only for merchant / outlet admin (and system admin). */
     fun canDeleteCancelledOrders(): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN

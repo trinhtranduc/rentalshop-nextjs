@@ -764,4 +764,55 @@
     <string name="api_error_current_password_incorrect">Current password is incorrect</string>
     <string name="api_error_password_min_length">The new password needs at least 6 characters</string>
     <string name="settings_v2_password_done">Password changed. Please sign in again.</string>
+
+    <!-- #387 onboarding and customers (newAuth, newCustomers) -->
+    <string name="customers_v2_title">Customers</string>
+    <string name="customers_v2_tile_orders">Orders</string>
+    <string name="customers_v2_tile_spent">Total spent</string>
+    <string name="customers_v2_tile_renting">Renting</string>
+    <string name="customers_v2_search">Search customers</string>
+    <string name="customers_v2_search_placeholder">Name or phone number</string>
+    <string name="customers_v2_new">New customer</string>
+    <string name="customers_v2_pick_title">Choose customer</string>
+    <string name="customers_v2_close">Close</string>
+    <string name="customers_v2_add">Add customer</string>
+    <string name="customers_v2_empty">No customers yet</string>
+    <string name="customers_v2_no_match">No matching customers</string>
+    <string name="customers_v2_recent">RECENT</string>
+    <string name="customers_v2_new_title">New customer</string>
+    <string name="customers_v2_save_and_pick">Save and select</string>
+    <string name="customers_v2_phone">Phone number</string>
+    <string name="customers_v2_name">Full name</string>
+    <string name="customers_v2_note">Note</string>
+    <string name="customers_v2_optional">(optional)</string>
+    <string name="customers_v2_note_placeholder">E.g. size M, wedding 12/10</string>
+    <string name="customers_v2_hint">Add address, ID and birthday later in the customer profile.</string>
+    <string name="customers_v2_duplicate">This phone number already belongs to:</string>
+    <string name="customers_v2_use_existing">Select this customer</string>
+    <string name="customers_v2_open_existing">Open this customer</string>
+    <string name="customers_v2_need_phone">Enter a phone number</string>
+    <string name="customers_v2_need_name">Enter the full name</string>
+    <string name="customers_v2_edit">Edit</string>
+    <string name="customers_v2_call">Call customer</string>
+    <string name="customers_v2_recent_orders">Recent orders</string>
+    <string name="customers_v2_no_orders">No orders yet</string>
+    <string name="customers_v2_create_order">Create order for this customer</string>
+    <string name="onboarding_v2_step">Step %1$d/%2$d</string>
+    <string name="onboarding_v2_product_title">Add rental items</string>
+    <string name="onboarding_v2_product_body">Add a photo, rental price and stock. Search or scan to find it when you create an order.</string>
+    <string name="onboarding_v2_customer_title">Save customers</string>
+    <string name="onboarding_v2_customer_body">Save a customer once and reuse them for every rental and sale.</string>
+    <string name="onboarding_v2_order_title">Create orders</string>
+    <string name="onboarding_v2_order_body">Pick a customer, add items, set the dates and finish in a few taps.</string>
+    <string name="onboarding_v2_skip">Skip</string>
+    <string name="onboarding_v2_next">Next</string>
+    <string name="onboarding_v2_start">Get started</string>
+    <plurals name="customers_v2_orders">
+        <item quantity="one">%d order</item>
+        <item quantity="other">%d orders</item>
+    </plurals>
+    <plurals name="customers_v2_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
 </resources>
