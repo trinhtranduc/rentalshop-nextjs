@@ -21,6 +21,7 @@ import java.time.LocalDate
 class DefaultAvailabilityRepository(
     private val api: ApiClient = ApiClient.get(),
     private val outletIdProvider: () -> Int? = { SessionStore.outletId },
+    private val roleProvider: () -> String? = { SessionStore.role },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AvailabilityRepository {
     override suspend fun searchProducts(query: String): List<AvailabilityProduct> =
