@@ -67,15 +67,14 @@ class DefaultAvailabilityRepository(
         if (quantity < 1) {
             throw AppError.Validation("Quantity must be at least 1")
         }
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         runCatching {
             val path = buildString {
                 append("/api/products/$productId/availability")
                 append("?startDate=${startDate}T00:00:00Z")
                 append("&endDate=${endDate}T23:59:59Z")
                 append("&quantity=$quantity")
-                append("&outletId=$outletId")
+                outletId?.let { append("&outletId=$it") }
                 append("&includeAllOrders=true")
             }
             val json = api.authedGet(path)
@@ -91,8 +90,7 @@ class DefaultAvailabilityRepository(
         validateBatch(requests, startDate, endDate)
         if (requests.isEmpty()) return@withContext emptyMap()
 
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         val normalized = requests
             .groupBy { it.productId }
             .mapValues { (_, values) -> values.sumOf { it.quantity } }
@@ -107,7 +105,7 @@ class DefaultAvailabilityRepository(
             )
             .put("startDate", "${startDate}T00:00:00Z")
             .put("endDate", "${endDate}T23:59:59Z")
-            .put("outletId", outletId)
+            .apply { outletId?.let { put("outletId", it) } }
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
@@ -142,6 +140,18 @@ class DefaultAvailabilityRepository(
         } catch (error: Throwable) {
             throw AppError.from(error)
         }
+    }
+
+    /**
+     * Outlet sent with an availability request (#411):
+     * - the session outlet when there is one (any role);
+     * - none for a MERCHANT without one: the API picks the merchant's default outlet (#398);
+     * - otherwise refuse here: ADMIN must name an outlet, and an outlet user without one is a broken session.
+     */
+    private fun outletParam(): Int? {
+        outletIdProvider()?.let { return it }
+        if (roleProvider() == "MERCHANT") return null
+        throw AppError.Validation("An outlet is required to check availability")
     }
 
     private fun validateBatch(
@@ -267,10 +277,10 @@ class DefaultAvailabilityRepository(
         from: LocalDate,
         to: LocalDate,
     ): Map<LocalDate, Int> = withContext(ioDispatcher) {
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         runCatching {
-            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to&outletId=$outletId"
+            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to" +
+                (outletId?.let { "&outletId=$it" } ?: "")
             val json = api.authedGet(path)
             val data = json.optJSONObject("data") ?: json
             val days = data.optJSONArray("days") ?: JSONArray()
