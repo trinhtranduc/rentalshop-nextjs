@@ -995,8 +995,10 @@ struct UpdateOrderRequest: Codable {
     let orderItems: [UpdateOrderItem]?
     /// URLs of note images (for "delete only" or "set list" via JSON; see API_ORDER_NOTES_IMAGES.md)
     let notesImages: [String]?
+    /// Late fee set at return (existing order field)
+    let lateFee: Double?
 
-    init(orderType: String? = nil, status: String? = nil, totalAmount: Double? = nil, depositAmount: Double? = nil, securityDeposit: Double? = nil, customerId: Int? = nil, customerName: String? = nil, customerPhone: String? = nil, customerEmail: String? = nil, outletId: Int? = nil, pickupPlanAt: String? = nil, returnPlanAt: String? = nil, pickedUpAt: String? = nil, returnedAt: String? = nil, rentalDuration: Int? = nil, isReadyToDeliver: Bool? = nil, collateralType: String? = nil, collateralDetails: String? = nil, notes: String? = nil, pickupNotes: String? = nil, returnNotes: String? = nil, damageNotes: String? = nil, damageFee: Double? = nil, discountType: String? = nil, discountValue: Double? = nil, discountAmount: Double? = nil, orderItems: [UpdateOrderItem]? = nil, notesImages: [String]? = nil) {
+    init(orderType: String? = nil, status: String? = nil, totalAmount: Double? = nil, depositAmount: Double? = nil, securityDeposit: Double? = nil, customerId: Int? = nil, customerName: String? = nil, customerPhone: String? = nil, customerEmail: String? = nil, outletId: Int? = nil, pickupPlanAt: String? = nil, returnPlanAt: String? = nil, pickedUpAt: String? = nil, returnedAt: String? = nil, rentalDuration: Int? = nil, isReadyToDeliver: Bool? = nil, collateralType: String? = nil, collateralDetails: String? = nil, notes: String? = nil, pickupNotes: String? = nil, returnNotes: String? = nil, damageNotes: String? = nil, damageFee: Double? = nil, discountType: String? = nil, discountValue: Double? = nil, discountAmount: Double? = nil, orderItems: [UpdateOrderItem]? = nil, notesImages: [String]? = nil, lateFee: Double? = nil) {
         self.orderType = orderType
         self.status = status
         self.totalAmount = totalAmount
@@ -1025,6 +1027,7 @@ struct UpdateOrderRequest: Codable {
         self.discountAmount = discountAmount
         self.orderItems = orderItems
         self.notesImages = notesImages
+        self.lateFee = lateFee
     }
 
     // Custom encoding to only include non-nil values
@@ -1059,6 +1062,7 @@ struct UpdateOrderRequest: Codable {
         if let discountAmount = discountAmount { try container.encode(discountAmount, forKey: .discountAmount) }
         if let orderItems = orderItems { try container.encode(orderItems, forKey: .orderItems) }
         if let notesImages = notesImages { try container.encode(notesImages, forKey: .notesImages) }
+        if let lateFee = lateFee { try container.encode(lateFee, forKey: .lateFee) }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -1068,7 +1072,7 @@ struct UpdateOrderRequest: Codable {
         case rentalDuration, isReadyToDeliver, collateralType, collateralDetails
         case notes, pickupNotes, returnNotes, damageNotes, damageFee
         case discountType, discountValue, discountAmount
-        case orderItems, notesImages
+        case orderItems, notesImages, lateFee
     }
 }
 

@@ -683,9 +683,7 @@ extension ImageSearchResultsViewController: OrderCheckViewControllerDelegate {
                 }
                 let fullOrder = Order.from(detail: detail)
                 guard let nav = self.navigationController else { return }
-                let preview = PreviewViewController(order: fullOrder)
-                preview.hidesBottomBarWhenPushed = true
-                preview.delegate = self
+                let preview = OrderDetailRouter.detailController(for: fullOrder, delegate: self)
                 nav.pushViewController(preview, animated: true)
             }
         }

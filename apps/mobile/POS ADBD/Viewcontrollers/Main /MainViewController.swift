@@ -942,9 +942,7 @@ extension MainViewController: OrderCheckViewControllerDelegate {
                     return
                 }
                 let fullOrder = Order.from(detail: detail)
-                let orderViewController = PreviewViewController(order: fullOrder)
-                orderViewController.hidesBottomBarWhenPushed = true
-                orderViewController.delegate = self
+                let orderViewController = OrderDetailRouter.detailController(for: fullOrder, delegate: self)
                 self.navigationController?.pushViewController(orderViewController, animated: true)
             }
         }
