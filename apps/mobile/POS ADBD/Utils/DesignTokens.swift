@@ -49,6 +49,29 @@ enum DS {
 
     /// Minimum touch target
     static let touchTarget: CGFloat = 44
+
+    /// Icon box sizes of the boards (canvas px = icon box; the 2px outline glyph fills ~75–88% of it) (#396)
+    enum Icon {
+        static let sm: CGFloat = 18
+        static let md: CGFloat = 20
+        static let lg: CGFloat = 22
+        /// SF Symbol point size per canvas px, measured against the boards' outline icons
+        static let pointFactor: CGFloat = 0.78
+        /// Glyphs that draw >10% larger than the boards' at the same point size (camera +26%, chevrons +13%)
+        static let opticalCorrection: [String: CGFloat] = ["camera": 0.8, "chevron": 0.88]
+    }
+
+    /// SF Symbol point size that draws like a board icon of `size` px
+    static func symbolPointSize(for size: CGFloat, name: String = "") -> CGFloat {
+        let base = name.split(separator: ".").first.map(String.init) ?? name
+        let correction = Icon.opticalCorrection[base] ?? 1
+        return (size * Icon.pointFactor * correction * 2).rounded() / 2
+    }
+
+    /// SF Symbol sized like a board icon of `size` px; `.medium` is the closest stroke to the boards' 2px line
+    static func symbol(_ name: String, _ size: CGFloat, weight: UIImage.SymbolWeight = .medium) -> UIImage? {
+        UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolPointSize(for: size, name: name), weight: weight))
+    }
 }
 
 /// Device time zone, sent as `timeZone` on day-based API calls
@@ -87,7 +110,7 @@ enum DayFormatter {
     }
 }
 
-/// `1.150.000đ` (dot grouping, no decimals)
+/// `1.150.000` (dot grouping, no decimals, no currency symbol — #399)
 enum MoneyFormatter {
     private static let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -101,6 +124,6 @@ enum MoneyFormatter {
     static func format(_ amount: Double) -> String {
         let rounded = amount.rounded()
         let digits = formatter.string(from: NSNumber(value: abs(rounded))) ?? "\(Int(abs(rounded)))"
-        return (rounded < 0 ? "−" : "") + digits + "đ"
+        return (rounded < 0 ? "−" : "") + digits
     }
 }

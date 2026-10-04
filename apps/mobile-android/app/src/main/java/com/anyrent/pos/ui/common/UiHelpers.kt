@@ -182,10 +182,13 @@ fun formatDayShort(
 fun dayKey(instant: Instant, zone: ZoneId = ZoneId.systemDefault()): String =
     instant.atZone(zone).toLocalDate().toString()
 
-/** `1.150.000đ` (dot grouping, no decimals) */
+/**
+ * `1.150.000` (dot grouping, no decimals, no currency symbol — #399). Used only by the redesigned
+ * (v2) screens. The name is kept because [formatMoney] (comma grouping) already serves the old screens.
+ */
 fun formatMoneyVnd(amount: Double): String {
     val rounded = Math.round(amount)
     val digits = kotlin.math.abs(rounded).toString().reversed().chunked(3).joinToString(".").reversed()
-    return (if (rounded < 0) "−" else "") + digits + "đ"
+    return (if (rounded < 0) "−" else "") + digits
 }
 

@@ -117,14 +117,20 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || userScope.outletId;
       } else if (user.role === USER_ROLE.MERCHANT) {
-        // Merchants: outletId is required
+        // A merchant login has no outlet (#398): without outletId use the merchant's default outlet,
+        // else its only active one
         if (!queryOutletId) {
-          return NextResponse.json(
-            ResponseBuilder.error('OUTLET_REQUIRED'),
-            { status: 400 }
-          );
+          const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+          if (!defaultOutlet) {
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_REQUIRED'),
+              { status: 400 }
+            );
+          }
+          finalOutletId = defaultOutlet.id;
+        } else {
+          finalOutletId = queryOutletId;
         }
-        finalOutletId = queryOutletId;
       } else if (user.role === USER_ROLE.ADMIN) {
         // Admins: outletId is required
         if (!queryOutletId) {

@@ -51,8 +51,9 @@ final class OrdersViewController: BaseViewControler {
         searchBar.searchTextField.autocapitalizationType = .none
         searchBar.searchTextField.backgroundColor = DS.Color.surface
         searchBar.searchTextField.font = Utils.regularFont(size: 16)
+        searchBar.setImage(DS.symbol("magnifyingglass", DS.Icon.sm), for: .search, state: .normal)
 
-        filterButton.setImage(UIImage(systemName: "line.3.horizontal.decrease"), for: .normal)
+        filterButton.setImage(DS.symbol("line.3.horizontal.decrease", DS.Icon.md), for: .normal)
         filterButton.tintColor = DS.Color.text
         filterButton.accessibilityLabel = "Order Filter".localized()
         filterButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)

@@ -29,7 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -119,7 +119,7 @@ fun ProductDetailScreen(
             Box(Modifier.fillMaxSize().statusBarsPadding()) {
                 if (error != null) Text(error!!, modifier = Modifier.padding(32.dp)) else LoadingBox()
                 RoundButton(onClick = onBack, label = stringResource(R.string.back), modifier = Modifier.padding(12.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, modifier = Modifier.size(DS.Icon.Md))
                 }
             }
             return@Column
@@ -147,7 +147,7 @@ fun ProductDetailScreen(
                 }
                 Row(Modifier.fillMaxWidth().statusBarsPadding().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     RoundButton(onClick = onBack, label = stringResource(R.string.back)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, modifier = Modifier.size(DS.Icon.Md))
                     }
                     Spacer(Modifier.weight(1f))
                     if (ProductAccess.canEdit(PermissionManager.role)) {

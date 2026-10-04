@@ -1166,7 +1166,7 @@
 "OUTLET_CREATED_SUCCESS" = "Outlet created successfully";
 "OUTLET_DELETED_SUCCESS" = "Outlet deleted successfully";
 "OUTLET_INFO_UPDATED_SUCCESS" = "Outlet information updated successfully";
-"OUTLET_REQUIRED" = "Outlet ID is required";
+"OUTLET_REQUIRED" = "Choose an outlet, or set a default outlet for your shop.";
 "OUTLET_STOCK_REQUIRED" = "Outlet stock information is required";
 "OUTLET_UPDATED_SUCCESS" = "Outlet updated successfully";
 "PASSWORD_CHANGED_SUCCESS" = "Password changed successfully";
@@ -1600,6 +1600,7 @@
 "products.cart.money" = "Money";
 "products.cart.rentSubtotal" = "Rental";
 "products.cart.saleSubtotal" = "Items";
+"products.cart.discountAmount" = "Amount";
 "products.cart.discount" = "Discount";
 "products.cart.total" = "Order total";
 "products.cart.deposit" = "Deposit paid now";

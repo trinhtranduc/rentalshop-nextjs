@@ -1164,7 +1164,7 @@
 "OUTLET_CREATED_SUCCESS" = "Đã tạo cửa hàng thành công";
 "OUTLET_DELETED_SUCCESS" = "Đã xóa cửa hàng thành công";
 "OUTLET_INFO_UPDATED_SUCCESS" = "Đã cập nhật thông tin cửa hàng thành công";
-"OUTLET_REQUIRED" = "Yêu cầu ID cửa hàng";
+"OUTLET_REQUIRED" = "Vui lòng chọn cửa hàng, hoặc đặt một cửa hàng mặc định.";
 "OUTLET_STOCK_REQUIRED" = "Yêu cầu thông tin tồn kho cửa hàng";
 "OUTLET_UPDATED_SUCCESS" = "Đã cập nhật cửa hàng thành công";
 "PASSWORD_CHANGED_SUCCESS" = "Đã đổi mật khẩu thành công";
@@ -1598,6 +1598,7 @@
 "products.cart.money" = "Tiền";
 "products.cart.rentSubtotal" = "Tiền thuê";
 "products.cart.saleSubtotal" = "Tiền hàng";
+"products.cart.discountAmount" = "Số tiền";
 "products.cart.discount" = "Giảm giá";
 "products.cart.total" = "Tổng đơn";
 "products.cart.deposit" = "Cọc trả trước";
