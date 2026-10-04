@@ -43,6 +43,41 @@ struct PricingOption: Codable {
     var isDailyType: Bool { return type.uppercased() == "DAILY" }
 }
 
+/// Stock of a product at one outlet (product detail and list)
+struct ProductOutletStock: Codable {
+    var outletId: Int?
+    var stock: Int?
+    var renting: Int?
+    var available: Int?
+
+    private struct OutletRef: Codable { var id: Int? }
+    private enum CodingKeys: String, CodingKey { case outletId, stock, renting, available, outlet }
+
+    init(outletId: Int?, stock: Int?, renting: Int?, available: Int?) {
+        self.outletId = outletId
+        self.stock = stock
+        self.renting = renting
+        self.available = available
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let outlet = (try? c.decodeIfPresent(OutletRef.self, forKey: .outlet)) ?? nil
+        outletId = outlet?.id ?? ((try? c.decodeIfPresent(Int.self, forKey: .outletId)) ?? nil)
+        stock = (try? c.decodeIfPresent(Int.self, forKey: .stock)) ?? nil
+        renting = (try? c.decodeIfPresent(Int.self, forKey: .renting)) ?? nil
+        available = (try? c.decodeIfPresent(Int.self, forKey: .available)) ?? nil
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(outletId, forKey: .outletId)
+        try c.encodeIfPresent(stock, forKey: .stock)
+        try c.encodeIfPresent(renting, forKey: .renting)
+        try c.encodeIfPresent(available, forKey: .available)
+    }
+}
+
 struct Product: Codable, Comparable, Copying {
     var barcode: String?
     var product_id: Int = 0
@@ -88,6 +123,9 @@ struct Product: Codable, Comparable, Copying {
 
     /// ISO date when image search last finished. nil = never indexed.
     var embeddingGeneratedAt: String?
+
+    /// Per-outlet stock rows (read only; used by the redesigned screens, #373)
+    var outletStock: [ProductOutletStock]?
 
     /// Whether this product uses per-day pricing
     var isDailyPricing: Bool {
@@ -142,6 +180,7 @@ struct Product: Codable, Comparable, Copying {
         self.pricingType = original.pricingType
         self.pricingOptions = original.pricingOptions
         self.embeddingGeneratedAt = original.embeddingGeneratedAt
+        self.outletStock = original.outletStock
     }
     
     // MARK: - Codable Implementation
@@ -188,6 +227,7 @@ struct Product: Codable, Comparable, Copying {
         case pricingType
         case pricingOptions
         case embeddingGeneratedAt
+        case outletStock
     }
     
     init(from decoder: Decoder) throws {
@@ -284,6 +324,8 @@ struct Product: Codable, Comparable, Copying {
         } catch {
             self.embeddingGeneratedAt = nil
         }
+        // A bad row must not drop the product
+        self.outletStock = (try? container.decodeIfPresent([ProductOutletStock].self, forKey: .outletStock)) ?? nil
     }
     
     func encode(to encoder: Encoder) throws {

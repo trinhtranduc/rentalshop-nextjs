@@ -78,7 +78,8 @@ class TabbarViewController: UITabBarController {
         let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
         
         // Create view controllers
-        let child_0 = MainViewController()
+        // #373: redesigned products + cart behind `newProducts`; off keeps the old Home
+        let child_0: UIViewController = FeatureFlags.shared.isOn(.newProducts) ? ProductsHomeViewController() : MainViewController()
         child_0.tabBarItem = UITabBarItem(
             title: child0Title,
             image: UIImage(systemName: "house")?.withConfiguration(symbolConfig),
