@@ -86,7 +86,8 @@ class TabbarViewController: UITabBarController {
         )
         child_0.navigationItem.title = child0Title
         
-        let child_1 = SaleViewController()
+        // Redesigned orders tab behind the server flag (#371); the current list otherwise
+        let child_1: UIViewController = FeatureFlags.shared.isOn(.newOrders) ? OrdersViewController() : SaleViewController()
         child_1.tabBarItem = UITabBarItem(
             title: child1Title,
             image: UIImage(systemName: "list.bullet.rectangle")?.withConfiguration(symbolConfig),

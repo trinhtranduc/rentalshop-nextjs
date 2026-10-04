@@ -1514,3 +1514,20 @@
 // MARK: - App config (#370)
 "Update required" = "Cần cập nhật ứng dụng";
 "A new version of AnyRent is needed to keep working. Please update the app." = "Cần phiên bản AnyRent mới để tiếp tục sử dụng. Vui lòng cập nhật ứng dụng.";
+
+// MARK: - Orders tab (#371)
+"To do" = "Việc cần làm";
+"All orders" = "Tất cả đơn";
+"Late section" = "Trễ hạn";
+"Today section" = "Hôm nay";
+"Tomorrow section" = "Ngày mai";
+"Late %d days" = "Trễ %d ngày";
+"Not prepared" = "Chưa soạn";
+"Hand over" = "Giao";
+"Take back" = "Nhận lại";
+"Collect %@" = "Thu %@";
+"Refund %@" = "Trả cọc %@";
+"Call customer" = "Gọi khách";
+"Nothing to do today" = "Không có việc hôm nay";
+"Retry" = "Thử lại";
+"Something went wrong" = "Đã có lỗi xảy ra";

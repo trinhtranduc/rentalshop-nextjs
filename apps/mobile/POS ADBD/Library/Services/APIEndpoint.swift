@@ -127,6 +127,8 @@ enum APIEndpoint {
         static let topProducts = "/api/analytics/top-products"
         static let recentActivities = "/api/analytics/recent-activities"
         static let todayMetrics = "/api/analytics/today-metrics"
+        /// GET today's work of the outlet team (#350, #371). Params: timeZone (IANA)
+        static let outletOperations = "/api/analytics/outlet-operations"
         static let growthMetrics = "/api/analytics/growth-metrics"
         static let recentOrders = "/api/analytics/recent-orders"
         /// GET aggregated yearly overview (income + growth + statistics + top products/customers)
