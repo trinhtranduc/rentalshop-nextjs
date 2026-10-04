@@ -61,6 +61,7 @@ import com.anyrent.pos.ui.auth.OnboardingScreen
 import com.anyrent.pos.ui.auth.RegisterStoreScreen
 import com.anyrent.pos.ui.availability.AvailabilityScreen
 import com.anyrent.pos.ui.calendar.CalendarScreen
+import com.anyrent.pos.ui.calendar.v2.CalendarV2Screen
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.customers.CustomersScreen
 import com.anyrent.pos.ui.home.BarcodeMode
@@ -75,6 +76,7 @@ import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
 import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.ui.overview.OverviewScreen
+import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
 import com.anyrent.pos.ui.settings.AppInfoScreen
 import com.anyrent.pos.ui.settings.ExportAuthScreen
 import com.anyrent.pos.ui.settings.PrinterNetworkScreen
@@ -82,6 +84,7 @@ import com.anyrent.pos.ui.settings.SettingsScreen
 import com.anyrent.pos.ui.settings.StoreInfoScreen
 import com.anyrent.pos.ui.settings.SubscriptionScreen
 import com.anyrent.pos.ui.settings.UserManagementScreen
+import com.anyrent.pos.ui.settings.v2.SettingsV2Screen
 import com.anyrent.pos.ui.theme.AppMuted
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -591,9 +594,21 @@ private fun MainTabs(
                 )
             }
             composable(MainTab.Calendar.route) {
+                // #374: redesigned calendar behind `newCalendar`; off keeps the current screen
+                val features by FeatureFlags.enabled.collectAsState()
+                if (MobileFeature.NEW_CALENDAR in features) {
+                    CalendarV2Screen(onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) })
+                    return@composable
+                }
                 CalendarScreen(onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) })
             }
             composable(MainTab.Overview.route) {
+            // #374: redesigned overview behind `newOverview`
+            val features by FeatureFlags.enabled.collectAsState()
+            if (MobileFeature.NEW_OVERVIEW in features) {
+                OverviewV2Screen()
+                return@composable
+            }
             OverviewScreen(
                 onViewProductOrders = { item ->
                     item.id?.let { rootNavController.navigate(Routes.analyticsOrders("product", it)) }
@@ -604,6 +619,24 @@ private fun MainTabs(
             )
             }
             composable(MainTab.Settings.route) {
+                // #374: redesigned settings behind `newSettings`; same sub-screens
+                val features by FeatureFlags.enabled.collectAsState()
+                if (MobileFeature.NEW_SETTINGS in features) {
+                    SettingsV2Screen(
+                        onOpenStore = { rootNavController.navigate(Routes.StoreInfo) },
+                        onOpenPrinter = { rootNavController.navigate(Routes.Printer) },
+                        onOpenCustomers = { rootNavController.navigate(Routes.Customers) },
+                        onOpenUsers = { rootNavController.navigate(Routes.Users) },
+                        onOpenExport = { rootNavController.navigate(Routes.Export) },
+                        onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
+                        onLoggedOut = {
+                            rootNavController.navigate(Routes.Login) {
+                                popUpTo(Routes.Main) { inclusive = true }
+                            }
+                        },
+                    )
+                    return@composable
+                }
                 SettingsScreen(
                     onOpenUsers = { rootNavController.navigate(Routes.Users) },
                     onOpenCustomers = { rootNavController.navigate(Routes.Customers) },

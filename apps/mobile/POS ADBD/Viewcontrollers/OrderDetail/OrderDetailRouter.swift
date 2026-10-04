@@ -23,6 +23,31 @@ enum OrderDetailRouter {
         preview.delegate = delegate
         return preview
     }
+
+    /// Push the detail of an order known only by its numeric id (#374 calendar rows): the new detail loads it
+    /// itself; the current one needs the order first
+    static func open(orderId: Int, from controller: BaseViewControler) {
+        if usesNewDetail {
+            let detail = OrderDetailViewController(orderId: orderId)
+            detail.hidesBottomBarWhenPushed = true
+            controller.navigationController?.pushViewController(detail, animated: true)
+            return
+        }
+        controller.showProgressText(text: "Loading...".localized())
+        OrderService.shared.loadOrderDetail(orderId: orderId) { [weak controller] detail, error in
+            DispatchQueue.main.async {
+                guard let controller else { return }
+                controller.hideProgress()
+                if let error {
+                    UIAlertController.errorAlert(parent: controller, error: error)
+                    return
+                }
+                guard let detail else { return }
+                let preview = detailController(for: Order.from(detail: detail), delegate: nil)
+                controller.navigationController?.pushViewController(preview, animated: true)
+            }
+        }
+    }
 }
 
 /// Edit an order the way the app does today: load it into the cart and open the sales tab
