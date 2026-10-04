@@ -29,6 +29,7 @@ final class OrdersFilterSheet: UIViewController {
     private var presetButtons: [UIButton] = []
     private let customButton = UIButton(type: .system)
     private let applyButton = V2.primaryButton("")
+    private let contentStack = UIStackView()
 
     init(filter: RentOrdersFilter) {
         self.filter = filter
@@ -36,7 +37,11 @@ final class OrdersFilterSheet: UIViewController {
         if let sheet = sheetPresentationController {
             sheet.detents = [.large()]
             if #available(iOS 16.0, *) {
-                sheet.detents = [.custom { _ in 540 }]
+                // As tall as the content (board Loc), never taller than the screen allows
+                sheet.detents = [.custom { [weak self] context in
+                    guard let self else { return nil }
+                    return min(context.maximumDetentValue, self.fittingHeight())
+                }]
             }
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 24
@@ -116,7 +121,8 @@ final class OrdersFilterSheet: UIViewController {
         rangeSection.spacing = DS.Spacing.sm
         rangeSection.setCustomSpacing(16, after: rangeSection.arrangedSubviews[0])
 
-        let stack = UIStackView(arrangedSubviews: [titleRow, sortSection, rangeSection, applyButton])
+        let stack = contentStack
+        [titleRow, sortSection, rangeSection, applyButton].forEach { stack.addArrangedSubview($0) }
         stack.axis = .vertical
         stack.spacing = DS.Spacing.lg
         view.addSubview(stack)
@@ -125,6 +131,16 @@ final class OrdersFilterSheet: UIViewController {
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
         }
         refresh()
+    }
+
+    /// Top inset + content + the board's 28pt bottom padding
+    private func fittingHeight() -> CGFloat {
+        loadViewIfNeeded()
+        let width = (view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width) - 2 * DS.Spacing.lg
+        let size = contentStack.systemLayoutSizeFitting(CGSize(width: width, height: 0),
+                                                       withHorizontalFittingPriority: .required,
+                                                       verticalFittingPriority: .fittingSizeLevel)
+        return DS.Spacing.xl + size.height + 28
     }
 
     // MARK: - Texts
