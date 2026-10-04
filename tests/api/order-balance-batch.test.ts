@@ -37,6 +37,15 @@ describe('order balance for list rows (#389)', () => {
     expect(rows.map((r) => [r.amountDue, r.refundDue])).toEqual([[0, 0], [0, 0]]);
   });
 
+  it('closed SALE orders (COMPLETED / CANCELLED) owe nothing even without recorded payments', () => {
+    // Cash sales record no SALE payment; a finished or cancelled sale must not show "còn thu" in the list
+    const rows = attachOrderBalances([
+      { id: 6, orderType: 'SALE', status: 'COMPLETED', totalAmount: 50000 },
+      { id: 7, orderType: 'SALE', status: 'CANCELLED', totalAmount: 50000 },
+    ], []);
+    expect(rows.map((r) => [r.amountDue, r.refundDue])).toEqual([[0, 0], [0, 0]]);
+  });
+
   it('an order without payments owes its full pickup amount', () => {
     const [row] = attachOrderBalances([reserved], []);
     expect(row.amountDue).toBe(1200000);

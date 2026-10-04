@@ -1,4 +1,11 @@
+import { ORDER_STATUS } from '@rentalshop/constants';
 import { computeOrderBalance, type OrderBalanceInput } from './order-balance';
+
+/**
+ * A closed order (COMPLETED / RETURNED / CANCELLED) has nothing left at the counter. Cash sales record no SALE
+ * payment, so `computeOrderBalance` alone would still show the whole total for a finished sale.
+ */
+const CLOSED_STATUSES = new Set<string>([ORDER_STATUS.COMPLETED, ORDER_STATUS.RETURNED, ORDER_STATUS.CANCELLED]);
 
 /**
  * `amountDue` / `refundDue` for a page of list rows (#389): orders list and calendar day rows.
@@ -41,6 +48,8 @@ export function attachOrderBalances<T extends OrderBalanceInput & { id: number }
   }
   return orders.map((order) => ({
     ...order,
-    ...computeOrderBalance({ ...order, payments: paymentsByOrder.get(order.id) || [] }),
+    ...(CLOSED_STATUSES.has(String(order.status))
+      ? { amountDue: 0, refundDue: 0 }
+      : computeOrderBalance({ ...order, payments: paymentsByOrder.get(order.id) || [] })),
   }));
 }
