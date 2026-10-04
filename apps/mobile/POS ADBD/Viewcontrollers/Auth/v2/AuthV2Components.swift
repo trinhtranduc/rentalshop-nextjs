@@ -115,7 +115,7 @@ final class AuthV2Field: UIView {
 
     private func updateToggle() {
         let hidden = textField.isSecureTextEntry
-        toggleButton?.setImage(UIImage(systemName: hidden ? "eye" : "eye.slash", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)), for: .normal)
+        toggleButton?.setImage(DS.symbol(hidden ? "eye" : "eye.slash", DS.Icon.md), for: .normal)
         toggleButton?.accessibilityLabel = (hidden ? "authv2.password.show" : "authv2.password.hide").localized()
     }
 }
@@ -158,7 +158,7 @@ final class AuthV2Header: UIView {
 
     init() {
         super.init(frame: .zero)
-        backButton.setImage(UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)), for: .normal)
+        backButton.setImage(DS.symbol("chevron.left", DS.Icon.lg), for: .normal)
         backButton.tintColor = AuthV2Style.text
         backButton.backgroundColor = AuthV2Style.backButtonFill
         backButton.layer.cornerRadius = DS.touchTarget / 2

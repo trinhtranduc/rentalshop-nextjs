@@ -1,5 +1,7 @@
 package com.anyrent.pos.ui.auth.v2
 
+import com.anyrent.pos.ui.theme.DS
+import com.anyrent.pos.ui.common.AppIcon
 import com.anyrent.pos.domain.auth.EmailSentKind
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -41,7 +43,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -174,11 +175,11 @@ private fun AuthBackHeader(onBack: () -> Unit) {
             onClick = onBack,
             modifier = Modifier.size(44.dp).background(AuthV2Style.BackButtonFill, CircleShape),
         ) {
-            Icon(
+            AppIcon(
                 Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
                 contentDescription = stringResource(R.string.authv2_back),
                 tint = AuthV2Style.Text,
-                modifier = Modifier.size(22.dp),
+                size = DS.Icon.Lg,
             )
         }
     }
@@ -251,11 +252,11 @@ private fun AuthField(
             trailingIcon = if (password) {
                 {
                     IconButton(onClick = { visible = !visible }) {
-                        Icon(
+                        AppIcon(
                             if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                             contentDescription = stringResource(if (visible) R.string.authv2_password_hide else R.string.authv2_password_show),
                             tint = AuthV2Style.TextMuted,
-                            modifier = Modifier.size(20.dp),
+                            size = DS.Icon.Md,
                         )
                     }
                 }

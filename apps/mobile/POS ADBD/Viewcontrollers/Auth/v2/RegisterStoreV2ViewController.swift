@@ -273,7 +273,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
 
     private func updateTermsCheck() {
         let name = draft.termsAccepted ? "checkmark.square.fill" : "square"
-        termsCheck.setImage(UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)), for: .normal)
+        termsCheck.setImage(DS.symbol(name, DS.Icon.lg), for: .normal)
         termsCheck.tintColor = draft.termsAccepted ? AuthV2Style.primary : AuthV2Style.fieldBorder
         termsCheck.accessibilityTraits = draft.termsAccepted
             ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton

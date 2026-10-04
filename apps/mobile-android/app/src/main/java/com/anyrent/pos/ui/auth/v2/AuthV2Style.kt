@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material3.Icon
+import com.anyrent.pos.ui.common.AppIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -213,6 +213,6 @@ fun AuthFloatingMailIcon() {
             .clearAndSetSemantics { },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Outlined.Email, contentDescription = null, tint = AuthV2Style.Primary, modifier = Modifier.size(36.dp))
+        AppIcon(Icons.Outlined.Email, contentDescription = null, tint = AuthV2Style.Primary, size = 36.dp)
     }
 }

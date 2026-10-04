@@ -81,7 +81,7 @@ enum AuthV2Style {
         box.layer.shadowOpacity = 0.18
         box.layer.shadowRadius = 12
         box.layer.shadowOffset = CGSize(width: 0, height: 8)
-        let icon = UIImageView(image: UIImage(systemName: "envelope", withConfiguration: UIImage.SymbolConfiguration(pointSize: 29, weight: .regular)))
+        let icon = UIImageView(image: DS.symbol("envelope", 36))
         icon.tintColor = primary
         icon.contentMode = .center
         box.addSubview(icon)
