@@ -1900,3 +1900,20 @@
 "products.detail.state.returnOn" = "Trả %@";
 "Late 1 day" = "Trễ 1 ngày";
 "Returned 1 day late" = "trả trễ 1 ngày";
+
+/* #390 phase 8 */
+"orders.v2.sort.nearest" = "Việc gần nhất";
+"orders.v2.sort.nearestHint" = "Việc gần nhất: đơn trễ hạn trả trước, rồi đơn cần giao hoặc nhận trả sớm nhất.";
+"calendar.v2.fee" = "phí %@";
+"products.detail.deleteTitle" = "Xóa sản phẩm?";
+"products.detail.deleteMessage" = "“%@” sẽ không còn trong danh sách sản phẩm. Đơn cũ vẫn giữ tên sản phẩm.";
+"products.detail.deleted" = "Đã xóa sản phẩm";
+"order.extend" = "Gia hạn";
+"order.extend.title" = "Gia hạn thuê";
+"order.extend.current" = "Đang hẹn trả %@";
+"order.extend.extraDay" = "Thêm 1 ngày";
+"order.extend.extraDays" = "Thêm %d ngày";
+"order.extend.pick" = "Chọn ngày trả mới, sau ngày hẹn trả";
+"order.extend.confirm" = "Gia hạn đến %@";
+"order.extend.unavailable" = "Không đủ hàng trong những ngày thêm: %@";
+"order.extend.done" = "Đã gia hạn đến %@";

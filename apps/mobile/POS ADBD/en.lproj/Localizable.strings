@@ -1902,3 +1902,20 @@
 "products.detail.state.returnOn" = "Return %@";
 "Late 1 day" = "1 day late";
 "Returned 1 day late" = "Returned 1 day late";
+
+/* #390 phase 8 */
+"orders.v2.sort.nearest" = "Nearest task";
+"orders.v2.sort.nearestHint" = "Nearest task: late returns first, then the next hand-overs and returns.";
+"calendar.v2.fee" = "fee %@";
+"products.detail.deleteTitle" = "Delete product?";
+"products.detail.deleteMessage" = "“%@” will no longer be in the product list. Past orders keep its name.";
+"products.detail.deleted" = "Product deleted";
+"order.extend" = "Extend";
+"order.extend.title" = "Extend rental";
+"order.extend.current" = "Due back %@";
+"order.extend.extraDay" = "1 more day";
+"order.extend.extraDays" = "%d more days";
+"order.extend.pick" = "Pick a later return day";
+"order.extend.confirm" = "Extend to %@";
+"order.extend.unavailable" = "Not enough stock on the added days: %@";
+"order.extend.done" = "Extended to %@";

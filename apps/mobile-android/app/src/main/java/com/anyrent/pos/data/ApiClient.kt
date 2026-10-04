@@ -8,6 +8,7 @@ import com.anyrent.pos.data.model.InboxNotification
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.data.model.optionalAmount
 import com.anyrent.pos.data.model.PaymentEntry
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.ProductOutletStock
@@ -1182,6 +1183,8 @@ class ApiClient(
             updatedAt = o.nullableString("updatedAt"),
             itemsSummary = orderItemsSummary(o.optJSONArray("orderItems")),
             productQuantities = orderItemQuantities(o.optJSONArray("orderItems")),
+            amountDue = optionalAmount(o, "amountDue"),
+            refundDue = optionalAmount(o, "refundDue"),
         )
     }
 
@@ -1259,6 +1262,7 @@ class ApiClient(
             discountAmount = root.safeDouble("discountAmount"),
             outletName = root.nullableString("outletName")
                 ?: root.optJSONObject("outlet")?.nullableString("name"),
+            outletId = root.positiveInt("outletId") ?: root.optJSONObject("outlet")?.positiveInt("id"),
         )
     }
 

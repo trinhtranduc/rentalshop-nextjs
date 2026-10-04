@@ -63,13 +63,21 @@ struct CalendarDayOrder: Decodable, Equatable {
     let orderType: String?
     let totalAmount: Double
     let orderItems: [Item]
+    /// Balances and the stored late fee (#389); nil on an older API
+    let amountDue: Double?
+    let refundDue: Double?
+    let lateFee: Double?
 
     enum CodingKeys: String, CodingKey {
-        case id, orderNumber, customerName, status, orderType, totalAmount, orderItems
+        case id, orderNumber, customerName, status, orderType, totalAmount, orderItems, amountDue, refundDue, lateFee
     }
 
     init(id: Int, orderNumber: String, customerName: String?, status: String?, orderType: String?,
-         totalAmount: Double, orderItems: [Item]) {
+         totalAmount: Double, orderItems: [Item], amountDue: Double? = nil, refundDue: Double? = nil,
+         lateFee: Double? = nil) {
+        self.amountDue = amountDue
+        self.refundDue = refundDue
+        self.lateFee = lateFee
         self.id = id
         self.orderNumber = orderNumber
         self.customerName = customerName
@@ -88,6 +96,9 @@ struct CalendarDayOrder: Decodable, Equatable {
         orderType = (try? c.decodeIfPresent(String.self, forKey: .orderType)) ?? nil
         totalAmount = ((try? c.decodeIfPresent(Double.self, forKey: .totalAmount)) ?? nil) ?? 0
         orderItems = ((try? c.decodeIfPresent([Item].self, forKey: .orderItems)) ?? nil) ?? []
+        amountDue = (try? c.decodeIfPresent(Double.self, forKey: .amountDue)) ?? nil
+        refundDue = (try? c.decodeIfPresent(Double.self, forKey: .refundDue)) ?? nil
+        lateFee = (try? c.decodeIfPresent(Double.self, forKey: .lateFee)) ?? nil
     }
 
     /// "Áo dài ×2, Cà vạt lụa"
@@ -139,6 +150,15 @@ struct CalendarCell: Equatable {
 
 enum CalendarRowKind: Equatable {
     case handOver, takeBack
+}
+
+/// Note under a day row's total (board Lich, #390)
+enum CalendarNote: Equatable {
+    /// "Trễ N ngày", plus " · phí X" when a fee is stored
+    case late(days: Int, fee: Double?)
+    case refund(Double)
+    case due(Double)
+    case none
 }
 
 struct CalendarDayRow: Equatable {
@@ -233,6 +253,19 @@ enum CalendarV2Logic {
         let late = lateDays(dayKey: dayKey, todayKey: todayKey)
         return pickups.map { CalendarDayRow(kind: .handOver, order: $0, lateDays: late) }
             + returns.map { CalendarDayRow(kind: .takeBack, order: $0, lateDays: late) }
+    }
+
+    /// Late days first (with the fee), then what to give back, then what is still to collect; else nothing.
+    /// With money hidden only the late days show.
+    static func note(_ row: CalendarDayRow, hidesMoney: Bool) -> CalendarNote {
+        if row.lateDays > 0 {
+            let fee = row.order.lateFee.flatMap { $0 > 0 && !hidesMoney ? $0 : nil }
+            return .late(days: row.lateDays, fee: fee)
+        }
+        guard !hidesMoney else { return .none }
+        if let refund = row.order.refundDue, refund > 0 { return .refund(refund) }
+        if let due = row.order.amountDue, due > 0 { return .due(due) }
+        return .none
     }
 
     /// Day selected when a month opens: today in its own month, else the first day

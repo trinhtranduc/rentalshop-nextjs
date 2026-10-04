@@ -86,6 +86,13 @@ final class ProductsHomeViewModel {
         onChange?()
     }
 
+    /// Drop a deleted product without a reload (#390)
+    func remove(productId: Int) {
+        let before = products.count
+        products.removeAll { ($0.id ?? $0.product_id) == productId }
+        if products.count != before { onChange?() }
+    }
+
     private func load(page nextPage: Int) {
         if nextPage == 1 { generation += 1 }
         let token = generation

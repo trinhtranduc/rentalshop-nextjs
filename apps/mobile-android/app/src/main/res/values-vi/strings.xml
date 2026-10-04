@@ -956,4 +956,19 @@
     <string name="v2_detail_state_pickup_on">Giao %1$s</string>
     <string name="v2_detail_state_return_today">Trả hôm nay</string>
     <string name="v2_detail_state_return_on">Trả %1$s</string>
+    <!-- #390 phase 8 -->
+    <string name="orders_v2_sort_nearest">Việc gần nhất</string>
+    <string name="orders_v2_sort_nearest_hint">Việc gần nhất: đơn trễ hạn trả trước, rồi đơn cần giao hoặc nhận trả sớm nhất.</string>
+    <string name="calendar_v2_fee">phí %1$s</string>
+    <string name="v2_product_deleted">Đã xóa sản phẩm</string>
+    <string name="extend_rental">Gia hạn</string>
+    <string name="extend_rental_title">Gia hạn thuê</string>
+    <string name="extend_rental_current">Đang hẹn trả %1$s</string>
+    <plurals name="extend_rental_extra_days">
+        <item quantity="other">Thêm %1$d ngày</item>
+    </plurals>
+    <string name="extend_rental_pick">Chọn ngày trả mới, sau ngày hẹn trả</string>
+    <string name="extend_rental_confirm">Gia hạn đến %1$s</string>
+    <string name="extend_rental_unavailable">Không đủ hàng trong những ngày thêm: %1$s</string>
+    <string name="extend_rental_done">Đã gia hạn đến %1$s</string>
 </resources>

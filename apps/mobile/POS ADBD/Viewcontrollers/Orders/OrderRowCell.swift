@@ -226,10 +226,19 @@ final class OrderRowCell: UITableViewCell {
         if lateDays > 0 {
             addPill(LateText.days(lateDays), DS.Status.late)
         }
-        // The list API has no per-step payments: the total only (no "còn thu")
         setTotal(order.totalAmount, struck: order.status == .cancelled)
-        payLabel.text = nil
-        payLabel.isHidden = true
+        // Balances of the list API (#389); nothing on an older API or a cancelled order
+        switch OrdersHomeLogic.listPayLine(order) {
+        case .refund(let amount)?:
+            setPay(String(format: "orders.v2.pay.refund".localized(), MoneyFormatter.format(amount)), DS.Status.returning.text)
+        case .due(let amount)?:
+            setPay(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(amount)), DS.Status.waiting.text)
+        case .paid?:
+            setPay("orders.v2.pay.paid".localized(), DS.Status.done.text)
+        case nil:
+            payLabel.text = nil
+            payLabel.isHidden = true
+        }
         phone = nil
     }
 

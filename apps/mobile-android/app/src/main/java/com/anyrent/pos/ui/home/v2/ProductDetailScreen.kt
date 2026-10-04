@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +78,8 @@ import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductStock
 import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppFormSheet
+import com.anyrent.pos.ui.common.AppAlertConfirm
+import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.common.LoadingBox
@@ -86,6 +89,7 @@ import com.anyrent.pos.ui.common.dayKey
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
@@ -114,7 +118,12 @@ fun ProductDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableIntStateOf(0) }
     var showEdit by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     val added = stringResource(R.string.v2_added_to_cart)
+    val deletedText = stringResource(R.string.v2_product_deleted)
 
     LaunchedEffect(productId, reloadKey) {
         withContext(Dispatchers.IO) { ApiClient.get().getProduct(productId) }
@@ -183,6 +192,13 @@ fun ProductDetailScreen(
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, modifier = Modifier.size(DS.Icon.Md))
                     }
                     Spacer(Modifier.weight(1f))
+                    // #390: delete needs products.manage (never OUTLET_STAFF); the API also refuses it
+                    if (ProductAccess.canDelete(PermissionManager.role)) {
+                        RoundButton(onClick = { confirmDelete = true }, label = stringResource(R.string.delete_product)) {
+                            Text(stringResource(R.string.delete), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger, modifier = Modifier.padding(horizontal = 12.dp))
+                        }
+                        Spacer(Modifier.width(8.dp))
+                    }
                     if (ProductAccess.canEdit(PermissionManager.role)) {
                         RoundButton(onClick = { showEdit = true }, label = stringResource(R.string.edit_product)) {
                             Text(stringResource(R.string.v2_detail_edit), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 12.dp))
@@ -276,6 +292,37 @@ fun ProductDetailScreen(
             )
         }
     }
+
+    if (confirmDelete && current != null) {
+        AppAlertConfirm(
+            title = stringResource(R.string.delete_product),
+            message = stringResource(R.string.delete_product_confirmation, current.name),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            confirmLoading = deleting,
+            dismissEnabled = !deleting,
+            onConfirm = {
+                if (!deleting) {
+                    deleting = true
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) { ApiClient.get().deleteProduct(current.id) }
+                        deleting = false
+                        confirmDelete = false
+                        result
+                            .onSuccess {
+                                DeletedProducts.add(current.id)
+                                Toast.makeText(context, deletedText, Toast.LENGTH_SHORT).show()
+                                onBack()
+                            }
+                            // 409 PRODUCT_HAS_OPEN_ORDERS arrives already mapped (ApiErrorMessages)
+                            .onFailure { deleteError = it.message }
+                    }
+                }
+            },
+            onDismiss = { if (!deleting) confirmDelete = false },
+        )
+    }
+    deleteError?.let { AppAlertError(message = it, onDismiss = { deleteError = null }) }
 
     if (showEdit && current != null) {
         AppFormSheet(onDismiss = { showEdit = false }, fullScreen = true) {

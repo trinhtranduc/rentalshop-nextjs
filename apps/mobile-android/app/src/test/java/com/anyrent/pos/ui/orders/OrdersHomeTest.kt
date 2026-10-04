@@ -328,11 +328,11 @@ class OrdersHomeTest {
         assertEquals("2026-10-01" to "2026-10-31", OrdersBoardLogic.dayBounds(DateRangeChoice.ThisMonth, now, vietnam)?.let { it.first.toString() to it.second.toString() })
         assertEquals(OrdersQuery(orderType = "RENT"), OrdersBoardLogic.rentQuery(RentOrdersFilter(), 1, now, vietnam))
         val query = OrdersBoardLogic.rentQuery(
-            RentOrdersFilter(status = "PICKUPED", sort = OrdersSort.RETURN, basis = DateBasis.PICKED_UP, range = DateRangeChoice.Today),
+            RentOrdersFilter(status = "PICKUPED", sort = OrdersSort.RETURN, basis = DateBasis.PICKUP_PLAN, range = DateRangeChoice.Today),
             2, now, vietnam,
         )
         assertEquals(
-            OrdersQuery(orderType = "RENT", status = "PICKUPED", sortBy = "returnPlanAt", startDate = "2026-10-04", endDate = "2026-10-04", dateField = "pickedUpAt", page = 2),
+            OrdersQuery(orderType = "RENT", status = "PICKUPED", sortBy = "returnPlanAt", startDate = "2026-10-04", endDate = "2026-10-04", dateField = "pickupPlanAt", page = 2),
             query,
         )
     }

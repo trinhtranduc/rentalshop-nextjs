@@ -336,6 +336,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let detail = ProductDetailViewController(product: product)
         detail.hidesBottomBarWhenPushed = true
         detail.onSaved = { [weak self] saved in self?.viewModel.replace(saved) }
+        detail.onDeleted = { [weak self] id in self?.viewModel.remove(productId: id) }
         navigationController?.pushViewController(detail, animated: true)
     }
 

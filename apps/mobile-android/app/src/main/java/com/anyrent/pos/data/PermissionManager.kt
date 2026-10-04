@@ -42,6 +42,9 @@ object PermissionManager {
     fun canManageOrders(): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
 
+    /** `orders.update` (PUT /api/orders/{id}): every shop role, OUTLET_STAFF included (#390) */
+    fun canUpdateOrders(): Boolean = role != UserRole.UNKNOWN
+
     /** iOS: delete cancelled orders only for merchant / outlet admin (and system admin). */
     fun canDeleteCancelledOrders(): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN

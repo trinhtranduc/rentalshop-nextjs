@@ -23,6 +23,9 @@ final class ProductDetailViewController: BaseViewControler {
     /// Bumped on each load; an older answer is dropped
     private var generation = 0
     var onSaved: ((Product) -> Void)?
+    /// The product was deleted (#390): the list drops it
+    var onDeleted: ((Int) -> Void)?
+    private var deleteButton: UIButton?
 
     private let scroll = UIScrollView()
     private let content = UIStackView()
@@ -125,6 +128,7 @@ final class ProductDetailViewController: BaseViewControler {
             make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
             make.width.height.equalTo(DS.touchTarget)
         }
+        var trailingAnchorView: UIView?
         if ProductAccess.canEdit(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions) {
             let edit = roundButton(symbol: nil, title: "products.detail.edit".localized(), label: "products.form.editTitle".localized(), action: #selector(editProduct))
             photoBox.addSubview(edit)
@@ -133,6 +137,23 @@ final class ProductDetailViewController: BaseViewControler {
                 make.centerY.equalTo(back)
                 make.height.equalTo(DS.touchTarget)
             }
+            trailingAnchorView = edit
+        }
+        // #390: delete needs products.manage (never OUTLET_STAFF); the API refuses it too
+        if ProductAccess.canDelete(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions) {
+            let delete = roundButton(symbol: nil, title: "Delete".localized(), label: "Delete product".localized(), action: #selector(deleteTapped))
+            delete.setTitleColor(DS.Status.late.text, for: .normal)
+            photoBox.addSubview(delete)
+            delete.snp.makeConstraints { make in
+                if let trailingAnchorView {
+                    make.trailing.equalTo(trailingAnchorView.snp.leading).offset(-8)
+                } else {
+                    make.trailing.equalToSuperview().offset(-12)
+                }
+                make.centerY.equalTo(back)
+                make.height.equalTo(DS.touchTarget)
+            }
+            deleteButton = delete
         }
         pageLabel.backgroundColor = DS.Color.text.withAlphaComponent(0.6)
         pageLabel.layer.cornerRadius = 9
@@ -499,6 +520,41 @@ final class ProductDetailViewController: BaseViewControler {
             self.onSaved?(saved)
         }
         V2.presentForm(form, from: self)
+    }
+
+    /// Confirm sheet, then DELETE /api/products/{id}. A 409 PRODUCT_HAS_OPEN_ORDERS arrives as a localized NSError.
+    @objc private func deleteTapped() {
+        let sheet = UIAlertController(title: "products.detail.deleteTitle".localized(),
+                                      message: String(format: "products.detail.deleteMessage".localized(), product.name ?? ""),
+                                      preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Delete product".localized(), style: .destructive) { [weak self] _ in
+            self?.performDelete()
+        })
+        sheet.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        if let popover = sheet.popoverPresentationController, let source = deleteButton {
+            popover.sourceView = source
+            popover.sourceRect = source.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func performDelete() {
+        let id = productId
+        showProgressText(text: "")
+        ProductService.shared.deleteProduct(productId: id) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                if let error {
+                    UIAlertController.errorAlert(parent: self, error: error)
+                    return
+                }
+                self.onDeleted?(id)
+                let list = self.navigationController?.viewControllers.dropLast().last as? BaseViewControler
+                self.navigationController?.popViewController(animated: true)
+                list?.showToast(message: "products.detail.deleted".localized())
+            }
+        }
     }
 
     @objc private func addToCart() {

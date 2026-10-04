@@ -278,13 +278,13 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertNil(OrdersHomeLogic.rentQuery(filter, now: now, timeZone: vietnam).startDate)
         filter.status = .pickuped
         filter.sort = .returnDate
-        filter.dateBasis = .pickedUp
+        filter.dateBasis = .pickupPlan
         filter.dateRange = .today
         let query = OrdersHomeLogic.rentQuery(filter, page: 2, now: now, timeZone: vietnam)
         XCTAssertEqual(query.orderType, .rent)
         XCTAssertEqual(query.status, .pickuped)
         XCTAssertEqual(query.sortBy, "returnPlanAt")
-        XCTAssertEqual(query.dateField, "pickedUpAt")
+        XCTAssertEqual(query.dateField, "pickupPlanAt")
         XCTAssertEqual(query.page, 2)
         XCTAssertEqual(query.startDate.map(key), "2026-10-04")
     }

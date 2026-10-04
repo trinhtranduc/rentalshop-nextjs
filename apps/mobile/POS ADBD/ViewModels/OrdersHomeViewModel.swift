@@ -43,10 +43,10 @@ struct OrdersSection {
 
 /// Rent list query: the status chips plus the "Lọc & sắp xếp" sheet (board Loc)
 struct RentOrdersFilter: Equatable {
-    enum Sort: CaseIterable { case createdDate, pickupDate, returnDate }
-    /// Which date the range applies to. The list API filters actual hand-over / return dates (`pickedUpAt`,
-    /// `returnedAt`); it has no planned-date range.
-    enum DateBasis: CaseIterable { case created, pickedUp, returned }
+    /// `nearestTask` (#389): late tasks first, then the nearest planned hand-over or return, then closed orders
+    enum Sort: CaseIterable { case nearestTask, createdDate, pickupDate, returnDate }
+    /// Which date the range applies to: created, or the planned hand-over / return day (#389)
+    enum DateBasis: CaseIterable { case created, pickupPlan, returnPlan }
     enum DateRange: Equatable {
         case any, today, next7Days, thisMonth
         case custom(from: Date, to: Date)
@@ -62,6 +62,7 @@ struct RentOrdersFilter: Equatable {
 
     var sortBy: String {
         switch sort {
+        case .nearestTask: return "nearestTask"
         case .createdDate: return "createdAt"
         case .pickupDate: return "pickupPlanAt"
         case .returnDate: return "returnPlanAt"
@@ -71,8 +72,8 @@ struct RentOrdersFilter: Equatable {
     var dateField: String {
         switch dateBasis {
         case .created: return "createdAt"
-        case .pickedUp: return "pickedUpAt"
-        case .returned: return "returnedAt"
+        case .pickupPlan: return "pickupPlanAt"
+        case .returnPlan: return "returnPlanAt"
         }
     }
 }
@@ -179,6 +180,14 @@ enum OrdersHomeLogic {
         if refundDue > 0 { return .refund(refundDue) }
         if amountDue > 0 { return .due(amountDue) }
         return .paid
+    }
+
+    /// Pay line of a "Tất cả đơn" / search row from the list balances (#390); nil when the API sent neither field
+    /// (older server) or the order is cancelled
+    static func listPayLine(_ order: Order) -> PayLine? {
+        guard order.status != .cancelled else { return nil }
+        guard order.listAmountDue != nil || order.listRefundDue != nil else { return nil }
+        return payLine(amountDue: order.listAmountDue ?? 0, refundDue: order.listRefundDue ?? 0)
     }
 
     /// "giao N · trả M" of a band

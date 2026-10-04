@@ -512,6 +512,7 @@ private fun chipLabel(status: String?): Int = when (status) {
 }
 
 private fun sortLabel(sort: OrdersSort): Int = when (sort) {
+    OrdersSort.NEAREST_TASK -> R.string.orders_v2_sort_nearest
     OrdersSort.CREATED -> R.string.orders_v2_sort_created
     OrdersSort.PICKUP -> R.string.orders_v2_sort_pickup
     OrdersSort.RETURN -> R.string.orders_v2_sort_return
@@ -665,8 +666,13 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoa
         pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
-        // The list API has no per-step payments: the total only (no "còn thu")
-        pay = null,
+        // Balances of the list API (#389); nothing on an older API or a cancelled order
+        pay = when (val pay = OrdersBoardLogic.listPayLine(order)) {
+            is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(pay.amount)) to DS.Status.Return.text
+            is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(pay.amount)) to DS.Status.Waiting.text
+            PayLine.Paid -> stringResource(R.string.orders_v2_pay_paid) to DS.Status.Done.text
+            null -> null
+        },
         phone = null,
         onClick = onClick,
         onCall = {},
@@ -838,6 +844,7 @@ private fun FilterSheet(
                         if (line.size < 2) Spacer(Modifier.weight(1f))
                     }
                 }
+                Text(stringResource(R.string.orders_v2_sort_nearest_hint), fontSize = 12.sp, color = DS.Colors.TextMuted)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SheetLabel(stringResource(R.string.orders_v2_filter_range))
@@ -861,8 +868,8 @@ private fun FilterSheet(
                                 stringResource(
                                     when (basis) {
                                         DateBasis.CREATED -> R.string.orders_v2_basis_created
-                                        DateBasis.PICKED_UP -> R.string.orders_v2_basis_pickup
-                                        DateBasis.RETURNED -> R.string.orders_v2_basis_return
+                                        DateBasis.PICKUP_PLAN -> R.string.orders_v2_basis_pickup
+                                        DateBasis.RETURN_PLAN -> R.string.orders_v2_basis_return
                                     },
                                 ),
                                 fontSize = 13.sp,
