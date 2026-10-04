@@ -145,14 +145,15 @@ fun OverviewV2Screen(
                         RevenueSection(state.report, state.loading, state.reportError, range, onRetry = viewModel::load)
                     }
                 }
-                // #388: each figure but Thế chấp opens its list (the kind of the `overview-orders` route)
+                // #388: each figure opens its list (the kind of the `overview-orders` route)
                 val stats = buildList {
                     state.report?.newOrders?.takeIf { state.showsRevenue }?.let { add(StatRowData(R.string.overview_v2_new_orders, it.toString(), DS.Colors.Text, OverviewLinks.NEW)) }
                     state.now?.rentedOut?.let { add(StatRowData(R.string.overview_v2_rented_out, it.toString(), DS.Colors.Text, OverviewLinks.RENTED)) }
                     state.now?.takeIf { state.showsOperations }?.let {
                         add(StatRowData(R.string.overview_v2_late_returns, it.lateReturns.toString(), if (it.lateReturns > 0) V2Colors.Danger else DS.Colors.Text, OverviewLinks.LATE))
                     }
-                    state.now?.collateralHeld?.let { add(StatRowData(R.string.overview_v2_collateral_held, formatMoneyVnd(it), DS.Colors.Text, null)) }
+                    // The collateral is held by the orders out now: the same list as Đang cho thuê
+                    state.now?.collateralHeld?.let { add(StatRowData(R.string.overview_v2_collateral_held, formatMoneyVnd(it), DS.Colors.Text, OverviewLinks.RENTED)) }
                 }
                 if (stats.isNotEmpty()) {
                     item(key = "orders-band") { SectionBand(stringResource(R.string.overview_v2_orders)) }

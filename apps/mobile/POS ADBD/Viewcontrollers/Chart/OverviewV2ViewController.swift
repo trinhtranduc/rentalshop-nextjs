@@ -142,7 +142,7 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(revenueSection())
         }
 
-        // #388: each figure but Thế chấp opens its list
+        // #388: each figure opens its list
         var stats: [(String, String, UIColor, OverviewRankingOrdersFilter?)] = []
         if showsRevenue, let newOrders = report?.newOrders {
             let title = "overview.v2.newOrders".localized()
@@ -157,7 +157,9 @@ final class OverviewV2ViewController: BaseViewControler {
             stats.append((title, "\(now.lateReturns)", now.lateReturns > 0 ? V2.danger : DS.Color.text, .lateReturns(title: title)))
         }
         if let held = now?.collateralHeld {
-            stats.append(("overview.v2.collateralHeld".localized(), MoneyFormatter.format(held), DS.Color.text, nil))
+            // The collateral is held by the orders out now: the same list as Đang cho thuê
+            stats.append(("overview.v2.collateralHeld".localized(), MoneyFormatter.format(held), DS.Color.text,
+                          .rentedOut(title: "overview.v2.rentedOut".localized())))
         }
         if !stats.isEmpty {
             contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.orders".localized()))

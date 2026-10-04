@@ -22,7 +22,7 @@ Issue: #388 · Status: accepted · Intent: ./intent.md
 5. Rows get a chevron and open: Đơn mới → orders created in the period (income orders `new`, the same bucket as
    the figure); Đang cho thuê → PICKUPED orders; Trễ hạn → PICKUPED rent orders whose return day is before
    today (sorted by return ascending; paging stops at the first not-late row); a top product → orders of that
-   product created in the period. Thế chấp đang giữ stays a plain row.
+   product created in the period. Thế chấp đang giữ opens the Đang cho thuê list (the orders holding it).
 
 ### Settings (`newSettings`, board Cai-dat)
 6. Khách hàng shows `data.total` of `GET /api/customers?limit=1`; Người dùng shows `pagination.total` of
