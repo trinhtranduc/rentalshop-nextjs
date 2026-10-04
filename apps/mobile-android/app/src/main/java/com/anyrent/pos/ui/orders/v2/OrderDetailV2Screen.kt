@@ -317,8 +317,21 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                 onShowQr = paymentVm::loadQr,
                 onClearQr = paymentVm::clearQr,
                 onDismiss = { sheet = null; paymentVm.clearQr() },
-                onConfirm = {
-                    paymentVm.submit { vm.changeStatus("PICKUPED") { sheet = null } }
+                onConfirm = { papers, securityDeposit ->
+                    // Papers and deposit are optional (#427); the PICKUP payment follows the deposit typed in
+                    val fields = OrderDetailLogic.handOverFields(
+                        papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
+                    )
+                    val deposit = fields.securityDeposit ?: detail.securityDeposit
+                    if (deposit != detail.securityDeposit || fields.collateralDetails != null) {
+                        paymentVm.setOrder(
+                            detail.copy(
+                                securityDeposit = deposit,
+                                collateralDetails = fields.collateralDetails ?: detail.collateralDetails,
+                            ),
+                        )
+                    }
+                    paymentVm.submit { vm.handOver(fields) { sheet = null } }
                 },
             )
             DetailSheet.RETURN -> ReturnSheet(

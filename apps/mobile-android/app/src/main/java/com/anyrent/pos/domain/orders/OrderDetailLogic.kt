@@ -49,6 +49,16 @@ sealed interface NotesStep {
     data class Upload(val notes: String?, val fileCount: Int) : NotesStep
 }
 
+/**
+ * Papers and security deposit sent with the hand-over (#427). Null = leave the order's value alone.
+ * Papers go as the old screens send them: `collateralType = ID_CARD` + `collateralDetails`.
+ */
+data class HandOverFields(
+    val collateralType: String? = null,
+    val collateralDetails: String? = null,
+    val securityDeposit: Double? = null,
+)
+
 /** What the screen does with a failed status change */
 data class StatusErrorOutcome(val code: String?, val message: String, val reload: Boolean)
 
@@ -118,6 +128,29 @@ object OrderDetailLogic {
         val paidBefore = paid(payments, "PICKUP")
         val due = totalAmount - depositAmount + securityDeposit - paidBefore
         return HandOverMoney(totalAmount, depositAmount, securityDeposit, paidBefore, due.coerceAtLeast(0.0))
+    }
+
+    /**
+     * What the hand-over sheet sends besides `status` (#427). Both fields are optional: given papers
+     * or deposit are sent, a cleared prefilled value is sent empty / 0, and nothing else is sent.
+     */
+    fun handOverFields(
+        papers: String,
+        securityDeposit: Double,
+        currentPapers: String?,
+        currentDeposit: Double,
+    ): HandOverFields {
+        val text = papers.trim()
+        val hadPapers = !currentPapers.isNullOrBlank()
+        return HandOverFields(
+            collateralType = if (text.isNotEmpty()) "ID_CARD" else null,
+            collateralDetails = when {
+                text.isNotEmpty() -> text
+                hadPapers -> ""
+                else -> null
+            },
+            securityDeposit = securityDeposit.takeIf { it > 0.0 || currentDeposit > 0.0 }?.coerceAtLeast(0.0),
+        )
     }
 
     fun returnMoney(

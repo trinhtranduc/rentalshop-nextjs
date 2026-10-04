@@ -7,6 +7,7 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.domain.orders.OrderDetailLogic
 import com.anyrent.pos.domain.orders.StatusErrorOutcome
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,8 @@ import kotlinx.coroutines.withContext
 interface OrderDetailSource {
     suspend fun load(id: Int): Result<OrderDetail>
     suspend fun changeStatus(id: Int, status: String): Result<Unit>
+    /** RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427) */
+    suspend fun handOver(id: Int, fields: HandOverFields): Result<Unit>
     suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit>
     suspend fun saveNotes(
         id: Int,
@@ -36,6 +39,9 @@ object ApiOrderDetailSource : OrderDetailSource {
 
     override suspend fun changeStatus(id: Int, status: String) =
         withContext(Dispatchers.IO) { ApiClient.get().updateOrderStatus(id, status).map { } }
+
+    override suspend fun handOver(id: Int, fields: HandOverFields) =
+        withContext(Dispatchers.IO) { ApiClient.get().updateOrderStatus(id, "PICKUPED", fields).map { } }
 
     override suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double) =
         withContext(Dispatchers.IO) { ApiParity.updateOrderFees(id, lateFee, damageFee) }
@@ -96,11 +102,18 @@ class OrderDetailV2ViewModel(
     }
 
     /** PUT status; [onDone] gets true on success. A 4xx shows its message and reloads the order. */
-    fun changeStatus(status: String, onDone: (Boolean) -> Unit = {}) {
+    fun changeStatus(status: String, onDone: (Boolean) -> Unit = {}) =
+        runStatusChange(onDone) { source.changeStatus(orderId, status) }
+
+    /** Hand-over: papers and deposit are optional; empty fields still hand the order over (#427) */
+    fun handOver(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) =
+        runStatusChange(onDone) { source.handOver(orderId, fields) }
+
+    private fun runStatusChange(onDone: (Boolean) -> Unit, call: suspend () -> Result<Unit>) {
         if (_state.value.busy) return
         _state.update { it.copy(busy = true) }
         viewModelScope.launch {
-            val result = source.changeStatus(orderId, status)
+            val result = call()
             val failure = result.exceptionOrNull()?.let(OrderDetailLogic::statusError)
             _state.update { it.copy(busy = false, statusError = failure) }
             if (failure == null || failure.reload) reload()
