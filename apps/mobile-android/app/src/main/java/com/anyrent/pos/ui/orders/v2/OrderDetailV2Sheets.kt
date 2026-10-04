@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -132,7 +133,7 @@ internal fun ReturnSheet(
         SheetTitle(
             stringResource(R.string.detail_take_return),
             if (lateDays > 0) {
-                stringResource(R.string.detail_return_late_subtitle, s.customerName.orEmpty(), "#${s.orderNumber}", lateDays)
+                pluralStringResource(R.plurals.detail_return_late_subtitle, lateDays, s.customerName.orEmpty(), "#${s.orderNumber}", lateDays)
             } else {
                 stringResource(
                     R.string.detail_hand_over_subtitle,

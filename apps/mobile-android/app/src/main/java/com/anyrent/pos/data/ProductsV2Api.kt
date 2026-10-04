@@ -36,6 +36,29 @@ object ProductsV2Api {
         )
     }
 
+    /** Outlet stock and free units per day key (#388); outlet users pass their outlet, a merchant gets the default */
+    data class FreeDays(val stock: Int?, val available: Map<String, Int>)
+
+    fun availabilityCalendar(productId: Int, from: String, to: String, outletId: Int?): Result<FreeDays> = runCatching {
+        val query = buildList {
+            add("from=$from")
+            add("to=$to")
+            outletId?.let { add("outletId=$it") }
+        }.joinToString("&")
+        val json = ApiClient.get().authedGet("/api/products/$productId/availability-calendar?$query")
+        parseFreeDays(json.optJSONObject("data") ?: JSONObject())
+    }
+
+    internal fun parseFreeDays(data: JSONObject): FreeDays {
+        val days = data.optJSONArray("days") ?: JSONArray()
+        val available = (0 until days.length()).mapNotNull { i ->
+            val day = days.optJSONObject(i) ?: return@mapNotNull null
+            val key = day.optString("date").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            key to day.optInt("available")
+        }.toMap()
+        return FreeDays(stock = data.optInt("stock").takeIf { data.has("stock") }, available = available)
+    }
+
     /** Merchant outlets as (id, isDefault), for a merchant without an outlet of their own */
     fun listOutlets(): Result<List<Pair<Int, Boolean>>> = runCatching {
         val json = ApiClient.get().authedGet("/api/outlets")

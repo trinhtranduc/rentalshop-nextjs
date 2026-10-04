@@ -571,7 +571,7 @@
     <string name="v2_detail_edit">Edit</string>
     <string name="v2_detail_deposit">deposit %1$s</string>
     <string name="v2_detail_orders">Orders of this product</string>
-    <string name="v2_detail_orders_count">All %1$d</string>
+    <string name="v2_detail_orders_count">All %1$d ›</string>
     <string name="v2_detail_no_orders">No orders yet</string>
     <string name="v2_detail_free_calendar">Free days</string>
     <string name="v2_detail_add_to_cart">Add to cart</string>
@@ -648,12 +648,11 @@
     <string name="orders_section_late">Late</string>
     <string name="orders_section_today">Today</string>
     <string name="orders_section_tomorrow">Tomorrow</string>
-    <string name="orders_late_days">%1$d days late</string>
-    <string name="orders_not_prepared">Not prepared</string>
+    <plurals name="orders_late_days">
+        <item quantity="one">%1$d day late</item>
+        <item quantity="other">%1$d days late</item>
+    </plurals>
     <string name="orders_hand_over">Hand over</string>
-    <string name="orders_take_back">Take back</string>
-    <string name="orders_collect">Collect %1$s</string>
-    <string name="orders_refund">Refund %1$s</string>
     <string name="nothing_to_do_today">Nothing to do today</string>
     <string name="retry">Retry</string>
     <string name="something_went_wrong">Something went wrong</string>
@@ -666,8 +665,14 @@
     <string name="detail_progress_booked">Booked %1$s</string>
     <string name="detail_progress_hand_over">Hand over %1$s</string>
     <string name="detail_progress_return">Return %1$s</string>
-    <string name="detail_late_return">Return %1$d days late</string>
-    <string name="detail_late_hand_over">Hand-over %1$d days late</string>
+    <plurals name="detail_late_return">
+        <item quantity="one">Return %1$d day late</item>
+        <item quantity="other">Return %1$d days late</item>
+    </plurals>
+    <plurals name="detail_late_hand_over">
+        <item quantity="one">Hand-over %1$d day late</item>
+        <item quantity="other">Hand-over %1$d days late</item>
+    </plurals>
     <string name="detail_due_on">Due %1$s</string>
     <string name="detail_schedule">Rental</string>
     <string name="detail_sale_day">Sale day</string>
@@ -703,7 +708,10 @@
     <string name="detail_late_fee_days">Late fee (%1$d days)</string>
     <string name="detail_photos_count">%1$d/%2$d photos</string>
     <string name="detail_hand_over_subtitle">%1$s · %2$s · %3$s</string>
-    <string name="detail_return_late_subtitle">%1$s · %2$s · %3$d days late</string>
+    <plurals name="detail_return_late_subtitle">
+        <item quantity="one">%1$s · %2$s · %3$d day late</item>
+        <item quantity="other">%1$s · %2$s · %3$d days late</item>
+    </plurals>
 
     <!-- #374 Calendar, overview, settings -->
     <string name="calendar_v2_title">Calendar</string>
@@ -943,4 +951,14 @@
     <string name="authv2_error_account_deactivated">This account has been deactivated.</string>
     <string name="authv2_error_merchant_duplicate">A shop with this email or phone number already exists.</string>
     <string name="authv2_error_rate_limited">Too many requests. Please try again later.</string>
+    <!-- #388 phase 7 gaps -->
+    <string name="v2_detail_chip_upcoming">Upcoming</string>
+    <string name="v2_detail_chip_renting">Rented</string>
+    <string name="v2_detail_chip_done">Done</string>
+    <string name="v2_detail_strip_caption">Free units per day · %1$d in this shop</string>
+    <string name="v2_detail_strip_accessibility">Free in the next 7 days</string>
+    <string name="v2_detail_state_pickup_today">Hand over today</string>
+    <string name="v2_detail_state_pickup_on">Hand over %1$s</string>
+    <string name="v2_detail_state_return_today">Return today</string>
+    <string name="v2_detail_state_return_on">Return %1$s</string>
 </resources>

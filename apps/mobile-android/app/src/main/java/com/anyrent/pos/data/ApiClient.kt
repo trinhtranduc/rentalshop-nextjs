@@ -1180,7 +1180,19 @@ class ApiClient(
             },
             updatedAt = o.nullableString("updatedAt"),
             itemsSummary = orderItemsSummary(o.optJSONArray("orderItems")),
+            productQuantities = orderItemQuantities(o.optJSONArray("orderItems")),
         )
+    }
+
+    /** product id → units, from the list's `orderItems` (#388) */
+    internal fun orderItemQuantities(items: JSONArray?): Map<Int, Int> {
+        val result = mutableMapOf<Int, Int>()
+        for (index in 0 until (items?.length() ?: 0)) {
+            val item = items?.optJSONObject(index) ?: continue
+            val id = item.optInt("productId").takeIf { it > 0 } ?: item.optJSONObject("product")?.optInt("id")?.takeIf { it > 0 } ?: continue
+            result[id] = (result[id] ?: 0) + item.optInt("quantity", 1)
+        }
+        return result
     }
 
     /** "Áo dài trắng ×2, Cà vạt lụa" from the list's `orderItems` (#401) */

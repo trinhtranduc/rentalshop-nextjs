@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -47,10 +48,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,7 +67,12 @@ import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.data.ProductsV2Api
+import com.anyrent.pos.domain.products.FreeStripDay
 import com.anyrent.pos.domain.products.ProductAccess
+import com.anyrent.pos.domain.products.ProductDetailLogic
+import com.anyrent.pos.domain.products.ProductOrderRowState
+import com.anyrent.pos.domain.products.ProductOrdersChip
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductStock
 import com.anyrent.pos.domain.products.barcodeText
@@ -74,7 +82,7 @@ import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.ui.common.StatusBadge
-import com.anyrent.pos.ui.common.formatDayShort
+import com.anyrent.pos.ui.common.dayKey
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +92,7 @@ import java.time.Instant
 /**
  * Redesigned product detail (#373, flag `newProducts`, board SP-chi-tiet): photos, prices per rental / per day /
  * sale, rented and free units, and the product's orders.
+ * #388: 7-day free strip, chips Sắp tới / Đang thuê / Đã xong, "Tất cả N" opens every order of the product.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -92,11 +101,16 @@ fun ProductDetailScreen(
     onBack: () -> Unit,
     onOpenOrder: (Int) -> Unit,
     onOpenCalendar: (Int) -> Unit,
+    onOpenAllOrders: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     var product by remember { mutableStateOf<Product?>(null) }
-    var orders by remember { mutableStateOf<List<OrderSummary>>(emptyList()) }
+    var chipOrders by remember { mutableStateOf<Map<ProductOrdersChip, List<OrderSummary>>>(emptyMap()) }
+    var chipTotals by remember { mutableStateOf<Map<ProductOrdersChip, Int>>(emptyMap()) }
+    var chip by remember { mutableStateOf(ProductOrdersChip.UPCOMING) }
     var ordersTotal by remember { mutableIntStateOf(0) }
+    var strip by remember { mutableStateOf<List<FreeStripDay>>(emptyList()) }
+    var stripStock by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableIntStateOf(0) }
     var showEdit by remember { mutableStateOf(false) }
@@ -106,12 +120,31 @@ fun ProductDetailScreen(
         withContext(Dispatchers.IO) { ApiClient.get().getProduct(productId) }
             .onSuccess { product = it; error = null }
             .onFailure { if (product == null) error = it.message }
-        withContext(Dispatchers.IO) { ApiClient.get().searchProductOrders(productId, page = 1, limit = 20) }
+        val todayKey = dayKey(Instant.now())
+        val keys = ProductDetailLogic.weekKeys(todayKey)
+        withContext(Dispatchers.IO) { ProductsV2Api.availabilityCalendar(productId, keys.first(), keys.last(), SessionStore.outletId) }
             .onSuccess {
-                orders = it.items
-                ordersTotal = it.total ?: it.items.size
+                strip = ProductDetailLogic.strip(todayKey, it.available)
+                stripStock = it.stock
             }
+        withContext(Dispatchers.IO) { ApiClient.get().searchProductOrders(productId, page = 1, limit = 1) }
+            .onSuccess { ordersTotal = it.total ?: it.items.size }
+        // One call per status of each chip
+        val results = withContext(Dispatchers.IO) {
+            ProductOrdersChip.entries.associateWith { c ->
+                c.statuses.map { status ->
+                    ApiClient.get().searchOrders(page = 1, limit = 20, status = status, productId = productId, sortBy = c.sortBy, sortOrder = c.sortOrder)
+                        .getOrNull()
+                }
+            }
+        }
+        chipOrders = results.mapValues { (c, pages) ->
+            val lists = pages.map { it?.items.orEmpty() }
+            if (c == ProductOrdersChip.DONE) ProductDetailLogic.mergeDone(lists) else lists.flatten()
+        }
+        chipTotals = results.mapValues { (_, pages) -> pages.sumOf { it?.total ?: it?.items?.size ?: 0 } }
     }
+    val orders = chipOrders[chip].orEmpty()
 
     val current = product
     Column(Modifier.fillMaxSize().background(Color.White)) {
@@ -176,25 +209,45 @@ fun ProductDetailScreen(
                         tiles.forEach { (title, value) -> PriceTile(title, value, Modifier.weight(1f)) }
                     }
                 }
-                val counts = ProductStock.counts(current, SessionStore.outletId)
-                Text(
-                    stringResource(R.string.v2_stock_summary, counts.rented, counts.free, counts.total),
-                    fontSize = 14.sp, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 4.dp),
-                )
+                if (strip.isEmpty()) {
+                    val counts = ProductStock.counts(current, SessionStore.outletId)
+                    Text(
+                        stringResource(R.string.v2_stock_summary, counts.rented, counts.free, counts.total),
+                        fontSize = 14.sp, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 4.dp),
+                    )
+                } else {
+                    FreeStrip(strip, Modifier.padding(top = 4.dp))
+                    Text(stringResource(R.string.v2_detail_strip_caption, stripStock ?: 0), fontSize = 12.sp, color = DS.Colors.TextMuted)
+                }
             }
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 
             // Orders
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.v2_detail_orders), fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (ordersTotal > 0) {
-                    Text(stringResource(R.string.v2_detail_orders_count, ordersTotal), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                    Text(
+                        stringResource(R.string.v2_detail_orders_count, ordersTotal), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+                        modifier = Modifier.heightIn(min = 40.dp).clickable { onOpenAllOrders(productId) }.wrapContentHeight(Alignment.CenterVertically),
+                    )
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ProductOrdersChip.entries.forEach { c ->
+                    val title = stringResource(
+                        when (c) {
+                            ProductOrdersChip.UPCOMING -> R.string.v2_detail_chip_upcoming
+                            ProductOrdersChip.RENTING -> R.string.v2_detail_chip_renting
+                            ProductOrdersChip.DONE -> R.string.v2_detail_chip_done
+                        },
+                    )
+                    OrdersChip(title + (chipTotals[c]?.let { " $it" } ?: ""), selected = c == chip) { chip = c }
                 }
             }
             if (orders.isEmpty()) {
                 Text(stringResource(R.string.v2_detail_no_orders), fontSize = 14.sp, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
-            orders.forEach { order -> OrderRow(order) { onOpenOrder(order.id) } }
+            orders.forEach { order -> OrderRow(order, productId, chip) { onOpenOrder(order.id) } }
             Spacer(Modifier.height(24.dp))
         }
 
@@ -267,12 +320,51 @@ private fun PriceTile(title: String, value: Double, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun OrderRow(order: OrderSummary, onClick: () -> Unit) {
-    val dates = if (order.orderType.equals("RENT", ignoreCase = true) && order.pickupPlanAt != null && order.returnPlanAt != null) {
-        listOfNotNull(dayOf(order.pickupPlanAt), dayOf(order.returnPlanAt)).joinToString(" → ")
-    } else {
-        dayOf(order.createdAt).orEmpty()
+private fun FreeStrip(days: List<FreeStripDay>, modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.v2_detail_strip_accessibility) + ": " + days.joinToString(", ") { "${it.day}: ${it.free}" }
+    Row(modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        days.forEach { day ->
+            val (fill, text) = when (day.tone) {
+                FreeStripDay.Tone.NONE -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
+                FreeStripDay.Tone.LOW -> Color(0xFFFFEDD5) to Color(0xFF9A3412)
+                FreeStripDay.Tone.OK -> Color(0xFFD1FAE5) to Color(0xFF065F46)
+            }
+            val shape = RoundedCornerShape(10.dp)
+            Column(
+                Modifier.weight(1f).clip(shape).background(fill)
+                    .then(if (day.isToday) Modifier.border(2.dp, DS.Colors.Text, shape) else Modifier)
+                    .padding(vertical = 5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(day.day, fontSize = 11.sp, color = text)
+                Text(day.free.toString(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = text)
+            }
+        }
     }
+}
+
+@Composable
+private fun OrdersChip(title: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(999.dp)
+    Box(
+        Modifier.height(36.dp).clip(shape)
+            .background(if (selected) DS.Colors.Text else Color.White)
+            .then(if (selected) Modifier else Modifier.border(1.dp, V2Colors.Line, shape))
+            .clickable(onClick = onClick)
+            .semantics { role = Role.Button; this.selected = selected }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            title, fontSize = 13.sp, maxLines = 1,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) Color.White else DS.Colors.Text,
+        )
+    }
+}
+
+@Composable
+private fun OrderRow(order: OrderSummary, productId: Int, chip: ProductOrdersChip, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
@@ -282,12 +374,24 @@ private fun OrderRow(order: OrderSummary, onClick: () -> Unit) {
             Box(Modifier.width(4.dp).height(40.dp).clip(RoundedCornerShape(4.dp)).background(OrderStatusStyle.badgeColor(order.status)))
             Column(Modifier.weight(1f)) {
                 Text(order.customerName.orEmpty(), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("$dates · #${order.orderNumber}", fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(ProductDetailLogic.meta(order, productId), fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            StatusBadge(order.status)
+            when (val state = ProductDetailLogic.rowState(order, chip)) {
+                ProductOrderRowState.Status -> StatusBadge(order.status)
+                else -> {
+                    val (text, color) = when (state) {
+                        ProductOrderRowState.PickupToday -> stringResource(R.string.v2_detail_state_pickup_today) to DS.Status.HandOver.text
+                        is ProductOrderRowState.PickupOn -> stringResource(R.string.v2_detail_state_pickup_on, state.dayMonth) to DS.Colors.TextMuted
+                        is ProductOrderRowState.Late -> pluralStringResource(R.plurals.orders_late_days, state.days, state.days) to V2Colors.Danger
+                        ProductOrderRowState.ReturnToday -> stringResource(R.string.v2_detail_state_return_today) to DS.Status.HandOver.text
+                        is ProductOrderRowState.ReturnOn -> stringResource(R.string.v2_detail_state_return_on, state.dayMonth) to DS.Colors.TextMuted
+                        ProductOrderRowState.Status -> "" to DS.Colors.TextMuted
+                    }
+                    Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+                }
+            }
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
 }
 
-private fun dayOf(iso: String?): String? = iso?.let { runCatching { formatDayShort(Instant.parse(it)) }.getOrNull() }

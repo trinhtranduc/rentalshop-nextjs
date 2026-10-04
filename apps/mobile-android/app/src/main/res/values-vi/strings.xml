@@ -570,7 +570,7 @@
     <string name="v2_detail_edit">Sửa</string>
     <string name="v2_detail_deposit">cọc %1$s</string>
     <string name="v2_detail_orders">Đơn của sản phẩm</string>
-    <string name="v2_detail_orders_count">Tất cả %1$d</string>
+    <string name="v2_detail_orders_count">Tất cả %1$d ›</string>
     <string name="v2_detail_no_orders">Chưa có đơn nào</string>
     <string name="v2_detail_free_calendar">Lịch trống</string>
     <string name="v2_detail_add_to_cart">Thêm vào giỏ</string>
@@ -647,12 +647,10 @@
     <string name="orders_section_late">Trễ hạn</string>
     <string name="orders_section_today">Hôm nay</string>
     <string name="orders_section_tomorrow">Ngày mai</string>
-    <string name="orders_late_days">Trễ %1$d ngày</string>
-    <string name="orders_not_prepared">Chưa soạn</string>
+    <plurals name="orders_late_days">
+        <item quantity="other">Trễ %1$d ngày</item>
+    </plurals>
     <string name="orders_hand_over">Giao</string>
-    <string name="orders_take_back">Nhận lại</string>
-    <string name="orders_collect">Thu %1$s</string>
-    <string name="orders_refund">Trả cọc %1$s</string>
     <string name="nothing_to_do_today">Không có việc hôm nay</string>
     <string name="retry">Thử lại</string>
     <string name="something_went_wrong">Đã có lỗi xảy ra</string>
@@ -665,8 +663,12 @@
     <string name="detail_progress_booked">Đã đặt %1$s</string>
     <string name="detail_progress_hand_over">Giao %1$s</string>
     <string name="detail_progress_return">Trả %1$s</string>
-    <string name="detail_late_return">Trễ hạn trả %1$d ngày</string>
-    <string name="detail_late_hand_over">Trễ giao %1$d ngày</string>
+    <plurals name="detail_late_return">
+        <item quantity="other">Trễ hạn trả %1$d ngày</item>
+    </plurals>
+    <plurals name="detail_late_hand_over">
+        <item quantity="other">Trễ giao %1$d ngày</item>
+    </plurals>
     <string name="detail_due_on">Hạn %1$s</string>
     <string name="detail_schedule">Lịch thuê</string>
     <string name="detail_sale_day">Ngày bán</string>
@@ -702,7 +704,9 @@
     <string name="detail_late_fee_days">Phí trễ (%1$d ngày)</string>
     <string name="detail_photos_count">%1$d/%2$d ảnh</string>
     <string name="detail_hand_over_subtitle">%1$s · %2$s · %3$s</string>
-    <string name="detail_return_late_subtitle">%1$s · %2$s · trả trễ %3$d ngày</string>
+    <plurals name="detail_return_late_subtitle">
+        <item quantity="other">%1$s · %2$s · trả trễ %3$d ngày</item>
+    </plurals>
 
     <!-- #374 Calendar, overview, settings -->
     <string name="calendar_v2_title">Lịch</string>
@@ -940,4 +944,14 @@
     <string name="authv2_error_account_deactivated">Tài khoản đã bị vô hiệu hóa.</string>
     <string name="authv2_error_merchant_duplicate">Đã có cửa hàng dùng email hoặc số điện thoại này.</string>
     <string name="authv2_error_rate_limited">Bạn gửi quá nhiều lần. Vui lòng thử lại sau.</string>
+    <!-- #388 phase 7 gaps -->
+    <string name="v2_detail_chip_upcoming">Sắp tới</string>
+    <string name="v2_detail_chip_renting">Đang thuê</string>
+    <string name="v2_detail_chip_done">Đã xong</string>
+    <string name="v2_detail_strip_caption">Số còn trống mỗi ngày · cửa hàng có %1$d bộ</string>
+    <string name="v2_detail_strip_accessibility">Còn trống 7 ngày tới</string>
+    <string name="v2_detail_state_pickup_today">Giao hôm nay</string>
+    <string name="v2_detail_state_pickup_on">Giao %1$s</string>
+    <string name="v2_detail_state_return_today">Trả hôm nay</string>
+    <string name="v2_detail_state_return_on">Trả %1$s</string>
 </resources>

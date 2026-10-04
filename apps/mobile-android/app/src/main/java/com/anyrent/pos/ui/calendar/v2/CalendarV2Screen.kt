@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -287,7 +288,7 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
         Column(horizontalAlignment = Alignment.End) {
             Text(formatMoneyVnd(row.order.totalAmount), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             if (row.lateDays > 0) {
-                Text(stringResource(R.string.orders_late_days, row.lateDays), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger)
+                Text(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger)
             }
         }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = OtherMonth, modifier = Modifier.size(DS.Icon.Sm))

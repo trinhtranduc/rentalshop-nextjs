@@ -44,6 +44,20 @@ object SettingsRows {
         ).filter { it.items.isNotEmpty() }
     }
 
+    /** The list whose `total` (with `limit=1`) shows next to a row (#388) */
+    fun countPath(item: SettingsItem): String? = when (item) {
+        SettingsItem.CUSTOMERS -> "/api/customers?limit=1&page=1"
+        SettingsItem.USERS -> "/api/users?limit=1&page=1"
+        else -> null
+    }
+
+    /** Customers answer `data.total`, users `pagination.total` */
+    fun listTotal(json: org.json.JSONObject): Int? {
+        json.optJSONObject("data")?.takeIf { it.has("total") }?.let { return it.optInt("total") }
+        json.optJSONObject("pagination")?.takeIf { it.has("total") }?.let { return it.optInt("total") }
+        return null
+    }
+
     /** "MT" from "Merchant Tran"; one letter for one word; "?" when empty */
     fun initials(name: String): String {
         val words = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
