@@ -127,9 +127,6 @@ final class OrderRowCell: UITableViewCell {
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, hidesMoney: Bool) {
         orderNumberLabel.text = "#\(work.orderNumber)"
-        if work.lateDays > 0 {
-            addPill(String(format: "Late %d days".localized(), work.lateDays), DS.Status.late)
-        }
         if kind == .handOver && !work.isReadyToDeliver {
             addPill("Not prepared".localized(), DS.Status.waiting)
         }
@@ -139,7 +136,7 @@ final class OrderRowCell: UITableViewCell {
         detailLabel.text = work.productNames
         detailLabel.isHidden = work.productNames.isEmpty
         let planned = kind == .handOver ? work.pickupPlanAt : work.returnPlanAt
-        dateLabel.text = planned.map { DayFormatter.short($0) } ?? ""
+        setDate(planned.map { DayFormatter.short($0) } ?? "", lateDays: work.lateDays)
 
         if hidesMoney {
             amountLabel.text = nil
@@ -160,9 +157,6 @@ final class OrderRowCell: UITableViewCell {
             addPill(order.orderType == .rent ? "Order_Type_Rent".localized() : "Order_Type_Sale".localized(),
                     DS.Pill(text: DS.Color.textMuted, fill: DS.Color.divider))
         }
-        if lateDays > 0 {
-            addPill(String(format: "Late %d days".localized(), lateDays), DS.Status.late)
-        }
         let status = OrderStatusPillLabel()
         status.apply(status: order.status)
         pillStack.addArrangedSubview(status)
@@ -174,12 +168,27 @@ final class OrderRowCell: UITableViewCell {
         if order.orderType == .rent {
             let from = order.pickupPlanAt.map { DayFormatter.short($0) } ?? "—"
             let to = order.returnPlanAt.map { DayFormatter.short($0) } ?? "—"
-            dateLabel.text = "\(from) → \(to)"
+            setDate("\(from) → \(to)", lateDays: lateDays)
         } else {
-            dateLabel.text = DayFormatter.short(order.createdAt)
+            setDate(DayFormatter.short(order.createdAt), lateDays: 0)
         }
         amountLabel.textColor = DS.Color.text
         amountLabel.text = hidesMoney ? nil : MoneyFormatter.format(order.totalAmount)
+    }
+
+    /// Date line; "Trễ N ngày" follows in red (a note, not a status)
+    private func setDate(_ date: String, lateDays: Int) {
+        let text = NSMutableAttributedString(string: date, attributes: [
+            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+            NSAttributedString.Key.font: Utils.regularFont(size: 13),
+        ])
+        if lateDays > 0 {
+            text.append(NSAttributedString(string: (date.isEmpty ? "" : " · ") + String(format: "Late %d days".localized(), lateDays), attributes: [
+                NSAttributedString.Key.foregroundColor: DS.Status.late.text,
+                NSAttributedString.Key.font: Utils.boldFont(size: 13),
+            ]))
+        }
+        dateLabel.attributedText = text
     }
 
     private func bindCustomer(name: String?, phone: String?) {

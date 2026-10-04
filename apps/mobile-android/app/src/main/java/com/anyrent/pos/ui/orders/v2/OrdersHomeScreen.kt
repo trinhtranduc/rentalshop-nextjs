@@ -52,7 +52,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -275,7 +278,6 @@ private fun TopLine(orderNumber: String, pills: @Composable () -> Unit) {
 @Composable
 private fun WorkRowContent(work: TodayWorkRow, kind: WorkKind, onCall: (String) -> Unit) {
     TopLine(work.orderNumber) {
-        if (work.lateDays > 0) Pill(stringResource(R.string.orders_late_days, work.lateDays), DS.Status.Late)
         if (kind == WorkKind.HAND_OVER && !work.isReadyToDeliver) {
             Pill(stringResource(R.string.orders_not_prepared), DS.Status.Waiting)
         }
@@ -301,7 +303,7 @@ private fun WorkRowContent(work: TodayWorkRow, kind: WorkKind, onCall: (String) 
         work.amountDue > 0 -> stringResource(R.string.orders_collect, formatMoneyVnd(work.amountDue)) to DS.Colors.Text
         else -> null to DS.Colors.Text
     }
-    BottomLine(planned?.let { formatDayShort(it) }.orEmpty(), amount, color)
+    BottomLine(planned?.let { formatDayShort(it) }.orEmpty(), amount, color, work.lateDays)
 }
 
 @Composable
@@ -315,7 +317,6 @@ private fun OrderRowContent(row: OrdersRow.Order, showsType: Boolean, onCall: (S
                 DS.Pill(DS.Colors.TextMuted, DS.Colors.Divider),
             )
         }
-        if (row.lateDays > 0) Pill(stringResource(R.string.orders_late_days, row.lateDays), DS.Status.Late)
         StatusBadge(order.status)
     }
     CustomerLine(order.customerName, order.customerPhone, onCall)
@@ -331,7 +332,7 @@ private fun OrderRowContent(row: OrdersRow.Order, showsType: Boolean, onCall: (S
     } else {
         OrdersHomeLogic.parseInstant(order.createdAt)?.let { formatDayShort(it) }.orEmpty()
     }
-    BottomLine(date, formatMoneyVnd(order.totalAmount), DS.Colors.Text)
+    BottomLine(date, formatMoneyVnd(order.totalAmount), DS.Colors.Text, row.lateDays)
 }
 
 @Composable
@@ -371,10 +372,19 @@ private fun CustomerLine(name: String?, phone: String?, onCall: (String) -> Unit
 }
 
 @Composable
-private fun BottomLine(date: String, amount: String?, amountColor: Color) {
+private fun BottomLine(date: String, amount: String?, amountColor: Color, lateDays: Int = 0) {
+    // "Trễ N ngày" follows the date in red (a note, not a status)
+    val late = if (lateDays > 0) stringResource(R.string.orders_late_days, lateDays) else null
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            date,
+            buildAnnotatedString {
+                append(date)
+                if (late != null) {
+                    withStyle(SpanStyle(color = DS.Status.Late.text, fontWeight = FontWeight.Bold)) {
+                        append(if (date.isEmpty()) late else " · $late")
+                    }
+                }
+            },
             style = MaterialTheme.typography.bodySmall,
             color = DS.Colors.TextMuted,
             modifier = Modifier.weight(1f),
