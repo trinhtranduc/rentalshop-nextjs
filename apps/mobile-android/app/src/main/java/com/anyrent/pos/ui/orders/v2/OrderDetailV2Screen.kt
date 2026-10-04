@@ -26,16 +26,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -195,7 +196,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back), modifier = Modifier.size(DS.Icon.Lg))
             }
             Text(
                 detail?.summary?.orderNumber?.let { "#$it" } ?: stringResource(R.string.order_detail),
@@ -207,11 +208,11 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
             )
             if (detail != null && actions != null) {
                 IconButton(onClick = { print(detail) }) {
-                    Icon(Icons.Default.Print, contentDescription = stringResource(R.string.detail_print_receipt))
+                    Icon(Icons.Outlined.Print, contentDescription = stringResource(R.string.detail_print_receipt), modifier = Modifier.size(DS.Icon.Md))
                 }
                 val menu = buildList {
                     if (actions.canEdit) {
-                        add(AppMenuAction(stringResource(R.string.edit_order), Icons.Default.Edit, {
+                        add(AppMenuAction(stringResource(R.string.edit_order), Icons.Outlined.Edit, {
                             if (!editing) {
                                 editing = true
                                 scope.launch {
@@ -223,15 +224,15 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                             }
                         }))
                     }
-                    add(AppMenuAction(stringResource(R.string.detail_edit_notes), Icons.Default.EditNote, { openNotes(detail) }))
-                    add(AppMenuAction(stringResource(R.string.share_order), Icons.Default.Share, {
+                    add(AppMenuAction(stringResource(R.string.detail_edit_notes), Icons.Outlined.EditNote, { openNotes(detail) }))
+                    add(AppMenuAction(stringResource(R.string.share_order), Icons.Outlined.Share, {
                         scope.launch { runCatching { shareOrderReceipt(context, detail) }.onFailure { toast(it.message) } }
                     }))
                     if (actions.canCancel) {
-                        add(AppMenuAction(stringResource(R.string.cancel_order), Icons.Default.Cancel, { confirmCancel = true }, destructive = true))
+                        add(AppMenuAction(stringResource(R.string.cancel_order), Icons.Outlined.Cancel, { confirmCancel = true }, destructive = true))
                     }
                     if (actions.canDelete) {
-                        add(AppMenuAction(stringResource(R.string.delete_order), Icons.Default.Delete, { confirmDelete = true }, destructive = true))
+                        add(AppMenuAction(stringResource(R.string.delete_order), Icons.Outlined.Delete, { confirmDelete = true }, destructive = true))
                     }
                 }
                 AppOverflowMenuAnchor(
@@ -239,6 +240,9 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                     actions = menu,
                     expanded = menuOpen,
                     onExpandedChange = { menuOpen = it },
+                    icon = Icons.Outlined.MoreHoriz,
+                    iconSize = DS.Icon.Md,
+                    iconTint = DS.Colors.Text,
                 )
             }
         }
@@ -439,7 +443,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon(Icons.Default.Warning, contentDescription = null, tint = DS.Status.Late.text)
+                Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = DS.Status.Late.text, modifier = Modifier.size(DS.Icon.Md))
                 Column {
                     Text(
                         stringResource(if (returning) R.string.detail_late_return else R.string.detail_late_hand_over, lateDays),
@@ -465,7 +469,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Divider, contentColor = DS.Colors.Text),
             ) {
-                Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Outlined.Phone, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.size(6.dp))
                 Text(summary.customerPhone.orEmpty(), fontWeight = FontWeight.SemiBold)
             }
@@ -778,7 +782,7 @@ internal fun Thumb(model: Any?, size: Dp, onClick: (() -> Unit)? = null) {
         .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
     Box(if (onClick != null) base.clickable(onClick = onClick) else base, contentAlignment = Alignment.Center) {
         if (model == null) {
-            Icon(Icons.Default.Image, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(20.dp))
+            Icon(Icons.Outlined.Image, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(DS.Icon.Md))
         } else {
             AsyncImage(
                 model = model,

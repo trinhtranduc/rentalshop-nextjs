@@ -43,7 +43,7 @@ final class CartV2ViewController: BaseViewControler {
     private func buildLayout() {
         let header = UIView()
         let back = UIButton(type: .system)
-        back.setImage(UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)), for: .normal)
+        back.setImage(DS.symbol("chevron.left", DS.Icon.lg, weight: .semibold), for: .normal)
         back.tintColor = DS.Color.text
         back.accessibilityLabel = "products.cart.back".localized()
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)

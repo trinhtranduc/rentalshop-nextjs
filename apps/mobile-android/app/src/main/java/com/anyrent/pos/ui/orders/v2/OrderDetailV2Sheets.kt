@@ -16,9 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -223,7 +223,7 @@ internal fun NotesSheet(
                     onClick = onAdd,
                     modifier = Modifier.size(56.dp).background(DS.Colors.Divider, RoundedCornerShape(10.dp)),
                 ) {
-                    Icon(Icons.Default.AddPhotoAlternate, contentDescription = stringResource(R.string.add_photos))
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = stringResource(R.string.add_photos), tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Md))
                 }
             }
         }
@@ -243,7 +243,7 @@ private fun RemovableThumb(model: Any, onOpen: () -> Unit, onRemove: () -> Unit)
                 .size(24.dp)
                 .background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(12.dp)),
         ) {
-            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.delete), modifier = Modifier.size(16.dp))
+            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.delete), modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -331,7 +331,7 @@ private fun MethodPicker(
         }
         if (payment.selectedMethod == PaymentMethod.TRANSFER) {
             OutlinedButton(onClick = onShowQr, enabled = !working && !payment.loadingQr, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.QrCode2, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(DS.Icon.Sm))
                 Text(
                     if (payment.loadingQr) stringResource(R.string.loading) else stringResource(R.string.show_payment_qr),
                     modifier = Modifier.padding(start = 8.dp),

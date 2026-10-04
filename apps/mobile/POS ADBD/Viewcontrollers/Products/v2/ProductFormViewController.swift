@@ -90,7 +90,7 @@ final class ProductFormViewController: BaseViewControler {
     private func buildLayout() {
         let header = UIView()
         let close = UIButton(type: .system)
-        close.setImage(UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)), for: .normal)
+        close.setImage(DS.symbol("xmark", DS.Icon.lg, weight: .semibold), for: .normal)
         close.tintColor = DS.Color.text
         close.accessibilityLabel = "Close".localized()
         close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
@@ -173,7 +173,7 @@ final class ProductFormViewController: BaseViewControler {
         barcodeField.autocapitalizationType = .allCharacters
         barcodeField.addTarget(self, action: #selector(barcodeEdited), for: .editingChanged)
         let scan = UIButton(type: .system)
-        scan.setImage(UIImage(systemName: "barcode.viewfinder"), for: .normal)
+        scan.setImage(DS.symbol("barcode.viewfinder", DS.Icon.md), for: .normal)
         scan.tintColor = DS.Color.text
         scan.accessibilityLabel = "common.action.scanBarcode".localized()
         scan.addTarget(self, action: #selector(scanBarcode), for: .touchUpInside)
@@ -353,7 +353,7 @@ final class ProductFormViewController: BaseViewControler {
         }
         if photos.count < ProductFormValidator.maxPhotos {
             let add = UIButton(type: .system)
-            add.setImage(UIImage(systemName: "camera"), for: .normal)
+            add.setImage(DS.symbol("camera", DS.Icon.lg), for: .normal)
             add.setTitle("products.form.addPhoto".localized(), for: .normal)
             add.titleLabel?.font = Utils.boldFont(size: 12)
             add.tintColor = DS.Color.primary

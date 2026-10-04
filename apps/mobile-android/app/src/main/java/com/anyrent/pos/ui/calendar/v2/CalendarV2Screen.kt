@@ -22,8 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -96,7 +96,7 @@ fun CalendarV2Screen(
                 ) {
                     Text(stringResource(R.string.calendar_v2_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.moveMonth(-1) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.calendar_v2_prev_month), tint = DS.Colors.Text)
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.calendar_v2_prev_month), tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
                     }
                     Text(
                         stringResource(R.string.calendar_v2_month, state.month.monthValue, state.month.year),
@@ -104,7 +104,7 @@ fun CalendarV2Screen(
                         textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 108.dp),
                     )
                     IconButton(onClick = { viewModel.moveMonth(1) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.calendar_v2_next_month), tint = DS.Colors.Text)
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = stringResource(R.string.calendar_v2_next_month), tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
                     }
                 }
             }
@@ -290,6 +290,6 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                 Text(stringResource(R.string.orders_late_days, row.lateDays), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger)
             }
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = OtherMonth, modifier = Modifier.width(18.dp))
+        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = OtherMonth, modifier = Modifier.size(DS.Icon.Sm))
     }
 }
