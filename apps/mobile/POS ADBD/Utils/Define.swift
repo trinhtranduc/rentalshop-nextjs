@@ -314,6 +314,7 @@ extension OrderStatus {
         case .returned:  return .statusDoneFill
         case .completed: return .statusDoneFill
         case .cancelled: return .statusCancelledFill
+        case .unknown:   return .statusDraftFill
         }
     }
 

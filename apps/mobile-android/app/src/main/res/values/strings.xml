@@ -422,6 +422,9 @@
     <string name="status_returned">Returned</string>
     <string name="status_completed">Completed</string>
     <string name="status_cancelled">Cancelled</string>
+    <string name="update_required_title">Update required</string>
+    <string name="update_required_message">A new version of AnyRent is needed to keep working. Please update the app.</string>
+    <string name="update_required_button">Update</string>
     <string name="order_search_hint">Order number, name, phone number…</string>
     <string name="phone_visible">Phone number shown</string>
     <string name="item_count">%1$d items</string>

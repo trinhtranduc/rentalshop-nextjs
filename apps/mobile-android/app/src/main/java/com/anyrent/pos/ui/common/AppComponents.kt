@@ -421,13 +421,9 @@ fun AppCloseIconButton(
 
 @Composable
 fun StatusBadge(status: String, modifier: Modifier = Modifier) {
-    val background = when (status.uppercase()) {
-        "RESERVED" -> Color(0xFFE83F48)
-        "PICKUPED" -> Color(0xFFE88A19)
-        "RETURNED", "COMPLETED" -> Color(0xFF23844A)
-        "CANCELLED" -> Color(0xFF8E2930)
-        else -> MaterialTheme.colorScheme.secondary
-    }
+    val background = OrderStatusStyle.badgeColor(status)
+    // Translated label, never the raw API value (#370)
+    val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
     // Match iOS OrderStatusBadgeMetrics: ~10sp bold, 9×5 insets, 12pt corner, min ~26dp.
     Box(
         modifier = modifier
@@ -437,7 +433,7 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            status,
+            label,
             color = Color.White,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 10.sp,

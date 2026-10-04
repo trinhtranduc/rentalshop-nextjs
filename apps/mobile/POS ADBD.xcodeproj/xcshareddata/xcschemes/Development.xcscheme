@@ -47,6 +47,16 @@
                ReferencedContainer = "container:POS ADBD.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "166202CF0C827D08CD5A4371"
+               BuildableName = "POS ADBDTests.xctest"
+               BlueprintName = "POS ADBDTests"
+               ReferencedContainer = "container:POS ADBD.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

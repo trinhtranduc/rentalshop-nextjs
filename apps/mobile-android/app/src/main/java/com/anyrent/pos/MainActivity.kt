@@ -5,27 +5,43 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.push.DraftOrderReminder
+import com.anyrent.pos.ui.appconfig.AppConfigGate
+import com.anyrent.pos.ui.appconfig.AppConfigUiState
+import com.anyrent.pos.ui.appconfig.AppConfigViewModel
 import com.anyrent.pos.ui.navigation.AnyRentNavHost
 import com.anyrent.pos.ui.theme.AnyRentTheme
 
 class MainActivity : ComponentActivity() {
     private var launchOrderId: Int? = null
 
+    // Minimum version and screen flags from the API (#370)
+    private val appConfigViewModel: AppConfigViewModel by viewModels {
+        AppConfigViewModel.Factory((application as AnyRentApp).container.appConfigRepository, BuildConfig.VERSION_NAME)
+    }
+
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Keep the splash until the first app-config answer, at most 2 s (a slow network never blocks the app)
+        val splashStartedAt = SystemClock.elapsedRealtime()
+        splash.setKeepOnScreenCondition {
+            appConfigViewModel.state.value is AppConfigUiState.Loading &&
+                SystemClock.elapsedRealtime() - splashStartedAt < 2_000
+        }
         enableEdgeToEdge()
         launchOrderId = intent.getIntExtra(EXTRA_ORDER_ID, -1).takeIf { it > 0 }
             ?: intent.data?.lastPathSegment?.toIntOrNull()
@@ -39,7 +55,9 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             AnyRentTheme {
-                AnyRentNavHost(startOrderId = launchOrderId)
+                AppConfigGate(appConfigViewModel) {
+                    AnyRentNavHost(startOrderId = launchOrderId)
+                }
             }
         }
     }
@@ -47,6 +65,12 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         DraftOrderReminder.onAppForegrounded()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // First check at launch, again each time the app comes back (a minimum version can change meanwhile)
+        appConfigViewModel.refresh()
     }
 
     override fun onStop() {

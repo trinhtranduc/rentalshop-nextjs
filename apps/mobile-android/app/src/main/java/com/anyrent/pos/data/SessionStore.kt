@@ -30,10 +30,16 @@ object SessionStore {
     private const val KEY_DEVICE_ID = "deviceId"
     private const val KEY_PENDING_ORDER_ID = "pendingOrderId"
     private const val KEY_ONBOARDING = "onboardingDone"
+    private const val KEY_APP_CONFIG = "appConfig"
 
     private lateinit var prefs: SharedPreferences
     private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val sessionExpired = _sessionExpired.asSharedFlow()
+
+    /** Last good app config (#370) as JSON; kept across logouts so a forced update survives them */
+    var appConfigJson: String?
+        get() = prefs.getString(KEY_APP_CONFIG, null)
+        set(value) { prefs.edit().putString(KEY_APP_CONFIG, value).apply() }
 
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
