@@ -29,7 +29,7 @@ final class CalendarV2ViewController: BaseViewControler {
 
     private let listView = UITableView(frame: .zero, style: .plain)
     private let headerContainer = UIView()
-    private let monthLabel = V2.label(size: 15, weight: .bold)
+    private let monthLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     private let gridStack = UIStackView()
 
     private var todayKey: String { DayFormatter.key(Date()) }
@@ -76,7 +76,7 @@ final class CalendarV2ViewController: BaseViewControler {
     override func setupUI() {
         view.backgroundColor = DS.Color.surface
 
-        let title = V2.label("calendar.v2.title".localized(), size: 24, weight: .bold)
+        let title = V2.label("calendar.v2.title".localized(), size: DS.TextSize.title, weight: .bold)
         let previous = arrowButton("chevron.left", label: "calendar.v2.prevMonth".localized(), action: #selector(previousMonth))
         let next = arrowButton("chevron.right", label: "calendar.v2.nextMonth".localized(), action: #selector(nextMonth))
         monthLabel.textAlignment = .center
@@ -86,7 +86,7 @@ final class CalendarV2ViewController: BaseViewControler {
         titleRow.spacing = 4
 
         let weekdays = UIStackView(arrangedSubviews: "calendar.v2.weekdays".localized().split(separator: ",").map {
-            let label = V2.label(String($0), size: 12, color: DS.Color.textMuted)
+            let label = V2.label(String($0), size: DS.TextSize.pill, color: DS.Color.textMuted) // board Lich: weekday header 12
             label.textAlignment = .center
             return label
         })
@@ -179,7 +179,7 @@ final class CalendarV2ViewController: BaseViewControler {
     }
 
     private func legendItem(_ mark: UIView, _ text: String) -> UIView {
-        let stack = UIStackView(arrangedSubviews: [mark, V2.label(text, size: 12, color: DS.Color.textMuted)])
+        let stack = UIStackView(arrangedSubviews: [mark, V2.label(text, size: DS.TextSize.pill, color: DS.Color.textMuted)]) // board Lich: legend 12
         stack.spacing = 5
         stack.alignment = .center
         return stack
@@ -300,12 +300,12 @@ final class CalendarV2ViewController: BaseViewControler {
         let summary = NSMutableAttributedString()
         if let late = parts.late {
             summary.append(NSAttributedString(string: late + " · ", attributes: [
-                NSAttributedString.Key.font: Utils.boldFont(size: 13),
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
                 NSAttributedString.Key.foregroundColor: V2.danger,
             ]))
         }
         summary.append(NSAttributedString(string: parts.rest, attributes: [
-            NSAttributedString.Key.font: Utils.regularFont(size: 13),
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
             NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
         ]))
         return (title, summary)
@@ -339,7 +339,7 @@ extension CalendarV2ViewController: UITableViewDataSource, UITableViewDelegate {
         let texts = dayHeaderTexts()
         let view = UIView()
         view.backgroundColor = V2.sectionFill
-        let title = V2.label(texts.title, size: 13, weight: .bold, color: UIColor(hexString: "334155"))
+        let title = V2.label(texts.title, size: DS.TextSize.secondary, weight: .bold, color: UIColor(hexString: "334155"))
         let summary = UILabel()
         summary.attributedText = texts.summary
         summary.textAlignment = .right
@@ -448,15 +448,15 @@ final class CalendarDayButton: UIControl {
         if cell.isToday && cell.inMonth {
             background.backgroundColor = DS.Color.text
             numberLabel.textColor = .white
-            numberLabel.font = Utils.boldFont(size: 14)
+            numberLabel.font = Utils.boldFont(size: DS.TextSize.body)
         } else if selected && cell.inMonth {
             background.backgroundColor = DS.Status.handOver.fill
             numberLabel.textColor = DS.Status.handOver.text
-            numberLabel.font = Utils.boldFont(size: 14)
+            numberLabel.font = Utils.boldFont(size: DS.TextSize.body)
         } else {
             background.backgroundColor = .clear
             numberLabel.textColor = cell.inMonth ? DS.Color.text : UIColor(hexString: "94A3B8")
-            numberLabel.font = Utils.regularFont(size: 14)
+            numberLabel.font = Utils.regularFont(size: DS.TextSize.body)
         }
         if selected && cell.inMonth && cell.isToday {
             background.layer.borderWidth = 0
@@ -471,14 +471,14 @@ final class CalendarDayButton: UIControl {
 final class CalendarDayRowCell: UITableViewCell {
     static let reuseId = "CalendarDayRowCell"
     private let tagLabel = PaddedLabel()
-    private let nameLabel = V2.label(size: 15, weight: .bold)
-    private let itemsLabel = V2.label(size: 13, color: UIColor(hexString: "334155"))
-    private let totalLabel = V2.label(size: 15, weight: .bold)
-    private let noteLabel = V2.label(size: 12, weight: .bold, color: V2.danger)
+    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    private let itemsLabel = V2.label(size: DS.TextSize.body, color: UIColor(hexString: "334155"))
+    private let totalLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    private let noteLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: V2.danger)
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        tagLabel.font = Utils.boldFont(size: 11)
+        tagLabel.font = Utils.boldFont(size: DS.TextSize.pill)
         tagLabel.layer.cornerRadius = 6
         tagLabel.layer.masksToBounds = true
         tagLabel.setContentHuggingPriority(.required, for: .horizontal)
@@ -494,7 +494,7 @@ final class CalendarDayRowCell: UITableViewCell {
         nameRow.alignment = .center
         let left = UIStackView(arrangedSubviews: [nameRow, itemsLabel])
         left.axis = .vertical
-        left.spacing = 2
+        left.spacing = DS.Gap.lineTight
         left.alignment = .leading
         let right = UIStackView(arrangedSubviews: [totalLabel, noteLabel])
         right.axis = .vertical
@@ -568,7 +568,7 @@ final class PaddedLabel: UILabel {
 final class CalendarDayStateCell: UITableViewCell {
     static let reuseId = "CalendarDayStateCell"
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
-    private let messageLabel = V2.label(size: 15, color: DS.Color.textMuted, lines: 0)
+    private let messageLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)

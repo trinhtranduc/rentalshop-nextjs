@@ -42,7 +42,7 @@ enum V2 {
             make.top.leading.trailing.equalToSuperview()
             make.height.equalTo(8)
         }
-        let label = V2.label(title.uppercased(), size: 13, weight: .bold, color: DS.Color.textMuted)
+        let label = V2.label(title.uppercased(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
         view.addSubview(label)
         label.snp.makeConstraints { make in
             make.top.equalTo(top.snp.bottom).offset(10)
@@ -70,7 +70,7 @@ enum V2 {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 16)
+        button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         button.backgroundColor = DS.Color.primary
         button.layer.cornerRadius = 14
         button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
@@ -82,7 +82,7 @@ enum V2 {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
         button.setTitleColor(DS.Color.text, for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 15)
+        button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         button.layer.cornerRadius = 14
         button.layer.borderWidth = 1
         button.layer.borderColor = border.cgColor
@@ -141,7 +141,7 @@ final class V2Segmented: UIControl {
         for (index, title) in titles.enumerated() {
             let button = UIButton(type: .custom)
             button.setTitle(title, for: .normal)
-            button.titleLabel?.font = Utils.mediumFont(size: compact ? 13 : 14)
+            button.titleLabel?.font = Utils.mediumFont(size: compact ? DS.TextSize.secondary : DS.TextSize.body)
             button.layer.cornerRadius = compact ? 7 : 8
             button.tag = index
             button.contentEdgeInsets = UIEdgeInsets(top: 0, left: compact ? 10 : 16, bottom: 0, right: compact ? 10 : 16)
@@ -161,7 +161,7 @@ final class V2Segmented: UIControl {
             let on = button.tag == index
             button.backgroundColor = on ? .white : .clear
             button.setTitleColor(on ? DS.Color.text : DS.Color.textMuted, for: .normal)
-            button.titleLabel?.font = on ? Utils.boldFont(size: compact ? 13 : 14) : Utils.regularFont(size: compact ? 13 : 14)
+            button.titleLabel?.font = on ? Utils.boldFont(size: compact ? DS.TextSize.secondary : DS.TextSize.body) : Utils.regularFont(size: compact ? DS.TextSize.secondary : DS.TextSize.body)
             button.layer.shadowColor = UIColor.black.cgColor
             button.layer.shadowOpacity = on ? 0.08 : 0
             button.layer.shadowRadius = 1
@@ -181,7 +181,7 @@ final class V2Segmented: UIControl {
 final class V2Stepper: UIView {
     private let minus = UIButton(type: .system)
     private let plus = UIButton(type: .system)
-    private let valueLabel = V2.label(size: 16, weight: .bold)
+    private let valueLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     var minimum = 0
     var value = 1 { didSet { valueLabel.text = "\(value)"; minus.isEnabled = value > minimum } }
     var onChange: ((Int) -> Void)?
@@ -222,8 +222,8 @@ final class V2Stepper: UIView {
 
 /// Tappable row "title ……… value ›"
 final class V2ValueRow: UIControl {
-    let titleLabel = V2.label(size: 15)
-    let valueLabel = V2.label(size: 15, color: DS.Color.textMuted)
+    let titleLabel = V2.label(size: DS.TextSize.body)
+    let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
 
     init(title: String, chevron: Bool = true) {
         super.init(frame: .zero)

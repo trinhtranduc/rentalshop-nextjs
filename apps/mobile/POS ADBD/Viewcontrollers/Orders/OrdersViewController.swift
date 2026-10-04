@@ -115,9 +115,9 @@ final class OrdersViewController: BaseViewControler {
     }
 
     private func buildHeader() -> UIView {
-        titleLabel.font = Utils.boldFont(size: 24)
+        titleLabel.font = Utils.boldFont(size: DS.TextSize.title)
         titleLabel.textColor = DS.Color.text
-        modeButton.titleLabel?.font = Utils.boldFont(size: 14)
+        modeButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         modeButton.setTitleColor(DS.Color.text, for: .normal)
         modeButton.layer.cornerRadius = 10
         modeButton.layer.borderWidth = 1
@@ -136,11 +136,11 @@ final class OrdersViewController: BaseViewControler {
         let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
         glass.tintColor = DS.Color.textMuted
         glass.contentMode = .center
-        searchField.font = Utils.regularFont(size: 15)
+        searchField.font = Utils.regularFont(size: DS.TextSize.body)
         searchField.textColor = DS.Color.text
         searchField.attributedPlaceholder = NSAttributedString(string: "orders.v2.search.placeholder".localized(), attributes: [
             NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
-            NSAttributedString.Key.font: Utils.regularFont(size: 15),
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
         ])
         searchField.accessibilityLabel = "orders.v2.search.placeholder".localized()
         searchField.autocorrectionType = .no
@@ -175,7 +175,7 @@ final class OrdersViewController: BaseViewControler {
         searchBox.snp.makeConstraints { make in make.height.equalTo(44) }
         cancelButton.setTitle("orders.v2.search.cancel".localized(), for: .normal)
         cancelButton.setTitleColor(DS.Color.primary, for: .normal)
-        cancelButton.titleLabel?.font = Utils.mediumFont(size: 15)
+        cancelButton.titleLabel?.font = Utils.mediumFont(size: DS.TextSize.body)
         cancelButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
         cancelButton.addTarget(self, action: #selector(cancelSearchTapped), for: .touchUpInside)
         cancelButton.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -241,7 +241,7 @@ final class OrdersViewController: BaseViewControler {
         }
         scroll.snp.makeConstraints { make in make.height.equalTo(36) }
 
-        sortButton.titleLabel?.font = Utils.boldFont(size: 13)
+        sortButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
         sortButton.setTitleColor(DS.Color.primary, for: .normal)
         sortButton.tintColor = DS.Color.primary
         sortButton.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
@@ -250,7 +250,7 @@ final class OrdersViewController: BaseViewControler {
         sortButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
         sortButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)
         sortButton.snp.makeConstraints { make in make.height.equalTo(36) }
-        countLabel.font = Utils.regularFont(size: 13)
+        countLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         countLabel.textColor = DS.Color.textMuted
         let sortRow = UIStackView(arrangedSubviews: [sortButton, UIView(), countLabel])
         sortRow.alignment = .center
@@ -273,7 +273,7 @@ final class OrdersViewController: BaseViewControler {
     }
 
     private func buildSearchSummary() {
-        searchSummaryLabel.font = Utils.regularFont(size: 13)
+        searchSummaryLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         searchSummaryLabel.textColor = DS.Color.textMuted
         searchSummaryLabel.numberOfLines = 2
         searchSummary.addSubview(searchSummaryLabel)
@@ -337,7 +337,7 @@ final class OrdersViewController: BaseViewControler {
             chip.layer.borderWidth = selected ? 0 : 1
             chip.layer.borderColor = Self.chipBorder.cgColor
             chip.setTitleColor(selected ? .white : DS.Color.text, for: .normal)
-            chip.titleLabel?.font = selected ? Utils.boldFont(size: 13) : Utils.regularFont(size: 13)
+            chip.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             chip.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
         }
         sortButton.setTitle(OrdersFilterSheet.sortTitle(viewModel.filter.sort), for: .normal)
@@ -639,8 +639,8 @@ final class OrdersSegmentPill: UIControl {
     override init(frame: CGRect) {
         super.init(frame: frame)
         layer.cornerRadius = 9
-        label.font = Utils.mediumFont(size: 14)
-        badgeLabel.font = Utils.boldFont(size: 12)
+        label.font = Utils.mediumFont(size: DS.TextSize.body)
+        badgeLabel.font = Utils.boldFont(size: DS.TextSize.pill)
         badgeLabel.textColor = .white
         badgeLabel.backgroundColor = Self.badgeFill
         badgeLabel.textAlignment = .center
@@ -681,7 +681,7 @@ final class OrdersSegmentPill: UIControl {
     private func applyState() {
         backgroundColor = isSelected ? DS.Color.surface : .clear
         label.textColor = isSelected ? DS.Color.text : DS.Color.textMuted
-        label.font = isSelected ? Utils.boldFont(size: 14) : Utils.mediumFont(size: 14)
+        label.font = isSelected ? Utils.boldFont(size: DS.TextSize.body) : Utils.mediumFont(size: DS.TextSize.body)
         layer.shadowColor = DS.Color.text.cgColor
         layer.shadowOpacity = isSelected ? 0.1 : 0
         layer.shadowRadius = 1
@@ -706,12 +706,12 @@ final class OrdersStateView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        messageLabel.font = Utils.regularFont(size: 15)
+        messageLabel.font = Utils.regularFont(size: DS.TextSize.body)
         messageLabel.textColor = DS.Color.textMuted
         messageLabel.textAlignment = .center
         messageLabel.numberOfLines = 0
         retryButton.setTitle("Retry".localized(), for: .normal)
-        retryButton.titleLabel?.font = Utils.boldFont(size: 15)
+        retryButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         retryButton.tintColor = DS.Color.primary
         retryButton.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
         retryButton.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }

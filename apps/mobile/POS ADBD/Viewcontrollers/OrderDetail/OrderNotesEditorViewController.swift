@@ -49,13 +49,13 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
 
         let cancelButton = UIButton(type: .system)
         cancelButton.setTitle("Cancel".localized(), for: .normal)
-        cancelButton.titleLabel?.font = Utils.mediumFont(size: 16)
+        cancelButton.titleLabel?.font = Utils.mediumFont(size: DS.TextSize.input)
         cancelButton.tintColor = DS.Color.textMuted
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
 
         let saveButton = UIButton(type: .system)
         saveButton.setTitle("Save".localized(), for: .normal)
-        saveButton.titleLabel?.font = Utils.boldFont(size: 16)
+        saveButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         saveButton.tintColor = DS.Color.primary
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
 
@@ -66,7 +66,7 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
         header.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
 
         textView.text = initialText
-        textView.font = Utils.regularFont(size: 16)
+        textView.font = Utils.regularFont(size: DS.TextSize.input)
         textView.textColor = DS.Color.text
         textView.layer.cornerRadius = DS.Radius.card
         textView.layer.borderWidth = 1
@@ -74,11 +74,11 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
         textView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         textView.snp.makeConstraints { make in make.height.equalTo(140) }
 
-        countLabel.font = Utils.mediumFont(size: 13)
+        countLabel.font = Utils.mediumFont(size: DS.TextSize.secondary)
         countLabel.textColor = DS.Color.textMuted
         let photosTitle = UILabel()
         photosTitle.text = "Photos".localized().uppercased()
-        photosTitle.font = Utils.boldFont(size: 13)
+        photosTitle.font = Utils.boldFont(size: DS.TextSize.secondary)
         photosTitle.textColor = DS.Color.textMuted
         let photosHeader = UIStackView(arrangedSubviews: [photosTitle, UIView(), countLabel])
         photosHeader.axis = .horizontal

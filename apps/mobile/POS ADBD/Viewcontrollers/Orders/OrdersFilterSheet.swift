@@ -60,31 +60,31 @@ final class OrdersFilterSheet: UIViewController {
         let reset = UIButton(type: .system)
         reset.setTitle("Reset Filter".localized(), for: .normal)
         reset.setTitleColor(DS.Color.primary, for: .normal)
-        reset.titleLabel?.font = Utils.boldFont(size: 15)
+        reset.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         reset.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
         reset.snp.makeConstraints { make in make.height.equalTo(40) }
         let titleRow = UIStackView(arrangedSubviews: [title, UIView(), reset])
         titleRow.alignment = .center
 
         sortButtons = sorts.enumerated().map { index, sort in
-            let button = makeButton(Self.sortTitle(sort), size: 14, tag: index, action: #selector(sortTapped(_:)))
+            let button = makeButton(Self.sortTitle(sort), size: DS.TextSize.body, tag: index, action: #selector(sortTapped(_:)))
             button.layer.cornerRadius = 12
             button.snp.makeConstraints { make in make.height.equalTo(44) }
             return button
         }
         basisButtons = bases.enumerated().map { index, basis in
-            let button = makeButton(Self.basisTitle(basis), size: 13, tag: index, action: #selector(basisTapped(_:)))
+            let button = makeButton(Self.basisTitle(basis), size: DS.TextSize.secondary, tag: index, action: #selector(basisTapped(_:)))
             button.layer.cornerRadius = 9
             button.snp.makeConstraints { make in make.height.equalTo(36) }
             return button
         }
         presetButtons = presets.enumerated().map { index, preset in
-            let button = makeButton(Self.presetTitle(preset), size: 14, tag: index, action: #selector(presetTapped(_:)))
+            let button = makeButton(Self.presetTitle(preset), size: DS.TextSize.body, tag: index, action: #selector(presetTapped(_:)))
             stylePill(button)
             return button
         }
         customButton.setImage(DS.symbol("calendar", 16), for: .normal)
-        customButton.titleLabel?.font = Utils.regularFont(size: 14)
+        customButton.titleLabel?.font = Utils.regularFont(size: DS.TextSize.body)
         customButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: -3, bottom: 0, right: 3)
         customButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 3, bottom: 0, right: -3)
         customButton.addTarget(self, action: #selector(customTapped), for: .touchUpInside)
@@ -114,7 +114,7 @@ final class OrdersFilterSheet: UIViewController {
         applyButton.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
 
         // Board Loc: what "Việc gần nhất" means, under the options (#390)
-        let sortHint = V2.label("orders.v2.sort.nearestHint".localized(), size: 12, color: DS.Color.textMuted)
+        let sortHint = V2.label("orders.v2.sort.nearestHint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         sortHint.numberOfLines = 0
         let sortSection = UIStackView(arrangedSubviews: [sectionLabel("orders.v2.filter.sort".localized()), sortGrid, sortHint])
         sortSection.axis = .vertical
@@ -180,7 +180,7 @@ final class OrdersFilterSheet: UIViewController {
     // MARK: - Building blocks
 
     private func sectionLabel(_ text: String) -> UILabel {
-        let label = V2.label(nil, size: 13, weight: .bold, color: DS.Color.textMuted)
+        let label = V2.label(nil, size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
         label.attributedText = NSAttributedString(string: text, attributes: [NSAttributedString.Key.kern: 0.5])
         return label
     }
@@ -233,14 +233,14 @@ final class OrdersFilterSheet: UIViewController {
             button.layer.borderColor = (selected ? DS.Color.primary : Self.outline).cgColor
             button.backgroundColor = selected ? Self.selectedFill : DS.Color.surface
             button.setTitleColor(selected ? Self.selectedText : DS.Color.text, for: .normal)
-            button.titleLabel?.font = selected ? Utils.boldFont(size: 14) : Utils.regularFont(size: 14)
+            button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body)
             button.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
         }
         for (index, button) in basisButtons.enumerated() {
             let selected = bases[index] == filter.dateBasis
             button.backgroundColor = selected ? DS.Color.surface : .clear
             button.setTitleColor(selected ? DS.Color.text : DS.Color.textMuted, for: .normal)
-            button.titleLabel?.font = selected ? Utils.boldFont(size: 13) : Utils.regularFont(size: 13)
+            button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             button.layer.shadowColor = DS.Color.text.cgColor
             button.layer.shadowOpacity = selected ? 0.08 : 0
             button.layer.shadowRadius = 1
@@ -263,7 +263,7 @@ final class OrdersFilterSheet: UIViewController {
         button.layer.borderColor = Self.chipBorder.cgColor
         button.setTitleColor(selected ? .white : DS.Color.text, for: .normal)
         button.tintColor = selected ? .white : DS.Color.text
-        button.titleLabel?.font = selected ? Utils.boldFont(size: 14) : Utils.regularFont(size: 14)
+        button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body)
         button.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
     }
 
@@ -364,7 +364,7 @@ final class OrdersDateRangePicker: UIViewController {
     }
 
     private func row(_ title: String, _ picker: UIDatePicker) -> UIView {
-        let row = UIStackView(arrangedSubviews: [V2.label(title, size: 15), UIView(), picker])
+        let row = UIStackView(arrangedSubviews: [V2.label(title, size: DS.TextSize.body), UIView(), picker])
         row.alignment = .center
         return row
     }

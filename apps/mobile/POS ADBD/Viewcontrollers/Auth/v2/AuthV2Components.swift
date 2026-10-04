@@ -23,7 +23,7 @@ final class AuthV2Field: UIView {
     init(title: String, placeholder: String? = nil, hint: String? = nil, secure: Bool = false) {
         super.init(frame: .zero)
         titleLabel.text = title
-        titleLabel.font = Utils.boldFont(size: 14)
+        titleLabel.font = Utils.boldFont(size: DS.TextSize.body)
         titleLabel.textColor = AuthV2Style.text
 
         box.layer.cornerRadius = AuthV2Style.fieldRadius
@@ -31,7 +31,7 @@ final class AuthV2Field: UIView {
         box.layer.borderColor = AuthV2Style.fieldBorder.cgColor
         box.backgroundColor = AuthV2Style.fieldBackground
 
-        textField.font = Utils.regularFont(size: 16)
+        textField.font = Utils.regularFont(size: DS.TextSize.input)
         textField.textColor = AuthV2Style.text
         textField.placeholder = placeholder
         textField.isSecureTextEntry = secure
@@ -39,12 +39,12 @@ final class AuthV2Field: UIView {
         textField.addTarget(self, action: #selector(editingChanged), for: .editingChanged)
 
         hintLabel.text = hint
-        hintLabel.font = Utils.regularFont(size: 13)
+        hintLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         hintLabel.textColor = AuthV2Style.textMuted
         hintLabel.numberOfLines = 0
         hintLabel.isHidden = hint == nil
 
-        errorLabel.font = Utils.mediumFont(size: 13)
+        errorLabel.font = Utils.mediumFont(size: DS.TextSize.secondary)
         errorLabel.textColor = AuthV2Style.error
         errorLabel.numberOfLines = 0
         errorLabel.isHidden = true
@@ -127,7 +127,7 @@ final class AuthV2PrimaryButton: UIButton {
         setTitle(title, for: .normal)
         setTitleColor(AuthV2Style.onPrimary, for: .normal)
         setTitleColor(AuthV2Style.onPrimary.withAlphaComponent(0.7), for: .disabled)
-        titleLabel?.font = Utils.boldFont(size: 16)
+        titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         backgroundColor = AuthV2Style.primary
         layer.cornerRadius = AuthV2Style.buttonRadius
         snp.makeConstraints { $0.height.equalTo(AuthV2Style.buttonHeight) }
@@ -143,7 +143,7 @@ final class AuthV2PrimaryButton: UIButton {
 }
 
 /// Text button in the primary colour with a 44pt tap target
-func authV2LinkButton(_ title: String, size: CGFloat = 15) -> UIButton {
+func authV2LinkButton(_ title: String, size: CGFloat = DS.TextSize.body) -> UIButton {
     let button = UIButton(type: .system)
     button.setTitle(title, for: .normal)
     button.setTitleColor(AuthV2Style.primary, for: .normal)
@@ -189,7 +189,7 @@ final class AuthV2Progress: UIView {
         track.layer.cornerRadius = 3
         fill.backgroundColor = AuthV2Style.primary
         fill.layer.cornerRadius = 3
-        label.font = Utils.boldFont(size: 13)
+        label.font = Utils.boldFont(size: DS.TextSize.secondary)
         label.textColor = AuthV2Style.primary
         label.setContentHuggingPriority(.required, for: .horizontal)
         addSubview(track)
@@ -291,7 +291,7 @@ final class AuthV2Chip: UIButton {
     init(title: String) {
         super.init(frame: .zero)
         setTitle(title, for: .normal)
-        titleLabel?.font = Utils.mediumFont(size: 14)
+        titleLabel?.font = Utils.mediumFont(size: DS.TextSize.body)
         contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
         layer.cornerRadius = 20
         layer.borderWidth = 1
@@ -311,7 +311,7 @@ final class AuthV2Chip: UIButton {
         backgroundColor = on ? AuthV2Style.chipOn : AuthV2Style.chipOff
         setTitleColor(on ? AuthV2Style.chipOnText : AuthV2Style.chipOffText, for: .normal)
         layer.borderColor = (on ? AuthV2Style.chipOn : AuthV2Style.chipBorder).cgColor
-        titleLabel?.font = on ? Utils.boldFont(size: 14) : Utils.mediumFont(size: 14)
+        titleLabel?.font = on ? Utils.boldFont(size: DS.TextSize.body) : Utils.mediumFont(size: DS.TextSize.body)
         accessibilityTraits = on ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
     }
 }

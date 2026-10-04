@@ -31,18 +31,18 @@ final class ProductDetailViewController: BaseViewControler {
     private let content = UIStackView()
     private let photos = UIScrollView()
     private let photoStack = UIStackView()
-    private let pageLabel = V2.label(size: 12, weight: .bold, color: .white)
+    private let pageLabel = V2.label(size: DS.TextSize.pill, weight: .bold, color: .white)
     private let nameLabel = V2.label(size: 22, weight: .bold, lines: 0)
-    private let metaLabel = V2.label(size: 13, color: DS.Color.textMuted, lines: 0)
+    private let metaLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let tiles = UIStackView()
-    private let stockLabel = V2.label(size: 14, color: DS.Color.textMuted, lines: 0)
+    private let stockLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let stripRow = UIStackView()
-    private let stripCaption = V2.label(size: 12, color: DS.Color.textMuted, lines: 0)
-    private let ordersHeader = V2.label("products.detail.orders".localized(), size: 16, weight: .bold)
+    private let stripCaption = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    private let ordersHeader = V2.label("products.detail.orders".localized(), size: DS.TextSize.name, weight: .bold)
     private let ordersCount = UIButton(type: .system)
     private let chipsRow = UIStackView()
     private let ordersStack = UIStackView()
-    private let ordersEmpty = V2.label("products.detail.noOrders".localized(), size: 14, color: DS.Color.textMuted)
+    private let ordersEmpty = V2.label("products.detail.noOrders".localized(), size: DS.TextSize.body, color: DS.Color.textMuted)
 
     private var productId: Int { product.id ?? product.product_id }
 
@@ -194,7 +194,7 @@ final class ProductDetailViewController: BaseViewControler {
         content.addArrangedSubview(band)
 
         // Orders
-        ordersCount.titleLabel?.font = Utils.boldFont(size: 14)
+        ordersCount.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         ordersCount.setTitleColor(DS.Color.primary, for: .normal)
         ordersCount.addTarget(self, action: #selector(openAllOrders), for: .touchUpInside)
         ordersCount.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(40) }
@@ -209,7 +209,7 @@ final class ProductDetailViewController: BaseViewControler {
         for chip in ProductOrdersChip.allCases {
             let button = UIButton(type: .custom)
             button.tag = chip.rawValue
-            button.titleLabel?.font = Utils.mediumFont(size: 13)
+            button.titleLabel?.font = Utils.mediumFont(size: DS.TextSize.secondary)
             button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
             button.layer.cornerRadius = 18
             button.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
@@ -237,7 +237,7 @@ final class ProductDetailViewController: BaseViewControler {
         }
         if let title {
             button.setTitle(title, for: .normal)
-            button.titleLabel?.font = Utils.boldFont(size: 14)
+            button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
             button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         }
         button.tintColor = DS.Color.text
@@ -305,8 +305,8 @@ final class ProductDetailViewController: BaseViewControler {
         box.layer.cornerRadius = 12
         box.layer.borderWidth = 1
         box.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        let t = V2.label(title, size: 12, color: DS.Color.textMuted)
-        let v = V2.label(MoneyFormatter.format(value), size: 16, weight: .bold)
+        let t = V2.label(title, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let v = V2.label(MoneyFormatter.format(value), size: DS.TextSize.name, weight: .bold)
         v.adjustsFontSizeToFitWidth = true
         v.minimumScaleFactor = 0.7
         let stack = UIStackView(arrangedSubviews: [t, v])
@@ -333,8 +333,8 @@ final class ProductDetailViewController: BaseViewControler {
             case .low: (fill, text) = (UIColor(hexString: "FFEDD5"), UIColor(hexString: "9A3412"))
             case .ok: (fill, text) = (UIColor(hexString: "D1FAE5"), UIColor(hexString: "065F46"))
             }
-            let dayLabel = V2.label(day.day, size: 11, color: text)
-            let freeLabel = V2.label("\(day.free)", size: 14, weight: .bold, color: text)
+            let dayLabel = V2.label(day.day, size: DS.TextSize.pill, color: text)
+            let freeLabel = V2.label("\(day.free)", size: DS.TextSize.body, weight: .bold, color: text)
             [dayLabel, freeLabel].forEach { $0.textAlignment = .center }
             let cell = UIStackView(arrangedSubviews: [dayLabel, freeLabel])
             cell.axis = .vertical
@@ -359,7 +359,7 @@ final class ProductDetailViewController: BaseViewControler {
             let selected = chip == self.chip
             let count = chipTotals[chip].map { " \($0)" } ?? ""
             button.setTitle(chip.titleKey.localized() + count, for: .normal)
-            button.titleLabel?.font = selected ? Utils.boldFont(size: 13) : Utils.regularFont(size: 13)
+            button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             button.setTitleColor(selected ? .white : DS.Color.text, for: .normal)
             button.backgroundColor = selected ? DS.Color.text : .white
             button.layer.borderWidth = selected ? 0 : 1
@@ -383,11 +383,11 @@ final class ProductDetailViewController: BaseViewControler {
         let row = UIControl()
         row.tag = index
         row.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
-        let name = V2.label(order.customerName, size: 15, weight: .bold)
-        let meta = V2.label(ProductDetailV2Logic.meta(order, productId: productId), size: 13, color: DS.Color.textMuted)
+        let name = V2.label(order.customerName, size: DS.TextSize.name, weight: .bold)
+        let meta = V2.label(ProductDetailV2Logic.meta(order, productId: productId), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, meta])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = DS.Gap.lineTight
         texts.isUserInteractionEnabled = false
         let state = stateView(for: order)
         state.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -424,10 +424,10 @@ final class ProductDetailViewController: BaseViewControler {
         case .returnOn(let day): (text, color) = (String(format: "products.detail.state.returnOn".localized(), day), DS.Color.textMuted)
         case .status:
             let pill = OrderStatusPillLabel()
-            pill.apply(status: order.status)
+            pill.apply(status: order.status); pill.font = Utils.boldFont(size: DS.TextSize.pill)
             return pill
         }
-        return V2.label(text, size: 12, weight: .bold, color: color)
+        return V2.label(text, size: DS.TextSize.secondary, weight: .bold, color: color)
     }
 
     // MARK: - Data

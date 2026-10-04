@@ -21,7 +21,7 @@ final class EditCustomerViewController: BaseViewControler {
     private let idField = UITextField()
     private let dobField = UITextField()
     private let notesField = UITextField()
-    private let phoneError = V2.label(size: 13, color: V2.danger, lines: 0)
+    private let phoneError = V2.label(size: DS.TextSize.secondary, color: V2.danger, lines: 0)
     private let saveButton = V2.primaryButton("Save".localized())
     private let cancelButton = V2.secondaryButton("customers.v2.cancel".localized())
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
@@ -88,12 +88,12 @@ final class EditCustomerViewController: BaseViewControler {
 
         let extraTitle = UILabel()
         let extra = NSMutableAttributedString(string: "customers.v2.moreInfo".localized().uppercased(), attributes: [
-            NSAttributedString.Key.font: Utils.boldFont(size: 13),
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
             NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
             NSAttributedString.Key.kern: 0.5,
         ])
         extra.append(NSAttributedString(string: " " + "customers.v2.optional".localized(), attributes: [
-            NSAttributedString.Key.font: Utils.regularFont(size: 13),
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
             NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
         ]))
         extraTitle.attributedText = extra
@@ -164,8 +164,8 @@ final class EditCustomerViewController: BaseViewControler {
     }
 
     private func field(_ title: String, _ input: UITextField) -> UIView {
-        let label = V2.label(title, size: 14, weight: .bold)
-        input.font = Utils.regularFont(size: 16)
+        let label = V2.label(title, size: DS.TextSize.body, weight: .bold)
+        input.font = Utils.regularFont(size: DS.TextSize.input)
         input.textColor = DS.Color.text
         input.layer.borderWidth = 1
         input.layer.borderColor = V2.border.cgColor

@@ -17,8 +17,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
-    private let shopLabel = V2.label(size: 13, color: DS.Color.textMuted)
-    private let titleLabel = V2.label("products.home.title".localized(), size: 24, weight: .bold)
+    private let shopLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private let titleLabel = V2.label("products.home.title".localized(), size: DS.TextSize.title, weight: .bold)
     private let searchField = UITextField()
     private lazy var list: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
@@ -26,16 +26,16 @@ final class ProductsHomeViewController: BaseViewControler {
         table.delegate = self
         table.separatorStyle = .none
         table.rowHeight = UITableViewAutomaticDimension
-        table.estimatedRowHeight = 92
+        table.estimatedRowHeight = DS.Gap.productRowMinHeight
         table.keyboardDismissMode = .onDrag
         table.register(ProductRowV2Cell.self, forCellReuseIdentifier: ProductRowV2Cell.reuseId)
         table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 96, right: 0)
         return table
     }()
-    private let emptyLabel = V2.label(size: 15, color: DS.Color.textMuted, lines: 0)
+    private let emptyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     private let cartBar = UIControl()
-    private let cartCountLabel = V2.label(size: 13, color: UIColor.white.withAlphaComponent(0.85))
-    private let cartTotalLabel = V2.label(size: 16, weight: .bold, color: .white)
+    private let cartCountLabel = V2.label(size: DS.TextSize.secondary, color: UIColor.white.withAlphaComponent(0.85))
+    private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
     private let notificationButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
 
     private lazy var reader: QRCodeReaderViewController = {
@@ -80,7 +80,7 @@ final class ProductsHomeViewController: BaseViewControler {
         notificationButton.tintColor = DS.Color.text
         notificationButton.badgeBackgroundColor = DS.Color.primary
         notificationButton.badgeTextColor = .white
-        notificationButton.badgeFont = Utils.mediumFont(size: 11)
+        notificationButton.badgeFont = Utils.mediumFont(size: DS.TextSize.pill)
         notificationButton.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
         notificationButton.accessibilityLabel = "Notifications".localized()
         notificationButton.addTarget(self, action: #selector(openInbox), for: .touchUpInside)
@@ -101,7 +101,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
         glass.tintColor = DS.Color.textMuted
         searchField.placeholder = "products.search.placeholder".localized()
-        searchField.font = Utils.regularFont(size: 15)
+        searchField.font = Utils.regularFont(size: DS.TextSize.body)
         searchField.clearButtonMode = .whileEditing
         searchField.returnKeyType = .search
         searchField.autocorrectionType = .no
@@ -178,7 +178,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [cartCountLabel, cartTotalLabel])
         texts.axis = .vertical
         texts.isUserInteractionEnabled = false
-        let go = V2.label("products.cart.create".localized() + " ›", size: 15, weight: .bold, color: .white)
+        let go = V2.label("products.cart.create".localized() + " ›", size: DS.TextSize.name, weight: .bold, color: .white)
         cartBar.addSubview(texts)
         cartBar.addSubview(go)
         view.addSubview(cartBar)
@@ -415,10 +415,10 @@ extension ProductsHomeViewController: QRCodeReaderViewControllerDelegate {
 final class ProductRowV2Cell: UITableViewCell {
     static let reuseId = "ProductRowV2Cell"
     private let photo = V2.thumbnail(size: 68, radius: 12)
-    private let nameLabel = V2.label(size: 15, weight: .bold)
-    private let metaLabel = V2.label(size: 13, color: DS.Color.textMuted)
-    private let stockLabel = V2.label(size: 12, weight: .bold)
-    private let priceLabel = V2.label(size: 15, lines: 2)
+    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    private let metaLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
+    private let stockLabel = V2.label(size: DS.TextSize.secondary, weight: .bold)
+    private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)
     private let addButton = UIButton(type: .system)
     private let plusImage = DS.symbol("plus", DS.Icon.sm, weight: .semibold)
     /// The + of a product already in the cart: the count on a darker blue (board SP-dong)
@@ -441,12 +441,12 @@ final class ProductRowV2Cell: UITableViewCell {
         priceLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let texts = UIStackView(arrangedSubviews: [nameLabel, metaRow, priceLabel])
         texts.axis = .vertical
-        texts.spacing = 3
+        texts.spacing = DS.Gap.line
         texts.alignment = .fill
         texts.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         texts.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
         addButton.setImage(plusImage, for: .normal)
-        addButton.titleLabel?.font = Utils.boldFont(size: 16)
+        addButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         addButton.setTitleColor(.white, for: .normal)
         addButton.layer.cornerRadius = 12
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
@@ -460,9 +460,9 @@ final class ProductRowV2Cell: UITableViewCell {
         contentView.addSubview(line)
         row.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-            make.top.equalToSuperview().offset(10)
-            make.bottom.equalToSuperview().offset(-10).priority(999)
-            make.height.greaterThanOrEqualTo(68)
+            make.top.equalToSuperview().offset(DS.Gap.productRow)
+            make.bottom.equalToSuperview().offset(-DS.Gap.productRow).priority(999)
+            make.height.greaterThanOrEqualTo(DS.Gap.productRowMinHeight - 2 * DS.Gap.productRow)
         }
         line.snp.makeConstraints { make in
             make.leading.trailing.bottom.equalToSuperview()
@@ -493,8 +493,8 @@ final class ProductRowV2Cell: UITableViewCell {
         }
 
         let text = NSMutableAttributedString()
-        let strong: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.boldFont(size: 15), NSAttributedString.Key.foregroundColor: DS.Color.text]
-        let muted: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.regularFont(size: 13), NSAttributedString.Key.foregroundColor: DS.Color.textMuted]
+        let strong: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name), NSAttributedString.Key.foregroundColor: DS.Color.text]
+        let muted: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary), NSAttributedString.Key.foregroundColor: DS.Color.textMuted]
         var parts: [String] = []
         if let perRental = ProductPricing.perRental(product) {
             text.append(NSAttributedString(string: MoneyFormatter.format(perRental), attributes: strong))

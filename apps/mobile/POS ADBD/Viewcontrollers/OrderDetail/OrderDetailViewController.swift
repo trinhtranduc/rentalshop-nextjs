@@ -192,7 +192,7 @@ final class OrderDetailViewController: BaseViewControler {
         name.numberOfLines = 2
         name.text = order.customerName.isEmpty ? "N/A" : order.customerName
         let pill = OrderStatusPillLabel()
-        pill.apply(status: detail.status)
+        pill.apply(status: detail.status); pill.font = Utils.boldFont(size: DS.TextSize.pill)
         pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.setContentHuggingPriority(.required, for: .horizontal)
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -228,10 +228,10 @@ final class OrderDetailViewController: BaseViewControler {
         icon.tintColor = DS.Status.late.text
         icon.setContentHuggingPriority(.required, for: .horizontal)
         let title = UILabel()
-        title.font = Utils.boldFont(size: 14)
+        title.font = Utils.boldFont(size: DS.TextSize.body)
         title.textColor = UIColor(hexString: "991B1B")
         let subtitle = UILabel()
-        subtitle.font = Utils.regularFont(size: 13)
+        subtitle.font = Utils.regularFont(size: DS.TextSize.secondary)
         subtitle.textColor = UIColor(hexString: "991B1B")
         if detail.status == .pickuped {
             title.text = PluralText.format("Return late %d days", count: days, days)
@@ -280,7 +280,7 @@ final class OrderDetailViewController: BaseViewControler {
             bar.backgroundColor = done ? DS.Color.primary : UIColor(hexString: "E2E8F0")
             bar.snp.makeConstraints { make in make.height.equalTo(4) }
             let label = UILabel()
-            label.font = done ? Utils.boldFont(size: 12) : Utils.regularFont(size: 12)
+            label.font = done ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             label.textColor = done ? DS.Color.primary : DS.Color.textMuted
             label.text = [step.0, step.1.map { OrderDetailLogic.dayMonth($0) }].compactMap { $0 }.joined(separator: " ")
             label.adjustsFontSizeToFitWidth = true
@@ -330,18 +330,18 @@ final class OrderDetailViewController: BaseViewControler {
         image.snp.makeConstraints { make in make.size.equalTo(48) }
 
         let title = NSMutableAttributedString(string: item.productName, attributes: [
-            NSAttributedString.Key.font: Utils.mediumFont(size: 15),
+            NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: DS.Color.text,
         ])
         title.append(NSAttributedString(string: " × \(item.quantity)", attributes: [
-            NSAttributedString.Key.font: Utils.mediumFont(size: 15),
+            NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
         ]))
         let name = UILabel()
         name.attributedText = title
         name.numberOfLines = 2
         let calc = UILabel()
-        calc.font = Utils.regularFont(size: 13)
+        calc.font = Utils.regularFont(size: DS.TextSize.secondary)
         calc.textColor = DS.Color.textMuted
         let price = MoneyFormatter.format(item.unitPrice)
         if orderType == .sale {
@@ -353,9 +353,9 @@ final class OrderDetailViewController: BaseViewControler {
         }
         let texts = UIStackView(arrangedSubviews: [name, calc])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = DS.Gap.lineTight
         let total = UILabel()
-        total.font = Utils.boldFont(size: 15)
+        total.font = Utils.boldFont(size: DS.TextSize.name)
         total.textColor = DS.Color.text
         total.text = MoneyFormatter.format(item.totalPrice)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -438,12 +438,12 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func notesSection(_ detail: OrderDetail) -> UIView {
         let title = UILabel()
-        title.font = Utils.boldFont(size: 13)
+        title.font = Utils.boldFont(size: DS.TextSize.secondary)
         title.textColor = DS.Color.textMuted
         title.text = "NOTES".localized()
         let edit = UIButton(type: .system)
         edit.setTitle("Edit".localized(), for: .normal)
-        edit.titleLabel?.font = Utils.boldFont(size: 14)
+        edit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         edit.tintColor = DS.Color.primary
         edit.addTarget(self, action: #selector(editNotesTapped), for: .touchUpInside)
         edit.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
@@ -468,7 +468,7 @@ final class OrderDetailViewController: BaseViewControler {
             if !text.isEmpty {
                 let label = UILabel()
                 label.numberOfLines = 0
-                label.font = Utils.regularFont(size: 14)
+                label.font = Utils.regularFont(size: DS.TextSize.body)
                 label.textColor = UIColor(hexString: "78350F")
                 label.text = text
                 box.addArrangedSubview(label)
@@ -860,7 +860,7 @@ final class OrderDetailViewController: BaseViewControler {
         config.title = title
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
             var updated = attributes
-            updated.font = Utils.boldFont(size: style == .primary ? 16 : 15)
+            updated.font = Utils.boldFont(size: style == .primary ? DS.TextSize.input : DS.TextSize.body)
             return updated
         }
         config.titleLineBreakMode = .byTruncatingTail
@@ -874,7 +874,7 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func sectionTitle(_ text: String) -> UIView {
         let label = UILabel()
-        label.font = Utils.boldFont(size: 13)
+        label.font = Utils.boldFont(size: DS.TextSize.secondary)
         label.textColor = DS.Color.textMuted
         label.text = text
         return padded(label, top: 18, bottom: 4)
@@ -882,11 +882,11 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func keyValue(_ title: String, _ value: String, bold: Bool = false, divider: Bool = true) -> UIView {
         let left = UILabel()
-        left.font = Utils.regularFont(size: 14)
+        left.font = Utils.regularFont(size: DS.TextSize.body)
         left.textColor = DS.Color.textMuted
         left.text = title
         let right = UILabel()
-        right.font = bold ? Utils.boldFont(size: 15) : Utils.regularFont(size: 15)
+        right.font = bold ? Utils.boldFont(size: DS.TextSize.name) : Utils.regularFont(size: DS.TextSize.body)
         right.textColor = DS.Color.text
         right.text = value
         right.numberOfLines = 2
@@ -904,12 +904,12 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func totalRow(_ title: String, _ value: String) -> UIView {
         let left = UILabel()
-        left.font = Utils.boldFont(size: 15)
+        left.font = Utils.boldFont(size: DS.TextSize.name)
         left.textColor = DS.Color.text
         left.text = title
         left.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let right = UILabel()
-        right.font = Utils.boldFont(size: 20)
+        right.font = Utils.boldFont(size: DS.TextSize.amount)
         right.textColor = DS.Color.text
         right.text = value
         right.textAlignment = .right
