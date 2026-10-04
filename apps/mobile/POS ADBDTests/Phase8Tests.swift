@@ -153,6 +153,15 @@ final class Phase8Tests: XCTestCase {
         XCTAssertEqual(RentalExtension.extraDays(currentReturn: current, newDay: newDay, timeZone: utc), 2)
     }
 
+    /// A conflict's overlap comes with fractional hours; decoding must not fail (it hid every conflict before)
+    func testBatchAvailabilityWithConflictDecodes() throws {
+        let json = #"{"success":true,"code":"BATCH_AVAILABILITY_CHECKED","data":{"results":[{"productId":6,"productName":"Product 6","totalStock":2,"totalAvailableStock":0,"totalRenting":3,"requestedQuantity":1,"isAvailable":false,"stockAvailable":true,"hasNoConflicts":false,"availabilityByOutlet":[{"outletId":1,"stock":2,"available":5,"renting":3,"conflictingQuantity":2,"effectivelyAvailable":0,"canFulfillRequest":false,"conflicts":[{"orderNumber":"ORD-001-0013","quantity":2,"conflictDuration":95646934,"conflictHours":26.57,"conflictType":"period_overlap"}]}],"bestOutlet":{"outletId":1,"effectivelyAvailable":0},"totalConflictsFound":1}],"summary":{"totalProducts":1,"availableProducts":0,"unavailableProducts":1,"errorProducts":0}}}"#
+        let response = try JSONDecoder().decode(BatchAvailabilityResponse.self, from: Data(json.utf8))
+        let results = try XCTUnwrap(response.data?.results)
+        XCTAssertEqual(results.first?.availabilityByOutlet?.first?.conflicts?.first?.conflictHours, 26.57)
+        XCTAssertEqual(RentalExtension.unavailableNames(results, items: []), ["Product 6"])
+    }
+
     func testAvailabilityRequestsAndVerdict() throws {
         let items = #"[{"id":1,"productId":1,"productName":"Vest","quantity":1,"unitPrice":1,"totalPrice":1},{"id":2,"productId":2,"productName":"Áo dài","quantity":2,"unitPrice":1,"totalPrice":2},{"id":3,"productId":1,"productName":"Vest","quantity":2,"unitPrice":1,"totalPrice":2}]"#
         let decoded = try JSONDecoder.shared.decode([OrderItem].self, from: Data(items.utf8))

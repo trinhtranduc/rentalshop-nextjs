@@ -1927,8 +1927,9 @@ struct ConflictInfo: Codable {
     let pickupDateLocal: String?
     let returnDateLocal: String?
     let quantity: Int?
-    let conflictDuration: Int?
-    let conflictHours: Int?
+    /// Milliseconds / hours of overlap; the API sends fractions (`26.57`), which an Int cannot decode (#390)
+    let conflictDuration: Double?
+    let conflictHours: Double?
     let conflictType: String?
 }
 
