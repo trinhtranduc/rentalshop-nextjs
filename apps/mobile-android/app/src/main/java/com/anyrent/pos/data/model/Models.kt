@@ -47,6 +47,20 @@ data class Product(
     val note: String? = null,
     /** ISO timestamp when image search last finished; null = never indexed */
     val embeddingGeneratedAt: String? = null,
+    /** All photo URLs, cover first (#373) */
+    val images: List<String> = emptyList(),
+    /** Stock per outlet (#373) */
+    val outletStock: List<ProductOutletStock> = emptyList(),
+    /** Free today at the user's outlet when the list was asked with `outletId` (#373) */
+    val effectiveAvailableToday: Int? = null,
+)
+
+/** Stock of a product at one outlet */
+data class ProductOutletStock(
+    val outletId: Int,
+    val stock: Int,
+    val renting: Int,
+    val available: Int,
 )
 
 data class Customer(

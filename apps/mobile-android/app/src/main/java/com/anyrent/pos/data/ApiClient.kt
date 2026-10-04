@@ -10,6 +10,7 @@ import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.PaymentEntry
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.data.model.ProductOutletStock
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.RankingItem
 import com.anyrent.pos.data.model.StaffUser
@@ -1067,7 +1068,7 @@ class ApiClient(
         )
     }
 
-    private fun parseProduct(o: JSONObject): Product = Product(
+    internal fun parseProduct(o: JSONObject): Product = Product(
         id = o.optInt("id"),
         name = o.optString("name"),
         barcode = o.optString("barcode").takeIf { it.isNotBlank() },
@@ -1096,7 +1097,34 @@ class ApiClient(
         } ?: emptyList(),
         note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
         embeddingGeneratedAt = o.optString("embeddingGeneratedAt").takeIf { it.isNotBlank() && it != "null" },
+        images = productImageUrls(o),
+        outletStock = o.optJSONArray("outletStock")?.let { rows ->
+            (0 until rows.length()).mapNotNull { index ->
+                val row = rows.optJSONObject(index) ?: return@mapNotNull null
+                val outletId = row.optJSONObject("outlet")?.positiveInt("id") ?: row.positiveInt("outletId")
+                    ?: return@mapNotNull null
+                val stock = row.optInt("stock")
+                val renting = row.optInt("renting")
+                ProductOutletStock(outletId, stock, renting, row.optInt("available", (stock - renting).coerceAtLeast(0)))
+            }
+        } ?: emptyList(),
+        effectiveAvailableToday = if (o.has("effectiveAvailableToday") && !o.isNull("effectiveAvailableToday")) {
+            o.optInt("effectiveAvailableToday")
+        } else {
+            null
+        },
     )
+
+    /** Every photo URL of a product (string array), cover first */
+    private fun productImageUrls(o: JSONObject): List<String> {
+        val images = o.optJSONArray("images")
+            ?: o.nullableString("images")?.let { raw -> runCatching { JSONArray(raw) }.getOrNull() }
+            ?: return listOfNotNull(firstProductImageUrl(o))
+        return (0 until images.length()).mapNotNull { i ->
+            images.optString(i).takeIf { it.isNotBlank() && it != "null" && !it.startsWith("{") }
+                ?: images.optJSONObject(i)?.nullableString("url")
+        }
+    }
 
     private fun parseCustomer(o: JSONObject): Customer = Customer(
         id = o.optInt("id"),
