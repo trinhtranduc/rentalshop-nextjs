@@ -211,7 +211,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
             Text(
                 detail?.summary?.orderNumber?.let { "#$it" } ?: stringResource(R.string.order_detail),
                 color = DS.Colors.TextMuted,
-                fontSize = 14.sp,
+                fontSize = DS.TextSize.Body,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -471,7 +471,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 color = DS.Colors.Text,
                 modifier = Modifier.weight(1f),
             )
-            StatusBadge(summary.status)
+            StatusBadge(summary.status, fontSize = DS.TextSize.Pill)
         }
         if (lateDays > 0) {
             val returning = status == "PICKUPED"
@@ -489,7 +489,7 @@ private fun DetailHeader(detail: OrderDetail) {
                     Text(
                         pluralStringResource(if (returning) R.plurals.detail_late_return else R.plurals.detail_late_hand_over, lateDays, lateDays),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontSize = DS.TextSize.Body,
                         color = Color(0xFF991B1B),
                     )
                     Text(
@@ -497,7 +497,7 @@ private fun DetailHeader(detail: OrderDetail) {
                             R.string.detail_due_on,
                             shortDay(if (returning) summary.returnPlanAt else summary.pickupPlanAt),
                         ),
-                        fontSize = 13.sp,
+                        fontSize = DS.TextSize.Secondary,
                         color = Color(0xFF991B1B),
                     )
                 }
@@ -539,7 +539,7 @@ private fun DetailHeader(detail: OrderDetail) {
                         )
                         Text(
                             label,
-                            fontSize = 12.sp,
+                            fontSize = DS.TextSize.Secondary,
                             fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (done) DS.Colors.Primary else DS.Colors.TextMuted,
                             maxLines = 1,
@@ -647,7 +647,7 @@ private fun DetailBody(detail: OrderDetail, onPreview: (Any) -> Unit, onEditNote
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                note?.let { Text("${stringResource(R.string.notes)}: $it", fontSize = 14.sp, color = Color(0xFF78350F)) }
+                note?.let { Text("${stringResource(R.string.notes)}: $it", fontSize = DS.TextSize.Body, color = Color(0xFF78350F)) }
                 if (detail.notesImages.isNotEmpty()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         detail.notesImages.forEach { url -> Thumb(url, 48.dp) { onPreview(url) } }
@@ -720,7 +720,7 @@ internal fun PrimaryBarButton(text: String, modifier: Modifier, enabled: Boolean
         colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary),
         contentPadding = PaddingValues(horizontal = 12.dp),
     ) {
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -742,7 +742,7 @@ internal fun SecondaryBarButton(
             contentColor = if (destructive) DS.Status.Late.text else DS.Colors.Text,
         ),
     ) {
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -750,7 +750,7 @@ internal fun SecondaryBarButton(
 private fun SectionTitle(text: String) {
     Text(
         text,
-        fontSize = 13.sp,
+        fontSize = DS.TextSize.Secondary,
         fontWeight = FontWeight.Bold,
         color = DS.Colors.TextMuted,
         modifier = Modifier.padding(top = 18.dp, bottom = 4.dp),
@@ -764,10 +764,10 @@ private fun InfoRow(label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(label, fontSize = 14.sp, color = DS.Colors.TextMuted)
+        Text(label, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
         Text(
             value,
-            fontSize = 15.sp,
+            fontSize = DS.TextSize.Name,
             fontWeight = FontWeight.SemiBold,
             color = DS.Colors.Text,
             modifier = Modifier.weight(1f),
@@ -786,14 +786,14 @@ internal fun MoneyRow(label: String, value: String, total: Boolean = false, valu
     ) {
         Text(
             label,
-            fontSize = if (total) 15.sp else 14.sp,
+            fontSize = if (total) DS.TextSize.Name else DS.TextSize.Body,
             fontWeight = if (total) FontWeight.SemiBold else FontWeight.Normal,
             color = if (total) DS.Colors.Text else DS.Colors.TextMuted,
             modifier = Modifier.weight(1f),
         )
         Text(
             value,
-            fontSize = if (total) 20.sp else 15.sp,
+            fontSize = if (total) DS.TextSize.Amount else DS.TextSize.Body,
             fontWeight = if (total) FontWeight.Bold else FontWeight.Normal,
             color = valueColor,
         )
@@ -811,17 +811,17 @@ private fun ItemRow(item: OrderItem, orderType: String) {
         Column(Modifier.weight(1f)) {
             Text(
                 "${item.productName ?: "—"} × ${item.quantity}",
-                fontSize = 15.sp,
+                fontSize = DS.TextSize.Body,
                 fontWeight = FontWeight.Medium,
                 color = DS.Colors.Text,
             )
             Text(
                 orderLinePricingText(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, orderType),
-                fontSize = 13.sp,
+                fontSize = DS.TextSize.Secondary,
                 color = DS.Colors.TextMuted,
             )
         }
-        Text(formatMoneyVnd(item.totalPrice), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+        Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
     }
     HorizontalDivider(color = DS.Colors.Divider)
 }

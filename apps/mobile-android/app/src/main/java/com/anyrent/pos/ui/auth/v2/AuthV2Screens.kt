@@ -197,7 +197,7 @@ private fun AuthProgress(step: Int, total: Int = 2) {
             Box(Modifier.fillMaxWidth(step.toFloat() / total).height(6.dp).background(AuthV2Style.Primary, CircleShape))
         }
         Spacer(Modifier.width(10.dp))
-        Text(label, color = AuthV2Style.Primary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = AuthV2Style.Primary, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -220,7 +220,7 @@ private fun AuthField(
     var visible by rememberSaveable { mutableStateOf(false) }
     val focus = LocalFocusManager.current
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, color = AuthV2Style.Text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = AuthV2Style.Text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -231,10 +231,10 @@ private fun AuthField(
                     contentDescription = label
                     if (error != null) error(error)
                 },
-            placeholder = placeholder?.let { { Text(it, color = AuthV2Style.TextMuted, fontSize = 16.sp) } },
+            placeholder = placeholder?.let { { Text(it, color = AuthV2Style.TextMuted, fontSize = DS.TextSize.Input) } },
             singleLine = true,
             isError = error != null,
-            textStyle = TextStyle(fontSize = 16.sp, color = AuthV2Style.Text),
+            textStyle = TextStyle(fontSize = DS.TextSize.Input, color = AuthV2Style.Text),
             shape = RoundedCornerShape(AuthV2Style.FieldRadius),
             visualTransformation = if (password && !visible) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(
@@ -272,8 +272,8 @@ private fun AuthField(
                 errorCursorColor = ErrorRed,
             ),
         )
-        if (hint != null && error == null) Text(hint, color = AuthV2Style.TextMuted, fontSize = 13.sp)
-        if (error != null) Text(error, color = ErrorRed, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        if (hint != null && error == null) Text(hint, color = AuthV2Style.TextMuted, fontSize = DS.TextSize.Secondary)
+        if (error != null) Text(error, color = ErrorRed, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -294,7 +294,7 @@ private fun AuthButton(text: String, loading: Boolean, onClick: () -> Unit) {
         if (loading) {
             CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
         } else {
-            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text, fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -305,7 +305,7 @@ private fun AuthLink(text: String, onClick: () -> Unit, enabled: Boolean = true)
         Text(
             text,
             color = if (enabled) AuthV2Style.Primary else AuthV2Style.TextMuted,
-            fontSize = 15.sp,
+            fontSize = DS.TextSize.Body,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -373,7 +373,7 @@ fun LoginV2Screen(
         blobs = AuthV2Style.BlobScale.LOGIN,
         footer = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.authv2_no_store), color = AuthV2Style.TextMuted, fontSize = 15.sp)
+                Text(stringResource(R.string.authv2_no_store), color = AuthV2Style.TextMuted, fontSize = DS.TextSize.Body)
                 AuthLink(stringResource(R.string.authv2_create_store), onRegister)
             }
         },
@@ -402,7 +402,7 @@ fun LoginV2Screen(
             AuthLink(stringResource(R.string.authv2_forgot_link), { onForgotPassword(email.trim()) })
         }
         generalError?.let {
-            Text(it, color = ErrorRed, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp))
         }
         AuthButton(stringResource(R.string.authv2_login_button), loading) { submit() }
     }
@@ -484,7 +484,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
         contentTop = 52,
         blobs = AuthV2Style.BlobScale.REGISTER,
         footer = {
-            generalError?.let { Text(it, color = ErrorRed, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp)) }
+            generalError?.let { Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp)) }
             AuthButton(
                 stringResource(if (step == 1) R.string.authv2_continue else R.string.authv2_create_store_button),
                 loading,
@@ -529,7 +529,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                             append(" ")
                             withStyle(SpanStyle(color = AuthV2Style.TextMuted)) { append(stringResource(R.string.authv2_rent_what_hint)) }
                         },
-                        fontSize = 14.sp,
+                        fontSize = DS.TextSize.Body,
                     )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         BusinessTagRules.options.forEach { option ->
@@ -602,7 +602,7 @@ private fun TagChip(label: String, selected: Boolean, onClick: () -> Unit) {
             Text(
                 label,
                 color = if (selected) AuthV2Style.ChipOnText else AuthV2Style.ChipOffText,
-                fontSize = 14.sp,
+                fontSize = DS.TextSize.Body,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
         }
@@ -641,9 +641,9 @@ private fun TermsRow(checked: Boolean, error: String?, onToggle: () -> Unit) {
                     uncheckedColor = if (error != null) ErrorRed else FieldBorder,
                 ),
             )
-            Text(text, color = TermsText, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 12.dp))
+            Text(text, color = TermsText, fontSize = DS.TextSize.Body, lineHeight = 20.sp, modifier = Modifier.padding(top = 12.dp))
         }
-        if (error != null) Text(error, color = ErrorRed, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        if (error != null) Text(error, color = ErrorRed, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -681,7 +681,7 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
                 stringResource(R.string.authv2_forgot_staff_note),
                 modifier = Modifier.fillMaxWidth(),
                 color = AuthV2Style.TextMuted,
-                fontSize = 14.sp,
+                fontSize = DS.TextSize.Body,
                 textAlign = TextAlign.Center,
             )
         },
@@ -731,7 +731,7 @@ fun EmailSentV2Screen(email: String, kind: EmailSentKind = EmailSentKind.RESET, 
         contentTop = 150,
         blobs = AuthV2Style.BlobScale.FORGOT,
         footer = {
-            error?.let { Text(it, color = ErrorRed, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp)) }
+            error?.let { Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp)) }
             AuthButton(stringResource(R.string.authv2_back_to_login), loading = false, onClick = onBackToLogin)
             Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

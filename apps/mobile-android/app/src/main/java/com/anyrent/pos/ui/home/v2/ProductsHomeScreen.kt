@@ -161,9 +161,9 @@ fun ProductsHomeScreen(
                         val shop = listOfNotNull(SessionStore.merchantName, SessionStore.outletName)
                             .filter { it.isNotBlank() }.joinToString(" · ")
                         if (shop.isNotBlank()) {
-                            Text(shop, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(shop, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        Text(stringResource(R.string.v2_home_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                        Text(stringResource(R.string.v2_home_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
                     }
                     if (ProductAccess.canCreate(PermissionManager.role)) {
                         IconButton(onClick = { showForm = true }) {
@@ -191,14 +191,14 @@ fun ProductsHomeScreen(
                         Spacer(Modifier.size(8.dp))
                         Box(Modifier.weight(1f)) {
                             if (draft.isEmpty()) {
-                                Text(stringResource(R.string.v2_search_placeholder), color = DS.Colors.TextMuted, fontSize = 15.sp)
+                                Text(stringResource(R.string.v2_search_placeholder), color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body)
                             }
                             val searchLabel = stringResource(R.string.v2_search_placeholder)
                             BasicTextField(
                                 value = draft,
                                 onValueChange = { draft = it },
                                 singleLine = true,
-                                textStyle = TextStyle(fontSize = 15.sp, color = DS.Colors.Text),
+                                textStyle = TextStyle(fontSize = DS.TextSize.Body, color = DS.Colors.Text),
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = { viewModel.setQuery(draft) }),
                                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = searchLabel },
@@ -334,20 +334,20 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
     }
     Column(Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().heightIn(min = DS.Gap.ProductRowMinHeight).padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.ProductRow),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ProductThumb(product.images.firstOrNull() ?: product.imageUrl, 68.dp, 12.dp)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(product.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
+                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     subtitle.code?.let { code ->
-                        Text(code, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        Text(code, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     }
                     Text(
                         "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
-                        fontSize = 12.sp,
+                        fontSize = DS.TextSize.Secondary,
                         fontWeight = FontWeight.SemiBold,
                         color = when {
                             free <= 0 -> V2Colors.Danger
@@ -360,15 +360,15 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
                 val text = buildAnnotatedString {
                     val main = perRental?.let { it to unitRental } ?: perDay?.let { it to unitDay }
                     main?.let { (price, unit) ->
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DS.Colors.Text)) { append(formatMoneyVnd(price)) }
-                        withStyle(SpanStyle(fontSize = 12.sp, color = DS.Colors.TextMuted)) { append(unit) }
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = DS.TextSize.Name, color = DS.Colors.Text)) { append(formatMoneyVnd(price)) }
+                        withStyle(SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)) { append(unit) }
                     }
                     val extra = listOfNotNull(
                         perDay?.takeIf { perRental != null }?.let { formatMoneyVnd(it) + unitDay },
                         sale?.let { saleShort.format(formatMoneyVnd(it)) },
                     )
                     if (extra.isNotEmpty()) {
-                        withStyle(SpanStyle(fontSize = 13.sp, color = DS.Colors.TextMuted)) {
+                        withStyle(SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)) {
                             append((if (main != null) " · " else "") + extra.joinToString(" · "))
                         }
                     }
@@ -393,7 +393,7 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
                 contentAlignment = Alignment.Center,
             ) {
                 if (addState is AddButtonState.InCart) {
-                    Text(addState.count.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(addState.count.toString(), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = Color.White)
                 } else {
                     Icon(Icons.Outlined.Add, contentDescription = null, tint = if (out) DS.Colors.TextMuted else Color.White, modifier = Modifier.size(DS.Icon.Sm))
                 }
@@ -421,10 +421,10 @@ private fun CartBar(count: Int, total: Double, onClick: () -> Unit, modifier: Mo
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-            Text(formatMoneyVnd(total), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(label, fontSize = DS.TextSize.Secondary, color = Color.White.copy(alpha = 0.85f))
+            Text(formatMoneyVnd(total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = Color.White)
         }
-        Text(create, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Text(create, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = Color.White)
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
     }
 }

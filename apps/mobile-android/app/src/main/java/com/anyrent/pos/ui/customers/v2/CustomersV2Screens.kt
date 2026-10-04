@@ -206,7 +206,7 @@ private fun CustomersListContent(
                     color = DS.Colors.Text, modifier = Modifier.padding(start = 8.dp).weight(1f).semantics { heading() },
                 )
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = DS.TouchTarget)) {
-                    Text(stringResource(R.string.customers_v2_close), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
+                    Text(stringResource(R.string.customers_v2_close), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
                 }
             } else {
                 IconButton(onClick = onClose) {
@@ -216,7 +216,7 @@ private fun CustomersListContent(
                     buildAnnotatedString {
                         append(stringResource(R.string.customers_v2_title))
                         if (!state.loading || state.total > 0) {
-                            withStyle(SpanStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = DS.Colors.TextMuted)) {
+                            withStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.TextMuted)) {
                                 append(" · ${state.total}")
                             }
                         }
@@ -253,7 +253,7 @@ private fun CustomersListContent(
                     if (state.query.isEmpty() && state.rows.isNotEmpty()) {
                         item(key = "recent") {
                             Text(
-                                stringResource(R.string.customers_v2_recent), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                stringResource(R.string.customers_v2_recent), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold,
                                 color = DS.Colors.TextMuted, letterSpacing = 0.5.sp,
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp).semantics { heading() },
                             )
@@ -292,12 +292,12 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
     ) {
         AppIcon(Icons.Outlined.Search, contentDescription = null, size = DS.Icon.Sm, tint = DS.Colors.TextMuted)
         Box(Modifier.weight(1f)) {
-            if (value.isEmpty()) Text(stringResource(R.string.customers_v2_search_placeholder), fontSize = 16.sp, color = DS.Colors.TextMuted)
+            if (value.isEmpty()) Text(stringResource(R.string.customers_v2_search_placeholder), fontSize = DS.TextSize.Input, color = DS.Colors.TextMuted)
             androidx.compose.foundation.text.BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = DS.Colors.Text),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
             )
@@ -325,7 +325,7 @@ private fun NewCustomerRow(onClick: () -> Unit) {
             ) {
                 AppIcon(Icons.Outlined.Add, contentDescription = null, size = DS.Icon.Sm, tint = DS.Colors.Primary)
             }
-            Text(stringResource(R.string.customers_v2_new), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+            Text(stringResource(R.string.customers_v2_new), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
         }
         Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
     }
@@ -342,7 +342,7 @@ fun CustomerAvatar(name: String, size: Int, fontSize: Int) {
 private fun TierPill(tier: String?) {
     if (tier == null) return
     Text(
-        tier, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DS.Status.Waiting.text, maxLines = 1,
+        tier, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = DS.Status.Waiting.text, maxLines = 1,
         modifier = Modifier.clip(RoundedCornerShape(DS.Radius.pill)).background(DS.Status.Waiting.fill).padding(horizontal = 8.dp, vertical = 2.dp),
     )
 }
@@ -359,13 +359,13 @@ private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: ()
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CustomerAvatar(row.name, 44, 15)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(row.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1,
+                    Text(row.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     TierPill(row.tier)
                 }
-                Text(subtitle, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1)
+                Text(subtitle, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
             }
             if (showsChevron) AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, size = 16.dp, tint = Chevron)
         }
@@ -375,7 +375,7 @@ private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: ()
 
 @Composable
 private fun Message(text: String) {
-    Text(text, fontSize = 15.sp, color = DS.Colors.TextMuted, textAlign = TextAlign.Center,
+    Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp))
 }
 
@@ -449,23 +449,23 @@ fun NewCustomerContent(
                 placeholder = stringResource(R.string.customers_v2_note_placeholder),
                 imeAction = ImeAction.Done,
             )
-            Text(stringResource(R.string.customers_v2_hint), fontSize = 13.sp, color = DS.Colors.TextMuted)
+            Text(stringResource(R.string.customers_v2_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             existing?.let { row ->
                 Column(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.Radius.card)).background(DS.Status.Waiting.fill).padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(stringResource(R.string.customers_v2_duplicate), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Status.Waiting.text)
+                    Text(stringResource(R.string.customers_v2_duplicate), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Status.Waiting.text)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         CustomerAvatar(row.name, 44, 15)
-                        Column(Modifier.weight(1f)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(row.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                                Text(row.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                                 TierPill(row.tier)
                             }
                             Text(
                                 CustomerRules.subtitle(row.phone, pluralStringResource(R.plurals.customers_v2_orders, row.orderCount, row.orderCount)),
-                                fontSize = 13.sp, color = DS.Colors.TextMuted,
+                                fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
                             )
                         }
                     }
@@ -477,7 +477,7 @@ fun NewCustomerContent(
                         border = BorderStroke(1.dp, FieldBorder),
                     ) {
                         Text(stringResource(if (pickMode) R.string.customers_v2_use_existing else R.string.customers_v2_open_existing),
-                            fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -510,20 +510,20 @@ private fun FormField(
                 append(label)
                 optional?.let { withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = DS.Colors.TextMuted)) { append(" $it") } }
             },
-            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
+            fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
         )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
             isError = error != null,
-            placeholder = placeholder?.let { { Text(it, fontSize = 16.sp, color = DS.Colors.TextMuted) } },
+            placeholder = placeholder?.let { { Text(it, fontSize = DS.TextSize.Input, color = DS.Colors.TextMuted) } },
             supportingText = error?.let { { Text(it) } },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType, capitalization = capitalization, imeAction = imeAction),
             keyboardActions = KeyboardActions.Default,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = FieldBorder, focusedBorderColor = DS.Colors.Primary),
-            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = DS.Colors.Text),
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = label },
         )
     }
@@ -539,7 +539,7 @@ private fun PrimaryButton(text: String, enabled: Boolean = true, loading: Boolea
         colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary, contentColor = Color.White),
     ) {
         if (loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-        else Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        else Text(text, fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -602,19 +602,19 @@ fun CustomerDetailV2Screen(
                 Spacer(Modifier.weight(1f))
                 if (canEdit && shown != null) {
                     TextButton(onClick = onEdit, modifier = Modifier.heightIn(min = DS.TouchTarget)) {
-                        Text(stringResource(R.string.customers_v2_edit), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                        Text(stringResource(R.string.customers_v2_edit), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                     }
                 }
             }
             Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CustomerAvatar(name, 56, 18)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f, fill = false))
                         TierPill(shown?.tier)
                     }
-                    phone?.let { Text(it, fontSize = 14.sp, color = DS.Colors.TextMuted) }
+                    phone?.let { Text(it, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted) }
                 }
                 if (CustomerRules.phoneDigits(phone).isNotEmpty()) {
                     val callLabel = stringResource(R.string.customers_v2_call)
@@ -640,17 +640,17 @@ fun CustomerDetailV2Screen(
                     Column(
                         Modifier.weight(1f).border(1.dp, Color(0xFFEEF0F3), RoundedCornerShape(DS.Radius.card)).padding(10.dp)
                             .semantics(mergeDescendants = true) {},
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight),
                     ) {
-                        Text(tile.title, fontSize = 12.sp, color = DS.Colors.TextMuted, maxLines = 1)
-                        Text(tile.value, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,
+                        Text(tile.title, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+                        Text(tile.value, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,
                             overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
         }
         Text(
-            stringResource(R.string.customers_v2_recent_orders).uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+            stringResource(R.string.customers_v2_recent_orders).uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold,
             color = DS.Colors.TextMuted, letterSpacing = 0.5.sp,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp).semantics { heading() },
         )
@@ -691,14 +691,14 @@ private fun OrderRowItem(order: CustomerOrderRow, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(CustomerRules.orderTitle(order, items), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
+                Text(CustomerRules.orderTitle(order, items), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (dates.isNotEmpty()) Text(dates, fontSize = 13.sp, color = DS.Colors.TextMuted)
+                if (dates.isNotEmpty()) Text(dates, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 StatusPill(order.status)
-                Text(formatMoneyVnd(order.totalAmount), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                Text(formatMoneyVnd(order.totalAmount), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
@@ -716,7 +716,7 @@ private fun StatusPill(status: String) {
     }
     val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
     Text(
-        label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = colors.text, maxLines = 1,
+        label, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = colors.text, maxLines = 1,
         modifier = Modifier.clip(RoundedCornerShape(DS.Radius.pill)).background(colors.fill).padding(horizontal = 9.dp, vertical = 3.dp),
     )
 }

@@ -110,7 +110,7 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(stringResource(R.string.extend_rental_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-            Text(stringResource(R.string.extend_rental_current, dayText(current)), fontSize = 14.sp, color = DS.Colors.TextMuted)
+            Text(stringResource(R.string.extend_rental_current, dayText(current)), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
             DatePicker(
                 state = picker,
                 title = null,
@@ -120,7 +120,7 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
             )
             if (window != null && chosen != null) {
                 val extra = RentalExtension.extraDays(current, chosen)
-                Text(pluralStringResource(R.plurals.extend_rental_extra_days, extra, extra), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                Text(pluralStringResource(R.plurals.extend_rental_extra_days, extra, extra), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
             }
             OutlinedTextField(
                 value = extraText,
@@ -133,9 +133,9 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
                 modifier = Modifier.fillMaxWidth(),
             )
             newTotal?.let {
-                Text(stringResource(R.string.extend_rental_new_total, formatMoneyVnd(it)), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                Text(stringResource(R.string.extend_rental_new_total, formatMoneyVnd(it)), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
             }
-            error?.let { Text(it, fontSize = 14.sp, color = DS.Status.Late.text) }
+            error?.let { Text(it, fontSize = DS.TextSize.Body, color = DS.Status.Late.text) }
             AppPrimaryButton(
                 text = chosen?.takeIf { window != null }?.let { stringResource(R.string.extend_rental_confirm, dayText(it)) }
                     ?: stringResource(R.string.extend_rental_pick),

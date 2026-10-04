@@ -96,13 +96,13 @@ fun CalendarV2Screen(
                     Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(stringResource(R.string.calendar_v2_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.calendar_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.moveMonth(-1) }) {
                         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.calendar_v2_prev_month), tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
                     }
                     Text(
                         stringResource(R.string.calendar_v2_month, state.month.monthValue, state.month.year),
-                        fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
+                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
                         textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 108.dp),
                     )
                     IconButton(onClick = { viewModel.moveMonth(1) }) {
@@ -114,7 +114,7 @@ fun CalendarV2Screen(
                 Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                         stringResource(R.string.calendar_v2_weekdays).split(",").forEach {
-                            Text(it, fontSize = 12.sp, color = DS.Colors.TextMuted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Text(it, fontSize = DS.TextSize.Pill, color = DS.Colors.TextMuted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
                         }
                     }
                     grid.chunked(7).forEach { week ->
@@ -151,13 +151,13 @@ fun CalendarV2Screen(
                 state.dayError != null -> item(key = "error") {
                     Text(
                         (state.dayError?.takeIf { it.isNotBlank() } ?: stringResource(R.string.calendar_v2_error)) + "\n" + stringResource(R.string.retry),
-                        color = DS.Colors.TextMuted, fontSize = 15.sp, textAlign = TextAlign.Center,
+                        color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().clickable { viewModel.retryDay() }.padding(28.dp),
                     )
                 }
                 state.rows.isEmpty() -> item(key = "empty") {
                     Text(
-                        stringResource(R.string.calendar_v2_empty), color = DS.Colors.TextMuted, fontSize = 15.sp,
+                        stringResource(R.string.calendar_v2_empty), color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(28.dp),
                     )
                 }
@@ -187,7 +187,7 @@ private fun Mark(kind: MarkKind) {
 private fun Legend(kind: MarkKind, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         Mark(kind)
-        Text(label, fontSize = 12.sp, color = DS.Colors.TextMuted)
+        Text(label, fontSize = DS.TextSize.Pill, color = DS.Colors.TextMuted)
     }
 }
 
@@ -217,7 +217,7 @@ private fun DayCell(cell: CalendarCell, marks: CalendarDayMarks, selected: Boole
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            cell.day.toString(), fontSize = 14.sp, color = textColor,
+            cell.day.toString(), fontSize = DS.TextSize.Body, color = textColor,
             fontWeight = if ((cell.isToday || selected) && cell.inMonth) FontWeight.Bold else FontWeight.Normal,
         )
         Spacer(Modifier.height(3.dp))
@@ -245,7 +245,7 @@ private fun DayHeader(selectedKey: String, todayKey: String, counts: com.anyrent
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
+            Text(title, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = Color(0xFF334155), modifier = Modifier.weight(1f))
             Text(
                 buildAnnotatedString {
                     if (lateText != null) {
@@ -254,7 +254,7 @@ private fun DayHeader(selectedKey: String, todayKey: String, counts: com.anyrent
                     }
                     append(rest)
                 },
-                fontSize = 13.sp, color = DS.Colors.TextMuted,
+                fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
             )
         }
         ThinDivider()
@@ -270,24 +270,24 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    tag, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = pill.text,
+                    tag, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = pill.text,
                     modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(pill.fill).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
                 Text(
                     row.order.customerName?.takeIf { it.isNotBlank() } ?: row.order.orderNumber,
-                    fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(
-                row.order.itemsSummary.ifBlank { row.order.orderNumber }, fontSize = 13.sp, color = Color(0xFF334155),
+                row.order.itemsSummary.ifBlank { row.order.orderNumber }, fontSize = DS.TextSize.Body, color = Color(0xFF334155),
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatMoneyVnd(row.order.totalAmount), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+            Text(formatMoneyVnd(row.order.totalAmount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
             val note = when (val n = CalendarLogic.note(row)) {
                 is CalendarNote.Late -> {
@@ -299,7 +299,7 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                 CalendarNote.None -> null
             }
             note?.let { (text, color) ->
-                Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+                Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
             }
         }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = OtherMonth, modifier = Modifier.size(DS.Icon.Sm))

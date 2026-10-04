@@ -100,7 +100,7 @@ internal fun HandOverSheet(
             MoneyRow(stringResource(R.string.detail_collect_now), formatMoneyVnd(money.collectNow), total = true)
         }
         if (money.collectNow > 0) MethodPicker(payment, working, onMethod, onShowQr)
-        payment.error?.let { Text(it, color = DS.Status.Late.text, fontSize = 13.sp) }
+        payment.error?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
         SheetButtons(
             confirm = if (money.collectNow > 0) {
                 stringResource(R.string.detail_handed_over_collect, formatMoneyVnd(money.collectNow))
@@ -174,10 +174,10 @@ internal fun ReturnSheet(
             }
         }
         detail.collateralDetails?.takeIf { it.isNotBlank() }?.let {
-            Text("${stringResource(R.string.collateral)}: $it", fontSize = 14.sp, color = DS.Colors.Text)
+            Text("${stringResource(R.string.collateral)}: $it", fontSize = DS.TextSize.Body, color = DS.Colors.Text)
         }
         if (money.net != 0.0) MethodPicker(payment, working, onMethod, onShowQr)
-        (error ?: payment.error)?.let { Text(it, color = DS.Status.Late.text, fontSize = 13.sp) }
+        (error ?: payment.error)?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
         SheetButtons(
             confirm = when {
                 money.refund > 0 -> stringResource(R.string.detail_received_refund, formatMoneyVnd(money.refund))
@@ -217,7 +217,7 @@ internal fun NotesSheet(
     SheetFrame(onDismiss = onDismiss) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.notes), fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.detail_photos_count, count, max), fontSize = 13.sp, color = DS.Colors.TextMuted)
+            Text(stringResource(R.string.detail_photos_count, count, max), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
         OutlinedTextField(
             value = text,
@@ -238,7 +238,7 @@ internal fun NotesSheet(
                 }
             }
         }
-        error?.let { Text(it, color = DS.Status.Late.text, fontSize = 13.sp) }
+        error?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
         SheetButtons(confirm = stringResource(R.string.save_notes), enabled = !busy, onDismiss = onDismiss, onConfirm = onSave)
     }
 }
@@ -283,9 +283,9 @@ private fun SheetFrame(onDismiss: () -> Unit, content: @Composable ColumnScope.(
 
 @Composable
 private fun SheetTitle(title: String, subtitle: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
         Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-        Text(subtitle, fontSize = 14.sp, color = DS.Colors.TextMuted)
+        Text(subtitle, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
     }
 }
 
@@ -299,8 +299,8 @@ private fun SheetItems(detail: OrderDetail) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Thumb(item.imageUrl, 40.dp)
-                Text(item.productName ?: "—", fontSize = 15.sp, modifier = Modifier.weight(1f))
-                Text("× ${item.quantity}", fontSize = 14.sp, color = DS.Colors.TextMuted)
+                Text(item.productName ?: "—", fontSize = DS.TextSize.Body, modifier = Modifier.weight(1f))
+                Text("× ${item.quantity}", fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
             }
         }
     }
@@ -325,7 +325,7 @@ private fun MethodPicker(
     onShowQr: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(stringResource(R.string.payment_method), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
+        Text(stringResource(R.string.payment_method), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AppFilterChip(
                 label = stringResource(R.string.payment_method_cash),

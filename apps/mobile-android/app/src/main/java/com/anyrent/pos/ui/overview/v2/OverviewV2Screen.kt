@@ -118,7 +118,7 @@ fun OverviewV2Screen(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.overview_v2_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.overview_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
             if (state.showsRevenue) {
                 val description = stringResource(R.string.overview_v2_period_accessibility, periodTitle)
                 Row(
@@ -132,7 +132,7 @@ fun OverviewV2Screen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Text(periodTitle, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                    Text(periodTitle, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                     Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(16.dp))
                 }
             }
@@ -165,8 +165,8 @@ fun OverviewV2Screen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text(stringResource(stat.label), fontSize = 15.sp, color = DS.Colors.Text, modifier = Modifier.weight(1f))
-                            Text(stat.value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = stat.color)
+                            Text(stringResource(stat.label), fontSize = DS.TextSize.Body, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+                            Text(stat.value, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = stat.color)
                             if (stat.kind != null) Chevron()
                         }
                         ThinDivider()
@@ -182,7 +182,7 @@ fun OverviewV2Screen(
                 if (!state.showsRevenue && !state.showsOperations) {
                     item(key = "no-access") {
                         Text(
-                            stringResource(R.string.overview_v2_no_access), color = DS.Colors.TextMuted, fontSize = 15.sp,
+                            stringResource(R.string.overview_v2_no_access), color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body,
                             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(40.dp),
                         )
                     }
@@ -234,7 +234,7 @@ fun OverviewV2Screen(
 @Composable
 private fun RevenueSection(report: OverviewReport?, loading: Boolean, error: String?, range: DayRange, onRetry: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp)) {
-        Text("${stringResource(R.string.overview_v2_net_revenue)} · ${longRange(range)}", fontSize = 13.sp, color = DS.Colors.TextMuted)
+        Text("${stringResource(R.string.overview_v2_net_revenue)} · ${longRange(range)}", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         when {
             report != null -> {
                 Text(formatMoneyVnd(report.netRevenue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
@@ -243,7 +243,7 @@ private fun RevenueSection(report: OverviewReport?, loading: Boolean, error: Str
                 val previous = stringResource(R.string.overview_v2_vs_previous, OverviewLogic.shortRange(OverviewLogic.previous(range)))
                 Text(
                     if (growth != null) "${OverviewLogic.changeText(growth)} $previous · $cancelled" else cancelled,
-                    fontSize = 13.sp,
+                    fontSize = DS.TextSize.Secondary,
                     color = when {
                         growth == null -> DS.Colors.TextMuted
                         growth > 0.05 -> V2Colors.Ok
@@ -259,7 +259,7 @@ private fun RevenueSection(report: OverviewReport?, loading: Boolean, error: Str
                 Text("—", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
                 Text(
                     error.ifBlank { stringResource(R.string.calendar_v2_error) } + " · " + stringResource(R.string.retry),
-                    fontSize = 13.sp, color = V2Colors.Danger, modifier = Modifier.clickable(onClick = onRetry),
+                    fontSize = DS.TextSize.Secondary, color = V2Colors.Danger, modifier = Modifier.clickable(onClick = onRetry),
                 )
             }
             loading -> Box(Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
@@ -303,7 +303,7 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier) {
                 Text(
                     if (last || (index % labelEvery == 0 && bars.lastIndex - index >= (labelEvery + 1) / 2)) bar.label else "",
                     modifier = Modifier.fillMaxWidth().wrapContentWidth(align = labelAlign, unbounded = true),
-                    fontSize = 11.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible,
+                    fontSize = DS.TextSize.Pill, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible,
                     fontWeight = if (last) FontWeight.Bold else FontWeight.Normal,
                     color = if (last) DS.Colors.Text else DS.Colors.TextMuted,
                 )
@@ -329,10 +329,10 @@ private fun TopRow(product: OverviewReport.TopProduct, onClick: (() -> Unit)?) {
     ) {
         ProductThumb(product.image, 44.dp, 10.dp)
         Column(Modifier.weight(1f)) {
-            Text(product.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(R.string.overview_v2_rentals, product.rentalCount), fontSize = 13.sp, color = DS.Colors.TextMuted)
+            Text(product.name, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.overview_v2_rentals, product.rentalCount), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
-        Text(formatMoneyVnd(product.totalRevenue), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+        Text(formatMoneyVnd(product.totalRevenue), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
     }
     ThinDivider()
 }
@@ -365,8 +365,8 @@ private fun PeriodSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(presetTitle(preset), fontSize = 15.sp, color = DS.Colors.Text, fontWeight = if (checked) FontWeight.Bold else FontWeight.Normal)
-                    Text(if (range.dayCount == 1) longRange(range) else OverviewLogic.shortRange(range), fontSize = 13.sp, color = DS.Colors.TextMuted)
+                    Text(presetTitle(preset), fontSize = if (checked) DS.TextSize.Name else DS.TextSize.Body, color = DS.Colors.Text, fontWeight = if (checked) FontWeight.Bold else FontWeight.Normal)
+                    Text(if (range.dayCount == 1) longRange(range) else OverviewLogic.shortRange(range), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
                 RadioButton(selected = checked, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = DS.Colors.Primary))
             }
@@ -379,7 +379,7 @@ private fun PeriodSheet(
         ) {
             Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Md))
             val custom = (selected as? OverviewPeriod.Custom)?.let { "  ${OverviewLogic.shortRange(it.range)}" }.orEmpty()
-            Text(stringResource(R.string.overview_v2_period_custom) + custom, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+            Text(stringResource(R.string.overview_v2_period_custom) + custom, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
         }
     }
 }
