@@ -57,11 +57,26 @@ Old-app code read on `origin/main-real`.
 | `DELETE /api/products/{id}` open orders | new 409 `PRODUCT_HAS_OPEN_ORDERS` (before: hard delete always succeeded) | AF without `validate()` → body decoded, `success=false` → `createErrorFromResponse`; unknown code falls back to the English `message` (`Model/ErrorCodes.swift:1318-1323`), shown by `UIAlertController.errorAlert` (`Viewcontrollers/Main /MainViewController.swift:880-887`) | non-2xx → `AppError.Http(json.errorMessage())` (`ApiClient.kt:916-922`) → `AppAlertError` with the English message (`HomeScreens.kt:485`) | detail page fixed in this PR; list page already checks `success`; global handler translates the code | low — old apps show an English sentence; the product is not deleted (intended rule) |
 | `POST /api/products/batch-delete` | soft delete; open-order products go to `errors[]` | not called | not called | client/admin read `deleted` / `failed` counts | none |
 | Product lists, search, barcode, image search, availability, detail | deleted products hidden / 404 | same as a hard-deleted product before | same | same | none |
+| `GET /api/orders?productId=<deleted product>` | 404 `PRODUCT_NOT_FOUND` (route validates the product) | same as a hard-deleted product before | same | same | none |
 | Order create with a deleted product id | `Product with ID … not found` (`findById` null) | same as hard delete before | same | same | none |
 | Plan-limit product count | excludes deleted products | n/a | n/a | n/a | none (hard delete also freed the slot) |
 | Migration | `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)` — nullable, no default, no backfill, no lock beyond a catalog update | n/a | n/a | n/a | low — additive; human review per `review-pr` |
 
 Old orders that contain a product deleted *before* this change still show their item snapshot (unchanged).
+
+## Verification (2026-10-04)
+
+- Tests: `cd tests && yarn test` → 26 failing suites vs 27 in `fail-base.txt`, no new failing suite
+  (`validate-addon-deletion` also passes here). New suites green under `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh` (64 tests).
+- Type-check: `npx tsc --noEmit -p apps/api/tsconfig.json` after the build has 95 lines of errors, none in the changed
+  code (2 pre-existing loyalty errors in `orders/route.ts` POST); `apps/client` has no error in `products/[id]/page.tsx`.
+- Build: `turbo run build --filter=@rentalshop/api --force` → Compiled successfully.
+- Run on :3188 against `anyrent_mobile_e2e` as merchant2: samples for every item; `nearestTask` order equals a SQL
+  reference over all 61 orders; planned ranges match SQL counts (13 / 5).
+- Query cost, 100k orders + 200k payments in a rolled-back transaction: payment sums 0.16 ms (50-row page) /
+  0.88 ms (500-row page) on `Payment_orderId_status_idx`; `nearestTask` per open segment ~4 ms count + ~4 ms sorted
+  read (page 1) / 5.5 ms (take 1000) via `Order_status_outletId_idx`; default list page 0.03 ms. Seed DB endpoint
+  averages (20 runs): list 10.6 ms, nearestTask 11.0 ms, nearestTask limit 500 15.1 ms, by-date 6.9 ms.
 
 ## Risks
 
