@@ -66,6 +66,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.auth.LegacyRegisterTags
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.ui.common.appInputTextStyle
@@ -342,8 +343,8 @@ fun RegisterStoreScreen(onBack: () -> Unit, onRegistered: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val tags = listOf("AO_DAI", "COSTUME", "WEDDING", "EQUIPMENT", "VEHICLE", "FILM", "OTHER")
-    val tagLabels = listOf(R.string.tag_ao_dai, R.string.tag_costume, R.string.tag_wedding, R.string.tag_equipment, R.string.tag_vehicle, R.string.tag_film, R.string.tag_other)
+    val tags = LegacyRegisterTags.chips.map { it.apiValue }
+    val tagLabels = LegacyRegisterTags.chips.map { it.labelRes }
     val canContinue = when (step) {
         0 -> storeName.isNotBlank() && phone.isNotBlank() && address.isNotBlank()
         1 -> fullName.isNotBlank() && email.isNotBlank() && password.length >= 6 && password == confirmPassword
@@ -418,7 +419,7 @@ fun RegisterStoreScreen(onBack: () -> Unit, onRegistered: () -> Unit) {
                                         loading = true
                                         scope.launch {
                                             val result = withContext(Dispatchers.IO) {
-                                                ApiParity.registerMerchant(email, password, fullName, phone, storeName, address, selectedTags.toList())
+                                                ApiParity.registerMerchant(email, password, fullName, phone, storeName, address, LegacyRegisterTags.payload(selectedTags))
                                             }
                                             loading = false
                                             result.onSuccess { onRegistered() }.onFailure { error = it.message }

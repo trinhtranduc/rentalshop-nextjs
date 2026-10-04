@@ -1,0 +1,156 @@
+{
+  "success": true,
+  "code": "BATCH_AVAILABILITY_CHECKED",
+  "message": "BATCH_AVAILABILITY_CHECKED",
+  "data": {
+    "results": [
+      {
+        "productId": 31,
+        "productName": "Product 31 - Electronics",
+        "totalStock": 14,
+        "totalAvailableStock": 11,
+        "totalRenting": 3,
+        "requestedQuantity": 1,
+        "rentalPeriod": {
+          "startDate": "2026-10-05T00:00:00.000Z",
+          "endDate": "2026-10-05T23:59:59.000Z",
+          "startDateLocal": "10/5/2026, 07:00:00",
+          "endDateLocal": "10/6/2026, 06:59:59",
+          "durationMs": 86399000,
+          "durationHours": 24,
+          "durationDays": 1,
+          "timeZone": "Asia/Ho_Chi_Minh",
+          "includeTimePrecision": true
+        },
+        "isAvailable": true,
+        "stockAvailable": true,
+        "hasNoConflicts": false,
+        "availabilityByOutlet": [
+          {
+            "outletId": 2,
+            "outletName": "Outdoor Equipment Co. - Main Branch",
+            "stock": 14,
+            "available": 11,
+            "renting": 3,
+            "conflictingQuantity": 3,
+            "effectivelyAvailable": 11,
+            "canFulfillRequest": true,
+            "conflicts": [
+              {
+                "orderNumber": "ORD-002-0005",
+                "customerName": "Megan Thomas",
+                "pickupDate": "2026-09-30T22:47:25.818Z",
+                "returnDate": "2026-10-07T20:01:27.367Z",
+                "pickupDateLocal": "10/1/2026, 05:47:25",
+                "returnDateLocal": "10/8/2026, 03:01:27",
+                "quantity": 1,
+                "conflictDuration": 86399000,
+                "conflictHours": 24,
+                "conflictType": "complete_overlap"
+              },
+              {
+                "orderNumber": "739014",
+                "customerName": "Brian Clark",
+                "pickupDate": "2026-10-04T00:00:00.000Z",
+                "returnDate": "2026-10-05T23:59:00.000Z",
+                "pickupDateLocal": "10/4/2026, 07:00:00",
+                "returnDateLocal": "10/6/2026, 06:59:00",
+                "quantity": 1,
+                "conflictDuration": 86340000,
+                "conflictHours": 23.98,
+                "conflictType": "period_overlap"
+              },
+              {
+                "orderNumber": "148148",
+                "customerName": "Heather Robinson",
+                "pickupDate": "2026-10-05T17:00:00.000Z",
+                "returnDate": "2026-10-08T16:59:59.000Z",
+                "pickupDateLocal": "10/6/2026, 00:00:00",
+                "returnDateLocal": "10/8/2026, 23:59:59",
+                "quantity": 1,
+                "conflictDuration": 25199000,
+                "conflictHours": 7,
+                "conflictType": "period_overlap"
+              }
+            ]
+          }
+        ],
+        "bestOutlet": {
+          "outletId": 2,
+          "outletName": "Outdoor Equipment Co. - Main Branch",
+          "effectivelyAvailable": 11
+        },
+        "totalConflictsFound": 3,
+        "message": "Available for rental from 10/5/2026, 07:00:00 to 10/6/2026, 06:59:59 (24 hours)"
+      },
+      {
+        "productId": 62,
+        "productName": "P373 \u00c1o d\u00e0i test",
+        "totalStock": 3,
+        "totalAvailableStock": 1,
+        "totalRenting": 0,
+        "requestedQuantity": 2,
+        "rentalPeriod": {
+          "startDate": "2026-10-05T00:00:00.000Z",
+          "endDate": "2026-10-05T23:59:59.000Z",
+          "startDateLocal": "10/5/2026, 07:00:00",
+          "endDateLocal": "10/6/2026, 06:59:59",
+          "durationMs": 86399000,
+          "durationHours": 24,
+          "durationDays": 1,
+          "timeZone": "Asia/Ho_Chi_Minh",
+          "includeTimePrecision": true
+        },
+        "isAvailable": false,
+        "stockAvailable": true,
+        "hasNoConflicts": false,
+        "availabilityByOutlet": [
+          {
+            "outletId": 2,
+            "outletName": "Outdoor Equipment Co. - Main Branch",
+            "stock": 3,
+            "available": 3,
+            "renting": 0,
+            "conflictingQuantity": 2,
+            "effectivelyAvailable": 1,
+            "canFulfillRequest": false,
+            "conflicts": [
+              {
+                "orderNumber": "786100",
+                "customerName": "Brian Clark",
+                "pickupDate": "2026-10-04T00:00:00.000Z",
+                "returnDate": "2026-10-05T23:59:00.000Z",
+                "pickupDateLocal": "10/4/2026, 07:00:00",
+                "returnDateLocal": "10/6/2026, 06:59:00",
+                "quantity": 2,
+                "conflictDuration": 86340000,
+                "conflictHours": 23.98,
+                "conflictType": "period_overlap"
+              }
+            ]
+          }
+        ],
+        "bestOutlet": {
+          "outletId": 2,
+          "outletName": "Outdoor Equipment Co. - Main Branch",
+          "effectivelyAvailable": 1
+        },
+        "totalConflictsFound": 1,
+        "message": "Stock available but conflicts during requested period (24 hours)"
+      }
+    ],
+    "summary": {
+      "totalProducts": 2,
+      "availableProducts": 1,
+      "unavailableProducts": 1,
+      "errorProducts": 0
+    },
+    "rentalPeriod": {
+      "startDate": "2026-10-05T00:00:00.000Z",
+      "endDate": "2026-10-05T23:59:59.000Z",
+      "durationMs": 86399000,
+      "durationHours": 24,
+      "durationDays": 1
+    }
+  }
+}

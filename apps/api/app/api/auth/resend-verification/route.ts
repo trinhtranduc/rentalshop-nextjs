@@ -31,17 +31,9 @@ export async function POST(request: NextRequest) {
     
     const rateLimitResult = emailRateLimiter(request);
     if (rateLimitResult) {
-      const retryAfter = rateLimitResult.headers.get('Retry-After') || '300';
+      // Standard 429 body (RATE_LIMIT_EXCEEDED) with Retry-After, built by the limiter (#410)
       console.warn('⚠️ [Resend Verification] Rate limit exceeded:', { email: validatedData.email });
-      return NextResponse.json(
-        ResponseBuilder.error('RATE_LIMIT_EXCEEDED', 
-          `Quá nhiều yêu cầu. Vui lòng đợi ${Math.ceil(parseInt(retryAfter) / 60)} phút trước khi thử lại.`
-        ),
-        { 
-          status: 429,
-          headers: rateLimitResult.headers
-        }
-      );
+      return rateLimitResult;
     }
     
     // Find user by email

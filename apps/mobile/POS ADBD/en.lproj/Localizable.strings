@@ -1198,6 +1198,7 @@
 "PRODUCT_UPDATED_SUCCESS" = "Product updated successfully";
 "PROFILE_UPDATED_SUCCESS" = "Profile updated successfully";
 "QR_CODE_GENERATION_FAILED" = "Failed to generate QR code";
+"RATE_LIMIT_EXCEEDED" = "Too many requests. Please wait a few minutes and try again.";
 "RECENT_OPERATIONS_WITHOUT_LOGS" = "Recent operations found without corresponding audit logs";
 "RETRIEVE_USERS_FAILED" = "Failed to retrieve users";
 "SESSION_CANNOT_BE_RESUMED" = "Session cannot be resumed";

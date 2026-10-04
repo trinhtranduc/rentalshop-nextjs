@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+// Relative import (bundled by tsup) keeps this file free of the full @rentalshop/utils barrel,
+// the same way packages/database pulls single utils files.
+import { ResponseBuilder } from '../../../utils/src/api/response-builder';
 
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -44,16 +47,18 @@ export const createRateLimiter = (config: RateLimitConfig) => {
 
     // Check if limit exceeded
     if (rateLimitStore[key].count > maxRequests) {
+      const retryAfter = Math.ceil((rateLimitStore[key].resetTime - now) / 1000);
+      // Standard error body (success/code/message/error) so mobile apps can decode it (#410).
+      // retryAfter stays in the body for older clients.
       return NextResponse.json(
         {
-          error: 'Too many requests',
-          message: `Rate limit exceeded. Maximum ${maxRequests} requests per ${windowMs / 1000} seconds.`,
-          retryAfter: Math.ceil((rateLimitStore[key].resetTime - now) / 1000)
+          ...ResponseBuilder.error('RATE_LIMIT_EXCEEDED'),
+          retryAfter
         },
         {
           status: 429,
           headers: {
-            'Retry-After': Math.ceil((rateLimitStore[key].resetTime - now) / 1000).toString(),
+            'Retry-After': retryAfter.toString(),
             'X-RateLimit-Limit': maxRequests.toString(),
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset': rateLimitStore[key].resetTime.toString()
