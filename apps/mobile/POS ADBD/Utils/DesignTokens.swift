@@ -87,7 +87,7 @@ enum DayFormatter {
     }
 }
 
-/// `1.150.000đ` (dot grouping, no decimals)
+/// `1.150.000` (dot grouping, no decimals, no currency symbol — #399)
 enum MoneyFormatter {
     private static let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -101,6 +101,6 @@ enum MoneyFormatter {
     static func format(_ amount: Double) -> String {
         let rounded = amount.rounded()
         let digits = formatter.string(from: NSNumber(value: abs(rounded))) ?? "\(Int(abs(rounded)))"
-        return (rounded < 0 ? "−" : "") + digits + "đ"
+        return (rounded < 0 ? "−" : "") + digits
     }
 }

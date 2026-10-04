@@ -187,8 +187,8 @@ final class ProductFormViewController: BaseViewControler {
             form.addArrangedSubview(V2.sectionHeader("products.form.prices".localized()))
             configure(perRentalField, placeholder: "0", numeric: true)
             configure(perDayField, placeholder: "0", numeric: true)
-            form.addArrangedSubview(pair(field(title: "products.form.perRental".localized(), required: false, input: perRentalField, unit: "đ"),
-                                         field(title: "products.form.perDay".localized(), required: false, input: perDayField, unit: "đ")))
+            form.addArrangedSubview(pair(field(title: "products.form.perRental".localized(), required: false, input: perRentalField),
+                                         field(title: "products.form.perDay".localized(), required: false, input: perDayField)))
             let defaultTitle = V2.label("products.form.defaultPricing".localized(), size: 14, weight: .bold)
             defaultToggle.addTarget(self, action: #selector(defaultChanged), for: .valueChanged)
             let defaultBox = UIStackView(arrangedSubviews: [defaultTitle, defaultToggle])
@@ -197,8 +197,8 @@ final class ProductFormViewController: BaseViewControler {
             form.addArrangedSubview(padded(defaultBox, top: 8, bottom: 8))
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
             configure(depositField, placeholder: "0", numeric: true)
-            form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField, unit: "đ"),
-                                         field(title: "products.form.deposit".localized(), required: false, input: depositField, unit: "đ")))
+            form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
+                                         field(title: "products.form.deposit".localized(), required: false, input: depositField)))
         }
 
         // Stock

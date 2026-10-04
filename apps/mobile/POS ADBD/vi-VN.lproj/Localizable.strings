@@ -1598,6 +1598,7 @@
 "products.cart.money" = "Tiền";
 "products.cart.rentSubtotal" = "Tiền thuê";
 "products.cart.saleSubtotal" = "Tiền hàng";
+"products.cart.discountAmount" = "Số tiền";
 "products.cart.discount" = "Giảm giá";
 "products.cart.total" = "Tổng đơn";
 "products.cart.deposit" = "Cọc trả trước";
