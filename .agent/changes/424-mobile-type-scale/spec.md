@@ -1,6 +1,6 @@
 # Spec — One type scale for the new mobile UI
 
-Issue: #424 · Status: accepted · Intent: ./intent.md
+Issue: #424 · Status: in-progress · Intent: ./intent.md
 
 ## Behavior
 

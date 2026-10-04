@@ -1,6 +1,6 @@
 # One type scale for the new mobile UI (larger list text)
 
-Issue: #424 · Author: Trinh Tran · Status: accepted · Created: 2026-10-04
+Issue: #424 · Author: Trinh Tran · Status: in-progress · Created: 2026-10-04
 
 ## Problem
 
@@ -39,3 +39,9 @@ All mobile roles on iOS (`apps/mobile`) and Android (`apps/mobile-android`), new
 
 - 2026-10-04 — Owner approved the ramp on the canvas; issue #424 opened (Trinh Tran)
 - 2026-10-04 — Mapping rule used on the canvas is applied the same way in code (see `spec.md`)
+- 2026-10-04 — Where a CHỐT/Chờ chốt board differs from the plain rule, the board wins: cart bar "Tạo đơn" 17,
+  stepper number 17, product-form photo hint 12, calendar weekday header 12, overview checked period 17,
+  settings/customer avatar initials unchanged (Trinh Tran via agent)
+- 2026-10-04 — 20pt sheet titles and 18–30 headings stay literal; `amount` is only for money (agent)
+- 2026-10-04 — Shared order status badge/pill: optional size (Android) / font set after `apply` (iOS); old screens
+  keep 10 (agent)
