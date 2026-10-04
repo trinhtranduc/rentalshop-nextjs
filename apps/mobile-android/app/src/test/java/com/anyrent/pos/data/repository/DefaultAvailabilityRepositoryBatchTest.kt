@@ -144,7 +144,29 @@ class DefaultAvailabilityRepositoryBatchTest {
         assertFalse(result.getValue(62).isAvailable)
     }
 
-    private fun repository(answer: (Request) -> Pair<Int, String>): DefaultAvailabilityRepository {
+    @Test
+    fun `a merchant login without an outlet still checks in one batch and lets the API pick the default outlet`() {
+        val repo = repository(outletId = null) { request ->
+            if (request.url.encodedPath == BATCH) 200 to batchBody else 500 to SINGLE_NOT_EXPECTED
+        }
+
+        val result = runBlocking {
+            repo.checkBatchAvailability(
+                requests = listOf(AvailabilityRequest(31, 1), AvailabilityRequest(62, 2)),
+                startDate = LocalDate.of(2026, 10, 5),
+                endDate = LocalDate.of(2026, 10, 5),
+            )
+        }
+
+        assertEquals(listOf(BATCH), seen.map { it.url.encodedPath })
+        assertFalse(JSONObject(bodies.single()).has("outletId"))
+        assertEquals(setOf(31, 62), result.keys)
+    }
+
+    private fun repository(
+        outletId: Int? = 2,
+        answer: (Request) -> Pair<Int, String>,
+    ): DefaultAvailabilityRepository {
         val client = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val request = chain.request()
@@ -169,7 +191,7 @@ class DefaultAvailabilityRepositoryBatchTest {
         )
         return DefaultAvailabilityRepository(
             api = api,
-            outletIdProvider = { 2 },
+            outletIdProvider = { outletId },
             ioDispatcher = Dispatchers.Unconfined,
         )
     }
