@@ -19,7 +19,9 @@ import {
   generateFileName,
   splitKeyIntoParts,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls
+  mapStagingUrlsToProductionUrls,
+  getUtcRangeForDateKeys,
+  toDateKeyInTimeZone
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
@@ -33,7 +35,7 @@ import {
   handleLoyaltyOnOrderCreate,
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
-import { civilDayRange } from '../../../lib/outlet-operations-day';
+import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
@@ -111,24 +113,27 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       sortBy, sortOrder
     });
     
-    // Implement role-based filtering
-    const dayKey = /^\d{4}-\d{2}-\d{2}$/;
-    const civilRange =
-      startDate && dayKey.test(String(startDate)) && (!endDate || dayKey.test(String(endDate)))
-        ? civilDayRange(String(startDate), String(endDate || startDate))
-        : null;
+    // Date filter = civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` (#350, #355).
+    // A YYYY-MM-DD key is that day; an ISO instant is the civil day that contains it. A start without an
+    // end is open-ended (iOS loads "everything since 2000" that way), and the reverse.
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: 400 });
+    }
+    const startKey = startDate ? toDateKeyInTimeZone(String(startDate), timeZone) : null;
+    const endKey = endDate ? toDateKeyInTimeZone(String(endDate), timeZone) : null;
     let searchFilters: any = {
       customerId,
       productId,
       orderType,
       status,
-      // YYYY-MM-DD means Vietnam civil days ("today" used to start at 07:00 Vietnam time)
-      ...(civilRange
-        ? { startDate: civilRange.start, endDate: civilRange.end, exactDateRange: true }
-        : {
-            startDate: startDate ? new Date(startDate) : undefined,
-            endDate: endDate ? new Date(endDate) : undefined,
-          }),
+      ...(startKey || endKey
+        ? {
+            startDate: startKey ? getUtcRangeForDateKeys({ from: startKey }, timeZone).start : undefined,
+            endDate: endKey ? getUtcRangeForDateKeys({ from: endKey }, timeZone).end : undefined,
+            exactDateRange: true,
+          }
+        : {}),
       dateField,
       q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,

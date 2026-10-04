@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, getOrderRevenueEvents } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents, civilDayBucket } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { readAnalyticsTimeZone, readCivilRange, widenCivilRange } from '../../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/income/daily - Lấy doanh thu theo ngày với chi tiết đơn hàng
@@ -61,42 +62,30 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       );
     }
 
-    // Parse date string - treat as UTC date to match database timezone
-    // Similar to calendar API: parse as UTC, then use wider range to capture all potentially relevant orders
-    // "2026-03-07" should be treated as 2026-03-07 00:00:00 UTC
-    // But orders are stored with time component (e.g., "2026-03-07T17:00:00.000Z" = 2026-03-08 00:00:00 VN)
-    // So we need a wider range to capture all potentially relevant orders
-    const startOfDayUTC = new Date(startDate + 'T00:00:00.000Z');
-    const endOfDayUTC = new Date(endDate + 'T23:59:59.999Z');
-    
-    // Use wider UTC range to capture orders that might shift due to timezone
-    // Previous day's start UTC to capture orders that might be in previous UTC day but local date matches
-    const previousDayStartUTC = new Date(startOfDayUTC);
-    previousDayStartUTC.setUTCDate(previousDayStartUTC.getUTCDate() - 1);
-    // Next day's end UTC to capture orders that might be in next UTC day but local date matches
-    const nextDayEndUTC = new Date(endOfDayUTC);
-    nextDayEndUTC.setUTCDate(nextDayEndUTC.getUTCDate() + 1);
-    
-    // Use the wider range for query, but keep original range for filtering
-    const queryStart = previousDayStartUTC;
-    const queryEnd = nextDayEndUTC;
-    const filterStart = startOfDayUTC;
-    const filterEnd = endOfDayUTC;
-    
-    console.log('📅 Daily Income date range (UTC):', { 
+    // startDate/endDate are civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` (#355).
+    // Events are filtered by those exact bounds and bucketed by their civil day; the SQL window is one
+    // civil day wider on each side.
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
+    }
+    const civilRange = readCivilRange(startDate, endDate, timeZone);
+    if (!civilRange) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
+    }
+    const { start: queryStart, end: queryEnd } = widenCivilRange(civilRange, timeZone);
+    const filterStart = civilRange.start;
+    const filterEnd = civilRange.end;
+    /** Civil-day bucket of an instant: date = YYYY/MM/DD, dateISO = that date at 00:00:00.000Z */
+    const dayOf = (instant: Date | string) => civilDayBucket(instant, timeZone);
+
+    console.log('📅 Daily Income date range (civil days, UTC bounds):', { 
       dateStr: `${startDate} to ${endDate}`,
       queryRange: `${queryStart.toISOString()} to ${queryEnd.toISOString()}`,
       filterRange: `${filterStart.toISOString()} to ${filterEnd.toISOString()}`
     });
     
     // Validate date range
-    if (isNaN(filterStart.getTime()) || isNaN(filterEnd.getTime())) {
-      return NextResponse.json(
-        ResponseBuilder.error('INVALID_DATE_FORMAT'),
-        { status: API.STATUS.BAD_REQUEST }
-      );
-    }
-
     if (filterStart > filterEnd) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_INPUT'),
@@ -306,9 +295,9 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         }
 
         // Format ngày thành YYYY/MM/DD để nhóm
-        const dateKey = getUTCDateKey(event.date);
+        const dateKey = dayOf(event.date).date;
         // Chuẩn hóa ngày về midnight UTC
-        const dateISO = normalizeDateToISO(event.date);
+        const dateISO = dayOf(event.date).dateISO;
         const dateObj = new Date(dateISO);
 
         // Tạo hoặc lấy entry theo ngày
@@ -409,7 +398,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       if (order.createdAt) {
         const createdDate = new Date(order.createdAt);
         if (createdDate >= filterStart && createdDate <= filterEnd) {
-          const dateKey = getUTCDateKey(createdDate);
+          const dateKey = dayOf(createdDate).date;
           const orderKey = `${order.orderNumber}-${dateKey}`;
           
           // Chỉ đếm một lần mỗi đơn mỗi ngày
@@ -450,7 +439,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           ) {
             const createdDate = new Date(order.createdAt);
             if (createdDate >= filterStart && createdDate <= filterEnd) {
-              const dateKey = getUTCDateKey(createdDate);
+              const dateKey = dayOf(createdDate).date;
               if (dailyDataMap.has(dateKey)) {
                 const dailyData = dailyDataMap.get(dateKey)!;
                 dailyData.depositRefund += securityDeposit;
@@ -465,7 +454,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           ) {
             const pickedUpDate = new Date(order.pickedUpAt);
             if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
-              const dateKey = getUTCDateKey(pickedUpDate);
+              const dateKey = dayOf(pickedUpDate).date;
               if (dailyDataMap.has(dateKey)) {
                 const dailyData = dailyDataMap.get(dateKey)!;
                 dailyData.depositRefund += securityDeposit;
@@ -485,7 +474,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         if (securityDeposit > 0 && order.pickedUpAt) {
           const pickedUpDate = new Date(order.pickedUpAt);
           if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
-            const dateKey = getUTCDateKey(pickedUpDate);
+            const dateKey = dayOf(pickedUpDate).date;
             if (dailyDataMap.has(dateKey)) {
               const dailyData = dailyDataMap.get(dateKey)!;
               dailyData.totalCollateral += securityDeposit;
@@ -500,7 +489,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       if (order.pickedUpAt) {
         const pickedUpDate = new Date(order.pickedUpAt);
         if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
-          const dateKey = getUTCDateKey(pickedUpDate);
+          const dateKey = dayOf(pickedUpDate).date;
           const orderKey = `pickup-${order.id}-${dateKey}`;
           if (!pickupOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
             dailyDataMap.get(dateKey)!.pickupOrderCount += 1;
@@ -515,7 +504,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       if (order.returnedAt) {
         const returnedDate = new Date(order.returnedAt);
         if (returnedDate >= filterStart && returnedDate <= filterEnd) {
-          const dateKey = getUTCDateKey(returnedDate);
+          const dateKey = dayOf(returnedDate).date;
           const orderKey = `return-${order.id}-${dateKey}`;
           if (!returnOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
             dailyDataMap.get(dateKey)!.returnOrderCount += 1;
@@ -530,14 +519,14 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
         const updatedDate = new Date(order.updatedAt);
         if (updatedDate >= filterStart && updatedDate <= filterEnd) {
-          const dateKey = getUTCDateKey(updatedDate);
+          const dateKey = dayOf(updatedDate).date;
           const orderKey = `cancelled-${order.id}-${dateKey}`;
           if (!cancelledOrdersCounted.has(orderKey)) {
             if (!dailyDataMap.has(dateKey)) {
               dailyDataMap.set(dateKey, {
                 date: dateKey,
-                dateISO: normalizeDateToISO(updatedDate),
-                dateObj: new Date(normalizeDateToISO(updatedDate)),
+                dateISO: dayOf(updatedDate).dateISO,
+                dateObj: new Date(dayOf(updatedDate).dateISO),
                 totalRevenue: 0,
                 depositRefund: 0,
                 totalCollateral: 0,
@@ -605,7 +594,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     for (const order of collateralOrders) {
       if (order.pickedUpAt) {
         const pickedUpDate = new Date(order.pickedUpAt);
-        const dateKey = getUTCDateKey(pickedUpDate);
+        const dateKey = dayOf(pickedUpDate).date;
         if (dailyDataMap.has(dateKey)) {
           const dailyData = dailyDataMap.get(dateKey)!;
           dailyData.totalCollateral += (order.securityDeposit || 0);
@@ -661,13 +650,13 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     for (const order of collateralPlanOrders) {
       if (order.returnPlanAt) {
         const returnPlanDate = new Date(order.returnPlanAt);
-        const dateKey = getUTCDateKey(returnPlanDate);
+        const dateKey = dayOf(returnPlanDate).date;
         if (returnPlanDate >= filterStart && returnPlanDate <= filterEnd) {
           if (!dailyDataMap.has(dateKey)) {
             dailyDataMap.set(dateKey, {
               date: dateKey,
-              dateISO: normalizeDateToISO(returnPlanDate),
-              dateObj: new Date(normalizeDateToISO(returnPlanDate)),
+              dateISO: dayOf(returnPlanDate).dateISO,
+              dateObj: new Date(dayOf(returnPlanDate).dateISO),
               totalRevenue: 0,
               depositRefund: 0,
               totalCollateral: 0,
@@ -796,8 +785,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       for (const order of expectedPickupOrders) {
         if (!order.pickupPlanAt) continue;
         const pickupPlanDate = new Date(order.pickupPlanAt);
-        const dateKey = getUTCDateKey(pickupPlanDate);
-        const dateISO = normalizeDateToISO(pickupPlanDate);
+        const dateKey = dayOf(pickupPlanDate).date;
+        const dateISO = dayOf(pickupPlanDate).dateISO;
         const dateObj = new Date(dateISO);
 
         if (!dailyDataMap.has(dateKey)) {
@@ -891,8 +880,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       for (const order of expectedReturnOrders) {
         if (!order.returnPlanAt) continue;
         const returnPlanDate = new Date(order.returnPlanAt);
-        const dateKey = getUTCDateKey(returnPlanDate);
-        const dateISO = normalizeDateToISO(returnPlanDate);
+        const dateKey = dayOf(returnPlanDate).date;
+        const dateISO = dayOf(returnPlanDate).dateISO;
         const dateObj = new Date(dateISO);
         if (!dailyDataMap.has(dateKey)) {
           dailyDataMap.set(dateKey, {

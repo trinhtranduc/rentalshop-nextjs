@@ -10,7 +10,14 @@ import {
   type IncomePeriodDayRow,
   type IncomePeriodSummary
 } from './income-period-summary';
-import { getUTCDateKey } from '../core/date';
+import { SHOP_TIMEZONE } from '../core/date';
+import {
+  addDaysToDateKey,
+  getUtcRangeForDateKeys,
+  listCivilDays,
+  listCivilMonths,
+  toDateKeyInTimeZone
+} from '../core/date-range';
 import { paginateRanked, type RankingPage } from './ranking-page';
 import { rankOutletsByRevenue, type TopOutletRank } from './top-outlet-rank';
 import {
@@ -304,56 +311,23 @@ export function emptyAnalyticsPeriodReport(
   };
 }
 
-function parseUTCStart(s: string): Date {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
-  }
-  const dt = new Date(s);
-  return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), 0, 0, 0, 0));
-}
-
-function parseUTCEnd(s: string): Date {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999));
-  }
-  const dt = new Date(s);
-  return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), 23, 59, 59, 999));
-}
-
-/** Previous period with the same number of calendar days (7d→prev 7d, 30d→prev 30d, year→prev year). */
-export function resolvePreviousPeriod(rangeStart: Date, rangeEnd: Date): { prevStart: Date; prevEnd: Date } {
+/**
+ * Previous period with the same number of civil days (7d→prev 7d, 30d→prev 30d, full year→prev year).
+ * Keys are `YYYY-MM-DD` civil days; the caller turns them into UTC bounds in its time zone (#355).
+ */
+export function resolvePreviousPeriodKeys(startKey: string, endKey: string): { prevStartKey: string; prevEndKey: string } {
   const isFullCalendarYear =
-    rangeStart.getUTCMonth() === 0 &&
-    rangeStart.getUTCDate() === 1 &&
-    rangeEnd.getUTCMonth() === 11 &&
-    rangeEnd.getUTCDate() === 31 &&
-    rangeStart.getUTCFullYear() === rangeEnd.getUTCFullYear();
-
+    startKey.slice(5) === '01-01' && endKey.slice(5) === '12-31' && startKey.slice(0, 4) === endKey.slice(0, 4);
   if (isFullCalendarYear) {
-    const y = rangeStart.getUTCFullYear() - 1;
-    return {
-      prevStart: new Date(Date.UTC(y, 0, 1, 0, 0, 0, 0)),
-      prevEnd: new Date(Date.UTC(y, 11, 31, 23, 59, 59, 999))
-    };
+    const y = Number(startKey.slice(0, 4)) - 1;
+    return { prevStartKey: `${y}-01-01`, prevEndKey: `${y}-12-31` };
   }
-
-  const startDay = Date.UTC(rangeStart.getUTCFullYear(), rangeStart.getUTCMonth(), rangeStart.getUTCDate());
-  const endDay = Date.UTC(rangeEnd.getUTCFullYear(), rangeEnd.getUTCMonth(), rangeEnd.getUTCDate());
-  const daySpan = Math.max(Math.round((endDay - startDay) / DAY_MS) + 1, 1);
-
-  const prevEndDay = new Date(startDay - DAY_MS);
-  const prevStartDay = new Date(prevEndDay.getTime() - (daySpan - 1) * DAY_MS);
-
-  return {
-    prevStart: new Date(
-      Date.UTC(prevStartDay.getUTCFullYear(), prevStartDay.getUTCMonth(), prevStartDay.getUTCDate(), 0, 0, 0, 0)
-    ),
-    prevEnd: new Date(
-      Date.UTC(prevEndDay.getUTCFullYear(), prevEndDay.getUTCMonth(), prevEndDay.getUTCDate(), 23, 59, 59, 999)
-    )
-  };
+  const daySpan = Math.max(
+    Math.round((Date.parse(`${endKey}T00:00:00Z`) - Date.parse(`${startKey}T00:00:00Z`)) / DAY_MS) + 1,
+    1
+  );
+  const prevEndKey = addDaysToDateKey(startKey, -1);
+  return { prevStartKey: addDaysToDateKey(prevEndKey, -(daySpan - 1)), prevEndKey };
 }
 
 /**
@@ -419,38 +393,22 @@ function buildEventWhere(
 
 function mapDayRowsToSeries(
   periods: IncomePeriodDayRow[],
-  rangeStart: Date,
-  rangeEnd: Date
+  startKey: string,
+  endKey: string,
+  timeZone: string
 ): AnalyticsPeriodSeriesPoint[] {
   const byDate = new Map(periods.map((p) => [p.date, p]));
-  const series: AnalyticsPeriodSeriesPoint[] = [];
-
-  let currentMs = Date.UTC(
-    rangeStart.getUTCFullYear(),
-    rangeStart.getUTCMonth(),
-    rangeStart.getUTCDate()
-  );
-  const endMs = Date.UTC(
-    rangeEnd.getUTCFullYear(),
-    rangeEnd.getUTCMonth(),
-    rangeEnd.getUTCDate()
-  );
-
-  while (currentMs <= endMs) {
-    const current = new Date(currentMs);
-    const dateKey = getUTCDateKey(current);
-    const [y, m, d] = dateKey.split('/');
+  return listCivilDays(startKey, endKey, timeZone).map(({ dateKey: key }) => {
+    const [y, m, d] = key.split('-');
+    const dateKey = `${y}/${m}/${d}`;
     const yearNum = parseInt(y, 10);
-    const monthNum = parseInt(m, 10);
-    const dayNum = parseInt(d, 10);
     const row = byDate.get(dateKey);
-
-    series.push({
-      month: `${String(dayNum).padStart(2, '0')}/${String(monthNum).padStart(2, '0')}/${String(yearNum).slice(-2)}`,
+    return {
+      month: `${d}/${m}/${y.slice(-2)}`,
       date: dateKey,
       dateISO: row?.dateISO ?? `${y}-${m}-${d}T00:00:00.000Z`,
       year: yearNum,
-      dayNumber: dayNum,
+      dayNumber: parseInt(d, 10),
       realIncome: row?.totalRevenue ?? 0,
       futureIncome: 0,
       orderCount:
@@ -458,12 +416,8 @@ function mapDayRowsToSeries(
         (row?.pickupOrderCount ?? 0) +
         (row?.returnOrderCount ?? 0) +
         (row?.cancelledOrderCount ?? 0)
-    });
-
-    currentMs += DAY_MS;
-  }
-
-  return series;
+    };
+  });
 }
 
 export interface BuildAnalyticsPeriodReportParams {
@@ -473,6 +427,8 @@ export interface BuildAnalyticsPeriodReportParams {
   limit: number;
   outletFilter: Record<string, any>;
   userRole: string;
+  /** IANA zone whose civil days and months the report uses (default Vietnam, #355) */
+  timeZone?: string;
 }
 
 /**
@@ -483,17 +439,22 @@ export async function buildAnalyticsPeriodReport(
   db: DbApi,
   params: BuildAnalyticsPeriodReportParams
 ): Promise<AnalyticsPeriodReport> {
-  const { startDate, endDate, groupBy, limit, outletFilter, userRole } = params;
-  const rangeStart = parseUTCStart(startDate);
-  const rangeEnd = parseUTCEnd(endDate);
-  const { prevStart, prevEnd } = resolvePreviousPeriod(rangeStart, rangeEnd);
+  const { startDate, endDate, groupBy, limit, outletFilter, userRole, timeZone = SHOP_TIMEZONE } = params;
+  // Civil days of `timeZone` (#355): 2026-10-02 in Vietnam is 2026-10-01T17:00Z .. 2026-10-02T16:59:59.999Z
+  const startKey = toDateKeyInTimeZone(startDate, timeZone);
+  const endKey = toDateKeyInTimeZone(endDate, timeZone);
+  if (!startKey || !endKey) throw new Error(`Invalid period: ${startDate}..${endDate}`);
+  const { start: rangeStart, end: rangeEnd } = getUtcRangeForDateKeys({ from: startKey, to: endKey }, timeZone);
+  const { prevStartKey, prevEndKey } = resolvePreviousPeriodKeys(startKey, endKey);
+  const { start: prevStart, end: prevEnd } = getUtcRangeForDateKeys({ from: prevStartKey, to: prevEndKey }, timeZone);
 
   const computeOperational = async () => {
     const { summary } = await computeIncomePeriodSummary(prisma, {
       startDate,
       endDate,
       outletFilter,
-      includeDailyPeriods: groupBy === 'day'
+      includeDailyPeriods: groupBy === 'day',
+      timeZone
     });
     return summary;
   };
@@ -504,27 +465,18 @@ export async function buildAnalyticsPeriodReport(
         startDate,
         endDate,
         outletFilter,
-        includeDailyPeriods: true
+        includeDailyPeriods: true,
+        timeZone
       });
-      return mapDayRowsToSeries(periods ?? [], rangeStart, rangeEnd);
+      return mapDayRowsToSeries(periods ?? [], startKey, endKey, timeZone);
     }
 
     const income: AnalyticsPeriodSeriesPoint[] = [];
-    let current = new Date(
-      Date.UTC(rangeStart.getUTCFullYear(), rangeStart.getUTCMonth(), 1, 0, 0, 0, 0)
-    );
-    const endMonthDate = new Date(
-      Date.UTC(rangeEnd.getUTCFullYear(), rangeEnd.getUTCMonth(), 1, 0, 0, 0, 0)
-    );
-
-    while (current <= endMonthDate) {
-      const year = current.getUTCFullYear();
-      const month = current.getUTCMonth();
-      const monthStr = String(month + 1).padStart(2, '0');
-      const yearStr = String(year).slice(-2);
-      const periodLabel = `${monthStr}/${yearStr}`;
-      const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-      const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+    for (const civilMonth of listCivilMonths(startKey, endKey, timeZone)) {
+      const year = civilMonth.year;
+      const periodLabel = `${String(civilMonth.month).padStart(2, '0')}/${String(year).slice(-2)}`;
+      const startOfMonth = civilMonth.start;
+      const endOfMonth = civilMonth.end;
 
       const monthOrders = await prisma.order.findMany({
         where: buildEventWhere(outletFilter, startOfMonth, endOfMonth),
@@ -551,13 +503,11 @@ export async function buildAnalyticsPeriodReport(
       income.push({
         month: periodLabel,
         year,
-        monthNumber: month + 1,
+        monthNumber: civilMonth.month,
         realIncome,
         futureIncome,
         orderCount
       });
-
-      current = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
     }
 
     return income;

@@ -27,7 +27,7 @@ import {
   ActivityFeed
 } from '@rentalshop/ui';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { analyticsApi } from '@rentalshop/utils';
+import { analyticsApi, addDaysToDateKey, formatDateKeyInTimeZone, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { TopProduct, TopOutlet } from '@rentalshop/types';
 import { 
@@ -497,9 +497,24 @@ export default function AdminDashboard() {
           groupBy = 'day';
       }
       
+      // API date range as shop civil days (YYYY-MM-DD, Asia/Ho_Chi_Minh), which the analytics API reads as
+      // Vietnam days (#355). toISOString() on the local-midnight Dates above sent the previous day as the start
+      // (and two days for "today"). The Dates stay for the merchant/subscription filters below.
+      const todayKey = formatDateKeyInTimeZone(today, SHOP_TIMEZONE);
+      const monthStartKey = `${todayKey.slice(0, 7)}-01`;
+      const apiRange =
+        period === 'today'
+          ? { startDate: todayKey, endDate: todayKey }
+          : period === 'year'
+            ? { startDate: `${todayKey.slice(0, 4)}-01-01`, endDate: `${todayKey.slice(0, 4)}-12-31` }
+            : {
+                startDate: monthStartKey,
+                endDate: addDaysToDateKey(`${addDaysToDateKey(monthStartKey, 31).slice(0, 7)}-01`, -1)
+              };
+
       const filters = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
+        startDate: apiRange.startDate,
+        endDate: apiRange.endDate,
         groupBy: groupBy,
         period: period // Add period to filters for API
       };

@@ -8,6 +8,7 @@ import {
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
+import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/period
@@ -19,6 +20,8 @@ import { API } from '@rentalshop/constants';
  *   - endDate   (required, YYYY-MM-DD)
  *   - groupBy   (optional) `day` | `month` — chart granularity (default: day if range ≤ 45 days, else month)
  *   - limit     (optional) top products/customers count (default 3, max 50)
+ *   - timeZone  (optional) IANA zone of the days; default Asia/Ho_Chi_Minh. Days and months are civil days
+ *               of that zone (#355): 2026-10-02 = 2026-10-01T17:00Z .. 2026-10-02T16:59:59.999Z in Vietnam.
  *
  * Response sections:
  *   - operational  — event-based order counts + deposit held/due (same as income/summary)
@@ -43,16 +46,21 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       });
     }
 
-    const start = new Date(startDate + 'T00:00:00.000Z');
-    const end = new Date(endDate + 'T00:00:00.000Z');
-    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
+    }
+    const range = readCivilRange(startDate, endDate, timeZone);
+    if (!range || range.startKey > range.endKey) {
       return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), {
         status: API.STATUS.BAD_REQUEST
       });
     }
 
     const daySpan =
-      Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+      Math.round(
+        (Date.parse(`${range.endKey}T00:00:00Z`) - Date.parse(`${range.startKey}T00:00:00Z`)) / (24 * 60 * 60 * 1000)
+      ) + 1;
     const groupByParam = searchParams.get('groupBy');
     const groupBy: 'day' | 'month' =
       groupByParam === 'day' || groupByParam === 'month'
@@ -74,7 +82,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       groupBy,
       limit,
       outletFilter,
-      userRole: user.role
+      userRole: user.role,
+      timeZone
     });
 
     return NextResponse.json(ResponseBuilder.success('ANALYTICS_PERIOD_SUCCESS', report));
