@@ -22,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.anyrent.pos.data.FeatureFlags
+import com.anyrent.pos.domain.appconfig.MobileFeature
+import com.anyrent.pos.ui.orders.v2.OrdersHomeScreen
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -501,6 +504,12 @@ private fun MainTabs(
                 )
             }
             composable(MainTab.Orders.route) {
+                // Redesigned orders tab behind the server flag (#371); the current list otherwise
+                val features by FeatureFlags.enabled.collectAsState()
+                if (MobileFeature.NEW_ORDERS in features) {
+                    OrdersHomeScreen(onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) })
+                    return@composable
+                }
                 OrdersScreen(
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                     onOrderCheck = { rootNavController.navigate(Routes.OrderCheck) },
