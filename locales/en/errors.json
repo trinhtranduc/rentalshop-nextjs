@@ -166,7 +166,7 @@
   "MISSING_PRODUCT_DATA": "Missing product data",
   "MISSING_STAGING_KEYS": "Missing staging keys",
   "NO_VALID_FIELDS": "No valid fields to update",
-  "OUTLET_REQUIRED": "Outlet ID is required",
+  "OUTLET_REQUIRED": "Choose an outlet, or set a default outlet for your shop.",
   "MULTIPLE_ENTITIES_FOUND": "Multiple entities found with same identifier",
   "INVALID_ACTION": "Invalid action specified",
   "INVALID_REQUEST": "Invalid request format",

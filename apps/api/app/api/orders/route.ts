@@ -556,7 +556,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
       body.outletId = userScope.outletId;
     }
-    
+
+    // A MERCHANT login has no outlet; iOS and Android send no outletId (#398).
+    // Use the merchant's default outlet, else its only active outlet.
+    if (!body.outletId && user.role === USER_ROLE.MERCHANT) {
+      const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+      if (!defaultOutlet) {
+        return NextResponse.json(
+          ResponseBuilder.error('OUTLET_REQUIRED'),
+          { status: 400 }
+        );
+      }
+      body.outletId = defaultOutlet.id;
+    }
+
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

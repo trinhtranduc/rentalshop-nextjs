@@ -658,6 +658,7 @@
     <string name="something_went_wrong">Something went wrong</string>
     <!-- Order detail (#372) -->
     <string name="api_error_invalid_order_status">This status change is not allowed for this order. It may have just been updated.</string>
+    <string name="api_error_outlet_required">Choose an outlet, or set a default outlet for your shop.</string>
     <string name="detail_more_actions">More actions</string>
     <string name="detail_print_receipt">Print receipt</string>
     <string name="detail_call">Call</string>

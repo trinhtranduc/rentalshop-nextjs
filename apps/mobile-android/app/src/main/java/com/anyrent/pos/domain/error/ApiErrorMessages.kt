@@ -43,6 +43,7 @@ object ApiErrorMessages {
             R.string.api_error_session_expired
         "SESSION_REPLACED" -> R.string.api_error_session_replaced
         "INVALID_ORDER_STATUS" -> R.string.api_error_invalid_order_status
+        "OUTLET_REQUIRED" -> R.string.api_error_outlet_required
         "CURRENT_PASSWORD_INCORRECT" -> R.string.api_error_current_password_incorrect
         "PASSWORD_MIN_LENGTH" -> R.string.api_error_password_min_length
         else -> 0
