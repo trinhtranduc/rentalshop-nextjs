@@ -1,6 +1,6 @@
 # Spec — Mobile orders tab matches its boards
 
-Issue: #401 · Status: accepted · Intent: ./intent.md
+Issue: #401 · Status: done · Intent: ./intent.md
 
 ## Behavior
 
@@ -56,7 +56,7 @@ None changed. Read: `GET /api/analytics/outlet-operations` (adds `totalAmount` t
 
 ## Acceptance
 
-- [ ] Unit tests: band counts and badge, date-line text, pay-line choice, short number, date-range presets
-- [ ] Existing orders tests green on both apps
-- [ ] Screenshots next to the boards under the scratch `p401/compare/` folder
-- [ ] Staff: money hidden where it was; flag off: old screen
+- [x] Unit tests: band counts and badge, date-line text, pay-line choice, short number, date-range presets
+- [x] Existing orders tests green on both apps
+- [x] Screenshots next to the boards under the scratch `p401/compare/` folder
+- [x] Staff: money hidden where it was; flag off: old screen
