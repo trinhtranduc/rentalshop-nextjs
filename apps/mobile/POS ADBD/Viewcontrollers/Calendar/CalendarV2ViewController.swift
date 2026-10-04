@@ -532,8 +532,22 @@ final class CalendarDayRowCell: UITableViewCell {
         itemsLabel.text = items.isEmpty ? row.order.orderNumber : items
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
-        noteLabel.text = row.lateDays > 0 ? LateText.days(row.lateDays) : nil
-        noteLabel.isHidden = row.lateDays == 0
+        // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
+        switch CalendarV2Logic.note(row, hidesMoney: hidesMoney) {
+        case .late(let days, let fee):
+            let late = LateText.days(days)
+            noteLabel.text = fee.map { late + " · " + String(format: "calendar.v2.fee".localized(), MoneyFormatter.format($0)) } ?? late
+            noteLabel.textColor = V2.danger
+        case .refund(let amount):
+            noteLabel.text = String(format: "orders.v2.pay.refund".localized(), MoneyFormatter.format(amount))
+            noteLabel.textColor = DS.Status.returning.text
+        case .due(let amount):
+            noteLabel.text = String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(amount))
+            noteLabel.textColor = DS.Status.waiting.text
+        case .none:
+            noteLabel.text = nil
+        }
+        noteLabel.isHidden = noteLabel.text == nil
     }
 }
 

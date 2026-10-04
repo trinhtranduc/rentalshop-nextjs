@@ -113,9 +113,13 @@ final class OrdersFilterSheet: UIViewController {
 
         applyButton.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
 
-        let sortSection = UIStackView(arrangedSubviews: [sectionLabel("orders.v2.filter.sort".localized()), sortGrid])
+        // Board Loc: what "Việc gần nhất" means, under the options (#390)
+        let sortHint = V2.label("orders.v2.sort.nearestHint".localized(), size: 12, color: DS.Color.textMuted)
+        sortHint.numberOfLines = 0
+        let sortSection = UIStackView(arrangedSubviews: [sectionLabel("orders.v2.filter.sort".localized()), sortGrid, sortHint])
         sortSection.axis = .vertical
         sortSection.spacing = 16
+        sortSection.setCustomSpacing(DS.Spacing.sm, after: sortGrid)
         let rangeSection = UIStackView(arrangedSubviews: [sectionLabel("orders.v2.filter.range".localized()), track, presetLines])
         rangeSection.axis = .vertical
         rangeSection.spacing = DS.Spacing.sm
@@ -147,6 +151,7 @@ final class OrdersFilterSheet: UIViewController {
 
     static func sortTitle(_ sort: RentOrdersFilter.Sort) -> String {
         switch sort {
+        case .nearestTask: return "orders.v2.sort.nearest".localized()
         case .createdDate: return "orders.v2.sort.created".localized()
         case .pickupDate: return "orders.v2.sort.pickup".localized()
         case .returnDate: return "orders.v2.sort.return".localized()
@@ -156,8 +161,8 @@ final class OrdersFilterSheet: UIViewController {
     private static func basisTitle(_ basis: RentOrdersFilter.DateBasis) -> String {
         switch basis {
         case .created: return "orders.v2.basis.created".localized()
-        case .pickedUp: return "orders.v2.basis.pickup".localized()
-        case .returned: return "orders.v2.basis.return".localized()
+        case .pickupPlan: return "orders.v2.basis.pickup".localized()
+        case .returnPlan: return "orders.v2.basis.return".localized()
         }
     }
 

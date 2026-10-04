@@ -23,6 +23,12 @@ enum ProductAccess {
         return permissions.contains("products.manage") || permissions.contains("products.update")
     }
 
+    /// `DELETE /api/products/{id}` needs `products.manage`; never `OUTLET_STAFF` (#390)
+    static func canDelete(role: Role?, permissions: [String]) -> Bool {
+        guard role != .outletStaff else { return false }
+        return permissions.contains("products.manage")
+    }
+
     /// Price fields in the form and price edits in the cart
     static func showsPriceFields(role: Role?, permissions: [String]) -> Bool {
         guard role != .outletStaff else { return false }

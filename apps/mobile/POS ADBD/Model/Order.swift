@@ -211,6 +211,10 @@ struct Order: Codable {
     let loyaltyPointsRedeemed: Int
     let loyaltyDiscount: Double
     let loyaltyPointsEarned: Int
+    /// Still to collect / to give back from the list API (`computeOrderBalance`, #389). Nil on an older API and on
+    /// payloads without them. Not the computed `amountDue` of the old screens.
+    let listAmountDue: Double?
+    let listRefundDue: Double?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -272,6 +276,8 @@ struct Order: Codable {
         case loyaltyPointsRedeemed
         case loyaltyDiscount
         case loyaltyPointsEarned
+        case listAmountDue = "amountDue"
+        case listRefundDue = "refundDue"
     }
 
     /// Nested objects from list/search payloads — separate from CodingKeys so
@@ -431,6 +437,8 @@ struct Order: Codable {
         loyaltyPointsRedeemed = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsRedeemed) ?? 0
         loyaltyDiscount = try container.decodeIfPresent(Double.self, forKey: .loyaltyDiscount) ?? 0
         loyaltyPointsEarned = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsEarned) ?? 0
+        listAmountDue = (try? container.decodeIfPresent(Double.self, forKey: .listAmountDue)) ?? nil
+        listRefundDue = (try? container.decodeIfPresent(Double.self, forKey: .listRefundDue)) ?? nil
     }
     
     var amountDue: Double {
@@ -521,7 +529,9 @@ struct Order: Codable {
         totalPaid: Double,
         loyaltyPointsRedeemed: Int = 0,
         loyaltyDiscount: Double = 0,
-        loyaltyPointsEarned: Int = 0
+        loyaltyPointsEarned: Int = 0,
+        listAmountDue: Double? = nil,
+        listRefundDue: Double? = nil
     ) {
         self.id = id
         self.orderNumber = orderNumber
@@ -572,6 +582,8 @@ struct Order: Codable {
         self.loyaltyPointsRedeemed = loyaltyPointsRedeemed
         self.loyaltyDiscount = loyaltyDiscount
         self.loyaltyPointsEarned = loyaltyPointsEarned
+        self.listAmountDue = listAmountDue
+        self.listRefundDue = listRefundDue
     }
 }
 

@@ -145,6 +145,12 @@ final class OrderDetailViewController: BaseViewControler {
         )
     }
 
+    /// #390: "Gia hạn" for open rentals with `orders.update` (OUTLET_STAFF included; the API checks the outlet)
+    private func canExtend(_ detail: OrderDetail) -> Bool {
+        detail.returnPlanAt != nil && RentalExtension.canExtend(orderType: detail.orderType, status: detail.status,
+                                                                canUpdateOrders: PermissionManager.shared.hasPermission("orders.update"))
+    }
+
     private func lateDays(for detail: OrderDetail) -> Int {
         OrdersHomeLogic.lateDays(orderType: detail.orderType, status: detail.status,
                                  pickupPlanAt: detail.pickupPlanAt, returnPlanAt: detail.returnPlanAt)
@@ -509,6 +515,11 @@ final class OrderDetailViewController: BaseViewControler {
             primary.addTarget(self, action: #selector(handOverTapped), for: .touchUpInside)
             buttons.append(primary)
         case .takeReturn:
+            if canExtend(detail) {
+                let extend = makeButton(title: "order.extend".localized(), style: .outline)
+                extend.addTarget(self, action: #selector(extendTapped), for: .touchUpInside)
+                buttons.append(extend)
+            }
             let primary = makeButton(title: "Take back items".localized(), style: .primary)
             primary.addTarget(self, action: #selector(takeReturnTapped), for: .touchUpInside)
             buttons.append(primary)
@@ -534,6 +545,11 @@ final class OrderDetailViewController: BaseViewControler {
         if actions.canEdit {
             menu.append(UIAction(title: "Edit order".localized(), image: UIImage(systemName: "square.and.pencil")) { [weak self] _ in
                 self?.editOrderTapped()
+            })
+        }
+        if canExtend(detail) {
+            menu.append(UIAction(title: "order.extend".localized(), image: UIImage(systemName: "calendar.badge.plus")) { [weak self] _ in
+                self?.extendTapped()
             })
         }
         menu.append(UIAction(title: "Notes".localized(), image: UIImage(systemName: "note.text")) { [weak self] _ in
@@ -571,6 +587,18 @@ final class OrderDetailViewController: BaseViewControler {
         guard let order = orderViewModel?.currentOrder else { return }
         navigationController?.popViewController(animated: false)
         OrderEditLauncher.startEditing(order)
+    }
+
+    @objc private func extendTapped() {
+        guard let detail, let currentReturn = detail.returnPlanAt else { return }
+        let sheet = OrderExtendSheetViewController(detail: detail, currentReturn: currentReturn)
+        sheet.onExtended = { [weak self] day in
+            guard let self else { return }
+            self.showToast(message: String(format: "order.extend.done".localized(), DayFormatter.short(day)))
+            OrderListViewModel.shared.setNeedsRefresh()
+            self.load()
+        }
+        present(sheet, animated: true)
     }
 
     @objc private func handOverTapped() {
