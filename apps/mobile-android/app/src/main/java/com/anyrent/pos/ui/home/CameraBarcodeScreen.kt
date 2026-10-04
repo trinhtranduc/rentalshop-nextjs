@@ -62,6 +62,8 @@ fun CameraBarcodeScreen(
     onBack: () -> Unit,
     onOrderFound: ((Int) -> Unit)? = null,
     onProductFound: ((Product) -> Unit)? = null,
+    /** [BarcodeMode.CODE]: hands back the raw code (#373) */
+    onCode: ((String) -> Unit)? = null,
     /** Match Create Product: Close + no status-bar insets inside AppFormSheet. */
     embeddedInSheet: Boolean = false,
 ) {
@@ -177,6 +179,10 @@ fun CameraBarcodeScreen(
                                                                 handled.set(false)
                                                             }
                                                         }
+                                                        BarcodeMode.CODE -> {
+                                                            onCode?.invoke(raw.trim())
+                                                            onBack()
+                                                        }
                                                         BarcodeMode.ORDER -> {
                                                             val result = withContext(Dispatchers.IO) {
                                                                 ApiClient.get().findOrderByNumber(raw)
@@ -226,4 +232,4 @@ fun CameraBarcodeScreen(
     }
 }
 
-enum class BarcodeMode { PRODUCT, AVAILABILITY, ORDER }
+enum class BarcodeMode { PRODUCT, AVAILABILITY, ORDER, CODE }

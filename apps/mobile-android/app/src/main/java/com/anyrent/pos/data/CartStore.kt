@@ -220,19 +220,18 @@ object CartStore {
         _lines.update { list ->
             list.map { line ->
                 if (line.product.id != productId) return@map line
-                // iOS CartItem.applyPricingOption: switching FIXED/DAILY also updates
-                // the unit price to that option's catalog price so totals refresh.
-                val catalogPrice = line.product.pricingOptions.firstOrNull {
+                // iOS CartItem.applyPricingOption: switching FIXED/DAILY also moves the
+                // unit price to that option's catalog price so totals refresh.
+                // When the catalog has that price, drop the override instead of pinning it:
+                // CartLine.unitPrice then gives the same rent price, and a later switch to
+                // SALE uses the sale price instead of this rent price (#373).
+                val hasCatalogPrice = line.product.pricingOptions.any {
                     it.type.equals(normalized, ignoreCase = true)
-                }?.price ?: if (line.product.pricingType.equals(normalized, ignoreCase = true)) {
-                    line.product.rentPrice
-                } else {
-                    line.unitPrice
-                }
+                } || line.product.pricingType.equals(normalized, ignoreCase = true)
                 line.copy(
                     pricingType = normalized,
                     rentalDays = rentalDaysInclusive(),
-                    unitPriceOverride = catalogPrice,
+                    unitPriceOverride = if (hasCatalogPrice) null else line.unitPrice,
                 )
             }
         }

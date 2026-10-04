@@ -66,6 +66,9 @@ import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.CartCheckoutScreen
 import com.anyrent.pos.ui.home.HomeScreen
+import com.anyrent.pos.ui.home.v2.CartV2Screen
+import com.anyrent.pos.ui.home.v2.ProductDetailScreen
+import com.anyrent.pos.ui.home.v2.ProductsHomeScreen
 import com.anyrent.pos.ui.inbox.InboxScreen
 import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
@@ -108,12 +111,20 @@ object Routes {
     const val Printer = "printer"
     const val AppInfo = "app-info"
     const val Subscription = "subscription"
+    // #373 redesigned products and cart (flag newProducts)
+    const val ProductDetailV2 = "product-v2/{productId}"
+    const val CartV2 = "cart-v2"
+    const val CartV2Preview = "cart-v2-preview"
 
     fun orderDetail(id: Int) = "order/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
     fun overviewStatusOrders(kind: String, startDate: String, endDate: String) =
         "overview-orders/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
+    fun productDetailV2(id: Int) = "product-v2/$id"
+
+    /** The cart the user works in: the redesigned one behind `newProducts`, else the current one */
+    fun cart(): String = if (FeatureFlags.isOn(MobileFeature.NEW_PRODUCTS)) CartV2 else Cart
 }
 
 private enum class MainTab(val route: String, val labelRes: Int) {
@@ -286,6 +297,35 @@ fun AnyRentNavHost(
                 },
             )
         }
+        composable(
+            Routes.ProductDetailV2,
+            arguments = listOf(navArgument("productId") { type = NavType.IntType }),
+        ) { entry ->
+            ProductDetailScreen(
+                productId = entry.arguments?.getInt("productId") ?: 0,
+                onBack = { rootNavController.popBackStack() },
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onOpenCalendar = { id -> rootNavController.navigate(Routes.productAvailability(id)) },
+            )
+        }
+        composable(Routes.CartV2) {
+            CartV2Screen(
+                onBack = { rootNavController.popBackStack() },
+                onPreview = { rootNavController.navigate(Routes.CartV2Preview) { launchSingleTop = true } },
+            )
+        }
+        composable(Routes.CartV2Preview) {
+            // Existing preview: creates the order with the existing logic
+            CartCheckoutScreen(
+                previewMode = true,
+                onBack = { rootNavController.popBackStack() },
+                onPreview = {},
+                onCreated = {
+                    rootNavController.popBackStack(Routes.CartV2, inclusive = true)
+                    MainTabRouter.openOrdersList()
+                },
+            )
+        }
         composable(Routes.CartPreview) {
             CartCheckoutScreen(
                 previewMode = true,
@@ -408,7 +448,7 @@ private fun MainTabs(
                     runCatching { CartStore.loadFromOrderDetail(detail) }
                         .onSuccess {
                             MainTabRouter.openHome()
-                            rootNavController.navigate(Routes.Cart) {
+                            rootNavController.navigate(Routes.cart()) {
                                 launchSingleTop = true
                             }
                         }
@@ -495,13 +535,23 @@ private fun MainTabs(
             modifier = Modifier.padding(padding),
         ) {
             composable(MainTab.Home.route) {
-                HomeScreen(
-                    onOpenCart = { rootNavController.navigate(Routes.Cart) },
-                    onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
-                    onCheckProductAvailability = { id ->
-                        rootNavController.navigate(Routes.productAvailability(id))
-                    },
-                )
+                // #373: the redesigned Home behind `newProducts`; off keeps the current Home
+                val features by FeatureFlags.enabled.collectAsState()
+                if (MobileFeature.NEW_PRODUCTS in features) {
+                    ProductsHomeScreen(
+                        onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
+                        onOpenCart = { rootNavController.navigate(Routes.CartV2) },
+                        onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
+                    )
+                } else {
+                    HomeScreen(
+                        onOpenCart = { rootNavController.navigate(Routes.Cart) },
+                        onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
+                        onCheckProductAvailability = { id ->
+                            rootNavController.navigate(Routes.productAvailability(id))
+                        },
+                    )
+                }
             }
             composable(MainTab.Orders.route) {
                 // Redesigned orders tab behind the server flag (#371); the current list otherwise
@@ -604,6 +654,6 @@ private fun LaunchedOpenDraftCart(navController: NavHostController) {
         }
         if (!DraftOrderReminder.consumeOpenCart()) return@LaunchedEffect
         MainTabRouter.openHome()
-        navController.navigate(Routes.Cart) { launchSingleTop = true }
+        navController.navigate(Routes.cart()) { launchSingleTop = true }
     }
 }
