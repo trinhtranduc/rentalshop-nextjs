@@ -166,6 +166,18 @@ class DefaultAvailabilityRepository(
         data: JSONObject,
         request: AvailabilityRequest,
     ): ProductAvailability {
+        // Current API: data.results[] (iOS BatchAvailabilityData.results). An entry with `error`
+        // (product or outlet stock not found) is a real failure: the caller checks it singly.
+        data.optJSONArray("results")?.let { results ->
+            val entry = (0 until results.length())
+                .mapNotNull(results::optJSONObject)
+                .firstOrNull { it.optInt("productId") == request.productId }
+            if (entry != null && !entry.has("error")) return parseAvailability(entry)
+            throw AppError.InvalidResponse(
+                entry?.optString("error")?.takeIf { it.isNotBlank() }
+                    ?: "Availability response is missing product ${request.productId}",
+            )
+        }
         val key = request.productId.toString()
         val directConflicts = data.optJSONArray(key)
         val item = data.optJSONObject(key)
