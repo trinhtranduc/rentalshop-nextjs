@@ -236,6 +236,11 @@ class OrderViewModel: PreviewViewModelProtocol {
         return false // Deposit can only be edited when creating order (CartViewModel)
     }
     
+    /// PUT /api/orders/:id; replaced in tests
+    var orderUpdater: (Int, UpdateOrderRequest, @escaping (Order?, NSError?) -> Void) -> Void = { id, request, completion in
+        OrderService.shared.updateOrder(orderId: id, request: request, completion: completion)
+    }
+
     // MARK: - Initialization
     init(order: Order) {
         self.order = order
@@ -762,13 +767,50 @@ class OrderViewModel: PreviewViewModelProtocol {
         }
     }
     
-    private func handlePickup(completion: @escaping (Result<Void, Error>) -> Void) {
-        if orderType == .rent {
-            // Handle rental pickup with validation
-            if (materialText.isEmpty && securityDeposit == 0) {
-                completion(.failure(NSError(domain: "OrderViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Quý khách có thể cọc bằng các loại giấy tờ (CMND, GPLX, BLX) hoặc cọc tiền."])))
+    /// Old (flag-off) pickup screen only: it asks for papers or a security deposit before pickup.
+    /// The redesigned hand-over uses `handOver(papers:securityDeposit:)`, which does not require them (#427).
+    static func pickupBlockMessage(orderType: OrderType, papers: String, securityDeposit: Double) -> String? {
+        guard orderType == .rent, papers.isEmpty, securityDeposit == 0 else { return nil }
+        return "You can make a deposit using identification documents (ID card, driver's license, or vehicle registration) or pay a cash deposit.".localized()
+    }
+
+    /// Hand-over request of the redesigned sheet (#427): `status: PICKUPED` plus the optional papers and
+    /// security deposit. Papers go like the old screen sends them (`ID_CARD` + details); a cleared
+    /// prefilled value is sent empty / 0; nothing else is sent.
+    static func handOverRequest(papers: String, securityDeposit: Double,
+                                currentPapers: String?, currentDeposit: Double) -> UpdateOrderRequest {
+        let text = papers.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hadPapers = !(currentPapers ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let details: String? = !text.isEmpty ? text : (hadPapers ? "" : nil)
+        let deposit: Double? = (securityDeposit > 0 || currentDeposit > 0) ? max(0, securityDeposit) : nil
+        return UpdateOrderRequest(
+            status: "PICKUPED",
+            securityDeposit: deposit,
+            collateralType: text.isEmpty ? nil : "ID_CARD",
+            collateralDetails: details
+        )
+    }
+
+    /// RESERVED → PICKUPED from the redesigned hand-over sheet; papers and deposit may be empty (#427)
+    func handOver(papers: String, securityDeposit: Double, completion: @escaping (Result<Void, Error>) -> Void) {
+        let request = Self.handOverRequest(papers: papers, securityDeposit: securityDeposit,
+                                           currentPapers: order.collateralDetails, currentDeposit: order.securityDeposit)
+        orderUpdater(order.id, request) { [weak self] updatedOrder, error in
+            if let error = error {
+                completion(.failure(error))
                 return
             }
+            if let updatedOrder = updatedOrder {
+                self?.order = updatedOrder
+            }
+            completion(.success(()))
+        }
+    }
+
+    private func handlePickup(completion: @escaping (Result<Void, Error>) -> Void) {
+        if let message = Self.pickupBlockMessage(orderType: orderType, papers: materialText, securityDeposit: securityDeposit) {
+            completion(.failure(NSError(domain: "OrderViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: message])))
+            return
         }
         
         // Use specific update method for status change

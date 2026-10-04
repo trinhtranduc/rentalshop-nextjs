@@ -615,6 +615,9 @@ final class OrderDetailViewController: BaseViewControler {
         sheet.onConfirm = { [weak self] lateFee, damageFee in
             self?.confirm(mode, lateFee: lateFee, damageFee: damageFee)
         }
+        sheet.onHandOver = { [weak self] papers, securityDeposit in
+            self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit)
+        }
         if let presentation = sheet.sheetPresentationController {
             presentation.detents = [.large()]
             presentation.prefersGrabberVisible = true
@@ -645,7 +648,25 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
-    /// RESERVED → PICKUPED or PICKUPED → RETURNED through the current OrderViewModel rules
+    /// RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427)
+    private func confirmHandOver(papers: String, securityDeposit: Double) {
+        guard let viewModel = orderViewModel else { return }
+        showProgressText(text: "Updating...".localized())
+        viewModel.handOver(papers: papers, securityDeposit: securityDeposit) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                switch result {
+                case .success:
+                    self.didChangeOrder(viewModel.currentOrder)
+                case .failure(let error):
+                    self.handleStatusError(error as NSError)
+                }
+            }
+        }
+    }
+
+    /// PICKUPED → RETURNED through the current OrderViewModel rules
     private func changeStatus(with viewModel: OrderViewModel) {
         viewModel.saveOrder { [weak self] result in
             DispatchQueue.main.async {

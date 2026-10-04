@@ -1919,3 +1919,8 @@
 "order.extend.confirm" = "Extend to %@";
 "order.extend.unavailable" = "Not enough stock on the added days: %@";
 "order.extend.done" = "Extended to %@";
+
+/* #427 hand-over: optional papers and security deposit */
+"order.handOver.papers" = "Papers left";
+"order.handOver.papersHint" = "e.g. ID card, driver's license";
+"order.handOver.deposit" = "Security deposit";
