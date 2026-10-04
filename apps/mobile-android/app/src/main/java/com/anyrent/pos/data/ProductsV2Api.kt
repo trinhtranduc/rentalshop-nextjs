@@ -5,7 +5,6 @@ import com.anyrent.pos.domain.products.PricingOptionInput
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -15,7 +14,6 @@ import java.net.URLEncoder
  * Product calls of the redesigned screens (#373). Existing endpoints only; the old screens keep their calls.
  */
 object ProductsV2Api {
-    private val jsonMedia = "application/json; charset=utf-8".toMediaType()
     private val imageMedia = "image/jpeg".toMediaType()
 
     /** `GET /api/products` with the user's outlet (so the list gets today's free count) and an optional category */
@@ -75,7 +73,11 @@ object ProductsV2Api {
         val data = JSONObject()
             .put("name", fields.name)
             .put("outletStock", JSONArray().put(JSONObject().put("outletId", fields.outletId).put("stock", fields.quantity)))
-        if (id == null) data.put("totalStock", fields.quantity)
+        if (id == null) {
+            data.put("totalStock", fields.quantity)
+            // Create requires `rentPrice`; without price rights it is 0 (as iOS sends)
+            data.put("rentPrice", 0.0)
+        }
         fields.barcode?.takeIf { it.isNotBlank() }?.let { data.put("barcode", it) }
         fields.categoryId?.let { data.put("categoryId", it) }
         fields.prices?.let { prices ->
@@ -89,21 +91,17 @@ object ProductsV2Api {
         }
         if (id != null || keptUrls.isNotEmpty()) data.put("images", JSONArray(keptUrls))
 
+        // The product routes read multipart form data only (`data` JSON + `images` files), as iOS sends
         val path = if (id == null) "/api/products" else "/api/products/$id"
-        val json = if (newFiles.isEmpty()) {
-            val body = data.toString().toRequestBody(jsonMedia)
-            if (id == null) ApiClient.get().authedPost(path, body) else ApiClient.get().authedPut(path, body)
-        } else {
-            val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
-                .addFormDataPart("data", data.toString())
-                .apply {
-                    newFiles.forEachIndexed { index, file ->
-                        addFormDataPart("images", "image_$index.jpg", file.asRequestBody(imageMedia))
-                    }
+        val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("data", data.toString())
+            .apply {
+                newFiles.forEachIndexed { index, file ->
+                    addFormDataPart("images", "image_$index.jpg", file.asRequestBody(imageMedia))
                 }
-                .build()
-            if (id == null) ApiClient.get().authedMultipart(path, multipart) else ApiClient.get().authedMultipartPut(path, multipart)
-        }
+            }
+            .build()
+        val json = if (id == null) ApiClient.get().authedMultipart(path, multipart) else ApiClient.get().authedMultipartPut(path, multipart)
         val savedId = id ?: (json.optJSONObject("data") ?: JSONObject()).optInt("id")
         ApiClient.get().getProduct(savedId).getOrThrow()
     }

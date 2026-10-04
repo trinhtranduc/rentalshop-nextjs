@@ -108,6 +108,8 @@ internal fun V2Segmented(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     enabled: Boolean = true,
+    /** Equal widths across the whole row */
+    fill: Boolean = false,
 ) {
     Row(
         modifier
@@ -119,6 +121,7 @@ internal fun V2Segmented(
             val on = index == selected
             Box(
                 Modifier
+                    .then(if (fill) Modifier.weight(1f) else Modifier)
                     .then(if (on) Modifier.shadow(1.dp, RoundedCornerShape(8.dp)) else Modifier)
                     .clip(RoundedCornerShape(if (compact) 7.dp else 8.dp))
                     .background(if (on) Color.White else Color.Transparent)

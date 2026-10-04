@@ -67,6 +67,7 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductStock
+import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppSecondaryButton
@@ -161,7 +162,7 @@ fun ProductDetailScreen(
             Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(current.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
                 val meta = listOfNotNull(
-                    current.categoryName, current.barcode,
+                    current.categoryName, current.barcodeText,
                     current.deposit.takeIf { it > 0 }?.let { stringResource(R.string.v2_detail_deposit, formatMoneyVnd(it)) },
                 ).filter { it.isNotBlank() }
                 if (meta.isNotEmpty()) Text(meta.joinToString(" · "), fontSize = 13.sp, color = DS.Colors.TextMuted)
@@ -203,7 +204,15 @@ fun ProductDetailScreen(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            AppSecondaryButton(stringResource(R.string.v2_detail_free_calendar), onClick = { onOpenCalendar(current.id) }, modifier = Modifier.weight(1f))
+            Box(
+                Modifier.weight(1f).height(50.dp).clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, V2Colors.Border, RoundedCornerShape(12.dp))
+                    .clickable { onOpenCalendar(current.id) }
+                    .semantics { role = Role.Button },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(stringResource(R.string.v2_detail_free_calendar), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, color = DS.Colors.Text)
+            }
             AppPrimaryButton(
                 stringResource(R.string.v2_detail_add_to_cart),
                 onClick = {

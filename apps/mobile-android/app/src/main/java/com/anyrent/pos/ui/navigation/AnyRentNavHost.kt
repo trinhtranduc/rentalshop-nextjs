@@ -534,9 +534,9 @@ private fun MainTabs(
             modifier = Modifier.padding(padding),
         ) {
             composable(MainTab.Home.route) {
-                // #373: read once when the tab is built; off keeps the current Home
-                val newProducts = remember { FeatureFlags.isOn(MobileFeature.NEW_PRODUCTS) }
-                if (newProducts) {
+                // #373: the redesigned Home behind `newProducts`; off keeps the current Home
+                val features by FeatureFlags.enabled.collectAsState()
+                if (MobileFeature.NEW_PRODUCTS in features) {
                     ProductsHomeScreen(
                         onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
                         onOpenCart = { rootNavController.navigate(Routes.CartV2) },

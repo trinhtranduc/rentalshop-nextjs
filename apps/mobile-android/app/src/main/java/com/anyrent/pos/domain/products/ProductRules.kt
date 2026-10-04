@@ -207,3 +207,7 @@ object CartV2Logic {
     fun rentalDays(pickup: LocalDate, returnDate: LocalDate): Int =
         (ChronoUnit.DAYS.between(pickup, returnDate) + 1).toInt().coerceAtLeast(1)
 }
+
+/** The barcode to show; the list parser can hand back the JSON literal "null" */
+val Product.barcodeText: String?
+    get() = barcode?.trim()?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }

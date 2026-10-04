@@ -86,6 +86,7 @@ import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductStock
+import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoneyVnd
@@ -362,7 +363,7 @@ private fun ProductRow(product: Product, onOpen: () -> Unit, onAdd: () -> Unit) 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(product.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val meta = listOfNotNull(product.categoryName, product.barcode).filter { it.isNotBlank() }.joinToString(" · ")
+                    val meta = listOfNotNull(product.categoryName, product.barcodeText).filter { it.isNotBlank() }.joinToString(" · ")
                     if (meta.isNotBlank()) {
                         Text(meta, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     }

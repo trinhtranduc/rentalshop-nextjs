@@ -6,7 +6,7 @@ Issue: #373 · Status: accepted · Intent: ./intent.md
 
 1. Flag `newProducts` off → old Home, product form and cart, unchanged. On → new screens (read when the tab is built).
 2. Product list [SP-dong]: header (shop name, title), search field (`q`, as you type, 300 ms), barcode scan button,
-   category chips (Tất cả + `GET /api/categories`, filtered client-side on the loaded page), rows with image,
+   category chips (Tất cả + `GET /api/categories`, list asked again with `categoryId`), rows with image,
    name, category · barcode, "Còn N" / "Hết hôm nay" (`effectiveAvailableToday` / `available`), price per rental,
    per day and sale price when set, "+" adds to the cart. Paged, pull to refresh. A floating bar shows the cart
    ("Giỏ hàng · N món", total) and opens the cart. "+" in the header (create rights) opens the add form.
@@ -33,6 +33,8 @@ Issue: #373 · Status: accepted · Intent: ./intent.md
      Giảm giá, Tổng đơn, Ghi chú; bottom "Khách trả X" + "Bán & thu tiền".
    - The CTA validates (items, customer, dates for rent) and opens the existing order preview, which creates the order
      and collects payment. Totals come from the existing cart store.
+   - Android: a per-line Theo lần / Theo ngày switch no longer pins the rent price, so switching the cart to Bán
+     afterwards uses the sale price (bug in the shared cart store, also seen in the current cart).
 
 ## Out of scope
 

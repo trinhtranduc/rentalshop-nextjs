@@ -227,6 +227,7 @@ fun CartV2Screen(
             }
             AppPrimaryButton(
                 stringResource(if (isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
+                modifier = Modifier.weight(1.1f),
                 onClick = {
                     when {
                         lines.isEmpty() -> error = emptyMessage

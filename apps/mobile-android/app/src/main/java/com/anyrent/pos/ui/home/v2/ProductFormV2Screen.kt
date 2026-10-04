@@ -84,6 +84,7 @@ import com.anyrent.pos.domain.products.ProductFormIssue
 import com.anyrent.pos.domain.products.ProductFormValidator
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductStock
+import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppPrimaryButton
@@ -116,7 +117,7 @@ fun ProductFormV2Screen(
     val scope = rememberCoroutineScope()
     val showsPrices = ProductAccess.showsPriceFields(PermissionManager.role)
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
-    var barcode by remember { mutableStateOf(initial?.barcode.orEmpty()) }
+    var barcode by remember { mutableStateOf(initial?.barcodeText.orEmpty()) }
     var barcodeWarning by remember { mutableStateOf<String?>(null) }
     var categoryId by remember { mutableStateOf(initial?.categoryId) }
     var categoryName by remember { mutableStateOf(initial?.categoryName) }
@@ -329,6 +330,7 @@ fun ProductFormV2Screen(
                         selected = if (defaultMode == PricingMode.PER_DAY) 1 else 0,
                         onSelect = { defaultMode = if (it == 1) PricingMode.PER_DAY else PricingMode.PER_RENTAL },
                         modifier = Modifier.fillMaxWidth(),
+                        fill = true,
                     )
                 }
                 Row {
