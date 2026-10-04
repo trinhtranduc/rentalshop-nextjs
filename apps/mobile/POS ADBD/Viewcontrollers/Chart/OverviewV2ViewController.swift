@@ -47,7 +47,7 @@ final class OverviewV2ViewController: BaseViewControler {
 
         periodButton.titleLabel?.font = Utils.boldFont(size: 14)
         periodButton.setTitleColor(DS.Color.text, for: .normal)
-        periodButton.setImage(UIImage(systemName: "chevron.down", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)), for: .normal)
+        periodButton.setImage(DS.symbol("chevron.down", 16, weight: .semibold), for: .normal)
         periodButton.tintColor = DS.Color.textMuted
         periodButton.semanticContentAttribute = .forceRightToLeft
         periodButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
@@ -415,7 +415,7 @@ final class OverviewPeriodSheet: UIViewController {
         view.backgroundColor = DS.Color.surface
         let title = V2.label("overview.v2.period.title".localized(), size: 18, weight: .bold)
         let close = UIButton(type: .system)
-        close.setImage(UIImage(systemName: "xmark"), for: .normal)
+        close.setImage(DS.symbol("xmark", DS.Icon.md, weight: .semibold), for: .normal)
         close.tintColor = DS.Color.textMuted
         close.accessibilityLabel = "Close".localized()
         close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
@@ -437,7 +437,7 @@ final class OverviewPeriodSheet: UIViewController {
         }
         let custom = UIButton(type: .system)
         custom.setTitle("overview.v2.period.custom".localized(), for: .normal)
-        custom.setImage(UIImage(systemName: "calendar"), for: .normal)
+        custom.setImage(DS.symbol("calendar", DS.Icon.md), for: .normal)
         custom.titleLabel?.font = Utils.boldFont(size: 15)
         custom.tintColor = DS.Color.primary
         custom.contentHorizontalAlignment = .leading

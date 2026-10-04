@@ -76,7 +76,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let user = User.current()
         shopLabel.text = [user?.merchant?.name, user?.outlet?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
 
-        notificationButton.setImage(UIImage(systemName: "bell"), for: .normal)
+        notificationButton.setImage(DS.symbol("bell", DS.Icon.lg), for: .normal)
         notificationButton.tintColor = DS.Color.text
         notificationButton.badgeBackgroundColor = DS.Color.primary
         notificationButton.badgeTextColor = .white
@@ -85,7 +85,7 @@ final class ProductsHomeViewController: BaseViewControler {
         notificationButton.accessibilityLabel = "Notifications".localized()
         notificationButton.addTarget(self, action: #selector(openInbox), for: .touchUpInside)
 
-        let addButton = iconButton("plus", label: "product.action.add.accessibility".localized(), action: #selector(addProduct))
+        let addButton = iconButton("plus", size: DS.Icon.lg, label: "product.action.add.accessibility".localized(), action: #selector(addProduct))
         addButton.isHidden = !ProductAccess.canCreate(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
 
         let titles = UIStackView(arrangedSubviews: [shopLabel, titleLabel])
@@ -98,7 +98,7 @@ final class ProductsHomeViewController: BaseViewControler {
         let searchBox = UIView()
         searchBox.backgroundColor = V2.chipFill
         searchBox.layer.cornerRadius = 12
-        let glass = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
         glass.tintColor = DS.Color.textMuted
         searchField.placeholder = "products.search.placeholder".localized()
         searchField.font = Utils.regularFont(size: 15)
@@ -109,8 +109,8 @@ final class ProductsHomeViewController: BaseViewControler {
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
         // Board SP-dong: image search and barcode scan are icon buttons at the trailing end inside the field
-        let photoButton = iconButton("camera", label: "AI Image Search".localized(), action: #selector(imageSearch))
-        let scanButton = iconButton("barcode.viewfinder", label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
+        let photoButton = iconButton("camera", size: DS.Icon.md, label: "AI Image Search".localized(), action: #selector(imageSearch))
+        let scanButton = iconButton("barcode.viewfinder", size: DS.Icon.md, label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
         let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, photoButton, scanButton])
         fieldRow.alignment = .center
         fieldRow.spacing = 0
@@ -198,9 +198,9 @@ final class ProductsHomeViewController: BaseViewControler {
         updateCartBar()
     }
 
-    private func iconButton(_ symbol: String, label: String, action: Selector) -> UIButton {
+    private func iconButton(_ symbol: String, size: CGFloat, label: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)), for: .normal)
+        button.setImage(DS.symbol(symbol, size), for: .normal)
         button.tintColor = DS.Color.text
         button.accessibilityLabel = label
         button.addTarget(self, action: action, for: .touchUpInside)
@@ -244,7 +244,7 @@ final class ProductsHomeViewController: BaseViewControler {
 
     private func applyBadge(_ count: Int) {
         notificationButton.badge = count > 0 ? "\(min(count, 99))" : nil
-        notificationButton.setImage(UIImage(systemName: count > 0 ? "bell.badge" : "bell"), for: .normal)
+        notificationButton.setImage(DS.symbol(count > 0 ? "bell.badge" : "bell", DS.Icon.lg), for: .normal)
     }
 
     // MARK: - Actions
@@ -419,7 +419,7 @@ final class ProductRowV2Cell: UITableViewCell {
     private let stockLabel = V2.label(size: 12, weight: .bold)
     private let priceLabel = V2.label(size: 15, lines: 2)
     private let addButton = UIButton(type: .system)
-    private let plusImage = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold))
+    private let plusImage = DS.symbol("plus", DS.Icon.sm, weight: .semibold)
     /// The + of a product already in the cart: the count on a darker blue (board SP-dong)
     private static let inCartFill = UIColor(hexString: "1E3A8A")
     var onAdd: (() -> Void)?

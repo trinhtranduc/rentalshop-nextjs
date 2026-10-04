@@ -270,7 +270,7 @@ final class SettingsV2Cell: UITableViewCell {
     private let titleLabel = V2.label(size: 15)
     private let subtitleLabel = V2.label(size: 13, color: DS.Color.textMuted)
     private let valueLabel = V2.label(size: 14, color: DS.Color.textMuted)
-    private let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+    private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
     private let line = V2.divider()
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -286,8 +286,8 @@ final class SettingsV2Cell: UITableViewCell {
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
         valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         chevron.tintColor = UIColor(hexString: "94A3B8")
-        chevron.contentMode = .scaleAspectFit
-        chevron.snp.makeConstraints { make in make.width.height.equalTo(14) }
+        chevron.contentMode = .center
+        chevron.snp.makeConstraints { make in make.width.height.equalTo(DS.Icon.sm) }
 
         let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         texts.axis = .vertical
