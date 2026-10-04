@@ -259,6 +259,12 @@ describe('GET /api/orders date filter (#355)', () => {
     ]);
   });
 
+  it('a start without an end stays open-ended (iOS loads everything since 2000)', async () => {
+    await ordersGET(req('/api/orders?startDate=2000-01-01'));
+    const filters = mockDb.orders.findManyLightweight.mock.calls[0][0];
+    expect([filters.startDate, filters.endDate]).toEqual([new Date('1999-12-31T17:00:00.000Z'), undefined]);
+  });
+
   it('a valid timeZone is used; an unknown one is rejected', async () => {
     await ordersGET(req('/api/orders?startDate=2026-10-02&endDate=2026-10-02&timeZone=Asia/Tokyo'));
     expect(mockDb.orders.findManyLightweight.mock.calls[0][0].startDate).toEqual(new Date('2026-10-01T15:00:00.000Z'));
