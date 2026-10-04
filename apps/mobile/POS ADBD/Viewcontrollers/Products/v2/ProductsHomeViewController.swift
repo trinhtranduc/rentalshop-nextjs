@@ -339,7 +339,7 @@ final class ProductsHomeViewController: BaseViewControler {
         form.onSaved = { [weak self] product in
             self?.viewModel.replace(product)
         }
-        presentWithHiddenNavigationBar(form, fullScreen: true)
+        V2.presentForm(form, from: self)
     }
 
     @objc private func openCart() {
@@ -486,39 +486,40 @@ final class ProductRowV2Cell: UITableViewCell {
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .default
-        let metaRow = UIStackView(arrangedSubviews: [metaLabel, stockLabel])
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        spacer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
+        let metaRow = UIStackView(arrangedSubviews: [metaLabel, stockLabel, spacer])
         metaRow.spacing = 8
         metaLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        stockLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        stockLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        stockLabel.setContentHuggingPriority(.required, for: .horizontal)
+        metaLabel.setContentHuggingPriority(.required, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        priceLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let texts = UIStackView(arrangedSubviews: [nameLabel, metaRow, priceLabel])
         texts.axis = .vertical
         texts.spacing = 3
-        texts.alignment = .leading
+        texts.alignment = .fill
+        texts.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        texts.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
         addButton.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)), for: .normal)
         addButton.layer.cornerRadius = 12
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
-        contentView.addSubview(photo)
-        contentView.addSubview(texts)
-        contentView.addSubview(addButton)
+        addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
+        let row = UIStackView(arrangedSubviews: [photo, texts, addButton])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 12
+        contentView.addSubview(row)
         let line = V2.divider()
         contentView.addSubview(line)
-        photo.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(DS.Spacing.lg)
-            make.top.greaterThanOrEqualToSuperview().offset(10)
-            make.centerY.equalToSuperview()
-        }
-        addButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(DS.touchTarget)
-        }
-        texts.snp.makeConstraints { make in
-            make.leading.equalTo(photo.snp.trailing).offset(12)
-            make.trailing.equalTo(addButton.snp.leading).offset(-12)
+        row.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
             make.top.equalToSuperview().offset(10)
-            make.bottom.equalToSuperview().offset(-10)
+            make.bottom.equalToSuperview().offset(-10).priority(999)
+            make.height.greaterThanOrEqualTo(68)
         }
-        contentView.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(88) }
         line.snp.makeConstraints { make in
             make.leading.trailing.bottom.equalToSuperview()
         }

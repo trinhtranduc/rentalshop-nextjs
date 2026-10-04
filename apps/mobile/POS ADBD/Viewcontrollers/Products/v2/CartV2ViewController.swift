@@ -292,7 +292,11 @@ final class CartV2ViewController: BaseViewControler {
         }
         let calc = CartV2Logic.calc(item, orderType: cart.orderType)
         let name = V2.label(item.productName, size: 15, weight: .bold, lines: 2)
+        name.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let total = V2.label(MoneyFormatter.format(calc.total), size: 15, weight: .bold)
+        total.textAlignment = .right
+        total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
         let top = UIStackView(arrangedSubviews: [name, total])
         top.alignment = .top

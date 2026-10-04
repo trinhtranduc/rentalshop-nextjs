@@ -93,9 +93,10 @@ final class ProductDetailViewController: BaseViewControler {
             make.width.equalToSuperview()
         }
 
-        // Photos with back / edit on top
+        // Photos with back / edit on top (in the hierarchy first: the buttons pin to the safe area)
         let photoBox = UIView()
         photoBox.backgroundColor = V2.chipFill
+        content.addArrangedSubview(photoBox)
         photos.isPagingEnabled = true
         photos.showsHorizontalScrollIndicator = false
         photos.delegate = self
@@ -133,7 +134,6 @@ final class ProductDetailViewController: BaseViewControler {
             make.height.equalTo(18)
             make.width.greaterThanOrEqualTo(36)
         }
-        content.addArrangedSubview(photoBox)
         photoBox.snp.makeConstraints { make in
             make.height.equalTo(view.snp.width).multipliedBy(0.62)
         }
@@ -212,7 +212,8 @@ final class ProductDetailViewController: BaseViewControler {
         }
         tiles.isHidden = tiles.arrangedSubviews.isEmpty
 
-        let counts = ProductStock.counts(product)
+        // Outlet users see their outlet; a merchant without an outlet sees the totals
+        let counts = ProductStock.counts(product, outletId: User.current()?.outlet?.id ?? User.current()?.outletId)
         stockLabel.text = String(format: "products.stock.summary".localized(), counts.rented, counts.free, counts.total)
 
         photoStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -271,7 +272,7 @@ final class ProductDetailViewController: BaseViewControler {
         row.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
         let mark = UIView()
         mark.layer.cornerRadius = 2
-        mark.backgroundColor = order.status.badgeTextColor
+        mark.backgroundColor = order.status.badgeColor
         let name = V2.label(order.customerName, size: 15, weight: .bold)
         let dates: String
         if order.orderType == .rent, let pickup = order.pickupPlanAt, let ret = order.returnPlanAt {
@@ -357,7 +358,7 @@ final class ProductDetailViewController: BaseViewControler {
             self.load()
             self.onSaved?(saved)
         }
-        presentWithHiddenNavigationBar(form, fullScreen: true)
+        V2.presentForm(form, from: self)
     }
 
     @objc private func addToCart() {

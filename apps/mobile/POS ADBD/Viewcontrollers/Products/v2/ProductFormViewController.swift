@@ -236,10 +236,16 @@ final class ProductFormViewController: BaseViewControler {
         box.layer.cornerRadius = 12
         box.layer.borderWidth = 1
         box.layer.borderColor = V2.border.cgColor
+        input.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let row = UIStackView(arrangedSubviews: [input])
         row.alignment = .center
         row.spacing = 8
-        if let unit { row.addArrangedSubview(V2.label(unit, size: 14, color: DS.Color.textMuted)) }
+        if let unit {
+            let unitLabel = V2.label(unit, size: 14, color: DS.Color.textMuted)
+            unitLabel.setContentHuggingPriority(.required, for: .horizontal)
+            unitLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+            row.addArrangedSubview(unitLabel)
+        }
         if let accessory { row.addArrangedSubview(accessory) }
         box.addSubview(row)
         row.snp.makeConstraints { make in

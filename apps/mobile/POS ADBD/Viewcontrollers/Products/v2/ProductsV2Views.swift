@@ -110,6 +110,15 @@ enum V2 {
     }
 
     static let placeholder = UIImage(systemName: "tshirt")
+
+    /// Full-screen form over the current screen. `.overFullScreen` keeps the presenter in place, so a pushed
+    /// screen's hidden tab bar does not come back after the form closes.
+    static func presentForm(_ controller: UIViewController, from presenter: UIViewController) {
+        let nav = UINavigationController(rootViewController: controller)
+        nav.setNavigationBarHidden(true, animated: false)
+        nav.modalPresentationStyle = .overFullScreen
+        presenter.present(nav, animated: true)
+    }
 }
 
 /// Card-like pill toggle: "Theo lần | Theo ngày", "Thuê | Bán"
