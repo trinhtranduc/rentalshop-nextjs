@@ -1984,3 +1984,16 @@
 "orders.entity.section" = "ORDERS";
 "orders.entity.million" = "%d.%dM";
 "orders.entity.millionWhole" = "%dM";
+
+/* #482 */
+"products.cart.pricing.block" = "Per block";
+"products.cart.pricing.hourly" = "Per hour";
+"products.cart.pricing.sale" = "Sale price";
+"products.cart.pricing.enterPrice" = "Enter price";
+"products.cart.pricing.perDaySuffix" = "%@/day";
+"products.cart.pricing.priceField" = "Price for this order";
+"products.cart.pricing.note" = "Applies to this order only, the product price stays.";
+"products.cart.pricing.apply" = "Apply";
+"products.cart.pricing.change" = "Change pricing for %@";
+"products.cart.pricing.unit" = "đ";
+"products.cart.pricing.unitDaily" = "đ/day";

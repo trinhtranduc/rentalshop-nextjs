@@ -1982,3 +1982,16 @@
 "orders.entity.section" = "ĐƠN HÀNG";
 "orders.entity.million" = "%d,%dtr";
 "orders.entity.millionWhole" = "%dtr";
+
+/* #482 */
+"products.cart.pricing.block" = "Theo block";
+"products.cart.pricing.hourly" = "Theo giờ";
+"products.cart.pricing.sale" = "Giá bán";
+"products.cart.pricing.enterPrice" = "Nhập giá";
+"products.cart.pricing.perDaySuffix" = "%@/ngày";
+"products.cart.pricing.priceField" = "Giá cho đơn này";
+"products.cart.pricing.note" = "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.";
+"products.cart.pricing.apply" = "Áp dụng";
+"products.cart.pricing.change" = "Đổi cách tính giá %@";
+"products.cart.pricing.unit" = "đ";
+"products.cart.pricing.unitDaily" = "đ/ngày";

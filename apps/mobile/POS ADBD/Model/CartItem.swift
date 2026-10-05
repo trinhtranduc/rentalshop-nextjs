@@ -113,8 +113,11 @@ struct CartItem: Codable {
         pricingType = normalizedType
         if normalizedType == "DAILY" {
             price = customDailyPrice ?? option?.price ?? 0
-        } else {
+        } else if normalizedType == "FIXED" {
             price = customFixedPrice ?? option?.price ?? 0
+        } else {
+            // #482: another option type (BLOCK, HOURLY) starts at its own price
+            price = option?.price ?? 0
         }
         customRentPrice = price
     }
@@ -125,7 +128,7 @@ struct CartItem: Codable {
         let currentType = pricingType?.uppercased() ?? "FIXED"
         if currentType == "DAILY" {
             customDailyPrice = value
-        } else {
+        } else if currentType == "FIXED" {
             customFixedPrice = value
         }
         customRentPrice = value

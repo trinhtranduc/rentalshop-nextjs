@@ -562,6 +562,89 @@ extension ProductsV2Tests {
     }
 }
 
+/// #482 — one pricing chip per cart line and the "Cách tính giá" sheet (board Gio-hang-chon-gia)
+extension ProductsV2Tests {
+    private var threeOptions: String {
+        """
+        [{"id":1,"type":"FIXED","price":350000,"isDefault":true,"isActive":true},
+         {"id":2,"type":"DAILY","price":150000,"isDefault":false,"isActive":true},
+         {"id":3,"type":"BLOCK","price":0,"isDefault":false,"isActive":true},
+         {"id":4,"type":"HOURLY","price":20000,"isDefault":false,"isActive":false}]
+        """
+    }
+
+    private func pricingCart() throws -> Cart {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.customer = try JSONDecoder.shared.decode(Customer.self, from: Data(#"{"id":5,"firstName":"Minh","phone":"0912"}"#.utf8))
+        cart.addItem(CartItem(from: try homeRow(options: threeOptions), quantity: 1, price: 350_000))
+        cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")!
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")!
+        return cart
+    }
+
+    func testSheetListsBothModesThenOtherActiveOptionTypes() throws {
+        let line = try pricingCart().items[0]
+        XCTAssertEqual(CartV2Logic.pricingChoices(line), [
+            CartPricingChoice(type: "FIXED", catalogPrice: 350_000),
+            CartPricingChoice(type: "DAILY", catalogPrice: 150_000),
+            CartPricingChoice(type: "BLOCK", catalogPrice: nil),
+        ], "an inactive option is left out; a priceless one reads Nhập giá")
+        // A one-price product still offers both modes
+        let onePrice = CartItem(from: try homeRow(options: "[]"), quantity: 1, price: 150_000)
+        XCTAssertEqual(CartV2Logic.pricingChoices(onePrice).map(\.type), ["FIXED", "DAILY"])
+        XCTAssertNil(CartV2Logic.pricingChoices(onePrice)[1].catalogPrice)
+        XCTAssertEqual(CartV2Logic.pricingLabel("BLOCK"), "products.cart.pricing.block".localized())
+    }
+
+    func testFieldStartsAtTheLinePriceThenTheCatalogPrice() throws {
+        let cart = try pricingCart()
+        cart.updatePrice(at: 0, price: 320_000)
+        let line = cart.items[0]
+        XCTAssertEqual(CartV2Logic.startPrice(line, type: "FIXED"), 320_000, "the line's own mode shows the line price")
+        XCTAssertEqual(CartV2Logic.startPrice(line, type: "DAILY"), 150_000)
+        XCTAssertEqual(CartV2Logic.startPrice(line, type: "BLOCK"), 0)
+    }
+
+    func testChipAndPreviewTexts() throws {
+        let cart = try pricingCart()
+        XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).label, "products.price.perRental".localized())
+        XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).price, "350.000đ")
+        cart.selectPricingType(at: 0, type: "DAILY")
+        cart.updatePrice(at: 0, price: 130_000)
+        XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).price,
+                       String(format: "products.cart.pricing.perDaySuffix".localized(), "130.000đ"))
+        cart.selectPricingType(at: 0, type: "BLOCK")
+        XCTAssertNil(CartV2Logic.chip(cart.items[0], orderType: .rent).price, "no price yet: Nhập giá")
+        XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .sale).label, "products.cart.pricing.sale".localized())
+
+        let daily = CartV2Logic.pricePreview(type: "DAILY", price: 130_000, days: 3, quantity: 1, orderType: .rent)
+        XCTAssertEqual(daily.text, "130.000đ × " + PluralText.format("products.cart.days", count: 3, 3) + " × 1")
+        XCTAssertEqual(daily.total, 390_000)
+        let fixed = CartV2Logic.pricePreview(type: "FIXED", price: 350_000, days: 3, quantity: 2, orderType: .rent)
+        XCTAssertEqual(fixed.text, "350.000đ × 2")
+        XCTAssertEqual(fixed.total, 700_000)
+        XCTAssertEqual(CartV2Logic.pricePreview(type: "DAILY", price: 300_000, days: 3, quantity: 2, orderType: .sale).total, 600_000)
+    }
+
+    func testApplyingAThirdOptionChangesOnlyTheLineAndKeepsThePayloadShape() throws {
+        let cart = try pricingCart()
+        cart.selectPricingType(at: 0, type: "BLOCK")
+        cart.updatePrice(at: 0, price: 400_000)
+        XCTAssertEqual(cart.items[0].pricingType, "BLOCK")
+        XCTAssertEqual(CartV2Logic.calc(cart.items[0], orderType: .rent).total, 400_000)
+        XCTAssertNil(cart.items[0].customFixedPrice, "the per-rental price typed earlier is not overwritten")
+        let request = try XCTUnwrap(cart.toCreateOrderRequest().orderItems.first)
+        XCTAssertEqual(request.unitPrice, 400_000)
+        XCTAssertEqual(request.pricingType, "BLOCK")
+        XCTAssertEqual(request.totalPrice, 400_000)
+        // Back to per rental: the catalog price, the product never changed
+        cart.selectPricingType(at: 0, type: "FIXED")
+        XCTAssertEqual(cart.items[0].price, 350_000)
+        XCTAssertEqual(cart.items[0].originalRentPrice, 150_000)
+    }
+}
+
 /// #476 — "Tạo đơn" opens a confirm sheet on the cart, then a "Đã tạo đơn" sheet
 extension ProductsV2Tests {
     private var vn: TimeZone { TimeZone(identifier: "Asia/Ho_Chi_Minh")! }

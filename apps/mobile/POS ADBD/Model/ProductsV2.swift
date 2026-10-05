@@ -306,6 +306,12 @@ enum ProductFormValidator {
 // MARK: - Cart
 
 /// What one cart line costs and how the cart explains it ("150.000/ngày × 3 ngày")
+/// One row of the "Cách tính giá" sheet (#482)
+struct CartPricingChoice: Equatable {
+    let type: String
+    let catalogPrice: Double?
+}
+
 struct CartLineCalc: Equatable {
     enum Unit: Equatable { case perRental, perDay(days: Int), sale }
     let unitPrice: Double
@@ -355,6 +361,79 @@ enum CartV2Logic {
     /// A rent line with no price yet (a mode the product has no price for): the cart asks for one
     static func needsPrice(_ item: CartItem, orderType: OrderType) -> Bool {
         orderType == .rent && item.price <= 0
+    }
+
+    // MARK: Pricing sheet (#482, board Gio-hang-chon-gia)
+
+    /// "150.000đ"
+    static func money(_ amount: Double) -> String {
+        MoneyFormatter.format(amount) + "đ"
+    }
+
+    /// "Theo lần", "Theo ngày", "Theo block", "Theo giờ"; another type reads as sent
+    static func pricingLabel(_ type: String) -> String {
+        switch type.uppercased() {
+        case ProductPricingMode.perRental.rawValue: return "products.price.perRental".localized()
+        case ProductPricingMode.perDay.rawValue: return "products.price.perDay".localized()
+        case "BLOCK": return "products.cart.pricing.block".localized()
+        case "HOURLY": return "products.cart.pricing.hourly".localized()
+        default: return type.capitalized
+        }
+    }
+
+    /// The rows of the sheet: Theo lần and Theo ngày always, then every other active option type of the product, each
+    /// with its catalog price (nil = "Nhập giá")
+    static func pricingChoices(_ item: CartItem) -> [CartPricingChoice] {
+        let options = (item.pricingOptions ?? []).filter { $0.isActive != false }
+        var types = [ProductPricingMode.perRental.rawValue, ProductPricingMode.perDay.rawValue]
+        for option in options where !types.contains(option.type.uppercased()) {
+            types.append(option.type.uppercased())
+        }
+        return types.map { type in
+            let price = options.first { $0.type.uppercased() == type && $0.price > 0 }?.price
+            return CartPricingChoice(type: type, catalogPrice: price)
+        }
+    }
+
+    /// The line's pricing type (FIXED when it has none)
+    static func currentType(_ item: CartItem) -> String {
+        item.pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+    }
+
+    /// Price the field shows for a row: the line's price for its own mode, a price typed earlier for that mode, the
+    /// catalog price, else 0
+    static func startPrice(_ item: CartItem, type: String) -> Double {
+        let type = type.uppercased()
+        if type == currentType(item) { return item.price }
+        let catalog = pricingChoices(item).first { $0.type == type }?.catalogPrice
+        switch type {
+        case ProductPricingMode.perDay.rawValue: return item.customDailyPrice ?? catalog ?? 0
+        case ProductPricingMode.perRental.rawValue: return item.customFixedPrice ?? catalog ?? 0
+        default: return catalog ?? 0
+        }
+    }
+
+    /// The chip of a line: "Theo ngày" + "150.000đ/ngày" ("Giá bán" on a sale); price nil = "Nhập giá"
+    static func chip(_ item: CartItem, orderType: OrderType) -> (label: String, price: String?) {
+        let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
+        guard item.price > 0 else { return (label, nil) }
+        return (label, priceText(item.price, type: currentType(item), orderType: orderType))
+    }
+
+    /// "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise
+    static func priceText(_ price: Double, type: String, orderType: OrderType) -> String {
+        guard orderType == .rent, type.uppercased() == ProductPricingMode.perDay.rawValue else { return money(price) }
+        return String(format: "products.cart.pricing.perDaySuffix".localized(), money(price))
+    }
+
+    /// Live preview under the field: "130.000đ × 3 ngày × 1" and its total (days only for a daily rent price)
+    static func pricePreview(type: String, price: Double, days: Int, quantity: Int, orderType: OrderType) -> (text: String, total: Double) {
+        if orderType == .rent && type.uppercased() == ProductPricingMode.perDay.rawValue {
+            let days = max(1, days)
+            let dayText = PluralText.format("products.cart.days", count: days, days)
+            return ("\(money(price)) × \(dayText) × \(quantity)", price * Double(days) * Double(quantity))
+        }
+        return ("\(money(price)) × \(quantity)", price * Double(quantity))
     }
 
     /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
