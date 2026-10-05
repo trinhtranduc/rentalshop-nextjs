@@ -37,8 +37,11 @@ Issue: #341 · Status: in progress · Intent: ./intent.md
 
 ## Acceptance
 
-- [ ] `tests/api/order-create-duplicate.test.ts`: two concurrent identical creates → one order; a retried
+- [x] `tests/api/order-create-duplicate.test.ts`: two concurrent identical creates → one order; a retried
       create (same key, and same body without key) returns the same order id; two different orders sent
       together are both created; a keyed create with a new key creates a new identical order.
-- [ ] Existing `tests/api/*` stay green.
-- [ ] iOS and Android build; Android unit tests green.
+- [x] Existing `tests/api/*` stay green.
+- [x] iOS and Android build; Android unit tests green.
+- [x] Real Postgres check (scratch DB): 5 concurrent unkeyed creates → 1 order; 5 concurrent with one new key
+      → 1 order; key table missing → savepoint rollback, window fallback.
+- [ ] By hand on dev-api: double tap Confirm on iOS and Android → one order.
