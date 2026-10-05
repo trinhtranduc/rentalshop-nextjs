@@ -151,6 +151,24 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.dayMonth(iso.date(from: "2026-10-05T17:30:00Z")!, timeZone: vietnam), "06/10")
     }
 
+    // MARK: Created time (#482)
+
+    func testCreatedStampShowsShopTimeAndYearOnlyWhenNotThisYear() {
+        let vietnam = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+        let iso = ISO8601DateFormatter()
+        let now = iso.date(from: "2026-10-05T03:00:00Z")!
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T07:32:00Z")!, now: now, timeZone: vietnam), "14:32 28/09")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2025-12-28T07:32:00Z")!, now: now, timeZone: vietnam), "14:32 28/12/25")
+        // Vietnam midnight boundary: 16:59:59Z is still 28/09, 17:00Z is 29/09 00:00
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T16:59:59Z")!, now: now, timeZone: vietnam), "23:59 28/09")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T17:00:00Z")!, now: now, timeZone: vietnam), "00:00 29/09")
+        // New year in Vietnam while UTC is still in the old year
+        let newYear = iso.date(from: "2025-12-31T17:30:00Z")!
+        XCTAssertEqual(OrderDetailLogic.createdStamp(newYear, now: iso.date(from: "2026-01-02T03:00:00Z")!, timeZone: vietnam), "00:30 01/01")
+        // Default zone is the shop zone, whatever the device zone
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T07:32:00Z")!, now: now), "14:32 28/09")
+    }
+
     // MARK: Sẵn sàng giao (#470)
 
     func testReadyToDeliverShowsOnlyForReservedRentals() {

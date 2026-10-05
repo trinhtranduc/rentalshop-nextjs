@@ -270,4 +270,38 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertEqual(SettingsV2Logic.validatePassword(current: "old", new: "abcdef", confirm: "abcdeg"), .mismatch)
         XCTAssertNil(SettingsV2Logic.validatePassword(current: "old", new: "abcdef", confirm: "abcdef"))
     }
+
+    // MARK: Change password sheet (#482, board DMK-doi-mat-khau)
+
+    private func textFields(_ view: UIView) -> [UITextField] {
+        view.subviews.flatMap { ($0 as? UITextField).map { [$0] } ?? textFields($0) }
+    }
+
+    private func labels(_ view: UIView) -> [UILabel] {
+        view.subviews.flatMap { sub -> [UILabel] in ((sub as? UILabel).map { [$0] } ?? []) + labels(sub) }
+    }
+
+    func testPasswordSheetShowsTheErrorUnderTheFieldAndSubmitsOnlyValidInput() throws {
+        let sheet = ChangePasswordSheetViewController()
+        var submitted: (String, String)?
+        sheet.onSubmit = { submitted = ($0, $1) }
+        sheet.loadViewIfNeeded()
+        let fields = textFields(sheet.view)
+        XCTAssertEqual(fields.count, 3)
+        XCTAssertTrue(fields.allSatisfy(\.isSecureTextEntry))
+        let hint = String(format: "settings.v2.password.hint".localized(), SettingsV2Logic.minPasswordLength)
+        XCTAssertTrue(labels(sheet.view).contains { $0.text == hint && !$0.isHidden }, "length hint under the new password")
+
+        fields[0].text = "old"
+        fields[1].text = "abcdef"
+        fields[2].text = "abcdeg"
+        _ = sheet.textFieldShouldReturn(fields[2])
+        XCTAssertNil(submitted)
+        XCTAssertTrue(labels(sheet.view).contains { $0.text == "settings.v2.password.mismatch".localized() && !$0.isHidden })
+
+        fields[2].text = "abcdef"
+        _ = sheet.textFieldShouldReturn(fields[2])
+        XCTAssertEqual(submitted?.0, "old")
+        XCTAssertEqual(submitted?.1, "abcdef")
+    }
 }

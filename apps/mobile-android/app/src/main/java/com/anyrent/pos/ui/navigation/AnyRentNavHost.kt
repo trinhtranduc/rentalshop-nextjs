@@ -331,6 +331,20 @@ fun AnyRentNavHost(
         ) { entry ->
             val entityType = entry.arguments?.getString("entityType") ?: return@composable
             val entityId = entry.arguments?.getInt("entityId") ?: return@composable
+            // #482: orders by product / customer get the flat header of the DT boards
+            if (entityType == "product" || entityType == "customer") {
+                com.anyrent.pos.ui.orders.v2.EntityOrdersScreen(
+                    isProduct = entityType == "product",
+                    entityId = entityId,
+                    startDate = entry.arguments?.getString("start"),
+                    endDate = entry.arguments?.getString("end"),
+                    onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                    onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
+                    onOpenCustomer = { id -> rootNavController.navigate(Routes.customerDetailV2(id)) },
+                    onBack = { rootNavController.popBackStack() },
+                )
+                return@composable
+            }
             OrdersScreen(
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                 onOrderCheck = {},

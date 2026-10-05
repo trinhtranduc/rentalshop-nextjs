@@ -219,6 +219,98 @@ final class OrdersHomeTests: XCTestCase {
                                                      to: iso.date(from: "2026-10-03T10:00:00Z")!, timeZone: vietnam), 1)
     }
 
+    // MARK: Orders by product / customer (#482)
+
+    private func productOrder(id: Int, status: String, type: String = "RENT", total: Double,
+                              lines: [(productId: Int, total: Double)]) throws -> Order {
+        let items = lines.enumerated().map { index, line in
+            #"{"id":\#(index + 1),"quantity":1,"unitPrice":\#(line.total),"totalPrice":\#(line.total),"productId":\#(line.productId),"productName":"P\#(line.productId)"}"#
+        }.joined(separator: ",")
+        let json = #"{"id":\#(id),"orderNumber":"ORD-1-\#(id)","orderType":"\#(type)","status":"\#(status)","createdAt":"2026-10-02T03:00:00.000Z","updatedAt":"2026-10-02T03:00:00.000Z","customerName":"Tâm","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":\#(total),"orderItems":[\#(items)]}"#
+        return try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+    }
+
+    func testProductTilesCountRentalsAndRevenueWithoutCancelled() throws {
+        let orders = [
+            try productOrder(id: 1, status: "PICKUPED", total: 450_000, lines: [(4, 450_000)]),
+            try productOrder(id: 2, status: "RESERVED", total: 1_000_000, lines: [(4, 300_000), (9, 700_000)]),
+            try productOrder(id: 3, status: "RETURNED", total: 450_000, lines: [(4, 450_000)]),
+            try productOrder(id: 4, status: "CANCELLED", total: 700_000, lines: [(4, 700_000)]),
+            try productOrder(id: 5, status: "COMPLETED", type: "SALE", total: 900_000, lines: [(4, 900_000)]),
+        ]
+        XCTAssertEqual(EntityOrdersLogic.rentals(orders), 3, "cancelled and sale orders are not rentals")
+        XCTAssertEqual(EntityOrdersLogic.productRevenue(orders, productId: 4), 2_100_000, "only this product's lines, cancelled left out")
+        let tiles = EntityOrdersLogic.productTiles(orders: orders, productId: 4, total: 6, hasMore: false, hidesMoney: false)
+        XCTAssertEqual(tiles.map(\.title), ["orders.entity.tile.orders".localized(), "orders.entity.tile.rentals".localized(),
+                                           "orders.entity.tile.revenue".localized()])
+        XCTAssertEqual(tiles.map(\.value), ["6", "3", String(format: "orders.entity.million".localized(), 2, 1)])
+        // More pages to load: the loaded figures read "N+"
+        let partial = EntityOrdersLogic.productTiles(orders: orders, productId: 4, total: 40, hasMore: true, hidesMoney: true)
+        XCTAssertEqual(partial.map(\.value), ["40", "3+", "—"])
+    }
+
+    func testCustomerTilesAndCompactMoney() throws {
+        let tiles = EntityOrdersLogic.customerTiles(total: 4, spent: 3_200_000, renting: 1, hidesMoney: false)
+        XCTAssertEqual(tiles.map(\.value), ["4", String(format: "orders.entity.million".localized(), 3, 2), "1"])
+        XCTAssertEqual(tiles.map(\.accent), [false, false, true])
+        XCTAssertEqual(EntityOrdersLogic.customerTiles(total: 4, spent: nil, renting: nil, hidesMoney: false).map(\.value), ["4", "—", "—"])
+        XCTAssertEqual(EntityOrdersLogic.compactMoney(450_000), "450.000")
+        XCTAssertEqual(EntityOrdersLogic.compactMoney(2_000_000), String(format: "orders.entity.millionWhole".localized(), 2))
+        XCTAssertEqual(EntityOrdersLogic.compactMoney(2_049_000), String(format: "orders.entity.millionWhole".localized(), 2))
+        let spent = EntityOrdersLogic.spent([
+            try productOrder(id: 1, status: "RETURNED", total: 500_000, lines: []),
+            try productOrder(id: 2, status: "CANCELLED", total: 900_000, lines: []),
+        ])
+        XCTAssertEqual(spent, 500_000)
+        XCTAssertEqual(EntityOrdersLogic.productSubtitle(code: "VS-004", freeToday: 1),
+                       "VS-004 · " + String(format: "orders.entity.free".localized(), 1))
+        XCTAssertEqual(EntityOrdersLogic.productSubtitle(code: "VS-004", freeToday: 0), "VS-004")
+        XCTAssertEqual(EntityOrdersLogic.productSubtitle(code: nil, freeToday: 2), String(format: "orders.entity.free".localized(), 2))
+    }
+
+    /// #482: the order detail header tag reads the list row tag for every status; task tags say what to do
+    func testDetailStatusTagMatchesListTag() throws {
+        let statuses: [(String, String)] = [("RESERVED", "RENT"), ("PICKUPED", "RENT"), ("RETURNED", "RENT"),
+                                            ("COMPLETED", "SALE"), ("CANCELLED", "RENT")]
+        for (status, type) in statuses {
+            let listed = try order(status: status, type: type)
+            XCTAssertEqual(OrdersHomeLogic.statusTag(listed.status), OrdersHomeLogic.statusTag(listed), status)
+        }
+        XCTAssertEqual(OrdersHomeLogic.statusTag(.reserved).text, "orders.v2.status.reserved".localized())
+        XCTAssertEqual(OrdersHomeLogic.statusTag(.cancelled).text, "orders.v2.status.cancelled".localized())
+        let bundle = Bundle(for: OrderRowCell.self)
+        let vi = bundle.path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        if let vi {
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.status.reserved", value: nil, table: nil), "Đã đặt")
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.status.cancelled", value: nil, table: nil), "Đã huỷ")
+            XCTAssertEqual(vi.localizedString(forKey: "Cancelled", value: nil, table: nil), "Đã huỷ")
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.tag.handOver", value: nil, table: nil), "Cần giao")
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.tag.takeBack", value: nil, table: nil), "Cần trả")
+        } else {
+            XCTFail("vi-VN.lproj missing")
+        }
+    }
+
+    /// #482: a row of another year shows the 2-digit year on every dd/MM of its date line
+    func testListDateLineAddsYearWhenNotThisYear() throws {
+        let now = iso.date(from: "2026-01-02T05:00:00Z")!
+        let old = try order(status: "RESERVED", created: "2025-12-28T03:00:00.000Z",
+                            pickup: "2025-12-30T02:00:00.000Z", returns: "2026-01-03T02:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(old, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "28/12/25") + " · 30/12/25 → 03/01")
+        let cancelled = try order(status: "CANCELLED", created: "2025-12-28T03:00:00.000Z", updated: "2025-12-29T03:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(cancelled, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "28/12/25") + " · "
+                       + String(format: "orders.v2.when.cancelled".localized(), "29/12/25"))
+        // 31/12/2025 17:30Z is 01/01/2026 in Vietnam: this year there, last year in UTC
+        let newYear = try order(status: "RESERVED", created: "2025-12-31T17:30:00.000Z",
+                                pickup: "2026-01-04T02:00:00.000Z", returns: "2026-01-05T02:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(newYear, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "01/01") + " · 04/01 → 05/01")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(newYear, lateDays: 0, now: now, timeZone: utc),
+                       String(format: "orders.v2.when.created".localized(), "31/12/25") + " · 04/01 → 05/01")
+    }
+
     func testListDateLine() throws {
         let now = iso.date(from: "2026-10-04T05:00:00Z")!
         let booked = try order(status: "RESERVED")

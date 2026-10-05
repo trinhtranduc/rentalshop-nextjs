@@ -177,6 +177,16 @@ final class CartStore {
         notifyDidChange()
     }
 
+    /// #482 "Áp dụng" of the pricing sheet: the line's pricing type (rent) and its price for this order only
+    func applyLinePricing(at index: Int, type: String?, price: Double) {
+        if let type, storage.orderType == .rent {
+            storage.selectPricingType(at: index, type: type)
+            storage.syncRentalDaysFromDates()
+        }
+        storage.updatePrice(at: index, price: price)
+        notifyDidChange()
+    }
+
     func selectPricingType(at index: Int, type: String) {
         storage.selectPricingType(at: index, type: type)
         storage.syncRentalDaysFromDates()

@@ -1834,8 +1834,8 @@
 "orders.v2.count.one" = "%d order";
 "orders.v2.band.work" = "hand over %d · take back %d";
 "orders.v2.yesterday" = "Yesterday";
-"orders.v2.tag.handOver" = "Hand over";
-"orders.v2.tag.takeBack" = "Return";
+"orders.v2.tag.handOver" = "To hand over";
+"orders.v2.tag.takeBack" = "To take back";
 "orders.v2.tag.sale" = "Sale · %@";
 "orders.v2.status.all" = "All";
 "orders.v2.status.reserved" = "Booked";
@@ -1973,3 +1973,34 @@
 "notes.v2.add" = "Add";
 "notes.v2.photoHint" = "Take a photo or pick from the library. Tap a photo to view it larger.";
 "notes.v2.save" = "Save note";
+
+/* #482 */
+"orders.entity.free" = "%d free today";
+"orders.entity.tile.orders" = "Orders";
+"orders.entity.tile.rentals" = "Rentals";
+"orders.entity.tile.revenue" = "Revenue";
+"orders.entity.tile.spent" = "Spent";
+"orders.entity.tile.renting" = "Renting";
+"orders.entity.section" = "ORDERS";
+"orders.entity.million" = "%d.%dM";
+"orders.entity.millionWhole" = "%dM";
+
+/* #482 */
+"products.cart.pricing.block" = "Per block";
+"products.cart.pricing.hourly" = "Per hour";
+"products.cart.pricing.sale" = "Sale price";
+"products.cart.pricing.enterPrice" = "Enter price";
+"products.cart.pricing.perDaySuffix" = "%@/day";
+"products.cart.pricing.priceField" = "Price for this order";
+"products.cart.pricing.note" = "Applies to this order only, the product price stays.";
+"products.cart.pricing.apply" = "Apply";
+"products.cart.pricing.change" = "Change pricing for %@";
+"products.cart.pricing.unit" = "đ";
+"products.cart.pricing.unitDaily" = "đ/day";
+
+/* #482 */
+"settings.v2.password.hint" = "At least %d characters.";
+"settings.v2.password.submit" = "Change password";
+"settings.v2.password.show" = "Show password";
+"settings.v2.password.hide" = "Hide password";
+"settings.v2.password.close" = "Close";

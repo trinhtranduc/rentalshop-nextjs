@@ -649,17 +649,19 @@ internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
     OrderRow(row, RowContext.SEARCH, boardTexts(), onClick)
 }
 
+/** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
+@Composable
+internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
+    OrderRow(row, RowContext.LIST, boardTexts(), onClick)
+}
+
 @Composable
 private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoardTexts, onClick: () -> Unit) {
     val order = row.order
     val tagKind = OrdersBoardLogic.statusTag(order.status)
-    val (tagRes, colors) = when (tagKind) {
-        RowTag.RESERVED -> R.string.orders_v2_status_reserved to DS.Status.HandOver
-        RowTag.RENTING -> R.string.orders_v2_status_renting to DS.Status.Return
-        RowTag.RETURNED -> R.string.orders_v2_status_returned to DS.Status.Done
-        RowTag.COMPLETED -> R.string.orders_v2_status_completed to DS.Status.Done
-        else -> R.string.orders_v2_status_cancelled to DS.Status.Cancelled
-    }
+    // #482: same tag as the order detail header
+    val tagRes = OrderStatusTag.labelRes(order.status)
+    val colors = OrderStatusTag.colors(order.status)
     val isSale = !order.orderType.equals("RENT", ignoreCase = true)
     val tagText = stringResource(tagRes).let {
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
@@ -793,8 +795,9 @@ internal object RowMoneyText {
     val payWeight = FontWeight.Normal
 }
 
+/** Tag of an order row; also the status tag of the order detail header (#482) */
 @Composable
-private fun Tag(text: String, colors: DS.Pill, style: RowTagStyle) {
+internal fun Tag(text: String, colors: DS.Pill, style: RowTagStyle) {
     Box(
         Modifier
             .background(colors.fill, RoundedCornerShape(style.radius))

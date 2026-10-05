@@ -211,11 +211,11 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
         sleep(2)
 
-        // A RESERVED rent order: the to-do list marks it "Hand over" / "Giao".
+        // A RESERVED rent order: the to-do list marks it "To hand over" / "Cần giao" (#482).
         e2e.tapIfExists(e2e.button(["To do", "Việc cần làm"]))
         sleep(2)
         let handOverRow = app.tables.cells.containing(
-            NSPredicate(format: "label == 'Hand over' OR label == 'Giao'")).firstMatch
+            NSPredicate(format: "label == 'To hand over' OR label == 'Cần giao' OR label == 'Hand over' OR label == 'Giao'")).firstMatch
         if handOverRow.waitForExistence(timeout: 8) {
             e2e.tapRow(handOverRow)
             let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)

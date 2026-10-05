@@ -49,6 +49,29 @@ object CustomersV2Api {
         CustomerRules.parseOrders(json.optJSONObject("data") ?: JSONObject())
     }
 
+    /**
+     * #482 orders by customer: a page of `GET /api/customers/{id}/orders` (optionally in a period) as order rows, with
+     * the `summary` (cancelled excluded from the money by the API) and the customer snapshot
+     */
+    fun ordersPage(
+        customerId: Int,
+        page: Int,
+        limit: Int,
+        startDate: String?,
+        endDate: String?,
+    ): Result<Pair<ApiClient.PageResult<com.anyrent.pos.data.model.OrderSummary>, CustomerOrders>> = runCatching {
+        val query = buildList {
+            add("page=$page")
+            add("limit=$limit")
+            add("sortBy=createdAt")
+            add("sortOrder=desc")
+            if (!startDate.isNullOrBlank()) add("startDate=" + URLEncoder.encode(startDate, "UTF-8"))
+            if (!endDate.isNullOrBlank()) add("endDate=" + URLEncoder.encode(endDate, "UTF-8"))
+        }.joinToString("&")
+        val json = ApiClient.get().authedGet("/api/customers/$customerId/orders?$query")
+        ApiClient.get().parseOrdersPage(json) to CustomerRules.parseOrders(json.optJSONObject("data") ?: JSONObject())
+    }
+
     /** Orders of the customer that are out now (`status=PICKUPED`), read from the list `total` */
     fun rentingCount(customerId: Int): Result<Int> = runCatching {
         val json = ApiClient.get().authedGet("/api/orders?customerId=$customerId&status=PICKUPED&limit=1&page=1")

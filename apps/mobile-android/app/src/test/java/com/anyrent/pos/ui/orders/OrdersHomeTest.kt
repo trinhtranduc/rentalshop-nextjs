@@ -246,9 +246,10 @@ class OrdersHomeTest {
         created: String = "2026-10-02T03:00:00Z",
         updated: String = "2026-10-02T03:00:00Z",
         returns: String = "2026-10-05T02:00:00Z",
+        pickup: String = "2026-10-04T02:00:00Z",
     ) = OrderSummary(
         id = 1, orderNumber = "ORD-1-0062", orderType = type, status = status, totalAmount = 380000.0,
-        depositAmount = 0.0, customerName = "Tâm", customerPhone = null, pickupPlanAt = "2026-10-04T02:00:00Z",
+        depositAmount = 0.0, customerName = "Tâm", customerPhone = null, pickupPlanAt = pickup,
         returnPlanAt = returns, createdAt = created, notes = null, updatedAt = updated,
     )
 
@@ -340,6 +341,27 @@ class OrdersHomeTest {
     fun `row total stays bold, pay line is regular (#468)`() {
         assertEquals(FontWeight.Bold, RowMoneyText.totalWeight)
         assertEquals(FontWeight.Normal, RowMoneyText.payWeight)
+    }
+
+    /** #482: a row of another year shows the 2-digit year on every dd/MM of its date line (iOS parity) */
+    @Test
+    fun `list date line adds the year when not this year`() {
+        val now = Instant.parse("2026-01-02T05:00:00Z")
+        assertEquals(
+            "tạo 28/12/25 · 30/12/25 → 03/01",
+            OrdersBoardLogic.listWhen(
+                listOrder("RESERVED", created = "2025-12-28T03:00:00Z", pickup = "2025-12-30T02:00:00Z", returns = "2026-01-03T02:00:00Z"),
+                0, now, vietnam,
+            ),
+        )
+        assertEquals(
+            "tạo 28/12/25 · huỷ 29/12/25",
+            OrdersBoardLogic.listWhen(listOrder("CANCELLED", created = "2025-12-28T03:00:00Z", updated = "2025-12-29T03:00:00Z"), 0, now, vietnam),
+        )
+        // 31/12/2025 17:30Z is 01/01/2026 in Vietnam: this year there, last year in UTC
+        val newYear = listOrder("RESERVED", created = "2025-12-31T17:30:00Z", pickup = "2026-01-04T02:00:00Z", returns = "2026-01-05T02:00:00Z")
+        assertEquals("tạo 01/01 · 04/01 → 05/01", OrdersBoardLogic.listWhen(newYear, 0, now, vietnam))
+        assertEquals("tạo 31/12/25 · 04/01 → 05/01", OrdersBoardLogic.listWhen(newYear, 0, now, utc))
     }
 
     @Test

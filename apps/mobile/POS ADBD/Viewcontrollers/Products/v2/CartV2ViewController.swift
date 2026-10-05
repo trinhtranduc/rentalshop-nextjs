@@ -323,21 +323,7 @@ final class CartV2ViewController: BaseViewControler {
         top.spacing = 8
         let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary,
                                  color: CartV2Logic.needsPrice(item, orderType: cart.orderType) ? V2.danger : DS.Color.textMuted, lines: 0)
-        // The line price for this order only, any role, any time (owner 2026-10-05); never the product's price
-        let pencil = UIImageView(image: DS.symbol("pencil", 14, weight: .semibold))
-        pencil.tintColor = DS.Color.primary
-        pencil.setContentHuggingPriority(.required, for: .horizontal)
-        let priceRow = UIStackView(arrangedSubviews: [calcLabel, pencil, UIView()])
-        priceRow.spacing = 6
-        priceRow.alignment = .center
-        priceRow.tag = index
-        priceRow.isUserInteractionEnabled = true
-        priceRow.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(priceRowTapped(_:))))
-        priceRow.isAccessibilityElement = true
-        priceRow.accessibilityTraits = UIAccessibilityTraitButton
-        priceRow.accessibilityLabel = calc.text
-        priceRow.accessibilityHint = "products.cart.editPrice".localized()
-        let column = UIStackView(arrangedSubviews: [top, priceRow])
+        let column = UIStackView(arrangedSubviews: [top, calcLabel])
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
@@ -352,19 +338,17 @@ final class CartV2ViewController: BaseViewControler {
             column.addArrangedSubview(wrap)
         }
 
+        // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet. The price is
+        // for this order only, any role, any time (owner 2026-10-05); never the product's price.
+        let chipRow = UIStackView(arrangedSubviews: [pricingChip(item, index: index), UIView()])
+        column.addArrangedSubview(chipRow)
+
         let stepper = V2Stepper(compact: true)
         stepper.minimum = 0
         stepper.value = item.quantity
         stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
         var leading: UIView = UIView()
-        if CartV2Logic.showsPricingToggle(orderType: cart.orderType) {
-            let toggle = V2Segmented(titles: ["products.price.perRental".localized(), "products.price.perDay".localized()], compact: true)
-            toggle.select(item.isDailyPricing ? 1 : 0)
-            toggle.tag = index
-            toggle.accessibilityLabel = "products.cart.pricingMode".localized()
-            toggle.addTarget(self, action: #selector(pricingChanged(_:)), for: .valueChanged)
-            leading = toggle
-        } else if !isRent, let available = item.availabilityStatus?.available {
+        if !isRent, let available = item.availabilityStatus?.available {
             leading = V2.label(String(format: "products.cart.inStock".localized(), available), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         }
         let controls = UIStackView(arrangedSubviews: [leading, UIView(), stepper])
@@ -387,6 +371,43 @@ final class CartV2ViewController: BaseViewControler {
         }
         line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
         return row
+    }
+
+    /// "Theo ngày · 150.000đ/ngày" with a down chevron; "· Nhập giá" in blue while the line has no price
+    private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
+        let chip = CartV2Logic.chip(item, orderType: cart.orderType)
+        let button = UIButton(type: .system)
+        let title = NSMutableAttributedString(string: chip.label, attributes: [
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+            NSAttributedString.Key.foregroundColor: DS.Color.text,
+        ])
+        if let price = chip.price {
+            title.append(NSAttributedString(string: " · " + price, attributes: [
+                NSAttributedString.Key.font: UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.secondary, weight: .regular),
+                NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+            ]))
+        } else {
+            title.append(NSAttributedString(string: " · " + "products.cart.pricing.enterPrice".localized(), attributes: [
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: DS.Color.primary,
+            ]))
+        }
+        button.setAttributedTitle(title, for: .normal)
+        button.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
+        button.tintColor = DS.Color.textMuted
+        button.semanticContentAttribute = .forceRightToLeft
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 18)
+        button.layer.cornerRadius = 10
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
+        button.backgroundColor = DS.Color.surface
+        button.tag = index
+        button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
+        button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
+        button.addTarget(self, action: #selector(pricingChipTapped(_:)), for: .touchUpInside)
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(36) }
+        return button
     }
 
     private func customerName(_ customer: Customer?) -> String? {
@@ -469,32 +490,27 @@ final class CartV2ViewController: BaseViewControler {
         refreshStalePricing()
     }
 
-    @objc private func pricingChanged(_ sender: V2Segmented) {
+    /// #482: the "Cách tính giá" sheet of a line (board Gio-hang-chon-gia)
+    @objc private func pricingChipTapped(_ sender: UIButton) {
         let index = sender.tag
-        CartStore.shared.selectPricingType(at: index, type: sender.selectedIndex == 1 ? ProductPricingMode.perDay.rawValue : ProductPricingMode.perRental.rawValue)
-        // A mode the product has no price for starts at 0: ask for the price right away
-        if index < cart.items.count, CartV2Logic.needsPrice(cart.items[index], orderType: cart.orderType) {
-            editLinePrice(at: index)
-        }
-    }
-
-    @objc private func priceRowTapped(_ gesture: UITapGestureRecognizer) {
-        guard let index = gesture.view?.tag else { return }
-        editLinePrice(at: index)
-    }
-
-    /// Number pad pre-filled with the line's current unit price; tag = 100 + line index
-    private func editLinePrice(at index: Int) {
         guard index < cart.items.count, presentedViewController == nil else { return }
-        let item = cart.items[index]
-        let picker = NumberPickerViewController.instance()
-        picker.delegate = self
-        picker.tag = Self.linePriceTag + index
-        picker.configure(initialValue: item.price, title: item.productName ?? "products.cart.editPrice".localized())
-        present(picker, animated: true)
+        let sheet = CartPricingSheetViewController(item: cart.items[index], orderType: cart.orderType, days: rentalDays)
+        sheet.onApply = { type, price in
+            CartStore.shared.applyLinePricing(at: index, type: type, price: price)
+        }
+        if let presentation = sheet.sheetPresentationController {
+            presentation.detents = [.large()]
+            presentation.prefersGrabberVisible = true
+            presentation.preferredCornerRadius = 24
+        }
+        present(sheet, animated: true)
     }
 
-    private static let linePriceTag = 100
+    /// Rental days of the cart dates (1 without dates)
+    private var rentalDays: Int {
+        guard let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt else { return 1 }
+        return CartV2Logic.rentalDays(pickup: pickup, return: ret)
+    }
 
     private func changeQuantity(index: Int, quantity: Int) {
         guard index < cart.items.count else { return }
@@ -689,8 +705,6 @@ extension CartV2ViewController: NumberPickerViewControllerDelegate {
         case .discount(let type):
             CartStore.shared.setDiscountType(type == .percentage ? .percentage : .amount)
             CartStore.shared.setDiscount(value)
-        case .normal where sender.tag >= Self.linePriceTag:
-            CartStore.shared.updatePrice(at: sender.tag - Self.linePriceTag, price: value)
         case .normal:
             CartStore.shared.setManualDepositAmount(value)
         }
@@ -715,5 +729,204 @@ private extension UIView {
         let view = UIView()
         view.snp.makeConstraints { make in make.height.equalTo(height) }
         return view
+    }
+}
+
+// MARK: - Cách tính giá (#482, board Gio-hang-chon-gia)
+
+/// Bottom sheet of one cart line: the pricing options as radio rows, the price for this order, a live preview and
+/// "Áp dụng". Only the cart line changes, never the product's price.
+final class CartPricingSheetViewController: UIViewController, UITextFieldDelegate {
+    /// pricing type (nil on a sale line) and the unit price for this order
+    var onApply: ((String?, Double) -> Void)?
+
+    private let item: CartItem
+    private let orderType: OrderType
+    private let days: Int
+    private let choices: [CartPricingChoice]
+    private var selectedType: String
+    private let radioStack = UIStackView()
+    private let priceField = UITextField()
+    private let unitLabel = V2.label(size: DS.TextSize.body, weight: .medium, color: UIColor(hexString: "64748B"))
+    private let previewText = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+    private let previewTotal = V2.label(size: 18, weight: .bold)
+    private let scroll = UIScrollView()
+
+    init(item: CartItem, orderType: OrderType, days: Int) {
+        self.item = item
+        self.orderType = orderType
+        self.days = max(1, days)
+        choices = orderType == .rent ? CartV2Logic.pricingChoices(item) : []
+        selectedType = CartV2Logic.currentType(item)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+
+        let title = V2.label("products.cart.pricingMode".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let name = item.productName ?? ""
+        let subtitleText = orderType == .rent ? name + " · " + PluralText.format("products.cart.days", count: days, days) : name
+        let subtitle = V2.label(subtitleText, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 2)
+        let header = UIStackView(arrangedSubviews: [title, subtitle])
+        header.axis = .vertical
+        header.spacing = 2
+
+        let content = UIStackView(arrangedSubviews: [header])
+        content.axis = .vertical
+        content.spacing = 14
+
+        if !choices.isEmpty {
+            radioStack.axis = .vertical
+            radioStack.spacing = DS.Spacing.sm
+            radioStack.accessibilityLabel = "products.cart.pricingMode".localized()
+            content.addArrangedSubview(radioStack)
+            renderChoices()
+        }
+
+        let fieldTitle = V2.label("products.cart.pricing.priceField".localized(), size: DS.TextSize.body, weight: .bold)
+        priceField.font = UIFont.monospacedDigitSystemFont(ofSize: 18, weight: .semibold)
+        priceField.textColor = DS.Color.text
+        priceField.keyboardType = .numberPad
+        priceField.delegate = self
+        priceField.layer.cornerRadius = 12
+        priceField.layer.borderWidth = 1.5
+        priceField.layer.borderColor = DS.Color.primary.cgColor
+        priceField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+        priceField.leftViewMode = .always
+        let unitWrap = UIView(frame: CGRect(x: 0, y: 0, width: 64, height: 52))
+        unitWrap.addSubview(unitLabel)
+        unitLabel.textAlignment = .right
+        unitLabel.frame = CGRect(x: 0, y: 0, width: 50, height: 52)
+        priceField.rightView = unitWrap
+        priceField.rightViewMode = .always
+        priceField.accessibilityLabel = "products.cart.pricing.priceField".localized()
+        priceField.addTarget(self, action: #selector(priceChanged), for: .editingChanged)
+        priceField.snp.makeConstraints { make in make.height.equalTo(52) }
+        let note = V2.label("products.cart.pricing.note".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+        let field = UIStackView(arrangedSubviews: [fieldTitle, priceField, note])
+        field.axis = .vertical
+        field.spacing = 6
+        content.addArrangedSubview(field)
+
+        let preview = UIStackView(arrangedSubviews: [previewText, previewTotal])
+        preview.alignment = .firstBaseline
+        preview.spacing = DS.Spacing.sm
+        previewText.font = UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .regular)
+        previewTotal.font = UIFont.monospacedDigitSystemFont(ofSize: 18, weight: .bold)
+        previewTotal.setContentHuggingPriority(.required, for: .horizontal)
+        previewTotal.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let previewBox = UIView()
+        previewBox.backgroundColor = V2.sectionFill
+        previewBox.layer.cornerRadius = 12
+        previewBox.addSubview(preview)
+        preview.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 14, bottom: 10, right: 14)) }
+        content.addArrangedSubview(previewBox)
+
+        let apply = UIButton(type: .system)
+        apply.setTitle("products.cart.pricing.apply".localized(), for: .normal)
+        apply.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        apply.setTitleColor(.white, for: .normal)
+        apply.backgroundColor = DS.Color.primary
+        apply.layer.cornerRadius = 14
+        apply.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
+        apply.snp.makeConstraints { make in make.height.equalTo(54) }
+        content.addArrangedSubview(apply)
+
+        scroll.keyboardDismissMode = .interactive
+        scroll.alwaysBounceVertical = true
+        view.addSubview(scroll)
+        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
+        scroll.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(24)
+            make.leading.trailing.equalTo(view).inset(20)
+            make.bottom.equalToSuperview().offset(-20)
+        }
+
+        setPrice(CartV2Logic.startPrice(item, type: selectedType))
+    }
+
+    // MARK: Rows
+
+    private func renderChoices() {
+        radioStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for (index, choice) in choices.enumerated() {
+            let selected = choice.type == selectedType
+            let row = UIControl()
+            row.tag = index
+            row.layer.cornerRadius = 12
+            row.layer.borderWidth = selected ? 1.5 : 1
+            row.layer.borderColor = UIColor(hexString: selected ? "1D4ED8" : "E2E8F0").cgColor
+            row.backgroundColor = selected ? UIColor(hexString: "EFF6FF") : DS.Color.surface
+            row.addTarget(self, action: #selector(choiceTapped(_:)), for: .touchUpInside)
+            let dot = UIView()
+            dot.backgroundColor = .white
+            dot.layer.cornerRadius = 10
+            dot.layer.borderWidth = selected ? 6 : 1.5
+            dot.layer.borderColor = UIColor(hexString: selected ? "1D4ED8" : "94A3B8").cgColor
+            dot.snp.makeConstraints { make in make.size.equalTo(20) }
+            let label = V2.label(CartV2Logic.pricingLabel(choice.type), size: DS.TextSize.input, weight: .bold)
+            label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            let priceText = choice.catalogPrice.map { CartV2Logic.priceText($0, type: choice.type, orderType: orderType) }
+            let price = V2.label(priceText ?? "products.cart.pricing.enterPrice".localized(), size: DS.TextSize.body,
+                                 weight: priceText == nil ? .bold : .regular,
+                                 color: priceText == nil ? DS.Color.primary : DS.Color.textMuted)
+            if priceText != nil { price.font = UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .regular) }
+            price.setContentCompressionResistancePriority(.required, for: .horizontal)
+            let line = UIStackView(arrangedSubviews: [dot, label, price])
+            line.spacing = DS.Spacing.md
+            line.alignment = .center
+            line.isUserInteractionEnabled = false
+            row.addSubview(line)
+            line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)) }
+            row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+            row.isAccessibilityElement = true
+            row.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
+            row.accessibilityLabel = [label.text, price.text].compactMap { $0 }.joined(separator: ", ")
+            radioStack.addArrangedSubview(row)
+        }
+    }
+
+    @objc private func choiceTapped(_ sender: UIControl) {
+        guard sender.tag < choices.count else { return }
+        selectedType = choices[sender.tag].type
+        renderChoices()
+        setPrice(CartV2Logic.startPrice(item, type: selectedType))
+    }
+
+    // MARK: Price
+
+    private var price: Double {
+        Double(String((priceField.text ?? "").filter { $0.isNumber })) ?? 0
+    }
+
+    private func setPrice(_ value: Double) {
+        priceField.text = value > 0 ? MoneyFormatter.format(value) : ""
+        priceField.placeholder = "0"
+        let daily = orderType == .rent && selectedType == ProductPricingMode.perDay.rawValue
+        unitLabel.text = (daily ? "products.cart.pricing.unitDaily" : "products.cart.pricing.unit").localized()
+        updatePreview()
+    }
+
+    @objc private func priceChanged() {
+        let digits = String((priceField.text ?? "").filter { $0.isNumber }.prefix(12))
+        priceField.text = digits.isEmpty ? "" : MoneyFormatter.format(Double(digits) ?? 0)
+        updatePreview()
+    }
+
+    private func updatePreview() {
+        let preview = CartV2Logic.pricePreview(type: selectedType, price: price, days: days, quantity: item.quantity, orderType: orderType)
+        previewText.text = preview.text
+        previewTotal.text = CartV2Logic.money(preview.total)
+    }
+
+    @objc private func applyTapped() {
+        onApply?(orderType == .rent ? selectedType : nil, price)
+        dismiss(animated: true)
     }
 }

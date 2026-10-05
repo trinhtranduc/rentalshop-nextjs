@@ -89,7 +89,6 @@ import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
-import com.anyrent.pos.ui.common.StatusBadge
 import com.anyrent.pos.ui.common.copyUriToCacheFile
 import com.anyrent.pos.ui.common.fileToNotesJpegBytes
 import com.anyrent.pos.ui.common.formatDayShort
@@ -452,7 +451,9 @@ private fun DetailHeader(detail: OrderDetail) {
             .padding(top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        // #482 (board CT-gon): the order list's status tag, left of the name; the name takes the rest
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Tag(stringResource(OrderStatusTag.labelRes(summary.status)), OrderStatusTag.colors(summary.status), RowTagStyle.STATUS)
             Text(
                 summary.customerName?.takeIf { it.isNotBlank() } ?: "—",
                 fontSize = 22.sp,
@@ -460,7 +461,6 @@ private fun DetailHeader(detail: OrderDetail) {
                 color = DS.Colors.Text,
                 modifier = Modifier.weight(1f),
             )
-            StatusBadge(summary.status, fontSize = DS.TextSize.Pill)
         }
         if (lateDays > 0) {
             val returning = status == "PICKUPED"
@@ -514,7 +514,8 @@ private fun DetailHeader(detail: OrderDetail) {
             val days = OrderDetailLogic.progressDays(summary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
-                    stringResource(R.string.detail_progress_booked, shortDay(days.booked)),
+                    // #482: the booked step carries the created time ("Đã đặt 14:32 28/09")
+                    stringResource(R.string.detail_progress_booked, OrderDetailLogic.createdStamp(days.booked)),
                     stringResource(R.string.detail_progress_hand_over, shortDay(days.handOver)),
                     stringResource(R.string.detail_progress_return, shortDay(days.returned)),
                 ).forEachIndexed { index, label ->
@@ -531,7 +532,7 @@ private fun DetailHeader(detail: OrderDetail) {
                             fontSize = DS.TextSize.Secondary,
                             fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (done) DS.Colors.Primary else DS.Colors.TextMuted,
-                            maxLines = 1,
+                            maxLines = 2,
                         )
                     }
                 }

@@ -193,12 +193,13 @@ final class OrderDetailViewController: BaseViewControler {
         name.textColor = DS.Color.text
         name.numberOfLines = 2
         name.text = order.customerName.isEmpty ? "N/A" : order.customerName
-        let pill = OrderStatusPillLabel()
-        pill.apply(status: detail.status); pill.font = Utils.boldFont(size: DS.TextSize.pill)
-        pill.setContentCompressionResistancePriority(.required, for: .horizontal)
-        pill.setContentHuggingPriority(.required, for: .horizontal)
+        // #482 (board CT-gon): the order list's status tag, left of the name; the name takes the rest
+        let tag = RowTagLabel(style: .status)
+        let status = OrdersHomeLogic.statusTag(detail.status)
+        tag.apply(status.text, status.colors)
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let nameRow = UIStackView(arrangedSubviews: [name, pill])
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let nameRow = UIStackView(arrangedSubviews: [tag, name])
         nameRow.axis = .horizontal
         nameRow.alignment = .center
         nameRow.spacing = DS.Spacing.sm
@@ -284,7 +285,10 @@ final class OrderDetailViewController: BaseViewControler {
             let label = UILabel()
             label.font = done ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             label.textColor = done ? DS.Color.primary : DS.Color.textMuted
-            label.text = [step.0, step.1.map { OrderDetailLogic.dayMonth($0) }].compactMap { $0 }.joined(separator: " ")
+            // #482: the booked step carries the created time ("Đã đặt 14:32 28/09")
+            let stamp: String? = index == 0 ? step.1.map { OrderDetailLogic.createdStamp($0) } : step.1.map { OrderDetailLogic.dayMonth($0) }
+            label.text = [step.0, stamp].compactMap { $0 }.joined(separator: " ")
+            label.numberOfLines = 2
             label.adjustsFontSizeToFitWidth = true
             label.minimumScaleFactor = 0.8
             let column = UIStackView(arrangedSubviews: [bar, label])

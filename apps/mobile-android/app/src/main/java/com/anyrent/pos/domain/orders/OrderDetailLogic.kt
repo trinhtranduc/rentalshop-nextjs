@@ -203,6 +203,27 @@ object OrderDetailLogic {
         return StatusErrorOutcome(app.code, app.message, reload)
     }
 
+    /** Shop zone of the created stamp (timezone-dates skill) */
+    private val shopZone: java.time.ZoneId = java.time.ZoneId.of("Asia/Ho_Chi_Minh")
+
+    /**
+     * #482 step "Đã đặt": "14:32 28/09" in the shop zone; "14:32 28/12/25" when not the current year (iOS
+     * `OrderDetailLogic.createdStamp`); "—" without a date.
+     */
+    fun createdStamp(
+        createdAt: String?,
+        now: java.time.Instant = java.time.Instant.now(),
+        zone: java.time.ZoneId = shopZone,
+    ): String {
+        val instant = createdAt?.let { runCatching { java.time.Instant.parse(it) }.getOrNull() }
+            ?: createdAt?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant() }.getOrNull() }
+            ?: return "—"
+        val local = instant.atZone(zone)
+        var text = "%02d:%02d %02d/%02d".format(local.hour, local.minute, local.dayOfMonth, local.monthValue)
+        if (local.year != now.atZone(zone).year) text += "/%02d".format(local.year % 100)
+        return text
+    }
+
     /** Instants (ISO strings) under the three steps of the rent step bar: the actual day once it happened (#434, iOS) */
     fun progressDays(summary: OrderSummary): ProgressDays = ProgressDays(
         booked = summary.createdAt,

@@ -107,6 +107,8 @@ data class OrderSummary(
     val itemsSummary: String = "",
     /** Units per product id, from the list's `orderItems` (#388) */
     val productQuantities: Map<Int, Int> = emptyMap(),
+    /** Line totals per product id, from the list's `orderItems` (#482 "Doanh thu" of a product) */
+    val productTotals: Map<Int, Double> = emptyMap(),
     /** Still to collect / to give back, from `computeOrderBalance` (#389); null on an older API */
     val amountDue: Double? = null,
     val refundDue: Double? = null,

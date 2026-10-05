@@ -226,6 +226,14 @@ enum OrdersHomeLogic {
         String(DayFormatter.short(date, timeZone: timeZone, locale: Locale(identifier: "vi")).suffix(5))
     }
 
+    /// #482: "28/09", or "28/12/25" when the civil year is not the year of `now`
+    static func dayMonth(_ date: Date, now: Date, timeZone: TimeZone) -> String {
+        let calendar = calendar(timeZone)
+        let year = calendar.component(.year, from: date)
+        guard year != calendar.component(.year, from: now) else { return dayMonth(date, timeZone: timeZone) }
+        return dayMonth(date, timeZone: timeZone) + String(format: "/%02d", year % 100)
+    }
+
     private static func calendar(_ timeZone: TimeZone) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
@@ -240,10 +248,14 @@ enum OrdersHomeLogic {
     }
 
     /// "03/10 → 05/10 · 3 ngày"; just the hand-over day without a return day
-    static func span(from: Date?, to: Date?, withDays: Bool, timeZone: TimeZone) -> String {
-        let start = from.map { dayMonth($0, timeZone: timeZone) } ?? "—"
+    /// `now` (#482): add the 2-digit year to a day of another year
+    static func span(from: Date?, to: Date?, withDays: Bool, timeZone: TimeZone, now: Date? = nil) -> String {
+        let format: (Date) -> String = { date in
+            now.map { dayMonth(date, now: $0, timeZone: timeZone) } ?? dayMonth(date, timeZone: timeZone)
+        }
+        let start = from.map(format) ?? "—"
         guard let to else { return start }
-        var text = "\(start) → \(dayMonth(to, timeZone: timeZone))"
+        var text = "\(start) → \(format(to))"
         if withDays, let from {
             let days = inclusiveDays(from: from, to: to, timeZone: timeZone)
             text += " · " + PluralText.format("orders.v2.when.days", count: days, days)
@@ -270,18 +282,20 @@ enum OrdersHomeLogic {
         DayFormatter.key(a, timeZone: timeZone) == DayFormatter.key(b, timeZone: timeZone)
     }
 
-    /// Date line of a "Tất cả đơn" row: "tạo hôm nay · 05/10 → 07/10", "tạo 28/09 · hạn 02/10", "tạo 28/09 · huỷ 29/09"
+    /// Date line of a "Tất cả đơn" row: "tạo hôm nay · 05/10 → 07/10", "tạo 28/09 · hạn 02/10", "tạo 28/09 · huỷ 29/09";
+    /// #482: a day of another year reads "28/12/25"
     static func listWhen(_ order: Order, lateDays: Int, now: Date = Date(), timeZone: TimeZone = .current) -> String {
+        let day: (Date) -> String = { dayMonth($0, now: now, timeZone: timeZone) }
         let created = isSameDay(order.createdAt, now, timeZone: timeZone)
             ? "orders.v2.when.createdToday".localized()
-            : String(format: "orders.v2.when.created".localized(), dayMonth(order.createdAt, timeZone: timeZone))
+            : String(format: "orders.v2.when.created".localized(), day(order.createdAt))
         let tail: String?
         if order.status == .cancelled {
-            tail = String(format: "orders.v2.when.cancelled".localized(), dayMonth(order.updatedAt, timeZone: timeZone))
+            tail = String(format: "orders.v2.when.cancelled".localized(), day(order.updatedAt))
         } else if order.orderType == .rent && order.status == .pickuped && lateDays > 0, let due = order.returnPlanAt {
-            tail = String(format: "orders.v2.when.due".localized(), dayMonth(due, timeZone: timeZone))
+            tail = String(format: "orders.v2.when.due".localized(), day(due))
         } else if order.orderType == .rent {
-            tail = span(from: order.pickupPlanAt, to: order.returnPlanAt, withDays: false, timeZone: timeZone)
+            tail = span(from: order.pickupPlanAt, to: order.returnPlanAt, withDays: false, timeZone: timeZone, now: now)
         } else {
             tail = nil
         }
@@ -308,17 +322,21 @@ enum OrdersHomeLogic {
 
     /// Status tag in the board colours; a sale in search reads "Bán · Hoàn thành"
     static func statusTag(_ order: Order, inSearch: Bool = false) -> RowTag {
-        let base: RowTag
-        switch order.status {
-        case .reserved: base = RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver)
-        case .pickuped: base = RowTag(text: "orders.v2.status.renting".localized(), colors: DS.Status.returning)
-        case .returned: base = RowTag(text: "orders.v2.status.returned".localized(), colors: DS.Status.done)
-        case .completed: base = RowTag(text: "orders.v2.status.completed".localized(), colors: DS.Status.done)
-        case .cancelled: base = RowTag(text: "orders.v2.status.cancelled".localized(), colors: DS.Status.cancelled)
-        default: base = RowTag(text: order.status.localizedDisplayName(), colors: DS.Status.cancelled)
-        }
+        let base = statusTag(order.status)
         guard inSearch, order.orderType == .sale else { return base }
         return RowTag(text: String(format: "orders.v2.tag.sale".localized(), base.text), colors: base.colors)
+    }
+
+    /// Status text and colours of a status: the list row tag and the order detail header tag (#482)
+    static func statusTag(_ status: OrderStatus) -> RowTag {
+        switch status {
+        case .reserved: return RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver)
+        case .pickuped: return RowTag(text: "orders.v2.status.renting".localized(), colors: DS.Status.returning)
+        case .returned: return RowTag(text: "orders.v2.status.returned".localized(), colors: DS.Status.done)
+        case .completed: return RowTag(text: "orders.v2.status.completed".localized(), colors: DS.Status.done)
+        case .cancelled: return RowTag(text: "orders.v2.status.cancelled".localized(), colors: DS.Status.cancelled)
+        default: return RowTag(text: status.localizedDisplayName(), colors: DS.Status.cancelled)
+        }
     }
 
     /// "TRỄ HẠN · 3", "HÔM NAY · T7 03/10", "NGÀY MAI · CN 04/10", "HÔM QUA · T6 02/10", "T5 01/10"

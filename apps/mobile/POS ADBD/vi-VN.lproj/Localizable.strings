@@ -1264,7 +1264,7 @@
 "Pickuped" = "Đang thuê";
 "Returned" = "Đã trả";
 "Completed" = "Hoàn thành";
-"Cancelled" = "Đã hủy";
+"Cancelled" = "Đã huỷ";
 
 // MARK: - Product Availability Check
 "On check day" = "Trong ngày kiểm tra";
@@ -1832,8 +1832,8 @@
 "orders.v2.count.one" = "%d đơn";
 "orders.v2.band.work" = "giao %d · trả %d";
 "orders.v2.yesterday" = "Hôm qua";
-"orders.v2.tag.handOver" = "Giao";
-"orders.v2.tag.takeBack" = "Trả";
+"orders.v2.tag.handOver" = "Cần giao";
+"orders.v2.tag.takeBack" = "Cần trả";
 "orders.v2.tag.sale" = "Bán · %@";
 "orders.v2.status.all" = "Tất cả";
 "orders.v2.status.reserved" = "Đã đặt";
@@ -1971,3 +1971,34 @@
 "notes.v2.add" = "Thêm";
 "notes.v2.photoHint" = "Chụp hoặc chọn từ thư viện. Chạm ảnh để xem lớn.";
 "notes.v2.save" = "Lưu ghi chú";
+
+/* #482 */
+"orders.entity.free" = "Còn %d hôm nay";
+"orders.entity.tile.orders" = "Số đơn";
+"orders.entity.tile.rentals" = "Lượt thuê";
+"orders.entity.tile.revenue" = "Doanh thu";
+"orders.entity.tile.spent" = "Đã chi";
+"orders.entity.tile.renting" = "Đang thuê";
+"orders.entity.section" = "ĐƠN HÀNG";
+"orders.entity.million" = "%d,%dtr";
+"orders.entity.millionWhole" = "%dtr";
+
+/* #482 */
+"products.cart.pricing.block" = "Theo block";
+"products.cart.pricing.hourly" = "Theo giờ";
+"products.cart.pricing.sale" = "Giá bán";
+"products.cart.pricing.enterPrice" = "Nhập giá";
+"products.cart.pricing.perDaySuffix" = "%@/ngày";
+"products.cart.pricing.priceField" = "Giá cho đơn này";
+"products.cart.pricing.note" = "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.";
+"products.cart.pricing.apply" = "Áp dụng";
+"products.cart.pricing.change" = "Đổi cách tính giá %@";
+"products.cart.pricing.unit" = "đ";
+"products.cart.pricing.unitDaily" = "đ/ngày";
+
+/* #482 */
+"settings.v2.password.hint" = "Ít nhất %d ký tự.";
+"settings.v2.password.submit" = "Đổi mật khẩu";
+"settings.v2.password.show" = "Hiện mật khẩu";
+"settings.v2.password.hide" = "Ẩn mật khẩu";
+"settings.v2.password.close" = "Đóng";

@@ -155,6 +155,18 @@ enum OrderDetailLogic {
         return String(format: "%02d/%02d", parts.day ?? 0, parts.month ?? 0)
     }
 
+    /// #482 step "Đã đặt": "14:32 28/09" in the shop zone; "14:32 28/12/25" when not the current year
+    static func createdStamp(_ date: Date, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        var text = String(format: "%02d:%02d %02d/%02d", parts.hour ?? 0, parts.minute ?? 0, parts.day ?? 0, parts.month ?? 0)
+        if let year = parts.year, year != calendar.component(.year, from: now) {
+            text += String(format: "/%02d", year % 100)
+        }
+        return text
+    }
+
     /// Whole civil days from pickup to return (a same-day rental is 1 day)
     static func rentalDays(pickup: Date?, return returnDate: Date?, timeZone: TimeZone = .current) -> Int? {
         guard let pickup, let returnDate else { return nil }

@@ -882,8 +882,8 @@
     </plurals>
     <string name="orders_v2_band_work">hand over %1$d · take back %2$d</string>
     <string name="orders_v2_yesterday">Yesterday</string>
-    <string name="orders_v2_tag_hand_over">Hand over</string>
-    <string name="orders_v2_tag_take_back">Return</string>
+    <string name="orders_v2_tag_hand_over">To hand over</string>
+    <string name="orders_v2_tag_take_back">To take back</string>
     <string name="orders_v2_tag_sale">Sale · %1$s</string>
     <string name="orders_v2_status_all">All</string>
     <string name="orders_v2_status_reserved">Booked</string>
@@ -1072,4 +1072,32 @@
     <string name="notes_v2_add">Add</string>
     <string name="notes_v2_photo_hint">Pick photos from the library. Tap a photo to view it larger.</string>
     <string name="notes_v2_save">Save note</string>
+    <!-- #482 -->
+    <string name="orders_entity_free">%1$d free today</string>
+    <string name="orders_entity_tile_orders">Orders</string>
+    <string name="orders_entity_tile_rentals">Rentals</string>
+    <string name="orders_entity_tile_revenue">Revenue</string>
+    <string name="orders_entity_tile_spent">Spent</string>
+    <string name="orders_entity_tile_renting">Renting</string>
+    <string name="orders_entity_section">ORDERS</string>
+    <string name="orders_entity_million">%1$d.%2$dM</string>
+    <string name="orders_entity_million_whole">%1$dM</string>
+    <!-- #482 -->
+    <string name="v2_pricing_title">Pricing</string>
+    <string name="v2_pricing_block">Per block</string>
+    <string name="v2_pricing_hourly">Per hour</string>
+    <string name="v2_pricing_sale">Sale price</string>
+    <string name="v2_pricing_enter_price">Enter price</string>
+    <string name="v2_pricing_per_day_suffix">%1$s/day</string>
+    <string name="v2_pricing_price_field">Price for this order</string>
+    <string name="v2_pricing_note">Applies to this order only, the product price stays.</string>
+    <string name="v2_pricing_apply">Apply</string>
+    <string name="v2_pricing_change">Change pricing for %1$s</string>
+    <string name="v2_pricing_unit">đ</string>
+    <string name="v2_pricing_unit_daily">đ/day</string>
+    <!-- #482 -->
+    <string name="settings_v2_password_hint">At least %1$d characters.</string>
+    <string name="settings_v2_password_submit">Change password</string>
+    <string name="settings_v2_password_show">Show password</string>
+    <string name="settings_v2_password_hide">Hide password</string>
 </resources>

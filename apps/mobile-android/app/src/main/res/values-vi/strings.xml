@@ -419,7 +419,7 @@
     <string name="status_pickuped">Đang thuê</string>
     <string name="status_returned">Đã trả</string>
     <string name="status_completed">Hoàn thành</string>
-    <string name="status_cancelled">Đã hủy</string>
+    <string name="status_cancelled">Đã huỷ</string>
     <string name="update_required_title">Cần cập nhật ứng dụng</string>
     <string name="update_required_message">Cần phiên bản AnyRent mới để tiếp tục sử dụng. Vui lòng cập nhật ứng dụng.</string>
     <string name="update_required_button">Cập nhật</string>
@@ -478,7 +478,7 @@
     <string name="picked_up">Đã lấy</string>
     <string name="returned">Đã trả</string>
     <string name="completed">Hoàn thành</string>
-    <string name="cancelled">Đã hủy</string>
+    <string name="cancelled">Đã huỷ</string>
     <string name="ok">Đồng ý</string>
     <string name="error">Lỗi</string>
     <string name="could_not_create_order">Không thể tạo đơn hàng</string>
@@ -869,8 +869,8 @@
     </plurals>
     <string name="orders_v2_band_work">giao %1$d · trả %2$d</string>
     <string name="orders_v2_yesterday">Hôm qua</string>
-    <string name="orders_v2_tag_hand_over">Giao</string>
-    <string name="orders_v2_tag_take_back">Trả</string>
+    <string name="orders_v2_tag_hand_over">Cần giao</string>
+    <string name="orders_v2_tag_take_back">Cần trả</string>
     <string name="orders_v2_tag_sale">Bán · %1$s</string>
     <string name="orders_v2_status_all">Tất cả</string>
     <string name="orders_v2_status_reserved">Đã đặt</string>
@@ -1056,4 +1056,32 @@
     <string name="notes_v2_add">Thêm</string>
     <string name="notes_v2_photo_hint">Chọn ảnh từ thư viện. Chạm ảnh để xem lớn.</string>
     <string name="notes_v2_save">Lưu ghi chú</string>
+    <!-- #482 -->
+    <string name="orders_entity_free">Còn %1$d hôm nay</string>
+    <string name="orders_entity_tile_orders">Số đơn</string>
+    <string name="orders_entity_tile_rentals">Lượt thuê</string>
+    <string name="orders_entity_tile_revenue">Doanh thu</string>
+    <string name="orders_entity_tile_spent">Đã chi</string>
+    <string name="orders_entity_tile_renting">Đang thuê</string>
+    <string name="orders_entity_section">ĐƠN HÀNG</string>
+    <string name="orders_entity_million">%1$d,%2$dtr</string>
+    <string name="orders_entity_million_whole">%1$dtr</string>
+    <!-- #482 -->
+    <string name="v2_pricing_title">Cách tính giá</string>
+    <string name="v2_pricing_block">Theo block</string>
+    <string name="v2_pricing_hourly">Theo giờ</string>
+    <string name="v2_pricing_sale">Giá bán</string>
+    <string name="v2_pricing_enter_price">Nhập giá</string>
+    <string name="v2_pricing_per_day_suffix">%1$s/ngày</string>
+    <string name="v2_pricing_price_field">Giá cho đơn này</string>
+    <string name="v2_pricing_note">Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.</string>
+    <string name="v2_pricing_apply">Áp dụng</string>
+    <string name="v2_pricing_change">Đổi cách tính giá %1$s</string>
+    <string name="v2_pricing_unit">đ</string>
+    <string name="v2_pricing_unit_daily">đ/ngày</string>
+    <!-- #482 -->
+    <string name="settings_v2_password_hint">Ít nhất %1$d ký tự.</string>
+    <string name="settings_v2_password_submit">Đổi mật khẩu</string>
+    <string name="settings_v2_password_show">Hiện mật khẩu</string>
+    <string name="settings_v2_password_hide">Ẩn mật khẩu</string>
 </resources>
