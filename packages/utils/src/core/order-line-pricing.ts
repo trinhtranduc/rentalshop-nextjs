@@ -27,12 +27,16 @@ export interface OrderLinePricingItem {
   } | null;
 }
 
-/** A new rent line starts on the per-rental option when there is one. */
-export const getPreferredPricingOption = <T extends { type: string; isDefault?: boolean }>(options: T[]): T | null =>
-  options.find(option => option.type === 'FIXED') ||
-  options.find(option => option.isDefault) ||
-  options[0] ||
-  null;
+/**
+ * A new rent line starts on the product's default option (#460, same as the iOS cart):
+ * the active option marked default, else the first active option.
+ */
+export const getPreferredPricingOption = <T extends { type: string; isDefault?: boolean | null; isActive?: boolean | null }>(
+  options: T[]
+): T | null => {
+  const active = (options || []).filter(option => option && option.isActive !== false);
+  return active.find(option => option.isDefault) || active[0] || null;
+};
 
 const getOptions = (item: OrderLinePricingItem): OrderLinePricingOption[] =>
   (item.product?.pricingOptions as OrderLinePricingOption[] | null | undefined) || [];

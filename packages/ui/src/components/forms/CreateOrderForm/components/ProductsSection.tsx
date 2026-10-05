@@ -22,7 +22,7 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { getOrderLineDisplay, resolveOrderLinePricingType } from '@rentalshop/utils';
+import { getOrderLineDisplay, offersBothPricingModes, resolveOrderLinePricingType } from '@rentalshop/utils';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
@@ -495,7 +495,7 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
           />
         </div>
 
-        {orderType === 'RENT' && (
+        {orderType === 'RENT' && offersBothPricingModes(options) && (
           <div className="col-span-2 sm:col-span-1">
             <span className={fieldLabel} id={`${ids}-pricing`}>{t('form.pricingMethod')}</span>
             <div role="radiogroup" aria-labelledby={`${ids}-pricing`} className="flex h-9 w-full min-w-0 gap-0.5 rounded-lg bg-slate-100 p-0.5 sm:inline-flex sm:w-auto">

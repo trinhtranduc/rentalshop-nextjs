@@ -320,9 +320,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
 
       // Resolve default pricing option (RENT only)
       const pricingOptions = (product.pricingOptions as any[]) || [];
-      // A rent line starts at the per-rental price when it is available. This is
-      // independent of a product-level marketing/default option so staff do not
-      // accidentally create a daily-priced order.
+      // A rent line starts on the product's default option (#460, same as the iOS cart);
+      // the merchant picks that default on the product form.
       const defaultOption = getPreferredPricingOption(pricingOptions);
       const isRent = formData.orderType === 'RENT';
 
@@ -398,8 +397,8 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
     }));
   }, [formData.pickupPlanAt, formData.returnPlanAt, formData.orderType]);
 
-  // Switch FIXED (per rental) ↔ DAILY (per day) — same as mobile cart, even when
-  // the product only has one configured option (or none).
+  // Switch FIXED (per rental) ↔ DAILY (per day). The row shows the toggle only when the
+  // product has a price for both (#460, iOS `CartV2Logic.offersBothModes`).
   const updateItemPricingType = useCallback((productId: number, type: string) => {
     const normalizedType = (type || 'FIXED').toUpperCase();
     setOrderItems(prev => prev.map(item => {

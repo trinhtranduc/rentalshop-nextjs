@@ -182,6 +182,9 @@
     },
     "businessTypePricingType": {
       "required": "Business type and pricing type are required for merchant registration"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "A per-day default needs a per-day price."
     }
   }
 }
