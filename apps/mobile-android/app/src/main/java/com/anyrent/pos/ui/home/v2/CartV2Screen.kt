@@ -439,17 +439,10 @@ fun CartV2Screen(
         }
     }
     noteDraft?.let { draft ->
-        AlertDialog(
-            onDismissRequest = { noteDraft = null },
-            title = { Text(stringResource(R.string.v2_cart_note)) },
-            text = { OutlinedTextField(value = draft, onValueChange = { noteDraft = it }, modifier = Modifier.fillMaxWidth()) },
-            confirmButton = {
-                TextButton(onClick = {
-                    CartStore.setNotes(draft.trim())
-                    noteDraft = null
-                }) { Text(stringResource(R.string.ok)) }
-            },
-            dismissButton = { TextButton(onClick = { noteDraft = null }) { Text(stringResource(R.string.cancel)) } },
+        // #477: note editor of board GC-ghi-chu, text only (the cart keeps no photos)
+        com.anyrent.pos.ui.orders.v2.NoteEditorV2(
+            orderNumber = null, text = draft, onTextChange = { noteDraft = it }, busy = false, error = null, showPhotos = false,
+            onDismiss = { noteDraft = null }, onSave = { CartStore.setNotes(draft.trim()); noteDraft = null },
         )
     }
     removeLine?.let { line ->

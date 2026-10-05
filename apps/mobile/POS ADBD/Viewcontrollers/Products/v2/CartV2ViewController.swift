@@ -553,17 +553,7 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     @objc private func editNote() {
-        let alert = UIAlertController(title: "products.cart.note".localized(), message: nil, preferredStyle: .alert)
-        alert.addTextField { [weak self] field in
-            field.text = self?.cart.notes
-            field.autocapitalizationType = .sentences
-        }
-        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        alert.addAction(UIAlertAction(title: "OK".localized(), style: .default) { _ in
-            let text = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            CartStore.shared.setNotes(text.isEmpty ? nil : text)
-        })
-        present(alert, animated: true)
+        OrderNotesEditorViewController.presentCartNote(from: self) // #477: note editor of board GC-ghi-chu
     }
 
     @objc private func ctaTapped() {

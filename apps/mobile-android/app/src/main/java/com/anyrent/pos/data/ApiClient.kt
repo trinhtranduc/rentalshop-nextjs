@@ -171,10 +171,12 @@ class ApiClient(
     // Notifications
     // -------------------------------------------------------------------------
 
-    fun getNotifications(page: Int, limit: Int = 20): Result<PageResult<InboxNotification>> = runCatching {
+    /** [isRead] false = unread only (existing API filter, used by the new inbox chip, #477); null = all */
+    fun getNotifications(page: Int, limit: Int = 20, isRead: Boolean? = null): Result<PageResult<InboxNotification>> = runCatching {
         val url = "$baseUrl/api/notifications".toHttpUrl().newBuilder()
             .addQueryParameter("page", page.toString())
             .addQueryParameter("limit", limit.toString())
+            .apply { if (isRead != null) addQueryParameter("isRead", isRead.toString()) }
             .build()
         val json = execute(get(url.toString()))
         requireSuccess(json)
@@ -1192,6 +1194,7 @@ class ApiClient(
             isRead = item.optBoolean("isRead", false),
             createdAt = item.optString("createdAt").takeIf { it.isNotBlank() },
             orderId = orderId,
+            status = payload?.optString("status")?.takeIf { it.isNotBlank() && it != "null" },
         )
     }
 

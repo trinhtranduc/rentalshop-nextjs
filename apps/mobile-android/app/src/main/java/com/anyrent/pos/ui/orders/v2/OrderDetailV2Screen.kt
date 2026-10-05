@@ -348,7 +348,9 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                     ) { sheet = null }
                 },
             )
-            DetailSheet.NOTES -> NotesSheet(
+            // #477: full-screen editor of board GC-ghi-chu; same state, picker and save as the sheet it replaces
+            DetailSheet.NOTES -> NoteEditorV2(
+                orderNumber = detail.summary.orderNumber,
                 text = notesText,
                 onTextChange = { notesText = it },
                 kept = notesKept,

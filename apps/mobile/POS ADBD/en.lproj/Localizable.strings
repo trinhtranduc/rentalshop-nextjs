@@ -1959,3 +1959,17 @@
 "order.handOver.deposit" = "Security deposit";
 "order.extend.extraRent" = "Extra rent";
 "order.extend.newTotal" = "New total: %@";
+
+/* #477 Notifications and note editor (new UI) */
+"notifications.v2.markAllRead" = "Mark all read";
+"notifications.v2.all" = "All";
+"notifications.v2.unread" = "Unread · %d";
+"notifications.v2.today" = "Today";
+"notifications.v2.yesterday" = "Yesterday";
+"notifications.v2.emptyUnread" = "No unread notifications";
+"notifications.v2.unreadA11y" = "Unread";
+"notes.v2.discard" = "Close without saving";
+"notes.v2.content" = "Note";
+"notes.v2.add" = "Add";
+"notes.v2.photoHint" = "Take a photo or pick from the library. Tap a photo to view it larger.";
+"notes.v2.save" = "Save note";
