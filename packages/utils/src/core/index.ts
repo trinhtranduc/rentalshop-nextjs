@@ -208,3 +208,6 @@ export * from './revenue-calculator';
 
 // Rental days: pickup and return day both included (#351)
 export { countRentalDays } from './rental-days';
+
+// Web order form line pricing (#444)
+export * from './order-line-pricing';
