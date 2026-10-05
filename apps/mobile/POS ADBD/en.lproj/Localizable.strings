@@ -1618,6 +1618,8 @@
 "products.cart.bar.one" = "Cart · %d item";
 "products.cart.removeTitle" = "Remove this item from the cart?";
 "products.cart.remove" = "Remove";
+"products.cart.needPrice" = "Enter a price for %@";
+"products.cart.editPrice" = "Edit price for this order";
 // MARK: - Orders tab (#371)
 "To do" = "To do";
 "All orders" = "All orders";

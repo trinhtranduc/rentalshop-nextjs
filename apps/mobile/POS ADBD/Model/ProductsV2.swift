@@ -304,6 +304,22 @@ enum CartV2Logic {
         return types.contains(ProductPricingMode.perRental.rawValue) && types.contains(ProductPricingMode.perDay.rawValue)
     }
 
+    /// "Theo lần / Theo ngày" on every rent line, whatever prices the product has (owner, 2026-10-05)
+    static func showsPricingToggle(orderType: OrderType) -> Bool {
+        orderType == .rent
+    }
+
+    /// A rent line with no price yet (a mode the product has no price for): the cart asks for one
+    static func needsPrice(_ item: CartItem, orderType: OrderType) -> Bool {
+        orderType == .rent && item.price <= 0
+    }
+
+    /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
+    static func missingPrices(_ cart: Cart) -> [String] {
+        cart.items.filter { needsPrice($0, orderType: cart.orderType) }
+            .map { String(format: "products.cart.needPrice".localized(), $0.productName ?? "") }
+    }
+
     /// Units free for the chosen dates (rent) or in stock today (sale), from batch availability; nil = not loaded
     static func shortage(_ item: CartItem) -> Int? {
         guard let status = item.availabilityStatus, status.available < item.quantity else { return nil }

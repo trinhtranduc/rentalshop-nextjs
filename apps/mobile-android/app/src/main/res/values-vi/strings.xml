@@ -643,6 +643,8 @@
     <string name="v2_cart_customer_pays">Khách trả</string>
     <string name="v2_cart_create">Tạo đơn</string>
     <string name="v2_cart_sell_and_collect">Bán &amp; thu tiền</string>
+    <string name="v2_cart_need_price">Nhập giá cho %s</string>
+    <string name="v2_cart_edit_price">Sửa giá cho đơn này</string>
     <plurals name="v2_cart_bar">
         <item quantity="other">Giỏ hàng · %1$d món</item>
     </plurals>

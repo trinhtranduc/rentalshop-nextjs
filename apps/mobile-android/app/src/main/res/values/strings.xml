@@ -646,6 +646,8 @@
     <string name="v2_cart_customer_pays">Customer pays</string>
     <string name="v2_cart_create">Create order</string>
     <string name="v2_cart_sell_and_collect">Sell &amp; collect</string>
+    <string name="v2_cart_need_price">Enter a price for %s</string>
+    <string name="v2_cart_edit_price">Edit price for this order</string>
     <plurals name="v2_cart_bar">
         <item quantity="one">Cart · %1$d item</item>
         <item quantity="other">Cart · %1$d items</item>

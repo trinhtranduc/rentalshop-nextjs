@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -121,6 +122,7 @@ fun CartV2Screen(
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     // iOS `Cart.validate()` copy, all problems in one alert (#448)
+    val needPriceText = stringResource(R.string.v2_cart_need_price)
     val problemText = mapOf(
         CartProblem.EMPTY to stringResource(R.string.v2_cart_need_items),
         CartProblem.NO_CUSTOMER to stringResource(R.string.v2_cart_need_customer),
@@ -223,7 +225,19 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
-                    onPricing = { type -> CartStore.setPricingType(line.product.id, type) },
+                    onPricing = { type ->
+                        CartStore.setPricingType(line.product.id, type)
+                        // A mode the product has no price for starts at 0: ask for the price right away
+                        val updated = CartStore.lines.value.firstOrNull { it.product.id == line.product.id }
+                        if (updated != null && CartV2Logic.needsPrice(updated, isSale)) {
+                            numericText = "0"
+                            numericEditor = "PRICE:${line.product.id}"
+                        }
+                    },
+                    onEditPrice = {
+                        numericText = line.unitPrice.toLong().toString()
+                        numericEditor = "PRICE:${line.product.id}"
+                    },
                 )
             }
 
@@ -271,7 +285,9 @@ fun CartV2Screen(
                 modifier = Modifier.weight(1.1f),
                 onClick = {
                     val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
-                    if (problems.isEmpty()) onPreview() else error = problems.joinToString("\n") { problemText.getValue(it) }
+                    val messages = problems.map { problemText.getValue(it) } +
+                        CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
+                    if (messages.isEmpty()) onPreview() else error = messages.joinToString("\n")
                 },
             )
         }
@@ -318,14 +334,25 @@ fun CartV2Screen(
         )
     }
     numericEditor?.let { editor ->
+        val priceProductId = editor.removePrefix("PRICE:").takeIf { editor.startsWith("PRICE:") }?.toIntOrNull()
         AppNumericPadSheet(
-            title = stringResource(if (editor == "DEPOSIT") R.string.enter_deposit else R.string.enter_discount),
+            title = when {
+                priceProductId != null -> lines.firstOrNull { it.product.id == priceProductId }?.product?.name
+                    ?: stringResource(R.string.v2_cart_edit_price)
+                editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
+                else -> stringResource(R.string.enter_discount)
+            },
             rawValue = numericText,
             onRawValueChange = { numericText = it },
             onDismiss = { numericEditor = null },
             onConfirm = {
                 val value = numericText.toDoubleOrNull() ?: 0.0
-                if (editor == "DEPOSIT") CartStore.setDeposit(value) else CartStore.setDiscount(value)
+                when {
+                    // The line price for this order only, never the product's price (owner 2026-10-05)
+                    priceProductId != null -> CartStore.updateUnitPrice(priceProductId, value)
+                    editor == "DEPOSIT" -> CartStore.setDeposit(value)
+                    else -> CartStore.setDiscount(value)
+                }
                 numericEditor = null
             },
         ) {
@@ -402,6 +429,7 @@ private fun ItemRow(
     available: Int?,
     onQuantity: (Int) -> Unit,
     onPricing: (String) -> Unit,
+    onEditPrice: () -> Unit,
 ) {
     val calc = CartV2Logic.calc(line, isSale)
     val price = formatMoneyVnd(calc.unitPrice)
@@ -419,7 +447,19 @@ private fun ItemRow(
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                Text(calcText, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                // Tap to edit this line's price, any role, any time (owner 2026-10-05)
+                val editPriceLabel = stringResource(R.string.v2_cart_edit_price)
+                Row(
+                    Modifier.clickable(onClickLabel = editPriceLabel, onClick = onEditPrice).heightIn(min = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        calcText, fontSize = DS.TextSize.Secondary,
+                        color = if (CartV2Logic.needsPrice(line, isSale)) Color(0xFFB91C1C) else DS.Colors.TextMuted,
+                    )
+                    Icon(Icons.Outlined.Edit, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
+                }
                 CartV2Logic.shortage(available, line.quantity)?.let { left ->
                     Text(
                         stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left),
@@ -429,7 +469,7 @@ private fun ItemRow(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f)) {
-                        if (!isSale && CartV2Logic.offersBothModes(line.product)) {
+                        if (CartV2Logic.showsPricingToggle(isSale)) {
                             V2Segmented(
                                 titles = listOf(stringResource(R.string.v2_price_per_rental), stringResource(R.string.v2_price_per_day)),
                                 selected = if (line.pricingType.equals("DAILY", ignoreCase = true)) 1 else 0,
