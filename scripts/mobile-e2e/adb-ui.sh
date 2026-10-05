@@ -16,6 +16,7 @@ Selectors match a node's text or content-desc exactly; prefix with ~ for a case-
   has "<sel>"             exit 0 if the selector is on screen, 1 otherwise
   tap "<sel>" [n]         tap the n-th match (default 1)
   type "<text>"           type into the focused field (ASCII only: adb input text cannot type Vietnamese)
+  clear                   empty the focused field (select all + delete; login keeps the last email)
   back                    press Back
   swipe up|down           scroll the screen content up or down
   shot <name>             save a screenshot to $E2E_OUT/android/<name>.png
@@ -35,7 +36,8 @@ adb_s() { "$ADB_BIN" -s "$SERIAL" "$@"; }
 
 dump_xml() {
   mkdir -p "$OUT_DIR"
-  adb_s shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 || true
+  # uiautomator waits for the UI to go idle and can hang on an endless animation: give up after 20 s.
+  perl -e 'alarm shift; exec @ARGV' 20 "$ADB_BIN" -s "$SERIAL" shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 || true
   adb_s exec-out cat /sdcard/e2e-ui.xml >"$XML"
 }
 
@@ -99,6 +101,7 @@ PY
   type)
     text="${1:?text}"
     adb_s shell input text "$(printf '%s' "$text" | sed -e 's/ /%s/g' -e "s/'/\\\\'/g")" ;;
+  clear) adb_s shell input keycombination 113 29; adb_s shell input keyevent 67 ;;  # Ctrl+A, Delete
   back) adb_s shell input keyevent 4; sleep 1 ;;
   swipe)
     size="$(adb_s shell wm size | awk -F': ' '/Physical/{print $2}' | tr -d '\r')"

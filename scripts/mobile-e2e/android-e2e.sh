@@ -109,14 +109,19 @@ first_of() { # tap the first selector that is on screen
 mkdir -p "$OUT_DIR"
 sleep 3
 step 00-launch
-# Login (fields have no content-desc: tap the placeholder, then type).
-if ui wait "Nhập email" 10 || ui has "Enter your email"; then
-  first_of "Nhập email" "Enter your email" || true
-  ui type "$E2E_EMAIL"
-  first_of "Nhập mật khẩu" "Enter password" || true
-  ui type "$E2E_PASSWORD"
+# Login. v2 (newAuth): each field's content-desc is its label, and the label text above it matches too,
+# so the field is the 2nd match. Old screen: tap the placeholder.
+login_field() { # login_field <v2 label vi> <v2 label en> <old placeholder vi> <old placeholder en>
+  ui tap "$1" 2 2>/dev/null || ui tap "$2" 2 2>/dev/null || first_of "$3" "$4"
+}
+if ui wait "~Email" 15 || ui has "Nhập email" || ui has "Enter your email"; then
+  login_field "Email" "Email" "Nhập email" "Enter your email" || echo "MISS  email field"
+  sleep 1; ui clear; ui type "$E2E_EMAIL"; sleep 1
+  ui back || true                          # hide the keyboard so the password field is tappable
+  login_field "Mật khẩu" "Password" "Nhập mật khẩu" "Enter password" || echo "MISS  password field"
+  sleep 1; ui clear; ui type "$E2E_PASSWORD"; sleep 1
   ui back || true                          # hide the keyboard
-  first_of "Đăng nhập" "Log in" || echo "MISS  login button"
+  first_of "Đăng nhập" "Sign in" "Log in" || echo "MISS  login button"
   step 01-login-submitted
 fi
 # Onboarding comes after the first login.
@@ -150,16 +155,16 @@ ui back || true
 first_of "Đơn hàng" "Orders" || echo "MISS  orders tab"
 step 30-orders-todo
 step 31-orders-all first_of "Tất cả đơn" "All orders"
-step 32-orders-filter first_of "Bộ lọc đơn hàng" "Order Filter"
+step 32-orders-filter first_of "Mới tạo nhất" "Newest first" "Bộ lọc đơn hàng" "Order Filter"
 ui back || true
-step 33-orders-sale first_of "Đơn bán" "Sale"
-step 34-order-detail first_of "~#ORD-"
+step 33-orders-sale first_of "Đơn bán" "Sales" "Sale"
+step 34-order-detail first_of "~#"   # order numbers are ORD-… (seed) or 6 digits (new)
 ui back || true
 # 4. Calendar
 first_of "Lịch" "Calendar" || echo "MISS  calendar tab"
 step 40-calendar
 # 5. Overview
-first_of "Tổng quan" "Overview" || echo "MISS  overview tab"
+first_of "Tổng quan" "Overview" "Báo cáo" "Reports" || echo "MISS  overview tab"
 step 50-overview
 step 51-overview-period first_of "~Khoảng thời gian:" "~Period:"
 ui back || true
