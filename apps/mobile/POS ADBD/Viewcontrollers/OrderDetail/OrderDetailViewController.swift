@@ -284,7 +284,10 @@ final class OrderDetailViewController: BaseViewControler {
             let label = UILabel()
             label.font = done ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             label.textColor = done ? DS.Color.primary : DS.Color.textMuted
-            label.text = [step.0, step.1.map { OrderDetailLogic.dayMonth($0) }].compactMap { $0 }.joined(separator: " ")
+            // #482: the booked step carries the created time ("Đã đặt 14:32 28/09")
+            let stamp: String? = index == 0 ? step.1.map { OrderDetailLogic.createdStamp($0) } : step.1.map { OrderDetailLogic.dayMonth($0) }
+            label.text = [step.0, stamp].compactMap { $0 }.joined(separator: " ")
+            label.numberOfLines = 2
             label.adjustsFontSizeToFitWidth = true
             label.minimumScaleFactor = 0.8
             let column = UIStackView(arrangedSubviews: [bar, label])

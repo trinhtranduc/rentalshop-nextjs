@@ -226,6 +226,14 @@ enum OrdersHomeLogic {
         String(DayFormatter.short(date, timeZone: timeZone, locale: Locale(identifier: "vi")).suffix(5))
     }
 
+    /// #482: "28/09", or "28/12/25" when the civil year is not the year of `now`
+    static func dayMonth(_ date: Date, now: Date, timeZone: TimeZone) -> String {
+        let calendar = calendar(timeZone)
+        let year = calendar.component(.year, from: date)
+        guard year != calendar.component(.year, from: now) else { return dayMonth(date, timeZone: timeZone) }
+        return dayMonth(date, timeZone: timeZone) + String(format: "/%02d", year % 100)
+    }
+
     private static func calendar(_ timeZone: TimeZone) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
@@ -240,10 +248,14 @@ enum OrdersHomeLogic {
     }
 
     /// "03/10 → 05/10 · 3 ngày"; just the hand-over day without a return day
-    static func span(from: Date?, to: Date?, withDays: Bool, timeZone: TimeZone) -> String {
-        let start = from.map { dayMonth($0, timeZone: timeZone) } ?? "—"
+    /// `now` (#482): add the 2-digit year to a day of another year
+    static func span(from: Date?, to: Date?, withDays: Bool, timeZone: TimeZone, now: Date? = nil) -> String {
+        let format: (Date) -> String = { date in
+            now.map { dayMonth(date, now: $0, timeZone: timeZone) } ?? dayMonth(date, timeZone: timeZone)
+        }
+        let start = from.map(format) ?? "—"
         guard let to else { return start }
-        var text = "\(start) → \(dayMonth(to, timeZone: timeZone))"
+        var text = "\(start) → \(format(to))"
         if withDays, let from {
             let days = inclusiveDays(from: from, to: to, timeZone: timeZone)
             text += " · " + PluralText.format("orders.v2.when.days", count: days, days)
@@ -270,18 +282,20 @@ enum OrdersHomeLogic {
         DayFormatter.key(a, timeZone: timeZone) == DayFormatter.key(b, timeZone: timeZone)
     }
 
-    /// Date line of a "Tất cả đơn" row: "tạo hôm nay · 05/10 → 07/10", "tạo 28/09 · hạn 02/10", "tạo 28/09 · huỷ 29/09"
+    /// Date line of a "Tất cả đơn" row: "tạo hôm nay · 05/10 → 07/10", "tạo 28/09 · hạn 02/10", "tạo 28/09 · huỷ 29/09";
+    /// #482: a day of another year reads "28/12/25"
     static func listWhen(_ order: Order, lateDays: Int, now: Date = Date(), timeZone: TimeZone = .current) -> String {
+        let day: (Date) -> String = { dayMonth($0, now: now, timeZone: timeZone) }
         let created = isSameDay(order.createdAt, now, timeZone: timeZone)
             ? "orders.v2.when.createdToday".localized()
-            : String(format: "orders.v2.when.created".localized(), dayMonth(order.createdAt, timeZone: timeZone))
+            : String(format: "orders.v2.when.created".localized(), day(order.createdAt))
         let tail: String?
         if order.status == .cancelled {
-            tail = String(format: "orders.v2.when.cancelled".localized(), dayMonth(order.updatedAt, timeZone: timeZone))
+            tail = String(format: "orders.v2.when.cancelled".localized(), day(order.updatedAt))
         } else if order.orderType == .rent && order.status == .pickuped && lateDays > 0, let due = order.returnPlanAt {
-            tail = String(format: "orders.v2.when.due".localized(), dayMonth(due, timeZone: timeZone))
+            tail = String(format: "orders.v2.when.due".localized(), day(due))
         } else if order.orderType == .rent {
-            tail = span(from: order.pickupPlanAt, to: order.returnPlanAt, withDays: false, timeZone: timeZone)
+            tail = span(from: order.pickupPlanAt, to: order.returnPlanAt, withDays: false, timeZone: timeZone, now: now)
         } else {
             tail = nil
         }

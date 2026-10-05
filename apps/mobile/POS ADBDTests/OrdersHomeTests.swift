@@ -219,6 +219,26 @@ final class OrdersHomeTests: XCTestCase {
                                                      to: iso.date(from: "2026-10-03T10:00:00Z")!, timeZone: vietnam), 1)
     }
 
+    /// #482: a row of another year shows the 2-digit year on every dd/MM of its date line
+    func testListDateLineAddsYearWhenNotThisYear() throws {
+        let now = iso.date(from: "2026-01-02T05:00:00Z")!
+        let old = try order(status: "RESERVED", created: "2025-12-28T03:00:00.000Z",
+                            pickup: "2025-12-30T02:00:00.000Z", returns: "2026-01-03T02:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(old, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "28/12/25") + " · 30/12/25 → 03/01")
+        let cancelled = try order(status: "CANCELLED", created: "2025-12-28T03:00:00.000Z", updated: "2025-12-29T03:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(cancelled, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "28/12/25") + " · "
+                       + String(format: "orders.v2.when.cancelled".localized(), "29/12/25"))
+        // 31/12/2025 17:30Z is 01/01/2026 in Vietnam: this year there, last year in UTC
+        let newYear = try order(status: "RESERVED", created: "2025-12-31T17:30:00.000Z",
+                                pickup: "2026-01-04T02:00:00.000Z", returns: "2026-01-05T02:00:00.000Z")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(newYear, lateDays: 0, now: now, timeZone: vietnam),
+                       String(format: "orders.v2.when.created".localized(), "01/01") + " · 04/01 → 05/01")
+        XCTAssertEqual(OrdersHomeLogic.listWhen(newYear, lateDays: 0, now: now, timeZone: utc),
+                       String(format: "orders.v2.when.created".localized(), "31/12/25") + " · 04/01 → 05/01")
+    }
+
     func testListDateLine() throws {
         let now = iso.date(from: "2026-10-04T05:00:00Z")!
         let booked = try order(status: "RESERVED")
