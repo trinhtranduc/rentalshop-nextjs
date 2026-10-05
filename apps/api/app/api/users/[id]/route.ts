@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../../lib/user-scope';
+import { applyUserAccessChange, buildUserAuditContext } from '../../../../lib/user-merchant-assignment';
 
 /**
  * GET /api/users/[id]
@@ -148,13 +150,29 @@ export async function PUT(
         updateData.emailVerifiedAt = null;
       }
 
+      // Moving to another merchant (ADMIN only), outlet and role changes (#443)
+      const access = await applyUserAccessChange(user, existingUser, updateData);
+      if (!access.ok) {
+        return NextResponse.json(ResponseBuilder.error(access.code), { status: access.status });
+      }
+
       // Update the user using the simplified database API (use parsed data)
       const updatedUser = await db.users.update(userId, updateData);
 
-      // If user is being deactivated, invalidate all their sessions to force logout
-      if (isBeingDeactivated) {
+      await createAuditHelper(prisma).logUpdate({
+        entityType: 'User',
+        entityId: String(userId),
+        entityName: updatedUser.email,
+        oldValues: toPublicUser(existingUser),
+        newValues: toPublicUser(updatedUser),
+        description: access.accessChanged ? `User access changed: ${updatedUser.email}` : `User updated: ${updatedUser.email}`,
+        context: buildUserAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log update failed:', err));
+
+      // Deactivation, or a new merchant/outlet/role, takes effect on the next sign-in
+      if (isBeingDeactivated || access.accessChanged) {
         await db.sessions.invalidateAllUserSessions(userId);
-        console.log(`🗑️ Deactivated user ${userId}: Invalidated all sessions to force logout`);
+        console.log(`🗑️ User ${userId}: invalidated all sessions (deactivated or access changed)`);
       }
 
       return NextResponse.json({

@@ -46,6 +46,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   'MERCHANT_ACCESS_REQUIRED': 'Merchant access required',
   'DELETE_USER_OUT_OF_SCOPE': 'Cannot delete user outside your scope',
   'UPDATE_USER_OUT_OF_SCOPE': 'Cannot update user outside your scope',
+  'MERCHANT_TRANSFER_ADMIN_ONLY': 'Only a system administrator can move an account to another merchant',
+  'MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED': 'A merchant owner account cannot be moved to another merchant',
+  'OUTLET_ASSIGNMENT_REQUIRED': 'Choose an outlet that belongs to the selected merchant',
+  'OUTLET_MERCHANT_MISMATCH': 'The selected outlet does not belong to the selected merchant',
+  'CANNOT_TRANSFER_LAST_MERCHANT_OWNER': 'Assign another active merchant owner before changing this account',
   'DELETE_OWN_ACCOUNT_ONLY': 'You can only delete your own account',
   
   // Validation Errors

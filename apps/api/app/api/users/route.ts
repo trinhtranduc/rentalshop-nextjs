@@ -4,26 +4,14 @@
 // REFACTORED: Now uses unified withAuth wrapper instead of withUserManagementAuth
 // This demonstrates the new standardized authentication pattern
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder, resolveUsersIsActiveFilter } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
-import { canAssignRole, isAllowedPlacement, toPublicUser } from '../../../lib/user-scope';
-
-function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
-  return {
-    userId: String(user.id),
-    userEmail: user.email,
-    userRole: user.role,
-    merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
-    outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
-    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-    userAgent: request.headers.get('user-agent') || undefined,
-    requestId: request.headers.get('x-request-id') || undefined
-  };
-}
+import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../lib/user-scope';
+import { applyUserAccessChange, buildUserAuditContext as buildAuditContext } from '../../../lib/user-merchant-assignment';
 
 export interface UserFilters {
   role?: UserRole;
@@ -380,12 +368,22 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
       );
     }
 
-    // Scope validation
-    if (userScope.merchantId && existingUser.merchantId !== userScope.merchantId) {
+    // Scope validation: merchant callers their merchant, outlet callers their outlet (user-scope.ts)
+    if (!canAccessUser(user, userScope, existingUser)) {
       return NextResponse.json(
         ResponseBuilder.error('UPDATE_USER_OUT_OF_SCOPE'),
         { status: 403 }
       );
+    }
+    // Merchant and outlet callers only place users inside their own merchant/outlet
+    const placementAllowed = await isAllowedPlacement(
+      user,
+      userScope,
+      { merchantId: parsed.data.merchantId, outletId: parsed.data.outletId },
+      (outletId) => db.outlets.findById(outletId)
+    );
+    if (!placementAllowed) {
+      return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
     }
 
     // Hash password if it's being updated (same as merchant registration)
@@ -411,31 +409,31 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
       );
     }
 
-    if (targetRole === USER_ROLE.ARTICLE || targetRole === USER_ROLE.OPS) {
-      updateData.merchantId = null;
-      updateData.outletId = null;
+    // Moving to another merchant (ADMIN only), outlet and role changes (#443).
+    // Also clears merchant/outlet for ARTICLE and OPS.
+    const access = await applyUserAccessChange(user, existingUser, updateData);
+    if (!access.ok) {
+      return NextResponse.json(ResponseBuilder.error(access.code), { status: access.status });
     }
 
     const updatedUser = await db.users.update(id, updateData);
     const auditHelper = createAuditHelper(prisma);
-    const { password: _p1, ...existingSafe } = existingUser as any;
-    const { password: _p2, ...updatedSafe } = updatedUser as any;
     await auditHelper.logUpdate({
       entityType: 'User',
       entityId: String(id),
       entityName: updatedUser.email,
-      oldValues: existingSafe,
-      newValues: updatedSafe,
-      description: `User updated: ${updatedUser.email}`,
+      oldValues: toPublicUser(existingUser),
+      newValues: toPublicUser(updatedUser),
+      description: access.accessChanged ? `User access changed: ${updatedUser.email}` : `User updated: ${updatedUser.email}`,
       context: buildAuditContext(request, user, userScope)
     }).catch((err) => console.error('Audit log update failed:', err));
 
     console.log(`✅ Updated user: ${updatedUser.email} (ID: ${updatedUser.id})`);
 
-    // If user is being deactivated, invalidate all their sessions to force logout
-    if (isBeingDeactivated) {
+    // Deactivation, or a new merchant/outlet/role, takes effect on the next sign-in
+    if (isBeingDeactivated || access.accessChanged) {
       await db.sessions.invalidateAllUserSessions(id);
-      console.log(`🗑️ Deactivated user ${id}: Invalidated all sessions to force logout`);
+      console.log(`🗑️ User ${id}: invalidated all sessions (deactivated or access changed)`);
     }
 
     return NextResponse.json({
@@ -447,10 +445,8 @@ export const PUT = withPermissions(['users.manage'])(async (request, { user, use
 
   } catch (error) {
     console.error('❌ PUT /api/users error:', error);
-    return NextResponse.json(
-      ResponseBuilder.error('UPDATE_USER_FAILED'),
-      { status: 500 }
-    );
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
   }
 });
 
