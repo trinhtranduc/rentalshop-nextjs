@@ -1,7 +1,10 @@
 /**
  * Mobile app config (#362): the minimum app version each platform must run, the latest version in the
  * stores, and which new screens are switched on. Read from env on every request so a change needs only a
- * Railway variable update. Defaults never force an update and keep every new screen off.
+ * Railway variable update. Defaults never force an update.
+ *
+ * Screens (`MOBILE_FEATURES`, #456): unset or blank → every new screen on; `none` → every new screen off;
+ * otherwise a comma-separated list of keys to turn on (staged rollout / kill switch). Unknown keys are ignored.
  */
 
 export const MOBILE_FEATURE_KEYS = [
@@ -46,13 +49,21 @@ function url(value: string | undefined, fallback: string | null): string | null 
   return trimmed && /^https?:\/\//.test(trimmed) ? trimmed : fallback;
 }
 
-export function buildMobileAppConfig(env: Record<string, string | undefined> = process.env): MobileAppConfig {
-  const enabled = new Set(
-    (env.MOBILE_FEATURES || '')
+/** Keys switched on by `MOBILE_FEATURES` (#456): unset/blank → all, `none` → none, else the listed keys */
+function enabledFeatures(value: string | undefined): Set<string> {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return new Set(MOBILE_FEATURE_KEYS);
+  if (trimmed.toLowerCase() === 'none') return new Set();
+  return new Set(
+    trimmed
       .split(',')
       .map((key) => key.trim())
       .filter(Boolean)
   );
+}
+
+export function buildMobileAppConfig(env: Record<string, string | undefined> = process.env): MobileAppConfig {
+  const enabled = enabledFeatures(env.MOBILE_FEATURES);
   const features = Object.fromEntries(
     MOBILE_FEATURE_KEYS.map((key) => [key, enabled.has(key)])
   ) as Record<MobileFeatureKey, boolean>;

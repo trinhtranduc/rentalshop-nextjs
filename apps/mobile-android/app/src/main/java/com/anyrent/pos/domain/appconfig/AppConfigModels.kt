@@ -13,14 +13,18 @@ data class PlatformConfig(
 data class AppConfig(
     val ios: PlatformConfig = PlatformConfig(),
     val android: PlatformConfig = PlatformConfig(),
-    val features: Set<MobileFeature> = emptySet(),
+    /** #456: every new screen is on unless a config says `false` for it */
+    val features: Set<MobileFeature> = MobileFeature.entries.toSet(),
 ) {
     /** True when this Android build is older than the minimum the server asks for */
     fun updateRequired(currentVersion: String): Boolean =
         AppVersion.compare(currentVersion, android.minVersion) < 0
 }
 
-/** New screens that can be switched on from the server (`MOBILE_FEATURES` on the API) */
+/**
+ * New screens switched by the server (`MOBILE_FEATURES` on the API). On by default (#456); a config that says
+ * `false` for a screen turns it off and shows the old one.
+ */
 enum class MobileFeature(val key: String) {
     NEW_ORDERS("newOrders"),
     NEW_ORDER_DETAIL("newOrderDetail"),

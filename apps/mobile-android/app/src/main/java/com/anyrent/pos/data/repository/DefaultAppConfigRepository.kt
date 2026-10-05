@@ -58,10 +58,11 @@ internal fun appConfigFromJson(data: JSONObject): AppConfig {
             storeUrl = block.optString("storeUrl").takeIf { it.isNotBlank() && it != "null" },
         )
     }
+    // #456: only an explicit `false` turns a screen off; a missing map (an API without flags) or key keeps it on
     val features = data.optJSONObject("features") ?: JSONObject()
     return AppConfig(
         ios = platform("ios"),
         android = platform("android"),
-        features = MobileFeature.entries.filter { features.optBoolean(it.key, false) }.toSet(),
+        features = MobileFeature.entries.filter { features.optBoolean(it.key, true) }.toSet(),
     )
 }

@@ -21,7 +21,8 @@ final class AppConfigTests: XCTestCase {
         let config = try XCTUnwrap(response.data)
         XCTAssertEqual(config.ios.minVersion, "1.2.0")
         XCTAssertNil(config.ios.storeUrl)
-        XCTAssertEqual(config.features, [.newOrders])
+        // #456: only an explicit false turns a screen off; keys the server does not send stay on
+        XCTAssertEqual(config.features, Set(MobileFeature.allCases).subtracting([.newOrderDetail]))
         XCTAssertTrue(config.updateRequired(currentVersion: "1.1.3"))
         XCTAssertFalse(config.updateRequired(currentVersion: "1.2.0"))
     }
@@ -29,8 +30,38 @@ final class AppConfigTests: XCTestCase {
     func testMissingFieldsAreSafeDefaults() throws {
         let config = try JSONDecoder.shared.decode(AppConfig.self, from: "{}".data(using: .utf8)!)
         XCTAssertEqual(config.ios.minVersion, "0.0.0")
-        XCTAssertTrue(config.features.isEmpty)
+        // #456: a config without `features` (an API that does not send them) keeps every new screen on
+        XCTAssertEqual(config.features, Set(MobileFeature.allCases))
         XCTAssertFalse(config.updateRequired(currentVersion: "1.1.3"))
+    }
+
+    /// #456 — first launch (no cached config) shows every new screen, including LoginV2
+    func testFeatureFlagsDefaultOnWithoutCache() {
+        let flags = FeatureFlags(cached: nil)
+        for feature in MobileFeature.allCases {
+            XCTAssertTrue(flags.isOn(feature), "\(feature) should be on without a cached config")
+        }
+        XCTAssertTrue(flags.isOn(.newAuth))
+    }
+
+    /// #456 — a config that says false still turns that screen off
+    func testExplicitFalseTurnsAScreenOff() throws {
+        let json = #"{"features":{"newAuth":false,"newOrders":true}}"#.data(using: .utf8)!
+        let config = try JSONDecoder.shared.decode(AppConfig.self, from: json)
+        let flags = FeatureFlags(cached: config)
+        XCTAssertFalse(flags.isOn(.newAuth))
+        XCTAssertTrue(flags.isOn(.newOrders))
+        XCTAssertTrue(flags.isOn(.newCalendar))
+    }
+
+    /// #456 — the API default (MOBILE_FEATURES unset) sends every flag true; `none` sends every flag false
+    func testAllTrueAndAllFalseConfigs() throws {
+        func decode(_ on: Bool) throws -> AppConfig {
+            let map = MobileFeature.allCases.map { "\"\($0.rawValue)\":\(on)" }.joined(separator: ",")
+            return try JSONDecoder.shared.decode(AppConfig.self, from: "{\"features\":{\(map)}}".data(using: .utf8)!)
+        }
+        XCTAssertEqual(try decode(true).features, Set(MobileFeature.allCases))
+        XCTAssertTrue(try decode(false).features.isEmpty)
     }
 
     func testCacheRoundTrip() throws {
