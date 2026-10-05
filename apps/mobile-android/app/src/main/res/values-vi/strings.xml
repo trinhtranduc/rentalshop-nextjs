@@ -616,12 +616,16 @@
     <string name="v2_cart_sale">Bán</string>
     <string name="v2_cart_pick_customer">Chọn khách hàng</string>
     <string name="v2_cart_change">Đổi</string>
-    <string name="v2_cart_days">%1$d ngày</string>
+    <plurals name="v2_cart_days">
+        <item quantity="other">%1$d ngày</item>
+    </plurals>
     <string name="v2_cart_items">Món · %1$d</string>
     <string name="v2_cart_add_more">Thêm</string>
     <string name="v2_cart_empty">Giỏ hàng trống. Thêm sản phẩm từ danh sách.</string>
     <string name="v2_calc_per_rental">%1$s/lần × %2$d</string>
-    <string name="v2_calc_per_day">%1$s/ngày × %2$d ngày</string>
+    <plurals name="v2_calc_per_day">
+        <item quantity="other">%1$s/ngày × %2$d ngày</item>
+    </plurals>
     <string name="v2_calc_sale">Giá bán %1$s × %2$d</string>
     <string name="v2_cart_short_rent">Chỉ còn %1$d trống trong ngày đã chọn</string>
     <string name="v2_cart_short_stock">Chỉ còn %1$d trong kho</string>
@@ -639,7 +643,9 @@
     <string name="v2_cart_customer_pays">Khách trả</string>
     <string name="v2_cart_create">Tạo đơn</string>
     <string name="v2_cart_sell_and_collect">Bán &amp; thu tiền</string>
-    <string name="v2_cart_bar">Giỏ hàng · %1$d món</string>
+    <plurals name="v2_cart_bar">
+        <item quantity="other">Giỏ hàng · %1$d món</item>
+    </plurals>
     <string name="v2_cart_remove_title">Bỏ món này khỏi giỏ?</string>
     <string name="v2_cart_remove">Bỏ</string>
     <!-- Orders tab (#371) -->
@@ -702,7 +708,9 @@
     <string name="detail_received">Đã nhận</string>
     <string name="detail_received_refund">Đã nhận · trả %1$s</string>
     <string name="detail_received_collect">Đã nhận · thu %1$s</string>
-    <string name="detail_late_fee_days">Phí trễ (%1$d ngày)</string>
+    <plurals name="detail_late_fee_days">
+        <item quantity="other">Phí trễ (%1$d ngày)</item>
+    </plurals>
     <string name="detail_photos_count">%1$d/%2$d ảnh</string>
     <string name="detail_hand_over_subtitle">%1$s · %2$s · %3$s</string>
     <plurals name="detail_return_late_subtitle">
@@ -836,8 +844,12 @@
     <string name="orders_v2_search_placeholder">Tìm tên, SĐT, mã đơn, tên đồ</string>
     <string name="orders_v2_search_cancel">Huỷ</string>
     <string name="orders_v2_search_clear">Xoá nội dung tìm</string>
-    <string name="orders_v2_search_summary">%1$d đơn khớp “%2$s” · tìm trong mọi trạng thái, cả tên đồ</string>
-    <string name="orders_v2_count">%1$d đơn</string>
+    <plurals name="orders_v2_search_summary">
+        <item quantity="other">%1$d đơn khớp “%2$s” · tìm trong mọi trạng thái, cả tên đồ</item>
+    </plurals>
+    <plurals name="orders_v2_count">
+        <item quantity="other">%1$d đơn</item>
+    </plurals>
     <string name="orders_v2_band_work">giao %1$d · trả %2$d</string>
     <string name="orders_v2_yesterday">Hôm qua</string>
     <string name="orders_v2_tag_hand_over">Giao</string>
@@ -855,7 +867,9 @@
     <string name="orders_v2_pay_paid">✓ đã thu đủ</string>
     <string name="orders_v2_when_hand_over_due">hẹn giao %1$s</string>
     <string name="orders_v2_when_return_due">hạn trả %1$s</string>
-    <string name="orders_v2_when_days">%1$d ngày</string>
+    <plurals name="orders_v2_when_days">
+        <item quantity="other">%1$d ngày</item>
+    </plurals>
     <string name="orders_v2_when_created_today">tạo hôm nay</string>
     <string name="orders_v2_when_created">tạo %1$s</string>
     <string name="orders_v2_when_due">hạn %1$s</string>
@@ -869,7 +883,9 @@
     <string name="orders_v2_filter_sort">SẮP XẾP</string>
     <string name="orders_v2_filter_range">KHOẢNG NGÀY</string>
     <string name="orders_v2_filter_show">Xem đơn</string>
-    <string name="orders_v2_filter_show_count">Xem %1$d đơn</string>
+    <plurals name="orders_v2_filter_show_count">
+        <item quantity="other">Xem %1$d đơn</item>
+    </plurals>
     <string name="orders_v2_basis_created">Ngày tạo</string>
     <string name="orders_v2_basis_pickup">Ngày giao</string>
     <string name="orders_v2_basis_return">Ngày trả</string>

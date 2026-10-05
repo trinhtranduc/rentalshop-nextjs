@@ -88,7 +88,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
         if mode == .takeReturn {
             let fees = UIStackView(arrangedSubviews: [
-                feeField(lateFeeField, title: lateDays > 0 ? String(format: "Late fee (%d days)".localized(), lateDays) : "Late fee".localized(), value: detail.lateFee),
+                feeField(lateFeeField, title: lateDays > 0 ? PluralText.format("Late fee (%d days)", count: lateDays, lateDays) : "Late fee".localized(), value: detail.lateFee),
                 feeField(damageFeeField, title: "Damage fee".localized(), value: detail.damageFee),
             ])
             fees.axis = .horizontal

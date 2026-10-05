@@ -156,7 +156,7 @@ internal fun ReturnSheet(
         SheetItems(detail)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FeeField(
-                if (lateDays > 0) stringResource(R.string.detail_late_fee_days, lateDays) else stringResource(R.string.detail_late_fee),
+                if (lateDays > 0) pluralStringResource(R.plurals.detail_late_fee_days, lateDays, lateDays) else stringResource(R.string.detail_late_fee),
                 lateText,
                 { lateText = it },
                 Modifier.weight(1f),

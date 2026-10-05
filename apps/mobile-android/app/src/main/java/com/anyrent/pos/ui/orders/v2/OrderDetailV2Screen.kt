@@ -565,7 +565,7 @@ private fun DetailBody(detail: OrderDetail, onPreview: (Any) -> Unit, onEditNote
                 OrderPlanDays.dayOf(summary.returnPlanAt, zone)?.let { to -> CartV2Logic.rentalDays(from, to) }
             }
             val dates = "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}"
-            InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + stringResource(R.string.v2_cart_days, it) } ?: dates)
+            InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + pluralStringResource(R.plurals.v2_cart_days, it, it) } ?: dates)
         } else {
             val day = OrdersHomeLogic.parseInstant(summary.createdAt)?.let { formatDayShort(it) } ?: "—"
             InfoRow(stringResource(R.string.detail_sale_day), listOfNotNull(day, summary.createdByName).joinToString(" · "))

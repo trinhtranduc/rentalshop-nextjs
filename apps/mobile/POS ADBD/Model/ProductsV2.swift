@@ -278,7 +278,7 @@ struct CartLineCalc: Equatable {
         case .perRental:
             return String(format: "products.cart.calc.perRental".localized(), price, quantity)
         case .perDay(let days):
-            let base = String(format: "products.cart.calc.perDay".localized(), price, days)
+            let base = PluralText.format("products.cart.calc.perDay", count: days, price, days)
             return quantity > 1 ? base + " × \(quantity)" : base
         }
     }

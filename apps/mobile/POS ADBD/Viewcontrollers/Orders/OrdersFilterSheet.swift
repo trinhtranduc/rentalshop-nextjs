@@ -273,7 +273,7 @@ final class OrdersFilterSheet: UIViewController {
         countProvider?(requested) { [weak self] count in
             DispatchQueue.main.async {
                 guard let self, self.filter == requested, let count else { return }
-                self.applyButton.setTitle(String(format: "orders.v2.filter.showCount".localized(), count), for: .normal)
+                self.applyButton.setTitle(PluralText.format("orders.v2.filter.showCount", count: count, count), for: .normal)
             }
         }
     }
