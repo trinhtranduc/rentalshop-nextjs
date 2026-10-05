@@ -3,8 +3,8 @@
 //  POS ADBD
 //
 //  Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
-//  State lives in CartStore; the button opens the existing order preview, which creates the order and collects
-//  payment (no new business rule here).
+//  State lives in CartStore. "Tạo đơn" confirms a new order in a sheet on this screen and creates it with the
+//  same request the review screen sends (#476); an edited order still opens the review screen.
 //
 
 import UIKit
@@ -22,6 +22,8 @@ final class CartV2ViewController: BaseViewControler {
     private var availabilityGeneration = 0
     /// Products whose prices this screen already reloaded (#473), once per screen
     private var pricingChecked = Set<Int>()
+    /// One create at a time, one Idempotency-Key per checkout (#341, #476)
+    private let submission = CreateOrderSubmission()
 
     private var cart: Cart { CartStore.shared.cart }
     private var isRent: Bool { cart.orderType == .rent }
@@ -527,18 +529,92 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     @objc private func ctaTapped() {
-        // A double tap must not push two previews (#341)
-        guard navigationController?.topViewController === self else { return }
+        // A double tap must not open two previews or sheets (#341)
+        guard navigationController?.topViewController === self, presentedViewController == nil else { return }
         HapticFeedback.medium()
         let (valid, errors) = cart.validate()
         guard valid else {
             UIAlertController.alert(parent: self, title: "Error".localized(), message: errors.joined(separator: "\n"))
             return
         }
-        let preview = PreviewViewController(cart: cart)
-        preview.hidesBottomBarWhenPushed = true
-        preview.delegate = self
-        navigationController?.pushViewController(preview, animated: true)
+        switch CartV2Logic.ctaRoute(isEditMode: cart.isEditMode) {
+        case .preview:
+            let preview = PreviewViewController(cart: cart)
+            preview.hidesBottomBarWhenPushed = true
+            preview.delegate = self
+            navigationController?.pushViewController(preview, animated: true)
+        case .confirmSheet:
+            presentConfirmSheet()
+        }
+    }
+
+    // MARK: - Create order sheets (#476)
+
+    private func presentConfirmSheet() {
+        let confirm = CreateOrderSheetLogic.confirm(cart)
+        let sheet = CreateOrderConfirmSheet(confirm: confirm)
+        sheet.onConfirm = { [weak self, weak sheet] in self?.submitOrder(confirm: confirm, sheet: sheet) }
+        present(sheet, animated: true)
+    }
+
+    /// The request `CartViewModel.saveOrder` sends from the review screen, with this checkout's key
+    private func submitOrder(confirm: CreateOrderConfirm, sheet: CreateOrderConfirmSheet?) {
+        guard submission.begin() else { return }
+        sheet?.setBusy(true)
+        OrderService.shared.createOrder(from: cart, idempotencyKey: submission.idempotencyKey) { [weak self] order, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let error {
+                    // The cart stays; the next confirm retries with the same key
+                    self.submission.failed()
+                    sheet?.setBusy(false)
+                    UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    return
+                }
+                self.submission.succeeded()
+                self.orderCreated(order, confirm: confirm, sheet: sheet)
+            }
+        }
+    }
+
+    /// Same clean-up as the review screen, then the "Đã tạo đơn" sheet
+    private func orderCreated(_ order: Order?, confirm: CreateOrderConfirm, sheet: CreateOrderConfirmSheet?) {
+        if let order {
+            OrderListViewModel.shared.updateOrder(order)
+        } else {
+            OrderListViewModel.shared.setNeedsRefresh()
+        }
+        CartStore.shared.resetCart()
+        ProductAvailabilityCache.shared.clearAll()
+        HapticFeedback.success()
+
+        let created = OrderCreatedSheet(summary: CreateOrderSheetLogic.created(orderNumber: order?.orderNumber ?? "", confirm: confirm))
+        created.onNewOrder = { [weak self] in
+            guard let self else { return }
+            RatingManager.shared.requestRatingIfNeeded(from: self)
+            self.addMoreTapped()
+        }
+        created.onViewOrder = { [weak self] in
+            guard let self else { return }
+            RatingManager.shared.requestRatingIfNeeded(from: self)
+            if let order { self.openCreatedOrder(order) } else { self.addMoreTapped() }
+        }
+        let show: () -> Void = { [weak self] in self?.present(created, animated: true) }
+        if let sheet, sheet.presentingViewController != nil {
+            sheet.dismiss(animated: true, completion: show)
+        } else {
+            show()
+        }
+    }
+
+    /// The new order's detail in place of the (now empty) cart
+    private func openCreatedOrder(_ order: Order) {
+        guard let navigationController else { return }
+        let detail = OrderDetailRouter.detailController(for: order, delegate: nil)
+        var stack = navigationController.viewControllers
+        if stack.last === self { stack.removeLast() }
+        stack.append(detail)
+        navigationController.setViewControllers(stack, animated: true)
     }
 }
 

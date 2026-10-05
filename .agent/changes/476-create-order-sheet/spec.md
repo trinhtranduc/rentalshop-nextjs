@@ -22,7 +22,8 @@ Issue: #476 · Status: accepted · Intent: ./intent.md
    (boards Gio-hang-da-tao): `CreateOrderSheetLogic.created(orderNumber:confirm:)` → short number (`ORD-17-0063` →
    `0063`), subtitle `customer · range` (sale: customer), paid amount. "Tạo đơn mới" → product list (same route as
    "+ Thêm"); "Xem đơn" → the order detail.
-7. Failure: the confirm sheet closes, the error alert shows, the cart is kept, the next confirm reuses the key.
+7. Failure: the error alert shows over the confirm sheet; the sheet and the cart stay (Hủy goes back to the cart);
+   the next confirm reuses the key. Android keeps the review screen's availability check and messages.
 
 ## Out of scope
 

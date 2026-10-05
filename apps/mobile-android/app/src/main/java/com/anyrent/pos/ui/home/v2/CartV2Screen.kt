@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,9 +53,14 @@ import androidx.compose.ui.unit.sp
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.domain.availability.AvailabilityRequest
+import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
+import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.CreateOrderSheet
+import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartV2Logic
@@ -75,13 +81,15 @@ import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
- * State lives in [CartStore]; the button opens the existing order preview, which creates the order.
+ * State lives in [CartStore]. "Tạo đơn" confirms a new order in a sheet on this screen and sends the review screen's
+ * create request ([CartOrderSubmit], #476); an edited order still opens the review screen ([onPreview]).
  */
 @Composable
 fun CartV2Screen(
@@ -89,6 +97,10 @@ fun CartV2Screen(
     onPreview: () -> Unit,
     /** "+ Add": the product list on Home (#433), not the screen that opened the cart */
     onAddItems: () -> Unit = onBack,
+    /** "Tạo đơn mới" after a create (#476): the product list with an empty cart */
+    onNewOrder: () -> Unit = onAddItems,
+    /** "Xem đơn" after a create (#476) */
+    onOpenOrder: (Int) -> Unit = {},
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -157,6 +169,54 @@ fun CartV2Screen(
         staleIds.filter { it > 0 && pricingChecked.add(it) }.forEach { productId ->
             withContext(Dispatchers.IO) { ApiClient.get().getProduct(productId) }
                 .onSuccess { CartStore.refreshPricing(it) }
+        }
+    }
+
+    // #476: confirm sheet → create → "Đã tạo đơn" sheet, without leaving the cart
+    val submission = remember { CreateOrderSubmission() }
+    var confirmSheet by remember { mutableStateOf<CreateOrderSheet.Confirm?>(null) }
+    var submitting by remember { mutableStateOf(false) }
+    var createdSheet by remember { mutableStateOf<Pair<CreateOrderSheet.Created, Int>?>(null) }
+    val scope = rememberCoroutineScope()
+    val validateRentalCart = remember { ValidateRentalCartAvailability(app.container.availabilityRepository) }
+    val sessionExpiredMessage = stringResource(R.string.session_expired_error)
+    val availabilityFailedMessage = stringResource(R.string.availability_check_failed)
+    val validationFallbackMessage = stringResource(R.string.order_validation_fallback)
+
+    // Same checks, request and messages as the review screen's submit (CartCheckoutScreen)
+    fun submitOrder(confirm: CreateOrderSheet.Confirm) {
+        if (!submission.begin()) return
+        submitting = true
+        scope.launch {
+            if (!confirm.isSale) {
+                val check = runCatching { CartOrderSubmit.blockedRentalLines(validateRentalCart) }
+                val failure = check.exceptionOrNull()
+                val blocked = check.getOrNull().orEmpty()
+                if (failure != null || blocked.isNotEmpty()) {
+                    submission.failed()
+                    submitting = false
+                    error = when {
+                        failure is AppError.Unauthorized -> sessionExpiredMessage
+                        failure != null -> "$availabilityFailedMessage\n${failure.message.orEmpty()}"
+                        else -> "Availability conflicts: " + blocked.joinToString { it.productName }
+                    }
+                    return@launch
+                }
+            }
+            val result = withContext(Dispatchers.IO) { CartOrderSubmit.create(submission.idempotencyKey) }
+            submitting = false
+            result.onSuccess { order ->
+                submission.succeeded()
+                CartStore.clear()
+                confirmSheet = null
+                createdSheet = CreateOrderSheet.created(order.orderNumber, confirm) to order.id
+            }.onFailure {
+                // The cart and the sheet stay; the next confirm retries with the same key
+                submission.failed()
+                error = it.message
+                    ?.takeUnless { message -> message.isBlank() || message.equals("Validation error", ignoreCase = true) }
+                    ?: validationFallbackMessage
+            }
         }
     }
 
@@ -271,7 +331,21 @@ fun CartV2Screen(
                 modifier = Modifier.weight(1.1f),
                 onClick = {
                     val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
-                    if (problems.isEmpty()) onPreview() else error = problems.joinToString("\n") { problemText.getValue(it) }
+                    if (problems.isNotEmpty()) {
+                        error = problems.joinToString("\n") { problemText.getValue(it) }
+                    } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.PREVIEW) {
+                        onPreview()
+                    } else if (confirmSheet == null && createdSheet == null) {
+                        confirmSheet = CreateOrderSheet.confirm(
+                            isSale = isSale,
+                            customerName = customer?.displayName.orEmpty(),
+                            pickup = pickup,
+                            returnDate = ret,
+                            lines = lines.map { it.product.name to it.quantity },
+                            total = total,
+                            deposit = deposit,
+                        )
+                    }
                 },
             )
         }
@@ -361,6 +435,28 @@ fun CartV2Screen(
             onConfirm = {
                 CartStore.remove(line.product.id)
                 removeLine = null
+            },
+        )
+    }
+    confirmSheet?.let { confirm ->
+        CreateOrderConfirmSheet(
+            confirm = confirm,
+            busy = submitting,
+            onDismiss = { confirmSheet = null },
+            onConfirm = { submitOrder(confirm) },
+        )
+    }
+    createdSheet?.let { (created, orderId) ->
+        OrderCreatedSheet(
+            created = created,
+            onDismiss = { createdSheet = null },
+            onNewOrder = {
+                createdSheet = null
+                onNewOrder()
+            },
+            onViewOrder = {
+                createdSheet = null
+                onOpenOrder(orderId)
             },
         )
     }

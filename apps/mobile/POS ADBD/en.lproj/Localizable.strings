@@ -1618,6 +1618,18 @@
 "products.cart.bar.one" = "Cart · %d item";
 "products.cart.removeTitle" = "Remove this item from the cart?";
 "products.cart.remove" = "Remove";
+"products.cart.confirm.rentTitle" = "Create rental order?";
+"products.cart.confirm.saleTitle" = "Sell & collect?";
+"products.cart.confirm.customer" = "Customer";
+"products.cart.confirm.dates" = "Rental dates";
+"products.cart.confirm.items" = "Items";
+"products.cart.confirm.collectDeposit" = "Collect deposit now";
+"products.cart.confirm.collectSale" = "Collect now";
+"products.cart.created.title" = "Order #%@ created";
+"products.cart.created.paidDeposit" = "Deposit collected %@";
+"products.cart.created.paidSale" = "Collected %@";
+"products.cart.created.newOrder" = "New order";
+"products.cart.created.viewOrder" = "View order";
 // MARK: - Orders tab (#371)
 "To do" = "To do";
 "All orders" = "All orders";

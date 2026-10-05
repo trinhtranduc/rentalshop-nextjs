@@ -516,6 +516,26 @@ extension ProductsV2Tests {
         XCTAssertEqual(sale.paidKey, "products.cart.created.paidSale")
     }
 
+    func testBothSheetsLayOutWithTheBoardButtons() throws {
+        // Laying the buttons out used to throw "no common ancestor" (width constraint before the row existed)
+        let confirm = CreateOrderSheetLogic.confirm(try rentCart(), timeZone: vn)
+        let sheets: [V2FittingSheet] = [
+            CreateOrderConfirmSheet(confirm: confirm),
+            OrderCreatedSheet(summary: CreateOrderSheetLogic.created(orderNumber: "ORD-17-0063", confirm: confirm)),
+        ]
+        for sheet in sheets {
+            sheet.loadViewIfNeeded()
+            sheet.view.frame = CGRect(x: 0, y: 0, width: 390, height: 460)
+            sheet.view.layoutIfNeeded()
+            let buttons = sheet.stack.arrangedSubviews.last as? UIStackView
+            let widths = buttons?.arrangedSubviews.map { $0.frame.width } ?? []
+            XCTAssertEqual(widths.count, 2)
+            XCTAssertEqual(buttons?.arrangedSubviews.first?.frame.height, 50)
+            let ratio: CGFloat = sheet is CreateOrderConfirmSheet ? 1.6 : 1
+            XCTAssertEqual(widths[1] / widths[0], ratio, accuracy: 0.02)
+        }
+    }
+
     func testOnlyANewOrderUsesTheSheet() {
         XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: false), .confirmSheet)
         XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .preview, "editing an order keeps the review screen")

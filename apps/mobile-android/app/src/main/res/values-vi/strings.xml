@@ -643,6 +643,18 @@
     <string name="v2_cart_customer_pays">Khách trả</string>
     <string name="v2_cart_create">Tạo đơn</string>
     <string name="v2_cart_sell_and_collect">Bán &amp; thu tiền</string>
+    <string name="v2_create_confirm_rent_title">Tạo đơn thuê?</string>
+    <string name="v2_create_confirm_sale_title">Bán &amp; thu tiền?</string>
+    <string name="v2_create_confirm_customer">Khách</string>
+    <string name="v2_create_confirm_dates">Lịch thuê</string>
+    <string name="v2_create_confirm_items">Món</string>
+    <string name="v2_create_confirm_collect_deposit">Thu cọc ngay</string>
+    <string name="v2_create_confirm_collect_sale">Thu ngay</string>
+    <string name="v2_create_done_title">Đã tạo đơn #%1$s</string>
+    <string name="v2_create_done_paid_deposit">Đã thu cọc %1$s</string>
+    <string name="v2_create_done_paid_sale">Đã thu %1$s</string>
+    <string name="v2_create_done_new_order">Tạo đơn mới</string>
+    <string name="v2_create_done_view_order">Xem đơn</string>
     <plurals name="v2_cart_bar">
         <item quantity="other">Giỏ hàng · %1$d món</item>
     </plurals>

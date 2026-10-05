@@ -405,6 +405,12 @@ fun AnyRentNavHost(
                     }
                 },
                 onPreview = { rootNavController.navigate(Routes.CartV2Preview) { launchSingleTop = true } },
+                // #476 "Xem đơn": the new order's detail in place of the (now empty) cart
+                onOpenOrder = { id ->
+                    rootNavController.navigate(Routes.orderDetail(id)) {
+                        popUpTo(Routes.CartV2) { inclusive = true }
+                    }
+                },
             )
         }
         composable(Routes.CartV2Preview) {
