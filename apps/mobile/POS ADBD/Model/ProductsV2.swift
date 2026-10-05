@@ -330,9 +330,10 @@ enum CartV2Logic {
         case openHomeTab
     }
 
-    /// Stub: today's behavior, always one step back
+    /// The product list: one step back when the cart came from Products Home, else the Home tab
+    /// (the cart opened from a customer would otherwise go back to the customer page)
     static func addMoreRoute(previousIsProductsHome: Bool) -> AddMoreRoute {
-        .pop
+        previousIsProductsHome ? .pop : .openHomeTab
     }
 }
 
