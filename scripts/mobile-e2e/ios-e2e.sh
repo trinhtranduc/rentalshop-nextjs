@@ -20,7 +20,9 @@ Builds the Development scheme and runs -only-testing:"POS ADBDUITests/AnyRentE2E
 
 Credentials, flags and the output dir reach the UI test through TEST_RUNNER_* variables
 (xcodebuild strips the prefix): E2E_EMAIL, E2E_PASSWORD, E2E_ROLE, E2E_FEATURES, E2E_OUT_DIR.
-Screenshots: $E2E_OUT/ios/<account>/NN-feature-step.png. Derived data: $E2E_OUT/DerivedData (delete after).
+Screenshots: $E2E_OUT/ios/<account>/NN-feature-step.png. Derived data: $E2E_DERIVED_DATA (default
+$E2E_OUT/DerivedData; delete after). Under /tmp the bridging-header PCH can fail: then set
+E2E_DERIVED_DATA=~/Library/Developer/Xcode/DerivedData/<your-name>.
 Result bundle: $E2E_OUT/ios/<account>.xcresult. Exit code is xcodebuild's.
 EOF
 }
@@ -51,6 +53,7 @@ MOBILE_DIR="$E2E_ROOT/apps/mobile"
 BUNDLE_ID="com.anyrent.debug"
 SHOT_DIR="$E2E_OUT/ios/$E2E_ACCOUNT"
 RESULT="$E2E_OUT/ios/$E2E_ACCOUNT.xcresult"
+DERIVED="${E2E_DERIVED_DATA:-$E2E_OUT/DerivedData}"
 LOG="$E2E_OUT/ios/$E2E_ACCOUNT-xcodebuild.log"
 mkdir -p "$SHOT_DIR"
 rm -rf "$RESULT"
@@ -95,7 +98,7 @@ set +e
   TEST_RUNNER_E2E_OUT_DIR="$SHOT_DIR" \
   xcodebuild -workspace "POS ADBD.xcworkspace" -scheme Development \
     -destination "platform=iOS Simulator,id=$UDID" \
-    -derivedDataPath "$E2E_OUT/DerivedData" \
+    -derivedDataPath "$DERIVED" \
     -resultBundlePath "$RESULT" \
     -only-testing:"$TARGET" \
     ${LANG_ARGS[@]+"${LANG_ARGS[@]}"} \
