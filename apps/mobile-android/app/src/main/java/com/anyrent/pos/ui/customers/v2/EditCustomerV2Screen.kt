@@ -138,7 +138,7 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
                         append(stringResource(R.string.customers_v2_more_info).uppercase())
                         withStyle(SpanStyle(fontWeight = FontWeight.Normal, letterSpacing = 0.sp)) { append(" " + stringResource(R.string.customers_v2_optional)) }
                     },
-                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, letterSpacing = 0.5.sp,
+                    fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, letterSpacing = 0.5.sp,
                     modifier = Modifier.padding(top = 6.dp),
                 )
                 EditField(
@@ -173,7 +173,7 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
                 border = BorderStroke(1.dp, EditBorder),
                 contentPadding = PaddingValues(horizontal = 20.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = DS.Colors.Text),
-            ) { Text(stringResource(R.string.customers_v2_cancel), fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+            ) { Text(stringResource(R.string.customers_v2_cancel), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold) }
             Button(
                 onClick = ::save,
                 enabled = form != null && !saving,
@@ -182,7 +182,7 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
                 colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary, contentColor = Color.White),
             ) {
                 if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-                else Text(stringResource(R.string.save), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                else Text(stringResource(R.string.save), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -201,18 +201,18 @@ private fun EditField(
     onValueChange: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+        Text(label, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
             isError = error != null,
-            placeholder = placeholder?.let { { Text(it, fontSize = 16.sp, color = DS.Colors.TextMuted) } },
+            placeholder = placeholder?.let { { Text(it, fontSize = DS.TextSize.Input, color = DS.Colors.TextMuted) } },
             supportingText = error?.let { { Text(it, color = EditDanger) } },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType, capitalization = capitalization, imeAction = imeAction),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = EditBorder, focusedBorderColor = DS.Colors.Primary),
-            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = DS.Colors.Text),
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = label },
         )
     }

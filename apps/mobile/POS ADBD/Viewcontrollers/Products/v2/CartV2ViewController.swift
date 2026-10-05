@@ -14,8 +14,8 @@ final class CartV2ViewController: BaseViewControler {
     private let typeToggle = V2Segmented(titles: ["products.cart.rent".localized(), "products.cart.sale".localized()], compact: false)
     private let scroll = UIScrollView()
     private let content = UIStackView()
-    private let collectTitle = V2.label(size: 13, color: DS.Color.textMuted)
-    private let collectAmount = V2.label(size: 20, weight: .bold)
+    private let collectTitle = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private let collectAmount = V2.label(size: DS.TextSize.amount, weight: .bold)
     private let ctaButton = V2.primaryButton("products.cart.create".localized())
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
     /// Bumped on each availability call; an older answer is dropped
@@ -129,12 +129,12 @@ final class CartV2ViewController: BaseViewControler {
 
         let add = UIButton(type: .system)
         add.setTitle("+ " + "products.cart.addMore".localized(), for: .normal)
-        add.titleLabel?.font = Utils.boldFont(size: 14)
+        add.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         add.addTarget(self, action: #selector(addMoreTapped), for: .touchUpInside)
         add.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
         content.addArrangedSubview(V2.sectionHeader(String(format: "products.cart.items".localized(), cart.itemCount), trailing: add))
         if cart.items.isEmpty {
-            let empty = V2.label("products.cart.empty".localized(), size: 15, color: DS.Color.textMuted, lines: 0)
+            let empty = V2.label("products.cart.empty".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
             content.addArrangedSubview(padded(empty, vertical: 20))
         }
         for (index, item) in cart.items.enumerated() {
@@ -158,7 +158,7 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(V2.divider())
 
         let total = V2ValueRow(title: "products.cart.total".localized(), chevron: false)
-        total.titleLabel.font = Utils.boldFont(size: 15)
+        total.titleLabel.font = Utils.boldFont(size: DS.TextSize.name)
         total.valueLabel.font = Utils.boldFont(size: 18)
         total.valueLabel.textColor = DS.Color.text
         total.valueLabel.text = MoneyFormatter.format(cart.totalAmount)
@@ -170,7 +170,7 @@ final class CartV2ViewController: BaseViewControler {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized())
             deposit.valueLabel.text = MoneyFormatter.format(cart.depositAmount)
             deposit.valueLabel.textColor = DS.Color.primary
-            deposit.valueLabel.font = Utils.boldFont(size: 15)
+            deposit.valueLabel.font = Utils.boldFont(size: DS.TextSize.name)
             deposit.addTarget(self, action: #selector(editDeposit), for: .touchUpInside)
             content.addArrangedSubview(deposit)
             content.addArrangedSubview(V2.divider())
@@ -210,19 +210,19 @@ final class CartV2ViewController: BaseViewControler {
         row.addTarget(self, action: #selector(pickCustomer), for: .touchUpInside)
         let customer = cart.customer
         let name = customerName(customer)
-        let avatar = V2.label(initials(name), size: 13, weight: .bold, color: UIColor(hexString: "1E40AF"))
+        let avatar = V2.label(initials(name), size: DS.TextSize.secondary, weight: .bold, color: UIColor(hexString: "1E40AF"))
         avatar.textAlignment = .center
         avatar.backgroundColor = UIColor(hexString: "DBEAFE")
         avatar.layer.cornerRadius = 20
         avatar.clipsToBounds = true
-        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: 15, weight: .bold,
+        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.name, weight: .bold,
                              color: name == nil ? DS.Color.primary : DS.Color.text)
-        let phone = V2.label(customer?.phone, size: 13, color: DS.Color.textMuted)
+        let phone = V2.label(customer?.phone, size: DS.TextSize.secondary, color: DS.Color.textMuted)
         phone.isHidden = (customer?.phone ?? "").isEmpty
         let texts = UIStackView(arrangedSubviews: [title, phone])
         texts.axis = .vertical
         texts.isUserInteractionEnabled = false
-        let change = V2.label(name == nil ? nil : "products.cart.change".localized(), size: 14, weight: .bold, color: DS.Color.primary)
+        let change = V2.label(name == nil ? nil : "products.cart.change".localized(), size: DS.TextSize.body, weight: .bold, color: DS.Color.primary)
         [avatar, texts, change].forEach(row.addSubview)
         avatar.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(DS.Spacing.lg)
@@ -256,8 +256,8 @@ final class CartV2ViewController: BaseViewControler {
         } else {
             text = "products.cart.pickDates".localized()
         }
-        let label = V2.label(text, size: 15, weight: .bold, color: days == nil ? DS.Color.primary : DS.Color.text)
-        let pill = V2.label(days.map { " " + PluralText.format("products.cart.days", count: $0, $0) + " " }, size: 13, weight: .bold,
+        let label = V2.label(text, size: DS.TextSize.name, weight: .bold, color: days == nil ? DS.Color.primary : DS.Color.text)
+        let pill = V2.label(days.map { " " + PluralText.format("products.cart.days", count: $0, $0) + " " }, size: DS.TextSize.secondary, weight: .bold,
                             color: UIColor(hexString: "1E40AF"))
         pill.backgroundColor = UIColor(hexString: "DBEAFE")
         pill.layer.cornerRadius = 11
@@ -291,17 +291,17 @@ final class CartV2ViewController: BaseViewControler {
             }
         }
         let calc = CartV2Logic.calc(item, orderType: cart.orderType)
-        let name = V2.label(item.productName, size: 15, weight: .bold, lines: 2)
+        let name = V2.label(item.productName, size: DS.TextSize.name, weight: .bold, lines: 2)
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let total = V2.label(MoneyFormatter.format(calc.total), size: 15, weight: .bold)
+        let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .bold)
         total.textAlignment = .right
         total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
         let top = UIStackView(arrangedSubviews: [name, total])
         top.alignment = .top
         top.spacing = 8
-        let calcLabel = V2.label(calc.text, size: 13, color: DS.Color.textMuted, lines: 0)
+        let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
         let column = UIStackView(arrangedSubviews: [top, calcLabel])
         column.axis = .vertical
         column.spacing = 6
@@ -309,7 +309,7 @@ final class CartV2ViewController: BaseViewControler {
 
         if let left = CartV2Logic.shortage(item) {
             let key = isRent ? "products.cart.shortRent" : "products.cart.shortStock"
-            let warn = V2.label(" " + String(format: key.localized(), left) + " ", size: 12, weight: .bold, color: UIColor(hexString: "991B1B"))
+            let warn = V2.label(" " + String(format: key.localized(), left) + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
             warn.backgroundColor = UIColor(hexString: "FEE2E2")
             warn.layer.cornerRadius = 6
             warn.clipsToBounds = true
@@ -330,7 +330,7 @@ final class CartV2ViewController: BaseViewControler {
             toggle.addTarget(self, action: #selector(pricingChanged(_:)), for: .valueChanged)
             leading = toggle
         } else if !isRent, let available = item.availabilityStatus?.available {
-            leading = V2.label(String(format: "products.cart.inStock".localized(), available), size: 13, color: DS.Color.textMuted)
+            leading = V2.label(String(format: "products.cart.inStock".localized(), available), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         }
         let controls = UIStackView(arrangedSubviews: [leading, UIView(), stepper])
         controls.alignment = .center

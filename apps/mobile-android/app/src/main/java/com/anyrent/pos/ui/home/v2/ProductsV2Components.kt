@@ -90,7 +90,7 @@ internal fun SectionBand(title: String, trailing: (@Composable () -> Unit)? = nu
             Modifier.fillMaxWidth().background(V2Colors.Section).padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
+            Text(title.uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
             trailing?.invoke()
         }
     }
@@ -136,7 +136,7 @@ internal fun V2Segmented(
             ) {
                 Text(
                     title,
-                    fontSize = if (compact) 13.sp else 14.sp,
+                    fontSize = if (compact) DS.TextSize.Secondary else DS.TextSize.Body,
                     fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
                     color = if (on) DS.Colors.Text else DS.Colors.TextMuted,
                 )
@@ -161,7 +161,7 @@ internal fun V2Stepper(value: Int, onChange: (Int) -> Unit, minimum: Int = 0, co
                 .semantics { contentDescription = minus; role = Role.Button },
             contentAlignment = Alignment.Center,
         ) { Text("−", fontSize = 20.sp, color = if (value > minimum) DS.Colors.Text else DS.Colors.TextMuted) }
-        Text("$value", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 28.dp))
+        Text("$value", fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 28.dp))
         Box(
             Modifier
                 .size(width = 44.dp, height = if (compact) 38.dp else 44.dp)
@@ -190,10 +190,10 @@ internal fun V2ValueRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(title, fontSize = 15.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+        Text(title, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = Modifier.weight(1f))
         Text(
             value,
-            fontSize = if (bold) 18.sp else 15.sp,
+            fontSize = if (bold) 18.sp else DS.TextSize.Body,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = valueColor,
             maxLines = 1,

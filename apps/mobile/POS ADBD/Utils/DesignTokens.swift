@@ -47,6 +47,39 @@ enum DS {
         static let sheet: CGFloat = 20
     }
 
+    /// Type ramp of the new UI (He-thong board, owner-approved 2026-10-04, #424).
+    /// Text uses only 17 · 15 · 14 · 12; inputs and primary buttons 16; headings and hero numbers 18–30.
+    /// No 11 or 13. Same numbers on Android (`DS.TextSize`, sp).
+    enum TextSize {
+        /// Screen title, 700
+        static let title: CGFloat = 24
+        /// Main money amount, 700
+        static let amount: CGFloat = 20
+        /// Customer name, product name, row total, price, card title (600–700)
+        static let name: CGFloat = 17
+        /// Text inputs and primary buttons
+        static let input: CGFloat = 16
+        /// Body, buttons, item line, field labels, segmented control (400–600)
+        static let body: CGFloat = 15
+        /// Secondary: dates, order code, còn thu / trả cọc, stock, per-day price (400–600)
+        static let secondary: CGFloat = 14
+        /// Status pills, tags, count badges, tab labels (600–700). The minimum.
+        static let pill: CGFloat = 12
+    }
+
+    /// Vertical rhythm of the new lists (#424)
+    enum Gap {
+        /// Between text lines inside one block (board: 4–5)
+        static let line: CGFloat = 5
+        static let lineTight: CGFloat = 4
+        /// Order list row: 15 top/bottom, 16 left/right
+        static let orderRowVertical: CGFloat = 15
+        static let rowHorizontal: CGFloat = 16
+        /// Product list row: 14 padding, 96 min height
+        static let productRow: CGFloat = 14
+        static let productRowMinHeight: CGFloat = 96
+    }
+
     /// Minimum touch target
     static let touchTarget: CGFloat = 44
 

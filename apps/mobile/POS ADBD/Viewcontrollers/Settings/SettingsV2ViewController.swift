@@ -39,7 +39,7 @@ final class SettingsV2ViewController: BaseViewControler {
 
     override func setupUI() {
         view.backgroundColor = DS.Color.surface
-        let title = V2.label("settings.v2.title".localized(), size: 24, weight: .bold)
+        let title = V2.label("settings.v2.title".localized(), size: DS.TextSize.title, weight: .bold)
         view.addSubview(title)
         title.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
@@ -292,10 +292,10 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
 
 final class SettingsV2Cell: UITableViewCell {
     static let reuseId = "SettingsV2Cell"
-    private let avatar = V2.label(size: 15, weight: .bold, color: .white)
-    private let titleLabel = V2.label(size: 15)
-    private let subtitleLabel = V2.label(size: 13, color: DS.Color.textMuted)
-    private let valueLabel = V2.label(size: 14, color: DS.Color.textMuted)
+    private let avatar = V2.label(size: DS.TextSize.body, weight: .bold, color: .white)
+    private let titleLabel = V2.label(size: DS.TextSize.body)
+    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
     private let line = V2.divider()
 
@@ -340,7 +340,7 @@ final class SettingsV2Cell: UITableViewCell {
         avatar.isHidden = false
         avatar.text = initials
         titleLabel.text = name
-        titleLabel.font = Utils.boldFont(size: 16)
+        titleLabel.font = Utils.boldFont(size: DS.TextSize.name)
         titleLabel.textColor = DS.Color.text
         subtitleLabel.text = subtitle
         subtitleLabel.isHidden = subtitle.isEmpty
@@ -354,7 +354,7 @@ final class SettingsV2Cell: UITableViewCell {
     func configure(title: String, value: String?, showsChevron: Bool) {
         avatar.isHidden = true
         titleLabel.text = title
-        titleLabel.font = Utils.regularFont(size: 15)
+        titleLabel.font = Utils.regularFont(size: DS.TextSize.body)
         titleLabel.textColor = DS.Color.text
         subtitleLabel.isHidden = true
         valueLabel.text = value
@@ -368,7 +368,7 @@ final class SettingsV2Cell: UITableViewCell {
     func configureLogout(_ title: String) {
         avatar.isHidden = true
         titleLabel.text = title
-        titleLabel.font = Utils.boldFont(size: 15)
+        titleLabel.font = Utils.boldFont(size: DS.TextSize.body)
         titleLabel.textColor = V2.danger
         subtitleLabel.isHidden = true
         valueLabel.isHidden = true

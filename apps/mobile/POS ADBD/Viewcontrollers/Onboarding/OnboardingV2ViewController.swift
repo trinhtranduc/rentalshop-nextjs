@@ -30,7 +30,7 @@ final class OnboardingV2ViewController: BaseViewControler {
     private let skipButton = UIButton(type: .system)
     private let iconCard = UIView()
     private let iconView = UIImageView()
-    private let stepLabel = V2.label(size: 13, weight: .bold, color: DS.Color.primary)
+    private let stepLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: DS.Color.primary)
     private let titleLabel = UILabel()
     private let bodyLabel = V2.label(size: 16, color: DS.Color.textMuted, lines: 0)
     private let dots = UIStackView()
@@ -90,7 +90,7 @@ final class OnboardingV2ViewController: BaseViewControler {
 
         skipButton.setTitle("onboarding.v2.skip".localized(), for: .normal)
         skipButton.setTitleColor(DS.Color.textMuted, for: .normal)
-        skipButton.titleLabel?.font = Utils.boldFont(size: 15)
+        skipButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         skipButton.backgroundColor = UIColor.white.withAlphaComponent(0.9)
         skipButton.layer.cornerRadius = DS.touchTarget / 2
         skipButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
@@ -124,7 +124,7 @@ final class OnboardingV2ViewController: BaseViewControler {
         dots.alignment = .center
         dots.isAccessibilityElement = false
         primaryButton.setTitleColor(.white, for: .normal)
-        primaryButton.titleLabel?.font = Utils.boldFont(size: 16)
+        primaryButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         primaryButton.backgroundColor = DS.Color.primary
         primaryButton.layer.cornerRadius = 14
         primaryButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 28, bottom: 0, right: 28)

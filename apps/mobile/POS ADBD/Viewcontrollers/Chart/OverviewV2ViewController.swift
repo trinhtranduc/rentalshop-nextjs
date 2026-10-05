@@ -43,9 +43,9 @@ final class OverviewV2ViewController: BaseViewControler {
 
     override func setupUI() {
         view.backgroundColor = DS.Color.surface
-        let title = V2.label("overview.v2.title".localized(), size: 24, weight: .bold)
+        let title = V2.label("overview.v2.title".localized(), size: DS.TextSize.title, weight: .bold)
 
-        periodButton.titleLabel?.font = Utils.boldFont(size: 14)
+        periodButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         periodButton.setTitleColor(DS.Color.text, for: .normal)
         periodButton.setImage(DS.symbol("chevron.down", 16, weight: .semibold), for: .normal)
         periodButton.tintColor = DS.Color.textMuted
@@ -171,7 +171,7 @@ final class OverviewV2ViewController: BaseViewControler {
             top.forEach { contentStack.addArrangedSubview(topRow($0)) }
         }
         if !showsRevenue && !showsOperations {
-            let label = V2.label("overview.v2.noAccess".localized(), size: 15, color: DS.Color.textMuted, lines: 0)
+            let label = V2.label("overview.v2.noAccess".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
             label.textAlignment = .center
             contentStack.addArrangedSubview(padded(label, top: 40))
         }
@@ -206,12 +206,12 @@ final class OverviewV2ViewController: BaseViewControler {
     private func revenueSection() -> UIView {
         let range = self.range
         let caption = V2.label("\("overview.v2.netRevenue".localized()) · \(OverviewLogic.longRange(range))",
-                               size: 13, color: DS.Color.textMuted, lines: 0)
+                               size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
         let amount = V2.label(size: 30, weight: .bold)
-        let change = V2.label(size: 13, color: DS.Color.textMuted, lines: 0)
+        let change = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
         let stack = UIStackView(arrangedSubviews: [caption, amount, change])
         stack.axis = .vertical
-        stack.spacing = 2
+        stack.spacing = DS.Gap.lineTight
 
         if let report {
             amount.text = MoneyFormatter.format(report.netRevenue)
@@ -245,8 +245,8 @@ final class OverviewV2ViewController: BaseViewControler {
     }
 
     private func statRow(_ label: String, value: String, color: UIColor, opens filter: OverviewRankingOrdersFilter?) -> UIView {
-        let title = V2.label(label, size: 15)
-        let number = V2.label(value, size: 16, weight: .bold, color: color)
+        let title = V2.label(label, size: DS.TextSize.body)
+        let number = V2.label(value, size: DS.TextSize.name, weight: .bold, color: color)
         number.textAlignment = .right
         let row = UIStackView(arrangedSubviews: [title, number])
         row.alignment = .center
@@ -289,12 +289,12 @@ final class OverviewV2ViewController: BaseViewControler {
             thumb.contentMode = .center
             thumb.image = UIImage(systemName: "tshirt")
         }
-        let name = V2.label(product.name, size: 15, weight: .medium)
-        let times = V2.label(String(format: "overview.v2.rentals".localized(), product.rentalCount), size: 13, color: DS.Color.textMuted)
+        let name = V2.label(product.name, size: DS.TextSize.body, weight: .medium)
+        let times = V2.label(String(format: "overview.v2.rentals".localized(), product.rentalCount), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, times])
         texts.axis = .vertical
         texts.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let revenue = V2.label(MoneyFormatter.format(product.totalRevenue), size: 15, weight: .bold)
+        let revenue = V2.label(MoneyFormatter.format(product.totalRevenue), size: DS.TextSize.name, weight: .bold)
         revenue.textAlignment = .right
         revenue.setContentHuggingPriority(.required, for: .horizontal)
         revenue.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -424,7 +424,7 @@ final class OverviewBarsView: UIView {
             fill.layer.cornerRadius = bars.count <= 14 ? 5 : 2
             fill.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
             let showsLabel = isLast || (index % labelEvery == 0 && bars.count - 1 - index >= (labelEvery + 1) / 2)
-            let label = V2.label(showsLabel ? bar.label : "", size: 11,
+            let label = V2.label(showsLabel ? bar.label : "", size: DS.TextSize.pill,
                                  weight: isLast ? .bold : .regular, color: isLast ? DS.Color.text : DS.Color.textMuted)
             label.textAlignment = .center
             column.addSubview(fill)
@@ -432,7 +432,7 @@ final class OverviewBarsView: UIView {
             // Centred under its bar and free to run over the unlabelled neighbours ("01/09" under a thin bar)
             label.snp.makeConstraints { make in
                 make.centerX.bottom.equalToSuperview()
-                make.height.equalTo(14)
+                make.height.equalTo(16)
             }
             fill.snp.makeConstraints { make in
                 make.leading.trailing.equalToSuperview()
@@ -495,7 +495,7 @@ final class OverviewPeriodSheet: UIViewController {
         let custom = UIButton(type: .system)
         custom.setTitle("overview.v2.period.custom".localized(), for: .normal)
         custom.setImage(DS.symbol("calendar", DS.Icon.md), for: .normal)
-        custom.titleLabel?.font = Utils.boldFont(size: 15)
+        custom.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         custom.tintColor = DS.Color.primary
         custom.contentHorizontalAlignment = .leading
         custom.titleEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: -12)
@@ -534,8 +534,8 @@ final class OverviewPeriodSheet: UIViewController {
     private final class PeriodRow: UIControl {
         init(title: String, subtitle: String, checked: Bool) {
             super.init(frame: .zero)
-            let titleLabel = V2.label(title, size: 15, weight: checked ? .bold : .regular)
-            let subtitleLabel = V2.label(subtitle, size: 13, color: DS.Color.textMuted)
+            let titleLabel = V2.label(title, size: checked ? DS.TextSize.name : DS.TextSize.body, weight: checked ? .bold : .regular)
+            let subtitleLabel = V2.label(subtitle, size: DS.TextSize.secondary, color: DS.Color.textMuted)
             let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
             texts.axis = .vertical
             texts.isUserInteractionEnabled = false

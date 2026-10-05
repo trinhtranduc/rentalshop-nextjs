@@ -82,6 +82,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -175,7 +176,7 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(if (saleMode) R.string.orders_v2_title_sale else R.string.orders_v2_title_rent),
-                        fontSize = 24.sp,
+                        fontSize = DS.TextSize.Title,
                         fontWeight = FontWeight.Bold,
                         color = DS.Colors.Text,
                         modifier = Modifier.weight(1f),
@@ -210,7 +211,7 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                     ) {
                         Text(
                             stringResource(R.string.orders_v2_search_cancel),
-                            fontSize = 15.sp,
+                            fontSize = DS.TextSize.Body,
                             fontWeight = FontWeight.Medium,
                             color = DS.Colors.Primary,
                         )
@@ -234,7 +235,7 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
         if (searchMode && state.isSearching && state.total != null) {
             Text(
                 (state.total ?: 0).let { pluralStringResource(R.plurals.orders_v2_search_summary, it, it, state.query.trim()) },
-                fontSize = 13.sp,
+                fontSize = DS.TextSize.Secondary,
                 color = DS.Colors.TextMuted,
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
             )
@@ -349,7 +350,7 @@ private fun OutlinedPill(text: String, onClick: () -> Unit) {
         modifier = Modifier.height(40.dp),
     ) {
         Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-            Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+            Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
         }
     }
 }
@@ -380,13 +381,13 @@ private fun SearchBox(
         Spacer(Modifier.size(8.dp))
         Box(Modifier.weight(1f)) {
             if (query.isEmpty()) {
-                Text(placeholder, color = DS.Colors.TextMuted, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(placeholder, color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
                 singleLine = true,
-                textStyle = TextStyle(fontSize = if (active) 16.sp else 15.sp, color = DS.Colors.Text),
+                textStyle = TextStyle(fontSize = if (active) DS.TextSize.Input else DS.TextSize.Body, color = DS.Colors.Text),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = {}),
                 modifier = Modifier
@@ -448,7 +449,7 @@ private fun SegmentPill(text: String, selected: Boolean, badge: Int?, onClick: (
     ) {
         Text(
             text,
-            fontSize = 14.sp,
+            fontSize = DS.TextSize.Body,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
             maxLines = 1,
@@ -462,7 +463,7 @@ private fun SegmentPill(text: String, selected: Boolean, badge: Int?, onClick: (
                     .background(BoardColors.Badge, RoundedCornerShape(999.dp))
                     .padding(horizontal = 6.dp),
                 contentAlignment = Alignment.Center,
-            ) { Text("$badge", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+            ) { Text("$badge", fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = Color.White) }
         }
     }
 }
@@ -480,7 +481,7 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
                 text = stringResource(chipLabel(status)),
                 selected = state.filter.status == status,
                 height = 36,
-                fontSize = 13,
+                fontSize = DS.TextSize.Secondary,
                 onClick = { onStatus(status) },
             )
         }
@@ -493,13 +494,13 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
             Modifier.defaultMinSize(minHeight = 36.dp).clickable(onClick = onSort),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(sortLabel(state.filter.sort)), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+            Text(stringResource(sortLabel(state.filter.sort)), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
             Spacer(Modifier.size(4.dp))
             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
         }
         Spacer(Modifier.weight(1f))
         state.total?.let {
-            Text(pluralStringResource(R.plurals.orders_v2_count, it, it), fontSize = 13.sp, color = DS.Colors.TextMuted)
+            Text(pluralStringResource(R.plurals.orders_v2_count, it, it), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
     }
     HorizontalDivider(color = DS.Colors.Divider)
@@ -521,7 +522,7 @@ private fun sortLabel(sort: OrdersSort): Int = when (sort) {
 }
 
 @Composable
-private fun Chip(text: String, selected: Boolean, height: Int, fontSize: Int, onClick: () -> Unit, icon: ImageVector? = null) {
+private fun Chip(text: String, selected: Boolean, height: Int, fontSize: TextUnit, onClick: () -> Unit, icon: ImageVector? = null) {
     val shape = RoundedCornerShape(999.dp)
     Row(
         Modifier
@@ -540,7 +541,7 @@ private fun Chip(text: String, selected: Boolean, height: Int, fontSize: Int, on
         }
         Text(
             text,
-            fontSize = fontSize.sp,
+            fontSize = fontSize,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) Color.White else DS.Colors.Text,
             maxLines = 1,
@@ -586,14 +587,14 @@ private fun SectionBand(section: OrdersSection) {
         ) {
             Text(
                 title.uppercase(),
-                fontSize = 13.sp,
+                fontSize = DS.TextSize.Secondary,
                 fontWeight = FontWeight.Bold,
                 color = if (late) DS.Status.Late.text else BoardColors.Items,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(summary, fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1)
+            Text(summary, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
@@ -699,27 +700,28 @@ private fun BoardRow(
 ) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowVertical),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Tag(tag.first, tag.second, bold = true)
                     Spacer(Modifier.size(6.dp))
                     Text(
                         name?.takeIf { it.isNotBlank() } ?: "N/A",
-                        fontSize = 15.sp,
+                        fontSize = DS.TextSize.Name,
                         fontWeight = FontWeight.Bold,
                         color = DS.Colors.Text,
-                        maxLines = 1,
+                        // #424: a long name wraps to a second line (tag stays centred) instead of being cut
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (items.isNotBlank()) {
-                    Text(items, fontSize = 13.sp, color = BoardColors.Items, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(items, fontSize = DS.TextSize.Body, color = BoardColors.Items, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Text(line, fontSize = 12.sp, color = DS.Colors.TextMuted)
+                Text(line, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 if (pills.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
                         pills.forEach { (text, colors) -> Tag(text, colors, bold = false) }
@@ -729,14 +731,14 @@ private fun BoardRow(
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     total,
-                    fontSize = 15.sp,
+                    fontSize = DS.TextSize.Name,
                     fontWeight = FontWeight.Bold,
                     color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
                     textDecoration = if (struck) TextDecoration.LineThrough else null,
                     maxLines = 1,
                 )
                 if (pay != null) {
-                    Text(pay.first, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = pay.second, maxLines = 1)
+                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = pay.second, maxLines = 1)
                 }
             }
             if (phone != null) {
@@ -769,7 +771,7 @@ private fun Tag(text: String, colors: DS.Pill, bold: Boolean) {
             .background(colors.fill, RoundedCornerShape(DS.Radius.chip))
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
-        Text(text, color = colors.text, fontSize = 11.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1)
+        Text(text, color = colors.text, fontSize = DS.TextSize.Pill, fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -780,7 +782,7 @@ private fun StateMessage(message: String, onRetry: (() -> Unit)? = null) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(message, fontSize = 15.sp, color = DS.Colors.TextMuted)
+        Text(message, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
         if (onRetry != null) {
             TextButton(onClick = onRetry, modifier = Modifier.height(DS.TouchTarget)) {
                 Text(stringResource(R.string.retry), fontWeight = FontWeight.Bold, color = DS.Colors.Primary)
@@ -830,7 +832,7 @@ private fun FilterSheet(
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(onClick = { filter = RentOrdersFilter(status = filter.status) }) {
-                    Text(stringResource(R.string.reset), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                    Text(stringResource(R.string.reset), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -846,7 +848,7 @@ private fun FilterSheet(
                         if (line.size < 2) Spacer(Modifier.weight(1f))
                     }
                 }
-                Text(stringResource(R.string.orders_v2_sort_nearest_hint), fontSize = 12.sp, color = DS.Colors.TextMuted)
+                Text(stringResource(R.string.orders_v2_sort_nearest_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SheetLabel(stringResource(R.string.orders_v2_filter_range))
@@ -874,7 +876,7 @@ private fun FilterSheet(
                                         DateBasis.RETURN_PLAN -> R.string.orders_v2_basis_return
                                     },
                                 ),
-                                fontSize = 13.sp,
+                                fontSize = DS.TextSize.Secondary,
                                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                                 color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
                             )
@@ -888,7 +890,7 @@ private fun FilterSheet(
                         DateRangeChoice.Next7Days to R.string.orders_v2_range_next7,
                         DateRangeChoice.ThisMonth to R.string.orders_v2_range_month,
                     ).forEach { (range, label) ->
-                        Chip(stringResource(label), filter.range == range, height = 40, fontSize = 14, onClick = { filter = filter.copy(range = range) })
+                        Chip(stringResource(label), filter.range == range, height = 40, fontSize = DS.TextSize.Body, onClick = { filter = filter.copy(range = range) })
                     }
                     val custom = filter.range as? DateRangeChoice.Custom
                     Chip(
@@ -896,7 +898,7 @@ private fun FilterSheet(
                             ?: stringResource(R.string.select_date),
                         selected = custom != null,
                         height = 40,
-                        fontSize = 14,
+                        fontSize = DS.TextSize.Body,
                         icon = Icons.Outlined.CalendarMonth,
                         onClick = { pickDates = true },
                     )
@@ -911,7 +913,7 @@ private fun FilterSheet(
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         total?.let { pluralStringResource(R.plurals.orders_v2_filter_show_count, it, it) } ?: stringResource(R.string.orders_v2_filter_show),
-                        fontSize = 16.sp,
+                        fontSize = DS.TextSize.Input,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                     )
@@ -939,7 +941,7 @@ private fun FilterSheet(
 
 @Composable
 private fun SheetLabel(text: String) {
-    Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = DS.Colors.TextMuted)
+    Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = DS.Colors.TextMuted)
 }
 
 @Composable
@@ -957,7 +959,7 @@ private fun SortOption(text: String, selected: Boolean, modifier: Modifier, onCl
     ) {
         Text(
             text,
-            fontSize = 14.sp,
+            fontSize = DS.TextSize.Body,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) BoardColors.SelectedText else DS.Colors.Text,
             maxLines = 1,

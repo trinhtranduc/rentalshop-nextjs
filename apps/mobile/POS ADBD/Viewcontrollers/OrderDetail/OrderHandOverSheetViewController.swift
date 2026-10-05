@@ -54,7 +54,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         titleLabel.textColor = DS.Color.text
 
         let subtitle = UILabel()
-        subtitle.font = Utils.regularFont(size: 14)
+        subtitle.font = Utils.regularFont(size: DS.TextSize.body)
         subtitle.textColor = DS.Color.textMuted
         subtitle.numberOfLines = 2
         subtitle.text = subtitleText()
@@ -112,14 +112,14 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
         let cancelButton = UIButton(type: .system)
         cancelButton.setTitle("Cancel".localized(), for: .normal)
-        cancelButton.titleLabel?.font = Utils.boldFont(size: 15)
+        cancelButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         cancelButton.tintColor = DS.Color.text
         cancelButton.layer.cornerRadius = 14
         cancelButton.layer.borderWidth = 1
         cancelButton.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
 
-        confirmButton.titleLabel?.font = Utils.boldFont(size: 16)
+        confirmButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         confirmButton.titleLabel?.adjustsFontSizeToFitWidth = true
         confirmButton.titleLabel?.minimumScaleFactor = 0.8
         confirmButton.tintColor = .white
@@ -238,12 +238,12 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         image.kf.setImage(with: item.productImages?.first.flatMap { URL(string: $0) }, placeholder: UIImage(systemName: "tshirt"))
         image.snp.makeConstraints { make in make.size.equalTo(40) }
         let name = UILabel()
-        name.font = Utils.regularFont(size: 15)
+        name.font = Utils.regularFont(size: DS.TextSize.body)
         name.textColor = DS.Color.text
         name.numberOfLines = 2
         name.text = item.productName
         let qty = UILabel()
-        qty.font = Utils.regularFont(size: 14)
+        qty.font = Utils.regularFont(size: DS.TextSize.body)
         qty.textColor = DS.Color.textMuted
         qty.text = "× \(item.quantity)"
         qty.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -257,11 +257,11 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     private func feeField(_ field: UITextField, title: String, value: Double) -> UIView {
         let label = UILabel()
-        label.font = Utils.boldFont(size: 13)
+        label.font = Utils.boldFont(size: DS.TextSize.secondary)
         label.textColor = DS.Color.textMuted
         label.text = title
         field.keyboardType = .numberPad
-        field.font = Utils.regularFont(size: 16)
+        field.font = Utils.regularFont(size: DS.TextSize.input)
         field.text = value > 0 ? MoneyFormatter.format(value) : ""
         field.placeholder = "0"
         field.borderStyle = .none
@@ -281,12 +281,12 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     private func row(_ title: String, _ value: String) -> UIView {
         let left = UILabel()
-        left.font = Utils.regularFont(size: 14)
+        left.font = Utils.regularFont(size: DS.TextSize.body)
         left.textColor = DS.Color.textMuted
         left.text = title
         left.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let right = UILabel()
-        right.font = Utils.regularFont(size: 14)
+        right.font = Utils.regularFont(size: DS.TextSize.body)
         right.textColor = DS.Color.text
         right.text = value
         right.textAlignment = .right
@@ -300,7 +300,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     private func totalRow(_ title: String, _ value: String, color: UIColor) -> UIView {
         let left = UILabel()
-        left.font = Utils.boldFont(size: 15)
+        left.font = Utils.boldFont(size: DS.TextSize.name)
         left.textColor = DS.Color.text
         left.text = title
         left.setContentHuggingPriority(.defaultLow, for: .horizontal)

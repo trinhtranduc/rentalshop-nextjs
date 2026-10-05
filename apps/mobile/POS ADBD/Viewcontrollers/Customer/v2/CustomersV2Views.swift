@@ -27,7 +27,7 @@ enum CustomersV2UI {
     /// Orange tier pill ("Vàng"); hidden when there is no tier
     static func tierPill() -> OrderStatusPillLabel {
         let pill = OrderStatusPillLabel()
-        pill.font = Utils.boldFont(size: 12)
+        pill.font = Utils.boldFont(size: DS.TextSize.pill)
         pill.contentInsets = UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)
         pill.textColor = DS.Status.waiting.text
         pill.backgroundColor = DS.Status.waiting.fill
@@ -50,7 +50,7 @@ enum CustomersV2UI {
         glass.tintColor = DS.Color.textMuted
         glass.contentMode = .center
         field.placeholder = placeholder
-        field.font = Utils.regularFont(size: 16)
+        field.font = Utils.regularFont(size: DS.TextSize.input)
         field.clearButtonMode = .whileEditing
         field.returnKeyType = .search
         field.autocorrectionType = .no
@@ -84,7 +84,7 @@ enum CustomersV2UI {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
         button.setTitleColor(color, for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: 15)
+        button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
         return button
@@ -94,10 +94,10 @@ enum CustomersV2UI {
 /// Customer row: initials, name + tier, "masked phone · N đơn", optional chevron
 final class CustomerV2Cell: UITableViewCell {
     static let reuseId = "CustomerV2Cell"
-    private let avatar = CustomersV2UI.avatar(size: 44, fontSize: 15)
-    private let nameLabel = V2.label(size: 16, weight: .bold)
+    private let avatar = CustomersV2UI.avatar(size: 44, fontSize: DS.TextSize.body)
+    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     private let tierPill = CustomersV2UI.tierPill()
-    private let subtitleLabel = V2.label(size: 13, color: DS.Color.textMuted)
+    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", 16))
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -111,7 +111,7 @@ final class CustomerV2Cell: UITableViewCell {
         nameRow.alignment = .center
         let texts = UIStackView(arrangedSubviews: [nameRow, subtitleLabel])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = DS.Gap.lineTight
         texts.alignment = .leading
         let row = UIStackView(arrangedSubviews: [avatar, texts, chevron])
         row.spacing = 12
@@ -163,7 +163,7 @@ final class NewCustomerRowCell: UITableViewCell {
         plus.tintColor = DS.Color.primary
         circle.addSubview(plus)
         plus.snp.makeConstraints { make in make.center.equalToSuperview() }
-        let title = V2.label("customers.v2.new".localized(), size: 16, weight: .bold, color: DS.Color.primary)
+        let title = V2.label("customers.v2.new".localized(), size: DS.TextSize.input, weight: .bold, color: DS.Color.primary)
         let band = UIView()
         band.backgroundColor = DS.Color.background
         [circle, title, band].forEach(contentView.addSubview)
@@ -200,7 +200,7 @@ final class NewCustomerRowCell: UITableViewCell {
 /// Upper-case muted label on white ("GẦN ĐÂY")
 final class CustomersV2SectionLabel: UITableViewHeaderFooterView {
     static let reuseId = "CustomersV2SectionLabel"
-    let titleLabel = V2.label(size: 13, weight: .bold, color: DS.Color.textMuted)
+    let titleLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
 
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)

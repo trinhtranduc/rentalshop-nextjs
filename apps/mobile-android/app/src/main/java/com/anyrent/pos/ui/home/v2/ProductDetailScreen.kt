@@ -180,7 +180,7 @@ fun ProductDetailScreen(
                     if (urls.size > 1) {
                         Text(
                             "${pager.currentPage + 1}/${urls.size}",
-                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                            fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color.White,
                             modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
                                 .clip(RoundedCornerShape(999.dp)).background(DS.Colors.Text.copy(alpha = 0.6f))
                                 .padding(horizontal = 8.dp, vertical = 2.dp),
@@ -195,13 +195,13 @@ fun ProductDetailScreen(
                     // #390: delete needs products.manage (never OUTLET_STAFF); the API also refuses it
                     if (ProductAccess.canDelete(PermissionManager.role)) {
                         RoundButton(onClick = { confirmDelete = true }, label = stringResource(R.string.delete_product)) {
-                            Text(stringResource(R.string.delete), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger, modifier = Modifier.padding(horizontal = 12.dp))
+                            Text(stringResource(R.string.delete), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = V2Colors.Danger, modifier = Modifier.padding(horizontal = 12.dp))
                         }
                         Spacer(Modifier.width(8.dp))
                     }
                     if (ProductAccess.canEdit(PermissionManager.role)) {
                         RoundButton(onClick = { showEdit = true }, label = stringResource(R.string.edit_product)) {
-                            Text(stringResource(R.string.v2_detail_edit), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 12.dp))
+                            Text(stringResource(R.string.v2_detail_edit), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 12.dp))
                         }
                     }
                 }
@@ -214,7 +214,7 @@ fun ProductDetailScreen(
                     current.categoryName, current.barcodeText,
                     current.deposit.takeIf { it > 0 }?.let { stringResource(R.string.v2_detail_deposit, formatMoneyVnd(it)) },
                 ).filter { it.isNotBlank() }
-                if (meta.isNotEmpty()) Text(meta.joinToString(" · "), fontSize = 13.sp, color = DS.Colors.TextMuted)
+                if (meta.isNotEmpty()) Text(meta.joinToString(" · "), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 val tiles = listOfNotNull(
                     ProductPricing.perRental(current)?.let { stringResource(R.string.v2_price_per_rental) to it },
                     ProductPricing.perDay(current)?.let { stringResource(R.string.v2_price_per_day) to it },
@@ -229,21 +229,21 @@ fun ProductDetailScreen(
                     val counts = ProductStock.counts(current, SessionStore.outletId)
                     Text(
                         stringResource(R.string.v2_stock_summary, counts.rented, counts.free, counts.total),
-                        fontSize = 14.sp, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 4.dp),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 4.dp),
                     )
                 } else {
                     FreeStrip(strip, Modifier.padding(top = 4.dp))
-                    Text(stringResource(R.string.v2_detail_strip_caption, stripStock ?: 0), fontSize = 12.sp, color = DS.Colors.TextMuted)
+                    Text(stringResource(R.string.v2_detail_strip_caption, stripStock ?: 0), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
             }
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 
             // Orders
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.v2_detail_orders), fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.v2_detail_orders), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (ordersTotal > 0) {
                     Text(
-                        stringResource(R.string.v2_detail_orders_count, ordersTotal), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+                        stringResource(R.string.v2_detail_orders_count, ordersTotal), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
                         modifier = Modifier.heightIn(min = 40.dp).clickable { onOpenAllOrders(productId) }.wrapContentHeight(Alignment.CenterVertically),
                     )
                 }
@@ -261,7 +261,7 @@ fun ProductDetailScreen(
                 }
             }
             if (orders.isEmpty()) {
-                Text(stringResource(R.string.v2_detail_no_orders), fontSize = 14.sp, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                Text(stringResource(R.string.v2_detail_no_orders), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
             orders.forEach { order -> OrderRow(order, productId, chip) { onOpenOrder(order.id) } }
             Spacer(Modifier.height(24.dp))
@@ -280,7 +280,7 @@ fun ProductDetailScreen(
                     .semantics { role = Role.Button },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(stringResource(R.string.v2_detail_free_calendar), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, color = DS.Colors.Text)
+                Text(stringResource(R.string.v2_detail_free_calendar), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1, color = DS.Colors.Text)
             }
             AppPrimaryButton(
                 stringResource(R.string.v2_detail_add_to_cart),
@@ -361,8 +361,8 @@ private fun PriceTile(title: String, value: Double, modifier: Modifier = Modifie
             .border(1.dp, V2Colors.Line, RoundedCornerShape(12.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Text(title, fontSize = 12.sp, color = DS.Colors.TextMuted)
-        Text(formatMoneyVnd(value), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        Text(formatMoneyVnd(value), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -383,8 +383,8 @@ private fun FreeStrip(days: List<FreeStripDay>, modifier: Modifier = Modifier) {
                     .padding(vertical = 5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(day.day, fontSize = 11.sp, color = text)
-                Text(day.free.toString(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = text)
+                Text(day.day, fontSize = DS.TextSize.Pill, color = text)
+                Text(day.free.toString(), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = text)
             }
         }
     }
@@ -403,7 +403,7 @@ private fun OrdersChip(title: String, selected: Boolean, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            title, fontSize = 13.sp, maxLines = 1,
+            title, fontSize = DS.TextSize.Secondary, maxLines = 1,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) Color.White else DS.Colors.Text,
         )
@@ -429,12 +429,12 @@ private fun OrderRow(order: OrderSummary, productId: Int, chip: ProductOrdersChi
             }
             // Board: the bar takes the colour of the row's state
             Box(Modifier.width(4.dp).height(40.dp).clip(RoundedCornerShape(4.dp)).background(color))
-            Column(Modifier.weight(1f)) {
-                Text(order.customerName.orEmpty(), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(ProductDetailLogic.meta(order, productId), fontSize = 13.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
+                Text(order.customerName.orEmpty(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(ProductDetailLogic.meta(order, productId), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            if (state == ProductOrderRowState.Status) StatusBadge(order.status)
-            else Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+            if (state == ProductOrderRowState.Status) StatusBadge(order.status, fontSize = DS.TextSize.Pill)
+            else Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }

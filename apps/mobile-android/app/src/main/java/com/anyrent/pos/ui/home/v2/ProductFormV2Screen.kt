@@ -261,7 +261,7 @@ fun ProductFormV2Screen(
                         )
                         if (index == 0) {
                             Text(
-                                stringResource(R.string.v2_form_cover), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                stringResource(R.string.v2_form_cover), fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = Color.White,
                                 modifier = Modifier.align(Alignment.BottomStart).padding(4.dp)
                                     .clip(RoundedCornerShape(4.dp)).background(DS.Colors.Text.copy(alpha = 0.7f)).padding(horizontal = 4.dp, vertical = 1.dp),
                             )
@@ -281,14 +281,14 @@ fun ProductFormV2Screen(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Lg))
-                            Text(stringResource(R.string.v2_form_add_photo), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                            Text(stringResource(R.string.v2_form_add_photo), fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                         }
                     }
                 }
             }
             Text(
                 stringResource(R.string.v2_form_photos_hint, ProductFormValidator.MAX_PHOTOS),
-                fontSize = 12.sp, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp),
+                fontSize = DS.TextSize.Pill, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp),
             )
 
             FormField(stringResource(R.string.v2_form_name), required = true, value = name, onChange = { name = it },
@@ -297,8 +297,8 @@ fun ProductFormV2Screen(
                 Modifier.fillMaxWidth().clickable { showCategories = true }.heightIn(min = 52.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.v2_form_category), fontSize = 15.sp, modifier = Modifier.weight(1f))
-                Text(categoryName ?: stringResource(R.string.v2_form_choose), fontSize = 15.sp, color = DS.Colors.TextMuted)
+                Text(stringResource(R.string.v2_form_category), fontSize = DS.TextSize.Body, modifier = Modifier.weight(1f))
+                Text(categoryName ?: stringResource(R.string.v2_form_choose), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
                 Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
             }
             HorizontalDivider(color = DS.Colors.Divider)
@@ -313,7 +313,7 @@ fun ProductFormV2Screen(
                     }
                 },
             )
-            barcodeWarning?.let { Text(it, fontSize = 13.sp, color = V2Colors.Danger, modifier = Modifier.padding(horizontal = 16.dp)) }
+            barcodeWarning?.let { Text(it, fontSize = DS.TextSize.Secondary, color = V2Colors.Danger, modifier = Modifier.padding(horizontal = 16.dp)) }
 
             if (showsPrices) {
                 SectionBand(stringResource(R.string.v2_form_prices))
@@ -324,7 +324,7 @@ fun ProductFormV2Screen(
                         placeholder = "0", numeric = true, modifier = Modifier.weight(1f), start = 6.dp)
                 }
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.v2_form_default_pricing), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.v2_form_default_pricing), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
                     V2Segmented(
                         titles = listOf(stringResource(R.string.v2_price_per_rental), stringResource(R.string.v2_price_per_day)),
                         selected = if (defaultMode == PricingMode.PER_DAY) 1 else 0,
@@ -344,8 +344,8 @@ fun ProductFormV2Screen(
             SectionBand(stringResource(R.string.v2_form_stock))
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.v2_form_quantity), fontSize = 15.sp)
-                    counts?.let { Text(stringResource(R.string.v2_form_stock_note, it.rented, it.free), fontSize = 13.sp, color = DS.Colors.TextMuted) }
+                    Text(stringResource(R.string.v2_form_quantity), fontSize = DS.TextSize.Body)
+                    counts?.let { Text(stringResource(R.string.v2_form_stock_note, it.rented, it.free), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
                 }
                 V2Stepper(value = quantity, onChange = { quantity = it }, minimum = 0)
             }
@@ -422,14 +422,14 @@ private fun FormField(
                 append(title)
                 if (required) withStyle(SpanStyle(color = V2Colors.Danger)) { append(" *") }
             },
-            fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold,
         )
         Row(
             Modifier.fillMaxWidth().height(48.dp).border(1.dp, V2Colors.Border, RoundedCornerShape(12.dp)).padding(start = 12.dp, end = if (trailing == null) 12.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.weight(1f)) {
-                if (value.isEmpty()) Text(placeholder, fontSize = 16.sp, color = Color(0xFF94A3B8))
+                if (value.isEmpty()) Text(placeholder, fontSize = DS.TextSize.Input, color = Color(0xFF94A3B8))
                 val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = title }
                     .onFocusChanged { focus ->
                         if (focus.isFocused) {
@@ -445,7 +445,7 @@ private fun FormField(
                         value = TextFieldValue(value, selection = TextRange(value.length)),
                         onValueChange = { onChange(it.text) },
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 16.sp, color = DS.Colors.Text),
+                        textStyle = TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = fieldModifier,
                     )
@@ -454,14 +454,14 @@ private fun FormField(
                         value = value,
                         onValueChange = onChange,
                         singleLine = true,
-                        textStyle = TextStyle(fontSize = 16.sp, color = DS.Colors.Text),
+                        textStyle = TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone?.invoke() }),
                         modifier = fieldModifier,
                     )
                 }
             }
-            unit?.let { Text(it, fontSize = 14.sp, color = DS.Colors.TextMuted) }
+            unit?.let { Text(it, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted) }
             trailing?.invoke()
         }
     }

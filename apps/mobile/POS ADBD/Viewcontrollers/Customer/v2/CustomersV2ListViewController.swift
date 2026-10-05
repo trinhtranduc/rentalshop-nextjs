@@ -19,7 +19,7 @@ final class CustomersV2ListViewController: BaseViewControler {
     private let searchField = UITextField()
     private let searchDebouncer = DebounceManager(delay: 0.3)
     private let titleLabel = V2.label(size: 20, weight: .bold)
-    private let emptyLabel = V2.label(size: 15, color: DS.Color.textMuted, lines: 0)
+    private let emptyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
 
     /// `.pick`: the chosen customer (the caller sets the cart and closes the sheet)
@@ -136,7 +136,7 @@ final class CustomersV2ListViewController: BaseViewControler {
             ])
             if !viewModel.customers.isEmpty || viewModel.total > 0 {
                 count.append(NSAttributedString(string: " · \(viewModel.total)", attributes: [
-                    NSAttributedString.Key.font: Utils.mediumFont(size: 15),
+                    NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.body),
                     NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
                 ]))
             }

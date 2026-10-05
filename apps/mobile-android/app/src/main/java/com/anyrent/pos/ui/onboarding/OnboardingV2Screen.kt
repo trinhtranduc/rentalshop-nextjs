@@ -125,7 +125,7 @@ fun OnboardingV2Screen(onFinished: () -> Unit) {
                         onClick = onFinished,
                         modifier = Modifier.heightIn(min = DS.TouchTarget).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)),
                     ) {
-                        Text(stringResource(R.string.onboarding_v2_skip), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
+                        Text(stringResource(R.string.onboarding_v2_skip), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
                     }
                 }
             }
@@ -138,7 +138,7 @@ fun OnboardingV2Screen(onFinished: () -> Unit) {
             ) {
                 Text(
                     stringResource(R.string.onboarding_v2_step, index + 1, steps.size).uppercase(),
-                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Primary, letterSpacing = 0.5.sp,
+                    fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.Primary, letterSpacing = 0.5.sp,
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
                 Text(
@@ -167,7 +167,7 @@ fun OnboardingV2Screen(onFinished: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary, contentColor = Color.White),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 28.dp),
                 ) {
-                    Text(stringResource(if (isLast) R.string.onboarding_v2_start else R.string.onboarding_v2_next), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(if (isLast) R.string.onboarding_v2_start else R.string.onboarding_v2_next), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
                 }
             }
         }

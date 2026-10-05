@@ -93,11 +93,11 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         let legend = UILabel()
         let attributed = NSMutableAttributedString(
             string: "authv2.rentWhat".localized() + " ",
-            attributes: [NSAttributedString.Key.font: Utils.boldFont(size: 14), NSAttributedString.Key.foregroundColor: AuthV2Style.text]
+            attributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body), NSAttributedString.Key.foregroundColor: AuthV2Style.text]
         )
         attributed.append(NSAttributedString(
             string: "authv2.rentWhat.hint".localized(),
-            attributes: [NSAttributedString.Key.font: Utils.regularFont(size: 14), NSAttributedString.Key.foregroundColor: AuthV2Style.textMuted]
+            attributes: [NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body), NSAttributedString.Key.foregroundColor: AuthV2Style.textMuted]
         ))
         legend.attributedText = attributed
         legend.numberOfLines = 0
@@ -156,16 +156,16 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         let privacy = "Privacy Policy".localized()
         let full = String(format: "authv2.terms".localized(), terms, privacy)
         let text = NSMutableAttributedString(string: full, attributes: [
-            NSAttributedString.Key.font: Utils.regularFont(size: 14),
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: AuthV2Style.termsText
         ])
         if let range = full.range(of: terms) {
             text.addAttributes([NSAttributedString.Key.link: URL(string: AppLegalLinks.termsURL)!,
-                                NSAttributedString.Key.font: Utils.boldFont(size: 14)], range: NSRange(range, in: full))
+                                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body)], range: NSRange(range, in: full))
         }
         if let range = full.range(of: privacy) {
             text.addAttributes([NSAttributedString.Key.link: URL(string: AppLegalLinks.privacyURL)!,
-                                NSAttributedString.Key.font: Utils.boldFont(size: 14)], range: NSRange(range, in: full))
+                                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body)], range: NSRange(range, in: full))
         }
         let textView = termsText
         textView.attributedText = text
@@ -177,7 +177,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         textView.tintColor = AuthV2Style.primary
         textView.delegate = self
 
-        termsError.font = Utils.mediumFont(size: 13)
+        termsError.font = Utils.mediumFont(size: DS.TextSize.secondary)
         termsError.textColor = AuthV2Style.error
         termsError.numberOfLines = 0
         termsError.isHidden = true

@@ -33,7 +33,7 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
 
         let note = UILabel()
         note.text = "authv2.forgot.staffNote".localized()
-        note.font = Utils.regularFont(size: 14)
+        note.font = Utils.regularFont(size: DS.TextSize.body)
         note.textColor = AuthV2Style.textMuted
         note.textAlignment = .center
         note.numberOfLines = 0

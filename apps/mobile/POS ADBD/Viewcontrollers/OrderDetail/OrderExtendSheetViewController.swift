@@ -17,10 +17,10 @@ final class OrderExtendSheetViewController: UIViewController {
     private let detail: OrderDetail
     private let currentReturn: Date
     private let picker = UIDatePicker()
-    private let extraLabel = V2.label(size: 14, weight: .bold)
+    private let extraLabel = V2.label(size: DS.TextSize.body, weight: .bold)
     private let extraField = UITextField()
-    private let newTotalLabel = V2.label(size: 14, weight: .bold)
-    private let errorLabel = V2.label(size: 14, color: DS.Status.late.text, lines: 0)
+    private let newTotalLabel = V2.label(size: DS.TextSize.body, weight: .bold)
+    private let errorLabel = V2.label(size: DS.TextSize.body, color: DS.Status.late.text, lines: 0)
     private let confirmButton = V2.primaryButton("")
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .white)
     private var busy = false
@@ -46,7 +46,7 @@ final class OrderExtendSheetViewController: UIViewController {
 
         let title = V2.label("order.extend.title".localized(), size: 20, weight: .bold)
         let current = V2.label(String(format: "order.extend.current".localized(), DayFormatter.short(currentReturn)),
-                               size: 14, color: DS.Color.textMuted, lines: 0)
+                               size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
 
         let first = RentalExtension.firstSelectableDay(after: currentReturn)
         picker.datePickerMode = .date
@@ -57,7 +57,7 @@ final class OrderExtendSheetViewController: UIViewController {
         picker.tintColor = DS.Color.primary
         picker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
 
-        let extraTitle = V2.label("order.extend.extraRent".localized(), size: 14, weight: .bold)
+        let extraTitle = V2.label("order.extend.extraRent".localized(), size: DS.TextSize.body, weight: .bold)
         extraField.placeholder = "0"
         extraField.font = Utils.regularFont(size: 16)
         extraField.textColor = DS.Color.text

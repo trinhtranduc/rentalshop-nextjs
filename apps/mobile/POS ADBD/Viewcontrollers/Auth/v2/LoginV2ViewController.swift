@@ -62,7 +62,7 @@ final class LoginV2ViewController: BaseViewControler {
     private func makeFooter() -> UIView {
         let label = UILabel()
         label.text = "authv2.noStore".localized()
-        label.font = Utils.regularFont(size: 15)
+        label.font = Utils.regularFont(size: DS.TextSize.body)
         label.textColor = AuthV2Style.textMuted
         let button = authV2LinkButton("authv2.createStore".localized())
         button.addTarget(self, action: #selector(registerTapped), for: .touchUpInside)

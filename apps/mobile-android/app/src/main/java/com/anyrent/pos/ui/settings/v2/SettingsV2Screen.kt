@@ -131,7 +131,7 @@ fun SettingsV2Screen(
     LazyColumn(Modifier.fillMaxSize().background(DS.Colors.Surface)) {
         item(key = "title") {
             Text(
-                stringResource(R.string.settings_v2_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
             )
         }
@@ -146,11 +146,11 @@ fun SettingsV2Screen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(Modifier.size(48.dp).clip(CircleShape).background(DS.Colors.Primary), contentAlignment = Alignment.Center) {
-                    Text(SettingsRows.initials(SessionStore.userName.orEmpty()), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text(SettingsRows.initials(SessionStore.userName.orEmpty()), color = Color.White, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
-                    if (subtitle.isNotBlank()) Text(subtitle, fontSize = 13.sp, color = DS.Colors.TextMuted)
+                    Text(name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                    if (subtitle.isNotBlank()) Text(subtitle, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
             }
         }
@@ -197,7 +197,7 @@ fun SettingsV2Screen(
         item(key = "logout") {
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
             Text(
-                stringResource(R.string.logout), color = V2Colors.Danger, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                stringResource(R.string.logout), color = V2Colors.Danger, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.fillMaxWidth().clickable { confirmLogout = true }.heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 14.dp),
             )
             Spacer(Modifier.height(24.dp))
@@ -322,10 +322,10 @@ private fun SettingRow(title: String, value: String?, chevron: Boolean, onClick:
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(title, fontSize = 15.sp, color = DS.Colors.Text)
+        Text(title, fontSize = DS.TextSize.Body, color = DS.Colors.Text)
         Spacer(Modifier.weight(1f))
         if (!value.isNullOrBlank()) {
-            Text(value, fontSize = 14.sp, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp))
+            Text(value, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp))
         }
         if (chevron) {
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))

@@ -21,11 +21,11 @@ final class CustomerDetailV2ViewController: BaseViewControler {
     private let avatar = CustomersV2UI.avatar(size: 56, fontSize: 18)
     private let nameLabel = V2.label(size: 20, weight: .bold, lines: 2)
     private let tierPill = CustomersV2UI.tierPill()
-    private let phoneLabel = V2.label(size: 14, color: DS.Color.textMuted)
+    private let phoneLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
     private let callButton = UIButton(type: .system)
     private let tiles = UIStackView()
     private let ordersStack = UIStackView()
-    private let ordersMessage = V2.label(size: 14, color: DS.Color.textMuted, lines: 0)
+    private let ordersMessage = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
 
     private var customerId: Int { customer.id ?? customer.customer_id }
@@ -84,7 +84,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         nameRow.alignment = .center
         let texts = UIStackView(arrangedSubviews: [nameRow, phoneLabel])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = DS.Gap.lineTight
         texts.alignment = .leading
         let who = UIStackView(arrangedSubviews: [avatar, texts, callButton])
         who.spacing = 12
@@ -110,7 +110,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         tiles.isLayoutMarginsRelativeArrangement = true
         tiles.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
 
-        let ordersTitle = V2.label("customers.v2.recentOrders".localized().uppercased(), size: 13, weight: .bold, color: DS.Color.textMuted)
+        let ordersTitle = V2.label("customers.v2.recentOrders".localized().uppercased(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
         let titleWrap = UIView()
         titleWrap.addSubview(ordersTitle)
         ordersTitle.snp.makeConstraints { make in
@@ -229,13 +229,13 @@ final class CustomerDetailV2ViewController: BaseViewControler {
             box.layer.borderWidth = 1
             box.layer.borderColor = UIColor(hexString: "EEF0F3").cgColor
             box.layer.cornerRadius = DS.Radius.card
-            let title = V2.label(tile.title, size: 12, color: DS.Color.textMuted)
-            let value = V2.label(tile.value, size: 17, weight: .bold)
+            let title = V2.label(tile.title, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            let value = V2.label(tile.value, size: DS.TextSize.name, weight: .bold)
             value.adjustsFontSizeToFitWidth = true
             value.minimumScaleFactor = 0.7
             let stack = UIStackView(arrangedSubviews: [title, value])
             stack.axis = .vertical
-            stack.spacing = 2
+            stack.spacing = DS.Gap.lineTight
             box.addSubview(stack)
             stack.snp.makeConstraints { make in make.edges.equalToSuperview().inset(10) }
             box.isAccessibilityElement = true
@@ -258,11 +258,11 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         let control = UIControl()
         control.tag = index
         control.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
-        let title = V2.label(CustomersV2Logic.orderTitle(row), size: 15, weight: .bold)
-        let dates = V2.label(CustomersV2Logic.orderDates(row), size: 13, color: DS.Color.textMuted)
+        let title = V2.label(CustomersV2Logic.orderTitle(row), size: DS.TextSize.name, weight: .bold)
+        let dates = V2.label(CustomersV2Logic.orderDates(row), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [title, dates])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = DS.Gap.lineTight
         texts.isUserInteractionEnabled = false
         let pill = OrderStatusPillLabel()
         pill.apply(status: row.status)
@@ -276,11 +276,11 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         }
         pill.textColor = colors.text
         pill.backgroundColor = colors.fill
-        pill.font = Utils.boldFont(size: 12)
+        pill.font = Utils.boldFont(size: DS.TextSize.pill)
         // Sentence case as on the board ("Đang thuê", not "ĐANG THUÊ")
         let lower = (pill.text ?? "").lowercased()
         pill.text = lower.prefix(1).uppercased() + lower.dropFirst()
-        let amount = V2.label(hidesMoney ? nil : MoneyFormatter.format(row.totalAmount), size: 14, weight: .bold)
+        let amount = V2.label(hidesMoney ? nil : MoneyFormatter.format(row.totalAmount), size: DS.TextSize.body, weight: .bold)
         let right = UIStackView(arrangedSubviews: [pill, amount])
         right.axis = .vertical
         right.alignment = .trailing

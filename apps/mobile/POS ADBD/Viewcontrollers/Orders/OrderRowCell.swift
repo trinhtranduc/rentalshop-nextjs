@@ -17,13 +17,13 @@ enum OrderRowContext {
     case search
 }
 
-/// Small coloured tag ("Giao", "Đã đặt", "Trễ 1 ngày"): 11pt, 2/6 padding, radius 6
+/// Small coloured tag ("Giao", "Đã đặt", "Trễ 1 ngày"): 12pt (DS.TextSize.pill), 2/6 padding, radius 6
 final class RowTagLabel: UILabel {
     private let insets = UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
 
     init(bold: Bool) {
         super.init(frame: .zero)
-        font = bold ? Utils.boldFont(size: 11) : Utils.mediumFont(size: 11)
+        font = bold ? Utils.boldFont(size: DS.TextSize.pill) : Utils.mediumFont(size: DS.TextSize.pill)
         layer.cornerRadius = DS.Radius.chip
         layer.masksToBounds = true
         setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -85,20 +85,21 @@ final class OrderRowCell: UITableViewCell {
     }
 
     private func buildLayout() {
-        nameLabel.font = Utils.boldFont(size: 15)
+        nameLabel.font = Utils.boldFont(size: DS.TextSize.name)
         nameLabel.textColor = DS.Color.text
+        // #424: a long name wraps to a second line (the tag stays centred beside it) instead of being cut
+        nameLabel.numberOfLines = 2
         nameLabel.lineBreakMode = .byTruncatingTail
-        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column;
-        // still below the tag and the money labels, so a long name truncates
+        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column
         nameLabel.setContentCompressionResistancePriority(.defaultHigh - 1, for: .horizontal)
         let firstLine = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
         firstLine.spacing = 6
         firstLine.alignment = .center
 
-        itemsLabel.font = Utils.regularFont(size: 13)
+        itemsLabel.font = Utils.regularFont(size: DS.TextSize.body)
         itemsLabel.textColor = Self.itemsColor
         itemsLabel.lineBreakMode = .byTruncatingTail
-        whenLabel.font = Utils.regularFont(size: 12)
+        whenLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         whenLabel.textColor = DS.Color.textMuted
         whenLabel.numberOfLines = 2
         pillStack.spacing = 6
@@ -107,13 +108,13 @@ final class OrderRowCell: UITableViewCell {
 
         let left = UIStackView(arrangedSubviews: [firstLine, itemsLabel, whenLabel, pillLine])
         left.axis = .vertical
-        left.spacing = 3
+        left.spacing = DS.Gap.line
         left.alignment = .fill
-        left.setCustomSpacing(5, after: whenLabel)
+        left.setCustomSpacing(DS.Gap.line, after: whenLabel)
 
-        totalLabel.font = Utils.boldFont(size: 15)
+        totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
-        payLabel.font = Utils.boldFont(size: 12)
+        payLabel.font = Utils.boldFont(size: DS.TextSize.secondary)
         moneyStack.axis = .vertical
         moneyStack.alignment = .trailing
         moneyStack.addArrangedSubview(totalLabel)
@@ -144,8 +145,8 @@ final class OrderRowCell: UITableViewCell {
         row.alignment = .center
         contentView.addSubview(row)
         row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(DS.Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowVertical)
+            make.leading.trailing.equalToSuperview().inset(DS.Gap.rowHorizontal)
         }
 
         let divider = UIView()
@@ -261,7 +262,7 @@ final class OrderRowCell: UITableViewCell {
             totalLabel.attributedText = NSAttributedString(string: text, attributes: [
                 NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.styleSingle.rawValue,
                 NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
-                NSAttributedString.Key.font: Utils.boldFont(size: 15),
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name),
             ])
         } else {
             totalLabel.attributedText = nil
@@ -278,7 +279,7 @@ final class OrderRowCell: UITableViewCell {
 
     private func addPill(_ text: String, _ colors: DS.Pill) {
         let pill = RowTagLabel(bold: false)
-        pill.font = Utils.boldFont(size: 11)
+        pill.font = Utils.boldFont(size: DS.TextSize.pill)
         pill.apply(text, colors)
         pillStack.addArrangedSubview(pill)
     }
@@ -296,8 +297,8 @@ final class OrdersSectionHeaderView: UITableViewHeaderFooterView {
 
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
-        titleLabel.font = Utils.boldFont(size: 13)
-        summaryLabel.font = Utils.regularFont(size: 13)
+        titleLabel.font = Utils.boldFont(size: DS.TextSize.secondary)
+        summaryLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         summaryLabel.textColor = DS.Color.textMuted
         summaryLabel.textAlignment = .right
         summaryLabel.setContentCompressionResistancePriority(.required, for: .horizontal)

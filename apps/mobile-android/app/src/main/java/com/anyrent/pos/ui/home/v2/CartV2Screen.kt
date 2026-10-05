@@ -162,11 +162,11 @@ fun CartV2Screen(
                 ) {
                     Text(
                         "${formatDay(pickup)} → ${formatDay(ret)}",
-                        fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
+                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
                     )
                     Text(
                         CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
-                        fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
+                        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
                         modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
@@ -175,7 +175,7 @@ fun CartV2Screen(
             SectionBand(stringResource(R.string.v2_cart_items, lines.sumOf { it.quantity })) {
                 Text(
                     "+ " + stringResource(R.string.v2_cart_add_more),
-                    fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+                    fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
                     modifier = Modifier.clickable(onClick = onAddItems).padding(vertical = 8.dp).semantics { role = Role.Button },
                 )
             }
@@ -228,8 +228,8 @@ fun CartV2Screen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = 13.sp, color = DS.Colors.TextMuted)
-                Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
             }
             AppPrimaryButton(
                 stringResource(if (isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
@@ -349,17 +349,17 @@ private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
             listOfNotNull(words.firstOrNull()?.first(), words.drop(1).lastOrNull()?.first()).joinToString("").uppercase()
         } ?: "+"
         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFDBEAFE)), contentAlignment = Alignment.Center) {
-            Text(initials, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E40AF))
+            Text(initials, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = Color(0xFF1E40AF))
         }
         Column(Modifier.weight(1f)) {
             Text(
                 name ?: stringResource(R.string.v2_cart_pick_customer),
-                fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold,
                 color = if (name == null) DS.Colors.Primary else DS.Colors.Text,
             )
-            if (!phone.isNullOrBlank()) Text(phone, fontSize = 13.sp, color = DS.Colors.TextMuted)
+            if (!phone.isNullOrBlank()) Text(phone, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
-        if (name != null) Text(stringResource(R.string.v2_cart_change), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+        if (name != null) Text(stringResource(R.string.v2_cart_change), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
     }
 }
 
@@ -384,14 +384,14 @@ private fun ItemRow(
             ProductThumb(line.product.images.firstOrNull() ?: line.product.imageUrl, 56.dp, 10.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(line.product.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Text(formatMoneyVnd(calc.total), fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                Text(calcText, fontSize = 13.sp, color = DS.Colors.TextMuted)
+                Text(calcText, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 CartV2Logic.shortage(available, line.quantity)?.let { left ->
                     Text(
                         stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left),
-                        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
+                        fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
                         modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2)).padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
@@ -405,7 +405,7 @@ private fun ItemRow(
                                 compact = true,
                             )
                         } else if (isSale && available != null) {
-                            Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = 13.sp, color = DS.Colors.TextMuted)
+                            Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                         }
                     }
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)

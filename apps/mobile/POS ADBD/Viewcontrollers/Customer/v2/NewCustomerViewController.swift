@@ -21,10 +21,10 @@ final class NewCustomerViewController: BaseViewControler {
     private let noteField = UITextField()
     private let saveButton: UIButton
     private let existingBox = UIView()
-    private let existingAvatar = CustomersV2UI.avatar(size: 44, fontSize: 15)
-    private let existingName = V2.label(size: 16, weight: .bold)
+    private let existingAvatar = CustomersV2UI.avatar(size: 44, fontSize: DS.TextSize.body)
+    private let existingName = V2.label(size: DS.TextSize.name, weight: .bold)
     private let existingTier = CustomersV2UI.tierPill()
-    private let existingSubtitle = V2.label(size: 13, color: DS.Color.textMuted)
+    private let existingSubtitle = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private var existing: Customer?
     private var keyboardManagerWasEnabled = true
     private let formScroll = CustomerFormScrollView()
@@ -95,14 +95,14 @@ final class NewCustomerViewController: BaseViewControler {
         [phoneField, nameField].forEach { $0.addTarget(self, action: #selector(fieldsChanged), for: .editingChanged) }
 
         let noteTitle = NSMutableAttributedString(string: "customers.v2.note".localized(), attributes: [
-            NSAttributedString.Key.font: Utils.boldFont(size: 14),
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: DS.Color.text,
         ])
         noteTitle.append(NSAttributedString(string: " " + "customers.v2.optional".localized(), attributes: [
-            NSAttributedString.Key.font: Utils.regularFont(size: 14),
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
         ]))
-        let hint = V2.label("customers.v2.hint".localized(), size: 13, color: DS.Color.textMuted, lines: 0)
+        let hint = V2.label("customers.v2.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
 
         buildExistingBox()
         let form = UIStackView(arrangedSubviews: [
@@ -144,9 +144,9 @@ final class NewCustomerViewController: BaseViewControler {
     }
 
     private func field(_ title: String?, _ input: UITextField, attributedTitle: NSAttributedString? = nil) -> UIView {
-        let label = V2.label(title, size: 14, weight: .bold)
+        let label = V2.label(title, size: DS.TextSize.body, weight: .bold)
         if let attributedTitle { label.attributedText = attributedTitle }
-        input.font = Utils.regularFont(size: 16)
+        input.font = Utils.regularFont(size: DS.TextSize.input)
         input.textColor = DS.Color.text
         input.layer.borderWidth = 1
         input.layer.borderColor = V2.border.cgColor
@@ -166,13 +166,13 @@ final class NewCustomerViewController: BaseViewControler {
         existingBox.isHidden = true
         existingBox.backgroundColor = DS.Status.waiting.fill
         existingBox.layer.cornerRadius = DS.Radius.card
-        let title = V2.label("customers.v2.duplicate".localized(), size: 14, weight: .bold, color: DS.Status.waiting.text, lines: 0)
+        let title = V2.label("customers.v2.duplicate".localized(), size: DS.TextSize.body, weight: .bold, color: DS.Status.waiting.text, lines: 0)
         let nameRow = UIStackView(arrangedSubviews: [existingName, existingTier])
         nameRow.spacing = 6
         nameRow.alignment = .center
         let texts = UIStackView(arrangedSubviews: [nameRow, existingSubtitle])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = DS.Gap.lineTight
         texts.alignment = .leading
         let row = UIStackView(arrangedSubviews: [existingAvatar, texts])
         row.spacing = 12

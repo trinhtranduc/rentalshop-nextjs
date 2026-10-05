@@ -34,14 +34,14 @@ final class ProductFormViewController: BaseViewControler {
     private let nameField = UITextField()
     private let categoryRow = V2ValueRow(title: "products.form.category".localized())
     private let barcodeField = UITextField()
-    private let barcodeWarning = V2.label(size: 13, color: V2.danger, lines: 0)
+    private let barcodeWarning = V2.label(size: DS.TextSize.secondary, color: V2.danger, lines: 0)
     private let perRentalField = UITextField()
     private let perDayField = UITextField()
     private let saleField = UITextField()
     private let depositField = UITextField()
     private let defaultToggle = V2Segmented(titles: ["products.price.perRental".localized(), "products.price.perDay".localized()])
     private let quantityStepper = V2Stepper()
-    private let stockNote = V2.label(size: 13, color: DS.Color.textMuted)
+    private let stockNote = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -160,8 +160,8 @@ final class ProductFormViewController: BaseViewControler {
         }
         photoScroll.snp.makeConstraints { make in make.height.equalTo(104) }
         form.addArrangedSubview(photoScroll)
-        form.addArrangedSubview(padded(V2.label(String(format: "products.form.photosHint".localized(), ProductFormValidator.maxPhotos),
-                                                size: 12, color: DS.Color.textMuted, lines: 0), top: 0, bottom: 6))
+        form.addArrangedSubview(padded(V2.label(String(format: "products.form.photosHint".localized(), ProductFormValidator.maxPhotos), // board SP-sua: hint stays 12/400
+                                                size: DS.TextSize.pill, color: DS.Color.textMuted, lines: 0), top: 0, bottom: 6))
 
         // Name, category, barcode
         configure(nameField, placeholder: "products.form.namePlaceholder".localized(), numeric: false)
@@ -189,7 +189,7 @@ final class ProductFormViewController: BaseViewControler {
             configure(perDayField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.perRental".localized(), required: false, input: perRentalField),
                                          field(title: "products.form.perDay".localized(), required: false, input: perDayField)))
-            let defaultTitle = V2.label("products.form.defaultPricing".localized(), size: 14, weight: .bold)
+            let defaultTitle = V2.label("products.form.defaultPricing".localized(), size: DS.TextSize.body, weight: .bold)
             defaultToggle.addTarget(self, action: #selector(defaultChanged), for: .valueChanged)
             let defaultBox = UIStackView(arrangedSubviews: [defaultTitle, defaultToggle])
             defaultBox.axis = .vertical
@@ -203,7 +203,7 @@ final class ProductFormViewController: BaseViewControler {
 
         // Stock
         form.addArrangedSubview(V2.sectionHeader("products.form.stock".localized()))
-        let quantityTitle = V2.label("products.form.quantity".localized(), size: 15)
+        let quantityTitle = V2.label("products.form.quantity".localized(), size: DS.TextSize.body)
         let quantityTexts = UIStackView(arrangedSubviews: [quantityTitle, stockNote])
         quantityTexts.axis = .vertical
         let quantityRow = UIStackView(arrangedSubviews: [quantityTexts, UIView(), quantityStepper])
@@ -213,7 +213,7 @@ final class ProductFormViewController: BaseViewControler {
 
     private func configure(_ field: UITextField, placeholder: String, numeric: Bool) {
         field.placeholder = placeholder
-        field.font = Utils.regularFont(size: 16)
+        field.font = Utils.regularFont(size: DS.TextSize.input)
         field.textColor = DS.Color.text
         field.autocorrectionType = .no
         field.delegate = self
@@ -224,11 +224,11 @@ final class ProductFormViewController: BaseViewControler {
     }
 
     private func field(title: String, required: Bool, input: UITextField, unit: String? = nil, accessory: UIView? = nil) -> UIView {
-        let titleLabel = V2.label(title, size: 14, weight: .bold)
+        let titleLabel = V2.label(title, size: DS.TextSize.body, weight: .bold)
         if required {
-            let text = NSMutableAttributedString(string: title + " ", attributes: [NSAttributedString.Key.font: Utils.boldFont(size: 14)])
+            let text = NSMutableAttributedString(string: title + " ", attributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body)])
             text.append(NSAttributedString(string: "*", attributes: [NSAttributedString.Key.foregroundColor: V2.danger,
-                                                                     NSAttributedString.Key.font: Utils.boldFont(size: 14)]))
+                                                                     NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body)]))
             titleLabel.attributedText = text
         }
         input.accessibilityLabel = title
@@ -241,7 +241,7 @@ final class ProductFormViewController: BaseViewControler {
         row.alignment = .center
         row.spacing = 8
         if let unit {
-            let unitLabel = V2.label(unit, size: 14, color: DS.Color.textMuted)
+            let unitLabel = V2.label(unit, size: DS.TextSize.body, color: DS.Color.textMuted)
             unitLabel.setContentHuggingPriority(.required, for: .horizontal)
             unitLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
             row.addArrangedSubview(unitLabel)
@@ -329,7 +329,7 @@ final class ProductFormViewController: BaseViewControler {
             }
             tile.snp.makeConstraints { make in make.width.height.equalTo(84) }
             if index == 0 {
-                let cover = V2.label(" " + "products.form.cover".localized() + " ", size: 10, weight: .bold, color: .white)
+                let cover = V2.label(" " + "products.form.cover".localized() + " ", size: DS.TextSize.pill, weight: .bold, color: .white)
                 cover.backgroundColor = DS.Color.text.withAlphaComponent(0.7)
                 cover.layer.cornerRadius = 4
                 cover.clipsToBounds = true
@@ -355,7 +355,7 @@ final class ProductFormViewController: BaseViewControler {
             let add = UIButton(type: .system)
             add.setImage(DS.symbol("camera", DS.Icon.lg), for: .normal)
             add.setTitle("products.form.addPhoto".localized(), for: .normal)
-            add.titleLabel?.font = Utils.boldFont(size: 12)
+            add.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
             add.tintColor = DS.Color.primary
             add.backgroundColor = V2.sectionFill
             add.layer.cornerRadius = 12

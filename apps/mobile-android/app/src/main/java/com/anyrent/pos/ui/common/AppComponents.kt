@@ -77,6 +77,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -423,7 +424,12 @@ fun AppCloseIconButton(
 }
 
 @Composable
-fun StatusBadge(status: String, modifier: Modifier = Modifier) {
+fun StatusBadge(
+    status: String,
+    modifier: Modifier = Modifier,
+    // New screens pass the pill size of the type ramp (DS.TextSize.Pill, #424); old screens keep 10sp
+    fontSize: TextUnit = 10.sp,
+) {
     val background = OrderStatusStyle.badgeColor(status)
     // Translated label, never the raw API value (#370)
     val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
@@ -439,8 +445,8 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
             label,
             color = Color.White,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
+                fontSize = fontSize,
+                lineHeight = if (fontSize == 10.sp) 12.sp else fontSize * 1.34f,
                 fontWeight = FontWeight.Bold,
             ),
             maxLines = 1,
