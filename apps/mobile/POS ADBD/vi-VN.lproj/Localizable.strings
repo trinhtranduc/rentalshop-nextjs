@@ -1995,3 +1995,10 @@
 "products.cart.pricing.change" = "Đổi cách tính giá %@";
 "products.cart.pricing.unit" = "đ";
 "products.cart.pricing.unitDaily" = "đ/ngày";
+
+/* #482 */
+"settings.v2.password.hint" = "Ít nhất %d ký tự.";
+"settings.v2.password.submit" = "Đổi mật khẩu";
+"settings.v2.password.show" = "Hiện mật khẩu";
+"settings.v2.password.hide" = "Ẩn mật khẩu";
+"settings.v2.password.close" = "Đóng";

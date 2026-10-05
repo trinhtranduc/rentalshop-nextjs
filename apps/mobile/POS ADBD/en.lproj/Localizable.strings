@@ -1997,3 +1997,10 @@
 "products.cart.pricing.change" = "Change pricing for %@";
 "products.cart.pricing.unit" = "đ";
 "products.cart.pricing.unitDaily" = "đ/day";
+
+/* #482 */
+"settings.v2.password.hint" = "At least %d characters.";
+"settings.v2.password.submit" = "Change password";
+"settings.v2.password.show" = "Show password";
+"settings.v2.password.hide" = "Hide password";
+"settings.v2.password.close" = "Close";

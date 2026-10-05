@@ -201,49 +201,31 @@ final class SettingsV2ViewController: BaseViewControler {
         present(alert, animated: true)
     }
 
-    private func askPassword(problem: SettingsV2Logic.PasswordProblem? = nil) {
-        let alert = UIAlertController(title: "Change Password".localized(), message: problem.map(message(of:)),
-                                      preferredStyle: .alert)
-        let placeholders = ["settings.v2.password.current", "settings.v2.password.new", "settings.v2.password.confirm"]
-        placeholders.forEach { key in
-            alert.addTextField { field in
-                field.placeholder = key.localized()
-                field.isSecureTextEntry = true
-                field.textContentType = key.hasSuffix("current") ? .password : .newPassword
-            }
+    /// #482 (board DMK-doi-mat-khau): a bottom sheet over Cài đặt; same call and validation as before
+    private func askPassword() {
+        let sheet = ChangePasswordSheetViewController()
+        sheet.onSubmit = { [weak self, weak sheet] current, new in
+            self?.changePassword(current: current, new: new, sheet: sheet)
         }
-        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        alert.addAction(UIAlertAction(title: "Save".localized(), style: .default) { [weak self, weak alert] _ in
-            guard let self else { return }
-            let values = (alert?.textFields ?? []).map { $0.text ?? "" }
-            guard values.count == 3 else { return }
-            if let problem = SettingsV2Logic.validatePassword(current: values[0], new: values[1], confirm: values[2]) {
-                self.askPassword(problem: problem)
-                return
-            }
-            self.changePassword(current: values[0], new: values[1])
-        })
-        present(alert, animated: true)
+        if let presentation = sheet.sheetPresentationController {
+            presentation.detents = [.large()]
+            presentation.prefersGrabberVisible = true
+            presentation.preferredCornerRadius = 24
+        }
+        present(sheet, animated: true)
     }
 
-    private func message(of problem: SettingsV2Logic.PasswordProblem) -> String {
-        switch problem {
-        case .missingCurrent: return "settings.v2.password.missingCurrent".localized()
-        case .tooShort: return "settings.v2.password.tooShort".localized()
-        case .mismatch: return "settings.v2.password.mismatch".localized()
-        }
-    }
-
-    private func changePassword(current: String, new: String) {
-        showProgressText(text: "Loading...".localized())
+    private func changePassword(current: String, new: String, sheet: ChangePasswordSheetViewController?) {
+        sheet?.setBusy(true)
         TabsV2APIService.shared.changePassword(current: current, new: new) { [weak self] error in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.hideProgress()
+                sheet?.setBusy(false)
                 if let error {
-                    UIAlertController.errorAlert(parent: self, error: error)
+                    UIAlertController.errorAlert(parent: sheet ?? self, error: error)
                     return
                 }
+                sheet?.dismiss(animated: true)
                 // The API revokes every token of the account: sign in again with the new password
                 UIAlertController.alert(parent: self, title: "Change Password".localized(),
                                         message: "settings.v2.password.done".localized()) { _ in
@@ -387,5 +369,197 @@ final class SettingsV2Cell: UITableViewCell {
         line.isHidden = true
         selectionStyle = .default
         accessibilityTraits = UIAccessibilityTraitButton
+    }
+}
+
+// MARK: - Đổi mật khẩu (#482, board DMK-doi-mat-khau)
+
+/// Change password as a bottom sheet: three secure fields with a lock and a show/hide eye, the length hint under the
+/// new password, the error under the field at fault, "Đổi mật khẩu". Validation is `SettingsV2Logic.validatePassword`.
+final class ChangePasswordSheetViewController: UIViewController, UITextFieldDelegate {
+    var onSubmit: ((String, String) -> Void)?
+
+    private let currentField = UITextField()
+    private let newField = UITextField()
+    private let confirmField = UITextField()
+    private let currentMessage = V2.label(size: DS.TextSize.secondary, lines: 0)
+    private let newMessage = V2.label(size: DS.TextSize.secondary, lines: 0)
+    private let confirmMessage = V2.label(size: DS.TextSize.secondary, lines: 0)
+    private let submit = UIButton(type: .system)
+    private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+    private let scroll = UIScrollView()
+    private var problem: SettingsV2Logic.PasswordProblem?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+
+        let title = V2.label("Change Password".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let close = UIButton(type: .system)
+        close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
+        close.tintColor = DS.Color.textMuted
+        close.backgroundColor = UIColor(hexString: "F1F5F9")
+        close.layer.cornerRadius = 18
+        close.accessibilityLabel = "settings.v2.password.close".localized()
+        close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        close.snp.makeConstraints { make in make.size.equalTo(36) }
+        let header = UIStackView(arrangedSubviews: [title, close])
+        header.alignment = .center
+
+        let content = UIStackView(arrangedSubviews: [
+            header,
+            field(currentField, title: "settings.v2.password.current".localized(), message: currentMessage, newPassword: false),
+            field(newField, title: "settings.v2.password.new".localized(), message: newMessage, newPassword: true),
+            field(confirmField, title: "settings.v2.password.confirm".localized(), message: confirmMessage, newPassword: true),
+        ])
+        content.axis = .vertical
+        content.spacing = 14
+
+        submit.setTitle("settings.v2.password.submit".localized(), for: .normal)
+        submit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        submit.setTitleColor(.white, for: .normal)
+        submit.backgroundColor = DS.Color.primary
+        submit.layer.cornerRadius = 14
+        submit.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
+        submit.snp.makeConstraints { make in make.height.equalTo(54) }
+        spinner.color = .white
+        spinner.hidesWhenStopped = true
+        submit.addSubview(spinner)
+        spinner.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalToSuperview().offset(-18)
+        }
+        content.addArrangedSubview(submit)
+        content.setCustomSpacing(18, after: content.arrangedSubviews[content.arrangedSubviews.count - 2])
+
+        scroll.keyboardDismissMode = .interactive
+        scroll.alwaysBounceVertical = true
+        view.addSubview(scroll)
+        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
+        scroll.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(24)
+            make.leading.trailing.equalTo(view).inset(20)
+            make.bottom.equalToSuperview().offset(-20)
+        }
+        render()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        currentField.becomeFirstResponder()
+    }
+
+    private func field(_ textField: UITextField, title: String, message: UILabel, newPassword: Bool) -> UIView {
+        let label = V2.label(title, size: DS.TextSize.body, weight: .bold)
+        textField.isSecureTextEntry = true
+        textField.textContentType = newPassword ? .newPassword : .password
+        textField.font = Utils.regularFont(size: DS.TextSize.input)
+        textField.textColor = DS.Color.text
+        textField.placeholder = "••••••••"
+        textField.layer.cornerRadius = 12
+        textField.layer.borderWidth = 1
+        textField.delegate = self
+        textField.returnKeyType = textField === confirmField ? .done : .next
+        textField.accessibilityLabel = title
+        textField.addTarget(self, action: #selector(edited(_:)), for: .editingChanged)
+
+        let lock = UIImageView(image: DS.symbol("lock", DS.Icon.md))
+        lock.contentMode = .center
+        lock.frame = CGRect(x: 0, y: 0, width: 44, height: 52)
+        textField.leftView = lock
+        textField.leftViewMode = .always
+
+        let eye = UIButton(type: .system)
+        eye.setImage(DS.symbol("eye", DS.Icon.md), for: .normal)
+        eye.tintColor = DS.Color.textMuted
+        eye.accessibilityLabel = "settings.v2.password.show".localized()
+        eye.frame = CGRect(x: 0, y: 0, width: 48, height: 52)
+        eye.addTarget(self, action: #selector(toggleVisible(_:)), for: .touchUpInside)
+        textField.rightView = eye
+        textField.rightViewMode = .always
+        textField.snp.makeConstraints { make in make.height.equalTo(52) }
+
+        let stack = UIStackView(arrangedSubviews: [label, textField, message])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return stack
+    }
+
+    private func render() {
+        let pairs: [(UITextField, UILabel, SettingsV2Logic.PasswordProblem, String?)] = [
+            (currentField, currentMessage, .missingCurrent, nil),
+            (newField, newMessage, .tooShort, String(format: "settings.v2.password.hint".localized(), SettingsV2Logic.minPasswordLength)),
+            (confirmField, confirmMessage, .mismatch, nil),
+        ]
+        let danger = UIColor(hexString: "B91C1C")
+        for (field, message, fault, hint) in pairs {
+            let failed = problem == fault
+            field.layer.borderWidth = failed ? 1.5 : 1
+            field.layer.borderColor = (failed ? danger : UIColor(hexString: "CBD5E1")).cgColor
+            (field.leftView as? UIImageView)?.tintColor = failed ? danger : UIColor(hexString: "64748B")
+            if failed {
+                message.text = text(of: fault)
+                message.textColor = danger
+                message.font = Utils.mediumFont(size: DS.TextSize.secondary)
+                message.isHidden = false
+            } else {
+                message.text = hint
+                message.textColor = DS.Color.textMuted
+                message.font = Utils.regularFont(size: DS.TextSize.secondary)
+                message.isHidden = hint == nil
+            }
+        }
+    }
+
+    private func text(of problem: SettingsV2Logic.PasswordProblem) -> String {
+        switch problem {
+        case .missingCurrent: return "settings.v2.password.missingCurrent".localized()
+        case .tooShort: return "settings.v2.password.tooShort".localized()
+        case .mismatch: return "settings.v2.password.mismatch".localized()
+        }
+    }
+
+    func setBusy(_ busy: Bool) {
+        submit.isEnabled = !busy
+        busy ? spinner.startAnimating() : spinner.stopAnimating()
+        isModalInPresentation = busy
+    }
+
+    @objc private func edited(_ sender: UITextField) {
+        guard problem != nil else { return }
+        problem = nil
+        render()
+    }
+
+    @objc private func toggleVisible(_ sender: UIButton) {
+        guard let field = [currentField, newField, confirmField].first(where: { $0.rightView === sender }) else { return }
+        field.isSecureTextEntry.toggle()
+        sender.setImage(DS.symbol(field.isSecureTextEntry ? "eye" : "eye.slash", DS.Icon.md), for: .normal)
+        sender.accessibilityLabel = (field.isSecureTextEntry ? "settings.v2.password.show" : "settings.v2.password.hide").localized()
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
+    }
+
+    @objc private func submitTapped() {
+        let current = currentField.text ?? ""
+        let new = newField.text ?? ""
+        problem = SettingsV2Logic.validatePassword(current: current, new: new, confirm: confirmField.text ?? "")
+        render()
+        guard problem == nil else { return }
+        view.endEditing(true)
+        onSubmit?(current, new)
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        switch textField {
+        case currentField: newField.becomeFirstResponder()
+        case newField: confirmField.becomeFirstResponder()
+        default: submitTapped()
+        }
+        return true
     }
 }
