@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.orders
 
+import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.error.AppError
 
 /** The one primary action of the order detail (#372) */
@@ -193,4 +194,14 @@ object OrderDetailLogic {
             (app is AppError.Http && app.statusCode in 400..499)
         return StatusErrorOutcome(app.code, app.message, reload)
     }
+
+    /** Instants (ISO strings) under the three steps of the rent step bar: the actual day once it happened (#434, iOS) */
+    fun progressDays(summary: OrderSummary): ProgressDays = ProgressDays(
+        booked = summary.createdAt,
+        handOver = summary.pickedUpAt ?: summary.pickupPlanAt,
+        returned = summary.returnedAt ?: summary.returnPlanAt,
+    )
 }
+
+/** Days shown under "Booked", "Hand over" and "Return" of the order detail step bar */
+data class ProgressDays(val booked: String?, val handOver: String?, val returned: String?)

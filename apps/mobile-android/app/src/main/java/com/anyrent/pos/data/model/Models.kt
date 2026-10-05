@@ -110,6 +110,9 @@ data class OrderSummary(
     /** Still to collect / to give back, from `computeOrderBalance` (#389); null on an older API */
     val amountDue: Double? = null,
     val refundDue: Double? = null,
+    /** Actual hand-over / return instants (#434); null until they happen or on an older payload */
+    val pickedUpAt: String? = null,
+    val returnedAt: String? = null,
 )
 
 data class OrderItem(
