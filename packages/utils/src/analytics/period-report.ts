@@ -178,6 +178,7 @@ export interface TopProductShopRank {
   category: string;
   note: string | null;
   rentalCount: number;
+  saleCount: number;
   quantity: number;
   totalRevenue: number;
   image: string | null;
@@ -213,9 +214,20 @@ export async function computeTopProductsByShop(
       productId: true,
       quantity: true,
       totalPrice: true,
-      order: { select: { outletId: true } }
+      order: { select: { outletId: true, orderType: true } }
     }
   });
+
+  // "rentals" = quantity on RENT lines, sales = quantity on SALE lines, per product and shop (#429)
+  const quantityByType = new Map<string, { rent: number; sale: number }>();
+  for (const row of rows) {
+    if (!row.productId) continue;
+    const key = `${row.productId}:${row.order.outletId}`;
+    const entry = quantityByType.get(key) ?? { rent: 0, sale: 0 };
+    if (row.order.orderType === ORDER_TYPE.RENT) entry.rent += row.quantity || 0;
+    else if (row.order.orderType === ORDER_TYPE.SALE) entry.sale += row.quantity || 0;
+    quantityByType.set(key, entry);
+  }
 
   const ranked = rankProductShops(
     aggregateProductShopSales(
@@ -269,13 +281,15 @@ export async function computeTopProductsByShop(
       const product = productById.get(row.productId);
       const outlet = outletById.get(row.outletId);
       const images = parseProductImages(product?.images);
+      const byType = quantityByType.get(`${row.productId}:${row.outletId}`);
       return {
         id: product?.id || row.productId,
         name: product?.name || 'Unknown Product',
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',
         note: product?.description || null,
-        rentalCount: row.quantity,
+        rentalCount: byType?.rent || 0,
+        saleCount: byType?.sale || 0,
         quantity: row.quantity,
         totalRevenue: row.totalRevenue,
         image: images.length > 0 ? images[0] : null,
@@ -558,7 +572,8 @@ export async function buildAnalyticsPeriodReport(
       },
       limit: 10000
     });
-    const orderIds = orders.data?.map((o: { id: number }) => o.id) || [];
+    const orderRows: Array<{ id: number; orderType?: string }> = orders.data || [];
+    const orderIds = orderRows.map((o) => o.id);
     if (orderIds.length === 0) return [];
 
     const grouped = await db.orderItems.groupBy({
@@ -569,6 +584,30 @@ export async function buildAnalyticsPeriodReport(
       orderBy: { _sum: { totalPrice: 'desc' } },
       take: limit
     });
+
+    // "rentals" count RENT order lines only; SALE lines are `saleCount` (#429)
+    const rankedIds = grouped
+      .map((item: { productId: number | null }) => Number(item.productId))
+      .filter((id: number) => Number.isFinite(id) && id > 0);
+    const countLinesByProduct = async (orderType: string): Promise<Map<number, number>> => {
+      const typedOrderIds = orderRows.filter((o) => o.orderType === orderType).map((o) => o.id);
+      if (typedOrderIds.length === 0 || rankedIds.length === 0) return new Map();
+      const counts = await db.orderItems.groupBy({
+        by: ['productId'],
+        where: { orderId: { in: typedOrderIds }, productId: { in: rankedIds } },
+        _count: { productId: true }
+      });
+      return new Map(
+        counts.map((c: { productId: number | null; _count?: { productId?: number } }) => [
+          Number(c.productId),
+          Number(c._count?.productId) || 0
+        ])
+      );
+    };
+    const [rentLines, saleLines] = await Promise.all([
+      countLinesByProduct(ORDER_TYPE.RENT),
+      countLinesByProduct(ORDER_TYPE.SALE)
+    ]);
 
     const result: any[] = [];
     for (const item of grouped) {
@@ -583,7 +622,8 @@ export async function buildAnalyticsPeriodReport(
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',
         note: product?.description || null,
-        rentalCount: (item._count as any).productId,
+        rentalCount: rentLines.get(productId) || 0,
+        saleCount: saleLines.get(productId) || 0,
         totalRevenue: item._sum?.totalPrice || 0,
         image: images.length > 0 ? images[0] : null
       });
