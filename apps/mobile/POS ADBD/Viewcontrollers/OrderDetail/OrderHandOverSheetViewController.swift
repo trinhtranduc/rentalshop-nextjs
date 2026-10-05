@@ -155,6 +155,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
         }
+        KeyboardDoneBar.attach([lateFeeField, damageFeeField, securityDepositField])
         renderMoney()
     }
 

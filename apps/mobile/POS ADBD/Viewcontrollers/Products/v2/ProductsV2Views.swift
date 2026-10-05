@@ -267,3 +267,18 @@ final class V2ValueRow: UIControl {
         didSet { backgroundColor = isHighlighted ? V2.chipFill : .clear }
     }
 }
+
+/// Number and phone pads have no return key (#461): a "Xong" bar above the keyboard ends editing
+enum KeyboardDoneBar {
+    static func attach(_ fields: [UITextField]) {
+        fields.forEach { field in
+            let bar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+            let done = UIBarButtonItem(title: "Done".localized(), style: .done, target: field,
+                                       action: #selector(UIResponder.resignFirstResponder))
+            done.tintColor = DS.Color.primary
+            bar.items = [UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), done]
+            bar.sizeToFit()
+            field.inputAccessoryView = bar
+        }
+    }
+}

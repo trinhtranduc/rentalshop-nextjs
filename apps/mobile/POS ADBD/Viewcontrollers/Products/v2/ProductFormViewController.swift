@@ -11,6 +11,7 @@ import SnapKit
 import QRCodeReader
 import AVFoundation
 import AudioToolbox
+import IQKeyboardManagerSwift
 
 final class ProductFormViewController: BaseViewControler {
     private enum Photo {
@@ -27,6 +28,7 @@ final class ProductFormViewController: BaseViewControler {
     private var categoryId: Int?
     private var merchantOutlets: [(id: Int, isDefault: Bool)] = []
     private var defaultMode: ProductPricingMode = .perRental
+    private var keyboardManagerWasEnabled = true
 
     private let scroll = UIScrollView()
     private let form = UIStackView()
@@ -83,6 +85,25 @@ final class ProductFormViewController: BaseViewControler {
         let tap = UITapGestureRecognizer(target: self, action: #selector(endEditing))
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow),
+                                               name: NSNotification.Name.UIKeyboardDidShow, object: nil)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // The save bar rides on the keyboard and the form scrolls itself (#461); IQKeyboardManager would also
+        // shift the form, as on the new customer screens
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Layout
@@ -131,7 +152,8 @@ final class ProductFormViewController: BaseViewControler {
         save.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
+            // On the keyboard while it is up, else on the safe area (#461)
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-8)
         }
 
         view.addSubview(scroll)
@@ -220,6 +242,7 @@ final class ProductFormViewController: BaseViewControler {
         if numeric {
             field.keyboardType = .numberPad
             field.addTarget(self, action: #selector(formatMoney(_:)), for: .editingChanged)
+            KeyboardDoneBar.attach([field])
         }
     }
 
@@ -393,6 +416,17 @@ final class ProductFormViewController: BaseViewControler {
 
     @objc private func endEditing() {
         view.endEditing(true)
+    }
+
+    /// Scrolls the focused field's box above the keyboard (the scroll view ends at the save bar)
+    @objc private func keyboardDidShow() {
+        revealFocusedField()
+    }
+
+    private func revealFocusedField() {
+        guard let field = [nameField, barcodeField, perRentalField, perDayField, saleField, depositField].first(where: { $0.isFirstResponder }),
+              let box = field.superview?.superview else { return }
+        scroll.scrollRectToVisible(box.convert(box.bounds, to: scroll).insetBy(dx: 0, dy: -12), animated: true)
     }
 
     @objc private func closeTapped() {
@@ -576,6 +610,10 @@ final class ProductFormViewController: BaseViewControler {
 }
 
 extension ProductFormViewController: UITextFieldDelegate {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        DispatchQueue.main.async { [weak self] in self?.revealFocusedField() }
+    }
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true

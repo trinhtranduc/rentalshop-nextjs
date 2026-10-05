@@ -62,6 +62,7 @@ final class OrderExtendSheetViewController: UIViewController {
         extraField.font = Utils.regularFont(size: 16)
         extraField.textColor = DS.Color.text
         extraField.keyboardType = .numberPad
+        KeyboardDoneBar.attach([extraField])
         extraField.accessibilityLabel = "order.extend.extraRent".localized()
         extraField.addTarget(self, action: #selector(extraChanged), for: .editingChanged)
         let extraBox = UIView()

@@ -71,6 +71,7 @@ final class EditCustomerViewController: BaseViewControler {
         headerLine.backgroundColor = DS.Color.border
 
         phoneField.keyboardType = .phonePad
+        KeyboardDoneBar.attach([phoneField])
         nameField.autocapitalizationType = .words
         emailField.keyboardType = .emailAddress
         emailField.autocapitalizationType = .none
