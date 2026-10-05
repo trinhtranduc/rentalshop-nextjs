@@ -11,7 +11,9 @@ Issue: #460 · Status: approved · Spec: ./spec.md
    for OUTLET_STAFF / no `products.manage`. `ProductEdit.tsx`: pass `pricingOptions`.
 4. Order form: `useCreateOrderForm.ts` comment/start on default; `ProductsSection.tsx` toggle only when both.
 5. i18n (`i18n-keys`): `products.pricing.defaultMode`, `products.pricing.defaultFixed`,
-   `products.pricing.defaultDaily`, `validation.fields.pricingDefault.dailyNeedsPrice` in en/vi/ja/ko/zh.
+   `products.pricing.defaultDaily`, `validation.fields.pricingDefault.dailyNeedsPrice`. Only `en` and `vi` have
+   `products.json` / `validation.json`; `ja`, `ko`, `zh` have no such namespace files (they fall back), so the keys
+   go into en and vi.
 6. Verify (`verify-change`): `cd tests && yarn test product-pricing-default order-form-line-pricing`,
    `npx tsc --noEmit -p packages/ui/tsconfig.json`, `-p apps/client/tsconfig.json`, eslint on changed files,
    locale key parity.
