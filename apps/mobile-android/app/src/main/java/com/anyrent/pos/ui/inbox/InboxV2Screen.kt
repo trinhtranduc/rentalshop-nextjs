@@ -61,7 +61,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
@@ -345,20 +344,21 @@ private fun NotificationRowV2(item: InboxNotification, onClick: () -> Unit, onLo
                 Icon(notificationIcon(kind), contentDescription = null, tint = colors.text, modifier = Modifier.size(DS.Icon.Md))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // #482: title and body wrap in full (no line limit, no ellipsis); Compose breaks a word longer than
+                // the line, so a long unbroken word wraps too
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(
                         item.title,
                         fontSize = 16.sp,
+                        lineHeight = 22.sp,
                         fontWeight = if (style.titleBold) FontWeight.Bold else FontWeight.Medium,
                         color = Color(style.titleArgb),
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
                     Text(NotificationsLogic.time(item.createdAt), fontSize = DS.TextSize.Secondary, color = Color(0xFF64748B))
                 }
                 Text(
                     item.body, fontSize = DS.TextSize.Body, lineHeight = 21.sp, color = DS.Colors.TextMuted,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
             }
             Box(
