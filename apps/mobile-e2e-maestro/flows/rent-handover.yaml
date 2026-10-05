@@ -6,7 +6,18 @@ appId: ${APP_ID}
 - runScript: run-vars.js
 
 # Home: add the first seeded product (accessibility label "Thêm <name> vào giỏ"), open the cart.
-- tapOn: "Thêm Product 1 - Electronics vào giỏ|Add Product 1 - Electronics to cart"
+# A tap right after the list loads can be lost: wait, then retry until the cart bar shows.
+- extendedWaitUntil:
+    visible: "Thêm Product 1 - Electronics vào giỏ|Add Product 1 - Electronics to cart"
+    timeout: 15000
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn: "Thêm Product 1 - Electronics vào giỏ|Add Product 1 - Electronics to cart"
+      - extendedWaitUntil:
+          visible: "Giỏ hàng · .*|Cart · .*"
+          timeout: 5000
 - tapOn: "Giỏ hàng · .*|Cart · .*"
 - tapOn: "Thuê|Rent"
 
