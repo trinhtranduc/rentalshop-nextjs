@@ -649,6 +649,12 @@ internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
     OrderRow(row, RowContext.SEARCH, boardTexts(), onClick)
 }
 
+/** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
+@Composable
+internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
+    OrderRow(row, RowContext.LIST, boardTexts(), onClick)
+}
+
 @Composable
 private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoardTexts, onClick: () -> Unit) {
     val order = row.order

@@ -27,6 +27,14 @@ class Issue482ResourcesTest {
         "orders_v2_status_completed" to "Hoàn thành",
         "orders_v2_status_cancelled" to "Đã huỷ",
         "status_cancelled" to "Đã huỷ",
+        // Item 1: orders by product / customer
+        "orders_entity_free" to "Còn %1\$d hôm nay",
+        "orders_entity_tile_orders" to "Số đơn",
+        "orders_entity_tile_rentals" to "Lượt thuê",
+        "orders_entity_tile_revenue" to "Doanh thu",
+        "orders_entity_tile_spent" to "Đã chi",
+        "orders_entity_tile_renting" to "Đang thuê",
+        "orders_entity_section" to "ĐƠN HÀNG",
     )
 
     @Test

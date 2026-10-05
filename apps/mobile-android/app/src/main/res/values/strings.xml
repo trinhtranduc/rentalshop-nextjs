@@ -1072,4 +1072,14 @@
     <string name="notes_v2_add">Add</string>
     <string name="notes_v2_photo_hint">Pick photos from the library. Tap a photo to view it larger.</string>
     <string name="notes_v2_save">Save note</string>
+    <!-- #482 -->
+    <string name="orders_entity_free">%1$d free today</string>
+    <string name="orders_entity_tile_orders">Orders</string>
+    <string name="orders_entity_tile_rentals">Rentals</string>
+    <string name="orders_entity_tile_revenue">Revenue</string>
+    <string name="orders_entity_tile_spent">Spent</string>
+    <string name="orders_entity_tile_renting">Renting</string>
+    <string name="orders_entity_section">ORDERS</string>
+    <string name="orders_entity_million">%1$d.%2$dM</string>
+    <string name="orders_entity_million_whole">%1$dM</string>
 </resources>

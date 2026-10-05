@@ -331,7 +331,7 @@ class ApiClient(
         )
     }
 
-    private fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
+    internal fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject()
         val array = data.optJSONArray("orders") ?: JSONArray()
@@ -1319,9 +1319,22 @@ class ApiClient(
             updatedAt = o.nullableString("updatedAt"),
             itemsSummary = orderItemsSummary(o.optJSONArray("orderItems")),
             productQuantities = orderItemQuantities(o.optJSONArray("orderItems")),
+            productTotals = orderItemTotals(o.optJSONArray("orderItems")),
             amountDue = optionalAmount(o, "amountDue"),
             refundDue = optionalAmount(o, "refundDue"),
         )
+    }
+
+    /** product id → line totals, from the list's `orderItems` (#482) */
+    internal fun orderItemTotals(items: JSONArray?): Map<Int, Double> {
+        val result = mutableMapOf<Int, Double>()
+        for (index in 0 until (items?.length() ?: 0)) {
+            val item = items?.optJSONObject(index) ?: continue
+            val id = item.optInt("productId").takeIf { it > 0 } ?: item.optJSONObject("product")?.optInt("id")?.takeIf { it > 0 } ?: continue
+            val total = item.optDouble("totalPrice").takeIf { !it.isNaN() } ?: 0.0
+            result[id] = (result[id] ?: 0.0) + total
+        }
+        return result
     }
 
     /** product id → units, from the list's `orderItems` (#388) */

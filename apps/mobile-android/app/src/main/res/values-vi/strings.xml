@@ -1056,4 +1056,14 @@
     <string name="notes_v2_add">Thêm</string>
     <string name="notes_v2_photo_hint">Chọn ảnh từ thư viện. Chạm ảnh để xem lớn.</string>
     <string name="notes_v2_save">Lưu ghi chú</string>
+    <!-- #482 -->
+    <string name="orders_entity_free">Còn %1$d hôm nay</string>
+    <string name="orders_entity_tile_orders">Số đơn</string>
+    <string name="orders_entity_tile_rentals">Lượt thuê</string>
+    <string name="orders_entity_tile_revenue">Doanh thu</string>
+    <string name="orders_entity_tile_spent">Đã chi</string>
+    <string name="orders_entity_tile_renting">Đang thuê</string>
+    <string name="orders_entity_section">ĐƠN HÀNG</string>
+    <string name="orders_entity_million">%1$d,%2$dtr</string>
+    <string name="orders_entity_million_whole">%1$dtr</string>
 </resources>
