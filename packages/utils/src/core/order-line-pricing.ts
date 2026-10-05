@@ -52,12 +52,20 @@ export const resolveOrderLineOption = (item: OrderLinePricingItem): OrderLinePri
   return getPreferredPricingOption(opts);
 };
 
-/** Pricing type used for the line total and the saved order. */
+/**
+ * Pricing type of the line, used for the toggle, the display, the total and the saved order.
+ * The line's own type wins (#444): `product.pricingType` only mirrors the product's default option,
+ * so a FIXED line on a per-day-default product stays FIXED.
+ */
 export const resolveOrderLinePricingType = (item: OrderLinePricingItem): string => {
+  if (item.pricingType) return item.pricingType.toUpperCase();
   const opt = resolveOrderLineOption(item);
-  if (opt) return opt.type;
-  return (item.pricingType || item.product?.pricingType || 'FIXED') as string;
+  if (opt) return opt.type.toUpperCase();
+  return (item.product?.pricingType || 'FIXED').toUpperCase();
 };
+
+const isDailyLine = (item: OrderLinePricingItem, orderType: OrderLineOrderType): boolean =>
+  orderType === 'RENT' && resolveOrderLinePricingType(item) === 'DAILY';
 
 /** Line total: unit × qty, times rental days for a per-day line of a RENT order. */
 export const computeOrderLineTotal = (
@@ -67,37 +75,46 @@ export const computeOrderLineTotal = (
 ): number => {
   const qty = item.quantity || 1;
   const unit = item.unitPrice || 0;
-  if (orderType === 'RENT' && resolveOrderLinePricingType(item) === 'DAILY') {
-    return unit * qty * Math.max(1, days);
-  }
-  return unit * qty;
+  return isDailyLine(item, orderType) ? unit * qty * Math.max(1, days) : unit * qty;
 };
 
-/** What the line row shows: per day or not, the days counted, and the line total. */
+/**
+ * What the line row shows: per day or not, the days counted, and the line total.
+ * The total comes from `computeOrderLineTotal`, so it always equals the saved total.
+ */
 export const getOrderLineDisplay = (
   item: OrderLinePricingItem,
   orderType: OrderLineOrderType,
   pickupDate?: string,
   returnDate?: string
 ): { isDaily: boolean; days: number; total: number } => {
-  const isDaily = orderType === 'RENT' && (item.pricingType === 'DAILY' || item.product?.pricingType === 'DAILY');
-  let days = 1;
-  if (isDaily && pickupDate && returnDate) {
-    // Pickup and return day both count (#351)
-    days = countRentalDays(pickupDate, returnDate);
-  }
-  const lineDays = isDaily ? days : 1;
-  return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };
+  const isDaily = isDailyLine(item, orderType);
+  // Pickup and return day both count (#351); 1 without both dates
+  const days = isDaily ? countRentalDays(pickupDate, returnDate) : 1;
+  return { isDaily, days, total: computeOrderLineTotal(item, orderType, days) };
 };
 
-/** Unit price and line total after the order switches between RENT and SALE. */
+/**
+ * Unit price and line total after the order switches between RENT and SALE.
+ * SALE: sale price (fallback rent price), unit × qty.
+ * RENT: the selected option's price (by id, else the option of the line's type), else rent price;
+ * the total follows the per-day rule.
+ */
 export const repriceOrderLineForOrderType = (
   item: OrderLinePricingItem,
   orderType: OrderLineOrderType,
-  _days: number
+  days: number
 ): { unitPrice: number; totalPrice: number } => {
   const rentPrice = item.product?.rentPrice ?? 0;
-  const salePrice = item.product?.salePrice ?? rentPrice;
-  const unitPrice = orderType === 'RENT' ? rentPrice : salePrice;
-  return { unitPrice, totalPrice: unitPrice * (item.quantity || 1) };
+  if (orderType === 'SALE') {
+    const unitPrice = item.product?.salePrice ?? rentPrice;
+    return { unitPrice, totalPrice: computeOrderLineTotal({ ...item, unitPrice }, 'SALE', days) };
+  }
+  const opts = getOptions(item);
+  const lineType = resolveOrderLinePricingType(item);
+  const selected =
+    (item.selectedPricingOptionId != null ? opts.find(o => o.id === item.selectedPricingOptionId) : undefined) ??
+    opts.find(o => (o.type || '').toUpperCase() === lineType);
+  const unitPrice = selected?.price ?? rentPrice;
+  return { unitPrice, totalPrice: computeOrderLineTotal({ ...item, unitPrice }, 'RENT', days) };
 };

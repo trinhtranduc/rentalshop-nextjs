@@ -22,7 +22,7 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { getOrderLineDisplay } from '@rentalshop/utils';
+import { getOrderLineDisplay, resolveOrderLinePricingType } from '@rentalshop/utils';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
@@ -386,7 +386,8 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
   const name = displayProduct?.name || `#${item.productId}`;
   const imageUrl = displayProduct?.images?.[0];
   const line = getOrderLineDisplay(item, orderType, pickupDate, returnDate);
-  const pricingType = (item.pricingType || 'FIXED').toUpperCase();
+  // Same resolved type as the line total and the saved order (#444)
+  const pricingType = resolveOrderLinePricingType(item);
   const availability = useItemAvailability(
     product || (item.product as ProductWithStock | undefined),
     orderType,
