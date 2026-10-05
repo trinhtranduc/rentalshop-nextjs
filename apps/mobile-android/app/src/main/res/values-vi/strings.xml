@@ -908,6 +908,9 @@
     <string name="authv2_create_store">Tạo cửa hàng mới</string>
     <string name="authv2_have_store">Đã có cửa hàng?</string>
     <string name="authv2_remember_password">Nhớ ra mật khẩu?</string>
+    <string name="authv2_store_name_placeholder">VD: Áo dài Minh Châu</string>
+    <string name="authv2_phone_placeholder">VD: 0901 234 567</string>
+    <string name="authv2_full_name_placeholder">VD: Nguyễn Văn A</string>
     <string name="authv2_back">Quay lại</string>
     <string name="authv2_step">Bước %1$d/%2$d</string>
     <string name="authv2_store_title">Cửa hàng của bạn</string>

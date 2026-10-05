@@ -923,6 +923,9 @@
     <string name="authv2_create_store">Create a new shop</string>
     <string name="authv2_have_store">Already have a shop?</string>
     <string name="authv2_remember_password">Remembered your password?</string>
+    <string name="authv2_store_name_placeholder">e.g. Minh Chau Ao Dai</string>
+    <string name="authv2_phone_placeholder">e.g. 0901 234 567</string>
+    <string name="authv2_full_name_placeholder">e.g. Nguyen Van A</string>
     <string name="authv2_back">Back</string>
     <string name="authv2_step">Step %1$d/%2$d</string>
     <string name="authv2_store_title">Your shop</string>

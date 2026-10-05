@@ -13,7 +13,7 @@ final class LoginV2ViewController: BaseViewControler {
     private let authService = AuthenticationService.shared
 
     private let emailField = AuthV2Field(title: "Email".localized(), icon: "envelope", placeholder: "authv2.email.placeholder".localized())
-    private let passwordField = AuthV2Field(title: "Password".localized(), icon: "lock", secure: true)
+    private let passwordField = AuthV2Field(title: "Password".localized(), icon: "lock", placeholder: AuthV2Style.passwordPlaceholder, secure: true)
     private let loginButton = AuthV2PrimaryButton(title: "Login".localized())
 
     override func viewDidLoad() {
@@ -60,8 +60,9 @@ final class LoginV2ViewController: BaseViewControler {
         content.setCustomSpacing(48, after: brand)
         content.setCustomSpacing(20, after: title)
         content.setCustomSpacing(14, after: emailField)
-        content.setCustomSpacing(0, after: passwordField)
-        content.setCustomSpacing(4, after: forgotRow)
+        // Clear space around "Quên mật khẩu?" so it does not crowd the button
+        content.setCustomSpacing(8, after: passwordField)
+        content.setCustomSpacing(16, after: forgotRow)
         content.setCustomSpacing(8, after: loginButton)
     }
 

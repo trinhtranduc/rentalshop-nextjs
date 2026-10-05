@@ -1872,7 +1872,9 @@
 "authv2.store.title" = "Your shop";
 "authv2.store.subtitle" = "Printed on receipts. You can change it later.";
 "authv2.storeName" = "Shop name";
+"authv2.storeName.placeholder" = "e.g. Minh Chau Ao Dai";
 "authv2.phone" = "Phone number";
+"authv2.phone.placeholder" = "e.g. 0901 234 567";
 "authv2.address" = "Address";
 "authv2.address.placeholder" = "Number, street, district";
 "authv2.rentWhat" = "What do you rent?";
@@ -1887,6 +1889,7 @@
 "authv2.owner.title" = "Owner account";
 "authv2.owner.subtitle" = "You sign in with this email.";
 "authv2.fullName" = "Full name";
+"authv2.fullName.placeholder" = "e.g. Nguyen Van A";
 "authv2.password.hint" = "At least 6 characters.";
 "authv2.confirmPassword" = "Re-enter password";
 "authv2.passwordsMismatch" = "The passwords don't match.";

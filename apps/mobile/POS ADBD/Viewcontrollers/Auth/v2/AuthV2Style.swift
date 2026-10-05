@@ -27,6 +27,8 @@ enum AuthV2Style {
     static let titleLineHeight: CGFloat = 36
     static let wordmark = UIColor(hexString: "1E3A8A")
     static let brandName = "AnyRent"
+    /// Placeholder of every password field: dots, not words (owner, #466)
+    static let passwordPlaceholder = "••••••••"
 
     // Controls
     static let primary = DS.Color.primary

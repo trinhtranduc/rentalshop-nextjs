@@ -67,6 +67,19 @@ after-create-store-2-top as well).
 - Not captured, because they need an API call or a login: email sent (mail tile) and onboarding v2. They build and
   follow the same tokens.
 
+## Owner review round 1 (2026-10-05)
+
+- Every password and confirm-password field gets the placeholder "••••••••". It is a literal and is not translated.
+- Every 4A text field has a placeholder:
+  - store name "VD: Áo dài Minh Châu", phone "VD: 0901 234 567" and full name "VD: Nguyễn Văn A". These are new keys
+    `authv2.{storeName,phone,fullName}.placeholder` / `authv2_{store_name,phone,full_name}_placeholder`, in en and vi.
+  - address reuses `authv2.address.placeholder`.
+  - step-2 email and forgot email reuse `authv2.email.placeholder` (ten@cuahang.vn).
+- Login spacing: 8pt between the password field and "Quên mật khẩu?", and 16pt between that link and Đăng nhập.
+  The create-store footer gap between the button and "Đã có cửa hàng?" goes from 2pt to 8pt. Forgot password was
+  already spaced (14pt / 8pt).
+- Screenshots: `auth-shots/after2-*.png`.
+
 ## Results (2026-10-05)
 
 - iOS `POS ADBDTests` on the spare simulator: 174 tests, 0 failures, TEST SUCCEEDED.

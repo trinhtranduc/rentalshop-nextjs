@@ -27,17 +27,17 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     private var ownerStack = UIStackView()
 
     // Step 1
-    private let storeNameField = AuthV2Field(title: "authv2.storeName".localized(), icon: "storefront")
-    private let phoneField = AuthV2Field(title: "authv2.phone".localized(), icon: "phone")
+    private let storeNameField = AuthV2Field(title: "authv2.storeName".localized(), icon: "storefront", placeholder: "authv2.storeName.placeholder".localized())
+    private let phoneField = AuthV2Field(title: "authv2.phone".localized(), icon: "phone", placeholder: "authv2.phone.placeholder".localized())
     private let addressField = AuthV2Field(title: "authv2.address".localized(), icon: "mappin.and.ellipse", placeholder: "authv2.address.placeholder".localized())
     private let chipFlow = AuthV2ChipFlow()
     private var chips: [AuthV2Chip] = []
 
     // Step 2
-    private let nameField = AuthV2Field(title: "authv2.fullName".localized(), icon: "person")
-    private let emailField = AuthV2Field(title: "Email".localized(), icon: "envelope")
-    private let passwordField = AuthV2Field(title: "Password".localized(), icon: "lock", hint: "authv2.password.hint".localized(), secure: true)
-    private let confirmField = AuthV2Field(title: "authv2.confirmPassword".localized(), icon: "lock", secure: true)
+    private let nameField = AuthV2Field(title: "authv2.fullName".localized(), icon: "person", placeholder: "authv2.fullName.placeholder".localized())
+    private let emailField = AuthV2Field(title: "Email".localized(), icon: "envelope", placeholder: "authv2.email.placeholder".localized())
+    private let passwordField = AuthV2Field(title: "Password".localized(), icon: "lock", placeholder: AuthV2Style.passwordPlaceholder, hint: "authv2.password.hint".localized(), secure: true)
+    private let confirmField = AuthV2Field(title: "authv2.confirmPassword".localized(), icon: "lock", placeholder: AuthV2Style.passwordPlaceholder, secure: true)
     private let termsCheck = UIButton(type: .custom)
     private let termsError = UILabel()
     private let termsText = UITextView()
@@ -73,7 +73,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         loginRow = row
         let footer = UIStackView(arrangedSubviews: [primaryButton, loginRow])
         footer.axis = .vertical
-        footer.spacing = 2
+        footer.spacing = 8
         let content = authV2Page(header: header, footer: footer, contentInsetTop: 24)
         content.addArrangedSubview(progress)
 

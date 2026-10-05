@@ -1870,7 +1870,9 @@
 "authv2.store.title" = "Cửa hàng của bạn";
 "authv2.store.subtitle" = "Thông tin này in trên hóa đơn, sửa được sau.";
 "authv2.storeName" = "Tên cửa hàng";
+"authv2.storeName.placeholder" = "VD: Áo dài Minh Châu";
 "authv2.phone" = "Số điện thoại";
+"authv2.phone.placeholder" = "VD: 0901 234 567";
 "authv2.address" = "Địa chỉ";
 "authv2.address.placeholder" = "Số nhà, đường, quận";
 "authv2.rentWhat" = "Bạn cho thuê gì?";
@@ -1885,6 +1887,7 @@
 "authv2.owner.title" = "Tài khoản chủ cửa hàng";
 "authv2.owner.subtitle" = "Dùng email này để đăng nhập.";
 "authv2.fullName" = "Họ và tên";
+"authv2.fullName.placeholder" = "VD: Nguyễn Văn A";
 "authv2.password.hint" = "Ít nhất 6 ký tự.";
 "authv2.confirmPassword" = "Nhập lại mật khẩu";
 "authv2.passwordsMismatch" = "Mật khẩu nhập lại chưa khớp.";

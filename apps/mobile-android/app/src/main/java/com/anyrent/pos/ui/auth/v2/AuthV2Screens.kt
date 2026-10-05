@@ -129,6 +129,9 @@ private val ChipBorder = AuthV2Style.ChipBorder
 private val TermsText = AuthV2Style.TermsText
 private val MaxWidth = AuthV2Style.MaxWidth
 
+/** Placeholder of every password field: dots, not words (owner, #466) */
+private const val AuthPasswordPlaceholder = "••••••••"
+
 // MARK: - Building blocks
 
 /**
@@ -476,13 +479,17 @@ fun LoginV2Screen(
             onValueChange = { password = it; passwordError = null },
             error = passwordError,
             icon = Icons.Outlined.Lock,
+            placeholder = AuthPasswordPlaceholder,
             password = true,
             imeAction = ImeAction.Go,
             onImeAction = { submit() },
         )
+        // Clear space around "Quên mật khẩu?" so it does not crowd the button
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             AuthLink(stringResource(R.string.authv2_forgot_link), { onForgotPassword(email.trim()) })
         }
+        Spacer(Modifier.height(16.dp))
         generalError?.let {
             Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp))
         }
@@ -576,6 +583,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
             ) { primary() }
             // Step 1 only; steps aside with the keyboard so the fields keep the room (#448)
             if (step == 1 && !keyboardUp) {
+                Spacer(Modifier.height(8.dp))
                 AuthSecondaryRow(stringResource(R.string.authv2_have_store), stringResource(R.string.authv2_login_button), onBack)
             }
         },
@@ -592,6 +600,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     onValueChange = { draft = draft.copy(storeName = it); clear(AuthField.STORE_NAME) },
                     error = errors[AuthField.STORE_NAME],
                     icon = Icons.Outlined.Storefront,
+                    placeholder = stringResource(R.string.authv2_store_name_placeholder),
                     capitalization = KeyboardCapitalization.Words,
                 )
                 AuthField(
@@ -600,6 +609,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     onValueChange = { draft = draft.copy(phone = it); clear(AuthField.PHONE) },
                     error = errors[AuthField.PHONE],
                     icon = Icons.Outlined.Phone,
+                    placeholder = stringResource(R.string.authv2_phone_placeholder),
                     keyboardType = KeyboardType.Phone,
                 )
                 AuthField(
@@ -644,6 +654,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     onValueChange = { draft = draft.copy(fullName = it); clear(AuthField.FULL_NAME) },
                     error = errors[AuthField.FULL_NAME],
                     icon = Icons.Outlined.Person,
+                    placeholder = stringResource(R.string.authv2_full_name_placeholder),
                     capitalization = KeyboardCapitalization.Words,
                 )
                 AuthField(
@@ -652,6 +663,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     onValueChange = { draft = draft.copy(email = it); clear(AuthField.EMAIL) },
                     error = errors[AuthField.EMAIL],
                     icon = Icons.Outlined.Email,
+                    placeholder = stringResource(R.string.authv2_email_placeholder),
                     keyboardType = KeyboardType.Email,
                 )
                 AuthField(
@@ -660,6 +672,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     onValueChange = { draft = draft.copy(password = it); clear(AuthField.PASSWORD) },
                     error = errors[AuthField.PASSWORD],
                     icon = Icons.Outlined.Lock,
+                    placeholder = AuthPasswordPlaceholder,
                     hint = stringResource(R.string.authv2_password_hint),
                     password = true,
                 )
@@ -669,6 +682,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     onValueChange = { draft = draft.copy(confirmPassword = it); clear(AuthField.CONFIRM_PASSWORD) },
                     error = errors[AuthField.CONFIRM_PASSWORD],
                     icon = Icons.Outlined.Lock,
+                    placeholder = AuthPasswordPlaceholder,
                     password = true,
                     imeAction = ImeAction.Done,
                 )
