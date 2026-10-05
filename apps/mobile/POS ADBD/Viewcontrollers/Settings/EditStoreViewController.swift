@@ -140,6 +140,14 @@ class EditStoreViewController: BaseViewControler {
         setupUI()
         setupData()
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // v2 draws its own header: no empty system bar above it in the sheet
+        if v2 {
+            navigationController?.setNavigationBarHidden(true, animated: false)
+        }
+    }
     
     override func setupUI() {
         if v2 {
