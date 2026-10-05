@@ -258,13 +258,15 @@ object CartStore {
                 // When the catalog has that price, drop the override instead of pinning it:
                 // CartLine.unitPrice then gives the same rent price, and a later switch to
                 // SALE uses the sale price instead of this rent price (#373).
+                // A mode the product has no price for starts at 0 and the cart asks for the price
+                // (#473, owner 2026-10-05; iOS `selectPricingType` does the same).
                 val hasCatalogPrice = line.product.pricingOptions.any {
                     it.type.equals(normalized, ignoreCase = true)
                 } || line.product.pricingType.equals(normalized, ignoreCase = true)
                 line.copy(
                     pricingType = normalized,
                     rentalDays = rentalDaysInclusive(),
-                    unitPriceOverride = if (hasCatalogPrice) null else line.unitPrice,
+                    unitPriceOverride = if (hasCatalogPrice) null else 0.0,
                 )
             }
         }

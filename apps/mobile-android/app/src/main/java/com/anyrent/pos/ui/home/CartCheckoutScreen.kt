@@ -71,6 +71,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.anyrent.pos.R
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Customer
@@ -250,28 +251,8 @@ fun CartCheckoutScreen(
                         rentalDaysByProduct = daysByProduct,
                     )
                 } else {
-                    ApiClient.get().createOrder(
-                        orderType = orderType,
-                        customerId = customer?.id,
-                        lines = payloadLines,
-                        totalAmount = CartStore.totalAmount,
-                        depositAmount = deposit,
-                        notes = listOfNotNull(
-                            notes.takeIf { it.isNotBlank() },
-                            collateral.takeIf { it.isNotBlank() }?.let { "Collateral: $it" },
-                        ).joinToString("\n").ifBlank { null },
-                        rentalDays = CartStore.rentalDaysInclusive(),
-                        pickupPlanAt = if (orderType == "RENT") CartStore.isoPickup() else null,
-                        returnPlanAt = if (orderType == "RENT") CartStore.isoReturn() else null,
-                        securityDeposit = security.takeIf { it > 0 },
-                        discountType = if (discountType == CartStore.DiscountType.AMOUNT) "amount" else "percentage",
-                        discountValue = discount.takeIf { it > 0 },
-                        discountAmount = CartStore.discountAmount.takeIf { it > 0 },
-                        depositsByProduct = deposits,
-                        pricingTypesByProduct = pricing,
-                        rentalDaysByProduct = daysByProduct,
-                        idempotencyKey = createIdempotencyKey,
-                    )
+                    // Same request as the new cart's confirm sheet (#476)
+                    CartOrderSubmit.create(createIdempotencyKey)
                 }
             }
             loading = false

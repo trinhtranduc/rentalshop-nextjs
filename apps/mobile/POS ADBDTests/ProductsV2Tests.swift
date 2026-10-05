@@ -501,4 +501,164 @@ extension ProductsV2Tests {
         let restored = try JSONDecoder().decode(CartItem.self, from: JSONEncoder().encode(cart.items[0]))
         XCTAssertTrue(CartV2Logic.offersBothModes(restored))
     }
+
+    // MARK: Owner decision 2026-10-05: both modes on every rent line, the line price is editable
+
+    private func onePriceRentCart() throws -> Cart {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.customer = try JSONDecoder.shared.decode(Customer.self, from: Data(#"{"id":5,"firstName":"Minh","phone":"0912"}"#.utf8))
+        cart.addItem(CartItem(from: try homeRow(options: "[]"), quantity: 2, price: 150_000))
+        let pickup = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")!
+        cart.pickupPlanAt = pickup
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")!
+        return cart
+    }
+
+    func testEveryRentLineShowsTheToggleEvenWithOnePrice() throws {
+        let cart = try onePriceRentCart()
+        XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
+        XCTAssertTrue(CartV2Logic.showsPricingToggle(orderType: .rent))
+        XCTAssertFalse(CartV2Logic.showsPricingToggle(orderType: .sale))
+    }
+
+    func testAModeWithoutAPriceStartsAtZeroAsksForAPriceAndBlocksCreate() throws {
+        let cart = try onePriceRentCart()
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+
+        cart.selectPricingType(at: 0, type: "DAILY")
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent), "the cart opens the price editor")
+        XCTAssertEqual(CartV2Logic.missingPrices(cart), [String(format: "products.cart.needPrice".localized(), "Cart toggle probe both prices")])
+
+        // Back to per rental: the product's own price again
+        cart.selectPricingType(at: 0, type: "FIXED")
+        XCTAssertEqual(cart.items[0].price, 150_000)
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+    }
+
+    func testTheEditedLinePriceIsUsedInTotalsAndTheCreateRequest() throws {
+        let cart = try onePriceRentCart()
+        cart.selectPricingType(at: 0, type: "DAILY")
+        cart.updatePrice(at: 0, price: 60_000)
+        cart.syncRentalDaysFromDates()
+        let days = Double(cart.items[0].rentalDays)
+        XCTAssertGreaterThanOrEqual(days, 3)
+        XCTAssertEqual(CartV2Logic.calc(cart.items[0], orderType: .rent).total, 60_000 * 2 * days)
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+
+        let item = try XCTUnwrap(cart.toCreateOrderRequest().orderItems.first)
+        XCTAssertEqual(item.unitPrice, 60_000)
+        XCTAssertEqual(item.pricingType, "DAILY")
+        XCTAssertEqual(item.rentDays, cart.items[0].rentalDays)
+        XCTAssertEqual(item.totalPrice, 60_000 * 2 * days)
+
+        // Per rental keeps its own price; the edit never touches the product
+        cart.selectPricingType(at: 0, type: "FIXED")
+        cart.updatePrice(at: 0, price: 120_000)
+        XCTAssertEqual(CartV2Logic.calc(cart.items[0], orderType: .rent).total, 240_000)
+        XCTAssertEqual(cart.items[0].originalRentPrice, 150_000)
+    }
+}
+
+/// #476 — "Tạo đơn" opens a confirm sheet on the cart, then a "Đã tạo đơn" sheet
+extension ProductsV2Tests {
+    private var vn: TimeZone { TimeZone(identifier: "Asia/Ho_Chi_Minh")! }
+
+    private func rentCart() throws -> Cart {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.customer = try JSONDecoder.shared.decode(Customer.self, from: Data(#"{"id":5,"firstName":"Trần Văn","lastName":"Minh","phone":"0912555018"}"#.utf8))
+        let vest = CartItem(productId: 1, productName: "Vest đen slim fit", barcode: nil, quantity: 1, price: 150_000, deposit: 100_000,
+                            originalRentPrice: 150_000, originalSalePrice: 0)
+        let aoDai = CartItem(productId: 2, productName: "Áo dài lụa đỏ", barcode: nil, quantity: 2, price: 300_000, deposit: 100_000,
+                             originalRentPrice: 300_000, originalSalePrice: 0)
+        cart.addItem(vest)
+        cart.addItem(aoDai)
+        // T7 03/10 → T2 05/10 in Vietnam
+        cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")
+        return cart
+    }
+
+    func testRentConfirmSheetSummarisesTheCart() throws {
+        let cart = try rentCart()
+        let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertFalse(confirm.isSale)
+        XCTAssertEqual(confirm.customer, "Trần Văn Minh")
+        XCTAssertEqual(confirm.range, "03/10 → 05/10")
+        XCTAssertEqual(confirm.days, 3)
+        XCTAssertEqual(confirm.items, "Vest đen slim fit, Áo dài lụa đỏ ×2")
+        XCTAssertEqual(confirm.total, cart.totalAmount)
+        XCTAssertEqual(confirm.total, 750_000)
+        XCTAssertEqual(confirm.collect, cart.depositAmount, "rent collects the prepaid deposit")
+        XCTAssertEqual(confirm.titleKey, "products.cart.confirm.rentTitle")
+        XCTAssertEqual(confirm.collectKey, "products.cart.confirm.collectDeposit")
+    }
+
+    func testSaleConfirmSheetCollectsTheAmountDue() throws {
+        let cart = try rentCart()
+        cart.orderType = .sale
+        cart.discount = 10_000
+        let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertTrue(confirm.isSale)
+        XCTAssertNil(confirm.range, "a sale has no rental dates")
+        XCTAssertEqual(confirm.collect, cart.amountDue)
+        XCTAssertEqual(confirm.titleKey, "products.cart.confirm.saleTitle")
+        XCTAssertEqual(confirm.collectKey, "products.cart.confirm.collectSale")
+    }
+
+    func testCreatedSheetUsesTheShortOrderNumber() throws {
+        let confirm = CreateOrderSheetLogic.confirm(try rentCart(), timeZone: vn)
+        let created = CreateOrderSheetLogic.created(orderNumber: "ORD-17-0063", confirm: confirm)
+        XCTAssertEqual(created.shortNumber, "0063")
+        XCTAssertEqual(created.subtitle, "Trần Văn Minh · 03/10 → 05/10")
+        XCTAssertEqual(created.paid, confirm.collect)
+        XCTAssertEqual(created.paidKey, "products.cart.created.paidDeposit")
+
+        let saleCart = try rentCart()
+        saleCart.orderType = .sale
+        let sale = CreateOrderSheetLogic.created(orderNumber: "ORD-17-0064", confirm: CreateOrderSheetLogic.confirm(saleCart, timeZone: vn))
+        XCTAssertEqual(sale.subtitle, "Trần Văn Minh")
+        XCTAssertEqual(sale.paidKey, "products.cart.created.paidSale")
+    }
+
+    func testBothSheetsLayOutWithTheBoardButtons() throws {
+        // Laying the buttons out used to throw "no common ancestor" (width constraint before the row existed)
+        let confirm = CreateOrderSheetLogic.confirm(try rentCart(), timeZone: vn)
+        let sheets: [V2FittingSheet] = [
+            CreateOrderConfirmSheet(confirm: confirm),
+            OrderCreatedSheet(summary: CreateOrderSheetLogic.created(orderNumber: "ORD-17-0063", confirm: confirm)),
+        ]
+        for sheet in sheets {
+            sheet.loadViewIfNeeded()
+            sheet.view.frame = CGRect(x: 0, y: 0, width: 390, height: 460)
+            sheet.view.layoutIfNeeded()
+            let buttons = sheet.stack.arrangedSubviews.last as? UIStackView
+            let widths = buttons?.arrangedSubviews.map { $0.frame.width } ?? []
+            XCTAssertEqual(widths.count, 2)
+            XCTAssertEqual(buttons?.arrangedSubviews.first?.frame.height, 50)
+            let ratio: CGFloat = sheet is CreateOrderConfirmSheet ? 1.6 : 1
+            XCTAssertEqual(widths[1] / widths[0], ratio, accuracy: 0.02)
+        }
+    }
+
+    func testOnlyANewOrderUsesTheSheet() {
+        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: false), .confirmSheet)
+        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .preview, "editing an order keeps the review screen")
+    }
+
+    func testOneCreateAtATimeAndTheKeyIsReusedOnRetry() {
+        let submission = CreateOrderSubmission()
+        let key = submission.idempotencyKey
+        XCTAssertTrue(submission.begin())
+        XCTAssertFalse(submission.begin(), "a double tap must not send a second create (#341)")
+        submission.failed()
+        XCTAssertEqual(submission.idempotencyKey, key, "a retry after an error reuses the key")
+        XCTAssertTrue(submission.begin())
+        submission.succeeded()
+        XCTAssertNotEqual(submission.idempotencyKey, key, "the next cart is a new checkout")
+        XCTAssertFalse(submission.inFlight)
+    }
 }

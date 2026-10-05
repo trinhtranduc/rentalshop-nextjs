@@ -347,6 +347,22 @@ enum CartV2Logic {
         return types.contains(ProductPricingMode.perRental.rawValue) && types.contains(ProductPricingMode.perDay.rawValue)
     }
 
+    /// "Theo lần / Theo ngày" on every rent line, whatever prices the product has (owner, 2026-10-05)
+    static func showsPricingToggle(orderType: OrderType) -> Bool {
+        orderType == .rent
+    }
+
+    /// A rent line with no price yet (a mode the product has no price for): the cart asks for one
+    static func needsPrice(_ item: CartItem, orderType: OrderType) -> Bool {
+        orderType == .rent && item.price <= 0
+    }
+
+    /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
+    static func missingPrices(_ cart: Cart) -> [String] {
+        cart.items.filter { needsPrice($0, orderType: cart.orderType) }
+            .map { String(format: "products.cart.needPrice".localized(), $0.productName ?? "") }
+    }
+
     /// Units free for the chosen dates (rent) or in stock today (sale), from batch availability; nil = not loaded
     static func shortage(_ item: CartItem) -> Int? {
         guard let status = item.availabilityStatus, status.available < item.quantity else { return nil }
@@ -377,6 +393,114 @@ enum CartV2Logic {
     /// (the cart opened from a customer would otherwise go back to the customer page)
     static func addMoreRoute(previousIsProductsHome: Bool) -> AddMoreRoute {
         previousIsProductsHome ? .pop : .openHomeTab
+    }
+
+    /// What "Tạo đơn" opens (#476): a new order is confirmed in a sheet on the cart; an edited order keeps the review screen
+    enum CtaRoute: Equatable {
+        case confirmSheet
+        case preview
+    }
+
+    static func ctaRoute(isEditMode: Bool) -> CtaRoute {
+        isEditMode ? .preview : .confirmSheet
+    }
+}
+
+// MARK: - Create order sheet (#476, boards Gio-hang-xac-nhan, Gio-hang-da-tao)
+
+/// "Tạo đơn thuê?" / "Bán & thu tiền?" sheet content
+struct CreateOrderConfirm: Equatable {
+    let isSale: Bool
+    let customer: String
+    /// `03/10 → 05/10`; nil for a sale
+    let range: String?
+    /// Inclusive civil days; nil for a sale
+    let days: Int?
+    /// `Vest đen slim fit, Áo dài lụa đỏ ×2`
+    let items: String
+    let total: Double
+    /// Prepaid deposit (rent) or amount due (sale)
+    let collect: Double
+
+    var titleKey: String { isSale ? "products.cart.confirm.saleTitle" : "products.cart.confirm.rentTitle" }
+    var collectKey: String { isSale ? "products.cart.confirm.collectSale" : "products.cart.confirm.collectDeposit" }
+}
+
+/// "Đã tạo đơn #0063" sheet content
+struct CreatedOrderSummary: Equatable {
+    let shortNumber: String
+    /// `Trần Văn Minh · 03/10 → 05/10` (sale: the customer)
+    let subtitle: String
+    let paid: Double
+    let isSale: Bool
+
+    var paidKey: String { isSale ? "products.cart.created.paidSale" : "products.cart.created.paidDeposit" }
+}
+
+enum CreateOrderSheetLogic {
+    static func confirm(_ cart: Cart, timeZone: TimeZone = .current) -> CreateOrderConfirm {
+        let isSale = cart.orderType == .sale
+        var range: String?
+        var days: Int?
+        if !isSale, let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt {
+            range = dayMonth(pickup, timeZone: timeZone) + " → " + dayMonth(ret, timeZone: timeZone)
+            days = CartV2Logic.rentalDays(pickup: pickup, return: ret, timeZone: timeZone)
+        }
+        let items = cart.items
+            .map { item in
+                let name = item.productName ?? ""
+                return item.quantity > 1 ? "\(name) ×\(item.quantity)" : name
+            }
+            .joined(separator: ", ")
+        return CreateOrderConfirm(
+            isSale: isSale,
+            customer: cart.customer.map(CustomersV2Logic.displayName) ?? "—",
+            range: range,
+            days: days,
+            items: items,
+            total: cart.totalAmount,
+            collect: CartV2Logic.collectNow(cart)
+        )
+    }
+
+    static func created(orderNumber: String, confirm: CreateOrderConfirm) -> CreatedOrderSummary {
+        CreatedOrderSummary(
+            shortNumber: OrdersHomeLogic.shortNumber(orderNumber),
+            subtitle: [confirm.customer, confirm.range].compactMap { $0 }.joined(separator: " · "),
+            paid: confirm.collect,
+            isSale: confirm.isSale
+        )
+    }
+
+    /// `03/10`, the civil day in `timeZone`
+    static func dayMonth(_ date: Date, timeZone: TimeZone = .current) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.day, .month], from: date)
+        return String(format: "%02d/%02d", parts.day ?? 0, parts.month ?? 0)
+    }
+}
+
+/// One create at a time, one Idempotency-Key per checkout, reused when staff retry after an error (#341)
+final class CreateOrderSubmission {
+    private(set) var idempotencyKey = UUID().uuidString
+    private(set) var inFlight = false
+
+    /// False while a create is already on its way (a double tap)
+    func begin() -> Bool {
+        guard !inFlight else { return false }
+        inFlight = true
+        return true
+    }
+
+    func failed() {
+        inFlight = false
+    }
+
+    /// The next cart is a new checkout
+    func succeeded() {
+        inFlight = false
+        idempotencyKey = UUID().uuidString
     }
 }
 

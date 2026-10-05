@@ -278,6 +278,16 @@ object CartV2Logic {
     fun offersBothModes(product: Product): Boolean =
         ProductPricing.perRental(product) != null && ProductPricing.perDay(product) != null
 
+    /** "Theo lần / Theo ngày" on every rent line, whatever prices the product has (owner, 2026-10-05) */
+    fun showsPricingToggle(isSale: Boolean): Boolean = !isSale
+
+    /** A rent line with no price yet (a mode the product has no price for): the cart asks for one */
+    fun needsPrice(line: CartLine, isSale: Boolean): Boolean = !isSale && line.unitPrice <= 0
+
+    /** Names of the rent lines without a price; each becomes "Nhập giá cho …" in the error alert before Tạo đơn */
+    fun missingPrices(lines: List<CartLine>, isSale: Boolean): List<String> =
+        lines.filter { needsPrice(it, isSale) }.map { it.product.name }
+
     /**
      * #473 — a line built before the product had both prices (added earlier, restored from disk, or loaded from an
      * edited order) takes the product's options, so the cart offers "Theo lần / Theo ngày". Only when [product] has

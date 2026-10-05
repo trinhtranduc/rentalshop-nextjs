@@ -282,3 +282,202 @@ enum KeyboardDoneBar {
         }
     }
 }
+
+// MARK: - Create order sheets (#476, boards Gio-hang-xac-nhan, Gio-hang-da-tao)
+
+/// Bottom sheet as tall as its content: grabber, 24pt top radius
+class V2FittingSheet: UIViewController {
+    let stack = UIStackView()
+
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        if let sheet = sheetPresentationController {
+            sheet.detents = [.medium()]
+            if #available(iOS 16.0, *) {
+                sheet.detents = [.custom { [weak self] context in
+                    guard let self else { return nil }
+                    return min(context.maximumDetentValue, self.fittingHeight())
+                }]
+            }
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+        stack.axis = .vertical
+        stack.spacing = 14
+        view.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(28)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+    }
+
+    private func fittingHeight() -> CGFloat {
+        loadViewIfNeeded()
+        let width = (view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width) - 40
+        let size = stack.systemLayoutSizeFitting(CGSize(width: width, height: 0),
+                                                 withHorizontalFittingPriority: .required,
+                                                 verticalFittingPriority: .fittingSizeLevel)
+        return 28 + size.height + 24
+    }
+
+    static func buttons(cancel: UIButton, confirm: UIButton, confirmRatio: CGFloat) -> UIStackView {
+        [cancel, confirm].forEach { button in button.snp.remakeConstraints { make in make.height.equalTo(50) } }
+        let row = UIStackView(arrangedSubviews: [cancel, confirm])
+        row.spacing = 10
+        // After both are in the row: a width constraint needs a common ancestor
+        confirm.snp.makeConstraints { make in make.width.equalTo(cancel).multipliedBy(confirmRatio) }
+        return row
+    }
+}
+
+/// "Tạo đơn thuê?" / "Bán & thu tiền?" — Hủy / Tạo đơn
+final class CreateOrderConfirmSheet: V2FittingSheet {
+    var onConfirm: (() -> Void)?
+    private let confirm: CreateOrderConfirm
+    private let confirmButton: UIButton
+
+    init(confirm: CreateOrderConfirm) {
+        self.confirm = confirm
+        confirmButton = V2.primaryButton((confirm.isSale ? "products.cart.sellAndCollect" : "products.cart.create").localized())
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        stack.addArrangedSubview(V2.label(confirm.titleKey.localized(), size: 20, weight: .bold, lines: 0))
+
+        let rows = UIStackView()
+        rows.axis = .vertical
+        rows.spacing = 2
+        rows.addArrangedSubview(row("products.cart.confirm.customer".localized(), confirm.customer))
+        if let range = confirm.range, let days = confirm.days {
+            rows.addArrangedSubview(row("products.cart.confirm.dates".localized(),
+                                        range + " · " + PluralText.format("products.cart.days", count: days, days)))
+        }
+        rows.addArrangedSubview(row("products.cart.confirm.items".localized(), confirm.items))
+        rows.addArrangedSubview(row("products.cart.total".localized(), MoneyFormatter.format(confirm.total), bold: true))
+        stack.addArrangedSubview(rows)
+
+        let collect = UIView()
+        collect.backgroundColor = UIColor(hexString: "EFF6FF")
+        collect.layer.cornerRadius = 14
+        let navy = UIColor(hexString: "1E3A8A")
+        let collectLabel = V2.label(confirm.collectKey.localized(), size: DS.TextSize.body, color: navy)
+        let collectAmount = V2.label(MoneyFormatter.format(confirm.collect), size: 22, weight: .bold, color: navy)
+        collectAmount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        [collectLabel, collectAmount].forEach(collect.addSubview)
+        collectLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.centerY.equalToSuperview()
+        }
+        collectAmount.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-14)
+            make.top.bottom.equalToSuperview().inset(12)
+            make.leading.greaterThanOrEqualTo(collectLabel.snp.trailing).offset(8)
+        }
+        collect.isAccessibilityElement = true
+        collect.accessibilityLabel = [collectLabel.text, collectAmount.text].compactMap { $0 }.joined(separator: " ")
+        stack.addArrangedSubview(collect)
+
+        let cancel = V2.secondaryButton("Cancel".localized())
+        cancel.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
+        confirmButton.accessibilityIdentifier = "cart.confirm.create"
+        let buttons = V2FittingSheet.buttons(cancel: cancel, confirm: confirmButton, confirmRatio: 1.6)
+        stack.setCustomSpacing(16, after: collect)
+        stack.addArrangedSubview(buttons)
+    }
+
+    /// Greyed while the create is on its way; swipe-down is blocked too
+    func setBusy(_ busy: Bool) {
+        confirmButton.isEnabled = !busy
+        confirmButton.alpha = busy ? 0.6 : 1
+        isModalInPresentation = busy
+    }
+
+    private func row(_ title: String, _ value: String, bold: Bool = false) -> UIView {
+        let titleLabel = V2.label(title, size: DS.TextSize.body, color: DS.Color.textMuted)
+        titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let valueLabel = V2.label(value, size: DS.TextSize.body, weight: bold ? .semibold : .regular, lines: 0)
+        valueLabel.textAlignment = .right
+        let row = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        row.alignment = .firstBaseline
+        row.spacing = 12
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(30) }
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = title + ", " + value
+        return row
+    }
+
+    @objc private func cancelTapped() {
+        dismiss(animated: true)
+    }
+
+    @objc private func confirmTapped() {
+        onConfirm?()
+    }
+}
+
+/// "Đã tạo đơn #0063" — Tạo đơn mới / Xem đơn
+final class OrderCreatedSheet: V2FittingSheet {
+    var onNewOrder: (() -> Void)?
+    var onViewOrder: (() -> Void)?
+    private let summary: CreatedOrderSummary
+
+    init(summary: CreatedOrderSummary) {
+        self.summary = summary
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        stack.alignment = .center
+        stack.spacing = 12
+
+        let check = UIImageView(image: DS.symbol("checkmark", 28, weight: .bold))
+        check.tintColor = V2.ok
+        check.contentMode = .center
+        check.backgroundColor = UIColor(hexString: "D1FAE5")
+        check.layer.cornerRadius = 28
+        check.snp.makeConstraints { make in make.width.height.equalTo(56) }
+        stack.addArrangedSubview(check)
+
+        let title = V2.label(String(format: "products.cart.created.title".localized(), summary.shortNumber), size: 20, weight: .bold, lines: 0)
+        title.textAlignment = .center
+        stack.addArrangedSubview(title)
+
+        let paid = String(format: summary.paidKey.localized(), MoneyFormatter.format(summary.paid))
+        let detail = V2.label(summary.subtitle + "\n" + paid, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+        detail.textAlignment = .center
+        stack.addArrangedSubview(detail)
+
+        let newOrder = V2.secondaryButton("products.cart.created.newOrder".localized())
+        newOrder.addTarget(self, action: #selector(newOrderTapped), for: .touchUpInside)
+        let viewOrder = V2.primaryButton("products.cart.created.viewOrder".localized())
+        viewOrder.addTarget(self, action: #selector(viewOrderTapped), for: .touchUpInside)
+        let buttons = V2FittingSheet.buttons(cancel: newOrder, confirm: viewOrder, confirmRatio: 1)
+        stack.setCustomSpacing(18, after: detail)
+        stack.addArrangedSubview(buttons)
+        buttons.snp.makeConstraints { make in make.width.equalTo(stack) }
+    }
+
+    @objc private func newOrderTapped() {
+        dismiss(animated: true) { [onNewOrder] in onNewOrder?() }
+    }
+
+    @objc private func viewOrderTapped() {
+        dismiss(animated: true) { [onViewOrder] in onViewOrder?() }
+    }
+}

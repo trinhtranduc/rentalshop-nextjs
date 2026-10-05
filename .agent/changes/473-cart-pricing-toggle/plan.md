@@ -10,7 +10,9 @@ Issue: #473 · Status: accepted · Spec: ./spec.md
    (load products of stale rent lines on appear).
 3. Android: `domain/products/ProductRules.kt` (`CartV2Logic.withFreshPricing`), `data/CartStore.kt`
    (`addProduct`, `refreshPricing`), `ui/home/v2/CartV2Screen.kt` (load products of stale rent lines).
-4. Skill `mobile-parity`: same rule in both apps. No API change.
+4. Owner decision: tests first (both apps), then toggle on every rent line, line price editor, price-0 validation,
+   strings (`en`/`vi-VN`, `values`/`values-vi`). Android `CartStore.setPricingType` starts a priceless mode at 0.
+5. Skill `mobile-parity`: same rule in both apps. No API change.
 
 ## Verification
 

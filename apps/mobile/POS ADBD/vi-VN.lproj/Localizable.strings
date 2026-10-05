@@ -1618,6 +1618,20 @@
 "products.cart.bar.one" = "Giỏ hàng · %d món";
 "products.cart.removeTitle" = "Bỏ món này khỏi giỏ?";
 "products.cart.remove" = "Bỏ";
+"products.cart.confirm.rentTitle" = "Tạo đơn thuê?";
+"products.cart.confirm.saleTitle" = "Bán & thu tiền?";
+"products.cart.confirm.customer" = "Khách";
+"products.cart.confirm.dates" = "Lịch thuê";
+"products.cart.confirm.items" = "Món";
+"products.cart.confirm.collectDeposit" = "Thu cọc ngay";
+"products.cart.confirm.collectSale" = "Thu ngay";
+"products.cart.created.title" = "Đã tạo đơn #%@";
+"products.cart.created.paidDeposit" = "Đã thu cọc %@";
+"products.cart.created.paidSale" = "Đã thu %@";
+"products.cart.created.newOrder" = "Tạo đơn mới";
+"products.cart.created.viewOrder" = "Xem đơn";
+"products.cart.needPrice" = "Nhập giá cho %@";
+"products.cart.editPrice" = "Sửa giá cho đơn này";
 // MARK: - Orders tab (#371)
 "To do" = "Việc cần làm";
 "All orders" = "Tất cả đơn";
