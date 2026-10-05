@@ -1082,4 +1082,17 @@
     <string name="orders_entity_section">ORDERS</string>
     <string name="orders_entity_million">%1$d.%2$dM</string>
     <string name="orders_entity_million_whole">%1$dM</string>
+    <!-- #482 -->
+    <string name="v2_pricing_title">Pricing</string>
+    <string name="v2_pricing_block">Per block</string>
+    <string name="v2_pricing_hourly">Per hour</string>
+    <string name="v2_pricing_sale">Sale price</string>
+    <string name="v2_pricing_enter_price">Enter price</string>
+    <string name="v2_pricing_per_day_suffix">%1$s/day</string>
+    <string name="v2_pricing_price_field">Price for this order</string>
+    <string name="v2_pricing_note">Applies to this order only, the product price stays.</string>
+    <string name="v2_pricing_apply">Apply</string>
+    <string name="v2_pricing_change">Change pricing for %1$s</string>
+    <string name="v2_pricing_unit">đ</string>
+    <string name="v2_pricing_unit_daily">đ/day</string>
 </resources>

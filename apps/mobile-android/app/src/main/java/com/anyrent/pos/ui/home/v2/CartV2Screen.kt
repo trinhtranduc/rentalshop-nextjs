@@ -1,6 +1,7 @@
 package com.anyrent.pos.ui.home.v2
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -152,6 +153,8 @@ fun CartV2Screen(
         }
     }
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
+    // #482: product id of the line whose "Cách tính giá" sheet is open
+    var pricingLineId by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     // iOS `Cart.validate()` copy, all problems in one alert (#448)
     val needPriceText = stringResource(R.string.v2_cart_need_price)
@@ -309,19 +312,7 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
-                    onPricing = { type ->
-                        CartStore.setPricingType(line.product.id, type)
-                        // A mode the product has no price for starts at 0: ask for the price right away
-                        val updated = CartStore.lines.value.firstOrNull { it.product.id == line.product.id }
-                        if (updated != null && CartV2Logic.needsPrice(updated, isSale)) {
-                            numericText = "0"
-                            numericEditor = "PRICE:${line.product.id}"
-                        }
-                    },
-                    onEditPrice = {
-                        numericText = line.unitPrice.toLong().toString()
-                        numericEditor = "PRICE:${line.product.id}"
-                    },
+                    onOpenPricing = { pricingLineId = line.product.id },
                 )
             }
 
@@ -430,6 +421,24 @@ fun CartV2Screen(
                 showDates = false
             },
         )
+    }
+    pricingLineId?.let { id ->
+        val line = lines.firstOrNull { it.product.id == id }
+        if (line == null) {
+            pricingLineId = null
+        } else {
+            CartPricingSheet(
+                line = line,
+                isSale = isSale,
+                days = CartStore.rentalDaysInclusive(),
+                onDismiss = { pricingLineId = null },
+                onApply = { type, price ->
+                    // The line price for this order only, any role, never the product's price (owner 2026-10-05)
+                    CartStore.applyLinePricing(id, type, price)
+                    pricingLineId = null
+                },
+            )
+        }
     }
     numericEditor?.let { editor ->
         val priceProductId = editor.removePrefix("PRICE:").takeIf { editor.startsWith("PRICE:") }?.toIntOrNull()
@@ -563,8 +572,7 @@ private fun ItemRow(
     isSale: Boolean,
     available: Int?,
     onQuantity: (Int) -> Unit,
-    onPricing: (String) -> Unit,
-    onEditPrice: () -> Unit,
+    onOpenPricing: () -> Unit,
 ) {
     val calc = CartV2Logic.calc(line, isSale)
     val price = formatMoneyVnd(calc.unitPrice)
@@ -582,19 +590,10 @@ private fun ItemRow(
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                // Tap to edit this line's price, any role, any time (owner 2026-10-05)
-                val editPriceLabel = stringResource(R.string.v2_cart_edit_price)
-                Row(
-                    Modifier.clickable(onClickLabel = editPriceLabel, onClick = onEditPrice).heightIn(min = 32.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        calcText, fontSize = DS.TextSize.Secondary,
-                        color = if (CartV2Logic.needsPrice(line, isSale)) Color(0xFFB91C1C) else DS.Colors.TextMuted,
-                    )
-                    Icon(Icons.Outlined.Edit, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
-                }
+                Text(
+                    calcText, fontSize = DS.TextSize.Secondary,
+                    color = if (CartV2Logic.needsPrice(line, isSale)) Color(0xFFB91C1C) else DS.Colors.TextMuted,
+                )
                 CartV2Logic.shortage(available, line.quantity)?.let { left ->
                     Text(
                         stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left),
@@ -602,16 +601,11 @@ private fun ItemRow(
                         modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2)).padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
+                // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet
+                PricingChip(line, isSale, onOpenPricing)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f)) {
-                        if (CartV2Logic.showsPricingToggle(isSale)) {
-                            V2Segmented(
-                                titles = listOf(stringResource(R.string.v2_price_per_rental), stringResource(R.string.v2_price_per_day)),
-                                selected = if (line.pricingType.equals("DAILY", ignoreCase = true)) 1 else 0,
-                                onSelect = { onPricing(if (it == 1) "DAILY" else "FIXED") },
-                                compact = true,
-                            )
-                        } else if (isSale && available != null) {
+                        if (isSale && available != null) {
                             Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                         }
                     }
@@ -620,5 +614,157 @@ private fun ItemRow(
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
+    }
+}
+
+/** "Theo ngày · 150.000đ/ngày" (or "· Nhập giá" in blue) with a down chevron (#482, iOS `pricingChip`) */
+@Composable
+private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit) {
+    val label = if (isSale) stringResource(R.string.v2_pricing_sale) else pricingLabel(line.pricingType)
+    val price = line.unitPrice.takeIf { it > 0 }?.let { pricingPriceText(it, line.pricingType, isSale) }
+    val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp))
+            .background(DS.Colors.Surface)
+            .clickable(onClickLabel = changeLabel, onClick = onClick)
+            .heightIn(min = 36.dp)
+            .padding(start = 12.dp, end = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1)
+        if (price != null) {
+            Text(" · $price", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+        } else {
+            Text(" · " + stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Secondary,
+                fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary, maxLines = 1)
+        }
+        Spacer(Modifier.size(8.dp))
+        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(16.dp))
+    }
+}
+
+@Composable
+private fun pricingLabel(type: String): String = when (type.uppercase()) {
+    "FIXED" -> stringResource(R.string.v2_price_per_rental)
+    "DAILY" -> stringResource(R.string.v2_price_per_day)
+    "BLOCK" -> stringResource(R.string.v2_pricing_block)
+    "HOURLY" -> stringResource(R.string.v2_pricing_hourly)
+    else -> type.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+/** "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise */
+@Composable
+private fun pricingPriceText(price: Double, type: String, isSale: Boolean): String {
+    val money = formatMoneyVnd(price) + "đ"
+    return if (!isSale && type.equals("DAILY", ignoreCase = true)) stringResource(R.string.v2_pricing_per_day_suffix, money) else money
+}
+
+/**
+ * "Cách tính giá" (#482, board Gio-hang-chon-gia; iOS `CartPricingSheetViewController`): the pricing options as radio
+ * rows, "Giá cho đơn này", a live preview and "Áp dụng". Only the cart line changes, never the product's price.
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun CartPricingSheet(
+    line: CartLine,
+    isSale: Boolean,
+    days: Int,
+    onDismiss: () -> Unit,
+    onApply: (String?, Double) -> Unit,
+) {
+    val choices = remember(line.product.id) { if (isSale) emptyList() else CartV2Logic.pricingChoices(line) }
+    var type by remember(line.product.id) { mutableStateOf(line.pricingType.uppercase()) }
+    var digits by remember(line.product.id) {
+        mutableStateOf(CartV2Logic.startPrice(line, line.pricingType).toLong().takeIf { it > 0 }?.toString().orEmpty())
+    }
+    val price = digits.toDoubleOrNull() ?: 0.0
+    val daily = !isSale && type == "DAILY"
+    val preview = CartV2Logic.pricePreview(type, price, days, line.quantity, isSale)
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = DS.Colors.Surface,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(R.string.v2_pricing_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                val sub = if (isSale) line.product.name else line.product.name + " · " + pluralStringResource(R.plurals.v2_cart_days, days, days)
+                Text(sub, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+            }
+            if (choices.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    choices.forEach { choice ->
+                        val selected = choice.type == type
+                        val shape = RoundedCornerShape(12.dp)
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
+                                .border(if (selected) 1.5.dp else 1.dp, if (selected) DS.Colors.Primary else Color(0xFFE2E8F0), shape)
+                                .background(if (selected) Color(0xFFEFF6FF) else DS.Colors.Surface)
+                                .clickable(role = Role.RadioButton) {
+                                    type = choice.type
+                                    digits = CartV2Logic.startPrice(line, choice.type).toLong().takeIf { it > 0 }?.toString().orEmpty()
+                                }
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Box(
+                                Modifier.size(20.dp).clip(CircleShape).background(Color.White)
+                                    .border(if (selected) 6.dp else 1.5.dp, if (selected) DS.Colors.Primary else Color(0xFF94A3B8), CircleShape),
+                            )
+                            Text(pricingLabel(choice.type), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
+                                modifier = Modifier.weight(1f))
+                            val catalog = choice.catalogPrice
+                            if (catalog != null) {
+                                Text(pricingPriceText(catalog, choice.type, isSale), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+                            } else {
+                                Text(stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Body,
+                                    fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                            }
+                        }
+                    }
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(R.string.v2_pricing_price_field), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                OutlinedTextField(
+                    value = if (digits.isEmpty()) "" else formatMoneyVnd(price),
+                    onValueChange = { text -> digits = text.filter { it.isDigit() }.take(12).trimStart('0') },
+                    placeholder = { Text("0") },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text),
+                    trailingIcon = {
+                        Text(stringResource(if (daily) R.string.v2_pricing_unit_daily else R.string.v2_pricing_unit),
+                            fontSize = DS.TextSize.Body, color = Color(0xFF64748B), modifier = Modifier.padding(end = 14.dp))
+                    },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(stringResource(R.string.v2_pricing_note), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            }
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val money = formatMoneyVnd(preview.unitPrice) + "đ"
+                val text = preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
+                    ?: "$money × ${preview.quantity}"
+                Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
+                Text(formatMoneyVnd(preview.total) + "đ", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+            }
+            AppPrimaryButton(
+                stringResource(R.string.v2_pricing_apply),
+                onClick = { onApply(if (isSale) null else type, price) },
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+            )
+        }
     }
 }

@@ -1066,4 +1066,17 @@
     <string name="orders_entity_section">ĐƠN HÀNG</string>
     <string name="orders_entity_million">%1$d,%2$dtr</string>
     <string name="orders_entity_million_whole">%1$dtr</string>
+    <!-- #482 -->
+    <string name="v2_pricing_title">Cách tính giá</string>
+    <string name="v2_pricing_block">Theo block</string>
+    <string name="v2_pricing_hourly">Theo giờ</string>
+    <string name="v2_pricing_sale">Giá bán</string>
+    <string name="v2_pricing_enter_price">Nhập giá</string>
+    <string name="v2_pricing_per_day_suffix">%1$s/ngày</string>
+    <string name="v2_pricing_price_field">Giá cho đơn này</string>
+    <string name="v2_pricing_note">Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.</string>
+    <string name="v2_pricing_apply">Áp dụng</string>
+    <string name="v2_pricing_change">Đổi cách tính giá %1$s</string>
+    <string name="v2_pricing_unit">đ</string>
+    <string name="v2_pricing_unit_daily">đ/ngày</string>
 </resources>

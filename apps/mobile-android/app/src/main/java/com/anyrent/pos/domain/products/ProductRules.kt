@@ -38,6 +38,12 @@ object PricingTypes {
     private val known = setOf("FIXED", "HOURLY", "DAILY")
 
     fun normalize(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known } ?: "FIXED"
+
+    /**
+     * #482: type of a pricing option as the cart sheet lists it; BLOCK stays BLOCK so it gets its own row. The order
+     * payload still goes through [normalize] (the API takes FIXED / HOURLY / DAILY), so a block price is sent as FIXED.
+     */
+    fun normalizeOption(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known || it == "BLOCK" } ?: "FIXED"
 }
 
 data class PricingOptionInput(val type: String, val price: Double, val isDefault: Boolean)
@@ -235,6 +241,12 @@ object MoneyInput {
 // Cart
 // ---------------------------------------------------------------------------------------------
 
+/** One row of the "Cách tính giá" sheet (#482): a pricing type and its catalog price (null = "Nhập giá") */
+data class CartPricingChoice(val type: String, val catalogPrice: Double?)
+
+/** Live preview of the sheet: "130.000đ × 3 ngày × 1" ([days] only for a daily rent price) and its total */
+data class CartPricePreview(val unitPrice: Double, val days: Int?, val quantity: Int, val total: Double)
+
 /** What one cart line costs: "150.000đ/ngày × 3 ngày", "300.000đ/lần × 2", "Giá bán 850.000đ × 1" */
 data class CartLineCalc(
     val unitPrice: Double,
@@ -297,6 +309,51 @@ object CartV2Logic {
     fun withFreshPricing(line: CartLine, product: Product): CartLine {
         if (!offersBothModes(product) || offersBothModes(line.product)) return line
         return line.copy(product = line.product.copy(pricingOptions = product.pricingOptions))
+    }
+
+    // --- Pricing sheet (#482, board Gio-hang-chon-gia; iOS CartV2Logic) ---
+
+    /** The product's price for a pricing type: an option with a price, else the legacy rent price of its own type */
+    fun catalogPrice(product: Product, type: String): Double? =
+        product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.price > 0 }?.price
+            ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it > 0 }
+
+    /** Theo lần and Theo ngày always, then every other option type of the product, each with its catalog price */
+    fun pricingChoices(line: CartLine): List<CartPricingChoice> {
+        val types = mutableListOf("FIXED", "DAILY")
+        line.product.pricingOptions.forEach { option ->
+            val type = option.type.uppercase()
+            if (type !in types) types += type
+        }
+        return types.map { CartPricingChoice(it, catalogPrice(line.product, it)) }
+    }
+
+    /** Price the field shows for a row: the line's price for its own mode, else the catalog price, else 0 */
+    fun startPrice(line: CartLine, type: String): Double =
+        if (type.equals(line.pricingType, ignoreCase = true)) line.unitPrice else catalogPrice(line.product, type) ?: 0.0
+
+    fun pricePreview(type: String, price: Double, days: Int, quantity: Int, isSale: Boolean): CartPricePreview =
+        if (!isSale && type.equals("DAILY", ignoreCase = true)) {
+            val safe = days.coerceAtLeast(1)
+            CartPricePreview(price, safe, quantity, price * safe * quantity)
+        } else {
+            CartPricePreview(price, null, quantity, price * quantity)
+        }
+
+    /**
+     * "Áp dụng": the line's pricing type (rent) and its price for this order only; the product is never changed. The
+     * catalog price of that type clears the override, so a later switch to SALE still uses the sale price (#373).
+     */
+    fun applyPricing(line: CartLine, type: String?, price: Double, rentalDays: Int): CartLine {
+        val safe = price.coerceAtLeast(0.0)
+        if (line.isSale || type == null) return line.copy(unitPriceOverride = safe)
+        val normalized = type.uppercase()
+        val catalog = catalogPrice(line.product, normalized)
+        return line.copy(
+            pricingType = normalized,
+            rentalDays = rentalDays,
+            unitPriceOverride = if (catalog != null && catalog == safe) null else safe,
+        )
     }
 
     /** Units free for the dates (rent) or in stock (sale) when fewer than asked; null = enough or unknown */

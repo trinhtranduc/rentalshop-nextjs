@@ -267,6 +267,17 @@ object CartStore {
         persist()
     }
 
+    /** #482 "Áp dụng" of the pricing sheet: pricing type (rent) and the line price for this order only */
+    fun applyLinePricing(productId: Int, type: String?, price: Double) {
+        _lines.update { list ->
+            list.map { line ->
+                if (line.product.id != productId) line
+                else com.anyrent.pos.domain.products.CartV2Logic.applyPricing(line, type, price, rentalDaysInclusive())
+            }
+        }
+        persist()
+    }
+
     fun setPricingType(productId: Int, type: String) {
         val normalized = if (type.equals("DAILY", ignoreCase = true)) "DAILY" else "FIXED"
         _lines.update { list ->
@@ -537,7 +548,7 @@ object CartStore {
                 val option = optionsArray.optJSONObject(optionIndex) ?: return@mapNotNull null
                 PricingOption(
                     id = option.optInt("id", 0).takeIf { it > 0 },
-                    type = PricingTypes.normalize(option.optString("type")),
+                    type = PricingTypes.normalizeOption(option.optString("type")),
                     price = option.optDouble("price", 0.0),
                     isDefault = option.optBoolean("isDefault"),
                 )
@@ -566,7 +577,7 @@ object CartStore {
                 quantity = line.optInt("quantity", 1).coerceAtLeast(1),
                 rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),
                 isSale = line.optBoolean("isSale"),
-                pricingType = PricingTypes.normalize(line.optString("pricingType").ifBlank { product.pricingType }),
+                pricingType = PricingTypes.normalizeOption(line.optString("pricingType").ifBlank { product.pricingType }),
                 unitPriceOverride = override,
             )
         }

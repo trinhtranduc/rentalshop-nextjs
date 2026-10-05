@@ -1224,7 +1224,7 @@ class ApiClient(
                 options.optJSONObject(index)?.let { option ->
                     PricingOption(
                         id = option.optInt("id").takeIf { option.has("id") },
-                        type = PricingTypes.normalize(option.optString("type")),
+                        type = PricingTypes.normalizeOption(option.optString("type")),
                         price = option.optDouble("price"),
                         isDefault = option.optBoolean("isDefault"),
                     )

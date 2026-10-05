@@ -35,6 +35,15 @@ class Issue482ResourcesTest {
         "orders_entity_tile_spent" to "Đã chi",
         "orders_entity_tile_renting" to "Đang thuê",
         "orders_entity_section" to "ĐƠN HÀNG",
+        // Item 4: cart pricing sheet
+        "v2_pricing_title" to "Cách tính giá",
+        "v2_pricing_enter_price" to "Nhập giá",
+        "v2_pricing_price_field" to "Giá cho đơn này",
+        "v2_pricing_note" to "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.",
+        "v2_pricing_apply" to "Áp dụng",
+        "v2_pricing_block" to "Theo block",
+        "v2_price_per_rental" to "Theo lần",
+        "v2_price_per_day" to "Theo ngày",
     )
 
     @Test
