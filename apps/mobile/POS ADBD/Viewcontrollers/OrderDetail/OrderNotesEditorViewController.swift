@@ -5,7 +5,8 @@
 //  Note text + up to 5 photos for the redesigned order detail (#372). Saved photos stay URLs (so removing
 //  one never depends on it having loaded); new photos are images until the order is saved.
 //  #477: full-screen look of board GC-ghi-chu (X + "Ghi chú #0057", new field, 72pt tiles, dashed "Thêm",
-//  "Lưu ghi chú" pinned above the keyboard). Also opened by the cart v2 note row, text only.
+//  "Lưu ghi chú" pinned above the keyboard). Also opened by the cart v2 note row (#480: with photos, kept by the cart).
+//  Presented `.overFullScreen`: the presenter stays in place, so a pushed screen's hidden tab bar stays hidden.
 //
 
 import UIKit
@@ -37,26 +38,40 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
     private static let tileSize: CGFloat = 72
     private static let tilesPerRow = 4
 
-    /// `maxPhotos` 0 hides the photo block (the cart keeps no photos)
-    init(text: String, savedURLs: [String], orderNumber: String? = nil, maxPhotos: Int = OrderDetailLogic.maxNotePhotos) {
+    /// `newImages`: photos not uploaded yet (the cart's). `maxPhotos` 0 hides the photo block (cart in edit mode).
+    init(text: String, savedURLs: [String], newImages: [UIImage] = [], orderNumber: String? = nil,
+         maxPhotos: Int = OrderDetailLogic.maxNotePhotos) {
         initialText = text
-        photos = savedURLs.map { .saved($0) }
+        photos = savedURLs.map { .saved($0) } + newImages.map { .new($0) }
         self.orderNumber = orderNumber
         self.maxPhotos = maxPhotos
         super.init(nibName: nil, bundle: nil)
-        modalPresentationStyle = .fullScreen
+        // #480: `.fullScreen` removed the cart from the window; on dismiss its hidden tab bar came back
+        modalPresentationStyle = .overFullScreen
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Cart v2 note row (#477): same editor, text only; saves the cart note as the old alert did
+    /// Cart v2 note row (#477): same editor; saves the cart note as the old alert did. #480: with photos, kept by
+    /// the cart (memory only) and sent on create. Editing an existing order stays text only (its photos live on the
+    /// order detail).
     static func presentCartNote(from presenter: UIViewController) {
-        let editor = OrderNotesEditorViewController(text: CartStore.shared.cart.notes ?? "", savedURLs: [], maxPhotos: 0)
-        editor.onSave = { text, _, _ in
+        let store = CartStore.shared
+        let editMode = store.cart.isEditMode
+        // Photos already kept by the cart keep their compressed bytes; only new picks are compressed
+        let kept = store.noteImageData.compactMap { data in UIImage(data: data).map { ($0, data) } }
+        var keptData: [ObjectIdentifier: Data] = [:]
+        kept.forEach { keptData[ObjectIdentifier($0.0)] = $0.1 }
+        let editor = OrderNotesEditorViewController(text: store.cart.notes ?? "", savedURLs: [],
+                                                    newImages: editMode ? [] : kept.map { $0.0 },
+                                                    maxPhotos: editMode ? 0 : OrderDetailLogic.maxNotePhotos)
+        editor.onSave = { text, _, images in
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            CartStore.shared.setNotes(trimmed.isEmpty ? nil : trimmed)
+            store.setNotes(trimmed.isEmpty ? nil : trimmed)
+            guard !editMode else { return }
+            store.setNoteImageData(images.compactMap { keptData[ObjectIdentifier($0)] ?? NoteEditorLogic.compressedJPEG($0) })
         }
         presenter.present(editor, animated: true)
     }

@@ -21,6 +21,21 @@ protocol OrderServiceProtocol {
 }
 
 class OrderService: BaseService, OrderServiceProtocol {
+    /// One multipart file part of a note photo
+    struct NotesImagePart: Equatable {
+        let name: String
+        let fileName: String
+        let mimeType: String
+        let data: Data
+    }
+
+    /// File parts of `notesImages` next to the `data` JSON (create and update); none without photos (#480)
+    static func notesImageParts(_ images: [Data]) -> [NotesImagePart] {
+        images.enumerated().map { index, data in
+            NotesImagePart(name: "notesImages", fileName: "notes_image_\(index).jpg", mimeType: "image/jpeg", data: data)
+        }
+    }
+
     private func uploadOrderRequest<Request: Encodable>(
         path: String,
         request: Request,
@@ -50,13 +65,8 @@ class OrderService: BaseService, OrderServiceProtocol {
                 multipartFormData: { multipartFormData in
                     multipartFormData.append(requestData, withName: "data")
 
-                    for (index, imageData) in notesImages.enumerated() {
-                        multipartFormData.append(
-                            imageData,
-                            withName: "notesImages",
-                            fileName: "notes_image_\(index).jpg",
-                            mimeType: "image/jpeg"
-                        )
+                    for part in OrderService.notesImageParts(notesImages) {
+                        multipartFormData.append(part.data, withName: part.name, fileName: part.fileName, mimeType: part.mimeType)
                     }
                 },
                 to: fullURL,

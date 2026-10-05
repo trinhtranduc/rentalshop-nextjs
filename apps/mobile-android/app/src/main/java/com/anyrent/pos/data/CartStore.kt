@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -62,6 +63,14 @@ object CartStore {
 
     private val _notes = MutableStateFlow("")
     val notes: StateFlow<String> = _notes.asStateFlow()
+
+    /**
+     * #480: note photos picked in the cart note editor (cache files, at most MAX_NOTE_PHOTOS), compressed to ~180KB
+     * and sent as `notesImages` when the order is created. Memory only: not in the saved draft, so they are gone
+     * after an app restart. Cleared (and the files deleted) with the cart.
+     */
+    private val _noteImageFiles = MutableStateFlow<List<File>>(emptyList())
+    val noteImageFiles: StateFlow<List<File>> = _noteImageFiles.asStateFlow()
 
     private val _discount = MutableStateFlow(0.0)
     val discount: StateFlow<Double> = _discount.asStateFlow()
@@ -150,6 +159,16 @@ object CartStore {
     fun setNotes(value: String) {
         _notes.value = value
         persist()
+    }
+
+    /** #480: photos of the cart note (replaces the previous set; extra photos past the limit are dropped) */
+    fun setNoteImageFiles(files: List<File>) {
+        _noteImageFiles.value = files.take(com.anyrent.pos.domain.orders.OrderDetailLogic.MAX_NOTE_PHOTOS)
+    }
+
+    private fun dropNoteImages() {
+        _noteImageFiles.value.forEach { runCatching { it.delete() } }
+        _noteImageFiles.value = emptyList()
     }
     fun setDiscount(value: Double) {
         _discount.value = value
@@ -280,6 +299,7 @@ object CartStore {
     }
 
     fun clear(persistToDisk: Boolean = true) {
+        dropNoteImages()
         _editingOrderId.value = null
         _lines.value = emptyList()
         _customer.value = null
@@ -365,6 +385,7 @@ object CartStore {
         }
 
         // Assign after building so collectors never see a cleared mid-load cart.
+        dropNoteImages()
         _editingOrderId.value = summary.id
         _orderType.value = if (sale) "SALE" else "RENT"
         _pickupDate.value = pickup

@@ -58,3 +58,5 @@ All shop roles. iOS and Android. No API or data change.
   destructive-action confirmations). The old Android inbox is unchanged (agent).
 - 2026-10-05 — Out of scope: the old `PreviewViewController` (create preview reached from cart v2) still opens
   the old `NoteViewController`; it belongs to the create-order flow being changed in #473 (agent).
+- 2026-10-05 — Superseded by #480: the owner wants photos in cart notes too (kept by the cart, sent on create),
+  and the editor is presented `.overFullScreen` so the cart keeps its tab bar hidden.

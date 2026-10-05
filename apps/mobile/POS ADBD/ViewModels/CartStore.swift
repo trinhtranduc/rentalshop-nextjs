@@ -14,6 +14,10 @@ final class CartStore {
     private static let defaultsPrefix = "anyrent.draftCart."
 
     private var storage = Cart()
+    /// #480: note photos picked in the cart note editor (JPEG ~180KB each, at most `OrderDetailLogic.maxNotePhotos`),
+    /// sent as `notesImages` when the order is created. Memory only: not in the draft saved to disk, so they are gone
+    /// after an app restart. Cleared with the cart.
+    private(set) var noteImageData: [Data] = []
     private var isRestoring = false
     /// Set after we have loaded this user's disk snapshot (or confirmed there is none).
     /// Empty-cart persist must not wipe disk before restore — that is what made
@@ -30,6 +34,7 @@ final class CartStore {
 
     func replaceCart(with cart: Cart, notify: Bool = true) {
         storage = cart
+        noteImageData = []
         persistToDiskNow()
         if notify {
             NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
@@ -38,6 +43,7 @@ final class CartStore {
 
     func resetCart(notify: Bool = true, persistToDisk: Bool = true) {
         storage.clear()
+        noteImageData = []
         if persistToDisk {
             persistToDiskNow()
         } else {
@@ -96,6 +102,12 @@ final class CartStore {
     func setDiscount(_ discount: Double) {
         storage.discount = discount
         notifyDidChange()
+    }
+
+    /// #480: photos of the cart note (replaces the previous set; extra photos past the limit are dropped)
+    func setNoteImageData(_ data: [Data]) {
+        noteImageData = Array(data.prefix(OrderDetailLogic.maxNotePhotos))
+        NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
     }
 
     func setNotes(_ notes: String?) {
