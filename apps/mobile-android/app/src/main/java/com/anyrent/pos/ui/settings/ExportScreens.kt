@@ -52,6 +52,14 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.SectionLabel
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.People
+import com.anyrent.pos.ui.home.v2.SectionBand
+import com.anyrent.pos.ui.settings.v2.SettingsDetailPage
+import com.anyrent.pos.ui.settings.v2.SettingsDetailPrimaryButton
+import com.anyrent.pos.ui.settings.v2.SettingsDetailRow
+import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -109,7 +117,7 @@ private enum class OrderDateField(val apiValue: String) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExportAuthScreen(onBack: () -> Unit) {
+fun ExportAuthScreen(onBack: () -> Unit, v2: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -204,80 +212,34 @@ fun ExportAuthScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.export_data),
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { runExport() },
-                        enabled = !exporting,
-                    ) {
-                        Text(
-                            if (exporting) {
-                                stringResource(R.string.preparing_export)
-                            } else {
-                                stringResource(R.string.export)
-                            },
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
-    ) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 24.dp),
+    // #459: new style when opened from Settings v2 (`newSettings`); same choices, checks and export call
+    if (v2) {
+        SettingsDetailPage(
+            title = stringResource(R.string.export_data),
+            onBack = onBack,
+            bottomBar = {
+                SettingsDetailPrimaryButton(text = stringResource(R.string.export), onClick = { runExport() }, loading = exporting)
+            },
         ) {
-            SectionLabel(stringResource(R.string.export_type))
-            ExportGroupCard {
-                ExportSelectRow(
-                    icon = Icons.Default.Inventory2,
-                    title = stringResource(R.string.products),
-                    selected = selectedType == ExportType.PRODUCTS,
-                    showDivider = true,
-                    onClick = { selectedType = ExportType.PRODUCTS },
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+                SectionBand(stringResource(R.string.export_type))
+                SettingsDetailRow(
+                    stringResource(R.string.products), icon = Icons.Outlined.Inventory2,
+                    selected = selectedType == ExportType.PRODUCTS, onClick = { selectedType = ExportType.PRODUCTS },
                 )
-                ExportSelectRow(
-                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                    title = stringResource(R.string.orders),
-                    selected = selectedType == ExportType.ORDERS,
-                    showDivider = true,
-                    onClick = { selectedType = ExportType.ORDERS },
+                SettingsDetailRow(
+                    stringResource(R.string.orders), icon = Icons.AutoMirrored.Outlined.ReceiptLong,
+                    selected = selectedType == ExportType.ORDERS, onClick = { selectedType = ExportType.ORDERS },
                 )
-                ExportSelectRow(
-                    icon = Icons.Default.People,
-                    title = stringResource(R.string.customers),
-                    selected = selectedType == ExportType.CUSTOMERS,
-                    showDivider = false,
-                    onClick = { selectedType = ExportType.CUSTOMERS },
+                SettingsDetailRow(
+                    stringResource(R.string.customers), icon = Icons.Outlined.People,
+                    selected = selectedType == ExportType.CUSTOMERS, onClick = { selectedType = ExportType.CUSTOMERS },
                 )
-            }
 
-            SectionLabel(stringResource(R.string.time_period))
-            ExportGroupCard {
-                ExportPeriod.entries.forEachIndexed { index, period ->
-                    ExportSelectRow(
-                        title = stringResource(
+                SectionBand(stringResource(R.string.time_period))
+                ExportPeriod.entries.forEach { period ->
+                    SettingsDetailRow(
+                        stringResource(
                             when (period) {
                                 ExportPeriod.ONE_MONTH -> R.string.last_1_month
                                 ExportPeriod.THREE_MONTHS -> R.string.last_3_months
@@ -287,101 +249,248 @@ fun ExportAuthScreen(onBack: () -> Unit) {
                             },
                         ),
                         selected = selectedPeriod == period,
-                        showDivider = index < ExportPeriod.entries.lastIndex,
                         onClick = { selectedPeriod = period },
                     )
                 }
-            }
 
-            if (selectedPeriod == ExportPeriod.CUSTOM) {
-                SectionLabel(stringResource(R.string.date_range))
-                ExportGroupCard {
-                    ExportValueRow(
-                        title = stringResource(R.string.start_date),
-                        value = customStartMillis?.let { dateFmt.format(Date(it)) } ?: "—",
-                        showDivider = true,
-                        onClick = { showDateRangePicker = true },
+                if (selectedPeriod == ExportPeriod.CUSTOM) {
+                    SectionBand(stringResource(R.string.date_range))
+                    SettingsDetailRow(
+                        stringResource(R.string.start_date), value = customStartMillis?.let { dateFmt.format(Date(it)) } ?: "—",
+                        chevron = true, onClick = { showDateRangePicker = true },
                     )
-                    ExportValueRow(
-                        title = stringResource(R.string.end_date),
-                        value = customEndMillis?.let { dateFmt.format(Date(it)) } ?: "—",
-                        showDivider = false,
-                        onClick = { showDateRangePicker = true },
+                    SettingsDetailRow(
+                        stringResource(R.string.end_date), value = customEndMillis?.let { dateFmt.format(Date(it)) } ?: "—",
+                        chevron = true, onClick = { showDateRangePicker = true },
                     )
                 }
-            }
 
-            SectionLabel(stringResource(R.string.file_format))
-            ExportGroupCard {
-                ExportSelectRow(
-                    title = stringResource(R.string.excel_xlsx),
-                    selected = selectedFormat == ExportFormat.EXCEL,
-                    showDivider = true,
+                SectionBand(stringResource(R.string.file_format))
+                SettingsDetailRow(
+                    stringResource(R.string.excel_xlsx), selected = selectedFormat == ExportFormat.EXCEL,
                     onClick = { selectedFormat = ExportFormat.EXCEL },
                 )
-                ExportSelectRow(
-                    title = stringResource(R.string.csv_csv),
-                    selected = selectedFormat == ExportFormat.CSV,
-                    showDivider = false,
+                SettingsDetailRow(
+                    stringResource(R.string.csv_csv), selected = selectedFormat == ExportFormat.CSV,
                     onClick = { selectedFormat = ExportFormat.CSV },
                 )
-            }
 
-            if (selectedType == ExportType.ORDERS) {
-                SectionLabel(stringResource(R.string.order_filters))
+                if (selectedType == ExportType.ORDERS) {
+                    SectionBand(stringResource(R.string.order_filters))
+                    listOf(
+                        OrderStatusFilter.ALL to R.string.all_statuses,
+                        OrderStatusFilter.RESERVED to R.string.reserved,
+                        OrderStatusFilter.PICKUPED to R.string.picked_up,
+                        OrderStatusFilter.RETURNED to R.string.returned,
+                        OrderStatusFilter.COMPLETED to R.string.completed,
+                        OrderStatusFilter.CANCELLED to R.string.cancelled,
+                    ).forEach { (status, title) ->
+                        SettingsDetailRow(stringResource(title), selected = orderStatus == status, onClick = { orderStatus = status })
+                    }
+                    listOf(
+                        OrderTypeFilter.ALL to R.string.all_types,
+                        OrderTypeFilter.RENT to R.string.rent,
+                        OrderTypeFilter.SALE to R.string.sale,
+                    ).forEach { (type, title) ->
+                        SettingsDetailRow(stringResource(title), selected = orderType == type, onClick = { orderType = type })
+                    }
+                    listOf(
+                        OrderDateField.CREATED_AT to R.string.created_date,
+                        OrderDateField.PICKUP_PLAN_AT to R.string.pickup_date,
+                        OrderDateField.RETURN_PLAN_AT to R.string.return_date,
+                    ).forEach { (field, title) ->
+                        SettingsDetailRow(stringResource(title), selected = dateField == field, onClick = { dateField = field })
+                    }
+                }
+
+                success?.let {
+                    Text(
+                        it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        color = DS.Colors.Primary, fontSize = DS.TextSize.Secondary,
+                    )
+                }
+            }
+        }
+    } else {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(R.string.export_data),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        }
+                    },
+                    actions = {
+                        TextButton(
+                            onClick = { runExport() },
+                            enabled = !exporting,
+                        ) {
+                            Text(
+                                if (exporting) {
+                                    stringResource(R.string.preparing_export)
+                                } else {
+                                    stringResource(R.string.export)
+                                },
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
+            },
+        ) { padding ->
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 24.dp),
+            ) {
+                SectionLabel(stringResource(R.string.export_type))
                 ExportGroupCard {
-                    val statusRows = listOf(
-                        OrderStatusFilter.ALL to stringResource(R.string.all_statuses),
-                        OrderStatusFilter.RESERVED to stringResource(R.string.reserved),
-                        OrderStatusFilter.PICKUPED to stringResource(R.string.picked_up),
-                        OrderStatusFilter.RETURNED to stringResource(R.string.returned),
-                        OrderStatusFilter.COMPLETED to stringResource(R.string.completed),
-                        OrderStatusFilter.CANCELLED to stringResource(R.string.cancelled),
+                    ExportSelectRow(
+                        icon = Icons.Default.Inventory2,
+                        title = stringResource(R.string.products),
+                        selected = selectedType == ExportType.PRODUCTS,
+                        showDivider = true,
+                        onClick = { selectedType = ExportType.PRODUCTS },
                     )
-                    statusRows.forEachIndexed { index, (status, title) ->
-                        ExportSelectRow(
-                            title = title,
-                            selected = orderStatus == status,
-                            showDivider = true,
-                            onClick = { orderStatus = status },
-                        )
-                    }
-                    val typeRows = listOf(
-                        OrderTypeFilter.ALL to stringResource(R.string.all_types),
-                        OrderTypeFilter.RENT to stringResource(R.string.rent),
-                        OrderTypeFilter.SALE to stringResource(R.string.sale),
+                    ExportSelectRow(
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                        title = stringResource(R.string.orders),
+                        selected = selectedType == ExportType.ORDERS,
+                        showDivider = true,
+                        onClick = { selectedType = ExportType.ORDERS },
                     )
-                    typeRows.forEach { (type, title) ->
-                        ExportSelectRow(
-                            title = title,
-                            selected = orderType == type,
-                            showDivider = true,
-                            onClick = { orderType = type },
-                        )
-                    }
-                    val dateRows = listOf(
-                        OrderDateField.CREATED_AT to stringResource(R.string.created_date),
-                        OrderDateField.PICKUP_PLAN_AT to stringResource(R.string.pickup_date),
-                        OrderDateField.RETURN_PLAN_AT to stringResource(R.string.return_date),
+                    ExportSelectRow(
+                        icon = Icons.Default.People,
+                        title = stringResource(R.string.customers),
+                        selected = selectedType == ExportType.CUSTOMERS,
+                        showDivider = false,
+                        onClick = { selectedType = ExportType.CUSTOMERS },
                     )
-                    dateRows.forEachIndexed { index, (field, title) ->
+                }
+
+                SectionLabel(stringResource(R.string.time_period))
+                ExportGroupCard {
+                    ExportPeriod.entries.forEachIndexed { index, period ->
                         ExportSelectRow(
-                            title = title,
-                            selected = dateField == field,
-                            showDivider = index < dateRows.lastIndex,
-                            onClick = { dateField = field },
+                            title = stringResource(
+                                when (period) {
+                                    ExportPeriod.ONE_MONTH -> R.string.last_1_month
+                                    ExportPeriod.THREE_MONTHS -> R.string.last_3_months
+                                    ExportPeriod.SIX_MONTHS -> R.string.last_6_months
+                                    ExportPeriod.ONE_YEAR -> R.string.last_1_year
+                                    ExportPeriod.CUSTOM -> R.string.custom_range
+                                },
+                            ),
+                            selected = selectedPeriod == period,
+                            showDivider = index < ExportPeriod.entries.lastIndex,
+                            onClick = { selectedPeriod = period },
                         )
                     }
                 }
-            }
 
-            success?.let {
-                Text(
-                    it,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                if (selectedPeriod == ExportPeriod.CUSTOM) {
+                    SectionLabel(stringResource(R.string.date_range))
+                    ExportGroupCard {
+                        ExportValueRow(
+                            title = stringResource(R.string.start_date),
+                            value = customStartMillis?.let { dateFmt.format(Date(it)) } ?: "—",
+                            showDivider = true,
+                            onClick = { showDateRangePicker = true },
+                        )
+                        ExportValueRow(
+                            title = stringResource(R.string.end_date),
+                            value = customEndMillis?.let { dateFmt.format(Date(it)) } ?: "—",
+                            showDivider = false,
+                            onClick = { showDateRangePicker = true },
+                        )
+                    }
+                }
+
+                SectionLabel(stringResource(R.string.file_format))
+                ExportGroupCard {
+                    ExportSelectRow(
+                        title = stringResource(R.string.excel_xlsx),
+                        selected = selectedFormat == ExportFormat.EXCEL,
+                        showDivider = true,
+                        onClick = { selectedFormat = ExportFormat.EXCEL },
+                    )
+                    ExportSelectRow(
+                        title = stringResource(R.string.csv_csv),
+                        selected = selectedFormat == ExportFormat.CSV,
+                        showDivider = false,
+                        onClick = { selectedFormat = ExportFormat.CSV },
+                    )
+                }
+
+                if (selectedType == ExportType.ORDERS) {
+                    SectionLabel(stringResource(R.string.order_filters))
+                    ExportGroupCard {
+                        val statusRows = listOf(
+                            OrderStatusFilter.ALL to stringResource(R.string.all_statuses),
+                            OrderStatusFilter.RESERVED to stringResource(R.string.reserved),
+                            OrderStatusFilter.PICKUPED to stringResource(R.string.picked_up),
+                            OrderStatusFilter.RETURNED to stringResource(R.string.returned),
+                            OrderStatusFilter.COMPLETED to stringResource(R.string.completed),
+                            OrderStatusFilter.CANCELLED to stringResource(R.string.cancelled),
+                        )
+                        statusRows.forEachIndexed { index, (status, title) ->
+                            ExportSelectRow(
+                                title = title,
+                                selected = orderStatus == status,
+                                showDivider = true,
+                                onClick = { orderStatus = status },
+                            )
+                        }
+                        val typeRows = listOf(
+                            OrderTypeFilter.ALL to stringResource(R.string.all_types),
+                            OrderTypeFilter.RENT to stringResource(R.string.rent),
+                            OrderTypeFilter.SALE to stringResource(R.string.sale),
+                        )
+                        typeRows.forEach { (type, title) ->
+                            ExportSelectRow(
+                                title = title,
+                                selected = orderType == type,
+                                showDivider = true,
+                                onClick = { orderType = type },
+                            )
+                        }
+                        val dateRows = listOf(
+                            OrderDateField.CREATED_AT to stringResource(R.string.created_date),
+                            OrderDateField.PICKUP_PLAN_AT to stringResource(R.string.pickup_date),
+                            OrderDateField.RETURN_PLAN_AT to stringResource(R.string.return_date),
+                        )
+                        dateRows.forEachIndexed { index, (field, title) ->
+                            ExportSelectRow(
+                                title = title,
+                                selected = dateField == field,
+                                showDivider = index < dateRows.lastIndex,
+                                onClick = { dateField = field },
+                            )
+                        }
+                    }
+                }
+
+                success?.let {
+                    Text(
+                        it,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
         }
     }

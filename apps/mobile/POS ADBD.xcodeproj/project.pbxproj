@@ -295,6 +295,7 @@
 		DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 286EED8E25240975FDF5D455 /* IconTokensTests.swift */; };
 		A424B0010000000000000001 /* TypeScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A424B0010000000000000002 /* TypeScaleTests.swift */; };
 		DED3B23637CAEA6ED6DC027C /* SettingsV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */; };
+		A4590459D0000000000000A1 /* SettingsDetailV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4590459D0000000000000B2 /* SettingsDetailV2.swift */; };
 		E4524B2B978D3134644DADCB /* OrderRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C466A2A395154AD70553624A /* OrderRowCell.swift */; };
 		E6844B2830F8361BAA9CEFC4 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */; };
 		EC0A10022F1B00010000001 /* AvailabilityCheckViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */; };
@@ -653,6 +654,7 @@
 		D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderHandOverSheetViewController.swift; sourceTree = "<group>"; };
 		D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderNotesEditorViewController.swift; sourceTree = "<group>"; };
 		DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2ViewController.swift; sourceTree = "<group>"; };
+		A4590459D0000000000000B2 /* SettingsDetailV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsDetailV2.swift; sourceTree = "<group>"; };
 		EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityCheckViews.swift; sourceTree = "<group>"; };
 		EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeViewModel.swift; sourceTree = "<group>"; };
 		EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ForgotPasswordV2ViewController.swift; sourceTree = "<group>"; };
@@ -847,6 +849,7 @@
 				048838F92D7832AD00069256 /* SettingsViewController.swift */,
 				04A1B0102F7A000100000010 /* SubscriptionViewController.swift */,
 				DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */,
+				A4590459D0000000000000B2 /* SettingsDetailV2.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1980,6 +1983,7 @@
 				3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */,
 				80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */,
 				DED3B23637CAEA6ED6DC027C /* SettingsV2ViewController.swift in Sources */,
+				A4590459D0000000000000A1 /* SettingsDetailV2.swift in Sources */,
 				F4268E5625300006E2E8BF03 /* CustomersV2.swift in Sources */,
 				75C21D317F5521D9A9958865 /* CustomersV2ViewModel.swift in Sources */,
 				85ABA05A8130F520F4EEDAC2 /* CustomersV2Views.swift in Sources */,

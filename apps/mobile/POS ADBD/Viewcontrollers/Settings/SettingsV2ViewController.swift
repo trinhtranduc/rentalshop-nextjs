@@ -147,18 +147,27 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func open(_ item: SettingsV2Item) {
         switch item {
+        // #459: detail pages in the new style
         case .storeInfo:
-            navigationController?.pushViewController(AccountViewController(), animated: true)
+            let page = AccountViewController()
+            page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
         case .receiptNote, .printer:
-            navigationController?.pushViewController(PrinterConfigurationViewController(), animated: true)
+            let page = PrinterConfigurationViewController()
+            page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
         case .customers:
             let list = CustomersV2ListViewController(mode: .browse)
             list.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(list, animated: true)
         case .users:
-            navigationController?.pushViewController(UserManagementViewController(), animated: true)
+            let page = UserManagementViewController()
+            page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
         case .export:
-            navigationController?.pushViewController(ExportViewController(), animated: true)
+            let page = ExportViewController()
+            page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
         case .plan:
             break
         case .language:
@@ -168,7 +177,9 @@ final class SettingsV2ViewController: BaseViewControler {
         case .password:
             askPassword()
         case .appInfo:
-            navigationController?.pushViewController(AppInformationViewController(), animated: true)
+            let page = AppInformationViewController()
+            page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
         case .deleteAccount:
             // Same as the current settings screen
             let alert = UIAlertController(title: "Delete Account".localized(),

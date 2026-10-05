@@ -153,6 +153,9 @@ enum ExportSection: Int, CaseIterable {
 }
 
 class ExportViewController: BaseViewControler {
+    /// #459: new style, set by Settings v2 before the page is shown
+    var v2 = false
+
     // MARK: - UI Components
     private lazy var exportButton: UIButton = {
         let button = UIButton(type: .system)
@@ -164,7 +167,7 @@ class ExportViewController: BaseViewControler {
     }()
     
     private lazy var exportTableView: UITableView = {
-        let table = UITableView(frame: .zero, style: .insetGrouped)
+        let table = UITableView(frame: .zero, style: v2 ? .plain : .insetGrouped)
         table.delegate = self
         table.dataSource = self
         table.backgroundColor = .backgroundPrimary
@@ -185,7 +188,9 @@ class ExportViewController: BaseViewControler {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
+        if !v2 {
+            setupNavigationBar()
+        }
         setupUI()
     }
     
@@ -209,6 +214,10 @@ class ExportViewController: BaseViewControler {
     }
     
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
         
         guard let customNavBar = customNavBar else { return }
@@ -247,6 +256,37 @@ class ExportViewController: BaseViewControler {
         }
     }
     
+    /// v2: ‹ header, band list, "Xuất" as the primary button at the bottom (same action as the old nav button)
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        let line = SettingsDetailV2.installHeader(on: view, title: "Export Data".localized(), back: back)
+        let export = V2.primaryButton("Export".localized())
+        export.addTarget(self, action: #selector(exportTapped), for: .touchUpInside)
+        let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [export])
+        SettingsDetailV2.configureList(exportTableView)
+        view.addSubview(exportTableView)
+        exportTableView.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bar.snp.top)
+        }
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
+    /// Outline glyphs of the new UI for the export types
+    private func v2Icon(_ type: ExportType) -> UIImage? {
+        switch type {
+        case .products: return DS.symbol("shippingbox", DS.Icon.md)
+        case .orders: return DS.symbol("doc.text", DS.Icon.md)
+        case .customers: return DS.symbol("person.2", DS.Icon.md)
+        }
+    }
+
     // MARK: - Helper Methods
     
     private func getDateRangeForPeriod(_ period: ExportPeriod) -> (startDate: Date, endDate: Date) {
@@ -494,8 +534,43 @@ extension ExportViewController: UITableViewDataSource {
         let actualSection = getActualSection(for: section)
         return actualSection.title
     }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard v2, let title = getActualSection(for: section).title else { return nil }
+        return V2.sectionHeader(title)
+    }
+
+    /// v2 rows: same content as the old cells, in the new cell
+    private func v2Cell(_ tableView: UITableView, at indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: SettingsDetailV2Cell.reuseId, for: indexPath) as! SettingsDetailV2Cell
+        switch getActualSection(for: indexPath.section) {
+        case .type:
+            let type = ExportType.allCases[indexPath.row]
+            cell.configure(title: type.title, icon: v2Icon(type), accessory: selectedType == type ? .check : .none, selectable: true)
+        case .period:
+            let period = ExportPeriod.allCases[indexPath.row]
+            cell.configure(title: period.title, accessory: selectedPeriod == period ? .check : .none, selectable: true)
+        case .format:
+            let format = ExportFormat.allCases[indexPath.row]
+            cell.configure(title: format.title, accessory: selectedFormat == format ? .check : .none, selectable: true)
+        case .customDates:
+            let date = indexPath.row == 0 ? customStartDate : customEndDate
+            cell.configure(title: indexPath.row == 0 ? "Start Date".localized() : "End Date".localized(),
+                           value: date?.dateServerInString() ?? "Select".localized(), accessory: .chevron)
+        case .orderFilters:
+            let rows = [("Status".localized(), selectedOrderStatus.title),
+                        ("Order Type".localized(), selectedOrderType.title),
+                        ("Date Field".localized(), selectedDateField.title)]
+            let row = rows[min(indexPath.row, rows.count - 1)]
+            cell.configure(title: row.0, value: row.1, accessory: .chevron)
+        }
+        return cell
+    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if v2 {
+            return v2Cell(tableView, at: indexPath)
+        }
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "Cell")
         let actualSection = getActualSection(for: indexPath.section)
         

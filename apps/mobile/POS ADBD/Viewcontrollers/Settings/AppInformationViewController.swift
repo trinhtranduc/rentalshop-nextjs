@@ -2,8 +2,11 @@ import UIKit
 import SnapKit
 
 class AppInformationViewController: BaseViewControler {
+    /// #459: new style, set by Settings v2 before the page is shown
+    var v2 = false
+
     private lazy var appInformationViewControler: UITableView = {
-        let table = UITableView(frame: .zero, style: .insetGrouped)
+        let table = UITableView(frame: .zero, style: v2 ? .plain : .insetGrouped)
         table.delegate = self
         table.dataSource = self
         table.backgroundColor = .backgroundPrimary
@@ -95,6 +98,10 @@ class AppInformationViewController: BaseViewControler {
     }
     
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
         
         // Setup custom navigation bar
@@ -136,6 +143,23 @@ class AppInformationViewController: BaseViewControler {
         }
     }
     
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        let line = SettingsDetailV2.installHeader(on: view, title: "App Information".localized(), back: back)
+        SettingsDetailV2.configureList(appInformationViewControler)
+        view.addSubview(appInformationViewControler)
+        appInformationViewControler.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
     private func setupNavigationBar() {
         setupCustomNavigationBar(
             title: "App Information".localized(),
@@ -159,8 +183,19 @@ extension AppInformationViewController: UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return Section(rawValue: section)?.title
     }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard v2, let title = Section(rawValue: section)?.title else { return nil }
+        return V2.sectionHeader(title)
+    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if v2, let section = Section(rawValue: indexPath.section) {
+            let item = section.items[indexPath.row]
+            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsDetailV2Cell.reuseId, for: indexPath) as! SettingsDetailV2Cell
+            cell.configure(title: item.title, value: item.value, accessory: item.isClickable ? .chevron : .none)
+            return cell
+        }
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "InfoCell")
         
         guard let section = Section(rawValue: indexPath.section) else {
