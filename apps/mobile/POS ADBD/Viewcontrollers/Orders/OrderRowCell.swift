@@ -198,14 +198,7 @@ final class OrderRowCell: UITableViewCell {
         }
 
         setTotal(work.totalAmount, struck: false)
-        switch OrdersHomeLogic.payLine(amountDue: work.amountDue, refundDue: work.refundDue) {
-        case .refund(let amount):
-            setPay(String(format: "orders.v2.pay.refund".localized(), MoneyFormatter.format(amount)), DS.Status.returning.text)
-        case .due(let amount):
-            setPay(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(amount)), DS.Status.waiting.text)
-        case .paid:
-            setPay("orders.v2.pay.paid".localized(), DS.Status.done.text)
-        }
+        setPay(OrdersHomeLogic.payLine(amountDue: work.amountDue, refundDue: work.refundDue))
 
         // Board Main: the call button only on TRỄ HẠN rows
         let trimmedPhone = work.customerPhone?.removeWhiteSpace() ?? ""
@@ -231,18 +224,8 @@ final class OrderRowCell: UITableViewCell {
             addPill(LateText.days(lateDays), DS.Status.late)
         }
         setTotal(order.totalAmount, struck: order.status == .cancelled)
-        // Balances of the list API (#389); nothing on an older API or a cancelled order
-        switch OrdersHomeLogic.listPayLine(order) {
-        case .refund(let amount)?:
-            setPay(String(format: "orders.v2.pay.refund".localized(), MoneyFormatter.format(amount)), DS.Status.returning.text)
-        case .due(let amount)?:
-            setPay(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(amount)), DS.Status.waiting.text)
-        case .paid?:
-            setPay("orders.v2.pay.paid".localized(), DS.Status.done.text)
-        case nil:
-            payLabel.text = nil
-            payLabel.isHidden = true
-        }
+        // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
+        setPay(OrdersHomeLogic.listPayLine(order))
         phone = nil
     }
 
@@ -271,10 +254,21 @@ final class OrderRowCell: UITableViewCell {
         }
     }
 
-    private func setPay(_ text: String, _ color: UIColor) {
-        payLabel.text = text
-        payLabel.textColor = color
-        payLabel.isHidden = false
+    /// "còn thu N" / "trả cọc N" under the total; no line (the total alone) when nothing is due (#458)
+    private func setPay(_ line: PayLine?) {
+        switch line {
+        case .refund(let amount)?:
+            payLabel.text = String(format: "orders.v2.pay.refund".localized(), MoneyFormatter.format(amount))
+            payLabel.textColor = DS.Status.returning.text
+            payLabel.isHidden = false
+        case .due(let amount)?:
+            payLabel.text = String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(amount))
+            payLabel.textColor = DS.Status.waiting.text
+            payLabel.isHidden = false
+        case nil:
+            payLabel.text = nil
+            payLabel.isHidden = true
+        }
     }
 
     private func addPill(_ text: String, _ colors: DS.Pill) {

@@ -1830,7 +1830,6 @@
 "orders.v2.notPrepared" = "Not prepared";
 "orders.v2.pay.due" = "to collect %@";
 "orders.v2.pay.refund" = "refund deposit %@";
-"orders.v2.pay.paid" = "✓ paid in full";
 "orders.v2.when.handOverDue" = "hand over %@";
 "orders.v2.when.returnDue" = "due back %@";
 "orders.v2.when.days" = "%d days";

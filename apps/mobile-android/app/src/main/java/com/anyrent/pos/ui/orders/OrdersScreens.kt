@@ -94,10 +94,15 @@ import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.appconfig.MobileFeature
+import com.anyrent.pos.ui.orders.v2.OrderBoardRow
+import com.anyrent.pos.ui.orders.v2.OrdersHomeLogic
+import com.anyrent.pos.ui.theme.DS
 import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.domain.payment.PaymentPolicy
 import com.anyrent.pos.domain.error.ApiErrorMessages
@@ -281,6 +286,9 @@ fun OrdersScreen(
     val orderListState = rememberLazyListState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val isSaleTab = orderType.equals("SALE", ignoreCase = true)
+    val features by FeatureFlags.enabled.collectAsState()
+    // #458: overview drill-down lists use the Orders tab row when the new orders UI is on
+    val boardRows = filteredMode && MobileFeature.NEW_ORDERS in features
 
     fun refresh(fromPull: Boolean = false) {
         val requestedQuery = appliedQuery.trim()
@@ -525,8 +533,9 @@ fun OrdersScreen(
                     orders.isEmpty() -> EmptyOrError(stringResource(R.string.empty_orders))
                     else -> LazyColumn(
                         state = orderListState,
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = if (boardRows) Modifier.fillMaxSize().background(DS.Colors.Surface) else Modifier,
+                        contentPadding = if (boardRows) PaddingValues(0.dp) else PaddingValues(16.dp),
+                        verticalArrangement = if (boardRows) Arrangement.Top else Arrangement.spacedBy(12.dp),
                     ) {
                         // #388 "Trễ hạn": keep the API order (most late first)
                         val sortedOrders = if (lateOnly) {
@@ -536,7 +545,11 @@ fun OrdersScreen(
                         } else {
                             orders.sortedByDescending { it.createdAt.orEmpty() }
                         }
-                        items(sortedOrders, key = { it.id }) { order ->
+                        if (boardRows) {
+                            items(OrdersHomeLogic.orderRows(sortedOrders), key = { it.key }) { row ->
+                                OrderBoardRow(row, onClick = { onOpenOrder(row.orderId) })
+                            }
+                        } else items(sortedOrders, key = { it.id }) { order ->
                             OrderListCard(
                                 order = order,
                                 onClick = { onOpenOrder(order.id) },

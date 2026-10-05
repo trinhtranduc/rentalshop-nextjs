@@ -619,7 +619,8 @@ private fun WorkRow(
     val pay = when (val line = OrdersBoardLogic.payLine(work.amountDue, work.refundDue)) {
         is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(line.amount)) to DS.Status.Return.text
         is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(line.amount)) to DS.Status.Waiting.text
-        PayLine.Paid -> stringResource(R.string.orders_v2_pay_paid) to DS.Status.Done.text
+        // #458: fully paid → the total only
+        null -> null
     }
     val phone = work.customerPhone?.filterNot { it.isWhitespace() }.orEmpty()
     BoardRow(
@@ -638,6 +639,15 @@ private fun WorkRow(
         onClick = onClick,
         onCall = onCall,
     )
+}
+
+/**
+ * The Orders tab row for lists outside the tab (overview drill-downs, #458): search context, so a sale reads
+ * "Bán · Hoàn thành" and the date line follows the status.
+ */
+@Composable
+internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
+    OrderRow(row, RowContext.SEARCH, boardTexts(), onClick)
 }
 
 @Composable
@@ -669,11 +679,10 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoa
         pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
-        // Balances of the list API (#389); nothing on an older API or a cancelled order
+        // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
         pay = when (val pay = OrdersBoardLogic.listPayLine(order)) {
             is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(pay.amount)) to DS.Status.Return.text
             is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(pay.amount)) to DS.Status.Waiting.text
-            PayLine.Paid -> stringResource(R.string.orders_v2_pay_paid) to DS.Status.Done.text
             null -> null
         },
         phone = null,

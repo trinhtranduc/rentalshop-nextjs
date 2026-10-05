@@ -90,9 +90,9 @@ struct OrdersQuery: Equatable {
     var page = 1
 }
 
-/// Right-hand line under a row total (board Main)
+/// Right-hand line under a row total (board Main). A fully paid order has none (#458).
 enum PayLine: Equatable {
-    case refund(Double), due(Double), paid
+    case refund(Double), due(Double)
 }
 
 /// Tag colours and text of a row (boards Main, VL-tat-ca, VL-ban, VL-tim)
@@ -175,15 +175,25 @@ enum OrdersHomeLogic {
         return String(last)
     }
 
-    /// Refund first (the counter hands money back), then what is still to collect, else paid in full
-    static func payLine(amountDue: Double, refundDue: Double) -> PayLine {
+    /// Refund first (the counter hands money back), then what is still to collect. Nil when fully paid: a status
+    /// change already guarantees the money is in, so no "đã thu đủ" line (#458)
+    static func payLine(amountDue: Double, refundDue: Double) -> PayLine? {
         if refundDue > 0 { return .refund(refundDue) }
         if amountDue > 0 { return .due(amountDue) }
-        return .paid
+        return nil
+    }
+
+    /// Order rows with their late days, in the API order (Orders tab lists and overview drill-down lists, #458)
+    static func orderRows(_ orders: [Order], now: Date = Date(), timeZone: TimeZone = .current) -> [OrdersRow] {
+        orders.map { order in
+            .order(order, lateDays: lateDays(orderType: order.orderType, status: order.status,
+                                             pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
+                                             now: now, timeZone: timeZone))
+        }
     }
 
     /// Pay line of a "Tất cả đơn" / search row from the list balances (#390); nil when the API sent neither field
-    /// (older server) or the order is cancelled
+    /// (older server), the order is cancelled, or nothing is due (#458)
     static func listPayLine(_ order: Order) -> PayLine? {
         guard order.status != .cancelled else { return nil }
         guard order.listAmountDue != nil || order.listRefundDue != nil else { return nil }
@@ -577,16 +587,12 @@ final class OrdersHomeViewModel {
     private func buildOrderSections() -> [OrdersSection] {
         let tz = timeZone()
         let today = now()
-        let rows: (Order) -> OrdersRow = { order in
-            .order(order, lateDays: OrdersHomeLogic.lateDays(orderType: order.orderType, status: order.status,
-                                                            pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
-                                                            now: today, timeZone: tz))
-        }
+        let rows: ([Order]) -> [OrdersRow] = { OrdersHomeLogic.orderRows($0, now: today, timeZone: tz) }
         guard !isSearching, segment == .sale else {
-            return orders.isEmpty ? [] : [OrdersSection(kind: .plain, rows: orders.map(rows))]
+            return orders.isEmpty ? [] : [OrdersSection(kind: .plain, rows: rows(orders))]
         }
         return OrdersHomeLogic.groupByDay(orders, date: { $0.createdAt }, timeZone: tz).map { group in
-            OrdersSection(kind: .day(group.day), rows: group.items.map(rows))
+            OrdersSection(kind: .day(group.day), rows: rows(group.items))
         }
     }
 }
