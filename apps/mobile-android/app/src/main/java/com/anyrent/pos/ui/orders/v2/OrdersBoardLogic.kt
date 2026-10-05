@@ -139,11 +139,11 @@ object OrdersBoardLogic {
         return "$text · ${(if (days == 1) texts.oneDay else texts.days).format(days)}"
     }
 
-    /** Phone behind the call button of a "Việc cần làm" row; null hides the button */
-    fun workCallPhone(row: TodayWorkRow, isLate: Boolean): String? {
-        val phone = row.customerPhone?.filterNot { it.isWhitespace() }.orEmpty()
-        return phone.takeIf { isLate && it.isNotEmpty() }
-    }
+    /**
+     * Phone behind the call button of a "Việc cần làm" row; null hides the button.
+     * Board Main (#468): no call button on any row, late or not; the customer is called from order detail.
+     */
+    fun workCallPhone(row: TodayWorkRow, isLate: Boolean): String? = null
 
     /** Date line of a "Việc cần làm" row: the missed day on TRỄ HẠN, the rental span otherwise */
     fun workWhen(
