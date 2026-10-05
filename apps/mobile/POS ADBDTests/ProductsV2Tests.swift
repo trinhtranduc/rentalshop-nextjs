@@ -627,7 +627,7 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.pricePreview(type: "DAILY", price: 300_000, days: 3, quantity: 2, orderType: .sale).total, 600_000)
     }
 
-    func testApplyingAThirdOptionChangesOnlyTheLineAndKeepsThePayloadShape() throws {
+    func testApplyingAThirdOptionChangesOnlyTheLineAndKeepsThePayloadValid() throws {
         let cart = try pricingCart()
         cart.selectPricingType(at: 0, type: "BLOCK")
         cart.updatePrice(at: 0, price: 400_000)
@@ -636,7 +636,8 @@ extension ProductsV2Tests {
         XCTAssertNil(cart.items[0].customFixedPrice, "the per-rental price typed earlier is not overwritten")
         let request = try XCTUnwrap(cart.toCreateOrderRequest().orderItems.first)
         XCTAssertEqual(request.unitPrice, 400_000)
-        XCTAssertEqual(request.pricingType, "BLOCK")
+        XCTAssertEqual(request.pricingType, "FIXED", "the order API takes FIXED / HOURLY / DAILY; a block price is unit × quantity")
+        XCTAssertNil(request.pricingOptionId)
         XCTAssertEqual(request.totalPrice, 400_000)
         // Back to per rental: the catalog price, the product never changed
         cart.selectPricingType(at: 0, type: "FIXED")

@@ -54,6 +54,18 @@ struct CartItem: Codable {
         return pricingType?.uppercased() == "DAILY"
     }
 
+    /// #482: the pricing type the order API accepts (FIXED, HOURLY, DAILY). Another option type chosen in the sheet
+    /// (BLOCK) is sent as FIXED: its total is already unit price × quantity, so the payload keeps today's shape.
+    var requestPricingType: String {
+        let type = pricingType?.uppercased() ?? "FIXED"
+        return ["FIXED", "HOURLY", "DAILY"].contains(type) ? type : "FIXED"
+    }
+
+    /// The chosen option id, left out when the type is sent as FIXED in its place
+    var requestPricingOptionId: Int? {
+        requestPricingType == (pricingType?.uppercased() ?? "FIXED") ? selectedPricingOptionId : nil
+    }
+
     /// Whether this cart item offers more than one pricing option
     var hasMultiplePricingOptions: Bool {
         return (pricingOptions?.count ?? 0) > 1

@@ -803,8 +803,8 @@ class Cart {
                     ? (item.isDailyPricing ? item.rentalDays : calculateRentalDays())
                     : nil,
                 imageUrl: item.imageUrl,
-                pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
-                pricingOptionId: item.selectedPricingOptionId
+                pricingType: orderType == .rent ? item.requestPricingType : nil,
+                pricingOptionId: item.requestPricingOptionId
             )
         }
         
@@ -886,8 +886,8 @@ class Cart {
                 deposit: item.deposit,
                 notes: finalNote,
                 rentDays: orderType == .rent && item.isDailyPricing ? item.rentalDays : nil,
-                pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
-                pricingOptionId: item.selectedPricingOptionId
+                pricingType: orderType == .rent ? item.requestPricingType : nil,
+                pricingOptionId: item.requestPricingOptionId
             )
         }
         
