@@ -1973,3 +1973,14 @@
 "notes.v2.add" = "Add";
 "notes.v2.photoHint" = "Take a photo or pick from the library. Tap a photo to view it larger.";
 "notes.v2.save" = "Save note";
+
+/* #482 */
+"orders.entity.free" = "%d free today";
+"orders.entity.tile.orders" = "Orders";
+"orders.entity.tile.rentals" = "Rentals";
+"orders.entity.tile.revenue" = "Revenue";
+"orders.entity.tile.spent" = "Spent";
+"orders.entity.tile.renting" = "Renting";
+"orders.entity.section" = "ORDERS";
+"orders.entity.million" = "%d.%dM";
+"orders.entity.millionWhole" = "%dM";

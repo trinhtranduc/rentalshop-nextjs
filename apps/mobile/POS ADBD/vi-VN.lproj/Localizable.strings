@@ -1971,3 +1971,14 @@
 "notes.v2.add" = "Thêm";
 "notes.v2.photoHint" = "Chụp hoặc chọn từ thư viện. Chạm ảnh để xem lớn.";
 "notes.v2.save" = "Lưu ghi chú";
+
+/* #482 */
+"orders.entity.free" = "Còn %d hôm nay";
+"orders.entity.tile.orders" = "Số đơn";
+"orders.entity.tile.rentals" = "Lượt thuê";
+"orders.entity.tile.revenue" = "Doanh thu";
+"orders.entity.tile.spent" = "Đã chi";
+"orders.entity.tile.renting" = "Đang thuê";
+"orders.entity.section" = "ĐƠN HÀNG";
+"orders.entity.million" = "%d,%dtr";
+"orders.entity.millionWhole" = "%dtr";
