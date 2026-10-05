@@ -877,7 +877,6 @@
     <string name="orders_v2_not_prepared">Not prepared</string>
     <string name="orders_v2_pay_due">to collect %1$s</string>
     <string name="orders_v2_pay_refund">refund deposit %1$s</string>
-    <string name="orders_v2_pay_paid">✓ paid in full</string>
     <string name="orders_v2_when_hand_over_due">hand over %1$s</string>
     <string name="orders_v2_when_return_due">due back %1$s</string>
     <plurals name="orders_v2_when_days">

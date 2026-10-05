@@ -51,11 +51,10 @@ data class OrdersQuery(
     val page: Int = 1,
 )
 
-/** Right-hand line under a row total (board Main) */
+/** Right-hand line under a row total (board Main). A fully paid order has none (#458). */
 sealed interface PayLine {
     data class Refund(val amount: Double) : PayLine
     data class Due(val amount: Double) : PayLine
-    data object Paid : PayLine
 }
 
 /** Row tag in the board colours */
@@ -85,16 +84,19 @@ object OrdersBoardLogic {
     fun shortNumber(orderNumber: String): String =
         orderNumber.substringAfterLast('-').ifEmpty { orderNumber }
 
-    /** Refund first (the counter hands money back), then what is still to collect, else paid in full */
-    fun payLine(amountDue: Double, refundDue: Double): PayLine = when {
+    /**
+     * Refund first (the counter hands money back), then what is still to collect. Null when fully paid: a status
+     * change already guarantees the money is in, so no "đã thu đủ" line (#458).
+     */
+    fun payLine(amountDue: Double, refundDue: Double): PayLine? = when {
         refundDue > 0 -> PayLine.Refund(refundDue)
         amountDue > 0 -> PayLine.Due(amountDue)
-        else -> PayLine.Paid
+        else -> null
     }
 
     /**
      * Pay line of a "Tất cả đơn" / search row from the list balances (#390). Null when the API sent neither field
-     * (older server) or the order is cancelled.
+     * (older server), the order is cancelled, or nothing is due (#458).
      */
     fun listPayLine(order: OrderSummary): PayLine? {
         if (order.status.equals("CANCELLED", ignoreCase = true)) return null

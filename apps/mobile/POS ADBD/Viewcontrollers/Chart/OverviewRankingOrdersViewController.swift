@@ -93,15 +93,21 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
     /// Prefer API `summary.totalAmount` (all matching orders); fall back to loaded pages.
     private var summaryAmountTotal: Double?
     private var loadedAmountTotal: Double = 0
+    /// #458: with the new orders UI the rows are the Orders tab row (search context), else the old order card
+    private let usesOrderRows = FeatureFlags.shared.isOn(.newOrders)
+    private var hidesMoney: Bool {
+        OrdersHomeLogic.hidesMoney(role: User.current()?.role, hideForStaff: Utils.shouldHideFinancialDataForStaff())
+    }
 
     private lazy var ordersTableView: UITableView = {
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
         let table = UITableView(frame: .zero, style: .plain)
         table.delegate = self
         table.dataSource = self
-        // Same order card cell as the main Orders tab (SaleDetailCell_Option5).
+        // Same row as the main Orders tab: OrderRowCell with the new orders UI (#458), else SaleDetailCell_Option5.
         table.register(SaleDetailCell_Option5.self, forCellReuseIdentifier: "SaleDetailCell")
-        table.backgroundColor = .backgroundPrimary
+        table.register(OrderRowCell.self, forCellReuseIdentifier: OrderRowCell.reuseId)
+        table.backgroundColor = usesOrderRows ? DS.Color.surface : .backgroundPrimary
         table.separatorStyle = .none
         table.rowHeight = UITableViewAutomaticDimension
         table.estimatedRowHeight = isIPad ? 132 : 118
@@ -604,6 +610,12 @@ extension OverviewRankingOrdersViewController: UITableViewDataSource, UITableVie
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if usesOrderRows {
+            let rowCell = tableView.dequeueReusableCell(withIdentifier: OrderRowCell.reuseId, for: indexPath) as! OrderRowCell
+            let row = OrdersHomeLogic.orderRows([orders[indexPath.row]])[0]
+            rowCell.configure(row, context: .search, hidesMoney: hidesMoney)
+            return rowCell
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: "SaleDetailCell", for: indexPath) as! SaleDetailCell_Option5
         cell.bind(order: orders[indexPath.row])
         cell.backgroundColor = .clear

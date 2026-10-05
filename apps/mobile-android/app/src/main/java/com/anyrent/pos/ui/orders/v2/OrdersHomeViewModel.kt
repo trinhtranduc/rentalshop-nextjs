@@ -104,6 +104,18 @@ object OrdersHomeLogic {
         return days.coerceAtLeast(0).toInt()
     }
 
+    /** Order rows with their late days, in the API order (Orders tab lists and overview drill-down lists, #458) */
+    fun orderRows(
+        orders: List<OrderSummary>,
+        now: Instant = Instant.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<OrdersRow.Order> = orders.map { order ->
+        OrdersRow.Order(
+            order,
+            lateDays(order.orderType, order.status, parseInstant(order.pickupPlanAt), parseInstant(order.returnPlanAt), now, zone),
+        )
+    }
+
     /** TRỄ HẠN (most late first), HÔM NAY, NGÀY MAI; empty groups and a missing NGÀY MAI are left out */
     fun todaySections(work: TodayWork): List<OrdersSection> {
         fun List<TodayWorkRow>.asWork(kind: WorkKind) = map { OrdersRow.Work(it, kind) }
@@ -304,19 +316,7 @@ class OrdersHomeViewModel(
     private fun buildSections(searching: Boolean, segment: OrdersSegment): List<OrdersSection> {
         val today = now()
         val zoneId = zone()
-        val rows = loaded.map { order ->
-            OrdersRow.Order(
-                order,
-                OrdersHomeLogic.lateDays(
-                    order.orderType,
-                    order.status,
-                    OrdersHomeLogic.parseInstant(order.pickupPlanAt),
-                    OrdersHomeLogic.parseInstant(order.returnPlanAt),
-                    today,
-                    zoneId,
-                ),
-            )
-        }
+        val rows = OrdersHomeLogic.orderRows(loaded, today, zoneId)
         if (rows.isEmpty()) return emptyList()
         return if (!searching && segment == OrdersSegment.SALE) {
             OrdersHomeLogic.saleSections(rows, zoneId)

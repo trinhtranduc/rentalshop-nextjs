@@ -864,7 +864,6 @@
     <string name="orders_v2_not_prepared">Chưa soạn đồ</string>
     <string name="orders_v2_pay_due">còn thu %1$s</string>
     <string name="orders_v2_pay_refund">trả cọc %1$s</string>
-    <string name="orders_v2_pay_paid">✓ đã thu đủ</string>
     <string name="orders_v2_when_hand_over_due">hẹn giao %1$s</string>
     <string name="orders_v2_when_return_due">hạn trả %1$s</string>
     <plurals name="orders_v2_when_days">

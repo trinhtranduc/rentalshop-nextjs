@@ -47,7 +47,8 @@ class Phase8LogicTest {
         assertEquals(PayLine.Refund(500000.0), OrdersBoardLogic.listPayLine(order(status = "PICKUPED", amountDue = 0.0, refundDue = 500000.0)))
         // Refund wins when both are set
         assertEquals(PayLine.Refund(10.0), OrdersBoardLogic.listPayLine(order(amountDue = 5.0, refundDue = 10.0)))
-        assertEquals(PayLine.Paid, OrdersBoardLogic.listPayLine(order(status = "RETURNED", amountDue = 0.0, refundDue = 0.0)))
+        // #458: fully paid → no line ("đã thu đủ" is not shown)
+        assertNull(OrdersBoardLogic.listPayLine(order(status = "RETURNED", amountDue = 0.0, refundDue = 0.0)))
     }
 
     @Test

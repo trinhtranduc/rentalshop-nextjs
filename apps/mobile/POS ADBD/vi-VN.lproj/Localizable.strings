@@ -1828,7 +1828,6 @@
 "orders.v2.notPrepared" = "Chưa soạn đồ";
 "orders.v2.pay.due" = "còn thu %@";
 "orders.v2.pay.refund" = "trả cọc %@";
-"orders.v2.pay.paid" = "✓ đã thu đủ";
 "orders.v2.when.handOverDue" = "hẹn giao %@";
 "orders.v2.when.returnDue" = "hạn trả %@";
 "orders.v2.when.days" = "%d ngày";

@@ -22,7 +22,8 @@ final class Phase8Tests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.listPayLine(try order(balances: #","amountDue":300000,"refundDue":0"#)), .due(300000))
         XCTAssertEqual(OrdersHomeLogic.listPayLine(try order(status: "PICKUPED", balances: #","amountDue":0,"refundDue":500000"#)), .refund(500000))
         XCTAssertEqual(OrdersHomeLogic.listPayLine(try order(balances: #","amountDue":5,"refundDue":10"#)), .refund(10))
-        XCTAssertEqual(OrdersHomeLogic.listPayLine(try order(status: "RETURNED", balances: #","amountDue":0,"refundDue":0"#)), .paid)
+        // #458: fully paid → no line
+        XCTAssertNil(OrdersHomeLogic.listPayLine(try order(status: "RETURNED", balances: #","amountDue":0,"refundDue":0"#)))
         // One field alone is enough
         XCTAssertEqual(OrdersHomeLogic.listPayLine(try order(balances: #","amountDue":7"#)), .due(7))
     }
