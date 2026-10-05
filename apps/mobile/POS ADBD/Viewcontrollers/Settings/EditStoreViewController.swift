@@ -8,6 +8,9 @@ protocol EditStoreViewControllerDelegate: AnyObject {
 class EditStoreViewController: BaseViewControler {
     // MARK: - Properties
     weak var delegate: EditStoreViewControllerDelegate?
+    /// #459: new style, set by the v2 store information page
+    var v2 = false
+    private let v2NameError = V2.label(size: DS.TextSize.secondary, color: V2.danger, lines: 0)
     private var outlet: Outlet?
     private var merchant: Merchant?
     
@@ -139,6 +142,10 @@ class EditStoreViewController: BaseViewControler {
     }
     
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
         
         // Setup navigation bar
@@ -287,6 +294,62 @@ class EditStoreViewController: BaseViewControler {
         setupTextFieldDelegates()
     }
     
+    /// v2: ‹ header, labelled fields (same fields; Quốc gia opens the country picker), primary button at the bottom
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(v2Close), for: .touchUpInside)
+        let line = SettingsDetailV2.installHeader(on: view, title: "Edit Store".localized(), back: back)
+        let save = V2.primaryButton("Update Store".localized())
+        save.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
+        let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [save])
+
+        v2NameError.isHidden = true
+        let nameBlock = SettingsDetailV2.field(storeNameField.titleLabel.text ?? "", storeNameField.textField)
+        nameBlock.addArrangedSubview(v2NameError)
+        let countryBlock = SettingsDetailV2.field(countryField.titleLabel.text ?? "", countryField.textField, chevron: true)
+        countryBlock.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(countryFieldTapped)))
+        let form = UIStackView(arrangedSubviews: [
+            nameBlock,
+            SettingsDetailV2.field(addressField.titleLabel.text ?? "", addressField.textField),
+            SettingsDetailV2.field(cityField.titleLabel.text ?? "", cityField.textField),
+            SettingsDetailV2.field(stateField.titleLabel.text ?? "", stateField.textField),
+            countryBlock,
+            SettingsDetailV2.field(zipCodeField.titleLabel.text ?? "", zipCodeField.textField),
+            SettingsDetailV2.field(phoneField.titleLabel.text ?? "", phoneField.textField),
+            SettingsDetailV2.field(descriptionField.titleLabel.text ?? "", descriptionField.textField),
+        ])
+        form.axis = .vertical
+        form.spacing = 16
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(form)
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bar.snp.top)
+        }
+        form.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-16)
+            make.width.equalToSuperview().offset(-2 * DS.Spacing.lg)
+        }
+        setupTextFieldDelegates()
+    }
+
+    @objc private func v2Close() {
+        dismiss(animated: true)
+    }
+
+    /// v2: the old error label lives inside LabeledTextField, which is not shown; show it under the field instead
+    private func showV2NameError(_ text: String?) {
+        guard v2 else { return }
+        v2NameError.text = text
+        v2NameError.isHidden = text == nil
+        storeNameField.textField.layer.borderColor = (text == nil ? V2.border : V2.danger).cgColor
+    }
+
     override func setupData() {
         guard let user = User.account() else { return }
         
@@ -337,6 +400,7 @@ class EditStoreViewController: BaseViewControler {
         guard let storeName = storeNameField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !storeName.isEmpty else {
             storeNameField.errorMessage = "Store name is required".localized()
+            showV2NameError("Store name is required".localized())
             return
         }
         
@@ -445,6 +509,9 @@ extension EditStoreViewController: UITextFieldDelegate {
         if let field = [storeNameField, addressField, cityField, stateField, zipCodeField, phoneField, descriptionField]
             .first(where: { $0.textField == textField }) {
             field.errorMessage = nil
+        }
+        if textField == storeNameField.textField, !v2NameError.isHidden {
+            showV2NameError(nil)
         }
     }
 }

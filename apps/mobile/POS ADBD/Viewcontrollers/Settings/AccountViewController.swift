@@ -257,6 +257,7 @@ class AccountViewController: BaseViewControler {
     // MARK: - Actions
     @objc private func editButtonTapped() {
         let editVC = EditStoreViewController()
+        editVC.v2 = v2
         editVC.delegate = self
         let navController = UINavigationController(rootViewController: editVC)
         present(navController, animated: true)

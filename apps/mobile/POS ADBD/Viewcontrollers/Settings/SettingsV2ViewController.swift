@@ -147,14 +147,16 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func open(_ item: SettingsV2Item) {
         switch item {
-        // #459: detail pages in the new style
+        // #459: detail pages in the new style, without the tab bar (like Khách hàng)
         case .storeInfo:
             let page = AccountViewController()
             page.v2 = true
+            page.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(page, animated: true)
         case .receiptNote, .printer:
             let page = PrinterConfigurationViewController()
             page.v2 = true
+            page.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(page, animated: true)
         case .customers:
             let list = CustomersV2ListViewController(mode: .browse)
@@ -163,10 +165,12 @@ final class SettingsV2ViewController: BaseViewControler {
         case .users:
             let page = UserManagementViewController()
             page.v2 = true
+            page.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(page, animated: true)
         case .export:
             let page = ExportViewController()
             page.v2 = true
+            page.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(page, animated: true)
         case .plan:
             break
@@ -179,6 +183,7 @@ final class SettingsV2ViewController: BaseViewControler {
         case .appInfo:
             let page = AppInformationViewController()
             page.v2 = true
+            page.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(page, animated: true)
         case .deleteAccount:
             // Same as the current settings screen
