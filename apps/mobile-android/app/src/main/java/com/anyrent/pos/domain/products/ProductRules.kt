@@ -135,6 +135,33 @@ object ProductRowLogic {
     }
 }
 
+/** What the full-screen viewer shows: the photos and the one it opens at (#472) */
+data class ProductImageViewerRequest(val urls: List<String>, val startIndex: Int)
+
+/** Full-screen photos (#472, iOS `ProductImages`) */
+object ProductImages {
+    /** The product's photos in pager order: `images` without blanks, else `imageUrl` (same list as the detail pager) */
+    fun viewerUrls(product: Product): List<String> =
+        product.images.filter { it.isNotBlank() }.ifEmpty { listOfNotNull(product.imageUrl?.takeIf { it.isNotBlank() }) }
+
+    /** The URL the Home row thumbnail loads (first of `images`, else `imageUrl`); null means the placeholder */
+    fun thumbnailUrl(product: Product): String? =
+        (product.images.firstOrNull() ?: product.imageUrl)?.takeIf { it.isNotBlank() }
+
+    /** A tap on the Home row thumbnail: the viewer at that photo, or null (placeholder) so the row opens detail */
+    fun thumbnailTap(product: Product): ProductImageViewerRequest? {
+        val thumb = thumbnailUrl(product) ?: return null
+        val urls = viewerUrls(product).ifEmpty { return null }
+        return ProductImageViewerRequest(urls, urls.indexOf(thumb).coerceAtLeast(0))
+    }
+
+    /** A tap on the detail photo pager: the viewer at the page on screen (clamped), or null without photos */
+    fun detailTap(product: Product, page: Int): ProductImageViewerRequest? {
+        val urls = viewerUrls(product).ifEmpty { return null }
+        return ProductImageViewerRequest(urls, page.coerceIn(0, urls.lastIndex))
+    }
+}
+
 object BarcodeMatch {
     /** The product whose barcode equals [code] (trimmed, case-insensitive); the search API also matches names */
     fun exact(code: String, products: List<Product>): Product? {

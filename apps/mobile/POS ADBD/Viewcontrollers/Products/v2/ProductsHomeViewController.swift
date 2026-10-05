@@ -372,6 +372,15 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
         let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
         cell.bind(product, inCart: inCart)
         cell.onAdd = { [weak self] in self?.addToCart(product) }
+        // #472: the thumbnail opens the photo full screen; without a photo it opens detail like the row
+        cell.onImage = { [weak self] in
+            guard let self else { return }
+            if let request = ProductImages.thumbnailTap(product) {
+                self.present(ImageViewerViewController(request: request), animated: true)
+            } else {
+                self.openDetail(product)
+            }
+        }
         return cell
     }
 
@@ -425,10 +434,15 @@ final class ProductRowV2Cell: UITableViewCell {
     /// The + of a product already in the cart: the count on a darker blue (board SP-dong)
     private static let inCartFill = UIColor(hexString: "1E3A8A")
     var onAdd: (() -> Void)?
+    /// A tap on the thumbnail (#472)
+    var onImage: (() -> Void)?
+    private lazy var photoTap = UITapGestureRecognizer(target: self, action: #selector(photoTapped))
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .default
+        photo.isUserInteractionEnabled = true
+        photo.addGestureRecognizer(photoTap)
         let spacer = UIView()
         spacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         spacer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
@@ -476,7 +490,13 @@ final class ProductRowV2Cell: UITableViewCell {
         nameLabel.text = product.name
         photo.image = V2.placeholder
         photo.contentMode = .center
-        if let url = product.image_url ?? product.images?.first, let link = URL(string: url) {
+        // #472: with a photo the thumbnail is its own button; the placeholder leaves the tap to the row
+        let thumbUrl = ProductImages.thumbnailUrl(product)
+        photoTap.isEnabled = thumbUrl != nil
+        photo.isAccessibilityElement = thumbUrl != nil
+        photo.accessibilityTraits = UIAccessibilityTraitButton
+        photo.accessibilityLabel = String(format: "products.image.view.accessibility".localized(), product.name ?? "")
+        if let url = thumbUrl, let link = URL(string: url) {
             photo.kf.setImage(with: link, placeholder: V2.placeholder, options: [.transition(.fade(0.1))]) { [weak photo] result in
                 if case .success = result { photo?.contentMode = .scaleAspectFill }
             }
@@ -538,5 +558,9 @@ final class ProductRowV2Cell: UITableViewCell {
 
     @objc private func addTapped() {
         onAdd?()
+    }
+
+    @objc private func photoTapped() {
+        onImage?()
     }
 }

@@ -271,6 +271,7 @@
 		C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */; };
 		C2E7493E136407C5EA7E6D96 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */; };
 		C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */; };
+		A47201AA0000000000000001 /* ImageViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A47201AA0000000000000002 /* ImageViewerViewController.swift */; };
 		C914E01023A48955008B3EDF /* PreviewHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914E00F23A48955008B3EDF /* PreviewHeaderCell.swift */; };
 		C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914E01423A49075008B3EDF /* UIScrollView+Additions.swift */; };
 		C914E01923A4907A008B3EDF /* UIView+Additions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914E01523A49077008B3EDF /* UIView+Additions.swift */; };
@@ -615,6 +616,7 @@
 		B07CC0B0BF772BE52542D13E /* TodayWork.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayWork.swift; sourceTree = "<group>"; };
 		B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateRequiredViewController.swift; sourceTree = "<group>"; };
 		B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsHomeViewController.swift; sourceTree = "<group>"; };
+		A47201AA0000000000000002 /* ImageViewerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImageViewerViewController.swift; sourceTree = "<group>"; };
 		B854361D12543F58020DE847 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2.swift; sourceTree = "<group>"; };
 		C1128874207B931039540DAB /* Phase7GapsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase7GapsTests.swift; sourceTree = "<group>"; };
@@ -946,6 +948,7 @@
 			children = (
 				652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */,
 				B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */,
+				A47201AA0000000000000002 /* ImageViewerViewController.swift */,
 				665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */,
 				C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */,
 				A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */,
@@ -1963,6 +1966,7 @@
 				9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */,
 				219F5B5BC02CC3E14401DD74 /* ProductsV2Views.swift in Sources */,
 				C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */,
+				A47201AA0000000000000001 /* ImageViewerViewController.swift in Sources */,
 				523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */,
 				57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */,
 				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,

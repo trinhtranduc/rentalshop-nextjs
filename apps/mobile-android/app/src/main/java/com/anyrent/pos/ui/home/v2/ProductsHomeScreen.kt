@@ -82,10 +82,13 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.AddButtonState
 import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.ProductAccess
+import com.anyrent.pos.domain.products.ProductImageViewerRequest
+import com.anyrent.pos.domain.products.ProductImages
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.ProductRowLogic
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppIcons
+import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
@@ -120,6 +123,7 @@ fun ProductsHomeScreen(
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
+    var viewer by remember { mutableStateOf<ProductImageViewerRequest?>(null) }
     val listState = rememberLazyListState()
     val notFound = stringResource(R.string.v2_scan_not_found)
     val added = stringResource(R.string.v2_added_to_cart)
@@ -238,6 +242,8 @@ fun ProductsHomeScreen(
                                 product = product,
                                 inCart = ProductRowLogic.cartCount(product.id, lines),
                                 onOpen = { onOpenProduct(product.id) },
+                                // #472: the thumbnail opens the photo full screen; without a photo, detail like the row
+                                onImage = { viewer = ProductImages.thumbnailTap(product) ?: run { onOpenProduct(product.id); null } },
                                 onAdd = {
                                     CartStore.addProduct(product)
                                     Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
@@ -288,6 +294,7 @@ fun ProductsHomeScreen(
             )
         }
     }
+    viewer?.let { FullScreenImagePreview(models = it.urls, startIndex = it.startIndex, onDismiss = { viewer = null }) }
     if (showImageSearch) {
         Dialog(
             onDismissRequest = { showImageSearch = false },
@@ -317,7 +324,7 @@ private fun FieldIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 private val InCartFill = Color(0xFF1E3A8A)
 
 @Composable
-private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd: () -> Unit) {
+private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
     val subtitle = ProductRowLogic.subtitle(product)
     val free = subtitle.free
     val addState = ProductRowLogic.addState(free, inCart)
@@ -327,6 +334,8 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
     val unitRental = stringResource(R.string.v2_unit_per_rental)
     val unitDay = stringResource(R.string.v2_unit_per_day)
     val saleShort = stringResource(R.string.v2_price_sale_short)
+    val viewLabel = stringResource(R.string.v2_view_image_named, product.name)
+    val viewHint = stringResource(R.string.v2_view_image_hint)
     val addLabel = if (addState is AddButtonState.InCart) {
         stringResource(R.string.v2_add_in_cart_named, product.name, addState.count)
     } else {
@@ -338,7 +347,14 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ProductThumb(product.images.firstOrNull() ?: product.imageUrl, 68.dp, 12.dp)
+            val thumbUrl = ProductImages.thumbnailUrl(product)
+            ProductThumb(
+                thumbUrl, 68.dp, 12.dp,
+                // With a photo the thumbnail is its own button; the placeholder leaves the tap to the row
+                modifier = if (thumbUrl == null) Modifier else Modifier
+                    .semantics { contentDescription = viewLabel }
+                    .clickable(onClickLabel = viewHint, role = Role.Button, onClick = onImage),
+            )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
                 Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

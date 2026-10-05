@@ -23,6 +23,55 @@ final class ProductsV2Tests: XCTestCase {
 
     // MARK: - Roles
 
+    // MARK: - Full-screen photos (#472)
+
+    func testViewerUrlsUseImagesWithoutBlanksElseImageUrl() throws {
+        var p = try product(#"{"id":1,"name":"Áo dài","images":["https://x/a.jpg"," ","https://x/b.jpg"]}"#)
+        XCTAssertEqual(ProductImages.viewerUrls(p), ["https://x/a.jpg", "https://x/b.jpg"])
+        p.images = ["", "  "]
+        p.image_url = "https://x/avatar.jpg"
+        XCTAssertEqual(ProductImages.viewerUrls(p), ["https://x/avatar.jpg"])
+        p.image_url = " "
+        XCTAssertEqual(ProductImages.viewerUrls(p), [])
+    }
+
+    func testThumbnailTapOpensViewerAtTheThumbnailPhoto() throws {
+        var p = try product(#"{"id":1,"name":"Áo dài","images":["https://x/a.jpg","https://x/b.jpg"]}"#)
+        XCTAssertEqual(ProductImages.thumbnailTap(p), ProductImageViewerRequest(urls: ["https://x/a.jpg", "https://x/b.jpg"], startIndex: 0))
+        p.image_url = "https://x/b.jpg"
+        XCTAssertEqual(ProductImages.thumbnailTap(p)?.startIndex, 1)
+        // A thumbnail URL outside the list still opens the viewer, at the first photo
+        p.image_url = "https://x/other.jpg"
+        XCTAssertEqual(ProductImages.thumbnailTap(p)?.startIndex, 0)
+    }
+
+    func testThumbnailTapWithoutPhotoFallsBackToRow() throws {
+        var p = try product(#"{"id":1,"name":"Áo dài"}"#)
+        XCTAssertNil(ProductImages.thumbnailUrl(p))
+        XCTAssertNil(ProductImages.thumbnailTap(p))
+        p.image_url = ""
+        XCTAssertNil(ProductImages.thumbnailTap(p))
+    }
+
+    func testDetailTapStartsAtTheVisiblePageClamped() throws {
+        let p = try product(#"{"id":1,"name":"Áo dài","images":["https://x/a.jpg","https://x/b.jpg","https://x/c.jpg"]}"#)
+        XCTAssertEqual(ProductImages.detailTap(p, page: 1)?.startIndex, 1)
+        XCTAssertEqual(ProductImages.detailTap(p, page: 9)?.startIndex, 2)
+        XCTAssertEqual(ProductImages.detailTap(p, page: -1)?.startIndex, 0)
+        XCTAssertNil(ProductImages.detailTap(try product(#"{"id":2,"name":"Váy"}"#), page: 0))
+    }
+
+    func testImageViewerShowsOnePagePerPhotoAndClampsStart() {
+        let viewer = ImageViewerViewController(urls: ["https://x/a.jpg", "https://x/b.jpg"], startIndex: 5)
+        viewer.loadViewIfNeeded()
+        let pager = viewer.view.subviews.compactMap { $0 as? UIScrollView }.first
+        XCTAssertEqual(pager?.subviews.filter { $0 is UIScrollView }.count, 2)
+        XCTAssertEqual(viewer.modalPresentationStyle, .overFullScreen)
+        let counter = viewer.view.subviews.compactMap { $0 as? UILabel }.first
+        XCTAssertEqual(counter?.text?.trimmingCharacters(in: .whitespaces), "2/2")
+        XCTAssertEqual(counter?.isHidden, false)
+    }
+
     func testOutletStaffSeesNoPriceFieldsAndCannotEdit() {
         let staffPerms = ["products.view", "products.create", "orders.view"]
         XCTAssertFalse(ProductAccess.showsPriceFields(role: .outletStaff, permissions: staffPerms))
