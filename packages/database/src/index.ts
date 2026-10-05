@@ -346,7 +346,6 @@ export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number
 export { getDefaultOutlet, getDefaultBankAccount } from './outlet';
 export type { OrderNumberFormat } from './order-number-generator';
 export { searchOrders } from './order'; // Legacy order search function
-export type { OrderCreateGuard, OrderCreateGuardItem } from './order-create-guard';
 
 // Registration functions
 export { registerUser, registerMerchantWithTrial } from './registration';

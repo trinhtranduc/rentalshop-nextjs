@@ -8,7 +8,7 @@ import type {
 } from '@rentalshop/types';
 import { applyOrderDateRange } from './order-date-range';
 import { findNearestTaskPageIds } from './order-nearest-task';
-import { createOrderOnce, type OrderCreateGuard } from './order-create-guard';
+import { createOrderOnce } from './order-create-guard';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
@@ -1059,11 +1059,15 @@ export const simplifiedOrders = {
   },
 
   /**
-   * Create an order unless this create already made one (#341): a second in-flight or retried
-   * POST /api/orders returns the existing order with `replay: true`. See order-create-guard.ts.
+   * Create an order; with an Idempotency-Key, a second in-flight or retried create with the same
+   * (user, key) returns the first order with `replay: true` (#341). Without a key: a plain create.
    */
-  createOnce: async (guard: OrderCreateGuard, data: any): Promise<{ order: CreatedOrder; replay: boolean }> => {
-    return await createOrderOnce(guard, data, ORDER_CREATE_INCLUDE);
+  createOnce: async (
+    createdById: number,
+    idempotencyKey: string | null | undefined,
+    data: any
+  ): Promise<{ order: CreatedOrder; replay: boolean }> => {
+    return await createOrderOnce(createdById, idempotencyKey, data, ORDER_CREATE_INCLUDE);
   },
 
   /**

@@ -893,24 +893,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
 
     console.log('🔍 Creating order with data:', orderData);
 
-    // #341: one Save / Confirm = one order. A second in-flight or retried create (same optional
-    // Idempotency-Key, or for installed apps an identical order within 60 s) returns the existing
-    // order instead of inserting; `isReplay` then skips the create side effects below.
+    // #341: with an optional Idempotency-Key, a second in-flight or retried create by the same user
+    // returns the first order; `isReplay` then skips the create side effects below.
+    // Without a key (installed apps, web) every request creates an order, as before.
     const { order, replay: isReplay } = await db.orders.createOnce(
-      {
-        outletId: parsed.data.outletId,
-        customerId: parsed.data.customerId ?? null,
-        createdById: user.id,
-        orderType: parsed.data.orderType,
-        totalAmount: parsed.data.totalAmount,
-        pickupPlanAt: orderData.pickupPlanAt,
-        returnPlanAt: orderData.returnPlanAt,
-        items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
-          productId: item.productId,
-          quantity: item.quantity
-        })),
-        idempotencyKey: request.headers.get('idempotency-key')
-      },
+      user.id,
+      request.headers.get('idempotency-key'),
       orderData
     );
     if (isReplay) {
