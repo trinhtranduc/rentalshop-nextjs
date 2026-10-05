@@ -19,7 +19,7 @@ class CategoryService: BaseService, CategoryServiceProtocol {
     private func requestWithCustomParsing(path: String, method: HTTPMethod, parameters: [String: Any]? = nil, completion: @escaping (Category?, NSError?) -> Void) {
         let fullURL = APIEndpoint.currentBaseURL + path
         
-        AF.request(fullURL, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Category Operation Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")

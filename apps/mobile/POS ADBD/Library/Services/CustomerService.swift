@@ -19,7 +19,7 @@ class CustomerService: BaseService, CustomerServiceProtocol {
     private func requestWithCustomParsing(path: String, method: HTTPMethod, parameters: [String: Any]? = nil, completion: @escaping (Customer?, NSError?) -> Void) {
         let fullURL = APIEndpoint.currentBaseURL + path
         
-        AF.request(fullURL, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Customer Operation Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")

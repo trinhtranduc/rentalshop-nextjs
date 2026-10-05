@@ -145,6 +145,8 @@ enum APIEndpoint {
         
         // Mobile APIs
         static let mobileLogin = "/api/mobile/auth/login"
+        static let mobileRefresh = "/api/mobile/auth/refresh"
+        static let mobileLogout = "/api/mobile/auth/logout"
         static let registerDevice = "/api/mobile/notifications/register-device"
         static let syncCheck = "/api/mobile/sync/check"
 

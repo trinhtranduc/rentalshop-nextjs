@@ -14,32 +14,26 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
     static let shared = AuthenticationService()
     
     func login(emailUser: String, passwordUser: String, completion: @escaping (User?, NSError?) -> Void) {
-        let path = APIEndpoint.Path.login
+        // Mobile login: 1-hour access token + refresh token bound to this session (#344)
+        let path = APIEndpoint.Path.mobileLogin
         let fullURL = APIEndpoint.currentBaseURL + path
         
-        // Updated request format according to API documentation
         let params: [String: Any] = [
             "email": emailUser,
-            "password": passwordUser
+            "password": passwordUser,
+            "deviceId": PushNotificationManager.shared.deviceId
         ]
         
         print("📡 Login Request - URL: \(fullURL)")
-        print("📡 Login Params: \(params)")
         
-        AF.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Login Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
                 
                 switch response.result {
                 case .success(let data):
-                    // Log raw response JSON
-                    if let jsonString = String(data: data, encoding: .utf8) {
-                        print("📄 Login Raw Response Body:")
-                        print(jsonString)
-                        print("   " + String(repeating: "-", count: 50))
-                    }
-                    
+                    // Raw body not logged: it carries the access and refresh tokens
                     do {
                         let loginResponse = try JSONDecoder.shared.decode(LoginResponse.self, from: data)
                         
@@ -81,8 +75,13 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
                             print("   Outlet Object: nil")
                         }
                         
-                        // Save user to UserDefaults
+                        // Save user to UserDefaults, refresh token to the Keychain
                         User.save(user: user)
+                        AuthTokenStore.refreshToken = loginData.refreshToken
+                        if let token = loginData.token {
+                            AuthTokenStore.didReceiveAccessToken(token)
+                        }
+                        AuthEventMonitor.sessionStarted()
                         completion(user, nil)
                         
                     } catch {
@@ -105,13 +104,19 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
                 return
             }
 
-            let path = APIEndpoint.Path.logout
-            let fullURL = APIEndpoint.currentBaseURL + path
-            let params: [String: Any] = [
-                "deviceId": PushNotificationManager.shared.deviceId
-            ]
+            // With a refresh token: revoke it and end its session (works after the access token expired).
+            // Without one (logged in before #344): end the session with the access token.
+            let fullURL: String
+            let params: [String: Any]
+            if let refreshToken = AuthTokenStore.refreshToken {
+                fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.mobileLogout
+                params = ["refreshToken": refreshToken]
+            } else {
+                fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.logout
+                params = ["deviceId": PushNotificationManager.shared.deviceId]
+            }
 
-            AF.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+            AuthSession.shared.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
                 .responseData { response in
                     switch response.result {
                     case .success(let data):
@@ -179,7 +184,7 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         print("📡 Register Request - URL: \(fullURL)")
         print("📡 Register Params: \(params)")
         
-        AF.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Register Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -274,7 +279,7 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         let path = APIEndpoint.currentBaseURL + APIEndpoint.Path.accountDeletion
         let fullURL = path.hasPrefix("http") ? path : APIEndpoint.currentBaseURL + path
         
-        AF.request(fullURL, method: .post, parameters: nil, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: nil, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 switch response.result {
                 case .success(let data):
@@ -296,7 +301,7 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         
         print("📡 Validate Account Request - URL: \(fullURL)")
         
-        AF.request(fullURL, method: .post, parameters: nil, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: nil, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Validate Account Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -361,7 +366,7 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         print("📡 Resend Verification Request - URL: \(fullURL)")
         print("📡 Resend Verification Params: \(params)")
         
-        AF.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Resend Verification Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -447,7 +452,7 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         print("📡 Forgot Password Request - URL: \(fullURL)")
         print("📡 Forgot Password Params: \(params)")
         
-        AF.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: params, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Forgot Password Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")

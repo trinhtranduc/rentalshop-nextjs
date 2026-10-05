@@ -43,12 +43,27 @@ import java.util.concurrent.TimeUnit
 class ApiClient(
     private val baseUrl: String = BuildConfig.API_BASE_URL.trimEnd('/'),
     private val tokenProvider: () -> String? = { SessionStore.accessToken },
-    private val onUnauthorized: () -> Unit = { SessionStore.expireAuth() },
+    /** Called with the server's 401 code when the session is gone (not on a wrong password). */
+    private val onUnauthorized: (code: String?) -> Unit = { code -> SessionStore.expireAuth(code) },
     private val client: OkHttpClient = defaultHttpClient(),
     /** Sent as `X-App-Version` so the API can tell app versions apart (minimum version, request logs) */
     private val appVersion: String = BuildConfig.VERSION_NAME,
+    private val refreshTokenProvider: () -> String? = { SessionStore.refreshToken },
+    private val onTokensRefreshed: (accessToken: String, refreshToken: String) -> Unit = { access, refresh ->
+        SessionStore.accessToken = access
+        SessionStore.refreshToken = refresh
+    },
+    private val deviceIdProvider: () -> String = { SessionStore.deviceId },
 ) {
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
+
+    /** One refresh at a time; concurrent 401s wait and reuse the result. */
+    private val refreshLock = Any()
+
+    private sealed interface RefreshOutcome {
+        data class Refreshed(val accessToken: String) : RefreshOutcome
+        data class Rejected(val code: String?, val message: String) : RefreshOutcome
+    }
     data class PageResult<T>(
         val items: List<T>,
         val hasMore: Boolean,
@@ -61,19 +76,21 @@ class ApiClient(
     // -------------------------------------------------------------------------
 
     fun login(email: String, password: String): Result<UserProfile> = runCatching {
-        // Match iOS AuthenticationService: POST /api/auth/login
+        // Match iOS AuthenticationService: POST /api/mobile/auth/login (1-hour token + refresh token, #344)
         val body = JSONObject()
             .put("email", email.trim())
             .put("password", password)
+            .put("deviceId", deviceIdProvider())
             .toString()
             .toRequestBody(jsonMedia)
 
-        val json = execute(post("/api/auth/login", body, authed = false))
+        val json = execute(post("/api/mobile/auth/login", body, authed = false))
         requireSuccess(json)
         val data = json.getJSONObject("data")
         val token = data.optString("token").ifBlank { data.optString("accessToken") }
         require(token.isNotBlank()) { "Missing access token" }
         SessionStore.accessToken = token
+        SessionStore.refreshToken = data.optString("refreshToken").takeIf { it.isNotBlank() }
 
         val user = data.optJSONObject("user") ?: JSONObject()
         val profile = parseUserProfile(user)
@@ -104,8 +121,15 @@ class ApiClient(
     }
 
     fun logout(): Result<Unit> = runCatching {
-        val body = JSONObject().put("deviceId", SessionStore.deviceId).toString().toRequestBody(jsonMedia)
-        runCatching { execute(post("/api/auth/logout", body, authed = true)) }
+        val refreshToken = refreshTokenProvider()
+        if (!refreshToken.isNullOrBlank()) {
+            // Revokes the refresh token and ends its session; works even after the access token expired
+            val body = JSONObject().put("refreshToken", refreshToken).toString().toRequestBody(jsonMedia)
+            runCatching { execute(post("/api/mobile/auth/logout", body, authed = false)) }
+        } else {
+            val body = JSONObject().put("deviceId", deviceIdProvider()).toString().toRequestBody(jsonMedia)
+            runCatching { execute(post("/api/auth/logout", body, authed = true)) }
+        }
         Unit
     }
 
@@ -558,9 +582,32 @@ class ApiClient(
             .get()
             .applyAuth(true)
             .build()
+        return fetchBytes(request, allowRefresh = true)
+    }
+
+    private fun fetchBytes(request: Request, allowRefresh: Boolean): ByteArray {
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 val body = response.body?.string().orEmpty()
+                val sentAuthorization = request.header("Authorization")
+                // Same refresh-and-retry as execute() so a download after the 1-hour token still works (#344)
+                if (response.code == 401 && allowRefresh && sentAuthorization != null &&
+                    runCatching { JSONObject(body).errorCode() }.getOrNull() == CODE_TOKEN_EXPIRED
+                ) {
+                    when (val outcome = refreshAccessToken(sentAuthorization)) {
+                        is RefreshOutcome.Refreshed -> return fetchBytes(
+                            request.newBuilder().header("Authorization", "Bearer ${outcome.accessToken}").build(),
+                            allowRefresh = false,
+                        )
+                        is RefreshOutcome.Rejected -> {
+                            onUnauthorized(outcome.code)
+                            throw AppError.Unauthorized(
+                                outcome.message.ifBlank { "Your session has expired" },
+                                outcome.code,
+                            )
+                        }
+                    }
+                }
                 val apiMessage = runCatching {
                     JSONObject(body).optString("message")
                         .ifBlank { JSONObject(body).optString("error") }
@@ -923,7 +970,7 @@ class ApiClient(
     // HTTP helpers + parsers
     // -------------------------------------------------------------------------
 
-    private fun execute(request: Request): JSONObject {
+    private fun execute(request: Request, allowRefresh: Boolean = true): JSONObject {
         try {
             client.newCall(request).execute().use { response ->
                 val raw = response.body?.string().orEmpty()
@@ -937,10 +984,32 @@ class ApiClient(
                     )
                 }
                 if (response.code == 401) {
-                    onUnauthorized()
+                    val code = json.errorCode()
+                    val sentAuthorization = request.header("Authorization")
+                    // A 401 without a token (e.g. wrong password on login) is not a lost session.
+                    if (sentAuthorization != null) {
+                        if (allowRefresh && code == CODE_TOKEN_EXPIRED) {
+                            when (val outcome = refreshAccessToken(sentAuthorization)) {
+                                is RefreshOutcome.Refreshed -> return execute(
+                                    request.newBuilder()
+                                        .header("Authorization", "Bearer ${outcome.accessToken}")
+                                        .build(),
+                                    allowRefresh = false,
+                                )
+                                is RefreshOutcome.Rejected -> {
+                                    onUnauthorized(outcome.code ?: code)
+                                    throw AppError.Unauthorized(
+                                        outcome.message.ifBlank { "Your session has expired" },
+                                        outcome.code ?: code,
+                                    )
+                                }
+                            }
+                        }
+                        onUnauthorized(code)
+                    }
                     throw AppError.Unauthorized(
                         json.errorMessage().ifBlank { "Your session has expired" },
-                        json.errorCode(),
+                        code,
                     )
                 }
                 if (!response.isSuccessful) {
@@ -959,6 +1028,46 @@ class ApiClient(
             }
         } catch (error: AppError) {
             throw error
+        } catch (error: IOException) {
+            logApi("Network ${request.method} ${request.url}: ${error.message}")
+            throw AppError.Network(error.message ?: "Network request failed", error)
+        }
+    }
+
+    /**
+     * Exchanges the refresh token for a new pair. If another request already refreshed while this
+     * one waited, reuses that token instead of spending the (rotated) refresh token again.
+     * Network errors propagate as [AppError.Network] so a bad connection never signs the user out.
+     */
+    private fun refreshAccessToken(staleAuthorization: String): RefreshOutcome = synchronized(refreshLock) {
+        val current = tokenProvider()
+        if (!current.isNullOrBlank() && "Bearer $current" != staleAuthorization) {
+            return RefreshOutcome.Refreshed(current)
+        }
+        val refreshToken = refreshTokenProvider()
+        if (refreshToken.isNullOrBlank()) {
+            return RefreshOutcome.Rejected(null, "")
+        }
+        val body = JSONObject()
+            .put("refreshToken", refreshToken)
+            .put("deviceId", deviceIdProvider())
+            .toString()
+            .toRequestBody(jsonMedia)
+        val request = post("/api/mobile/auth/refresh", body, authed = false)
+        try {
+            client.newCall(request).execute().use { response ->
+                val json = runCatching { JSONObject(response.body?.string().orEmpty().ifBlank { "{}" }) }
+                    .getOrElse { JSONObject() }
+                val data = json.optJSONObject("data")
+                val accessToken = data?.optString("token").orEmpty()
+                val newRefreshToken = data?.optString("refreshToken").orEmpty()
+                if (response.isSuccessful && accessToken.isNotBlank() && newRefreshToken.isNotBlank()) {
+                    onTokensRefreshed(accessToken, newRefreshToken)
+                    return RefreshOutcome.Refreshed(accessToken)
+                }
+                logApi("Token refresh rejected ${response.code}: ${json.errorCode()}")
+                return RefreshOutcome.Rejected(json.errorCode(), json.errorMessage())
+            }
         } catch (error: IOException) {
             logApi("Network ${request.method} ${request.url}: ${error.message}")
             throw AppError.Network(error.message ?: "Network request failed", error)
@@ -1436,6 +1545,8 @@ class ApiClient(
         }
 
     companion object {
+        private const val CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
+
         private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
