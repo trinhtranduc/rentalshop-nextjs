@@ -277,3 +277,84 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(model.hasMore)
     }
 }
+
+/// #461 — the number pad covered "Lưu sản phẩm" and had no Done key
+final class ProductFormKeyboardTests: XCTestCase {
+    override func tearDown() {
+        User.reset()
+        super.tearDown()
+    }
+
+    /// Price fields only show for a user with `products.manage` who is not `OUTLET_STAFF`
+    private func merchantForm() throws -> ProductFormViewController {
+        let json = #"{"id":1,"role":"MERCHANT","permissions":["products.manage"]}"#
+        User.save(user: try JSONDecoder.shared.decode(User.self, from: Data(json.utf8)))
+        let form = ProductFormViewController(product: nil)
+        form.loadViewIfNeeded()
+        return form
+    }
+
+    private func allViews(_ view: UIView) -> [UIView] {
+        [view] + view.subviews.flatMap { allViews($0) }
+    }
+
+    private func fields(_ view: UIView) -> [UITextField] {
+        allViews(view).compactMap { $0 as? UITextField }
+    }
+
+    private func assertDoneBar(_ field: UITextField?, file: StaticString = #filePath, line: UInt = #line) {
+        guard let field else { return XCTFail("field not found", file: file, line: line) }
+        let bar = field.inputAccessoryView as? UIToolbar
+        let done = bar?.items?.last
+        XCTAssertNotNil(bar, "\(field.accessibilityLabel ?? "field") has no Done bar", file: file, line: line)
+        XCTAssertEqual(done?.title, "Done".localized(), file: file, line: line)
+        XCTAssertTrue(done?.target === field, "Done must end editing on its own field", file: file, line: line)
+        XCTAssertEqual(done?.action, #selector(UIResponder.resignFirstResponder), file: file, line: line)
+    }
+
+    func testEveryPriceFieldHasADoneBar() throws {
+        let numeric = fields(try merchantForm().view).filter { $0.keyboardType == .numberPad }
+        XCTAssertEqual(numeric.count, 4, "per rental, per day, sale, deposit")
+        numeric.forEach { assertDoneBar($0) }
+    }
+
+    func testSaveButtonRidesOnTheKeyboard() throws {
+        let form = try merchantForm()
+        let guide = form.view.keyboardLayoutGuide
+        let save = try XCTUnwrap(allViews(form.view).compactMap { $0 as? UIButton }
+            .first { $0.title(for: .normal) == "products.form.save".localized() })
+        let tied = allViews(form.view).flatMap { $0.constraints }.contains { constraint in
+            constraint.isActive && ((constraint.firstItem === save && constraint.secondItem === guide)
+                || (constraint.firstItem === guide && constraint.secondItem === save))
+        }
+        XCTAssertTrue(tied, "the save button must sit on the keyboard while it is up")
+    }
+
+    /// A Maestro run showed "300" after typing "30": the next tap on the covered save button hit the pad's "0"
+    func testTypingDigitsKeepsExactlyThoseDigits() throws {
+        let form = try merchantForm()
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = form
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        let perDay = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.perDay".localized() })
+        XCTAssertTrue(perDay.becomeFirstResponder())
+
+        perDay.insertText("3")
+        perDay.insertText("0")
+        XCTAssertEqual(perDay.text, "30")
+        ["0", "0", "0"].forEach { perDay.insertText($0) }
+        XCTAssertEqual(perDay.text, "30.000")
+        perDay.resignFirstResponder()
+    }
+
+    func testCustomerPhoneHasADoneBar() {
+        let screen = NewCustomerViewController(mode: .pick)
+        screen.loadViewIfNeeded()
+        assertDoneBar(fields(screen.view).first { $0.keyboardType == .phonePad })
+
+        let edit = EditCustomerViewController(customerId: 1)
+        edit.loadViewIfNeeded()
+        assertDoneBar(fields(edit.view).first { $0.keyboardType == .phonePad })
+    }
+}

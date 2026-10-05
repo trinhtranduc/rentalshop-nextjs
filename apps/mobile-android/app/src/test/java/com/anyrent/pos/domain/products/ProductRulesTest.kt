@@ -128,6 +128,16 @@ class ProductRulesTest {
         assertEquals("", MoneyInput.display(null))
     }
 
+    /** #461 — the form re-formats on each key ("300" in a Maestro run came from a tap on the covered save button) */
+    @Test
+    fun `typing digits keeps exactly those digits`() {
+        var field = ""
+        listOf("3", "0").forEach { field = MoneyInput.display(MoneyInput.parse(field + it)) }
+        assertEquals("30", field)
+        listOf("0", "0", "0").forEach { field = MoneyInput.display(MoneyInput.parse(field + it)) }
+        assertEquals("30.000", field)
+    }
+
     // Cart
 
     @Test
