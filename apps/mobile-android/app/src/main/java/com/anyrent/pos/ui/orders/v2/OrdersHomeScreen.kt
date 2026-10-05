@@ -82,6 +82,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -622,7 +623,6 @@ private fun WorkRow(
         // #458: fully paid → the total only
         null -> null
     }
-    val phone = work.customerPhone?.filterNot { it.isWhitespace() }.orEmpty()
     BoardRow(
         tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
             (if (handOver) DS.Status.HandOver else DS.Status.Return),
@@ -634,8 +634,7 @@ private fun WorkRow(
         total = formatMoneyVnd(work.totalAmount),
         struck = false,
         pay = pay,
-        // Board Main: the call button only on TRỄ HẠN rows
-        phone = phone.takeIf { isLate && it.isNotEmpty() },
+        phone = OrdersBoardLogic.workCallPhone(work, isLate),
         onClick = onClick,
         onCall = onCall,
     )
@@ -715,7 +714,7 @@ private fun BoardRow(
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Tag(tag.first, tag.second, bold = true)
+                    Tag(tag.first, tag.second, RowTagStyle.STATUS)
                     Spacer(Modifier.size(6.dp))
                     Text(
                         name?.takeIf { it.isNotBlank() } ?: "N/A",
@@ -733,7 +732,7 @@ private fun BoardRow(
                 Text(line, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 if (pills.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
-                        pills.forEach { (text, colors) -> Tag(text, colors, bold = false) }
+                        pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
                     }
                 }
             }
@@ -741,13 +740,13 @@ private fun BoardRow(
                 Text(
                     total,
                     fontSize = DS.TextSize.Name,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = RowMoneyText.totalWeight,
                     color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
                     textDecoration = if (struck) TextDecoration.LineThrough else null,
                     maxLines = 1,
                 )
                 if (pay != null) {
-                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = pay.second, maxLines = 1)
+                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = pay.second, maxLines = 1)
                 }
             }
             if (phone != null) {
@@ -773,14 +772,35 @@ private fun BoardRow(
     }
 }
 
+/**
+ * Coloured tag of an order row (#468, boards Main / VL-tat-ca / VL-ban): STATUS ("Giao", "Đã đặt") 14sp bold,
+ * 8/3 padding, radius 7; NOTE ("Trễ 1 ngày", "Chưa soạn đồ") 12sp regular, 6/2 padding, radius 6.
+ */
+internal enum class RowTagStyle(
+    val fontSize: TextUnit,
+    val weight: FontWeight,
+    val horizontal: Dp,
+    val vertical: Dp,
+    val radius: Dp,
+) {
+    STATUS(DS.TextSize.Secondary, FontWeight.Bold, 8.dp, 3.dp, DS.Radius.tag),
+    NOTE(DS.TextSize.Pill, FontWeight.Normal, 6.dp, 2.dp, DS.Radius.chip),
+}
+
+/** Money column of an order row (#468): the total bold, the pay line ("còn thu N" / "trả cọc N") regular */
+internal object RowMoneyText {
+    val totalWeight = FontWeight.Bold
+    val payWeight = FontWeight.Normal
+}
+
 @Composable
-private fun Tag(text: String, colors: DS.Pill, bold: Boolean) {
+private fun Tag(text: String, colors: DS.Pill, style: RowTagStyle) {
     Box(
         Modifier
-            .background(colors.fill, RoundedCornerShape(DS.Radius.chip))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .background(colors.fill, RoundedCornerShape(style.radius))
+            .padding(horizontal = style.horizontal, vertical = style.vertical),
     ) {
-        Text(text, color = colors.text, fontSize = DS.TextSize.Pill, fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, maxLines = 1)
+        Text(text, color = colors.text, fontSize = style.fontSize, fontWeight = style.weight, maxLines = 1)
     }
 }
 

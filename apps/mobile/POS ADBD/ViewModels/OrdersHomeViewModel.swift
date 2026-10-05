@@ -251,6 +251,12 @@ enum OrdersHomeLogic {
         return text
     }
 
+    /// Phone behind the call button of a "Việc cần làm" row; nil hides the button.
+    /// Board Main (#468): no call button on any row, late or not; the customer is called from order detail.
+    static func workCallPhone(_ row: TodayWorkRow, isLate: Bool) -> String? {
+        nil
+    }
+
     /// Date line of a "Việc cần làm" row: the missed day on TRỄ HẠN, the rental span otherwise
     static func workWhen(_ row: TodayWorkRow, kind: WorkKind, isLate: Bool,
                          timeZone: TimeZone = .current, locale: Locale = .current) -> String {

@@ -18,6 +18,11 @@ import com.anyrent.pos.ui.orders.v2.OrdersSort
 import com.anyrent.pos.ui.orders.v2.PayLine
 import com.anyrent.pos.ui.orders.v2.RentOrdersFilter
 import com.anyrent.pos.ui.orders.v2.RowTag
+import com.anyrent.pos.ui.orders.v2.RowTagStyle
+import com.anyrent.pos.ui.orders.v2.RowMoneyText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anyrent.pos.ui.orders.v2.OrdersPageLoader
 import com.anyrent.pos.ui.orders.v2.OrdersRow
 import com.anyrent.pos.ui.orders.v2.OrdersSegment
@@ -304,6 +309,37 @@ class OrdersHomeTest {
         assertEquals("hẹn giao T7 03/10", OrdersBoardLogic.workWhen(row, WorkKind.HAND_OVER, true, vietnam, vi))
         assertEquals("hạn trả T2 05/10", OrdersBoardLogic.workWhen(row, WorkKind.TAKE_BACK, true, vietnam, vi))
         assertEquals(1, OrdersBoardLogic.inclusiveDays(Instant.parse("2026-10-03T01:00:00Z"), Instant.parse("2026-10-03T10:00:00Z"), vietnam))
+    }
+
+    @Test
+    fun `work rows have no call phone, late or not (#468)`() {
+        val row = TodayWorkRow(id = 1, orderNumber = "ORD-1-0001", customerName = "Huy", customerPhone = "0901 234 567", lateDays = 2)
+        assertNull(OrdersBoardLogic.workCallPhone(row, isLate = true))
+        assertNull(OrdersBoardLogic.workCallPhone(row, isLate = false))
+    }
+
+    @Test
+    fun `status tag is 14sp bold, notes are 12sp regular (#468)`() {
+        with(RowTagStyle.STATUS) {
+            assertEquals(14.sp, fontSize)
+            assertEquals(FontWeight.Bold, weight)
+            assertEquals(8.dp, horizontal)
+            assertEquals(3.dp, vertical)
+            assertEquals(7.dp, radius)
+        }
+        with(RowTagStyle.NOTE) {
+            assertEquals(12.sp, fontSize)
+            assertEquals(FontWeight.Normal, weight)
+            assertEquals(6.dp, horizontal)
+            assertEquals(2.dp, vertical)
+            assertEquals(6.dp, radius)
+        }
+    }
+
+    @Test
+    fun `row total stays bold, pay line is regular (#468)`() {
+        assertEquals(FontWeight.Bold, RowMoneyText.totalWeight)
+        assertEquals(FontWeight.Normal, RowMoneyText.payWeight)
     }
 
     @Test
