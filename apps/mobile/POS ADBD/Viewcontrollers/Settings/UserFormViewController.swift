@@ -20,6 +20,11 @@ class UserFormViewController: BaseViewControler {
     // MARK: - Properties
     var user: User?
     weak var delegate: UserFormViewControllerDelegate?
+    /// #459: new style, set by the v2 user list before the form is shown
+    var v2 = false
+    /// v2 rows that open the role / outlet pickers (iPad popover anchors)
+    private var v2RoleRow: UIView?
+    private var v2OutletRow: UIView?
     
     // MARK: - UI Components
     private lazy var saveButton: RCPrimaryButton = {
@@ -114,7 +119,9 @@ class UserFormViewController: BaseViewControler {
         // Hide tabbar when pushed
         self.hidesBottomBarWhenPushed = true
         
-        setupNavigationBar()
+        if !v2 {
+            setupNavigationBar()
+        }
         setupUI()
         setupData()
         
@@ -141,6 +148,10 @@ class UserFormViewController: BaseViewControler {
     
     // MARK: - Setup
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
         
         guard let customNavBar = customNavBar else { return }
@@ -346,6 +357,80 @@ class UserFormViewController: BaseViewControler {
         }
     }
     
+    /// v2: ‹ header, labelled fields (same fields per role and mode as the old form), primary button at the bottom
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(v2Close), for: .touchUpInside)
+        let title = user == nil ? "Add User".localized() : "Update User".localized()
+        let line = SettingsDetailV2.installHeader(on: view, title: title, back: back)
+
+        let save = V2.primaryButton(title)
+        save.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
+        let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [save])
+
+        let currentUser = User.current()
+        let isMerchant = currentUser?.role == .merchant
+        let isOutletAdmin = currentUser?.role == .outletAdmin
+        let isEditMode = user != nil
+
+        let form = UIStackView()
+        form.axis = .vertical
+        form.spacing = 16
+        form.addArrangedSubview(SettingsDetailV2.field(userNameField.titleLabel.text ?? "", userNameField.textField))
+        form.addArrangedSubview(SettingsDetailV2.field(emailField.titleLabel.text ?? "", emailField.textField, enabled: !isEditMode))
+        // Password only when creating (editing uses Change Password in the list menu)
+        if !isEditMode {
+            form.addArrangedSubview(SettingsDetailV2.field(passwordField.titleLabel.text ?? "", passwordField.textField))
+        }
+        let roleRow = SettingsDetailV2.field(roleField.titleLabel.text ?? "", roleField.textField, chevron: true)
+        roleRow.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showRolePicker)))
+        v2RoleRow = roleRow
+        form.addArrangedSubview(roleRow)
+        if (isMerchant && !isEditMode) || (isOutletAdmin && !isEditMode) || isEditMode {
+            let interactive = isMerchant && !isEditMode
+            let outletRow = SettingsDetailV2.field(outletField.titleLabel.text ?? "", outletField.textField,
+                                                   enabled: interactive, chevron: interactive)
+            if interactive {
+                outletRow.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showOutletPicker)))
+            } else {
+                outletRow.isUserInteractionEnabled = false
+            }
+            v2OutletRow = outletRow
+            form.addArrangedSubview(outletRow)
+        }
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(form)
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bar.snp.top)
+        }
+        form.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-16)
+            make.width.equalToSuperview().offset(-2 * DS.Spacing.lg)
+        }
+
+        [userNameField, emailField, passwordField].forEach { field in
+            field.textField.delegate = self
+            field.textField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
+        }
+    }
+
+    @objc private func v2Close() {
+        dismiss(animated: true)
+    }
+
+    /// v2 rows anchor the action sheets on iPad
+    private func anchorV2Popover(_ alert: UIAlertController, to row: UIView?) {
+        guard v2, let row, let popover = alert.popoverPresentationController else { return }
+        popover.sourceView = row
+        popover.sourceRect = row.bounds
+    }
+
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         let title = user == nil ? "Add User".localized() : "Update User".localized()
@@ -475,9 +560,10 @@ class UserFormViewController: BaseViewControler {
         }
         
         alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        anchorV2Popover(alert, to: v2OutletRow)
         
         // For iPad
-        if UIDevice.current.userInterfaceIdiom == .pad {
+        if !v2, UIDevice.current.userInterfaceIdiom == .pad {
             if let popover = alert.popoverPresentationController {
                 // Find the outlet field wrapper in the view hierarchy
                 for subview in containerView.subviews {
@@ -583,9 +669,10 @@ class UserFormViewController: BaseViewControler {
         }
         
         alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        anchorV2Popover(alert, to: v2RoleRow)
         
         // For iPad - find the role field wrapper in the view hierarchy
-        if UIDevice.current.userInterfaceIdiom == .pad {
+        if !v2, UIDevice.current.userInterfaceIdiom == .pad {
             if let popover = alert.popoverPresentationController {
                 // Find the role field wrapper view
                 for subview in containerView.subviews {

@@ -4,6 +4,9 @@ import SnapKit
 /// Network thermal printer (ESC/POS over TCP). Form layout so IP and notes
 /// can actually be typed — the old table accessoryView clipped the field.
 class PrinterConfigurationViewController: BaseViewControler {
+    /// #459: new style, set by Settings v2 before the page is shown
+    var v2 = false
+
     private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.keyboardDismissMode = .interactive
@@ -85,7 +88,9 @@ class PrinterConfigurationViewController: BaseViewControler {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
+        if !v2 {
+            setupNavigationBar()
+        }
         setupUI()
         loadCurrentConfig()
     }
@@ -96,6 +101,10 @@ class PrinterConfigurationViewController: BaseViewControler {
     }
 
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
@@ -147,6 +156,58 @@ class PrinterConfigurationViewController: BaseViewControler {
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 16, left: 16, bottom: 24, right: 16))
             make.width.equalTo(scrollView).offset(-32)
         }
+    }
+
+    /// v2: ‹ header, labelled IP and note fields, Kiểm tra máy in + Lưu at the bottom (same actions)
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        let line = SettingsDetailV2.installHeader(on: view, title: "Printer Configuration".localized(), back: back)
+
+        let test = V2.secondaryButton("Test Printer".localized())
+        test.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+        test.setContentHuggingPriority(.required, for: .horizontal)
+        test.addTarget(self, action: #selector(testPrinter), for: .touchUpInside)
+        let save = V2.primaryButton("Save".localized())
+        save.addTarget(self, action: #selector(self.save), for: .touchUpInside)
+        let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [test, save])
+
+        hintLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
+        hintLabel.textColor = DS.Color.textMuted
+        supportLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
+        supportLabel.textColor = V2.warn
+        noteTextView.isScrollEnabled = true
+        let form = UIStackView(arrangedSubviews: [
+            hintLabel,
+            SettingsDetailV2.field("IP Address".localized(), ipField.textField),
+            SettingsDetailV2.textArea("Printer Notes".localized(), noteTextView),
+            supportLabel,
+        ])
+        form.axis = .vertical
+        form.spacing = 16
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(form)
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bar.snp.top)
+        }
+        form.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-16)
+            make.width.equalToSuperview().offset(-2 * DS.Spacing.lg)
+        }
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
     }
 
     private func setupNavigationBar() {
