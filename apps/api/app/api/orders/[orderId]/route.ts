@@ -13,7 +13,7 @@ import {
   mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
-import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
 import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
@@ -423,6 +423,9 @@ export const PUT = async (
             typeof entry === 'object' &&
             typeof (entry as File).arrayBuffer === 'function'
         );
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.notesImages) + notesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (notesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(notesImageFiles, userMerchantId || 0);
@@ -456,6 +459,9 @@ export const PUT = async (
         
         // Upload and process pickupNotesImages
         const pickupNotesImageFiles = formData.getAll('pickupNotesImages') as File[];
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.pickupNotesImages) + pickupNotesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (pickupNotesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(pickupNotesImageFiles, userMerchantId || 0);
@@ -476,6 +482,9 @@ export const PUT = async (
         
         // Upload and process returnNotesImages
         const returnNotesImageFiles = formData.getAll('returnNotesImages') as File[];
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.returnNotesImages) + returnNotesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (returnNotesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(returnNotesImageFiles, userMerchantId || 0);
@@ -496,6 +505,9 @@ export const PUT = async (
         
         // Upload and process damageNotesImages
         const damageNotesImageFiles = formData.getAll('damageNotesImages') as File[];
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.damageNotesImages) + damageNotesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (damageNotesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(damageNotesImageFiles, userMerchantId || 0);
@@ -518,6 +530,9 @@ export const PUT = async (
       } else {
         // Parse JSON request body (backward compatibility)
         body = await request.json();
+        if (bodyExceedsNoteImageLimit(body)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
       }
 
       // JSON clients (Android two-step, web delete/set-list) may send staging CDN URLs

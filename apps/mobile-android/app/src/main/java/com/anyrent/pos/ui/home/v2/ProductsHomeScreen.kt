@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -404,7 +405,7 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
 
 @Composable
 private fun CartBar(count: Int, total: Double, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val label = stringResource(R.string.v2_cart_bar, count)
+    val label = pluralStringResource(R.plurals.v2_cart_bar, count, count)
     val create = stringResource(R.string.v2_cart_create)
     Row(
         modifier

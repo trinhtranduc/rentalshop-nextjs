@@ -26,6 +26,8 @@ export const VALIDATION = {
   MIN_ORDER_AMOUNT: 0.01,
   MAX_ORDER_AMOUNT: 999999.99,
   MAX_ORDER_ITEMS: 50,
+  /** Photos on one order note (general, pickup, return, damage). */
+  MAX_ORDER_NOTE_IMAGES: 5,
   
   // Financial
   MIN_DEPOSIT_AMOUNT: 0,

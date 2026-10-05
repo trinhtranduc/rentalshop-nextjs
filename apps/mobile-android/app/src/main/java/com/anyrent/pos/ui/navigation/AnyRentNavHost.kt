@@ -336,15 +336,7 @@ fun AnyRentNavHost(
             val kind = entry.arguments?.getString("kind") ?: return@composable
             val startDate = entry.arguments?.getString("startDate") ?: return@composable
             val endDate = entry.arguments?.getString("endDate") ?: return@composable
-            val titleRes = when (kind.lowercase()) {
-                "new" -> R.string.snapshot_new_rentals
-                "pickup" -> R.string.in_progress
-                "return" -> R.string.completed
-                "cancelled" -> R.string.cancelled
-                OverviewLinks.RENTED -> R.string.overview_v2_rented_out
-                OverviewLinks.LATE -> R.string.overview_v2_late_returns
-                else -> R.string.orders
-            }
+            val titleRes = OverviewLinks.listTitle(kind)
             // #388: "rented" / "late" are lists of now, not of the period
             val now = kind == OverviewLinks.RENTED || kind == OverviewLinks.LATE
             OrdersScreen(
@@ -391,6 +383,17 @@ fun AnyRentNavHost(
         composable(Routes.CartV2) {
             CartV2Screen(
                 onBack = { rootNavController.popBackStack() },
+                onAddItems = {
+                    // #433: the product list on Home, not the screen that opened the cart (e.g. a customer)
+                    val backStack = rootNavController.currentBackStack.value.map { it.destination.route }
+                    val target = CartAddItems.popTarget(backStack)
+                    if (target == null) {
+                        rootNavController.popBackStack()
+                    } else {
+                        MainTabRouter.openHome()
+                        rootNavController.popBackStack(target, inclusive = false)
+                    }
+                },
                 onPreview = { rootNavController.navigate(Routes.CartV2Preview) { launchSingleTop = true } },
             )
         }
@@ -634,6 +637,7 @@ private fun MainTabs(
                 // Fresh list after create — don't restore a stale Orders snapshot.
                 restoreState = false
             }
+            MainTabRouter.tabShown(route)
         }
     }
 

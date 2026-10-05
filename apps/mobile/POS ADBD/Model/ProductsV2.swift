@@ -278,7 +278,7 @@ struct CartLineCalc: Equatable {
         case .perRental:
             return String(format: "products.cart.calc.perRental".localized(), price, quantity)
         case .perDay(let days):
-            let base = String(format: "products.cart.calc.perDay".localized(), price, days)
+            let base = PluralText.format("products.cart.calc.perDay", count: days, price, days)
             return quantity > 1 ? base + " × \(quantity)" : base
         }
     }
@@ -322,6 +322,18 @@ enum CartV2Logic {
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: pickup),
                                            to: calendar.startOfDay(for: returnDate)).day ?? 0
         return max(1, days + 1)
+    }
+
+    /// Where the cart's "+ Add" goes (#433)
+    enum AddMoreRoute: Equatable {
+        case pop
+        case openHomeTab
+    }
+
+    /// The product list: one step back when the cart came from Products Home, else the Home tab
+    /// (the cart opened from a customer would otherwise go back to the customer page)
+    static func addMoreRoute(previousIsProductsHome: Bool) -> AddMoreRoute {
+        previousIsProductsHome ? .pop : .openHomeTab
     }
 }
 

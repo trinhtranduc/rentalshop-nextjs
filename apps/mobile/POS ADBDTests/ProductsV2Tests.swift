@@ -184,6 +184,12 @@ final class ProductsV2Tests: XCTestCase {
                                               timeZone: TimeZone(identifier: "UTC")!), 2)
     }
 
+    /// #433: "+ Add" in the cart opens the product list, not the customer page the cart came from
+    func testCartAddMoreOpensProductsHome() {
+        XCTAssertEqual(CartV2Logic.addMoreRoute(previousIsProductsHome: true), .pop)
+        XCTAssertEqual(CartV2Logic.addMoreRoute(previousIsProductsHome: false), .openHomeTab)
+    }
+
     // MARK: - Errors and barcode
 
     func testStockBelowRentedMapsToItsOwnMessage() {

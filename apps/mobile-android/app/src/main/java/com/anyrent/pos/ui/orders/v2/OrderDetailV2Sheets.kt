@@ -63,10 +63,14 @@ internal fun HandOverSheet(
     onShowQr: () -> Unit,
     onClearQr: () -> Unit,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (papers: String, securityDeposit: Double) -> Unit,
 ) {
     val s = detail.summary
-    val money = OrderDetailLogic.handOver(s.totalAmount, s.depositAmount, detail.securityDeposit, detail.balancePayments())
+    // Optional papers and security deposit, prefilled from the order (#427)
+    var papers by remember { mutableStateOf(detail.collateralDetails.orEmpty()) }
+    var depositText by remember { mutableStateOf(detail.securityDeposit.toLong().takeIf { it > 0 }?.toString().orEmpty()) }
+    val securityDeposit = depositText.toDoubleOrNull() ?: 0.0
+    val money = OrderDetailLogic.handOver(s.totalAmount, s.depositAmount, securityDeposit, detail.balancePayments())
     val working = busy || payment.submitting
     SheetFrame(onDismiss = { if (!working) onDismiss() }) {
         SheetTitle(
@@ -79,15 +83,21 @@ internal fun HandOverSheet(
             ),
         )
         SheetItems(detail)
+        OutlinedTextField(
+            value = papers,
+            onValueChange = { papers = it.take(200) },
+            label = { Text(stringResource(R.string.detail_hand_over_papers)) },
+            placeholder = { Text(stringResource(R.string.detail_hand_over_papers_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        FeeField(stringResource(R.string.detail_hand_over_deposit), depositText, { depositText = it }, Modifier.fillMaxWidth())
         MoneyBox {
             MoneyRow(stringResource(R.string.total), formatMoneyVnd(money.total))
             if (money.deposit > 0) MoneyRow(stringResource(R.string.detail_deposit_paid), formatMoneyVnd(-money.deposit))
             if (money.collateralMoney > 0) MoneyRow(stringResource(R.string.detail_collateral_money), "+" + formatMoneyVnd(money.collateralMoney))
             if (money.paidBefore > 0) MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
             MoneyRow(stringResource(R.string.detail_collect_now), formatMoneyVnd(money.collectNow), total = true)
-        }
-        detail.collateralDetails?.takeIf { it.isNotBlank() }?.let {
-            Text("${stringResource(R.string.collateral)}: $it", fontSize = 14.sp, color = DS.Colors.Text)
         }
         if (money.collectNow > 0) MethodPicker(payment, working, onMethod, onShowQr)
         payment.error?.let { Text(it, color = DS.Status.Late.text, fontSize = 13.sp) }
@@ -99,7 +109,7 @@ internal fun HandOverSheet(
             },
             enabled = !working,
             onDismiss = onDismiss,
-            onConfirm = onConfirm,
+            onConfirm = { onConfirm(papers, securityDeposit) },
         )
     }
     payment.qr?.let { PaymentQrDialog(qr = it, onDismiss = onClearQr) }
@@ -146,7 +156,7 @@ internal fun ReturnSheet(
         SheetItems(detail)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FeeField(
-                if (lateDays > 0) stringResource(R.string.detail_late_fee_days, lateDays) else stringResource(R.string.detail_late_fee),
+                if (lateDays > 0) pluralStringResource(R.plurals.detail_late_fee_days, lateDays, lateDays) else stringResource(R.string.detail_late_fee),
                 lateText,
                 { lateText = it },
                 Modifier.weight(1f),

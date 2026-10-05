@@ -319,8 +319,21 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                 onShowQr = paymentVm::loadQr,
                 onClearQr = paymentVm::clearQr,
                 onDismiss = { sheet = null; paymentVm.clearQr() },
-                onConfirm = {
-                    paymentVm.submit { vm.changeStatus("PICKUPED") { sheet = null } }
+                onConfirm = { papers, securityDeposit ->
+                    // Papers and deposit are optional (#427); the PICKUP payment follows the deposit typed in
+                    val fields = OrderDetailLogic.handOverFields(
+                        papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
+                    )
+                    val deposit = fields.securityDeposit ?: detail.securityDeposit
+                    if (deposit != detail.securityDeposit || fields.collateralDetails != null) {
+                        paymentVm.setOrder(
+                            detail.copy(
+                                securityDeposit = deposit,
+                                collateralDetails = fields.collateralDetails ?: detail.collateralDetails,
+                            ),
+                        )
+                    }
+                    paymentVm.submit { vm.handOver(fields) { sheet = null } }
                 },
             )
             DetailSheet.RETURN -> ReturnSheet(
@@ -509,11 +522,12 @@ private fun DetailHeader(detail: OrderDetail) {
                 "RETURNED" -> 3
                 else -> 0
             }
+            val days = OrderDetailLogic.progressDays(summary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
-                    stringResource(R.string.detail_progress_booked, shortDay(summary.createdAt)),
-                    stringResource(R.string.detail_progress_hand_over, shortDay(summary.pickupPlanAt)),
-                    stringResource(R.string.detail_progress_return, shortDay(summary.returnPlanAt)),
+                    stringResource(R.string.detail_progress_booked, shortDay(days.booked)),
+                    stringResource(R.string.detail_progress_hand_over, shortDay(days.handOver)),
+                    stringResource(R.string.detail_progress_return, shortDay(days.returned)),
                 ).forEachIndexed { index, label ->
                     val done = index < reached
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -551,7 +565,7 @@ private fun DetailBody(detail: OrderDetail, onPreview: (Any) -> Unit, onEditNote
                 OrderPlanDays.dayOf(summary.returnPlanAt, zone)?.let { to -> CartV2Logic.rentalDays(from, to) }
             }
             val dates = "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}"
-            InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + stringResource(R.string.v2_cart_days, it) } ?: dates)
+            InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + pluralStringResource(R.plurals.v2_cart_days, it, it) } ?: dates)
         } else {
             val day = OrdersHomeLogic.parseInstant(summary.createdAt)?.let { formatDayShort(it) } ?: "—"
             InfoRow(stringResource(R.string.detail_sale_day), listOfNotNull(day, summary.createdByName).joinToString(" · "))

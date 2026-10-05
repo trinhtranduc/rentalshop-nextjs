@@ -67,6 +67,8 @@ enum class DayWord { TODAY, TOMORROW, YESTERDAY, NONE }
 /** Templates of the date lines; the defaults are the Vietnamese ones, the screen passes the string resources */
 data class OrdersBoardTexts(
     val days: String = "%d ngày",
+    /** English singular "1 day" (#430); Vietnamese repeats [days] */
+    val oneDay: String = "%d ngày",
     val handOverDue: String = "hẹn giao %s",
     val returnDue: String = "hạn trả %s",
     val createdToday: String = "tạo hôm nay",
@@ -130,7 +132,9 @@ object OrdersBoardLogic {
         val start = from?.let { dayMonth(it, zone) } ?: "—"
         if (to == null) return start
         val text = "$start → ${dayMonth(to, zone)}"
-        return if (withDays && from != null) "$text · ${texts.days.format(inclusiveDays(from, to, zone))}" else text
+        if (!withDays || from == null) return text
+        val days = inclusiveDays(from, to, zone)
+        return "$text · ${(if (days == 1) texts.oneDay else texts.days).format(days)}"
     }
 
     /** Date line of a "Việc cần làm" row: the missed day on TRỄ HẠN, the rental span otherwise */

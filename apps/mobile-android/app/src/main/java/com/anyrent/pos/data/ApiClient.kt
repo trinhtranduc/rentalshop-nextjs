@@ -22,6 +22,7 @@ import com.anyrent.pos.data.repository.appConfigFromJson
 import com.anyrent.pos.domain.appconfig.AppConfig
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.domain.products.PricingTypes
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -331,8 +332,17 @@ class ApiClient(
         getOrder(match.id).getOrThrow()
     }
 
-    fun updateOrderStatus(id: Int, status: String): Result<OrderSummary> = runCatching {
-        val body = JSONObject().put("status", status).toString().toRequestBody(jsonMedia)
+    /** PUT the status; a hand-over also carries the papers / security deposit from the sheet (#427) */
+    fun updateOrderStatus(
+        id: Int,
+        status: String,
+        fields: HandOverFields = HandOverFields(),
+    ): Result<OrderSummary> = runCatching {
+        val body = JSONObject().put("status", status).apply {
+            fields.collateralType?.let { put("collateralType", it) }
+            fields.collateralDetails?.let { put("collateralDetails", it) }
+            fields.securityDeposit?.let { put("securityDeposit", it) }
+        }.toString().toRequestBody(jsonMedia)
         val json = execute(put("$baseUrl/api/orders/$id", body))
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject().put("id", id).put("status", status)
@@ -1162,6 +1172,8 @@ class ApiClient(
                 ?: customer?.nullableString("phone"),
             pickupPlanAt = o.nullableString("pickupPlanAt"),
             returnPlanAt = o.nullableString("returnPlanAt"),
+            pickedUpAt = o.nullableString("pickedUpAt"),
+            returnedAt = o.nullableString("returnedAt"),
             createdAt = o.nullableString("createdAt"),
             notes = o.nullableString("notes"),
             isReadyToDeliver = o.optBoolean("isReadyToDeliver", false),

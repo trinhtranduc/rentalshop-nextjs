@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.orders
 
+import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.error.AppError
 
 /** The one primary action of the order detail (#372) */
@@ -48,6 +49,16 @@ sealed interface NotesStep {
     /** Multipart PUT: `data` (with [notes] when not sent yet) + [fileCount] files under `notesImages` */
     data class Upload(val notes: String?, val fileCount: Int) : NotesStep
 }
+
+/**
+ * Papers and security deposit sent with the hand-over (#427). Null = leave the order's value alone.
+ * Papers go as the old screens send them: `collateralType = ID_CARD` + `collateralDetails`.
+ */
+data class HandOverFields(
+    val collateralType: String? = null,
+    val collateralDetails: String? = null,
+    val securityDeposit: Double? = null,
+)
 
 /** What the screen does with a failed status change */
 data class StatusErrorOutcome(val code: String?, val message: String, val reload: Boolean)
@@ -120,6 +131,29 @@ object OrderDetailLogic {
         return HandOverMoney(totalAmount, depositAmount, securityDeposit, paidBefore, due.coerceAtLeast(0.0))
     }
 
+    /**
+     * What the hand-over sheet sends besides `status` (#427). Both fields are optional: given papers
+     * or deposit are sent, a cleared prefilled value is sent empty / 0, and nothing else is sent.
+     */
+    fun handOverFields(
+        papers: String,
+        securityDeposit: Double,
+        currentPapers: String?,
+        currentDeposit: Double,
+    ): HandOverFields {
+        val text = papers.trim()
+        val hadPapers = !currentPapers.isNullOrBlank()
+        return HandOverFields(
+            collateralType = if (text.isNotEmpty()) "ID_CARD" else null,
+            collateralDetails = when {
+                text.isNotEmpty() -> text
+                hadPapers -> ""
+                else -> null
+            },
+            securityDeposit = securityDeposit.takeIf { it > 0.0 || currentDeposit > 0.0 }?.coerceAtLeast(0.0),
+        )
+    }
+
     fun returnMoney(
         lateFee: Double,
         damageFee: Double,
@@ -160,4 +194,14 @@ object OrderDetailLogic {
             (app is AppError.Http && app.statusCode in 400..499)
         return StatusErrorOutcome(app.code, app.message, reload)
     }
+
+    /** Instants (ISO strings) under the three steps of the rent step bar: the actual day once it happened (#434, iOS) */
+    fun progressDays(summary: OrderSummary): ProgressDays = ProgressDays(
+        booked = summary.createdAt,
+        handOver = summary.pickedUpAt ?: summary.pickupPlanAt,
+        returned = summary.returnedAt ?: summary.returnPlanAt,
+    )
 }
+
+/** Days shown under "Booked", "Hand over" and "Return" of the order detail step bar */
+data class ProgressDays(val booked: String?, val handOver: String?, val returned: String?)

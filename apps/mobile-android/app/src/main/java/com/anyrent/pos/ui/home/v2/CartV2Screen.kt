@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -82,6 +83,8 @@ import java.time.ZoneId
 fun CartV2Screen(
     onBack: () -> Unit,
     onPreview: () -> Unit,
+    /** "+ Add": the product list on Home (#433), not the screen that opened the cart */
+    onAddItems: () -> Unit = onBack,
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -162,7 +165,7 @@ fun CartV2Screen(
                         fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
                     )
                     Text(
-                        stringResource(R.string.v2_cart_days, CartV2Logic.rentalDays(pickup, ret)),
+                        CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
                         fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
                         modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 3.dp),
                     )
@@ -173,7 +176,7 @@ fun CartV2Screen(
                 Text(
                     "+ " + stringResource(R.string.v2_cart_add_more),
                     fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onBack).padding(vertical = 8.dp).semantics { role = Role.Button },
+                    modifier = Modifier.clickable(onClick = onAddItems).padding(vertical = 8.dp).semantics { role = Role.Button },
                 )
             }
             if (lines.isEmpty()) {
@@ -373,7 +376,7 @@ private fun ItemRow(
     val calcText = when (val kind = calc.kind) {
         CartLineCalc.Kind.Sale -> stringResource(R.string.v2_calc_sale, price, calc.quantity)
         CartLineCalc.Kind.PerRental -> stringResource(R.string.v2_calc_per_rental, price, calc.quantity)
-        is CartLineCalc.Kind.PerDay -> stringResource(R.string.v2_calc_per_day, price, kind.days) +
+        is CartLineCalc.Kind.PerDay -> pluralStringResource(R.plurals.v2_calc_per_day, kind.days, price, kind.days) +
             if (calc.quantity > 1) " × ${formatQuantity(calc.quantity)}" else ""
     }
     Column(Modifier.fillMaxWidth()) {

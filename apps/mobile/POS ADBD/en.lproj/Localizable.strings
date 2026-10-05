@@ -1589,11 +1589,13 @@
 "products.cart.change" = "Change";
 "products.cart.pickDates" = "Choose rental dates";
 "products.cart.days" = "%d days";
+"products.cart.days.one" = "%d day";
 "products.cart.items" = "Items · %d";
 "products.cart.addMore" = "Add";
 "products.cart.empty" = "The cart is empty. Add products from the list.";
 "products.cart.calc.perRental" = "%@/rental × %d";
 "products.cart.calc.perDay" = "%@/day × %d days";
+"products.cart.calc.perDay.one" = "%@/day × %d day";
 "products.cart.calc.sale" = "Sale price %@ × %d";
 "products.cart.pricingMode" = "Pricing";
 "products.cart.shortRent" = "Only %d free on these dates";
@@ -1613,6 +1615,7 @@
 "products.cart.create" = "Create order";
 "products.cart.sellAndCollect" = "Sell & collect";
 "products.cart.bar" = "Cart · %d items";
+"products.cart.bar.one" = "Cart · %d item";
 "products.cart.removeTitle" = "Remove this item from the cart?";
 "products.cart.remove" = "Remove";
 // MARK: - Orders tab (#371)
@@ -1638,18 +1641,22 @@
 "ITEMS · %d" = "ITEMS · %d";
 "MONEY" = "MONEY";
 "Return late %d days" = "Return late %d days";
+"Return late %d days.one" = "Return late %d day";
 "Due back %@" = "Due back %@";
 "Hand-over late %d days" = "Hand-over late %d days";
+"Hand-over late %d days.one" = "Hand-over late %d day";
 "Planned hand-over %@" = "Planned hand-over %@";
 "Booked" = "Booked";
 "Return step" = "Return";
 "Rental dates" = "Rental dates";
 "%d days" = "%d days";
+"%d days.one" = "%d day";
 "Handed over" = "Handed over";
 "Collateral" = "Collateral";
 "Sale date" = "Sale date";
 "Sale price %@" = "Sale price %@";
 "%@/day × %d days" = "%@/day × %d days";
+"%@/day × %d days.one" = "%@/day × %d day";
 "Goods total" = "Goods total";
 "Collected" = "Collected";
 "To collect" = "To collect";
@@ -1670,6 +1677,7 @@
 "Take back items" = "Take back items";
 "Cancel order" = "Cancel order";
 "Late fee (%d days)" = "Late fee (%d days)";
+"Late fee (%d days).one" = "Late fee (%d day)";
 "Keep collateral: %@" = "Keep collateral: %@";
 "Collect now" = "Collect now";
 "Handed over · collect %@" = "Handed over · collect %@";
@@ -1805,7 +1813,9 @@
 "orders.v2.search.cancel" = "Cancel";
 "orders.v2.search.clear" = "Clear search";
 "orders.v2.search.summary" = "%d orders match “%@” · all statuses, item names too";
+"orders.v2.search.summary.one" = "%d order matches “%@” · all statuses, item names too";
 "orders.v2.count" = "%d orders";
+"orders.v2.count.one" = "%d order";
 "orders.v2.band.work" = "hand over %d · take back %d";
 "orders.v2.yesterday" = "Yesterday";
 "orders.v2.tag.handOver" = "Hand over";
@@ -1824,6 +1834,7 @@
 "orders.v2.when.handOverDue" = "hand over %@";
 "orders.v2.when.returnDue" = "due back %@";
 "orders.v2.when.days" = "%d days";
+"orders.v2.when.days.one" = "%d day";
 "orders.v2.when.createdToday" = "created today";
 "orders.v2.when.created" = "created %@";
 "orders.v2.when.due" = "due %@";
@@ -1838,6 +1849,7 @@
 "orders.v2.filter.range" = "DATE RANGE";
 "orders.v2.filter.show" = "Show orders";
 "orders.v2.filter.showCount" = "Show %d orders";
+"orders.v2.filter.showCount.one" = "Show %d order";
 "orders.v2.basis.created" = "Created";
 "orders.v2.basis.pickup" = "Handed over";
 "orders.v2.basis.return" = "Returned";
@@ -1919,5 +1931,10 @@
 "order.extend.confirm" = "Extend to %@";
 "order.extend.unavailable" = "Not enough stock on the added days: %@";
 "order.extend.done" = "Extended to %@";
+
+/* #427 hand-over: optional papers and security deposit */
+"order.handOver.papers" = "Papers left";
+"order.handOver.papersHint" = "e.g. ID card, driver's license";
+"order.handOver.deposit" = "Security deposit";
 "order.extend.extraRent" = "Extra rent";
 "order.extend.newTotal" = "New total: %@";

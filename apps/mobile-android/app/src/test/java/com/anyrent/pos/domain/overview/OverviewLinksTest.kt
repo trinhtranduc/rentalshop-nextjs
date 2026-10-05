@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.overview
 
+import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,5 +34,16 @@ class OverviewLinksTest {
         val (allLate, allMore) = OverviewLinks.latePage(rows.take(2), hasMore = true, now = now, zone = vietnam)
         assertEquals(2, allLate.size)
         assertTrue(allMore)
+    }
+
+    /** #434: the "New orders" card counts both types and later-cancelled orders; its list carries the card title */
+    @Test
+    fun newOrdersListHasTheCardTitle() {
+        assertEquals(R.string.overview_v2_new_orders, OverviewLinks.listTitle(OverviewLinks.NEW))
+        assertEquals(R.string.overview_v2_new_orders, OverviewLinks.listTitle("NEW"))
+        assertEquals(R.string.overview_v2_rented_out, OverviewLinks.listTitle(OverviewLinks.RENTED))
+        assertEquals(R.string.overview_v2_late_returns, OverviewLinks.listTitle(OverviewLinks.LATE))
+        assertEquals(R.string.cancelled, OverviewLinks.listTitle("cancelled"))
+        assertEquals(R.string.orders, OverviewLinks.listTitle("other"))
     }
 }

@@ -167,3 +167,13 @@ enum LateText {
         days == 1 ? returnedKey(1).localized() : String(format: returnedKey(days).localized(), days)
     }
 }
+
+/// English "1 day" / "N days" (#430): `<key>.one` holds the singular, Vietnamese repeats the plural text
+enum PluralText {
+    static func key(_ base: String, count: Int) -> String { count == 1 ? base + ".one" : base }
+
+    /// `args` are the format arguments in key order (the count among them)
+    static func format(_ base: String, count: Int, _ args: CVarArg...) -> String {
+        String(format: key(base, count: count).localized(), arguments: args)
+    }
+}

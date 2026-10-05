@@ -47,6 +47,14 @@ final class OrderDetailViewController: BaseViewControler {
         moreButton.showsMenuAsPrimaryAction = true
         navBar.addRightButton(printButton)
         navBar.addRightButton(moreButton)
+        // #430: a long order number ("#ORD-003-0022") shrinks to fit between the buttons instead of being cut
+        let titleLabel = UILabel()
+        titleLabel.font = Utils.boldFont(size: 20)
+        titleLabel.textColor = APP_TEXT_COLOR
+        titleLabel.textAlignment = .center
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.7
+        navBar.setCustomTitleView(titleLabel, centered: true)
         buildLayout()
         load()
     }
@@ -226,10 +234,10 @@ final class OrderDetailViewController: BaseViewControler {
         subtitle.font = Utils.regularFont(size: 13)
         subtitle.textColor = UIColor(hexString: "991B1B")
         if detail.status == .pickuped {
-            title.text = String(format: "Return late %d days".localized(), days)
+            title.text = PluralText.format("Return late %d days", count: days, days)
             subtitle.text = detail.returnPlanAt.map { String(format: "Due back %@".localized(), OrderDetailLogic.dayMonth($0)) }
         } else {
-            title.text = String(format: "Hand-over late %d days".localized(), days)
+            title.text = PluralText.format("Hand-over late %d days", count: days, days)
             subtitle.text = detail.pickupPlanAt.map { String(format: "Planned hand-over %@".localized(), OrderDetailLogic.dayMonth($0)) }
         }
         let texts = UIStackView(arrangedSubviews: [title, subtitle])
@@ -292,7 +300,7 @@ final class OrderDetailViewController: BaseViewControler {
             if let from = detail.pickupPlanAt, let to = detail.returnPlanAt {
                 let days = detail.rentalDuration ?? OrderDetailLogic.rentalDays(pickup: from, return: to) ?? 1
                 stack.addArrangedSubview(keyValue("Rental dates".localized(),
-                    "\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to)) · " + String(format: "%d days".localized(), days),
+                    "\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to)) · " + PluralText.format("%d days", count: days, days),
                     bold: true))
             }
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
@@ -339,7 +347,7 @@ final class OrderDetailViewController: BaseViewControler {
         if orderType == .sale {
             calc.text = String(format: "Sale price %@".localized(), price)
         } else if item.pricingType == "DAILY", let days = item.rentalDays {
-            calc.text = String(format: "%@/day × %d days".localized(), price, days)
+            calc.text = PluralText.format("%@/day × %d days", count: days, price, days)
         } else {
             calc.text = "\(price) × \(item.quantity)"
         }
@@ -615,6 +623,9 @@ final class OrderDetailViewController: BaseViewControler {
         sheet.onConfirm = { [weak self] lateFee, damageFee in
             self?.confirm(mode, lateFee: lateFee, damageFee: damageFee)
         }
+        sheet.onHandOver = { [weak self] papers, securityDeposit in
+            self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit)
+        }
         if let presentation = sheet.sheetPresentationController {
             presentation.detents = [.large()]
             presentation.prefersGrabberVisible = true
@@ -645,7 +656,25 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
-    /// RESERVED → PICKUPED or PICKUPED → RETURNED through the current OrderViewModel rules
+    /// RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427)
+    private func confirmHandOver(papers: String, securityDeposit: Double) {
+        guard let viewModel = orderViewModel else { return }
+        showProgressText(text: "Updating...".localized())
+        viewModel.handOver(papers: papers, securityDeposit: securityDeposit) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                switch result {
+                case .success:
+                    self.didChangeOrder(viewModel.currentOrder)
+                case .failure(let error):
+                    self.handleStatusError(error as NSError)
+                }
+            }
+        }
+    }
+
+    /// PICKUPED → RETURNED through the current OrderViewModel rules
     private func changeStatus(with viewModel: OrderViewModel) {
         viewModel.saveOrder { [weak self] result in
             DispatchQueue.main.async {

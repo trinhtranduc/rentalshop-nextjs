@@ -233,7 +233,7 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
         }
         if (searchMode && state.isSearching && state.total != null) {
             Text(
-                stringResource(R.string.orders_v2_search_summary, state.total ?: 0, state.query.trim()),
+                (state.total ?: 0).let { pluralStringResource(R.plurals.orders_v2_search_summary, it, it, state.query.trim()) },
                 fontSize = 13.sp,
                 color = DS.Colors.TextMuted,
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
@@ -326,7 +326,9 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
 
 @Composable
 private fun boardTexts() = OrdersBoardTexts(
-    days = stringResource(R.string.orders_v2_when_days),
+    // Unformatted plural forms ("%1$d days" / "%1$d day"), formatted by OrdersBoardLogic.span
+    days = pluralStringResource(R.plurals.orders_v2_when_days, 2),
+    oneDay = pluralStringResource(R.plurals.orders_v2_when_days, 1),
     handOverDue = stringResource(R.string.orders_v2_when_hand_over_due),
     returnDue = stringResource(R.string.orders_v2_when_return_due),
     createdToday = stringResource(R.string.orders_v2_when_created_today),
@@ -497,7 +499,7 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
         }
         Spacer(Modifier.weight(1f))
         state.total?.let {
-            Text(stringResource(R.string.orders_v2_count, it), fontSize = 13.sp, color = DS.Colors.TextMuted)
+            Text(pluralStringResource(R.plurals.orders_v2_count, it, it), fontSize = 13.sp, color = DS.Colors.TextMuted)
         }
     }
     HorizontalDivider(color = DS.Colors.Divider)
@@ -574,7 +576,7 @@ private fun SectionBand(section: OrdersSection) {
         }
         else -> {
             val (count, amount) = OrdersBoardLogic.saleDaySummary(section.rows)
-            "${stringResource(R.string.orders_v2_count, count)} · ${formatMoneyVnd(amount)}"
+            "${pluralStringResource(R.plurals.orders_v2_count, count, count)} · ${formatMoneyVnd(amount)}"
         }
     }
     Column(Modifier.fillMaxWidth().background(if (late) BoardColors.LateBand else BoardColors.Band)) {
@@ -908,7 +910,7 @@ private fun FilterSheet(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        total?.let { stringResource(R.string.orders_v2_filter_show_count, it) } ?: stringResource(R.string.orders_v2_filter_show),
+                        total?.let { pluralStringResource(R.plurals.orders_v2_filter_show_count, it, it) } ?: stringResource(R.string.orders_v2_filter_show),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,

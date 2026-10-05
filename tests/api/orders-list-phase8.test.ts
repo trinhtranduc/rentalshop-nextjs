@@ -68,7 +68,10 @@ jest.mock('@rentalshop/loyalty', () => ({
   handleLoyaltyOnOrderCreate: jest.fn(),
   merchantHasLoyaltyFeature: jest.fn(),
 }));
-jest.mock('../../apps/api/lib/image-compression', () => ({ compressImageTo1MB: jest.fn() }));
+jest.mock('../../apps/api/lib/image-compression', () => ({
+  ...jest.requireActual('../../apps/api/lib/image-compression'),
+  compressImageTo1MB: jest.fn(),
+}));
 jest.mock('../../apps/api/lib/analytics-days', () => ({
   readAnalyticsTimeZone: (params: URLSearchParams) => params.get('timeZone') || 'Asia/Ho_Chi_Minh',
 }));
