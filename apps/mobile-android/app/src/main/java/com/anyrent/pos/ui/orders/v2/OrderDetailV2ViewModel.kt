@@ -121,6 +121,24 @@ class OrderDetailV2ViewModel(
         }
     }
 
+    /**
+     * Return (board Nhan-tra): saves the fees when they changed, then RETURNED. Like iOS, no payment is
+     * recorded; the API works the balance out (owner 2026-10-05, #448).
+     */
+    fun takeReturn(lateFee: Double, damageFee: Double, onError: (Throwable) -> Unit, onDone: (Boolean) -> Unit = {}) {
+        if (_state.value.busy) return
+        val current = _state.value.detail
+        viewModelScope.launch {
+            if (current == null || lateFee != current.lateFee || damageFee != current.damageFee) {
+                saveFees(lateFee, damageFee).exceptionOrNull()?.let {
+                    onError(it)
+                    return@launch
+                }
+            }
+            changeStatus("RETURNED", onDone)
+        }
+    }
+
     /** Saves fees set in the return sheet and returns the reloaded order (for the payment amount) */
     suspend fun saveFees(lateFee: Double, damageFee: Double): Result<OrderDetail> {
         _state.update { it.copy(busy = true) }
