@@ -419,7 +419,7 @@
     <string name="status_pickuped">Đang thuê</string>
     <string name="status_returned">Đã trả</string>
     <string name="status_completed">Hoàn thành</string>
-    <string name="status_cancelled">Đã hủy</string>
+    <string name="status_cancelled">Đã huỷ</string>
     <string name="update_required_title">Cần cập nhật ứng dụng</string>
     <string name="update_required_message">Cần phiên bản AnyRent mới để tiếp tục sử dụng. Vui lòng cập nhật ứng dụng.</string>
     <string name="update_required_button">Cập nhật</string>
@@ -478,7 +478,7 @@
     <string name="picked_up">Đã lấy</string>
     <string name="returned">Đã trả</string>
     <string name="completed">Hoàn thành</string>
-    <string name="cancelled">Đã hủy</string>
+    <string name="cancelled">Đã huỷ</string>
     <string name="ok">Đồng ý</string>
     <string name="error">Lỗi</string>
     <string name="could_not_create_order">Không thể tạo đơn hàng</string>
@@ -869,8 +869,8 @@
     </plurals>
     <string name="orders_v2_band_work">giao %1$d · trả %2$d</string>
     <string name="orders_v2_yesterday">Hôm qua</string>
-    <string name="orders_v2_tag_hand_over">Giao</string>
-    <string name="orders_v2_tag_take_back">Trả</string>
+    <string name="orders_v2_tag_hand_over">Cần giao</string>
+    <string name="orders_v2_tag_take_back">Cần trả</string>
     <string name="orders_v2_tag_sale">Bán · %1$s</string>
     <string name="orders_v2_status_all">Tất cả</string>
     <string name="orders_v2_status_reserved">Đã đặt</string>

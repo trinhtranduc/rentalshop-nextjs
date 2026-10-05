@@ -882,8 +882,8 @@
     </plurals>
     <string name="orders_v2_band_work">hand over %1$d · take back %2$d</string>
     <string name="orders_v2_yesterday">Yesterday</string>
-    <string name="orders_v2_tag_hand_over">Hand over</string>
-    <string name="orders_v2_tag_take_back">Return</string>
+    <string name="orders_v2_tag_hand_over">To hand over</string>
+    <string name="orders_v2_tag_take_back">To take back</string>
     <string name="orders_v2_tag_sale">Sale · %1$s</string>
     <string name="orders_v2_status_all">All</string>
     <string name="orders_v2_status_reserved">Booked</string>
