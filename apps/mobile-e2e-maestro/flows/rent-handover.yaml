@@ -1,0 +1,87 @@
+# Pilot flow (#447): log in → rent one product today for a new customer → create → find it → hand over.
+# Same file for iOS and Android. Env: APP_ID, E2E_EMAIL, E2E_PASSWORD.
+appId: ${APP_ID}
+---
+- runFlow: login.yaml
+- runScript: run-vars.js
+
+# Home: add the first seeded product (accessibility label "Thêm <name> vào giỏ"), open the cart.
+- tapOn: "Thêm Product 1 - Electronics vào giỏ|Add Product 1 - Electronics to cart"
+- tapOn: "Giỏ hàng · .*|Cart · .*"
+- tapOn: "Thuê|Rent"
+
+# Same-day rental on today (a same-day pickup and return still occupies the day).
+- tapOn: "Chọn ngày thuê|Choose rental dates"
+- tapOn:
+    text: ${output.day}
+    index: ${output.dayIndex}
+- tapOn: "Xác nhận|Confirm"
+
+# New customer. Label and field share a name: the field is the second match.
+- tapOn: "Chọn khách hàng|Choose customer"
+- tapOn:
+    text: "Khách mới|New customer"
+    index: 0
+- tapOn:
+    text: "Số điện thoại|Phone number"
+    index: 1
+- inputText: ${output.customerPhone}
+- tapOn:
+    text: "Họ và tên|Full name"
+    index: 1
+- inputText: ${output.customerName}
+- tapOn: "Lưu và chọn|Save and select"
+- extendedWaitUntil:
+    visible: "${output.customerName}.*"
+    timeout: 10000
+- takeScreenshot: 10-cart-ready
+
+# Cart CTA (index 1: index 0 is the screen title "Tạo đơn") → review → deposit sheet.
+- waitForAnimationToEnd
+- tapOn:
+    text: "Tạo đơn|Create order"
+    index: 1
+- extendedWaitUntil:
+    visible: "Danh sách Sản phẩm|Products"
+    timeout: 10000
+- tapOn:
+    text: "Tạo đơn|Create order"
+    below: "Danh sách Sản phẩm|Products"
+- extendedWaitUntil:
+    visible: "Thu tiền cọc|Collect deposit"
+    timeout: 10000
+- tapOn:
+    text: "Xác nhận|Confirm"
+    below: "Thu tiền cọc|Collect deposit"
+- waitForAnimationToEnd
+# iOS "Enjoying AnyRent?" rating prompt after the first order
+- runFlow:
+    when:
+      visible: "Not Now|Không phải bây giờ"
+    commands:
+      - tapOn: "Not Now|Không phải bây giờ"
+
+# Orders tab: search without accents, open the order.
+- tapOn: "Đơn hàng|Orders|My Order"
+- tapOn: "Tìm tên, SĐT, mã đơn, tên đồ|Search name, phone, order code, item"
+- inputText: ${output.customerQuery}
+- extendedWaitUntil:
+    visible: "${output.customerName}"
+    timeout: 10000
+- takeScreenshot: 20-search-found
+- tapOn: "${output.customerName}"
+
+# Detail → hand-over sheet (papers in Vietnamese) → renting.
+- extendedWaitUntil:
+    visible: "Giao đồ.*|Hand over.*"
+    timeout: 10000
+- tapOn: "Giao đồ.*|Hand over.*"
+- tapOn:
+    id: "handOver.papers"
+- inputText: "CCCD Nguyễn Văn Á"
+- tapOn: "Đã giao.*|Handed over.*"
+- extendedWaitUntil:
+    visible: "ĐANG THUÊ|RENTING|Đang thuê|Renting"
+    timeout: 10000
+- assertVisible: "CCCD Nguyễn Văn Á"
+- takeScreenshot: 30-renting

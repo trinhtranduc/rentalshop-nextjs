@@ -1,0 +1,62 @@
+# Log in on the NEW auth screen (flag newAuth, board Dang-nhap) from a clean install.
+# Env: APP_ID, E2E_EMAIL, E2E_PASSWORD. Shared by iOS and Android (#447).
+appId: ${APP_ID}
+---
+# The app reads feature flags from the cached /api/mobile/app-config at launch. A clean install has no
+# cache, so the first launch shows the old login while it fetches the config; relaunch once.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Đăng nhập|Login|Log in"
+    timeout: 15000
+- launchApp:
+    stopApp: true
+
+# Fail on the old screen: the run must exercise the new UI.
+- extendedWaitUntil:
+    visible: "Xin chào|Hello"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: "Allow|Cho phép"
+    commands:
+      - tapOn: "Allow|Cho phép"
+- takeScreenshot: 00-login-new
+
+# Fields: email by its placeholder, password as the field left of the eye button.
+- tapOn: "ten@cuahang.vn|name@store.com"
+- inputText: ${E2E_EMAIL}
+# The label above and the field share the name "Mật khẩu": the field is the second match.
+# TODO(#447): an accessibility id on both apps would make this stable.
+- tapOn:
+    text: "Mật khẩu|Password"
+    index: 1
+- inputText: ${E2E_PASSWORD}
+# No hideKeyboard: on iOS it can tap a link under the keyboard edge.
+- tapOn:
+    text: "Đăng nhập|Login|Log in"
+    below: "Quên mật khẩu\\?|Forgot password\\?"
+
+# iOS AutoFill "Save Password?" sheet, notification prompt, onboarding.
+- runFlow:
+    when:
+      visible: "Not Now|Không phải bây giờ"
+    commands:
+      - tapOn: "Not Now|Không phải bây giờ"
+- runFlow:
+    when:
+      visible: "Allow|Cho phép"
+    commands:
+      - tapOn: "Allow|Cho phép"
+- repeat:
+    times: 4
+    while:
+      visible: "Skip|Bỏ qua"
+    commands:
+      - tapOn: "Skip|Bỏ qua"
+
+# Fail if the login did not go through.
+- extendedWaitUntil:
+    notVisible: "Xin chào|Hello"
+    timeout: 20000
+- takeScreenshot: 01-after-login
