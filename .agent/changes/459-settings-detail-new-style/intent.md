@@ -30,8 +30,7 @@ No API, data or string change.
 
 ## Open questions
 
-- None. The modal "Sửa cửa hàng" (iOS `EditStoreViewController`) is reached from Store information but is
-  not one of the five rows; it stays as is in this change.
+- None.
 
 ## Decision log
 
@@ -39,3 +38,5 @@ No API, data or string change.
   when Settings v2 pushes the page; Android: a `v2` parameter the nav host passes when `newSettings` is on).
   Keeps one copy of the behaviour, API calls and validation instead of duplicating them (agent, per brief
   "choose the least risky").
+- 2026-10-05 — Owner follow-up on PR #463: hide the tab bar on the v2 detail pages and restyle iOS
+  `EditStoreViewController` behind the same switch (owner via coordinator).

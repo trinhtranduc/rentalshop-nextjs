@@ -17,7 +17,9 @@ Base `origin/dev`, branch `feat/459-settings-detail-new-style`, one PR into `dev
 5. Android pages get `v2: Boolean = false`: `StoreInfoScreen`, `PrinterNetworkScreen`, `UserManagementScreen`,
    `UserFormScreen`, `ExportAuthScreen`, `AppInfoScreen`. `AnyRentNavHost` passes
    `MobileFeature.NEW_SETTINGS in features`.
-6. After screenshots with the same tour; remove the temporary test.
+6. Follow-up: `SettingsV2ViewController` sets `hidesBottomBarWhenPushed` on the pages it opens;
+   `EditStoreViewController` gets `v2` (set by `AccountViewController` from its own `v2`). Android: none needed.
+7. After screenshots with the same tour; remove the temporary test.
 
 No logic is extracted, so no new unit tests: the UI-only restyle is proven by builds, the existing unit
 tests and screenshots. Domain skills: `mobile-parity` (both apps, same behaviour); `i18n-keys` not needed

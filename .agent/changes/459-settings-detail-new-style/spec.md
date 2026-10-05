@@ -13,6 +13,13 @@ Issue: #459 · Status: accepted · Intent: ./intent.md
 | Xuất dữ liệu | `ExportViewController`: old nav bar with "Xuất" text button, inset-grouped checkmark table | `v2 = true`: v2 header, bands + flat rows with primary checkmarks, bottom v2 primary button "Xuất" | `ExportAuthScreen`: TopAppBar with "Xuất" text action, SectionLabel + rounded cards | `v2 = true`: v2 header, bands + flat rows, bottom v2 primary button |
 | Thông tin ứng dụng | `AppInformationViewController`: old nav bar, inset-grouped value1 table | `v2 = true`: v2 header, bands + rows (value, chevron on links) | `AppInfoScreen`: CenterAlignedTopAppBar, SectionLabel + AppCard | `v2 = true`: v2 header, bands + rows |
 
+| ↳ Sửa cửa hàng (follow-up) | `EditStoreViewController`: old nav bar (×), right-aligned card rows, RCPrimaryButton | `v2 = true` (passed on from store info): ‹ header, labelled fields (Quốc gia opens the country picker), error under the name field, v2 primary "Cập nhật cửa hàng" | none: `StoreInfoScreen` is itself the edit form (restyled above) | n/a |
+
+Follow-up (owner, 2026-10-05): with `newSettings` on, the detail pages opened from Settings v2 hide the bottom
+tab bar (iOS `hidesBottomBarWhenPushed`, like Khách hàng); bottom buttons sit on the safe-area bottom.
+Android already shows no bottom navigation there: these are root destinations outside the tab scaffold,
+the same as the v2 customer list, so nothing changes on Android.
+
 Khách hàng already opens the v2 customer list; Ngôn ngữ / Đổi mật khẩu / Xóa tài khoản are system settings
 or alerts and are not changed.
 
@@ -27,12 +34,13 @@ or alerts and are not changed.
 4. Permissions unchanged: "Sửa" on store info only with `canManageOutlets` (iOS) / fields read-only without
    `canManageStore` (Android); "+" on users only with `canManageUsers` (iOS, as today); Settings v2 still
    decides who sees each row.
-5. Text sizes only from the #424 ramp (24/20 headings, 17 · 16 · 15 · 14 · 12); colours from the tokens.
+5. With `newSettings` on, no tab bar on these pages (iOS); Android unchanged (already none).
+6. Text sizes only from the #424 ramp (24/20 headings, 17 · 16 · 15 · 14 · 12); colours from the tokens.
 
 ## Out of scope
 
 - New rows, new actions, new screens, API or string changes.
-- iOS `EditStoreViewController` (modal opened from "Sửa"), bank account screens, subscription screen.
+- Bank account screens, subscription screen.
 - Order-row files of the parallel change.
 
 ## API and data
