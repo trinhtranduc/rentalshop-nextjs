@@ -67,7 +67,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
@@ -95,7 +94,6 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.common.orderLinePricingText
 import com.anyrent.pos.ui.navigation.loadOrderIntoCart
 import com.anyrent.pos.ui.orders.shareOrderReceipt
-import com.anyrent.pos.ui.payment.PaymentViewModel
 import com.anyrent.pos.ui.theme.DS
 import java.io.File
 import java.time.ZoneId
@@ -124,9 +122,6 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
     val factory = remember(orderId) { OrderDetailV2ViewModel.Factory(orderId) }
     val vm: OrderDetailV2ViewModel = viewModel(key = "order-detail-v2-$orderId", factory = factory)
     val state by vm.state.collectAsState()
-    val app = context.applicationContext as AnyRentApp
-    val paymentFactory = remember { PaymentViewModel.Factory(app.container.paymentRepository) }
-    val paymentVm: PaymentViewModel = viewModel(key = "order-detail-v2-payment-$orderId", factory = paymentFactory)
     val printerPrefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
 
     var sheet by remember { mutableStateOf<DetailSheet?>(null) }
@@ -283,16 +278,8 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                     canCancel = actions.canCancel,
                     canExtend = canExtend,
                     busy = state.busy || editing,
-                    onHandOver = {
-                        paymentVm.clearError()
-                        paymentVm.setOrder(detail)
-                        sheet = DetailSheet.HAND_OVER
-                    },
-                    onReturn = {
-                        paymentVm.clearError()
-                        paymentVm.setOrder(detail)
-                        sheet = DetailSheet.RETURN
-                    },
+                    onHandOver = { sheet = DetailSheet.HAND_OVER },
+                    onReturn = { sheet = DetailSheet.RETURN },
                     onEdit = {
                         editing = true
                         scope.launch {
@@ -308,57 +295,32 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
         }
     }
 
-    val paymentState by paymentVm.state.collectAsState()
     if (detail != null) {
         when (sheet) {
+            // Like iOS (owner 2026-10-05, #448): hand-over and return send only the order update
+            // (PUT /api/orders/{id}); no payment is recorded, the API works the balance out itself
             DetailSheet.HAND_OVER -> HandOverSheet(
                 detail = detail,
-                payment = paymentState,
                 busy = state.busy,
-                onMethod = paymentVm::selectMethod,
-                onShowQr = paymentVm::loadQr,
-                onClearQr = paymentVm::clearQr,
-                onDismiss = { sheet = null; paymentVm.clearQr() },
+                onDismiss = { sheet = null },
                 onConfirm = { papers, securityDeposit ->
-                    // Papers and deposit are optional (#427); the PICKUP payment follows the deposit typed in
+                    // Papers and deposit are optional (#427)
                     val fields = OrderDetailLogic.handOverFields(
                         papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
                     )
-                    val deposit = fields.securityDeposit ?: detail.securityDeposit
-                    if (deposit != detail.securityDeposit || fields.collateralDetails != null) {
-                        paymentVm.setOrder(
-                            detail.copy(
-                                securityDeposit = deposit,
-                                collateralDetails = fields.collateralDetails ?: detail.collateralDetails,
-                            ),
-                        )
-                    }
-                    paymentVm.submit { vm.handOver(fields) { sheet = null } }
+                    vm.handOver(fields) { sheet = null }
                 },
             )
             DetailSheet.RETURN -> ReturnSheet(
                 detail = detail,
-                payment = paymentState,
                 busy = state.busy,
-                onMethod = paymentVm::selectMethod,
-                onShowQr = paymentVm::loadQr,
-                onClearQr = paymentVm::clearQr,
-                onDismiss = { sheet = null; paymentVm.clearQr() },
+                onDismiss = { sheet = null },
                 onConfirm = { late, damage, onError ->
-                    scope.launch {
-                        var current = detail
-                        if (late != detail.lateFee || damage != detail.damageFee) {
-                            val saved = vm.saveFees(late, damage)
-                            saved.exceptionOrNull()?.let {
-                                onError(ApiErrorMessages.resolve(context, null, it.message.orEmpty()))
-                                return@launch
-                            }
-                            current = saved.getOrThrow()
-                        }
-                        // The payment amount follows the saved fees
-                        paymentVm.setOrder(current)
-                        paymentVm.submit { vm.changeStatus("RETURNED") { sheet = null } }
-                    }
+                    vm.takeReturn(
+                        lateFee = late,
+                        damageFee = damage,
+                        onError = { onError(ApiErrorMessages.resolve(context, null, it.message.orEmpty())) },
+                    ) { sheet = null }
                 },
             )
             DetailSheet.NOTES -> NotesSheet(

@@ -21,12 +21,18 @@ Issue: #448 · Status: accepted · Intent: ./intent.md
 7. New login and forgot password: when the keyboard opens, the fields and the main button scroll
    into view above it, and the footer hides while the keyboard is up. Create store and the
    new-customer sheet keep their pinned button above the keyboard (checked on the emulator).
-8. The hand-over papers and security-deposit fields carry test tags `handOver.papers` and
+8. New-UI hand-over (`newOrderDetail`): no "Phương thức thanh toán" picker; "Đã giao" sends only
+   `PUT /api/orders/{id}` with `status: PICKUPED` and the optional papers / security deposit, no
+   `/api/payments/process` call. New-UI return (Nhận trả): no picker; changed fees are saved, then
+   `status: RETURNED`, no payment call. The money box ("Thu bây giờ" / refund) still shows the
+   amount. Old flag-off screens keep their payment sheet.
+9. The hand-over papers and security-deposit fields carry test tags `handOver.papers` and
    `handOver.securityDeposit`, exposed as resource ids (`testTagsAsResourceId`).
 
 ## Out of scope
 
-- Item 3 (payment-method picker on hand-over): reported, not changed (see intent open question).
+- Old flag-off order screens (`OrderDetailActions`, `OrdersScreens`) still record payments.
+- The transfer QR button that lived inside the removed picker on the new sheets.
 - iOS review rows "Tạo bởi" and "Sẵn sàng giao".
 - Per-day line totals shown before dates are picked still use the stored default days; dates are
   required before the review, so the created order uses the picked days.
@@ -38,11 +44,14 @@ No change. Create/update order bodies are the same as Android sent before.
 ## Acceptance
 
 - [x] Behaviors 1–5: unit tests `CartDatesChosenTest`, `OrderReviewV2Test`, `Issue448ResourcesTest`
-- [x] 7–8: emulator-5570 screenshots and the Maestro flow (`rent-handover.yaml` and a variant
+- [x] Behavior 8: `HandOverReturnNoPaymentTest` (requests sent; the v2 screen/sheets reference no
+  payment code); order 140820 on the local API after the Maestro run: PICKUPED, papers saved, `payments: []`
+- [x] 7 and 9: emulator-5570 screenshots and the Maestro flow (`rent-handover.yaml` and a variant
   without the Android-only branches)
 - [x] iOS unchanged; strings in `values` and `values-vi`
 
 ## Found while verifying
 
-- The hand-over sheet (not one of the four items) can leave "Đã giao" under the keyboard after
-  typing the papers; the Maestro flow keeps its keyboard-hide step there. Follow-up candidate.
+- Before the picker was removed, the hand-over sheet could leave "Đã giao" under the keyboard.
+  Without the picker the buttons stay above the keyboard (Maestro run without any keyboard hide
+  in login, new customer and hand-over passed).

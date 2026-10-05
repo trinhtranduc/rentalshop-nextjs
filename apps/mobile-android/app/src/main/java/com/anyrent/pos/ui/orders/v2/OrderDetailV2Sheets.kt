@@ -18,12 +18,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -48,11 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.orders.OrderDetailLogic
-import com.anyrent.pos.domain.payment.PaymentMethod
-import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.formatMoneyVnd
-import com.anyrent.pos.ui.payment.PaymentQrDialog
-import com.anyrent.pos.ui.payment.PaymentUiState
 import com.anyrent.pos.ui.theme.DS
 import java.io.File
 
@@ -61,11 +55,7 @@ import java.io.File
 @Composable
 internal fun HandOverSheet(
     detail: OrderDetail,
-    payment: PaymentUiState,
     busy: Boolean,
-    onMethod: (PaymentMethod) -> Unit,
-    onShowQr: () -> Unit,
-    onClearQr: () -> Unit,
     onDismiss: () -> Unit,
     onConfirm: (papers: String, securityDeposit: Double) -> Unit,
 ) {
@@ -75,7 +65,7 @@ internal fun HandOverSheet(
     var depositText by remember { mutableStateOf(detail.securityDeposit.toLong().takeIf { it > 0 }?.toString().orEmpty()) }
     val securityDeposit = depositText.toDoubleOrNull() ?: 0.0
     val money = OrderDetailLogic.handOver(s.totalAmount, s.depositAmount, securityDeposit, detail.balancePayments())
-    val working = busy || payment.submitting
+    val working = busy
     SheetFrame(onDismiss = { if (!working) onDismiss() }) {
         SheetTitle(
             stringResource(R.string.detail_hand_over),
@@ -107,8 +97,7 @@ internal fun HandOverSheet(
             if (money.paidBefore > 0) MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
             MoneyRow(stringResource(R.string.detail_collect_now), formatMoneyVnd(money.collectNow), total = true)
         }
-        if (money.collectNow > 0) MethodPicker(payment, working, onMethod, onShowQr)
-        payment.error?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
+        // No payment method: like iOS, hand-over records no payment; the API works the balance out (#448)
         SheetButtons(
             confirm = if (money.collectNow > 0) {
                 stringResource(R.string.detail_handed_over_collect, formatMoneyVnd(money.collectNow))
@@ -120,7 +109,6 @@ internal fun HandOverSheet(
             onConfirm = { onConfirm(papers, securityDeposit) },
         )
     }
-    payment.qr?.let { PaymentQrDialog(qr = it, onDismiss = onClearQr) }
 }
 
 /** Return sheet (board Nhan-tra): late and damage fees, what to give back or collect, then RETURNED */
@@ -128,11 +116,7 @@ internal fun HandOverSheet(
 @Composable
 internal fun ReturnSheet(
     detail: OrderDetail,
-    payment: PaymentUiState,
     busy: Boolean,
-    onMethod: (PaymentMethod) -> Unit,
-    onShowQr: () -> Unit,
-    onClearQr: () -> Unit,
     onDismiss: () -> Unit,
     onConfirm: (lateFee: Double, damageFee: Double, onError: (String) -> Unit) -> Unit,
 ) {
@@ -146,7 +130,7 @@ internal fun ReturnSheet(
     val lateDays = OrdersHomeLogic.lateDays(
         s.orderType, s.status, OrdersHomeLogic.parseInstant(s.pickupPlanAt), OrdersHomeLogic.parseInstant(s.returnPlanAt),
     )
-    val working = busy || payment.submitting
+    val working = busy
     SheetFrame(onDismiss = { if (!working) onDismiss() }) {
         SheetTitle(
             stringResource(R.string.detail_take_return),
@@ -184,8 +168,8 @@ internal fun ReturnSheet(
         detail.collateralDetails?.takeIf { it.isNotBlank() }?.let {
             Text("${stringResource(R.string.collateral)}: $it", fontSize = DS.TextSize.Body, color = DS.Colors.Text)
         }
-        if (money.net != 0.0) MethodPicker(payment, working, onMethod, onShowQr)
-        (error ?: payment.error)?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
+        // No payment method: like iOS, the return records no payment (#448)
+        error?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
         SheetButtons(
             confirm = when {
                 money.refund > 0 -> stringResource(R.string.detail_received_refund, formatMoneyVnd(money.refund))
@@ -200,7 +184,6 @@ internal fun ReturnSheet(
             },
         )
     }
-    payment.qr?.let { PaymentQrDialog(qr = it, onDismiss = onClearQr) }
 }
 
 /** Notes with up to [OrderDetailLogic.MAX_NOTE_PHOTOS] photos (board CT-sua, GHI CHÚ) */
@@ -325,41 +308,6 @@ private fun MoneyBox(content: @Composable ColumnScope.() -> Unit) {
             .padding(horizontal = 14.dp, vertical = 6.dp),
         content = content,
     )
-}
-
-@Composable
-private fun MethodPicker(
-    payment: PaymentUiState,
-    working: Boolean,
-    onMethod: (PaymentMethod) -> Unit,
-    onShowQr: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(stringResource(R.string.payment_method), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.TextMuted)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AppFilterChip(
-                label = stringResource(R.string.payment_method_cash),
-                selected = payment.selectedMethod == PaymentMethod.CASH,
-                onClick = { if (!working) onMethod(PaymentMethod.CASH) },
-                modifier = Modifier.weight(1f),
-            )
-            AppFilterChip(
-                label = stringResource(R.string.payment_method_transfer),
-                selected = payment.selectedMethod == PaymentMethod.TRANSFER,
-                onClick = { if (!working) onMethod(PaymentMethod.TRANSFER) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-        if (payment.selectedMethod == PaymentMethod.TRANSFER) {
-            OutlinedButton(onClick = onShowQr, enabled = !working && !payment.loadingQr, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Outlined.QrCode2, contentDescription = null, modifier = Modifier.size(DS.Icon.Sm))
-                Text(
-                    if (payment.loadingQr) stringResource(R.string.loading) else stringResource(R.string.show_payment_qr),
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-        }
-    }
 }
 
 @Composable
