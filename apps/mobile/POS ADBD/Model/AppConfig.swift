@@ -30,7 +30,8 @@ struct PlatformConfig: Codable, Equatable {
     }
 }
 
-/// New screens that can be switched on from the server (`MOBILE_FEATURES` on the API)
+/// New screens switched by the server (`MOBILE_FEATURES` on the API). On by default (#456); a config that
+/// says `false` for a screen turns it off and shows the old one.
 enum MobileFeature: String, CaseIterable, Codable {
     case newOrders, newOrderDetail, newProducts, newCalendar, newOverview, newSettings, newAuth, newCustomers
 }
@@ -38,11 +39,11 @@ enum MobileFeature: String, CaseIterable, Codable {
 struct AppConfig: Codable, Equatable {
     var ios = PlatformConfig()
     var android = PlatformConfig()
-    var features: Set<MobileFeature> = []
+    var features: Set<MobileFeature> = Set(MobileFeature.allCases)
 
     enum CodingKeys: String, CodingKey { case ios, android, features }
 
-    init(ios: PlatformConfig = PlatformConfig(), android: PlatformConfig = PlatformConfig(), features: Set<MobileFeature> = []) {
+    init(ios: PlatformConfig = PlatformConfig(), android: PlatformConfig = PlatformConfig(), features: Set<MobileFeature> = Set(MobileFeature.allCases)) {
         self.ios = ios
         self.android = android
         self.features = features
@@ -52,9 +53,10 @@ struct AppConfig: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         ios = try container.decodeIfPresent(PlatformConfig.self, forKey: .ios) ?? PlatformConfig()
         android = try container.decodeIfPresent(PlatformConfig.self, forKey: .android) ?? PlatformConfig()
-        // `features` is a map of flag → Bool; unknown flags are ignored
+        // `features` is a map of flag → Bool; unknown flags are ignored. #456: only an explicit `false` turns a
+        // screen off, so a missing map (an API without flags) or a missing key keeps it on
         let flags = (try? container.decodeIfPresent([String: Bool].self, forKey: .features)) ?? nil
-        features = Set((flags ?? [:]).compactMap { key, on in on ? MobileFeature(rawValue: key) : nil })
+        features = Set(MobileFeature.allCases.filter { flags?[$0.rawValue] ?? true })
     }
 
     func encode(to encoder: Encoder) throws {
