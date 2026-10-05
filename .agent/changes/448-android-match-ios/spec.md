@@ -37,6 +37,12 @@ No change. Create/update order bodies are the same as Android sent before.
 
 ## Acceptance
 
-- [ ] Behaviors 1–5: unit tests `CartDatesChosenTest`, `OrderReviewV2Test`, `Issue448ResourcesTest`
-- [ ] 7–8: emulator-5570 screenshots and the Maestro flow
-- [ ] iOS unchanged; strings in `values` and `values-vi`
+- [x] Behaviors 1–5: unit tests `CartDatesChosenTest`, `OrderReviewV2Test`, `Issue448ResourcesTest`
+- [x] 7–8: emulator-5570 screenshots and the Maestro flow (`rent-handover.yaml` and a variant
+  without the Android-only branches)
+- [x] iOS unchanged; strings in `values` and `values-vi`
+
+## Found while verifying
+
+- The hand-over sheet (not one of the four items) can leave "Đã giao" under the keyboard after
+  typing the papers; the Maestro flow keeps its keyboard-hide step there. Follow-up candidate.

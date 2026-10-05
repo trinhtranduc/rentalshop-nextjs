@@ -51,6 +51,14 @@ object CartStore {
     private val _returnDate = MutableStateFlow(LocalDate.now().plusDays(1))
     val returnDate: StateFlow<LocalDate> = _returnDate.asStateFlow()
 
+    /**
+     * The user picked rental dates (or they came from an order / saved draft). The new cart shows
+     * "Chọn ngày thuê" and blocks the review until then, like iOS `Cart.pickupPlanAt == nil` (#448).
+     * The old cart ignores it and keeps showing the default today → tomorrow.
+     */
+    private val _datesChosen = MutableStateFlow(false)
+    val datesChosen: StateFlow<Boolean> = _datesChosen.asStateFlow()
+
     private val _notes = MutableStateFlow("")
     val notes: StateFlow<String> = _notes.asStateFlow()
 
@@ -128,11 +136,13 @@ object CartStore {
     fun setPickup(date: LocalDate) {
         _pickupDate.value = date
         if (_returnDate.value.isBefore(date)) _returnDate.value = date.plusDays(1)
+        _datesChosen.value = true
         syncRentalDays()
         persist()
     }
     fun setReturn(date: LocalDate) {
         _returnDate.value = if (date.isBefore(_pickupDate.value)) _pickupDate.value else date
+        _datesChosen.value = true
         syncRentalDays()
         persist()
     }
@@ -269,6 +279,7 @@ object CartStore {
         _collateralDetails.value = ""
         _pickupDate.value = LocalDate.now()
         _returnDate.value = LocalDate.now().plusDays(1)
+        _datesChosen.value = false
         _orderType.value = "RENT"
         if (persistToDisk) persist() else persistEnabled = false
     }
@@ -345,6 +356,7 @@ object CartStore {
         _orderType.value = if (sale) "SALE" else "RENT"
         _pickupDate.value = pickup
         _returnDate.value = ret
+        _datesChosen.value = true
         _notes.value = summary.notes.orEmpty()
         _collateralDetails.value = detail.collateralDetails.orEmpty()
         _depositAmount.value = summary.depositAmount.takeUnless { it.isNaN() } ?: 0.0
@@ -445,6 +457,7 @@ object CartStore {
             .put("orderType", _orderType.value)
             .put("pickup", _pickupDate.value.toString())
             .put("return", _returnDate.value.toString())
+            .put("datesChosen", _datesChosen.value)
             .put("notes", _notes.value)
             .put("discount", _discount.value)
             .put("discountType", _discountType.value.name)
@@ -461,6 +474,8 @@ object CartStore {
         _orderType.value = json.optString("orderType").ifBlank { "RENT" }
         _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(LocalDate.now())
         _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(LocalDate.now().plusDays(1))
+        // A draft saved before #448 has no flag: keep its dates as chosen
+        _datesChosen.value = !json.has("datesChosen") || json.optBoolean("datesChosen")
         _notes.value = json.optString("notes")
         _discount.value = json.optDouble("discount", 0.0)
         _discountType.value = runCatching {

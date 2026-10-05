@@ -222,7 +222,21 @@ data class CartLineCalc(
     }
 }
 
+/** Why the new cart cannot open the review yet (iOS `Cart.validate()`, same order) */
+enum class CartProblem { EMPTY, NO_CUSTOMER, NO_PICKUP, NO_RETURN }
+
 object CartV2Logic {
+    /** Every problem at once, like the iOS alert; a sale needs no dates (#448) */
+    fun problems(itemCount: Int, hasCustomer: Boolean, isSale: Boolean, datesChosen: Boolean): List<CartProblem> =
+        buildList {
+            if (itemCount <= 0) add(CartProblem.EMPTY)
+            if (!hasCustomer) add(CartProblem.NO_CUSTOMER)
+            if (!isSale && !datesChosen) {
+                add(CartProblem.NO_PICKUP)
+                add(CartProblem.NO_RETURN)
+            }
+        }
+
     /** Same money as the old cart: [CartLine.unitPrice] and [CartLine.lineTotal] */
     fun calc(line: CartLine, isSale: Boolean): CartLineCalc {
         val kind = when {

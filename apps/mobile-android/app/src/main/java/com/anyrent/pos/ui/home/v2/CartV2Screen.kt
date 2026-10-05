@@ -55,6 +55,7 @@ import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.domain.availability.AvailabilityRequest
 import com.anyrent.pos.domain.products.CartLineCalc
+import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -91,6 +92,7 @@ fun CartV2Screen(
     val orderType by CartStore.orderType.collectAsState()
     val pickup by CartStore.pickupDate.collectAsState()
     val ret by CartStore.returnDate.collectAsState()
+    val datesChosen by CartStore.datesChosen.collectAsState()
     val notes by CartStore.notes.collectAsState()
     val discount by CartStore.discount.collectAsState()
     val discountType by CartStore.discountType.collectAsState()
@@ -115,13 +117,22 @@ fun CartV2Screen(
     var noteDraft by remember { mutableStateOf<String?>(null) }
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    val emptyMessage = stringResource(R.string.cart_empty_error)
-    val customerMessage = stringResource(R.string.customer_required_error)
+    // iOS `Cart.validate()` copy, all problems in one alert (#448)
+    val problemText = mapOf(
+        CartProblem.EMPTY to stringResource(R.string.v2_cart_need_items),
+        CartProblem.NO_CUSTOMER to stringResource(R.string.v2_cart_need_customer),
+        CartProblem.NO_PICKUP to stringResource(R.string.v2_cart_need_pickup),
+        CartProblem.NO_RETURN to stringResource(R.string.v2_cart_need_return),
+    )
 
     // Batch availability for the dates (rent) or today (sale), same call as the old cart's check
-    val availabilityKey = lines.map { it.product.id to it.quantity } to Triple(isSale, pickup, ret)
+    val availabilityKey = lines.map { it.product.id to it.quantity } to listOf(isSale, pickup, ret, datesChosen)
     LaunchedEffect(availabilityKey) {
-        if (lines.isEmpty()) return@LaunchedEffect
+        // iOS checks a rental only once dates are picked
+        if (lines.isEmpty() || (!isSale && !datesChosen)) {
+            available = emptyMap()
+            return@LaunchedEffect
+        }
         delay(300)
         val today = LocalDate.now(ZoneId.systemDefault())
         val result = runCatching {
@@ -160,15 +171,24 @@ fun CartV2Screen(
                     Modifier.fillMaxWidth().clickable { showDates = true }.heightIn(min = 56.dp).padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        "${formatDay(pickup)} → ${formatDay(ret)}",
-                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
-                        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
-                        modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 3.dp),
-                    )
+                    if (!datesChosen) {
+                        // iOS starts with no dates: "Chọn ngày thuê" in the primary colour, no day pill (#448)
+                        Text(
+                            stringResource(R.string.v2_cart_pick_dates),
+                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Text(
+                            "${formatDay(pickup)} → ${formatDay(ret)}",
+                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
+                            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
+                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 3.dp),
+                        )
+                    }
                 }
             }
 
@@ -235,11 +255,8 @@ fun CartV2Screen(
                 stringResource(if (isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
                 modifier = Modifier.weight(1.1f),
                 onClick = {
-                    when {
-                        lines.isEmpty() -> error = emptyMessage
-                        customer == null -> error = customerMessage
-                        else -> onPreview()
-                    }
+                    val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
+                    if (problems.isEmpty()) onPreview() else error = problems.joinToString("\n") { problemText.getValue(it) }
                 },
             )
         }

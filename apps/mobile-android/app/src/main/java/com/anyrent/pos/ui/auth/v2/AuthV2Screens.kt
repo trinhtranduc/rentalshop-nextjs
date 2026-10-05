@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class) // BringIntoViewRequester (#448)
+
 package com.anyrent.pos.ui.auth.v2
 
 import com.anyrent.pos.ui.theme.DS
@@ -20,7 +22,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -114,16 +120,30 @@ private val MaxWidth = AuthV2Style.MaxWidth
 
 // MARK: - Building blocks
 
-/** White page: optional [header], scrolling [content] and a [footer] pinned above the keyboard */
+/**
+ * White page: optional [header], scrolling [content] and a [footer] pinned above the keyboard.
+ * When the keyboard opens, [keepInView] (the fields and the main button) scrolls above it, and a
+ * secondary footer can step aside ([hideFooterWithKeyboard]) so the form has the room, like iOS (#448).
+ */
 @Composable
 private fun AuthPage(
     header: (@Composable () -> Unit)?,
     footer: @Composable ColumnScope.() -> Unit,
     contentTop: Int,
     blobs: AuthV2Style.BlobScale,
+    keepInView: BringIntoViewRequester? = null,
+    hideFooterWithKeyboard: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scrollState = rememberScrollState()
+    val keyboardUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    LaunchedEffect(keyboardUp, keepInView) {
+        if (keyboardUp && keepInView != null) {
+            // After the keyboard animation, when imePadding has shrunk the scroll area
+            delay(350)
+            keepInView.bringIntoView()
+        }
+    }
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val headerHeight = if (header != null) AuthV2Style.HeaderHeight else 0.dp
     val top = maxOf(contentTop.dp, AuthV2Style.blobClearance(blobs) - statusTop - headerHeight)
@@ -144,10 +164,12 @@ private fun AuthPage(
                     .padding(start = AuthV2Style.SideInset, end = AuthV2Style.SideInset, top = top, bottom = 16.dp),
                 content = content,
             )
-            Column(
-                Modifier.widthIn(max = MaxWidth).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 24.dp),
-                content = footer,
-            )
+            if (!(hideFooterWithKeyboard && keyboardUp)) {
+                Column(
+                    Modifier.widthIn(max = MaxWidth).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 24.dp),
+                    content = footer,
+                )
+            }
         }
     }
 }
@@ -367,10 +389,13 @@ fun LoginV2Screen(
         }
     }
 
+    val formInView = remember { BringIntoViewRequester() }
     AuthPage(
         header = null,
         contentTop = 240,
         blobs = AuthV2Style.BlobScale.LOGIN,
+        keepInView = formInView,
+        hideFooterWithKeyboard = true,
         footer = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.authv2_no_store), color = AuthV2Style.TextMuted, fontSize = DS.TextSize.Body)
@@ -380,6 +405,7 @@ fun LoginV2Screen(
     ) {
         AuthTitle(stringResource(R.string.authv2_login_title), stringResource(R.string.authv2_login_subtitle))
         Spacer(Modifier.height(16.dp))
+        Column(Modifier.bringIntoViewRequester(formInView)) {
         AuthField(
             label = stringResource(R.string.authv2_email),
             value = email,
@@ -405,6 +431,7 @@ fun LoginV2Screen(
             Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp))
         }
         AuthButton(stringResource(R.string.authv2_login_button), loading) { submit() }
+        }
     }
 }
 
@@ -672,10 +699,13 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
         }
     }
 
+    val formInView = remember { BringIntoViewRequester() }
     AuthPage(
         header = { AuthBackHeader(onBack) },
         contentTop = 200,
         blobs = AuthV2Style.BlobScale.FORGOT,
+        keepInView = formInView,
+        hideFooterWithKeyboard = true,
         footer = {
             Text(
                 stringResource(R.string.authv2_forgot_staff_note),
@@ -688,6 +718,7 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
     ) {
         AuthTitle(stringResource(R.string.authv2_forgot_title), stringResource(R.string.authv2_forgot_text))
         Spacer(Modifier.height(18.dp))
+        Column(Modifier.bringIntoViewRequester(formInView)) {
         AuthField(
             label = stringResource(R.string.authv2_email),
             value = email,
@@ -700,6 +731,7 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
         )
         Spacer(Modifier.height(16.dp))
         AuthButton(stringResource(R.string.authv2_forgot_send), loading) { send() }
+        }
     }
 }
 

@@ -1,6 +1,8 @@
 package com.anyrent.pos.ui.home
 
 import androidx.compose.foundation.clickable
+import com.anyrent.pos.domain.orders.OrderReviewV2
+import com.anyrent.pos.ui.home.v2.OrderReviewConfirmSheet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -106,6 +108,8 @@ fun CartCheckoutScreen(
     onCreated: (Int) -> Unit,
     previewMode: Boolean = false,
     onViewCustomerOrders: ((Customer) -> Unit)? = null,
+    /** Review after the new cart (#448): iOS title, section labels and the "Thu tiền cọc" confirm sheet */
+    reviewV2: Boolean = false,
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -143,6 +147,7 @@ fun CartCheckoutScreen(
     var showDateSelection by remember { mutableStateOf(false) }
     var showPickCustomer by remember { mutableStateOf(false) }
     var showClearConfirmation by remember { mutableStateOf(false) }
+    var showReviewConfirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val app = LocalContext.current.applicationContext as AnyRentApp
     val validateRentalCart = remember {
@@ -290,7 +295,13 @@ fun CartCheckoutScreen(
                 title = {
                     if (previewMode) {
                         Text(
-                            stringResource(R.string.order_preview),
+                            stringResource(
+                                when {
+                                    !reviewV2 -> R.string.order_preview
+                                    editingOrderId != null -> R.string.v2_review_edit_title
+                                    else -> R.string.v2_review_title
+                                },
+                            ),
                             // iOS nav title: Bold 20
                             style = MaterialTheme.typography.titleLarge,
                         )
@@ -413,7 +424,12 @@ fun CartCheckoutScreen(
                             .fillMaxWidth()
                             .height(58.dp)
                             .clickable(enabled = !loading) {
-                                if (previewMode) submitOrder() else openPreview()
+                                when {
+                                    // iOS confirms what to collect before it creates the order (#448)
+                                    previewMode && reviewV2 -> showReviewConfirm = true
+                                    previewMode -> submitOrder()
+                                    else -> openPreview()
+                                }
                             },
                     ) {
                         Row(
@@ -425,6 +441,8 @@ fun CartCheckoutScreen(
                                 stringResource(
                                     when {
                                         !previewMode -> R.string.preview
+                                        reviewV2 && editingOrderId != null -> R.string.v2_review_update
+                                        reviewV2 -> R.string.v2_review_create
                                         editingOrderId != null -> R.string.edit_order
                                         else -> R.string.create_order
                                     },
@@ -459,6 +477,7 @@ fun CartCheckoutScreen(
             discount = discountAmount,
             subtotal = subtotal,
             total = totalAmount,
+            reviewV2 = reviewV2,
         ) else Column(
             Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -715,6 +734,18 @@ fun CartCheckoutScreen(
         )
     }
 
+    if (showReviewConfirm) {
+        val confirm = OrderReviewV2.confirm(isSale = orderType == "SALE", deposit = deposit, total = totalAmount)
+        OrderReviewConfirmSheet(
+            confirm = confirm,
+            collateral = collateral.takeIf { orderType == "RENT" && it.isNotBlank() },
+            onDismiss = { showReviewConfirm = false },
+            onConfirm = {
+                showReviewConfirm = false
+                submitOrder()
+            },
+        )
+    }
     if (showClearConfirmation) {
         AppAlertConfirm(
             title = stringResource(R.string.clear_cart),
@@ -1060,13 +1091,17 @@ private fun CartPreviewDetailContent(
     discount: Double,
     subtotal: Double,
     total: Double,
+    reviewV2: Boolean = false,
 ) {
     val dateFormatter = remember { DisplayDateFormatter }
+    // #448: the new cart's review uses the iOS labels as written; the old preview keeps its own
+    @Composable
+    fun label(old: Int, v2: Int) = PreviewSectionLabel(stringResource(if (reviewV2) v2 else old), uppercase = !reviewV2)
     Column(
         modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        PreviewSectionLabel(stringResource(R.string.information))
+        label(R.string.information, R.string.v2_review_info)
         AppCard(shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.padding(horizontal = 16.dp)) {
                 PreviewValueRow(stringResource(R.string.customer), customer?.displayName ?: "N/A")
@@ -1076,8 +1111,10 @@ private fun CartPreviewDetailContent(
                 }
             }
         }
-        if (orderType == "RENT") {
-            PreviewSectionLabel(stringResource(R.string.date_information))
+        val isRent = orderType == "RENT"
+        val v2Sections = OrderReviewV2.sections(isSale = !isRent)
+        if (if (reviewV2) OrderReviewV2.Section.DATES in v2Sections else isRent) {
+            label(R.string.date_information, R.string.v2_review_dates)
             AppCard(shape = RoundedCornerShape(10.dp)) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     PreviewValueRow(
@@ -1085,15 +1122,16 @@ private fun CartPreviewDetailContent(
                         formatDisplayDateTime(LocalDateTime.now()),
                     )
                     androidx.compose.material3.HorizontalDivider()
-                    PreviewValueRow(stringResource(R.string.pickup_date), pickup.format(dateFormatter))
+                    // A sale has no dates: iOS shows "-"
+                    PreviewValueRow(stringResource(R.string.pickup_date), if (isRent) pickup.format(dateFormatter) else "-")
                     androidx.compose.material3.HorizontalDivider()
-                    PreviewValueRow(stringResource(R.string.return_date), ret.format(dateFormatter))
-                    androidx.compose.material3.HorizontalDivider()
-                    PreviewValueRow(stringResource(R.string.deposit), formatMoney(deposit), true)
+                    PreviewValueRow(stringResource(R.string.return_date), if (isRent) ret.format(dateFormatter) else "-")
+                    if (isRent) androidx.compose.material3.HorizontalDivider()
+                    if (isRent) PreviewValueRow(stringResource(if (reviewV2) R.string.v2_review_deposit else R.string.deposit), formatMoney(deposit), true)
                 }
             }
         }
-        PreviewSectionLabel(stringResource(R.string.products))
+        label(R.string.products, R.string.v2_review_products)
         AppCard(shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.padding(horizontal = 16.dp)) {
                 lines.forEachIndexed { index, line ->
@@ -1128,16 +1166,18 @@ private fun CartPreviewDetailContent(
                 }
             }
         }
-        PreviewSectionLabel(stringResource(R.string.deposit_collateral_details))
+        // iOS shows the deposit & papers section for a rental only
+        if (!reviewV2 || OrderReviewV2.Section.DEPOSIT_PAPERS in v2Sections) {
+        label(R.string.deposit_collateral_details, R.string.v2_review_deposit_papers)
         AppCard(shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.padding(horizontal = 16.dp)) {
                 PreviewValueRow(
-                    stringResource(R.string.collateral),
+                    stringResource(if (reviewV2) R.string.v2_review_papers else R.string.collateral),
                     collateral.ifBlank { stringResource(R.string.tap_to_edit) },
                 )
                 androidx.compose.material3.HorizontalDivider()
                 PreviewValueRow(
-                    stringResource(R.string.security_deposit),
+                    stringResource(if (reviewV2) R.string.v2_review_security_deposit else R.string.security_deposit),
                     if (securityDeposit > 0) formatMoney(securityDeposit)
                     else stringResource(R.string.tap_to_edit),
                 )
@@ -1145,7 +1185,8 @@ private fun CartPreviewDetailContent(
                 PreviewValueRow(stringResource(R.string.damage_fee), "0")
             }
         }
-        PreviewSectionLabel(stringResource(R.string.notes))
+        }
+        label(R.string.notes, R.string.notes)
         AppCard(shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 Text(stringResource(R.string.notes), style = MaterialTheme.typography.bodyLarge)
@@ -1156,7 +1197,7 @@ private fun CartPreviewDetailContent(
                 )
             }
         }
-        PreviewSectionLabel(stringResource(R.string.summary))
+        label(R.string.summary, R.string.summary)
         AppCard(shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.padding(horizontal = 16.dp)) {
                 PreviewValueRow(stringResource(R.string.subtotal), formatMoney(subtotal), true)
@@ -1171,9 +1212,9 @@ private fun CartPreviewDetailContent(
 }
 
 @Composable
-private fun PreviewSectionLabel(text: String) {
+private fun PreviewSectionLabel(text: String, uppercase: Boolean = true) {
     Text(
-        text.uppercase(),
+        if (uppercase) text.uppercase() else text,
         modifier = Modifier.padding(start = 12.dp, top = 10.dp),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
