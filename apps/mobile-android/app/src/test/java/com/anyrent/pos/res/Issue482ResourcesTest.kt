@@ -44,6 +44,12 @@ class Issue482ResourcesTest {
         "v2_pricing_block" to "Theo block",
         "v2_price_per_rental" to "Theo lần",
         "v2_price_per_day" to "Theo ngày",
+        // Item 5: change password sheet
+        "settings_v2_password_hint" to "Ít nhất %1\$d ký tự.",
+        "settings_v2_password_submit" to "Đổi mật khẩu",
+        "settings_v2_password_current" to "Mật khẩu hiện tại",
+        "settings_v2_password_new" to "Mật khẩu mới",
+        "settings_v2_password_confirm" to "Nhập lại mật khẩu mới",
     )
 
     @Test

@@ -1095,4 +1095,9 @@
     <string name="v2_pricing_change">Change pricing for %1$s</string>
     <string name="v2_pricing_unit">đ</string>
     <string name="v2_pricing_unit_daily">đ/day</string>
+    <!-- #482 -->
+    <string name="settings_v2_password_hint">At least %1$d characters.</string>
+    <string name="settings_v2_password_submit">Change password</string>
+    <string name="settings_v2_password_show">Show password</string>
+    <string name="settings_v2_password_hide">Hide password</string>
 </resources>

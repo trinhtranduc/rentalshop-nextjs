@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -22,6 +24,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -243,7 +249,8 @@ fun SettingsV2Screen(
         )
     }
     if (showPassword) {
-        PasswordDialog(
+        // #482 (board DMK-doi-mat-khau): a bottom sheet over Cài đặt; same call and validation as before
+        PasswordSheet(
             busy = busy,
             onDismiss = { showPassword = false },
             onSubmit = { current, new ->
@@ -334,46 +341,105 @@ private fun SettingRow(title: String, value: String?, chevron: Boolean, onClick:
     ThinDivider()
 }
 
+/**
+ * Change password as a bottom sheet (#482, board DMK-doi-mat-khau; iOS `ChangePasswordSheetViewController`): three
+ * secure fields with a lock and a show/hide eye, the length hint under the new password, the error under the field at
+ * fault, "Đổi mật khẩu". Validation unchanged ([SettingsRows.validatePassword]).
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun PasswordDialog(busy: Boolean, onDismiss: () -> Unit, onSubmit: (String, String) -> Unit) {
+private fun PasswordSheet(busy: Boolean, onDismiss: () -> Unit, onSubmit: (String, String) -> Unit) {
     var current by remember { mutableStateOf("") }
     var new by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var problem by remember { mutableStateOf<PasswordProblem?>(null) }
-    AppAlertConfirm(
-        title = stringResource(R.string.change_password),
-        message = problem?.let {
-            stringResource(
-                when (it) {
-                    PasswordProblem.MISSING_CURRENT -> R.string.settings_v2_password_missing_current
-                    PasswordProblem.TOO_SHORT -> R.string.settings_v2_password_too_short
-                    PasswordProblem.MISMATCH -> R.string.settings_v2_password_mismatch
-                },
-            )
-        }.orEmpty(),
-        confirmLabel = stringResource(R.string.save),
-        confirmLoading = busy,
-        dismissEnabled = !busy,
-        onDismiss = onDismiss,
-        onConfirm = {
-            problem = SettingsRows.validatePassword(current, new, confirm)
-            if (problem == null) onSubmit(current, new)
-        },
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = { if (!busy) onDismiss() },
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !busy }),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = DS.Colors.Surface,
     ) {
-        listOf(
-            Triple(R.string.settings_v2_password_current, current) { v: String -> current = v },
-            Triple(R.string.settings_v2_password_new, new) { v: String -> new = v },
-            Triple(R.string.settings_v2_password_confirm, confirm) { v: String -> confirm = v },
-        ).forEach { (label, value, onChange) ->
-            OutlinedTextField(
-                value = value,
-                onValueChange = onChange,
-                label = { Text(stringResource(label)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.change_password), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f))
+                val closeLabel = stringResource(R.string.close)
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(enabled = !busy, onClickLabel = closeLabel, onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = closeLabel, tint = DS.Colors.TextMuted,
+                        modifier = Modifier.size(18.dp))
+                }
+            }
+            PasswordField(
+                label = stringResource(R.string.settings_v2_password_current),
+                value = current,
+                onChange = { current = it; if (problem == PasswordProblem.MISSING_CURRENT) problem = null },
+                error = if (problem == PasswordProblem.MISSING_CURRENT) stringResource(R.string.settings_v2_password_missing_current) else null,
             )
+            PasswordField(
+                label = stringResource(R.string.settings_v2_password_new),
+                value = new,
+                onChange = { new = it; if (problem == PasswordProblem.TOO_SHORT) problem = null },
+                error = if (problem == PasswordProblem.TOO_SHORT) stringResource(R.string.settings_v2_password_too_short) else null,
+                hint = stringResource(R.string.settings_v2_password_hint, SettingsRows.MIN_PASSWORD_LENGTH),
+            )
+            PasswordField(
+                label = stringResource(R.string.settings_v2_password_confirm),
+                value = confirm,
+                onChange = { confirm = it; if (problem == PasswordProblem.MISMATCH) problem = null },
+                error = if (problem == PasswordProblem.MISMATCH) stringResource(R.string.settings_v2_password_mismatch) else null,
+            )
+            com.anyrent.pos.ui.common.AppPrimaryButton(
+                stringResource(R.string.settings_v2_password_submit),
+                loading = busy,
+                onClick = {
+                    problem = SettingsRows.validatePassword(current, new, confirm)
+                    if (problem == null) onSubmit(current, new)
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(54.dp),
+            )
+        }
+    }
+}
+
+/** One secure field of the sheet: lock icon, show/hide eye, a hint or the error under it */
+@Composable
+private fun PasswordField(label: String, value: String, onChange: (String) -> Unit, error: String?, hint: String? = null) {
+    var visible by remember { mutableStateOf(false) }
+    val danger = Color(0xFFB91C1C)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            singleLine = true,
+            isError = error != null,
+            leadingIcon = {
+                Icon(androidx.compose.material.icons.Icons.Outlined.Lock, contentDescription = null,
+                    tint = if (error != null) danger else Color(0xFF64748B), modifier = Modifier.size(20.dp))
+            },
+            trailingIcon = {
+                val toggle = stringResource(if (visible) R.string.settings_v2_password_hide else R.string.settings_v2_password_show)
+                androidx.compose.material3.IconButton(onClick = { visible = !visible }) {
+                    Icon(
+                        if (visible) androidx.compose.material.icons.Icons.Outlined.VisibilityOff else androidx.compose.material.icons.Icons.Outlined.Visibility,
+                        contentDescription = toggle, tint = DS.Colors.TextMuted, modifier = Modifier.size(20.dp),
+                    )
+                }
+            },
+            visualTransformation = if (visible) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        when {
+            error != null -> Text(error, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = danger)
+            hint != null -> Text(hint, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
     }
 }

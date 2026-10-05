@@ -1079,4 +1079,9 @@
     <string name="v2_pricing_change">Đổi cách tính giá %1$s</string>
     <string name="v2_pricing_unit">đ</string>
     <string name="v2_pricing_unit_daily">đ/ngày</string>
+    <!-- #482 -->
+    <string name="settings_v2_password_hint">Ít nhất %1$d ký tự.</string>
+    <string name="settings_v2_password_submit">Đổi mật khẩu</string>
+    <string name="settings_v2_password_show">Hiện mật khẩu</string>
+    <string name="settings_v2_password_hide">Ẩn mật khẩu</string>
 </resources>
