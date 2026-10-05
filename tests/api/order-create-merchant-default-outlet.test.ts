@@ -43,6 +43,8 @@ const mockDb: any = {
       orderItems: [],
       payments: [],
     })),
+    // #341: the route creates through the duplicate guard; here it always inserts via `create`
+    createOnce: jest.fn(async (_guard: any, data: any) => ({ order: await mockDb.orders.create(data), replay: false })),
     delete: jest.fn(),
   },
   prisma: {
