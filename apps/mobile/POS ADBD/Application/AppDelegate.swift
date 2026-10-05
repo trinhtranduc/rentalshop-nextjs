@@ -181,7 +181,7 @@ extension AppDelegate {
         // Say why: another device signed in vs. the session simply ended (#344)
         let code = notification.userInfo?["code"] as? String
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let errorCode: APIErrorCode = code == APIErrorCode.sessionReplaced.rawValue ? .sessionReplaced : .sessionExpired
+            let errorCode = SessionEndReason.errorCode(forServerCode: code)
             let error = NSError.errorWithOwnMessage(
                 message: errorCode.defaultMessage,
                 domain: "RC",

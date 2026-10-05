@@ -908,7 +908,7 @@ extension AnalyticsAPIService {
     func loadOutletOperations(timeZone: String = DeviceTimeZone.identifier,
                               completion: @escaping (TodayWork?, NSError?) -> Void) -> DataRequest {
         let fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.outletOperations
-        return AF.request(fullURL, method: .get, parameters: ["timeZone": timeZone], headers: BaseService.jsonHeader)
+        return AuthSession.shared.request(fullURL, method: .get, parameters: ["timeZone": timeZone], headers: BaseService.jsonHeader)
             .responseData { response in
                 let statusCode = response.response?.statusCode
                 switch response.result {
