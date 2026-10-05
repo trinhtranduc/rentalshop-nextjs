@@ -11,11 +11,7 @@ appId: ${APP_ID}
 - tapOn: "Thuê|Rent"
 
 # Same-day rental on today (a same-day pickup and return still occupies the day).
-- tapOn: "Chọn ngày thuê|Choose rental dates"
-- tapOn:
-    text: ${output.day}
-    index: ${output.dayIndex}
-- tapOn: "Xác nhận|Confirm"
+- runFlow: pick-today.yaml
 
 # New customer. Label and field share a name: the field is the second match.
 - tapOn: "Chọn khách hàng|Choose customer"
@@ -26,33 +22,37 @@ appId: ${APP_ID}
     text: "Số điện thoại|Phone number"
     index: 1
 - inputText: ${output.customerPhone}
+- runFlow: hide-keyboard-android.yaml
 - tapOn:
     text: "Họ và tên|Full name"
     index: 1
 - inputText: ${output.customerName}
+- runFlow: hide-keyboard-android.yaml
 - tapOn: "Lưu và chọn|Save and select"
 - extendedWaitUntil:
     visible: "${output.customerName}.*"
     timeout: 10000
 - takeScreenshot: 10-cart-ready
 
-# Cart CTA (index 1: index 0 is the screen title "Tạo đơn") → review → deposit sheet.
+# Cart CTA (index 1: index 0 is the screen title "Tạo đơn") → review ("Xem trước đơn hàng" on Android) → create.
 - waitForAnimationToEnd
 - tapOn:
     text: "Tạo đơn|Create order"
     index: 1
 - extendedWaitUntil:
-    visible: "Danh sách Sản phẩm|Products"
+    visible: "Danh sách Sản phẩm|SẢN PHẨM|Products|PRODUCTS"
     timeout: 10000
 - tapOn:
     text: "Tạo đơn|Create order"
-    below: "Danh sách Sản phẩm|Products"
-- extendedWaitUntil:
-    visible: "Thu tiền cọc|Collect deposit"
-    timeout: 10000
-- tapOn:
-    text: "Xác nhận|Confirm"
-    below: "Thu tiền cọc|Collect deposit"
+    below: "Danh sách Sản phẩm|SẢN PHẨM|Products|PRODUCTS"
+# iOS asks to collect the deposit in a sheet; Android records it on the review screen ("Đã thu").
+- runFlow:
+    when:
+      visible: "Thu tiền cọc|Collect deposit"
+    commands:
+      - tapOn:
+          text: "Xác nhận|Confirm"
+          below: "Thu tiền cọc|Collect deposit"
 - waitForAnimationToEnd
 # iOS "Enjoying AnyRent?" rating prompt after the first order
 - runFlow:
@@ -65,6 +65,7 @@ appId: ${APP_ID}
 - tapOn: "Đơn hàng|Orders|My Order"
 - tapOn: "Tìm tên, SĐT, mã đơn, tên đồ|Search name, phone, order code, item"
 - inputText: ${output.customerQuery}
+- runFlow: hide-keyboard-android.yaml
 - extendedWaitUntil:
     visible: "${output.customerName}"
     timeout: 10000
@@ -76,9 +77,21 @@ appId: ${APP_ID}
     visible: "Giao đồ.*|Hand over.*"
     timeout: 10000
 - tapOn: "Giao đồ.*|Hand over.*"
-- tapOn:
-    id: "handOver.papers"
+# iOS has the id handOver.papers; Android has no testTag yet, so tap its label.
+# TODO(#447): add Modifier.testTag("handOver.papers") on Android.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "handOver.papers"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "Giấy tờ để lại|Papers left"
 - inputText: "CCCD Nguyễn Văn Á"
+- runFlow: hide-keyboard-android.yaml
 - tapOn: "Đã giao.*|Handed over.*"
 - extendedWaitUntil:
     visible: "ĐANG THUÊ|RENTING|Đang thuê|Renting"

@@ -1,0 +1,12 @@
+# Android only: the keyboard covers the controls below a field (forms do not scroll up).
+# hideKeyboard on Android presses Back, which closes a sheet when the keyboard is already gone,
+# so only hide it while the Gboard view is on screen. iOS: no-op (hideKeyboard there can tap a link).
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: Android
+      visible:
+        id: ".*keyboard_holder"
+    commands:
+      - hideKeyboard

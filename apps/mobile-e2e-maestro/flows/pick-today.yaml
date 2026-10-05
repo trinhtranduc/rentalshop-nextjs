@@ -1,0 +1,20 @@
+# Same-day rental on today (Vietnam day). Needs run-vars.js output (day, dayIndex).
+# iOS: month grid with bare day numbers. Android: Material range picker, cells labelled "…, Hôm nay, …";
+# tap today twice so pickup and return are the same day.
+appId: ${APP_ID}
+---
+- tapOn: "Chọn ngày thuê|Choose rental dates|(T[2-7]|CN|Mon|Tue|Wed|Thu|Fri|Sat|Sun) [0-9]{2}/[0-9]{2} → .*"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: ${output.day}
+          index: ${output.dayIndex}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: ".*(Hôm nay|Today).*"
+      - tapOn: ".*(Hôm nay|Today).*"
+- tapOn: "Xác nhận|Confirm"

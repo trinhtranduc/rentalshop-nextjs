@@ -26,12 +26,14 @@ appId: ${APP_ID}
 # Fields: email by its placeholder, password as the field left of the eye button.
 - tapOn: "ten@cuahang.vn|name@store.com"
 - inputText: ${E2E_EMAIL}
+- runFlow: hide-keyboard-android.yaml
 # The label above and the field share the name "Mật khẩu": the field is the second match.
 # TODO(#447): an accessibility id on both apps would make this stable.
 - tapOn:
     text: "Mật khẩu|Password"
     index: 1
 - inputText: ${E2E_PASSWORD}
+- runFlow: hide-keyboard-android.yaml
 # No hideKeyboard: on iOS it can tap a link under the keyboard edge.
 - tapOn:
     text: "Đăng nhập|Login|Log in"
