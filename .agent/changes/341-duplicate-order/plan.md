@@ -7,8 +7,8 @@ Issue: #341 · Status: in progress · Spec: ./spec.md
 1. Failing test `tests/api/order-create-duplicate.test.ts` (route + real `packages/database/src/order.ts`
    over an in-memory Prisma fake that honours advisory locks). Commit alone (`bug-fix-tdd`).
 2. `prisma/schema.prisma` + `prisma/migrations/20261005120000_order_create_key/` — `OrderCreateKey` (`db-migration`).
-3. `packages/database/src/order-create-guard.ts` — lock key, item signature, `createOrderOnce`; exposed as
-   `db.orders.createOnce`.
+3. `packages/database/src/order-create-guard.ts` — key check, (user, key) lock, `createOrderOnce`; exposed as
+   `db.orders.createOnce(userId, key, data)`. No key → plain create (owner decision, no time window).
 4. `apps/api/app/api/orders/route.ts` — read `Idempotency-Key`, call `db.orders.createOnce`, skip side effects
    on replay (`api-route-standard`).
 5. iOS: `PaymentCollectionViewController` latch; `PreviewViewController` in-flight flag + disabled Save;
@@ -29,9 +29,8 @@ Issue: #341 · Status: in progress · Spec: ./spec.md
 
 ## Risks
 
-- Old apps / web: an intentional identical order within 60 s (same customer, items, total, dates, staff)
-  now returns the first order. Accepted trade-off; new apps send a key and are exempt.
-- Migration fails on deploy → probe finds no table → keyed requests use the window. Create still works.
+- Installed apps and web send no key, so they are not protected until users update (owner accepted).
+- Migration fails on deploy → savepoint rollback → keyed requests create without dedupe. Create still works.
 - Replay after a loyalty-redeem rollback of the first order could return a deleted order (both taps +
   redeem failure). Very unlikely; the first request already reports the error.
 
