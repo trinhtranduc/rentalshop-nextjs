@@ -150,10 +150,19 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     // Check if user has permission to view costPrice
     const canViewCostPrice = await hasPermission(user, 'products.manage');
 
+    // A merchant login has no outlet (#432). On iOS/Android it works in its default outlet (#398), so
+    // count today's free units there, as the availability routes do. Products are not filtered by it.
+    // The web list keeps its all-outlets view; no default and several outlets also keeps it.
+    let merchantDefaultOutletId: number | undefined;
+    if (user.role === USER_ROLE.MERCHANT && !queryOutletId && isMobilePlatform) {
+      const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+      merchantDefaultOutletId = defaultOutlet?.id;
+    }
+
     const availabilityOutletId = resolveProductListAvailabilityOutletId({
       role: user.role,
       userOutletId: userScope.outletId,
-      queryOutletId,
+      queryOutletId: queryOutletId || merchantDefaultOutletId,
       filterOutletId,
     });
 
