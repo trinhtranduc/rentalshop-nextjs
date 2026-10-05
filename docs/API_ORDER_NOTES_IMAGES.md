@@ -102,8 +102,8 @@ Thứ tự: gọi request 1 xong (thành công) rồi mới gọi request 2 nế
 
 ## 4. Giới hạn số ảnh
 
-- Ở **UI** (web) đang giới hạn tối đa **3 ảnh** cho notes images.
-- API không ép giới hạn; mobile nên áp dụng cùng rule (tối đa 3) để đồng bộ với web.
+- Mỗi nhóm note (general, pickup, return, damage) tối đa **5 ảnh**.
+- API từ chối khi tổng vượt 5 (`IMAGE_VALIDATION_FAILED`). Ảnh được nén phía client và server nén lại về tối đa 200KB trước khi lưu.
 
 ---
 

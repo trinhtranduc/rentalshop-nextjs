@@ -1954,10 +1954,15 @@ class PreviewViewController: BaseViewControler {
         present(paymentController, animated: true)
     }
     
+    /// Phone photos at JPEG 0.8 are often several MB. The API stores note images at 200KB,
+    /// so shrink to ~180KB here and let the server compress again as a backstop.
+    private func compressedNoteJPEG(_ image: UIImage) -> Data? {
+        image.compressToTargetSize(targetSizeKB: 180, maxDimension: 1920)
+            ?? UIImageJPEGRepresentation(image, 0.6)
+    }
+
     private func proceedWithSave() {
-        let noteImageData = noteImages.compactMap { image in
-            UIImageJPEGRepresentation(image, 0.8)
-        }
+        let noteImageData = noteImages.compactMap { compressedNoteJPEG($0) }
 
         if let cartViewModel = viewModel as? CartViewModel, !noteImageData.isEmpty {
             OrderService.shared.createOrder(from: CartStore.shared.cart, notesImages: noteImageData) { [weak self] order, error in
@@ -2979,7 +2984,7 @@ extension PreviewViewController: NoteViewControllerDelegate {
             let keptURLs = imageURLs.compactMap { $0 }
             let newImageData = images.enumerated().compactMap { index, img -> Data? in
                 guard index < imageURLs.count, imageURLs[index] == nil else { return nil }
-                return UIImageJPEGRepresentation(img, 0.8)
+                return compressedNoteJPEG(img)
             }
             // When editing: send kept URLs (JSON) and/or new files (FormData) per API_ORDER_NOTES_IMAGES.md
             let keptNoteImageURLs: [String]? = keptURLs

@@ -25,7 +25,7 @@ import {
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
-import { compressImageTo1MB } from '../../../lib/image-compression';
+import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -478,6 +478,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process notesImages
       const notesImageFiles = formData.getAll('notesImages') as File[];
+      if (exceedsNoteImageLimit(notesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (notesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(notesImageFiles, userMerchantId || 0);
@@ -498,6 +501,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process pickupNotesImages
       const pickupNotesImageFiles = formData.getAll('pickupNotesImages') as File[];
+      if (exceedsNoteImageLimit(pickupNotesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (pickupNotesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(pickupNotesImageFiles, userMerchantId || 0);
@@ -518,6 +524,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process returnNotesImages
       const returnNotesImageFiles = formData.getAll('returnNotesImages') as File[];
+      if (exceedsNoteImageLimit(returnNotesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (returnNotesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(returnNotesImageFiles, userMerchantId || 0);
@@ -538,6 +547,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process damageNotesImages
       const damageNotesImageFiles = formData.getAll('damageNotesImages') as File[];
+      if (exceedsNoteImageLimit(damageNotesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (damageNotesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(damageNotesImageFiles, userMerchantId || 0);
@@ -560,6 +572,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     } else {
       // Parse JSON request body (backward compatibility)
       body = await request.json();
+      if (bodyExceedsNoteImageLimit(body)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
     }
     
     // ✅ Auto-fill outletId from userScope if not provided
