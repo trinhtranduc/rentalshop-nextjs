@@ -112,6 +112,8 @@ class HandOverReturnNoPaymentTest {
             return Result.success(Unit)
         }
 
+        override suspend fun setReadyToDeliver(id: Int, ready: Boolean) = Result.success(Unit)
+
         override suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit> {
             writes += "fees:$lateFee:$damageFee"
             return Result.success(Unit)

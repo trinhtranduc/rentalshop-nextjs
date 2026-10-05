@@ -108,6 +108,8 @@ class OrderDetailV2ViewModelTest {
 
         override suspend fun handOver(id: Int, fields: HandOverFields) = statusResult
 
+        override suspend fun setReadyToDeliver(id: Int, ready: Boolean) = Result.success(Unit)
+
         override suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double) = Result.success(Unit)
 
         override suspend fun saveNotes(

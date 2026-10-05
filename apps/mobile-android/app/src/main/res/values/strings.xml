@@ -685,6 +685,7 @@
     </plurals>
     <string name="detail_due_on">Due %1$s</string>
     <string name="detail_schedule">Rental</string>
+    <string name="detail_ready_to_deliver_subtitle">All items packed for this order</string>
     <string name="detail_sale_day">Sale day</string>
     <string name="detail_items_count">ITEMS · %1$d</string>
     <string name="detail_money">MONEY</string>

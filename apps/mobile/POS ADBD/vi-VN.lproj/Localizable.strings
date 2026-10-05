@@ -1826,6 +1826,7 @@
 "orders.v2.status.completed" = "Hoàn thành";
 "orders.v2.status.cancelled" = "Đã huỷ";
 "orders.v2.notPrepared" = "Chưa soạn đồ";
+"order.readyToDeliver.subtitle" = "Đã soạn đủ đồ cho đơn này";
 "orders.v2.pay.due" = "còn thu %@";
 "orders.v2.pay.refund" = "trả cọc %@";
 "orders.v2.when.handOverDue" = "hẹn giao %@";

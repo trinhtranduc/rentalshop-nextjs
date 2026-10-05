@@ -43,7 +43,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -193,6 +196,10 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
     val canExtend = detail?.let {
         RentalExtension.canExtend(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
     } == true
+    // #470: "Sẵn sàng giao" for rentals not handed over yet (same orders.update gate as Gia hạn)
+    val showReady = detail?.let {
+        OrderDetailLogic.showsReadyToDeliver(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
+    } == true
 
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface).statusBarsPadding()) {
         // Top bar: back, order code, print, ⋯
@@ -268,7 +275,25 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
             else -> {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                     DetailHeader(detail)
-                    DetailBody(detail, onPreview = { previewImage = it }, onEditNotes = { openNotes(detail) })
+                    DetailBody(
+                        detail,
+                        onPreview = { previewImage = it },
+                        onEditNotes = { openNotes(detail) },
+                        readyRow = if (showReady) {
+                            {
+                                ReadyToDeliverRow(detail, saving = state.savingReady) { value, revert ->
+                                    vm.setReadyToDeliver(value) { error ->
+                                        if (error != null) {
+                                            revert()
+                                            toast(ApiErrorMessages.resolve(context, null, error))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            null
+                        },
+                    )
                     Spacer(Modifier.height(24.dp))
                 }
                 DetailBottomBar(
@@ -515,7 +540,12 @@ private fun DetailHeader(detail: OrderDetail) {
 }
 
 @Composable
-private fun DetailBody(detail: OrderDetail, onPreview: (Any) -> Unit, onEditNotes: () -> Unit) {
+private fun DetailBody(
+    detail: OrderDetail,
+    onPreview: (Any) -> Unit,
+    onEditNotes: () -> Unit,
+    readyRow: (@Composable () -> Unit)? = null,
+) {
     val summary = detail.summary
     val isRent = summary.orderType.equals("RENT", ignoreCase = true)
     val status = summary.status.uppercase()
@@ -528,6 +558,7 @@ private fun DetailBody(detail: OrderDetail, onPreview: (Any) -> Unit, onEditNote
             }
             val dates = "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}"
             InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + pluralStringResource(R.plurals.v2_cart_days, it, it) } ?: dates)
+            readyRow?.invoke()
         } else {
             val day = OrdersHomeLogic.parseInstant(summary.createdAt)?.let { formatDayShort(it) } ?: "—"
             InfoRow(stringResource(R.string.detail_sale_day), listOfNotNull(day, summary.createdByName).joinToString(" · "))
@@ -734,6 +765,50 @@ private fun InfoRow(label: String, value: String) {
             color = DS.Colors.Text,
             modifier = Modifier.weight(1f),
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
+        )
+    }
+    HorizontalDivider(color = DS.Colors.Divider)
+}
+
+/**
+ * "Sẵn sàng giao" (#470, board CT-gon): title, subtitle and a switch that saves at once.
+ * [onChange] gets the new value and a revert for a failed save; a reload resets the switch to the order.
+ */
+@Composable
+private fun ReadyToDeliverRow(detail: OrderDetail, saving: Boolean, onChange: (Boolean, () -> Unit) -> Unit) {
+    var checked by remember(detail) { mutableStateOf(detail.summary.isReadyToDeliver) }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.ready_to_deliver),
+                fontSize = DS.TextSize.Body,
+                fontWeight = FontWeight.SemiBold,
+                color = DS.Colors.Text,
+            )
+            Text(
+                stringResource(R.string.detail_ready_to_deliver_subtitle),
+                fontSize = DS.TextSize.Secondary,
+                color = DS.Colors.TextMuted,
+            )
+        }
+        if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+        Switch(
+            checked = checked,
+            enabled = !saving,
+            onCheckedChange = { value ->
+                val before = checked
+                checked = value
+                onChange(value) { checked = before }
+            },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF34C759),
+                checkedBorderColor = Color(0xFF34C759),
+            ),
         )
     }
     HorizontalDivider(color = DS.Colors.Divider)

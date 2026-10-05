@@ -24,6 +24,8 @@ final class OrderDetailViewController: BaseViewControler {
     private let printButton = UIButton(type: .system)
     private let moreButton = UIButton(type: .system)
     private let pullRefresh = UIRefreshControl()
+    /// "Sẵn sàng giao" save in flight (#470)
+    private var savingReady = false
 
     init(orderId: Int) {
         self.orderId = orderId
@@ -303,6 +305,10 @@ final class OrderDetailViewController: BaseViewControler {
                     "\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to)) · " + PluralText.format("%d days", count: days, days),
                     bold: true))
             }
+            if OrderDetailLogic.showsReadyToDeliver(orderType: detail.orderType, status: detail.status,
+                                                    canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
+                stack.addArrangedSubview(readyToDeliverRow(detail))
+            }
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
                 stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.short(picked)))
             }
@@ -315,6 +321,71 @@ final class OrderDetailViewController: BaseViewControler {
                 DayFormatter.short(detail.createdAt) + (by.isEmpty ? "" : " · \(by)")))
         }
         return padded(stack, top: 0, bottom: 0)
+    }
+
+    /// "Sẵn sàng giao" (#470, board CT-gon): title, subtitle and a switch that saves at once
+    private func readyToDeliverRow(_ detail: OrderDetail) -> UIView {
+        let title = UILabel()
+        // Board: 15pt semibold (Inter-SemiBold ships in Info.plist UIAppFonts)
+        title.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.body) ?? Utils.boldFont(size: DS.TextSize.body)
+        title.textColor = DS.Color.text
+        title.text = "Ready deliver".localized()
+        let subtitle = UILabel()
+        subtitle.font = Utils.regularFont(size: DS.TextSize.secondary)
+        subtitle.textColor = DS.Color.textMuted
+        subtitle.numberOfLines = 2
+        subtitle.text = "order.readyToDeliver.subtitle".localized()
+        let texts = UIStackView(arrangedSubviews: [title, subtitle])
+        texts.axis = .vertical
+        texts.spacing = 2
+
+        let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+        spinner.hidesWhenStopped = true
+        let toggle = UISwitch()
+        toggle.onTintColor = .systemGreen
+        toggle.isOn = detail.isReadyToDeliver
+        toggle.isEnabled = !savingReady
+        toggle.accessibilityLabel = "Ready deliver".localized()
+        toggle.setContentHuggingPriority(.required, for: .horizontal)
+        toggle.addAction(UIAction { [weak self, weak toggle, weak spinner] _ in
+            guard let self, let toggle, let spinner else { return }
+            self.setReadyToDeliver(toggle.isOn, toggle: toggle, spinner: spinner)
+        }, for: .valueChanged)
+
+        let row = UIStackView(arrangedSubviews: [texts, spinner, toggle])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = DS.Spacing.md
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+        return withDivider(row)
+    }
+
+    /// Same request as the old detail (`OrderViewModel.updateReadyToDeliverStatus`); reverts on failure
+    private func setReadyToDeliver(_ ready: Bool, toggle: UISwitch, spinner: UIActivityIndicatorView) {
+        guard !savingReady, let viewModel = orderViewModel else {
+            toggle.setOn(!ready, animated: true)
+            return
+        }
+        savingReady = true
+        toggle.isEnabled = false
+        spinner.startAnimating()
+        viewModel.updateReadyToDeliverStatus(ready) { [weak self, weak toggle, weak spinner] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.savingReady = false
+                spinner?.stopAnimating()
+                toggle?.isEnabled = true
+                switch result {
+                case .success:
+                    self.didChangeOrder(viewModel.currentOrder)
+                case .failure(let error):
+                    toggle?.setOn(!ready, animated: true)
+                    UIAlertController.errorAlert(parent: self, error: error)
+                }
+            }
+        }
     }
 
     private func itemRow(_ item: OrderItem, orderType: OrderType) -> UIView {

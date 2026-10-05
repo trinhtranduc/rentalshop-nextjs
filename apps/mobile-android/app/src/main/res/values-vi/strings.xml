@@ -678,6 +678,7 @@
     </plurals>
     <string name="detail_due_on">Hạn %1$s</string>
     <string name="detail_schedule">Lịch thuê</string>
+    <string name="detail_ready_to_deliver_subtitle">Đã soạn đủ đồ cho đơn này</string>
     <string name="detail_sale_day">Ngày bán</string>
     <string name="detail_items_count">MÓN · %1$d</string>
     <string name="detail_money">TIỀN</string>
