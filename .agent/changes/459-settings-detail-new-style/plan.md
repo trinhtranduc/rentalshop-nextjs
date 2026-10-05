@@ -1,6 +1,6 @@
 # Plan — Settings detail pages in the new UI style
 
-Issue: #459 · Status: in progress · Spec: ./spec.md
+Issue: #459 · Status: done (PR into dev) · Spec: ./spec.md
 
 Base `origin/dev`, branch `feat/459-settings-detail-new-style`, one PR into `dev`.
 

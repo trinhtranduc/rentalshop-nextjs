@@ -41,7 +41,7 @@ None.
 
 ## Acceptance
 
-- [ ] iOS Development build and `POS ADBDTests` pass
-- [ ] Android `:app:testDebugUnitTest :app:assembleDebug` pass
-- [ ] Before/after screenshots of each iOS page (spare simulator)
-- [ ] No new user-facing strings (i18n-keys not needed)
+- [x] iOS Development build and `POS ADBDTests` pass (168 tests)
+- [x] Android `:app:testDebugUnitTest :app:assembleDebug` pass (249 tests)
+- [x] Before/after screenshots of each iOS page (spare iPhone 17 simulator, local API)
+- [x] No new user-facing strings (i18n-keys not needed)
