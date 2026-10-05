@@ -348,7 +348,8 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onAdd:
                     Text(
                         "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
                         fontSize = DS.TextSize.Secondary,
-                        fontWeight = FontWeight.SemiBold,
+                        // #468: regular weight, colour carries the state
+                        fontWeight = FontWeight.Normal,
                         color = when {
                             free <= 0 -> V2Colors.Danger
                             free == 1 -> V2Colors.Warn

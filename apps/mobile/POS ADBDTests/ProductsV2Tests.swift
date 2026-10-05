@@ -276,6 +276,17 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(model.products.map { $0.id }, [2, 1])
         XCTAssertFalse(model.hasMore)
     }
+
+    /// #468 — board "Danh sách sản phẩm": the "● Còn N" / "● Hết hôm nay" label is 14pt regular
+    func testStockLabelIsRegularWeight() throws {
+        let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
+        cell.bind(try product(#"{"id":1,"name":"Áo dài"}"#), inCart: 0)
+        func labels(_ view: UIView) -> [UILabel] {
+            ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
+        }
+        let stock = try XCTUnwrap(labels(cell.contentView).first { $0.text?.hasPrefix("● ") == true })
+        XCTAssertEqual(stock.font, Utils.regularFont(size: DS.TextSize.secondary))
+    }
 }
 
 /// #461 — the number pad covered "Lưu sản phẩm" and had no Done key
