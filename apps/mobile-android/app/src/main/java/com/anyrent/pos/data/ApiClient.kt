@@ -576,9 +576,32 @@ class ApiClient(
             .get()
             .applyAuth(true)
             .build()
+        return fetchBytes(request, allowRefresh = true)
+    }
+
+    private fun fetchBytes(request: Request, allowRefresh: Boolean): ByteArray {
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 val body = response.body?.string().orEmpty()
+                val sentAuthorization = request.header("Authorization")
+                // Same refresh-and-retry as execute() so a download after the 1-hour token still works (#344)
+                if (response.code == 401 && allowRefresh && sentAuthorization != null &&
+                    runCatching { JSONObject(body).errorCode() }.getOrNull() == CODE_TOKEN_EXPIRED
+                ) {
+                    when (val outcome = refreshAccessToken(sentAuthorization)) {
+                        is RefreshOutcome.Refreshed -> return fetchBytes(
+                            request.newBuilder().header("Authorization", "Bearer ${outcome.accessToken}").build(),
+                            allowRefresh = false,
+                        )
+                        is RefreshOutcome.Rejected -> {
+                            onUnauthorized(outcome.code)
+                            throw AppError.Unauthorized(
+                                outcome.message.ifBlank { "Your session has expired" },
+                                outcome.code,
+                            )
+                        }
+                    }
+                }
                 val apiMessage = runCatching {
                     JSONObject(body).optString("message")
                         .ifBlank { JSONObject(body).optString("error") }
