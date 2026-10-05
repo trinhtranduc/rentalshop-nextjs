@@ -219,6 +219,29 @@ final class OrdersHomeTests: XCTestCase {
                                                      to: iso.date(from: "2026-10-03T10:00:00Z")!, timeZone: vietnam), 1)
     }
 
+    /// #482: the order detail header tag reads the list row tag for every status; task tags say what to do
+    func testDetailStatusTagMatchesListTag() throws {
+        let statuses: [(String, String)] = [("RESERVED", "RENT"), ("PICKUPED", "RENT"), ("RETURNED", "RENT"),
+                                            ("COMPLETED", "SALE"), ("CANCELLED", "RENT")]
+        for (status, type) in statuses {
+            let listed = try order(status: status, type: type)
+            XCTAssertEqual(OrdersHomeLogic.statusTag(listed.status), OrdersHomeLogic.statusTag(listed), status)
+        }
+        XCTAssertEqual(OrdersHomeLogic.statusTag(.reserved).text, "orders.v2.status.reserved".localized())
+        XCTAssertEqual(OrdersHomeLogic.statusTag(.cancelled).text, "orders.v2.status.cancelled".localized())
+        let bundle = Bundle(for: OrderRowCell.self)
+        let vi = bundle.path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        if let vi {
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.status.reserved", value: nil, table: nil), "Đã đặt")
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.status.cancelled", value: nil, table: nil), "Đã huỷ")
+            XCTAssertEqual(vi.localizedString(forKey: "Cancelled", value: nil, table: nil), "Đã huỷ")
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.tag.handOver", value: nil, table: nil), "Cần giao")
+            XCTAssertEqual(vi.localizedString(forKey: "orders.v2.tag.takeBack", value: nil, table: nil), "Cần trả")
+        } else {
+            XCTFail("vi-VN.lproj missing")
+        }
+    }
+
     /// #482: a row of another year shows the 2-digit year on every dd/MM of its date line
     func testListDateLineAddsYearWhenNotThisYear() throws {
         let now = iso.date(from: "2026-01-02T05:00:00Z")!

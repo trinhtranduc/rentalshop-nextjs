@@ -193,12 +193,13 @@ final class OrderDetailViewController: BaseViewControler {
         name.textColor = DS.Color.text
         name.numberOfLines = 2
         name.text = order.customerName.isEmpty ? "N/A" : order.customerName
-        let pill = OrderStatusPillLabel()
-        pill.apply(status: detail.status); pill.font = Utils.boldFont(size: DS.TextSize.pill)
-        pill.setContentCompressionResistancePriority(.required, for: .horizontal)
-        pill.setContentHuggingPriority(.required, for: .horizontal)
+        // #482 (board CT-gon): the order list's status tag, left of the name; the name takes the rest
+        let tag = RowTagLabel(style: .status)
+        let status = OrdersHomeLogic.statusTag(detail.status)
+        tag.apply(status.text, status.colors)
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let nameRow = UIStackView(arrangedSubviews: [name, pill])
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let nameRow = UIStackView(arrangedSubviews: [tag, name])
         nameRow.axis = .horizontal
         nameRow.alignment = .center
         nameRow.spacing = DS.Spacing.sm

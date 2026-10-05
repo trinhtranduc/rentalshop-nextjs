@@ -1834,8 +1834,8 @@
 "orders.v2.count.one" = "%d order";
 "orders.v2.band.work" = "hand over %d · take back %d";
 "orders.v2.yesterday" = "Yesterday";
-"orders.v2.tag.handOver" = "Hand over";
-"orders.v2.tag.takeBack" = "Return";
+"orders.v2.tag.handOver" = "To hand over";
+"orders.v2.tag.takeBack" = "To take back";
 "orders.v2.tag.sale" = "Sale · %@";
 "orders.v2.status.all" = "All";
 "orders.v2.status.reserved" = "Booked";

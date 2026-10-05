@@ -1264,7 +1264,7 @@
 "Pickuped" = "Đang thuê";
 "Returned" = "Đã trả";
 "Completed" = "Hoàn thành";
-"Cancelled" = "Đã hủy";
+"Cancelled" = "Đã huỷ";
 
 // MARK: - Product Availability Check
 "On check day" = "Trong ngày kiểm tra";
@@ -1832,8 +1832,8 @@
 "orders.v2.count.one" = "%d đơn";
 "orders.v2.band.work" = "giao %d · trả %d";
 "orders.v2.yesterday" = "Hôm qua";
-"orders.v2.tag.handOver" = "Giao";
-"orders.v2.tag.takeBack" = "Trả";
+"orders.v2.tag.handOver" = "Cần giao";
+"orders.v2.tag.takeBack" = "Cần trả";
 "orders.v2.tag.sale" = "Bán · %@";
 "orders.v2.status.all" = "Tất cả";
 "orders.v2.status.reserved" = "Đã đặt";

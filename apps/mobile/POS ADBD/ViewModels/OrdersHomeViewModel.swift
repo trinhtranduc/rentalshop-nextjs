@@ -322,17 +322,21 @@ enum OrdersHomeLogic {
 
     /// Status tag in the board colours; a sale in search reads "Bán · Hoàn thành"
     static func statusTag(_ order: Order, inSearch: Bool = false) -> RowTag {
-        let base: RowTag
-        switch order.status {
-        case .reserved: base = RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver)
-        case .pickuped: base = RowTag(text: "orders.v2.status.renting".localized(), colors: DS.Status.returning)
-        case .returned: base = RowTag(text: "orders.v2.status.returned".localized(), colors: DS.Status.done)
-        case .completed: base = RowTag(text: "orders.v2.status.completed".localized(), colors: DS.Status.done)
-        case .cancelled: base = RowTag(text: "orders.v2.status.cancelled".localized(), colors: DS.Status.cancelled)
-        default: base = RowTag(text: order.status.localizedDisplayName(), colors: DS.Status.cancelled)
-        }
+        let base = statusTag(order.status)
         guard inSearch, order.orderType == .sale else { return base }
         return RowTag(text: String(format: "orders.v2.tag.sale".localized(), base.text), colors: base.colors)
+    }
+
+    /// Status text and colours of a status: the list row tag and the order detail header tag (#482)
+    static func statusTag(_ status: OrderStatus) -> RowTag {
+        switch status {
+        case .reserved: return RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver)
+        case .pickuped: return RowTag(text: "orders.v2.status.renting".localized(), colors: DS.Status.returning)
+        case .returned: return RowTag(text: "orders.v2.status.returned".localized(), colors: DS.Status.done)
+        case .completed: return RowTag(text: "orders.v2.status.completed".localized(), colors: DS.Status.done)
+        case .cancelled: return RowTag(text: "orders.v2.status.cancelled".localized(), colors: DS.Status.cancelled)
+        default: return RowTag(text: status.localizedDisplayName(), colors: DS.Status.cancelled)
+        }
     }
 
     /// "TRỄ HẠN · 3", "HÔM NAY · T7 03/10", "NGÀY MAI · CN 04/10", "HÔM QUA · T6 02/10", "T5 01/10"
