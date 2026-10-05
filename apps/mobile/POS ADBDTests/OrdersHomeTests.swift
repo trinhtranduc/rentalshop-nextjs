@@ -189,7 +189,8 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 600000, refundDue: 0), .due(600000))
         XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 0, refundDue: 200000), .refund(200000))
         XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 50000, refundDue: 200000), .refund(200000), "a refund wins")
-        XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 0, refundDue: 0), .paid)
+        // #458: a fully paid order shows no pay line ("đã thu đủ" is not shown)
+        XCTAssertNil(OrdersHomeLogic.payLine(amountDue: 0, refundDue: 0))
     }
 
     func testShortNumber() {
@@ -350,5 +351,61 @@ private final class FakeSource: OrdersHomeDataSource {
         } catch {
             XCTFail("fixture did not decode: \(error)")
         }
+    }
+
+    // MARK: #458 — no "đã thu đủ" line; overview drill-down lists use the Orders tab row
+
+    private func listOrder(_ id: Int, status: String, returnPlanAt: String = "2026-10-08T02:00:00.000Z",
+                           balances: String = "") throws -> Order {
+        let json = #"{"id":\#(id),"orderNumber":"ORD-19-000\#(id)","orderType":"RENT","status":"\#(status)","createdAt":"2026-10-01T03:00:00.000Z","updatedAt":"2026-10-01T03:00:00.000Z","pickupPlanAt":"2026-10-01T02:00:00.000Z","returnPlanAt":"\#(returnPlanAt)","customerName":"Huy","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":300000\#(balances)}"#
+        return try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+    }
+
+    /// Texts of the labels a user can see in the cell (the label and every parent up to the cell are shown)
+    private func visibleTexts(_ cell: UITableViewCell) -> [String] {
+        func isShown(_ view: UIView) -> Bool {
+            var current: UIView? = view
+            while let v = current, v !== cell {
+                if v.isHidden { return false }
+                current = v.superview
+            }
+            return true
+        }
+        func walk(_ view: UIView) -> [String] {
+            var texts: [String] = []
+            if let label = view as? UILabel, isShown(label), let text = label.text ?? label.attributedText?.string, !text.isEmpty {
+                texts.append(text)
+            }
+            return texts + view.subviews.flatMap(walk)
+        }
+        return walk(cell.contentView)
+    }
+
+    func testOrderRowsCarryLateDaysForOverviewLists() throws {
+        let now = iso.date(from: "2026-10-05T03:00:00Z")!
+        let late = try listOrder(1, status: "PICKUPED", returnPlanAt: "2026-10-03T02:00:00.000Z")
+        let onTime = try listOrder(2, status: "PICKUPED")
+        let rows = OrdersHomeLogic.orderRows([late, onTime], now: now, timeZone: vietnam)
+        XCTAssertEqual(rows.map(\.orderId), [1, 2], "keeps the API order")
+        guard case .order(_, let lateDays) = rows[0], case .order(_, let onTimeDays) = rows[1] else {
+            return XCTFail("overview rows are order rows")
+        }
+        XCTAssertEqual(lateDays, 2)
+        XCTAssertEqual(onTimeDays, 0)
+    }
+
+    func testRowCellShowsOnlyTheTotalWhenFullyPaid() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let due = try listOrder(1, status: "PICKUPED", balances: #","amountDue":120000,"refundDue":0"#)
+        let paid = try listOrder(2, status: "PICKUPED", balances: #","amountDue":0,"refundDue":0"#)
+        cell.configure(.order(due, lateDays: 0), context: .search, hidesMoney: false)
+        let dueTexts = visibleTexts(cell)
+        XCTAssertTrue(dueTexts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000))))
+        // Reused cell: the pay line of the previous row must not stay behind
+        cell.configure(.order(paid, lateDays: 0), context: .search, hidesMoney: false)
+        let paidTexts = visibleTexts(cell)
+        XCTAssertEqual(paidTexts.count, dueTexts.count - 1, "fully paid: the total only, no second line")
+        XCTAssertFalse(paidTexts.contains { $0.contains("✓") })
+        XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
     }
 }

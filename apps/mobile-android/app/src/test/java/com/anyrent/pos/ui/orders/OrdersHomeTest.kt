@@ -263,7 +263,25 @@ class OrdersHomeTest {
         assertEquals(PayLine.Due(600000.0), OrdersBoardLogic.payLine(600000.0, 0.0))
         assertEquals(PayLine.Refund(200000.0), OrdersBoardLogic.payLine(0.0, 200000.0))
         assertEquals("a refund wins", PayLine.Refund(200000.0), OrdersBoardLogic.payLine(50000.0, 200000.0))
-        assertEquals(PayLine.Paid, OrdersBoardLogic.payLine(0.0, 0.0))
+        // #458: a fully paid order shows no pay line
+        assertNull(OrdersBoardLogic.payLine(0.0, 0.0))
+    }
+
+    @Test
+    fun `overview drill-down lists build the orders tab rows with late days (#458)`() {
+        fun summary(id: Int, returnPlanAt: String) = OrderSummary(
+            id = id, orderNumber = "ORD-19-000$id", orderType = "RENT", status = "PICKUPED", totalAmount = 300000.0,
+            depositAmount = 0.0, customerName = "Huy", customerPhone = null, pickupPlanAt = "2026-10-01T02:00:00Z",
+            returnPlanAt = returnPlanAt, createdAt = "2026-10-01T03:00:00Z", notes = null,
+        )
+        val now = Instant.parse("2026-10-05T03:00:00Z")
+        val rows = OrdersHomeLogic.orderRows(
+            listOf(summary(1, "2026-10-03T02:00:00Z"), summary(2, "2026-10-08T02:00:00Z")),
+            now,
+            vietnam,
+        )
+        assertEquals("keeps the API order", listOf(1, 2), rows.map { it.orderId })
+        assertEquals(listOf(2, 0), rows.map { it.lateDays })
     }
 
     @Test
