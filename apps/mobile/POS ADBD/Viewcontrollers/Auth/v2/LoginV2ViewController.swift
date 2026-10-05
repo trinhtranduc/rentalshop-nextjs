@@ -2,7 +2,7 @@
 //  LoginV2ViewController.swift
 //  POS ADBD
 //
-//  #386 — board Dang-nhap (flag `newAuth`). The sign-in itself is the one of `LoginViewController`:
+//  #386 — board Dang-nhap (flag `newAuth`), style 4A in #466 (board DX-Dang-nhap). The sign-in itself is the one of `LoginViewController`:
 //  `AuthenticationService.login`, `User.save`, purchases sync, push start, then `loadMainUserView`.
 //
 
@@ -12,8 +12,8 @@ import SnapKit
 final class LoginV2ViewController: BaseViewControler {
     private let authService = AuthenticationService.shared
 
-    private let emailField = AuthV2Field(title: "Email".localized(), placeholder: "authv2.email.placeholder".localized())
-    private let passwordField = AuthV2Field(title: "Password".localized(), secure: true)
+    private let emailField = AuthV2Field(title: "Email".localized(), icon: "envelope", placeholder: "authv2.email.placeholder".localized())
+    private let passwordField = AuthV2Field(title: "Password".localized(), icon: "lock", secure: true)
     private let loginButton = AuthV2PrimaryButton(title: "Login".localized())
 
     override func viewDidLoad() {
@@ -31,10 +31,10 @@ final class LoginV2ViewController: BaseViewControler {
     }
 
     override func setupUI() {
-        let footer = makeFooter()
-        let content = authV2Page(header: nil, footer: footer, contentInsetTop: 240, blobs: .login)
+        let content = authV2Page(header: nil, footer: nil, contentInsetTop: 96)
 
-        let title = authV2TitleBlock(title: "authv2.login.title".localized(), subtitle: "authv2.login.subtitle".localized())
+        let brand = AuthV2Style.makeBrandHeader()
+        let title = authV2TitleBlock(title: "authv2.login.title".localized(), subtitle: "authv2.login.subtitle".localized(), centered: true)
 
         emailField.textField.keyboardType = .emailAddress
         emailField.textField.autocapitalizationType = .none
@@ -53,31 +53,16 @@ final class LoginV2ViewController: BaseViewControler {
 
         loginButton.addTarget(self, action: #selector(loginTapped), for: .touchUpInside)
 
-        [title, emailField, passwordField, forgotRow, loginButton].forEach(content.addArrangedSubview)
-        content.setCustomSpacing(16, after: title)
-        content.setCustomSpacing(4, after: passwordField)
-        content.setCustomSpacing(4, after: forgotRow)
-    }
+        let (registerRow, registerButton) = authV2SecondaryRow(question: "authv2.noStore".localized(), link: "authv2.createStore".localized())
+        registerButton.addTarget(self, action: #selector(registerTapped), for: .touchUpInside)
 
-    private func makeFooter() -> UIView {
-        let label = UILabel()
-        label.text = "authv2.noStore".localized()
-        label.font = Utils.regularFont(size: DS.TextSize.body)
-        label.textColor = AuthV2Style.textMuted
-        let button = authV2LinkButton("authv2.createStore".localized())
-        button.addTarget(self, action: #selector(registerTapped), for: .touchUpInside)
-        let row = UIStackView(arrangedSubviews: [label, button])
-        row.axis = .horizontal
-        row.spacing = 6
-        row.alignment = .center
-        let wrapper = UIView()
-        wrapper.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.centerX.equalToSuperview()
-            make.leading.greaterThanOrEqualToSuperview()
-        }
-        return wrapper
+        [brand, title, emailField, passwordField, forgotRow, loginButton, registerRow].forEach(content.addArrangedSubview)
+        content.setCustomSpacing(48, after: brand)
+        content.setCustomSpacing(20, after: title)
+        content.setCustomSpacing(14, after: emailField)
+        content.setCustomSpacing(0, after: passwordField)
+        content.setCustomSpacing(4, after: forgotRow)
+        content.setCustomSpacing(8, after: loginButton)
     }
 
     // MARK: - Actions
@@ -105,10 +90,10 @@ final class LoginV2ViewController: BaseViewControler {
 
     /// Same success path as `LoginViewController.performLogin`
     private func performLogin(email: String, password: String) {
-        showProgressText(text: "Loading...".localized())
+        authV2SetLoading(true, button: loginButton)
         authService.login(emailUser: email, passwordUser: password) { [weak self] user, error in
             guard let self else { return }
-            self.hideProgress()
+            self.authV2SetLoading(false, button: self.loginButton)
 
             if let error = error {
                 switch AuthErrorPlacement.login(status: error.code) {

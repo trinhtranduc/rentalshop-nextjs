@@ -1866,6 +1866,8 @@
 "authv2.password.hide" = "Hide password";
 "authv2.noStore" = "No shop yet?";
 "authv2.createStore" = "Create a new shop";
+"authv2.haveStore" = "Already have a shop?";
+"authv2.rememberPassword" = "Remembered your password?";
 "authv2.step" = "Step %d/%d";
 "authv2.store.title" = "Your shop";
 "authv2.store.subtitle" = "Printed on receipts. You can change it later.";

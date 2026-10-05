@@ -1864,6 +1864,8 @@
 "authv2.password.hide" = "Ẩn mật khẩu";
 "authv2.noStore" = "Chưa có cửa hàng?";
 "authv2.createStore" = "Tạo cửa hàng mới";
+"authv2.haveStore" = "Đã có cửa hàng?";
+"authv2.rememberPassword" = "Nhớ ra mật khẩu?";
 "authv2.step" = "Bước %d/%d";
 "authv2.store.title" = "Cửa hàng của bạn";
 "authv2.store.subtitle" = "Thông tin này in trên hóa đơn, sửa được sau.";
