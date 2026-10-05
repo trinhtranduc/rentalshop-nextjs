@@ -61,7 +61,8 @@ fun Context.uriToProductJpegFile(uri: Uri): File {
 }
 
 /**
- * Notes path: JPEG @ quality 0.8 like iOS; shrink further if over API 200KB.
+ * Notes path: JPEG, then shrink to 180KB when the file is over the API 200KB cap.
+ * iOS compresses note photos to 180KB before upload; the server compresses again.
  */
 fun fileToNotesJpegBytes(file: File): ByteArray {
     val bitmap = decodeBitmapFile(file, maxSide = PRODUCT_MAX_SIDE)

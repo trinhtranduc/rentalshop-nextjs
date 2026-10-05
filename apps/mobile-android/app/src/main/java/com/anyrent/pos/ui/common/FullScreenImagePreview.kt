@@ -26,7 +26,7 @@ import coil.compose.AsyncImage
 import com.anyrent.pos.R
 
 /** Max photos allowed on an order note (iOS `maxAttachmentCount` parity). */
-const val MAX_NOTE_IMAGES = 3
+const val MAX_NOTE_IMAGES = 5
 
 /**
  * Full-screen note/product image viewer.
