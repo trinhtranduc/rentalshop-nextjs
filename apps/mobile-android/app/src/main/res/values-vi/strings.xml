@@ -971,6 +971,9 @@
     <string name="extend_rental_confirm">Gia hạn đến %1$s</string>
     <string name="extend_rental_unavailable">Không đủ hàng trong những ngày thêm: %1$s</string>
     <string name="extend_rental_done">Đã gia hạn đến %1$s</string>
+    <string name="detail_hand_over_papers">Giấy tờ để lại</string>
+    <string name="detail_hand_over_papers_hint">VD: CCCD, GPLX</string>
+    <string name="detail_hand_over_deposit">Cọc thế chân</string>
     <string name="extend_rental_extra_rent">Tiền thuê thêm</string>
     <string name="extend_rental_new_total">Tổng mới: %1$s</string>
 </resources>

@@ -979,6 +979,9 @@
     <string name="extend_rental_confirm">Extend to %1$s</string>
     <string name="extend_rental_unavailable">Not enough stock on the added days: %1$s</string>
     <string name="extend_rental_done">Extended to %1$s</string>
+    <string name="detail_hand_over_papers">Papers left</string>
+    <string name="detail_hand_over_papers_hint">e.g. ID card, driver\'s license</string>
+    <string name="detail_hand_over_deposit">Security deposit</string>
     <string name="extend_rental_extra_rent">Extra rent</string>
     <string name="extend_rental_new_total">New total: %1$s</string>
 </resources>

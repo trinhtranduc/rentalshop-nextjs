@@ -1917,5 +1917,10 @@
 "order.extend.confirm" = "Gia hạn đến %@";
 "order.extend.unavailable" = "Không đủ hàng trong những ngày thêm: %@";
 "order.extend.done" = "Đã gia hạn đến %@";
+
+/* #427 hand-over: optional papers and security deposit */
+"order.handOver.papers" = "Giấy tờ để lại";
+"order.handOver.papersHint" = "VD: CCCD, GPLX";
+"order.handOver.deposit" = "Cọc thế chân";
 "order.extend.extraRent" = "Tiền thuê thêm";
 "order.extend.newTotal" = "Tổng mới: %@";

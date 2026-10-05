@@ -16,8 +16,10 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         case takeReturn
     }
 
-    /// lateFee, damageFee (return only; the order's values for hand-over)
+    /// lateFee, damageFee (return sheet)
     var onConfirm: ((Double, Double) -> Void)?
+    /// papers, security deposit (hand-over sheet); both may be empty (#427)
+    var onHandOver: ((String, Double) -> Void)?
 
     private let mode: Mode
     private let detail: OrderDetail
@@ -25,6 +27,8 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
     private let lateDays: Int
     private let lateFeeField = UITextField()
     private let damageFeeField = UITextField()
+    private let papersField = UITextField()
+    private let securityDepositField = UITextField()
     private let moneyStack = UIStackView()
     private let confirmButton = UIButton(type: .system)
 
@@ -64,6 +68,24 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             content.addArrangedSubview(itemRow(item))
         }
 
+        if mode == .handOver {
+            // Optional papers and security deposit, prefilled from the order (#427)
+            let papers = feeField(papersField, title: "order.handOver.papers".localized(), value: 0)
+            papersField.keyboardType = .default
+            papersField.autocapitalizationType = .allCharacters
+            papersField.returnKeyType = .done
+            papersField.text = detail.collateralDetails
+            papersField.placeholder = "order.handOver.papersHint".localized()
+            papersField.removeTarget(self, action: #selector(feeChanged(_:)), for: .editingChanged)
+            papersField.accessibilityIdentifier = "handOver.papers"
+            securityDepositField.accessibilityIdentifier = "handOver.securityDeposit"
+            let deposit = feeField(securityDepositField, title: "order.handOver.deposit".localized(), value: detail.securityDeposit)
+            content.addArrangedSubview(papers)
+            content.setCustomSpacing(DS.Spacing.md, after: content.arrangedSubviews[content.arrangedSubviews.count - 2])
+            content.addArrangedSubview(deposit)
+            content.setCustomSpacing(DS.Spacing.md, after: papers)
+        }
+
         if mode == .takeReturn {
             let fees = UIStackView(arrangedSubviews: [
                 feeField(lateFeeField, title: lateDays > 0 ? String(format: "Late fee (%d days)".localized(), lateDays) : "Late fee".localized(), value: detail.lateFee),
@@ -87,15 +109,6 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         moneyStack.snp.makeConstraints { make in make.edges.equalToSuperview() }
         content.addArrangedSubview(moneyBox)
         content.setCustomSpacing(DS.Spacing.md, after: content.arrangedSubviews[content.arrangedSubviews.count - 2])
-
-        if mode == .handOver, let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
-            let papersLabel = UILabel()
-            papersLabel.numberOfLines = 0
-            papersLabel.font = Utils.regularFont(size: 14)
-            papersLabel.textColor = DS.Status.waiting.text
-            papersLabel.text = String(format: "Keep collateral: %@".localized(), papers)
-            content.addArrangedSubview(papersLabel)
-        }
 
         let cancelButton = UIButton(type: .system)
         cancelButton.setTitle("Cancel".localized(), for: .normal)
@@ -149,6 +162,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     private var enteredLateFee: Double { Self.amount(from: lateFeeField.text) }
     private var enteredDamageFee: Double { Self.amount(from: damageFeeField.text) }
+    private var enteredSecurityDeposit: Double { Self.amount(from: securityDepositField.text) }
 
     static func amount(from text: String?) -> Double {
         Double((text ?? "").filter { $0.isNumber }) ?? 0
@@ -159,7 +173,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         switch mode {
         case .handOver:
             let money = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
-                                                  securityDeposit: detail.securityDeposit, payments: payments)
+                                                  securityDeposit: enteredSecurityDeposit, payments: payments)
             moneyStack.addArrangedSubview(row("Order total".localized(), MoneyFormatter.format(money.total)))
             if money.deposit > 0 {
                 moneyStack.addArrangedSubview(row("Deposit paid at booking".localized(), MoneyFormatter.format(-money.deposit)))
@@ -322,10 +336,23 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         dismiss(animated: true)
     }
 
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+
     @objc private func confirmTapped() {
         view.endEditing(true)
-        let late = mode == .takeReturn ? enteredLateFee : detail.lateFee
-        let damage = mode == .takeReturn ? enteredDamageFee : detail.damageFee
+        if mode == .handOver {
+            let papers = papersField.text ?? ""
+            let deposit = enteredSecurityDeposit
+            dismiss(animated: true) { [onHandOver] in
+                onHandOver?(papers, deposit)
+            }
+            return
+        }
+        let late = enteredLateFee
+        let damage = enteredDamageFee
         dismiss(animated: true) { [onConfirm] in
             onConfirm?(late, damage)
         }

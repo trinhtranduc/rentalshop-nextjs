@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.orders
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.ui.orders.v2.OrderDetailSource
 import com.anyrent.pos.ui.orders.v2.OrderDetailV2ViewModel
 import kotlinx.coroutines.Dispatchers
@@ -104,6 +105,8 @@ class OrderDetailV2ViewModelTest {
         }
 
         override suspend fun changeStatus(id: Int, status: String) = statusResult
+
+        override suspend fun handOver(id: Int, fields: HandOverFields) = statusResult
 
         override suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double) = Result.success(Unit)
 
