@@ -80,6 +80,7 @@ import com.anyrent.pos.ui.customers.v2.CustomerPickerSheet
 import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
+import com.anyrent.pos.ui.common.copyUriToCacheFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -131,6 +132,25 @@ fun CartV2Screen(
     var numericEditor by remember { mutableStateOf<String?>(null) }
     var numericText by remember { mutableStateOf("0") }
     var noteDraft by remember { mutableStateOf<String?>(null) }
+    // #480: photos of the note being edited; the cart keeps the saved set (CartStore.noteImageFiles)
+    var noteDraftFiles by remember { mutableStateOf<List<java.io.File>>(emptyList()) }
+    var notePicking by remember { mutableStateOf(false) }
+    var notePreview by remember { mutableStateOf<Any?>(null) }
+    val noteContext = LocalContext.current
+    val noteScope = androidx.compose.runtime.rememberCoroutineScope()
+    val notePicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents(),
+    ) { uris ->
+        notePicking = false
+        val slots = com.anyrent.pos.domain.notifications.NoteEditorLogic.remaining(noteDraftFiles.size)
+        if (uris.isEmpty() || slots <= 0) return@rememberLauncherForActivityResult
+        noteScope.launch {
+            val copied = withContext(Dispatchers.IO) {
+                uris.take(slots).mapNotNull { runCatching { noteContext.copyUriToCacheFile(it) }.getOrNull() }
+            }
+            noteDraftFiles = noteDraftFiles + copied
+        }
+    }
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     // iOS `Cart.validate()` copy, all problems in one alert (#448)
@@ -205,7 +225,11 @@ fun CartV2Screen(
                     return@launch
                 }
             }
-            val result = withContext(Dispatchers.IO) { CartOrderSubmit.create(submission.idempotencyKey) }
+            // #480: the cart note photos go with the create, ~180KB JPEG each (none = the same request as before)
+            val result = withContext(Dispatchers.IO) {
+                runCatching { CartStore.noteImageFiles.value.map { com.anyrent.pos.ui.common.fileToNotesJpegBytes(it) } }
+                    .fold({ photos -> CartOrderSubmit.create(submission.idempotencyKey, photos) }, { Result.failure(it) })
+            }
             submitting = false
             result.onSuccess { order ->
                 submission.succeeded()
@@ -324,7 +348,7 @@ fun CartV2Screen(
             V2ValueRow(
                 stringResource(R.string.v2_cart_note),
                 notes.ifBlank { stringResource(R.string.v2_cart_add_note) },
-                onClick = { noteDraft = notes },
+                onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
                 valueColor = if (notes.isBlank()) DS.Colors.Primary else DS.Colors.TextMuted,
             )
             Spacer(Modifier.height(24.dp))
@@ -439,12 +463,34 @@ fun CartV2Screen(
         }
     }
     noteDraft?.let { draft ->
-        // #477: note editor of board GC-ghi-chu, text only (the cart keeps no photos)
+        // #477: note editor of board GC-ghi-chu. #480: with photos, kept by the cart and sent on create; editing an
+        // existing order stays text only (its photos live on the order detail)
+        val saved = CartStore.noteImageFiles.value
         com.anyrent.pos.ui.orders.v2.NoteEditorV2(
-            orderNumber = null, text = draft, onTextChange = { noteDraft = it }, busy = false, error = null, showPhotos = false,
-            onDismiss = { noteDraft = null }, onSave = { CartStore.setNotes(draft.trim()); noteDraft = null },
+            orderNumber = null, text = draft, onTextChange = { noteDraft = it }, busy = false, error = null,
+            showPhotos = editingOrderId == null,
+            files = noteDraftFiles,
+            onRemoveFile = { file -> noteDraftFiles = noteDraftFiles - file },
+            onAdd = { notePicking = true; notePicker.launch("image/*") },
+            onPreview = { notePreview = it },
+            onDismiss = {
+                if (!notePicking) {
+                    // Close without saving: drop the photos picked in this round only
+                    (noteDraftFiles - saved.toSet()).forEach { runCatching { it.delete() } }
+                    noteDraft = null
+                }
+            },
+            onSave = {
+                CartStore.setNotes(draft.trim())
+                if (editingOrderId == null) {
+                    (saved - noteDraftFiles.toSet()).forEach { runCatching { it.delete() } }
+                    CartStore.setNoteImageFiles(noteDraftFiles)
+                }
+                noteDraft = null
+            },
         )
     }
+    notePreview?.let { com.anyrent.pos.ui.common.FullScreenImagePreview(model = it, onDismiss = { notePreview = null }) }
     removeLine?.let { line ->
         AppAlertConfirm(
             title = stringResource(R.string.v2_cart_remove_title),

@@ -20,8 +20,8 @@ object CartOrderSubmit {
             returnDate = CartStore.returnDate.value,
         )
 
-    /** Blocking network call; run it off the main thread */
-    fun create(idempotencyKey: String): Result<OrderSummary> {
+    /** Blocking network call; run it off the main thread. #480: [noteImages] = the cart note photos as JPEG bytes. */
+    fun create(idempotencyKey: String, noteImages: List<ByteArray> = emptyList()): Result<OrderSummary> {
         val lines = CartStore.lines.value
         val orderType = CartStore.orderType.value
         val notes = CartStore.notes.value
@@ -48,6 +48,7 @@ object CartOrderSubmit {
             pricingTypesByProduct = lines.associate { it.product.id to it.pricingType },
             rentalDaysByProduct = lines.associate { it.product.id to it.rentalDays },
             idempotencyKey = idempotencyKey,
+            noteImages = noteImages,
         )
     }
 }

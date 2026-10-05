@@ -839,7 +839,7 @@ final class OrderDetailViewController: BaseViewControler {
             return
         }
         // Same ~180KB note photos as the old detail (#435); the API compresses again as a backstop (#477)
-        let data = added.compactMap { $0.compressToTargetSize(targetSizeKB: 180, maxDimension: 1920) ?? UIImageJPEGRepresentation($0, 0.6) }
+        let data = added.compactMap(NoteEditorLogic.compressedJPEG)
         showProgressText(text: "Updating...".localized())
         viewModel.updateNotes(text, keptNoteImageURLs: plan.keptURLs, newNoteImageData: data.isEmpty ? nil : data) { [weak self] result in
             DispatchQueue.main.async {

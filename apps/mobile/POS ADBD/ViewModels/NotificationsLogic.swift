@@ -147,6 +147,11 @@ enum NoteEditorLogic {
         String(format: "%d/%d photos".localized(), count, max)
     }
 
+    /// ~180KB JPEG of a note photo, as the old create/detail screens send (#435); the API compresses again
+    static func compressedJPEG(_ image: UIImage) -> Data? {
+        image.compressToTargetSize(targetSizeKB: 180, maxDimension: 1920) ?? UIImageJPEGRepresentation(image, 0.6)
+    }
+
     /// " #0057" after "Ghi chú"; nil without an order number (cart)
     static func titleSuffix(orderNumber: String?) -> String? {
         guard let orderNumber, !orderNumber.isEmpty else { return nil }

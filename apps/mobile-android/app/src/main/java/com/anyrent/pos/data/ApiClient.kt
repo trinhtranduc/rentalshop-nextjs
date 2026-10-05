@@ -400,6 +400,8 @@ class ApiClient(
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
         /** #341: one value per checkout, reused on retry, so the API never creates the order twice. */
         idempotencyKey: String? = null,
+        /** #480: cart note photos (JPEG ~180KB); empty = the same JSON request as before */
+        noteImages: List<ByteArray> = emptyList(),
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
@@ -445,8 +447,12 @@ class ApiClient(
                 }
             }
             .toString()
-            .toRequestBody(jsonMedia)
+            .let { createOrderBody(it, noteImages) }
         val request = post("/api/orders", body).let { base ->
+            // Multipart (note photos) carries its own boundary in the content type
+            if (body is MultipartBody) base.newBuilder().header("Content-Type", body.contentType().toString()).build()
+            else base
+        }.let { base ->
             if (idempotencyKey.isNullOrBlank()) base
             else base.newBuilder().header("Idempotency-Key", idempotencyKey).build()
         }
@@ -1548,6 +1554,22 @@ class ApiClient(
         }
 
     companion object {
+        private val createJsonMedia = "application/json; charset=utf-8".toMediaType()
+        private val createImageMedia = "image/jpeg".toMediaType()
+
+        /**
+         * Body of `POST /api/orders` (#480): the JSON alone without note photos; with photos the multipart form the
+         * iOS create sends — field `data` (the same JSON) plus one `notesImages` file part per photo.
+         */
+        fun createOrderBody(json: String, noteImages: List<ByteArray>): okhttp3.RequestBody {
+            if (noteImages.isEmpty()) return json.toRequestBody(createJsonMedia)
+            val multipart = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("data", json)
+            noteImages.forEachIndexed { index, bytes ->
+                multipart.addFormDataPart("notesImages", "notes_image_$index.jpg", bytes.toRequestBody(createImageMedia))
+            }
+            return multipart.build()
+        }
+
         private const val CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
 
         private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()

@@ -594,7 +594,8 @@ final class CartV2ViewController: BaseViewControler {
     private func submitOrder(confirm: CreateOrderConfirm, sheet: CreateOrderConfirmSheet?) {
         guard submission.begin() else { return }
         sheet?.setBusy(true)
-        OrderService.shared.createOrder(from: cart, idempotencyKey: submission.idempotencyKey) { [weak self] order, error in
+        // #480: the cart note photos go with the create (no photos = the same request as before)
+        OrderService.shared.createOrder(from: cart, notesImages: CartStore.shared.noteImageData, idempotencyKey: submission.idempotencyKey) { [weak self] order, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 if let error {
