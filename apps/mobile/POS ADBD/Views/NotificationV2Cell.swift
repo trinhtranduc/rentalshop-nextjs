@@ -2,8 +2,9 @@
 //  NotificationV2Cell.swift
 //  POS ADBD
 //
-//  Inbox row of the new UI (#477, board TB-thong-bao): 40pt type tile, 16pt title, 15pt body (2 lines),
+//  Inbox row of the new UI (#477, board TB-thong-bao): 40pt type tile, 16pt title, 15pt body,
 //  14pt time, 9pt unread dot and a very light blue row while unread.
+//  #482: title and body wrap in full (no line limit, no ellipsis); a long unbroken word wraps too.
 //
 
 import UIKit
@@ -14,9 +15,9 @@ final class NotificationV2Cell: UITableViewCell {
 
     private let tile = UIView()
     private let iconView = UIImageView()
-    private let titleLabel = V2.label(size: 16, weight: .bold)
+    private let titleLabel = V2.label(size: 16, weight: .bold, lines: 0)
     private let timeLabel = V2.label(size: DS.TextSize.secondary, color: UIColor(hexString: "64748B"))
-    private let bodyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 2)
+    private let bodyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     private let dot = UIView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -28,7 +29,9 @@ final class NotificationV2Cell: UITableViewCell {
         tile.addSubview(iconView)
         iconView.snp.makeConstraints { make in make.center.equalToSuperview() }
 
-        titleLabel.lineBreakMode = .byTruncatingTail
+        // Word wrap breaks a word longer than the line at a character, so nothing is cut (#482)
+        titleLabel.lineBreakMode = .byWordWrapping
+        bodyLabel.lineBreakMode = .byWordWrapping
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         timeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         timeLabel.setContentHuggingPriority(.required, for: .horizontal)
