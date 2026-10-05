@@ -318,41 +318,6 @@ final class OrdersHomeTests: XCTestCase {
         DispatchQueue.main.async { done.fulfill() }
         wait(for: [done], timeout: 1)
     }
-}
-
-private final class FakeSource: OrdersHomeDataSource {
-    struct Call {
-        let query: OrdersQuery
-        let completion: (OrdersData?, NSError?) -> Void
-        var keyword: String? { query.keyword }
-        var orderType: OrderType? { query.orderType }
-        var page: Int { query.page }
-    }
-
-    var todayCompletion: ((TodayWork?, NSError?) -> Void)?
-    var orderCalls: [Call] = []
-
-    func loadTodayWork(completion: @escaping (TodayWork?, NSError?) -> Void) {
-        todayCompletion = completion
-    }
-
-    func loadOrders(_ query: OrdersQuery, completion: @escaping (OrdersData?, NSError?) -> Void) {
-        orderCalls.append(Call(query: query, completion: completion))
-    }
-
-    func completeOrders(at index: Int, ids: [Int]) {
-        let orders = ids.map { id in
-            #"{"id":\#(id),"orderNumber":"ORD-1-\#(id)","orderType":"RENT","status":"RESERVED","createdAt":"2026-10-03T02:00:00.000Z","updatedAt":"2026-10-03T02:00:00.000Z","customerName":"Lan","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B"}"#
-        }.joined(separator: ",")
-        let json = #"{"orders":[\#(orders)],"total":\#(ids.count),"page":1,"limit":20,"offset":0,"hasMore":false,"totalPages":1}"#
-        do {
-            let data = try JSONDecoder.shared.decode(OrdersData.self, from: Data(json.utf8))
-            orderCalls[index].completion(data, nil)
-        } catch {
-            XCTFail("fixture did not decode: \(error)")
-        }
-    }
-
     // MARK: #458 — no "đã thu đủ" line; overview drill-down lists use the Orders tab row
 
     private func listOrder(_ id: Int, status: String, returnPlanAt: String = "2026-10-08T02:00:00.000Z",
@@ -407,5 +372,39 @@ private final class FakeSource: OrdersHomeDataSource {
         XCTAssertEqual(paidTexts.count, dueTexts.count - 1, "fully paid: the total only, no second line")
         XCTAssertFalse(paidTexts.contains { $0.contains("✓") })
         XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
+    }
+}
+
+private final class FakeSource: OrdersHomeDataSource {
+    struct Call {
+        let query: OrdersQuery
+        let completion: (OrdersData?, NSError?) -> Void
+        var keyword: String? { query.keyword }
+        var orderType: OrderType? { query.orderType }
+        var page: Int { query.page }
+    }
+
+    var todayCompletion: ((TodayWork?, NSError?) -> Void)?
+    var orderCalls: [Call] = []
+
+    func loadTodayWork(completion: @escaping (TodayWork?, NSError?) -> Void) {
+        todayCompletion = completion
+    }
+
+    func loadOrders(_ query: OrdersQuery, completion: @escaping (OrdersData?, NSError?) -> Void) {
+        orderCalls.append(Call(query: query, completion: completion))
+    }
+
+    func completeOrders(at index: Int, ids: [Int]) {
+        let orders = ids.map { id in
+            #"{"id":\#(id),"orderNumber":"ORD-1-\#(id)","orderType":"RENT","status":"RESERVED","createdAt":"2026-10-03T02:00:00.000Z","updatedAt":"2026-10-03T02:00:00.000Z","customerName":"Lan","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B"}"#
+        }.joined(separator: ",")
+        let json = #"{"orders":[\#(orders)],"total":\#(ids.count),"page":1,"limit":20,"offset":0,"hasMore":false,"totalPages":1}"#
+        do {
+            let data = try JSONDecoder.shared.decode(OrdersData.self, from: Data(json.utf8))
+            orderCalls[index].completion(data, nil)
+        } catch {
+            XCTFail("fixture did not decode: \(error)")
+        }
     }
 }
