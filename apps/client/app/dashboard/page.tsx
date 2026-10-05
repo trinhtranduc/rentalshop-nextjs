@@ -1603,7 +1603,9 @@ export default function DashboardPage() {
                           </div>
                           <div className="shrink-0 text-right">
                             <p className="text-sm font-medium text-gray-900">{formatMoney(product.totalRevenue || 0)}</p>
-                            <p className="text-xs text-gray-500">{t('operations.cash.orders', { count: product.rentalCount || 0 })}</p>
+                            <p className="text-xs text-gray-500">
+                              {product.rentalCount || 0} {t('charts.rentals')} · {product.saleCount || 0} {t('charts.sales')}
+                            </p>
                           </div>
                         </li>
                       ))}

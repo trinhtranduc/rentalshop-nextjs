@@ -8,9 +8,21 @@ import type {
 } from '@rentalshop/types';
 import { applyOrderDateRange } from './order-date-range';
 import { findNearestTaskPageIds } from './order-nearest-task';
+import { createOrderOnce, type OrderCreateGuard } from './order-create-guard';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
+
+/** Planned dates can be NULL; PostgreSQL would list those first on DESC (#428). */
+const NULLABLE_ORDER_SORT_KEYS = new Set(['pickupPlanAt', 'returnPlanAt']);
+
+/** Order-list orderBy: nullable planned dates sort with NULLs last in both directions (#428). */
+export function orderListOrderBy(sortBy: string, sortOrder: 'asc' | 'desc'): Prisma.OrderOrderByWithRelationInput {
+  if (NULLABLE_ORDER_SORT_KEYS.has(sortBy)) {
+    return { [sortBy]: { sort: sortOrder, nulls: 'last' } } as Prisma.OrderOrderByWithRelationInput;
+  }
+  return { [sortBy]: sortOrder } as Prisma.OrderOrderByWithRelationInput;
+}
 
 /**
  * Build search conditions for orders with contains matching across:
@@ -946,6 +958,34 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
   };
 }
 
+/** Relations returned by order create (POST /api/orders flattens these). */
+const ORDER_CREATE_INCLUDE = {
+  customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+  outlet: { select: { id: true, name: true } },
+  createdBy: { select: { id: true, firstName: true, lastName: true } },
+  orderItems: {
+    select: {
+      id: true,
+      quantity: true,
+      unitPrice: true,
+      totalPrice: true,
+      deposit: true,
+      productId: true,
+      notes: true,
+      rentalDays: true,
+      pricingType: true,
+      pricingOptionId: true,
+      productName: true,
+      productBarcode: true,
+      productImages: true,
+      product: { select: { id: true, name: true, barcode: true, images: true } }
+    }
+  },
+  payments: true
+} as const;
+
+type CreatedOrder = Prisma.OrderGetPayload<{ include: typeof ORDER_CREATE_INCLUDE }>;
+
 export const simplifiedOrders = {
   /**
    * Find order by ID (simplified API) - OPTIMIZED for performance
@@ -1026,33 +1066,15 @@ export const simplifiedOrders = {
    * Create new order (simplified API)
    */
   create: async (data: any) => {
-    return await prisma.order.create({
-      data,
-      include: {
-        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
-        outlet: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-        orderItems: {
-          select: {
-            id: true,
-            quantity: true,
-            unitPrice: true,
-            totalPrice: true,
-            deposit: true,
-            productId: true,
-            notes: true,
-            rentalDays: true,
-            pricingType: true,
-            pricingOptionId: true,
-            productName: true,
-            productBarcode: true,
-            productImages: true,
-            product: { select: { id: true, name: true, barcode: true, images: true } }
-          }
-        },
-        payments: true
-      }
-    });
+    return await prisma.order.create({ data, include: ORDER_CREATE_INCLUDE });
+  },
+
+  /**
+   * Create an order unless this create already made one (#341): a second in-flight or retried
+   * POST /api/orders returns the existing order with `replay: true`. See order-create-guard.ts.
+   */
+  createOnce: async (guard: OrderCreateGuard, data: any): Promise<{ order: CreatedOrder; replay: boolean }> => {
+    return await createOrderOnce(guard, data, ORDER_CREATE_INCLUDE);
   },
 
   /**
@@ -1871,7 +1893,7 @@ export const simplifiedOrders = {
         prisma.order.findMany({
           where,
           select: listSelect,
-          orderBy: { [sortBy]: sortOrder },
+          orderBy: orderListOrderBy(sortBy, sortOrder),
           skip: (page - 1) * limit,
           take: limit
         }),

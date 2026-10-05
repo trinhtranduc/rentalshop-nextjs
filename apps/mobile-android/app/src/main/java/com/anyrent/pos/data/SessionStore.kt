@@ -8,11 +8,13 @@ import java.util.UUID
 
 /**
  * Persists auth session + stable device id for FCM register/unregister.
- * Why SharedPreferences: tiny session for MVP; EncryptedSharedPreferences can replace later.
+ * Why SharedPreferences: tiny session for MVP. The refresh token is encrypted with a
+ * Keystore key ([TokenCipher]); the access token is short-lived (1 hour).
  */
 object SessionStore {
     private const val PREFS = "anyrent.session"
     private const val KEY_TOKEN = "accessToken"
+    private const val KEY_REFRESH_TOKEN = "refreshTokenEnc"
     private const val KEY_USER_NAME = "userName"
     private const val KEY_EMAIL = "email"
     /** Survives logout — same as iOS `LastLoginEmail`. */
@@ -33,7 +35,8 @@ object SessionStore {
     private const val KEY_APP_CONFIG = "appConfig"
 
     private lateinit var prefs: SharedPreferences
-    private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
+    private val _sessionExpired = MutableSharedFlow<String?>(extraBufferCapacity = 1)
     val sessionExpired = _sessionExpired.asSharedFlow()
 
     /** Last good app config (#370) as JSON; kept across logouts so a forced update survives them */
@@ -49,6 +52,16 @@ object SessionStore {
         get() = prefs.getString(KEY_TOKEN, null)
         set(value) {
             prefs.edit().putString(KEY_TOKEN, value).apply()
+        }
+
+    /** Rotated on every refresh (#344). Stored encrypted; null when absent or unreadable. */
+    var refreshToken: String?
+        get() = prefs.getString(KEY_REFRESH_TOKEN, null)?.let { TokenCipher.decrypt(it) }
+        set(value) {
+            prefs.edit().apply {
+                if (value.isNullOrBlank()) remove(KEY_REFRESH_TOKEN)
+                else putString(KEY_REFRESH_TOKEN, TokenCipher.encrypt(value))
+            }.apply()
         }
 
     var userName: String?
@@ -166,6 +179,7 @@ object SessionStore {
         val rememberedEmail = email?.takeIf { it.isNotBlank() } ?: lastLoginEmail
         prefs.edit()
             .remove(KEY_TOKEN)
+            .remove(KEY_REFRESH_TOKEN)
             .remove(KEY_USER_NAME)
             .remove(KEY_EMAIL)
             .remove(KEY_ROLE)
@@ -187,8 +201,9 @@ object SessionStore {
         CartStore.clear(persistToDisk = false)
     }
 
-    fun expireAuth() {
+    /** [code] is the server's 401 code, e.g. SESSION_REPLACED when another device signed in. */
+    fun expireAuth(code: String? = null) {
         clearAuth()
-        _sessionExpired.tryEmit(Unit)
+        _sessionExpired.tryEmit(code)
     }
 }

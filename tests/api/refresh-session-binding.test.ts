@@ -14,6 +14,7 @@ jest.mock('@rentalshop/database', () => ({ db: mockDb }));
 
 const mockAuth = {
   generateToken: jest.fn((payload: any) => `jwt:${payload.sessionId}`),
+  generateRefreshableToken: jest.fn((payload: any) => `short:${payload.sessionId}`),
   verifyTokenSimple: jest.fn(),
 };
 
@@ -31,13 +32,13 @@ describe('refresh binds to the refresh token session (#343)', () => {
     mockDb.refreshTokens.findSessionId.mockResolvedValue(null);
   });
 
-  it('issues a token for the session linked to the refresh token', async () => {
+  it('issues a 1-hour token for the session linked to the refresh token (#344)', async () => {
     mockDb.refreshTokens.rotate.mockResolvedValue({ newToken: 'rt2', userId: 1, sessionId: 'session-a' });
     mockDb.sessions.getSessionStatus.mockResolvedValue('active');
 
     const result: any = await refreshWithRefreshToken({ refreshToken: 'rt1' });
 
-    expect(result).toEqual(expect.objectContaining({ ok: true, token: 'jwt:session-a', refreshToken: 'rt2' }));
+    expect(result).toEqual(expect.objectContaining({ ok: true, token: 'short:session-a', refreshToken: 'rt2' }));
     expect(mockDb.sessions.getSessionStatus).toHaveBeenCalledWith('session-a');
   });
 
@@ -48,7 +49,7 @@ describe('refresh binds to the refresh token session (#343)', () => {
     const result: any = await refreshWithRefreshToken({ refreshToken: 'rt1' });
 
     expect(result).toEqual({ ok: false, code: 'SESSION_REPLACED', status: 401 });
-    expect(mockAuth.generateToken).not.toHaveBeenCalled();
+    expect(mockAuth.generateRefreshableToken).not.toHaveBeenCalled();
     expect(mockDb.refreshTokens.revoke).toHaveBeenCalledWith('rt2');
   });
 
