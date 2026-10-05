@@ -121,6 +121,8 @@ final class ProductDetailViewController: BaseViewControler {
             make.height.equalToSuperview()
         }
         photos.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        // #472: a tap on the photo opens it full screen
+        photos.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openPhotoViewer)))
         let back = roundButton(symbol: "chevron.left", title: nil, label: "Back".localized(), action: #selector(goBack))
         photoBox.addSubview(back)
         back.snp.makeConstraints { make in
@@ -278,7 +280,7 @@ final class ProductDetailViewController: BaseViewControler {
         renderStrip()
 
         photoStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let urls = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 }).filter { !$0.isEmpty }
+        let urls = ProductImages.viewerUrls(product)
         if urls.isEmpty {
             let empty = UIImageView(image: UIImage(systemName: "tshirt", withConfiguration: UIImage.SymbolConfiguration(pointSize: 56, weight: .light)))
             empty.tintColor = DS.Color.textMuted
@@ -292,6 +294,8 @@ final class ProductDetailViewController: BaseViewControler {
             image.clipsToBounds = true
             image.isAccessibilityElement = true
             image.accessibilityLabel = product.name
+            image.accessibilityHint = "products.image.view.hint".localized()
+            image.accessibilityTraits = UIAccessibilityTraitImage | UIAccessibilityTraitButton
             V2.setImage(image, url: url)
             photoStack.addArrangedSubview(image)
             image.snp.makeConstraints { make in make.width.equalTo(photos) }
@@ -603,6 +607,15 @@ final class ProductDetailViewController: BaseViewControler {
                 self.navigationController?.pushViewController(preview, animated: true)
             }
         }
+    }
+}
+
+extension ProductDetailViewController {
+    /// #472: the full-screen viewer at the photo on screen
+    @objc fileprivate func openPhotoViewer() {
+        let page = photos.bounds.width > 0 ? Int(round(photos.contentOffset.x / photos.bounds.width)) : 0
+        guard let request = ProductImages.detailTap(product, page: page) else { return }
+        present(ImageViewerViewController(request: request), animated: true)
     }
 }
 

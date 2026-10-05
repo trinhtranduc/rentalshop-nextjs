@@ -180,6 +180,49 @@ enum ProductRowLogic {
     }
 }
 
+// MARK: - Full-screen photos (#472)
+
+/// What the full-screen viewer shows: the photos and the one it opens at
+struct ProductImageViewerRequest: Equatable {
+    let urls: [String]
+    let startIndex: Int
+}
+
+enum ProductImages {
+    /// The product's photos in pager order: `images` without blanks, else `image_url` (same list as the detail pager)
+    static func viewerUrls(_ product: Product) -> [String] {
+        let images = (product.images ?? []).filter { !isBlank($0) }
+        if !images.isEmpty { return images }
+        guard let url = product.image_url, !isBlank(url) else { return [] }
+        return [url]
+    }
+
+    /// The URL the Home row thumbnail loads (`image_url`, else the first of `images`); nil means the placeholder
+    static func thumbnailUrl(_ product: Product) -> String? {
+        guard let url = product.image_url ?? product.images?.first, !isBlank(url) else { return nil }
+        return url
+    }
+
+    /// A tap on the Home row thumbnail: the viewer at that photo, or nil (placeholder) so the row opens detail
+    static func thumbnailTap(_ product: Product) -> ProductImageViewerRequest? {
+        guard let thumb = thumbnailUrl(product) else { return nil }
+        let urls = viewerUrls(product)
+        guard !urls.isEmpty else { return nil }
+        return ProductImageViewerRequest(urls: urls, startIndex: urls.firstIndex(of: thumb) ?? 0)
+    }
+
+    /// A tap on the detail photo pager: the viewer at the page on screen (clamped), or nil without photos
+    static func detailTap(_ product: Product, page: Int) -> ProductImageViewerRequest? {
+        let urls = viewerUrls(product)
+        guard !urls.isEmpty else { return nil }
+        return ProductImageViewerRequest(urls: urls, startIndex: min(max(page, 0), urls.count - 1))
+    }
+
+    private static func isBlank(_ value: String) -> Bool {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
 // MARK: - Barcode
 
 enum BarcodeMatch {

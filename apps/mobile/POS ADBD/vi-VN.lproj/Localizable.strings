@@ -1534,6 +1534,8 @@
 "products.price.saleShort" = "bán %@";
 "products.add.accessibility" = "Thêm %@ vào giỏ";
 "products.add.inCart.accessibility" = "%@: %d trong giỏ, thêm 1";
+"products.image.view.accessibility" = "Xem ảnh %@";
+"products.image.view.hint" = "Mở ảnh toàn màn hình";
 "products.scan.notFound" = "Không tìm thấy sản phẩm có mã %@";
 "products.stepper.minus" = "Bớt 1";
 "products.stepper.plus" = "Thêm 1";
