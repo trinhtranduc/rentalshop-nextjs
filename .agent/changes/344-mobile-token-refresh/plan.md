@@ -29,3 +29,11 @@ Issue: #344 · Status: accepted · Spec: ./spec.md
 ## Rollback
 
 Revert the app release (store builds on `/api/auth/login` keep working). The API part is additive.
+
+## Re-land on dev (2026-10-05)
+
+1. Branch `fix/344-mobile-token-refresh-dev` from `origin/dev` (`fix/344-mobile-token-refresh` is the merged #346 branch).
+2. Cherry-pick the #346 API tests, API fix, Android tests, Android fix, iOS fix and docs; skip d9af3683 (old compile fix).
+3. Failing tests first: Android download refresh (`ApiClientRefreshTest`), iOS `AuthSessionTests`.
+4. iOS retry (`AuthAwareSession`, `AuthInterceptor.retry`, `AuthResponsePolicy`, `SessionEndReason`); Android `authedBytes`.
+5. Verify: `cd tests && npx jest api/`; `./gradlew :app:testDebugUnitTest :app:assembleDebug`; iOS `POS ADBDTests` + build.

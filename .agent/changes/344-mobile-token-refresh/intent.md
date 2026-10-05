@@ -36,3 +36,9 @@ generic message. `/api/mobile/auth/login` does not create a session, so the apps
 - 2026-10-02 — iOS refreshes proactively in an Alamofire interceptor: call sites read errors from 200-path bodies without `.validate()`, so Alamofire never calls `retry` on a 401 (agent)
 - 2026-10-02 — `/api/mobile/auth/logout` stops trusting a client `x-user-id` header (public route; let anyone sign out any user) (agent)
 - 2026-10-02 — Fixed pre-existing Android compile errors on `dev` (OverviewScreen, AvailabilityScreen) to verify this change (agent)
+- 2026-10-05 — PR #346 merged into `fix/343-token-expiry-refresh` seven seconds after #345 merged that branch
+  into `dev`, so none of phase 2 reached `dev`. Re-landed on `fix/344-mobile-token-refresh-dev` from `origin/dev`
+  by cherry-picking the #346 commits (agent)
+- 2026-10-05 — iOS now also retries after a 401 `TOKEN_EXPIRED`: `AuthAwareSession` validates only that response,
+  so Alamofire calls `AuthInterceptor.retry`; other responses stay unvalidated and call sites are unchanged.
+  Both apps now refresh once and retry once (agent)
