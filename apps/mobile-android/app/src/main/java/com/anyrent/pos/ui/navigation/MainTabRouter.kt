@@ -29,4 +29,8 @@ object MainTabRouter {
     fun openHome() {
         _selectTab.tryEmit(HOME)
     }
+
+    /** Stub (#433): Main reports the tab it switched to. */
+    @Suppress("UNUSED_PARAMETER")
+    fun tabShown(route: String) {}
 }

@@ -323,6 +323,17 @@ enum CartV2Logic {
                                            to: calendar.startOfDay(for: returnDate)).day ?? 0
         return max(1, days + 1)
     }
+
+    /// Where the cart's "+ Add" goes (#433)
+    enum AddMoreRoute: Equatable {
+        case pop
+        case openHomeTab
+    }
+
+    /// Stub: today's behavior, always one step back
+    static func addMoreRoute(previousIsProductsHome: Bool) -> AddMoreRoute {
+        .pop
+    }
 }
 
 // MARK: - Inputs
