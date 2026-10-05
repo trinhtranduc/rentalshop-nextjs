@@ -85,6 +85,7 @@ final class NewCustomerViewController: BaseViewControler {
         header.spacing = 4
 
         phoneField.keyboardType = .phonePad
+        KeyboardDoneBar.attach([phoneField])
         phoneField.textContentType = .telephoneNumber
         nameField.autocapitalizationType = .words
         nameField.textContentType = .name

@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.home.v2
 
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +54,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -61,12 +65,14 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogWindowProvider
 import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
@@ -115,6 +121,16 @@ fun ProductFormV2Screen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // AppFormSheet(fullScreen) hosts the form in its own dialog window, which does not resize for the
+    // keyboard; resize it so the save bar sits above the keyboard (#461). No-op outside a dialog.
+    val hostView = LocalView.current
+    DisposableEffect(hostView) {
+        val window = (hostView.parent as? DialogWindowProvider)?.window
+        val previous = window?.attributes?.softInputMode
+        @Suppress("DEPRECATION")
+        window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        onDispose { if (window != null && previous != null) window.setSoftInputMode(previous) }
+    }
     val showsPrices = ProductAccess.showsPriceFields(PermissionManager.role)
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
     var barcode by remember { mutableStateOf(initial?.barcodeText.orEmpty()) }
@@ -236,7 +252,8 @@ fun ProductFormV2Screen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
+    // imePadding on the whole screen keeps the save bar above the keyboard (#461)
+    Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.close), modifier = Modifier.size(DS.Icon.Lg)) }
             Text(
@@ -245,7 +262,7 @@ fun ProductFormV2Screen(
             )
         }
         HorizontalDivider(color = DS.Colors.Border)
-        Column(Modifier.weight(1f).imePadding().verticalScroll(rememberScrollState())) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             // Photos
             LazyRow(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp),
@@ -416,6 +433,7 @@ private fun FormField(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     var hadFocus by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     Column(modifier.padding(start = start, end = end, top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             buildAnnotatedString {
@@ -446,7 +464,9 @@ private fun FormField(
                         onValueChange = { onChange(it.text) },
                         singleLine = true,
                         textStyle = TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        // Done closes the pad, like "Xong" on iOS (#461)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { focusManager.clearFocus() }),
                         modifier = fieldModifier,
                     )
                 } else {
