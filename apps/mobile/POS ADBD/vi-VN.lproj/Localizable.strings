@@ -1628,6 +1628,8 @@
 "products.cart.created.paidSale" = "Đã thu %@";
 "products.cart.created.newOrder" = "Tạo đơn mới";
 "products.cart.created.viewOrder" = "Xem đơn";
+"products.cart.needPrice" = "Nhập giá cho %@";
+"products.cart.editPrice" = "Sửa giá cho đơn này";
 // MARK: - Orders tab (#371)
 "To do" = "Việc cần làm";
 "All orders" = "Tất cả đơn";

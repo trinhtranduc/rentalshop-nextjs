@@ -21,9 +21,14 @@ never shows the toggle.
 
 ## Proposed outcome
 
-A rent line whose product has both prices always shows the toggle on iOS and Android, including lines
-that were in the cart before the price was added and lines of an edited order. A product with only one
-rental price shows no toggle, as today.
+Owner decision (2026-10-05): "hiện cả 2 để user chọn 1 trong 2, có thể đổi giá".
+
+- Every rent line in the new cart shows "Theo lần | Theo ngày", whatever prices the product has. Sale lines: no toggle.
+- The line's unit price (this order only, never the product's price) can be edited at any time, pre-filled with the
+  current price. Switching to a mode the product has no price for starts at 0 and opens the price editor.
+- A rent line at price 0 blocks "Tạo đơn" with the "Lỗi" alert ("Nhập giá cho …").
+- Lines added before the product got its second price, restored lines and edited-order lines still take the
+  product's options (first fix), so a product with both prices starts with the right price in each mode.
 
 ## Affected users and systems
 
@@ -36,10 +41,21 @@ Shops using the new cart on iOS and Android. No API or data change.
 
 ## Open questions
 
-- Products on dev may simply have one rental price (`pricingOptions: []`, legacy `rentPrice` only). The old
-  cart offered both modes on every rent line (the missing one at price 0); the new one does not. Owner to
-  confirm the products tested have both prices.
+- None.
+
+## Findings (old cart, API)
+
+- Old cart (iOS `ProductSelectedCell`, Android `CartCheckoutScreen`): the mode picker on every rent line, the
+  missing mode at price 0 (iOS) or the previous price (Android); unit price editable by every role, no role check;
+  price 0 was accepted.
+- API `POST /api/orders` uses the client `unitPrice`, `totalPrice` and `pricingType` as sent ("Backend trusts frontend
+  pricing - no recalculation"), with no role check on prices.
 
 ## Decision log
 
-- 2026-10-05 — Keep "no toggle with one price"; refresh stale lines from the product (caller).
+- 2026-10-05 — Refresh stale lines from the product (first fix, kept).
+- 2026-10-05 — Owner: show both modes on every rent line; the line price is editable ("có thể đổi giá").
+- 2026-10-05 — Owner: the edit is the price of the item in this cart/order only, never the product's price
+  ("không phải sửa giá sp mà sửa giá tiền sp trong cart"); every role, OUTLET_STAFF included, may edit it (the
+  AGENTS staff rule is for catalog prices). Editable at any time, also when the line already has a product price.
+- 2026-10-05 — A rent line at price 0 blocks Tạo đơn (the old cart let it through).

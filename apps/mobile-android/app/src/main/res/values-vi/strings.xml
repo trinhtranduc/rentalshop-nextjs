@@ -655,6 +655,8 @@
     <string name="v2_create_done_paid_sale">Đã thu %1$s</string>
     <string name="v2_create_done_new_order">Tạo đơn mới</string>
     <string name="v2_create_done_view_order">Xem đơn</string>
+    <string name="v2_cart_need_price">Nhập giá cho %s</string>
+    <string name="v2_cart_edit_price">Sửa giá cho đơn này</string>
     <plurals name="v2_cart_bar">
         <item quantity="other">Giỏ hàng · %1$d món</item>
     </plurals>

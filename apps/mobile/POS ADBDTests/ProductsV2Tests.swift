@@ -452,6 +452,65 @@ extension ProductsV2Tests {
         let restored = try JSONDecoder().decode(CartItem.self, from: JSONEncoder().encode(cart.items[0]))
         XCTAssertTrue(CartV2Logic.offersBothModes(restored))
     }
+
+    // MARK: Owner decision 2026-10-05: both modes on every rent line, the line price is editable
+
+    private func onePriceRentCart() throws -> Cart {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.customer = try JSONDecoder.shared.decode(Customer.self, from: Data(#"{"id":5,"firstName":"Minh","phone":"0912"}"#.utf8))
+        cart.addItem(CartItem(from: try homeRow(options: "[]"), quantity: 2, price: 150_000))
+        let pickup = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")!
+        cart.pickupPlanAt = pickup
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")!
+        return cart
+    }
+
+    func testEveryRentLineShowsTheToggleEvenWithOnePrice() throws {
+        let cart = try onePriceRentCart()
+        XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
+        XCTAssertTrue(CartV2Logic.showsPricingToggle(orderType: .rent))
+        XCTAssertFalse(CartV2Logic.showsPricingToggle(orderType: .sale))
+    }
+
+    func testAModeWithoutAPriceStartsAtZeroAsksForAPriceAndBlocksCreate() throws {
+        let cart = try onePriceRentCart()
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+
+        cart.selectPricingType(at: 0, type: "DAILY")
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent), "the cart opens the price editor")
+        XCTAssertEqual(CartV2Logic.missingPrices(cart), [String(format: "products.cart.needPrice".localized(), "Cart toggle probe both prices")])
+
+        // Back to per rental: the product's own price again
+        cart.selectPricingType(at: 0, type: "FIXED")
+        XCTAssertEqual(cart.items[0].price, 150_000)
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+    }
+
+    func testTheEditedLinePriceIsUsedInTotalsAndTheCreateRequest() throws {
+        let cart = try onePriceRentCart()
+        cart.selectPricingType(at: 0, type: "DAILY")
+        cart.updatePrice(at: 0, price: 60_000)
+        cart.syncRentalDaysFromDates()
+        let days = Double(cart.items[0].rentalDays)
+        XCTAssertGreaterThanOrEqual(days, 3)
+        XCTAssertEqual(CartV2Logic.calc(cart.items[0], orderType: .rent).total, 60_000 * 2 * days)
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+
+        let item = try XCTUnwrap(cart.toCreateOrderRequest().orderItems.first)
+        XCTAssertEqual(item.unitPrice, 60_000)
+        XCTAssertEqual(item.pricingType, "DAILY")
+        XCTAssertEqual(item.rentDays, cart.items[0].rentalDays)
+        XCTAssertEqual(item.totalPrice, 60_000 * 2 * days)
+
+        // Per rental keeps its own price; the edit never touches the product
+        cart.selectPricingType(at: 0, type: "FIXED")
+        cart.updatePrice(at: 0, price: 120_000)
+        XCTAssertEqual(CartV2Logic.calc(cart.items[0], orderType: .rent).total, 240_000)
+        XCTAssertEqual(cart.items[0].originalRentPrice, 150_000)
+    }
 }
 
 /// #476 — "Tạo đơn" opens a confirm sheet on the cart, then a "Đã tạo đơn" sheet

@@ -321,8 +321,23 @@ final class CartV2ViewController: BaseViewControler {
         let top = UIStackView(arrangedSubviews: [name, total])
         top.alignment = .top
         top.spacing = 8
-        let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let column = UIStackView(arrangedSubviews: [top, calcLabel])
+        let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary,
+                                 color: CartV2Logic.needsPrice(item, orderType: cart.orderType) ? V2.danger : DS.Color.textMuted, lines: 0)
+        // The line price for this order only, any role, any time (owner 2026-10-05); never the product's price
+        let pencil = UIImageView(image: DS.symbol("pencil", 14, weight: .semibold))
+        pencil.tintColor = DS.Color.primary
+        pencil.setContentHuggingPriority(.required, for: .horizontal)
+        let priceRow = UIStackView(arrangedSubviews: [calcLabel, pencil, UIView()])
+        priceRow.spacing = 6
+        priceRow.alignment = .center
+        priceRow.tag = index
+        priceRow.isUserInteractionEnabled = true
+        priceRow.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(priceRowTapped(_:))))
+        priceRow.isAccessibilityElement = true
+        priceRow.accessibilityTraits = UIAccessibilityTraitButton
+        priceRow.accessibilityLabel = calc.text
+        priceRow.accessibilityHint = "products.cart.editPrice".localized()
+        let column = UIStackView(arrangedSubviews: [top, priceRow])
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
@@ -342,7 +357,7 @@ final class CartV2ViewController: BaseViewControler {
         stepper.value = item.quantity
         stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
         var leading: UIView = UIView()
-        if isRent && CartV2Logic.offersBothModes(item) {
+        if CartV2Logic.showsPricingToggle(orderType: cart.orderType) {
             let toggle = V2Segmented(titles: ["products.price.perRental".localized(), "products.price.perDay".localized()], compact: true)
             toggle.select(item.isDailyPricing ? 1 : 0)
             toggle.tag = index
@@ -455,8 +470,31 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     @objc private func pricingChanged(_ sender: V2Segmented) {
-        CartStore.shared.selectPricingType(at: sender.tag, type: sender.selectedIndex == 1 ? ProductPricingMode.perDay.rawValue : ProductPricingMode.perRental.rawValue)
+        let index = sender.tag
+        CartStore.shared.selectPricingType(at: index, type: sender.selectedIndex == 1 ? ProductPricingMode.perDay.rawValue : ProductPricingMode.perRental.rawValue)
+        // A mode the product has no price for starts at 0: ask for the price right away
+        if index < cart.items.count, CartV2Logic.needsPrice(cart.items[index], orderType: cart.orderType) {
+            editLinePrice(at: index)
+        }
     }
+
+    @objc private func priceRowTapped(_ gesture: UITapGestureRecognizer) {
+        guard let index = gesture.view?.tag else { return }
+        editLinePrice(at: index)
+    }
+
+    /// Number pad pre-filled with the line's current unit price; tag = 100 + line index
+    private func editLinePrice(at index: Int) {
+        guard index < cart.items.count, presentedViewController == nil else { return }
+        let item = cart.items[index]
+        let picker = NumberPickerViewController.instance()
+        picker.delegate = self
+        picker.tag = Self.linePriceTag + index
+        picker.configure(initialValue: item.price, title: item.productName ?? "products.cart.editPrice".localized())
+        present(picker, animated: true)
+    }
+
+    private static let linePriceTag = 100
 
     private func changeQuantity(index: Int, quantity: Int) {
         guard index < cart.items.count else { return }
@@ -532,7 +570,12 @@ final class CartV2ViewController: BaseViewControler {
         // A double tap must not open two previews or sheets (#341)
         guard navigationController?.topViewController === self, presentedViewController == nil else { return }
         HapticFeedback.medium()
-        let (valid, errors) = cart.validate()
+        var (valid, errors) = cart.validate()
+        let missingPrices = CartV2Logic.missingPrices(cart)
+        if !missingPrices.isEmpty {
+            valid = false
+            errors += missingPrices
+        }
         guard valid else {
             UIAlertController.alert(parent: self, title: "Error".localized(), message: errors.joined(separator: "\n"))
             return
@@ -655,6 +698,8 @@ extension CartV2ViewController: NumberPickerViewControllerDelegate {
         case .discount(let type):
             CartStore.shared.setDiscountType(type == .percentage ? .percentage : .amount)
             CartStore.shared.setDiscount(value)
+        case .normal where sender.tag >= Self.linePriceTag:
+            CartStore.shared.updatePrice(at: sender.tag - Self.linePriceTag, price: value)
         case .normal:
             CartStore.shared.setManualDepositAmount(value)
         }
