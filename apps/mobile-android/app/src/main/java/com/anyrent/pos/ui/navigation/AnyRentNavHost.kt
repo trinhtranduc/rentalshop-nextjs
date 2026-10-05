@@ -85,6 +85,7 @@ import com.anyrent.pos.ui.home.v2.CartV2Screen
 import com.anyrent.pos.ui.home.v2.ProductDetailScreen
 import com.anyrent.pos.ui.home.v2.ProductsHomeScreen
 import com.anyrent.pos.ui.inbox.InboxScreen
+import com.anyrent.pos.ui.inbox.InboxV2Screen
 import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
 import com.anyrent.pos.ui.orders.OrdersScreen
@@ -250,10 +251,19 @@ fun AnyRentNavHost(
             )
         }
         composable(Routes.Inbox) {
-            InboxScreen(
-                onBack = { rootNavController.popBackStack() },
-                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
-            )
+            // #477: new inbox with the new products home (the screen that hosts the bell); off keeps the old one
+            val features by FeatureFlags.enabled.collectAsState()
+            if (MobileFeature.NEW_PRODUCTS in features) {
+                InboxV2Screen(
+                    onBack = { rootNavController.popBackStack() },
+                    onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                )
+            } else {
+                InboxScreen(
+                    onBack = { rootNavController.popBackStack() },
+                    onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                )
+            }
         }
         composable(
             Routes.OrderDetail,

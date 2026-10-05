@@ -132,6 +132,7 @@
 		04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0001 /* InboxNotification.swift */; };
 		04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0002 /* NotificationService.swift */; };
 		04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0003 /* NotificationCell.swift */; };
+		A4770477B0000000000000A2 /* NotificationV2Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A2 /* NotificationV2Cell.swift */; };
 		04F1B0022F1C0101000A0004 /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */; };
 		04F301012F40000100A001 /* OverviewTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301002F40000100A001 /* OverviewTypes.swift */; };
 		04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301022F40000100A002 /* OverviewUIBuilder.swift */; };
@@ -163,6 +164,7 @@
 		04FBE0D02EDE8DF90057EDF8 /* RCSimpleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0CE2EDE8DF90057EDF8 /* RCSimpleTextField.swift */; };
 		04FBE0D22EDED09E0057EDF8 /* RCCustomNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */; };
 		0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */; };
+		A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */; };
 		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
 		17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */; };
 		17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A0C2121B33928148F209CE /* TabsV2APIService.swift */; };
@@ -266,6 +268,7 @@
 		A4B110012F1E010100001F /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4B110012F1E010100001B /* ActivityKit.framework */; };
 		AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */; };
 		ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */; };
+		A4770477B0000000000000A1 /* NotificationsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A1 /* NotificationsLogic.swift */; };
 		B298B580A0C9BA1614A0649B /* RentalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730E16169321964B8996F08C /* RentalExtension.swift */; };
 		B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */; };
 		C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */; };
@@ -479,6 +482,7 @@
 		04F1B0012F1C0101000A0001 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0003 /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
+		A4770477F0000000000000A2 /* NotificationV2Cell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationV2Cell.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewController.swift; sourceTree = "<group>"; };
 		04F301002F40000100A001 /* OverviewTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewTypes.swift; sourceTree = "<group>"; };
 		04F301022F40000100A002 /* OverviewUIBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewUIBuilder.swift; sourceTree = "<group>"; };
@@ -533,6 +537,7 @@
 		57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomerDetailV2ViewController.swift; sourceTree = "<group>"; };
 		5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBDTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogicTests.swift; sourceTree = "<group>"; };
+		A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNotesV2Tests.swift; sourceTree = "<group>"; };
 		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
 		64454969BCB62EEB55223203 /* OverviewV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2.swift; sourceTree = "<group>"; };
 		652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Views.swift; sourceTree = "<group>"; };
@@ -596,6 +601,7 @@
 		8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		928C3E8D4BF3A29D647F9A0B /* Pods-POS ADBDTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.release.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.release.xcconfig"; sourceTree = "<group>"; };
 		97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogic.swift; sourceTree = "<group>"; };
+		A4770477F0000000000000A1 /* NotificationsLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsLogic.swift; sourceTree = "<group>"; };
 		9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditCustomerViewController.swift; sourceTree = "<group>"; };
 		9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Tests.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000011 /* DraftOrderAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderAttributes.swift; sourceTree = "<group>"; };
@@ -736,6 +742,7 @@
 				C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */,
 				EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */,
 				97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */,
+				A4770477F0000000000000A1 /* NotificationsLogic.swift */,
 				1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */,
 			);
 			path = ViewModels;
@@ -963,6 +970,7 @@
 				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
+				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
 				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
@@ -1233,6 +1241,7 @@
 			children = (
 				04A82A7C2EE94E3B00E55F9C /* UserCell.swift */,
 				04F1B0012F1C0101000A0003 /* NotificationCell.swift */,
+				A4770477F0000000000000A2 /* NotificationV2Cell.swift */,
 				04FBE0C52EDBE34C0057EDF8 /* PreviewTwoColumnCells.swift */,
 				04FBE0C32EDBDF0A0057EDF8 /* PreviewCompactCells.swift */,
 				04FBE0C12EDB50F40057EDF8 /* PreviewGroupedCells.swift */,
@@ -1759,6 +1768,7 @@
 				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
+				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
 				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
@@ -1799,6 +1809,7 @@
 				04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */,
 				04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */,
 				04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */,
+				A4770477B0000000000000A2 /* NotificationV2Cell.swift in Sources */,
 				04F1B0022F1C0101000A0004 /* NotificationsViewController.swift in Sources */,
 				881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */,
 				88E4149A21A99E9100BAF4A1 /* Utils.swift in Sources */,
@@ -1976,6 +1987,7 @@
 				AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */,
 				8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */,
 				ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */,
+				A4770477B0000000000000A1 /* NotificationsLogic.swift in Sources */,
 				6DF35D462195744CA6E88339 /* CalendarV2.swift in Sources */,
 				372335F213185EFD8AC37259 /* OverviewV2.swift in Sources */,
 				6F7DAC80E945C7A8AF3FD213 /* SettingsV2.swift in Sources */,

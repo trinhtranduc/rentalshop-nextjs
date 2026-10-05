@@ -3,6 +3,8 @@
 //  POS ADBD
 //
 //  In-app notification inbox: list, mark read, open order.
+//  #477: new style (board TB-thong-bao) when `newProducts` is on: day groups on Vietnam days, type tiles,
+//  "Tất cả" / "Chưa đọc · N" chips. Same calls, paging and unread badge; flag off keeps the old screen.
 //
 
 import Foundation
@@ -10,6 +12,8 @@ import UIKit
 import SnapKit
 
 final class NotificationsViewController: BaseViewControler {
+    /// #477: new style, on with the new products home (the screen that hosts the bell)
+    var v2 = FeatureFlags.shared.isOn(.newProducts)
 
     // MARK: - UI
     private lazy var notificationsTableView: UITableView = {
@@ -19,6 +23,7 @@ final class NotificationsViewController: BaseViewControler {
         table.backgroundColor = .backgroundPrimary
         table.separatorStyle = .none
         table.register(NotificationCell.self, forCellReuseIdentifier: String(describing: NotificationCell.self))
+        table.register(NotificationV2Cell.self, forCellReuseIdentifier: NotificationV2Cell.reuseId)
         table.tableHeaderView = UIView()
         table.tableFooterView = UIView()
         table.rowHeight = UITableViewAutomaticDimension
@@ -65,6 +70,35 @@ final class NotificationsViewController: BaseViewControler {
         return button
     }()
 
+    // MARK: - New style (#477)
+    private lazy var markAllReadV2Button: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DS.symbol("checkmark", DS.Icon.sm, weight: .semibold), for: .normal)
+        button.setTitle(" " + "notifications.v2.markAllRead".localized(), for: .normal)
+        button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        button.tintColor = DS.Color.primary
+        button.setTitleColor(DS.Color.primary, for: .normal)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        button.accessibilityLabel = "notifications.markAllRead".localized()
+        button.addTarget(self, action: #selector(markAllReadTapped), for: .touchUpInside)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in make.height.equalTo(40) }
+        return button
+    }()
+
+    private lazy var moreV2Button: UIButton = {
+        let button = CustomersV2UI.iconButton("ellipsis", label: "notifications.more".localized(), size: DS.Icon.md)
+        button.showsMenuAsPrimaryAction = true
+        return button
+    }()
+
+    private let allChip = UIButton(type: .system)
+    private let unreadChip = UIButton(type: .system)
+    private var unreadOnly = false
+    private var groups: [NotificationsLogic.DayGroup] = []
+    private let emptyV2 = UIStackView()
+    private let emptyV2Label = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+
     // MARK: - State
     private var notifications: [InboxNotification] = []
     private var currentPage = 1
@@ -87,6 +121,10 @@ final class NotificationsViewController: BaseViewControler {
     // MARK: - Setup
     override func setupUI() {
         super.setupUI()
+        if v2 {
+            setupV2()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
         setupNavigationBar()
 
@@ -128,6 +166,90 @@ final class NotificationsViewController: BaseViewControler {
         }
     }
 
+    private func setupV2() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addAction(UIAction { [weak self] _ in self?.navigationController?.popViewController(animated: true) },
+                       for: .touchUpInside)
+        let headerLine = SettingsDetailV2.installHeader(on: view, title: "Notifications".localized(), back: back,
+                                                        trailing: [markAllReadV2Button, moreV2Button])
+
+        for (chip, tag) in [(allChip, 0), (unreadChip, 1)] {
+            chip.tag = tag
+            chip.layer.cornerRadius = 17
+            chip.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+            chip.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
+            chip.snp.makeConstraints { make in make.height.equalTo(34) }
+        }
+        let chips = UIStackView(arrangedSubviews: [allChip, unreadChip, UIView()])
+        chips.spacing = DS.Spacing.sm
+        let chipsLine = V2.divider()
+        [chips, chipsLine].forEach(view.addSubview)
+        chips.snp.makeConstraints { make in
+            make.top.equalTo(headerLine.snp.bottom).offset(10)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        chipsLine.snp.makeConstraints { make in
+            make.top.equalTo(chips.snp.bottom).offset(10)
+            make.leading.trailing.equalToSuperview()
+        }
+
+        notificationsTableView.backgroundColor = .white
+        if #available(iOS 15.0, *) {
+            notificationsTableView.sectionHeaderTopPadding = 0
+        }
+        notificationsTableView.estimatedRowHeight = 90
+        view.addSubview(notificationsTableView)
+        notificationsTableView.snp.makeConstraints { make in
+            make.top.equalTo(chipsLine.snp.bottom)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        configPullToRefresh(tableview: notificationsTableView)
+
+        let tile = UIImageView(image: DS.symbol("bell", DS.Icon.lg))
+        tile.tintColor = DS.Status.cancelled.text
+        tile.backgroundColor = DS.Status.cancelled.fill
+        tile.contentMode = .center
+        tile.layer.cornerRadius = 16
+        tile.snp.makeConstraints { make in make.size.equalTo(56) }
+        emptyV2Label.textAlignment = .center
+        emptyV2.axis = .vertical
+        emptyV2.alignment = .center
+        emptyV2.spacing = DS.Spacing.md
+        [tile, emptyV2Label].forEach(emptyV2.addArrangedSubview)
+        emptyV2.isHidden = true
+        view.addSubview(emptyV2)
+        emptyV2.snp.makeConstraints { make in
+            make.centerY.equalTo(notificationsTableView).offset(-40)
+            make.leading.trailing.equalToSuperview().inset(32)
+        }
+        updateMoreMenu()
+        renderChips()
+    }
+
+    private func renderChips() {
+        unreadChip.setTitle(String(format: "notifications.v2.unread".localized(), unreadCount), for: .normal)
+        allChip.setTitle("notifications.v2.all".localized(), for: .normal)
+        for (chip, selected) in [(allChip, !unreadOnly), (unreadChip, unreadOnly)] {
+            chip.backgroundColor = selected ? DS.Color.text : .white
+            chip.setTitleColor(selected ? .white : DS.Color.text, for: .normal)
+            chip.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
+            chip.layer.borderWidth = selected ? 0 : 1
+            chip.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
+            chip.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
+        }
+    }
+
+    @objc private func chipTapped(_ sender: UIButton) {
+        let wantsUnread = sender.tag == 1
+        guard wantsUnread != unreadOnly else { return }
+        unreadOnly = wantsUnread
+        notifications = []
+        // A page in flight is dropped when it lands, and page 1 of this list is asked then
+        if !isLoading { loadNotifications(page: 1, showProgress: true) }
+        reloadUI()
+    }
+
     private func updateMoreMenu() {
         let deleteRead = UIAction(
             title: "notifications.deleteRead".localized(),
@@ -136,7 +258,7 @@ final class NotificationsViewController: BaseViewControler {
         ) { [weak self] _ in
             self?.deleteAllReadTapped()
         }
-        moreButton.menu = UIMenu(children: [deleteRead])
+        (v2 ? moreV2Button : moreButton).menu = UIMenu(children: [deleteRead])
     }
 
     // MARK: - Data
@@ -148,11 +270,17 @@ final class NotificationsViewController: BaseViewControler {
             showProgressText(text: "Loading...".localized())
         }
 
-        NotificationService.shared.getNotifications(page: page, limit: 20) { [weak self] data, error in
+        let wantsUnread = v2 && unreadOnly
+        NotificationService.shared.getNotifications(page: page, limit: 20, isRead: wantsUnread ? false : nil) { [weak self] data, error in
             guard let self else { return }
             self.isLoading = false
             self.hideProgress()
             self.endRefresh()
+            // #477: the chip changed while this page loaded; drop it and load page 1 of the chosen list
+            guard wantsUnread == (self.v2 && self.unreadOnly) else {
+                self.loadNotifications(page: 1, showProgress: false)
+                return
+            }
 
             if let error {
                 UIAlertController.errorAlert(parent: self, error: error)
@@ -176,10 +304,33 @@ final class NotificationsViewController: BaseViewControler {
     }
 
     private func reloadUI() {
+        if v2 {
+            groups = NotificationsLogic.groups(notifications)
+            emptyV2Label.text = (unreadOnly ? "notifications.v2.emptyUnread" : "notifications.empty").localized()
+            emptyV2.isHidden = !notifications.isEmpty || isLoading
+            notificationsTableView.reloadData()
+            updateMarkAllEnabled()
+            renderChips()
+            return
+        }
         emptyStateLabel.isHidden = !notifications.isEmpty
         notificationsTableView.reloadData()
-        markAllReadButton.isEnabled = unreadCount > 0
-        markAllReadButton.alpha = unreadCount > 0 ? 1 : 0.4
+        updateMarkAllEnabled()
+    }
+
+    private func updateMarkAllEnabled() {
+        let button = v2 ? markAllReadV2Button : markAllReadButton
+        button.isEnabled = unreadCount > 0
+        button.alpha = unreadCount > 0 ? 1 : 0.4
+    }
+
+    /// Row of the flat list behind a table index path (the new style groups rows by day)
+    private func flatIndex(_ indexPath: IndexPath) -> Int? {
+        guard v2 else { return notifications.indices.contains(indexPath.row) ? indexPath.row : nil }
+        guard groups.indices.contains(indexPath.section),
+              groups[indexPath.section].items.indices.contains(indexPath.row) else { return nil }
+        let id = groups[indexPath.section].items[indexPath.row].id
+        return notifications.firstIndex { $0.id == id }
     }
 
     private func postUnreadCount(_ count: Int) {
@@ -194,8 +345,8 @@ final class NotificationsViewController: BaseViewControler {
         NotificationService.shared.getUnreadCount { [weak self] count, _ in
             guard let self, let count else { return }
             self.unreadCount = count
-            self.markAllReadButton.isEnabled = count > 0
-            self.markAllReadButton.alpha = count > 0 ? 1 : 0.4
+            self.updateMarkAllEnabled()
+            if self.v2 { self.renderChips() }
             self.postUnreadCount(count)
         }
     }
@@ -242,10 +393,10 @@ final class NotificationsViewController: BaseViewControler {
         present(alert, animated: true)
     }
 
-    private func openNotification(_ notification: InboxNotification, at indexPath: IndexPath) {
+    private func openNotification(_ notification: InboxNotification, at index: Int) {
         if !notification.isRead {
             // Optimistic local update
-            notifications[indexPath.row] = InboxNotification(
+            notifications[index] = InboxNotification(
                 id: notification.id,
                 type: notification.type,
                 title: notification.title,
@@ -277,8 +428,8 @@ final class NotificationsViewController: BaseViewControler {
         }
     }
 
-    private func toggleRead(at indexPath: IndexPath) {
-        let item = notifications[indexPath.row]
+    private func toggleRead(at index: Int) {
+        let item = notifications[index]
         let markRead = !item.isRead
 
         showProgressText(text: "Loading...".localized())
@@ -300,8 +451,8 @@ final class NotificationsViewController: BaseViewControler {
         }
     }
 
-    private func deleteNotification(at indexPath: IndexPath) {
-        let item = notifications[indexPath.row]
+    private func deleteNotification(at index: Int) {
+        let item = notifications[index]
         showProgressText(text: "Loading...".localized())
         NotificationService.shared.deleteNotification(notificationId: item.id) { [weak self] success, error in
             guard let self else { return }
@@ -311,7 +462,8 @@ final class NotificationsViewController: BaseViewControler {
                 return
             }
             guard success else { return }
-            self.notifications.remove(at: indexPath.row)
+            // The list may have reloaded meanwhile: remove by id
+            self.notifications.removeAll { $0.id == item.id }
             if !item.isRead, self.unreadCount > 0 {
                 self.unreadCount -= 1
             }
@@ -323,11 +475,45 @@ final class NotificationsViewController: BaseViewControler {
 
 // MARK: - UITableView
 extension NotificationsViewController: UITableViewDataSource, UITableViewDelegate {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        v2 ? groups.count : 1
+    }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        notifications.count
+        v2 ? groups[section].items.count : notifications.count
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard v2 else { return nil }
+        let band = UIView()
+        band.backgroundColor = V2.sectionFill
+        let label = V2.label(groups[section].title, size: DS.TextSize.secondary, weight: .bold, color: UIColor(hexString: "334155"))
+        label.accessibilityTraits = UIAccessibilityTraitHeader
+        let line = V2.divider()
+        [label, line].forEach(band.addSubview)
+        label.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
+            make.bottom.equalToSuperview().offset(-6)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        return band
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        v2 ? UITableViewAutomaticDimension : 0
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat {
+        v2 ? 38 : 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if v2 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: NotificationV2Cell.reuseId, for: indexPath)
+            (cell as? NotificationV2Cell)?.configure(with: groups[indexPath.section].items[indexPath.row])
+            return cell
+        }
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: String(describing: NotificationCell.self),
             for: indexPath
@@ -340,11 +526,13 @@ extension NotificationsViewController: UITableViewDataSource, UITableViewDelegat
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        openNotification(notifications[indexPath.row], at: indexPath)
+        guard let index = flatIndex(indexPath) else { return }
+        openNotification(notifications[index], at: index)
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row >= notifications.count - 5, hasMore, !isLoading {
+        guard let index = flatIndex(indexPath) else { return }
+        if index >= notifications.count - 5, hasMore, !isLoading {
             loadNotifications(page: currentPage + 1, showProgress: false)
         }
     }
@@ -353,10 +541,11 @@ extension NotificationsViewController: UITableViewDataSource, UITableViewDelegat
         _ tableView: UITableView,
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
-        let item = notifications[indexPath.row]
+        guard let index = flatIndex(indexPath) else { return nil }
+        let item = notifications[index]
 
         let delete = UIContextualAction(style: .destructive, title: "Delete".localized()) { [weak self] _, _, done in
-            self?.deleteNotification(at: indexPath)
+            self?.deleteNotification(at: index)
             done(true)
         }
 
@@ -364,7 +553,7 @@ extension NotificationsViewController: UITableViewDataSource, UITableViewDelegat
             ? "notifications.markUnread".localized()
             : "notifications.markRead".localized()
         let toggle = UIContextualAction(style: .normal, title: toggleTitle) { [weak self] _, _, done in
-            self?.toggleRead(at: indexPath)
+            self?.toggleRead(at: index)
             done(true)
         }
         toggle.backgroundColor = .systemBlue

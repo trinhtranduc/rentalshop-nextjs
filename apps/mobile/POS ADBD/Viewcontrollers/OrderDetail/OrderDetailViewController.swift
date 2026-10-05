@@ -823,13 +823,10 @@ final class OrderDetailViewController: BaseViewControler {
     @objc private func editNotesTapped() {
         guard let detail else { return }
         let original = noteImageURLs(detail)
-        let editor = OrderNotesEditorViewController(text: detail.notes ?? "", savedURLs: original)
+        // #477: full-screen editor of board GC-ghi-chu
+        let editor = OrderNotesEditorViewController(text: detail.notes ?? "", savedURLs: original, orderNumber: detail.orderNumber)
         editor.onSave = { [weak self] text, kept, added in
             self?.saveNotes(text: text, original: original, kept: kept, added: added)
-        }
-        if let presentation = editor.sheetPresentationController {
-            presentation.detents = [.medium(), .large()]
-            presentation.prefersGrabberVisible = true
         }
         present(editor, animated: true)
     }
@@ -841,7 +838,8 @@ final class OrderDetailViewController: BaseViewControler {
                                     message: String(format: "You can attach up to %d images.".localized(), OrderDetailLogic.maxNotePhotos))
             return
         }
-        let data = added.compactMap { UIImageJPEGRepresentation($0, 0.8) }
+        // Same ~180KB note photos as the old detail (#435); the API compresses again as a backstop (#477)
+        let data = added.compactMap { $0.compressToTargetSize(targetSizeKB: 180, maxDimension: 1920) ?? UIImageJPEGRepresentation($0, 0.6) }
         showProgressText(text: "Updating...".localized())
         viewModel.updateNotes(text, keptNoteImageURLs: plan.keptURLs, newNoteImageData: data.isEmpty ? nil : data) { [weak self] result in
             DispatchQueue.main.async {

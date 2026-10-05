@@ -1037,5 +1037,23 @@
     <string name="v2_review_collect_papers">Collect Collateral Documents</string>
     <string name="v2_review_cancel">Cancel</string>
     <string name="v2_review_confirm">Confirm</string>
-</resources>
 
+    <!-- #477 Notifications and note editor (new UI) -->
+    <string name="notifications_v2_mark_all">Mark all read</string>
+    <string name="notifications_v2_more">More actions</string>
+    <string name="notifications_v2_delete_read">Delete read</string>
+    <string name="notifications_v2_delete_read_confirm">Delete all read notifications?</string>
+    <string name="notifications_v2_all">All</string>
+    <string name="notifications_v2_unread">Unread · %1$d</string>
+    <string name="notifications_v2_today">Today</string>
+    <string name="notifications_v2_yesterday">Yesterday</string>
+    <string name="notifications_v2_empty_unread">No unread notifications</string>
+    <string name="notifications_v2_unread_a11y">Unread</string>
+    <string name="notes_v2_discard">Close without saving</string>
+    <string name="notes_v2_content">Note</string>
+    <string name="notes_v2_photos">Photos</string>
+    <string name="notes_v2_photo">Note photo</string>
+    <string name="notes_v2_add">Add</string>
+    <string name="notes_v2_photo_hint">Pick photos from the library. Tap a photo to view it larger.</string>
+    <string name="notes_v2_save">Save note</string>
+</resources>

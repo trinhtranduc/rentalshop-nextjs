@@ -167,6 +167,8 @@ data class InboxNotification(
     val isRead: Boolean,
     val createdAt: String?,
     val orderId: Int?,
+    /** `data.status` of an `ORDER_STATUS_CHANGED` notification; picks the icon of the new inbox (#477) */
+    val status: String? = null,
 )
 
 data class CalendarDay(

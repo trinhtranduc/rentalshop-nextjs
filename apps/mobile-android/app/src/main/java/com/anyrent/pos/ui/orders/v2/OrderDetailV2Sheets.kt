@@ -10,17 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -48,7 +42,6 @@ import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.orders.OrderDetailLogic
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
-import java.io.File
 
 /** Hand-over sheet (board Giao-do): what to collect now by the API rule, then PICKUPED */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -183,70 +176,6 @@ internal fun ReturnSheet(
                 onConfirm(late, damage) { error = it }
             },
         )
-    }
-}
-
-/** Notes with up to [OrderDetailLogic.MAX_NOTE_PHOTOS] photos (board CT-sua, GHI CHÚ) */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun NotesSheet(
-    text: String,
-    onTextChange: (String) -> Unit,
-    kept: List<String>,
-    files: List<File>,
-    busy: Boolean,
-    error: String?,
-    onRemoveKept: (String) -> Unit,
-    onRemoveFile: (File) -> Unit,
-    onAdd: () -> Unit,
-    onPreview: (Any) -> Unit,
-    onDismiss: () -> Unit,
-    onSave: () -> Unit,
-) {
-    val count = kept.size + files.size
-    val max = OrderDetailLogic.MAX_NOTE_PHOTOS
-    SheetFrame(onDismiss = onDismiss) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.notes), fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.detail_photos_count, count, max), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-        }
-        OutlinedTextField(
-            value = text,
-            onValueChange = onTextChange,
-            placeholder = { Text(stringResource(R.string.add_notes_hint)) },
-            minLines = 4,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            kept.forEach { url -> RemovableThumb(url, { onPreview(url) }) { onRemoveKept(url) } }
-            files.forEach { file -> RemovableThumb(file, { onPreview(file) }) { onRemoveFile(file) } }
-            if (count < max) {
-                IconButton(
-                    onClick = onAdd,
-                    modifier = Modifier.size(56.dp).background(DS.Colors.Divider, RoundedCornerShape(10.dp)),
-                ) {
-                    Icon(Icons.Outlined.PhotoCamera, contentDescription = stringResource(R.string.add_photos), tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Md))
-                }
-            }
-        }
-        error?.let { Text(it, color = DS.Status.Late.text, fontSize = DS.TextSize.Secondary) }
-        SheetButtons(confirm = stringResource(R.string.save_notes), enabled = !busy, onDismiss = onDismiss, onConfirm = onSave)
-    }
-}
-
-@Composable
-private fun RemovableThumb(model: Any, onOpen: () -> Unit, onRemove: () -> Unit) {
-    Box {
-        Thumb(model, 56.dp, onOpen)
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(24.dp)
-                .background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(12.dp)),
-        ) {
-            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.delete), modifier = Modifier.size(16.dp))
-        }
     }
 }
 

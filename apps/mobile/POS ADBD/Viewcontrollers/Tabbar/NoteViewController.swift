@@ -454,7 +454,8 @@ extension NoteViewController: UITextViewDelegate {
     }
 }
 
-private final class NoteImagePreviewViewController: UIViewController {
+/// Full-screen note photo; also used by the new note editor (#477)
+final class NoteImagePreviewViewController: UIViewController {
     private let image: UIImage
 
     init(image: UIImage) {

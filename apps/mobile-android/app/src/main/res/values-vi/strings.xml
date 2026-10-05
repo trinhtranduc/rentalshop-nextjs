@@ -1021,5 +1021,23 @@
     <string name="v2_review_collect_papers">Giữ giấy tờ bảo đảm</string>
     <string name="v2_review_cancel">Hủy</string>
     <string name="v2_review_confirm">Xác nhận</string>
-</resources>
 
+    <!-- #477 Notifications and note editor (new UI) -->
+    <string name="notifications_v2_mark_all">Đã đọc hết</string>
+    <string name="notifications_v2_more">Thêm thao tác</string>
+    <string name="notifications_v2_delete_read">Xóa đã đọc</string>
+    <string name="notifications_v2_delete_read_confirm">Xóa tất cả thông báo đã đọc?</string>
+    <string name="notifications_v2_all">Tất cả</string>
+    <string name="notifications_v2_unread">Chưa đọc · %1$d</string>
+    <string name="notifications_v2_today">Hôm nay</string>
+    <string name="notifications_v2_yesterday">Hôm qua</string>
+    <string name="notifications_v2_empty_unread">Không có thông báo chưa đọc</string>
+    <string name="notifications_v2_unread_a11y">Chưa đọc</string>
+    <string name="notes_v2_discard">Đóng, không lưu</string>
+    <string name="notes_v2_content">Nội dung</string>
+    <string name="notes_v2_photos">Ảnh</string>
+    <string name="notes_v2_photo">Ảnh ghi chú</string>
+    <string name="notes_v2_add">Thêm</string>
+    <string name="notes_v2_photo_hint">Chọn ảnh từ thư viện. Chạm ảnh để xem lớn.</string>
+    <string name="notes_v2_save">Lưu ghi chú</string>
+</resources>
