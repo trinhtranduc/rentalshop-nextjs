@@ -59,6 +59,25 @@ struct CartItem: Codable {
         return (pricingOptions?.count ?? 0) > 1
     }
 
+    /// #473 — A line built before the product had both prices (added earlier, restored from disk, or loaded from
+    /// an edited order) takes the product's options, so the cart offers "Theo lần / Theo ngày". Only when those
+    /// options hold both prices and the line does not offer both yet. Quantity, mode and prices stay.
+    mutating func adoptPricingOptions(_ options: [PricingOption]?) {
+        let active = (options ?? []).filter { $0.isActive != false }
+        var fresh = self
+        fresh.pricingOptions = active
+        guard CartV2Logic.offersBothModes(fresh), !CartV2Logic.offersBothModes(self) else { return }
+        pricingOptions = active
+        if selectedPricingOptionId == nil {
+            let current = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+            selectedPricingOptionId = active.first { $0.type.uppercased() == current }?.id
+        }
+    }
+
+    mutating func refreshPricing(from product: Product) {
+        adoptPricingOptions(product.pricingOptions)
+    }
+
     /// Switch to a different pricing option (updates price + pricingType)
     mutating func selectPricingOption(_ optionId: Int) {
         guard let opt = pricingOptions?.first(where: { $0.id == optionId }) else { return }

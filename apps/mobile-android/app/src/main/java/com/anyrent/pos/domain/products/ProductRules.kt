@@ -278,6 +278,17 @@ object CartV2Logic {
     fun offersBothModes(product: Product): Boolean =
         ProductPricing.perRental(product) != null && ProductPricing.perDay(product) != null
 
+    /**
+     * #473 — a line built before the product had both prices (added earlier, restored from disk, or loaded from an
+     * edited order) takes the product's options, so the cart offers "Theo lần / Theo ngày". Only when [product] has
+     * both prices and the line does not offer both yet. Quantity, mode and the price in use stay (iOS
+     * `CartItem.adoptPricingOptions`).
+     */
+    fun withFreshPricing(line: CartLine, product: Product): CartLine {
+        if (!offersBothModes(product) || offersBothModes(line.product)) return line
+        return line.copy(product = line.product.copy(pricingOptions = product.pricingOptions))
+    }
+
     /** Units free for the dates (rent) or in stock (sale) when fewer than asked; null = enough or unknown */
     fun shortage(available: Int?, quantity: Int): Int? =
         available?.takeIf { it < quantity }?.coerceAtLeast(0)

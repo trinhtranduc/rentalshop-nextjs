@@ -20,6 +20,8 @@ final class CartV2ViewController: BaseViewControler {
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
     /// Bumped on each availability call; an older answer is dropped
     private var availabilityGeneration = 0
+    /// Products whose prices this screen already reloaded (#473), once per screen
+    private var pricingChecked = Set<Int>()
 
     private var cart: Cart { CartStore.shared.cart }
     private var isRent: Bool { cart.orderType == .rent }
@@ -36,6 +38,22 @@ final class CartV2ViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         render()
         loadAvailability()
+        refreshStalePricing()
+    }
+
+    /// #473 — a rent line that does not offer "Theo lần / Theo ngày" may be stale (added before the product got its
+    /// second price, restored from disk, or loaded from an edited order): reload that product once and let the line
+    /// take its prices. A product with one price stays without the toggle.
+    private func refreshStalePricing() {
+        guard isRent else { return }
+        let ids = Set(cart.items.filter { !CartV2Logic.offersBothModes($0) }.map { $0.productId }).subtracting(pricingChecked)
+        for productId in ids where productId > 0 {
+            pricingChecked.insert(productId)
+            ProductService.shared.loadProduct(productId: productId) { product, _ in
+                guard let product else { return }
+                DispatchQueue.main.async { CartStore.shared.refreshPricing(from: product) }
+            }
+        }
     }
 
     // MARK: - Layout
@@ -431,6 +449,7 @@ final class CartV2ViewController: BaseViewControler {
         guard !cart.isEditMode else { return }
         CartStore.shared.setOrderType(typeToggle.selectedIndex == 0 ? .rent : .sale, syncPrices: true)
         loadAvailability()
+        refreshStalePricing()
     }
 
     @objc private func pricingChanged(_ sender: V2Segmented) {

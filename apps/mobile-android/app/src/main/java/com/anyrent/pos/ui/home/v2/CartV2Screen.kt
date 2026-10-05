@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.domain.availability.AvailabilityRequest
@@ -72,7 +73,9 @@ import com.anyrent.pos.ui.customers.v2.CustomerPickerSheet
 import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -143,6 +146,18 @@ fun CartV2Screen(
             )
         }
         result.onSuccess { map -> available = map.mapValues { it.value.effectivelyAvailable } }
+    }
+
+    // #473 — a rent line without "Theo lần / Theo ngày" may be stale (added before the product got its second price,
+    // restored from disk, or loaded from an edited order): reload that product once per screen and let the line take
+    // its prices. A product with one price stays without the toggle.
+    val pricingChecked = remember { mutableSetOf<Int>() }
+    val staleIds = if (isSale) emptyList() else lines.filterNot { CartV2Logic.offersBothModes(it.product) }.map { it.product.id }
+    LaunchedEffect(staleIds) {
+        staleIds.filter { it > 0 && pricingChecked.add(it) }.forEach { productId ->
+            withContext(Dispatchers.IO) { ApiClient.get().getProduct(productId) }
+                .onSuccess { CartStore.refreshPricing(it) }
+        }
     }
 
     Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {

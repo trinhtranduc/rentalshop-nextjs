@@ -134,6 +134,12 @@ final class CartStore {
         notifyDidChange()
     }
 
+    /// #473 — lines of this product take its current prices when it has both and they do not offer both yet
+    func refreshPricing(from product: Product) {
+        storage.refreshPricing(from: product)
+        notifyDidChange()
+    }
+
     func updateQuantity(at index: Int, quantity: Int) {
         storage.updateQuantity(at: index, quantity: quantity)
         notifyDidChange()

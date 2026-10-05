@@ -418,3 +418,87 @@ final class ProductFormKeyboardTests: XCTestCase {
         assertDoneBar(fields(edit.view).first { $0.keyboardType == .phonePad })
     }
 }
+
+/// #473 — the cart's "Theo lần / Theo ngày" toggle for a product that has both prices
+extension ProductsV2Tests {
+    /// One row of `GET /api/products?page=1&limit=20&sortBy=createdAt&sortOrder=desc&outletId=17` (local stack, 2026-10-05)
+    private func homeRow(options: String) throws -> Product {
+        try product("""
+        {"id":301,"name":"Cart toggle probe both prices","description":null,"barcode":null,"totalStock":3,"stock":3,
+         "renting":0,"available":3,"effectiveAvailableToday":3,"rentPrice":150000,"salePrice":0,"costPrice":0,"deposit":0,
+         "images":[],"isActive":true,"embeddingGeneratedAt":null,"pricingType":"FIXED","durationConfig":null,
+         "pricingOptions":\(options),
+         "createdAt":"2026-10-05T13:03:54.566Z","updatedAt":"2026-10-05T13:03:54.566Z","deletedAt":null,"categoryId":1,
+         "category":{"id":1,"name":"Electronics"},"merchant":{"id":9,"name":"Rental Shop Demo"},"merchantId":9,
+         "outletStock":[{"id":601,"stock":3,"available":3,"renting":0,"productId":301,"outletId":17,
+                         "outlet":{"id":17,"name":"Rental Shop Demo - Main Branch","address":"123 Main Street"}}]}
+        """)
+    }
+
+    private var bothOptions: String {
+        """
+        [{"id":1,"productId":301,"type":"FIXED","price":150000,"unit":null,"blockSize":null,"isDefault":true,"isActive":true,
+          "sortOrder":0,"createdAt":"2026-10-05T13:03:54.566Z","updatedAt":"2026-10-05T13:03:54.566Z"},
+         {"id":2,"productId":301,"type":"DAILY","price":50000,"unit":null,"blockSize":null,"isDefault":false,"isActive":true,
+          "sortOrder":1,"createdAt":"2026-10-05T13:03:54.566Z","updatedAt":"2026-10-05T13:03:54.566Z"}]
+        """
+    }
+
+    func testHomeRowWithBothPricesOffersBothModes() throws {
+        let row = try homeRow(options: bothOptions)
+        let line = CartItem(from: row, quantity: 1, price: row.rentPrice ?? row.rent)
+        XCTAssertTrue(CartV2Logic.offersBothModes(line))
+        XCTAssertEqual(line.pricingType, "FIXED")
+        XCTAssertEqual(line.price, 150_000)
+    }
+
+    func testOnePriceProductShowsNoToggle() throws {
+        let onePrice = try homeRow(options: "[]")
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(CartItem(from: onePrice, quantity: 1, price: 150_000))
+        cart.addItem(CartItem(from: onePrice, quantity: 1, price: 150_000))
+        cart.refreshPricing(from: onePrice)
+        XCTAssertEqual(cart.items.count, 1)
+        XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
+    }
+
+    func testStaleLineGetsTheToggleWhenTheProductIsAddedAgain() throws {
+        // Put in the cart while it had one price; then the per-day price was added and it is added again
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(CartItem(from: try homeRow(options: "[]"), quantity: 1, price: 150_000))
+        XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
+
+        cart.addItem(CartItem(from: try homeRow(options: bothOptions), quantity: 1, price: 150_000))
+        XCTAssertEqual(cart.items.count, 1)
+        XCTAssertEqual(cart.items[0].quantity, 2)
+        XCTAssertTrue(CartV2Logic.offersBothModes(cart.items[0]))
+        XCTAssertEqual(cart.items[0].pricingType, "FIXED")
+        XCTAssertEqual(cart.items[0].price, 150_000)
+
+        cart.selectPricingType(at: 0, type: "DAILY")
+        XCTAssertEqual(cart.items[0].price, 50_000)
+    }
+
+    func testRestoredOrEditedLineGetsTheToggleAfterARefresh() throws {
+        // A line of an edited order: no options, the order's own unit price
+        var edited = CartItem(productId: 301, productName: "Cart toggle probe both prices", barcode: nil, quantity: 1,
+                              price: 140_000, deposit: 0, originalRentPrice: 140_000, originalSalePrice: 140_000,
+                              customRentPrice: 140_000)
+        edited.pricingType = "FIXED"
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(edited)
+        XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
+
+        cart.refreshPricing(from: try homeRow(options: bothOptions))
+        XCTAssertTrue(CartV2Logic.offersBothModes(cart.items[0]))
+        XCTAssertEqual(cart.items[0].price, 140_000, "the order's unit price stays until the mode changes")
+        XCTAssertEqual(cart.items[0].pricingType, "FIXED")
+
+        // A cart saved to disk and restored keeps the refreshed options
+        let restored = try JSONDecoder().decode(CartItem.self, from: JSONEncoder().encode(cart.items[0]))
+        XCTAssertTrue(CartV2Logic.offersBothModes(restored))
+    }
+}
