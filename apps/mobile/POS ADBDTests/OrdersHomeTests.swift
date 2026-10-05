@@ -373,6 +373,26 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertFalse(paidTexts.contains { $0.contains("✓") })
         XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
     }
+
+    // MARK: #468 — no call button on "Việc cần làm" rows (call from order detail)
+
+    func testWorkRowsHaveNoCallPhone() {
+        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0001", customerName: "Huy", customerPhone: "0901 234 567")
+        XCTAssertNil(OrdersHomeLogic.workCallPhone(row, isLate: true))
+        XCTAssertNil(OrdersHomeLogic.workCallPhone(row, isLate: false))
+    }
+
+    func testLateWorkCellShowsNoCallButton() {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0001", customerName: "Huy", customerPhone: "0901234567",
+                               returnPlanAt: iso.date(from: "2026-10-01T02:00:00Z"), lateDays: 2)
+        cell.configure(.work(row, kind: .takeBack), context: .work(isLate: true), hidesMoney: false)
+        func visibleButtons(_ view: UIView) -> [UIButton] {
+            let own = (view as? UIButton).map { [$0] } ?? []
+            return view.isHidden ? [] : own + view.subviews.flatMap(visibleButtons)
+        }
+        XCTAssertTrue(visibleButtons(cell.contentView).isEmpty, "late work row: no call button")
+    }
 }
 
 private final class FakeSource: OrdersHomeDataSource {

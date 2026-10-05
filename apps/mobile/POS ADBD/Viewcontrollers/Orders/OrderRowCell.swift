@@ -200,10 +200,8 @@ final class OrderRowCell: UITableViewCell {
         setTotal(work.totalAmount, struck: false)
         setPay(OrdersHomeLogic.payLine(amountDue: work.amountDue, refundDue: work.refundDue))
 
-        // Board Main: the call button only on TRỄ HẠN rows
-        let trimmedPhone = work.customerPhone?.removeWhiteSpace() ?? ""
-        phone = trimmedPhone
-        callButton.isHidden = !isLate || trimmedPhone.isEmpty
+        phone = OrdersHomeLogic.workCallPhone(work, isLate: isLate)
+        callButton.isHidden = phone == nil
     }
 
     private func bindOrder(_ order: Order, lateDays: Int, context: OrderRowContext, hidesMoney: Bool) {

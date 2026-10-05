@@ -622,7 +622,6 @@ private fun WorkRow(
         // #458: fully paid → the total only
         null -> null
     }
-    val phone = work.customerPhone?.filterNot { it.isWhitespace() }.orEmpty()
     BoardRow(
         tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
             (if (handOver) DS.Status.HandOver else DS.Status.Return),
@@ -634,8 +633,7 @@ private fun WorkRow(
         total = formatMoneyVnd(work.totalAmount),
         struck = false,
         pay = pay,
-        // Board Main: the call button only on TRỄ HẠN rows
-        phone = phone.takeIf { isLate && it.isNotEmpty() },
+        phone = OrdersBoardLogic.workCallPhone(work, isLate),
         onClick = onClick,
         onCall = onCall,
     )

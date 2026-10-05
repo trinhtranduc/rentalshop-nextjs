@@ -251,6 +251,12 @@ enum OrdersHomeLogic {
         return text
     }
 
+    /// Phone behind the call button of a "Việc cần làm" row; nil hides the button
+    static func workCallPhone(_ row: TodayWorkRow, isLate: Bool) -> String? {
+        let phone = row.customerPhone?.removeWhiteSpace() ?? ""
+        return isLate && !phone.isEmpty ? phone : nil
+    }
+
     /// Date line of a "Việc cần làm" row: the missed day on TRỄ HẠN, the rental span otherwise
     static func workWhen(_ row: TodayWorkRow, kind: WorkKind, isLate: Bool,
                          timeZone: TimeZone = .current, locale: Locale = .current) -> String {

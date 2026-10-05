@@ -307,6 +307,13 @@ class OrdersHomeTest {
     }
 
     @Test
+    fun `work rows have no call phone, late or not (#468)`() {
+        val row = TodayWorkRow(id = 1, orderNumber = "ORD-1-0001", customerName = "Huy", customerPhone = "0901 234 567", lateDays = 2)
+        assertNull(OrdersBoardLogic.workCallPhone(row, isLate = true))
+        assertNull(OrdersBoardLogic.workCallPhone(row, isLate = false))
+    }
+
+    @Test
     fun `list and search date lines`() {
         val now = Instant.parse("2026-10-04T05:00:00Z")
         assertEquals("tạo 02/10 · 04/10 → 05/10", OrdersBoardLogic.listWhen(listOrder("RESERVED"), 0, now, vietnam))
