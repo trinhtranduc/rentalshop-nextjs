@@ -398,9 +398,10 @@ fun AnyRentNavHost(
             )
         }
         composable(Routes.CartV2Preview) {
-            // Existing preview: creates the order with the existing logic
+            // Existing preview logic with the iOS review copy and confirm sheet (#448)
             CartCheckoutScreen(
                 previewMode = true,
+                reviewV2 = true,
                 onBack = { rootNavController.popBackStack() },
                 onPreview = {},
                 onCreated = {
