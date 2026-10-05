@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess, hashPassword } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, userUpdateSchema } from '@rentalshop/utils';
+import { createAuditHelper } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../../../../lib/user-scope';
+import { applyUserAccessChange, buildUserAuditContext } from '../../../../../../lib/user-merchant-assignment';
 
 /**
  * GET /api/merchants/[id]/users/[userId]
@@ -117,7 +119,27 @@ export async function PUT(
       } else {
         delete updateData.password;
       }
+      // Moving to another merchant (ADMIN only), outlet and role changes (#443)
+      const access = await applyUserAccessChange(user, existing, updateData);
+      if (!access.ok) {
+        return NextResponse.json(ResponseBuilder.error(access.code), { status: access.status });
+      }
       const updatedUser = await db.users.update(userPublicId, updateData);
+
+      await createAuditHelper(prisma).logUpdate({
+        entityType: 'User',
+        entityId: String(userPublicId),
+        entityName: updatedUser.email,
+        oldValues: toPublicUser(existing),
+        newValues: toPublicUser(updatedUser),
+        description: access.accessChanged ? `User access changed: ${updatedUser.email}` : `User updated: ${updatedUser.email}`,
+        context: buildUserAuditContext(request, user, userScope)
+      }).catch((err) => console.error('Audit log update failed:', err));
+
+      // A new merchant/outlet/role takes effect on the next sign-in
+      if (access.accessChanged || (existing.isActive && updateData.isActive === false)) {
+        await db.sessions.invalidateAllUserSessions(userPublicId);
+      }
 
       return NextResponse.json({ success: true, data: toPublicUser(updatedUser) });
     } catch (error) {

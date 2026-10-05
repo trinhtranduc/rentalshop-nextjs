@@ -41,6 +41,7 @@
   "MERCHANT_ACCESS_REQUIRED": "Yêu cầu quyền truy cập doanh nghiệp",
   "DELETE_USER_OUT_OF_SCOPE": "Không thể xóa người dùng ngoài phạm vi của bạn",
   "UPDATE_USER_OUT_OF_SCOPE": "Không thể cập nhật người dùng ngoài phạm vi của bạn",
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "Vui lòng chỉ định một chủ doanh nghiệp khác đang hoạt động trước khi thay đổi tài khoản này",
   "DELETE_OWN_ACCOUNT_ONLY": "Bạn chỉ có thể xóa tài khoản của chính mình",
   "ACCESS_TOKEN_REQUIRED": "Yêu cầu token truy cập",
   "TOKEN_REQUIRED": "Token là bắt buộc",
