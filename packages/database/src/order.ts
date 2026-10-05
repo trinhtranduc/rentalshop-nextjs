@@ -12,6 +12,17 @@ import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, forma
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
 
+/** Planned dates can be NULL; PostgreSQL would list those first on DESC (#428). */
+const NULLABLE_ORDER_SORT_KEYS = new Set(['pickupPlanAt', 'returnPlanAt']);
+
+/** Order-list orderBy: nullable planned dates sort with NULLs last in both directions (#428). */
+export function orderListOrderBy(sortBy: string, sortOrder: 'asc' | 'desc'): Prisma.OrderOrderByWithRelationInput {
+  if (NULLABLE_ORDER_SORT_KEYS.has(sortBy)) {
+    return { [sortBy]: { sort: sortOrder, nulls: 'last' } } as Prisma.OrderOrderByWithRelationInput;
+  }
+  return { [sortBy]: sortOrder } as Prisma.OrderOrderByWithRelationInput;
+}
+
 /**
  * Build search conditions for orders with contains matching across:
  * - order number
@@ -1871,7 +1882,7 @@ export const simplifiedOrders = {
         prisma.order.findMany({
           where,
           select: listSelect,
-          orderBy: { [sortBy]: sortOrder },
+          orderBy: orderListOrderBy(sortBy, sortOrder),
           skip: (page - 1) * limit,
           take: limit
         }),
