@@ -453,3 +453,84 @@ extension ProductsV2Tests {
         XCTAssertTrue(CartV2Logic.offersBothModes(restored))
     }
 }
+
+/// #476 — "Tạo đơn" opens a confirm sheet on the cart, then a "Đã tạo đơn" sheet
+extension ProductsV2Tests {
+    private var vn: TimeZone { TimeZone(identifier: "Asia/Ho_Chi_Minh")! }
+
+    private func rentCart() throws -> Cart {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.customer = try JSONDecoder.shared.decode(Customer.self, from: Data(#"{"id":5,"firstName":"Trần Văn","lastName":"Minh","phone":"0912555018"}"#.utf8))
+        let vest = CartItem(productId: 1, productName: "Vest đen slim fit", barcode: nil, quantity: 1, price: 150_000, deposit: 100_000,
+                            originalRentPrice: 150_000, originalSalePrice: 0)
+        let aoDai = CartItem(productId: 2, productName: "Áo dài lụa đỏ", barcode: nil, quantity: 2, price: 300_000, deposit: 100_000,
+                             originalRentPrice: 300_000, originalSalePrice: 0)
+        cart.addItem(vest)
+        cart.addItem(aoDai)
+        // T7 03/10 → T2 05/10 in Vietnam
+        cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")
+        return cart
+    }
+
+    func testRentConfirmSheetSummarisesTheCart() throws {
+        let cart = try rentCart()
+        let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertFalse(confirm.isSale)
+        XCTAssertEqual(confirm.customer, "Trần Văn Minh")
+        XCTAssertEqual(confirm.range, "03/10 → 05/10")
+        XCTAssertEqual(confirm.days, 3)
+        XCTAssertEqual(confirm.items, "Vest đen slim fit, Áo dài lụa đỏ ×2")
+        XCTAssertEqual(confirm.total, cart.totalAmount)
+        XCTAssertEqual(confirm.total, 750_000)
+        XCTAssertEqual(confirm.collect, cart.depositAmount, "rent collects the prepaid deposit")
+        XCTAssertEqual(confirm.titleKey, "products.cart.confirm.rentTitle")
+        XCTAssertEqual(confirm.collectKey, "products.cart.confirm.collectDeposit")
+    }
+
+    func testSaleConfirmSheetCollectsTheAmountDue() throws {
+        let cart = try rentCart()
+        cart.orderType = .sale
+        cart.discount = 10_000
+        let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertTrue(confirm.isSale)
+        XCTAssertNil(confirm.range, "a sale has no rental dates")
+        XCTAssertEqual(confirm.collect, cart.amountDue)
+        XCTAssertEqual(confirm.titleKey, "products.cart.confirm.saleTitle")
+        XCTAssertEqual(confirm.collectKey, "products.cart.confirm.collectSale")
+    }
+
+    func testCreatedSheetUsesTheShortOrderNumber() throws {
+        let confirm = CreateOrderSheetLogic.confirm(try rentCart(), timeZone: vn)
+        let created = CreateOrderSheetLogic.created(orderNumber: "ORD-17-0063", confirm: confirm)
+        XCTAssertEqual(created.shortNumber, "0063")
+        XCTAssertEqual(created.subtitle, "Trần Văn Minh · 03/10 → 05/10")
+        XCTAssertEqual(created.paid, confirm.collect)
+        XCTAssertEqual(created.paidKey, "products.cart.created.paidDeposit")
+
+        let saleCart = try rentCart()
+        saleCart.orderType = .sale
+        let sale = CreateOrderSheetLogic.created(orderNumber: "ORD-17-0064", confirm: CreateOrderSheetLogic.confirm(saleCart, timeZone: vn))
+        XCTAssertEqual(sale.subtitle, "Trần Văn Minh")
+        XCTAssertEqual(sale.paidKey, "products.cart.created.paidSale")
+    }
+
+    func testOnlyANewOrderUsesTheSheet() {
+        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: false), .confirmSheet)
+        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .preview, "editing an order keeps the review screen")
+    }
+
+    func testOneCreateAtATimeAndTheKeyIsReusedOnRetry() {
+        let submission = CreateOrderSubmission()
+        let key = submission.idempotencyKey
+        XCTAssertTrue(submission.begin())
+        XCTAssertFalse(submission.begin(), "a double tap must not send a second create (#341)")
+        submission.failed()
+        XCTAssertEqual(submission.idempotencyKey, key, "a retry after an error reuses the key")
+        XCTAssertTrue(submission.begin())
+        submission.succeeded()
+        XCTAssertNotEqual(submission.idempotencyKey, key, "the next cart is a new checkout")
+        XCTAssertFalse(submission.inFlight)
+    }
+}
