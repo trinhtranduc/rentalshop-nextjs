@@ -1172,6 +1172,8 @@ class ApiClient(
                 ?: customer?.nullableString("phone"),
             pickupPlanAt = o.nullableString("pickupPlanAt"),
             returnPlanAt = o.nullableString("returnPlanAt"),
+            pickedUpAt = o.nullableString("pickedUpAt"),
+            returnedAt = o.nullableString("returnedAt"),
             createdAt = o.nullableString("createdAt"),
             notes = o.nullableString("notes"),
             isReadyToDeliver = o.optBoolean("isReadyToDeliver", false),

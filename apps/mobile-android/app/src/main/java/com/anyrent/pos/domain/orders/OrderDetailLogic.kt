@@ -195,11 +195,11 @@ object OrderDetailLogic {
         return StatusErrorOutcome(app.code, app.message, reload)
     }
 
-    /** Instants (ISO strings) under the three steps of the rent step bar */
+    /** Instants (ISO strings) under the three steps of the rent step bar: the actual day once it happened (#434, iOS) */
     fun progressDays(summary: OrderSummary): ProgressDays = ProgressDays(
         booked = summary.createdAt,
-        handOver = summary.pickupPlanAt,
-        returned = summary.returnPlanAt,
+        handOver = summary.pickedUpAt ?: summary.pickupPlanAt,
+        returned = summary.returnedAt ?: summary.returnPlanAt,
     )
 }
 
