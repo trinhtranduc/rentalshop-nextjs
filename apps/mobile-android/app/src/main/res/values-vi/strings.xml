@@ -906,6 +906,8 @@
     <string name="authv2_login_button">Đăng nhập</string>
     <string name="authv2_no_store">Chưa có cửa hàng?</string>
     <string name="authv2_create_store">Tạo cửa hàng mới</string>
+    <string name="authv2_have_store">Đã có cửa hàng?</string>
+    <string name="authv2_remember_password">Nhớ ra mật khẩu?</string>
     <string name="authv2_back">Quay lại</string>
     <string name="authv2_step">Bước %1$d/%2$d</string>
     <string name="authv2_store_title">Cửa hàng của bạn</string>

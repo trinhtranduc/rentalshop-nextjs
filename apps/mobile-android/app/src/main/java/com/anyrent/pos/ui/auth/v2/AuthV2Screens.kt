@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +40,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -68,7 +72,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -110,7 +121,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// #386 — boards Dang-nhap, Dang-ky, Dang-ky-2, Quen-mat-khau, Quen-mat-khau-da-gui (flag `newAuth`)
+// #386 — boards Dang-nhap, Dang-ky, Dang-ky-2, Quen-mat-khau, Quen-mat-khau-da-gui (flag `newAuth`); style 4A (#466)
 
 private val FieldBorder = AuthV2Style.FieldBorder
 private val ErrorRed = AuthV2Style.Error
@@ -121,16 +132,16 @@ private val MaxWidth = AuthV2Style.MaxWidth
 // MARK: - Building blocks
 
 /**
- * White page: optional [header], scrolling [content] and a [footer] pinned above the keyboard.
+ * White page with the 4A dot grid: optional [header], scrolling [content] and an optional [footer] pinned above
+ * the keyboard.
  * When the keyboard opens, [keepInView] (the fields and the main button) scrolls above it, and a
  * secondary footer can step aside ([hideFooterWithKeyboard]) so the form has the room, like iOS (#448).
  */
 @Composable
 private fun AuthPage(
     header: (@Composable () -> Unit)?,
-    footer: @Composable ColumnScope.() -> Unit,
+    footer: (@Composable ColumnScope.() -> Unit)?,
     contentTop: Int,
-    blobs: AuthV2Style.BlobScale,
     keepInView: BringIntoViewRequester? = null,
     hideFooterWithKeyboard: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
@@ -144,12 +155,8 @@ private fun AuthPage(
             keepInView.bringIntoView()
         }
     }
-    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val headerHeight = if (header != null) AuthV2Style.HeaderHeight else 0.dp
-    val top = maxOf(contentTop.dp, AuthV2Style.blobClearance(blobs) - statusTop - headerHeight)
     Box(Modifier.fillMaxSize().background(AuthV2Style.PageBackground)) {
-        // The blobs move with the content (keyboard up, scrolling), so they never slide over the text
-        AuthBlobs(blobs, scrollOffset = { scrollState.value })
+        AuthDotGrid()
         Column(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -161,10 +168,10 @@ private fun AuthPage(
                     .widthIn(max = MaxWidth)
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = AuthV2Style.SideInset, end = AuthV2Style.SideInset, top = top, bottom = 16.dp),
+                    .padding(start = AuthV2Style.SideInset, end = AuthV2Style.SideInset, top = contentTop.dp, bottom = 16.dp),
                 content = content,
             )
-            if (!(hideFooterWithKeyboard && keyboardUp)) {
+            if (footer != null && !(hideFooterWithKeyboard && keyboardUp)) {
                 Column(
                     Modifier.widthIn(max = MaxWidth).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 24.dp),
                     content = footer,
@@ -175,27 +182,41 @@ private fun AuthPage(
 }
 
 @Composable
-private fun AuthTitle(title: String, subtitle: String, size: Int = 30) {
+private fun AuthTitle(title: String, subtitle: String, centered: Boolean = false) {
+    val align = if (centered) TextAlign.Center else TextAlign.Start
     Text(
         title,
-        modifier = Modifier.semantics { heading() },
+        modifier = Modifier.fillMaxWidth().semantics { heading() },
         color = AuthV2Style.Text,
-        fontSize = size.sp,
-        lineHeight = (size + 8).sp,
+        fontSize = AuthV2Style.TitleSize.sp,
+        lineHeight = 36.sp,
         fontWeight = FontWeight.ExtraBold,
         letterSpacing = AuthV2Style.HeadingLetterSpacing,
+        textAlign = align,
     )
     Spacer(Modifier.height(6.dp))
-    Text(subtitle, color = AuthV2Style.TextMuted, fontSize = AuthV2Style.SubtitleSize, lineHeight = 23.sp)
+    Text(
+        subtitle,
+        modifier = Modifier.fillMaxWidth(),
+        color = AuthV2Style.TextMuted,
+        fontSize = AuthV2Style.SubtitleSize,
+        lineHeight = 23.sp,
+        textAlign = align,
+    )
 }
 
-/** Round 44dp back button, white at 0.9 over the blobs */
+/** Top bar: round white 44dp back button with a light shadow, and the small brand centred (board 4A) */
 @Composable
 private fun AuthBackHeader(onBack: () -> Unit) {
-    Box(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp)) {
+    Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+        AuthBrandBar(Modifier.align(Alignment.Center))
         IconButton(
             onClick = onBack,
-            modifier = Modifier.size(44.dp).background(AuthV2Style.BackButtonFill, CircleShape),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .size(44.dp)
+                .shadow(2.dp, CircleShape, ambientColor = Color(0x1F0F172A), spotColor = Color(0x1F0F172A))
+                .background(Color.White, CircleShape),
         ) {
             AppIcon(
                 Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
@@ -230,6 +251,7 @@ private fun AuthField(
     value: String,
     onValueChange: (String) -> Unit,
     error: String?,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     hint: String? = null,
@@ -240,6 +262,7 @@ private fun AuthField(
     onImeAction: (() -> Unit)? = null,
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
     val focus = LocalFocusManager.current
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, color = AuthV2Style.Text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
@@ -249,6 +272,19 @@ private fun AuthField(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = AuthV2Style.FieldHeight)
+                .onFocusChanged { focused = it.isFocused }
+                // 3dp light-blue ring outside the focused field (an error keeps the red border only)
+                .drawBehind {
+                    if (focused && error == null) {
+                        val ring = 3.dp.toPx()
+                        drawRoundRect(
+                            AuthV2Style.FocusRing,
+                            topLeft = Offset(-ring, -ring),
+                            size = Size(size.width + 2 * ring, size.height + 2 * ring),
+                            cornerRadius = CornerRadius((AuthV2Style.FieldRadius + 3.dp).toPx()),
+                        )
+                    }
+                }
                 .semantics {
                     contentDescription = label
                     if (error != null) error(error)
@@ -258,6 +294,7 @@ private fun AuthField(
             isError = error != null,
             textStyle = TextStyle(fontSize = DS.TextSize.Input, color = AuthV2Style.Text),
             shape = RoundedCornerShape(AuthV2Style.FieldRadius),
+            leadingIcon = { AppIcon(icon, contentDescription = null, size = DS.Icon.Md) },
             visualTransformation = if (password && !visible) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(
                 keyboardType = if (password) KeyboardType.Password else keyboardType,
@@ -290,6 +327,9 @@ private fun AuthField(
                 focusedBorderColor = AuthV2Style.Primary,
                 unfocusedBorderColor = FieldBorder,
                 errorBorderColor = ErrorRed,
+                focusedLeadingIconColor = AuthV2Style.Primary,
+                unfocusedLeadingIconColor = AuthV2Style.FieldIcon,
+                errorLeadingIconColor = ErrorRed,
                 cursorColor = AuthV2Style.Primary,
                 errorCursorColor = ErrorRed,
             ),
@@ -304,7 +344,15 @@ private fun AuthButton(text: String, loading: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         enabled = !loading,
-        modifier = Modifier.fillMaxWidth().height(AuthV2Style.ButtonHeight),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(AuthV2Style.ButtonHeight)
+            .shadow(
+                8.dp,
+                RoundedCornerShape(AuthV2Style.ButtonRadius),
+                ambientColor = AuthV2Style.Primary,
+                spotColor = AuthV2Style.Primary.copy(alpha = .5f),
+            ),
         shape = RoundedCornerShape(AuthV2Style.ButtonRadius),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuthV2Style.Primary,
@@ -330,6 +378,17 @@ private fun AuthLink(text: String, onClick: () -> Unit, enabled: Boolean = true)
             fontSize = DS.TextSize.Body,
             fontWeight = FontWeight.SemiBold,
         )
+    }
+}
+
+/** "Question? Link" centred under the form (4A) */
+@Composable
+private fun AuthSecondaryRow(question: String, link: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Text(question, color = AuthV2Style.TextMuted, fontSize = DS.TextSize.Body)
+        TextButton(onClick = onClick, modifier = Modifier.heightIn(min = 48.dp)) {
+            Text(link, color = AuthV2Style.Primary, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -392,25 +451,21 @@ fun LoginV2Screen(
     val formInView = remember { BringIntoViewRequester() }
     AuthPage(
         header = null,
-        contentTop = 240,
-        blobs = AuthV2Style.BlobScale.LOGIN,
+        contentTop = 96,
         keepInView = formInView,
-        hideFooterWithKeyboard = true,
-        footer = {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.authv2_no_store), color = AuthV2Style.TextMuted, fontSize = DS.TextSize.Body)
-                AuthLink(stringResource(R.string.authv2_create_store), onRegister)
-            }
-        },
+        footer = null,
     ) {
-        AuthTitle(stringResource(R.string.authv2_login_title), stringResource(R.string.authv2_login_subtitle))
-        Spacer(Modifier.height(16.dp))
+        AuthBrandHeader()
+        Spacer(Modifier.height(48.dp))
+        AuthTitle(stringResource(R.string.authv2_login_title), stringResource(R.string.authv2_login_subtitle), centered = true)
+        Spacer(Modifier.height(20.dp))
         Column(Modifier.bringIntoViewRequester(formInView)) {
         AuthField(
             label = stringResource(R.string.authv2_email),
             value = email,
             onValueChange = { email = it; emailError = null },
             error = emailError,
+            icon = Icons.Outlined.Email,
             placeholder = stringResource(R.string.authv2_email_placeholder),
             keyboardType = KeyboardType.Email,
         )
@@ -420,6 +475,7 @@ fun LoginV2Screen(
             value = password,
             onValueChange = { password = it; passwordError = null },
             error = passwordError,
+            icon = Icons.Outlined.Lock,
             password = true,
             imeAction = ImeAction.Go,
             onImeAction = { submit() },
@@ -432,6 +488,8 @@ fun LoginV2Screen(
         }
         AuthButton(stringResource(R.string.authv2_login_button), loading) { submit() }
         }
+        Spacer(Modifier.height(8.dp))
+        AuthSecondaryRow(stringResource(R.string.authv2_no_store), stringResource(R.string.authv2_create_store), onRegister)
     }
 }
 
@@ -505,23 +563,27 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
     }
 
     androidx.activity.compose.BackHandler(enabled = step == 2) { back() }
+    val keyboardUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
     AuthPage(
         header = { AuthBackHeader(onBack = { back() }) },
-        contentTop = 52,
-        blobs = AuthV2Style.BlobScale.REGISTER,
+        contentTop = 24,
         footer = {
             generalError?.let { Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp)) }
             AuthButton(
                 stringResource(if (step == 1) R.string.authv2_continue else R.string.authv2_create_store_button),
                 loading,
             ) { primary() }
+            // Step 1 only; steps aside with the keyboard so the fields keep the room (#448)
+            if (step == 1 && !keyboardUp) {
+                AuthSecondaryRow(stringResource(R.string.authv2_have_store), stringResource(R.string.authv2_login_button), onBack)
+            }
         },
     ) {
         AuthProgress(step)
         Spacer(Modifier.height(16.dp))
         if (step == 1) {
-            AuthTitle(stringResource(R.string.authv2_store_title), stringResource(R.string.authv2_store_subtitle), size = 26)
+            AuthTitle(stringResource(R.string.authv2_store_title), stringResource(R.string.authv2_store_subtitle))
             Spacer(Modifier.height(16.dp))
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 AuthField(
@@ -529,6 +591,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     value = draft.storeName,
                     onValueChange = { draft = draft.copy(storeName = it); clear(AuthField.STORE_NAME) },
                     error = errors[AuthField.STORE_NAME],
+                    icon = Icons.Outlined.Storefront,
                     capitalization = KeyboardCapitalization.Words,
                 )
                 AuthField(
@@ -536,6 +599,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     value = draft.phone,
                     onValueChange = { draft = draft.copy(phone = it); clear(AuthField.PHONE) },
                     error = errors[AuthField.PHONE],
+                    icon = Icons.Outlined.Phone,
                     keyboardType = KeyboardType.Phone,
                 )
                 AuthField(
@@ -543,6 +607,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     value = draft.address,
                     onValueChange = { draft = draft.copy(address = it); clear(AuthField.ADDRESS) },
                     error = errors[AuthField.ADDRESS],
+                    icon = Icons.Outlined.Place,
                     placeholder = stringResource(R.string.authv2_address_placeholder),
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -570,14 +635,15 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                 }
             }
         } else {
-            AuthTitle(stringResource(R.string.authv2_owner_title), stringResource(R.string.authv2_owner_subtitle), size = 26)
-            Spacer(Modifier.height(14.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            AuthTitle(stringResource(R.string.authv2_owner_title), stringResource(R.string.authv2_owner_subtitle))
+            Spacer(Modifier.height(16.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 AuthField(
                     label = stringResource(R.string.authv2_full_name),
                     value = draft.fullName,
                     onValueChange = { draft = draft.copy(fullName = it); clear(AuthField.FULL_NAME) },
                     error = errors[AuthField.FULL_NAME],
+                    icon = Icons.Outlined.Person,
                     capitalization = KeyboardCapitalization.Words,
                 )
                 AuthField(
@@ -585,6 +651,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     value = draft.email,
                     onValueChange = { draft = draft.copy(email = it); clear(AuthField.EMAIL) },
                     error = errors[AuthField.EMAIL],
+                    icon = Icons.Outlined.Email,
                     keyboardType = KeyboardType.Email,
                 )
                 AuthField(
@@ -592,6 +659,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     value = draft.password,
                     onValueChange = { draft = draft.copy(password = it); clear(AuthField.PASSWORD) },
                     error = errors[AuthField.PASSWORD],
+                    icon = Icons.Outlined.Lock,
                     hint = stringResource(R.string.authv2_password_hint),
                     password = true,
                 )
@@ -600,6 +668,7 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     value = draft.confirmPassword,
                     onValueChange = { draft = draft.copy(confirmPassword = it); clear(AuthField.CONFIRM_PASSWORD) },
                     error = errors[AuthField.CONFIRM_PASSWORD],
+                    icon = Icons.Outlined.Lock,
                     password = true,
                     imeAction = ImeAction.Done,
                 )
@@ -702,8 +771,7 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
     val formInView = remember { BringIntoViewRequester() }
     AuthPage(
         header = { AuthBackHeader(onBack) },
-        contentTop = 200,
-        blobs = AuthV2Style.BlobScale.FORGOT,
+        contentTop = 56,
         keepInView = formInView,
         hideFooterWithKeyboard = true,
         footer = {
@@ -717,13 +785,14 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
         },
     ) {
         AuthTitle(stringResource(R.string.authv2_forgot_title), stringResource(R.string.authv2_forgot_text))
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(20.dp))
         Column(Modifier.bringIntoViewRequester(formInView)) {
         AuthField(
             label = stringResource(R.string.authv2_email),
             value = email,
             onValueChange = { email = it; error = null },
             error = error,
+            icon = Icons.Outlined.Email,
             placeholder = stringResource(R.string.authv2_email_placeholder),
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Send,
@@ -732,6 +801,8 @@ fun ForgotPasswordV2Screen(initialEmail: String, onBack: () -> Unit, onSent: (St
         Spacer(Modifier.height(16.dp))
         AuthButton(stringResource(R.string.authv2_forgot_send), loading) { send() }
         }
+        Spacer(Modifier.height(8.dp))
+        AuthSecondaryRow(stringResource(R.string.authv2_remember_password), stringResource(R.string.authv2_login_button), onBack)
     }
 }
 
@@ -760,8 +831,7 @@ fun EmailSentV2Screen(email: String, kind: EmailSentKind = EmailSentKind.RESET, 
 
     AuthPage(
         header = { AuthBackHeader(onBackToLogin) },
-        contentTop = 150,
-        blobs = AuthV2Style.BlobScale.FORGOT,
+        contentTop = 110,
         footer = {
             error?.let { Text(it, color = ErrorRed, fontSize = DS.TextSize.Body, modifier = Modifier.padding(bottom = 8.dp)) }
             AuthButton(stringResource(R.string.authv2_back_to_login), loading = false, onClick = onBackToLogin)
@@ -790,14 +860,14 @@ fun EmailSentV2Screen(email: String, kind: EmailSentKind = EmailSentKind.RESET, 
             }
         },
     ) {
-        AuthFloatingMailIcon()
-        Spacer(Modifier.height(18.dp))
+        AuthMailTile()
+        Spacer(Modifier.height(16.dp))
         Text(
             stringResource(R.string.authv2_sent_title),
             modifier = Modifier.semantics { heading() },
             color = AuthV2Style.Text,
-            fontSize = 30.sp,
-            lineHeight = 38.sp,
+            fontSize = AuthV2Style.TitleSize.sp,
+            lineHeight = 36.sp,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = AuthV2Style.HeadingLetterSpacing,
         )
