@@ -516,7 +516,9 @@ fun AnyRentNavHost(
             OnboardingScreen(onFinished = finish)
         }
         composable(Routes.StoreInfo) {
-            StoreInfoScreen(onBack = { rootNavController.popBackStack() })
+            // #459: Settings detail pages in the new style when `newSettings` is on
+            val features by FeatureFlags.enabled.collectAsState()
+            StoreInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
         }
         composable(Routes.Subscription) {
             SubscriptionScreen(onBack = { rootNavController.popBackStack() })
@@ -574,18 +576,23 @@ fun AnyRentNavHost(
             )
         }
         composable(Routes.Users) {
+            val features by FeatureFlags.enabled.collectAsState()
             UserManagementScreen(
                 onBack = { rootNavController.popBackStack() },
+                v2 = MobileFeature.NEW_SETTINGS in features,
             )
         }
         composable(Routes.Export) {
-            ExportAuthScreen(onBack = { rootNavController.popBackStack() })
+            val features by FeatureFlags.enabled.collectAsState()
+            ExportAuthScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
         }
         composable(Routes.Printer) {
-            PrinterNetworkScreen(onBack = { rootNavController.popBackStack() })
+            val features by FeatureFlags.enabled.collectAsState()
+            PrinterNetworkScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
         }
         composable(Routes.AppInfo) {
-            AppInfoScreen(onBack = { rootNavController.popBackStack() })
+            val features by FeatureFlags.enabled.collectAsState()
+            AppInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
         }
     }
 

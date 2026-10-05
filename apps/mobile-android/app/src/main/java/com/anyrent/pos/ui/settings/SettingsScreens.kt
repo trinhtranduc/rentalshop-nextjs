@@ -84,6 +84,16 @@ import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.SectionLabel
 import com.anyrent.pos.ui.common.SettingsCardRow
 import com.anyrent.pos.config.AppLegalLinks
+import com.anyrent.pos.ui.common.AppIcon
+import com.anyrent.pos.ui.customers.v2.CustomerAvatar
+import com.anyrent.pos.ui.home.v2.SectionBand
+import com.anyrent.pos.ui.home.v2.ThinDivider
+import com.anyrent.pos.ui.settings.v2.SettingsDetailPage
+import com.anyrent.pos.ui.settings.v2.SettingsDetailPill
+import com.anyrent.pos.ui.settings.v2.SettingsDetailRow
+import com.anyrent.pos.ui.theme.DS
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.MoreVert
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -249,7 +259,7 @@ fun SettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserManagementScreen(onBack: () -> Unit) {
+fun UserManagementScreen(onBack: () -> Unit, v2: Boolean = false) {
     var users by remember { mutableStateOf<List<StaffUser>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -274,154 +284,185 @@ fun UserManagementScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.user_management)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+    // Same actions in both styles (edit, change password, enable/disable, delete)
+    @Composable
+    fun userMenuActions(user: StaffUser): List<AppMenuAction> = listOf(
+        AppMenuAction(
+            label = stringResource(R.string.edit),
+            icon = Icons.Outlined.Edit,
+            onClick = {
+                editing = user
+                showForm = true
+            },
+        ),
+        AppMenuAction(
+            label = stringResource(R.string.change_password),
+            icon = Icons.Default.Key,
+            onClick = {
+                newPassword = ""
+                confirmPassword = ""
+                passwordUser = user
+            },
+        ),
+        AppMenuAction(
+            label = stringResource(if (user.isActive) R.string.disable_user else R.string.enable_user),
+            icon = if (user.isActive) Icons.Default.PersonOff else Icons.Default.Person,
+            onClick = {
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        ApiParity.updateUser(
+                            user.id,
+                            user.firstName.orEmpty(),
+                            user.lastName.orEmpty(),
+                            user.role,
+                            !user.isActive,
+                            SessionStore.outletId,
+                        )
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        editing = null
-                        showForm = true
-                    }) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_user))
-                    }
-                },
-            )
-        }
-    ) { padding ->
-        when {
-            loading -> LoadingBox()
-            error != null -> EmptyOrError(error!!)
-            else -> {
-            LazyColumn(
-                modifier = Modifier.padding(padding).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(users, key = { it.id }) { user ->
-                    var menuExpanded by remember(user.id) { mutableStateOf(false) }
-                    AppCard(
-                        Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.AccountCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(44.dp),
-                                tint = MaterialTheme.colorScheme.outline,
+                    result.onSuccess { refreshKey++ }
+                        .onFailure { error = it.message }
+                }
+            },
+        ),
+        AppMenuAction(
+            label = stringResource(R.string.delete),
+            icon = Icons.Outlined.DeleteOutline,
+            onClick = { deleteUser = user },
+            destructive = true,
+        ),
+    )
+
+    // #459: new style when opened from Settings v2 (`newSettings`); same list, menu and dialogs
+    if (v2) {
+        SettingsDetailPage(
+            title = stringResource(R.string.settings_v2_users),
+            onBack = onBack,
+            actions = {
+                IconButton(onClick = {
+                    editing = null
+                    showForm = true
+                }) {
+                    AppIcon(Icons.Outlined.Add, contentDescription = stringResource(R.string.new_user), size = DS.Icon.Sm, tint = DS.Colors.Text)
+                }
+            },
+        ) {
+            when {
+                loading -> LoadingBox()
+                error != null -> EmptyOrError(error!!)
+                else -> LazyColumn(Modifier.fillMaxSize()) {
+                    items(users, key = { it.id }) { user ->
+                        var menuExpanded by remember(user.id) { mutableStateOf(false) }
+                        UserRowV2(user) {
+                            AppOverflowMenuAnchor(
+                                contentDescription = stringResource(R.string.more_options),
+                                actions = userMenuActions(user),
+                                expanded = menuExpanded,
+                                onExpandedChange = { menuExpanded = it },
+                                icon = Icons.Outlined.MoreVert,
+                                iconSize = DS.Icon.Md,
+                                iconTint = DS.Colors.TextMuted,
                             )
-                            Column(
-                                Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                            ) {
-                                // iOS UserCell: status badge sits on the name row (top-right),
-                                // not as a tall sibling that squeezes email/role.
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    Text(
-                                        user.displayName,
-                                        modifier = Modifier.weight(1f),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    UserStatusBadge(isActive = user.isActive)
-                                }
-                                Text(
-                                    user.email,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    roleDisplayValue(user.role),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            Box {
-                                val editLabel = stringResource(R.string.edit)
-                                val changePasswordLabel = stringResource(R.string.change_password)
-                                val toggleLabel = stringResource(
-                                    if (user.isActive) R.string.disable_user
-                                    else R.string.enable_user,
-                                )
-                                val deleteLabel = stringResource(R.string.delete)
-                                AppOverflowMenuAnchor(
-                                    contentDescription = stringResource(R.string.more_options),
-                                    actions = listOf(
-                                        AppMenuAction(
-                                            label = editLabel,
-                                            icon = Icons.Outlined.Edit,
-                                            onClick = {
-                                                editing = user
-                                                showForm = true
-                                            },
-                                        ),
-                                        AppMenuAction(
-                                            label = changePasswordLabel,
-                                            icon = Icons.Default.Key,
-                                            onClick = {
-                                                newPassword = ""
-                                                confirmPassword = ""
-                                                passwordUser = user
-                                            },
-                                        ),
-                                        AppMenuAction(
-                                            label = toggleLabel,
-                                            icon = if (user.isActive) {
-                                                Icons.Default.PersonOff
-                                            } else {
-                                                Icons.Default.Person
-                                            },
-                                            onClick = {
-                                                scope.launch {
-                                                    val result = withContext(Dispatchers.IO) {
-                                                        ApiParity.updateUser(
-                                                            user.id,
-                                                            user.firstName.orEmpty(),
-                                                            user.lastName.orEmpty(),
-                                                            user.role,
-                                                            !user.isActive,
-                                                            SessionStore.outletId,
-                                                        )
-                                                    }
-                                                    result.onSuccess { refreshKey++ }
-                                                        .onFailure { error = it.message }
-                                                }
-                                            },
-                                        ),
-                                        AppMenuAction(
-                                            label = deleteLabel,
-                                            icon = Icons.Outlined.DeleteOutline,
-                                            onClick = { deleteUser = user },
-                                            destructive = true,
-                                        ),
-                                    ),
-                                    expanded = menuExpanded,
-                                    onExpandedChange = { menuExpanded = it },
-                                )
-                            }
                         }
                     }
                 }
             }
+        }
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.user_management)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            editing = null
+                            showForm = true
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_user))
+                        }
+                    },
+                )
+            }
+        ) { padding ->
+            when {
+                loading -> LoadingBox()
+                error != null -> EmptyOrError(error!!)
+                else -> {
+                LazyColumn(
+                    modifier = Modifier.padding(padding).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(users, key = { it.id }) { user ->
+                        var menuExpanded by remember(user.id) { mutableStateOf(false) }
+                        AppCard(
+                            Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.AccountCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(44.dp),
+                                    tint = MaterialTheme.colorScheme.outline,
+                                )
+                                Column(
+                                    Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    // iOS UserCell: status badge sits on the name row (top-right),
+                                    // not as a tall sibling that squeezes email/role.
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(
+                                            user.displayName,
+                                            modifier = Modifier.weight(1f),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        UserStatusBadge(isActive = user.isActive)
+                                    }
+                                    Text(
+                                        user.email,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        roleDisplayValue(user.role),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                Box {
+                                    AppOverflowMenuAnchor(
+                                        contentDescription = stringResource(R.string.more_options),
+                                        actions = userMenuActions(user),
+                                        expanded = menuExpanded,
+                                        onExpandedChange = { menuExpanded = it },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                }
             }
         }
+
     }
 
     if (showForm) {
@@ -434,6 +475,7 @@ fun UserManagementScreen(onBack: () -> Unit) {
         ) {
             UserFormScreen(
                 initial = editing,
+                v2 = v2,
                 onBack = {
                     showForm = false
                     editing = null
@@ -532,6 +574,37 @@ fun UserManagementScreen(onBack: () -> Unit) {
     }
 }
 
+/** v2 user row: initials, name + status pill, "email · role", overflow menu */
+@Composable
+private fun UserRowV2(user: StaffUser, menu: @Composable () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        CustomerAvatar(user.displayName, 44, 15)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    user.displayName, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold,
+                    color = if (user.isActive) DS.Colors.Text else DS.Colors.TextMuted,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                )
+                SettingsDetailPill(
+                    stringResource(if (user.isActive) R.string.active_badge else R.string.inactive_badge),
+                    if (user.isActive) DS.Status.Done else DS.Status.Late,
+                )
+            }
+            Text(
+                listOf(user.email, roleDisplayValue(user.role)).filter { it.isNotBlank() }.joinToString(" · "),
+                fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        menu()
+    }
+    ThinDivider()
+}
+
 @Composable
 private fun UserStatusBadge(isActive: Boolean) {
     val background = if (isActive) Color(0xFF23844A) else MaterialTheme.colorScheme.error
@@ -626,12 +699,36 @@ fun PrinterConfigScreen(onBack: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppInfoScreen(onBack: () -> Unit) {
+fun AppInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
     val ctx = LocalContext.current
     fun openUrl(url: String) {
         runCatching {
             ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
+    }
+
+    // #459: new style when opened from Settings v2 (`newSettings`); same rows and links
+    if (v2) {
+        SettingsDetailPage(title = stringResource(R.string.app_info), onBack = onBack) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+                SectionBand(stringResource(R.string.app_info))
+                SettingsDetailRow(stringResource(R.string.version), BuildConfig.VERSION_NAME)
+                SettingsDetailRow(stringResource(R.string.build_number), BuildConfig.VERSION_CODE.toString())
+                SectionBand(stringResource(R.string.legal))
+                SettingsDetailRow(stringResource(R.string.privacy), chevron = true, onClick = { openUrl(AppLegalLinks.PRIVACY_URL) })
+                SettingsDetailRow(stringResource(R.string.terms), chevron = true, onClick = { openUrl(AppLegalLinks.TERMS_URL) })
+                SectionBand(stringResource(R.string.developer_contact))
+                SettingsDetailRow(
+                    stringResource(R.string.email), value = "trinhduc20@gmail.com", chevron = true,
+                    onClick = { openUrl("mailto:trinhduc20@gmail.com") },
+                )
+                SettingsDetailRow(
+                    stringResource(R.string.website), value = AppLegalLinks.WEBSITE_HOST, chevron = true,
+                    onClick = { openUrl(AppLegalLinks.WEBSITE_URL) },
+                )
+            }
+        }
+        return
     }
 
     Scaffold(
