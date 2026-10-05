@@ -6,11 +6,11 @@
  * interleave), and honours `pg_advisory_xact_lock` like Postgres: a second transaction asking for the
  * same lock waits until the first transaction ends.
  *
- * Expected:
- * - two concurrent identical creates → one order, both responses carry its id
- * - a retried create (same Idempotency-Key, or same body without a key = installed apps) → same order
- * - two different orders sent together → two orders
- * - a new Idempotency-Key → a new order even when the body is identical (intentional repeat sale)
+ * Expected (owner decision 2026-10-05: only the Idempotency-Key dedupes; no time window):
+ * - two concurrent creates with the same key → one order, both responses carry its id
+ * - a retried create with the same key → same order
+ * - no key (installed apps, web) → every request creates its own order, as before
+ * - a new key, or the same key from another user → a new order
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -268,26 +268,38 @@ describe('POST /api/orders — one confirm creates one order (#341)', () => {
     mockLocks.clear();
   });
 
-  it('two concurrent identical creates from an installed app (no key) produce one order', async () => {
+  it('no key (installed apps, web): two concurrent identical creates each create their own order, as before', async () => {
     const [a, b]: any[] = await Promise.all([POST(post(rentBody())), POST(post(rentBody()))]);
 
     expect(a.status).toBe(200);
     expect(b.status).toBe(200);
     expect(a.body.code).toBe('ORDER_CREATED_SUCCESS');
     expect(b.body.code).toBe('ORDER_CREATED_SUCCESS');
-    expect(liveOrders()).toHaveLength(1);
-    expect(b.body.data.id).toBe(a.body.data.id);
-    expect(b.body.data.orderNumber).toBe(a.body.data.orderNumber);
-    // Stock is reserved once, for the one order
-    expect(mockUpdateStock).toHaveBeenCalledTimes(1);
+    expect(liveOrders()).toHaveLength(2);
+    expect(b.body.data.id).not.toBe(a.body.data.id);
+    expect(mockUpdateStock).toHaveBeenCalledTimes(2);
+  });
+
+  it('no key: a repeated identical create is a new order (no time window)', async () => {
+    const first: any = await POST(post(rentBody()));
+    const second: any = await POST(post(rentBody()));
+
+    expect(second.status).toBe(200);
+    expect(second.body.data.id).not.toBe(first.body.data.id);
+    expect(liveOrders()).toHaveLength(2);
   });
 
   it('two concurrent creates with the same Idempotency-Key produce one order', async () => {
     const key = 'ios-7f3c2a10-5b9e-4c8d-9a61-0e2f4b7c1d33';
     const [a, b]: any[] = await Promise.all([POST(post(rentBody(), key)), POST(post(rentBody(), key))]);
 
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
     expect(liveOrders()).toHaveLength(1);
-    expect(a.body.data.id).toBe(b.body.data.id);
+    expect(b.body.data.id).toBe(a.body.data.id);
+    expect(b.body.data.orderNumber).toBe(a.body.data.orderNumber);
+    // Stock is reserved once, for the one order
+    expect(mockUpdateStock).toHaveBeenCalledTimes(1);
   });
 
   it('a retried create with the same key returns the existing order', async () => {
@@ -301,20 +313,11 @@ describe('POST /api/orders — one confirm creates one order (#341)', () => {
     expect(liveOrders()).toHaveLength(1);
   });
 
-  it('a retried identical create without a key (installed app) returns the existing order', async () => {
-    const first: any = await POST(post(rentBody()));
-    const retry: any = await POST(post(rentBody()));
-
-    expect(retry.status).toBe(200);
-    expect(retry.body.data.id).toBe(first.body.data.id);
-    expect(liveOrders()).toHaveLength(1);
-  });
-
-  it('two different orders sent at the same time are both created', async () => {
+  it('different keyed orders sent at the same time are all created', async () => {
     const [a, b, c]: any[] = await Promise.all([
-      POST(post(rentBody())),
-      POST(post(rentBody({ orderItems: [{ productId: 12, quantity: 1, unitPrice: 200000, totalPrice: 200000 }] }))),
-      POST(post(rentBody({ customerId: 78 }))),
+      POST(post(rentBody(), 'key-order-a-000001')),
+      POST(post(rentBody({ orderItems: [{ productId: 12, quantity: 1, unitPrice: 200000, totalPrice: 200000 }] }), 'key-order-b-000002')),
+      POST(post(rentBody({ customerId: 78 }), 'key-order-c-000003')),
     ]);
 
     expect(liveOrders()).toHaveLength(3);
@@ -329,23 +332,36 @@ describe('POST /api/orders — one confirm creates one order (#341)', () => {
     expect(liveOrders()).toHaveLength(2);
   });
 
-  it('a cancelled earlier order does not swallow a new identical create', async () => {
-    const first: any = await POST(post(rentBody()));
-    mockStore.orders[0].status = 'CANCELLED';
-    const second: any = await POST(post(rentBody()));
+  it('the same key from another user is a different create', async () => {
+    const key = 'shared-key-0000000001';
+    const first: any = await POST(post(rentBody(), key));
+    ctx = {
+      user: { id: 10, role: 'OUTLET_STAFF', merchantId: 2, outletId: 3, email: 't@x' },
+      userScope: { merchantId: 2, outletId: 3 },
+    };
+    const second: any = await POST(post(rentBody(), key));
 
     expect(second.body.data.id).not.toBe(first.body.data.id);
     expect(liveOrders()).toHaveLength(2);
   });
 
-  it('keyed creates still work, guarded by the window, when the key table is not migrated yet', async () => {
+  it('a malformed key is ignored: the request creates an order as without a key', async () => {
+    const first: any = await POST(post(rentBody(), 'short'));
+    const second: any = await POST(post(rentBody(), 'short'));
+
+    expect(first.status).toBe(200);
+    expect(second.body.data.id).not.toBe(first.body.data.id);
+    expect(liveOrders()).toHaveLength(2);
+  });
+
+  it('keyed creates still succeed when the key table is not migrated yet (no dedupe, no error)', async () => {
     mockStore.keyTable = false;
     const key = 'ios-00000000-0000-4000-8000-000000000001';
-    const [a, b]: any[] = await Promise.all([POST(post(rentBody(), key)), POST(post(rentBody(), key))]);
+    const first: any = await POST(post(rentBody(), key));
+    const retry: any = await POST(post(rentBody(), key));
 
-    expect(a.status).toBe(200);
-    expect(b.status).toBe(200);
-    expect(liveOrders()).toHaveLength(1);
-    expect(b.body.data.id).toBe(a.body.data.id);
+    expect(first.status).toBe(200);
+    expect(retry.status).toBe(200);
+    expect(liveOrders()).toHaveLength(2);
   });
 });
