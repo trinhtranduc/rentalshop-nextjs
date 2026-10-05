@@ -257,7 +257,7 @@ final class CartV2ViewController: BaseViewControler {
             text = "products.cart.pickDates".localized()
         }
         let label = V2.label(text, size: 15, weight: .bold, color: days == nil ? DS.Color.primary : DS.Color.text)
-        let pill = V2.label(days.map { " " + String(format: "products.cart.days".localized(), $0) + " " }, size: 13, weight: .bold,
+        let pill = V2.label(days.map { " " + PluralText.format("products.cart.days", count: $0, $0) + " " }, size: 13, weight: .bold,
                             color: UIColor(hexString: "1E40AF"))
         pill.backgroundColor = UIColor(hexString: "DBEAFE")
         pill.layer.cornerRadius = 11

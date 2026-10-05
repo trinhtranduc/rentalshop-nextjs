@@ -228,7 +228,7 @@ final class ProductsHomeViewController: BaseViewControler {
     private func updateCartBar() {
         let cart = CartStore.shared.cart
         cartBar.isHidden = cart.items.isEmpty
-        cartCountLabel.text = String(format: "products.cart.bar".localized(), cart.itemCount)
+        cartCountLabel.text = PluralText.format("products.cart.bar", count: cart.itemCount, cart.itemCount)
         cartTotalLabel.text = MoneyFormatter.format(cart.totalAmount)
         cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, "products.cart.create".localized()]
             .compactMap { $0 }.joined(separator: ", ")

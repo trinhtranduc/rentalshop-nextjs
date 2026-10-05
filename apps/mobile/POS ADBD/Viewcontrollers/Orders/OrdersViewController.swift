@@ -341,9 +341,9 @@ final class OrdersViewController: BaseViewControler {
             chip.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
         }
         sortButton.setTitle(OrdersFilterSheet.sortTitle(viewModel.filter.sort), for: .normal)
-        countLabel.text = viewModel.total.map { String(format: "orders.v2.count".localized(), $0) }
+        countLabel.text = viewModel.total.map { PluralText.format("orders.v2.count", count: $0, $0) }
         if let total = viewModel.total {
-            searchSummaryLabel.text = String(format: "orders.v2.search.summary".localized(), total, viewModel.searchText)
+            searchSummaryLabel.text = PluralText.format("orders.v2.search.summary", count: total, total, viewModel.searchText)
         }
     }
 
@@ -515,7 +515,7 @@ final class OrdersViewController: BaseViewControler {
             return String(format: "orders.v2.band.work".localized(), counts.handOver, counts.takeBack)
         case .day:
             let sum = OrdersHomeLogic.saleDaySummary(section.rows)
-            let count = String(format: "orders.v2.count".localized(), sum.count)
+            let count = PluralText.format("orders.v2.count", count: sum.count, sum.count)
             return hidesMoney ? count : "\(count) · \(MoneyFormatter.format(sum.amount))"
         case .plain:
             return nil

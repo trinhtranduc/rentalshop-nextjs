@@ -88,7 +88,9 @@ final class OrderRowCell: UITableViewCell {
         nameLabel.font = Utils.boldFont(size: 15)
         nameLabel.textColor = DS.Color.text
         nameLabel.lineBreakMode = .byTruncatingTail
-        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column;
+        // still below the tag and the money labels, so a long name truncates
+        nameLabel.setContentCompressionResistancePriority(.defaultHigh - 1, for: .horizontal)
         let firstLine = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
         firstLine.spacing = 6
         firstLine.alignment = .center
@@ -120,6 +122,7 @@ final class OrderRowCell: UITableViewCell {
         moneyStack.setContentHuggingPriority(.required, for: .horizontal)
         [totalLabel, payLabel].forEach {
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
+            $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.textAlignment = .right
         }
 

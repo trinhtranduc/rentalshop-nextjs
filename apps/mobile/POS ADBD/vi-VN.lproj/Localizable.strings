@@ -1587,11 +1587,13 @@
 "products.cart.change" = "Đổi";
 "products.cart.pickDates" = "Chọn ngày thuê";
 "products.cart.days" = "%d ngày";
+"products.cart.days.one" = "%d ngày";
 "products.cart.items" = "Món · %d";
 "products.cart.addMore" = "Thêm";
 "products.cart.empty" = "Giỏ hàng trống. Thêm sản phẩm từ danh sách.";
 "products.cart.calc.perRental" = "%@/lần × %d";
 "products.cart.calc.perDay" = "%@/ngày × %d ngày";
+"products.cart.calc.perDay.one" = "%@/ngày × %d ngày";
 "products.cart.calc.sale" = "Giá bán %@ × %d";
 "products.cart.pricingMode" = "Cách tính giá";
 "products.cart.shortRent" = "Chỉ còn %d trống trong ngày đã chọn";
@@ -1611,6 +1613,7 @@
 "products.cart.create" = "Tạo đơn";
 "products.cart.sellAndCollect" = "Bán & thu tiền";
 "products.cart.bar" = "Giỏ hàng · %d món";
+"products.cart.bar.one" = "Giỏ hàng · %d món";
 "products.cart.removeTitle" = "Bỏ món này khỏi giỏ?";
 "products.cart.remove" = "Bỏ";
 // MARK: - Orders tab (#371)
@@ -1636,18 +1639,22 @@
 "ITEMS · %d" = "MÓN · %d";
 "MONEY" = "TIỀN";
 "Return late %d days" = "Trễ hạn trả %d ngày";
+"Return late %d days.one" = "Trễ hạn trả %d ngày";
 "Due back %@" = "Hạn trả %@";
 "Hand-over late %d days" = "Trễ giao %d ngày";
+"Hand-over late %d days.one" = "Trễ giao %d ngày";
 "Planned hand-over %@" = "Hẹn giao %@";
 "Booked" = "Đã đặt";
 "Return step" = "Trả";
 "Rental dates" = "Lịch thuê";
 "%d days" = "%d ngày";
+"%d days.one" = "%d ngày";
 "Handed over" = "Đã giao";
 "Collateral" = "Thế chấp";
 "Sale date" = "Ngày bán";
 "Sale price %@" = "Giá bán %@";
 "%@/day × %d days" = "%@/ngày × %d ngày";
+"%@/day × %d days.one" = "%@/ngày × %d ngày";
 "Goods total" = "Tiền hàng";
 "Collected" = "Đã thu";
 "To collect" = "Còn thu";
@@ -1668,6 +1675,7 @@
 "Take back items" = "Nhận trả";
 "Cancel order" = "Hủy đơn";
 "Late fee (%d days)" = "Phí trễ (%d ngày)";
+"Late fee (%d days).one" = "Phí trễ (%d ngày)";
 "Keep collateral: %@" = "Giữ thế chấp: %@";
 "Collect now" = "Thu bây giờ";
 "Handed over · collect %@" = "Đã giao · thu %@";
@@ -1803,7 +1811,9 @@
 "orders.v2.search.cancel" = "Huỷ";
 "orders.v2.search.clear" = "Xoá nội dung tìm";
 "orders.v2.search.summary" = "%d đơn khớp “%@” · tìm trong mọi trạng thái, cả tên đồ";
+"orders.v2.search.summary.one" = "%d đơn khớp “%@” · tìm trong mọi trạng thái, cả tên đồ";
 "orders.v2.count" = "%d đơn";
+"orders.v2.count.one" = "%d đơn";
 "orders.v2.band.work" = "giao %d · trả %d";
 "orders.v2.yesterday" = "Hôm qua";
 "orders.v2.tag.handOver" = "Giao";
@@ -1822,6 +1832,7 @@
 "orders.v2.when.handOverDue" = "hẹn giao %@";
 "orders.v2.when.returnDue" = "hạn trả %@";
 "orders.v2.when.days" = "%d ngày";
+"orders.v2.when.days.one" = "%d ngày";
 "orders.v2.when.createdToday" = "tạo hôm nay";
 "orders.v2.when.created" = "tạo %@";
 "orders.v2.when.due" = "hạn %@";
@@ -1836,6 +1847,7 @@
 "orders.v2.filter.range" = "KHOẢNG NGÀY";
 "orders.v2.filter.show" = "Xem đơn";
 "orders.v2.filter.showCount" = "Xem %d đơn";
+"orders.v2.filter.showCount.one" = "Xem %d đơn";
 "orders.v2.basis.created" = "Ngày tạo";
 "orders.v2.basis.pickup" = "Ngày giao";
 "orders.v2.basis.return" = "Ngày trả";

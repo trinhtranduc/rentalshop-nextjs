@@ -235,7 +235,8 @@ enum OrdersHomeLogic {
         guard let to else { return start }
         var text = "\(start) → \(dayMonth(to, timeZone: timeZone))"
         if withDays, let from {
-            text += " · " + String(format: "orders.v2.when.days".localized(), inclusiveDays(from: from, to: to, timeZone: timeZone))
+            let days = inclusiveDays(from: from, to: to, timeZone: timeZone)
+            text += " · " + PluralText.format("orders.v2.when.days", count: days, days)
         }
         return text
     }
