@@ -51,19 +51,18 @@ appId: ${APP_ID}
     text: "Tạo đơn|Create order"
     index: 1
 - extendedWaitUntil:
-    visible: "Danh sách Sản phẩm|SẢN PHẨM|Products|PRODUCTS"
+    visible: "Danh sách Sản phẩm|Products"
     timeout: 10000
 - tapOn:
     text: "Tạo đơn|Create order"
-    below: "Danh sách Sản phẩm|SẢN PHẨM|Products|PRODUCTS"
-# iOS asks to collect the deposit in a sheet; Android records it on the review screen ("Đã thu").
-- runFlow:
-    when:
-      visible: "Thu tiền cọc|Collect deposit"
-    commands:
-      - tapOn:
-          text: "Xác nhận|Confirm"
-          below: "Thu tiền cọc|Collect deposit"
+    below: "Danh sách Sản phẩm|Products"
+# Both apps confirm the deposit in a sheet before the order is created (#448).
+- extendedWaitUntil:
+    visible: "Thu tiền cọc|Collect deposit"
+    timeout: 10000
+- tapOn:
+    text: "Xác nhận|Confirm"
+    below: "Thu tiền cọc|Collect deposit"
 - waitForAnimationToEnd
 # iOS "Enjoying AnyRent?" rating prompt after the first order
 - runFlow:
@@ -88,19 +87,9 @@ appId: ${APP_ID}
     visible: "Giao đồ.*|Hand over.*"
     timeout: 10000
 - tapOn: "Giao đồ.*|Hand over.*"
-# iOS has the id handOver.papers; Android has no testTag yet, so tap its label.
-# TODO(#447): add Modifier.testTag("handOver.papers") on Android.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          id: "handOver.papers"
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn: "Giấy tờ để lại|Papers left"
+# Same id on both apps (iOS accessibilityIdentifier, Android testTag, #448).
+- tapOn:
+    id: "handOver.papers"
 - inputText: "CCCD Nguyễn Văn Á"
 - runFlow: hide-keyboard-android.yaml
 - tapOn: "Đã giao.*|Handed over.*"
