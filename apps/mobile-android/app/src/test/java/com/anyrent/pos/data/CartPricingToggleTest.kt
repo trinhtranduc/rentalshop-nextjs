@@ -3,7 +3,9 @@ package com.anyrent.pos.data
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.CartV2Logic
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -108,5 +110,84 @@ class CartPricingToggleTest {
         assertEquals(140_000.0, refreshed.unitPrice, 0.0)
         assertEquals("FIXED", refreshed.pricingType)
         assertEquals(1, refreshed.quantity)
+    }
+
+    // Owner decision 2026-10-05: both modes on every rent line; the line price (this order only) is editable
+
+    private val sent = mutableListOf<okhttp3.Request>()
+
+    private val recordingApi = ApiClient(
+        baseUrl = "https://example.test",
+        tokenProvider = { "token" },
+        onUnauthorized = {},
+        client = OkHttpClient.Builder().addInterceptor { chain ->
+            sent += chain.request()
+            okhttp3.Response.Builder().request(chain.request()).protocol(okhttp3.Protocol.HTTP_1_1).code(200).message("OK")
+                .body("""{"success":true,"data":{"id":1}}""".toResponseBody("application/json".toMediaType()))
+                .build()
+        }.build(),
+        appVersion = "0.2.0",
+    )
+
+    @Test
+    fun `every rent line shows the toggle even with one price`() {
+        CartStore.addProduct(homeRow("[]"))
+        assertFalse(CartV2Logic.offersBothModes(CartStore.lines.value.single().product))
+        assertTrue(CartV2Logic.showsPricingToggle(isSale = false))
+        assertFalse(CartV2Logic.showsPricingToggle(isSale = true))
+    }
+
+    @Test
+    fun `a mode without a price starts at zero, asks for a price and blocks create`() {
+        CartStore.addProduct(homeRow("[]"))
+        assertTrue(CartV2Logic.missingPrices(CartStore.lines.value, isSale = false).isEmpty())
+
+        CartStore.setPricingType(301, "DAILY")
+        val line = CartStore.lines.value.single()
+        assertEquals(0.0, line.unitPrice, 0.0)
+        assertTrue("the cart opens the price editor", CartV2Logic.needsPrice(line, isSale = false))
+        assertEquals(listOf("Cart toggle probe both prices"), CartV2Logic.missingPrices(CartStore.lines.value, isSale = false))
+
+        CartStore.setPricingType(301, "FIXED")
+        assertEquals(150_000.0, CartStore.lines.value.single().unitPrice, 0.0)
+        assertTrue(CartV2Logic.missingPrices(CartStore.lines.value, isSale = false).isEmpty())
+    }
+
+    @Test
+    fun `a line that already has a product price can be edited for this order only`() {
+        val product = homeRow("[]")
+        CartStore.addProduct(product, quantity = 2)
+        CartStore.updateUnitPrice(301, 120_000.0)
+        val line = CartStore.lines.value.single()
+        assertEquals(120_000.0, line.unitPrice, 0.0)
+        assertEquals(240_000.0, line.lineTotal, 0.0)
+        assertEquals("the product price is untouched", 150_000.0, line.product.rentPrice, 0.0)
+    }
+
+    @Test
+    fun `the edited per-day price is used in totals and the create request`() {
+        CartStore.addProduct(homeRow("[]"), quantity = 2)
+        CartStore.setPricingType(301, "DAILY")
+        CartStore.updateUnitPrice(301, 60_000.0)
+        val line = CartStore.lines.value.single()
+        val days = line.rentalDays
+        assertEquals(60_000.0 * 2 * days, line.lineTotal, 0.0)
+
+        // What the review screen sends for the cart lines
+        recordingApi.createOrder(
+            orderType = "RENT",
+            customerId = 5,
+            lines = listOf(Triple(line.product.id, line.quantity, line.unitPrice)),
+            totalAmount = line.lineTotal,
+            pricingTypesByProduct = mapOf(line.product.id to line.pricingType),
+            rentalDaysByProduct = mapOf(line.product.id to line.rentalDays),
+        ).getOrThrow()
+        val buffer = okio.Buffer()
+        sent.single().body!!.writeTo(buffer)
+        val item = JSONObject(buffer.readUtf8()).getJSONArray("orderItems").getJSONObject(0)
+        assertEquals(60_000.0, item.getDouble("unitPrice"), 0.0)
+        assertEquals("DAILY", item.getString("pricingType"))
+        assertEquals(days, item.getInt("rentDays"))
+        assertEquals(60_000.0 * 2 * days, item.getDouble("totalPrice"), 0.0)
     }
 }
