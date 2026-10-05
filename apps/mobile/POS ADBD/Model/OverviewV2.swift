@@ -108,15 +108,22 @@ enum OverviewLogic {
         return range.start == range.end ? label(range.start) : "\(label(range.start)) – \(label(range.end))"
     }
 
-    /// Bars of the chart: one per day of the range (missing days are 0) or, per month, the API points as sent
+    /// Bars of the chart: one per day of the range (missing days are 0) or, per month, the API points as sent.
+    /// `.orders` plots `newOrderCount` (0 when an older API leaves it out, #484)
     static func bars(report: OverviewReport, range: DayKeyRange, timeZone: TimeZone = .current,
-                     locale: Locale = .current) -> [OverviewBar] {
+                     locale: Locale = .current, mode: OverviewChartMode = .money) -> [OverviewBar] {
+        func value(_ point: OverviewReport.Point) -> Double {
+            switch mode {
+            case .money: return point.realIncome
+            case .orders: return Double(point.newOrderCount ?? 0)
+            }
+        }
         if groupBy(range) == "month" {
-            return report.series.map { OverviewBar(key: $0.monthLabel ?? "", label: $0.monthLabel ?? "", value: $0.realIncome) }
+            return report.series.map { OverviewBar(key: $0.monthLabel ?? "", label: $0.monthLabel ?? "", value: value($0)) }
         }
         var byKey: [String: Double] = [:]
         for point in report.series {
-            if let key = point.dayKey { byKey[key, default: 0] += point.realIncome }
+            if let key = point.dayKey { byKey[key, default: 0] += value(point) }
         }
         return (0..<range.dayCount).map { offset in
             let key = CalendarV2Logic.shift(range.start, days: offset)
@@ -158,6 +165,11 @@ enum OverviewLogic {
     }
 }
 
+/// What the overview bars plot (#484): money collected or orders created per day / month
+enum OverviewChartMode: Equatable {
+    case money, orders
+}
+
 struct OverviewBar: Equatable {
     let key: String
     let label: String
@@ -174,13 +186,16 @@ struct OverviewReport: Decodable, Equatable {
         /// "10/26" for monthly points
         let monthLabel: String?
         let realIncome: Double
+        /// Orders created that day / month (#484); nil on an older API
+        let newOrderCount: Int?
 
-        enum CodingKeys: String, CodingKey { case date, month, realIncome, monthNumber }
+        enum CodingKeys: String, CodingKey { case date, month, realIncome, monthNumber, newOrderCount }
 
-        init(dayKey: String?, monthLabel: String?, realIncome: Double) {
+        init(dayKey: String?, monthLabel: String?, realIncome: Double, newOrderCount: Int? = nil) {
             self.dayKey = dayKey
             self.monthLabel = monthLabel
             self.realIncome = realIncome
+            self.newOrderCount = newOrderCount
         }
 
         init(from decoder: Decoder) throws {
@@ -190,6 +205,7 @@ struct OverviewReport: Decodable, Equatable {
             let isMonthly = ((try? c.decodeIfPresent(Int.self, forKey: .monthNumber)) ?? nil) != nil
             monthLabel = isMonthly || date == nil ? ((try? c.decodeIfPresent(String.self, forKey: .month)) ?? nil) : nil
             realIncome = ((try? c.decodeIfPresent(Double.self, forKey: .realIncome)) ?? nil) ?? 0
+            newOrderCount = (try? c.decodeIfPresent(Int.self, forKey: .newOrderCount)) ?? nil
         }
     }
 
@@ -220,8 +236,12 @@ struct OverviewReport: Decodable, Equatable {
         }
     }
 
-    /// Net money in the period (`revenue.totalActualRevenue`, else `totalRevenue`)
+    /// Money collected in the period (`revenue.totalActualRevenue`, else `totalRevenue`)
     let netRevenue: Double
+    /// Total of the orders created in the period, cancelled left out (`revenue.totalOrderValue`, #484); nil on an older API
+    let totalOrderValue: Double?
+    /// Part of those orders not collected yet (`revenue.outstanding`, #484); nil on an older API
+    let outstanding: Double?
     /// % change of revenue against the previous period of the same length
     let revenueGrowth: Double?
     /// Orders created in the period (`operational.orderCounts.new`)
@@ -230,14 +250,17 @@ struct OverviewReport: Decodable, Equatable {
     let topProducts: [TopProduct]
 
     private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts }
-    private enum RevenueKeys: String, CodingKey { case totalActualRevenue, totalRevenue }
+    private enum RevenueKeys: String, CodingKey { case totalActualRevenue, totalRevenue, totalOrderValue, outstanding }
     private enum GrowthKeys: String, CodingKey { case revenue }
     private enum ChangeKeys: String, CodingKey { case growth }
     private enum OperationalKeys: String, CodingKey { case orderCounts }
     private enum CountKeys: String, CodingKey { case new }
 
-    init(netRevenue: Double, revenueGrowth: Double?, newOrders: Int?, series: [Point], topProducts: [TopProduct]) {
+    init(netRevenue: Double, revenueGrowth: Double?, newOrders: Int?, series: [Point], topProducts: [TopProduct],
+         totalOrderValue: Double? = nil, outstanding: Double? = nil) {
         self.netRevenue = netRevenue
+        self.totalOrderValue = totalOrderValue
+        self.outstanding = outstanding
         self.revenueGrowth = revenueGrowth
         self.newOrders = newOrders
         self.series = series
@@ -249,8 +272,12 @@ struct OverviewReport: Decodable, Equatable {
         if let revenue = try? c.nestedContainer(keyedBy: RevenueKeys.self, forKey: .revenue) {
             netRevenue = ((try? revenue.decodeIfPresent(Double.self, forKey: .totalActualRevenue)) ?? nil)
                 ?? ((try? revenue.decodeIfPresent(Double.self, forKey: .totalRevenue)) ?? nil) ?? 0
+            totalOrderValue = (try? revenue.decodeIfPresent(Double.self, forKey: .totalOrderValue)) ?? nil
+            outstanding = (try? revenue.decodeIfPresent(Double.self, forKey: .outstanding)) ?? nil
         } else {
             netRevenue = 0
+            totalOrderValue = nil
+            outstanding = nil
         }
         if let growth = try? c.nestedContainer(keyedBy: GrowthKeys.self, forKey: .growth),
            let change = try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .revenue) {

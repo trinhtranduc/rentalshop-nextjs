@@ -193,6 +193,7 @@
 		763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */; };
 		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
 		80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */; };
+		B484B0000000000000000001 /* RentedOutOrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B484F0000000000000000001 /* RentedOutOrdersViewController.swift */; };
 		81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32451210261D4A00E83FEBAA /* OrderStatusTests.swift */; };
 		818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */; };
 		83BD6AF23E08F2BB98957B98 /* OrderExtendSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */; };
@@ -529,6 +530,7 @@
 		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
 		32451210261D4A00E83FEBAA /* OrderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderStatusTests.swift; sourceTree = "<group>"; };
 		371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2ViewController.swift; sourceTree = "<group>"; };
+		B484F0000000000000000001 /* RentedOutOrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RentedOutOrdersViewController.swift; sourceTree = "<group>"; };
 		40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthFormsTests.swift; sourceTree = "<group>"; };
 		42DC389596269843419D1B18 /* OrdersHomeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeTests.swift; sourceTree = "<group>"; };
 		44906268638CD53C3E41AD39 /* SettingsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2.swift; sourceTree = "<group>"; };
@@ -1079,6 +1081,7 @@
 				04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */,
 				886B188021AE39560029CFB1 /* OverviewViewController.swift */,
 				371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */,
+				B484F0000000000000000001 /* RentedOutOrdersViewController.swift */,
 			);
 			path = Chart;
 			sourceTree = "<group>";
@@ -2002,6 +2005,7 @@
 				17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */,
 				3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */,
 				80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */,
+				B484B0000000000000000001 /* RentedOutOrdersViewController.swift in Sources */,
 				DED3B23637CAEA6ED6DC027C /* SettingsV2ViewController.swift in Sources */,
 				A4590459D0000000000000A1 /* SettingsDetailV2.swift in Sources */,
 				F4268E5625300006E2E8BF03 /* CustomersV2.swift in Sources */,

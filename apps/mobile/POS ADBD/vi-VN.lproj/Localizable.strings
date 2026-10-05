@@ -1746,6 +1746,26 @@
 "overview.v2.rentals" = "%d lượt thuê";
 "overview.v2.noAccess" = "Tài khoản của bạn không xem được báo cáo";
 "overview.v2.bars" = "Tiền thu từng ngày";
+"overview.v2.collected" = "Tiền đã thu";
+"overview.v2.collectedInfo" = "Tiền đã thu là gì?";
+"overview.v2.totalOrderValue" = "Tổng giá trị đơn";
+"overview.v2.outstanding" = "Còn phải thu";
+"overview.v2.chart.money" = "Tiền thu";
+"overview.v2.chart.orders" = "Số đơn";
+"overview.v2.barsOrders" = "Số đơn từng ngày";
+"overview.v2.barOrders" = "%d đơn";
+"overview.v2.barOrders.one" = "%d đơn";
+"overview.v2.topRentedByValue" = "Thuê nhiều nhất · theo giá trị đơn";
+"overview.v2.info.body" = "Số tiền khách thực trả cho cửa hàng trong khoảng thời gian đang xem, tính theo ngày nhận tiền.";
+"overview.v2.info.deposit" = "Tiền cọc khi đặt đơn";
+"overview.v2.info.remaining" = "Tiền thuê, tiền bán còn lại";
+"overview.v2.info.damageFee" = "Phí hư hỏng";
+"overview.v2.info.lateFee" = "Phí trễ hạn";
+"overview.v2.info.cancelled" = "Đơn huỷ";
+"overview.v2.info.included" = "có tính";
+"overview.v2.info.refundsSubtracted" = "trừ lại tiền đã hoàn";
+"overview.v2.info.note" = "Tổng giá trị đơn là tổng tiền các đơn tạo trong kỳ, kể cả phần khách chưa trả. Còn phải thu là phần khách chưa trả đó.";
+"overview.v2.info.gotIt" = "Đã hiểu";
 "settings.v2.title" = "Cài đặt";
 "settings.v2.group.store" = "Cửa hàng";
 "settings.v2.group.management" = "Quản lý";
@@ -2002,3 +2022,15 @@
 "settings.v2.password.show" = "Hiện mật khẩu";
 "settings.v2.password.hide" = "Ẩn mật khẩu";
 "settings.v2.password.close" = "Đóng";
+
+/* #484 Rented-out list, store info form */
+"rentedOut.title" = "Đang cho thuê · %d";
+"rentedOut.section.late" = "Trễ hạn trả · %d";
+"rentedOut.section.onTime" = "Còn hạn · %d";
+"rentedOut.empty" = "Không có đơn nào đang cho thuê";
+"store.v2.name" = "Tên cửa hàng";
+"store.v2.street" = "Số nhà, đường";
+"store.v2.city" = "Phường / Quận";
+"store.v2.state" = "Tỉnh / Thành phố";
+"store.v2.other" = "Khác";
+"store.v2.descriptionPlaceholder" = "Giới thiệu ngắn về cửa hàng";

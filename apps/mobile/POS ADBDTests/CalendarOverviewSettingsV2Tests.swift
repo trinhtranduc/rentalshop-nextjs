@@ -202,6 +202,48 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertEqual(bars.map(\.value), [200, 300])
     }
 
+    // MARK: - #484 money tiles, orders chart, rented-out groups
+
+    func testReportParsingOfOrderValueOutstandingAndOrderCounts() throws {
+        let report = try decode(OverviewReport.self, """
+        {"revenue":{"totalActualRevenue":12450000,"totalOrderValue":15800000,"outstanding":3350000},
+         "series":[{"date":"2026/09/28","realIncome":1440,"newOrderCount":3},{"date":"2026/09/29","realIncome":708}]}
+        """)
+        XCTAssertEqual(report.netRevenue, 12_450_000)
+        XCTAssertEqual(report.totalOrderValue, 15_800_000)
+        XCTAssertEqual(report.outstanding, 3_350_000)
+        XCTAssertEqual(report.series.map(\.newOrderCount), [3, nil])
+        let range = DayKeyRange(start: "2026-09-28", end: "2026-09-30")
+        XCTAssertEqual(OverviewLogic.bars(report: report, range: range, mode: .orders).map(\.value), [3, 0, 0])
+        XCTAssertEqual(OverviewLogic.bars(report: report, range: range).map(\.value), [1440, 708, 0])
+
+        // Older API: no new fields, tiles hidden
+        let old = try decode(OverviewReport.self, #"{"revenue":{"totalRevenue":500}}"#)
+        XCTAssertNil(old.totalOrderValue)
+        XCTAssertNil(old.outstanding)
+    }
+
+    private func rental(id: Int, status: String = "PICKUPED", returns: String) throws -> Order {
+        let json = #"{"id":\#(id),"orderNumber":"000\#(id)","orderType":"RENT","status":"\#(status)","createdAt":"2026-09-20T03:00:00.000Z","updatedAt":"2026-09-20T03:00:00.000Z","pickupPlanAt":"2026-09-25T02:00:00.000Z","returnPlanAt":"\#(returns)","customerName":"Minh","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":1,"orderItems":[]}"#
+        return try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+    }
+
+    func testRentedOutGroupsUseVietnamDays() throws {
+        let vn = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+        // 2026-10-03 00:30 in Vietnam (17:30Z the day before)
+        let now = ISO8601DateFormatter().date(from: "2026-10-02T17:30:00Z")!
+        let orders = [
+            try rental(id: 1, returns: "2026-10-05T02:00:00.000Z"),
+            try rental(id: 2, returns: "2026-10-02T16:59:59.000Z"), // 23:59:59 on 02/10 in Vietnam: late
+            try rental(id: 3, returns: "2026-10-02T17:00:00.000Z"), // 00:00 on 03/10 in Vietnam: due today
+            try rental(id: 4, returns: "2026-09-30T02:00:00.000Z"),
+            try rental(id: 5, status: "RESERVED", returns: "2026-09-30T02:00:00.000Z"),
+        ]
+        let groups = RentedOutLogic.groups(orders, now: now, timeZone: vn)
+        XCTAssertEqual(groups.late.map(\.id), [4, 2])
+        XCTAssertEqual(groups.onTime.map(\.id), [3, 1])
+    }
+
     func testOperationsParsingWithAndWithoutCash() throws {
         let merchant = try decode(OverviewNow.self, """
         {"overdueReturns":{"count":4,"orders":[]},
