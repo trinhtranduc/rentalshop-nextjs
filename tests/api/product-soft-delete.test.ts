@@ -53,7 +53,10 @@ jest.mock('@rentalshop/utils/server', () => ({
   extractS3KeyFromUrl: () => 'key',
   createAuditHelper: () => ({ logDelete: () => Promise.resolve() }),
 }));
-jest.mock('../../apps/api/lib/image-compression', () => ({ compressImageTo1MB: jest.fn() }));
+jest.mock('../../apps/api/lib/image-compression', () => ({
+  ...jest.requireActual('../../apps/api/lib/image-compression'),
+  compressImageTo1MB: jest.fn(),
+}));
 
 import { DELETE } from '../../apps/api/app/api/products/[id]/route';
 import { POST as batchDelete } from '../../apps/api/app/api/products/batch-delete/route';

@@ -416,6 +416,8 @@ declare const VALIDATION: {
     readonly MIN_ORDER_AMOUNT: 0.01;
     readonly MAX_ORDER_AMOUNT: 999999.99;
     readonly MAX_ORDER_ITEMS: 50;
+    /** Photos on one order note (general, pickup, return, damage). */
+    readonly MAX_ORDER_NOTE_IMAGES: 5;
     readonly MIN_DEPOSIT_AMOUNT: 0;
     readonly MAX_DEPOSIT_AMOUNT: 99999.99;
     readonly MIN_DISCOUNT_AMOUNT: 0;
@@ -1527,6 +1529,7 @@ declare const CONSTANTS: {
         readonly MIN_ORDER_AMOUNT: 0.01;
         readonly MAX_ORDER_AMOUNT: 999999.99;
         readonly MAX_ORDER_ITEMS: 50;
+        readonly MAX_ORDER_NOTE_IMAGES: 5;
         readonly MIN_DEPOSIT_AMOUNT: 0;
         readonly MAX_DEPOSIT_AMOUNT: 99999.99;
         readonly MIN_DISCOUNT_AMOUNT: 0;

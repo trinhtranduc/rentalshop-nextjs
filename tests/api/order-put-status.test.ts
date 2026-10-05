@@ -40,7 +40,10 @@ jest.mock('@rentalshop/loyalty', () => ({
   handleLoyaltyOnCancel: jest.fn(),
   merchantHasLoyaltyFeature: jest.fn().mockResolvedValue(false),
 }));
-jest.mock('../../apps/api/lib/image-compression', () => ({ compressImageTo1MB: jest.fn() }));
+jest.mock('../../apps/api/lib/image-compression', () => ({
+  ...jest.requireActual('../../apps/api/lib/image-compression'),
+  compressImageTo1MB: jest.fn(),
+}));
 jest.mock('../../apps/api/lib/push-notifications', () => ({ notifyOutletOrderEvent: jest.fn() }));
 
 import { PUT } from '../../apps/api/app/api/orders/[orderId]/route';

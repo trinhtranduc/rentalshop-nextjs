@@ -183,3 +183,19 @@ export async function compressImageTo1MB(buffer: Buffer | Uint8Array): Promise<B
   }
 }
 
+export function noteImageCount(value: unknown): number {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+/** One note field may hold at most VALIDATION.MAX_ORDER_NOTE_IMAGES photos. */
+export function exceedsNoteImageLimit(total: number): boolean {
+  return total > VALIDATION.MAX_ORDER_NOTE_IMAGES;
+}
+
+const NOTE_IMAGE_FIELDS = ['notesImages', 'pickupNotesImages', 'returnNotesImages', 'damageNotesImages'] as const;
+
+/** True when a JSON body sends more than the allowed photos in any note field. */
+export function bodyExceedsNoteImageLimit(body: unknown): boolean {
+  const fields = (body ?? {}) as Record<string, unknown>;
+  return NOTE_IMAGE_FIELDS.some((field) => exceedsNoteImageLimit(noteImageCount(fields[field])));
+}

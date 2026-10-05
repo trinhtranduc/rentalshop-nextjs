@@ -103,7 +103,10 @@ jest.mock('@rentalshop/loyalty', () => ({
   handleLoyaltyOnOrderCreate: jest.fn(),
   merchantHasLoyaltyFeature: jest.fn().mockResolvedValue(false),
 }));
-jest.mock('../../apps/api/lib/image-compression', () => ({ compressImageTo1MB: jest.fn() }));
+jest.mock('../../apps/api/lib/image-compression', () => ({
+  ...jest.requireActual('../../apps/api/lib/image-compression'),
+  compressImageTo1MB: jest.fn(),
+}));
 jest.mock('../../apps/api/lib/analytics-days', () => ({ readAnalyticsTimeZone: jest.fn() }));
 jest.mock('../../apps/api/lib/push-notifications', () => ({ notifyOutletOrderEvent: jest.fn() }));
 
@@ -166,6 +169,17 @@ describe('POST /api/orders — merchant without an outlet (#398)', () => {
     expect(res.body).toEqual(expect.objectContaining({ success: true, code: 'ORDER_CREATED_SUCCESS' }));
     expect(createdOnOutlet()).toBe(3);
     expect(res.body.data.outletId).toBe(3);
+  });
+
+  it('#435: 3 note photos still create; 6 in one field answer 400 IMAGE_VALIDATION_FAILED', async () => {
+    const urls = (n: number) => Array.from({ length: n }, (_, i) => `https://cdn.example/n${i}.jpg`);
+    const ok: any = await POST(post(saleBody({ notesImages: urls(3) })));
+    expect(ok.status).toBe(200);
+    mockDb.orders.create.mockClear();
+    const res: any = await POST(post(saleBody({ pickupNotesImages: urls(6) })));
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('IMAGE_VALIDATION_FAILED');
+    expect(mockDb.orders.create).not.toHaveBeenCalled();
   });
 
   it('treats outletId null / 0 / "" like a missing outletId', async () => {
