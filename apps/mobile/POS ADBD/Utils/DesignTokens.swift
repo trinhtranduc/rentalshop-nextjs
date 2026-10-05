@@ -43,6 +43,8 @@ enum DS {
 
     enum Radius {
         static let chip: CGFloat = 6
+        /// Status tag of an order row (#468)
+        static let tag: CGFloat = 7
         static let card: CGFloat = 12
         static let sheet: CGFloat = 20
     }

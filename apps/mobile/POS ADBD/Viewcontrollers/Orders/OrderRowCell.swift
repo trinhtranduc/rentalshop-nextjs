@@ -17,14 +17,33 @@ enum OrderRowContext {
     case search
 }
 
-/// Small coloured tag ("Giao", "Đã đặt", "Trễ 1 ngày"): 12pt (DS.TextSize.pill), 2/6 padding, radius 6
+/// Coloured tag of an order row (#468, boards Main / VL-tat-ca / VL-ban):
+/// `.status` ("Giao", "Đã đặt") 14pt bold, 3/8 padding, radius 7; `.note` ("Trễ 1 ngày", "Chưa soạn đồ") 12pt regular,
+/// 2/6 padding, radius 6
 final class RowTagLabel: UILabel {
-    private let insets = UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
+    enum Style {
+        case status
+        case note
+    }
 
-    init(bold: Bool) {
+    private let insets: UIEdgeInsets
+
+    init(style: Style) {
+        switch style {
+        case .status:
+            insets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
+        case .note:
+            insets = UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
+        }
         super.init(frame: .zero)
-        font = bold ? Utils.boldFont(size: DS.TextSize.pill) : Utils.mediumFont(size: DS.TextSize.pill)
-        layer.cornerRadius = DS.Radius.chip
+        switch style {
+        case .status:
+            font = Utils.boldFont(size: DS.TextSize.secondary)
+            layer.cornerRadius = DS.Radius.tag
+        case .note:
+            font = Utils.regularFont(size: DS.TextSize.pill)
+            layer.cornerRadius = DS.Radius.chip
+        }
         layer.masksToBounds = true
         setContentCompressionResistancePriority(.required, for: .horizontal)
         setContentHuggingPriority(.required, for: .horizontal)
@@ -57,7 +76,7 @@ final class OrderRowCell: UITableViewCell {
     private static let callBorder = UIColor(hexString: "CBD5E1")
     private static let chevronColor = UIColor(hexString: "94A3B8")
 
-    private let tagLabel = RowTagLabel(bold: true)
+    private let tagLabel = RowTagLabel(style: .status)
     private let nameLabel = UILabel()
     private let itemsLabel = UILabel()
     private let whenLabel = UILabel()
@@ -270,8 +289,7 @@ final class OrderRowCell: UITableViewCell {
     }
 
     private func addPill(_ text: String, _ colors: DS.Pill) {
-        let pill = RowTagLabel(bold: false)
-        pill.font = Utils.boldFont(size: DS.TextSize.pill)
+        let pill = RowTagLabel(style: .note)
         pill.apply(text, colors)
         pillStack.addArrangedSubview(pill)
     }

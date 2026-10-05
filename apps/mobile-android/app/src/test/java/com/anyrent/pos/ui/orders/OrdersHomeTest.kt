@@ -18,6 +18,10 @@ import com.anyrent.pos.ui.orders.v2.OrdersSort
 import com.anyrent.pos.ui.orders.v2.PayLine
 import com.anyrent.pos.ui.orders.v2.RentOrdersFilter
 import com.anyrent.pos.ui.orders.v2.RowTag
+import com.anyrent.pos.ui.orders.v2.RowTagStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anyrent.pos.ui.orders.v2.OrdersPageLoader
 import com.anyrent.pos.ui.orders.v2.OrdersRow
 import com.anyrent.pos.ui.orders.v2.OrdersSegment
@@ -311,6 +315,24 @@ class OrdersHomeTest {
         val row = TodayWorkRow(id = 1, orderNumber = "ORD-1-0001", customerName = "Huy", customerPhone = "0901 234 567", lateDays = 2)
         assertNull(OrdersBoardLogic.workCallPhone(row, isLate = true))
         assertNull(OrdersBoardLogic.workCallPhone(row, isLate = false))
+    }
+
+    @Test
+    fun `status tag is 14sp bold, notes are 12sp regular (#468)`() {
+        with(RowTagStyle.STATUS) {
+            assertEquals(14.sp, fontSize)
+            assertEquals(FontWeight.Bold, weight)
+            assertEquals(8.dp, horizontal)
+            assertEquals(3.dp, vertical)
+            assertEquals(7.dp, radius)
+        }
+        with(RowTagStyle.NOTE) {
+            assertEquals(12.sp, fontSize)
+            assertEquals(FontWeight.Normal, weight)
+            assertEquals(6.dp, horizontal)
+            assertEquals(2.dp, vertical)
+            assertEquals(6.dp, radius)
+        }
     }
 
     @Test

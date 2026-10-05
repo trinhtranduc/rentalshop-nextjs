@@ -41,6 +41,8 @@ object DS {
     object Radius {
         val pill = 999.dp
         val chip = 6.dp
+        /** Status tag of an order row (#468) */
+        val tag = 7.dp
         val card = 12.dp
         val sheet = 20.dp
     }

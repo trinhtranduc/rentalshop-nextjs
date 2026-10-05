@@ -393,6 +393,28 @@ final class OrdersHomeTests: XCTestCase {
         }
         XCTAssertTrue(visibleButtons(cell.contentView).isEmpty, "late work row: no call button")
     }
+
+    func testStatusTagIsBiggerAndNotesAreRegular() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0001", customerName: "Huy",
+                               returnPlanAt: iso.date(from: "2026-10-01T02:00:00Z"), lateDays: 2)
+        cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
+        func tags(_ view: UIView) -> [RowTagLabel] {
+            ((view as? RowTagLabel).map { [$0] } ?? []) + view.subviews.flatMap(tags)
+        }
+        let all = tags(cell.contentView)
+        let status = try XCTUnwrap(all.first { $0.text == "orders.v2.tag.handOver".localized() })
+        XCTAssertEqual(status.font, Utils.boldFont(size: DS.TextSize.secondary))
+        XCTAssertEqual(status.layer.cornerRadius, 7)
+        XCTAssertEqual(status.intrinsicContentSize.width,
+                       (status.text! as NSString).size(withAttributes: [.font: status.font!]).width + 16, accuracy: 1)
+        let notes = all.filter { $0 !== status }
+        XCTAssertEqual(notes.count, 2, "not prepared + late")
+        for note in notes {
+            XCTAssertEqual(note.font, Utils.regularFont(size: DS.TextSize.pill), note.text ?? "")
+            XCTAssertEqual(note.layer.cornerRadius, DS.Radius.chip)
+        }
+    }
 }
 
 private final class FakeSource: OrdersHomeDataSource {
