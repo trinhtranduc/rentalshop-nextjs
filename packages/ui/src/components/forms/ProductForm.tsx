@@ -20,8 +20,17 @@ import {
   NumericInput
 } from '../ui';
 import { formatCurrency } from '../../lib';
-import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
-import { useProductTranslations, useCommonTranslations, useValidationTranslations, usePermissions } from '@rentalshop/hooks';
+import {
+  uploadImage,
+  getAuthToken,
+  buildProductPricingOptions,
+  getProductDefaultPricingMode,
+  getProductRentalPrices,
+  validateProductPricing,
+  type UploadProgress,
+  type ProductPricingMode,
+} from '@rentalshop/utils';
+import { useProductTranslations, useCommonTranslations, useValidationTranslations, usePermissions, useAuth } from '@rentalshop/hooks';
 import { 
   Package, 
   DollarSign, 
@@ -39,7 +48,8 @@ import {
 } from 'lucide-react';
 import type { 
   ProductInput, 
-  ProductUpdateInput
+  ProductUpdateInput,
+  PricingOption
 } from '@rentalshop/types';
 import { 
   PRICING_TYPE, 
@@ -77,13 +87,23 @@ interface ProductFormData {
     maxDuration?: number;
     defaultDuration?: number;
   } | null;
-  // Multiple pricing options — FIXED (required) + DAILY (optional)
-  pricingOptions?: Array<{
-    type: PricingType;
-    price: number;
-    isDefault: boolean;
-  }>;
+  // Saved pricing options (read on edit to seed the two prices and the default)
+  pricingOptions?: PricingOption[];
+  // Rental prices as typed (0 = empty) and the default for new orders (#460, same as iOS)
+  perRentalPrice: number;
+  perDayPrice: number;
+  pricingDefault: ProductPricingMode;
 }
+
+/** The two rental prices and the default mode from saved product data (#460). */
+const seedRentalPricing = (data: Partial<ProductFormData>) => {
+  const { perRental, perDay } = getProductRentalPrices(data);
+  return {
+    perRentalPrice: perRental ?? 0,
+    perDayPrice: perDay ?? 0,
+    pricingDefault: getProductDefaultPricingMode(data),
+  };
+};
 
 interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
@@ -126,11 +146,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const tc = useCommonTranslations();
   const tv = useValidationTranslations();
   const { hasPermission } = usePermissions();
-  // products.manage: full pricing including cost on edit.
-  // Create mode: anyone who can open the form may set prices (staff has products.create).
-  // Edit mode: only products.manage (staff cannot update products at all).
+  const { user } = useAuth();
+  // Price fields only with products.manage and never for OUTLET_STAFF, same as iOS
+  // (`ProductAccess.showsPriceFields`); others do not see or send prices (#460).
   const canManageProducts = hasPermission('products.manage');
-  const canEditPricing = canManageProducts || mode === 'create';
+  const canEditPricing = canManageProducts && user?.role !== 'OUTLET_STAFF';
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -148,17 +168,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     pricingType: null,
     durationConfig: null,
     ...initialData,
-    // Seed pricing options: use provided options, otherwise default rows (per-rental + per-day)
-    pricingOptions: (initialData as any)?.pricingOptions?.length
-      ? (initialData as any).pricingOptions.map((o: any) => ({
-          type: o.type as PricingType,
-          price: Number(o.price) || 0,
-          isDefault: !!o.isDefault,
-        }))
-      : [
-          { type: PRICING_TYPE.FIXED as PricingType, price: initialData.rentPrice ?? 0, isDefault: true },
-          { type: PRICING_TYPE.DAILY as PricingType, price: 0, isDefault: false },
-        ],
+    ...seedRentalPricing(initialData),
   });
 
   
@@ -242,16 +252,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         pricingType: null,
         durationConfig: null,
         ...parsedInitialData,
-        pricingOptions: (parsedInitialData as any)?.pricingOptions?.length
-          ? (parsedInitialData as any).pricingOptions.map((o: any) => ({
-              type: o.type as PricingType,
-              price: Number(o.price) || 0,
-              isDefault: !!o.isDefault,
-            }))
-          : [
-              { type: PRICING_TYPE.FIXED as PricingType, price: parsedInitialData.rentPrice ?? 0, isDefault: true },
-              { type: PRICING_TYPE.DAILY as PricingType, price: 0, isDefault: false },
-            ],
+        ...seedRentalPricing(parsedInitialData),
       });
     }
   }, [initialData]);
@@ -347,6 +348,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [formData]);
 
+  const rentalPricingIssues = validateProductPricing({
+    perRental: formData.perRentalPrice,
+    perDay: formData.perDayPrice,
+    defaultMode: formData.pricingDefault,
+  });
+
+  const rentalPricingErrors = (): Partial<Record<keyof ProductFormData, string>> => {
+    const result: Partial<Record<keyof ProductFormData, string>> = {};
+    if (rentalPricingIssues.includes('negativeAmount')) {
+      result.rentPrice = tv('fields.rentPrice.nonNegative');
+    }
+    if (rentalPricingIssues.includes('perDayDefaultNeedsPrice')) {
+      result.pricingDefault = tv('fields.pricingDefault.dailyNeedsPrice');
+    }
+    return result;
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
 
@@ -358,8 +376,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newErrors.categoryId = tv('fields.category.required');
     }
 
-    if (canEditPricing && formData.rentPrice <= 0) {
-      newErrors.rentPrice = tv('fields.rentPrice.required');
+    // Both rental prices are optional; a per-day default needs a per-day price (#460)
+    if (canEditPricing) {
+      Object.assign(newErrors, rentalPricingErrors());
     }
 
     if (canEditPricing && formData.salePrice <= 0) {
@@ -460,8 +479,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         newErrors.categoryId = tv('fields.category.required');
       }
 
-      if (canEditPricing && formData.rentPrice <= 0) {
-        newErrors.rentPrice = tv('fields.rentPrice.required');
+      if (canEditPricing) {
+        Object.assign(newErrors, rentalPricingErrors());
       }
 
       if (canEditPricing && formData.salePrice <= 0) {
@@ -498,33 +517,34 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     
 
 
-    // Normalize pricing options: keep only priced options, ensure one default
-    const validOptions = (formData.pricingOptions || []).filter(o => o.price > 0);
-    if (validOptions.length > 0 && !validOptions.some(o => o.isDefault)) {
-      validOptions[0] = { ...validOptions[0], isDefault: true };
-    }
-    const defaultOption = validOptions.find(o => o.isDefault) || validOptions[0];
-    const hasOptions = validOptions.length > 0;
+    // Same payload as the mobile apps (#460): priced options only, one default; the API copies the
+    // default's price into rentPrice and its type into pricingType. No pricingType is sent (a DAILY
+    // pricingType on create would require durationConfig). [] on edit clears both prices.
+    const pricingOptions = buildProductPricingOptions(formData.perRentalPrice, formData.perDayPrice, formData.pricingDefault);
+    const defaultOption = pricingOptions.find(o => o.isDefault);
 
-    const productData: ProductInput & { pricingType?: PricingType | null; durationConfig?: string | null; costPrice?: number | null; pricingOptions?: Array<{ type: PricingType; price: number; isDefault: boolean }> } = {
+    // rentPrice is left out for users without price rights (the API keeps the saved price / defaults to 0)
+    const productData: Omit<ProductInput, 'rentPrice'> & {
+      rentPrice?: number;
+      costPrice?: number | null;
+      pricingOptions?: Array<{ type: ProductPricingMode; price: number; isDefault: boolean }>;
+    } = {
       merchantId: typeof merchantId === 'string' ? parseInt(merchantId) || 0 : merchantId || 0,
       categoryId: formData.categoryId,
       name: formData.name,
       description: formData.description,
       barcode: formData.barcode,
       totalStock: formData.totalStock,
-      // Pricing: staff can set on create; on edit only products.manage may change prices.
+      // Prices only for users who see the price fields (iOS sends none otherwise)
       ...(canEditPricing
         ? {
-            rentPrice: hasOptions ? defaultOption.price : formData.rentPrice,
+            rentPrice: defaultOption?.price ?? 0,
             salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
-            pricingType: hasOptions ? defaultOption.type : (formData.pricingType || null),
-            durationConfig: null,
-            ...(hasOptions ? { pricingOptions: validOptions } : {}),
+            pricingOptions,
           }
         : {}),
       // Only include costPrice if user has products.manage permission
-      ...(canManageProducts && formData.costPrice > 0 ? { costPrice: formData.costPrice } : {}),
+      ...(canEditPricing && formData.costPrice > 0 ? { costPrice: formData.costPrice } : {}),
       deposit: formData.deposit,
       images: useMultipartUpload ? [] : formData.images, // Empty array for multipart, existing images for immediate upload
       outletStock: formData.outletStock,
@@ -532,55 +552,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
     // Pass files when using multipart upload
     if (useMultipartUpload) {
-      onSubmit(productData, selectedFiles);
+      onSubmit(productData as ProductInput, selectedFiles);
     } else {
-      onSubmit(productData);
+      onSubmit(productData as ProductInput);
     }
   };
 
-  // ---- Compact rental pricing (FIXED required + DAILY optional) ----
-  const getOptionPrice = (type: PricingType): number => {
-    const option = (formData.pricingOptions || []).find(o => o.type === type);
-    if (option) return option.price;
-    return type === PRICING_TYPE.FIXED ? formData.rentPrice : 0;
-  };
-
-  const updateRentPricing = (type: typeof PRICING_TYPE.FIXED | typeof PRICING_TYPE.DAILY, price: number) => {
-    setFormData(prev => {
-      let options = [...(prev.pricingOptions || [])];
-      const idx = options.findIndex(o => o.type === type);
-
-      if (idx >= 0) {
-        options[idx] = { ...options[idx], price };
-      } else {
-        options.push({
-          type: type as PricingType,
-          price,
-          isDefault: type === PRICING_TYPE.FIXED,
-        });
-      }
-
-      // Always keep a FIXED row (required)
-      if (!options.some(o => o.type === PRICING_TYPE.FIXED)) {
-        options = [
-          {
-            type: PRICING_TYPE.FIXED as PricingType,
-            price: type === PRICING_TYPE.FIXED ? price : prev.rentPrice,
-            isDefault: true,
-          },
-          ...options,
-        ];
-      }
-
-      // FIXED is always the default option
-      options = options.map(o => ({
-        ...o,
-        isDefault: o.type === PRICING_TYPE.FIXED,
-      }));
-
-      const rentPrice = options.find(o => o.type === PRICING_TYPE.FIXED)?.price ?? 0;
-      return { ...prev, pricingOptions: options, rentPrice };
-    });
+  // ---- Rental pricing: per-rental and per-day, both optional, plus the default (#460) ----
+  const updateRentalPricing = (
+    field: 'perRentalPrice' | 'perDayPrice' | 'pricingDefault',
+    value: number | ProductPricingMode
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors.rentPrice || errors.pricingDefault) {
+      setValidationErrors(prev => ({ ...prev, rentPrice: undefined, pricingDefault: undefined }));
+    }
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -989,24 +975,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {/* Compact pricing — no dynamic "add price" rows */}
             <div className="pt-3 border-t border-border space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground">{t('pricing.title')}</h3>
-              {!canEditPricing && (
-                <p className="text-[11px] text-muted-foreground">
-                  {t('pricing.readOnlyHint')}
-                </p>
-              )}
-
+              {canEditPricing && (
+              <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <NumericInput
                     label={t('pricing.pricePerRental')}
-                    value={getOptionPrice(PRICING_TYPE.FIXED)}
-                    onChange={(value) => updateRentPricing(PRICING_TYPE.FIXED, value)}
+                    value={formData.perRentalPrice}
+                    onChange={(value) => updateRentalPricing('perRentalPrice', value)}
                     placeholder="0"
                     error={!!errors.rentPrice}
-                    required
                     allowDecimals={true}
                     maxDecimalPlaces={2}
-                    disabled={!canEditPricing}
                   />
                   {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
                 </div>
@@ -1014,20 +994,52 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <div>
                   <NumericInput
                     label={t('pricing.pricePerDay')}
-                    value={getOptionPrice(PRICING_TYPE.DAILY)}
-                    onChange={(value) => updateRentPricing(PRICING_TYPE.DAILY, value)}
+                    value={formData.perDayPrice}
+                    onChange={(value) => updateRentalPricing('perDayPrice', value)}
                     placeholder="0"
                     allowDecimals={true}
                     maxDecimalPlaces={2}
-                    disabled={!canEditPricing}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {t('pricing.dailyDescription')}
-                  </p>
                 </div>
               </div>
 
-              <div className={`grid grid-cols-1 gap-3 ${isPage ? 'sm:grid-cols-2' : canManageProducts ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+              <div>
+                <span id="product-pricing-default" className="mb-1 block text-sm font-medium">
+                  {t('pricing.defaultMode')}
+                </span>
+                <div
+                  role="radiogroup"
+                  aria-labelledby="product-pricing-default"
+                  className="inline-flex h-9 gap-0.5 rounded-lg bg-slate-100 p-0.5"
+                >
+                  {(['FIXED', 'DAILY'] as const).map((mode) => {
+                    const selected = formData.pricingDefault === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => updateRentalPricing('pricingDefault', mode)}
+                        className={`whitespace-nowrap rounded-md px-3 text-sm transition-colors ${
+                          selected ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'font-medium text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {t(mode === 'FIXED' ? 'pricing.defaultFixed' : 'pricing.defaultDaily')}
+                      </button>
+                    );
+                  })}
+                </div>
+                {(errors.pricingDefault || rentalPricingIssues.includes('perDayDefaultNeedsPrice')) && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.pricingDefault || tv('fields.pricingDefault.dailyNeedsPrice')}
+                  </p>
+                )}
+              </div>
+              </>
+              )}
+
+              <div className={`grid grid-cols-1 gap-3 ${isPage ? 'sm:grid-cols-2' : canEditPricing ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
                 <div>
                   <NumericInput
                     label={t('fields.deposit')}
@@ -1041,6 +1053,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   {errors.deposit && <p className="text-sm text-red-500">{errors.deposit}</p>}
                 </div>
 
+                {canEditPricing && (
                 <div>
                   <NumericInput
                     label={t('fields.salePrice')}
@@ -1050,12 +1063,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     error={!!errors.salePrice}
                     allowDecimals={true}
                     maxDecimalPlaces={2}
-                    disabled={!canEditPricing}
                   />
                   {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
                 </div>
+                )}
 
-                {canManageProducts && (
+                {canEditPricing && (
                   <div>
                     <NumericInput
                       label={t('fields.costPrice')}

@@ -11,6 +11,7 @@ import {
   offersBothPricingModes,
   validateProductPricing,
 } from '../packages/utils/src/core/product-pricing-options';
+import { productCreateSchema, productUpdateSchema } from '../packages/utils/src/core/validation-schemas';
 
 const fixed = { id: 1, type: 'FIXED', price: 150_000 };
 const daily = { id: 2, type: 'DAILY', price: 100_000 };
@@ -93,5 +94,21 @@ describe('product form prices (#460)', () => {
 
   it('rejects a negative price', () => {
     expect(validateProductPricing({ perRental: -1, perDay: null, defaultMode: 'FIXED' })).toEqual(['negativeAmount']);
+  });
+});
+
+describe('the API accepts the web payload (#460)', () => {
+  // Same schemas as POST /api/products and PUT /api/products/[id]
+  const base = { name: 'Áo dài', deposit: 0, outletStock: [{ outletId: 1, stock: 2 }] };
+
+  it('per-day default, no pricingType sent', () => {
+    const pricingOptions = buildProductPricingOptions(150_000, 100_000, 'DAILY');
+    expect(productCreateSchema.safeParse({ ...base, rentPrice: 100_000, pricingOptions }).success).toBe(true);
+    expect(productUpdateSchema.safeParse({ ...base, id: 5, rentPrice: 100_000, pricingOptions }).success).toBe(true);
+  });
+
+  it('no rental price: rentPrice 0 and empty options', () => {
+    expect(productCreateSchema.safeParse({ ...base, rentPrice: 0, pricingOptions: [] }).success).toBe(true);
+    expect(productUpdateSchema.safeParse({ ...base, id: 5, rentPrice: 0, pricingOptions: [] }).success).toBe(true);
   });
 });

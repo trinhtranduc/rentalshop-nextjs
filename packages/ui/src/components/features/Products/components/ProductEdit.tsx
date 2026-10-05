@@ -61,6 +61,9 @@ export const ProductEdit: React.FC<ProductEditFormProps> = ({
     barcode: product.barcode || '',
     categoryId: product.category?.id || product.categoryId,
     rentPrice: product.rentPrice,
+    // Saved per-rental / per-day prices and the default, so the form shows and keeps them (#460)
+    pricingType: product.pricingType ?? null,
+    pricingOptions: product.pricingOptions ?? [],
     salePrice: (product as any).salePrice || 0, // Use actual salePrice if available, default to 0
     // Only include costPrice if user has products.manage permission
     ...(canManageProducts ? { costPrice: (product as any).costPrice || 0 } : { costPrice: 0 }),
