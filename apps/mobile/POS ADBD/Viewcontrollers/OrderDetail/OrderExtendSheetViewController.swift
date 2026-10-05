@@ -57,7 +57,7 @@ final class OrderExtendSheetViewController: UIViewController {
         picker.tintColor = DS.Color.primary
         picker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
 
-        let extraTitle = V2.label("order.extend.extraRent".localized(), size: 14, weight: .bold)
+        let extraTitle = V2.label("order.extend.extraRent".localized(), size: DS.TextSize.body, weight: .bold)
         extraField.placeholder = "0"
         extraField.font = Utils.regularFont(size: 16)
         extraField.textColor = DS.Color.text
