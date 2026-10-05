@@ -18,9 +18,9 @@ Public, no token. Read by iOS and Android at launch and when the app comes back 
 | `IOS_MIN_VERSION`, `ANDROID_MIN_VERSION` | Builds below this see a blocking "Update required" screen |
 | `IOS_LATEST_VERSION`, `ANDROID_LATEST_VERSION` | Newest store version (informational) |
 | `IOS_STORE_URL`, `ANDROID_STORE_URL` | Where the Update button goes (hidden when empty) |
-| `MOBILE_FEATURES` | Comma-separated screens to turn on, e.g. `newOrders,newOrderDetail` |
+| `MOBILE_FEATURES` | Unset or blank: every new screen on (#456). `none`: every new screen off. Otherwise the comma-separated screens to turn on, e.g. `newOrders,newOrderDetail` (staged rollout / kill switch) |
 
-Defaults never force an update and keep every new screen off. Responses are cached 5 minutes.
+Defaults never force an update and turn every new screen on. Responses are cached 5 minutes.
 
 ## App behavior
 
@@ -32,6 +32,7 @@ Defaults never force an update and keep every new screen off. Responses are cach
 ## Rollout
 
 1. Ship the app version that reads this endpoint.
-2. Turn screens on for testing on dev-api first (`MOBILE_FEATURES`), then production.
+2. New screens are on by default. For a staged rollout set `MOBILE_FEATURES` to a list (or `none`)
+   before the API reaches an environment, then widen it.
 3. Raise `*_MIN_VERSION` only when most active devices run a version that has the needed screens
    (request logs carry `X-App-Version`).

@@ -44,8 +44,10 @@ scripts/mobile-e2e/api-local.sh status             # shows the app-config flags 
 - No `node_modules` in this checkout? `E2E_NODE_MODULES=/other/checkout/node_modules` (same `prisma/schema.prisma`).
 - Seed accounts: `merchant1@example.com / merchant123` (MERCHANT, merchant 1), `staff.outlet1@example.com / staff123`
   (OUTLET_STAFF, merchant 1 main branch), `admin.outlet1@example.com / admin123` (OUTLET_ADMIN), `admin@rentalshop.com / admin123`.
-- Flags: `MOBILE_FEATURES=newOrders,newOrderDetail,…` on `api-local.sh start`. The apps cache `/api/mobile/app-config`
-  for up to 5 minutes and read flags at launch: after changing flags restart the API and reinstall (`--fresh`).
+- Flags: `MOBILE_FEATURES=newOrders,newOrderDetail,…` on `api-local.sh start`. On the API, unset/blank means every
+  new screen on (#456) and `none` means all off; the apps also default every new screen on without a cached config
+  (`env.sh` still passes its own list unless you set one). The apps cache `/api/mobile/app-config` for up to
+  5 minutes and read flags at launch: after changing flags restart the API and reinstall (`--fresh`).
 
 ## 3. Run
 
