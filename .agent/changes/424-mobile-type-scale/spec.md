@@ -28,7 +28,7 @@ None.
 
 ## Acceptance
 
-- [ ] Token tests green on iOS and Android
-- [ ] `grep` for size 11/13 literals on the new-UI files returns nothing
-- [ ] iOS and Android builds succeed (or the report says why they could not run)
-- [ ] Screens compared with the canvas boards where a device was available
+- [x] Token tests green on iOS and Android
+- [x] `grep` for size 11/13 literals on the new-UI files returns nothing
+- [x] iOS and Android builds succeed (or the report says why they could not run)
+- [ ] Screens compared with the canvas boards where a device was available (not done, see plan.md)

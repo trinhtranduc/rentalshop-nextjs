@@ -77,3 +77,26 @@ Revert the commit; the screens are also behind server flags.
 
 Unchanged on purpose: tab bar (shared shell; Android labels are 11, iOS is the shared UITabBar), search fields stay 15
 (the rule keeps 15 controls), 20 sheet titles and 18–30 headings stay literal, old screens and their shared helpers.
+
+## Verification (2026-10-05, after rebase onto origin/dev d3f6f8944, which includes #439 and #440)
+
+- Rebase conflicts: Android `CartV2Screen.kt`, `OrderDetailV2Sheets.kt`, `OrderExtendSheet.kt`, `OrdersHomeScreen.kt`;
+  iOS `CartV2ViewController.swift`, `OrderHandOverSheetViewController.swift`, `OrderExtendSheetViewController.swift`.
+  Kept dev's code (plurals from #430, cart "+ Thêm" → add-from-customer from #433, hand-over papers/deposit fields
+  from #427, extend sheet extra-rent field) and applied the type-scale tokens to it. The extend sheet's new extra-rent
+  title (14) became `DS.TextSize.body` (15) per the mapping rule.
+- Token tests: Android `TypeScaleTest` 3/3 (`:app:testDebugUnitTest` 222 tests, 0 failures);
+  iOS `TypeScaleTests` 4/4 on the iPhone 17 simulator.
+- Builds: Android `:app:assembleDebug` BUILD SUCCESSFUL; iOS `xcodebuild … -scheme Development
+  -destination 'generic/platform=iOS Simulator' build` BUILD SUCCEEDED.
+- grep (no 11, 13 or < 12 sizes on new-UI files): iOS
+  `grep -rnE "(size|ofSize): *(1[13]|[0-9])(\.[0-9]+)?\b" <iOS files in step 2>` → no matches;
+  Android `grep -rnE "\b(1[13]|[0-9])(\.[0-9]+)?\.sp\b" ui/**/v2/*.kt ui/onboarding/OnboardingV2Screen.kt | grep -v letterSpacing`
+  → no matches (only `letterSpacing = 0.sp / 0.5.sp` lines, which are not font sizes).
+- **Open: iOS `Issue430Tests.testRowShowsWholeNameBesidePayLine` fails (154/155 iOS tests pass).** #430 spec line 1
+  requires "Nguyễn Văn Kiểm Thử" untruncated on a 390pt completed sale row with the pay line. At the new sizes
+  (name 17 bold, pay line 14 bold) the name needs 185pt and gets 147pt. This is a conflict between #430 and this
+  spec's line 6 (long names truncate), not a layout bug. Needs an owner decision: (a) accept truncation at 17 and
+  change the #430 test to "the left column has no slack", or (b) a layout change (e.g. pay line under the name).
+  The test was not edited.
+- Screens vs canvas: not done (needs a local API with the new-UI flags and a driven simulator/emulator).
