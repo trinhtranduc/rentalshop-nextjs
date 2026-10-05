@@ -22,7 +22,7 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { countRentalDays } from '@rentalshop/utils';
+import { getOrderLineDisplay } from '@rentalshop/utils';
 import type { 
   OrderItemFormData, 
   ProductWithStock,
@@ -198,23 +198,6 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-
-// Compute day-aware line display for an order item
-const getLineDisplay = (
-  item: OrderItemFormData,
-  orderType: 'RENT' | 'SALE',
-  pickupDate?: string,
-  returnDate?: string
-): { isDaily: boolean; days: number; total: number } => {
-  const isDaily = orderType === 'RENT' && (item.pricingType === 'DAILY' || item.product?.pricingType === 'DAILY');
-  let days = 1;
-  if (isDaily && pickupDate && returnDate) {
-    // Pickup and return day both count (#351)
-    days = countRentalDays(pickupDate, returnDate);
-  }
-  const lineDays = isDaily ? days : 1;
-  return { isDaily, days: lineDays, total: (item.unitPrice || 0) * (item.quantity || 1) * lineDays };
-};
 
 /** Units free for the order period, reported up so the summary can warn before creating (#create-order UI). */
 export interface ItemAvailability {
@@ -402,7 +385,7 @@ const OrderItemRow: React.FC<OrderItemRowProps> = ({
   const displayProduct = item.product || product;
   const name = displayProduct?.name || `#${item.productId}`;
   const imageUrl = displayProduct?.images?.[0];
-  const line = getLineDisplay(item, orderType, pickupDate, returnDate);
+  const line = getOrderLineDisplay(item, orderType, pickupDate, returnDate);
   const pricingType = (item.pricingType || 'FIXED').toUpperCase();
   const availability = useItemAvailability(
     product || (item.product as ProductWithStock | undefined),

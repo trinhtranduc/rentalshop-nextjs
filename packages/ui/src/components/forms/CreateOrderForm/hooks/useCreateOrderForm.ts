@@ -4,7 +4,17 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@rentalshop/ui';
-import { customersApi, handleApiError, convertLocalDateToUTCDatetime, getLocalDateKey, countRentalDays } from '@rentalshop/utils';
+import {
+  customersApi,
+  handleApiError,
+  convertLocalDateToUTCDatetime,
+  getLocalDateKey,
+  countRentalDays,
+  computeOrderLineTotal,
+  getPreferredPricingOption,
+  repriceOrderLineForOrderType,
+  resolveOrderLinePricingType,
+} from '@rentalshop/utils';
 import { BUSINESS, VALIDATION } from '@rentalshop/constants';
 import type { 
   OrderFormData, 
@@ -13,47 +23,14 @@ import type {
   CreateOrderFormProps 
 } from '../types';
 
-// ---- Pricing option helpers (multi-option products) ----
+// ---- Pricing helpers (shared with the line row, #444) ----
 // Pickup and return day both count (#351), same as iOS and Android
 const deriveRentalDays = (start?: string, end?: string): number => countRentalDays(start, end);
 
-const getItemOptions = (item: OrderItemFormData): Array<{ id?: number; type: string; price: number; isDefault?: boolean }> =>
-  (item.product?.pricingOptions as any[]) || [];
+const resolveItemPricingType = (item: OrderItemFormData): string => resolveOrderLinePricingType(item);
 
-const getPreferredPricingOption = <T extends { type: string; isDefault?: boolean }>(options: T[]): T | null =>
-  options.find(option => option.type === 'FIXED') ||
-  options.find(option => option.isDefault) ||
-  options[0] ||
-  null;
-
-const resolveItemOption = (item: OrderItemFormData) => {
-  const opts = getItemOptions(item);
-  if (opts.length === 0) return null;
-  if (item.selectedPricingOptionId != null) {
-    const found = opts.find(o => o.id === item.selectedPricingOptionId);
-    if (found) return found;
-  }
-  if (item.pricingType) {
-    const matchingType = opts.find(option => option.type === item.pricingType);
-    if (matchingType) return matchingType;
-  }
-  return getPreferredPricingOption(opts);
-};
-
-const resolveItemPricingType = (item: OrderItemFormData): string => {
-  const opt = resolveItemOption(item);
-  if (opt) return opt.type;
-  return (item.pricingType || item.product?.pricingType || 'FIXED') as string;
-};
-
-const computeLineTotal = (item: OrderItemFormData, orderType: 'RENT' | 'SALE', days: number): number => {
-  const qty = item.quantity || 1;
-  const unit = item.unitPrice || 0;
-  if (orderType === 'RENT' && resolveItemPricingType(item) === 'DAILY') {
-    return unit * qty * Math.max(1, days);
-  }
-  return unit * qty;
-};
+const computeLineTotal = (item: OrderItemFormData, orderType: 'RENT' | 'SALE', days: number): number =>
+  computeOrderLineTotal(item, orderType, days);
 
 /** Map API/order item → form item, preserving daily/hourly pricing snapshot. */
 const mapInitialOrderItem = (item: any): OrderItemFormData => {
@@ -226,19 +203,11 @@ export const useCreateOrderForm = (props: CreateOrderFormProps) => {
   // Update unitPrice of all order items when orderType changes
   useEffect(() => {
     if (orderItems.length > 0) {
-      const updatedItems = orderItems.map(item => {
-        const rentPrice = item.product.rentPrice ?? 0;
-        const salePrice = item.product.salePrice ?? rentPrice; // Fallback to rentPrice if salePrice not available
-        
-        // Use salePrice for SALE orders, rentPrice for RENT orders
-        const newUnitPrice = formData.orderType === 'RENT' ? rentPrice : salePrice;
-        
-        return {
-          ...item,
-          unitPrice: newUnitPrice,
-          totalPrice: newUnitPrice * item.quantity,
-        };
-      });
+      const days = deriveRentalDays(formData.pickupPlanAt, formData.returnPlanAt);
+      const updatedItems = orderItems.map(item => ({
+        ...item,
+        ...repriceOrderLineForOrderType(item, formData.orderType, days),
+      }));
       
       setOrderItems(updatedItems);
     }
