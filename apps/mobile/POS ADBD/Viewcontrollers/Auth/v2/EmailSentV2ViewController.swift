@@ -2,7 +2,7 @@
 //  EmailSentV2ViewController.swift
 //  POS ADBD
 //
-//  #386 — board Quen-mat-khau-da-gui. Also used after sign-up (the activation mail), where the current flow
+//  #386 — board Quen-mat-khau-da-gui, style 4A in #466 (board DX-Da-gui). Also used after sign-up (the activation mail), where the current flow
 //  shows its "check your email" screen. "Gửi lại email" is disabled for a minute after a tap.
 //
 
@@ -65,16 +65,21 @@ final class EmailSentV2ViewController: BaseViewControler {
         footer.axis = .vertical
         footer.spacing = 8
 
-        let content = authV2Page(header: header, footer: footer, contentInsetTop: 142, blobs: .forgot)
+        let content = authV2Page(header: header, footer: footer, contentInsetTop: 110)
 
-        let iconRow = AuthV2Style.makeSentIcon()
+        let iconRow = AuthV2Style.makeMailTile()
 
+        let titleStyle = NSMutableParagraphStyle()
+        titleStyle.minimumLineHeight = AuthV2Style.titleLineHeight
+        titleStyle.maximumLineHeight = AuthV2Style.titleLineHeight
         let title = UILabel()
         title.attributedText = NSAttributedString(string: "authv2.sent.title".localized(), attributes: [
-            NSAttributedString.Key.font: Utils.extraBoldFont(size: 30),
+            NSAttributedString.Key.font: Utils.extraBoldFont(size: AuthV2Style.titleSize),
             NSAttributedString.Key.foregroundColor: AuthV2Style.text,
-            NSAttributedString.Key.kern: AuthV2Style.headingKern
+            NSAttributedString.Key.kern: AuthV2Style.headingKern,
+            NSAttributedString.Key.paragraphStyle: titleStyle
         ])
+        title.numberOfLines = 0
         title.accessibilityTraits = UIAccessibilityTraitHeader
 
         let format = (purpose == .passwordReset ? "authv2.sent.reset" : "authv2.sent.verify").localized()
@@ -95,7 +100,7 @@ final class EmailSentV2ViewController: BaseViewControler {
         bodyLabel.numberOfLines = 0
 
         [iconRow, title, bodyLabel].forEach(content.addArrangedSubview)
-        content.setCustomSpacing(2, after: iconRow)
+        content.setCustomSpacing(16, after: iconRow)
         content.setCustomSpacing(6, after: title)
         updateResendButton()
     }

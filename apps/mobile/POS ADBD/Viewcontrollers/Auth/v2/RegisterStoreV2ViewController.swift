@@ -2,7 +2,7 @@
 //  RegisterStoreV2ViewController.swift
 //  POS ADBD
 //
-//  #386 — boards Dang-ky (step 1: shop) and Dang-ky-2 (step 2: owner). Both steps live in one screen so the
+//  #386 — boards Dang-ky (step 1: shop) and Dang-ky-2 (step 2: owner); style 4A in #466 (DX-Tao-cua-hang-1/2). Both steps live in one screen so the
 //  values stay when going back and forth. The call is the current `AuthenticationService.createAccount`.
 //
 
@@ -22,21 +22,22 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     private let header = AuthV2Header()
     private let progress = AuthV2Progress()
     private let primaryButton = AuthV2PrimaryButton(title: "authv2.continue".localized())
+    private var loginRow = UIView()
     private var storeStack = UIStackView()
     private var ownerStack = UIStackView()
 
     // Step 1
-    private let storeNameField = AuthV2Field(title: "authv2.storeName".localized())
-    private let phoneField = AuthV2Field(title: "authv2.phone".localized())
-    private let addressField = AuthV2Field(title: "authv2.address".localized(), placeholder: "authv2.address.placeholder".localized())
+    private let storeNameField = AuthV2Field(title: "authv2.storeName".localized(), icon: "storefront", placeholder: "authv2.storeName.placeholder".localized())
+    private let phoneField = AuthV2Field(title: "authv2.phone".localized(), icon: "phone", placeholder: "authv2.phone.placeholder".localized())
+    private let addressField = AuthV2Field(title: "authv2.address".localized(), icon: "mappin.and.ellipse", placeholder: "authv2.address.placeholder".localized())
     private let chipFlow = AuthV2ChipFlow()
     private var chips: [AuthV2Chip] = []
 
     // Step 2
-    private let nameField = AuthV2Field(title: "authv2.fullName".localized())
-    private let emailField = AuthV2Field(title: "Email".localized())
-    private let passwordField = AuthV2Field(title: "Password".localized(), hint: "authv2.password.hint".localized(), secure: true)
-    private let confirmField = AuthV2Field(title: "authv2.confirmPassword".localized(), secure: true)
+    private let nameField = AuthV2Field(title: "authv2.fullName".localized(), icon: "person", placeholder: "authv2.fullName.placeholder".localized())
+    private let emailField = AuthV2Field(title: "Email".localized(), icon: "envelope", placeholder: "authv2.email.placeholder".localized())
+    private let passwordField = AuthV2Field(title: "Password".localized(), icon: "lock", placeholder: AuthV2Style.passwordPlaceholder, hint: "authv2.password.hint".localized(), secure: true)
+    private let confirmField = AuthV2Field(title: "authv2.confirmPassword".localized(), icon: "lock", placeholder: AuthV2Style.passwordPlaceholder, secure: true)
     private let termsCheck = UIButton(type: .custom)
     private let termsError = UILabel()
     private let termsText = UITextView()
@@ -66,7 +67,14 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     override func setupUI() {
         header.backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         primaryButton.addTarget(self, action: #selector(primaryTapped), for: .touchUpInside)
-        let content = authV2Page(header: header, footer: primaryButton, contentInsetTop: 64, blobs: .register)
+        // Footer: the main button, plus "Đã có cửa hàng? Đăng nhập" on step 1 (board DX-Tao-cua-hang-1)
+        let (row, loginLink) = authV2SecondaryRow(question: "authv2.haveStore".localized(), link: "Login".localized())
+        loginLink.addTarget(self, action: #selector(loginTapped), for: .touchUpInside)
+        loginRow = row
+        let footer = UIStackView(arrangedSubviews: [primaryButton, loginRow])
+        footer.axis = .vertical
+        footer.spacing = 8
+        let content = authV2Page(header: header, footer: footer, contentInsetTop: 24)
         content.addArrangedSubview(progress)
 
         storeStack = makeStoreStep()
@@ -116,7 +124,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         tagsStack.spacing = 10
 
         let stack = UIStackView(arrangedSubviews: [
-            authV2TitleBlock(title: "authv2.store.title".localized(), subtitle: "authv2.store.subtitle".localized(), size: 26),
+            authV2TitleBlock(title: "authv2.store.title".localized(), subtitle: "authv2.store.subtitle".localized()),
             storeNameField, phoneField, addressField, tagsStack
         ])
         stack.axis = .vertical
@@ -137,12 +145,12 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         confirmField.onChange = { [weak self] in self?.confirmField.setError(nil) }
 
         let stack = UIStackView(arrangedSubviews: [
-            authV2TitleBlock(title: "authv2.owner.title".localized(), subtitle: "authv2.owner.subtitle".localized(), size: 26),
+            authV2TitleBlock(title: "authv2.owner.title".localized(), subtitle: "authv2.owner.subtitle".localized()),
             nameField, emailField, passwordField, confirmField, makeTermsRow()
         ])
         stack.axis = .vertical
-        stack.spacing = 12
-        stack.setCustomSpacing(14, after: stack.arrangedSubviews[0])
+        stack.spacing = 14
+        stack.setCustomSpacing(16, after: stack.arrangedSubviews[0])
         return stack
     }
 
@@ -208,6 +216,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         storeStack.isHidden = next != .store
         ownerStack.isHidden = next != .owner
         progress.setStep(next.rawValue, of: 2)
+        loginRow.isHidden = next != .store
         primaryButton.setTitle((next == .store ? "authv2.continue" : "authv2.createStoreButton").localized(), for: .normal)
         UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil)
     }
@@ -229,6 +238,11 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         } else {
             navigationController?.popViewController(animated: true)
         }
+    }
+
+    @objc private func loginTapped() {
+        view.endEditing(true)
+        navigationController?.popViewController(animated: true)
     }
 
     @objc private func primaryTapped() {
@@ -288,7 +302,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
 
     private func submit() {
         let request = draft.request
-        showProgressText(text: "Processing...".localized())
+        authV2SetLoading(true, button: primaryButton)
         authService.createAccount(
             loginName: request.loginName,
             password: request.password,
@@ -299,7 +313,7 @@ final class RegisterStoreV2ViewController: BaseViewControler {
             businessTags: request.businessTags
         ) { [weak self] _, error in
             guard let self else { return }
-            self.hideProgress()
+            self.authV2SetLoading(false, button: self.primaryButton)
             if let error = error {
                 switch AuthErrorPlacement.register(status: error.code) {
                 case .field:

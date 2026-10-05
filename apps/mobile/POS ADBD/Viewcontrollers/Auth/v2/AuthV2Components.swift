@@ -2,34 +2,46 @@
 //  AuthV2Components.swift
 //  POS ADBD
 //
-//  #386 — building blocks of the new auth boards (Dang-nhap, Dang-ky, Quen-mat-khau): page, 52pt fields with
-//  the label above and the error below, the 52pt button, back + "Bước n/2" header. Colours come from AuthV2Style.
+//  #386, style 4A in #466 — building blocks of the pre-login screens: page with the dot grid, 52pt fields with a
+//  leading icon, the label above and the error below, the 54pt button with a loading state, the top bar with the
+//  back button and the small brand, "Bước n/2". Colours come from AuthV2Style.
 //
 
 import UIKit
 import SnapKit
 
-/// Label above, 52pt field, optional hint and an inline error below
+/// Label above, 52pt field with a leading icon, optional hint and an inline error below.
+/// Focus: 1.5pt blue border + 3pt light-blue ring, blue icon. Error: 1.5pt red border, red icon (wins over focus).
 final class AuthV2Field: UIView {
     let textField = UITextField()
     private let titleLabel = UILabel()
     private let hintLabel = UILabel()
     private let errorLabel = UILabel()
+    private let ring = UIView()
     private let box = UIView()
+    private let iconView = UIImageView()
     private var toggleButton: UIButton?
+    private var hasError = false
 
     var onChange: (() -> Void)?
 
-    init(title: String, placeholder: String? = nil, hint: String? = nil, secure: Bool = false) {
+    init(title: String, icon: String, placeholder: String? = nil, hint: String? = nil, secure: Bool = false) {
         super.init(frame: .zero)
         titleLabel.text = title
         titleLabel.font = Utils.boldFont(size: DS.TextSize.body)
         titleLabel.textColor = AuthV2Style.text
 
+        ring.backgroundColor = AuthV2Style.focusRing
+        ring.layer.cornerRadius = AuthV2Style.fieldRadius + 3
+        ring.isHidden = true
+        ring.isUserInteractionEnabled = false
+
         box.layer.cornerRadius = AuthV2Style.fieldRadius
-        box.layer.borderWidth = 1
-        box.layer.borderColor = AuthV2Style.fieldBorder.cgColor
         box.backgroundColor = AuthV2Style.fieldBackground
+
+        iconView.image = DS.symbol(icon, DS.Icon.md)
+        iconView.contentMode = .center
+        iconView.isAccessibilityElement = false
 
         textField.font = Utils.regularFont(size: DS.TextSize.input)
         textField.textColor = AuthV2Style.text
@@ -37,6 +49,7 @@ final class AuthV2Field: UIView {
         textField.isSecureTextEntry = secure
         textField.accessibilityLabel = title
         textField.addTarget(self, action: #selector(editingChanged), for: .editingChanged)
+        textField.addTarget(self, action: #selector(focusChanged), for: [.editingDidBegin, .editingDidEnd])
 
         hintLabel.text = hint
         hintLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
@@ -55,8 +68,18 @@ final class AuthV2Field: UIView {
         addSubview(stack)
         stack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
+        // The ring sits behind the box and 3pt outside it; the stack does not clip, so nothing moves on focus
+        insertSubview(ring, belowSubview: stack)
+        ring.snp.makeConstraints { $0.edges.equalTo(box).inset(-3) }
+
+        box.addSubview(iconView)
         box.addSubview(textField)
         box.snp.makeConstraints { $0.height.equalTo(AuthV2Style.fieldHeight) }
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(14)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(20)
+        }
         if secure {
             let button = UIButton(type: .system)
             button.tintColor = AuthV2Style.textMuted
@@ -68,7 +91,7 @@ final class AuthV2Field: UIView {
                 make.width.height.equalTo(DS.touchTarget)
             }
             textField.snp.makeConstraints { make in
-                make.leading.equalToSuperview().inset(14)
+                make.leading.equalToSuperview().inset(44)
                 make.trailing.equalTo(button.snp.leading)
                 make.top.bottom.equalToSuperview()
             }
@@ -76,10 +99,12 @@ final class AuthV2Field: UIView {
             updateToggle()
         } else {
             textField.snp.makeConstraints { make in
-                make.leading.trailing.equalToSuperview().inset(14)
+                make.leading.equalToSuperview().inset(44)
+                make.trailing.equalToSuperview().inset(14)
                 make.top.bottom.equalToSuperview()
             }
         }
+        render()
     }
 
     required init?(coder: NSCoder) {
@@ -91,17 +116,37 @@ final class AuthV2Field: UIView {
         set { textField.text = newValue }
     }
 
-    /// `key` is a localization key; nil clears the error
+    /// `message` is already localized; nil clears the error
     func setError(_ message: String?) {
         errorLabel.text = message
         errorLabel.isHidden = message == nil
-        box.layer.borderWidth = message == nil ? 1 : 1.5
-        box.layer.borderColor = (message == nil ? AuthV2Style.fieldBorder : AuthV2Style.error).cgColor
+        hasError = message != nil
         textField.accessibilityHint = message
+        render()
+    }
+
+    private func render() {
+        let focused = textField.isFirstResponder
+        let color: UIColor
+        if hasError {
+            color = AuthV2Style.error
+        } else if focused {
+            color = AuthV2Style.primary
+        } else {
+            color = AuthV2Style.fieldIcon
+        }
+        box.layer.borderWidth = hasError || focused ? 1.5 : 1
+        box.layer.borderColor = (hasError || focused ? color : AuthV2Style.fieldBorder).cgColor
+        iconView.tintColor = color
+        ring.isHidden = !(focused && !hasError)
     }
 
     @objc private func editingChanged() {
         onChange?()
+    }
+
+    @objc private func focusChanged() {
+        render()
     }
 
     @objc private func toggleSecure() {
@@ -120,8 +165,11 @@ final class AuthV2Field: UIView {
     }
 }
 
-/// Blue 52pt button with a radius of 14
+/// Full-width blue 54pt button, radius 14, soft blue shadow; `setLoading` swaps the title for a spinner
 final class AuthV2PrimaryButton: UIButton {
+    private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .white)
+    private(set) var isLoading = false
+
     init(title: String) {
         super.init(frame: .zero)
         setTitle(title, for: .normal)
@@ -130,6 +178,13 @@ final class AuthV2PrimaryButton: UIButton {
         titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         backgroundColor = AuthV2Style.primary
         layer.cornerRadius = AuthV2Style.buttonRadius
+        layer.shadowColor = AuthV2Style.primary.cgColor
+        layer.shadowOpacity = 0.25
+        layer.shadowRadius = 8
+        layer.shadowOffset = CGSize(width: 0, height: 6)
+        spinner.hidesWhenStopped = true
+        addSubview(spinner)
+        spinner.snp.makeConstraints { $0.center.equalToSuperview() }
         snp.makeConstraints { $0.height.equalTo(AuthV2Style.buttonHeight) }
     }
 
@@ -137,8 +192,22 @@ final class AuthV2PrimaryButton: UIButton {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: AuthV2Style.buttonRadius).cgPath
+    }
+
     override var isEnabled: Bool {
         didSet { alpha = isEnabled ? 1 : 0.6 }
+    }
+
+    /// Spinner instead of the title; taps are ignored while loading
+    func setLoading(_ loading: Bool) {
+        isLoading = loading
+        isUserInteractionEnabled = !loading
+        titleLabel?.alpha = loading ? 0 : 1
+        if loading { spinner.startAnimating() } else { spinner.stopAnimating() }
+        accessibilityTraits = loading ? UIAccessibilityTraitButton | UIAccessibilityTraitNotEnabled : UIAccessibilityTraitButton
     }
 }
 
@@ -152,7 +221,28 @@ func authV2LinkButton(_ title: String, size: CGFloat = DS.TextSize.body) -> UIBu
     return button
 }
 
-/// Round 44pt back button, white at 0.9 over the blobs (style E)
+/// "Question? Link" centred under the form (board 4A). Returns the row and the link button.
+func authV2SecondaryRow(question: String, link: String) -> (UIView, UIButton) {
+    let label = UILabel()
+    label.text = question
+    label.font = Utils.regularFont(size: DS.TextSize.body)
+    label.textColor = AuthV2Style.textMuted
+    let button = authV2LinkButton(link)
+    let row = UIStackView(arrangedSubviews: [label, button])
+    row.axis = .horizontal
+    row.spacing = 6
+    row.alignment = .center
+    let wrapper = UIView()
+    wrapper.addSubview(row)
+    row.snp.makeConstraints { make in
+        make.top.bottom.equalToSuperview()
+        make.centerX.equalToSuperview()
+        make.leading.greaterThanOrEqualToSuperview()
+    }
+    return (wrapper, button)
+}
+
+/// Top bar: round white 44pt back button with a light shadow on the left, small brand centred (board 4A)
 final class AuthV2Header: UIView {
     let backButton = UIButton(type: .system)
 
@@ -160,15 +250,26 @@ final class AuthV2Header: UIView {
         super.init(frame: .zero)
         backButton.setImage(DS.symbol("chevron.left", DS.Icon.lg), for: .normal)
         backButton.tintColor = AuthV2Style.text
-        backButton.backgroundColor = AuthV2Style.backButtonFill
+        backButton.backgroundColor = .white
         backButton.layer.cornerRadius = DS.touchTarget / 2
+        backButton.layer.shadowColor = UIColor(hexString: "0F172A").cgColor
+        backButton.layer.shadowOpacity = 0.12
+        backButton.layer.shadowRadius = 1.5
+        backButton.layer.shadowOffset = CGSize(width: 0, height: 1)
         backButton.accessibilityLabel = "Back".localized()
+        let brand = AuthV2Style.makeBrandBar()
+        addSubview(brand)
         addSubview(backButton)
         backButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
             make.leading.equalToSuperview().offset(16)
             make.bottom.equalToSuperview()
             make.width.height.equalTo(DS.touchTarget)
+        }
+        brand.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalTo(backButton)
+            make.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(8)
         }
     }
 
@@ -221,21 +322,32 @@ final class AuthV2Progress: UIView {
     }
 }
 
-/// Big heading (weight 800, tight spacing) + grey 16pt subtitle
-func authV2TitleBlock(title: String, subtitle: String, size: CGFloat = 30) -> UIStackView {
+/// 28/36 heading (weight 800, tight spacing) + grey 16pt subtitle; centred on login
+func authV2TitleBlock(title: String, subtitle: String, centered: Bool = false) -> UIStackView {
+    let alignment: NSTextAlignment = centered ? .center : .natural
+    let titleStyle = NSMutableParagraphStyle()
+    titleStyle.minimumLineHeight = AuthV2Style.titleLineHeight
+    titleStyle.maximumLineHeight = AuthV2Style.titleLineHeight
+    titleStyle.alignment = alignment
     let titleLabel = UILabel()
     titleLabel.attributedText = NSAttributedString(string: title, attributes: [
-        NSAttributedString.Key.font: Utils.extraBoldFont(size: size),
+        NSAttributedString.Key.font: Utils.extraBoldFont(size: AuthV2Style.titleSize),
         NSAttributedString.Key.foregroundColor: AuthV2Style.text,
-        NSAttributedString.Key.kern: AuthV2Style.headingKern
+        NSAttributedString.Key.kern: AuthV2Style.headingKern,
+        NSAttributedString.Key.paragraphStyle: titleStyle
     ])
     titleLabel.numberOfLines = 0
     titleLabel.accessibilityTraits = UIAccessibilityTraitHeader
 
+    let subtitleStyle = NSMutableParagraphStyle()
+    subtitleStyle.minimumLineHeight = 23
+    subtitleStyle.alignment = alignment
     let subtitleLabel = UILabel()
-    subtitleLabel.text = subtitle
-    subtitleLabel.font = Utils.regularFont(size: 16)
-    subtitleLabel.textColor = AuthV2Style.textMuted
+    subtitleLabel.attributedText = NSAttributedString(string: subtitle, attributes: [
+        NSAttributedString.Key.font: Utils.regularFont(size: 16),
+        NSAttributedString.Key.foregroundColor: AuthV2Style.textMuted,
+        NSAttributedString.Key.paragraphStyle: subtitleStyle
+    ])
     subtitleLabel.numberOfLines = 0
 
     let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
@@ -317,17 +429,11 @@ final class AuthV2Chip: UIButton {
 }
 
 extension BaseViewControler {
-    /// White scrolling page centred at a max width on iPad. Returns the content stack.
-    func authV2Page(header: UIView?, footer: UIView?, contentInsetTop: CGFloat, blobs: AuthV2Style.BlobScale) -> UIStackView {
+    /// White scrolling page with the 4A dot grid, centred at a max width on iPad. Returns the content stack.
+    func authV2Page(header: UIView?, footer: UIView?, contentInsetTop: CGFloat) -> UIStackView {
         view.backgroundColor = AuthV2Style.pageBackground
-        let blobLayer = AuthV2Style.installBlobs(in: view, scale: blobs)
-        // The blobs move with the content (keyboard up, scrolling), so they never slide over the text
-        let scroll = AuthV2ScrollView()
-        scroll.minStackTop = contentInsetTop
-        scroll.blobClearance = AuthV2Style.blobClearance(blobs)
-        scroll.onOffsetChange = { [weak blobLayer] scroll in
-            blobLayer?.transform = CGAffineTransform(translationX: 0, y: -(scroll.contentOffset.y + scroll.adjustedContentInset.top))
-        }
+        AuthV2Style.installDotGrid(in: view)
+        let scroll = UIScrollView()
         scroll.backgroundColor = .clear
         scroll.alwaysBounceVertical = true
         // Dragging dismisses the keyboard. No tap-to-dismiss: with IQKeyboardManager the view moves back on
@@ -365,7 +471,7 @@ extension BaseViewControler {
         stack.spacing = 16
         scroll.addSubview(stack)
         stack.snp.makeConstraints { make in
-            scroll.stackTop = make.top.equalToSuperview().offset(contentInsetTop).constraint
+            make.top.equalToSuperview().offset(contentInsetTop)
             make.bottom.equalToSuperview().inset(16)
             make.centerX.equalToSuperview()
             make.width.lessThanOrEqualTo(AuthV2Style.maxWidth - 2 * AuthV2Style.sideInset)
@@ -380,32 +486,10 @@ extension BaseViewControler {
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
         present(alert, animated: true)
     }
-}
 
-/// Reports every content offset change (user scroll, IQKeyboardManager, programmatic)
-final class AuthV2ScrollView: UIScrollView {
-    var onOffsetChange: ((UIScrollView) -> Void)?
-    var stackTop: Constraint?
-    var minStackTop: CGFloat = 0
-    var blobClearance: CGFloat = 0
-    private var appliedTop: CGFloat = -1
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // The scroll's top depends on the safe area and the header; keep the content below the blobs
-        let top = max(minStackTop, blobClearance - frame.minY)
-        if top != appliedTop {
-            appliedTop = top
-            stackTop?.update(offset: top)
-        }
-    }
-
-    override var contentOffset: CGPoint {
-        didSet { onOffsetChange?(self) }
-    }
-
-    override func adjustedContentInsetDidChange() {
-        super.adjustedContentInsetDidChange()
-        onOffsetChange?(self)
+    /// Button spinner while a request runs; the page ignores touches meanwhile (as the old progress overlay did)
+    func authV2SetLoading(_ loading: Bool, button: AuthV2PrimaryButton) {
+        button.setLoading(loading)
+        view.isUserInteractionEnabled = !loading
     }
 }

@@ -2,7 +2,7 @@
 //  ForgotPasswordV2ViewController.swift
 //  POS ADBD
 //
-//  #386 — board Quen-mat-khau. Calls `AuthenticationService.forgotPassword` like the current screen;
+//  #386 — board Quen-mat-khau, style 4A in #466 (board DX-Quen-mat-khau). Calls `AuthenticationService.forgotPassword` like the current screen;
 //  errors in an alert as today.
 //
 
@@ -13,7 +13,7 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
     var prefilledEmail: String?
 
     private let authService = AuthenticationService.shared
-    private let emailField = AuthV2Field(title: "Email".localized(), placeholder: "authv2.email.placeholder".localized())
+    private let emailField = AuthV2Field(title: "Email".localized(), icon: "envelope", placeholder: "authv2.email.placeholder".localized())
     private let sendButton = AuthV2PrimaryButton(title: "authv2.forgot.send".localized())
 
     override func viewDidLoad() {
@@ -38,7 +38,7 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
         note.textAlignment = .center
         note.numberOfLines = 0
 
-        let content = authV2Page(header: header, footer: note, contentInsetTop: 200, blobs: .forgot)
+        let content = authV2Page(header: header, footer: note, contentInsetTop: 56)
 
         emailField.text = prefilledEmail ?? ""
         emailField.textField.keyboardType = .emailAddress
@@ -50,8 +50,12 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
         let title = authV2TitleBlock(title: "authv2.forgot.title".localized(), subtitle: "authv2.forgot.text".localized())
-        [title, emailField, sendButton].forEach(content.addArrangedSubview)
-        content.setCustomSpacing(18, after: title)
+        let (loginRow, loginLink) = authV2SecondaryRow(question: "authv2.rememberPassword".localized(), link: "Login".localized())
+        loginLink.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        [title, emailField, sendButton, loginRow].forEach(content.addArrangedSubview)
+        content.setCustomSpacing(20, after: title)
+        content.setCustomSpacing(14, after: emailField)
+        content.setCustomSpacing(8, after: sendButton)
     }
 
     @objc private func backTapped() {
@@ -65,10 +69,10 @@ final class ForgotPasswordV2ViewController: BaseViewControler {
         guard errors.isEmpty else { return }
 
         let email = AuthValidation.trimmed(emailField.text)
-        showProgressText(text: "Sending...".localized())
+        authV2SetLoading(true, button: sendButton)
         authService.forgotPassword(email: email) { [weak self] success, error in
             guard let self else { return }
-            self.hideProgress()
+            self.authV2SetLoading(false, button: self.sendButton)
             if let error = error {
                 self.authV2Alert(error.localizedDescription)
                 return
