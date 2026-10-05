@@ -391,6 +391,17 @@ fun AnyRentNavHost(
         composable(Routes.CartV2) {
             CartV2Screen(
                 onBack = { rootNavController.popBackStack() },
+                onAddItems = {
+                    // #433: the product list on Home, not the screen that opened the cart (e.g. a customer)
+                    val backStack = rootNavController.currentBackStack.value.map { it.destination.route }
+                    val target = CartAddItems.popTarget(backStack)
+                    if (target == null) {
+                        rootNavController.popBackStack()
+                    } else {
+                        MainTabRouter.openHome()
+                        rootNavController.popBackStack(target, inclusive = false)
+                    }
+                },
                 onPreview = { rootNavController.navigate(Routes.CartV2Preview) { launchSingleTop = true } },
             )
         }
@@ -634,6 +645,7 @@ private fun MainTabs(
                 // Fresh list after create — don't restore a stale Orders snapshot.
                 restoreState = false
             }
+            MainTabRouter.tabShown(route)
         }
     }
 
