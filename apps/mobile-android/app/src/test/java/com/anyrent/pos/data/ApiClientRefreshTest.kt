@@ -92,6 +92,28 @@ class ApiClientRefreshTest {
     }
 
     @Test
+    fun `a download after the token expired refreshes and retries`() {
+        val tokens = Tokens("old-access", "rt-1")
+        val unauthorized = mutableListOf<String?>()
+        val server = FakeServer { request, _ ->
+            when {
+                request.url.encodedPath == "/api/mobile/auth/refresh" ->
+                    200 to """{"success":true,"data":{"token":"new-access","refreshToken":"rt-2"}}"""
+                request.header("Authorization") == "Bearer old-access" ->
+                    401 to """{"success":false,"code":"TOKEN_EXPIRED"}"""
+                else -> 200 to "PDF"
+            }
+        }
+
+        val bytes = api(server, tokens, unauthorized).authedBytes("/api/orders/1/pdf")
+
+        assertEquals("PDF", String(bytes))
+        assertEquals("rt-2", tokens.refresh)
+        assertTrue(unauthorized.isEmpty())
+        assertEquals(3, server.calls.size)
+    }
+
+    @Test
     fun `SESSION_REPLACED signs out with that reason and does not refresh`() {
         val tokens = Tokens("access", "rt-1")
         val unauthorized = mutableListOf<String?>()
