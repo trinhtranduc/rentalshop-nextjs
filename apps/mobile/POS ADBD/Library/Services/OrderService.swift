@@ -27,9 +27,15 @@ class OrderService: BaseService, OrderServiceProtocol {
         notesImages: [Data],
         method: HTTPMethod,
         context: String,
+        idempotencyKey: String? = nil,
         completion: @escaping (Order?, NSError?) -> Void
     ) {
         let fullURL = APIEndpoint.currentBaseURL + path
+        var headers = BaseService.formHeader
+        if let idempotencyKey {
+            // #341: a retried or doubled create with this key returns the first order
+            headers.add(name: "Idempotency-Key", value: idempotencyKey)
+        }
 
         do {
             let requestData = try JSONEncoder.shared.encode(request)
@@ -55,7 +61,7 @@ class OrderService: BaseService, OrderServiceProtocol {
                 },
                 to: fullURL,
                 method: method,
-                headers: BaseService.formHeader
+                headers: headers
             )
             .responseData { response in
                 print("📥 \(context) Multipart Response:")
@@ -431,8 +437,9 @@ class OrderService: BaseService, OrderServiceProtocol {
     
     // MARK: - Create Order from Cart (New API)
     
-    /// Create order from Cart model
-    func createOrder(from cart: Cart, completion: @escaping (Order?, NSError?) -> Void) {
+    /// Create order from Cart model.
+    /// `idempotencyKey`: one value per checkout, reused on retry, so the API never creates the order twice (#341).
+    func createOrder(from cart: Cart, idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
         let request = cart.toCreateOrderRequest()
         let validation = request.validate()
         if !validation.isValid {
@@ -452,11 +459,12 @@ class OrderService: BaseService, OrderServiceProtocol {
             notesImages: [],
             method: .post,
             context: "OrderService.createOrder",
+            idempotencyKey: idempotencyKey,
             completion: completion
         )
     }
 
-    func createOrder(from cart: Cart, notesImages: [Data], completion: @escaping (Order?, NSError?) -> Void) {
+    func createOrder(from cart: Cart, notesImages: [Data], idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
         let request = cart.toCreateOrderRequest()
         let validation = request.validate()
         if !validation.isValid {
@@ -472,6 +480,7 @@ class OrderService: BaseService, OrderServiceProtocol {
             notesImages: notesImages,
             method: .post,
             context: "OrderService.createOrderWithNotesImages",
+            idempotencyKey: idempotencyKey,
             completion: completion
         )
     }

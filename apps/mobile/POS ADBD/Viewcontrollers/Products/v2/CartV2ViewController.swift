@@ -508,6 +508,8 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     @objc private func ctaTapped() {
+        // A double tap must not push two previews (#341)
+        guard navigationController?.topViewController === self else { return }
         HapticFeedback.medium()
         let (valid, errors) = cart.validate()
         guard valid else {

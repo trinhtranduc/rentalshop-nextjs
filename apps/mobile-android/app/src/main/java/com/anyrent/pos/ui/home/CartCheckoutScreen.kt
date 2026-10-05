@@ -57,6 +57,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
@@ -98,6 +99,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import androidx.compose.ui.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,6 +140,8 @@ fun CartCheckoutScreen(
     val totalAmount = (subtotal - discountAmount).coerceAtLeast(0.0)
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    // #341: one key per checkout screen, reused when staff retry after an error
+    val createIdempotencyKey = rememberSaveable { UUID.randomUUID().toString() }
     var pickupText by remember(pickup) { mutableStateOf(pickup.toString()) }
     var returnText by remember(ret) { mutableStateOf(ret.toString()) }
     var showDetails by remember { mutableStateOf(false) }
@@ -172,6 +176,8 @@ fun CartCheckoutScreen(
     val displayDateFormatter = remember { DisplayDateFormatter }
 
     fun submitOrder() {
+        // #341: a second tap before recomposition disables the button must not create twice
+        if (loading) return
         if (lines.isEmpty()) {
             error = cartEmptyMessage
             return
@@ -264,6 +270,7 @@ fun CartCheckoutScreen(
                         depositsByProduct = deposits,
                         pricingTypesByProduct = pricing,
                         rentalDaysByProduct = daysByProduct,
+                        idempotencyKey = createIdempotencyKey,
                     )
                 }
             }

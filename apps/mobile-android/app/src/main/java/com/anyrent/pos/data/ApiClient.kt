@@ -372,6 +372,8 @@ class ApiClient(
         depositsByProduct: Map<Int, Double> = emptyMap(),
         pricingTypesByProduct: Map<Int, String> = emptyMap(),
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
+        /** #341: one value per checkout, reused on retry, so the API never creates the order twice. */
+        idempotencyKey: String? = null,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
@@ -418,7 +420,11 @@ class ApiClient(
             }
             .toString()
             .toRequestBody(jsonMedia)
-        val json = execute(post("/api/orders", body))
+        val request = post("/api/orders", body).let { base ->
+            if (idempotencyKey.isNullOrBlank()) base
+            else base.newBuilder().header("Idempotency-Key", idempotencyKey).build()
+        }
+        val json = execute(request)
         requireSuccess(json)
         parseOrderSummary(json.optJSONObject("data") ?: JSONObject())
     }

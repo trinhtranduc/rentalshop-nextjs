@@ -892,9 +892,30 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     };
 
     console.log('🔍 Creating order with data:', orderData);
-    
-    // Use simplified database API
-    const order = await db.orders.create(orderData);
+
+    // #341: one Save / Confirm = one order. A second in-flight or retried create (same optional
+    // Idempotency-Key, or for installed apps an identical order within 60 s) returns the existing
+    // order instead of inserting; `isReplay` then skips the create side effects below.
+    const { order, replay: isReplay } = await db.orders.createOnce(
+      {
+        outletId: parsed.data.outletId,
+        customerId: parsed.data.customerId ?? null,
+        createdById: user.id,
+        orderType: parsed.data.orderType,
+        totalAmount: parsed.data.totalAmount,
+        pickupPlanAt: orderData.pickupPlanAt,
+        returnPlanAt: orderData.returnPlanAt,
+        items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
+          productId: item.productId,
+          quantity: item.quantity
+        })),
+        idempotencyKey: request.headers.get('idempotency-key')
+      },
+      orderData
+    );
+    if (isReplay) {
+      console.warn('⚠️ Duplicate order create, returning existing order:', order.orderNumber);
+    }
 
     let loyaltyOrder = order;
     // Resolve the loyalty feature flag AT MOST ONCE per request (INV-7), and only when
@@ -904,7 +925,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const wantsSaleEarn = Boolean(
       parsed.data.customerId && order.orderType === ORDER_TYPE.SALE
     );
-    if (wantsRedeem || wantsSaleEarn) {
+    if (!isReplay && (wantsRedeem || wantsSaleEarn)) {
       const hasLoyalty = await merchantHasLoyaltyFeature(outlet.merchantId);
       if (hasLoyalty && wantsRedeem) {
         // Redeem is FAIL-CLOSED (INV-6): a redeem failure must not leave a mispriced order.
@@ -936,7 +957,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     }
 
     const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logCreate({
+    if (!isReplay) await auditHelper.logCreate({
       entityType: 'Order',
       entityId: String(loyaltyOrder.id),
       entityName: loyaltyOrder.orderNumber || String(loyaltyOrder.id),
@@ -947,7 +968,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     console.log('✅ Order created successfully:', loyaltyOrder);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
-    if (loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {
+    if (!isReplay && loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {
       try {
         // Import the function from product module (same pattern as updateOrder in order.ts)
         // Use dynamic import - order.ts uses './product' from same package
@@ -1075,7 +1096,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     };
 
     // Push to outlet users (fire-and-forget — do not block response)
-    if (loyaltyOrder.outletId) {
+    if (!isReplay && loyaltyOrder.outletId) {
       const { notifyOutletOrderEvent } = await import('../../../lib/push-notifications');
       notifyOutletOrderEvent(loyaltyOrder.outletId, {
         type: 'ORDER_CREATED',
