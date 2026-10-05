@@ -63,6 +63,7 @@ class ApiClientHeadersTest {
         assertEquals("0.2.0", config.android.minVersion)
         assertEquals("https://play.google.com/store/apps/details?id=anyrent.shop", config.android.storeUrl)
         assertNull(config.ios.storeUrl)
-        assertEquals(setOf(MobileFeature.NEW_ORDERS), config.features)
+        // #456: only an explicit false turns a screen off; keys the server does not send stay on
+        assertEquals(MobileFeature.entries.toSet() - MobileFeature.NEW_ORDER_DETAIL, config.features)
     }
 }

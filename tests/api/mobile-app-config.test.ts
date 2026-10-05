@@ -1,6 +1,6 @@
 /**
  * #362 — GET /api/mobile/app-config: minimum app version and screen flags for iOS and Android.
- * Public, env-driven; the defaults never force an update and keep every new screen off.
+ * Public, env-driven; the defaults never force an update. #456: with MOBILE_FEATURES unset every new screen is on.
  */
 jest.mock('next/server', () => ({
   NextResponse: {
@@ -35,14 +35,44 @@ describe('mobile app-config (#362)', () => {
     }
   });
 
-  it('defaults never force an update and keep every feature off', () => {
+  it('defaults never force an update and turn every feature on (#456)', () => {
     const config = buildMobileAppConfig({});
     expect(config.ios.minVersion).toBe('0.0.0');
     expect(config.android.minVersion).toBe('0.0.0');
     expect(config.android.storeUrl).toBe('https://play.google.com/store/apps/details?id=anyrent.shop');
     expect(config.ios.storeUrl).toBeNull();
     expect(Object.keys(config.features).sort()).toEqual([...MOBILE_FEATURE_KEYS].sort());
-    expect(Object.values(config.features).every((on) => on === false)).toBe(true);
+    expect(Object.values(config.features).every((on) => on === true)).toBe(true);
+  });
+
+  const allOn = (features: Record<string, boolean>) => Object.values(features).every((on) => on === true);
+  const allOff = (features: Record<string, boolean>) => Object.values(features).every((on) => on === false);
+
+  it('#456: MOBILE_FEATURES unset → all 8 features on', () => {
+    const { features } = buildMobileAppConfig({ MOBILE_FEATURES: undefined });
+    expect(Object.keys(features)).toHaveLength(8);
+    expect(allOn(features)).toBe(true);
+  });
+
+  it('#456: MOBILE_FEATURES empty or whitespace → all features on', () => {
+    expect(allOn(buildMobileAppConfig({ MOBILE_FEATURES: '' }).features)).toBe(true);
+    expect(allOn(buildMobileAppConfig({ MOBILE_FEATURES: '   ' }).features)).toBe(true);
+  });
+
+  it('#456: a list turns on only the listed keys', () => {
+    const { features } = buildMobileAppConfig({ MOBILE_FEATURES: 'newOrders,newAuth' });
+    const on = Object.entries(features).filter(([, value]) => value).map(([key]) => key).sort();
+    expect(on).toEqual(['newAuth', 'newOrders']);
+  });
+
+  it('#456: "none" turns every feature off', () => {
+    expect(allOff(buildMobileAppConfig({ MOBILE_FEATURES: 'none' }).features)).toBe(true);
+    expect(allOff(buildMobileAppConfig({ MOBILE_FEATURES: ' NONE ' }).features)).toBe(true);
+  });
+
+  it('#456: GET with MOBILE_FEATURES unset answers all features on', async () => {
+    const res: any = await GET();
+    expect(allOn(res.body.data.features)).toBe(true);
   });
 
   it('uses the env values', () => {
