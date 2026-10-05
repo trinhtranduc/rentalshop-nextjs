@@ -87,9 +87,10 @@ final class OrderRowCell: UITableViewCell {
     private func buildLayout() {
         nameLabel.font = Utils.boldFont(size: DS.TextSize.name)
         nameLabel.textColor = DS.Color.text
+        // #424: a long name wraps to a second line (the tag stays centred beside it) instead of being cut
+        nameLabel.numberOfLines = 2
         nameLabel.lineBreakMode = .byTruncatingTail
-        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column;
-        // still below the tag and the money labels, so a long name truncates
+        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column
         nameLabel.setContentCompressionResistancePriority(.defaultHigh - 1, for: .horizontal)
         let firstLine = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
         firstLine.spacing = 6

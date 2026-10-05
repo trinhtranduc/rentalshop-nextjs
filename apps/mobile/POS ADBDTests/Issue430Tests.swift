@@ -27,9 +27,11 @@ final class Issue430Tests: XCTestCase {
         cell.setNeedsLayout()
         cell.layoutIfNeeded()
 
+        // #424: at the larger type scale a long name may wrap to two lines, but every word stays visible
         let nameLabel = try XCTUnwrap(labels(in: cell.contentView).first { $0.text == name })
-        XCTAssertGreaterThanOrEqual(nameLabel.bounds.width + 0.5, nameLabel.intrinsicContentSize.width,
-                                    "name cut to \(nameLabel.bounds.width)pt of \(nameLabel.intrinsicContentSize.width)pt")
+        let needed = nameLabel.sizeThatFits(CGSize(width: nameLabel.bounds.width, height: .greatestFiniteMagnitude)).height
+        XCTAssertLessThanOrEqual(needed, nameLabel.bounds.height + 0.5,
+                                 "name cut: needs \(needed)pt height, has \(nameLabel.bounds.height)pt")
     }
 
     // MARK: Plurals

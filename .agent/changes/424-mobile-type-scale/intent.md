@@ -45,3 +45,4 @@ All mobile roles on iOS (`apps/mobile`) and Android (`apps/mobile-android`), new
 - 2026-10-04 — 20pt sheet titles and 18–30 headings stay literal; `amount` is only for money (agent)
 - 2026-10-04 — Shared order status badge/pill: optional size (Android) / font set after `apply` (iOS); old screens
   keep 10 (agent)
+- 2026-10-05 — Owner: a long customer name may take two lines in the order row, tag centred beside it, as long as the whole name is visible ("center là được miễn tên ng ta thấy"). iOS and Android name maxLines 1 → 2; the #430 row test now checks that every word is visible (Trinh Tran)

@@ -713,7 +713,8 @@ private fun BoardRow(
                         fontSize = DS.TextSize.Name,
                         fontWeight = FontWeight.Bold,
                         color = DS.Colors.Text,
-                        maxLines = 1,
+                        // #424: a long name wraps to a second line (tag stays centred) instead of being cut
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
