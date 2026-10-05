@@ -125,15 +125,31 @@ object OrdersBoardLogic {
         return "%02d/%02d".format(date.dayOfMonth, date.monthValue)
     }
 
+    /** #482: "28/09", or "28/12/25" when the civil year is not the year of [now] (iOS `dayMonth(_:now:timeZone:)`) */
+    fun dayMonth(instant: Instant, now: Instant, zone: ZoneId): String {
+        val year = instant.atZone(zone).year
+        if (year == now.atZone(zone).year) return dayMonth(instant, zone)
+        return dayMonth(instant, zone) + "/%02d".format(year % 100)
+    }
+
     /** Civil days from [from] to [to], both counted (a same-day rental is 1 day) */
     fun inclusiveDays(from: Instant, to: Instant, zone: ZoneId): Int =
         (ChronoUnit.DAYS.between(from.atZone(zone).toLocalDate(), to.atZone(zone).toLocalDate()) + 1).toInt().coerceAtLeast(1)
 
     /** "03/10 → 05/10 · 3 ngày"; just the hand-over day without a return day */
-    fun span(from: Instant?, to: Instant?, withDays: Boolean, zone: ZoneId, texts: OrdersBoardTexts = OrdersBoardTexts()): String {
-        val start = from?.let { dayMonth(it, zone) } ?: "—"
+    fun span(
+        from: Instant?,
+        to: Instant?,
+        withDays: Boolean,
+        zone: ZoneId,
+        texts: OrdersBoardTexts = OrdersBoardTexts(),
+        now: Instant? = null,
+    ): String {
+        // [now] (#482): a day of another year gets its 2-digit year
+        val format: (Instant) -> String = { day -> now?.let { dayMonth(day, it, zone) } ?: dayMonth(day, zone) }
+        val start = from?.let(format) ?: "—"
         if (to == null) return start
-        val text = "$start → ${dayMonth(to, zone)}"
+        val text = "$start → ${format(to)}"
         if (!withDays || from == null) return text
         val days = inclusiveDays(from, to, zone)
         return "$text · ${(if (days == 1) texts.oneDay else texts.days).format(days)}"
@@ -174,14 +190,14 @@ object OrdersBoardLogic {
         val created = when {
             createdAt == null -> null
             createdAt.atZone(zone).toLocalDate() == now.atZone(zone).toLocalDate() -> texts.createdToday
-            else -> texts.created.format(dayMonth(createdAt, zone))
+            else -> texts.created.format(dayMonth(createdAt, now, zone))
         }
         val status = order.status.uppercase()
         val returnAt = OrdersHomeLogic.parseInstant(order.returnPlanAt)
         val tail = when {
-            status == "CANCELLED" -> OrdersHomeLogic.parseInstant(order.updatedAt)?.let { texts.cancelled.format(dayMonth(it, zone)) }
-            isRent(order) && status == "PICKUPED" && lateDays > 0 && returnAt != null -> texts.due.format(dayMonth(returnAt, zone))
-            isRent(order) -> span(OrdersHomeLogic.parseInstant(order.pickupPlanAt), returnAt, withDays = false, zone = zone, texts = texts)
+            status == "CANCELLED" -> OrdersHomeLogic.parseInstant(order.updatedAt)?.let { texts.cancelled.format(dayMonth(it, now, zone)) }
+            isRent(order) && status == "PICKUPED" && lateDays > 0 && returnAt != null -> texts.due.format(dayMonth(returnAt, now, zone))
+            isRent(order) -> span(OrdersHomeLogic.parseInstant(order.pickupPlanAt), returnAt, withDays = false, zone = zone, texts = texts, now = now)
             else -> null
         }
         return listOfNotNull(created, tail).joinToString(" · ")

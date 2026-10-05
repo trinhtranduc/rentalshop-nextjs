@@ -514,7 +514,8 @@ private fun DetailHeader(detail: OrderDetail) {
             val days = OrderDetailLogic.progressDays(summary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
-                    stringResource(R.string.detail_progress_booked, shortDay(days.booked)),
+                    // #482: the booked step carries the created time ("Đã đặt 14:32 28/09")
+                    stringResource(R.string.detail_progress_booked, OrderDetailLogic.createdStamp(days.booked)),
                     stringResource(R.string.detail_progress_hand_over, shortDay(days.handOver)),
                     stringResource(R.string.detail_progress_return, shortDay(days.returned)),
                 ).forEachIndexed { index, label ->
@@ -531,7 +532,7 @@ private fun DetailHeader(detail: OrderDetail) {
                             fontSize = DS.TextSize.Secondary,
                             fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (done) DS.Colors.Primary else DS.Colors.TextMuted,
-                            maxLines = 1,
+                            maxLines = 2,
                         )
                     }
                 }
