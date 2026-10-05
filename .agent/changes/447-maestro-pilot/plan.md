@@ -1,6 +1,6 @@
 # Plan — Maestro pilot for mobile e2e
 
-Issue: #447 · Status: draft · Spec: ./spec.md
+Issue: #447 · Status: pilot done · Spec: ./spec.md
 
 Base `dev`, branch `feat/447-maestro-pilot`, one PR into `dev`.
 
@@ -30,16 +30,36 @@ If app code gets ids: iOS `xcodebuild … build`, Android `./gradlew :app:assemb
 
 ## Results
 
-_To fill after step 5._
+Run on 2026-10-05, local stack (seeded `anyrent_mobile_e2e`, API :3180, all new-UI flags), Maestro 2.11.0.
+Flow: `apps/mobile-e2e-maestro/flows/rent-handover.yaml` (one file for both platforms).
 
-| | Maestro iOS | Maestro Android | XCUITest | adb |
+| | Maestro iOS (iPhone 17 Pro Max, iOS 26.2) | Maestro Android (AVD anyrent_w391, vi-VN) | XCUITest | adb |
 |---|---|---|---|---|
-| Passes / 5 | | | | |
-| Time per run | | | | |
-| Vietnamese input | | | n/a | no (ASCII only) |
-| Ids added | | | | |
+| Passes / 5 | **5/5** | **5/5** | not re-run in the pilot | not re-run in the pilot |
+| Time per run | 117–125 s | 143–161 s | — | — |
+| Vietnamese input ("CCCD Nguyễn Văn Á") | yes | **yes** | yes | no (ASCII only) |
+| Ids used / needed | 1 used (`handOver.papers`); 3 positional selectors | 0 ids; label tap for papers | — | — |
 
-Recommendation: _go / no-go, and why._
+Platform differences handled in the flow (only 3 `when: platform` branches):
+date picker (iOS bare day numbers, Android "Hôm nay" cells), keyboard hiding (Android only, and only while
+the keyboard is visible), papers field (iOS id, Android label).
+
+Pitfalls found while writing the flow:
+- Steps report COMPLETED on the wrong screen unless the flow asserts the outcome → every flow ends with an assert.
+- iOS `hideKeyboard` tapped "Quên mật khẩu?"; Android `hideKeyboard` presses Back and closed a sheet.
+- `maestro hierarchy` on iOS returned a stale screen once; screenshots are the source of truth.
+- A clean install shows the old login until the app-config is cached → the flow relaunches once and fails
+  if the new screen ("Xin chào") is not shown.
+
+App differences found (iOS vs Android), for the owner to decide:
+1. Android pre-fills rental dates (today → tomorrow, "2 ngày"); iOS starts empty ("Chọn ngày thuê").
+2. Review screen: iOS "Danh sách Sản phẩm" + a deposit sheet; Android "Xem trước đơn hàng / SẢN PHẨM", no sheet.
+3. Android hand-over sheet has "Phương thức thanh toán"; iOS does not.
+4. Android login: the keyboard covers the password field and the button (form does not scroll).
+
+Recommendation: **go** — one flow file passed 5/5 on both platforms, typed Vietnamese on Android, and needed
+only three platform branches. Next: P0 smoke flows from `test-cases.md`, and shared accessibility ids
+(password, phone, name fields, cart CTA; Android `handOver.papers`).
 
 ## Risks
 
