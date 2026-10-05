@@ -130,7 +130,7 @@ final class CartV2ViewController: BaseViewControler {
         let add = UIButton(type: .system)
         add.setTitle("+ " + "products.cart.addMore".localized(), for: .normal)
         add.titleLabel?.font = Utils.boldFont(size: 14)
-        add.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        add.addTarget(self, action: #selector(addMoreTapped), for: .touchUpInside)
         add.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
         content.addArrangedSubview(V2.sectionHeader(String(format: "products.cart.items".localized(), cart.itemCount), trailing: add))
         if cart.items.isEmpty {
@@ -410,6 +410,21 @@ final class CartV2ViewController: BaseViewControler {
 
     @objc private func goBack() {
         navigationController?.popViewController(animated: true)
+    }
+
+    /// "+ Add" (#433): the product list. The cart keeps its customer and lines in CartStore.
+    @objc private func addMoreTapped() {
+        let stack = navigationController?.viewControllers ?? []
+        let previous = stack.count >= 2 ? stack[stack.count - 2] : nil
+        switch CartV2Logic.addMoreRoute(previousIsProductsHome: previous is ProductsHomeViewController) {
+        case .pop:
+            navigationController?.popViewController(animated: true)
+        case .openHomeTab:
+            let tabBar = tabBarController ?? (appDelegate.window?.rootViewController as? UITabBarController)
+            navigationController?.popToRootViewController(animated: false)
+            tabBar?.selectedIndex = 0
+            (tabBar?.viewControllers?.first as? UINavigationController)?.popToRootViewController(animated: false)
+        }
     }
 
     @objc private func typeChanged() {

@@ -82,6 +82,8 @@ import java.time.ZoneId
 fun CartV2Screen(
     onBack: () -> Unit,
     onPreview: () -> Unit,
+    /** "+ Add": the product list on Home (#433), not the screen that opened the cart */
+    onAddItems: () -> Unit = onBack,
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -173,7 +175,7 @@ fun CartV2Screen(
                 Text(
                     "+ " + stringResource(R.string.v2_cart_add_more),
                     fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onBack).padding(vertical = 8.dp).semantics { role = Role.Button },
+                    modifier = Modifier.clickable(onClick = onAddItems).padding(vertical = 8.dp).semantics { role = Role.Button },
                 )
             }
             if (lines.isEmpty()) {
