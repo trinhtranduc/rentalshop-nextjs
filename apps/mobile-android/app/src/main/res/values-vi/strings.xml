@@ -761,7 +761,6 @@
     <string name="overview_v2_period_accessibility">Khoảng thời gian: %1$s</string>
     <string name="overview_v2_from">Từ ngày</string>
     <string name="overview_v2_to">Đến ngày</string>
-    <string name="overview_v2_net_revenue">Tiền thu ròng</string>
     <string name="overview_v2_excludes_cancelled">không tính đơn huỷ</string>
     <string name="overview_v2_vs_previous">so với %1$s</string>
     <string name="overview_v2_orders">Đơn</string>
@@ -769,7 +768,7 @@
     <string name="overview_v2_rented_out">Đang cho thuê</string>
     <string name="overview_v2_late_returns">Đang thuê · trễ hạn trả</string>
     <string name="overview_v2_collateral_held">Thế chấp đang giữ</string>
-    <string name="overview_v2_top_rented">Thuê nhiều nhất</string>
+    <string name="overview_v2_top_rented">Thuê nhiều nhất · theo giá trị đơn</string>
     <string name="overview_v2_rentals">%1$d lượt thuê</string>
     <string name="overview_v2_no_access">Tài khoản của bạn không xem được báo cáo</string>
     <string name="overview_v2_bars">Tiền thu từng ngày</string>
@@ -1084,4 +1083,38 @@
     <string name="settings_v2_password_submit">Đổi mật khẩu</string>
     <string name="settings_v2_password_show">Hiện mật khẩu</string>
     <string name="settings_v2_password_hide">Ẩn mật khẩu</string>
+    <!-- #484 overview money, rented-out list, store info -->
+    <string name="overview_v2_collected">Tiền đã thu</string>
+    <string name="overview_v2_collected_info">Tiền đã thu là gì?</string>
+    <string name="overview_v2_total_order_value">Tổng giá trị đơn</string>
+    <string name="overview_v2_outstanding">Còn phải thu</string>
+    <string name="overview_v2_chart_money">Tiền thu</string>
+    <string name="overview_v2_chart_orders">Số đơn</string>
+    <string name="overview_v2_bars_orders">Số đơn từng ngày</string>
+    <string name="overview_v2_info_body">Số tiền khách thực trả cho cửa hàng trong khoảng thời gian đang xem, tính theo ngày nhận tiền.</string>
+    <string name="overview_v2_info_deposit">Tiền cọc khi đặt đơn</string>
+    <string name="overview_v2_info_remaining">Tiền thuê, tiền bán còn lại</string>
+    <string name="overview_v2_info_damage">Phí hư hỏng</string>
+    <string name="overview_v2_info_late_fee">Phí trễ hạn</string>
+    <string name="overview_v2_info_cancelled">Đơn huỷ</string>
+    <string name="overview_v2_info_included">có tính</string>
+    <string name="overview_v2_info_refunds">trừ lại tiền đã hoàn</string>
+    <string name="overview_v2_info_note">Tổng giá trị đơn là tổng tiền các đơn tạo trong kỳ, kể cả phần khách chưa trả. Còn phải thu là phần chênh lệch đó.</string>
+    <string name="overview_v2_info_ok">Đã hiểu</string>
+    <string name="rented_out_title">Đang cho thuê · %1$d</string>
+    <string name="rented_out_late">Trễ hạn trả · %1$d</string>
+    <string name="rented_out_on_time">Còn hạn · %1$d</string>
+    <string name="store_v2_name">Tên cửa hàng</string>
+    <string name="store_v2_phone">Số điện thoại</string>
+    <string name="store_v2_address_section">Địa chỉ</string>
+    <string name="store_v2_street">Số nhà, đường</string>
+    <string name="store_v2_state">Phường / Quận</string>
+    <string name="store_v2_city">Tỉnh / Thành phố</string>
+    <string name="store_v2_country">Quốc gia</string>
+    <string name="store_v2_country_pick">Chọn quốc gia</string>
+    <string name="store_v2_postal">Mã bưu chính</string>
+    <string name="store_v2_other">Khác</string>
+    <string name="store_v2_optional">(không bắt buộc)</string>
+    <string name="store_v2_description">Mô tả</string>
+    <string name="store_v2_description_placeholder">Giới thiệu ngắn về cửa hàng</string>
 </resources>

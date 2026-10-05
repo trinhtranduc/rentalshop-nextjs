@@ -68,6 +68,8 @@ import com.anyrent.pos.ui.settings.v2.SettingsDetailNote
 import com.anyrent.pos.ui.settings.v2.SettingsDetailPage
 import com.anyrent.pos.ui.settings.v2.SettingsDetailPrimaryButton
 import com.anyrent.pos.ui.settings.v2.SettingsDetailSecondaryButton
+import com.anyrent.pos.ui.settings.v2.StoreForm
+import com.anyrent.pos.ui.settings.v2.StoreInfoV2Page
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,6 +83,12 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
     var name by remember { mutableStateOf(SessionStore.outletName ?: SessionStore.merchantName.orEmpty()) }
     var address by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+    // #484: the other outlet fields of the v2 store form (iOS EditStoreViewController)
+    var city by remember { mutableStateOf("") }
+    var state by remember { mutableStateOf("") }
+    var country by remember { mutableStateOf("") }
+    var zipCode by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var loadingInitial by remember { mutableStateOf(true) }
     var submitted by remember { mutableStateOf(false) }
@@ -99,6 +107,11 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
             name = outlet.name
             address = outlet.address.orEmpty()
             phone = outlet.phone.orEmpty()
+            city = outlet.city.orEmpty()
+            state = outlet.state.orEmpty()
+            country = outlet.country.orEmpty()
+            zipCode = outlet.zipCode.orEmpty()
+            description = outlet.description.orEmpty()
             SessionStore.outletName = outlet.name
             SessionStore.outletAddress = outlet.address
             SessionStore.outletPhone = outlet.phone
@@ -122,7 +135,11 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
         error = null
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                ApiParity.updateOutlet(outletId, name, address, phone)
+                ApiParity.updateOutlet(
+                    outletId, name, address, phone,
+                    city = city.trim(), state = state.trim(), country = country.trim(),
+                    zipCode = zipCode.trim(), description = description.trim(),
+                )
             }
             loading = false
             result.onSuccess {
@@ -134,64 +151,31 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
         }
     }
 
-    // #459: new style when opened from Settings v2 (`newSettings`); same fields, permission and save
+    // #459 / #484: v2 form style when opened from Settings v2 (`newSettings`, board CH-sua); same permission and save
     if (v2) {
-        SettingsDetailPage(
-            title = stringResource(R.string.store_info),
-            onBack = onBack,
-            bottomBar = if (canEdit) {
-                {
-                    SettingsDetailPrimaryButton(
-                        text = stringResource(R.string.save),
-                        onClick = ::saveStore,
-                        enabled = !loadingInitial,
-                        loading = loading,
-                    )
+        StoreInfoV2Page(
+            form = StoreForm(name, phone, address, city, state, country, zipCode, description),
+            onChange = { form ->
+                if (canEdit) {
+                    name = form.name
+                    phone = form.phone
+                    address = form.address
+                    city = form.city
+                    state = form.state
+                    country = form.country
+                    zipCode = form.zipCode
+                    description = form.description
                 }
-            } else {
-                null
             },
-        ) {
-            Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState())) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
-                    Text(SessionStore.userName ?: "—", fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
-                    Text(roleDisplayValue(SessionStore.role), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                    Text(
-                        stringResource(R.string.merchant_label, SessionStore.merchantName ?: SessionStore.merchantId?.toString() ?: "—"),
-                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
-                    )
-                }
-                SectionBand(stringResource(R.string.store_info))
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (loadingInitial) {
-                        SettingsDetailNote(stringResource(R.string.loading))
-                    } else {
-                        SettingsDetailField(
-                            label = stringResource(R.string.store_name_required),
-                            value = name,
-                            onValueChange = { if (canEdit) name = it },
-                            isError = submitted && name.isBlank(),
-                        )
-                        SettingsDetailField(
-                            label = stringResource(R.string.address),
-                            value = address,
-                            onValueChange = { if (canEdit) address = it },
-                            singleLine = false,
-                            minLines = 2,
-                        )
-                        SettingsDetailField(
-                            label = stringResource(R.string.phone),
-                            value = phone,
-                            onValueChange = { if (canEdit) phone = it },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        )
-                    }
-                    if (!canEdit) SettingsDetailNote(stringResource(R.string.no_permission_manage_store), V2Colors.Danger)
-                    message?.let { SettingsDetailNote(it, DS.Colors.Primary) }
-                    error?.let { SettingsDetailNote(it, V2Colors.Danger) }
-                }
-            }
-        }
+            canEdit = canEdit,
+            loadingInitial = loadingInitial,
+            saving = loading,
+            nameError = submitted && name.isBlank(),
+            message = message,
+            error = error,
+            onBack = onBack,
+            onSave = ::saveStore,
+        )
     } else {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,

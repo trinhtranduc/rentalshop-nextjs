@@ -92,6 +92,7 @@ import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
+import com.anyrent.pos.ui.overview.v2.RentedOutScreen
 import com.anyrent.pos.ui.settings.AppInfoScreen
 import com.anyrent.pos.ui.settings.ExportAuthScreen
 import com.anyrent.pos.ui.settings.PrinterNetworkScreen
@@ -124,6 +125,8 @@ object Routes {
     // #388: optional period (overview top product); without it, every order of the entity
     const val AnalyticsOrders = "analytics-orders/{entityType}/{entityId}?start={start}&end={end}"
     const val OverviewStatusOrders = "overview-orders/{kind}/{startDate}/{endDate}"
+    // #484: "Đang cho thuê" list of the redesigned overview (late returns first)
+    const val RentedOut = "rented-out"
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
     const val ProductAvailability = "product-availability/{productId}"
@@ -383,6 +386,12 @@ fun AnyRentNavHost(
                 filteredTitle = stringResource(titleRes),
                 onBack = { rootNavController.popBackStack() },
                 lateOnly = kind == OverviewLinks.LATE,
+            )
+        }
+        composable(Routes.RentedOut) {
+            RentedOutScreen(
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onBack = { rootNavController.popBackStack() },
             )
         }
         composable(Routes.Cart) {
@@ -800,6 +809,7 @@ private fun MainTabs(
                 OverviewV2Screen(
                     onOpenList = { kind, start, end -> rootNavController.navigate(Routes.overviewStatusOrders(kind, start, end)) },
                     onOpenProduct = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("product", id, start, end)) },
+                    onOpenRentedOut = { rootNavController.navigate(Routes.RentedOut) { launchSingleTop = true } },
                 )
                 return@composable
             }

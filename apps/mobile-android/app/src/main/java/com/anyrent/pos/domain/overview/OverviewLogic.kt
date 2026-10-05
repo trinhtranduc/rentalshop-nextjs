@@ -7,6 +7,9 @@ import java.time.temporal.ChronoUnit
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
+/** #484: what the bar chart plots: money collected, or orders created (`series[].newOrderCount`) */
+enum class OverviewChart { MONEY, ORDERS }
+
 enum class OverviewPreset { TODAY, YESTERDAY, LAST_7, LAST_30, THIS_MONTH, LAST_MONTH }
 
 /** Inclusive range of `yyyy-MM-dd` days */
@@ -28,9 +31,16 @@ data class OverviewReport(
     val newOrders: Int?,
     val series: List<Point>,
     val topProducts: List<TopProduct>,
+    /** #484: orders created in the period, not cancelled; null on an older API (tile hidden) */
+    val totalOrderValue: Double? = null,
+    /** #484: the part of those orders not collected yet; null on an older API (tile hidden) */
+    val outstanding: Double? = null,
 ) {
-    /** [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones */
-    data class Point(val dayKey: String?, val monthLabel: String?, val realIncome: Double)
+    /**
+     * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
+     * [newOrderCount] (#484) is null on an older API.
+     */
+    data class Point(val dayKey: String?, val monthLabel: String?, val realIncome: Double, val newOrderCount: Int? = null)
     data class TopProduct(val id: Int?, val name: String, val rentalCount: Int, val totalRevenue: Double, val image: String?)
 }
 
@@ -69,13 +79,27 @@ object OverviewLogic {
     fun shortRange(range: DayRange): String =
         if (range.start == range.end) dayMonth(range.start) else "${dayMonth(range.start)} – ${dayMonth(range.end)}"
 
-    /** One bar per day (missing days are 0), or per month as the API sends them; [weekday] labels short ranges */
-    fun bars(report: OverviewReport, range: DayRange, weekday: (LocalDate) -> String): List<OverviewBar> {
+    /** The value of one point for [chart]; a missing `newOrderCount` (older API) is 0 */
+    fun pointValue(point: OverviewReport.Point, chart: OverviewChart): Double = when (chart) {
+        OverviewChart.MONEY -> point.realIncome
+        OverviewChart.ORDERS -> (point.newOrderCount ?: 0).toDouble()
+    }
+
+    /**
+     * One bar per day (missing days are 0), or per month as the API sends them; [weekday] labels short ranges.
+     * [chart] picks money collected (default) or orders created (#484).
+     */
+    fun bars(
+        report: OverviewReport,
+        range: DayRange,
+        chart: OverviewChart = OverviewChart.MONEY,
+        weekday: (LocalDate) -> String,
+    ): List<OverviewBar> {
         if (groupBy(range) == "month") {
-            return report.series.map { OverviewBar(it.monthLabel.orEmpty(), it.monthLabel.orEmpty(), it.realIncome) }
+            return report.series.map { OverviewBar(it.monthLabel.orEmpty(), it.monthLabel.orEmpty(), pointValue(it, chart)) }
         }
         val byKey = report.series.filter { it.dayKey != null }.groupBy { it.dayKey!! }
-            .mapValues { (_, points) -> points.sumOf { it.realIncome } }
+            .mapValues { (_, points) -> points.sumOf { pointValue(it, chart) } }
         return (0 until range.dayCount).map { offset ->
             val date = range.start.plusDays(offset.toLong())
             val key = date.toString()
@@ -129,6 +153,7 @@ object OverviewLogic {
                     dayKey = date?.take(10)?.replace('/', '-'),
                     monthLabel = if (monthly || date == null) p.optString("month").takeIf { it.isNotBlank() } else null,
                     realIncome = number(p, "realIncome") ?: 0.0,
+                    newOrderCount = number(p, "newOrderCount")?.toInt(),
                 )
             },
             topProducts = (0 until (top?.length() ?: 0)).mapNotNull { i ->
@@ -141,6 +166,8 @@ object OverviewLogic {
                     image = if (p.isNull("image")) null else p.optString("image").takeIf { it.isNotBlank() },
                 )
             },
+            totalOrderValue = number(revenue, "totalOrderValue"),
+            outstanding = number(revenue, "outstanding"),
         )
     }
 
