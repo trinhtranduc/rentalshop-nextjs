@@ -31,15 +31,19 @@ All shop roles using the Android app with the new-UI flags. Android only; no API
 
 ## Open questions
 
-- Item 3: iOS hand-over sends only `PUT /api/orders/{id}` with `status: PICKUPED` (+ optional
-  papers / security deposit). It never calls `/api/payments/process` and sends no payment method.
-  Android posts a payment (`method: CASH|TRANSFER`, `kind: COLLECT`, `notes: PICKUP`) before the
-  status change whenever there is money to collect. Removing the picker either keeps posting `CASH`
-  (a payment row iOS never creates) or stops recording the payment (a money change). Waiting for
-  the owner.
+- None. Item 3 was answered by the owner (see decision log).
+
+## Finding behind item 3
+
+iOS hand-over sends only `PUT /api/orders/{id}` with `status: PICKUPED` (+ optional papers /
+security deposit); iOS return sends the fees (when changed) and `status: RETURNED`. iOS never calls
+`/api/payments/process`. Android new-UI posted a payment (`method: CASH|TRANSFER`, `kind`,
+`notes: PICKUP|RETURN_ADJUSTMENT`) before both status changes.
 
 ## Decision log
 
 - 2026-10-05 — iOS is the reference; Android changes (owner).
-- 2026-10-05 — Item 3 not changed in this PR; reported back with the finding above (agent, per the
-  task's stop rule).
+- 2026-10-05 — Item 3 first left unchanged and reported (agent, per the task's stop rule).
+- 2026-10-05 — Owner: match iOS, no payment record on hand-over ("không cần ghi khoản thu nó tự
+  tính"). Android new-UI hand-over and return drop the payment-method picker and the
+  `/api/payments/process` call; they send what iOS sends. Old flag-off screens unchanged (owner).
