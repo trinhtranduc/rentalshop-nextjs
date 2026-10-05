@@ -17,7 +17,9 @@ Issue: #461 · Status: accepted · Intent: ./intent.md
    phone in new / edit customer (`.phonePad`). Their confirm buttons already ride on the keyboard or sit
    in a scroll view, so only the Done bar is added.
 6. Android product form: `imePadding()` applies to the whole screen column, so the save bar sits above the
-   keyboard; the scrolling column no longer pads itself. Numeric fields use `ImeAction.Done`, which clears
+   keyboard; the scrolling column no longer pads itself. The form lives in a full-screen dialog window
+   (`AppFormSheet(fullScreen = true)`), so it also sets that window to `SOFT_INPUT_ADJUST_RESIZE` while shown
+   (restored on dispose; no-op outside a dialog). Numeric fields use `ImeAction.Done`, which clears
    focus (closes the keyboard).
 7. Android: the money formatter turns keystrokes "3", "30", "30000" into "3", "30", "30.000".
 

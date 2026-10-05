@@ -16,7 +16,8 @@ Issue: #461 · Status: accepted · Spec: ./spec.md
    off in `viewWillAppear` and restored in `viewWillDisappear`.
 4. iOS `OrderHandOverSheetViewController.swift`, `OrderExtendSheetViewController.swift`,
    `NewCustomerViewController.swift`, `EditCustomerViewController.swift`: attach the bar.
-5. Android `ui/home/v2/ProductFormV2Screen.kt`: move `imePadding()` to the screen column; numeric
+5. Android `ui/home/v2/ProductFormV2Screen.kt`: move `imePadding()` to the screen column, set the hosting
+   dialog window to adjust-resize (`DialogWindowProvider`); numeric
    `BasicTextField` gets `ImeAction.Done` + `focusManager.clearFocus()`.
 6. Skills: `mobile-parity` (UI parity only), `verify-change`.
 
