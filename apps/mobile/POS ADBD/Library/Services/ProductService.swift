@@ -34,7 +34,7 @@ class ProductService: BaseService, ProductServiceProtocol {
     private func uploadRequestWithCustomParsing(path: String, parameters: [String: Any], images: [UIImage], method: HTTPMethod = .post, completion: @escaping (Product?, NSError?) -> Void) {
         let fullURL = APIEndpoint.currentBaseURL + path
         
-        AF.upload(multipartFormData: { multipartFormData in
+        AuthSession.shared.upload(multipartFormData: { multipartFormData in
             // Convert parameters to JSON string and wrap in "data" field
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: parameters)
@@ -579,7 +579,7 @@ class ProductService: BaseService, ProductServiceProtocol {
         print("   Compressed Data Size: \(sizeKB)KB")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.upload(multipartFormData: { multipartFormData in
+        AuthSession.shared.upload(multipartFormData: { multipartFormData in
             // Use pre-compressed data directly
             multipartFormData.append(imageData, withName: "image", fileName: "search_image.jpg", mimeType: "image/jpeg")
             print("📤 Uploading pre-compressed image: \(sizeKB)KB")
@@ -708,7 +708,7 @@ class ProductService: BaseService, ProductServiceProtocol {
         print("   Image Size: \(image.size)")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.upload(multipartFormData: { multipartFormData in
+        AuthSession.shared.upload(multipartFormData: { multipartFormData in
             // Add image (required field)
             // Only compress if image is too large (safety check for max 5MB as per API docs)
             let imageData: Data?

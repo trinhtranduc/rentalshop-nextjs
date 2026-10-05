@@ -992,4 +992,29 @@
     <string name="detail_hand_over_deposit">Cọc thế chân</string>
     <string name="extend_rental_extra_rent">Tiền thuê thêm</string>
     <string name="extend_rental_new_total">Tổng mới: %1$s</string>
+    <!-- #448: giỏ hàng và màn tạo đơn mới giống iOS -->
+    <string name="v2_cart_pick_dates">Chọn ngày thuê</string>
+    <string name="v2_cart_need_pickup">Vui lòng chọn ngày lấy hàng cho đơn thuê.</string>
+    <string name="v2_cart_need_return">Vui lòng chọn ngày trả hàng cho đơn thuê.</string>
+    <string name="v2_cart_need_items">Giỏ hàng trống. Vui lòng thêm ít nhất một sản phẩm.</string>
+    <string name="v2_cart_need_customer">Vui lòng chọn khách hàng.</string>
+    <string name="v2_review_title">Tạo đơn</string>
+    <string name="v2_review_edit_title">Chỉnh sửa đơn</string>
+    <string name="v2_review_create">Tạo đơn</string>
+    <string name="v2_review_update">Cập nhật đơn</string>
+    <string name="v2_review_info">Thông tin</string>
+    <string name="v2_review_dates">Thông tin ngày tháng</string>
+    <string name="v2_review_products">Danh sách Sản phẩm</string>
+    <string name="v2_review_deposit_papers">Tiền cọc &amp; Giấy tờ thế chân</string>
+    <string name="v2_review_deposit">Tiền cọc</string>
+    <string name="v2_review_papers">Giấy tờ</string>
+    <string name="v2_review_security_deposit">Tiền thế chân</string>
+    <string name="v2_review_collect_deposit">Thu tiền cọc</string>
+    <string name="v2_review_collect_deposit_text">Vui lòng thu tiền cọc từ khách hàng.</string>
+    <string name="v2_review_collect_payment">Thu tiền</string>
+    <string name="v2_review_collect_payment_text">Vui lòng thu đầy đủ số tiền từ khách hàng.</string>
+    <string name="v2_review_collect_papers">Giữ giấy tờ bảo đảm</string>
+    <string name="v2_review_cancel">Hủy</string>
+    <string name="v2_review_confirm">Xác nhận</string>
 </resources>
+

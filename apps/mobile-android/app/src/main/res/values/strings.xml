@@ -1008,4 +1008,29 @@
     <string name="detail_hand_over_deposit">Security deposit</string>
     <string name="extend_rental_extra_rent">Extra rent</string>
     <string name="extend_rental_new_total">New total: %1$s</string>
+    <!-- #448: new cart and review match iOS -->
+    <string name="v2_cart_pick_dates">Choose rental dates</string>
+    <string name="v2_cart_need_pickup">Please set pickup date for rental order.</string>
+    <string name="v2_cart_need_return">Please set return date for rental order.</string>
+    <string name="v2_cart_need_items">Cart is empty. Please add at least one item.</string>
+    <string name="v2_cart_need_customer">Please select a customer.</string>
+    <string name="v2_review_title">Create Order</string>
+    <string name="v2_review_edit_title">Edit Order</string>
+    <string name="v2_review_create">Create Order</string>
+    <string name="v2_review_update">Update Order</string>
+    <string name="v2_review_info">Information</string>
+    <string name="v2_review_dates">Date Information</string>
+    <string name="v2_review_products">Products</string>
+    <string name="v2_review_deposit_papers">Deposit &amp; Collateral Details</string>
+    <string name="v2_review_deposit">Deposit</string>
+    <string name="v2_review_papers">Document</string>
+    <string name="v2_review_security_deposit">Security Deposit</string>
+    <string name="v2_review_collect_deposit">Collect Deposit</string>
+    <string name="v2_review_collect_deposit_text">Please collect the deposit amount from the customer.</string>
+    <string name="v2_review_collect_payment">Collect Payment</string>
+    <string name="v2_review_collect_payment_text">Please collect the full payment amount from the customer.</string>
+    <string name="v2_review_collect_papers">Collect Collateral Documents</string>
+    <string name="v2_review_cancel">Cancel</string>
+    <string name="v2_review_confirm">Confirm</string>
 </resources>
+

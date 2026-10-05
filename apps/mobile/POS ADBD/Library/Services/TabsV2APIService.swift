@@ -26,7 +26,7 @@ final class TabsV2APIService: BaseService {
                                        completion: @escaping (T?, NSError?) -> Void) -> DataRequest {
         let url = APIEndpoint.currentBaseURL + path
         let encoding: ParameterEncoding = method == .get ? URLEncoding.default : JSONEncoding.default
-        return AF.request(url, method: method, parameters: parameters, encoding: encoding, headers: BaseService.jsonHeader)
+        return AuthSession.shared.request(url, method: method, parameters: parameters, encoding: encoding, headers: BaseService.jsonHeader)
             .responseData { response in
                 let statusCode = response.response?.statusCode
                 switch response.result {
@@ -99,7 +99,7 @@ final class TabsV2APIService: BaseService {
     /// POST /api/auth/change-password. The API answers without `data`, so success is `error == nil`.
     func changePassword(current: String, new: String, completion: @escaping (NSError?) -> Void) {
         let url = APIEndpoint.currentBaseURL + APIEndpoint.Path.changePassword
-        AF.request(url, method: .post, parameters: ["currentPassword": current, "newPassword": new],
+        AuthSession.shared.request(url, method: .post, parameters: ["currentPassword": current, "newPassword": new],
                    encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 let statusCode = response.response?.statusCode

@@ -421,6 +421,20 @@ model Order {
   @@index([deletedAt])
 }
 
+/// #341: Idempotency-Key sent by a client with POST /api/orders, scoped to the calling user.
+/// A retry or a second in-flight create with the same key returns `orderId` instead of a new order.
+/// No foreign keys on purpose: the Order table is unchanged and a stale row is ignored.
+model OrderCreateKey {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  key       String
+  orderId   Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([createdAt])
+}
+
 model OrderItem {
   id              Int                   @id @default(autoincrement())
   quantity        Int                   @default(1)

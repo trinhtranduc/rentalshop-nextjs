@@ -1,6 +1,8 @@
 import Foundation
 
 class CartViewModel: PreviewViewModelProtocol {
+    /// One key per preview screen, reused when staff retry after an error (#341).
+    let createIdempotencyKey = UUID().uuidString
     // MARK: - Properties
     private var cart: Cart {
         CartStore.shared.cart
@@ -294,7 +296,7 @@ class CartViewModel: PreviewViewModelProtocol {
                     completion(.success(()))
                 }
             } else {
-                OrderService.shared.createOrder(from: self.cart) { _, error in
+                OrderService.shared.createOrder(from: self.cart, idempotencyKey: self.createIdempotencyKey) { _, error in
                     if let error = error {
                         completion(.failure(error))
                         return

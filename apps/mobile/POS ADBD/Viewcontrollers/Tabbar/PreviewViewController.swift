@@ -1914,6 +1914,8 @@ class PreviewViewController: BaseViewControler {
     }
     
     @objc private func saveOrder() {
+        // #341: no second payment dialog / create while one is in flight
+        guard !isCreateInFlight else { return }
         HapticFeedback.medium()
         
         // For existing orders (OrderViewModel), show payment dialog for rent orders
@@ -1961,13 +1963,30 @@ class PreviewViewController: BaseViewControler {
             ?? UIImageJPEGRepresentation(image, 0.6)
     }
 
+    /// #341: true from the first confirm until the request fails (staff may retry) or succeeds (screen closes).
+    /// Keeps one Save / Confirm from sending the create twice.
+    private var isCreateInFlight = false
+
+    private func setCreateInFlight(_ inFlight: Bool) {
+        isCreateInFlight = inFlight
+        saveButton.isEnabled = !inFlight
+    }
+
     private func proceedWithSave() {
+        guard !isCreateInFlight else { return }
+        setCreateInFlight(true)
+
         let noteImageData = noteImages.compactMap { compressedNoteJPEG($0) }
 
         if let cartViewModel = viewModel as? CartViewModel, !noteImageData.isEmpty {
-            OrderService.shared.createOrder(from: CartStore.shared.cart, notesImages: noteImageData) { [weak self] order, error in
+            OrderService.shared.createOrder(
+                from: CartStore.shared.cart,
+                notesImages: noteImageData,
+                idempotencyKey: cartViewModel.createIdempotencyKey
+            ) { [weak self] order, error in
                 DispatchQueue.main.async {
                     if let error = error {
+                        self?.setCreateInFlight(false)
                         UIAlertController.errorAlert(parent: self, error: error)
                         return
                     }
@@ -1979,14 +1998,17 @@ class PreviewViewController: BaseViewControler {
         }
 
         viewModel.saveOrder { [weak self] result in
-            switch result {
-            case .success:
-                // For CartViewModel, we need to get the created order
-                // Since CartViewModel.saveOrder doesn't return order directly,
-                // we'll complete with nil and SaleViewController will handle reload
-                self?.completeOrder()
-            case .failure(let error):
-                UIAlertController.errorAlert(parent: self, error: error)
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    // For CartViewModel, we need to get the created order
+                    // Since CartViewModel.saveOrder doesn't return order directly,
+                    // we'll complete with nil and SaleViewController will handle reload
+                    self?.completeOrder()
+                case .failure(let error):
+                    self?.setCreateInFlight(false)
+                    UIAlertController.errorAlert(parent: self, error: error)
+                }
             }
         }
     }

@@ -797,6 +797,8 @@ fun CartScreen(onBack: () -> Unit, onPickCustomer: () -> Unit, onCreated: (Int) 
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = {
+                    // #341: ignore a second tap while the create is in flight
+                    if (loading) return@Button
                     if (lines.isEmpty()) {
                         error = "Cart is empty"
                         return@Button

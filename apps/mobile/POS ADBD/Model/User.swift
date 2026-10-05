@@ -261,6 +261,7 @@ class User: NSObject, Codable {
     // MARK: - UserDefaults Storage Methods
     
     class func reset() {
+        AuthTokenStore.clear()
         UserDefaults.standard.removeObject(forKey: userKey)
         UserDefaults.standard.synchronize()
         print("✅ User reset successfully from UserDefaults")

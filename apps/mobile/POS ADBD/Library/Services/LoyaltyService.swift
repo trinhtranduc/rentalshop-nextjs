@@ -48,7 +48,7 @@ class LoyaltyService: BaseService, LoyaltyServiceProtocol {
     private func requestWithAPIResponse<T: Codable>(path: String, method: HTTPMethod, parameters: [String: Any]?, completion: @escaping (T?, NSError?) -> Void) {
         let fullURL = APIEndpoint.currentBaseURL + path
 
-        AF.request(fullURL, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: method, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 switch response.result {
                 case .success(let data):

@@ -34,7 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,9 +93,13 @@ internal fun HandOverSheet(
             label = { Text(stringResource(R.string.detail_hand_over_papers)) },
             placeholder = { Text(stringResource(R.string.detail_hand_over_papers_hint)) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            // Same id as iOS `accessibilityIdentifier` so one Maestro flow taps it on both apps (#448)
+            modifier = Modifier.fillMaxWidth().testTag("handOver.papers"),
         )
-        FeeField(stringResource(R.string.detail_hand_over_deposit), depositText, { depositText = it }, Modifier.fillMaxWidth())
+        FeeField(
+            stringResource(R.string.detail_hand_over_deposit), depositText, { depositText = it },
+            Modifier.fillMaxWidth().testTag("handOver.securityDeposit"),
+        )
         MoneyBox {
             MoneyRow(stringResource(R.string.total), formatMoneyVnd(money.total))
             if (money.deposit > 0) MoneyRow(stringResource(R.string.detail_deposit_paid), formatMoneyVnd(-money.deposit))
@@ -259,7 +267,7 @@ private fun RemovableThumb(model: Any, onOpen: () -> Unit, onRemove: () -> Unit)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 private fun SheetFrame(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     ModalBottomSheet(
@@ -271,6 +279,8 @@ private fun SheetFrame(onDismiss: () -> Unit, content: @Composable ColumnScope.(
         Column(
             Modifier
                 .fillMaxWidth()
+                // A sheet is its own window: expose test tags as resource ids here too (#448)
+                .semantics { testTagsAsResourceId = true }
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)

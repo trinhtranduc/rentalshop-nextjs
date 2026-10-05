@@ -369,7 +369,13 @@ class PaymentCollectionViewController: UIViewController {
         }
     }
     
+    /// A second tap during the dismiss animation must not confirm (and create the order) twice (#341).
+    private var isConfirming = false
+
     @objc private func confirmTapped() {
+        guard !isConfirming else { return }
+        isConfirming = true
+        view.isUserInteractionEnabled = false
         dismiss(animated: true) {
             self.delegate?.didConfirmPayment(sender: self)
         }
