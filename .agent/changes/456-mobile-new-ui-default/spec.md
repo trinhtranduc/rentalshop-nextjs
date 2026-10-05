@@ -32,6 +32,6 @@ No shape change. The value of `features` changes from all-false to all-true when
 
 ## Acceptance
 
-- [ ] `tests/api/mobile-app-config.test.ts`: unset / "" / list / none cases
-- [ ] iOS `AppConfigTests`: no-cache default, missing `features`, explicit false
-- [ ] Android unit tests: same cases
+- [x] `tests/api/mobile-app-config.test.ts`: unset / "" / list / none cases
+- [x] iOS `AppConfigTests`: no-cache default, missing `features`, explicit false
+- [x] Android unit tests: same cases
