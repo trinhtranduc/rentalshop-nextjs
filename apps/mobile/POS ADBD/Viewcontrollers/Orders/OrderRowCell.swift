@@ -133,7 +133,8 @@ final class OrderRowCell: UITableViewCell {
 
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
-        payLabel.font = Utils.boldFont(size: DS.TextSize.secondary)
+        // #468: the pay line is regular weight (colour carries the meaning); the total stays bold
+        payLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         moneyStack.axis = .vertical
         moneyStack.alignment = .trailing
         moneyStack.addArrangedSubview(totalLabel)

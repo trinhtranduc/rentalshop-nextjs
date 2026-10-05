@@ -15,7 +15,9 @@ Issue: #468 · Status: accepted · Intent: ./intent.md
 6. Order row note pills (`.note` / `RowTagStyle.NOTE`): `DS.TextSize.pill` (12) regular, padding 2/6, radius
    `DS.Radius.chip` (6), same colours.
 7. The name beside the bigger tag still wraps to two lines and is not cut (existing #430 test).
-8. Home product row stock label ("● Còn N" / "● Hết hôm nay"): 14pt regular, colours unchanged (green / orange /
+8. Order row pay line (iOS `payLabel`, Android `RowMoneyText.payWeight`): 14pt regular, colours unchanged; the
+   total stays 17pt bold (`RowMoneyText.totalWeight`). No late-fee line exists in the row today.
+9. Home product row stock label ("● Còn N" / "● Hết hôm nay"): 14pt regular, colours unchanged (green / orange /
    red).
 
 ## Out of scope
@@ -32,5 +34,6 @@ None.
   button.
 - Android `OrdersHomeTest`: logic returns null for a late row with a phone.
 - iOS `OrdersHomeTests.testStatusTagIsBiggerAndNotesAreRegular`, `ProductsV2Tests.testStockLabelIsRegularWeight`;
-  Android `OrdersHomeTest` checks `RowTagStyle` values.
+  Android `OrdersHomeTest` checks `RowTagStyle` values. Pay line regular / total bold: iOS in
+  `testStatusTagIsBiggerAndNotesAreRegular`, Android `RowMoneyText` test.
 - iOS build + `POS ADBDTests`; Android `:app:testDebugUnitTest :app:assembleDebug`.

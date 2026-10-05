@@ -408,7 +408,20 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(status.layer.cornerRadius, 7)
         XCTAssertEqual(status.intrinsicContentSize.width,
                        (status.text! as NSString).size(withAttributes: [.font: status.font!]).width + 16, accuracy: 1)
-        let notes = all.filter { $0 !== status }
+        // Money column: total bold, pay line ("còn thu N") regular
+        func labels(_ view: UIView) -> [UILabel] {
+            ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
+        }
+        let due = TodayWorkRow(id: 2, orderNumber: "ORD-1-0002", customerName: "Lan", totalAmount: 300000, amountDue: 120000)
+        cell.configure(.work(due, kind: .takeBack), context: .work(isLate: false), hidesMoney: false)
+        let money = labels(cell.contentView)
+        let pay = try XCTUnwrap(money.first { $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000)) })
+        XCTAssertEqual(pay.font, Utils.regularFont(size: DS.TextSize.secondary))
+        let total = try XCTUnwrap(money.first { $0.text == MoneyFormatter.format(300000) })
+        XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
+        cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
+
+        let notes = tags(cell.contentView).filter { $0 !== status }
         XCTAssertEqual(notes.count, 2, "not prepared + late")
         for note in notes {
             XCTAssertEqual(note.font, Utils.regularFont(size: DS.TextSize.pill), note.text ?? "")

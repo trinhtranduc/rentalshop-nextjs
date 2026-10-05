@@ -19,6 +19,7 @@ import com.anyrent.pos.ui.orders.v2.PayLine
 import com.anyrent.pos.ui.orders.v2.RentOrdersFilter
 import com.anyrent.pos.ui.orders.v2.RowTag
 import com.anyrent.pos.ui.orders.v2.RowTagStyle
+import com.anyrent.pos.ui.orders.v2.RowMoneyText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -333,6 +334,12 @@ class OrdersHomeTest {
             assertEquals(2.dp, vertical)
             assertEquals(6.dp, radius)
         }
+    }
+
+    @Test
+    fun `row total stays bold, pay line is regular (#468)`() {
+        assertEquals(FontWeight.Bold, RowMoneyText.totalWeight)
+        assertEquals(FontWeight.Normal, RowMoneyText.payWeight)
     }
 
     @Test

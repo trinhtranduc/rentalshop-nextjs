@@ -740,13 +740,13 @@ private fun BoardRow(
                 Text(
                     total,
                     fontSize = DS.TextSize.Name,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = RowMoneyText.totalWeight,
                     color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
                     textDecoration = if (struck) TextDecoration.LineThrough else null,
                     maxLines = 1,
                 )
                 if (pay != null) {
-                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = pay.second, maxLines = 1)
+                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = pay.second, maxLines = 1)
                 }
             }
             if (phone != null) {
@@ -785,6 +785,12 @@ internal enum class RowTagStyle(
 ) {
     STATUS(DS.TextSize.Secondary, FontWeight.Bold, 8.dp, 3.dp, DS.Radius.tag),
     NOTE(DS.TextSize.Pill, FontWeight.Normal, 6.dp, 2.dp, DS.Radius.chip),
+}
+
+/** Money column of an order row (#468): the total bold, the pay line ("còn thu N" / "trả cọc N") regular */
+internal object RowMoneyText {
+    val totalWeight = FontWeight.Bold
+    val payWeight = FontWeight.Normal
 }
 
 @Composable
