@@ -522,11 +522,12 @@ private fun DetailHeader(detail: OrderDetail) {
                 "RETURNED" -> 3
                 else -> 0
             }
+            val days = OrderDetailLogic.progressDays(summary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
-                    stringResource(R.string.detail_progress_booked, shortDay(summary.createdAt)),
-                    stringResource(R.string.detail_progress_hand_over, shortDay(summary.pickupPlanAt)),
-                    stringResource(R.string.detail_progress_return, shortDay(summary.returnPlanAt)),
+                    stringResource(R.string.detail_progress_booked, shortDay(days.booked)),
+                    stringResource(R.string.detail_progress_hand_over, shortDay(days.handOver)),
+                    stringResource(R.string.detail_progress_return, shortDay(days.returned)),
                 ).forEachIndexed { index, label ->
                     val done = index < reached
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {

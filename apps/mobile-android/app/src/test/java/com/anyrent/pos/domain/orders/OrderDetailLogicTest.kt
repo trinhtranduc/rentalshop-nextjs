@@ -1,12 +1,15 @@
 package com.anyrent.pos.domain.orders
 
+import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.ui.orders.v2.shortDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import java.time.ZoneId
 
 /** #372 — order detail: actions per status, API money rule, notes payload, status errors */
 class OrderDetailLogicTest {
@@ -156,5 +159,43 @@ class OrderDetailLogicTest {
         val network = OrderDetailLogic.statusError(IOException("connect timeout"))
         assertFalse(network.reload)
         assertEquals("connect timeout", network.message)
+    }
+
+    private fun rent(
+        status: String,
+        pickedUpAt: String? = null,
+        returnedAt: String? = null,
+    ) = OrderSummary(
+        id = 746120, orderNumber = "ORD-001-0746", orderType = "RENT", status = status, totalAmount = 100.0,
+        depositAmount = 0.0, customerName = null, customerPhone = null,
+        pickupPlanAt = "2026-10-02T17:00:00.000Z", returnPlanAt = "2026-10-07T17:00:00.000Z",
+        createdAt = "2026-10-01T03:00:00.000Z", notes = null,
+        pickedUpAt = pickedUpAt, returnedAt = returnedAt,
+    )
+
+    /** #434: a returned order shows the day it came back (iOS `returnedAt ?? returnPlanAt`), not the plan */
+    @Test
+    fun `returned order step bar shows the actual return day`() {
+        val vietnam = ZoneId.of("Asia/Ho_Chi_Minh")
+        // 18:30Z on 04/10 is 01:30 on 05/10 in Vietnam; the plan is 08/10
+        val days = OrderDetailLogic.progressDays(
+            rent("RETURNED", pickedUpAt = "2026-10-03T16:59:59.000Z", returnedAt = "2026-10-04T18:30:00.000Z"),
+        )
+        assertEquals("05/10", shortDay(days.returned, vietnam))
+        assertEquals("03/10", shortDay(days.handOver, vietnam))
+        assertEquals("01/10", shortDay(days.booked, vietnam))
+    }
+
+    @Test
+    fun `step bar falls back to the plan before hand-over and return`() {
+        val vietnam = ZoneId.of("Asia/Ho_Chi_Minh")
+        val reserved = OrderDetailLogic.progressDays(rent("RESERVED"))
+        assertEquals("03/10", shortDay(reserved.handOver, vietnam))
+        assertEquals("08/10", shortDay(reserved.returned, vietnam))
+        val out = OrderDetailLogic.progressDays(rent("PICKUPED", pickedUpAt = "2026-10-02T17:00:00.000Z"))
+        assertEquals("03/10", shortDay(out.handOver, vietnam))
+        assertEquals("08/10", shortDay(out.returned, vietnam))
+        val early = OrderDetailLogic.progressDays(rent("PICKUPED", pickedUpAt = "2026-10-01T16:00:00.000Z"))
+        assertEquals("01/10", shortDay(early.handOver, vietnam))
     }
 }
