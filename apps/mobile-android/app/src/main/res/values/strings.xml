@@ -617,12 +617,18 @@
     <string name="v2_cart_sale">Sale</string>
     <string name="v2_cart_pick_customer">Choose customer</string>
     <string name="v2_cart_change">Change</string>
-    <string name="v2_cart_days">%1$d days</string>
+    <plurals name="v2_cart_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="v2_cart_items">Items · %1$d</string>
     <string name="v2_cart_add_more">Add</string>
     <string name="v2_cart_empty">The cart is empty. Add products from the list.</string>
     <string name="v2_calc_per_rental">%1$s/rental × %2$d</string>
-    <string name="v2_calc_per_day">%1$s/day × %2$d days</string>
+    <plurals name="v2_calc_per_day">
+        <item quantity="one">%1$s/day × %2$d day</item>
+        <item quantity="other">%1$s/day × %2$d days</item>
+    </plurals>
     <string name="v2_calc_sale">Sale price %1$s × %2$d</string>
     <string name="v2_cart_short_rent">Only %1$d free on these dates</string>
     <string name="v2_cart_short_stock">Only %1$d in stock</string>
@@ -640,7 +646,10 @@
     <string name="v2_cart_customer_pays">Customer pays</string>
     <string name="v2_cart_create">Create order</string>
     <string name="v2_cart_sell_and_collect">Sell &amp; collect</string>
-    <string name="v2_cart_bar">Cart · %1$d items</string>
+    <plurals name="v2_cart_bar">
+        <item quantity="one">Cart · %1$d item</item>
+        <item quantity="other">Cart · %1$d items</item>
+    </plurals>
     <string name="v2_cart_remove_title">Remove this item from the cart?</string>
     <string name="v2_cart_remove">Remove</string>
     <!-- Orders tab (#371) -->
@@ -706,7 +715,10 @@
     <string name="detail_received">Received</string>
     <string name="detail_received_refund">Received · give back %1$s</string>
     <string name="detail_received_collect">Received · collect %1$s</string>
-    <string name="detail_late_fee_days">Late fee (%1$d days)</string>
+    <plurals name="detail_late_fee_days">
+        <item quantity="one">Late fee (%1$d day)</item>
+        <item quantity="other">Late fee (%1$d days)</item>
+    </plurals>
     <string name="detail_photos_count">%1$d/%2$d photos</string>
     <string name="detail_hand_over_subtitle">%1$s · %2$s · %3$s</string>
     <plurals name="detail_return_late_subtitle">
@@ -843,8 +855,14 @@
     <string name="orders_v2_search_placeholder">Name, phone, order number, item</string>
     <string name="orders_v2_search_cancel">Cancel</string>
     <string name="orders_v2_search_clear">Clear search</string>
-    <string name="orders_v2_search_summary">%1$d orders match “%2$s” · all statuses, item names too</string>
-    <string name="orders_v2_count">%1$d orders</string>
+    <plurals name="orders_v2_search_summary">
+        <item quantity="one">%1$d order matches “%2$s” · all statuses, item names too</item>
+        <item quantity="other">%1$d orders match “%2$s” · all statuses, item names too</item>
+    </plurals>
+    <plurals name="orders_v2_count">
+        <item quantity="one">%1$d order</item>
+        <item quantity="other">%1$d orders</item>
+    </plurals>
     <string name="orders_v2_band_work">hand over %1$d · take back %2$d</string>
     <string name="orders_v2_yesterday">Yesterday</string>
     <string name="orders_v2_tag_hand_over">Hand over</string>
@@ -862,7 +880,10 @@
     <string name="orders_v2_pay_paid">✓ paid in full</string>
     <string name="orders_v2_when_hand_over_due">hand over %1$s</string>
     <string name="orders_v2_when_return_due">due back %1$s</string>
-    <string name="orders_v2_when_days">%1$d days</string>
+    <plurals name="orders_v2_when_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="orders_v2_when_created_today">created today</string>
     <string name="orders_v2_when_created">created %1$s</string>
     <string name="orders_v2_when_due">due %1$s</string>
@@ -876,7 +897,10 @@
     <string name="orders_v2_filter_sort">SORT</string>
     <string name="orders_v2_filter_range">DATE RANGE</string>
     <string name="orders_v2_filter_show">Show orders</string>
-    <string name="orders_v2_filter_show_count">Show %1$d orders</string>
+    <plurals name="orders_v2_filter_show_count">
+        <item quantity="one">Show %1$d order</item>
+        <item quantity="other">Show %1$d orders</item>
+    </plurals>
     <string name="orders_v2_basis_created">Created</string>
     <string name="orders_v2_basis_pickup">Handed over</string>
     <string name="orders_v2_basis_return">Returned</string>
