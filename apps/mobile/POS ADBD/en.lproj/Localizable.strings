@@ -1828,6 +1828,7 @@
 "orders.v2.status.completed" = "Completed";
 "orders.v2.status.cancelled" = "Cancelled";
 "orders.v2.notPrepared" = "Not prepared";
+"order.readyToDeliver.subtitle" = "All items packed for this order";
 "orders.v2.pay.due" = "to collect %@";
 "orders.v2.pay.refund" = "refund deposit %@";
 "orders.v2.when.handOverDue" = "hand over %@";

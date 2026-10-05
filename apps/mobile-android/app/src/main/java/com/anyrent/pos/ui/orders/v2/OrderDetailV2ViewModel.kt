@@ -25,6 +25,8 @@ interface OrderDetailSource {
     /** RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427) */
     suspend fun handOver(id: Int, fields: HandOverFields): Result<Unit>
     suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit>
+    /** "Sẵn sàng giao" (#470): the same `PUT /api/orders/{id}` the old detail sends */
+    suspend fun setReadyToDeliver(id: Int, ready: Boolean): Result<Unit>
     suspend fun saveNotes(
         id: Int,
         notes: String,
@@ -45,6 +47,9 @@ object ApiOrderDetailSource : OrderDetailSource {
 
     override suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double) =
         withContext(Dispatchers.IO) { ApiParity.updateOrderFees(id, lateFee, damageFee) }
+
+    override suspend fun setReadyToDeliver(id: Int, ready: Boolean) =
+        withContext(Dispatchers.IO) { ApiParity.setReadyToDeliver(id, ready) }
 
     override suspend fun saveNotes(
         id: Int,
@@ -71,6 +76,8 @@ data class OrderDetailUiState(
     val busy: Boolean = false,
     /** A rejected status change; the screen shows it, the order has been reloaded when [StatusErrorOutcome.reload] */
     val statusError: StatusErrorOutcome? = null,
+    /** The "Sẵn sàng giao" switch is saving (#470) */
+    val savingReady: Boolean = false,
 )
 
 class OrderDetailV2ViewModel(
@@ -161,6 +168,21 @@ class OrderDetailV2ViewModel(
             val result = source.saveNotes(orderId, notes, original, kept, newImages)
             _state.update { it.copy(busy = false) }
             if (result.isSuccess) reload()
+            onDone(result.exceptionOrNull()?.let { AppError.from(it).message })
+        }
+    }
+
+    /**
+     * "Sẵn sàng giao" (#470): saves at once, then reloads so the orders list shows or hides "Chưa soạn đồ".
+     * [onDone] gets null on success or the error message; the switch then falls back to the order's value.
+     */
+    fun setReadyToDeliver(ready: Boolean, onDone: (String?) -> Unit) {
+        if (_state.value.savingReady) return
+        _state.update { it.copy(savingReady = true) }
+        viewModelScope.launch {
+            val result = source.setReadyToDeliver(orderId, ready)
+            if (result.isSuccess) reload()
+            _state.update { it.copy(savingReady = false) }
             onDone(result.exceptionOrNull()?.let { AppError.from(it).message })
         }
     }

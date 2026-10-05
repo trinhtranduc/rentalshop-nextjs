@@ -2,6 +2,7 @@ package com.anyrent.pos.domain.orders
 
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.error.AppError
+import org.json.JSONObject
 
 /** The one primary action of the order detail (#372) */
 enum class DetailPrimary { HAND_OVER, TAKE_RETURN, NONE }
@@ -66,6 +67,13 @@ data class StatusErrorOutcome(val code: String?, val message: String, val reload
 object OrderDetailLogic {
     /** Note photos per order on the new detail (`MAX_ORDER_NOTE_IMAGES`) */
     const val MAX_NOTE_PHOTOS = 5
+
+    /** "Sẵn sàng giao" (#470): a rental not handed over yet, for users who may update orders */
+    fun showsReadyToDeliver(orderType: String, status: String, canUpdateOrders: Boolean): Boolean =
+        canUpdateOrders && orderType.equals("RENT", ignoreCase = true) && status.equals("RESERVED", ignoreCase = true)
+
+    /** `PUT /api/orders/{id}` body of the ready switch; the old detail sends the same */
+    fun readyToDeliverBody(ready: Boolean): JSONObject = JSONObject().put("isReadyToDeliver", ready)
 
     fun actions(
         orderType: String,

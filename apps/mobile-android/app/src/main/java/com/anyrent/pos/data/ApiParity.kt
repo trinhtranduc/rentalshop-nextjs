@@ -185,7 +185,7 @@ object ApiParity {
     }
 
     fun setReadyToDeliver(id: Int, ready: Boolean): Result<Unit> = runCatching {
-        val body = JSONObject().put("isReadyToDeliver", ready).toString().toRequestBody(jsonMedia)
+        val body = OrderDetailLogic.readyToDeliverBody(ready).toString().toRequestBody(jsonMedia)
         ApiClient.get().authedPut("/api/orders/$id", body)
         Unit
     }

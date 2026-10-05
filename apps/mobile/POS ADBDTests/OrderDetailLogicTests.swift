@@ -150,4 +150,27 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: TimeZone(identifier: "UTC")!), "05/10")
         XCTAssertEqual(OrderDetailLogic.dayMonth(iso.date(from: "2026-10-05T17:30:00Z")!, timeZone: vietnam), "06/10")
     }
+
+    // MARK: Sẵn sàng giao (#470)
+
+    func testReadyToDeliverShowsOnlyForReservedRentals() {
+        XCTAssertTrue(OrderDetailLogic.showsReadyToDeliver(orderType: .rent, status: .reserved, canUpdateOrders: true))
+        for status in [OrderStatus.pickuped, .returned, .cancelled, .completed] {
+            XCTAssertFalse(OrderDetailLogic.showsReadyToDeliver(orderType: .rent, status: status, canUpdateOrders: true), "\(status)")
+        }
+        for status in [OrderStatus.reserved, .completed, .cancelled] {
+            XCTAssertFalse(OrderDetailLogic.showsReadyToDeliver(orderType: .sale, status: status, canUpdateOrders: true), "\(status)")
+        }
+        XCTAssertFalse(OrderDetailLogic.showsReadyToDeliver(orderType: .rent, status: .reserved, canUpdateOrders: false))
+    }
+
+    /// Same body as the old detail (PreviewViewController → OrderViewModel.updateReadyToDeliverStatus)
+    func testReadyToDeliverToggleSendsOnlyTheFlag() throws {
+        for value in [true, false] {
+            let data = try JSONEncoder().encode(UpdateOrderRequest.updateReadyToDeliver(value))
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            XCTAssertEqual(json.count, 1, "\(json)")
+            XCTAssertEqual(json["isReadyToDeliver"] as? Bool, value)
+        }
+    }
 }

@@ -70,6 +70,11 @@ struct StatusErrorOutcome: Equatable {
 enum OrderDetailLogic {
     static let maxNotePhotos = 5
 
+    /// "Sẵn sàng giao" (#470): a rental not handed over yet, for users who may update orders
+    static func showsReadyToDeliver(orderType: OrderType, status: OrderStatus, canUpdateOrders: Bool) -> Bool {
+        canUpdateOrders && orderType == .rent && status == .reserved
+    }
+
     static func actions(orderType: OrderType, status: OrderStatus, canManageOrders: Bool,
                         canDeleteCancelled: Bool) -> OrderDetailActions {
         let primary: OrderPrimaryAction
