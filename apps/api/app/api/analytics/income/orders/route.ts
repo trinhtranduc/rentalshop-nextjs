@@ -148,6 +148,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,
+        lateFee: true,
         outletId: true,
         customerId: true,
         pickupPlanAt: true,
@@ -273,6 +274,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         depositAmount: order.depositAmount || 0,
         securityDeposit: order.securityDeposit || 0,
         damageFee: order.damageFee || 0,
+        lateFee: order.lateFee || 0,
         createdAt: order.createdAt,
         pickedUpAt: order.pickedUpAt,
         returnedAt: order.returnedAt,
@@ -307,7 +309,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         where: expectedPickupWhereClause,
         select: {
           id: true, orderNumber: true, orderType: true, status: true, outletId: true, customerId: true,
-          totalAmount: true, depositAmount: true, securityDeposit: true, damageFee: true,
+          totalAmount: true, depositAmount: true, securityDeposit: true, damageFee: true, lateFee: true,
           createdAt: true, pickupPlanAt: true, returnPlanAt: true,
           customer: { select: { firstName: true, lastName: true, phone: true } },
           outlet: { select: { id: true, name: true } }
@@ -362,7 +364,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         where: expectedReturnWhereClause,
         select: {
           id: true, orderNumber: true, orderType: true, status: true, outletId: true, customerId: true,
-          totalAmount: true, depositAmount: true, securityDeposit: true, damageFee: true,
+          totalAmount: true, depositAmount: true, securityDeposit: true, damageFee: true, lateFee: true,
           createdAt: true, pickupPlanAt: true, returnPlanAt: true,
           customer: { select: { firstName: true, lastName: true, phone: true } },
           outlet: { select: { id: true, name: true } }
