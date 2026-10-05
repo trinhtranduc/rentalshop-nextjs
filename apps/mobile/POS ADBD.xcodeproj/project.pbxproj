@@ -165,6 +165,7 @@
 		04FBE0D22EDED09E0057EDF8 /* RCCustomNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */; };
 		0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */; };
 		A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */; };
+		A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A1 /* CartNotePhotosTests.swift */; };
 		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
 		17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */; };
 		17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A0C2121B33928148F209CE /* TabsV2APIService.swift */; };
@@ -539,6 +540,7 @@
 		5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBDTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogicTests.swift; sourceTree = "<group>"; };
 		A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNotesV2Tests.swift; sourceTree = "<group>"; };
+		A4800480F0000000000000A1 /* CartNotePhotosTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartNotePhotosTests.swift; sourceTree = "<group>"; };
 		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
 		64454969BCB62EEB55223203 /* OverviewV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2.swift; sourceTree = "<group>"; };
 		652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Views.swift; sourceTree = "<group>"; };
@@ -974,6 +976,7 @@
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
+				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
 				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
@@ -1772,6 +1775,7 @@
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
+				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
 				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
