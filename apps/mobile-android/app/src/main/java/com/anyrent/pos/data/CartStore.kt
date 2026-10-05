@@ -7,6 +7,7 @@ import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.orders.OrderPlanDays
+import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.domain.products.PricingTypes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -198,13 +199,23 @@ object CartStore {
             if (existing >= 0) {
                 current.toMutableList().also {
                     val line = it[existing]
-                    it[existing] = line.copy(quantity = line.quantity + quantity)
+                    // A stale line takes the product's prices (#473)
+                    it[existing] = CartV2Logic.withFreshPricing(line.copy(quantity = line.quantity + quantity), product)
                 }
             } else {
                 current + CartLine(product = product, quantity = quantity, rentalDays = days, isSale = sale)
             }
         }
         refreshAutoDeposit()
+        persist()
+    }
+
+    /** #473 — lines of [product] take its current prices when it has both and they do not offer both yet */
+    fun refreshPricing(product: Product) {
+        val before = _lines.value
+        val after = before.map { if (it.product.id == product.id) CartV2Logic.withFreshPricing(it, product) else it }
+        if (after == before) return
+        _lines.value = after
         persist()
     }
 
