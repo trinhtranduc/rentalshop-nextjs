@@ -72,6 +72,8 @@ import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.domain.products.FreeStripDay
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductDetailLogic
+import com.anyrent.pos.domain.products.ProductImageViewerRequest
+import com.anyrent.pos.domain.products.ProductImages
 import com.anyrent.pos.domain.products.ProductOrderRowState
 import com.anyrent.pos.domain.products.ProductOrdersChip
 import com.anyrent.pos.domain.products.ProductPricing
@@ -82,6 +84,7 @@ import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppSecondaryButton
+import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.ui.common.StatusBadge
@@ -121,9 +124,11 @@ fun ProductDetailScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+    var viewer by remember { mutableStateOf<ProductImageViewerRequest?>(null) }
     val scope = rememberCoroutineScope()
     val added = stringResource(R.string.v2_added_to_cart)
     val deletedText = stringResource(R.string.v2_product_deleted)
+    val viewLabel = stringResource(R.string.v2_view_image_hint)
 
     LaunchedEffect(productId, reloadKey) {
         withContext(Dispatchers.IO) { ApiClient.get().getProduct(productId) }
@@ -168,14 +173,18 @@ fun ProductDetailScreen(
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             // Photos with back / edit on top
-            val urls = current.images.ifEmpty { listOfNotNull(current.imageUrl) }
+            val urls = ProductImages.viewerUrls(current)
             Box(Modifier.fillMaxWidth().aspectRatio(1.6f).background(V2Colors.Chip)) {
                 if (urls.isEmpty()) {
                     Icon(Icons.Outlined.Checkroom, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(64.dp).align(Alignment.Center))
                 } else {
                     val pager = rememberPagerState { urls.size }
                     HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
-                        AsyncImage(model = urls[page], contentDescription = current.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        // #472: a tap opens the photo full screen
+                        AsyncImage(
+                            model = urls[page], contentDescription = current.name, contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize().clickable(onClickLabel = viewLabel) { viewer = ProductImages.detailTap(current, page) },
+                        )
                     }
                     if (urls.size > 1) {
                         Text(
@@ -323,6 +332,7 @@ fun ProductDetailScreen(
         )
     }
     deleteError?.let { AppAlertError(message = it, onDismiss = { deleteError = null }) }
+    viewer?.let { FullScreenImagePreview(models = it.urls, startIndex = it.startIndex, onDismiss = { viewer = null }) }
 
     if (showEdit && current != null) {
         AppFormSheet(onDismiss = { showEdit = false }, fullScreen = true) {
