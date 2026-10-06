@@ -10,6 +10,7 @@ jest.mock('@rentalshop/utils', () => ({
   ...(jest.requireActual('../packages/utils/src/core/rental-days') as object),
 }));
 import {
+  pickOutlet,
   addProduct,
   buildPayload,
   canEditOrder,
@@ -26,6 +27,11 @@ import {
   hydrateLines,
   imagesOf,
   lineFromProduct,
+  lineModes,
+  lineTotal,
+  needsPrice,
+  selectMode,
+  setLinePrice,
   quickDays,
   rentalDays,
   repriceLines,
@@ -289,5 +295,112 @@ describe('edit', () => {
     expect(canEditOrder({ orderType: 'RENT', status: 'PICKUPED' })).toBe(false);
     expect(canEditOrder({ orderType: 'SALE', status: 'COMPLETED' })).toBe(true);
     expect(canEditOrder({ orderType: 'SALE', status: 'CANCELLED' })).toBe(false);
+  });
+});
+
+// #556: Theo lần / Theo ngày and a price for this order on every rent line (iOS CartItem.selectPricingType)
+describe('pricing mode and price for this order', () => {
+  it('offers Theo lần and Theo ngày on every rent line, then other option types', () => {
+    expect(lineModes(lineFromProduct(VEST, 'RENT'))).toEqual(['FIXED', 'DAILY']);
+    const hourly = { ...AO_DAI, pricingOptions: [...(AO_DAI.pricingOptions || []), { id: 3, type: 'HOURLY', price: 50_000 }] };
+    expect(lineModes(lineFromProduct(hourly, 'RENT'))).toEqual(['FIXED', 'DAILY', 'HOURLY']);
+  });
+
+  it('switches to the option price, or 0 for a mode the product has no price for', () => {
+    let lines = selectMode([lineFromProduct(AO_DAI, 'RENT')], 11, 'FIXED');
+    expect(lines[0]).toMatchObject({ pricingType: 'FIXED', unitPrice: 250_000, selectedPricingOptionId: 1 });
+    // Vest has a rent price only (FIXED, no option): Theo ngày starts empty and needs a price
+    lines = selectMode([lineFromProduct(VEST, 'RENT')], 12, 'DAILY');
+    expect(lines[0]).toMatchObject({ pricingType: 'DAILY', unitPrice: 0, selectedPricingOptionId: null });
+    expect(needsPrice(lines[0], 'RENT')).toBe(true);
+    expect(needsPrice(lines[0], 'SALE')).toBe(false);
+    // Back to Theo lần keeps the price it had (iOS legacy option)
+    expect(selectMode(lines, 12, 'FIXED')[0]).toMatchObject({ pricingType: 'FIXED', unitPrice: 300_000 });
+  });
+
+  it('keeps a typed price per mode, independently', () => {
+    let lines = setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 120_000); // DAILY
+    expect(lines[0]).toMatchObject({ pricingType: 'DAILY', unitPrice: 120_000, selectedPricingOptionId: 2 });
+    lines = selectMode(lines, 11, 'FIXED');
+    expect(lines[0].unitPrice).toBe(250_000);
+    lines = setLinePrice(lines, 11, 200_000);
+    lines = selectMode(lines, 11, 'DAILY');
+    expect(lines[0].unitPrice).toBe(120_000);
+    lines = selectMode(lines, 11, 'FIXED');
+    expect(lines[0].unitPrice).toBe(200_000);
+    // The product's own prices never change
+    expect(lines[0].product.pricingOptions.map((o) => o.price)).toEqual([250_000, 150_000]);
+    expect(setLinePrice(lines, 11, -5)[0].unitPrice).toBe(0);
+  });
+
+  it('totals qty × price, × days only for Theo ngày', () => {
+    let lines = setQuantity(setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 100_000), 11, 2);
+    expect(lineTotal(lines[0], 'RENT', 3)).toBe(600_000);
+    lines = setLinePrice(selectMode(lines, 11, 'FIXED'), 11, 180_000);
+    expect(lineTotal(lines[0], 'RENT', 3)).toBe(360_000);
+  });
+
+  it('keeps a typed rent price through Thuê → Bán → Thuê', () => {
+    let lines = setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 99_000);
+    lines = repriceLines(lines, 'SALE');
+    expect(lines[0].unitPrice).toBe(900_000);
+    lines = repriceLines(lines, 'RENT');
+    expect(lines[0]).toMatchObject({ pricingType: 'DAILY', unitPrice: 99_000 });
+  });
+
+  it('keeps a saved order price when switching mode and back', () => {
+    const draft = draftFromOrder(
+      { orderType: 'RENT', orderItems: [{ productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 140_000, pricingType: 'DAILY' }] },
+      getLocalDateKey,
+    );
+    let lines = hydrateLines(draft.lines, [AO_DAI]);
+    lines = selectMode(selectMode(lines, 11, 'FIXED'), 11, 'DAILY');
+    expect(lines[0].unitPrice).toBe(140_000);
+  });
+
+  it('blocks create while a rent line has no price', () => {
+    const lines = selectMode([lineFromProduct(VEST, 'RENT')], 12, 'DAILY');
+    const base = { orderType: 'RENT' as const, pickup: '2026-10-07', ret: '2026-10-09', customerId: 5, outletId: 1 };
+    expect(firstMissing({ ...base, lines })).toBe('price');
+    expect(firstMissing({ ...base, lines: setLinePrice(lines, 12, 80_000) })).toBeNull();
+  });
+
+  it('sends the mode, and the option id only when the product has that mode', () => {
+    const base = {
+      mode: 'create' as const,
+      orderType: 'RENT' as const,
+      customerId: 5,
+      outletId: 1,
+      pickup: '2026-10-07',
+      ret: '2026-10-09',
+      discountType: 'amount' as const,
+      discountValue: 0,
+      depositAmount: null,
+      securityDeposit: 0,
+      notes: '',
+    };
+    const daily = setLinePrice(selectMode([lineFromProduct(VEST, 'RENT')], 12, 'DAILY'), 12, 80_000);
+    const item = buildPayload({ ...base, lines: daily }).orderItems[0];
+    expect(item).toMatchObject({ pricingType: 'DAILY', unitPrice: 80_000, totalPrice: 240_000, rentDays: 3 });
+    expect(item).not.toHaveProperty('pricingOptionId');
+    const fixed = setLinePrice(selectMode([lineFromProduct(AO_DAI, 'RENT')], 11, 'FIXED'), 11, 200_000);
+    expect(buildPayload({ ...base, lines: fixed }).orderItems[0]).toMatchObject({ pricingType: 'FIXED', unitPrice: 200_000, totalPrice: 200_000, pricingOptionId: 1 });
+    // Another option type goes as FIXED without its id (the API takes FIXED, HOURLY, DAILY)
+    const block = { ...AO_DAI, pricingOptions: [{ id: 9, type: 'BLOCK', price: 70_000, isDefault: true }] };
+    const blockItem = buildPayload({ ...base, lines: [lineFromProduct(block, 'RENT')] }).orderItems[0];
+    expect(blockItem).toMatchObject({ pricingType: 'FIXED', unitPrice: 70_000 });
+    expect(blockItem).not.toHaveProperty('pricingOptionId');
+  });
+});
+
+describe('outlet for a new order (owner: "phải có outlet mặc định")', () => {
+  const list = [{ id: 3 }, { id: 1, isDefault: true }];
+  it('keeps a valid choice, else the user outlet, else the default, else the first', () => {
+    expect(pickOutlet(3, null, list)).toBe(3);
+    expect(pickOutlet(null, 3, list)).toBe(3);
+    expect(pickOutlet(null, null, list)).toBe(1);
+    expect(pickOutlet(99, null, list)).toBe(1);
+    expect(pickOutlet(null, null, [{ id: 7 }, { id: 8 }])).toBe(7);
+    expect(pickOutlet(null, 5, [])).toBe(5);
   });
 });

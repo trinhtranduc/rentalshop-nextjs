@@ -9,7 +9,8 @@ import { customersApi } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
 import { outlineBtn, primaryBtn, type Money, type T } from '../list/parts';
-import { checkDays, quickDays, rentalDays, type CartLine, type CustomerPick, type OrderType, type Stock } from './create-model';
+import { dayMark, monthCells, monthOf, pickDay, shiftMonth, type DayRangePick } from './calendar-model';
+import { checkDays, lineModes, needsPrice, quickDays, rentalDays, type CartLine, type CustomerPick, type OrderType, type Stock } from './create-model';
 
 export const fieldClass =
   'h-11 w-full rounded-xl border border-ar-line-strong bg-ar-surface px-3 text-base text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none';
@@ -25,6 +26,7 @@ export function Modal({
   children,
   footer,
   closeLabel,
+  wide = false,
 }: {
   open: boolean;
   title: string;
@@ -32,6 +34,8 @@ export function Modal({
   children: React.ReactNode;
   footer?: React.ReactNode;
   closeLabel: string;
+  /** Room for two calendar months side by side */
+  wide?: boolean;
 }) {
   const id = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -54,7 +58,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={id}
-        className="relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-ar-surface text-ar-ink shadow-xl sm:max-w-[480px] sm:rounded-2xl"
+        className={`relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-ar-surface text-ar-ink shadow-xl sm:rounded-2xl ${wide ? 'sm:max-w-[720px]' : 'sm:max-w-[480px]'}`}
       >
         <div className="flex items-center justify-between gap-3 border-b border-ar-line-soft px-5 py-4">
           <h2 id={id} className="m-0 text-lg font-bold">
@@ -119,6 +123,7 @@ export function DaysDialog({
       title={t('editor.days.title')}
       onClose={onClose}
       closeLabel={t('editor.close')}
+      wide
       footer={
         <>
           <button type="button" className={outlineBtn} onClick={onClose}>
@@ -150,25 +155,17 @@ export function DaysDialog({
             );
           })}
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
-            {t('editor.days.pickup')}
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => {
-                const v = e.target.value;
-                setFrom(v);
-                if (v && (!to || to < v)) setTo(v);
-              }}
-              className={fieldClass}
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
-            {t('editor.days.return')}
-            <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className={fieldClass} />
-          </label>
-        </div>
+        <RangeCalendar
+          from={from}
+          to={to}
+          todayKey={todayKey}
+          weekdays={weekdays}
+          onPick={(r) => {
+            setFrom(r.from);
+            setTo(r.to);
+          }}
+          t={t}
+        />
         <p className={`m-0 text-sm ${problem && problem !== 'missing' ? 'text-ar-danger' : 'text-ar-muted'}`} role="status">
           {problem === 'reversed'
             ? t('editor.days.reversed')
@@ -184,6 +181,104 @@ export function DaysDialog({
         </p>
       </div>
     </Modal>
+  );
+}
+
+/**
+ * One range calendar (#556), like the old form's date range picker: click the pickup day, then the return day.
+ * Monday-first, today ringed, past days allowed; two months side by side on wide screens, one on phones.
+ */
+function RangeCalendar({
+  from,
+  to,
+  todayKey,
+  weekdays,
+  onPick,
+  t,
+}: {
+  from: string;
+  to: string;
+  todayKey: string;
+  weekdays: string[];
+  onPick: (range: DayRangePick) => void;
+  t: T;
+}) {
+  const [month, setMonth] = useState(() => monthOf(from || todayKey));
+  const [hover, setHover] = useState<string | null>(null);
+  const range = { from, to };
+  // Monday-first headers from the Sunday-first list ("CN,T2,…,T7")
+  const heads = [1, 2, 3, 4, 5, 6, 0].map((i) => weekdays[i] ?? '');
+  const renderMonth = (m: string, extra = '') => {
+    const [y, mm] = m.split('-').map(Number);
+    return (
+      <div key={m} className={`min-w-0 flex-1 ${extra}`}>
+        <div className="pb-2 text-center text-[15px] font-semibold">{t('editor.days.month', { month: mm, year: y })}</div>
+        <div className="grid grid-cols-7 text-center text-xs text-ar-muted">
+          {heads.map((h, i) => (
+            <span key={i} className="pb-1">
+              {h}
+            </span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7" onMouseLeave={() => setHover(null)}>
+          {monthCells(m).map((key, i) => {
+            if (!key) return <span key={`e${i}`} />;
+            const mark = dayMark(range, key, hover);
+            const ends = mark === 'start' || mark === 'end' || mark === 'single';
+            return (
+              <span
+                key={key}
+                className={`flex h-10 items-center justify-center ${mark === 'inside' ? 'bg-ar-primary-soft' : ''} ${
+                  mark === 'start' ? 'rounded-l-full bg-ar-primary-soft' : ''
+                } ${mark === 'end' ? 'rounded-r-full bg-ar-primary-soft' : ''}`}
+              >
+                <button
+                  type="button"
+                  aria-pressed={!!mark && mark !== 'inside'}
+                  aria-label={key.split('-').reverse().join('/')}
+                  onClick={() => onPick(pickDay(range, key))}
+                  onMouseEnter={() => from && !to && setHover(key)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm tabular-nums ${
+                    ends
+                      ? 'bg-ar-primary font-bold text-ar-on-primary'
+                      : `${mark === 'inside' ? 'text-ar-primary-ink' : 'text-ar-ink'} hover:bg-ar-subtle`
+                  } ${key === todayKey && !ends ? 'font-bold ring-1 ring-inset ring-ar-primary' : ''}`}
+                >
+                  {Number(key.slice(8))}
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setMonth((m) => shiftMonth(m, -1))}
+          aria-label={t('editor.days.prev')}
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-ar-ink hover:bg-ar-subtle"
+        >
+          <ShellIcon d={ICONS.chevronLeft} size={18} />
+        </button>
+        <span className="text-sm text-ar-muted">{from && !to ? t('editor.days.pickReturn') : t('editor.days.pickPickup')}</span>
+        <button
+          type="button"
+          onClick={() => setMonth((m) => shiftMonth(m, 1))}
+          aria-label={t('editor.days.next')}
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-ar-ink hover:bg-ar-subtle"
+        >
+          <ShellIcon d="M9 6l6 6-6 6" size={18} />
+        </button>
+      </div>
+      <div className="flex gap-6">
+        {renderMonth(month)}
+        {renderMonth(shiftMonth(month, 1), 'max-sm:hidden')}
+      </div>
+    </div>
   );
 }
 
@@ -433,14 +528,21 @@ export function ProductCard({
 // Cart line
 // ----------------------------------------------------------------------------
 
+/** What the cart says about a line's units for the chosen days (#556). */
+export type LineStatus = { kind: 'conflict' | 'short' | 'ok'; text: string } | null;
+
+const MODE_KEYS = ['FIXED', 'DAILY', 'HOURLY'];
+const modeKey = (type: string) => (MODE_KEYS.includes(type) ? type : 'OTHER');
+
 export function CartLineRow({
   line,
   orderType,
   total,
   days,
-  free,
+  status,
   onQuantity,
-  onOption,
+  onMode,
+  onPrice,
   t,
   money,
 }: {
@@ -448,15 +550,21 @@ export function CartLineRow({
   orderType: OrderType;
   total: number;
   days: number;
-  free: number | null;
+  status: LineStatus;
   onQuantity: (q: number) => void;
-  onOption: (optionId: number) => void;
+  onMode: (mode: string) => void;
+  onPrice: (price: number) => void;
   t: T;
   money: Money;
 }) {
-  const options = orderType === 'RENT' ? line.product.pricingOptions.filter((o) => o.id != null) : [];
-  const type = orderType === 'RENT' ? line.pricingType : 'SALE';
-  const over = free != null && line.quantity > free;
+  const rent = orderType === 'RENT';
+  const type = rent ? line.pricingType : 'SALE';
+  const [editing, setEditing] = useState(false);
+  const panelId = useId();
+  const missingPrice = needsPrice(line, orderType);
+  const chip = missingPrice
+    ? t('editor.pricing.chipEmpty', { mode: t(`editor.pricing.mode.${modeKey(type)}`, { type }) })
+    : t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) });
   return (
     <div className="flex flex-col gap-2 border-t border-ar-line-soft py-3">
       <div className="flex items-start gap-2">
@@ -464,25 +572,22 @@ export function CartLineRow({
         <span className="text-[15px] font-bold tabular-nums text-ar-ink">{money(total)}</span>
       </div>
       <div className="flex items-center gap-2">
-        {options.length > 1 ? (
-          <select
-            value={line.selectedPricingOptionId ?? ''}
-            onChange={(e) => onOption(Number(e.target.value))}
+        {rent ? (
+          <button
+            type="button"
+            aria-expanded={editing}
+            aria-controls={panelId}
+            onClick={() => setEditing((v) => !v)}
             aria-label={t('editor.cart.priceFor', { name: line.name })}
-            className="h-9 min-w-0 flex-1 cursor-pointer rounded-[10px] border border-ar-line-strong bg-ar-surface px-2.5 text-sm text-ar-ink"
+            className={`flex h-9 min-w-0 flex-1 items-center justify-between gap-1 rounded-[10px] border px-2.5 text-left text-sm ${
+              missingPrice ? 'border-ar-danger text-ar-danger' : 'border-ar-line-strong text-ar-ink'
+            } bg-ar-surface hover:bg-ar-subtle`}
           >
-            {options.map((o) => (
-              <option key={o.id as number} value={o.id as number}>
-                {t(`editor.option.${o.type.toUpperCase()}`, {
-                  price: money(o.price),
-                })}
-              </option>
-            ))}
-          </select>
+            <span className="truncate">{chip}</span>
+            <ShellIcon d={editing ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={16} />
+          </button>
         ) : (
-          <span className="min-w-0 flex-1 truncate text-sm text-ar-muted">
-            {t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) })}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-sm text-ar-muted">{t('editor.option.SALE', { price: money(line.unitPrice) })}</span>
         )}
         <div className="flex h-9 flex-none items-center rounded-[10px] border border-ar-line-strong">
           <button
@@ -504,7 +609,42 @@ export function CartLineRow({
           </button>
         </div>
       </div>
-      {type === 'DAILY' && days > 1 && (
+      {rent && editing && (
+        <div id={panelId} className="flex flex-col gap-2.5 rounded-xl bg-ar-subtle p-3">
+          <span className="text-sm font-semibold text-ar-ink">{t('editor.pricing.title')}</span>
+          <div role="radiogroup" aria-label={t('editor.pricing.title')} className="flex rounded-[10px] bg-ar-surface p-0.5">
+            {lineModes(line).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={type === m}
+                onClick={() => onMode(m)}
+                className={`h-9 min-w-0 flex-1 truncate rounded-[8px] px-2 text-sm ${
+                  type === m ? 'bg-ar-primary-soft font-bold text-ar-primary-ink' : 'font-medium text-ar-muted hover:text-ar-ink'
+                }`}
+              >
+                {t(`editor.pricing.mode.${modeKey(m)}`, { type: m })}
+              </button>
+            ))}
+          </div>
+          <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
+            {t('editor.pricing.price')}
+            <MoneyInput
+              value={line.unitPrice}
+              onChange={onPrice}
+              label={t('editor.pricing.priceFor', { name: line.name })}
+              suffix={t(`editor.pricing.unit.${modeKey(type)}`)}
+              className={missingPrice ? '[&_input]:border-ar-danger' : ''}
+            />
+          </label>
+          <span className="text-xs text-ar-muted">{t('editor.pricing.note')}</span>
+          <button type="button" onClick={() => setEditing(false)} className={`${outlineBtn} self-end`}>
+            {t('editor.pricing.done')}
+          </button>
+        </div>
+      )}
+      {rent && type === 'DAILY' && days > 1 && !missingPrice && (
         <span className="text-xs tabular-nums text-ar-muted">
           {t('editor.cart.perDayTimes', {
             price: money(line.unitPrice),
@@ -513,9 +653,18 @@ export function CartLineRow({
           })}
         </span>
       )}
-      {over && (
-        <span className="text-sm text-ar-danger" role="status">
-          {free! > 0 ? t('editor.cart.onlyLeft', { free: free! }) : t('editor.cart.noneLeft')}
+      {status && (
+        <span
+          role="status"
+          className={
+            status.kind === 'ok'
+              ? 'text-sm text-ar-done'
+              : status.kind === 'conflict'
+                ? 'w-fit rounded-md bg-ar-danger-soft px-2 py-0.5 text-sm font-semibold text-ar-danger'
+                : 'text-sm text-ar-danger'
+          }
+        >
+          {status.text}
         </span>
       )}
     </div>
@@ -549,7 +698,7 @@ export function MoneyInput({
         value={value ? group(value) : ''}
         placeholder="0"
         onChange={(e) => onChange(Number(e.target.value.replace(/\D/g, '')) || 0)}
-        className={`${fieldClass} tabular-nums ${suffix ? 'pr-9' : ''}`}
+        className={`${fieldClass} tabular-nums ${suffix ? (suffix.length > 2 ? 'pr-20' : 'pr-9') : ''}`}
       />
       {suffix && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ar-muted">{suffix}</span>}
     </span>
