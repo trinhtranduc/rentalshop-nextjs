@@ -61,7 +61,8 @@ export interface ChangeTimelinePage {
 
 /**
  * One page of readable entries, newest first, plus the total row count and the newest instant
- * (for "6 lần thay đổi · gần nhất 15:10"). `outletId` limits rows to those written in that outlet.
+ * (for "6 lần thay đổi · gần nhất 15:10"). `outletId` limits rows to those written in that outlet
+ * plus shop-level rows (no outlet, e.g. the owner's price edits), which apply to every outlet.
  * Only names and roles of users are read: no email, IP or user agent.
  */
 export async function loadChangeTimeline(
@@ -69,7 +70,7 @@ export async function loadChangeTimeline(
   params: { entityType: ChangeEntityType; entityId: number; outletId?: number | null; limit: number; offset: number }
 ): Promise<ChangeTimelinePage> {
   const where: Record<string, unknown> = { entityType: params.entityType, entityId: String(params.entityId) };
-  if (params.outletId != null) where.outletId = params.outletId;
+  if (params.outletId != null) where.OR = [{ outletId: params.outletId }, { outletId: null }];
   const orderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
 
   const [rows, total, latest] = await Promise.all([

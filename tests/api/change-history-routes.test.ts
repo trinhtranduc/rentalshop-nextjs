@@ -27,8 +27,10 @@ const owner = { id: 2, email: 'owner@shop.vn', firstName: 'Minh', lastName: 'Tr�
 const orderSnap = (o: any) => ({ status: 'RESERVED', totalAmount: 1000000, depositAmount: 0, returnPlanAt: '2026-10-04T17:00:00.000Z', items: [], ...o });
 let auditRows: any[] = [];
 
-function matches(row: any, where: any) {
-  return Object.entries(where).every(([k, v]) => row[k] === v);
+function matches(row: any, where: any): boolean {
+  return Object.entries(where).every(([k, v]) =>
+    k === 'OR' ? (v as any[]).some((w) => matches(row, w)) : row[k] === v
+  );
 }
 const mockPrisma = {
   order: { findUnique: jest.fn(async ({ where }: any) => orders[where.id] ?? null) },
@@ -125,6 +127,11 @@ beforeEach(() => {
     row(11, 'Product', 10, 'UPDATE', '2026-10-06T05:00:00Z', {
       oldValues: { name: 'Áo', rentPrice: 350000 }, newValues: { name: 'Áo', rentPrice: 300000 },
     }, owner, null),
+    // Stock change made in another outlet of the same shop
+    row(12, 'Product', 10, 'UPDATE', '2026-10-06T03:00:00Z', {
+      oldValues: { name: 'Áo', outletStock: [{ outletId: 3, outletName: 'Chi nhánh 2', stock: 2 }] },
+      newValues: { name: 'Áo', outletStock: [{ outletId: 3, outletName: 'Chi nhánh 2', stock: 5 }] },
+    }, owner, 3),
   ];
 });
 
@@ -178,7 +185,7 @@ describe('GET /api/products/:id/history scope (#519)', () => {
     const res: any = await productHistory(req('http://x/api/products/10/history'), { params: { id: '10' } });
     expect(res.status).toBe(200);
     expect(Object.keys(res.body).sort()).toEqual(['data', 'pagination', 'success']);
-    expect(res.body.data).toHaveLength(2);
+    expect(res.body.data).toHaveLength(3);
   });
 });
 
@@ -242,17 +249,18 @@ describe('GET /api/products/:id/changes (#519)', () => {
   it('owner sees all rows', async () => {
     const res: any = await productChanges(req('http://x/api/products/10/changes'), { params: { id: '10' } });
     expect(res.status).toBe(200);
-    expect(res.body.data.total).toBe(2);
-    expect(res.body.data.entries.map((e: any) => e.kind)).toEqual(['PRODUCT_PRICE', 'PRODUCT_STOCK']);
+    expect(res.body.data.total).toBe(3);
+    expect(res.body.data.entries.map((e: any) => e.kind)).toEqual(['PRODUCT_PRICE', 'PRODUCT_STOCK', 'PRODUCT_STOCK']);
     expect(res.body.data.entries[1].changes).toEqual([{ field: 'stock.Chi nhánh chính', from: 3, to: 4 }]);
   });
 
-  it('outlet staff only see rows recorded in their outlet', async () => {
+  it('outlet staff see rows of their outlet and shop-level rows, never another outlet', async () => {
     ctx = staffOutlet1;
     const res: any = await productChanges(req('http://x/api/products/10/changes'), { params: { id: '10' } });
-    expect(res.body.data.total).toBe(1);
-    expect(res.body.data.entries.map((e: any) => e.id)).toEqual([10]);
-    expect(res.body.data.latestAt).toBe('2026-10-06T04:00:00.000Z');
+    expect(res.body.data.total).toBe(2);
+    // 11: owner's price edit (no outlet) applies to every outlet; 12 (outlet 3) is hidden
+    expect(res.body.data.entries.map((e: any) => e.id)).toEqual([11, 10]);
+    expect(res.body.data.latestAt).toBe('2026-10-06T05:00:00.000Z');
   });
 
   it('404 for a product of another merchant', async () => {
