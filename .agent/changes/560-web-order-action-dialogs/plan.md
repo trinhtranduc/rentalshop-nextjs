@@ -10,3 +10,7 @@
 4. `locales/{en,vi}/orders.json` — `web.detail.dialog.*`.
 5. Verify: tsc, eslint, Jest both TZ, Playwright (stubbed writes, bodies logged before/after),
    light/dark 1440/390, OUTLET_STAFF.
+6. Owner answers (intent decision log): money model in `orders-model.ts` (`handOverMoney`, `returnMoney`,
+   `orderBalance`, `buildPaySummary` as iOS); `actions-model.ts` builds dialog rows, `returnFeesUpdate`,
+   `canCancelOrder`; PaymentCard redrawn; late fee input; tests extended; real PUT/cancel on own orders.
+7. Seed text: separate issue / PR off `origin/dev`.
