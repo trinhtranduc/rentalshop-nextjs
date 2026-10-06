@@ -4,7 +4,7 @@
 //
 //  Redesigned overview (#374): period presets in the device time zone, GET /api/analytics/period, and the
 //  "now" figures of GET /api/analytics/outlet-operations (`overdueReturns.count`, `cash.depositsHeld`).
-//  #492: `revenue.collectedBreakdown` (optional, newer API).
+//  #492: `revenue.collectedBreakdown` and `growth.orderValue` (optional, newer API).
 //
 
 import Foundation
@@ -281,6 +281,8 @@ struct OverviewReport: Decodable, Equatable {
     let collectedBreakdown: CollectedBreakdown?
     /// % change of revenue against the previous period of the same length
     let revenueGrowth: Double?
+    /// % change of the new orders' value against the previous period (`growth.orderValue.growth`, #492); nil on an older API
+    let orderValueGrowth: Double?
     /// Orders created in the period (`operational.orderCounts.new`)
     let newOrders: Int?
     let series: [Point]
@@ -289,14 +291,15 @@ struct OverviewReport: Decodable, Equatable {
     private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts }
     private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding,
                                                          collectedBreakdown }
-    private enum GrowthKeys: String, CodingKey { case collected, revenue }
+    private enum GrowthKeys: String, CodingKey { case collected, revenue, orderValue }
     private enum ChangeKeys: String, CodingKey { case growth }
     private enum OperationalKeys: String, CodingKey { case orderCounts }
     private enum CountKeys: String, CodingKey { case new }
 
     init(netRevenue: Double, revenueGrowth: Double?, newOrders: Int?, series: [Point], topProducts: [TopProduct],
          totalOrderValue: Double? = nil, outstanding: Double? = nil,
-         collectedBreakdown: CollectedBreakdown? = nil) {
+         collectedBreakdown: CollectedBreakdown? = nil, orderValueGrowth: Double? = nil) {
+        self.orderValueGrowth = orderValueGrowth
         self.netRevenue = netRevenue
         self.collectedBreakdown = collectedBreakdown
         self.totalOrderValue = totalOrderValue
@@ -321,7 +324,13 @@ struct OverviewReport: Decodable, Equatable {
             outstanding = nil
             collectedBreakdown = nil
         }
-        if let growth = try? c.nestedContainer(keyedBy: GrowthKeys.self, forKey: .growth),
+        let growthGroup = try? c.nestedContainer(keyedBy: GrowthKeys.self, forKey: .growth)
+        if let growthGroup, let orderValue = try? growthGroup.nestedContainer(keyedBy: ChangeKeys.self, forKey: .orderValue) {
+            orderValueGrowth = (try? orderValue.decodeIfPresent(Double.self, forKey: .growth)) ?? nil
+        } else {
+            orderValueGrowth = nil
+        }
+        if let growth = growthGroup,
            let change = (try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .collected))
             ?? (try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .revenue)) {
             revenueGrowth = (try? change.decodeIfPresent(Double.self, forKey: .growth)) ?? nil

@@ -6,8 +6,8 @@
 //  (sheet), net money with per-day bars and the change against the previous period, order figures, top rented.
 //  #484: "Tiền đã thu" with an explanation sheet, Tổng giá trị đơn / Còn phải thu tiles, a Tiền thu | Số đơn chart
 //  toggle, and the rented-out figures open the grouped rented-out list.
-//  #492: "Thực thu" with a "Chi tiết" link to the breakdown sheet, Cọc khi tạo đơn / Thế chân đang giữ tiles
-//  (collateral held moves from the ĐƠN rows into its tile).
+//  #492: the hero is "Tổng giá trị đơn mới" with its change; Thực thu (opens the breakdown sheet) and Còn phải thu
+//  tiles under it; collateral held leaves the ĐƠN rows for the breakdown sheet.
 //
 
 import UIKit
@@ -205,56 +205,37 @@ final class OverviewV2ViewController: BaseViewControler {
 
     private func revenueSection() -> UIView {
         let range = self.range
-        let caption = V2.label("\("overview.v2.collected".localized()) · \(OverviewLogic.longRange(range))",
+        // #492: the hero is the new orders' value; an older API without it keeps Thực thu as the hero
+        let orderValue = report?.totalOrderValue
+        let heroTitle = orderValue != nil ? "overview.v2.newOrderValue".localized() : "overview.v2.collected".localized()
+        let caption = V2.label("\(heroTitle) · \(OverviewLogic.longRange(range))",
                                size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
         let amount = V2.label(size: 30, weight: .bold)
         amount.adjustsFontSizeToFitWidth = true
         amount.minimumScaleFactor = 0.6
-        amount.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        // #492: "Chi tiết ›" on the amount row; the amount opens the same sheet
-        let details = UIButton(type: .system)
-        details.setTitle("overview.v2.details".localized(), for: .normal)
-        details.setTitleColor(DS.Color.primary, for: .normal)
-        details.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
-        details.setImage(DS.symbol("chevron.right", 14, weight: .semibold), for: .normal)
-        details.tintColor = DS.Color.primary
-        details.semanticContentAttribute = .forceRightToLeft
-        details.imageEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: -4)
-        details.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 4)
-        details.addTarget(self, action: #selector(openCollectedDetails), for: .touchUpInside)
-        details.setContentHuggingPriority(.required, for: .horizontal)
-        details.setContentCompressionResistancePriority(.required, for: .horizontal)
-        details.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(DS.touchTarget)
-            make.width.greaterThanOrEqualTo(DS.touchTarget)
-        }
-        // Added once the figures are in (a hidden arranged view would fight its 44pt minimum)
-        let amountRow = UIStackView(arrangedSubviews: [amount])
-        amountRow.alignment = .center
-        amountRow.spacing = DS.Spacing.sm
         let change = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let stack = UIStackView(arrangedSubviews: [caption, amountRow, change])
+        let stack = UIStackView(arrangedSubviews: [caption, amount, change])
         stack.axis = .vertical
         stack.spacing = DS.Gap.lineTight
-        stack.setCustomSpacing(0, after: caption)
-        stack.setCustomSpacing(0, after: amountRow)
 
         if let report {
-            amount.text = MoneyFormatter.format(report.netRevenue)
-            amount.isUserInteractionEnabled = true
-            amount.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openCollectedDetails)))
-            amountRow.addArrangedSubview(details)
-            details.accessibilityLabel = "\("overview.v2.details".localized()), \("overview.v2.collected".localized())"
-            let previous = OverviewLogic.shortRange(OverviewLogic.previous(range))
             let cancelled = "overview.v2.excludesCancelled".localized()
-            if let growth = report.revenueGrowth {
-                change.text = "\(OverviewLogic.changeText(growth)) \(String(format: "overview.v2.vsPrevious".localized(), previous)) · \(cancelled)"
-                change.textColor = growth > 0.05 ? V2.ok : (growth < -0.05 ? V2.danger : DS.Color.textMuted)
+            if let orderValue {
+                amount.text = MoneyFormatter.format(orderValue)
+                change.attributedText = Self.changeLine(growth: report.orderValueGrowth,
+                                                        versus: "overview.v2.vsPreviousPeriod".localized(), cancelled: cancelled)
             } else {
-                change.text = cancelled
+                amount.text = MoneyFormatter.format(report.netRevenue)
+                amount.isUserInteractionEnabled = true
+                amount.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openCollectedDetails)))
+                let previous = OverviewLogic.shortRange(OverviewLogic.previous(range))
+                change.attributedText = Self.changeLine(growth: report.revenueGrowth,
+                                                        versus: String(format: "overview.v2.vsPrevious".localized(), previous),
+                                                        cancelled: cancelled)
             }
             stack.setCustomSpacing(DS.Spacing.md, after: change)
-            if let tiles = moneyTiles(report) {
+            if orderValue != nil {
+                let tiles = moneyTiles(report)
                 stack.addArrangedSubview(tiles)
                 stack.setCustomSpacing(DS.Spacing.md, after: tiles)
             }
@@ -289,44 +270,38 @@ final class OverviewV2ViewController: BaseViewControler {
         return padded(stack, top: 2)
     }
 
-    /// 2×2 tiles (#492): Cọc khi tạo đơn, Thế chân đang giữ (now, from outlet-operations), Tổng giá trị đơn,
-    /// Còn phải thu, each only when the API sent its figure; nil when it sent none
-    private func moneyTiles(_ report: OverviewReport) -> UIView? {
-        var tiles: [UIView] = []
-        if let breakdown = report.collectedBreakdown {
-            tiles.append(moneyTile("overview.v2.depositsAtOrder".localized(), MoneyFormatter.format(breakdown.deposits),
-                                   color: DS.Color.text))
-        }
-        if let held = now?.collateralHeld {
-            let tile = moneyTile("overview.v2.collateralHeld".localized(), MoneyFormatter.format(held),
-                                 color: DS.Color.text, note: "overview.v2.collateralHeldNote".localized())
-            // The collateral is held by the orders out now: the same list as Đang cho thuê
-            tile.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openRentedOut)))
-            tile.accessibilityTraits = UIAccessibilityTraitButton
-            tiles.append(tile)
-        }
-        if let total = report.totalOrderValue {
-            tiles.append(moneyTile("overview.v2.totalOrderValue".localized(), MoneyFormatter.format(total), color: DS.Color.text))
-        }
+    /// "▲ 8% so với kỳ trước · không tính đơn huỷ": the change in green / red, the rest muted; no change → only the rest
+    private static func changeLine(growth: Double?, versus: String, cancelled: String) -> NSAttributedString {
+        let font = Utils.regularFont(size: DS.TextSize.secondary)
+        let muted: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: DS.Color.textMuted]
+        guard let growth else { return NSAttributedString(string: cancelled, attributes: muted) }
+        let color = growth > 0.05 ? V2.ok : (growth < -0.05 ? V2.danger : DS.Color.textMuted)
+        let line = NSMutableAttributedString(string: "\(OverviewLogic.changeText(growth)) \(versus)",
+                                             attributes: [.font: font, .foregroundColor: color])
+        line.append(NSAttributedString(string: " · \(cancelled)", attributes: muted))
+        return line
+    }
+
+    /// Thực thu (opens the breakdown) and Còn phải thu (#492), one row under the hero
+    private func moneyTiles(_ report: OverviewReport) -> UIView {
+        let collectedTitle = "overview.v2.collected".localized()
+        let collectedValue = MoneyFormatter.format(report.netRevenue)
+        let collected = moneyTile(collectedTitle, collectedValue, color: DS.Color.text, note: "overview.v2.collectedNote".localized())
+        collected.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openCollectedDetails)))
+        collected.accessibilityTraits = UIAccessibilityTraitButton
+        collected.accessibilityLabel = "\(collectedTitle) \(collectedValue), \("overview.v2.seeDetails".localized())"
+        var tiles: [UIView] = [collected]
         if let outstanding = report.outstanding {
             tiles.append(moneyTile("overview.v2.outstanding".localized(), MoneyFormatter.format(outstanding),
-                                   color: UIColor(hexString: "B45309")))
+                                   color: UIColor(hexString: "B45309"), note: "overview.v2.outstandingNote".localized()))
+        } else {
+            tiles.append(UIView())
         }
-        guard !tiles.isEmpty else { return nil }
-        let grid = UIStackView()
-        grid.axis = .vertical
-        grid.spacing = DS.Spacing.sm
-        var index = 0
-        while index < tiles.count {
-            let pair = Array(tiles[index..<min(index + 2, tiles.count)])
-            let row = UIStackView(arrangedSubviews: pair.count == 2 ? pair : pair + [UIView()])
-            row.distribution = .fillEqually
-            row.alignment = .fill
-            row.spacing = DS.Spacing.sm
-            grid.addArrangedSubview(row)
-            index += 2
-        }
-        return grid
+        let row = UIStackView(arrangedSubviews: tiles)
+        row.distribution = .fillEqually
+        row.alignment = .fill
+        row.spacing = DS.Spacing.sm
+        return row
     }
 
     private func moneyTile(_ title: String, _ value: String, color: UIColor, note: String? = nil) -> UIView {
@@ -347,7 +322,7 @@ final class OverviewV2ViewController: BaseViewControler {
             column.addArrangedSubview(V2.label(note, size: DS.TextSize.pill, color: DS.Color.textMuted, lines: 0))
         }
         box.addSubview(column)
-        // Top-aligned: a tile next to a taller one (with a note) keeps its text at the top
+        // Top-aligned: a tile next to a taller one keeps its text at the top
         column.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(10)
             make.leading.trailing.equalToSuperview().inset(12)
@@ -362,12 +337,6 @@ final class OverviewV2ViewController: BaseViewControler {
     @objc private func chartModeChanged(_ sender: V2Segmented) {
         chartMode = sender.selectedIndex == 1 ? .orders : .money
         render()
-    }
-
-    @objc private func openRentedOut() {
-        let list = RentedOutOrdersViewController(startsAtLate: false)
-        list.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(list, animated: true)
     }
 
     @objc private func openCollectedDetails() {

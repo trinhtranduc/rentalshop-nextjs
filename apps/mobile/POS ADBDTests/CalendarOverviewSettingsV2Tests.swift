@@ -238,8 +238,26 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertEqual(OverviewReport.CollectedBreakdown(deposits: 0, pickupAndSale: 0, fees: 0, refunds: 120).total, -120)
     }
 
+    func testReportParsingOfOrderValueGrowth() throws {
+        let report = try decode(OverviewReport.self, """
+        {"revenue":{"collected":12450000,"totalOrderValue":15800000},
+         "growth":{"collected":{"current":12450000,"previous":10000000,"growth":24.5},
+                   "orderValue":{"current":15800000,"previous":20000000,"growth":-21}}}
+        """)
+        XCTAssertEqual(report.orderValueGrowth, -21)
+        XCTAssertEqual(report.revenueGrowth, 24.5)
+        XCTAssertEqual(report.totalOrderValue, 15_800_000)
+
+        // Older API: no growth.orderValue, the hero shows no % part
+        let old = try decode(OverviewReport.self, #"{"growth":{"revenue":{"growth":5}}}"#)
+        XCTAssertNil(old.orderValueGrowth)
+        XCTAssertEqual(old.revenueGrowth, 5)
+        XCTAssertNil(try decode(OverviewReport.self, #"{"growth":{"orderValue":null}}"#).orderValueGrowth)
+        XCTAssertNil(try decode(OverviewReport.self, "{}").orderValueGrowth)
+    }
+
     func testReportParsingWithoutBreakdown() throws {
-        // Older API: no breakdown, so the cọc tile and the breakdown rows are hidden
+        // Older API: no breakdown, so the sheet shows only the total
         let old = try decode(OverviewReport.self, #"{"revenue":{"collected":500,"totalOrderValue":800,"outstanding":300}}"#)
         XCTAssertNil(old.collectedBreakdown)
         XCTAssertEqual(old.netRevenue, 500)
@@ -260,10 +278,14 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         let expected: [String: String] = [
             "overview.v2.collected": "Thực thu",
             "overview.v2.chart.money": "Thực thu",
-            "overview.v2.details": "Chi tiết",
+            "overview.v2.newOrderValue": "Tổng giá trị đơn mới",
+            "overview.v2.vsPreviousPeriod": "so với kỳ trước",
+            "overview.v2.collectedNote": "Tiền đã vào tiệm",
+            "overview.v2.outstanding": "Còn phải thu",
+            "overview.v2.outstandingNote": "Của các đơn mới",
+            "overview.v2.seeDetails": "xem chi tiết",
             "overview.v2.depositsAtOrder": "Cọc khi tạo đơn",
             "overview.v2.collateralHeld": "Thế chân đang giữ",
-            "overview.v2.collateralHeldNote": "Sẽ trả lại khách · không tính vào thực thu",
             "overview.v2.detail.body": "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.",
             "overview.v2.detail.pickupAndSale": "Thu khi giao đồ, bán hàng",
             "overview.v2.detail.fees": "Phí hư hỏng, trễ hạn",

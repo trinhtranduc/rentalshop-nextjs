@@ -1749,7 +1749,6 @@
 "overview.v2.noAccess" = "Your account cannot see reports";
 "overview.v2.bars" = "Income per day";
 "overview.v2.collected" = "Real income";
-"overview.v2.totalOrderValue" = "Total order value";
 "overview.v2.outstanding" = "Still to collect";
 "overview.v2.chart.money" = "Real income";
 "overview.v2.chart.orders" = "Orders";
@@ -1757,9 +1756,12 @@
 "overview.v2.barOrders" = "%d orders";
 "overview.v2.barOrders.one" = "%d order";
 "overview.v2.topRentedByValue" = "Most rented · by order value";
-"overview.v2.details" = "Details";
 "overview.v2.depositsAtOrder" = "Deposits at order";
-"overview.v2.collateralHeldNote" = "Goes back to the customer · not in real income";
+"overview.v2.newOrderValue" = "New order value";
+"overview.v2.vsPreviousPeriod" = "vs previous period";
+"overview.v2.collectedNote" = "Money received";
+"overview.v2.outstandingNote" = "From new orders";
+"overview.v2.seeDetails" = "see details";
 "overview.v2.detail.body" = "Money customers actually paid the store, counted on the day it was received.";
 "overview.v2.detail.pickupAndSale" = "Paid at hand-over and sales";
 "overview.v2.detail.fees" = "Damage and late fees";

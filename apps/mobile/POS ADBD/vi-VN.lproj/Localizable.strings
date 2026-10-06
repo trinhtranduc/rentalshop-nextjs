@@ -1747,7 +1747,6 @@
 "overview.v2.noAccess" = "Tài khoản của bạn không xem được báo cáo";
 "overview.v2.bars" = "Tiền thu từng ngày";
 "overview.v2.collected" = "Thực thu";
-"overview.v2.totalOrderValue" = "Tổng giá trị đơn";
 "overview.v2.outstanding" = "Còn phải thu";
 "overview.v2.chart.money" = "Thực thu";
 "overview.v2.chart.orders" = "Số đơn";
@@ -1755,9 +1754,12 @@
 "overview.v2.barOrders" = "%d đơn";
 "overview.v2.barOrders.one" = "%d đơn";
 "overview.v2.topRentedByValue" = "Thuê nhiều nhất · theo giá trị đơn";
-"overview.v2.details" = "Chi tiết";
 "overview.v2.depositsAtOrder" = "Cọc khi tạo đơn";
-"overview.v2.collateralHeldNote" = "Sẽ trả lại khách · không tính vào thực thu";
+"overview.v2.newOrderValue" = "Tổng giá trị đơn mới";
+"overview.v2.vsPreviousPeriod" = "so với kỳ trước";
+"overview.v2.collectedNote" = "Tiền đã vào tiệm";
+"overview.v2.outstandingNote" = "Của các đơn mới";
+"overview.v2.seeDetails" = "xem chi tiết";
 "overview.v2.detail.body" = "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.";
 "overview.v2.detail.pickupAndSale" = "Thu khi giao đồ, bán hàng";
 "overview.v2.detail.fees" = "Phí hư hỏng, trễ hạn";
