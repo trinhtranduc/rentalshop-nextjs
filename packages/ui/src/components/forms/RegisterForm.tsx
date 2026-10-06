@@ -28,6 +28,13 @@ import {
 } from "@rentalshop/ui";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { useLocale } from "next-intl";
+import {
+  shopFieldClass,
+  shopFieldErrorClass,
+  shopIconClass,
+  shopLabelClass,
+  shopPrimaryButtonClass,
+} from "./auth-shop";
 
 // Types for the registration form
 interface RegisterFormData {
@@ -56,6 +63,8 @@ interface RegisterFormProps {
   initialStep?: 1 | 2;
   /** Google OAuth Web Client ID (NEXT_PUBLIC_GOOGLE_CLIENT_ID). If unset, Google signup is hidden. */
   googleOAuthClientId?: string;
+  /** `shop` is the shop web 4A look (#510); the page wraps it in ShopAuthPage. Default `classic` keeps apps/admin unchanged. */
+  appearance?: 'classic' | 'shop';
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({
@@ -65,6 +74,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   registrationError,
   initialStep,
   googleOAuthClientId,
+  appearance = 'classic',
 }) => {
   const router = useRouter();
   const [viewPass, setViewPass] = useState(false);
@@ -299,44 +309,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   }, []);
 
   const googleClientIdTrimmed = googleOAuthClientId?.trim() || '';
+  const isShop = appearance === 'shop';
+  const iconCls = isShop ? shopIconClass : 'absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5';
+  const labelCls = isShop ? shopLabelClass : 'text-sm font-medium text-gray-700';
+  const fieldCls = (invalid: boolean, extra = '') =>
+    isShop
+      ? `${shopFieldClass} ${extra} ${invalid ? shopFieldErrorClass : ''}`
+      : `pl-10 ${extra} ${invalid ? 'border-red-500' : ''}`;
+  const primaryCls = isShop
+    ? shopPrimaryButtonClass
+    : 'w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200';
+  const stepTitle = currentStep === 1 ? t('register.account') : t('register.business');
 
-  const cardInner = (
-    <div className="w-full max-w-md mx-auto relative z-10">
-      <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            {t('register.createMerchantAccount')}
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            {currentStep === 1 
-              ? t('register.step1')
-              : t('register.step2')
-            }
-          </CardDescription>
-          
-          {/* Step Progress Indicator */}
-          <div className="flex items-center justify-center space-x-4 mt-4">
-            <div className={`flex items-center ${currentStep >= 1 ? 'text-blue-700' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 1 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                1
-              </div>
-              <span className="ml-2 text-sm font-medium">{t('register.account')}</span>
-            </div>
-            <div className={`w-8 h-0.5 ${currentStep >= 2 ? 'bg-blue-700' : 'bg-gray-200'}`}></div>
-            <div className={`flex items-center ${currentStep >= 2 ? 'text-blue-700' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 2 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                2
-              </div>
-              <span className="ml-2 text-sm font-medium">{t('register.business')}</span>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
+  const formBody = (
           <form onSubmit={(e) => {
             e.preventDefault();
             formik.handleSubmit(e);
@@ -395,11 +380,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="space-y-4">
                   {/* Name Field - Single field instead of firstName/lastName */}
                   <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="name" className={labelCls}>
                       {t('register.firstName')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <User className={iconCls} aria-hidden="true" />
                       <Input
                         id="name"
                         name="name"
@@ -408,7 +393,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         value={formik.values.name}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.name && formik.touched.name ? 'border-red-500' : ''}`}
+                        className={fieldCls(!!(formik.errors.name && formik.touched.name))}
                       />
                     </div>
                     {formik.errors.name && formik.touched.name && (
@@ -421,11 +406,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="space-y-4">
                   {/* Email Field - Quan trọng cho account */}
                   <div className="space-y-2">
-                    <label htmlFor="login" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="login" className={labelCls}>
                       {t('register.email')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Mail className={iconCls} aria-hidden="true" />
                       <Input
                         id="login"
                         name="login"
@@ -435,7 +420,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
                         readOnly={!!googleIdToken}
-                        className={`pl-10 ${formik.errors.login && formik.touched.login ? 'border-red-500' : ''} ${googleIdToken ? 'bg-gray-50' : ''}`}
+                        className={fieldCls(!!(formik.errors.login && formik.touched.login), googleIdToken ? 'bg-gray-50' : '')}
                       />
                     </div>
                     {formik.errors.login && formik.touched.login && (
@@ -447,11 +432,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {!googleIdToken ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                      <label htmlFor="password" className={labelCls}>
                         {t('register.password')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Lock className={iconCls} aria-hidden="true" />
                         <Input
                           id="password"
                           name="password"
@@ -460,7 +445,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                           value={formik.values.password}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
-                          className={`pl-10 pr-10 ${formik.errors.password && formik.touched.password ? 'border-red-500' : ''}`}
+                          className={fieldCls(!!(formik.errors.password && formik.touched.password), isShop ? 'pr-12' : 'pr-10')}
                         />
                         <Button
                           variant="ghost"
@@ -478,11 +463,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                      <label htmlFor="confirmPassword" className={labelCls}>
                         {t('register.confirmPassword')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <Lock className={iconCls} aria-hidden="true" />
                         <Input
                           id="confirmPassword"
                           name="confirmPassword"
@@ -491,7 +476,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                           value={formik.values.confirmPassword}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
-                          className={`pl-10 pr-10 ${formik.errors.confirmPassword && formik.touched.confirmPassword ? 'border-red-500' : ''}`}
+                          className={fieldCls(!!(formik.errors.confirmPassword && formik.touched.confirmPassword), isShop ? 'pr-12' : 'pr-10')}
                         />
                         <Button
                           variant="ghost"
@@ -513,7 +498,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 {/* Submit Button for Step 1 */}
                 <Button
                   type="submit"
-                  className="w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                  className={primaryCls}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t('register.validating') : t('register.continueToBusinessInfo')}
@@ -528,11 +513,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="space-y-4">
                   {/* Business Name Field - Quan trọng nhất */}
                   <div className="space-y-2">
-                    <label htmlFor="businessName" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="businessName" className={labelCls}>
                       {t('register.businessName')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Store className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Store className={iconCls} aria-hidden="true" />
                       <Input
                         id="businessName"
                         name="businessName"
@@ -541,7 +526,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         value={formik.values.businessName}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.businessName && formik.touched.businessName ? 'border-red-500' : ''}`}
+                        className={fieldCls(!!(formik.errors.businessName && formik.touched.businessName))}
                       />
                     </div>
                     {formik.errors.businessName && formik.touched.businessName && (
@@ -551,11 +536,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
                   {/* Phone Field */}
                   <div className="space-y-2">
-                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="phone" className={labelCls}>
                       {t('register.phone')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Phone className={iconCls} aria-hidden="true" />
                       <Input
                         id="phone"
                         name="phone"
@@ -564,7 +549,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         value={formik.values.phone}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.phone && formik.touched.phone ? 'border-red-500' : ''}`}
+                        className={fieldCls(!!(formik.errors.phone && formik.touched.phone))}
                       />
                     </div>
                     {formik.errors.phone && formik.touched.phone && (
@@ -577,11 +562,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 <div className="space-y-4">
                   {/* Address Field - Full address (required) */}
                   <div className="space-y-2">
-                    <label htmlFor="address" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="address" className={labelCls}>
                       {t('register.address')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <MapPin className={iconCls} aria-hidden="true" />
                       <Input
                         id="address"
                         name="address"
@@ -590,7 +575,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         value={formik.values.address}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={`pl-10 ${formik.errors.address && formik.touched.address ? 'border-red-500' : ''}`}
+                        className={fieldCls(!!(formik.errors.address && formik.touched.address))}
                       />
                     </div>
                     {formik.errors.address && formik.touched.address && (
@@ -600,11 +585,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
                   {/* Referral Code Field (optional) */}
                   <div className="space-y-2">
-                    <label htmlFor="referralCode" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="referralCode" className={labelCls}>
                       {t('register.referralCode')} {t('register.optional') && `(${t('register.optional')})`}
                     </label>
                     <div className="relative">
-                      <Gift className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Gift className={iconCls} aria-hidden="true" />
                       <Input
                         id="referralCode"
                         name="referralCode"
@@ -613,7 +598,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         value={formik.values.referralCode || ''}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="pl-10"
+                        className={fieldCls(false)}
                         disabled={!!referralCode} // Disable if auto-filled from URL
                       />
                     </div>
@@ -677,13 +662,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <Button
                     type="button"
                     onClick={() => { setCurrentStep(1); onNavigate?.('/register/step-1'); }}
-                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                    className={isShop
+                      ? 'h-[54px] flex-1 rounded-[14px] border border-slate-300 bg-white text-base font-semibold text-slate-900 hover:bg-slate-50'
+                      : 'flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200'}
                   >
                     {t('register.back')}
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                    className={isShop ? `${shopPrimaryButtonClass} flex-1` : 'flex-1 bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200'}
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? t('register.creatingAccount') : t('register.registerButton')}
@@ -714,6 +701,63 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               </p>
             </div>
           </form>
+  );
+
+  const shopInner = (
+    <div className="flex w-full flex-col gap-5">
+      <div className="flex flex-col items-center gap-1.5 text-center">
+        <span className="text-sm font-semibold text-blue-700">
+          {t('register.stepOf', { current: currentStep, total: 2 })}
+        </span>
+        <h1 className="m-0 text-[28px] font-extrabold leading-9 tracking-[-0.02em]">{stepTitle}</h1>
+        <p className="m-0 text-base text-slate-600">{t('register.createMerchantAccount')}</p>
+      </div>
+      <div className="flex gap-1.5" aria-hidden="true">
+        <span className="h-1 flex-1 rounded-full bg-blue-700" />
+        <span className={`h-1 flex-1 rounded-full ${currentStep >= 2 ? 'bg-blue-700' : 'bg-slate-200'}`} />
+      </div>
+      {formBody}
+    </div>
+  );
+
+  const cardInner = isShop ? shopInner : (
+    <div className="w-full max-w-md mx-auto relative z-10">
+      <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-900">
+            {t('register.createMerchantAccount')}
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            {currentStep === 1 
+              ? t('register.step1')
+              : t('register.step2')
+            }
+          </CardDescription>
+          
+          {/* Step Progress Indicator */}
+          <div className="flex items-center justify-center space-x-4 mt-4">
+            <div className={`flex items-center ${currentStep >= 1 ? 'text-blue-700' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                currentStep >= 1 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                1
+              </div>
+              <span className="ml-2 text-sm font-medium">{t('register.account')}</span>
+            </div>
+            <div className={`w-8 h-0.5 ${currentStep >= 2 ? 'bg-blue-700' : 'bg-gray-200'}`}></div>
+            <div className={`flex items-center ${currentStep >= 2 ? 'text-blue-700' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                currentStep >= 2 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                2
+              </div>
+              <span className="ml-2 text-sm font-medium">{t('register.business')}</span>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {formBody}
         </CardContent>
       </Card>
     </div>
