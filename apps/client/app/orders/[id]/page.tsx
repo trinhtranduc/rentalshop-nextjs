@@ -11,7 +11,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   COLLATERAL_CODES,
-  ReceiptPreviewModal,
   collateralKey,
   useFormatCurrency,
   useToast,
@@ -45,6 +44,7 @@ import {
   type NoteView,
 } from '../detail/sections';
 import { SettingsEditor, SettingsSummary, type PendingFiles, type SettingsForm } from '../detail/settings';
+import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { DangerDialog, HandOverDialog, ReturnDialog, type DialogItem } from '../detail/dialogs';
 import { scheduleRange } from '../detail/actions-model';
 
