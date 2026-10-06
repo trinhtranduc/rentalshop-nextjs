@@ -1,644 +1,380 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { 
-  PageWrapper,
-  PageHeader,
-  PageTitle,
-  Orders,
-  useToast,
-  Button,
-  LoadingIndicator,
-  ExportDialog,
-  ConfirmationDialog,
-  type QuickFilterOption
-} from '@rentalshop/ui';
-import { Plus, Download } from 'lucide-react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useOrdersData, useCanExportData, useOrderTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { ordersApi } from '@rentalshop/utils';
-import type { OrderFilters } from '@rentalshop/types';
-
 /**
- * ✅ MODERN NEXT.JS 13+ ORDERS PAGE - URL STATE PATTERN
- * 
- * Architecture:
- * ✅ URL params as single source of truth
- * ✅ Clean data fetching with useOrdersData hook
- * ✅ No duplicate state management
- * ✅ Smooth transitions with useTransition
- * ✅ Shareable URLs (bookmarkable filters)
- * ✅ Browser back/forward support
- * ✅ Auto-refresh on URL change (no manual refresh needed)
- * 
- * Data Flow:
- * 1. User interacts (search, filter, pagination)
- * 2. updateURL() → URL params change
- * 3. Next.js detects URL change → searchParams update
- * 4. filters object recalculates (memoized)
- * 5. useOrdersData detects filter change → fetch data
- * 6. UI updates with new data
- * 
- * Benefits:
- * - Single API call per action
- * - Minimal re-renders
- * - No manual refresh needed
- * - Clean and maintainable
+ * Đơn hàng (#516). "Tất cả đơn" reads GET /api/orders; "Việc cần làm" and "Chưa lấy đồ" read
+ * GET /api/analytics/outlet-operations. Row mapping lives in ./orders-model (unit-tested).
+ * Every filter is kept in the URL.
  */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { useCanExportData } from '@rentalshop/hooks';
+import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import type { OrderFilters } from '@rentalshop/types';
+import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { useOutletOperations } from '../dashboard/OutletOperationsPanel';
+import {
+  CREATED_PRESETS,
+  ORDER_STATUSES,
+  ORDERS_TABS,
+  SORT_KEYS,
+  SORTS,
+  addDaysKey,
+  buildOpsRows,
+  buildOrderRow,
+  createdRange,
+  opsCounts,
+  parsePage,
+  parsePageSize,
+  parsePreset,
+  parseSort,
+  parseStatus,
+  parseTab,
+  parseType,
+  type CreatedPreset,
+  type OrderRowLike,
+  type OrderTypeFilter,
+  type SortKey,
+} from './orders-model';
+import { FilterMenu, OrdersTable, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from './list/parts';
+
+interface ListState {
+  rows: OrderRowLike[];
+  total: number;
+  totalPages: number;
+  loading: boolean;
+  failed: boolean;
+}
+
+/** One page of GET /api/orders; idle when `filters` is null. */
+function useOrdersPage(filters: OrderFilters | null, nonce: number): ListState {
+  const [state, setState] = useState<ListState>({ rows: [], total: 0, totalPages: 1, loading: !!filters, failed: false });
+  const key = filters ? JSON.stringify(filters) : '';
+  useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+    setState((s) => ({ ...s, loading: true, failed: false }));
+    ordersApi
+      .searchOrders(JSON.parse(key) as OrderFilters)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.success && res.data) {
+          const data = res.data as { orders?: unknown[]; total?: number; totalPages?: number };
+          setState({
+            rows: (data.orders || []) as OrderRowLike[],
+            total: data.total || 0,
+            totalPages: Math.max(1, data.totalPages || 1),
+            loading: false,
+            failed: false,
+          });
+        } else setState((s) => ({ ...s, loading: false, failed: true }));
+      })
+      .catch(() => {
+        if (!cancelled) setState((s) => ({ ...s, loading: false, failed: true }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, nonce]);
+  return state;
+}
+
+/** Count per status chip under the other filters (one `limit=1` request each; `total` is the count). */
+function useStatusCounts(base: OrderFilters | null, nonce: number): Record<string, number | null> {
+  const [counts, setCounts] = useState<Record<string, number | null>>({});
+  const key = base ? JSON.stringify(base) : '';
+  useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+    const filters = JSON.parse(key) as OrderFilters;
+    const keys = ['', ...ORDER_STATUSES];
+    Promise.all(
+      keys.map((status) =>
+        ordersApi
+          .searchOrders({ ...filters, status: (status || undefined) as OrderFilters['status'], page: 1, limit: 1 })
+          .then((res) => (res.success && res.data ? (res.data as { total?: number }).total ?? null : null))
+          .catch(() => null),
+      ),
+    ).then((totals) => {
+      if (!cancelled) setCounts(Object.fromEntries(keys.map((k, i) => [k, totals[i]])));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, nonce]);
+  return counts;
+}
+
+const dateInput = 'h-9 rounded-[10px] border border-ar-line bg-ar-surface px-2.5 text-sm text-ar-ink';
+
 export default function OrdersPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
-  const { toastSuccess, toastWarning, toastError } = useToast();
-  const t = useOrderTranslations();
-  const tc = useCommonTranslations();
+  const t = useTranslations('orders.web') as unknown as T;
+  const money = useFormatCurrency();
   const canExport = useCanExportData();
+  const { toastSuccess, toastError } = useToast();
 
-  // ============================================================================
-  // QUICK FILTER STATE - Modern time-based filtering
-  // ============================================================================
-  
-  const [activeQuickFilter, setActiveQuickFilter] = useState<string | undefined>(
-    searchParams.get('quickFilter') || 'month' // ⭐ Default to Last 30 Days
+  const weekdays = useMemo(() => t('weekdays').split(','), [t]);
+  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+
+  // URL state
+  const tab = parseTab(searchParams.get('tab'));
+  const status = parseStatus(searchParams.get('status'));
+  const type = parseType(searchParams.get('type'));
+  const preset = parsePreset(searchParams.get('created'));
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const sort = parseSort(searchParams.get('sort'));
+  const page = parsePage(searchParams.get('page'));
+  const limit = parsePageSize(searchParams.get('limit'));
+  const q = (searchParams.get('q') || '').trim();
+  const range = useMemo(() => createdRange(preset, todayKey, { from, to }), [preset, todayKey, from, to]);
+
+  const update = useCallback(
+    (patch: Record<string, string | number | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === '' || v === undefined) params.delete(k);
+        else params.set(k, String(v));
+      }
+      if (!('page' in patch)) params.delete('page');
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
   );
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [showCancelConfirmDialog, setShowCancelConfirmDialog] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<{ id: number; orderNumber: string } | null>(null);
-  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<{ id: number; orderNumber: string } | null>(null);
-  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
 
-  // ============================================================================
-  // URL PARAMS - Single Source of Truth
-  // ============================================================================
-  
-  const search = searchParams.get('q') || '';
-  const status = searchParams.get('status') || '';
-  const orderType = searchParams.get('type') || '';
-  const outletId = searchParams.get('outlet') ? parseInt(searchParams.get('outlet')!) : undefined;
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '25');
-  const sortBy = searchParams.get('sortBy') || 'createdAt';
-  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
-  
-  // ============================================================================
-  // DATE FILTERS - Default to Last 30 Days (optimal performance)
-  // ============================================================================
-  
-  // Get date params directly from URL - use strings, no Date objects
-  const startDateParam = searchParams.get('startDate');
-  const endDateParam = searchParams.get('endDate');
-  
-  // Debug: Log URL params
-  console.log('🔗 URL Params:', {
-    search,
-    status,
-    orderType,
-    outletId,
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  });
+  // Filters shared by the page and the chip counts
+  const base: OrderFilters = useMemo(
+    () => ({
+      search: q || undefined,
+      orderType: (type || undefined) as OrderFilters['orderType'],
+      startDate: range?.startDate,
+      endDate: range?.endDate,
+    }),
+    [q, type, range],
+  );
+  const pageFilters: OrderFilters = useMemo(
+    () => ({ ...base, status: (status || undefined) as OrderFilters['status'], page, limit, ...SORTS[sort] }),
+    [base, status, page, limit, sort],
+  );
 
-  // ============================================================================
-  // DATA FETCHING - Clean & Simple
-  // ============================================================================
-  
-  // Get merchant ID from URL params (only for ADMIN users when filtering by merchant)
-  const merchantIdParam = searchParams.get('merchant') ? parseInt(searchParams.get('merchant')!) : undefined;
-  
-  // ✅ SIMPLE: Memoize filters - use strings directly, no Date objects
-  // Backend automatically filters by merchantId from JWT token for non-admin users
-  // Only ADMIN needs to send merchantId when filtering by specific merchant
-  const filters: OrderFilters = useMemo(() => {
-    const baseFilters: OrderFilters = {
-      search: search || undefined,
-      status: (status as any) || undefined,
-      orderType: (orderType as any) || undefined,
-      outletId,
-      startDate: startDateParam || undefined, // ⭐ String from URL params
-      endDate: endDateParam || undefined,     // ⭐ String from URL params
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    };
-    
-    // ✅ Only send merchantId for ADMIN when filtering by specific merchant
-    // Backend automatically uses userScope.merchantId from JWT for non-admin users
-    if (user?.role === 'ADMIN' && merchantIdParam) {
-      // Admin can filter by specific merchant from dropdown
-      baseFilters.merchantId = merchantIdParam;
+  const [nonce, setNonce] = useState(0);
+  const retry = useCallback(() => setNonce((n) => n + 1), []);
+  const list = useOrdersPage(tab === 'all' ? pageFilters : null, nonce);
+  const counts = useStatusCounts(tab === 'all' ? base : null, nonce);
+  const ops = useOutletOperations();
+  const badges = opsCounts(ops.data);
+
+  const rows = useMemo(() => {
+    if (tab === 'all') return list.rows.map((o) => buildOrderRow(o, todayKey, getLocalDateKey));
+    return buildOpsRows(ops.data, tab, todayKey, getLocalDateKey);
+  }, [tab, list.rows, ops.data, todayKey]);
+
+  // A page past the end (after a filter shrank the list) goes back to the last one
+  useEffect(() => {
+    if (tab === 'all' && !list.loading && !list.failed && page > list.totalPages) update({ page: list.totalPages > 1 ? list.totalPages : null });
+  }, [tab, list.loading, list.failed, list.totalPages, page, update]);
+
+  const [exporting, setExporting] = useState(false);
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const blob = await ordersApi.exportOrders({
+        format: 'excel',
+        dateField: 'createdAt',
+        ...(range ? { period: 'custom' as const, startDate: range.startDate, endDate: range.endDate } : { period: '1year' as const }),
+        status: status || undefined,
+        orderType: type || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `don-hang-${todayKey}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toastSuccess(t('exportDone'));
+    } catch {
+      toastError(t('exportFailed'));
+    } finally {
+      setExporting(false);
     }
-    // Merchant/Outlet users: Don't send merchantId - backend uses it from JWT automatically
-    
-    return baseFilters;
-  }, [search, status, orderType, outletId, startDateParam, endDateParam, page, limit, sortBy, sortOrder, merchantIdParam, user?.role]);
+  };
 
-  const { data, loading, error, refetch } = useOrdersData({ filters });
-  
-  // Debug: Log when filters or data changes
-  console.log('📊 Orders Page - Current state:', {
-    page,
-    filters,
-    hasData: !!data,
-    ordersCount: data?.orders?.length || 0,
-    currentPage: data?.currentPage,
-    loading
-  });
+  const [draft, setDraft] = useState({ from: range?.startDate ?? addDaysKey(todayKey, -6), to: range?.endDate ?? todayKey });
+  useEffect(() => {
+    if (range) setDraft({ from: range.startDate, to: range.endDate });
+  }, [range]);
 
-  // ============================================================================
-  // URL UPDATE HELPER - Update URL = Update Everything
-  // ============================================================================
-  
-  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      // Special handling for page: always set it, even if it's 1
-      if (key === 'page') {
-        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
-        if (pageNum > 0) {
-          params.set(key, pageNum.toString());
-        } else {
-          params.delete(key);
-        }
-      } else if (value && value !== '' && value !== 'all') {
-        params.set(key, value.toString());
-      } else {
-        params.delete(key);
-      }
-    });
-    
-    const newURL = `${pathname}?${params.toString()}`;
-    router.push(newURL, { scroll: false });
-  }, [pathname, router, searchParams]);
-
-  // ============================================================================
-  // FILTER HANDLERS - Simple URL Updates
-  // ============================================================================
-  
-  const handleSearchChange = useCallback((searchValue: string) => {
-    console.log('🔍 Page: Search changed to:', searchValue);
-    updateURL({ q: searchValue, page: 1 }); // Reset to page 1
-  }, [updateURL]);
-
-  const handleFiltersChange = useCallback((newFilters: Partial<OrderFilters>) => {
-    console.log('🔧 Page: Filters changed:', newFilters);
-    
-    const updates: Record<string, string | number | undefined> = { page: 1 }; // Reset page
-    
-    if ('status' in newFilters) {
-      updates.status = newFilters.status as any;
-    }
-    if ('orderType' in newFilters) {
-      updates.type = newFilters.orderType as any;
-    }
-    if ('outletId' in newFilters) {
-      updates.outlet = newFilters.outletId as any;
-    }
-    // Only update merchantId in URL if user is ADMIN (merchant/outlet users don't see this field)
-    if ('merchantId' in newFilters && user?.role === 'ADMIN') {
-      updates.merchant = newFilters.merchantId as any;
-    }
-    if ('sortBy' in newFilters) {
-      updates.sortBy = newFilters.sortBy;
-    }
-    if ('sortOrder' in newFilters) {
-      updates.sortOrder = newFilters.sortOrder;
-    }
-    
-    updateURL(updates);
-  }, [updateURL, user?.role]);
-
-  const handleClearFilters = useCallback(() => {
-    console.log('🔧 Page: Clear all filters');
-    // Clear all params except page
-    router.push(pathname, { scroll: false });
-  }, [pathname, router]);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    console.log('📄 handlePageChange called: current page=', page, ', new page=', newPage);
-    console.log('📄 Current filters:', filters);
-    updateURL({ page: newPage });
-  }, [updateURL, page, filters]);
-
-  const handleLimitChange = useCallback((newLimit: number) => {
-    console.log('📄 handleLimitChange called: current limit=', limit, ', new limit=', newLimit);
-    updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
-  }, [updateURL, limit]);
-
-  // Handle image search results (for finding products to add to orders)
-  const handleImageSearchResult = useCallback((products: any[]) => {
-    // TODO: Navigate to create order page with selected products
-    // Or show products in a dialog to add to new order
-    console.log('Image search results in orders page:', products);
-    // For now, just log - can be extended to navigate to create order with products
-  }, []);
-
-  const handleSort = useCallback((column: string) => {
-    console.log('🔀 Page: Sort changed:', column);
-    const newSortBy = column;
-    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
-  }, [sortBy, sortOrder, updateURL]);
-
-  // ============================================================================
-  // QUICK FILTER HANDLER - Modern time-based filtering
-  // ============================================================================
-  
-  // ============================================================================
-  // DATE RANGE HANDLER - Modern dropdown filter
-  // ============================================================================
-  
-  const handleDateRangeChange = useCallback((rangeId: string, start: Date, end: Date) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    // Format dates as yyyy-mm-dd (clean URL format)
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    
-    // Set date range with simple format
-    params.set('startDate', formatDate(start));
-    params.set('endDate', formatDate(end));
-    params.set('quickFilter', rangeId);
-    params.set('page', '1'); // Reset to page 1
-    
-    setActiveQuickFilter(rangeId);
-    
-    console.log('⚡ Date range applied:', rangeId, {
-      start: formatDate(start),
-      end: formatDate(end)
-    });
-    
-    // Show warning if "All time" selected with large dataset
-    if (rangeId === 'all' && data?.total && data.total > 10000) {
-      toastWarning(
-        'Viewing All Orders',
-        `You are viewing all ${data.total.toLocaleString()} orders. This may be slow. Consider using a shorter date range for better performance.`
-      );
-    }
-    
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [searchParams, pathname, router, data?.total, toastWarning]);
-
-  // ============================================================================
-  // ORDER ACTION HANDLERS
-  // ============================================================================
-  
-  const handleOrderAction = useCallback(async (action: string, orderNumber: string) => {
-    const numericOrderNumber = orderNumber;
-    
-    switch (action) {
-      case 'view':
-        router.push(`/orders/${numericOrderNumber}`);
-        break;
-        
-      case 'pickup':
-        const orderForPickup = data?.orders.find(o => o.orderNumber === orderNumber);
-        if (orderForPickup) {
-          try {
-            const response = await ordersApi.pickupOrder(orderForPickup.id);
-            if (response.success) {
-              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
-              // ✅ Force re-fetch by updating URL (trigger data refresh)
-              refetch();
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
-          }
-        }
-        break;
-        
-      case 'return':
-        const orderForReturn = data?.orders.find(o => o.orderNumber === orderNumber);
-        if (orderForReturn) {
-          try {
-            const response = await ordersApi.returnOrder(orderForReturn.id);
-            if (response.success) {
-              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
-              // ✅ Force re-fetch by updating URL (trigger data refresh)
-              refetch();
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
-          }
-        }
-        break;
-        
-      case 'cancel':
-        const orderForCancel = data?.orders.find(o => o.orderNumber === orderNumber);
-        if (orderForCancel) {
-          // Show confirmation dialog instead of browser confirm()
-          setOrderToCancel({ id: orderForCancel.id, orderNumber: orderForCancel.orderNumber });
-          setShowCancelConfirmDialog(true);
-        }
-        break;
-        
-      case 'edit':
-        router.push(`/orders/${numericOrderNumber}/edit`);
-        break;
-        
-      case 'delete':
-        const orderToDelete = data?.orders.find(o => o.orderNumber === orderNumber);
-        if (orderToDelete) {
-          // Show confirmation dialog
-          setOrderToDelete({ id: orderToDelete.id, orderNumber: orderToDelete.orderNumber });
-          setShowDeleteConfirmDialog(true);
-        }
-        break;
-        
-      default:
-        console.log('Unknown action:', action);
-    }
-  }, [data?.orders, router, toastSuccess, refetch, t, tc]);
-
-  // ============================================================================
-  // TRANSFORM DATA FOR UI
-  // ============================================================================
-  
-  const orderData = useMemo(() => {
-    if (!data || !data.orders) {
-      return {
-        items: [],
-        orders: [],
-        total: 0,
-        currentPage: 1,
-        totalPages: 1,
-        limit: 25,
-        hasMore: false,
-        stats: {
-          totalOrders: 0,
-          pendingOrders: 0,
-          activeOrders: 0,
-          completedOrders: 0,
-          cancelledOrders: 0,
-          totalRevenue: 0,
-          totalDeposits: 0,
-          averageOrderValue: 0,
-          ordersThisMonth: 0,
-          revenueThisMonth: 0,
-          activeRentals: 0,
-          overdueRentals: 0
-        }
-      };
-    }
-
-    const mappedOrders = data.orders.map(order => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      orderType: order.orderType,
-      status: order.status,
-      customerId: order.customer?.id || (order as any).customerId || '',
-      customerName: (order as any).customerName || 
-                   (order.customer ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ').trim() || 'Unknown' : 'Unknown'),
-      customerPhone: (order as any).customerPhone || order.customer?.phone || '',
-      outletId: order.outlet?.id || (order as any).outletId || '',
-      outletName: (order as any).outletName || order.outlet?.name || 'Unknown',
-      merchantName: (order as any).merchantName || order.outlet?.merchant?.name || 'Unknown',
-      totalAmount: order.totalAmount,
-      depositAmount: order.depositAmount,
-      notes: order.notes,
-      pickupPlanAt: order.pickupPlanAt ? (order.pickupPlanAt instanceof Date ? order.pickupPlanAt.toISOString() : order.pickupPlanAt) : undefined,
-      returnPlanAt: order.returnPlanAt ? (order.returnPlanAt instanceof Date ? order.returnPlanAt.toISOString() : order.returnPlanAt) : undefined,
-      pickedUpAt: order.pickedUpAt ? (order.pickedUpAt instanceof Date ? order.pickedUpAt.toISOString() : order.pickedUpAt) : undefined,
-      returnedAt: order.returnedAt ? (order.returnedAt instanceof Date ? order.returnedAt.toISOString() : order.returnedAt) : undefined,
-      createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
-      updatedAt: order.updatedAt instanceof Date ? order.updatedAt.toISOString() : order.updatedAt,
-      orderItems: [],
-      payments: [],
-      // Additional fields required by OrderSearchResult
-      isReadyToDeliver: false,
-      createdById: (order as any).createdById || 0,
-      itemCount: (order as any).itemCount || (order as any).orderItems?.length || 0,
-      paymentCount: (order as any).paymentCount || (order as any).payments?.length || 0,
-      totalPaid: (order as any).totalPaid || 0,
-      customer: order.customer ? {
-        id: order.customer.id,
-        firstName: order.customer.firstName,
-        lastName: order.customer.lastName,
-        email: order.customer.email || null,
-        phone: order.customer.phone
-      } : null,
-      outlet: order.outlet || null
-    }));
-
-    return {
-      items: mappedOrders, // Required by BaseSearchResult
-      orders: mappedOrders, // Alias for backward compatibility
-      total: data.total,
-      currentPage: data.currentPage,
-      totalPages: data.totalPages,
-      limit: data.limit,
-      hasMore: data.hasMore,
-      stats: {
-        totalOrders: 0,
-        pendingOrders: 0,
-        activeOrders: 0,
-        completedOrders: 0,
-        cancelledOrders: 0,
-        totalRevenue: 0,
-        totalDeposits: 0,
-        averageOrderValue: 0,
-        ordersThisMonth: 0,
-        revenueThisMonth: 0,
-        activeRentals: 0,
-        overdueRentals: 0
-      }
-    };
-  }, [data]);
-
-  // ============================================================================
-  // RENDER - Page renders immediately, show loading indicator
-  // ============================================================================
+  const tabLabel = (key: (typeof ORDERS_TABS)[number]) => {
+    const count = key === 'todo' ? badges.todo : key === 'noshow' ? badges.noshow : 0;
+    return (
+      <>
+        {t(`tabs.${key}`)}
+        {key === 'todo' && count > 0 && (
+          <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-ar-danger px-1.5 text-xs font-bold text-white">{count}</span>
+        )}
+        {key === 'noshow' && count > 0 && <span className="text-sm font-bold text-ar-danger">{count}</span>}
+      </>
+    );
+  };
 
   return (
-    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-2 sm:px-4 pt-4 pb-0 overflow-hidden">
-      <PageHeader className="flex-shrink-0">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-          <div>
-            <PageTitle>{t('title')}</PageTitle>
-            <p className="text-sm text-gray-600">{t('title')}</p>
-          </div>
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
-            {/* Export button - only show when orders are selected */}
-            {canExport && selectedOrderIds.length > 0 && (
-              <Button
-                onClick={() => setShowExportDialog(true)}
-                variant="default"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {tc('buttons.export')} ({selectedOrderIds.length})
-              </Button>
-            )}
-            <Button 
-              onClick={() => router.push('/orders/create')}
-              variant="default"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('createOrder')}
-            </Button>
-          </div>
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
+        <div className="flex flex-wrap gap-2">
+          {canExport && tab === 'all' && (
+            <button type="button" onClick={exportExcel} disabled={exporting} className={outlineBtn}>
+              <ShellIcon d={ICONS.download} size={18} />
+              {exporting ? t('exporting') : t('export')}
+            </button>
+          )}
+          <Link href="/orders/create" className={primaryBtn}>
+            <ShellIcon d={ICONS.plus} size={18} />
+            {t('create')}
+          </Link>
         </div>
-      </PageHeader>
-
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        {/* Center Loading Indicator - Shows when waiting for API */}
-        {loading && !data ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={tc('labels.loading') || 'Loading orders...'}
-            />
-          </div>
-        ) : (
-          /* Orders Content - Only render when data is loaded */
-          <Orders
-            data={orderData}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
-            onOrderAction={handleOrderAction}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onSelectionChange={setSelectedOrderIds}
-            onSort={handleSort}
-            onDateRangeChange={handleDateRangeChange}     // 🆕 Modern dropdown filter
-            activeQuickFilter={activeQuickFilter}          // 🆕 Active filter state
-            showQuickFilters={false}                        // 🆕 Hide date range filter
-            filterStyle="dropdown"                          // 🆕 Dropdown style (Shopify/Stripe)
-            showStats={false}
-            userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
-            onImageSearchResult={handleImageSearchResult}   // 🆕 AI Image Search for products
-            hideCopyPhone={true}                            // ⭐ Hide copy phone button on /orders page
-          />
-        )}
       </div>
 
-      {/* Export Dialog */}
-      <ExportDialog
-        open={showExportDialog}
-        onOpenChange={setShowExportDialog}
-        resourceName="Orders"
-        isLoading={isExporting}
-        selectedCount={selectedOrderIds.length}
-        onExport={async (params) => {
-          try {
-            setIsExporting(true);
-            // If orders are selected, export only those orders
-            const exportParams = selectedOrderIds.length > 0
-              ? {
-                  ...params,
-                  orderIds: selectedOrderIds, // Export selected orders only
-                  dateField: 'createdAt' as const
-                }
-              : {
-                  ...params,
-                  status: status || undefined,
-                  orderType: orderType || undefined,
-                  dateField: 'createdAt' as const // Default to createdAt, can be customized
-                };
-            
-            const blob = await ordersApi.exportOrders(exportParams);
-            
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `orders-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            toastSuccess(tc('labels.success'), 'Export completed successfully');
-            setShowExportDialog(false);
-            // Clear selection after successful export
-            setSelectedOrderIds([]);
-          } catch (error: any) {
-            // Show error message
-            const errorMessage = error?.message || 'Failed to export orders. Please try again.';
-            toastError(tc('labels.error') || 'Error', errorMessage);
-          } finally {
-            setIsExporting(false);
-          }
-        }}
-      />
+      <div role="tablist" aria-label={t('tabs.label')} className="flex gap-6 overflow-x-auto border-b border-ar-line">
+        {ORDERS_TABS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => update({ tab: key === 'all' ? null : key })}
+            className={`-mb-px flex h-11 shrink-0 items-center gap-1.5 border-b-2 text-[15px] ${
+              tab === key ? 'border-ar-primary font-bold text-ar-ink' : 'border-transparent font-medium text-ar-ink-2 hover:text-ar-ink'
+            }`}
+          >
+            {tabLabel(key)}
+          </button>
+        ))}
+      </div>
 
-      {/* Cancel Order Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showCancelConfirmDialog}
-        onOpenChange={setShowCancelConfirmDialog}
-        type="danger"
-        title={t('detail.cancelOrderTitle') || 'Cancel Order'}
-        description={t('detail.cancelOrderMessage') || t('messages.confirmCancel') || 'Are you sure you want to cancel this order? This action cannot be undone.'}
-        confirmText={t('actions.cancelOrder') || 'Cancel Order'}
-        cancelText={t('detail.keepOrder') || 'Keep Order'}
-        onConfirm={async () => {
-          if (!orderToCancel) return;
-          try {
-            const response = await ordersApi.cancelOrder(orderToCancel.id);
-            if (response.success) {
-              toastSuccess(tc('messages.updateSuccess'), t('messages.updateSuccess'));
-              setShowCancelConfirmDialog(false);
-              setOrderToCancel(null);
-              // ✅ Force re-fetch by updating URL (trigger data refresh)
-              refetch();
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
-          }
-        }}
-        onCancel={() => {
-          setShowCancelConfirmDialog(false);
-          setOrderToCancel(null);
-        }}
-      />
+      {q && (
+        <div className="flex">
+          <span className="inline-flex items-center gap-1 rounded-full bg-ar-primary-soft py-1 pl-3 pr-1 text-sm font-semibold text-ar-primary-ink">
+            {t('search.result', { q })}
+            <button
+              type="button"
+              aria-label={t('search.clear')}
+              onClick={() => update({ q: null })}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ar-surface"
+            >
+              <ShellIcon d={ICONS.close} size={14} />
+            </button>
+          </span>
+        </div>
+      )}
 
-      {/* Delete Order Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showDeleteConfirmDialog}
-        onOpenChange={setShowDeleteConfirmDialog}
-        type="danger"
-        title={t('actions.delete') || 'Delete Order'}
-        description={t('messages.confirmDelete') || `Are you sure you want to delete order ${orderToDelete?.orderNumber}? This action cannot be undone.`}
-        confirmText={t('actions.delete') || 'Delete Order'}
-        cancelText={t('actions.cancel') || 'Cancel'}
-        onConfirm={async () => {
-          if (!orderToDelete) return;
-          try {
-            const response = await ordersApi.deleteOrder(orderToDelete.id);
-            if (response.success) {
-              toastSuccess(tc('messages.deleteSuccess') || 'Order deleted successfully', t('messages.deleteSuccess') || 'Order deleted successfully');
-              setShowDeleteConfirmDialog(false);
-              setOrderToDelete(null);
-              // ✅ Force re-fetch by updating URL (trigger data refresh)
-              refetch();
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
-          }
-        }}
-        onCancel={() => {
-          setShowDeleteConfirmDialog(false);
-          setOrderToDelete(null);
-        }}
-      />
-    </PageWrapper>
+      <section className={`${cardClass} overflow-hidden`}>
+        {tab === 'all' && (
+          <>
+            <div className="flex flex-wrap items-center gap-2 border-b border-ar-subtle px-4 py-3.5">
+              <div role="group" aria-label={t('status.label')} className="flex flex-wrap gap-2">
+                {(['', ...ORDER_STATUSES] as const).map((s) => {
+                  const active = status === s;
+                  const count = counts[s];
+                  return (
+                    <button
+                      key={s || 'all'}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => update({ status: s || null })}
+                      className={`h-9 whitespace-nowrap rounded-full px-3 text-sm ${
+                        active ? 'bg-ar-ink font-semibold text-ar-page' : 'border border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'
+                      }`}
+                    >
+                      {t(`status.${s || 'all'}`)}
+                      {typeof count === 'number' && <span className={`ml-1 tabular-nums ${active ? 'opacity-80' : 'text-ar-muted'}`}>{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="flex-1" />
+              <div className="flex flex-wrap gap-2">
+                <FilterMenu<OrderTypeFilter | 'all'>
+                  label={t('type.label')}
+                  value={type || 'all'}
+                  options={(['all', 'RENT', 'SALE'] as const).map((v) => ({ value: v, label: t(`type.${v}`) }))}
+                  onChange={(v) => update({ type: v === 'all' ? null : v })}
+                />
+                <FilterMenu<CreatedPreset>
+                  label={t('created.label')}
+                  value={preset}
+                  options={CREATED_PRESETS.map((v) => ({
+                    value: v,
+                    label: v === 'custom' && preset === 'custom' && range ? `${range.startDate.slice(8)}/${range.startDate.slice(5, 7)} – ${range.endDate.slice(8)}/${range.endDate.slice(5, 7)}` : t(`created.${v}`),
+                  }))}
+                  onChange={(v) =>
+                    update(v === 'custom' ? { created: 'custom', from: draft.from, to: draft.to } : { created: v === 'any' ? null : v, from: null, to: null })
+                  }
+                />
+                <FilterMenu<SortKey>
+                  label={t('sort.label')}
+                  value={sort}
+                  options={SORT_KEYS.map((v) => ({ value: v, label: t(`sort.${v}`) }))}
+                  onChange={(v) => update({ sort: v === 'newest' ? null : v })}
+                />
+              </div>
+            </div>
+            {preset === 'custom' && (
+              <form
+                className="flex flex-wrap items-end justify-end gap-3 border-b border-ar-subtle px-4 py-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  update({ created: 'custom', from: draft.from, to: draft.to });
+                }}
+              >
+                <label className="flex flex-col gap-1 text-sm text-ar-muted">
+                  {t('created.from')}
+                  <input type="date" value={draft.from} max={todayKey} onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))} className={dateInput} />
+                </label>
+                <label className="flex flex-col gap-1 text-sm text-ar-muted">
+                  {t('created.to')}
+                  <input type="date" value={draft.to} onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))} className={dateInput} />
+                </label>
+                <button type="submit" className="h-9 rounded-[10px] bg-ar-primary px-4 text-sm font-semibold text-ar-on-primary hover:opacity-95">
+                  {t('created.apply')}
+                </button>
+              </form>
+            )}
+          </>
+        )}
+
+        <OrdersTable
+          rows={rows}
+          loading={tab === 'all' ? list.loading : ops.loading}
+          failed={tab === 'all' ? list.failed : ops.failed}
+          onRetry={tab === 'all' ? retry : ops.reload}
+          emptyText={t(`empty.${tab}`)}
+          weekdays={weekdays}
+          t={t}
+          money={money}
+          skeletonRows={tab === 'all' ? Math.min(limit, 10) : 4}
+        />
+
+        {tab === 'all' && list.total > 0 && (
+          <TableFooter
+            page={Math.min(page, list.totalPages)}
+            limit={limit}
+            total={list.total}
+            totalPages={list.totalPages}
+            onPage={(p) => update({ page: p > 1 ? p : null })}
+            onLimit={(n) => update({ limit: n === 10 ? null : n })}
+            t={t}
+          />
+        )}
+      </section>
+    </div>
   );
 }

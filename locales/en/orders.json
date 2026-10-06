@@ -564,5 +564,208 @@
       "nothing": "No money changes hands",
       "confirm": "Confirm take-back"
     }
+  },
+  "web": {
+    "title": "Orders",
+    "export": "Export Excel",
+    "exporting": "Exporting…",
+    "exportDone": "Excel file exported",
+    "exportFailed": "Could not export the file. Try again later.",
+    "create": "New order",
+    "tabs": {
+      "label": "Order lists",
+      "todo": "To do",
+      "all": "All orders",
+      "noshow": "Not picked up"
+    },
+    "status": {
+      "label": "Filter by status",
+      "all": "All",
+      "RESERVED": "Reserved",
+      "PICKUPED": "Renting",
+      "RETURNED": "Returned",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "type": {
+      "label": "Type:",
+      "all": "Rent, Sale",
+      "RENT": "Rent",
+      "SALE": "Sale"
+    },
+    "created": {
+      "label": "Created:",
+      "any": "Any day",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "month": "This month",
+      "custom": "Custom",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply"
+    },
+    "sort": {
+      "label": "Sort:",
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "nearest": "Next task first",
+      "total": "Highest total"
+    },
+    "search": {
+      "result": "Results for “{q}”",
+      "clear": "Clear search"
+    },
+    "cols": {
+      "status": "Status",
+      "customer": "Customer · order",
+      "schedule": "Schedule",
+      "note": "Note",
+      "total": "Total",
+      "pay": "Payment"
+    },
+    "row": {
+      "created": "created {day}",
+      "pickupReturn": "Pick up {pickup} · return {ret}",
+      "pickupOnly": "Pick up {pickup}",
+      "returnOn": "Return {day}",
+      "dueOn": "Due {day}",
+      "returnedOn": "Returned {day}",
+      "saleOn": "Sold {day}",
+      "cancelledOn": "Cancelled {day}",
+      "walkIn": "Walk-in customer"
+    },
+    "note": {
+      "late": "{days} days late",
+      "overduePickup": "{days} days overdue · call the customer",
+      "unprepared": "Not prepared",
+      "sale": "Sale"
+    },
+    "pay": {
+      "due": "to collect {amount}",
+      "fee": "+ late fee {amount}",
+      "refund": "refund {amount}",
+      "noRevenue": "no revenue"
+    },
+    "empty": {
+      "all": "No orders match these filters.",
+      "todo": "Nothing left to hand over or take back today.",
+      "noshow": "No overdue pickups."
+    },
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pagination",
+      "range": "{from}–{to} of {total} orders",
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "loadFailed": "Could not load orders.",
+    "retry": "Retry",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "detail": {
+      "back": "Orders",
+      "rent": "Rental",
+      "sale": "Sale",
+      "created": "created {time}",
+      "by": "by {name}",
+      "print": "Print",
+      "edit": "Edit order",
+      "more": "More actions",
+      "cancel": "Cancel order",
+      "delete": "Delete order",
+      "progress": {
+        "label": "Progress",
+        "RESERVED": "Reserved",
+        "PICKUP": "Pick up",
+        "RETURN": "Return",
+        "today": "Today · {day}",
+        "late": "Overdue · {day}"
+      },
+      "items": {
+        "rent": "Rented items",
+        "sale": "Sold items",
+        "ready": "Prepared",
+        "qty": "Qty {count}",
+        "code": "code {code}",
+        "daily": "Per day",
+        "fixed": "Fixed price",
+        "perDay": "{amount}/day × {days} days",
+        "empty": "This order has no items.",
+        "image": "Photo of {name}"
+      },
+      "notes": {
+        "title": "Notes",
+        "edit": "Edit notes",
+        "empty": "No notes yet.",
+        "general": "General",
+        "pickup": "At pickup",
+        "return": "At return",
+        "damage": "Damage",
+        "photo": "View note photo {n}"
+      },
+      "history": {
+        "title": "History",
+        "created": "{by} created the order",
+        "createdNoBy": "Order created",
+        "payment": "Payment recorded {amount}",
+        "refund": "Refunded {amount}",
+        "pickedUp": "Handed over to the customer",
+        "returned": "Items taken back",
+        "cancelled": "Order cancelled"
+      },
+      "next": {
+        "label": "Next step",
+        "pickupToday": "Hand over today",
+        "pickupOn": "Hand over {day}",
+        "pickupLate": "{days} days overdue for pickup",
+        "returnToday": "Take back today",
+        "returnOn": "Take back {day}",
+        "returnLate": "{days} days late",
+        "pickupBtn": "Hand over · collect {amount}",
+        "pickupBtnFree": "Hand over",
+        "returnBtn": "Take back · collect {amount}",
+        "returnBtnRefund": "Take back · refund {amount}",
+        "returnBtnFree": "Take back",
+        "pickupHelp": "Opens the confirmation: amount to collect and collateral received.",
+        "returnHelp": "Opens the confirmation: damage fee, amount to collect or refund.",
+        "lateHelp": "Call the customer first."
+      },
+      "pay": {
+        "title": "Payment",
+        "rent": "Rental",
+        "saleTotal": "Total",
+        "deposit": "Deposit paid",
+        "paid": "Paid",
+        "lateFee": "Late fee",
+        "damageFee": "Damage fee",
+        "collateralHeld": "Collateral held",
+        "dueAtPickup": "To collect at pickup",
+        "collectAtReturn": "To collect at return",
+        "refundAtReturn": "To refund at return",
+        "due": "To collect",
+        "settled": "Paid in full",
+        "noRevenue": "No revenue",
+        "nothingAtReturn": "Nothing to settle at return",
+        "collateral": "Collateral at pickup",
+        "collateralHint": "Included above, handed back at return"
+      },
+      "settings": {
+        "title": "Notes, collateral and fees",
+        "edit": "Edit collateral & fees",
+        "photos": "Note photos",
+        "addPhoto": "Add photo",
+        "removePhoto": "Remove photo"
+      },
+      "customer": {
+        "title": "Customer",
+        "view": "View customer",
+        "call": "Call {name}"
+      },
+      "loadFailed": "Could not load this order.",
+      "notFound": "Order not found.",
+      "backToList": "Back to orders",
+      "readyFailed": "Could not save the prepared state."
+    }
   }
 }

@@ -564,5 +564,208 @@
       "nothing": "Không phát sinh tiền",
       "confirm": "Xác nhận nhận trả"
     }
+  },
+  "web": {
+    "title": "Đơn hàng",
+    "export": "Xuất Excel",
+    "exporting": "Đang xuất…",
+    "exportDone": "Đã xuất file Excel",
+    "exportFailed": "Không xuất được file. Thử lại sau.",
+    "create": "Tạo đơn",
+    "tabs": {
+      "label": "Danh sách đơn",
+      "todo": "Việc cần làm",
+      "all": "Tất cả đơn",
+      "noshow": "Chưa lấy đồ"
+    },
+    "status": {
+      "label": "Lọc theo trạng thái",
+      "all": "Tất cả",
+      "RESERVED": "Đã đặt",
+      "PICKUPED": "Đang thuê",
+      "RETURNED": "Đã trả",
+      "COMPLETED": "Hoàn thành",
+      "CANCELLED": "Đã huỷ"
+    },
+    "type": {
+      "label": "Loại:",
+      "all": "Thuê, Bán",
+      "RENT": "Thuê",
+      "SALE": "Bán"
+    },
+    "created": {
+      "label": "Ngày tạo:",
+      "any": "Mọi ngày",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua",
+      "month": "Tháng này",
+      "custom": "Tuỳ chọn",
+      "from": "Từ ngày",
+      "to": "Đến ngày",
+      "apply": "Áp dụng"
+    },
+    "sort": {
+      "label": "Sắp xếp:",
+      "newest": "Mới tạo nhất",
+      "oldest": "Cũ nhất",
+      "nearest": "Việc gần nhất",
+      "total": "Tổng tiền cao nhất"
+    },
+    "search": {
+      "result": "Kết quả cho “{q}”",
+      "clear": "Xoá tìm kiếm"
+    },
+    "cols": {
+      "status": "Trạng thái",
+      "customer": "Khách · mã đơn",
+      "schedule": "Lịch",
+      "note": "Ghi chú",
+      "total": "Tổng",
+      "pay": "Thanh toán"
+    },
+    "row": {
+      "created": "tạo {day}",
+      "pickupReturn": "Giao {pickup} · trả {ret}",
+      "pickupOnly": "Giao {pickup}",
+      "returnOn": "Trả {day}",
+      "dueOn": "Hạn trả {day}",
+      "returnedOn": "Đã trả {day}",
+      "saleOn": "Bán {day}",
+      "cancelledOn": "Huỷ {day}",
+      "walkIn": "Khách lẻ"
+    },
+    "note": {
+      "late": "Trễ {days} ngày",
+      "overduePickup": "Quá {days} ngày · nên gọi khách",
+      "unprepared": "Chưa soạn đồ",
+      "sale": "Đơn bán"
+    },
+    "pay": {
+      "due": "còn thu {amount}",
+      "fee": "+ phí trễ {amount}",
+      "refund": "hoàn cọc {amount}",
+      "noRevenue": "không tính doanh thu"
+    },
+    "empty": {
+      "all": "Không có đơn nào khớp bộ lọc.",
+      "todo": "Hôm nay không còn việc giao trả.",
+      "noshow": "Không có đơn quá ngày lấy."
+    },
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} đơn",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "loadFailed": "Không tải được danh sách đơn.",
+    "retry": "Thử lại",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "detail": {
+      "back": "Đơn hàng",
+      "rent": "Đơn thuê",
+      "sale": "Đơn bán",
+      "created": "tạo {time}",
+      "by": "bởi {name}",
+      "print": "In phiếu",
+      "edit": "Sửa đơn",
+      "more": "Thêm thao tác",
+      "cancel": "Huỷ đơn",
+      "delete": "Xoá đơn",
+      "progress": {
+        "label": "Tiến trình",
+        "RESERVED": "Đã đặt",
+        "PICKUP": "Giao đồ",
+        "RETURN": "Trả đồ",
+        "today": "Hôm nay · {day}",
+        "late": "Quá hạn · {day}"
+      },
+      "items": {
+        "rent": "Đồ thuê",
+        "sale": "Đồ bán",
+        "ready": "Đã soạn đồ",
+        "qty": "SL {count}",
+        "code": "mã {code}",
+        "daily": "Theo ngày",
+        "fixed": "Giá cố định",
+        "perDay": "{amount}/ngày × {days} ngày",
+        "empty": "Đơn chưa có món nào.",
+        "image": "Ảnh {name}"
+      },
+      "notes": {
+        "title": "Ghi chú",
+        "edit": "Sửa ghi chú",
+        "empty": "Chưa có ghi chú.",
+        "general": "Chung",
+        "pickup": "Khi giao đồ",
+        "return": "Khi trả đồ",
+        "damage": "Hư hỏng",
+        "photo": "Xem ảnh ghi chú {n}"
+      },
+      "history": {
+        "title": "Lịch sử",
+        "created": "{by} tạo đơn",
+        "createdNoBy": "Tạo đơn",
+        "payment": "Ghi nhận thanh toán {amount}",
+        "refund": "Hoàn tiền {amount}",
+        "pickedUp": "Đã giao đồ cho khách",
+        "returned": "Đã nhận lại đồ",
+        "cancelled": "Đơn đã huỷ"
+      },
+      "next": {
+        "label": "Việc tiếp theo",
+        "pickupToday": "Giao đồ hôm nay",
+        "pickupOn": "Giao đồ {day}",
+        "pickupLate": "Quá {days} ngày chưa giao",
+        "returnToday": "Nhận trả hôm nay",
+        "returnOn": "Nhận trả {day}",
+        "returnLate": "Trễ trả {days} ngày",
+        "pickupBtn": "Giao đồ · thu {amount}",
+        "pickupBtnFree": "Giao đồ",
+        "returnBtn": "Nhận trả · thu {amount}",
+        "returnBtnRefund": "Nhận trả · hoàn {amount}",
+        "returnBtnFree": "Nhận trả",
+        "pickupHelp": "Mở hộp xác nhận: số tiền thu và thế chân nhận.",
+        "returnHelp": "Mở hộp xác nhận: phí hư hỏng, tiền thu thêm hoặc hoàn lại.",
+        "lateHelp": "Nên gọi khách trước."
+      },
+      "pay": {
+        "title": "Thanh toán",
+        "rent": "Tiền thuê",
+        "saleTotal": "Tổng tiền",
+        "deposit": "Cọc đã thu",
+        "paid": "Đã thanh toán",
+        "lateFee": "Phí trễ",
+        "damageFee": "Phí hư hỏng",
+        "collateralHeld": "Thế chân đang giữ",
+        "dueAtPickup": "Còn thu khi giao",
+        "collectAtReturn": "Thu thêm khi trả",
+        "refundAtReturn": "Hoàn lại khi trả",
+        "due": "Còn thu",
+        "settled": "Đã thanh toán đủ",
+        "noRevenue": "Không tính doanh thu",
+        "nothingAtReturn": "Không phát sinh tiền khi trả",
+        "collateral": "Thế chân khi giao",
+        "collateralHint": "Đã gồm trong số còn thu, trả lại khách khi nhận đồ"
+      },
+      "settings": {
+        "title": "Ghi chú, thế chấp và phí",
+        "edit": "Sửa thế chấp & phí",
+        "photos": "Ảnh ghi chú",
+        "addPhoto": "Thêm ảnh",
+        "removePhoto": "Bỏ ảnh"
+      },
+      "customer": {
+        "title": "Khách hàng",
+        "view": "Xem khách",
+        "call": "Gọi {name}"
+      },
+      "loadFailed": "Không tải được đơn này.",
+      "notFound": "Không tìm thấy đơn này.",
+      "backToList": "Về danh sách đơn",
+      "readyFailed": "Không lưu được trạng thái soạn đồ."
+    }
   }
 }
