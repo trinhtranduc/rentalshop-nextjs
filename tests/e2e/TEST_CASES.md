@@ -145,6 +145,88 @@ Run: `scripts/e2e/business-e2e.sh` (seed, API, both time zones) or `E2E_API_URL=
 | BF-DAY-05 | Lịch theo ngày | by-date RESERVED on X, not X − 1; returns on the return day; month count has it |
 | BF-DAY-06 | Quá ngày lấy | pickup planned yesterday → overduePickup, today 00:00 VN → atPickup |
 
+## BF-RT — Ngày chọn lúc tạo đơn = ngày đọc lại ở mọi nơi (`date-roundtrip.e2e.test.js`, #573)
+
+Owner: "lúc tạo đơn chọn ngày này nọ thì lúc load về, check calendar có chuẩn không". Every RENT order is created
+with the pickup / return instants one client really sends, then read back on every endpoint; each read is compared
+with the chosen Vietnam day keys P (pickup) and R (return). Run under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
+
+Clients (what `POST /api/orders` receives for VN days P..R):
+
+| Client | pickupPlanAt | returnPlanAt | Source |
+|---|---|---|---|
+| `web` (Tạo đơn, JSON) | 00:00 VN of P (`P-1T17:00:00.000Z`) | 00:00 VN of R | `create-model.ts` `dayStartIso` |
+| `ios` (multipart, sends `rentalDuration`) | start of P in the device zone, UTC ISO with ms | `R T16:59:59.000Z` (23:59:59 VN) | `RCExtentions.swift` `dateServerISOString`, `Cart.swift` |
+| `android` (device zone Asia/Ho_Chi_Minh) | same as iOS | same as iOS | `OrderPlanDays.kt` |
+| `oldAndroid` (cart before #413, still installed) | `P T00:00:00Z` | `R T23:59:00Z` | #413 |
+
+Windows (one describe per client × window, product DAILY stock 1):
+
+| ID | Window |
+|---|---|
+| BF-RT-01 | same day P = R (1 day) |
+| BF-RT-02 | one night (2 days) |
+| BF-RT-03 | cross-month 30/09/2027 → 02/10/2027 |
+| BF-RT-04 | cross-year 31/12/2026 → 01/01/2027 |
+| BF-RT-05 | 30 days |
+| BF-RT-06 | in the past (today − 10 → today − 8) |
+| BF-RT-07 | pickup today, return tomorrow |
+| BF-RT-08 | pickup and return today |
+
+Checks per case (`BF-RT-<nn>-<client> <check>`):
+
+| Check | Expected |
+|---|---|
+| detail | `GET /api/orders/{id}`, `/by-number/{n}` and the create response: VN day of pickupPlanAt = P, of returnPlanAt = R; `rentalDuration` = item `rentalDays` = inclusive days |
+| list | `GET /api/orders?customerId&dateField=pickupPlanAt&startDate=P&endDate=P` has it, P ± 1 not; same with `returnPlanAt` on R, R ± 1; `status=RESERVED` created today row carries P and R |
+| calendar day | `GET /api/calendar/orders/by-date?date=P` (also `status=RESERVED`, `timeZone`) lists it; P − 1, P + 1 do not |
+| calendar month | `GET /api/calendar/orders/count?month&year` (with and without `timeZone`): Δ only on P: count +1, pickups +1, returns 0 |
+| availability | `POST /api/products/batch-availability` with the web day window: held on P..R (first 3 days and R), free on P − 1 and R + 1 |
+| availability old iOS | same with the App Store iOS window `X T00:00:00.000Z … X T23:59:59.999Z` |
+| availability old Android | same with the pre-#413 Android window `X T00:00:00Z … X T23:59:59Z` |
+| today work (RT-07, RT-08) | `GET /api/analytics/outlet-operations` (with and without `timeZone`): `date` = today, pickupsToday +1 and lists it |
+| edit | `PUT /api/orders/{id}` with the same instants + notes: days unchanged, still on by-date P |
+| after hand-over | PICKUPED: by-date `kind=return` lists it on R, not R ± 1; month count Δ pickups −1 on P, returns +1 on R |
+
+Extra cases:
+
+| ID | Case | Expected |
+|---|---|---|
+| BF-RT-09a | pickup 00:30 VN, return 06:59 VN (both on the UTC day before) | VN days P, R; by-date P not P − 1; held P..R only |
+| BF-RT-09b | the 17:00Z boundary | `P-1T17:00:00.000Z` → `R T16:59:59.999Z` is P..R; one ms earlier on both ends is P − 1..R − 1 |
+
+Known bugs (`test.failing`):
+
+- **#575** `availability old iOS` (all clients): the day before P reads busy (batch route uses `lte` on the exclusive civil-day end).
+- **#576** `availability old Android` (web, ios, android orders): `T23:59:59Z` without ms is not read as a UTC-day window.
+- **#577** `oldAndroid` detail, list, availability, edit, after hand-over: `R T23:59:00Z` is R + 1 in Vietnam, stored as is.
+
+## WEB-RT — Shop web: chọn ngày ở Tạo đơn, đọc lại trên mọi màn hình (`tests/e2e/web/date-roundtrip.web.js`, #573)
+
+Browser e2e (playwright-core, Chrome for Testing), run by `scripts/e2e/web-e2e.sh` against a local API + shop web, in
+browser zones **Asia/Ho_Chi_Minh, UTC, America/Los_Angeles** (a device outside Vietnam must still see the shop's days),
+light theme, 1440 × 900. A fresh product (FIXED, stock 3) and customer per run; every created order is cancelled.
+
+| ID | Window |
+|---|---|
+| WEB-RT-01 | pickup today, return tomorrow |
+| WEB-RT-02 | same day (today + 2) |
+| WEB-RT-03 | pickup tomorrow, 3 days |
+| WEB-RT-04 | cross-month (last day of the month → + 2) |
+
+| Check | Expected |
+|---|---|
+| create | click P then R in the range calendar (same day: P twice), summary "T5 08/10 → T7 10/10 · 3 ngày", add product, pick customer, Tạo đơn (accept a confirm dialog if any); POST body pickupPlanAt / returnPlanAt = 00:00 VN of P / R; saved VN days P, R |
+| order page | progress "Giao đồ" = P label, "Trả đồ" = R label (`T5 08/10`, also with "Hôm nay · ") |
+| edit | Sửa đơn opens with "Giao P → Trả R · N ngày" |
+| list | `/orders?q=<n>` row "Giao P · trả R" |
+| calendar month | `/calendar` cell aria "d/m, giao N": Δ +1 on P only (P ± 1, R, R + 1 unchanged) |
+| calendar day | day panel P "Cần giao" lists `#n` with "trả R" (same day: "giao và trả trong ngày"); P ± 1 do not |
+| availability | `/availability` (product picked in the search box), per-day "còn": stock − 1 on P..R, stock on P − 1 and R + 1 |
+| availability deep link (first case of each zone, 5 loads) | **known #579**: `/availability?productId=` (product page button) drops the product on some loads (race) |
+| dashboard (WEB-RT-01, 03) | "Việc hôm nay" label = today (VN); P = today: "Cần giao hôm nay" +1 and lists `#n`; P = tomorrow: "Ngày mai · <label>" Giao +1, today +0 |
+| after hand-over | PICKUPED via API: calendar Δ "trả" +1 on R only; R panel "Cần nhận trả" lists it, R + 1 does not |
+
 ## BF-SCOPE / BF-NUM — Phạm vi, quyền, mã đơn (`scope-roles.e2e.test.js`)
 
 | ID | Case | Expected |
