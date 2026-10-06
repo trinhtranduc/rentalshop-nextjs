@@ -1,9 +1,9 @@
 /**
- * #556 shop web Tạo đơn: one range calendar for the rental days (day keys only, so it holds under
- * TZ=UTC and TZ=Asia/Ho_Chi_Minh).
+ * #556 / #559 shop web: the one range calendar used by Tạo đơn, Tổng quan, Kiểm tra còn hàng and Đơn hàng
+ * (day keys only, so it holds under TZ=UTC and TZ=Asia/Ho_Chi_Minh).
  */
 import { describe, expect, it } from '@jest/globals';
-import { dayMark, monthCells, monthOf, pickDay, shiftMonth } from '../apps/client/app/orders/create/calendar-model';
+import { dayAllowed, dayMark, monthCells, monthOf, pickDay, rangeDays, rangeProblem, shiftMonth } from '../apps/client/app/components/date-range/range-model';
 
 describe('months', () => {
   it('shifts across years', () => {
@@ -60,5 +60,36 @@ describe('picking a range', () => {
     expect(dayMark(half, '2026-10-06', '2026-10-05')).toBe('inside');
     expect(dayMark(half, '2026-10-05', '2026-10-05')).toBe('start');
     expect(dayMark({ from: '', to: '' }, '2026-10-08')).toBeNull();
+  });
+});
+
+describe('duration and limits', () => {
+  it('counts both ends: a same-day range is 1 day', () => {
+    expect(rangeDays('2026-10-08', '2026-10-08')).toBe(1);
+    expect(rangeDays('2026-10-01', '2026-10-31')).toBe(31);
+    expect(rangeDays('2026-12-30', '2027-01-02')).toBe(4);
+    // Across the end of February and a whole year
+    expect(rangeDays('2028-02-28', '2028-03-01')).toBe(3);
+    expect(rangeDays('2026-01-01', '2026-12-31')).toBe(365);
+  });
+
+  it('is 0 for an incomplete or reversed range', () => {
+    expect(rangeDays('2026-10-08', '')).toBe(0);
+    expect(rangeDays('', '')).toBe(0);
+    expect(rangeDays('2026-10-08', '2026-10-07')).toBe(0);
+  });
+
+  it('allows days inside min / max only', () => {
+    expect(dayAllowed('2026-10-07', { max: '2026-10-06' })).toBe(false);
+    expect(dayAllowed('2026-10-06', { max: '2026-10-06' })).toBe(true);
+    expect(dayAllowed('2026-10-05', { min: '2026-10-06' })).toBe(false);
+    expect(dayAllowed('2026-10-05')).toBe(true);
+  });
+
+  it('says why a range cannot be applied', () => {
+    expect(rangeProblem('2026-10-08', '')).toBe('missing');
+    expect(rangeProblem('2026-10-08', '2026-10-08')).toBeNull();
+    expect(rangeProblem('2026-10-01', '2026-10-31', 30)).toBe('tooLong');
+    expect(rangeProblem('2026-10-01', '2026-10-30', 30)).toBeNull();
   });
 });

@@ -261,6 +261,21 @@
       "loadMore": "Load more",
       "unreadCount": "{count} unread"
     }
+  },
+  "dateRange": {
+    "title": "Pick a date range",
+    "placeholder": "Pick dates",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "month": "{month}/{year}",
+    "prev": "Previous month",
+    "next": "Next month",
+    "pickStart": "Tap the first day, then the last",
+    "pickEnd": "Tap the last day (tap the first day again for one day)",
+    "summary": "{from} → {to} · {days, plural, one {# day} other {# days}}",
+    "single": "{from} · 1 day",
+    "tooLong": "Up to {days} days.",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }
-

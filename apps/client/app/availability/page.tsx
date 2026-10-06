@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, outletsApi, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { ShellIcon } from '../components/shell/Icon';
 import { formatDayLabel } from '../dashboard/overview-model';
 import { Skeleton, cardClass, primaryBtn, type Money, type T } from '../orders/list/parts';
@@ -471,23 +472,18 @@ function AvailabilityContent() {
       >
         <div className="flex flex-wrap items-end gap-3">
           <ProductPicker value={product} outletId={outletId} onPick={setProduct} t={t} />
-          <label className="flex min-w-0 flex-[1_1_150px] flex-col gap-1.5 text-sm text-ar-muted">
-            {t('pickup')}
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => {
-                const v = e.target.value;
-                setFrom(v);
-                if (v && (!to || to < v)) setTo(v);
-              }}
-              className={fieldClass}
+          <div className="flex min-w-0 flex-[2_1_260px] flex-col gap-1.5 text-sm text-ar-muted">
+            <span aria-hidden="true">{`${t('pickup')} → ${t('return')}`}</span>
+            <DateRangeField
+              from={from}
+              to={to}
+              todayKey={todayKey}
+              ariaLabel={`${t('pickup')} → ${t('return')}`}
+              quick={(['today', 'tomorrow', 'weekend', 'threeDays'] as const).map((k) => ({ key: k, label: t(`quick.${k}`), ...quick[k] }))}
+              className="h-11 rounded-xl text-base"
+              onChange={setPeriod}
             />
-          </label>
-          <label className="flex min-w-0 flex-[1_1_150px] flex-col gap-1.5 text-sm text-ar-muted">
-            {t('return')}
-            <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className={fieldClass} />
-          </label>
+          </div>
           <label className="flex min-w-0 flex-[0_1_110px] flex-col gap-1.5 text-sm text-ar-muted">
             {t('quantity')}
             <input

@@ -1,7 +1,8 @@
 /**
- * Tạo đơn (#556): one range calendar for the rental days, like the old create form's date range picker
- * (click the pickup day, then the return day; the range is highlighted). Works on Vietnam civil day keys
- * (YYYY-MM-DD) only, so the browser's time zone never moves a day. Pure, no @rentalshop/* imports.
+ * One range calendar for every date range on the shop web (#556 Tạo đơn, #559 Tổng quan, Kiểm tra còn hàng,
+ * Đơn hàng): click the first day, then the last; the range is highlighted and its length read in days.
+ * Works on Vietnam civil day keys (YYYY-MM-DD) only, so the browser's time zone never moves a day.
+ * Pure, no @rentalshop/* imports.
  */
 
 const KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -61,4 +62,30 @@ export function dayMark(range: DayRangePick, key: string, hover?: string | null)
   if (key === a) return 'start';
   if (key === b) return 'end';
   return key > a && key < b ? 'inside' : null;
+}
+
+const keyMs = (key: string): number => {
+  const [y, m, d] = key.split('-').map(Number);
+  return Date.UTC(y, m - 1, d);
+};
+
+/** Days a range covers, both ends counted: the same day is 1, 01/10 → 31/10 is 31. 0 when incomplete or reversed. */
+export function rangeDays(from: string, to: string): number {
+  if (!KEY.test(from) || !KEY.test(to) || to < from) return 0;
+  return Math.round((keyMs(to) - keyMs(from)) / 86_400_000) + 1;
+}
+
+/** Whether a day can be picked, given optional first / last allowed day keys. */
+export function dayAllowed(key: string, limits: { min?: string; max?: string } = {}): boolean {
+  if (limits.min && key < limits.min) return false;
+  if (limits.max && key > limits.max) return false;
+  return true;
+}
+
+/** Why a picked range cannot be applied yet: `missing` (no end day) or `tooLong` (over `maxDays`). */
+export function rangeProblem(from: string, to: string, maxDays?: number): 'missing' | 'tooLong' | null {
+  const days = rangeDays(from, to);
+  if (!days) return 'missing';
+  if (maxDays && days > maxDays) return 'tooLong';
+  return null;
 }
