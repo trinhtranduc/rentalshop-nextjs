@@ -210,5 +210,100 @@
       "handedOver": "Handed over",
       "takenBack": "Taken back"
     }
+  },
+  "home": {
+    "title": "Overview",
+    "comparedToPrevious": "vs. previous period",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "periods": {
+      "label": "Period",
+      "today": "Today",
+      "7d": "Last 7 days",
+      "month": "This month",
+      "custom": "Custom…"
+    },
+    "custom": {
+      "from": "From",
+      "to": "To",
+      "apply": "Show"
+    },
+    "kpi": {
+      "orderValue": "New order value",
+      "orderValueHint": "{count} orders · cancelled excluded",
+      "collected": "Collected",
+      "collectedHint": "excluding collateral",
+      "outstanding": "Still to collect",
+      "outstandingHint": "From new orders",
+      "overdueHint": "{amount} past pickup date",
+      "netReceived": "Cash received",
+      "netReceivedHint": "Collected + collateral in − returned",
+      "new": "New"
+    },
+    "chart": {
+      "label": "Chart",
+      "collectedTitle": "Collected per day",
+      "ordersTitle": "New orders per day",
+      "collected": "Collected",
+      "orders": "New orders",
+      "empty": "No data in this period."
+    },
+    "today": {
+      "title": "Today's work",
+      "pickups": "To hand over today",
+      "pickupsDone": "Handed over {done}/{total}",
+      "returns": "To take back today",
+      "returnsDone": "Taken back {done}/{total}",
+      "overdue": "Renting · overdue",
+      "noShows": "Past pickup date, not collected",
+      "tomorrow": "Tomorrow · {day}",
+      "tomorrowCounts": "Hand over {pickups} · Return {returns}"
+    },
+    "money": {
+      "collectedTitle": "Collected is made of",
+      "deposits": "Deposits at order",
+      "pickupAndSale": "Paid at pickup and sales",
+      "fees": "Damage and late fees",
+      "refunds": "Refunds on cancelled orders",
+      "collectedTotal": "Collected",
+      "outstandingTitle": "Still to collect",
+      "atPickup": "Due when the customer picks up",
+      "overduePickup": "Past pickup date, unpaid",
+      "orders": "{count} orders",
+      "callCustomers": "{count} orders · call the customer",
+      "total": "Total",
+      "collateralTitle": "Collateral",
+      "received": "Received in period",
+      "returned": "Returned to customers",
+      "upcoming": "Upcoming · not counted yet",
+      "toReturn": "Held, to return to customers",
+      "toCollect": "To receive at pickup"
+    },
+    "orders": {
+      "title": "Orders to handle today",
+      "viewAll": "View all",
+      "pickupTag": "Hand over",
+      "returnTag": "Take back",
+      "pickupOn": "Pickup {day}",
+      "returnOn": "return {day}",
+      "returnOnly": "Return {day}",
+      "returnDue": "Due back {day}",
+      "notPrepared": "Not prepared",
+      "late": "{days} days late",
+      "collect": "{amount} to collect",
+      "refund": "refund {amount}",
+      "fee": "+ fees {amount}",
+      "pickupAction": "Hand over",
+      "returnAction": "Take back",
+      "empty": "Nothing to hand over or take back today."
+    },
+    "top": {
+      "title": "Most rented",
+      "subtitle": "by order value",
+      "rentals": "{count} rentals",
+      "empty": "Nothing rented in this period.",
+      "imageAlt": "Photo of {name}"
+    },
+    "loadFailed": "Couldn't load the numbers.",
+    "retry": "Try again"
   }
 }
