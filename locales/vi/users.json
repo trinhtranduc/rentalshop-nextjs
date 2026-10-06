@@ -252,6 +252,125 @@
       "rolePermissions": "Xem quyền từng vai trò",
       "permissions": "Phân quyền thêm cho nhân viên"
     },
+    "permissions": {
+      "title": "Phân quyền thêm cho nhân viên",
+      "hint": "Bật thêm quyền cho từng nhân viên, ngoài quyền mặc định của vai trò.",
+      "noAccess": "Tài khoản nhân viên không phân quyền được.",
+      "pickTitle": "Chọn nhân viên",
+      "picked": "đã chọn {count}",
+      "pickAll": "Chọn tất cả",
+      "pickNone": "Bỏ chọn",
+      "noStaff": "Chưa có nhân viên nào (vai trò Nhân viên)",
+      "switchTitle": "Quyền thêm",
+      "pickFirst": "Chọn ít nhất một nhân viên ở bên trái.",
+      "forOne": "Đang sửa quyền của {name}.",
+      "forMany": "Đang sửa {count} nhân viên: bắt đầu từ tắt hết, Lưu sẽ áp dụng cho cả {count} người.",
+      "allOn": "Bật hết",
+      "allOff": "Tắt hết",
+      "cancel": "Bỏ chọn",
+      "save": "Lưu quyền",
+      "saving": "Đang lưu…",
+      "savedTitle": "Đã lưu",
+      "saved": "Đã lưu quyền cho {count} nhân viên",
+      "errorTitle": "Lỗi",
+      "saveFailed": "Không lưu được quyền. Thử lại.",
+      "readFailed": "Không đọc được quyền đã lưu của nhân viên này. Lưu sẽ ghi lại mọi quyền thêm đúng như các công tắc bên dưới.",
+      "groups": {
+        "outlet": "Chi nhánh",
+        "orders": "Đơn hàng",
+        "products": "Sản phẩm",
+        "customers": "Khách hàng",
+        "users": "Nhân viên",
+        "dashboard": "Tổng quan"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "Xem chi nhánh",
+        "desc": "Xem thông tin chi nhánh"
+      },
+      "outlet_manage": {
+        "label": "Quản lý chi nhánh",
+        "desc": "Sửa thông tin và cài đặt chi nhánh"
+      },
+      "users_view": {
+        "label": "Xem nhân viên",
+        "desc": "Xem danh sách và thông tin nhân viên"
+      },
+      "users_manage": {
+        "label": "Quản lý nhân viên",
+        "desc": "Thêm, sửa, khoá và xoá nhân viên"
+      },
+      "products_view": {
+        "label": "Xem sản phẩm",
+        "desc": "Xem danh sách và chi tiết sản phẩm"
+      },
+      "products_create": {
+        "label": "Thêm sản phẩm",
+        "desc": "Thêm sản phẩm mới"
+      },
+      "products_update": {
+        "label": "Sửa sản phẩm",
+        "desc": "Sửa sản phẩm đã có, kể cả giá"
+      },
+      "products_manage": {
+        "label": "Quản lý sản phẩm",
+        "desc": "Toàn quyền: xoá, nhập Excel, giá vốn"
+      },
+      "products_export": {
+        "label": "Xuất sản phẩm",
+        "desc": "Tải danh sách sản phẩm ra Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Tạo đơn",
+        "desc": "Tạo đơn thuê và đơn bán"
+      },
+      "orders_view": {
+        "label": "Xem đơn",
+        "desc": "Xem danh sách và chi tiết đơn"
+      },
+      "orders_update": {
+        "label": "Sửa đơn",
+        "desc": "Sửa đơn, giao đồ, nhận trả"
+      },
+      "orders_delete": {
+        "label": "Xoá đơn",
+        "desc": "Xoá đơn hàng"
+      },
+      "orders_export": {
+        "label": "Xuất đơn hàng",
+        "desc": "Tải danh sách đơn ra Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Quản lý đơn",
+        "desc": "Toàn quyền với đơn hàng"
+      },
+      "customers_view": {
+        "label": "Xem khách hàng",
+        "desc": "Xem danh sách và thông tin khách"
+      },
+      "customers_manage": {
+        "label": "Quản lý khách hàng",
+        "desc": "Thêm, sửa và xoá khách"
+      },
+      "customers_export": {
+        "label": "Xuất khách hàng",
+        "desc": "Tải danh sách khách ra Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "Xem tổng quan",
+        "desc": "Xem trang Tổng quan và số liệu"
+      }
+    },
+    "rolePermissions": {
+      "title": "Quyền theo vai trò",
+      "hint": "Quyền mặc định của mỗi vai trò. Chỉ để xem.",
+      "roleLabel": "Vai trò",
+      "count": "{count} quyền",
+      "granted": "Có quyền",
+      "notGranted": "Không có quyền",
+      "note": "Đây là quyền mặc định của vai trò. Muốn bật thêm cho từng người, dùng Phân quyền thêm cho nhân viên."
+    },
     "empty": "Chưa có nhân viên nào",
     "emptySearch": "Không có nhân viên khớp bộ lọc",
     "loadFailed": "Không tải được danh sách nhân viên.",
