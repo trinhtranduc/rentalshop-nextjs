@@ -11,9 +11,13 @@ export type ThemeName = 'light' | 'dark';
 export const THEME_STORAGE_KEY = 'anyrent-theme';
 export const THEME_ATTRIBUTE = 'data-ar-theme';
 
-/** The switch ships hidden until every page is redrawn for dark mode. */
-export const isThemeSwitchEnabled = (): boolean =>
-  process.env.NEXT_PUBLIC_ENABLE_THEME_SWITCH === 'true';
+/**
+ * The switch is on by default (#528). `NEXT_PUBLIC_ENABLE_THEME_SWITCH=false` turns it off
+ * (always light) as a kill switch; any other value, or none, keeps it on.
+ */
+export const isThemeSwitchEnabledFor = (flag: string | undefined): boolean => flag?.trim().toLowerCase() !== 'false';
+
+export const isThemeSwitchEnabled = (): boolean => isThemeSwitchEnabledFor(process.env.NEXT_PUBLIC_ENABLE_THEME_SWITCH);
 
 export function parseThemeChoice(value: unknown): ThemeName | null {
   return value === 'light' || value === 'dark' ? value : null;
