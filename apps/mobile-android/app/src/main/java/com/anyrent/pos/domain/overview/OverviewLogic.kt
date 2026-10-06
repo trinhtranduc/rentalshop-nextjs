@@ -93,7 +93,18 @@ data class OverviewNow(
     val collateralToCollect: CollateralCount? = null,
     /** #494 `cash.collateralToReturn`, or `depositsHeld.securityDeposit` without a count on an older API */
     val collateralToReturn: CollateralCount? = null,
+    /** #496 hand-overs of today: `pickupsToday.count` left, `doneToday.pickups` done; null when missing */
+    val pickupsToday: TodayTask? = null,
+    /** #496 returns of today: `returnsToday.count` left, `doneToday.returns` done; null when missing */
+    val returnsToday: TodayTask? = null,
+    /** #496 `noShows.count`: rent orders still RESERVED past their pickup day; null when missing */
+    val noShows: Int? = null,
 )
+
+/** #496 one row of "VIỆC HÔM NAY": [remaining] still to do, [done] already done today */
+data class TodayTask(val remaining: Int, val done: Int) {
+    val total: Int get() = remaining + done
+}
 
 object OverviewLogic {
     /** Ranges longer than this are charted per month (same rule as the API) */
@@ -240,6 +251,15 @@ object OverviewLogic {
         )
     }
 
+    private fun count(o: JSONObject?, key: String): Int? =
+        if (o == null || !o.has(key) || o.isNull(key)) null else o.optDouble(key).takeIf { !it.isNaN() }?.toInt()
+
+    /** #496 `{list}.count` left and `doneToday.{done}`; a missing count hides the row, a missing done count is 0 */
+    private fun todayTask(data: JSONObject, list: String, done: String): TodayTask? {
+        val remaining = count(data.optJSONObject(list), "count") ?: return null
+        return TodayTask(remaining, count(data.optJSONObject("doneToday"), done) ?: 0)
+    }
+
     fun nowFromJson(data: JSONObject): OverviewNow {
         val cash = data.optJSONObject("cash")
         val held = cash?.optJSONObject("depositsHeld")
@@ -257,6 +277,9 @@ object OverviewLogic {
             collateralHeld = collateralHeld,
             collateralToCollect = collateral("collateralToCollect"),
             collateralToReturn = collateral("collateralToReturn") ?: collateralHeld?.let { CollateralCount(it, null) },
+            pickupsToday = todayTask(data, "pickupsToday", "pickups"),
+            returnsToday = todayTask(data, "returnsToday", "returns"),
+            noShows = count(data.optJSONObject("noShows"), "count"),
         )
     }
 }

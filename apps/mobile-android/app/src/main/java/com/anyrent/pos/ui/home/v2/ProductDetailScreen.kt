@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.anyrent.pos.R
+import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
@@ -272,7 +273,7 @@ fun ProductDetailScreen(
             if (orders.isEmpty()) {
                 Text(stringResource(R.string.v2_detail_no_orders), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
-            orders.forEach { order -> OrderRow(order, productId, chip) { onOpenOrder(order.id) } }
+            orders.forEach { order -> OrderRow(order, chip) { onOpenOrder(order.id) } }
             Spacer(Modifier.height(24.dp))
         }
 
@@ -421,27 +422,29 @@ private fun OrdersChip(title: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun OrderRow(order: OrderSummary, productId: Int, chip: ProductOrdersChip, onClick: () -> Unit) {
+private fun OrderRow(order: OrderSummary, chip: ProductOrdersChip, onClick: () -> Unit) {
+    // #496: "#0057 · trả T2 05/10" left, "Giao T7 03/10" right; no quantity
+    val texts = orderRowTexts()
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val state = ProductDetailLogic.rowState(order, chip)
+            val state = ProductDetailLogic.rowState(order, chip, weekdays = texts.weekdays)
             val (text, color) = when (state) {
                 ProductOrderRowState.PickupToday -> stringResource(R.string.v2_detail_state_pickup_today) to DS.Status.HandOver.text
-                is ProductOrderRowState.PickupOn -> stringResource(R.string.v2_detail_state_pickup_on, state.dayMonth) to DS.Colors.TextMuted
+                is ProductOrderRowState.PickupOn -> stringResource(R.string.v2_detail_state_pickup_on, state.day) to DS.Colors.TextMuted
                 is ProductOrderRowState.Late -> pluralStringResource(R.plurals.orders_late_days, state.days, state.days) to V2Colors.Danger
                 ProductOrderRowState.ReturnToday -> stringResource(R.string.v2_detail_state_return_today) to DS.Status.HandOver.text
-                is ProductOrderRowState.ReturnOn -> stringResource(R.string.v2_detail_state_return_on, state.dayMonth) to DS.Colors.TextMuted
+                is ProductOrderRowState.ReturnOn -> stringResource(R.string.v2_detail_state_return_on, state.day) to DS.Colors.TextMuted
                 ProductOrderRowState.Status -> "" to OrderStatusStyle.badgeColor(order.status)
             }
             // Board: the bar takes the colour of the row's state
             Box(Modifier.width(4.dp).height(40.dp).clip(RoundedCornerShape(4.dp)).background(color))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
                 Text(order.customerName.orEmpty(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(ProductDetailLogic.meta(order, productId), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(ProductDetailLogic.meta(order, texts = texts), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (state == ProductOrderRowState.Status) StatusBadge(order.status, fontSize = DS.TextSize.Pill)
             else Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)

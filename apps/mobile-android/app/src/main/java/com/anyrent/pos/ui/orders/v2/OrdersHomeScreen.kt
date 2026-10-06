@@ -90,6 +90,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.TodayWorkRow
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.AppFormSheet
@@ -142,7 +144,7 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
     var searchMode by rememberSaveable { mutableStateOf(false) }
     var rentSegment by rememberSaveable { mutableStateOf(OrdersSegment.TODAY) }
     val listState = rememberLazyListState()
-    val texts = boardTexts()
+    val texts = orderRowTexts()
 
     LaunchedEffect(Unit) { viewModel.onShown() }
     // After create-order success: MainTabRouter switches to this tab and asks for a reload
@@ -326,19 +328,18 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
     }
 }
 
+/** #496 the date line templates of an order row, in the app language */
 @Composable
-private fun boardTexts() = OrdersBoardTexts(
-    // Unformatted plural forms ("%1$d days" / "%1$d day"), formatted by OrdersBoardLogic.span
-    days = pluralStringResource(R.plurals.orders_v2_when_days, 2),
-    oneDay = pluralStringResource(R.plurals.orders_v2_when_days, 1),
-    handOverDue = stringResource(R.string.orders_v2_when_hand_over_due),
-    returnDue = stringResource(R.string.orders_v2_when_return_due),
-    createdToday = stringResource(R.string.orders_v2_when_created_today),
-    created = stringResource(R.string.orders_v2_when_created),
-    due = stringResource(R.string.orders_v2_when_due),
-    cancelled = stringResource(R.string.orders_v2_when_cancelled),
-    returns = stringResource(R.string.orders_v2_when_returns),
-    sold = stringResource(R.string.orders_v2_when_sold),
+internal fun orderRowTexts() = OrderRowDates.Texts(
+    weekdays = stringResource(R.string.order_row_weekdays).split(',').map { it.trim() },
+    created = stringResource(R.string.order_row_created),
+    handOver = stringResource(R.string.order_row_hand_over),
+    handOverReturn = stringResource(R.string.order_row_hand_over_return),
+    returns = stringResource(R.string.order_row_returns),
+    returnDue = stringResource(R.string.order_row_return_due),
+    returned = stringResource(R.string.order_row_returned),
+    sold = stringResource(R.string.order_row_sold),
+    cancelled = stringResource(R.string.order_row_cancelled),
 )
 
 @Composable
@@ -608,7 +609,7 @@ private fun WorkRow(
     work: TodayWorkRow,
     kind: WorkKind,
     isLate: Boolean,
-    texts: OrdersBoardTexts,
+    texts: OrderRowDates.Texts,
     onClick: () -> Unit,
     onCall: (String) -> Unit,
 ) {
@@ -627,9 +628,7 @@ private fun WorkRow(
         tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
             (if (handOver) DS.Status.HandOver else DS.Status.Return),
         name = work.customerName,
-        items = work.productNames,
-        line = "#${OrdersBoardLogic.shortNumber(work.orderNumber)} · " +
-            OrdersBoardLogic.workWhen(work, kind, isLate, texts = texts),
+        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(work, kind, isLate), texts),
         pills = pills,
         total = formatMoneyVnd(work.totalAmount),
         struck = false,
@@ -646,17 +645,45 @@ private fun WorkRow(
  */
 @Composable
 internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.SEARCH, boardTexts(), onClick)
+    OrderRow(row, RowContext.SEARCH, orderRowTexts(), onClick)
 }
 
 /** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
 @Composable
 internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.LIST, boardTexts(), onClick)
+    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick)
 }
 
+/**
+ * #496 a "Chưa lấy đồ" row (board DT-chua-lay): the list row, with "Quá x ngày · nên gọi khách" when the pickup day
+ * has passed ([overdueDays] > 0) and "còn thu N" in amber under the total when something is due.
+ */
 @Composable
-private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoardTexts, onClick: () -> Unit) {
+internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick: () -> Unit) {
+    val due = order.amountDue?.takeIf { it > 0 }
+    BoardRow(
+        tag = stringResource(OrderStatusTag.labelRes(order.status)) to OrderStatusTag.colors(order.status),
+        name = order.customerName,
+        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, 0), orderRowTexts()),
+        pills = if (overdueDays > 0) {
+            listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to DS.Status.Late)
+        } else {
+            emptyList()
+        },
+        total = formatMoneyVnd(order.totalAmount),
+        struck = false,
+        pay = due?.let { stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(it)) to DueAmber },
+        phone = null,
+        onClick = onClick,
+        onCall = {},
+    )
+}
+
+/** #496 "còn thu" of a "Chưa lấy đồ" row */
+private val DueAmber = Color(0xFFB45309)
+
+@Composable
+private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrderRowDates.Texts, onClick: () -> Unit) {
     val order = row.order
     val tagKind = OrdersBoardLogic.statusTag(order.status)
     // #482: same tag as the order detail header
@@ -666,17 +693,11 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoa
     val tagText = stringResource(tagRes).let {
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
     }
-    val number = "#${OrdersBoardLogic.shortNumber(order.orderNumber)}"
-    val line = when (context) {
-        RowContext.SALE -> number
-        RowContext.SEARCH -> "$number · ${OrdersBoardLogic.searchWhen(order, row.lateDays, texts = texts)}"
-        RowContext.LIST -> "$number · ${OrdersBoardLogic.listWhen(order, row.lateDays, texts = texts)}"
-    }
     BoardRow(
         tag = tagText to colors,
         name = order.customerName,
-        items = order.itemsSummary,
-        line = line,
+        // #496: no product line; the same two date lines in every context
+        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
         pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
@@ -698,8 +719,7 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrdersBoa
 private fun BoardRow(
     tag: Pair<String, DS.Pill>,
     name: String?,
-    items: String,
-    line: String,
+    lines: OrderRowDates.Lines,
     pills: List<Pair<String, DS.Pill>>,
     total: String,
     struck: Boolean,
@@ -728,10 +748,7 @@ private fun BoardRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (items.isNotBlank()) {
-                    Text(items, fontSize = DS.TextSize.Body, color = BoardColors.Items, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                Text(line, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                OrderRowDateLines(lines)
                 if (pills.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
                         pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
@@ -773,6 +790,16 @@ private fun BoardRow(
         HorizontalDivider(color = DS.Colors.Divider)
     }
 }
+
+/** #496 line 1 muted "#0053 · tạo T2 05/10", line 2 the task of the status ("Giao T2 05/10 · trả T4 07/10") */
+@Composable
+internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
+    Text(lines.meta, fontSize = 13.sp, color = OrderRowMetaColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+}
+
+/** #496 line 1 of an order row */
+internal val OrderRowMetaColor = Color(0xFF64748B)
 
 /**
  * Coloured tag of an order row (#468, boards Main / VL-tat-ca / VL-ban): STATUS ("Giao", "Đã đặt") 14sp bold,

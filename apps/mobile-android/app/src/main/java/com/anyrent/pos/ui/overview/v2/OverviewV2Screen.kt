@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.overview.CollateralCount
 import com.anyrent.pos.domain.overview.CollateralFlow
 import com.anyrent.pos.domain.overview.CollectedBreakdown
@@ -121,6 +122,10 @@ fun OverviewV2Screen(
     onOpenProduct: (Int, String, String) -> Unit = { _, _, _ -> },
     /** #484: "Đang cho thuê" and "Đang thuê · trễ hạn trả" open the rented-out list */
     onOpenRentedOut: () -> Unit = {},
+    /** #496: "Quá ngày lấy, khách chưa đến" and both "Còn phải thu" rows open "Chưa lấy đồ" */
+    onOpenNotPickedUp: () -> Unit = {},
+    /** #496: the "Việc hôm nay" rows open the Orders tab */
+    onOpenOrdersTab: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
@@ -171,12 +176,32 @@ fun OverviewV2Screen(
                         )
                     }
                 }
+                // #496 "VIỆC HÔM NAY · T3 06/10": today's hand-overs and returns, whatever the period; hidden without the data
+                val todayTasks = state.now?.takeIf { state.showsOperations }?.let { now ->
+                    listOfNotNull(
+                        now.pickupsToday?.let { Triple(R.string.overview_v2_pickups_today, R.string.overview_v2_pickups_done, it) },
+                        now.returnsToday?.let { Triple(R.string.overview_v2_returns_today, R.string.overview_v2_returns_done, it) },
+                    )
+                }.orEmpty()
+                if (todayTasks.isNotEmpty()) {
+                    item(key = "today-band") {
+                        val weekdays = stringResource(R.string.order_row_weekdays).split(',').map { it.trim() }
+                        SectionBand("${stringResource(R.string.overview_v2_today_work)} · ${OrderRowDates.day(LocalDate.now(OrderRowDates.shopZone), weekdays)}")
+                    }
+                    items(todayTasks, key = { "today-${it.first}" }) { (label, sub, task) ->
+                        TodayTaskRow(stringResource(label), stringResource(sub, task.done, task.total), task.remaining, onOpenOrdersTab)
+                    }
+                }
                 // #388: each figure opens its list (the kind of the `overview-orders` route)
                 val stats = buildList {
                     state.report?.newOrders?.takeIf { state.showsRevenue }?.let { add(StatRowData(R.string.overview_v2_new_orders, it.toString(), DS.Colors.Text, OverviewLinks.NEW)) }
                     state.now?.rentedOut?.let { add(StatRowData(R.string.overview_v2_rented_out, it.toString(), DS.Colors.Text, OverviewLinks.RENTED)) }
                     state.now?.takeIf { state.showsOperations }?.let {
                         add(StatRowData(R.string.overview_v2_late_returns, it.lateReturns.toString(), if (it.lateReturns > 0) V2Colors.Danger else DS.Colors.Text, OverviewLinks.LATE))
+                    }
+                    // #496: red row, opens "Chưa lấy đồ"
+                    state.now?.noShows?.takeIf { state.showsOperations }?.let {
+                        add(StatRowData(R.string.overview_v2_no_shows, it.toString(), if (it > 0) V2Colors.Danger else DS.Colors.Text, NO_SHOWS_KIND))
                     }
                 }
                 if (stats.isNotEmpty()) {
@@ -186,15 +211,21 @@ fun OverviewV2Screen(
                             Modifier.fillMaxWidth()
                                 .then(
                                     stat.kind?.let { kind ->
-                                        if (kind == OverviewLinks.RENTED || kind == OverviewLinks.LATE) Modifier.clickable(onClick = onOpenRentedOut)
-                                        else Modifier.clickable { onOpenList(kind, range.start.toString(), range.end.toString()) }
+                                        when (kind) {
+                                            OverviewLinks.RENTED, OverviewLinks.LATE -> Modifier.clickable(onClick = onOpenRentedOut)
+                                            NO_SHOWS_KIND -> Modifier.clickable(onClick = onOpenNotPickedUp)
+                                            else -> Modifier.clickable { onOpenList(kind, range.start.toString(), range.end.toString()) }
+                                        }
                                     } ?: Modifier,
                                 )
                                 .heightIn(min = 48.dp).padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text(stringResource(stat.label), fontSize = DS.TextSize.Body, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+                            Text(
+                                stringResource(stat.label), fontSize = DS.TextSize.Body, modifier = Modifier.weight(1f),
+                                color = if (stat.kind == NO_SHOWS_KIND && stat.color == V2Colors.Danger) V2Colors.Danger else DS.Colors.Text,
+                            )
                             Text(stat.value, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = stat.color)
                             if (stat.kind != null) Chevron()
                         }
@@ -283,6 +314,11 @@ fun OverviewV2Screen(
                 breakdown = outstandingBreakdown,
                 periodTitle = periodTitle,
                 onClose = { showOutstanding = false },
+                // #496: both rows open "Chưa lấy đồ"; the sheet closes first
+                onOpenNotPickedUp = {
+                    showOutstanding = false
+                    onOpenNotPickedUp()
+                },
             )
         }
     }
@@ -708,7 +744,13 @@ private fun ReceivedDetailSheet(
 
 /** #494 "Còn phải thu": the unpaid part of the period's orders, due at pickup or already overdue */
 @Composable
-private fun OutstandingDetailSheet(outstanding: Double?, breakdown: OutstandingBreakdown, periodTitle: String, onClose: () -> Unit) {
+private fun OutstandingDetailSheet(
+    outstanding: Double?,
+    breakdown: OutstandingBreakdown,
+    periodTitle: String,
+    onClose: () -> Unit,
+    onOpenNotPickedUp: () -> Unit,
+) {
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -721,6 +763,8 @@ private fun OutstandingDetailSheet(outstanding: Double?, breakdown: OutstandingB
                 stringResource(R.string.overview_v2_outstanding_at_pickup),
                 stringResource(R.string.overview_v2_outstanding_at_pickup_orders, breakdown.atPickup.orders),
                 formatMoneyVnd(breakdown.atPickup.amount),
+                expanded = false,
+                onClick = onOpenNotPickedUp,
             )
             ThinDivider()
             if (breakdown.overduePickup.orders > 0) {
@@ -729,6 +773,8 @@ private fun OutstandingDetailSheet(outstanding: Double?, breakdown: OutstandingB
                     stringResource(R.string.overview_v2_outstanding_overdue_orders, breakdown.overduePickup.orders),
                     formatMoneyVnd(breakdown.overduePickup.amount),
                     amountColor = V2Colors.Danger,
+                    expanded = false,
+                    onClick = onOpenNotPickedUp,
                 )
                 ThinDivider()
             }
@@ -740,6 +786,28 @@ private fun OutstandingDetailSheet(outstanding: Double?, breakdown: OutstandingB
         }
         CloseButton(onClose)
     }
+}
+
+/** #496 kind of the "Quá ngày lấy, khách chưa đến" row (not an `overview-orders` kind) */
+private const val NO_SHOWS_KIND = "no-shows"
+
+/** #496 a "Việc hôm nay" row: what is left today, "Đã giao d/t" under it; opens the Orders tab */
+@Composable
+private fun TodayTaskRow(label: String, sub: String, remaining: Int, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(label, fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+            Text(sub, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        }
+        Text(remaining.toString(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+        Chevron()
+    }
+    ThinDivider()
 }
 
 private data class StatRowData(val label: Int, val value: String, val color: Color, val kind: String?)

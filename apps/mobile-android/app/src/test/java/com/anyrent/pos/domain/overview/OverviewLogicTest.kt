@@ -280,6 +280,32 @@ class OverviewLogicTest {
         assertEquals(null, OverviewLogic.nowFromJson(JSONObject("{}")).collateralToReturn)
     }
 
+    /** #496: "Việc hôm nay" counts and the no-shows count of outlet-operations */
+    @Test
+    fun todayWorkCounts() {
+        val now = OverviewLogic.nowFromJson(
+            JSONObject(
+                """{"pickupsToday":{"count":3,"orders":[]},"returnsToday":{"count":0,"orders":[]},
+                "noShows":{"count":2,"orders":[]},"doneToday":{"pickups":4,"returns":1}}""",
+            ),
+        )
+        assertEquals(TodayTask(remaining = 3, done = 4), now.pickupsToday)
+        assertEquals(7, now.pickupsToday!!.total)
+        assertEquals(TodayTask(remaining = 0, done = 1), now.returnsToday)
+        assertEquals(1, now.returnsToday!!.total)
+        assertEquals(2, now.noShows)
+
+        // Without `doneToday` the done count is 0; without a list the row is hidden
+        val partial = OverviewLogic.nowFromJson(JSONObject("""{"pickupsToday":{"count":5},"noShows":{"count":null}}"""))
+        assertEquals(TodayTask(5, 0), partial.pickupsToday)
+        assertEquals(null, partial.returnsToday)
+        assertEquals(null, partial.noShows)
+        val empty = OverviewLogic.nowFromJson(JSONObject("{}"))
+        assertEquals(null, empty.pickupsToday)
+        assertEquals(null, empty.returnsToday)
+        assertEquals(null, empty.noShows)
+    }
+
     @Test
     fun visibilityByRole() {
         assertFalse(OverviewLogic.showsRevenue("OUTLET_STAFF"))

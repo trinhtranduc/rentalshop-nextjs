@@ -65,15 +65,17 @@ class ProductDetailLogicTest {
         assertEquals(listOf(2, 3), ProductDetailLogic.mergeDone(listOf(returned, completed), limit = 2).map { it.id })
     }
 
+    /** #496: "#code · trả T? dd/mm", no quantity; a sale has no planned return */
     @Test
-    fun metaShowsDatesQuantityAndNumber() {
+    fun metaShowsNumberAndReturnDay() {
+        // 04/10 17:00 UTC is Monday 05/10 in Vietnam, Sunday 04/10 in UTC
         val rent = order(status = "RESERVED", pickup = "2026-10-02T17:00:00.000Z", returns = "2026-10-04T17:00:00.000Z")
-        assertEquals("03/10 → 05/10 · × 2 · #0057", ProductDetailLogic.meta(rent, 7, vietnam))
-        assertEquals("03/10 → 05/10 · × 1 · #0057", ProductDetailLogic.meta(rent, 8, vietnam))
-        assertEquals(1, ProductDetailLogic.quantity(9, rent))
+        assertEquals("#0057 · trả T2 05/10", ProductDetailLogic.meta(rent, vietnam))
+        assertEquals("#0057 · trả CN 04/10", ProductDetailLogic.meta(rent, utc))
+        assertEquals("#0057 · trả T2 05/10", ProductDetailLogic.meta(rent))
         val sale = order(status = "COMPLETED", type = "SALE", created = "2026-09-30T18:00:00.000Z", pickup = null, returns = null)
-        assertEquals("01/10 · × 2 · #0057", ProductDetailLogic.meta(sale, 7, vietnam))
-        assertEquals("30/09 · × 2 · #0057", ProductDetailLogic.meta(sale, 7, utc))
+        assertEquals("#0057", ProductDetailLogic.meta(sale, vietnam))
+        assertEquals("#0057", ProductDetailLogic.meta(order(status = "RESERVED", returns = null), vietnam))
     }
 
     @Test
@@ -82,7 +84,7 @@ class ProductDetailLogicTest {
         val today = order(status = "RESERVED", pickup = "2026-10-03T00:00:00.000Z")
         assertEquals(ProductOrderRowState.PickupToday, ProductDetailLogic.rowState(today, ProductOrdersChip.UPCOMING, now, vietnam))
         val later = order(status = "RESERVED", pickup = "2026-10-05T02:00:00.000Z")
-        assertEquals(ProductOrderRowState.PickupOn("05/10"), ProductDetailLogic.rowState(later, ProductOrdersChip.UPCOMING, now, vietnam))
+        assertEquals(ProductOrderRowState.PickupOn("T2 05/10"), ProductDetailLogic.rowState(later, ProductOrdersChip.UPCOMING, now, vietnam))
         val noShow = order(status = "RESERVED", pickup = "2026-10-01T02:00:00.000Z")
         assertEquals(ProductOrderRowState.Late(2), ProductDetailLogic.rowState(noShow, ProductOrdersChip.UPCOMING, now, vietnam))
         // 02/10 18:00 UTC is 03/10 in Vietnam but 02/10 in UTC
@@ -90,7 +92,7 @@ class ProductDetailLogicTest {
         assertEquals(ProductOrderRowState.ReturnToday, ProductDetailLogic.rowState(edge, ProductOrdersChip.RENTING, now, vietnam))
         assertEquals(ProductOrderRowState.Late(1), ProductDetailLogic.rowState(edge, ProductOrdersChip.RENTING, now, utc))
         val due = order(status = "PICKUPED", returns = "2026-10-07T02:00:00.000Z")
-        assertEquals(ProductOrderRowState.ReturnOn("07/10"), ProductDetailLogic.rowState(due, ProductOrdersChip.RENTING, now, vietnam))
+        assertEquals(ProductOrderRowState.ReturnOn("T4 07/10"), ProductDetailLogic.rowState(due, ProductOrdersChip.RENTING, now, vietnam))
         assertEquals(ProductOrderRowState.Status, ProductDetailLogic.rowState(order(status = "RETURNED"), ProductOrdersChip.DONE, now, vietnam))
     }
 }

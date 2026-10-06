@@ -4,6 +4,7 @@ import com.anyrent.pos.data.ApiClient.PageResult
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.repository.todayWorkFromJson
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRepository
 import com.anyrent.pos.domain.orders.TodayWorkRow
@@ -47,7 +48,6 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Instant
 import java.time.ZoneId
-import java.util.Locale
 
 /** #371 — orders tab: today's work, late days, sale day groups, stale search; #401 — board texts */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -236,8 +236,6 @@ class OrdersHomeTest {
 
     // --- Board texts (#401) ---
 
-    private val vi = Locale("vi")
-
     private fun work(id: Int, kind: WorkKind) = OrdersRow.Work(TodayWorkRow(id = id, orderNumber = "ORD-1-$id"), kind)
 
     private fun listOrder(
@@ -298,18 +296,26 @@ class OrdersHomeTest {
         assertEquals("702293", OrdersBoardLogic.shortNumber("702293"))
     }
 
+    /** #496: a "Việc cần làm" row reads like a list row: no created day, the task of its kind */
     @Test
-    fun `work date line`() {
+    fun `work row date lines`() {
         val row = TodayWorkRow(
             id = 1, orderNumber = "ORD-1-0057",
             pickupPlanAt = Instant.parse("2026-10-02T17:30:00Z"), // 03/10 00:30 in Vietnam
             returnPlanAt = Instant.parse("2026-10-05T02:00:00Z"),
         )
-        assertEquals("03/10 → 05/10 · 3 ngày", OrdersBoardLogic.workWhen(row, WorkKind.HAND_OVER, false, vietnam, vi))
-        assertEquals("02/10 → 05/10 · 4 ngày", OrdersBoardLogic.workWhen(row, WorkKind.HAND_OVER, false, utc, vi))
-        assertEquals("hẹn giao T7 03/10", OrdersBoardLogic.workWhen(row, WorkKind.HAND_OVER, true, vietnam, vi))
-        assertEquals("hạn trả T2 05/10", OrdersBoardLogic.workWhen(row, WorkKind.TAKE_BACK, true, vietnam, vi))
-        assertEquals(1, OrdersBoardLogic.inclusiveDays(Instant.parse("2026-10-03T01:00:00Z"), Instant.parse("2026-10-03T10:00:00Z"), vietnam))
+        assertEquals(
+            OrderRowDates.Lines("#0057", "Giao T7 03/10 · trả T2 05/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(row, WorkKind.HAND_OVER, isLate = true)),
+        )
+        assertEquals(
+            OrderRowDates.Lines("#0057", "Trả T2 05/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(row, WorkKind.TAKE_BACK, isLate = false)),
+        )
+        assertEquals(
+            OrderRowDates.Lines("#0057", "Hạn trả T2 05/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(row, WorkKind.TAKE_BACK, isLate = true)),
+        )
     }
 
     @Test
@@ -343,45 +349,25 @@ class OrdersHomeTest {
         assertEquals(FontWeight.Normal, RowMoneyText.payWeight)
     }
 
-    /** #482: a row of another year shows the 2-digit year on every dd/MM of its date line (iOS parity) */
+    /** #496: list rows map every date of the order; late only matters to a rented-out order */
     @Test
-    fun `list date line adds the year when not this year`() {
-        val now = Instant.parse("2026-01-02T05:00:00Z")
+    fun `list row date lines`() {
         assertEquals(
-            "tạo 28/12/25 · 30/12/25 → 03/01",
-            OrdersBoardLogic.listWhen(
-                listOrder("RESERVED", created = "2025-12-28T03:00:00Z", pickup = "2025-12-30T02:00:00Z", returns = "2026-01-03T02:00:00Z"),
-                0, now, vietnam,
-            ),
+            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Giao CN 04/10 · trả T2 05/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("RESERVED"), 0)),
         )
         assertEquals(
-            "tạo 28/12/25 · huỷ 29/12/25",
-            OrdersBoardLogic.listWhen(listOrder("CANCELLED", created = "2025-12-28T03:00:00Z", updated = "2025-12-29T03:00:00Z"), 0, now, vietnam),
-        )
-        // 31/12/2025 17:30Z is 01/01/2026 in Vietnam: this year there, last year in UTC
-        val newYear = listOrder("RESERVED", created = "2025-12-31T17:30:00Z", pickup = "2026-01-04T02:00:00Z", returns = "2026-01-05T02:00:00Z")
-        assertEquals("tạo 01/01 · 04/01 → 05/01", OrdersBoardLogic.listWhen(newYear, 0, now, vietnam))
-        assertEquals("tạo 31/12/25 · 04/01 → 05/01", OrdersBoardLogic.listWhen(newYear, 0, now, utc))
-    }
-
-    @Test
-    fun `list and search date lines`() {
-        val now = Instant.parse("2026-10-04T05:00:00Z")
-        assertEquals("tạo 02/10 · 04/10 → 05/10", OrdersBoardLogic.listWhen(listOrder("RESERVED"), 0, now, vietnam))
-        assertEquals(
-            "tạo hôm nay · 04/10 → 05/10",
-            OrdersBoardLogic.listWhen(listOrder("RESERVED", created = "2026-10-03T18:00:00Z"), 0, now, vietnam),
+            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Hạn trả T2 05/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("PICKUPED"), 2)),
         )
         assertEquals(
-            "tạo 02/10 · hạn 02/10",
-            OrdersBoardLogic.listWhen(listOrder("PICKUPED", returns = "2026-10-02T02:00:00Z"), 2, now, vietnam),
+            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Bán T6 02/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("COMPLETED", type = "SALE"), 0)),
         )
         assertEquals(
-            "tạo 02/10 · huỷ 03/10",
-            OrdersBoardLogic.listWhen(listOrder("CANCELLED", updated = "2026-10-03T03:00:00Z"), 0, now, vietnam),
+            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Huỷ T7 03/10"),
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("CANCELLED", updated = "2026-10-03T03:00:00Z"), 0)),
         )
-        assertEquals("bán T6 02/10", OrdersBoardLogic.searchWhen(listOrder("COMPLETED", type = "SALE"), 0, vietnam, vi))
-        assertEquals("trả T2 05/10", OrdersBoardLogic.searchWhen(listOrder("PICKUPED"), 0, vietnam, vi))
         assertEquals(RowTag.RENTING, OrdersBoardLogic.statusTag("PICKUPED"))
         assertEquals(RowTag.CANCELLED, OrdersBoardLogic.statusTag("CANCELLED"))
     }
