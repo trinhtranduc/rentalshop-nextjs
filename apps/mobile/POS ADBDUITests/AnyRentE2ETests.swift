@@ -10,6 +10,8 @@
 //    E2E_OUT_DIR               where NN-feature-step.png screenshots are written
 //  Test methods are numbered so XCTest runs them in flow order; each one launches the app and logs in
 //  if needed, so one failing flow does not stop the next.
+//  #530 added the screens from #482 #490 #491 #496 #518 #519: test5c/5d (⋯ sheet, order history), test7d–7j
+//  (product history, overlap setting, pricing sheet, change password, orders by product, notifications, today's work).
 //
 
 import XCTest
@@ -644,6 +646,526 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    // MARK: - Screens that landed on dev with #482 #490 #491 #496 #518 #519 (#530)
+
+    /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: In hoá đơn, Ghi chú, Lịch sử thay đổi,
+    /// then Huỷ đơn apart. Actions the screen already shows as buttons are not repeated in it.
+    func test5cOrderActionSheet() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+
+        // A booked rental: the bottom bar has Sửa đơn + Giao đồ
+        guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
+        checkOrderSheet(onScreen: [["Edit order", "Sửa đơn"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
+                        expected: [["Print receipt", "In hoá đơn"], ["Notes", "Ghi chú"], ["Change history", "Lịch sử thay đổi"]],
+                        destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47a-order-sheet-booked")
+        e2e.goBack()
+
+        // A renting order: Gia hạn + Nhận trả on screen
+        guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
+        checkOrderSheet(onScreen: [["Extend", "Gia hạn"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
+                        expected: [["Print receipt", "In hoá đơn"], ["Notes", "Ghi chú"], ["Change history", "Lịch sử thay đổi"]],
+                        destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47b-order-sheet-renting")
+        XCTAssertFalse(e2e.button(["Edit order", "Sửa đơn"]).exists, "A renting order is not editable: no Sửa đơn in the sheet")
+        e2e.goBack()
+    }
+
+    /// Opens ⋯ on the open detail and checks the sheet against the buttons the screen shows
+    private func checkOrderSheet(onScreen: [[String]], onScreenPrefixes: [[String]], expected: [[String]],
+                                 destructive: [String], shotPrefix: String) {
+        // Buttons of the screen before the sheet opens (the bottom bar)
+        let exact: ([String]) -> Int = { self.app.buttons.matching(NSPredicate(format: "label IN %@", $0)).count }
+        let prefix: ([String]) -> Int = { labels in
+            self.app.buttons.matching(NSCompoundPredicate(orPredicateWithSubpredicates:
+                labels.map { NSPredicate(format: "label BEGINSWITH %@", $0) })).count
+        }
+        let before = onScreen.map(exact) + onScreenPrefixes.map(prefix)
+        XCTAssertTrue(before.allSatisfy { $0 >= 1 }, "\(shotPrefix): the bottom bar shows \(onScreen + onScreenPrefixes) (\(before))")
+        e2e.shot("\(shotPrefix)-detail")
+
+        let more = e2e.orderMoreButton
+        guard e2e.openOrderSheet() else { return XCTFail("\(shotPrefix): ⋯ does not open the sheet titled Đơn #…") }
+        sleep(1)
+        e2e.shot("\(shotPrefix)-sheet")
+        // A sheet has its own title and a close button; a UIMenu has neither
+        XCTAssertTrue(e2e.button(["Close", "Đóng"]).exists, "\(shotPrefix): the sheet has a close button")
+
+        var frames: [CGRect] = []
+        for labels in expected {
+            let row = e2e.button(labels)
+            XCTAssertTrue(row.exists, "\(shotPrefix): sheet lists \(labels)")
+            frames.append(row.exists ? row.frame : .zero)
+        }
+        let cancel = e2e.button(destructive)
+        XCTAssertTrue(cancel.exists, "\(shotPrefix): sheet lists \(destructive) (destructive)")
+        if cancel.exists, let last = frames.last, last != .zero {
+            XCTAssertGreaterThan(cancel.frame.minY - last.maxY, 4, "\(shotPrefix): Huỷ đơn sits apart from the other rows")
+        }
+        XCTAssertEqual(frames.map(\.minY), frames.map(\.minY).sorted(), "\(shotPrefix): rows in the order In hoá đơn, Ghi chú, Lịch sử")
+
+        // Not repeated: the count of those labels does not grow while the sheet is up. When the screen under the
+        // sheet is hidden from accessibility, any match must be a sheet row.
+        let underVisible = more.exists
+        let after = onScreen.map(exact) + onScreenPrefixes.map(prefix)
+        for (index, count) in after.enumerated() {
+            let labels = (onScreen + onScreenPrefixes)[index]
+            XCTAssertEqual(count, underVisible ? before[index] : 0, "\(shotPrefix): the sheet does not repeat \(labels)")
+        }
+        e2e.button(["Close", "Đóng"]).tap()
+        XCTAssertTrue(e2e.orderSheetTitle.waitForNonExistence(timeout: 5), "\(shotPrefix): the sheet closes")
+    }
+
+    /// Lịch sử thay đổi of an order (board LS-don): a new order shows "Tạo đơn" under today; a note and a hand-over
+    /// add entries, the hand-over with the status old → new.
+    func test5dOrderChangeHistory() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        e2e.cartRentToday()
+        _ = e2e.pickFirstCustomer()
+        guard e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "48a-history-order", openOrder: true) else {
+            return XCTFail("Rent order was not created (last alert: \(e2e.lastAlert ?? "none"))")
+        }
+        let number = e2e.lastCreatedOrderNumber ?? ""
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "Xem đơn opens the new order")
+
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Change history", "Lịch sử thay đổi"]), "⋯ → Lịch sử thay đổi")
+        let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Change history", "Lịch sử thay đổi"])).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 8), "History screen opens")
+        sleep(2)
+        e2e.soft(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "#" + number)).firstMatch.exists,
+                 "history subtitle names order #\(number)")
+        let today = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'HÔM NAY' OR label BEGINSWITH 'TODAY'")).firstMatch
+        XCTAssertTrue(today.waitForExistence(timeout: 5), "entries are grouped by day, today first")
+        let created = app.cells.matching(NSPredicate(format: "label BEGINSWITH 'Tạo đơn' OR label BEGINSWITH 'Order created'")).firstMatch
+        XCTAssertTrue(created.waitForExistence(timeout: 5), "the history has the creation entry")
+        e2e.shot("48b-history-created")
+        e2e.goBackOnce()
+
+        // A note through ⋯ → Ghi chú
+        let stamp = "E2E note \(Int(Date().timeIntervalSince1970) % 100_000)"
+        if e2e.tapOrderSheetRow(["Notes", "Ghi chú"]) {
+            let text = app.textViews.firstMatch
+            if text.waitForExistence(timeout: 5) {
+                text.tap()
+                text.typeText(stamp)
+                e2e.tapIfExists(e2e.button(["Done", "Xong"]), timeout: 2)
+                e2e.shot("48c-history-note-editor")
+                e2e.tapIfExists(e2e.button(["Save note", "Lưu ghi chú"]), timeout: 3)
+                sleep(3)
+                e2e.dismissAlerts()
+            } else {
+                e2e.soft(false, "note editor has a text view")
+            }
+        }
+
+        // Hand over: RESERVED → PICKUPED, an entry with "Trạng thái: Đã đặt thành Đang thuê"
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        if handOver.waitForExistence(timeout: 8) {
+            handOver.tap()
+            let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã giao"], type: .button)
+            if handed.waitForExistence(timeout: 8) { handed.tap() }
+            sleep(3)
+            e2e.dismissAlerts()
+        } else {
+            XCTFail("The new order offers Giao đồ")
+        }
+
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Change history", "Lịch sử thay đổi"]), "⋯ → Lịch sử thay đổi again")
+        XCTAssertTrue(title.waitForExistence(timeout: 8), "History screen opens again")
+        sleep(3)
+        let note = app.cells.matching(NSPredicate(format: "label CONTAINS %@", stamp)).firstMatch
+        XCTAssertTrue(note.waitForExistence(timeout: 5), "the note edit is in the history")
+        let status = app.cells.matching(NSPredicate(format:
+            "(label CONTAINS 'Trạng thái: ' AND label CONTAINS ' thành ') OR (label CONTAINS 'Status: ' AND label CONTAINS ' to ')")).firstMatch
+        XCTAssertTrue(status.waitForExistence(timeout: 5), "the hand-over shows the status old → new")
+        if status.exists { e2e.note("history status entry: \(status.label)") }
+        e2e.soft(app.cells.count >= 3, "history lists creation, note and hand-over (\(app.cells.count) rows)")
+        e2e.shot("48d-history-after-edits")
+        e2e.goBackOnce()
+        e2e.goBack()
+    }
+
+    /// Lịch sử thay đổi of a product (board LS-san-pham): a daily-price edit shows old → new. The price is put back.
+    func test7dProductChangeHistory() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let key = "Product 25 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("\(key) not found") }
+        // Two edits (seed products may have no daily price): 77.000, then 88.000, so the second entry has old → new
+        guard let old = editDailyPrice(to: "77000", shot: nil) else {
+            return XCTFail("Could not change the daily price of \(key)")
+        }
+        XCTAssertNotNil(editDailyPrice(to: "88000", shot: "15a-product-price-edit"), "second daily-price edit saves")
+        XCTAssertTrue(e2e.button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10), "Back on the product detail after saving")
+
+        let history = app.descendants(matching: .any)["product.detail.history"]
+        XCTAssertTrue(e2e.scrollTo(history), "Product detail has Lịch sử thay đổi")
+        history.tap()
+        let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Change history", "Lịch sử thay đổi"])).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 8), "Product history opens")
+        sleep(3)
+        let entry = app.cells.matching(NSPredicate(format: "label CONTAINS '88.000'")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 5), "history shows the new daily price 88.000")
+        if entry.exists {
+            e2e.note("product history entry: \(entry.label)")
+            XCTAssertTrue(["Sửa giá", "Price changed"].contains { entry.label.hasPrefix($0) },
+                          "the price edit is titled Sửa giá (\(entry.label))")
+            XCTAssertTrue(entry.label.contains("77.000đ thành 88.000đ") || entry.label.contains("77.000đ to 88.000đ"),
+                          "the entry shows the daily price old → new (\(entry.label))")
+        }
+        e2e.shot("15b-product-history")
+        e2e.goBackOnce()
+
+        // Put the price back
+        if editDailyPrice(to: old, shot: nil) == nil { XCTFail("Could not restore the daily price of \(key) to '\(old)'") }
+        e2e.goBackOnce()
+    }
+
+    /// Product detail → Sửa → "Thuê theo ngày" → new value → Lưu thay đổi. Returns the value the field had (may be "").
+    private func editDailyPrice(to value: String, shot: String?) -> String? {
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        guard edit.waitForExistence(timeout: 5) else { e2e.note("no Sửa on product detail"); return nil }
+        edit.tap()
+        let field = e2e.field(["Rent per day", "Thuê theo ngày"])
+        guard field.waitForExistence(timeout: 8) else { e2e.note("no Thuê theo ngày field"); return nil }
+        e2e.scrollTo(field)
+        let raw = field.value as? String ?? ""
+        let old = (raw == field.placeholderValue || raw == "0") ? "" : raw
+        field.tap()
+        field.clearText()
+        if !value.isEmpty { field.typeText(value) }
+        e2e.hideKeyboard()
+        if let shot { e2e.shot(shot) }
+        let save = e2e.button(["Save changes", "Lưu thay đổi"])
+        e2e.scrollTo(save)
+        guard save.exists else { e2e.note("no Lưu thay đổi"); return nil }
+        save.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        guard field.waitForNonExistence(timeout: 10) else { e2e.note("product form stayed open"); return nil }
+        return old
+    }
+
+    /// "Cho tạo đơn khi trùng lịch" (#518, boards CD-trung-lich, GH-trung-bat, GH-trung-tat). A rental takes every unit
+    /// of a product today; a second cart for it today shows the clash. ON: "Vẫn tạo đơn" in the confirm sheet.
+    /// OFF: the blocked notice and a disabled Tạo đơn. The setting is turned back ON whatever happens.
+    func test7eOverlapSetting() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireFlag("newSettings")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        // Runs after the method even when an assertion fails (the UI test target is built for iOS 12.2)
+        if #available(iOS 13.0, *) {
+            addTeardownBlock { [app = app!, e2e = e2e!] in
+                if !app.tabBars.firstMatch.exists { app.launch(); e2e.settle(seconds: 6) }
+                if e2e.setOverlapAllowed(true) != true { XCTFail("Could not turn Cho tạo đơn khi trùng lịch back ON") }
+                e2e.emptyCart()
+            }
+        }
+        XCTAssertEqual(e2e.setOverlapAllowed(true), true, "Cho tạo đơn khi trùng lịch is ON")
+        e2e.shot("33a-overlap-setting-on")
+        e2e.emptyCart()
+
+        // 1. A rental today that takes every free unit (+ until the line says "Chỉ còn N trống")
+        let key = "Product 2 -"
+        guard e2e.addToCartAndOpen(product: key) else { return XCTFail("Could not put \(key) in the cart") }
+        e2e.cartRentToday()
+        let plus = e2e.button(["One more", "Thêm 1"])
+        let short = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS 'trống trong ngày' OR label CONTAINS 'free on these dates' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
+        for _ in 0..<40 where !short.exists {
+            guard plus.exists else { break }
+            plus.tap()
+            sleep(1)
+        }
+        e2e.soft(short.waitForExistence(timeout: 3), "the line says the stock runs out")
+        e2e.shot("33b-overlap-first-order-cart")
+        _ = e2e.pickFirstCustomer()
+        guard e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "33c-overlap-first") else {
+            return XCTFail("The order taking all stock was not created (last alert: \(e2e.lastAlert ?? "none"))")
+        }
+        let firstNumber = e2e.lastCreatedOrderNumber ?? ""
+
+        // 2. Same product, same day: the line shows the clash; the confirm sheet warns and reads "Vẫn tạo đơn"
+        guard e2e.addToCartAndOpen(product: key) else { return XCTFail("Could not put \(key) in the cart again") }
+        e2e.cartRentToday()
+        let clash = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Hết đồ' OR label CONTAINS 'Booked out'")).firstMatch
+        XCTAssertTrue(clash.waitForExistence(timeout: 10), "the cart line shows Hết đồ … · đã thuê ở đơn #…")
+        if clash.exists {
+            e2e.soft(firstNumber.isEmpty || clash.label.contains(firstNumber), "clash names order #\(firstNumber) (\(clash.label))")
+        }
+        _ = e2e.pickFirstCustomer()
+        e2e.shot("33d-overlap-on-cart")
+        let cta = e2e.button(["Create order", "Tạo đơn"])
+        XCTAssertTrue(cta.waitForExistence(timeout: 5) && cta.isEnabled, "Tạo đơn is enabled with the setting ON")
+        cta.tap()
+        let anyway = e2e.button(["Create anyway", "Vẫn tạo đơn"])
+        XCTAssertTrue(anyway.waitForExistence(timeout: 10), "the confirm sheet's button reads Vẫn tạo đơn")
+        e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format:
+            "label BEGINSWITH 'Trùng lịch' OR label BEGINSWITH 'Schedule overlap'")).firstMatch.exists, "the sheet has the Trùng lịch block")
+        e2e.shot("33e-overlap-on-confirm")
+        e2e.tapIfExists(e2e.button(["Cancel", "Hủy", "Huỷ"]), timeout: 3)
+        sleep(1)
+
+        // 3. OFF: the same cart is blocked
+        XCTAssertEqual(e2e.setOverlapAllowed(false), false, "Cho tạo đơn khi trùng lịch turns OFF")
+        e2e.shot("33f-overlap-setting-off")
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "the cart is kept")
+        e2e.cartBar.tap()
+        sleep(3)
+        let blocked = app.descendants(matching: .any).matching(NSPredicate(format:
+            "label BEGINSWITH 'Cửa hàng không cho tạo đơn trùng lịch' OR label BEGINSWITH 'This shop does not allow overlapping'")).firstMatch
+        XCTAssertTrue(blocked.waitForExistence(timeout: 10), "the cart shows the blocked notice")
+        let ctaOff = e2e.button(["Create order", "Tạo đơn"])
+        XCTAssertTrue(ctaOff.waitForExistence(timeout: 3), "Tạo đơn button")
+        XCTAssertFalse(ctaOff.isEnabled, "Tạo đơn is disabled with the setting OFF")
+        e2e.shot("33g-overlap-off-cart")
+        e2e.goBackOnce()
+        // The teardown block turns the setting back ON and empties the cart
+    }
+
+    /// Cart line pricing chip → "Cách tính giá" (#482, board Gio-hang-chon-gia): Theo ngày with a price for this order
+    /// only. The line total follows; the catalog price shown in the sheet stays.
+    func test7fCartPricingSheet() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        e2e.cartRentToday()
+        let chip = e2e.element(labelBeginsWith: ["Change pricing for", "Đổi cách tính giá"], type: .button)
+        XCTAssertTrue(chip.waitForExistence(timeout: 5), "a rent line has the pricing chip")
+        e2e.shot("34a-cart-pricing-chip")
+        chip.tap()
+        let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Pricing", "Cách tính giá"])).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "the chip opens Cách tính giá")
+        let perRental = e2e.element(labelBeginsWith: ["Per rental", "Theo lần"], type: .button)
+        let perDay = e2e.element(labelBeginsWith: ["Per day", "Theo ngày"], type: .button)
+        XCTAssertTrue(perRental.exists && perDay.exists, "the sheet lists Theo lần and Theo ngày")
+        let catalogPerDay = perDay.exists ? perDay.label : ""
+        e2e.shot("34b-cart-pricing-sheet")
+        perDay.tap()
+        sleep(1)
+        let price = e2e.field(["Price for this order", "Giá cho đơn này"])
+        XCTAssertTrue(price.waitForExistence(timeout: 3), "Giá cho đơn này field")
+        price.tap()
+        price.clearText()
+        price.typeText("123456")
+        XCTAssertEqual(price.value as? String, "123.456", "the price field formats the amount")
+        e2e.shot("34c-cart-pricing-edited")
+        let apply = e2e.button(["Apply", "Áp dụng"])
+        if !apply.isHittable { app.scrollViews.firstMatch.swipeUp(); sleep(1) }
+        XCTAssertTrue(apply.isHittable, "Áp dụng is reachable with the keyboard up")
+        apply.tap()
+        sleep(2)
+        let total = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '123.456'")).firstMatch
+        XCTAssertTrue(total.waitForExistence(timeout: 5), "the line total becomes 123.456đ (1 day × 1)")
+        XCTAssertTrue(((chip.value as? String) ?? "").contains("123.456"), "the chip shows the order price (\(chip.value ?? ""))")
+        e2e.shot("34d-cart-pricing-applied")
+
+        // The product's own price is unchanged: the sheet still shows the catalog price on Theo ngày
+        chip.tap()
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "the sheet opens again")
+        let perDayAgain = e2e.element(labelBeginsWith: ["Per day", "Theo ngày"], type: .button)
+        XCTAssertEqual(perDayAgain.label, catalogPerDay, "the catalog daily price stays (only this order changed)")
+        e2e.shot("34e-cart-pricing-catalog-kept")
+        title.swipeDown()
+        sleep(1)
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
+    /// Cài đặt → Đổi mật khẩu (#490 #491, board DMK-doi-mat-khau): a bottom sheet; an empty submit shows the error
+    /// under "Mật khẩu hiện tại". The password is never changed.
+    func test7gChangePasswordSheet() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Change Password", "Đổi mật khẩu"])).firstMatch
+        XCTAssertTrue(e2e.scrollTo(row), "Đổi mật khẩu row in Settings")
+        row.tap()
+        let fields = app.secureTextFields
+        XCTAssertTrue(fields.firstMatch.waitForExistence(timeout: 5), "the sheet opens with password fields")
+        XCTAssertEqual(fields.count, 3, "Mật khẩu hiện tại, Mật khẩu mới, Nhập lại mật khẩu mới")
+        e2e.soft(app.tabBars.firstMatch.exists, "the sheet sits over Cài đặt (tab bar still there)")
+        sleep(2)
+        e2e.note("password sheet: keyboard \(app.keyboards.firstMatch.exists ? "up" : "down")")
+        e2e.shot("83a-password-sheet")
+        // Board DMK-doi-mat-khau: the sheet fits its content, title and close button fully on screen
+        let sheetTitle = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Change Password", "Đổi mật khẩu"]))
+            .allElementsBoundByIndex.first { $0.frame.minY < fields.firstMatch.frame.minY }
+        let close = e2e.button(["Close", "Đóng"])
+        let top = app.windows.firstMatch.frame.minY + 50 // below the status bar
+        XCTAssertTrue((sheetTitle?.frame.minY ?? 0) >= top, "the sheet title is not cut off at the top (y \(Int(sheetTitle?.frame.minY ?? -1)))")
+        XCTAssertTrue(close.exists && close.frame.minY >= top, "the close button is not cut off at the top (y \(Int(close.frame.minY)))")
+        let submit = e2e.button(["Change password", "Change Password", "Đổi mật khẩu"])
+        XCTAssertTrue(submit.exists && submit.isHittable, "Đổi mật khẩu button is reachable with the keyboard up")
+        submit.tap()
+        sleep(1)
+        let error = app.staticTexts.matching(NSPredicate(format: "label IN %@",
+            ["Enter your current password", "Nhập mật khẩu hiện tại"])).firstMatch
+        XCTAssertTrue(error.waitForExistence(timeout: 3), "an empty submit shows Nhập mật khẩu hiện tại")
+        if error.exists, fields.count >= 2 {
+            XCTAssertTrue(error.frame.minY >= fields.element(boundBy: 0).frame.maxY - 1
+                          && error.frame.maxY <= fields.element(boundBy: 1).frame.minY,
+                          "the error sits under the current-password field")
+        }
+        e2e.shot("83b-password-empty-error")
+        e2e.button(["Close", "Đóng"]).tap()
+        XCTAssertTrue(fields.firstMatch.waitForNonExistence(timeout: 5), "the sheet closes")
+    }
+
+    /// Tổng quan → a top product → "Đơn theo sản phẩm" (#482, board DT-don-theo-sp): photo, name, sub line, period chip,
+    /// 3 tiles and the ĐƠN HÀNG rows. "Đơn theo khách hàng" (DT-don-theo-kh) where the app links it.
+    func test7hOrdersByProductAndCustomer() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { return XCTFail("No Tổng quan tab") }
+        sleep(3)
+        let top = app.buttons.matching(NSPredicate(format: "label CONTAINS ' lượt thuê' OR label CONTAINS ' rentals,'")).firstMatch
+        if e2e.scrollTo(top, maxSwipes: 8) {
+            e2e.shot("63a-overview-top-products")
+            top.tap()
+        } else {
+            // Without a ranking: product detail → "Tất cả N ›"
+            e2e.note("no top product on Tổng quan; using product detail")
+            guard e2e.openProduct(where: { $0 > 0 }) != nil else { return XCTFail("No product with orders") }
+            let all = e2e.element(labelBeginsWith: ["All ", "Tất cả "], type: .button)
+            XCTAssertTrue(e2e.scrollTo(all), "Tất cả N › on product detail")
+            all.tap()
+        }
+        checkEntityOrders(title: ["Orders by product", "Đơn theo sản phẩm"],
+                          tiles: [["Orders, ", "Số đơn, "], ["Rentals, ", "Lượt thuê, "], ["Revenue, ", "Doanh thu, "]],
+                          shot: "63b-orders-by-product")
+        e2e.goBack()
+
+        // Đơn theo khách hàng: the v2 screens (newCustomers) have no link to it; the old picker's ⋯ → Xem đơn hàng does
+        if e2e.features.contains("newCustomers") {
+            e2e.note("NOT COVERED: Đơn theo khách hàng has no entry point with newCustomers on (customer detail v2 and "
+                     + "Tổng quan do not link it)")
+            return
+        }
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart") }
+        let pick = e2e.element(labelBeginsWith: ["Choose customer", "Chọn khách hàng"])
+        guard pick.waitForExistence(timeout: 5) else { return XCTFail("Customer row in the cart") }
+        pick.tap()
+        sleep(3)
+        let more = app.cells.firstMatch.buttons.allElementsBoundByIndex.last
+        guard let more else { return XCTFail("customer row ⋯") }
+        more.tap()
+        e2e.tapIfExists(e2e.button(["View orders", "Xem đơn hàng"]), timeout: 3)
+        checkEntityOrders(title: ["Orders by customer", "Đơn theo khách hàng"],
+                          tiles: [["Orders, ", "Số đơn, "], ["Spent, ", "Đã chi, "], ["Renting, ", "Đang thuê, "]],
+                          shot: "64-orders-by-customer")
+        e2e.goBackOnce()
+    }
+
+    private func checkEntityOrders(title: [String], tiles: [[String]], shot: String) {
+        let header = app.staticTexts.matching(NSPredicate(format: "label IN %@", title)).firstMatch
+        XCTAssertTrue(header.waitForExistence(timeout: 10), "\(shot): \(title) opens")
+        sleep(3)
+        for labels in tiles {
+            XCTAssertTrue(e2e.element(labelBeginsWith: labels).exists, "\(shot): tile \(labels)")
+        }
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["ORDERS", "ĐƠN HÀNG"])).firstMatch.exists,
+                      "\(shot): ĐƠN HÀNG band")
+        // Period chip: "Tất cả thời gian", "30 ngày qua · …" or a day
+        let chip = app.buttons.matching(NSPredicate(format:
+            "label CONTAINS 'thời gian' OR label CONTAINS 'All time' OR label CONTAINS 'ngày' OR label CONTAINS 'days' OR label CONTAINS '/'")).firstMatch
+        e2e.soft(chip.exists, "\(shot): period chip")
+        XCTAssertGreaterThan(app.cells.count, 0, "\(shot): order rows")
+        e2e.shot(shot)
+    }
+
+    /// The bell on Trang chủ → Thông báo (#482): the list renders and long titles wrap instead of ending in "…"
+    func test7iNotifications() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let bell = e2e.button(["Notifications", "Thông báo"])
+        XCTAssertTrue(bell.waitForExistence(timeout: 8), "bell on Trang chủ")
+        bell.tap()
+        sleep(3)
+        let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 8), "Thông báo opens")
+        let empty = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["No notifications", "Chưa có thông báo"])).firstMatch
+        let rows = app.cells
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 5) || empty.exists, "notification rows or the empty state")
+        e2e.soft(rows.count > 0, "notifications listed (\(rows.count))")
+        // A label whose text needs more than one line must be taller than one line (a truncated one is not)
+        // A long title or body must wrap: taller than one line and inside the screen (not cut or run off the edge)
+        let screenRight = app.windows.firstMatch.frame.maxX
+        for cell in rows.allElementsBoundByIndex.prefix(6) where cell.exists {
+            for text in cell.staticTexts.allElementsBoundByIndex where text.label.count > 60 {
+                let oneLine: CGFloat = 26
+                XCTAssertTrue(text.frame.height > oneLine && text.frame.maxX <= screenRight + 1,
+                              "long notification text wraps: '\(text.label.prefix(40))…' is \(Int(text.frame.height))pt tall, "
+                              + "right edge \(Int(text.frame.maxX)) of \(Int(screenRight))")
+            }
+        }
+        e2e.shot("16-notifications")
+        e2e.goBackOnce()
+    }
+
+    /// Tổng quan → "Việc hôm nay" (#496): Cần giao / Cần nhận trả hôm nay rows open Đơn hàng; "Quá ngày lấy, khách chưa
+    /// đến" opens "Chưa lấy đồ" (board DT-chua-lay).
+    func test7jTodayWorkAndNotPickedUp() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Tổng quan tab for this account")
+        }
+        sleep(3)
+        let header = e2e.element(labelBeginsWith: ["Today's work ·", "Việc hôm nay ·", "VIỆC HÔM NAY ·", "TODAY'S WORK ·"])
+        XCTAssertTrue(e2e.scrollTo(header), "Việc hôm nay section on Tổng quan")
+        let pickups = e2e.element(labelBeginsWith: ["To hand over today", "Cần giao hôm nay"], type: .button)
+        let returns = e2e.element(labelBeginsWith: ["To take back today", "Cần nhận trả hôm nay"], type: .button)
+        XCTAssertTrue(pickups.exists, "Cần giao hôm nay row")
+        XCTAssertTrue(returns.exists, "Cần nhận trả hôm nay row")
+        if pickups.exists { e2e.note("today row: \(pickups.label)") }
+        e2e.shot("65a-overview-today-work")
+
+        let noShows = e2e.element(labelBeginsWith: ["Pickup day passed", "Quá ngày lấy"], type: .button)
+        XCTAssertTrue(e2e.scrollTo(noShows), "Quá ngày lấy, khách chưa đến row")
+        e2e.note("no-show row: \(noShows.label)")
+        noShows.tap()
+        let title = e2e.element(labelBeginsWith: ["Not picked up", "Chưa lấy đồ"])
+        XCTAssertTrue(title.waitForExistence(timeout: 8), "Chưa lấy đồ opens")
+        sleep(3)
+        let empty = app.staticTexts.matching(NSPredicate(format: "label IN %@",
+            ["No orders waiting for pickup", "Không có đơn nào chờ khách lấy đồ"])).firstMatch
+        XCTAssertTrue(app.cells.firstMatch.exists || empty.exists, "Chưa lấy đồ rows or its empty state")
+        e2e.soft(app.cells.count > 0, "Chưa lấy đồ lists orders (\(app.cells.count))")
+        e2e.shot("66a-not-picked-up")
+        if app.cells.count > 0 {
+            e2e.tapRow(app.cells.firstMatch)
+            e2e.soft(e2e.orderMoreButton.waitForExistence(timeout: 10), "a Chưa lấy đồ row opens the order")
+            e2e.shot("66b-not-picked-up-order")
+            e2e.goBackOnce()
+        }
+        e2e.goBack()
+
+        // Cần giao hôm nay → Đơn hàng (Việc cần làm)
+        e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3)
+        sleep(2)
+        if e2e.scrollTo(pickups) {
+            pickups.tap()
+            sleep(2)
+            XCTAssertTrue(e2e.button(["All orders", "Tất cả đơn"]).waitForExistence(timeout: 8), "Cần giao hôm nay opens Đơn hàng")
+            e2e.shot("65b-today-work-orders")
+        }
+    }
+
     func test9SettingsLogout() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
@@ -1158,8 +1680,9 @@ private final class E2E {
     /// Number of the last order created from the cart ("Đã tạo đơn #787771" → "787771")
     private(set) var lastCreatedOrderNumber: String?
 
-    /// Cart CTA → confirm sheet ("Tạo đơn thuê?" / "Bán & thu tiền?", #476) → "Đã tạo đơn #NNNNNN" sheet → "Tạo đơn mới".
-    func createOrderFromCart(cta: [String], shotPrefix: String) -> Bool {
+    /// Cart CTA → confirm sheet ("Tạo đơn thuê?" / "Bán & thu tiền?", #476) → "Đã tạo đơn #NNNNNN" sheet → "Tạo đơn mới",
+    /// or "Xem đơn" with `openOrder` (the order detail opens).
+    func createOrderFromCart(cta: [String], shotPrefix: String, openOrder: Bool = false) -> Bool {
         let ctaButton = button(cta)
         guard ctaButton.waitForExistence(timeout: 5) else {
             XCTFail("Cart CTA \(cta) missing")
@@ -1193,10 +1716,139 @@ private final class E2E {
             .components(separatedBy: CharacterSet.decimalDigits.inverted).first
         shot("\(shotPrefix)-created")
         soft(lastCreatedOrderNumber?.count == 6, "created order number has 6 digits (\(created.label))")
+        if openOrder {
+            tapIfExists(button(["Xem đơn", "View order"]), timeout: 3)
+            sleep(2)
+            dismissRatingPrompt()
+            return true
+        }
         tapIfExists(button(["Tạo đơn mới", "New order"]), timeout: 3)
         sleep(1)
         dismissRatingPrompt()
         return true
+    }
+
+    // MARK: New screens (#530)
+
+    /// Cart CTA labels: "Tạo đơn", or "Vẫn tạo đơn" in the confirm sheet when the dates clash (#518)
+    static let rentCta = ["Create order", "Tạo đơn", "Create anyway", "Vẫn tạo đơn"]
+
+    /// In the cart: Rent, then today as a same-day range
+    func cartRentToday() {
+        tapIfExists(button(["Rent", "Thuê"]))
+        let dates = element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
+        if dates.waitForExistence(timeout: 3) {
+            dates.tap()
+            pickTodayInDateSheet()
+            tapIfExists(button(["Confirm", "Xác nhận"]), timeout: 3)
+            sleep(1)
+        }
+    }
+
+    /// Removes every line from the cart (− on a 1-quantity line asks "Bỏ món này khỏi giỏ?"), then back to Home.
+    func emptyCart() {
+        tapTab(["Home", "Trang chủ"], index: 0)
+        guard cartBar.waitForExistence(timeout: 3) else { return }
+        cartBar.tap()
+        guard button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8) else { return }
+        let minus = app.buttons.matching(NSPredicate(format: "label IN %@", ["One less", "Bớt 1"]))
+        for _ in 0..<60 where minus.firstMatch.exists {
+            minus.firstMatch.tap()
+            let remove = app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Remove", "Bỏ"])).firstMatch
+            if remove.waitForExistence(timeout: 1) { remove.tap(); sleep(1) }
+        }
+        goBackOnce()
+    }
+
+    /// Home → product detail → Thêm vào giỏ → back → open the cart. True when the cart shows.
+    func addToCartAndOpen(product key: String) -> Bool {
+        guard openProduct(named: key) else { note("product \(key) not found"); return false }
+        button(["Add to cart", "Thêm vào giỏ"]).tap()
+        sleep(1)
+        tapIfExists(button(["Back", "Quay lại"]))
+        guard cartBar.waitForExistence(timeout: 5) else { return false }
+        cartBar.tap()
+        return button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
+    }
+
+    /// The ⋯ button of the order detail (#519: the header keeps only ⋯; it opens the action sheet)
+    var orderMoreButton: XCUIElement {
+        let byId = app.buttons["order.detail.more"]
+        return byId.exists ? byId : button(["More actions", "Thêm thao tác"])
+    }
+
+    /// Title of the ⋯ sheet, "Đơn #787771"
+    var orderSheetTitle: XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Đơn #' OR label BEGINSWITH 'Order #'")).firstMatch
+    }
+
+    /// ⋯ → the sheet; true when its title shows
+    @discardableResult
+    func openOrderSheet() -> Bool {
+        let more = orderMoreButton
+        guard more.waitForExistence(timeout: 10) else { note("⋯ on order detail not found"); return false }
+        more.tap()
+        return orderSheetTitle.waitForExistence(timeout: 5)
+    }
+
+    /// ⋯ → one row of the sheet (the sheet closes, then the row's action runs)
+    @discardableResult
+    func tapOrderSheetRow(_ labels: [String]) -> Bool {
+        guard openOrderSheet() else { return false }
+        let row = button(labels)
+        guard row.waitForExistence(timeout: 3) else { note("sheet row \(labels) missing"); return false }
+        row.tap()
+        sleep(2)
+        return true
+    }
+
+    /// Orders tab → Tất cả đơn → status chip → open the first row; true when the detail's ⋯ shows
+    func openFirstOrder(chip: [String]) -> Bool {
+        tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        let all = button(["All orders", "Tất cả đơn"])
+        guard all.waitForExistence(timeout: 5) else { return false }
+        all.tap()
+        sleep(1)
+        tapIfExists(button(chip), timeout: 3)
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return false }
+        tapRow(row)
+        return orderMoreButton.waitForExistence(timeout: 10)
+    }
+
+    /// Swipes up until the element is on screen and hittable
+    @discardableResult
+    func scrollTo(_ element: XCUIElement, maxSwipes: Int = 6) -> Bool {
+        for _ in 0..<maxSwipes where !(element.exists && element.isHittable) {
+            app.swipeUp()
+            sleep(1)
+        }
+        return element.exists && element.isHittable
+    }
+
+    /// Cài đặt → "Cho tạo đơn khi trùng lịch" (#518); sets it and returns the value the switch shows after the save
+    @discardableResult
+    func setOverlapAllowed(_ allowed: Bool) -> Bool? {
+        // From a pushed screen (cart, detail) the tab bar is hidden: go back to it first
+        if !(app.tabBars.firstMatch.exists && app.tabBars.firstMatch.isHittable) { goBack() }
+        tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let toggle = app.switches.matching(NSPredicate(format: "label IN %@",
+            ["Allow overlapping orders", "Cho tạo đơn khi trùng lịch"])).firstMatch
+        guard scrollTo(toggle) else { note("overlap switch not found in Settings"); return nil }
+        if (toggle.value as? String == "1") != allowed {
+            toggle.tap()
+            sleep(3) // saves at once (PATCH), the switch is disabled meanwhile
+            dismissAlerts()
+        }
+        return toggle.value as? String == "1"
+    }
+
+    /// Text of every static text inside an element (cell, row)
+    static func texts(_ element: XCUIElement) -> String {
+        ([element.label] + element.staticTexts.allElementsBoundByIndex.map(\.label)).joined(separator: " ")
     }
 
     // MARK: Reporting

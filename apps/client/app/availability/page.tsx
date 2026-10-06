@@ -654,6 +654,9 @@ function HolderRow({ h, days, t }: { h: Holder; days: string[]; t: T }) {
   const barLabel =
     text.kind === 'returnOn' ? t('bar.returnOn', { day: dayMonth(text.day) }) : text.kind === 'single' ? dayMonth(text.day) : t('bar.range', { from: dayMonth(text.from), to: dayMonth(text.to) });
   const units = h.quantity > 1 ? ` · ${t('units', { count: h.quantity })}` : '';
+  // A one-day bar is one strip column wide: show only the day, with the full label as a tooltip.
+  const narrow = cols.end === cols.start;
+  const shortLabel = text.kind === 'returnOn' || text.kind === 'single' ? dayMonth(text.day) : dayMonth(text.from);
   return (
     <>
       <Link href={`/orders/${h.orderNumber}`} className="col-start-1 flex min-h-[40px] min-w-0 flex-col justify-center pr-2 text-inherit no-underline">
@@ -666,11 +669,12 @@ function HolderRow({ h, days, t }: { h: Holder; days: string[]; t: T }) {
       <Link
         href={`/orders/${h.orderNumber}`}
         style={{ gridColumn: `${cols.start + 2} / ${cols.end + 3}` }}
-        className={`flex h-8 items-center self-center overflow-hidden whitespace-nowrap rounded-lg px-2.5 text-xs font-semibold no-underline ${
+        title={barLabel}
+        className={`flex h-8 items-center self-center overflow-hidden whitespace-nowrap rounded-lg text-xs ${narrow ? 'justify-center px-1' : 'px-2.5'} font-semibold no-underline ${
           h.status === 'PICKUPED' ? 'bg-ar-renting-bg text-ar-renting' : 'bg-ar-reserved-bg text-ar-reserved'
         } ${h.inPeriod ? 'ring-1 ring-inset ring-current' : ''}`}
       >
-        {barLabel}
+        {narrow ? shortLabel : barLabel}
       </Link>
     </>
   );
