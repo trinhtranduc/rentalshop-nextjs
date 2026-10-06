@@ -111,6 +111,37 @@ class OverviewLogicTest {
         assertEquals(listOf(200.0, 300.0), bars.map { it.value })
     }
 
+    /** #484: money tiles and the orders chart; an older API leaves them null and the chart at 0 */
+    @Test
+    fun orderValueOutstandingAndOrdersChart() {
+        val report = OverviewLogic.reportFromJson(
+            JSONObject(
+                """{"revenue":{"totalActualRevenue":12450000,"totalOrderValue":15800000,"outstanding":3350000},
+                "series":[{"date":"2026/09/28","realIncome":1440,"newOrderCount":3},{"date":"2026/09/29","realIncome":708,"newOrderCount":0},
+                          {"date":"2026/10/04","realIncome":-420}]}""",
+            ),
+        )
+        assertEquals(15_800_000.0, report.totalOrderValue!!, 0.0)
+        assertEquals(3_350_000.0, report.outstanding!!, 0.0)
+        assertEquals(3, report.series[0].newOrderCount)
+        assertEquals(null, report.series[2].newOrderCount)
+        val range = r("2026-09-28", "2026-10-04")
+        val money = OverviewLogic.bars(report, range) { "" }
+        assertEquals(listOf(1440.0, 708.0, 0.0, 0.0, 0.0, 0.0, -420.0), money.map { it.value })
+        val orders = OverviewLogic.bars(report, range, OverviewChart.ORDERS) { "" }
+        assertEquals(listOf(3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), orders.map { it.value })
+
+        val older = OverviewLogic.reportFromJson(JSONObject("""{"revenue":{"totalRevenue":500},"series":[{"date":"2026/09/28","realIncome":5}]}"""))
+        assertEquals(null, older.totalOrderValue)
+        assertEquals(null, older.outstanding)
+        assertEquals(0.0, OverviewLogic.bars(older, r("2026-09-28", "2026-09-28"), OverviewChart.ORDERS) { "" }.single().value, 0.0)
+
+        val monthly = OverviewLogic.reportFromJson(
+            JSONObject("""{"series":[{"month":"01/26","monthNumber":1,"realIncome":200,"newOrderCount":7},{"month":"02/26","monthNumber":2,"realIncome":300}]}"""),
+        )
+        assertEquals(listOf(7.0, 0.0), OverviewLogic.bars(monthly, r("2026-01-01", "2026-02-28"), OverviewChart.ORDERS) { "" }.map { it.value })
+    }
+
     @Test
     fun operationsWithAndWithoutCash() {
         val merchant = OverviewLogic.nowFromJson(

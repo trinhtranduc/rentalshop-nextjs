@@ -18,6 +18,7 @@ import {
   listCivilMonths,
   toDateKeyInTimeZone
 } from '../core/date-range';
+import { summarizeOrderValue, type OrderValueSummary } from './order-value';
 import { paginateRanked, type RankingPage } from './ranking-page';
 import { rankOutletsByRevenue, type TopOutletRank } from './top-outlet-rank';
 import {
@@ -30,6 +31,7 @@ export type { RankingPage, RankingSortBy } from './ranking-page';
 export { paginateRanked, parseRankingQuery } from './ranking-page';
 export type { TopOutletRank } from './top-outlet-rank';
 export { rankOutletsByRevenue } from './top-outlet-rank';
+export { summarizeOrderValue, type OrderValueSummary } from './order-value';
 export type { ProductRankSortBy } from './top-product-rank';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -41,6 +43,7 @@ const revenueSelect = {
   depositAmount: true,
   securityDeposit: true,
   damageFee: true,
+  lateFee: true,
   createdAt: true,
   pickedUpAt: true,
   returnedAt: true,
@@ -59,6 +62,8 @@ export interface AnalyticsPeriodSeriesPoint {
   realIncome: number;
   futureIncome: number;
   orderCount: number;
+  /** Orders created in the bucket, not cancelled (#484). Older apps ignore it. */
+  newOrderCount?: number;
 }
 
 export interface AnalyticsPeriodGrowth {
@@ -75,6 +80,10 @@ export interface AnalyticsPeriodReport {
     totalRevenue: number;
     totalActualRevenue: number;
     totalOrders: number;
+    /** Sum of `totalAmount` of orders created in the period, not cancelled (#484) */
+    totalOrderValue?: number;
+    /** Part of `totalOrderValue` not collected yet (#484) */
+    outstanding?: number;
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -365,6 +374,7 @@ function mapRevenueOrder(order: any) {
     depositAmount: order.depositAmount || 0,
     securityDeposit: order.securityDeposit || 0,
     damageFee: order.damageFee || 0,
+    lateFee: order.lateFee || 0,
     createdAt: order.createdAt,
     pickedUpAt: order.pickedUpAt,
     returnedAt: order.returnedAt,
@@ -425,6 +435,7 @@ function mapDayRowsToSeries(
       dayNumber: parseInt(d, 10),
       realIncome: row?.totalRevenue ?? 0,
       futureIncome: 0,
+      newOrderCount: row?.newOrderCount ?? 0,
       orderCount:
         (row?.newOrderCount ?? 0) +
         (row?.pickupOrderCount ?? 0) +
@@ -514,13 +525,22 @@ export async function buildAnalyticsPeriodReport(
         }
       });
 
+      const newOrderCount = await db.orders.getStats({
+        where: {
+          ...outletFilter,
+          createdAt: { gte: startOfMonth, lte: endOfMonth },
+          status: { not: ORDER_STATUS.CANCELLED as any }
+        }
+      });
+
       income.push({
         month: periodLabel,
         year,
         monthNumber: civilMonth.month,
         realIncome,
         futureIncome,
-        orderCount
+        orderCount,
+        newOrderCount
       });
     }
 
@@ -648,6 +668,7 @@ export async function buildAnalyticsPeriodReport(
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,
+        lateFee: true,
         createdAt: true,
         pickedUpAt: true,
         returnedAt: true,
@@ -725,6 +746,20 @@ export async function buildAnalyticsPeriodReport(
     return result;
   };
 
+  const computeOrderValue = async (): Promise<OrderValueSummary> => {
+    const created = await prisma.order.findMany({
+      where: {
+        ...outletFilter,
+        deletedAt: null,
+        createdAt: { gte: rangeStart, lte: rangeEnd },
+        status: { not: ORDER_STATUS.CANCELLED as any }
+      } as any,
+      select: { orderType: true, status: true, totalAmount: true, depositAmount: true },
+      take: 10000
+    });
+    return summarizeOrderValue(created);
+  };
+
   const settled = await Promise.allSettled([
     computeOperational(),
     computeSeries(),
@@ -737,7 +772,8 @@ export async function buildAnalyticsPeriodReport(
       rangeEnd,
       page: 1,
       limit
-    })
+    }),
+    computeOrderValue()
   ]);
 
   const valueOr = <T>(result: PromiseSettledResult<T>, fallback: T, label: string): T => {
@@ -747,6 +783,7 @@ export async function buildAnalyticsPeriodReport(
   };
 
   const operational = valueOr(settled[0], null, 'operational');
+  const orderValue = valueOr<OrderValueSummary | null>(settled[6], null, 'orderValue');
   const series = valueOr(settled[1], [], 'series');
   const growth = valueOr(
     settled[2],
@@ -773,7 +810,8 @@ export async function buildAnalyticsPeriodReport(
     revenue: {
       totalRevenue: operational?.totalRevenue ?? growth.revenue.current,
       totalActualRevenue: operational?.totalActualRevenue ?? growth.revenue.current,
-      totalOrders: totalOrdersFromOps
+      totalOrders: totalOrdersFromOps,
+      ...(orderValue ? { totalOrderValue: orderValue.totalOrderValue, outstanding: orderValue.outstanding } : {})
     },
     growth,
     series,

@@ -52,6 +52,8 @@ export interface OrderRevenueData {
   depositAmount: number;
   securityDeposit: number;
   damageFee: number;
+  /** Late fee charged at return; collected with the damage fee (#484) */
+  lateFee?: number;
   createdAt: Date | string | null;
   pickedUpAt: Date | string | null;
   returnedAt: Date | string | null;
@@ -123,6 +125,7 @@ export function getOrderRevenueEvents(
   const depositAmount = order.depositAmount || 0;
   const securityDeposit = order.securityDeposit || 0;
   const damageFee = order.damageFee || 0;
+  const returnFees = damageFee + (order.lateFee || 0);
 
   // ============================================================================
   // SALE ORDERS
@@ -222,12 +225,12 @@ export function getOrderRevenueEvents(
 
       if (isSameDayReturn) {
         // Same day return: totalAmount + damageFee (KHÔNG tính deposit và pickup riêng)
-        returnRevenue = totalAmount + damageFee;
+        returnRevenue = totalAmount + returnFees;
         description = 'Thuê và trả trong cùng ngày';
       } else {
         // Different day: damageFee - securityDeposit
         // Note: âm vì securityDeposit đã thu ở pickup, giờ trừ đi
-        returnRevenue = damageFee - securityDeposit;
+        returnRevenue = returnFees - securityDeposit;
         if (returnRevenue > 0) {
           description = 'Thu phí hư hỏng';
         } else if (returnRevenue < 0) {
@@ -474,6 +477,7 @@ export function getOrderRevenueForDate(
   const depositAmount = order.depositAmount || 0;
   const securityDeposit = order.securityDeposit || 0;
   const damageFee = order.damageFee || 0;
+  const returnFees = damageFee + (order.lateFee || 0);
 
   // ============================================================================
   // CASE 1: Order đã RETURNED và returnedAt < targetDate (quá khứ)
@@ -484,7 +488,7 @@ export function getOrderRevenueForDate(
     // Nếu order đã trả và targetDate sau ngày trả → return tổng doanh thu thực tế
     if (returnedAtKey < targetDateKey) {
       // Order đã hoàn tất trong quá khứ, return tổng doanh thu thực tế
-      return totalAmount + damageFee;
+      return totalAmount + returnFees;
     }
     
     // Nếu targetDate = returnedAt (ngày trả hàng) → tính theo return event logic
@@ -493,11 +497,11 @@ export function getOrderRevenueForDate(
       const isSameDayReturn = isSameDay(pickedUpAt || createdAt, returnedAt);
       
       if (isSameDayReturn) {
-        // Same day return: totalAmount + damageFee
-        return totalAmount + damageFee;
+        // Same day return: totalAmount + damageFee + lateFee
+        return totalAmount + returnFees;
       } else {
-        // Different day return: damageFee - securityDeposit
-        return damageFee - securityDeposit;
+        // Different day return: damageFee + lateFee - securityDeposit
+        return returnFees - securityDeposit;
       }
     }
   }
@@ -683,7 +687,7 @@ export function calculateOrderRevenueByStatus(order: OrderRevenueData): number {
       // RETURNED: đơn đã hoàn tất, tính tổng doanh thu thực tế cuối cùng
       // Luôn tính totalAmount + damageFee (bất kể pickup/return có cùng ngày hay không)
       // Lý do: Đơn đã hoàn tất, tổng doanh thu thực tế = totalAmount + damageFee
-      return (order.totalAmount || 0) + (order.damageFee || 0);
+      return (order.totalAmount || 0) + (order.damageFee || 0) + (order.lateFee || 0);
 
     case ORDER_STATUS.CANCELLED:
       return 0; // Cancelled = refunded

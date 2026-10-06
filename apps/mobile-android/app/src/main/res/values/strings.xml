@@ -770,7 +770,6 @@
     <string name="overview_v2_period_accessibility">Period: %1$s</string>
     <string name="overview_v2_from">From</string>
     <string name="overview_v2_to">To</string>
-    <string name="overview_v2_net_revenue">Net income</string>
     <string name="overview_v2_excludes_cancelled">cancelled orders excluded</string>
     <string name="overview_v2_vs_previous">vs %1$s</string>
     <string name="overview_v2_orders">Orders</string>
@@ -778,7 +777,7 @@
     <string name="overview_v2_rented_out">Rented out</string>
     <string name="overview_v2_late_returns">Rented · late return</string>
     <string name="overview_v2_collateral_held">Collateral held</string>
-    <string name="overview_v2_top_rented">Most rented</string>
+    <string name="overview_v2_top_rented">Most rented · by order value</string>
     <string name="overview_v2_rentals">%1$d rentals</string>
     <string name="overview_v2_no_access">Your account cannot see reports</string>
     <string name="overview_v2_bars">Income per day</string>
@@ -1100,4 +1099,38 @@
     <string name="settings_v2_password_submit">Change password</string>
     <string name="settings_v2_password_show">Show password</string>
     <string name="settings_v2_password_hide">Hide password</string>
+    <!-- #484 overview money, rented-out list, store info -->
+    <string name="overview_v2_collected">Money collected</string>
+    <string name="overview_v2_collected_info">What is money collected?</string>
+    <string name="overview_v2_total_order_value">Total order value</string>
+    <string name="overview_v2_outstanding">Still to collect</string>
+    <string name="overview_v2_chart_money">Money in</string>
+    <string name="overview_v2_chart_orders">Orders</string>
+    <string name="overview_v2_bars_orders">New orders per day</string>
+    <string name="overview_v2_info_body">Money customers actually paid the shop in the period you are viewing, counted on the day it was received.</string>
+    <string name="overview_v2_info_deposit">Deposit at booking</string>
+    <string name="overview_v2_info_remaining">Remaining rent or sale amount</string>
+    <string name="overview_v2_info_damage">Damage fee</string>
+    <string name="overview_v2_info_late_fee">Late fee</string>
+    <string name="overview_v2_info_cancelled">Cancelled orders</string>
+    <string name="overview_v2_info_included">included</string>
+    <string name="overview_v2_info_refunds">refunds subtracted</string>
+    <string name="overview_v2_info_note">Total order value is the total of the orders created in the period, including what customers have not paid yet. Still to collect is that unpaid part.</string>
+    <string name="overview_v2_info_ok">Got it</string>
+    <string name="rented_out_title">Rented out · %1$d</string>
+    <string name="rented_out_late">Late return · %1$d</string>
+    <string name="rented_out_on_time">Not due yet · %1$d</string>
+    <string name="store_v2_name">Store name</string>
+    <string name="store_v2_phone">Phone number</string>
+    <string name="store_v2_address_section">Address</string>
+    <string name="store_v2_street">Street address</string>
+    <string name="store_v2_state">Ward / District</string>
+    <string name="store_v2_city">City / Province</string>
+    <string name="store_v2_country">Country</string>
+    <string name="store_v2_country_pick">Select country</string>
+    <string name="store_v2_postal">Postal code</string>
+    <string name="store_v2_other">Other</string>
+    <string name="store_v2_optional">(optional)</string>
+    <string name="store_v2_description">Description</string>
+    <string name="store_v2_description_placeholder">A short introduction of the store</string>
 </resources>

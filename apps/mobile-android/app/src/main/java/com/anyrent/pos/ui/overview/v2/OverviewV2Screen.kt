@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,11 +25,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -40,6 +44,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +65,7 @@ import com.anyrent.pos.R
 import com.anyrent.pos.domain.overview.DayRange
 import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.domain.overview.OverviewBar
+import com.anyrent.pos.domain.overview.OverviewChart
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewPeriod
 import com.anyrent.pos.domain.overview.OverviewPreset
@@ -70,6 +77,7 @@ import com.anyrent.pos.ui.home.v2.ProductThumb
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
+import com.anyrent.pos.ui.home.v2.V2Segmented
 import com.anyrent.pos.ui.theme.DS
 import java.time.LocalDate
 import java.time.ZoneId
@@ -102,9 +110,13 @@ fun OverviewV2Screen(
     onOpenList: (String, String, String) -> Unit = { _, _, _ -> },
     /** #388: (product id, start, end) */
     onOpenProduct: (Int, String, String) -> Unit = { _, _, _ -> },
+    /** #484: "Đang cho thuê", "Đang thuê · trễ hạn trả" and the collateral row open the rented-out list */
+    onOpenRentedOut: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
+    var showInfo by remember { mutableStateOf(false) }
+    var chart by rememberSaveable { mutableStateOf(OverviewChart.MONEY) }
     var showPicker by remember { mutableStateOf(false) }
     val today = viewModel.today()
     val range = OverviewLogic.range(state.period, today)
@@ -142,7 +154,10 @@ fun OverviewV2Screen(
                 if (state.showsRevenue) {
                     item(key = "revenue") {
                         Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
-                        RevenueSection(state.report, state.loading, state.reportError, range, onRetry = viewModel::load)
+                        RevenueSection(
+                            state.report, state.loading, state.reportError, range, chart,
+                            onChart = { chart = it }, onInfo = { showInfo = true }, onRetry = viewModel::load,
+                        )
                     }
                 }
                 // #388: each figure opens its list (the kind of the `overview-orders` route)
@@ -160,7 +175,12 @@ fun OverviewV2Screen(
                     items(stats, key = { it.label }) { stat ->
                         Row(
                             Modifier.fillMaxWidth()
-                                .then(if (stat.kind != null) Modifier.clickable { onOpenList(stat.kind, range.start.toString(), range.end.toString()) } else Modifier)
+                                .then(
+                                    stat.kind?.let { kind ->
+                                        if (kind == OverviewLinks.RENTED || kind == OverviewLinks.LATE) Modifier.clickable(onClick = onOpenRentedOut)
+                                        else Modifier.clickable { onOpenList(kind, range.start.toString(), range.end.toString()) }
+                                    } ?: Modifier,
+                                )
                                 .heightIn(min = 48.dp).padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -213,6 +233,15 @@ fun OverviewV2Screen(
             )
         }
     }
+    if (showInfo) {
+        ModalBottomSheet(
+            onDismissRequest = { showInfo = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = DS.Colors.Surface,
+        ) {
+            CollectedInfoSheet(onClose = { showInfo = false })
+        }
+    }
     if (showPicker) {
         AppDateRangePickerSheet(
             title = stringResource(R.string.overview_v2_period_custom),
@@ -232,9 +261,31 @@ fun OverviewV2Screen(
 }
 
 @Composable
-private fun RevenueSection(report: OverviewReport?, loading: Boolean, error: String?, range: DayRange, onRetry: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp)) {
-        Text("${stringResource(R.string.overview_v2_net_revenue)} · ${longRange(range)}", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+private fun RevenueSection(
+    report: OverviewReport?,
+    loading: Boolean,
+    error: String?,
+    range: DayRange,
+    chart: OverviewChart,
+    onChart: (OverviewChart) -> Unit,
+    onInfo: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp)) {
+        // #484: "Tiền đã thu" + (i) that explains what the figure counts (board Tong-quan-giai-thich)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "${stringResource(R.string.overview_v2_collected)} · ${longRange(range)}",
+                fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            IconButton(onClick = onInfo, modifier = Modifier.size(48.dp).offset(x = (-8).dp)) {
+                Icon(
+                    Icons.Outlined.Info, contentDescription = stringResource(R.string.overview_v2_collected_info),
+                    tint = Color(0xFF64748B), modifier = Modifier.size(16.dp),
+                )
+            }
+        }
         when {
             report != null -> {
                 Text(formatMoneyVnd(report.netRevenue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
@@ -251,9 +302,30 @@ private fun RevenueSection(report: OverviewReport?, loading: Boolean, error: Str
                         else -> DS.Colors.TextMuted
                     },
                 )
+                // #484: hidden on an older API that does not send them
+                if (report.totalOrderValue != null || report.outstanding != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        report.totalOrderValue?.let {
+                            MoneyTile(stringResource(R.string.overview_v2_total_order_value), formatMoneyVnd(it), DS.Colors.Text, Modifier.weight(1f))
+                        }
+                        report.outstanding?.let {
+                            MoneyTile(stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber, Modifier.weight(1f))
+                        }
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
-                val bars = OverviewLogic.bars(report, range) { date -> dayLabel(date).substringBefore(' ') }
-                Bars(bars, Modifier.fillMaxWidth().height(110.dp))
+                V2Segmented(
+                    titles = listOf(stringResource(R.string.overview_v2_chart_money), stringResource(R.string.overview_v2_chart_orders)),
+                    selected = chart.ordinal,
+                    onSelect = { onChart(OverviewChart.entries[it]) },
+                )
+                Spacer(Modifier.height(12.dp))
+                val bars = OverviewLogic.bars(report, range, chart) { date -> dayLabel(date).substringBefore(' ') }
+                Bars(
+                    bars, Modifier.fillMaxWidth().height(110.dp),
+                    stringResource(if (chart == OverviewChart.ORDERS) R.string.overview_v2_bars_orders else R.string.overview_v2_bars),
+                )
             }
             error != null -> {
                 Text("—", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
@@ -270,7 +342,7 @@ private fun RevenueSection(report: OverviewReport?, loading: Boolean, error: Str
 }
 
 @Composable
-private fun Bars(bars: List<OverviewBar>, modifier: Modifier) {
+private fun Bars(bars: List<OverviewBar>, modifier: Modifier, description: String) {
     val ratios = OverviewLogic.barRatios(bars)
     val labelEvery = if (bars.size <= 7) 1 else maxOf(1, (bars.size + 5) / 6)
     val gap = when {
@@ -278,7 +350,6 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier) {
         bars.size <= 14 -> 4.dp
         else -> 2.dp
     }
-    val description = stringResource(R.string.overview_v2_bars)
     Row(modifier.semantics { contentDescription = description }, horizontalArrangement = Arrangement.spacedBy(gap)) {
         bars.forEachIndexed { index, bar ->
             val last = index == bars.lastIndex
@@ -308,6 +379,69 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier) {
                     color = if (last) DS.Colors.Text else DS.Colors.TextMuted,
                 )
             }
+        }
+    }
+}
+
+private val OutstandingAmber = Color(0xFFB45309)
+private val IncludedGreen = Color(0xFF047857)
+
+@Composable
+private fun MoneyTile(title: String, value: String, color: Color, modifier: Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 12.dp, vertical = 10.dp)
+            .semantics(mergeDescendants = true) {},
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(title, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+    }
+}
+
+/**
+ * #484 "Tiền đã thu" explanation. The collateral row of the board is left out until the product decision lands
+ * (spec: out of scope).
+ */
+@Composable
+private fun CollectedInfoSheet(onClose: () -> Unit) {
+    val included = stringResource(R.string.overview_v2_info_included)
+    val rows = listOf(
+        Triple(stringResource(R.string.overview_v2_info_deposit), included, IncludedGreen),
+        Triple(stringResource(R.string.overview_v2_info_remaining), included, IncludedGreen),
+        Triple(stringResource(R.string.overview_v2_info_damage), included, IncludedGreen),
+        Triple(stringResource(R.string.overview_v2_info_late_fee), included, IncludedGreen),
+        Triple(stringResource(R.string.overview_v2_info_cancelled), stringResource(R.string.overview_v2_info_refunds), OutstandingAmber),
+    )
+    Column(
+        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            stringResource(R.string.overview_v2_collected), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+            modifier = Modifier.semantics { heading() },
+        )
+        Text(stringResource(R.string.overview_v2_info_body), fontSize = DS.TextSize.Body, lineHeight = 22.sp, color = Color(0xFF334155))
+        Column {
+            rows.forEach { (label, value, color) ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 10.dp).semantics(mergeDescendants = true) {},
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(label, fontSize = DS.TextSize.Body, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+                    Text(value, fontSize = DS.TextSize.Secondary, color = color, textAlign = TextAlign.End)
+                }
+                ThinDivider()
+            }
+        }
+        Text(stringResource(R.string.overview_v2_info_note), fontSize = DS.TextSize.Secondary, lineHeight = 21.sp, color = DS.Colors.TextMuted)
+        Button(
+            onClick = onClose,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Text, contentColor = Color.White),
+        ) {
+            Text(stringResource(R.string.overview_v2_info_ok), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
         }
     }
 }

@@ -1748,6 +1748,26 @@
 "overview.v2.rentals" = "%d rentals";
 "overview.v2.noAccess" = "Your account cannot see reports";
 "overview.v2.bars" = "Income per day";
+"overview.v2.collected" = "Money collected";
+"overview.v2.collectedInfo" = "What is money collected?";
+"overview.v2.totalOrderValue" = "Total order value";
+"overview.v2.outstanding" = "Still to collect";
+"overview.v2.chart.money" = "Money";
+"overview.v2.chart.orders" = "Orders";
+"overview.v2.barsOrders" = "Orders per day";
+"overview.v2.barOrders" = "%d orders";
+"overview.v2.barOrders.one" = "%d order";
+"overview.v2.topRentedByValue" = "Most rented · by order value";
+"overview.v2.info.body" = "Money customers actually paid the store in the period shown, counted on the day it was received.";
+"overview.v2.info.deposit" = "Deposit paid when booking";
+"overview.v2.info.remaining" = "Remaining rent or sale amount";
+"overview.v2.info.damageFee" = "Damage fee";
+"overview.v2.info.lateFee" = "Late fee";
+"overview.v2.info.cancelled" = "Cancelled orders";
+"overview.v2.info.included" = "counted";
+"overview.v2.info.refundsSubtracted" = "refunds subtracted";
+"overview.v2.info.note" = "Total order value is the total of the orders created in the period, including what customers have not paid yet. Still to collect is that unpaid part.";
+"overview.v2.info.gotIt" = "Got it";
 "settings.v2.title" = "Settings";
 "settings.v2.group.store" = "Store";
 "settings.v2.group.management" = "Management";
@@ -2004,3 +2024,15 @@
 "settings.v2.password.show" = "Show password";
 "settings.v2.password.hide" = "Hide password";
 "settings.v2.password.close" = "Close";
+
+/* #484 Rented-out list, store info form */
+"rentedOut.title" = "Rented out · %d";
+"rentedOut.section.late" = "Overdue · %d";
+"rentedOut.section.onTime" = "Not due yet · %d";
+"rentedOut.empty" = "No orders are rented out";
+"store.v2.name" = "Store name";
+"store.v2.street" = "Street address";
+"store.v2.city" = "City / District";
+"store.v2.state" = "State / Province";
+"store.v2.other" = "Other";
+"store.v2.descriptionPlaceholder" = "A short introduction to your store";

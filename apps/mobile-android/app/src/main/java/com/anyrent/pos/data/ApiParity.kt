@@ -75,12 +75,23 @@ object ApiParity {
         name: String,
         address: String?,
         phone: String?,
+        // #484: the other outlet fields of the store form (same rule as iOS EditStoreViewController: blank is not sent)
+        city: String? = null,
+        state: String? = null,
+        country: String? = null,
+        zipCode: String? = null,
+        description: String? = null,
     ): Result<Unit> = runCatching {
         val body = JSONObject()
             .put("name", name)
             .apply {
                 if (!address.isNullOrBlank()) put("address", address)
                 if (!phone.isNullOrBlank()) put("phone", phone)
+                if (!city.isNullOrBlank()) put("city", city)
+                if (!state.isNullOrBlank()) put("state", state)
+                if (!country.isNullOrBlank()) put("country", country)
+                if (!zipCode.isNullOrBlank()) put("zipCode", zipCode)
+                if (!description.isNullOrBlank()) put("description", description)
             }
             .toString()
             .toRequestBody(jsonMedia)
@@ -94,6 +105,11 @@ object ApiParity {
         val name: String,
         val address: String?,
         val phone: String?,
+        val city: String? = null,
+        val state: String? = null,
+        val country: String? = null,
+        val zipCode: String? = null,
+        val description: String? = null,
     )
 
     fun getOutlet(outletId: Int): Result<OutletInfo> = runCatching {
@@ -109,8 +125,17 @@ object ApiParity {
             name = match.optString("name"),
             address = match.optString("address").takeIf { it.isNotBlank() },
             phone = match.optString("phone").takeIf { it.isNotBlank() },
+            city = match.optText("city"),
+            state = match.optText("state"),
+            country = match.optText("country"),
+            zipCode = match.optText("zipCode"),
+            description = match.optText("description"),
         )
     }
+
+    /** A string field, null when missing, JSON null or blank */
+    private fun JSONObject.optText(key: String): String? =
+        if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
 
     fun createUser(
         firstName: String,

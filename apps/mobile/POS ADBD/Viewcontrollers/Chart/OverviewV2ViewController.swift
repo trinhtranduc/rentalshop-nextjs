@@ -4,6 +4,8 @@
 //
 //  Redesigned overview tab (#374, boards Tong-quan, Tong-quan-chon), shown when `newOverview` is on: one period
 //  (sheet), net money with per-day bars and the change against the previous period, order figures, top rented.
+//  #484: "Tiền đã thu" with an explanation sheet, Tổng giá trị đơn / Còn phải thu tiles, a Tiền thu | Số đơn chart
+//  toggle, and the rented-out figures open the grouped rented-out list.
 //
 
 import UIKit
@@ -16,6 +18,7 @@ final class OverviewV2ViewController: BaseViewControler {
     private var report: OverviewReport?
     private var now: OverviewNow?
     private var reportFailed: String?
+    private var chartMode: OverviewChartMode = .money
     private var generation = 0
     private var requests: [DataRequest] = []
 
@@ -167,7 +170,7 @@ final class OverviewV2ViewController: BaseViewControler {
         }
 
         if showsRevenue, let top = report?.topProducts, !top.isEmpty {
-            contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.topRented".localized()))
+            contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.topRentedByValue".localized()))
             top.forEach { contentStack.addArrangedSubview(topRow($0)) }
         }
         if !showsRevenue && !showsOperations {
@@ -205,13 +208,28 @@ final class OverviewV2ViewController: BaseViewControler {
 
     private func revenueSection() -> UIView {
         let range = self.range
-        let caption = V2.label("\("overview.v2.netRevenue".localized()) · \(OverviewLogic.longRange(range))",
+        let caption = V2.label("\("overview.v2.collected".localized()) · \(OverviewLogic.longRange(range))",
                                size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+        caption.setContentHuggingPriority(.required, for: .horizontal)
+        caption.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // #484: outlined (i) with a 44pt hit area, glyph close to the caption (board: margin-left -10)
+        let info = UIButton(type: .system)
+        info.setImage(DS.symbol("info.circle", 18, weight: .regular), for: .normal)
+        info.tintColor = UIColor(hexString: "64748B")
+        info.accessibilityLabel = "overview.v2.collectedInfo".localized()
+        info.addTarget(self, action: #selector(openCollectedInfo), for: .touchUpInside)
+        info.setContentHuggingPriority(.required, for: .horizontal)
+        info.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
+        let captionRow = UIStackView(arrangedSubviews: [caption, info, UIView()])
+        captionRow.alignment = .center
+        captionRow.spacing = -10
         let amount = V2.label(size: 30, weight: .bold)
         let change = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let stack = UIStackView(arrangedSubviews: [caption, amount, change])
+        let stack = UIStackView(arrangedSubviews: [captionRow, amount, change])
         stack.axis = .vertical
         stack.spacing = DS.Gap.lineTight
+        // The 44pt row is taller than the caption: pull the amount back up (board: margin -12px 0)
+        stack.setCustomSpacing(DS.Gap.lineTight - 12, after: captionRow)
 
         if let report {
             amount.text = MoneyFormatter.format(report.netRevenue)
@@ -223,9 +241,24 @@ final class OverviewV2ViewController: BaseViewControler {
             } else {
                 change.text = cancelled
             }
-            let bars = OverviewBarsView()
-            bars.configure(OverviewLogic.bars(report: report, range: range))
             stack.setCustomSpacing(DS.Spacing.md, after: change)
+            if let tiles = moneyTiles(report) {
+                stack.addArrangedSubview(tiles)
+                stack.setCustomSpacing(DS.Spacing.md, after: tiles)
+            }
+            // "Số đơn" needs `series[].newOrderCount`; an older API sends none, so only money is charted
+            let hasOrderCounts = report.series.contains { $0.newOrderCount != nil }
+            if !hasOrderCounts { chartMode = .money }
+            if hasOrderCounts {
+                let toggle = V2Segmented(titles: ["overview.v2.chart.money".localized(), "overview.v2.chart.orders".localized()])
+                toggle.select(chartMode == .money ? 0 : 1)
+                toggle.addTarget(self, action: #selector(chartModeChanged(_:)), for: .valueChanged)
+                let toggleRow = UIStackView(arrangedSubviews: [toggle, UIView()])
+                stack.addArrangedSubview(toggleRow)
+                stack.setCustomSpacing(DS.Spacing.md, after: toggleRow)
+            }
+            let bars = OverviewBarsView()
+            bars.configure(OverviewLogic.bars(report: report, range: range, mode: chartMode), mode: chartMode)
             stack.addArrangedSubview(bars)
             bars.snp.makeConstraints { make in make.height.equalTo(110) }
         } else if let failed = reportFailed {
@@ -241,7 +274,62 @@ final class OverviewV2ViewController: BaseViewControler {
             stack.addArrangedSubview(spinner)
             spinner.snp.makeConstraints { make in make.height.equalTo(110) }
         }
-        return padded(stack)
+        return padded(stack, top: 2)
+    }
+
+    /// Tổng giá trị đơn and Còn phải thu (#484), each only when the API sent it; nil when it sent neither
+    private func moneyTiles(_ report: OverviewReport) -> UIView? {
+        var tiles: [UIView] = []
+        if let total = report.totalOrderValue {
+            tiles.append(moneyTile("overview.v2.totalOrderValue".localized(), MoneyFormatter.format(total), color: DS.Color.text))
+        }
+        if let outstanding = report.outstanding {
+            tiles.append(moneyTile("overview.v2.outstanding".localized(), MoneyFormatter.format(outstanding),
+                                   color: UIColor(hexString: "B45309")))
+        }
+        guard !tiles.isEmpty else { return nil }
+        if tiles.count == 1 { tiles.append(UIView()) }
+        let row = UIStackView(arrangedSubviews: tiles)
+        row.distribution = .fillEqually
+        row.spacing = DS.Spacing.sm
+        return row
+    }
+
+    private func moneyTile(_ title: String, _ value: String, color: UIColor) -> UIView {
+        let box = UIView()
+        box.backgroundColor = V2.sectionFill
+        box.layer.cornerRadius = DS.Radius.card
+        let titleLabel = V2.label(title, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.8
+        let valueLabel = V2.label(value, size: DS.TextSize.name, weight: .bold, color: color)
+        valueLabel.font = UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.name, weight: .bold)
+        valueLabel.adjustsFontSizeToFitWidth = true
+        valueLabel.minimumScaleFactor = 0.6
+        let column = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        column.axis = .vertical
+        column.spacing = 2
+        box.addSubview(column)
+        column.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)) }
+        box.isAccessibilityElement = true
+        box.accessibilityLabel = "\(title), \(value)"
+        return box
+    }
+
+    @objc private func chartModeChanged(_ sender: V2Segmented) {
+        chartMode = sender.selectedIndex == 1 ? .orders : .money
+        render()
+    }
+
+    @objc private func openCollectedInfo() {
+        let sheet = OverviewCollectedInfoSheet()
+        sheet.modalPresentationStyle = .pageSheet
+        if let controller = sheet.sheetPresentationController {
+            controller.detents = [.medium(), .large()]
+            controller.prefersGrabberVisible = true
+            controller.preferredCornerRadius = DS.Radius.sheet
+        }
+        present(sheet, animated: true)
     }
 
     private func statRow(_ label: String, value: String, color: UIColor, opens filter: OverviewRankingOrdersFilter?) -> UIView {
@@ -330,6 +418,18 @@ final class OverviewV2ViewController: BaseViewControler {
     /// The same period as the figures for Đơn mới and a top product; "now" for the others
     @objc private func linkTapped(_ sender: OverviewLinkRow) {
         guard let filter = sender.filter else { return }
+        // #484: rented out, late returns and collateral open the grouped rented-out list (late group first)
+        switch filter {
+        case .rentedOut, .lateReturns:
+            var startsAtLate = false
+            if case .lateReturns = filter { startsAtLate = true }
+            let list = RentedOutOrdersViewController(startsAtLate: startsAtLate)
+            list.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(list, animated: true)
+            return
+        default:
+            break
+        }
         let range = self.range
         let dated: Bool
         switch filter {
@@ -408,7 +508,7 @@ final class OverviewLinkRow: UIControl {
 
 /// Bars with a label under each (the last one highlighted)
 final class OverviewBarsView: UIView {
-    func configure(_ bars: [OverviewBar]) {
+    func configure(_ bars: [OverviewBar], mode: OverviewChartMode = .money) {
         subviews.forEach { $0.removeFromSuperview() }
         let ratios = OverviewLogic.barRatios(bars)
         let labelEvery = bars.count <= 7 ? 1 : max(1, Int((Double(bars.count) / 6).rounded(.up)))
@@ -441,13 +541,92 @@ final class OverviewBarsView: UIView {
                 make.height.equalTo(column.snp.height).multipliedBy(ratio).offset(-20 * ratio)
             }
             column.isAccessibilityElement = true
-            column.accessibilityLabel = "\(bar.label): \(MoneyFormatter.format(bar.value))"
+            switch mode {
+            case .money:
+                column.accessibilityLabel = "\(bar.label): \(MoneyFormatter.format(bar.value))"
+            case .orders:
+                let count = Int(bar.value)
+                column.accessibilityLabel = "\(bar.label): \(PluralText.format("overview.v2.barOrders", count: count, count))"
+            }
             columns.addArrangedSubview(column)
         }
         addSubview(columns)
         columns.snp.makeConstraints { make in make.edges.equalToSuperview() }
-        accessibilityLabel = "overview.v2.bars".localized()
+        accessibilityLabel = (mode == .money ? "overview.v2.bars" : "overview.v2.barsOrders").localized()
     }
+}
+
+/// "Tiền đã thu" explanation (#484, board Tong-quan-giai-thich). The collateral row of the board is left out
+/// until the owner decides whether collateral counts.
+final class OverviewCollectedInfoSheet: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+
+        let title = V2.label("overview.v2.collected".localized(), size: 18, weight: .bold, lines: 0)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let body = V2.label("overview.v2.info.body".localized(), size: DS.TextSize.body,
+                            color: UIColor(hexString: "334155"), lines: 0)
+
+        let included = "overview.v2.info.included".localized()
+        let rows: [(String, String, UIColor)] = [
+            ("overview.v2.info.deposit".localized(), included, V2.ok),
+            ("overview.v2.info.remaining".localized(), included, V2.ok),
+            ("overview.v2.info.damageFee".localized(), included, V2.ok),
+            ("overview.v2.info.lateFee".localized(), included, V2.ok),
+            ("overview.v2.info.cancelled".localized(), "overview.v2.info.refundsSubtracted".localized(), UIColor(hexString: "B45309")),
+        ]
+        let list = UIStackView()
+        list.axis = .vertical
+        for (name, value, color) in rows {
+            let nameLabel = V2.label(name, size: DS.TextSize.body, lines: 0)
+            let valueLabel = V2.label(value, size: DS.TextSize.secondary, color: color, lines: 0)
+            valueLabel.textAlignment = .right
+            valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+            valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+            let line = UIStackView(arrangedSubviews: [nameLabel, valueLabel])
+            line.spacing = DS.Spacing.md
+            line.alignment = .center
+            let row = UIView()
+            row.addSubview(line)
+            line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)) }
+            let divider = V2.divider()
+            row.addSubview(divider)
+            divider.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+            row.isAccessibilityElement = true
+            row.accessibilityLabel = "\(name), \(value)"
+            list.addArrangedSubview(row)
+        }
+
+        let note = V2.label("overview.v2.info.note".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+
+        let done = UIButton(type: .system)
+        done.setTitle("overview.v2.info.gotIt".localized(), for: .normal)
+        done.setTitleColor(.white, for: .normal)
+        done.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        done.backgroundColor = DS.Color.text
+        done.layer.cornerRadius = DS.Radius.card
+        done.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
+        done.snp.makeConstraints { make in make.height.equalTo(48) }
+
+        let stack = UIStackView(arrangedSubviews: [title, body, list, note, done])
+        stack.axis = .vertical
+        stack.spacing = DS.Spacing.md
+        stack.setCustomSpacing(DS.Spacing.md + 4, after: note)
+
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = false
+        view.addSubview(scroll)
+        scroll.addSubview(stack)
+        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(scroll.contentLayoutGuide).offset(DS.Spacing.xl)
+            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(20)
+        }
+    }
+
+    @objc private func doneTapped() { dismiss(animated: true) }
 }
 
 /// "Khoảng thời gian" sheet: six presets with their dates, then "Chọn khoảng ngày…"
