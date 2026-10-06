@@ -189,7 +189,7 @@ struct OverviewReport: Decodable, Equatable {
         /// Orders created that day / month (#484); nil on an older API
         let newOrderCount: Int?
 
-        enum CodingKeys: String, CodingKey { case date, month, realIncome, monthNumber, newOrderCount }
+        enum CodingKeys: String, CodingKey { case date, month, realIncome, collected, monthNumber, newOrderCount }
 
         init(dayKey: String?, monthLabel: String?, realIncome: Double, newOrderCount: Int? = nil) {
             self.dayKey = dayKey
@@ -204,7 +204,9 @@ struct OverviewReport: Decodable, Equatable {
             dayKey = date.map { String($0.prefix(10)).replacingOccurrences(of: "/", with: "-") }
             let isMonthly = ((try? c.decodeIfPresent(Int.self, forKey: .monthNumber)) ?? nil) != nil
             monthLabel = isMonthly || date == nil ? ((try? c.decodeIfPresent(String.self, forKey: .month)) ?? nil) : nil
-            realIncome = ((try? c.decodeIfPresent(Double.self, forKey: .realIncome)) ?? nil) ?? 0
+            // `collected` leaves collateral out (#484); an older API only sends `realIncome`
+            realIncome = ((try? c.decodeIfPresent(Double.self, forKey: .collected)) ?? nil)
+                ?? ((try? c.decodeIfPresent(Double.self, forKey: .realIncome)) ?? nil) ?? 0
             newOrderCount = (try? c.decodeIfPresent(Int.self, forKey: .newOrderCount)) ?? nil
         }
     }
@@ -236,7 +238,7 @@ struct OverviewReport: Decodable, Equatable {
         }
     }
 
-    /// Money collected in the period (`revenue.totalActualRevenue`, else `totalRevenue`)
+    /// Money collected in the period without collateral (`revenue.collected`, #484), else `totalActualRevenue`, else `totalRevenue`
     let netRevenue: Double
     /// Total of the orders created in the period, cancelled left out (`revenue.totalOrderValue`, #484); nil on an older API
     let totalOrderValue: Double?
@@ -250,8 +252,8 @@ struct OverviewReport: Decodable, Equatable {
     let topProducts: [TopProduct]
 
     private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts }
-    private enum RevenueKeys: String, CodingKey { case totalActualRevenue, totalRevenue, totalOrderValue, outstanding }
-    private enum GrowthKeys: String, CodingKey { case revenue }
+    private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding }
+    private enum GrowthKeys: String, CodingKey { case collected, revenue }
     private enum ChangeKeys: String, CodingKey { case growth }
     private enum OperationalKeys: String, CodingKey { case orderCounts }
     private enum CountKeys: String, CodingKey { case new }
@@ -270,7 +272,8 @@ struct OverviewReport: Decodable, Equatable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         if let revenue = try? c.nestedContainer(keyedBy: RevenueKeys.self, forKey: .revenue) {
-            netRevenue = ((try? revenue.decodeIfPresent(Double.self, forKey: .totalActualRevenue)) ?? nil)
+            netRevenue = ((try? revenue.decodeIfPresent(Double.self, forKey: .collected)) ?? nil)
+                ?? ((try? revenue.decodeIfPresent(Double.self, forKey: .totalActualRevenue)) ?? nil)
                 ?? ((try? revenue.decodeIfPresent(Double.self, forKey: .totalRevenue)) ?? nil) ?? 0
             totalOrderValue = (try? revenue.decodeIfPresent(Double.self, forKey: .totalOrderValue)) ?? nil
             outstanding = (try? revenue.decodeIfPresent(Double.self, forKey: .outstanding)) ?? nil
@@ -280,7 +283,8 @@ struct OverviewReport: Decodable, Equatable {
             outstanding = nil
         }
         if let growth = try? c.nestedContainer(keyedBy: GrowthKeys.self, forKey: .growth),
-           let change = try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .revenue) {
+           let change = (try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .collected))
+            ?? (try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .revenue)) {
             revenueGrowth = (try? change.decodeIfPresent(Double.self, forKey: .growth)) ?? nil
         } else {
             revenueGrowth = nil

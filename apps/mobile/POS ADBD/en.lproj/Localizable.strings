@@ -1766,6 +1766,8 @@
 "overview.v2.info.cancelled" = "Cancelled orders";
 "overview.v2.info.included" = "counted";
 "overview.v2.info.refundsSubtracted" = "refunds subtracted";
+"overview.v2.info.collateral" = "Collateral (documents, cash)";
+"overview.v2.info.notCounted" = "not counted";
 "overview.v2.info.note" = "Total order value is the total of the orders created in the period, including what customers have not paid yet. Still to collect is that unpaid part.";
 "overview.v2.info.gotIt" = "Got it";
 "settings.v2.title" = "Settings";

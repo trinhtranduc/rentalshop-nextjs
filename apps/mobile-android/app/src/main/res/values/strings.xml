@@ -1115,6 +1115,8 @@
     <string name="overview_v2_info_cancelled">Cancelled orders</string>
     <string name="overview_v2_info_included">included</string>
     <string name="overview_v2_info_refunds">refunds subtracted</string>
+    <string name="overview_v2_info_collateral">Collateral (documents, cash)</string>
+    <string name="overview_v2_info_not_counted">not counted</string>
     <string name="overview_v2_info_note">Total order value is the total of the orders created in the period, including what customers have not paid yet. Still to collect is that unpaid part.</string>
     <string name="overview_v2_info_ok">Got it</string>
     <string name="rented_out_title">Rented out · %1$d</string>

@@ -1764,6 +1764,8 @@
 "overview.v2.info.cancelled" = "Đơn huỷ";
 "overview.v2.info.included" = "có tính";
 "overview.v2.info.refundsSubtracted" = "trừ lại tiền đã hoàn";
+"overview.v2.info.collateral" = "Thế chấp (giấy tờ, tiền)";
+"overview.v2.info.notCounted" = "không tính";
 "overview.v2.info.note" = "Tổng giá trị đơn là tổng tiền các đơn tạo trong kỳ, kể cả phần khách chưa trả. Còn phải thu là phần khách chưa trả đó.";
 "overview.v2.info.gotIt" = "Đã hiểu";
 "settings.v2.title" = "Cài đặt";

@@ -1,7 +1,6 @@
 package com.anyrent.pos.res
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Test
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
@@ -54,10 +53,11 @@ class Issue484ResourcesTest {
         boardVietnamese.keys.forEach { assertEquals("$it missing in values", true, en[it]?.isNotBlank()) }
     }
 
-    /** Collateral is not part of the explanation until the product decision (spec: out of scope) */
+    /** Owner decided 2026-10-06: collected money leaves collateral out, and the sheet says so */
     @Test
-    fun explanationDoesNotMentionCollateral() {
+    fun explanationSaysCollateralIsNotCounted() {
         val vi = strings("values-vi")
-        vi.filterKeys { it.startsWith("overview_v2_info_") }.values.forEach { assertFalse(it, it.contains("Thế chấp", ignoreCase = true)) }
+        assertEquals("Thế chấp (giấy tờ, tiền)", vi["overview_v2_info_collateral"])
+        assertEquals("không tính", vi["overview_v2_info_not_counted"])
     }
 }

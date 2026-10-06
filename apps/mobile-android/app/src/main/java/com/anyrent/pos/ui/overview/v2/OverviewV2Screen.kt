@@ -411,6 +411,7 @@ private fun CollectedInfoSheet(onClose: () -> Unit) {
         Triple(stringResource(R.string.overview_v2_info_damage), included, IncludedGreen),
         Triple(stringResource(R.string.overview_v2_info_late_fee), included, IncludedGreen),
         Triple(stringResource(R.string.overview_v2_info_cancelled), stringResource(R.string.overview_v2_info_refunds), OutstandingAmber),
+        Triple(stringResource(R.string.overview_v2_info_collateral), stringResource(R.string.overview_v2_info_not_counted), Color(0xFF475569)),
     )
     Column(
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp),

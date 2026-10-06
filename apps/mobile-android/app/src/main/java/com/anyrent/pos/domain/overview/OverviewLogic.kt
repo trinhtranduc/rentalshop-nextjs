@@ -137,12 +137,13 @@ object OverviewLogic {
         fun number(o: JSONObject?, key: String): Double? =
             if (o == null || !o.has(key) || o.isNull(key)) null else o.optDouble(key).takeIf { !it.isNaN() }
         val revenue = data.optJSONObject("revenue")
-        val growth = data.optJSONObject("growth")?.optJSONObject("revenue")
+        // `collected` leaves collateral out (#484); an older API only sends `revenue`
+        val growth = data.optJSONObject("growth")?.let { it.optJSONObject("collected") ?: it.optJSONObject("revenue") }
         val counts = data.optJSONObject("operational")?.optJSONObject("orderCounts")
         val series = data.optJSONArray("series")
         val top = data.optJSONArray("topProducts")
         return OverviewReport(
-            netRevenue = number(revenue, "totalActualRevenue") ?: number(revenue, "totalRevenue") ?: 0.0,
+            netRevenue = number(revenue, "collected") ?: number(revenue, "totalActualRevenue") ?: number(revenue, "totalRevenue") ?: 0.0,
             revenueGrowth = number(growth, "growth"),
             newOrders = if (counts != null && counts.has("new") && !counts.isNull("new")) counts.optInt("new") else null,
             series = (0 until (series?.length() ?: 0)).mapNotNull { i ->
@@ -152,7 +153,7 @@ object OverviewLogic {
                 OverviewReport.Point(
                     dayKey = date?.take(10)?.replace('/', '-'),
                     monthLabel = if (monthly || date == null) p.optString("month").takeIf { it.isNotBlank() } else null,
-                    realIncome = number(p, "realIncome") ?: 0.0,
+                    realIncome = number(p, "collected") ?: number(p, "realIncome") ?: 0.0,
                     newOrderCount = number(p, "newOrderCount")?.toInt(),
                 )
             },

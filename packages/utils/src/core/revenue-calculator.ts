@@ -282,6 +282,15 @@ export function getOrderRevenueEvents(
 }
 
 /**
+ * The same order with collateral (securityDeposit) removed, for "money collected" totals that leave out
+ * collateral: it is held at pickup and handed back at return, so it is never the shop's money (#484).
+ * Pickup then collects `totalAmount - depositAmount`, return collects `damageFee + lateFee`.
+ */
+export function withoutCollateral<T extends OrderRevenueData>(order: T): T {
+  return { ...order, securityDeposit: 0 };
+}
+
+/**
  * Calculate total revenue for an order (sum of all revenue events)
  * 
  * @param order Order data
