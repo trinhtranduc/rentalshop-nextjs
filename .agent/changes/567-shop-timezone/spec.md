@@ -10,6 +10,9 @@
 
 3. `GET` login, `GET /api/users/profile`, `GET /api/merchants/{id}`, `/api/settings/merchant` return
    `merchant.timezone` (additive). Missing on old payloads = `Asia/Ho_Chi_Minh` for every client.
+4a. Register (`POST /api/auth/register` and the merchant-create path) accepts an optional `timezone` (the
+    device zone, sent by new web/iOS/Android builds). Valid → stored; missing/invalid → `Asia/Ho_Chi_Minh`
+    (old apps unchanged, never a 400 on register for this field).
 4. `PUT /api/settings/merchant` accepts `timezone` (MERCHANT only; ADMIN via merchant update). The change is
    written to the shop change history.
 5. A request-scoped resolver `shopTimeZone(userScope)` returns the merchant's zone (cached per request);
