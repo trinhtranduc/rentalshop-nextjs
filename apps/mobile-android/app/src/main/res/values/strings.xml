@@ -1165,4 +1165,139 @@
     <string name="store_v2_optional">(optional)</string>
     <string name="store_v2_description">Description</string>
     <string name="store_v2_description_placeholder">A short introduction of the store</string>
+    <!-- #518 overlap setting, #519 order action sheet and change history -->
+    <string name="settings_v2_group_orders">Orders</string>
+    <string name="settings_v2_allow_overlap">Allow overlapping bookings</string>
+    <string name="settings_v2_allow_overlap_hint">When off, an order cannot be created if the items are fully booked on those days.</string>
+    <string name="settings_v2_allow_overlap_failed">Could not save the setting. Please try again.</string>
+    <string name="api_error_order_schedule_conflict">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
+    <string name="v2_cart_overlap_line">Booked out %1$s · rented in order %2$s</string>
+    <string name="v2_cart_overlap_line_no_order">Booked out %1$s</string>
+    <string name="v2_cart_overlap_blocked">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
+    <string name="v2_create_overlap_title">Overlapping booking</string>
+    <string name="v2_create_overlap_line">%1$s is short %2$d on %3$s (rented in %4$s).</string>
+    <string name="v2_create_overlap_line_no_order">%1$s is short %2$d on %3$s.</string>
+    <string name="v2_create_anyway">Create anyway</string>
+    <string name="order_sheet_title">Order #%1$s</string>
+    <string name="order_sheet_print">Print receipt</string>
+    <string name="order_sheet_printer">Printer %1$s</string>
+    <string name="order_sheet_notes">Notes</string>
+    <string name="order_sheet_notes_with_text">1 note</string>
+    <plurals name="order_sheet_notes_photos">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <plurals name="order_sheet_notes_photos_only">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="order_sheet_notes_add">Add a note</string>
+    <string name="order_sheet_history">Change history</string>
+    <string name="order_sheet_edit">Edit order</string>
+    <string name="order_sheet_extend">Extend</string>
+    <string name="order_sheet_share">Share order</string>
+    <string name="order_sheet_cancel">Cancel order</string>
+    <string name="order_sheet_cancel_hint">The order becomes Cancelled and is left out of revenue</string>
+    <string name="order_sheet_delete">Delete order</string>
+    <string name="history_title">Change history</string>
+    <string name="history_order_subtitle">Order #%1$s · %2$s</string>
+    <string name="history_empty">No changes yet</string>
+    <string name="history_load_more">Load more</string>
+    <string name="history_error">Could not load the change history</string>
+    <string name="history_today">TODAY · %1$s</string>
+    <string name="history_weekdays">Mon,Tue,Wed,Thu,Fri,Sat,Sun</string>
+    <string name="history_other">Update</string>
+    <string name="history_refund">Refund</string>
+    <string name="history_staff_name">%1$s (staff)</string>
+    <string name="history_per_day">/day</string>
+    <string name="history_per_rental">/rental</string>
+    <string name="history_per_hour">/hour</string>
+    <string name="history_quantity">× %1$s</string>
+    <string name="history_item_added">added × %1$s</string>
+    <string name="history_item_removed">removed</string>
+    <string name="history_images_added">added %1$d photo(s)</string>
+    <string name="history_images_removed">removed %1$d photo(s)</string>
+    <string name="history_pricing_other">%1$s price</string>
+    <string name="history_count">%1$d changes · latest %2$s</string>
+    <string name="history_count_only">%1$d changes</string>
+    <string name="history_latest_today">%1$s today</string>
+    <string-array name="history_kinds">
+        <item>ORDER_CREATED|Order created</item>
+        <item>ORDER_EDITED|Order edited</item>
+        <item>ORDER_ITEMS|Items changed</item>
+        <item>ORDER_ITEM_PRICE|Price changed in order</item>
+        <item>ORDER_DEPOSIT|Deposit taken</item>
+        <item>ORDER_PAYMENT|Payment</item>
+        <item>ORDER_NOTE|Note edited</item>
+        <item>ORDER_PICKED_UP|Handed over</item>
+        <item>ORDER_RETURNED|Taken back</item>
+        <item>ORDER_COMPLETED|Completed</item>
+        <item>ORDER_CANCELLED|Order cancelled</item>
+        <item>ORDER_RESTORED|Restored</item>
+        <item>ORDER_DELETED|Order deleted</item>
+        <item>PRODUCT_CREATED|Product created</item>
+        <item>PRODUCT_EDITED|Details edited</item>
+        <item>PRODUCT_PRICE|Price changed</item>
+        <item>PRODUCT_STOCK|Stock changed</item>
+        <item>PRODUCT_IMAGES|Photos changed</item>
+        <item>PRODUCT_DELETED|Product deleted</item>
+        <item>PRODUCT_RESTORED|Restored</item>
+        <item>OTHER|Update</item>
+    </string-array>
+    <string-array name="history_fields">
+        <item>status|Status</item>
+        <item>orderType|Order type</item>
+        <item>pickupPlanAt|Pickup day</item>
+        <item>returnPlanAt|Return day</item>
+        <item>pickedUpAt|Handed over</item>
+        <item>returnedAt|Returned</item>
+        <item>totalAmount|Order total</item>
+        <item>depositAmount|Prepaid deposit</item>
+        <item>securityDeposit|Security deposit</item>
+        <item>discountType|Discount type</item>
+        <item>discountValue|Discount value</item>
+        <item>discountAmount|Discount</item>
+        <item>damageFee|Damage fee</item>
+        <item>lateFee|Late fee</item>
+        <item>collateralType|Collateral type</item>
+        <item>collateralDetails|Collateral</item>
+        <item>pickupNotes|Pickup notes</item>
+        <item>returnNotes|Return notes</item>
+        <item>damageNotes|Damage notes</item>
+        <item>isReadyToDeliver|Ready to deliver</item>
+        <item>paymentCollected|Collected</item>
+        <item>paymentRefunded|Refunded</item>
+        <item>paymentMethod|Method</item>
+        <item>notes|Note</item>
+        <item>name|Name</item>
+        <item>barcode|Barcode</item>
+        <item>category|Category</item>
+        <item>isActive|On sale</item>
+        <item>deposit|Deposit</item>
+        <item>rentPrice|Rent price</item>
+        <item>salePrice|Sale price</item>
+        <item>pricingType|Pricing</item>
+        <item>pricing.DAILY|Rent per day</item>
+        <item>pricing.FIXED|Rent per rental</item>
+        <item>pricing.HOURLY|Rent per hour</item>
+        <item>images|Photos</item>
+    </string-array>
+    <string-array name="history_values">
+        <item>status.RESERVED|Booked</item>
+        <item>status.PICKUPED|Renting</item>
+        <item>status.RETURNED|Returned</item>
+        <item>status.COMPLETED|Completed</item>
+        <item>status.CANCELLED|Cancelled</item>
+        <item>orderType.RENT|Rent</item>
+        <item>orderType.SALE|Sale</item>
+        <item>pricingType.DAILY|Per day</item>
+        <item>pricingType.FIXED|Per rental</item>
+        <item>pricingType.HOURLY|Per hour</item>
+        <item>discountType.AMOUNT|Amount</item>
+        <item>discountType.PERCENTAGE|Percent</item>
+        <item>paymentMethod.CASH|Cash</item>
+        <item>paymentMethod.BANK_TRANSFER|Bank transfer</item>
+        <item>bool.true|Yes</item>
+        <item>bool.false|No</item>
+    </string-array>
 </resources>

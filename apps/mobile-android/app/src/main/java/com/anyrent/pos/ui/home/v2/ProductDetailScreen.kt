@@ -31,7 +31,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Checkroom
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -92,6 +94,8 @@ import com.anyrent.pos.ui.common.StatusBadge
 import com.anyrent.pos.ui.common.dayKey
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
+import com.anyrent.pos.domain.history.ChangeHistory
+import com.anyrent.pos.ui.history.changeHistoryTexts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -110,6 +114,8 @@ fun ProductDetailScreen(
     onOpenOrder: (Int) -> Unit,
     onOpenCalendar: (Int) -> Unit,
     onOpenAllOrders: (Int) -> Unit = {},
+    /** #519 "Lịch sử thay đổi" of the product, with the screen subtitle "<name> · <barcode>" */
+    onOpenHistory: (productId: Int, subtitle: String) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     var product by remember { mutableStateOf<Product?>(null) }
@@ -126,6 +132,9 @@ fun ProductDetailScreen(
     var deleting by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
     var viewer by remember { mutableStateOf<ProductImageViewerRequest?>(null) }
+    // #519: "N lần thay đổi · gần nhất …" under the "Lịch sử thay đổi" row
+    var historyPage by remember { mutableStateOf<ChangeHistory.Page?>(null) }
+    val historyTexts = remember { changeHistoryTexts(context.resources) }
     val scope = rememberCoroutineScope()
     val added = stringResource(R.string.v2_added_to_cart)
     val deletedText = stringResource(R.string.v2_product_deleted)
@@ -144,6 +153,8 @@ fun ProductDetailScreen(
             }
         withContext(Dispatchers.IO) { ApiClient.get().searchProductOrders(productId, page = 1, limit = 1) }
             .onSuccess { ordersTotal = it.total ?: it.items.size }
+        withContext(Dispatchers.IO) { ApiClient.get().productChanges(productId, limit = 1) }
+            .onSuccess { historyPage = it }
         // One call per status of each chip
         val results = withContext(Dispatchers.IO) {
             ProductOrdersChip.entries.associateWith { c ->
@@ -245,6 +256,27 @@ fun ProductDetailScreen(
                     FreeStrip(strip, Modifier.padding(top = 4.dp))
                     Text(stringResource(R.string.v2_detail_strip_caption, stripStock ?: 0), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
+            }
+            Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
+
+            // #519: "Lịch sử thay đổi" (read only screen, newest first)
+            val historySubtitle = listOfNotNull(current.name.takeIf { it.isNotBlank() }, current.barcodeText?.takeIf { it.isNotBlank() })
+                .joinToString(" · ")
+            Row(
+                Modifier.fillMaxWidth().clickable { onOpenHistory(current.id, historySubtitle) }
+                    .semantics { role = Role.Button }
+                    .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.Outlined.History, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.history_title), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text)
+                    historyPage?.let { ChangeHistory.countSummary(it.total, it.latestAt, Instant.now(), historyTexts) }?.let {
+                        Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                    }
+                }
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))
             }
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 

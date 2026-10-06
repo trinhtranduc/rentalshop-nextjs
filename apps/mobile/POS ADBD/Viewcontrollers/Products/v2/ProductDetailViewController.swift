@@ -195,6 +195,17 @@ final class ProductDetailViewController: BaseViewControler {
         band.snp.makeConstraints { make in make.height.equalTo(8) }
         content.addArrangedSubview(band)
 
+        // #519: "Lịch sử thay đổi" of the product (board LS-san-pham)
+        let history = V2ValueRow(title: "history.title".localized())
+        history.titleLabel.font = Utils.mediumFont(size: DS.TextSize.body)
+        history.accessibilityIdentifier = "product.detail.history"
+        history.addTarget(self, action: #selector(openHistory), for: .touchUpInside)
+        content.addArrangedSubview(history)
+        let historyBand = UIView()
+        historyBand.backgroundColor = DS.Color.background
+        historyBand.snp.makeConstraints { make in make.height.equalTo(8) }
+        content.addArrangedSubview(historyBand)
+
         // Orders
         ordersCount.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         ordersCount.setTitleColor(DS.Color.primary, for: .normal)
@@ -572,6 +583,15 @@ final class ProductDetailViewController: BaseViewControler {
         controller.delegate = self
         controller.loadProduct(product)
         present(UINavigationController(rootViewController: controller), animated: true)
+    }
+
+    /// #519: read-only change history of this product
+    @objc private func openHistory() {
+        let barcode = product.barcode?.trimmingCharacters(in: .whitespaces)
+        let history = ChangeHistoryViewController(subject: .product(id: productId, name: product.name ?? "",
+                                                                    barcode: (barcode ?? "").isEmpty ? nil : barcode))
+        history.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(history, animated: true)
     }
 
     @objc private func chipTapped(_ sender: UIButton) {

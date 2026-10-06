@@ -59,6 +59,9 @@ import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.domain.availability.AvailabilityRequest
+import com.anyrent.pos.domain.availability.OverlapWarnings
+import com.anyrent.pos.domain.availability.ProductAvailability
+import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.CreateOrderSheet
@@ -127,7 +130,9 @@ fun CartV2Screen(
     }
     val total = (subtotal - discountAmount).coerceAtLeast(0.0)
 
-    var available by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
+    // Batch availability of the lines for the chosen dates; #518 also reads which other orders hold them
+    var availability by remember { mutableStateOf<Map<Int, ProductAvailability>>(emptyMap()) }
+    val available = availability.mapValues { it.value.effectivelyAvailable }
     var showCustomer by remember { mutableStateOf(false) }
     var showDates by remember { mutableStateOf(false) }
     var numericEditor by remember { mutableStateOf<String?>(null) }
@@ -170,7 +175,7 @@ fun CartV2Screen(
     LaunchedEffect(availabilityKey) {
         // iOS checks a rental only once dates are picked
         if (lines.isEmpty() || (!isSale && !datesChosen)) {
-            available = emptyMap()
+            availability = emptyMap()
             return@LaunchedEffect
         }
         delay(300)
@@ -182,8 +187,29 @@ fun CartV2Screen(
                 endDate = if (isSale) today else ret,
             )
         }
-        result.onSuccess { map -> available = map.mapValues { it.value.effectivelyAvailable } }
+        result.onSuccess { map -> availability = map }
     }
+
+    // #518 "Cho tạo đơn khi trùng lịch": the shop setting (re-read once per screen, the owner may change it on the
+    // web) and the rental lines other orders already hold on the chosen days. Not for an edited order: the batch
+    // check would count the order itself.
+    val allowOverlap by SessionStore.allowOverlappingOrdersFlow.collectAsState()
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { ApiClient.get().refreshAllowOverlappingOrders() } }
+    val overlapConflicts = if (isSale || !datesChosen || editingOrderId != null) {
+        emptyList<OverlapWarnings.LineConflict>()
+    } else {
+        lines.mapNotNull { line ->
+            OverlapWarnings.conflict(line.product.id, line.product.name, line.quantity, availability[line.product.id], pickup, ret)
+        }
+    }
+    val overlapTexts = OverlapWarnings.Texts(
+        cartLine = stringResource(R.string.v2_cart_overlap_line),
+        cartLineNoOrder = stringResource(R.string.v2_cart_overlap_line_no_order),
+        confirmLine = stringResource(R.string.v2_create_overlap_line),
+        confirmLineNoOrder = stringResource(R.string.v2_create_overlap_line_no_order),
+    )
+    val createBlocked = OverlapWarnings.blocksCreate(allowOverlap, overlapConflicts)
+    val overlapBlockedMessage = stringResource(R.string.v2_cart_overlap_blocked)
 
     // #473 — a rent line without "Theo lần / Theo ngày" may be stale (added before the product got its second price,
     // restored from disk, or loaded from an edited order): reload that product once per screen and let the line take
@@ -216,14 +242,17 @@ fun CartV2Screen(
             if (!confirm.isSale) {
                 val check = runCatching { CartOrderSubmit.blockedRentalLines(validateRentalCart) }
                 val failure = check.exceptionOrNull()
-                val blocked = check.getOrNull().orEmpty()
+                // #518: ON lets a double booking through (the sheet already warned, "Vẫn tạo đơn"); OFF stops lines
+                // other orders hold, like the API (409 ORDER_SCHEDULE_CONFLICT). Lines only short of stock go to the API.
+                val allowOverlapNow = SessionStore.allowOverlappingOrders
+                val blocked = check.getOrNull().orEmpty().filter { !allowOverlapNow && it.availability.conflicts.isNotEmpty() }
                 if (failure != null || blocked.isNotEmpty()) {
                     submission.failed()
                     submitting = false
                     error = when {
                         failure is AppError.Unauthorized -> sessionExpiredMessage
                         failure != null -> "$availabilityFailedMessage\n${failure.message.orEmpty()}"
-                        else -> "Availability conflicts: " + blocked.joinToString { it.productName }
+                        else -> overlapBlockedMessage
                     }
                     return@launch
                 }
@@ -311,6 +340,7 @@ fun CartV2Screen(
                     line = line,
                     isSale = isSale,
                     available = available[line.product.id],
+                    overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
                     onOpenPricing = { pricingLineId = line.product.id },
                 )
@@ -346,6 +376,14 @@ fun CartV2Screen(
         }
 
         HorizontalDivider(color = DS.Colors.Border)
+        if (createBlocked) {
+            // #518 board GH-trung-tat: the shop does not allow overlapping rentals
+            OverlapNotice(
+                text = overlapBlockedMessage,
+                background = Color(0xFFFEF2F2), borderColor = Color(0xFFFECACA), tint = Color(0xFFB91C1C), textColor = Color(0xFF991B1B),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
+            )
+        }
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -358,6 +396,7 @@ fun CartV2Screen(
             AppPrimaryButton(
                 stringResource(if (isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
                 modifier = Modifier.weight(1.1f),
+                enabled = !createBlocked,
                 onClick = {
                     val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
                     val messages = problems.map { problemText.getValue(it) } +
@@ -517,6 +556,12 @@ fun CartV2Screen(
         CreateOrderConfirmSheet(
             confirm = confirm,
             busy = submitting,
+            // #518 board GH-trung-bat: orange "Trùng lịch" block and "Vẫn tạo đơn"
+            overlapLines = if (!confirm.isSale && OverlapWarnings.warnsOnConfirm(allowOverlap, overlapConflicts)) {
+                overlapConflicts.map { OverlapWarnings.confirmLine(it, overlapTexts) }
+            } else {
+                emptyList()
+            },
             onDismiss = { confirmSheet = null },
             onConfirm = { submitOrder(confirm) },
         )
@@ -571,6 +616,8 @@ private fun ItemRow(
     line: CartLine,
     isSale: Boolean,
     available: Int?,
+    /** #518 "Hết đồ 03–05/10 · đã thuê ở đơn #482113"; replaces the shortage chip */
+    overlapText: String? = null,
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
 ) {
@@ -594,9 +641,12 @@ private fun ItemRow(
                     calcText, fontSize = DS.TextSize.Secondary,
                     color = if (CartV2Logic.needsPrice(line, isSale)) Color(0xFFB91C1C) else DS.Colors.TextMuted,
                 )
-                CartV2Logic.shortage(available, line.quantity)?.let { left ->
+                val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
+                    stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
+                }
+                shortText?.let { text ->
                     Text(
-                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left),
+                        text,
                         fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
                         modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2)).padding(horizontal = 6.dp, vertical = 2.dp),
                     )

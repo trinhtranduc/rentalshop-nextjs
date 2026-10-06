@@ -13,6 +13,8 @@ final class SettingsV2ViewController: BaseViewControler {
     private enum Row {
         case profile
         case item(SettingsV2Item)
+        /// #518 "Cho tạo đơn khi trùng lịch" (board CD-trung-lich), shop owner only
+        case overlapSwitch
         case logout
     }
 
@@ -35,6 +37,7 @@ final class SettingsV2ViewController: BaseViewControler {
         rebuild()
         loadPlan()
         loadCounts()
+        refreshOverlapSetting()
     }
 
     override func setupUI() {
@@ -56,6 +59,7 @@ final class SettingsV2ViewController: BaseViewControler {
         listView.dataSource = self
         listView.delegate = self
         listView.register(SettingsV2Cell.self, forCellReuseIdentifier: SettingsV2Cell.reuseId)
+        listView.register(SettingsV2SwitchCell.self, forCellReuseIdentifier: SettingsV2SwitchCell.reuseId)
         view.addSubview(listView)
         listView.snp.makeConstraints { make in
             make.top.equalTo(title.snp.bottom).offset(DS.Spacing.md)
@@ -97,15 +101,75 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
+    // MARK: - Order overlap setting (#518)
+
+    private var showsOverlapSetting: Bool { ScheduleConflictLogic.canEditSetting(role: user?.role) }
+
+    /// The shop's current value, so the switch matches what was saved on another device
+    private func refreshOverlapSetting() {
+        guard showsOverlapSetting else { return }
+        OverlapSetting.refresh(force: true) { [weak self] _ in
+            guard let self, self.showsOverlapSetting, !OverlapSetting.saving else { return }
+            self.listView.reloadData()
+        }
+    }
+
+    /// Optimistic: the cached value and the switch change at once; a failed save puts both back and says why
+    private func setOverlapAllowed(_ allowed: Bool, toggle: UISwitch) {
+        guard !OverlapSetting.saving else {
+            toggle.setOn(!allowed, animated: true)
+            return
+        }
+        let previous = OverlapSetting.isAllowed
+        OverlapSetting.saving = true
+        OverlapSetting.store(allowed)
+        toggle.isEnabled = false
+        TabsV2APIService.shared.setAllowOverlappingOrders(allowed) { [weak self] saved, error in
+            DispatchQueue.main.async {
+                OverlapSetting.saving = false
+                if let saved, error == nil {
+                    OverlapSetting.store(saved)
+                    self?.listView.reloadData()
+                    return
+                }
+                OverlapSetting.store(previous)
+                guard let self else { return }
+                self.listView.reloadData()
+                let failure = error ?? NSError.errorWithOwnMessage(message: "settings.v2.overlap.failed".localized(), domain: "RC")
+                UIAlertController.errorAlert(parent: self, error: failure)
+            }
+        }
+    }
+
     // MARK: - Rows
 
-    /// Section 0 profile, then the groups, then Đăng xuất
-    private var sectionCount: Int { groups.count + 2 }
+    private enum Section {
+        case profile
+        case group(Int)
+        case orders
+        case logout
+    }
+
+    /// Profile, the groups, ĐƠN HÀNG (shop owner), then Đăng xuất
+    private var sections: [Section] {
+        var list: [Section] = [.profile]
+        list += groups.indices.map { Section.group($0) }
+        if showsOverlapSetting { list.append(.orders) }
+        list.append(.logout)
+        return list
+    }
+
+    private var sectionCount: Int { sections.count }
 
     private func rows(in section: Int) -> [Row] {
-        if section == 0 { return [.profile] }
-        if section == sectionCount - 1 { return [.logout] }
-        return groups[section - 1].items.map { Row.item($0) }
+        let all = sections
+        guard section < all.count else { return [] }
+        switch all[section] {
+        case .profile: return [.profile]
+        case .group(let index): return groups[index].items.map { Row.item($0) }
+        case .orders: return [.overlapSwitch]
+        case .logout: return [.logout]
+        }
     }
 
     private func title(of item: SettingsV2Item) -> String {
@@ -253,18 +317,30 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        if section == 0 || section == sectionCount - 1 {
+        switch sections[section] {
+        case .group(let index):
+            return V2.sectionHeader(groups[index].title)
+        case .orders:
+            return V2.sectionHeader("settings.v2.group.orders".localized())
+        case .profile, .logout:
             let band = UIView()
             band.backgroundColor = DS.Color.background
             band.snp.makeConstraints { make in make.height.equalTo(8) }
             return band
         }
-        return V2.sectionHeader(groups[section - 1].title)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let row = rows(in: indexPath.section)[indexPath.row]
+        if case .overlapSwitch = row {
+            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsV2SwitchCell.reuseId, for: indexPath) as! SettingsV2SwitchCell
+            cell.configure(title: "settings.v2.overlap.title".localized(), subtitle: "settings.v2.overlap.subtitle".localized(),
+                           isOn: OverlapSetting.isAllowed, isEnabled: !OverlapSetting.saving)
+            cell.onChange = { [weak self] isOn, toggle in self?.setOverlapAllowed(isOn, toggle: toggle) }
+            return cell
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: SettingsV2Cell.reuseId, for: indexPath) as! SettingsV2Cell
-        switch rows(in: indexPath.section)[indexPath.row] {
+        switch row {
         case .profile:
             let name = [user?.firstName, user?.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
             let subtitle = [user?.role.displayName, user?.storeName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
@@ -274,6 +350,8 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan)
         case .logout:
             cell.configureLogout("Logout".localized())
+        case .overlapSwitch:
+            break
         }
         return cell
     }
@@ -283,8 +361,61 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
         switch rows(in: indexPath.section)[indexPath.row] {
         case .profile: break
         case .item(let item): open(item)
+        case .overlapSwitch: break
         case .logout: confirmLogout()
         }
+    }
+}
+
+/// Title, grey explanation and a switch that saves at once (board CD-trung-lich)
+final class SettingsV2SwitchCell: UITableViewCell {
+    static let reuseId = "SettingsV2SwitchCell"
+    var onChange: ((Bool, UISwitch) -> Void)?
+    private let titleLabel = V2.label(size: DS.TextSize.body, lines: 0)
+    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    private let toggle = UISwitch()
+
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        toggle.onTintColor = UIColor(hexString: "16A34A")
+        toggle.setContentHuggingPriority(.required, for: .horizontal)
+        toggle.setContentCompressionResistancePriority(.required, for: .horizontal)
+        toggle.addTarget(self, action: #selector(changed), for: .valueChanged)
+        let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let row = UIStackView(arrangedSubviews: [texts, toggle])
+        row.spacing = DS.Spacing.md
+        row.alignment = .center
+        contentView.addSubview(row)
+        row.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg))
+            make.height.greaterThanOrEqualTo(48)
+        }
+        let line = V2.divider()
+        contentView.addSubview(line)
+        line.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(DS.Spacing.lg)
+            make.trailing.bottom.equalToSuperview()
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func configure(title: String, subtitle: String, isOn: Bool, isEnabled: Bool) {
+        titleLabel.text = title
+        subtitleLabel.text = subtitle
+        toggle.isOn = isOn
+        toggle.isEnabled = isEnabled
+        toggle.accessibilityLabel = title
+        toggle.accessibilityHint = subtitle
+    }
+
+    @objc private func changed() {
+        onChange?(toggle.isOn, toggle)
     }
 }
 

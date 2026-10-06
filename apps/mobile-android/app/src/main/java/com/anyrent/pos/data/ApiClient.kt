@@ -22,7 +22,9 @@ import com.anyrent.pos.data.repository.appConfigFromJson
 import com.anyrent.pos.domain.appconfig.AppConfig
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.domain.orders.HandOverFields
+import com.anyrent.pos.domain.settings.OverlapSetting
 import com.anyrent.pos.domain.products.PricingTypes
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -108,10 +110,43 @@ class ApiClient(
         SessionStore.merchantAddress = profile.merchantAddress
         SessionStore.outletPhone = profile.outletPhone
         SessionStore.outletAddress = profile.outletAddress
+        SessionStore.allowOverlappingOrders = profile.allowOverlappingOrders
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
     }
+
+    /**
+     * #518: re-reads the shop setting "Cho tạo đơn khi trùng lịch" from GET /api/users/profile and caches it
+     * (the owner may have changed it on the web). An answer without a merchant keeps the cached value.
+     */
+    fun refreshAllowOverlappingOrders(): Result<Boolean> = runCatching {
+        val json = execute(get("$baseUrl/api/users/profile"))
+        val value = OverlapSetting.fromResponse(json) ?: SessionStore.allowOverlappingOrders
+        SessionStore.allowOverlappingOrders = value
+        value
+    }
+
+    /** #518: PUT /api/settings/merchant with only the setting (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
+    fun setAllowOverlappingOrders(allow: Boolean): Result<Boolean> = runCatching {
+        val body = OverlapSetting.body(allow).toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/settings/merchant", body))
+        val value = OverlapSetting.fromResponse(json) ?: allow
+        SessionStore.allowOverlappingOrders = value
+        value
+    }
+
+    /** #519: GET /api/orders/{id}/changes, newest first */
+    fun orderChanges(orderId: Int, limit: Int = ChangeHistory.PAGE_SIZE, offset: Int = 0): Result<ChangeHistory.Page> =
+        runCatching {
+            ChangeHistory.parsePage(execute(get("$baseUrl/api/orders/$orderId/changes?limit=$limit&offset=$offset")))
+        }
+
+    /** #519: GET /api/products/{id}/changes, newest first */
+    fun productChanges(productId: Int, limit: Int = ChangeHistory.PAGE_SIZE, offset: Int = 0): Result<ChangeHistory.Page> =
+        runCatching {
+            ChangeHistory.parsePage(execute(get("$baseUrl/api/products/$productId/changes?limit=$limit&offset=$offset")))
+        }
 
     fun forgotPassword(email: String): Result<String> = runCatching {
         val body = JSONObject().put("email", email.trim()).toString().toRequestBody(jsonMedia)
@@ -1185,6 +1220,7 @@ class ApiClient(
             merchantAddress = merchant?.optString("address")?.takeIf { it.isNotBlank() },
             outletPhone = outlet?.optString("phone")?.takeIf { it.isNotBlank() },
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
+            allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
         )
     }
 

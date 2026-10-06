@@ -301,6 +301,13 @@ class BaseService {
                 print("✅ \(context) Success: Response parsed successfully")
                 completion(decodedResponse, nil)
             } catch {
+                // An error body whose `data` has another shape than T (e.g. 409 ORDER_SCHEDULE_CONFLICT carries
+                // `data.conflicts`, #518): show the API's error, not a parsing error
+                if let apiError = decodeErrorResponse(from: data), !apiError.success {
+                    print("❌ \(context) API Error: \(apiError.code ?? "-")")
+                    completion(nil, apiError.toNSError(httpStatusCode: response.response?.statusCode))
+                    return
+                }
                 print("❌ \(context) JSON Parsing Error:")
                 print("   Error: \(error)")
                 print("   Error Type: \(type(of: error))")

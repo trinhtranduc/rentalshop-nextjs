@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +57,7 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.settings.OverlapSetting
 import com.anyrent.pos.domain.settings.PasswordProblem
 import com.anyrent.pos.domain.settings.SettingsGroup
 import com.anyrent.pos.domain.settings.SettingsItem
@@ -99,6 +101,29 @@ fun SettingsV2Screen(
     var passwordError by remember { mutableStateOf<String?>(null) }
     var passwordDone by remember { mutableStateOf(false) }
     val role = SessionStore.role
+    // #518 "Cho tạo đơn khi trùng lịch": cached value, an optimistic value while saving, re-read from the profile
+    val allowOverlap by SessionStore.allowOverlappingOrdersFlow.collectAsState()
+    var overlapPending by remember { mutableStateOf<Boolean?>(null) }
+    var overlapError by remember { mutableStateOf<String?>(null) }
+    val overlapFailedText = stringResource(R.string.settings_v2_allow_overlap_failed)
+    LaunchedEffect(role) {
+        if (OverlapSetting.canEdit(role)) withContext(Dispatchers.IO) { ApiClient.get().refreshAllowOverlappingOrders() }
+    }
+
+    fun setAllowOverlap(value: Boolean) {
+        if (overlapPending != null) return
+        overlapPending = value
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { ApiClient.get().setAllowOverlappingOrders(value) }
+            // Success: the session holds the saved value; failure: the switch goes back to the cached value
+            overlapPending = null
+            result.onFailure { failure ->
+                // 403 INSUFFICIENT_PERMISSIONS and other known codes read as their message; anything else as a plain retry
+                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
+                overlapError = if (id != 0) context.getString(id) else overlapFailedText
+            }
+        }
+    }
 
     LaunchedEffect(role) {
         if (role == "ADMIN") return@LaunchedEffect
@@ -200,6 +225,12 @@ fun SettingsV2Screen(
                 }
             }
         }
+        if (OverlapSetting.canEdit(role)) {
+            item(key = "band-orders") { SectionBand(stringResource(R.string.settings_v2_group_orders)) }
+            item(key = "allow-overlap") {
+                AllowOverlapRow(checked = overlapPending ?: allowOverlap, saving = overlapPending != null, onChange = { setAllowOverlap(it) })
+            }
+        }
         item(key = "logout") {
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
             Text(
@@ -272,6 +303,7 @@ fun SettingsV2Screen(
             },
         )
     }
+    overlapError?.let { message -> AppAlertError(message = message, onDismiss = { overlapError = null }) }
     passwordError?.let { message ->
         AppAlertError(message = message.ifBlank { stringResource(R.string.calendar_v2_error) }, onDismiss = { passwordError = null })
     }
@@ -289,6 +321,32 @@ fun SettingsV2Screen(
             },
         )
     }
+}
+
+/** #518 (board CD-trung-lich): title, explanation and a switch that saves at once */
+@Composable
+private fun AllowOverlapRow(checked: Boolean, saving: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.settings_v2_allow_overlap), fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+            Text(stringResource(R.string.settings_v2_allow_overlap_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        }
+        androidx.compose.material3.Switch(
+            checked = checked,
+            enabled = !saving,
+            onCheckedChange = onChange,
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF34C759),
+                checkedBorderColor = Color(0xFF34C759),
+            ),
+        )
+    }
+    ThinDivider()
 }
 
 @Composable
