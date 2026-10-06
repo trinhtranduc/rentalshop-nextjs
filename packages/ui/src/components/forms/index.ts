@@ -9,6 +9,7 @@ export { PlanForm } from './PlanForm';
 export { PostForm } from './PostForm';
 export { default as LoginForm } from './LoginForm';
 export { default as RegisterForm } from './RegisterForm';
+export { ShopAuthPage, ShopAuthHeading } from './auth-shop';
 export { default as ForgetPasswordForm } from './ForgetPasswordForm';
 export { default as ResetPasswordForm } from './ResetPasswordForm';
 export { AddCustomerForm } from '../features/Customers/components/AddCustomerForm';

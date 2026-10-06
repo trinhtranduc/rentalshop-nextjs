@@ -93,6 +93,7 @@ export default function LoginPage() {
 
   return (
     <LoginForm
+      appearance="shop"
       googleOAuthClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}
       onGoogleLogin={handleGoogleLogin}
       onLogin={handleLogin}
