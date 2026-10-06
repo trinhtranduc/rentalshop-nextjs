@@ -6,9 +6,10 @@
  * every VN day from its pickup day to its return day inclusive, and a same-day rental holds that day.
  *
  * The rule is the per-day peak, never a sum over the range:
- *   conflict on day D  ⇔  booked(D) + requested > stock
+ *   conflict on day D  ⇔  booked(D) > 0  and  booked(D) + requested > stock
  * where booked(D) counts the product in OTHER active rentals (RENT, RESERVED/PICKUPED, not deleted)
- * at the same outlet that cover D.
+ * at the same outlet that cover D. A day no other order holds is never a conflict, so shops that do
+ * not track stock (stock 0) are not blocked: the setting is about double booking, not stock levels.
  *
  * Kept free of @rentalshop/* imports so the unit tests stay fast.
  */
@@ -137,7 +138,7 @@ export function findScheduleConflicts(input: {
       .filter((order) => order.quantity > 0);
 
     const perDay = calendarDayAvailability({ stock, orders: ordersForProduct, fromYmd, toYmd });
-    const badDays = perDay.filter((day) => day.booked + requested > stock).map((day) => day.date);
+    const badDays = perDay.filter((day) => day.booked > 0 && day.booked + requested > stock).map((day) => day.date);
     if (badDays.length === 0) continue;
 
     const badDaySet = new Set(badDays);

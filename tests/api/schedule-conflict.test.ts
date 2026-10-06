@@ -186,7 +186,7 @@ describe('findScheduleConflicts (#518)', () => {
     expect(conflicts[0]).toEqual(expect.objectContaining({ available: 0, days: ['2026-09-11'], orderNumbers: ['ORD-1-0051'] }));
   });
 
-  it('a product with no stock row counts as stock 0', () => {
+  it('stock 0 or no stock row with no other order holding it is not a conflict (stock is not tracked)', () => {
     const conflicts = findScheduleConflicts({
       outletId: 1,
       pickupPlanAt: vn('2026-09-10'),
@@ -195,8 +195,20 @@ describe('findScheduleConflicts (#518)', () => {
       stockByProductId: new Map(),
       existingOrders: [],
     });
+    expect(conflicts).toEqual([]);
+  });
+
+  it('no stock row but another order holds it that day: conflict', () => {
+    const conflicts = findScheduleConflicts({
+      outletId: 1,
+      pickupPlanAt: vn('2026-09-10'),
+      returnPlanAt: vn('2026-09-10'),
+      items: [{ productId: 99, quantity: 1 }],
+      stockByProductId: new Map(),
+      existingOrders: [rental('ORD-1-0070', vn('2026-09-10'), vn('2026-09-11'), [[99, 1]])],
+    });
     expect(conflicts).toEqual([
-      { productId: 99, productName: null, requested: 1, available: 0, days: ['2026-09-10'], orderNumbers: [] },
+      { productId: 99, productName: null, requested: 1, available: 0, days: ['2026-09-10'], orderNumbers: ['ORD-1-0070'] },
     ]);
   });
 
