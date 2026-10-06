@@ -8,6 +8,8 @@
 //  toggle, and the rented-out figures open the grouped rented-out list.
 //  #492: the hero is "Tổng giá trị đơn mới" with its change; Thực thu (opens the breakdown sheet) and Còn phải thu
 //  tiles under it; collateral held leaves the ĐƠN rows for the breakdown sheet.
+//  #494: with `collateralFlow` the Thực thu sheet becomes "Tiền thực nhận" (money and collateral apart, upcoming
+//  collateral); with `outstandingBreakdown` the Còn phải thu tile opens its own sheet.
 //
 
 import UIKit
@@ -282,18 +284,27 @@ final class OverviewV2ViewController: BaseViewControler {
         return line
     }
 
-    /// Thực thu (opens the breakdown) and Còn phải thu (#492), one row under the hero
+    /// Thực thu (opens the breakdown) and Còn phải thu (#492), one row under the hero.
+    /// #494: Còn phải thu opens its split when the API sends `outstandingBreakdown`
     private func moneyTiles(_ report: OverviewReport) -> UIView {
         let collectedTitle = "overview.v2.collected".localized()
         let collectedValue = MoneyFormatter.format(report.netRevenue)
-        let collected = moneyTile(collectedTitle, collectedValue, color: DS.Color.text, note: "overview.v2.collectedNote".localized())
+        let collected = moneyTile(collectedTitle, collectedValue, color: DS.Color.text, note: "overview.v2.excludesCollateral".localized())
         collected.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openCollectedDetails)))
         collected.accessibilityTraits = UIAccessibilityTraitButton
         collected.accessibilityLabel = "\(collectedTitle) \(collectedValue), \("overview.v2.seeDetails".localized())"
         var tiles: [UIView] = [collected]
         if let outstanding = report.outstanding {
-            tiles.append(moneyTile("overview.v2.outstanding".localized(), MoneyFormatter.format(outstanding),
-                                   color: UIColor(hexString: "B45309"), note: "overview.v2.outstandingNote".localized()))
+            let outstandingTitle = "overview.v2.outstanding".localized()
+            let outstandingValue = MoneyFormatter.format(outstanding)
+            let tile = moneyTile(outstandingTitle, outstandingValue,
+                                 color: OverviewCollectedDetailsSheet.outstandingColor, note: "overview.v2.outstandingNote".localized())
+            if report.outstandingBreakdown != nil {
+                tile.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openOutstandingDetails)))
+                tile.accessibilityTraits = UIAccessibilityTraitButton
+                tile.accessibilityLabel = "\(outstandingTitle) \(outstandingValue), \("overview.v2.seeDetails".localized())"
+            }
+            tiles.append(tile)
         } else {
             tiles.append(UIView())
         }
@@ -341,8 +352,20 @@ final class OverviewV2ViewController: BaseViewControler {
 
     @objc private func openCollectedDetails() {
         guard let report else { return }
-        let sheet = OverviewCollectedDetailsSheet(report: report, periodTitle: periodTitle(period),
-                                                  collateralHeld: now?.collateralHeld)
+        presentDetails(OverviewCollectedDetailsSheet(report: report, periodTitle: periodTitle(period),
+                                                     collateralHeld: now?.collateralHeld,
+                                                     collateralToReturn: now?.collateralToReturn,
+                                                     collateralToCollect: now?.collateralToCollect))
+    }
+
+    /// #494: where Còn phải thu will come from
+    @objc private func openOutstandingDetails() {
+        guard let report, let parts = report.outstandingBreakdown else { return }
+        presentDetails(OverviewOutstandingDetailsSheet(breakdown: parts, total: report.outstanding ?? parts.total,
+                                                       periodTitle: periodTitle(period)))
+    }
+
+    private func presentDetails(_ sheet: UIViewController) {
         sheet.modalPresentationStyle = .pageSheet
         if let controller = sheet.sheetPresentationController {
             controller.detents = [.medium(), .large()]
@@ -578,15 +601,26 @@ final class OverviewBarsView: UIView {
 
 /// "Thực thu" breakdown (#492, board Tong-quan-giai-thich): the parts of the money collected, the collateral kept
 /// apart, and what the other two tiles mean. An older API sends no breakdown: only the total and the texts.
+/// #494: with `collateralFlow` it is "Tiền thực nhận": the store's money and the collateral as two rows that open
+/// their lines, their sum on top, and the collateral to come in a gray box.
 final class OverviewCollectedDetailsSheet: UIViewController {
+    /// Còn phải thu, on the tile and in its sheet
+    static let outstandingColor = UIColor(hexString: "B45309")
+
     private let report: OverviewReport
     private let periodTitle: String
     private let collateralHeld: Double?
+    private let collateralToReturn: OverviewNow.Collateral?
+    private let collateralToCollect: OverviewNow.Collateral?
 
-    init(report: OverviewReport, periodTitle: String, collateralHeld: Double?) {
+    /// `collateralToReturn` defaults to `collateralHeld` without an order count
+    init(report: OverviewReport, periodTitle: String, collateralHeld: Double?,
+         collateralToReturn: OverviewNow.Collateral? = nil, collateralToCollect: OverviewNow.Collateral? = nil) {
         self.report = report
         self.periodTitle = periodTitle
         self.collateralHeld = collateralHeld
+        self.collateralToReturn = collateralToReturn ?? collateralHeld.map { OverviewNow.Collateral(amount: $0, orders: nil) }
+        self.collateralToCollect = collateralToCollect
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -597,22 +631,27 @@ final class OverviewCollectedDetailsSheet: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
+        let views: [UIView]
+        if let flow = report.collateralFlow {
+            views = receivedViews(flow)
+        } else {
+            views = collectedViews()
+        }
+        let close: UIView = Self.closeButton(target: self, action: #selector(doneTapped))
+        Self.layout(views + [close], in: self)
+    }
 
-        let title = V2.label("\("overview.v2.collected".localized()) · \(periodTitle)", size: 18, weight: .bold, lines: 0)
-        title.accessibilityTraits = UIAccessibilityTraitHeader
+    // MARK: Thực thu (older API)
+
+    private func collectedViews() -> [UIView] {
+        let title = Self.sheetTitle("\("overview.v2.collected".localized()) · \(periodTitle)")
         let body = V2.label("overview.v2.detail.body".localized(), size: DS.TextSize.body,
                             color: UIColor(hexString: "334155"), lines: 0)
 
         let list = UIStackView()
         list.axis = .vertical
         if let parts = report.collectedBreakdown {
-            list.addArrangedSubview(Self.row("overview.v2.depositsAtOrder".localized(), "+" + MoneyFormatter.format(parts.deposits)))
-            list.addArrangedSubview(Self.row("overview.v2.detail.pickupAndSale".localized(), "+" + MoneyFormatter.format(parts.pickupAndSale)))
-            list.addArrangedSubview(Self.row("overview.v2.detail.fees".localized(), "+" + MoneyFormatter.format(parts.fees)))
-            if parts.refunds > 0 {
-                list.addArrangedSubview(Self.row("overview.v2.detail.refunds".localized(), "−" + MoneyFormatter.format(parts.refunds),
-                                                 color: UIColor(hexString: "B45309")))
-            }
+            Self.collectedLines(parts).forEach { list.addArrangedSubview($0) }
         }
         list.addArrangedSubview(Self.row("overview.v2.collected".localized(), MoneyFormatter.format(report.netRevenue),
                                          bold: true, divider: false))
@@ -621,38 +660,25 @@ final class OverviewCollectedDetailsSheet: UIViewController {
         if let box = collateralBox() { views.append(box) }
 
         let note = V2.label("overview.v2.detail.note".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let noteBox = UIView()
-        noteBox.backgroundColor = V2.sectionFill
-        noteBox.layer.cornerRadius = DS.Radius.card
-        noteBox.addSubview(note)
-        note.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)) }
+        let noteBox = Self.grayBox(note)
         views.append(noteBox)
+        return views
+    }
 
-        let done = UIButton(type: .system)
-        done.setTitle("overview.v2.detail.close".localized(), for: .normal)
-        done.setTitleColor(.white, for: .normal)
-        done.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
-        done.backgroundColor = DS.Color.text
-        done.layer.cornerRadius = DS.Radius.card
-        done.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
-        done.snp.makeConstraints { make in make.height.equalTo(48) }
-        views.append(done)
-
-        let stack = UIStackView(arrangedSubviews: views)
-        stack.axis = .vertical
-        stack.spacing = DS.Spacing.md
-        stack.setCustomSpacing(DS.Spacing.md + 4, after: noteBox)
-
-        let scroll = UIScrollView()
-        scroll.alwaysBounceVertical = false
-        view.addSubview(scroll)
-        scroll.addSubview(stack)
-        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
-        stack.snp.makeConstraints { make in
-            make.top.equalTo(scroll.contentLayoutGuide).offset(DS.Spacing.xl)
-            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
-            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(20)
+    /// Deposits, hand-over and sales, fees, and refunds when there are any
+    private static func collectedLines(_ parts: OverviewReport.CollectedBreakdown, indent: CGFloat = 0) -> [UIView] {
+        let divider = indent == 0
+        var lines = [
+            row("overview.v2.depositsAtOrder".localized(), "+" + MoneyFormatter.format(parts.deposits), divider: divider, indent: indent),
+            row("overview.v2.detail.pickupAndSale".localized(), "+" + MoneyFormatter.format(parts.pickupAndSale),
+                divider: divider, indent: indent),
+            row("overview.v2.detail.fees".localized(), "+" + MoneyFormatter.format(parts.fees), divider: divider, indent: indent),
+        ]
+        if parts.refunds > 0 {
+            lines.append(row("overview.v2.detail.refunds".localized(), "−" + MoneyFormatter.format(parts.refunds),
+                             color: indent == 0 ? outstandingColor : V2.danger, divider: divider, indent: indent))
         }
+        return lines
     }
 
     /// Thế chân đang giữ, kept apart from the money collected; nil when unknown
@@ -673,10 +699,135 @@ final class OverviewCollectedDetailsSheet: UIViewController {
         return box
     }
 
+    // MARK: Tiền thực nhận (#494)
+
+    private func receivedViews(_ flow: OverviewReport.CollateralFlow) -> [UIView] {
+        let title = Self.sheetTitle("\("overview.v2.received.title".localized()) · \(periodTitle)")
+        let caption = V2.label("overview.v2.received.caption".localized(), size: DS.TextSize.secondary,
+                               color: DS.Color.textMuted, lines: 0)
+        let total = V2.label(MoneyFormatter.format(report.netRevenue + flow.net), size: 28, weight: .bold)
+        total.font = UIFont.monospacedDigitSystemFont(ofSize: 28, weight: .bold)
+        total.adjustsFontSizeToFitWidth = true
+        total.minimumScaleFactor = 0.6
+        let head = UIStackView(arrangedSubviews: [caption, total])
+        head.axis = .vertical
+        head.spacing = 2
+        head.isAccessibilityElement = true
+        head.accessibilityLabel = "\(caption.text ?? ""), \(total.text ?? "")"
+
+        let indent = DS.Spacing.lg
+        let money = OverviewDisclosureSection(
+            name: "overview.v2.collected".localized(), note: "overview.v2.received.collectedNote".localized(),
+            value: MoneyFormatter.format(report.netRevenue),
+            lines: report.collectedBreakdown.map { Self.collectedLines($0, indent: indent) } ?? [])
+        let collateral = OverviewDisclosureSection(
+            name: "overview.v2.collateral".localized(), note: "overview.v2.received.collateralNote".localized(),
+            value: Self.signed(flow.net),
+            lines: [
+                Self.row("overview.v2.received.collateralIn".localized(), "+" + MoneyFormatter.format(flow.received),
+                         divider: false, indent: indent),
+                Self.row("overview.v2.received.collateralOut".localized(), "−" + MoneyFormatter.format(flow.returned),
+                         color: V2.danger, divider: false, indent: indent),
+            ])
+        let list = UIStackView(arrangedSubviews: [money, collateral])
+        list.axis = .vertical
+
+        var views: [UIView] = [title, head, list]
+        if let box = upcomingBox() { views.append(box) }
+        return views
+    }
+
+    /// "THẾ CHÂN SẮP TỚI · chưa tính vào số nào": collateral to hand back and to receive; nil when neither is known
+    private func upcomingBox() -> UIView? {
+        var rows: [UIView] = []
+        if let toReturn = collateralToReturn {
+            rows.append(Self.noteRow("overview.v2.received.toReturn".localized(),
+                                     note: toReturn.orders.map { PluralText.format("overview.v2.received.toReturnOrders", count: $0, $0) },
+                                     value: MoneyFormatter.format(toReturn.amount)))
+        }
+        if let toCollect = collateralToCollect {
+            rows.append(Self.noteRow("overview.v2.received.toCollect".localized(),
+                                     note: toCollect.orders.map { PluralText.format("overview.v2.received.toCollectOrders", count: $0, $0) },
+                                     value: MoneyFormatter.format(toCollect.amount)))
+        }
+        guard !rows.isEmpty else { return nil }
+        let heading = UILabel()
+        heading.numberOfLines = 0
+        let text = NSMutableAttributedString(string: "overview.v2.received.upcoming".localized(),
+                                             attributes: [.font: Utils.boldFont(size: DS.TextSize.pill),
+                                                          .foregroundColor: DS.Color.textMuted])
+        text.append(NSAttributedString(string: " · " + "overview.v2.received.upcomingNote".localized(),
+                                       attributes: [.font: Utils.regularFont(size: DS.TextSize.pill),
+                                                    .foregroundColor: DS.Color.textMuted]))
+        heading.attributedText = text
+        heading.accessibilityTraits = UIAccessibilityTraitHeader
+        let column = UIStackView(arrangedSubviews: [heading] + rows)
+        column.axis = .vertical
+        column.spacing = 2
+        column.setCustomSpacing(DS.Spacing.sm, after: heading)
+        return Self.grayBox(column)
+    }
+
+    /// "+3.500.000đ" / "−500.000đ" / "0đ"
+    static func signed(_ amount: Double) -> String {
+        if amount > 0 { return "+" + MoneyFormatter.format(amount) }
+        if amount < 0 { return "−" + MoneyFormatter.format(-amount) }
+        return MoneyFormatter.format(0)
+    }
+
+    // MARK: Parts shared with the Còn phải thu sheet
+
+    static func sheetTitle(_ text: String) -> UILabel {
+        let title = V2.label(text, size: 18, weight: .bold, lines: 0)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        return title
+    }
+
+    static func grayBox(_ content: UIView) -> UIView {
+        let box = UIView()
+        box.backgroundColor = V2.sectionFill
+        box.layer.cornerRadius = DS.Radius.card
+        box.addSubview(content)
+        content.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)) }
+        return box
+    }
+
+    static func closeButton(target: Any, action: Selector) -> UIButton {
+        let done = UIButton(type: .system)
+        done.setTitle("overview.v2.detail.close".localized(), for: .normal)
+        done.setTitleColor(.white, for: .normal)
+        done.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        done.backgroundColor = DS.Color.text
+        done.layer.cornerRadius = DS.Radius.card
+        done.addTarget(target, action: action, for: .touchUpInside)
+        done.snp.makeConstraints { make in make.height.equalTo(48) }
+        return done
+    }
+
+    /// The views one under the other in a scroll view, the last (the close button) a bit further down
+    static func layout(_ views: [UIView], in controller: UIViewController) {
+        let stack = UIStackView(arrangedSubviews: views)
+        stack.axis = .vertical
+        stack.spacing = DS.Spacing.md
+        if views.count > 1 { stack.setCustomSpacing(DS.Spacing.md + 4, after: views[views.count - 2]) }
+
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = false
+        controller.view.addSubview(scroll)
+        scroll.addSubview(stack)
+        scroll.snp.makeConstraints { make in make.edges.equalTo(controller.view.safeAreaLayoutGuide) }
+        stack.snp.makeConstraints { make in
+            make.top.equalTo(scroll.contentLayoutGuide).offset(DS.Spacing.xl)
+            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(20)
+        }
+    }
+
     /// Name on the left, amount right-aligned with tabular digits
-    private static func row(_ name: String, _ value: String, color: UIColor = DS.Color.text, bold: Bool = false,
-                            divider: Bool = true, vertical: CGFloat = 10) -> UIView {
-        let nameLabel = V2.label(name, size: DS.TextSize.body, weight: bold ? .bold : .regular, lines: 0)
+    static func row(_ name: String, _ value: String, color: UIColor = DS.Color.text, bold: Bool = false,
+                    divider: Bool = true, vertical: CGFloat = 10, indent: CGFloat = 0) -> UIView {
+        let nameLabel = V2.label(name, size: DS.TextSize.body, weight: bold ? .bold : .regular,
+                                 color: indent > 0 ? UIColor(hexString: "334155") : DS.Color.text, lines: 0)
         let valueLabel = V2.label(value, size: DS.TextSize.body, weight: bold ? .bold : .regular, color: color)
         valueLabel.font = UIFont.monospacedDigitSystemFont(ofSize: bold ? DS.TextSize.name : DS.TextSize.body,
                                                            weight: bold ? .bold : .regular)
@@ -689,7 +840,8 @@ final class OverviewCollectedDetailsSheet: UIViewController {
         let row = UIView()
         row.addSubview(line)
         line.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: vertical, left: 0, bottom: vertical, right: 0))
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: indent > 0 ? 6 : vertical, left: indent,
+                                                             bottom: indent > 0 ? 6 : vertical, right: 0))
         }
         if divider {
             let rule = V2.divider()
@@ -699,6 +851,155 @@ final class OverviewCollectedDetailsSheet: UIViewController {
         row.isAccessibilityElement = true
         row.accessibilityLabel = "\(name), \(value)"
         return row
+    }
+
+    /// Name with a muted note under it (left), amount right-aligned
+    static func noteRow(_ name: String, note: String?, value: String, color: UIColor = DS.Color.text,
+                        bold: Bool = false, divider: Bool = false) -> UIView {
+        let nameLabel = V2.label(name, size: DS.TextSize.body, weight: bold ? .bold : .medium, lines: 0)
+        let texts = UIStackView(arrangedSubviews: [nameLabel])
+        texts.axis = .vertical
+        texts.spacing = 2
+        if let note {
+            texts.addArrangedSubview(V2.label(note, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0))
+        }
+        let valueLabel = V2.label(value, size: DS.TextSize.body, weight: .bold, color: color)
+        valueLabel.font = UIFont.monospacedDigitSystemFont(ofSize: bold ? DS.TextSize.name : DS.TextSize.body, weight: .bold)
+        valueLabel.textAlignment = .right
+        valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+        valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let line = UIStackView(arrangedSubviews: [texts, valueLabel])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        let row = UIView()
+        row.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)) }
+        if divider {
+            let rule = V2.divider()
+            row.addSubview(rule)
+            rule.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        }
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = [name, note, value].compactMap { $0 }.joined(separator: ", ")
+        return row
+    }
+
+    @objc private func doneTapped() { dismiss(animated: true) }
+}
+
+/// A row (name, note under it, amount, chevron) whose tap shows or hides its indented lines; collapsed at first.
+/// Without lines it is a plain row with no chevron.
+final class OverviewDisclosureSection: UIView {
+    private let header = UIControl()
+    private let chevron = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
+    private let details: UIStackView
+    private(set) var isExpanded = false
+
+    init(name: String, note: String, value: String, lines: [UIView]) {
+        details = UIStackView(arrangedSubviews: lines)
+        super.init(frame: .zero)
+        let nameLabel = V2.label(name, size: DS.TextSize.body, weight: .bold, lines: 0)
+        let noteLabel = V2.label(note, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+        let texts = UIStackView(arrangedSubviews: [nameLabel, noteLabel])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let valueLabel = V2.label(value, size: DS.TextSize.name, weight: .bold)
+        valueLabel.font = UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.name, weight: .bold)
+        valueLabel.textAlignment = .right
+        valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+        valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        chevron.tintColor = UIColor(hexString: "94A3B8")
+        chevron.contentMode = .center
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        chevron.snp.makeConstraints { make in make.width.equalTo(16) }
+        chevron.isHidden = lines.isEmpty
+        let line = UIStackView(arrangedSubviews: [texts, valueLabel, chevron])
+        line.spacing = DS.Spacing.sm
+        line.alignment = .center
+        line.isUserInteractionEnabled = false
+        header.addSubview(line)
+        line.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0))
+            make.height.greaterThanOrEqualTo(28)
+        }
+        header.isAccessibilityElement = true
+        header.accessibilityLabel = "\(name), \(note), \(value)"
+        if !lines.isEmpty {
+            header.addTarget(self, action: #selector(toggle), for: .touchUpInside)
+            header.accessibilityTraits = UIAccessibilityTraitButton
+        }
+
+        details.axis = .vertical
+        details.isHidden = true
+        let column = UIStackView(arrangedSubviews: [header, details])
+        column.axis = .vertical
+        column.setCustomSpacing(0, after: header)
+        let rule = V2.divider()
+        addSubview(column)
+        addSubview(rule)
+        column.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-4)
+        }
+        rule.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc func toggle() {
+        isExpanded.toggle()
+        details.isHidden = !isExpanded
+        UIView.animate(withDuration: 0.2) {
+            self.chevron.transform = self.isExpanded ? CGAffineTransform(rotationAngle: .pi / 2) : .identity
+        }
+    }
+}
+
+/// "Còn phải thu" split (#494): what is collected at pickup from today on, what is past its pickup day, and the total
+final class OverviewOutstandingDetailsSheet: UIViewController {
+    private let breakdown: OverviewReport.OutstandingBreakdown
+    private let total: Double
+    private let periodTitle: String
+
+    init(breakdown: OverviewReport.OutstandingBreakdown, total: Double, periodTitle: String) {
+        self.breakdown = breakdown
+        self.total = total
+        self.periodTitle = periodTitle
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+        typealias Parts = OverviewCollectedDetailsSheet
+        let title = Parts.sheetTitle("\("overview.v2.outstanding".localized()) · \(periodTitle)")
+        let body = V2.label("overview.v2.outstandingDetail.body".localized(), size: DS.TextSize.body,
+                            color: UIColor(hexString: "334155"), lines: 0)
+
+        let list = UIStackView()
+        list.axis = .vertical
+        let atPickup = breakdown.atPickup
+        list.addArrangedSubview(Parts.noteRow(
+            "overview.v2.outstandingDetail.atPickup".localized(),
+            note: PluralText.format("overview.v2.outstandingDetail.atPickupOrders", count: atPickup.orders, atPickup.orders),
+            value: MoneyFormatter.format(atPickup.amount), divider: true))
+        let overdue = breakdown.overduePickup
+        if overdue.orders > 0 {
+            list.addArrangedSubview(Parts.noteRow(
+                "overview.v2.outstandingDetail.overdue".localized(),
+                note: PluralText.format("overview.v2.outstandingDetail.overdueOrders", count: overdue.orders, overdue.orders),
+                value: MoneyFormatter.format(overdue.amount), color: V2.danger, divider: true))
+        }
+        list.addArrangedSubview(Parts.row("overview.v2.outstanding".localized(), MoneyFormatter.format(total),
+                                          color: Parts.outstandingColor, bold: true, divider: false))
+
+        Parts.layout([title, body, list, Parts.closeButton(target: self, action: #selector(doneTapped))], in: self)
     }
 
     @objc private func doneTapped() { dismiss(animated: true) }

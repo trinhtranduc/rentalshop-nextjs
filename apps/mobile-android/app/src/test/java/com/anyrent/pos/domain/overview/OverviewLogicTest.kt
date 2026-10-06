@@ -208,10 +208,76 @@ class OverviewLogicTest {
         val merchant = OverviewLogic.nowFromJson(
             JSONObject("""{"overdueReturns":{"count":4,"orders":[]},"cash":{"depositsHeld":{"depositAmount":1236,"securityDeposit":3500000,"orders":9}}}"""),
         )
-        assertEquals(OverviewNow(4, 9, 3_500_000.0), merchant)
+        // An older API without `collateralToReturn`: the held collateral, no order count
+        assertEquals(OverviewNow(4, 9, 3_500_000.0, collateralToReturn = CollateralCount(3_500_000.0, null)), merchant)
         val staff = OverviewLogic.nowFromJson(JSONObject("""{"overdueReturns":{"count":2},"cash":null}"""))
         assertEquals(OverviewNow(2, null, null), staff)
         assertEquals(OverviewNow(0, null, null), OverviewLogic.nowFromJson(JSONObject("{}")))
+    }
+
+    /** #494: collateral received / returned in the period and the split of "Còn phải thu" */
+    @Test
+    fun collateralFlowAndOutstandingBreakdown() {
+        val report = OverviewLogic.reportFromJson(
+            JSONObject(
+                """{"revenue":{"collected":12450000,"outstanding":3350000,
+                "collateralFlow":{"received":5000000,"returned":1500000},
+                "outstandingBreakdown":{"atPickup":{"amount":2150000,"orders":5},"overduePickup":{"amount":1200000,"orders":2}}}}""",
+            ),
+        )
+        assertEquals(CollateralFlow(5_000_000.0, 1_500_000.0), report.collateralFlow)
+        assertEquals(3_500_000.0, report.collateralFlow!!.net, 0.0)
+        assertEquals(15_950_000.0, report.collateralFlow!!.totalReceived(report.netRevenue), 0.0)
+        assertEquals(
+            OutstandingBreakdown(AmountOrders(2_150_000.0, 5), AmountOrders(1_200_000.0, 2)),
+            report.outstandingBreakdown,
+        )
+
+        // More returned than received: the net is negative; a missing part counts as 0
+        val partial = OverviewLogic.reportFromJson(
+            JSONObject(
+                """{"revenue":{"collected":100,"collateralFlow":{"returned":300},
+                "outstandingBreakdown":{"atPickup":{"amount":50,"orders":1}}}}""",
+            ),
+        )
+        assertEquals(CollateralFlow(0.0, 300.0), partial.collateralFlow)
+        assertEquals(-300.0, partial.collateralFlow!!.net, 0.0)
+        assertEquals(-200.0, partial.collateralFlow!!.totalReceived(partial.netRevenue), 0.0)
+        assertEquals(OutstandingBreakdown(AmountOrders(50.0, 1), AmountOrders(0.0, 0)), partial.outstandingBreakdown)
+    }
+
+    /** #494: an older API sends neither: the old "Thực thu" sheet and a "Còn phải thu" tile that does not open */
+    @Test
+    fun olderApiWithoutCollateralFlowOrOutstandingBreakdown() {
+        val older = OverviewLogic.reportFromJson(JSONObject("""{"revenue":{"collected":1,"outstanding":2}}"""))
+        assertEquals(null, older.collateralFlow)
+        assertEquals(null, older.outstandingBreakdown)
+        val nulls = OverviewLogic.reportFromJson(JSONObject("""{"revenue":{"collateralFlow":null,"outstandingBreakdown":null}}"""))
+        assertEquals(null, nulls.collateralFlow)
+        assertEquals(null, nulls.outstandingBreakdown)
+    }
+
+    /** #494: collateral to collect at pickup and to hand back, from outlet-operations `cash` */
+    @Test
+    fun upcomingCollateral() {
+        val now = OverviewLogic.nowFromJson(
+            JSONObject(
+                """{"overdueReturns":{"count":1},"cash":{"depositsHeld":{"securityDeposit":3500000,"orders":9},
+                "collateralToCollect":{"securityDeposit":2000000,"orders":4},
+                "collateralToReturn":{"securityDeposit":3400000,"orders":8}}}""",
+            ),
+        )
+        assertEquals(CollateralCount(2_000_000.0, 4), now.collateralToCollect)
+        // `collateralToReturn` wins over `depositsHeld` when the API sends it
+        assertEquals(CollateralCount(3_400_000.0, 8), now.collateralToReturn)
+        assertEquals(3_500_000.0, now.collateralHeld!!, 0.0)
+
+        val noAmount = OverviewLogic.nowFromJson(
+            JSONObject("""{"cash":{"collateralToCollect":{"securityDeposit":null,"orders":4},"collateralToReturn":{"orders":2}}}"""),
+        )
+        assertEquals(null, noAmount.collateralToCollect)
+        assertEquals(null, noAmount.collateralToReturn)
+        assertEquals(null, OverviewLogic.nowFromJson(JSONObject("{}")).collateralToReturn)
     }
 
     @Test

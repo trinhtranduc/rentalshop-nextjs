@@ -53,6 +53,10 @@ export interface OutletOperations {
   /** Managers only */
   cash: {
     depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };
+    /** Collateral of rent orders still RESERVED, received at pickup (#494) */
+    collateralToCollect?: { securityDeposit: number; orders: number };
+    /** Collateral held now on rent orders with collateral, handed back at return (#494) */
+    collateralToReturn?: { securityDeposit: number; orders: number };
     depositsDueToday: { depositAmount: number; securityDeposit: number; orders: number };
     feesToday: { lateFee: number; damageFee: number; orders: number };
   } | null;

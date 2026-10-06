@@ -67,11 +67,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.overview.CollateralCount
+import com.anyrent.pos.domain.overview.CollateralFlow
 import com.anyrent.pos.domain.overview.CollectedBreakdown
 import com.anyrent.pos.domain.overview.DayRange
 import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.domain.overview.OverviewBar
 import com.anyrent.pos.domain.overview.OverviewChart
+import com.anyrent.pos.domain.overview.OutstandingBreakdown
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewPeriod
 import com.anyrent.pos.domain.overview.OverviewPreset
@@ -122,6 +125,7 @@ fun OverviewV2Screen(
     val state by viewModel.state.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
     var showDetails by remember { mutableStateOf(false) }
+    var showOutstanding by remember { mutableStateOf(false) }
     var chart by rememberSaveable { mutableStateOf(OverviewChart.MONEY) }
     var showPicker by remember { mutableStateOf(false) }
     val today = viewModel.today()
@@ -162,7 +166,8 @@ fun OverviewV2Screen(
                         Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
                         RevenueSection(
                             state.report, state.loading, state.reportError, range, chart,
-                            onChart = { chart = it }, onDetails = { showDetails = true }, onRetry = viewModel::load,
+                            onChart = { chart = it }, onDetails = { showDetails = true },
+                            onOutstanding = { showOutstanding = true }, onRetry = viewModel::load,
                         )
                     }
                 }
@@ -244,11 +249,40 @@ fun OverviewV2Screen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = DS.Colors.Surface,
         ) {
-            CollectedDetailSheet(
-                report = detailsReport,
-                collateralHeld = state.now?.collateralHeld,
+            val flow = detailsReport.collateralFlow
+            if (flow != null) {
+                // #494: everything received, collateral included, split into "Thực thu" and "Thế chân"
+                ReceivedDetailSheet(
+                    report = detailsReport,
+                    flow = flow,
+                    collateralToReturn = state.now?.collateralToReturn,
+                    collateralToCollect = state.now?.collateralToCollect,
+                    periodTitle = periodTitle,
+                    onClose = { showDetails = false },
+                )
+            } else {
+                CollectedDetailSheet(
+                    report = detailsReport,
+                    collateralHeld = state.now?.collateralHeld,
+                    periodTitle = periodTitle,
+                    onClose = { showDetails = false },
+                )
+            }
+        }
+    }
+    val outstandingReport = state.report
+    val outstandingBreakdown = outstandingReport?.outstandingBreakdown
+    if (showOutstanding && outstandingReport != null && outstandingBreakdown != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showOutstanding = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = DS.Colors.Surface,
+        ) {
+            OutstandingDetailSheet(
+                outstanding = outstandingReport.outstanding,
+                breakdown = outstandingBreakdown,
                 periodTitle = periodTitle,
-                onClose = { showDetails = false },
+                onClose = { showOutstanding = false },
             )
         }
     }
@@ -279,6 +313,8 @@ private fun RevenueSection(
     chart: OverviewChart,
     onChart: (OverviewChart) -> Unit,
     onDetails: () -> Unit,
+    /** #494: opens the "Còn phải thu" sheet; the tile is clickable only when the API sends the breakdown */
+    onOutstanding: () -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp)) {
@@ -327,14 +363,22 @@ private fun RevenueSection(
                         add(
                             TileData(
                                 stringResource(R.string.overview_v2_collected), formatMoneyVnd(report.netRevenue), DS.Colors.Text,
-                                sub = stringResource(R.string.overview_v2_collected_sub),
+                                sub = stringResource(R.string.overview_v2_collected_excludes_collateral),
                                 onClick = onDetails,
                                 description = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.netRevenue)),
                             ),
                         )
                     }
                     report.outstanding?.let {
-                        add(TileData(stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber, sub = stringResource(R.string.overview_v2_outstanding_sub)))
+                        val clickable = report.outstandingBreakdown != null
+                        add(
+                            TileData(
+                                stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber,
+                                sub = stringResource(R.string.overview_v2_outstanding_sub),
+                                onClick = if (clickable) onOutstanding else null,
+                                description = if (clickable) stringResource(R.string.overview_v2_outstanding_tile_accessibility, formatMoneyVnd(it)) else null,
+                            ),
+                        )
                     }
                 }
                 if (tiles.isNotEmpty()) {
@@ -476,10 +520,7 @@ private fun CollectedDetailSheet(report: OverviewReport, collateralHeld: Double?
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            "${stringResource(R.string.overview_v2_collected)} · $periodTitle", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-            modifier = Modifier.semantics { heading() },
-        )
+        SheetTitle("${stringResource(R.string.overview_v2_collected)} · $periodTitle")
         Text(stringResource(R.string.overview_v2_info_body), fontSize = DS.TextSize.Body, lineHeight = 22.sp, color = Color(0xFF334155))
         Column {
             if (breakdown != null) {
@@ -511,14 +552,193 @@ private fun CollectedDetailSheet(report: OverviewReport, collateralHeld: Double?
             stringResource(R.string.overview_v2_info_note), fontSize = DS.TextSize.Secondary, lineHeight = 21.sp, color = DS.Colors.TextMuted,
             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(V2Colors.Section).padding(12.dp),
         )
-        Button(
-            onClick = onClose,
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Text, contentColor = Color.White),
-        ) {
-            Text(stringResource(R.string.close), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
+        CloseButton(onClose)
+    }
+}
+
+/** "+3.500.000" / "−1.200.000" */
+private fun signedMoney(amount: Double): String = if (Math.round(amount) >= 0) "+" + formatMoneyVnd(amount) else formatMoneyVnd(amount)
+
+/**
+ * #494 a figure with a title and an optional sub-line. With [expanded] it shows a chevron (down when open) and the
+ * whole row toggles through [onClick].
+ */
+@Composable
+private fun DetailRow(
+    title: String,
+    sub: String?,
+    amount: String,
+    amountColor: Color = DS.Colors.Text,
+    expanded: Boolean? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    Row(
+        Modifier.fillMaxWidth()
+            .then(onClick?.let { Modifier.clickable(onClick = it) } ?: Modifier)
+            .heightIn(min = 48.dp).padding(vertical = 8.dp)
+            .semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+            sub?.let { Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
         }
+        Text(
+            amount, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = amountColor, textAlign = TextAlign.End,
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
+        )
+        if (expanded != null) {
+            Icon(
+                if (expanded) Icons.Outlined.KeyboardArrowDown else Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CloseButton(onClose: () -> Unit) {
+    Button(
+        onClick = onClose,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(48.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Text, contentColor = Color.White),
+    ) {
+        Text(stringResource(R.string.close), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun SheetTitle(text: String) {
+    Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.semantics { heading() })
+}
+
+/**
+ * #494 "Tiền thực nhận": all money received in the period, collateral included, split into "Thực thu" (the shop's
+ * money) and "Thế chân" (held for the customer). Each part expands to its lines; the box at the bottom shows the
+ * collateral still to come, which no figure above counts.
+ */
+@Composable
+private fun ReceivedDetailSheet(
+    report: OverviewReport,
+    flow: CollateralFlow,
+    collateralToReturn: CollateralCount?,
+    collateralToCollect: CollateralCount?,
+    periodTitle: String,
+    onClose: () -> Unit,
+) {
+    var collectedOpen by remember { mutableStateOf(false) }
+    var collateralOpen by remember { mutableStateOf(false) }
+    val breakdown = report.collectedBreakdown
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SheetTitle("${stringResource(R.string.overview_v2_received_title)} · $periodTitle")
+        Column {
+            Text(stringResource(R.string.overview_v2_received_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            Text(formatMoneyVnd(flow.totalReceived(report.netRevenue)), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
+        }
+        Column {
+            ThinDivider()
+            DetailRow(
+                stringResource(R.string.overview_v2_collected), stringResource(R.string.overview_v2_collected_shop),
+                formatMoneyVnd(report.netRevenue),
+                expanded = if (breakdown != null) collectedOpen else null,
+                onClick = if (breakdown != null) ({ collectedOpen = !collectedOpen }) else null,
+            )
+            if (breakdown != null && collectedOpen) {
+                Column(Modifier.padding(start = 16.dp)) {
+                    AmountRow(stringResource(R.string.overview_v2_info_deposit), "+" + formatMoneyVnd(breakdown.deposits))
+                    AmountRow(stringResource(R.string.overview_v2_info_remaining), "+" + formatMoneyVnd(breakdown.pickupAndSale))
+                    AmountRow(stringResource(R.string.overview_v2_info_fees), "+" + formatMoneyVnd(breakdown.fees))
+                    if (breakdown.refunds > 0) {
+                        AmountRow(stringResource(R.string.overview_v2_info_cancelled), "−" + formatMoneyVnd(breakdown.refunds), V2Colors.Danger)
+                    }
+                }
+            }
+            ThinDivider()
+            DetailRow(
+                stringResource(R.string.overview_v2_collateral), stringResource(R.string.overview_v2_collateral_sub),
+                signedMoney(flow.net),
+                expanded = collateralOpen,
+                onClick = { collateralOpen = !collateralOpen },
+            )
+            if (collateralOpen) {
+                Column(Modifier.padding(start = 16.dp)) {
+                    AmountRow(stringResource(R.string.overview_v2_collateral_received), "+" + formatMoneyVnd(flow.received))
+                    AmountRow(stringResource(R.string.overview_v2_collateral_returned), "−" + formatMoneyVnd(flow.returned), V2Colors.Danger)
+                }
+            }
+            ThinDivider()
+        }
+        if (collateralToReturn != null || collateralToCollect != null) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(V2Colors.Section).padding(horizontal = 14.dp, vertical = 10.dp),
+            ) {
+                val upcoming = stringResource(R.string.overview_v2_collateral_upcoming)
+                val upcomingNote = stringResource(R.string.overview_v2_collateral_upcoming_note)
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(upcoming) }
+                        append(" · $upcomingNote")
+                    },
+                    fontSize = DS.TextSize.Pill, color = DS.Colors.TextMuted,
+                )
+                collateralToReturn?.let { c ->
+                    DetailRow(
+                        stringResource(R.string.overview_v2_collateral_to_return),
+                        c.orders?.let { stringResource(R.string.overview_v2_collateral_to_return_orders, it) },
+                        formatMoneyVnd(c.amount),
+                    )
+                }
+                collateralToCollect?.let { c ->
+                    DetailRow(
+                        stringResource(R.string.overview_v2_collateral_to_collect),
+                        c.orders?.let { stringResource(R.string.overview_v2_collateral_to_collect_orders, it) },
+                        formatMoneyVnd(c.amount),
+                    )
+                }
+            }
+        }
+        CloseButton(onClose)
+    }
+}
+
+/** #494 "Còn phải thu": the unpaid part of the period's orders, due at pickup or already overdue */
+@Composable
+private fun OutstandingDetailSheet(outstanding: Double?, breakdown: OutstandingBreakdown, periodTitle: String, onClose: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SheetTitle("${stringResource(R.string.overview_v2_outstanding)} · $periodTitle")
+        Text(stringResource(R.string.overview_v2_outstanding_body), fontSize = DS.TextSize.Body, lineHeight = 22.sp, color = Color(0xFF334155))
+        Column {
+            ThinDivider()
+            DetailRow(
+                stringResource(R.string.overview_v2_outstanding_at_pickup),
+                stringResource(R.string.overview_v2_outstanding_at_pickup_orders, breakdown.atPickup.orders),
+                formatMoneyVnd(breakdown.atPickup.amount),
+            )
+            ThinDivider()
+            if (breakdown.overduePickup.orders > 0) {
+                DetailRow(
+                    stringResource(R.string.overview_v2_outstanding_overdue),
+                    stringResource(R.string.overview_v2_outstanding_overdue_orders, breakdown.overduePickup.orders),
+                    formatMoneyVnd(breakdown.overduePickup.amount),
+                    amountColor = V2Colors.Danger,
+                )
+                ThinDivider()
+            }
+            AmountRow(
+                stringResource(R.string.overview_v2_outstanding),
+                formatMoneyVnd(outstanding ?: (breakdown.atPickup.amount + breakdown.overduePickup.amount)),
+                OutstandingAmber, bold = true,
+            )
+        }
+        CloseButton(onClose)
     }
 }
 

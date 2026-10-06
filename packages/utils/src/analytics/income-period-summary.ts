@@ -1,10 +1,13 @@
 import type { PrismaClient } from '@prisma/client';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import {
+  addToCollateralFlow,
   addToCollectedBreakdown,
+  emptyCollateralFlow,
   emptyCollectedBreakdown,
   getOrderRevenueEvents,
   withoutCollateral,
+  type CollateralFlow,
   type CollectedBreakdown
 } from '../core/revenue-calculator';
 import { SHOP_TIMEZONE } from '../core/date';
@@ -31,6 +34,8 @@ export interface IncomePeriodSummary {
   totalCollected: number;
   /** Where `totalCollected` came from (#492) */
   collectedBreakdown: CollectedBreakdown;
+  /** Collateral received and handed back in the period (#494); `totalRevenue - totalCollected` = received - returned */
+  collateralFlow: CollateralFlow;
 }
 
 export interface IncomePeriodDayRow {
@@ -150,6 +155,7 @@ export async function computeIncomePeriodSummary(
   const returnOrdersCounted = new Set<string>();
   const cancelledOrdersCounted = new Set<string>();
   const collectedBreakdown = emptyCollectedBreakdown();
+  const collateralFlow = emptyCollateralFlow();
 
   const ensureDay = (date: Date): DailyBucket => {
     const { date: dateKey, dateISO } = civilDayBucket(date, timeZone);
@@ -189,16 +195,17 @@ export async function computeIncomePeriodSummary(
       updatedAt: order.updatedAt
     };
 
-    const revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd);
+    const inPeriod = (event: { date: Date }) => event.date >= filterStart && event.date <= filterEnd;
+    const revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd).filter(inPeriod);
     for (const event of revenueEvents) {
-      if (event.date < filterStart || event.date > filterEnd) continue;
       ensureDay(event.date).totalRevenue += event.revenue;
     }
-    for (const event of getOrderRevenueEvents(withoutCollateral(orderData), filterStart, filterEnd)) {
-      if (event.date < filterStart || event.date > filterEnd) continue;
+    const plainEvents = getOrderRevenueEvents(withoutCollateral(orderData), filterStart, filterEnd).filter(inPeriod);
+    for (const event of plainEvents) {
       ensureDay(event.date).collected += event.revenue;
       addToCollectedBreakdown(collectedBreakdown, orderData, event);
     }
+    addToCollateralFlow(collateralFlow, revenueEvents, plainEvents);
 
     if (order.createdAt) {
       const createdDate = new Date(order.createdAt);
@@ -408,7 +415,8 @@ export async function computeIncomePeriodSummary(
     totalRevenuePlan,
     totalDepositRefund,
     totalCollected,
-    collectedBreakdown
+    collectedBreakdown,
+    collateralFlow
   };
 
   return {

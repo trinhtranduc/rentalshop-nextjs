@@ -39,6 +39,10 @@ data class OverviewReport(
     val collectedBreakdown: CollectedBreakdown? = null,
     /** #492: `growth.orderValue`, the hero's change vs the previous period; null on an older API (hero falls back) */
     val orderValueGrowth: OverviewGrowth? = null,
+    /** #494 `revenue.collateralFlow`; null on an older API (the "Thực thu" sheet keeps the #492 layout) */
+    val collateralFlow: CollateralFlow? = null,
+    /** #494 `revenue.outstandingBreakdown`; null on an older API ("Còn phải thu" tile not clickable) */
+    val outstandingBreakdown: OutstandingBreakdown? = null,
 ) {
     /**
      * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
@@ -56,11 +60,40 @@ data class CollectedBreakdown(val deposits: Double, val pickupAndSale: Double, v
     val total: Double get() = deposits + pickupAndSale + fees - refunds
 }
 
+/**
+ * #494 `revenue.collateralFlow`: collateral (thế chân) [received] at pickup and [returned] to customers in the period.
+ * Not part of `revenue.collected`.
+ */
+data class CollateralFlow(val received: Double, val returned: Double) {
+    /** Signed change of the collateral held over the period */
+    val net: Double get() = received - returned
+
+    /** All money the shop took in over the period, collateral included */
+    fun totalReceived(collected: Double): Double = collected + net
+}
+
+/** #494 an amount over [orders] orders */
+data class AmountOrders(val amount: Double, val orders: Int)
+
+/** #494 `revenue.outstandingBreakdown`: [atPickup] + [overduePickup] = `revenue.outstanding` */
+data class OutstandingBreakdown(val atPickup: AmountOrders, val overduePickup: AmountOrders)
+
+/** #494 collateral of [orders] orders; [orders] is null when an older API only sends `depositsHeld.securityDeposit` */
+data class CollateralCount(val amount: Double, val orders: Int?)
+
 /** #492 one `growth.*` entry of `GET /api/analytics/period`; [growth] is a percentage (8.0 = 8%) */
 data class OverviewGrowth(val current: Double?, val previous: Double?, val growth: Double?)
 
-/** "Now" figures of `GET /api/analytics/outlet-operations`; [rentedOut] and [collateralHeld] need the revenue right */
-data class OverviewNow(val lateReturns: Int, val rentedOut: Int?, val collateralHeld: Double?)
+/** "Now" figures of `GET /api/analytics/outlet-operations`; [rentedOut] and the collateral figures need the revenue right */
+data class OverviewNow(
+    val lateReturns: Int,
+    val rentedOut: Int?,
+    val collateralHeld: Double?,
+    /** #494 `cash.collateralToCollect`: reserved rent orders' collateral, received at pickup; null on an older API */
+    val collateralToCollect: CollateralCount? = null,
+    /** #494 `cash.collateralToReturn`, or `depositsHeld.securityDeposit` without a count on an older API */
+    val collateralToReturn: CollateralCount? = null,
+)
 
 object OverviewLogic {
     /** Ranges longer than this are charted per month (same rule as the API) */
@@ -195,16 +228,35 @@ object OverviewLogic {
                     refunds = number(b, "refunds") ?: 0.0,
                 )
             },
+            collateralFlow = revenue?.optJSONObject("collateralFlow")?.let { f ->
+                CollateralFlow(received = number(f, "received") ?: 0.0, returned = number(f, "returned") ?: 0.0)
+            },
+            outstandingBreakdown = revenue?.optJSONObject("outstandingBreakdown")?.let { b ->
+                fun part(key: String): AmountOrders = b.optJSONObject(key).let { p ->
+                    AmountOrders(amount = number(p, "amount") ?: 0.0, orders = number(p, "orders")?.toInt() ?: 0)
+                }
+                OutstandingBreakdown(atPickup = part("atPickup"), overduePickup = part("overduePickup"))
+            },
         )
     }
 
     fun nowFromJson(data: JSONObject): OverviewNow {
-        val held = data.optJSONObject("cash")?.optJSONObject("depositsHeld")
+        val cash = data.optJSONObject("cash")
+        val held = cash?.optJSONObject("depositsHeld")
+        val collateralHeld = held?.takeIf { it.has("securityDeposit") && !it.isNull("securityDeposit") }
+            ?.optDouble("securityDeposit")?.takeIf { !it.isNaN() }
+        // #494: `{ securityDeposit, orders }`; an entry without an amount counts as missing
+        fun collateral(key: String): CollateralCount? = cash?.optJSONObject(key)?.let { c ->
+            val amount = if (!c.has("securityDeposit") || c.isNull("securityDeposit")) null
+            else c.optDouble("securityDeposit").takeIf { !it.isNaN() }
+            amount?.let { CollateralCount(it, if (c.has("orders") && !c.isNull("orders")) c.optInt("orders") else null) }
+        }
         return OverviewNow(
             lateReturns = data.optJSONObject("overdueReturns")?.optInt("count", 0) ?: 0,
             rentedOut = held?.takeIf { it.has("orders") && !it.isNull("orders") }?.optInt("orders"),
-            collateralHeld = held?.takeIf { it.has("securityDeposit") && !it.isNull("securityDeposit") }
-                ?.optDouble("securityDeposit")?.takeIf { !it.isNaN() },
+            collateralHeld = collateralHeld,
+            collateralToCollect = collateral("collateralToCollect"),
+            collateralToReturn = collateral("collateralToReturn") ?: collateralHeld?.let { CollateralCount(it, null) },
         )
     }
 }
