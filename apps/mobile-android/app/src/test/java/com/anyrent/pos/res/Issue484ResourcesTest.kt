@@ -17,15 +17,18 @@ class Issue484ResourcesTest {
 
     private val boardVietnamese = mapOf(
         "overview_v2_collected" to "Thực thu",
-        "overview_v2_total_order_value" to "Tổng giá trị đơn",
         "overview_v2_outstanding" to "Còn phải thu",
         "overview_v2_chart_money" to "Thực thu",
         "overview_v2_chart_orders" to "Số đơn",
         "overview_v2_top_rented" to "Thuê nhiều nhất · theo giá trị đơn",
         // #492 board Tong-quan, Tong-quan-giai-thich
-        "overview_v2_details" to "Chi tiết",
+        "overview_v2_new_order_value" to "Tổng giá trị đơn mới",
+        "overview_v2_vs_previous_period" to "so với kỳ trước",
+        "overview_v2_excludes_cancelled" to "không tính đơn huỷ",
+        "overview_v2_collected_sub" to "Tiền đã vào tiệm",
+        "overview_v2_outstanding_sub" to "Của các đơn mới",
+        "overview_v2_collected_tile_accessibility" to "Thực thu %1\$s, xem chi tiết",
         "overview_v2_collateral_held" to "Thế chân đang giữ",
-        "overview_v2_collateral_held_sub" to "Sẽ trả lại khách · không tính vào thực thu",
         "overview_v2_info_body" to "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.",
         "overview_v2_info_deposit" to "Cọc khi tạo đơn",
         "overview_v2_info_remaining" to "Thu khi giao đồ, bán hàng",

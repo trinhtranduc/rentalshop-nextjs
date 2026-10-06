@@ -1085,7 +1085,6 @@
     <string name="settings_v2_password_hide">Ẩn mật khẩu</string>
     <!-- #484 overview money, rented-out list, store info -->
     <string name="overview_v2_collected">Thực thu</string>
-    <string name="overview_v2_total_order_value">Tổng giá trị đơn</string>
     <string name="overview_v2_outstanding">Còn phải thu</string>
     <string name="overview_v2_chart_money">Thực thu</string>
     <string name="overview_v2_chart_orders">Số đơn</string>
@@ -1097,9 +1096,11 @@
     <string name="overview_v2_info_collateral">Không tính vào thực thu vì sẽ trả lại khách.</string>
     <string name="overview_v2_info_note">Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.</string>
     <string name="overview_v2_info_fees">Phí hư hỏng, trễ hạn</string>
-    <string name="overview_v2_details">Chi tiết</string>
-    <string name="overview_v2_details_accessibility">Chi tiết thực thu</string>
-    <string name="overview_v2_collateral_held_sub">Sẽ trả lại khách · không tính vào thực thu</string>
+    <string name="overview_v2_new_order_value">Tổng giá trị đơn mới</string>
+    <string name="overview_v2_vs_previous_period">so với kỳ trước</string>
+    <string name="overview_v2_collected_sub">Tiền đã vào tiệm</string>
+    <string name="overview_v2_outstanding_sub">Của các đơn mới</string>
+    <string name="overview_v2_collected_tile_accessibility">Thực thu %1$s, xem chi tiết</string>
     <string name="rented_out_title">Đang cho thuê · %1$d</string>
     <string name="rented_out_late">Trễ hạn trả · %1$d</string>
     <string name="rented_out_on_time">Còn hạn · %1$d</string>

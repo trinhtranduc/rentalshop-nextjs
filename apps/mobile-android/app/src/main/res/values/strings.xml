@@ -1101,7 +1101,6 @@
     <string name="settings_v2_password_hide">Hide password</string>
     <!-- #484 overview money, rented-out list, store info -->
     <string name="overview_v2_collected">Real income</string>
-    <string name="overview_v2_total_order_value">Total order value</string>
     <string name="overview_v2_outstanding">Still to collect</string>
     <string name="overview_v2_chart_money">Real income</string>
     <string name="overview_v2_chart_orders">Orders</string>
@@ -1113,9 +1112,11 @@
     <string name="overview_v2_info_collateral">Not in real income because it goes back to the customer.</string>
     <string name="overview_v2_info_note">Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.</string>
     <string name="overview_v2_info_fees">Damage and late fees</string>
-    <string name="overview_v2_details">Details</string>
-    <string name="overview_v2_details_accessibility">Real income details</string>
-    <string name="overview_v2_collateral_held_sub">To be returned · not in real income</string>
+    <string name="overview_v2_new_order_value">New order value</string>
+    <string name="overview_v2_vs_previous_period">vs previous period</string>
+    <string name="overview_v2_collected_sub">Money received</string>
+    <string name="overview_v2_outstanding_sub">From new orders</string>
+    <string name="overview_v2_collected_tile_accessibility">Real income %1$s, see details</string>
     <string name="rented_out_title">Rented out · %1$d</string>
     <string name="rented_out_late">Late return · %1$d</string>
     <string name="rented_out_on_time">Not due yet · %1$d</string>

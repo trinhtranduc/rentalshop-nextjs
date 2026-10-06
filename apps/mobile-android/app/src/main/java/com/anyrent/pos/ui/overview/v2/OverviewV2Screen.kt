@@ -57,7 +57,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -113,7 +116,7 @@ fun OverviewV2Screen(
     onOpenList: (String, String, String) -> Unit = { _, _, _ -> },
     /** #388: (product id, start, end) */
     onOpenProduct: (Int, String, String) -> Unit = { _, _, _ -> },
-    /** #484: "Đang cho thuê", "Đang thuê · trễ hạn trả" and (#492) the "Thế chân đang giữ" tile open the rented-out list */
+    /** #484: "Đang cho thuê" and "Đang thuê · trễ hạn trả" open the rented-out list */
     onOpenRentedOut: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
@@ -159,9 +162,7 @@ fun OverviewV2Screen(
                         Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
                         RevenueSection(
                             state.report, state.loading, state.reportError, range, chart,
-                            collateralHeld = state.now?.collateralHeld,
-                            onChart = { chart = it }, onDetails = { showDetails = true },
-                            onOpenRentedOut = onOpenRentedOut, onRetry = viewModel::load,
+                            onChart = { chart = it }, onDetails = { showDetails = true }, onRetry = viewModel::load,
                         )
                     }
                 }
@@ -276,87 +277,71 @@ private fun RevenueSection(
     error: String?,
     range: DayRange,
     chart: OverviewChart,
-    collateralHeld: Double?,
     onChart: (OverviewChart) -> Unit,
     onDetails: () -> Unit,
-    onOpenRentedOut: () -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp)) {
-        // #492: "Thực thu" (board Tong-quan); the amount and "Chi tiết" open what makes it up (Tong-quan-giai-thich)
+        // #492 (board Tong-quan): the hero is the value of the new orders; an older API without it keeps "Thực thu"
+        val orderValue = report?.totalOrderValue
         Text(
-            "${stringResource(R.string.overview_v2_collected)} · ${longRange(range)}",
+            "${stringResource(if (report != null && orderValue == null) R.string.overview_v2_collected else R.string.overview_v2_new_order_value)} · ${longRange(range)}",
             fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
             modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
         )
         when {
             report != null -> {
-                val detailsDescription = stringResource(R.string.overview_v2_details_accessibility)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) {
-                        Text(
-                            formatMoneyVnd(report.netRevenue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-                            maxLines = 1,
-                            modifier = Modifier.clickable(onClick = onDetails).semantics { contentDescription = "${formatMoneyVnd(report.netRevenue)}, $detailsDescription" },
-                        )
-                    }
-                    Row(
-                        Modifier
-                            .heightIn(min = 48.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable(role = Role.Button, onClick = onDetails)
-                            .padding(start = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(stringResource(R.string.overview_v2_details), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
-                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
-                    }
-                }
                 val cancelled = stringResource(R.string.overview_v2_excludes_cancelled)
-                val growth = report.revenueGrowth
-                val previous = stringResource(R.string.overview_v2_vs_previous, OverviewLogic.shortRange(OverviewLogic.previous(range)))
-                Text(
-                    if (growth != null) "${OverviewLogic.changeText(growth)} $previous · $cancelled" else cancelled,
-                    fontSize = DS.TextSize.Secondary,
-                    color = when {
-                        growth == null -> DS.Colors.TextMuted
-                        growth > 0.05 -> V2Colors.Ok
-                        growth < -0.05 -> V2Colors.Danger
-                        else -> DS.Colors.TextMuted
-                    },
-                )
-                // #484/#492: 2×2 tiles; each is hidden on an older API that does not send its figure
+                if (orderValue != null) {
+                    Text(formatMoneyVnd(orderValue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
+                    val growth = report.orderValueGrowth?.growth
+                    val previous = stringResource(R.string.overview_v2_vs_previous_period)
+                    Text(
+                        buildAnnotatedString {
+                            if (growth != null) {
+                                withStyle(SpanStyle(color = growthColor(growth))) { append("${OverviewLogic.changeText(growth)} $previous") }
+                                append(" · ")
+                            }
+                            append(cancelled)
+                        },
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                    )
+                } else {
+                    // Older API: the previous hero, "Thực thu" and its growth; the amount still opens the detail
+                    val collectedDescription = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.netRevenue))
+                    Text(
+                        formatMoneyVnd(report.netRevenue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,
+                        modifier = Modifier.clickable(onClick = onDetails).semantics { contentDescription = collectedDescription },
+                    )
+                    val growth = report.revenueGrowth
+                    val previous = stringResource(R.string.overview_v2_vs_previous, OverviewLogic.shortRange(OverviewLogic.previous(range)))
+                    Text(
+                        if (growth != null) "${OverviewLogic.changeText(growth)} $previous · $cancelled" else cancelled,
+                        fontSize = DS.TextSize.Secondary,
+                        color = if (growth == null) DS.Colors.TextMuted else growthColor(growth),
+                    )
+                }
+                // #492: "Thực thu" (opens the detail sheet) and "Còn phải thu", side by side
                 val tiles = buildList {
-                    report.collectedBreakdown?.let {
-                        add(TileData(stringResource(R.string.overview_v2_info_deposit), formatMoneyVnd(it.deposits), DS.Colors.Text))
-                    }
-                    // From outlet-operations: hidden when unknown (no revenue right, older API)
-                    collateralHeld?.let {
+                    if (orderValue != null) {
                         add(
                             TileData(
-                                stringResource(R.string.overview_v2_collateral_held), formatMoneyVnd(it), DS.Colors.Text,
-                                sub = stringResource(R.string.overview_v2_collateral_held_sub),
-                                // The collateral is held by the orders out now: the same list as Đang cho thuê
-                                onClick = onOpenRentedOut,
+                                stringResource(R.string.overview_v2_collected), formatMoneyVnd(report.netRevenue), DS.Colors.Text,
+                                sub = stringResource(R.string.overview_v2_collected_sub),
+                                onClick = onDetails,
+                                description = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.netRevenue)),
                             ),
                         )
                     }
-                    report.totalOrderValue?.let {
-                        add(TileData(stringResource(R.string.overview_v2_total_order_value), formatMoneyVnd(it), DS.Colors.Text))
-                    }
                     report.outstanding?.let {
-                        add(TileData(stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber))
+                        add(TileData(stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber, sub = stringResource(R.string.overview_v2_outstanding_sub)))
                     }
                 }
                 if (tiles.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        tiles.chunked(2).forEach { pair ->
-                            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                pair.forEach { tile -> MoneyTile(tile, Modifier.weight(1f).fillMaxHeight()) }
-                                if (pair.size == 1) Spacer(Modifier.weight(1f))
-                            }
-                        }
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        tiles.forEach { tile -> MoneyTile(tile, Modifier.weight(1f).fillMaxHeight()) }
+                        if (tiles.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -430,21 +415,30 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier, description: Strin
 
 private val OutstandingAmber = Color(0xFFB45309)
 
+/** Green when up, red when down, muted around 0 */
+private fun growthColor(growth: Double): Color = when {
+    growth > 0.05 -> V2Colors.Ok
+    growth < -0.05 -> V2Colors.Danger
+    else -> DS.Colors.TextMuted
+}
+
 private data class TileData(
     val title: String,
     val value: String,
     val color: Color,
     val sub: String? = null,
     val onClick: (() -> Unit)? = null,
+    /** Spoken instead of the merged texts when set */
+    val description: String? = null,
 )
 
 @Composable
 private fun MoneyTile(tile: TileData, modifier: Modifier) {
     Column(
-        modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC))
+        modifier.clip(RoundedCornerShape(12.dp)).background(V2Colors.Section)
             .then(tile.onClick?.let { Modifier.clickable(onClick = it) } ?: Modifier)
             .padding(horizontal = 12.dp, vertical = 10.dp)
-            .semantics(mergeDescendants = true) {},
+            .semantics(mergeDescendants = true) { tile.description?.let { contentDescription = it } },
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(tile.title, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
