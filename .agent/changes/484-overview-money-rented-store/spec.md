@@ -24,7 +24,13 @@ Issue: #484 · Status: accepted · Intent: ./intent.md
    description), v2 form style (label above field, no icons in fields, address grouped, Cancel/Save footer).
 8. All new strings exist in every locale the app ships.
 
+9. `GET /api/analytics/period` also adds `revenue.collected`, `series[].collected` and `growth.collected`: the same
+   money without collateral (pickup collects `totalAmount - depositAmount`, return collects `damageFee + lateFee`).
+   Existing `realIncome`, `totalRevenue`, `totalActualRevenue` and `growth.revenue` keep their meaning.
+10. Both apps show `collected` when present (headline, bars, growth) and fall back to the old fields; the info sheet
+    lists collateral as "không tính".
+
 ## Out of scope
 
-- Excluding collateral from collected money (open question).
+- Changing collateral handling in web income reports.
 - Web admin/client changes.

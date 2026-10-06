@@ -575,6 +575,7 @@ final class OverviewCollectedInfoSheet: UIViewController {
             ("overview.v2.info.damageFee".localized(), included, V2.ok),
             ("overview.v2.info.lateFee".localized(), included, V2.ok),
             ("overview.v2.info.cancelled".localized(), "overview.v2.info.refundsSubtracted".localized(), UIColor(hexString: "B45309")),
+            ("overview.v2.info.collateral".localized(), "overview.v2.info.notCounted".localized(), UIColor(hexString: "475569")),
         ]
         let list = UIStackView()
         list.axis = .vertical

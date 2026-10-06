@@ -29,9 +29,10 @@ Matches the design canvas "AnyRent mobile – bản đã chốt" (boards `Tong-q
 
 ## Open questions
 
-- Exclude collateral (`securityDeposit`) from "Tiền đã thu"? Asked the owner 2026-10-05. Not changed here.
+- None.
 
 ## Decision log
 
 - 2026-10-05 — Owner asked to implement the canvas changes ("update giúp tôi các thay đổi trên") (Trinh)
+- 2026-10-06 — "Tiền đã thu" leaves collateral out ("giúp tôi đổi", answering the collateral question) (Trinh)
 - 2026-10-05 — Late fee counts as collected money at return, like damage fee (Claude, from `order-money.ts`)

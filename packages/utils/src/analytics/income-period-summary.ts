@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { getOrderRevenueEvents } from '../core/revenue-calculator';
+import { getOrderRevenueEvents, withoutCollateral } from '../core/revenue-calculator';
 import { SHOP_TIMEZONE } from '../core/date';
 import { addDaysToDateKey, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '../core/date-range';
 
@@ -21,12 +21,16 @@ export interface IncomePeriodSummary {
   totalCollateralPlan: number;
   totalRevenuePlan: number;
   totalDepositRefund: number;
+  /** Money collected without collateral (#484): deposits, rent/sale balances, fees, minus cancellation refunds */
+  totalCollected: number;
 }
 
 export interface IncomePeriodDayRow {
   date: string;
   dateISO: string;
   totalRevenue: number;
+  /** `totalRevenue` without collateral (#484) */
+  collected: number;
   depositRefund: number;
   totalCollateral: number;
   totalCollateralPlan: number;
@@ -146,6 +150,7 @@ export async function computeIncomePeriodSummary(
         dateISO,
         dateObj: new Date(dateISO),
         totalRevenue: 0,
+        collected: 0,
         depositRefund: 0,
         totalCollateral: 0,
         totalCollateralPlan: 0,
@@ -179,6 +184,10 @@ export async function computeIncomePeriodSummary(
     for (const event of revenueEvents) {
       if (event.date < filterStart || event.date > filterEnd) continue;
       ensureDay(event.date).totalRevenue += event.revenue;
+    }
+    for (const event of getOrderRevenueEvents(withoutCollateral(orderData), filterStart, filterEnd)) {
+      if (event.date < filterStart || event.date > filterEnd) continue;
+      ensureDay(event.date).collected += event.revenue;
     }
 
     if (order.createdAt) {
@@ -368,6 +377,7 @@ export async function computeIncomePeriodSummary(
     .map(({ dateObj, ...rest }) => rest);
 
   const totalRevenue = dailyDataArray.reduce((sum, day) => sum + day.totalRevenue, 0);
+  const totalCollected = dailyDataArray.reduce((sum, day) => sum + day.collected, 0);
   const totalDepositRefund = dailyDataArray.reduce((sum, day) => sum + day.depositRefund, 0);
   const totalCollateral = dailyDataArray.reduce((sum, day) => sum + (day.totalCollateral || 0), 0);
   const totalCollateralPlan = dailyDataArray.reduce((sum, day) => sum + (day.totalCollateralPlan || 0), 0);
@@ -386,7 +396,8 @@ export async function computeIncomePeriodSummary(
     totalCollateralPlanExpectedToRefund: totalCollateralPlan,
     totalCollateralPlan,
     totalRevenuePlan,
-    totalDepositRefund
+    totalDepositRefund,
+    totalCollected
   };
 
   return {

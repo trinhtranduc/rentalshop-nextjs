@@ -5,6 +5,7 @@ import {
   getOrderRevenueEvents,
   parseProductImages
 } from '@rentalshop/utils';
+import { withoutCollateral } from '../core/revenue-calculator';
 import {
   computeIncomePeriodSummary,
   type IncomePeriodDayRow,
@@ -64,11 +65,15 @@ export interface AnalyticsPeriodSeriesPoint {
   orderCount: number;
   /** Orders created in the bucket, not cancelled (#484). Older apps ignore it. */
   newOrderCount?: number;
+  /** `realIncome` without collateral (#484) */
+  collected?: number;
 }
 
 export interface AnalyticsPeriodGrowth {
   orders: { current: number; previous: number; growth: number };
   revenue: { current: number; previous: number; growth: number };
+  /** Same as `revenue`, without collateral (#484) */
+  collected?: { current: number; previous: number; growth: number };
 }
 
 export interface AnalyticsPeriodReport {
@@ -84,6 +89,8 @@ export interface AnalyticsPeriodReport {
     totalOrderValue?: number;
     /** Part of `totalOrderValue` not collected yet (#484) */
     outstanding?: number;
+    /** Money collected in the period without collateral (#484) */
+    collected?: number;
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -434,6 +441,7 @@ function mapDayRowsToSeries(
       year: yearNum,
       dayNumber: parseInt(d, 10),
       realIncome: row?.totalRevenue ?? 0,
+      collected: row?.collected ?? 0,
       futureIncome: 0,
       newOrderCount: row?.newOrderCount ?? 0,
       orderCount:
@@ -509,8 +517,10 @@ export async function buildAnalyticsPeriodReport(
         take: 10000
       });
 
-      const { realIncome, futureIncome } = calculatePeriodRevenueBatch(
-        monthOrders.map(mapRevenueOrder),
+      const monthRevenueOrders = monthOrders.map(mapRevenueOrder);
+      const { realIncome, futureIncome } = calculatePeriodRevenueBatch(monthRevenueOrders, startOfMonth, endOfMonth);
+      const { realIncome: collected } = calculatePeriodRevenueBatch(
+        monthRevenueOrders.map(withoutCollateral),
         startOfMonth,
         endOfMonth
       );
@@ -538,6 +548,7 @@ export async function buildAnalyticsPeriodReport(
         year,
         monthNumber: civilMonth.month,
         realIncome,
+        collected,
         futureIncome,
         orderCount,
         newOrderCount
@@ -548,14 +559,16 @@ export async function buildAnalyticsPeriodReport(
   };
 
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
-    const fetchRevenue = async (ps: Date, pe: Date): Promise<number> => {
+    const fetchRevenue = async (ps: Date, pe: Date): Promise<{ revenue: number; collected: number }> => {
       const orders = await prisma.order.findMany({
         where: buildEventWhere(outletFilter, ps, pe),
         select: revenueSelect,
         take: 10000
       });
-      const { realIncome } = calculatePeriodRevenueBatch(orders.map(mapRevenueOrder), ps, pe);
-      return realIncome;
+      const mapped = orders.map(mapRevenueOrder);
+      const { realIncome } = calculatePeriodRevenueBatch(mapped, ps, pe);
+      const { realIncome: collected } = calculatePeriodRevenueBatch(mapped.map(withoutCollateral), ps, pe);
+      return { revenue: realIncome, collected };
     };
 
     const [curCountRes, prevCountRes, curRevenue, prevRevenue] = await Promise.all([
@@ -575,9 +588,14 @@ export async function buildAnalyticsPeriodReport(
         growth: percentChange(curCount, prevCount)
       },
       revenue: {
-        current: curRevenue,
-        previous: prevRevenue,
-        growth: percentChange(curRevenue, prevRevenue)
+        current: curRevenue.revenue,
+        previous: prevRevenue.revenue,
+        growth: percentChange(curRevenue.revenue, prevRevenue.revenue)
+      },
+      collected: {
+        current: curRevenue.collected,
+        previous: prevRevenue.collected,
+        growth: percentChange(curRevenue.collected, prevRevenue.collected)
       }
     };
   };
@@ -811,7 +829,8 @@ export async function buildAnalyticsPeriodReport(
       totalRevenue: operational?.totalRevenue ?? growth.revenue.current,
       totalActualRevenue: operational?.totalActualRevenue ?? growth.revenue.current,
       totalOrders: totalOrdersFromOps,
-      ...(orderValue ? { totalOrderValue: orderValue.totalOrderValue, outstanding: orderValue.outstanding } : {})
+      ...(orderValue ? { totalOrderValue: orderValue.totalOrderValue, outstanding: orderValue.outstanding } : {}),
+      ...(operational ? { collected: operational.totalCollected } : {})
     },
     growth,
     series,
