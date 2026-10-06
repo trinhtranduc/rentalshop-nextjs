@@ -27,7 +27,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   // ============================================================================
   const isAuthPage = isAuthRoute(pathname);
   const isPublicPage = isPublicRoute(pathname);
-  const isFullWidthPage = pathname?.includes('/edit');
+  // Sửa đơn uses the Tạo đơn screen inside the shell (#523); other edit pages stay full width
+  const isFullWidthPage = pathname?.includes('/edit') && !pathname.startsWith('/orders/');
   const isAffiliateGuidePage = pathname?.includes('/affiliate/guide');
   const isBlogPage = pathname?.startsWith('/blog');
   const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isBlogPage;
