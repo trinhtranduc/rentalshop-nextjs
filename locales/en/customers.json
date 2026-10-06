@@ -334,6 +334,7 @@
         "toList": "Back to customers",
         "again": "Import another file"
       }
-    }
+    },
+    "orderCount": "{count, plural, one {# order} other {# orders}}"
   }
 }

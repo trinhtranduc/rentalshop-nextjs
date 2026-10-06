@@ -20,6 +20,7 @@ import {
   parseStaffPageSize,
   readStaffPage,
   roleTone,
+  staffQuery,
   staffContact,
   staffInitials,
   staffName,
@@ -126,6 +127,21 @@ describe('staff list (#528)', () => {
     expect(readStaffPage({ success: true, data: [{ id: 1 }, { id: 2 }] }, 20)).toEqual({ rows: [{ id: 1 }, { id: 2 }], total: 2, totalPages: 1 });
     expect(readStaffPage({ success: true, data: { users: [{ id: 9 }], total: 25 } }, 10)).toEqual({ rows: [{ id: 9 }], total: 25, totalPages: 3 });
     expect(readStaffPage({ success: false }, 20)).toBeNull();
+  });
+
+  it('builds the GET /api/users query like usersApi.searchUsers', () => {
+    expect(staffQuery({ outletId: 3, page: 1, limit: 1 })).toBe('outletId=3&page=1&limit=1');
+    expect(staffQuery({ q: 'lan', search: 'lan', role: 'OUTLET_STAFF', status: 'inactive', page: 2, limit: 20, sortBy: 'createdAt', sortOrder: 'desc' })).toBe(
+      'search=lan&q=lan&role=OUTLET_STAFF&isActive=false&page=2&limit=20&sortBy=createdAt&sortOrder=desc',
+    );
+    expect(staffQuery({ status: 'active' })).toBe('isActive=true');
+    expect(staffQuery({})).toBe('');
+  });
+
+  it('reads the total from the raw GET /api/users answer, not the page length (#537)', () => {
+    // What /api/users sends for an outlet with two staff and limit=1: one row, total 2.
+    const raw = { success: true, data: [{ id: 7 }], pagination: { page: 1, limit: 1, total: 2, hasMore: true, totalPages: 2 } };
+    expect(readStaffPage(raw, 1)).toEqual({ rows: [{ id: 7 }], total: 2, totalPages: 2 });
   });
 
   it('last sign-in reads in Vietnam days', () => {

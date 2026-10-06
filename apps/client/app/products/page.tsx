@@ -409,7 +409,7 @@ export default function ProductsPage() {
             <ShellIcon d={CAMERA_ICON} size={16} />
             {t('imageSearch.open')}
           </button>
-          <div role="group" aria-label={t('category.label')} className="flex min-w-0 max-w-full flex-1 gap-2 overflow-x-auto">
+          <div role="group" aria-label={t('category.label')} className="flex min-w-0 max-w-full flex-1 gap-2 overflow-x-auto pr-6 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]">
             <button type="button" aria-pressed={!query.categoryId} onClick={() => update({ category: null })} className={chip(!query.categoryId)}>
               {t('category.all')}
             </button>

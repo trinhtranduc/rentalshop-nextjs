@@ -100,6 +100,38 @@ export interface StaffPage<T> {
  * GET /api/users answers `{ data: [...], pagination: { total, totalPages } }`; older shapes nest
  * `{ data: { users, total, totalPages } }`. Both are read here.
  */
+export interface StaffFilters {
+  q?: string;
+  search?: string;
+  role?: string;
+  status?: string;
+  outletId?: number;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+/**
+ * Query string for GET /api/users, built like `usersApi.searchUsers`. The page reads the raw JSON
+ * itself because `parseApiResponse` (behind `usersApi`) keeps `data` and drops `pagination`, so the
+ * total would be the length of one page.
+ */
+export function staffQuery(f: StaffFilters): string {
+  const params = new URLSearchParams();
+  if (f.search) params.append('search', f.search);
+  if (f.q) params.append('q', f.q);
+  if (f.role) params.append('role', f.role);
+  if (f.status === 'active') params.append('isActive', 'true');
+  else if (f.status === 'inactive') params.append('isActive', 'false');
+  if (f.outletId) params.append('outletId', String(f.outletId));
+  if (f.page) params.append('page', String(f.page));
+  if (f.limit) params.append('limit', String(f.limit));
+  if (f.sortBy) params.append('sortBy', f.sortBy);
+  if (f.sortOrder) params.append('sortOrder', f.sortOrder);
+  return params.toString();
+}
+
 export function readStaffPage<T = StaffLike>(res: unknown, limit: number): StaffPage<T> | null {
   if (!res || typeof res !== 'object' || !(res as { success?: unknown }).success) return null;
   const data = (res as { data?: unknown }).data;
