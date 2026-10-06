@@ -30,7 +30,6 @@ import { useAuthTranslations } from "@rentalshop/hooks";
 import { useLocale } from "next-intl";
 import {
   shopFieldClass,
-  shopFieldErrorClass,
   shopIconClass,
   shopLabelClass,
   shopPrimaryButtonClass,
@@ -314,7 +313,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const labelCls = isShop ? shopLabelClass : 'text-sm font-medium text-gray-700';
   const fieldCls = (invalid: boolean, extra = '') =>
     isShop
-      ? `${shopFieldClass} ${extra} ${invalid ? shopFieldErrorClass : ''}`
+      ? `${shopFieldClass(invalid)} ${extra}`
       : `pl-10 ${extra} ${invalid ? 'border-red-500' : ''}`;
   const primaryCls = isShop
     ? shopPrimaryButtonClass

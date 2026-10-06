@@ -9,11 +9,16 @@ import { LanguageSwitcher } from "../layout/LanguageSwitcher";
  * keeps the classic look.
  */
 
-export const shopFieldClass =
-  "h-[52px] w-full rounded-xl border border-slate-300 bg-white pl-11 pr-3.5 text-base text-slate-900 placeholder:text-slate-400 " +
-  "focus:outline-none focus:border-[1.5px] focus:border-blue-700 focus:ring-[3px] focus:ring-blue-100 focus-visible:ring-[3px] focus-visible:ring-blue-100 focus-visible:ring-offset-0";
+const shopFieldBase =
+  "h-[52px] w-full rounded-xl border bg-white pl-11 pr-3.5 text-base text-slate-900 placeholder:text-slate-400 " +
+  "focus:outline-none focus:border-[1.5px] focus:ring-[3px] focus-visible:ring-[3px] focus-visible:ring-offset-0";
 
-export const shopFieldErrorClass = "border-red-600 focus:border-red-600 focus:ring-red-100";
+/** One border set at a time; stacking both lets CSS order pick the colour. */
+export function shopFieldClass(invalid = false): string {
+  return invalid
+    ? `${shopFieldBase} border-red-600 focus:border-red-600 focus:ring-red-100 focus-visible:ring-red-100`
+    : `${shopFieldBase} border-slate-300 focus:border-blue-700 focus:ring-blue-100 focus-visible:ring-blue-100`;
+}
 
 export const shopLabelClass = "text-[15px] font-semibold text-slate-900";
 
@@ -57,11 +62,11 @@ export function ShopAuthPage({ children, termsLabel, privacyLabel, onNavigate }:
         <span className="text-[22px] font-extrabold text-blue-900">AnyRent</span>
       </div>
       <section className="relative mt-10 flex w-full max-w-[400px] flex-col gap-5 sm:mt-12">{children}</section>
-      <footer className="relative mt-auto flex items-center gap-4 pt-12 text-sm text-slate-600">
-        <button type="button" onClick={() => onNavigate?.("/terms")} className="hover:text-blue-700">
+      <footer className="relative mt-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-12 text-sm text-slate-600">
+        <button type="button" onClick={() => onNavigate?.("/terms")} className="whitespace-nowrap hover:text-blue-700">
           {termsLabel}
         </button>
-        <button type="button" onClick={() => onNavigate?.("/privacy")} className="hover:text-blue-700">
+        <button type="button" onClick={() => onNavigate?.("/privacy")} className="whitespace-nowrap hover:text-blue-700">
           {privacyLabel}
         </button>
         <LanguageSwitcher variant="compact" />

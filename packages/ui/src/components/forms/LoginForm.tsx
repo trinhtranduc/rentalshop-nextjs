@@ -13,7 +13,6 @@ import {
   ShopAuthHeading,
   ShopAuthPage,
   shopFieldClass,
-  shopFieldErrorClass,
   shopIconClass,
   shopLabelClass,
   shopPrimaryButtonClass,
@@ -448,7 +447,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               name="email"
               autoComplete="email"
               placeholder={t('register.enterYourEmail')}
-              className={`${shopFieldClass} ${emailError ? shopFieldErrorClass : ''}`}
+              className={shopFieldClass(!!emailError)}
               aria-invalid={emailError ? true : undefined}
               aria-describedby={emailError ? 'login-email-error' : undefined}
               onChange={(e) => {
@@ -477,7 +476,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               type={viewPass ? "text" : "password"}
               name="password"
               autoComplete="current-password"
-              className={`${shopFieldClass} pr-12 ${passwordError ? shopFieldErrorClass : ''}`}
+              className={`${shopFieldClass(!!passwordError)} pr-12`}
               aria-invalid={passwordError ? true : undefined}
               aria-describedby={passwordError ? 'login-password-error' : undefined}
               onChange={(e) => {
