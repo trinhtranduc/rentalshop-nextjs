@@ -572,6 +572,137 @@
     "exportDone": "Excel file exported",
     "exportFailed": "Could not export the file. Try again later.",
     "create": "New order",
+    "editor": {
+      "title": "New order",
+      "editTitle": "Edit order #{number}",
+      "backToOrder": "Back to order #{number}",
+      "notEditable": "This order can no longer be edited. Only reserved rentals and completed sales can be edited.",
+      "outlet": "Outlet",
+      "pickDays": "Choose pickup and return days",
+      "daysButton": "Pickup {from} → Return {to} · {days} days",
+      "bar": "View order · {count} items",
+      "close": "Close",
+      "cancel": "Cancel",
+      "retry": "Try again",
+      "loading": "Loading…",
+      "saving": "Saving…",
+      "days": {
+        "title": "Pickup and return",
+        "pickup": "Pickup day",
+        "return": "Return day",
+        "quick": {
+          "today": "Today",
+          "tomorrow": "Tomorrow",
+          "weekend": "Weekend",
+          "threeDays": "3 days"
+        },
+        "hint": "Choose the days to see what is still free for them.",
+        "summary": "{from} → {to} · {days} days, pickup and return days included",
+        "reversed": "The return day must be on or after the pickup day.",
+        "tooLong": "A rental can last at most {days} days.",
+        "apply": "Choose · {days} days",
+        "applyEmpty": "Choose"
+      },
+      "grid": {
+        "search": "Search name or scan barcode",
+        "searchLabel": "Search products",
+        "all": "All",
+        "helpRent": "\"Left\" counts units free for the chosen days.",
+        "helpSale": "\"Left\" counts units in stock today.",
+        "left": "Left {free}/{total}",
+        "out": "None free for these days",
+        "pickDays": "Choose days to see",
+        "add": "Add {name} to the order",
+        "image": "Photo of {name}",
+        "more": "Show more products",
+        "empty": "No products yet.",
+        "noMatch": "No products match \"{q}\".",
+        "failed": "Could not load products."
+      },
+      "per": {
+        "DAILY": "{price}/day",
+        "HOURLY": "{price}/hour",
+        "FIXED": "{price}/rental",
+        "SALE": "{price}"
+      },
+      "option": {
+        "DAILY": "Per day · {price}/day",
+        "HOURLY": "Per hour · {price}/hour",
+        "FIXED": "Per rental · {price}",
+        "SALE": "Sale price · {price}"
+      },
+      "cart": {
+        "label": "Order being created",
+        "type": "Order type",
+        "RENT": "Rent",
+        "SALE": "Sell",
+        "customer": "Customer",
+        "pickCustomer": "Choose a customer",
+        "change": "Change",
+        "choose": "Choose",
+        "rentItems": "Rented items · {count}",
+        "saleItems": "Sold items · {count}",
+        "empty": "Press + on a product to add it.",
+        "priceFor": "Pricing for {name}",
+        "less": "One less {name}",
+        "more": "One more {name}",
+        "perDayTimes": "{price} × {qty} × {days} days",
+        "onlyLeft": "Only {free} free for these days",
+        "noneLeft": "None free for these days"
+      },
+      "loyalty": {
+        "use": "Use reward points (customer has {points})",
+        "points": "Points to use",
+        "max": "max {max}",
+        "invalid": "These points cannot be used."
+      },
+      "notes": {
+        "open": "Add a note or photos",
+        "openEdit": "Edit note",
+        "label": "Note",
+        "placeholder": "For example: deliver before 9am, alter the dress",
+        "addPhoto": "Photos {count}/{max}",
+        "removePhoto": "Remove photo",
+        "photosOnOrder": "Note photos are edited on the order page."
+      },
+      "money": {
+        "rent": "Rental",
+        "goods": "Items",
+        "discount": "Discount",
+        "discountType": "Discount type",
+        "amount": "Amount",
+        "add": "Add",
+        "loyalty": "Reward points",
+        "total": "Order total",
+        "deposit": "Deposit now",
+        "security": "Security at pickup",
+        "dueAtPickup": "Due at pickup",
+        "includesSecurity": "Includes security {amount}"
+      },
+      "missing": {
+        "days": "Choose pickup and return days to create the order.",
+        "items": "Add at least one item.",
+        "customer": "Choose a customer for the order.",
+        "outlet": "No outlet for this order yet."
+      },
+      "customer": {
+        "title": "Choose a customer",
+        "search": "Search name or phone",
+        "add": "New customer",
+        "addNamed": "New customer \"{q}\"",
+        "none": "No matching customers.",
+        "newTitle": "New customer",
+        "name": "Full name",
+        "phone": "Phone",
+        "back": "Back",
+        "save": "Save and choose"
+      },
+      "submit": {
+        "create": "Create order",
+        "withDeposit": "Create order · take {amount} deposit",
+        "save": "Save changes"
+      }
+    },
     "tabs": {
       "label": "Order lists",
       "todo": "To do",

@@ -572,6 +572,137 @@
     "exportDone": "Đã xuất file Excel",
     "exportFailed": "Không xuất được file. Thử lại sau.",
     "create": "Tạo đơn",
+    "editor": {
+      "title": "Tạo đơn",
+      "editTitle": "Sửa đơn #{number}",
+      "backToOrder": "Về đơn #{number}",
+      "notEditable": "Đơn này không sửa được nữa. Chỉ sửa được đơn thuê đã đặt hoặc đơn bán đã hoàn thành.",
+      "outlet": "Cửa hàng",
+      "pickDays": "Chọn ngày giao, trả",
+      "daysButton": "Giao {from} → Trả {to} · {days} ngày",
+      "bar": "Xem đơn · {count} món",
+      "close": "Đóng",
+      "cancel": "Huỷ",
+      "retry": "Thử lại",
+      "loading": "Đang tải…",
+      "saving": "Đang lưu…",
+      "days": {
+        "title": "Ngày giao và trả",
+        "pickup": "Ngày giao",
+        "return": "Ngày trả",
+        "quick": {
+          "today": "Hôm nay",
+          "tomorrow": "Ngày mai",
+          "weekend": "Cuối tuần",
+          "threeDays": "3 ngày"
+        },
+        "hint": "Chọn ngày để xem số món còn trong lịch đó.",
+        "summary": "{from} → {to} · tính {days} ngày, cả ngày giao và ngày trả",
+        "reversed": "Ngày trả phải từ ngày giao trở đi.",
+        "tooLong": "Một đơn thuê tối đa {days} ngày.",
+        "apply": "Chọn · {days} ngày",
+        "applyEmpty": "Chọn"
+      },
+      "grid": {
+        "search": "Tìm tên hoặc quét mã vạch",
+        "searchLabel": "Tìm sản phẩm",
+        "all": "Tất cả",
+        "helpRent": "Số \"Còn\" tính theo lịch thuê đã chọn.",
+        "helpSale": "Số \"Còn\" là hàng còn trong kho hôm nay.",
+        "left": "Còn {free}/{total}",
+        "out": "Hết trong lịch này",
+        "pickDays": "Chọn ngày để xem",
+        "add": "Thêm {name} vào đơn",
+        "image": "Ảnh {name}",
+        "more": "Xem thêm sản phẩm",
+        "empty": "Chưa có sản phẩm nào.",
+        "noMatch": "Không có sản phẩm khớp \"{q}\".",
+        "failed": "Không tải được sản phẩm."
+      },
+      "per": {
+        "DAILY": "{price}/ngày",
+        "HOURLY": "{price}/giờ",
+        "FIXED": "{price}/lần",
+        "SALE": "{price}"
+      },
+      "option": {
+        "DAILY": "Theo ngày · {price}/ngày",
+        "HOURLY": "Theo giờ · {price}/giờ",
+        "FIXED": "Theo lần · {price}/lần",
+        "SALE": "Giá bán · {price}"
+      },
+      "cart": {
+        "label": "Đơn đang tạo",
+        "type": "Loại đơn",
+        "RENT": "Cho thuê",
+        "SALE": "Bán",
+        "customer": "Khách hàng",
+        "pickCustomer": "Chọn khách",
+        "change": "Đổi",
+        "choose": "Chọn",
+        "rentItems": "Đồ thuê · {count} món",
+        "saleItems": "Đồ bán · {count} món",
+        "empty": "Bấm + ở sản phẩm để thêm vào đơn.",
+        "priceFor": "Cách tính giá {name}",
+        "less": "Bớt 1 {name}",
+        "more": "Thêm 1 {name}",
+        "perDayTimes": "{price} × {qty} × {days} ngày",
+        "onlyLeft": "Chỉ còn {free} trong lịch này",
+        "noneLeft": "Hết trong lịch này"
+      },
+      "loyalty": {
+        "use": "Dùng điểm thưởng (khách có {points} điểm)",
+        "points": "Số điểm dùng",
+        "max": "tối đa {max}",
+        "invalid": "Không dùng được số điểm này."
+      },
+      "notes": {
+        "open": "Thêm ghi chú, ảnh",
+        "openEdit": "Sửa ghi chú",
+        "label": "Ghi chú",
+        "placeholder": "Ví dụ: giao trước 9 giờ, sửa lại váy",
+        "addPhoto": "Ảnh {count}/{max}",
+        "removePhoto": "Bỏ ảnh",
+        "photosOnOrder": "Ảnh ghi chú sửa ở trang đơn."
+      },
+      "money": {
+        "rent": "Tiền thuê",
+        "goods": "Tiền hàng",
+        "discount": "Giảm giá",
+        "discountType": "Kiểu giảm giá",
+        "amount": "đ",
+        "add": "Thêm",
+        "loyalty": "Trừ điểm thưởng",
+        "total": "Tổng đơn",
+        "deposit": "Thu cọc ngay",
+        "security": "Thế chân khi giao",
+        "dueAtPickup": "Còn thu khi giao",
+        "includesSecurity": "Gồm thế chân {amount}"
+      },
+      "missing": {
+        "days": "Chọn ngày giao, trả để tạo đơn.",
+        "items": "Thêm ít nhất một món.",
+        "customer": "Chọn khách cho đơn.",
+        "outlet": "Chưa có cửa hàng cho đơn."
+      },
+      "customer": {
+        "title": "Chọn khách",
+        "search": "Tìm tên hoặc số điện thoại",
+        "add": "Thêm khách mới",
+        "addNamed": "Thêm khách mới \"{q}\"",
+        "none": "Không có khách khớp.",
+        "newTitle": "Khách mới",
+        "name": "Họ tên",
+        "phone": "Số điện thoại",
+        "back": "Quay lại",
+        "save": "Lưu và chọn"
+      },
+      "submit": {
+        "create": "Tạo đơn",
+        "withDeposit": "Tạo đơn · thu cọc {amount}",
+        "save": "Lưu thay đổi"
+      }
+    },
     "tabs": {
       "label": "Danh sách đơn",
       "todo": "Việc cần làm",
