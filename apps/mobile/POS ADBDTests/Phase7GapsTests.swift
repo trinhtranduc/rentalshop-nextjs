@@ -54,15 +54,15 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.mergeDone([returned, completed], limit: 2).map(\.id), [2, 3])
     }
 
-    func testMetaShowsDatesQuantityAndNumber() throws {
+    /// #496: "#code · trả T? dd/mm", no quantity; days are Vietnam civil days
+    func testMetaShowsNumberAndReturnDay() throws {
+        let vi = Locale(identifier: "vi")
         let rent = try order(status: "RESERVED", pickup: "2026-10-02T17:00:00.000Z", returns: "2026-10-04T17:00:00.000Z")
-        XCTAssertEqual(ProductDetailV2Logic.meta(rent, productId: 7, timeZone: vietnam), "03/10 → 05/10 · × 2 · #0057")
-        XCTAssertEqual(ProductDetailV2Logic.meta(rent, productId: 8, timeZone: vietnam), "03/10 → 05/10 · × 1 · #0057")
-        // A row without this product's items still says × 1
-        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 9, in: rent), 1)
-        let sale = try order(status: "COMPLETED", type: "SALE", created: "2026-09-30T18:00:00.000Z")
-        XCTAssertEqual(ProductDetailV2Logic.meta(sale, productId: 7, timeZone: vietnam), "01/10 · × 2 · #0057")
-        XCTAssertEqual(ProductDetailV2Logic.meta(sale, productId: 7, timeZone: utc), "30/09 · × 2 · #0057")
+        XCTAssertEqual(ProductDetailV2Logic.meta(rent, timeZone: vietnam, locale: vi),
+                       "#0057 · " + String(format: "orders.row.returnAfter".localized(), "T2 05/10"))
+        XCTAssertEqual(ProductDetailV2Logic.meta(rent, timeZone: utc, locale: vi),
+                       "#0057 · " + String(format: "orders.row.returnAfter".localized(), "CN 04/10"))
+        XCTAssertFalse(ProductDetailV2Logic.meta(rent, timeZone: vietnam, locale: vi).contains("×"))
     }
 
     func testRowStatePerChip() throws {
@@ -71,7 +71,8 @@ final class Phase7GapsTests: XCTestCase {
         let today = try order(status: "RESERVED", pickup: "2026-10-03T00:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(today, chip: .upcoming, now: now, timeZone: vietnam), .pickupToday)
         let later = try order(status: "RESERVED", pickup: "2026-10-05T02:00:00.000Z")
-        XCTAssertEqual(ProductDetailV2Logic.rowState(later, chip: .upcoming, now: now, timeZone: vietnam), .pickupOn("05/10"))
+        XCTAssertEqual(ProductDetailV2Logic.rowState(later, chip: .upcoming, now: now, timeZone: vietnam, locale: Locale(identifier: "vi")),
+                       .pickupOn("T2 05/10"))
         let noShow = try order(status: "RESERVED", pickup: "2026-10-01T02:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(noShow, chip: .upcoming, now: now, timeZone: vietnam), .late(2))
         // 02/10 18:00 UTC is 03/10 in Vietnam but 02/10 in UTC
@@ -79,7 +80,8 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.rowState(edge, chip: .renting, now: now, timeZone: vietnam), .returnToday)
         XCTAssertEqual(ProductDetailV2Logic.rowState(edge, chip: .renting, now: now, timeZone: utc), .late(1))
         let due = try order(status: "PICKUPED", returns: "2026-10-07T02:00:00.000Z")
-        XCTAssertEqual(ProductDetailV2Logic.rowState(due, chip: .renting, now: now, timeZone: vietnam), .returnOn("07/10"))
+        XCTAssertEqual(ProductDetailV2Logic.rowState(due, chip: .renting, now: now, timeZone: vietnam, locale: Locale(identifier: "vi")),
+                       .returnOn("T4 07/10"))
         let done = try order(status: "RETURNED")
         XCTAssertEqual(ProductDetailV2Logic.rowState(done, chip: .done, now: now, timeZone: vietnam), .status)
     }

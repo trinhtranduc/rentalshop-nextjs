@@ -96,32 +96,20 @@ enum ProductDetailV2Logic {
             .map { $0 }
     }
 
-    /// Units of `productId` in the order (1 when the row carries no items)
-    static func quantity(of productId: Int, in order: Order) -> Int {
-        let total = order.orderItems.filter { $0.productId == productId }.reduce(0) { $0 + $1.quantity }
-        return total > 0 ? total : 1
+    /// #496: "#ORD-1-0057 · trả T2 05/10" (no quantity); just "#ORD-1-0057" without a return day
+    static func meta(_ order: Order, timeZone: TimeZone = Date.shopTimeZone,
+                     locale: Locale = OrdersHomeLogic.appLocale) -> String {
+        let code = "#\(order.orderNumber)"
+        guard let ret = order.returnPlanAt else { return code }
+        let day = OrdersHomeLogic.rowDay(ret, timeZone: timeZone, locale: locale)
+        return code + " · " + String(format: "orders.row.returnAfter".localized(), day)
     }
 
-    /// "03/10"
-    static func dayMonth(_ date: Date, timeZone: TimeZone = .current) -> String {
-        let key = DayFormatter.key(date, timeZone: timeZone)
-        guard let p = CalendarV2Logic.parts(of: key) else { return "" }
-        return String(format: "%02d/%02d", p.day, p.month)
-    }
-
-    /// "03/10 → 05/10 · × 1 · #0057"; a sale (or a rent without plan dates) shows its created day
-    static func meta(_ order: Order, productId: Int, timeZone: TimeZone = .current) -> String {
-        let dates: String
-        if order.orderType == .rent, let pickup = order.pickupPlanAt, let ret = order.returnPlanAt {
-            dates = dayMonth(pickup, timeZone: timeZone) + " → " + dayMonth(ret, timeZone: timeZone)
-        } else {
-            dates = dayMonth(order.createdAt, timeZone: timeZone)
-        }
-        return "\(dates) · × \(quantity(of: productId, in: order)) · #\(order.orderNumber)"
-    }
-
-    static func rowState(_ order: Order, chip: ProductOrdersChip, now: Date = Date(), timeZone: TimeZone = .current) -> ProductOrderRowState {
+    /// Right-hand state; #496: days read "T2 05/10" (Vietnam civil days)
+    static func rowState(_ order: Order, chip: ProductOrdersChip, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone,
+                         locale: Locale = OrdersHomeLogic.appLocale) -> ProductOrderRowState {
         let todayKey = DayFormatter.key(now, timeZone: timeZone)
+        let day: (Date) -> String = { OrdersHomeLogic.rowDay($0, timeZone: timeZone, locale: locale) }
         switch chip {
         case .upcoming:
             guard let pickup = order.pickupPlanAt else { return .status }
@@ -129,13 +117,13 @@ enum ProductDetailV2Logic {
             let late = OrdersHomeLogic.lateDays(orderType: order.orderType, status: order.status, pickupPlanAt: pickup,
                                                 returnPlanAt: order.returnPlanAt, now: now, timeZone: timeZone)
             if late > 0 { return .late(late) }
-            return DayFormatter.key(pickup, timeZone: timeZone) == todayKey ? .pickupToday : .pickupOn(dayMonth(pickup, timeZone: timeZone))
+            return DayFormatter.key(pickup, timeZone: timeZone) == todayKey ? .pickupToday : .pickupOn(day(pickup))
         case .renting:
             guard let ret = order.returnPlanAt else { return .status }
             let late = OrdersHomeLogic.lateDays(orderType: order.orderType, status: order.status, pickupPlanAt: order.pickupPlanAt,
                                                 returnPlanAt: ret, now: now, timeZone: timeZone)
             if late > 0 { return .late(late) }
-            return DayFormatter.key(ret, timeZone: timeZone) == todayKey ? .returnToday : .returnOn(dayMonth(ret, timeZone: timeZone))
+            return DayFormatter.key(ret, timeZone: timeZone) == todayKey ? .returnToday : .returnOn(day(ret))
         case .done:
             return .status
         }

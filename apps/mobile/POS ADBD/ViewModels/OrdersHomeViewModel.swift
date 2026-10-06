@@ -95,6 +95,12 @@ enum PayLine: Equatable {
     case refund(Double), due(Double)
 }
 
+/// Date lines of an order row (#496): "#0053 · tạo T7 03/10" and the status line ("" when there is none)
+struct OrderRowLines: Equatable {
+    let meta: String
+    let task: String
+}
+
 /// Tag colours and text of a row (boards Main, VL-tat-ca, VL-ban, VL-tim)
 struct RowTag: Equatable {
     let text: String
@@ -226,41 +232,10 @@ enum OrdersHomeLogic {
         String(DayFormatter.short(date, timeZone: timeZone, locale: Locale(identifier: "vi")).suffix(5))
     }
 
-    /// #482: "28/09", or "28/12/25" when the civil year is not the year of `now`
-    static func dayMonth(_ date: Date, now: Date, timeZone: TimeZone) -> String {
-        let calendar = calendar(timeZone)
-        let year = calendar.component(.year, from: date)
-        guard year != calendar.component(.year, from: now) else { return dayMonth(date, timeZone: timeZone) }
-        return dayMonth(date, timeZone: timeZone) + String(format: "/%02d", year % 100)
-    }
-
     private static func calendar(_ timeZone: TimeZone) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         return calendar
-    }
-
-    /// Civil days from `from` to `to`, both counted (a same-day rental is 1 day)
-    static func inclusiveDays(from: Date, to: Date, timeZone: TimeZone) -> Int {
-        let calendar = calendar(timeZone)
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: from), to: calendar.startOfDay(for: to)).day ?? 0
-        return max(1, days + 1)
-    }
-
-    /// "03/10 → 05/10 · 3 ngày"; just the hand-over day without a return day
-    /// `now` (#482): add the 2-digit year to a day of another year
-    static func span(from: Date?, to: Date?, withDays: Bool, timeZone: TimeZone, now: Date? = nil) -> String {
-        let format: (Date) -> String = { date in
-            now.map { dayMonth(date, now: $0, timeZone: timeZone) } ?? dayMonth(date, timeZone: timeZone)
-        }
-        let start = from.map(format) ?? "—"
-        guard let to else { return start }
-        var text = "\(start) → \(format(to))"
-        if withDays, let from {
-            let days = inclusiveDays(from: from, to: to, timeZone: timeZone)
-            text += " · " + PluralText.format("orders.v2.when.days", count: days, days)
-        }
-        return text
     }
 
     /// Phone behind the call button of a "Việc cần làm" row; nil hides the button.
@@ -269,55 +244,64 @@ enum OrdersHomeLogic {
         nil
     }
 
-    /// Date line of a "Việc cần làm" row: the missed day on TRỄ HẠN, the rental span otherwise
-    static func workWhen(_ row: TodayWorkRow, kind: WorkKind, isLate: Bool,
-                         timeZone: TimeZone = .current, locale: Locale = .current) -> String {
-        guard isLate else { return span(from: row.pickupPlanAt, to: row.returnPlanAt, withDays: true, timeZone: timeZone) }
-        let planned = kind == .handOver ? row.pickupPlanAt : row.returnPlanAt
-        let day = planned.map { DayFormatter.short($0, timeZone: timeZone, locale: locale) } ?? "—"
-        return String(format: (kind == .handOver ? "orders.v2.when.handOverDue" : "orders.v2.when.returnDue").localized(), day)
-    }
-
     private static func isSameDay(_ a: Date, _ b: Date, timeZone: TimeZone) -> Bool {
         DayFormatter.key(a, timeZone: timeZone) == DayFormatter.key(b, timeZone: timeZone)
     }
 
-    /// Date line of a "Tất cả đơn" row: "tạo hôm nay · 05/10 → 07/10", "tạo 28/09 · hạn 02/10", "tạo 28/09 · huỷ 29/09";
-    /// #482: a day of another year reads "28/12/25"
-    static func listWhen(_ order: Order, lateDays: Int, now: Date = Date(), timeZone: TimeZone = .current) -> String {
-        let day: (Date) -> String = { dayMonth($0, now: now, timeZone: timeZone) }
-        let created = isSameDay(order.createdAt, now, timeZone: timeZone)
-            ? "orders.v2.when.createdToday".localized()
-            : String(format: "orders.v2.when.created".localized(), day(order.createdAt))
-        let tail: String?
-        if order.status == .cancelled {
-            tail = String(format: "orders.v2.when.cancelled".localized(), day(order.updatedAt))
-        } else if order.orderType == .rent && order.status == .pickuped && lateDays > 0, let due = order.returnPlanAt {
-            tail = String(format: "orders.v2.when.due".localized(), day(due))
-        } else if order.orderType == .rent {
-            tail = span(from: order.pickupPlanAt, to: order.returnPlanAt, withDays: false, timeZone: timeZone, now: now)
-        } else {
-            tail = nil
-        }
-        return [created, tail].compactMap { $0 }.joined(separator: " · ")
+    // MARK: Row date lines (#496)
+
+    /// Language of the app's strings: "T7 03/10" in Vietnamese, "Sat 03/10" in English
+    static var appLocale: Locale {
+        Locale(identifier: Bundle.main.preferredLocalizations.first ?? "vi")
     }
 
-    /// Date line of a search result (board VL-tim): "hạn 01/10", "trả T3 06/10", "bán T6 02/10", "27/09 → 28/09"
-    static func searchWhen(_ order: Order, lateDays: Int, timeZone: TimeZone = .current, locale: Locale = .current) -> String {
-        if order.orderType == .sale {
-            return String(format: "orders.v2.when.sold".localized(), DayFormatter.short(order.createdAt, timeZone: timeZone, locale: locale))
+    /// "T7 03/10": a civil day of the shop (Vietnam), whatever the device time zone
+    static func rowDay(_ date: Date, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = appLocale) -> String {
+        DayFormatter.short(date, timeZone: timeZone, locale: locale)
+    }
+
+    /// The two lines under the customer name of every order row (#496):
+    /// `meta` "#0053 · tạo T7 03/10" (muted) and `task` by status: "Giao T2 05/10 · trả T4 07/10" (reserved),
+    /// "Trả T4 07/10" / "Hạn trả T5 01/10" (rented out, late), "Đã trả T7 28/09", "Bán T6 02/10" (sale),
+    /// "Huỷ T3 29/09". A missing date leaves its part out; `task` is empty when nothing is left.
+    static func rowLines(code: String, orderType: OrderType, status: OrderStatus, createdAt: Date?,
+                         pickupPlanAt: Date?, returnPlanAt: Date?, returnedAt: Date?, updatedAt: Date?,
+                         isLate: Bool, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = appLocale) -> OrderRowLines {
+        let day: (Date) -> String = { rowDay($0, timeZone: timeZone, locale: locale) }
+        let text: (String, Date?) -> String? = { key, date in date.map { String(format: key.localized(), day($0)) } }
+
+        var meta = "#\(code)"
+        if let created = text("orders.row.created", createdAt) { meta += " · " + created }
+
+        let task: String?
+        if status == .cancelled {
+            task = text("orders.row.cancelled", updatedAt)
+        } else if orderType == .sale {
+            task = text("orders.row.sold", createdAt)
+        } else {
+            switch status {
+            case .reserved:
+                let pickup = text("orders.row.pickup", pickupPlanAt)
+                let back = text(pickup == nil ? "orders.row.return" : "orders.row.returnAfter", returnPlanAt)
+                let parts = [pickup, back].compactMap { $0 }
+                task = parts.isEmpty ? nil : parts.joined(separator: " · ")
+            case .pickuped:
+                task = text(isLate ? "orders.row.dueBack" : "orders.row.return", returnPlanAt)
+            case .returned:
+                task = text("orders.row.returned", returnedAt)
+            default:
+                task = nil
+            }
         }
-        switch order.status {
-        case .cancelled:
-            return String(format: "orders.v2.when.cancelled".localized(), dayMonth(order.updatedAt, timeZone: timeZone))
-        case .pickuped where lateDays > 0:
-            return String(format: "orders.v2.when.due".localized(), order.returnPlanAt.map { dayMonth($0, timeZone: timeZone) } ?? "—")
-        case .pickuped:
-            return String(format: "orders.v2.when.returns".localized(),
-                          order.returnPlanAt.map { DayFormatter.short($0, timeZone: timeZone, locale: locale) } ?? "—")
-        default:
-            return span(from: order.pickupPlanAt, to: order.returnPlanAt, withDays: false, timeZone: timeZone)
-        }
+        return OrderRowLines(meta: meta, task: task ?? "")
+    }
+
+    static func rowLines(_ order: Order, lateDays: Int, timeZone: TimeZone = Date.shopTimeZone,
+                         locale: Locale = appLocale) -> OrderRowLines {
+        rowLines(code: shortNumber(order.orderNumber), orderType: order.orderType, status: order.status,
+                 createdAt: order.createdAt, pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
+                 returnedAt: order.returnedAt, updatedAt: order.updatedAt, isLate: lateDays > 0,
+                 timeZone: timeZone, locale: locale)
     }
 
     /// Status tag in the board colours; a sale in search reads "Bán · Hoàn thành"
@@ -621,12 +605,3 @@ final class OrdersHomeViewModel {
     }
 }
 
-extension Order {
-    /// "Áo dài trắng ×2, Cà vạt lụa" (board rows)
-    var itemsSummary: String {
-        orderItems.compactMap { item -> String? in
-            guard !item.productName.isEmpty else { return nil }
-            return item.quantity > 1 ? "\(item.productName) ×\(item.quantity)" : item.productName
-        }.joined(separator: ", ")
-    }
-}

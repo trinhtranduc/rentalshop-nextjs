@@ -92,6 +92,7 @@ import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
+import com.anyrent.pos.ui.overview.v2.NotPickedUpScreen
 import com.anyrent.pos.ui.overview.v2.RentedOutScreen
 import com.anyrent.pos.ui.settings.AppInfoScreen
 import com.anyrent.pos.ui.settings.ExportAuthScreen
@@ -127,6 +128,8 @@ object Routes {
     const val OverviewStatusOrders = "overview-orders/{kind}/{startDate}/{endDate}"
     // #484: "Đang cho thuê" list of the redesigned overview (late returns first)
     const val RentedOut = "rented-out"
+    // #496: "Chưa lấy đồ" list of the redesigned overview (past pickup day first)
+    const val NotPickedUp = "not-picked-up"
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
     const val ProductAvailability = "product-availability/{productId}"
@@ -390,6 +393,12 @@ fun AnyRentNavHost(
         }
         composable(Routes.RentedOut) {
             RentedOutScreen(
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onBack = { rootNavController.popBackStack() },
+            )
+        }
+        composable(Routes.NotPickedUp) {
+            NotPickedUpScreen(
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                 onBack = { rootNavController.popBackStack() },
             )
@@ -810,6 +819,9 @@ private fun MainTabs(
                     onOpenList = { kind, start, end -> rootNavController.navigate(Routes.overviewStatusOrders(kind, start, end)) },
                     onOpenProduct = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("product", id, start, end)) },
                     onOpenRentedOut = { rootNavController.navigate(Routes.RentedOut) { launchSingleTop = true } },
+                    onOpenNotPickedUp = { rootNavController.navigate(Routes.NotPickedUp) { launchSingleTop = true } },
+                    // #496: "Việc hôm nay" rows open the Orders tab, like tapping the tab
+                    onOpenOrdersTab = { MainTabRouter.openOrdersList(refresh = false) },
                 )
                 return@composable
             }

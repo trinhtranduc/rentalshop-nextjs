@@ -893,18 +893,6 @@
     <string name="orders_v2_not_prepared">Not prepared</string>
     <string name="orders_v2_pay_due">to collect %1$s</string>
     <string name="orders_v2_pay_refund">refund deposit %1$s</string>
-    <string name="orders_v2_when_hand_over_due">hand over %1$s</string>
-    <string name="orders_v2_when_return_due">due back %1$s</string>
-    <plurals name="orders_v2_when_days">
-        <item quantity="one">%1$d day</item>
-        <item quantity="other">%1$d days</item>
-    </plurals>
-    <string name="orders_v2_when_created_today">created today</string>
-    <string name="orders_v2_when_created">created %1$s</string>
-    <string name="orders_v2_when_due">due %1$s</string>
-    <string name="orders_v2_when_cancelled">cancelled %1$s</string>
-    <string name="orders_v2_when_returns">returns %1$s</string>
-    <string name="orders_v2_when_sold">sold %1$s</string>
     <string name="orders_v2_sort_created">Newest first</string>
     <string name="orders_v2_sort_pickup">Hand-over date</string>
     <string name="orders_v2_sort_return">Return date</string>
@@ -1139,6 +1127,31 @@
     <string name="rented_out_title">Rented out · %1$d</string>
     <string name="rented_out_late">Late return · %1$d</string>
     <string name="rented_out_on_time">Not due yet · %1$d</string>
+    <!-- #496 order list rows: "#0053 · created Mon 05/10", then the task of the status -->
+    <string name="order_row_weekdays">Mon,Tue,Wed,Thu,Fri,Sat,Sun</string>
+    <string name="order_row_created">created %1$s</string>
+    <string name="order_row_hand_over">Hand over %1$s</string>
+    <string name="order_row_hand_over_return">return %1$s</string>
+    <string name="order_row_returns">Return %1$s</string>
+    <string name="order_row_return_due">Due back %1$s</string>
+    <string name="order_row_returned">Returned %1$s</string>
+    <string name="order_row_sold">Sold %1$s</string>
+    <string name="order_row_cancelled">Cancelled %1$s</string>
+    <!-- #496 overview "Today's work" and "Not picked up" -->
+    <string name="overview_v2_today_work">Today\'s work</string>
+    <string name="overview_v2_pickups_today">To hand over today</string>
+    <string name="overview_v2_pickups_done">Handed over %1$d/%2$d</string>
+    <string name="overview_v2_returns_today">To take back today</string>
+    <string name="overview_v2_returns_done">Taken back %1$d/%2$d</string>
+    <string name="overview_v2_no_shows">Past pickup day, customer not in</string>
+    <string name="not_picked_up">Not picked up</string>
+    <string name="not_picked_up_title">Not picked up · %1$d</string>
+    <string name="not_picked_up_overdue">Past pickup day, not collected · %1$d</string>
+    <string name="not_picked_up_upcoming">To collect at pickup · %1$d</string>
+    <plurals name="not_picked_up_overdue_days">
+        <item quantity="one">%1$d day late · call the customer</item>
+        <item quantity="other">%1$d days late · call the customer</item>
+    </plurals>
     <string name="store_v2_name">Store name</string>
     <string name="store_v2_phone">Phone number</string>
     <string name="store_v2_address_section">Address</string>

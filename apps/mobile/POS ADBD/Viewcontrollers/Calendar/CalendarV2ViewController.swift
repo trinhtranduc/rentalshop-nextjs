@@ -472,7 +472,9 @@ final class CalendarDayRowCell: UITableViewCell {
     static let reuseId = "CalendarDayRowCell"
     private let tagLabel = PaddedLabel()
     private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
-    private let itemsLabel = V2.label(size: DS.TextSize.body, color: UIColor(hexString: "334155"))
+    /// #496: "#0053 · tạo T7 03/10" and the status line, as on the order list rows
+    private let metaLabel = V2.label(size: 13, color: OrderRowCell.metaColor)
+    private let taskLabel = V2.label(size: DS.TextSize.body, weight: .medium, lines: 2)
     private let totalLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     private let noteLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: V2.danger)
 
@@ -492,7 +494,7 @@ final class CalendarDayRowCell: UITableViewCell {
         let nameRow = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
         nameRow.spacing = 6
         nameRow.alignment = .center
-        let left = UIStackView(arrangedSubviews: [nameRow, itemsLabel])
+        let left = UIStackView(arrangedSubviews: [nameRow, metaLabel, taskLabel])
         left.axis = .vertical
         left.spacing = DS.Gap.lineTight
         left.alignment = .leading
@@ -528,8 +530,16 @@ final class CalendarDayRowCell: UITableViewCell {
         tagLabel.backgroundColor = pill.fill
         let name = row.order.customerName?.trimmingCharacters(in: .whitespaces) ?? ""
         nameLabel.text = name.isEmpty ? row.order.orderNumber : name
-        let items = row.order.itemsSummary
-        itemsLabel.text = items.isEmpty ? row.order.orderNumber : items
+        let order = row.order
+        let status = OrderStatus.from(apiString: order.status) ?? (row.kind == .handOver ? .reserved : .pickuped)
+        let lines = OrdersHomeLogic.rowLines(
+            code: OrdersHomeLogic.shortNumber(order.orderNumber),
+            orderType: (order.orderType ?? "").uppercased() == "SALE" ? .sale : .rent, status: status,
+            createdAt: order.createdAt, pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
+            returnedAt: nil, updatedAt: nil, isLate: row.lateDays > 0)
+        metaLabel.text = lines.meta
+        taskLabel.text = lines.task
+        taskLabel.isHidden = lines.task.isEmpty
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
         // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)

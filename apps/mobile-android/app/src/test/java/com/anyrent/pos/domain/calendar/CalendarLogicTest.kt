@@ -70,6 +70,24 @@ class CalendarLogicTest {
         assertEquals(CalendarDayCount(2, 0), partial.byDate["2026-10-02"])
     }
 
+    /** #496: the dates of the row's two lines, optional */
+    @Test
+    fun dayRowDates() {
+        val orders = CalendarLogic.dayOrdersFromJson(
+            JSONObject(
+                """{"orders":[{"id":5,"orderNumber":"ORD-001-0005","createdAt":"2026-10-02T03:00:00.000Z",
+                   "pickupPlanAt":"2026-10-04T17:00:00.000Z","returnPlanAt":"2026-10-06T17:00:00.000Z"},
+                  {"id":6,"createdAt":"bad","pickupPlanAt":null}]}""",
+            ),
+        )
+        assertEquals(java.time.Instant.parse("2026-10-02T03:00:00Z"), orders[0].createdAt)
+        assertEquals(java.time.Instant.parse("2026-10-04T17:00:00Z"), orders[0].pickupPlanAt)
+        assertEquals(java.time.Instant.parse("2026-10-06T17:00:00Z"), orders[0].returnPlanAt)
+        assertNull(orders[1].createdAt)
+        assertNull(orders[1].pickupPlanAt)
+        assertNull(orders[1].returnPlanAt)
+    }
+
     @Test
     fun dayRowsParsingAndLateDays() {
         val orders = CalendarLogic.dayOrdersFromJson(
@@ -87,6 +105,8 @@ class CalendarLogicTest {
         assertNull(orders[1].customerName)
         assertEquals(0.0, orders[1].totalAmount, 0.0)
         assertEquals("", orders[1].itemsSummary)
+        assertNull(orders[0].createdAt)
+        assertNull(orders[1].pickupPlanAt)
         assertTrue(CalendarLogic.dayOrdersFromJson(JSONObject("{}")).isEmpty())
 
         val rows = CalendarLogic.rows("2026-10-01", "2026-10-03", listOf(orders[1]), listOf(orders[0]))

@@ -7,6 +7,7 @@
 //  #492: `revenue.collectedBreakdown` and `growth.orderValue` (optional, newer API).
 //  #494: `revenue.collateralFlow`, `revenue.outstandingBreakdown`, `cash.collateralToCollect` / `cash.collateralToReturn`
 //  (optional, newer API; an older API leaves them out and everything still decodes).
+//  #496: `pickupsToday.count`, `returnsToday.count`, `doneToday.pickups/returns` and `noShows.count` (optional).
 //
 
 import Foundation
@@ -448,6 +449,24 @@ struct OverviewNow: Decodable, Equatable {
     /// Collateral held now, handed back at return (`cash.collateralToReturn`, #494). An older API: `collateralHeld`
     /// with no order count; nil without the revenue permission
     let collateralToReturn: Collateral?
+    /// #496 "VIỆC HÔM NAY": hand-overs and returns of today, still to do and already done; nil when the API left them out
+    let today: TodayTasks?
+    /// #496: reserved rentals whose pickup day has passed (`noShows.count`); nil when the API left it out
+    let noShows: Int?
+
+    /// Today's hand-overs (or returns): `remaining` still to do, `done` already done
+    struct TodayTask: Equatable {
+        let remaining: Int
+        let done: Int
+
+        /// Planned for today: what is left plus what is done ("Đã giao d/t")
+        var total: Int { remaining + done }
+    }
+
+    struct TodayTasks: Equatable {
+        let pickups: TodayTask
+        let returns: TodayTask
+    }
 
     /// Collateral amount and, when the API sends it, the number of orders
     struct Collateral: Decodable, Equatable {
@@ -468,14 +487,18 @@ struct OverviewNow: Decodable, Equatable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case overdueReturns, cash }
+    private enum CodingKeys: String, CodingKey { case overdueReturns, cash, pickupsToday, returnsToday, doneToday, noShows }
     private enum GroupKeys: String, CodingKey { case count }
+    private enum DoneKeys: String, CodingKey { case pickups, returns }
     private enum CashKeys: String, CodingKey { case depositsHeld, collateralToCollect, collateralToReturn }
     private enum HeldKeys: String, CodingKey { case securityDeposit, orders }
 
     /// `collateralToReturn` defaults to `collateralHeld` without an order count, as on an older API
     init(lateReturns: Int, rentedOut: Int?, collateralHeld: Double?,
-         collateralToCollect: Collateral? = nil, collateralToReturn: Collateral? = nil) {
+         collateralToCollect: Collateral? = nil, collateralToReturn: Collateral? = nil,
+         today: TodayTasks? = nil, noShows: Int? = nil) {
+        self.today = today
+        self.noShows = noShows
         self.lateReturns = lateReturns
         self.rentedOut = rentedOut
         self.collateralHeld = collateralHeld
@@ -489,6 +512,21 @@ struct OverviewNow: Decodable, Equatable {
             lateReturns = ((try? group.decodeIfPresent(Int.self, forKey: .count)) ?? nil) ?? 0
         } else {
             lateReturns = 0
+        }
+        let count: (CodingKeys) -> Int? = { key in
+            guard let group = try? c.nestedContainer(keyedBy: GroupKeys.self, forKey: key) else { return nil }
+            return (try? group.decodeIfPresent(Int.self, forKey: .count)) ?? nil
+        }
+        noShows = count(.noShows)
+        // The section needs both lists; `doneToday` missing counts as nothing done yet
+        if let pickups = count(.pickupsToday), let returns = count(.returnsToday) {
+            let done = try? c.nestedContainer(keyedBy: DoneKeys.self, forKey: .doneToday)
+            let donePickups = done.flatMap { (try? $0.decodeIfPresent(Int.self, forKey: .pickups)) ?? nil } ?? 0
+            let doneReturns = done.flatMap { (try? $0.decodeIfPresent(Int.self, forKey: .returns)) ?? nil } ?? 0
+            today = TodayTasks(pickups: TodayTask(remaining: pickups, done: donePickups),
+                               returns: TodayTask(remaining: returns, done: doneReturns))
+        } else {
+            today = nil
         }
         var held: Double?
         var toCollect: Collateral?

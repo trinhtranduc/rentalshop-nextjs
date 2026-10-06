@@ -43,7 +43,7 @@ final class Issue430Tests: XCTestCase {
     }
 
     private static let keys = [
-        "orders.v2.count", "orders.v2.search.summary", "orders.v2.when.days", "orders.v2.filter.showCount",
+        "orders.v2.count", "orders.v2.search.summary", "notPickedUp.chip", "orders.v2.filter.showCount",
         "products.cart.bar", "products.cart.days", "products.cart.calc.perDay",
         "%d days", "%@/day × %d days", "Return late %d days", "Hand-over late %d days", "Late fee (%d days)",
     ]
@@ -68,7 +68,7 @@ final class Issue430Tests: XCTestCase {
         XCTAssertEqual(text("products.cart.bar", 1, 1), "Cart · 1 item")
         XCTAssertEqual(text("products.cart.bar", 2, 2), "Cart · 2 items")
         XCTAssertEqual(text("%d days", 1, 1), "1 day")
-        XCTAssertEqual(text("orders.v2.when.days", 1, 1), "1 day")
+        XCTAssertEqual(text("notPickedUp.chip", 1, 1), "1 day past · call the customer")
         XCTAssertEqual(text("products.cart.days", 1, 1), "1 day")
         XCTAssertEqual(text("%@/day × %d days", 1, "104", 1), "104/day × 1 day")
         XCTAssertEqual(text("orders.v2.search.summary", 1, 1, "kiem"), "1 order matches “kiem” · all statuses, item names too")

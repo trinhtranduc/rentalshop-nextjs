@@ -1,6 +1,7 @@
 package com.anyrent.pos.domain.products
 
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.ui.orders.v2.OrdersHomeLogic
 import java.time.Instant
 import java.time.LocalDate
@@ -28,10 +29,10 @@ enum class ProductOrdersChip(val statuses: List<String>, val sortBy: String, val
 /** Right-hand text of a product order row */
 sealed interface ProductOrderRowState {
     data object PickupToday : ProductOrderRowState
-    data class PickupOn(val dayMonth: String) : ProductOrderRowState
+    data class PickupOn(val day: String) : ProductOrderRowState
     data class Late(val days: Int) : ProductOrderRowState
     data object ReturnToday : ProductOrderRowState
-    data class ReturnOn(val dayMonth: String) : ProductOrderRowState
+    data class ReturnOn(val day: String) : ProductOrderRowState
     /** Đã xong: the status badge */
     data object Status : ProductOrderRowState
 }
@@ -58,31 +59,23 @@ object ProductDetailLogic {
             .sortedByDescending { it.createdAt?.let { raw -> runCatching { Instant.parse(raw) }.getOrNull() } ?: Instant.EPOCH }
             .take(limit)
 
-    /** Units of [productId] in the order (1 when the row carries no items) */
-    fun quantity(productId: Int, order: OrderSummary): Int = order.productQuantities[productId]?.takeIf { it > 0 } ?: 1
-
-    fun dayMonth(instant: Instant, zone: ZoneId): String {
-        val date = instant.atZone(zone).toLocalDate()
-        return "%02d/%02d".format(date.dayOfMonth, date.monthValue)
-    }
-
-    /** "03/10 → 05/10 · × 1 · #0057"; a sale (or a rent without plan dates) shows its created day */
-    fun meta(order: OrderSummary, productId: Int, zone: ZoneId = ZoneId.systemDefault()): String {
-        val pickup = parse(order.pickupPlanAt)
-        val ret = parse(order.returnPlanAt)
-        val dates = if (order.orderType.equals("RENT", ignoreCase = true) && pickup != null && ret != null) {
-            "${dayMonth(pickup, zone)} → ${dayMonth(ret, zone)}"
-        } else {
-            parse(order.createdAt)?.let { dayMonth(it, zone) }.orEmpty()
-        }
-        return "$dates · × ${quantity(productId, order)} · #${order.orderNumber}"
+    /**
+     * #496 left line of a product order row: "#0057 · trả T2 05/10" (no quantity); just "#0057" without a planned
+     * return (a sale). Days are Vietnam civil days.
+     */
+    fun meta(order: OrderSummary, zone: ZoneId = OrderRowDates.shopZone, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String {
+        val ret = parse(order.returnPlanAt)?.takeIf { order.orderType.equals("RENT", ignoreCase = true) }
+            ?: return "#${order.orderNumber}"
+        return "#${order.orderNumber} · ${texts.handOverReturn.format(OrderRowDates.day(ret, zone, texts.weekdays))}"
     }
 
     fun rowState(
         order: OrderSummary,
         chip: ProductOrdersChip,
         now: Instant = Instant.now(),
-        zone: ZoneId = ZoneId.systemDefault(),
+        zone: ZoneId = OrderRowDates.shopZone,
+        /** #496: the right-hand day reads "T2 05/10" */
+        weekdays: List<String> = OrderRowDates.Texts().weekdays,
     ): ProductOrderRowState {
         val today = now.atZone(zone).toLocalDate()
         return when (chip) {
@@ -93,7 +86,7 @@ object ProductDetailLogic {
                 when {
                     late > 0 -> ProductOrderRowState.Late(late)
                     pickup.atZone(zone).toLocalDate() == today -> ProductOrderRowState.PickupToday
-                    else -> ProductOrderRowState.PickupOn(dayMonth(pickup, zone))
+                    else -> ProductOrderRowState.PickupOn(OrderRowDates.day(pickup, zone, weekdays))
                 }
             }
             ProductOrdersChip.RENTING -> {
@@ -102,7 +95,7 @@ object ProductDetailLogic {
                 when {
                     late > 0 -> ProductOrderRowState.Late(late)
                     ret.atZone(zone).toLocalDate() == today -> ProductOrderRowState.ReturnToday
-                    else -> ProductOrderRowState.ReturnOn(dayMonth(ret, zone))
+                    else -> ProductOrderRowState.ReturnOn(OrderRowDates.day(ret, zone, weekdays))
                 }
             }
             ProductOrdersChip.DONE -> ProductOrderRowState.Status

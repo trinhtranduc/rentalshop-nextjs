@@ -1,13 +1,12 @@
 package com.anyrent.pos.ui.orders.v2
 
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.TodayWorkRow
-import com.anyrent.pos.ui.common.formatDayShort
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 
 /**
  * Rent list sort of the "Lọc & sắp xếp" sheet (board Loc). `nearestTask` (#389): late tasks first, then the nearest
@@ -63,21 +62,6 @@ enum class RowTag { HAND_OVER, TAKE_BACK, RESERVED, RENTING, RETURNED, COMPLETED
 /** Day word of a band: "HÔM NAY", "NGÀY MAI", "HÔM QUA", or the date only */
 enum class DayWord { TODAY, TOMORROW, YESTERDAY, NONE }
 
-/** Templates of the date lines; the defaults are the Vietnamese ones, the screen passes the string resources */
-data class OrdersBoardTexts(
-    val days: String = "%d ngày",
-    /** English singular "1 day" (#430); Vietnamese repeats [days] */
-    val oneDay: String = "%d ngày",
-    val handOverDue: String = "hẹn giao %s",
-    val returnDue: String = "hạn trả %s",
-    val createdToday: String = "tạo hôm nay",
-    val created: String = "tạo %s",
-    val due: String = "hạn %s",
-    val cancelled: String = "huỷ %s",
-    val returns: String = "trả %s",
-    val sold: String = "bán %s",
-)
-
 /** Pure texts and counts of the boards Main, VL-tat-ca, VL-ban, VL-tim, Loc (#401); unit tested */
 object OrdersBoardLogic {
     /** "0053" of "ORD-1-0053"; numbers without a dash stay whole */
@@ -120,109 +104,37 @@ object OrdersBoardLogic {
         return kept.size to kept.sumOf { it.order.totalAmount }
     }
 
-    fun dayMonth(instant: Instant, zone: ZoneId): String {
-        val date = instant.atZone(zone).toLocalDate()
-        return "%02d/%02d".format(date.dayOfMonth, date.monthValue)
-    }
-
-    /** #482: "28/09", or "28/12/25" when the civil year is not the year of [now] (iOS `dayMonth(_:now:timeZone:)`) */
-    fun dayMonth(instant: Instant, now: Instant, zone: ZoneId): String {
-        val year = instant.atZone(zone).year
-        if (year == now.atZone(zone).year) return dayMonth(instant, zone)
-        return dayMonth(instant, zone) + "/%02d".format(year % 100)
-    }
-
-    /** Civil days from [from] to [to], both counted (a same-day rental is 1 day) */
-    fun inclusiveDays(from: Instant, to: Instant, zone: ZoneId): Int =
-        (ChronoUnit.DAYS.between(from.atZone(zone).toLocalDate(), to.atZone(zone).toLocalDate()) + 1).toInt().coerceAtLeast(1)
-
-    /** "03/10 → 05/10 · 3 ngày"; just the hand-over day without a return day */
-    fun span(
-        from: Instant?,
-        to: Instant?,
-        withDays: Boolean,
-        zone: ZoneId,
-        texts: OrdersBoardTexts = OrdersBoardTexts(),
-        now: Instant? = null,
-    ): String {
-        // [now] (#482): a day of another year gets its 2-digit year
-        val format: (Instant) -> String = { day -> now?.let { dayMonth(day, it, zone) } ?: dayMonth(day, zone) }
-        val start = from?.let(format) ?: "—"
-        if (to == null) return start
-        val text = "$start → ${format(to)}"
-        if (!withDays || from == null) return text
-        val days = inclusiveDays(from, to, zone)
-        return "$text · ${(if (days == 1) texts.oneDay else texts.days).format(days)}"
-    }
-
     /**
      * Phone behind the call button of a "Việc cần làm" row; null hides the button.
      * Board Main (#468): no call button on any row, late or not; the customer is called from order detail.
      */
     fun workCallPhone(row: TodayWorkRow, isLate: Boolean): String? = null
 
-    /** Date line of a "Việc cần làm" row: the missed day on TRỄ HẠN, the rental span otherwise */
-    fun workWhen(
-        row: TodayWorkRow,
-        kind: WorkKind,
-        isLate: Boolean,
-        zone: ZoneId = ZoneId.systemDefault(),
-        locale: Locale = Locale.getDefault(),
-        texts: OrdersBoardTexts = OrdersBoardTexts(),
-    ): String {
-        if (!isLate) return span(row.pickupPlanAt, row.returnPlanAt, withDays = true, zone = zone, texts = texts)
-        val planned = if (kind == WorkKind.HAND_OVER) row.pickupPlanAt else row.returnPlanAt
-        val day = planned?.let { formatDayShort(it, zone, locale) } ?: "—"
-        return (if (kind == WorkKind.HAND_OVER) texts.handOverDue else texts.returnDue).format(day)
-    }
+    /** #496 the date lines of a list row; [lateDays] > 0 on a rented-out order reads "Hạn trả …" */
+    fun rowDates(order: OrderSummary, lateDays: Int): OrderRowDates.Input = OrderRowDates.Input(
+        code = shortNumber(order.orderNumber),
+        orderType = order.orderType,
+        status = order.status,
+        createdAt = OrdersHomeLogic.parseInstant(order.createdAt),
+        pickupPlanAt = OrdersHomeLogic.parseInstant(order.pickupPlanAt),
+        returnPlanAt = OrdersHomeLogic.parseInstant(order.returnPlanAt),
+        returnedAt = OrdersHomeLogic.parseInstant(order.returnedAt),
+        updatedAt = OrdersHomeLogic.parseInstant(order.updatedAt),
+        late = lateDays > 0,
+    )
 
-    private fun isRent(order: OrderSummary) = order.orderType.equals("RENT", ignoreCase = true)
-
-    /** Date line of a "Tất cả đơn" row: "tạo hôm nay · 05/10 → 07/10", "tạo 28/09 · hạn 02/10", "tạo 28/09 · huỷ 29/09" */
-    fun listWhen(
-        order: OrderSummary,
-        lateDays: Int,
-        now: Instant = Instant.now(),
-        zone: ZoneId = ZoneId.systemDefault(),
-        texts: OrdersBoardTexts = OrdersBoardTexts(),
-    ): String {
-        val createdAt = OrdersHomeLogic.parseInstant(order.createdAt)
-        val created = when {
-            createdAt == null -> null
-            createdAt.atZone(zone).toLocalDate() == now.atZone(zone).toLocalDate() -> texts.createdToday
-            else -> texts.created.format(dayMonth(createdAt, now, zone))
-        }
-        val status = order.status.uppercase()
-        val returnAt = OrdersHomeLogic.parseInstant(order.returnPlanAt)
-        val tail = when {
-            status == "CANCELLED" -> OrdersHomeLogic.parseInstant(order.updatedAt)?.let { texts.cancelled.format(dayMonth(it, now, zone)) }
-            isRent(order) && status == "PICKUPED" && lateDays > 0 && returnAt != null -> texts.due.format(dayMonth(returnAt, now, zone))
-            isRent(order) -> span(OrdersHomeLogic.parseInstant(order.pickupPlanAt), returnAt, withDays = false, zone = zone, texts = texts, now = now)
-            else -> null
-        }
-        return listOfNotNull(created, tail).joinToString(" · ")
-    }
-
-    /** Date line of a search result (board VL-tim): "hạn 01/10", "trả T3 06/10", "bán T6 02/10", "27/09 → 28/09" */
-    fun searchWhen(
-        order: OrderSummary,
-        lateDays: Int,
-        zone: ZoneId = ZoneId.systemDefault(),
-        locale: Locale = Locale.getDefault(),
-        texts: OrdersBoardTexts = OrdersBoardTexts(),
-    ): String {
-        val returnAt = OrdersHomeLogic.parseInstant(order.returnPlanAt)
-        if (!isRent(order)) {
-            return OrdersHomeLogic.parseInstant(order.createdAt)?.let { texts.sold.format(formatDayShort(it, zone, locale)) }.orEmpty()
-        }
-        return when (order.status.uppercase()) {
-            "CANCELLED" -> OrdersHomeLogic.parseInstant(order.updatedAt)?.let { texts.cancelled.format(dayMonth(it, zone)) }.orEmpty()
-            "PICKUPED", "PICKED_UP" ->
-                if (lateDays > 0) texts.due.format(returnAt?.let { dayMonth(it, zone) } ?: "—")
-                else texts.returns.format(returnAt?.let { formatDayShort(it, zone, locale) } ?: "—")
-            else -> span(OrdersHomeLogic.parseInstant(order.pickupPlanAt), returnAt, withDays = false, zone = zone, texts = texts)
-        }
-    }
+    /**
+     * #496 the date lines of a "Việc cần làm" row: a hand-over is a RESERVED rent, a take-back a rented-out one.
+     * The operations rows carry no created day, so line 1 is the code alone.
+     */
+    fun rowDates(work: TodayWorkRow, kind: WorkKind, isLate: Boolean): OrderRowDates.Input = OrderRowDates.Input(
+        code = shortNumber(work.orderNumber),
+        orderType = "RENT",
+        status = if (kind == WorkKind.HAND_OVER) "RESERVED" else "PICKUPED",
+        pickupPlanAt = work.pickupPlanAt,
+        returnPlanAt = work.returnPlanAt,
+        late = isLate || work.lateDays > 0,
+    )
 
     fun statusTag(status: String): RowTag = when (status.uppercase()) {
         "RESERVED" -> RowTag.RESERVED

@@ -6,6 +6,8 @@
 //  trả and Thế chấp đang giữ. No header card: back + "Đang cho thuê · N", then TRỄ HẠN TRẢ · n (red band) and
 //  CÒN HẠN · n, each by return day, nearest first. Rows are the Orders tab row; a tap opens the order.
 //  Data: GET /api/orders?status=PICKUPED&orderType=RENT sorted by returnPlanAt, every page.
+//  #496: the same screen lists "Chưa lấy đồ · N" (board DT-chua-lay): RESERVED rentals sorted by pickupPlanAt,
+//  QUÁ NGÀY LẤY, CHƯA THU · n (red band, pickup day before today) and SẼ THU KHI KHÁCH LẤY ĐỒ · n.
 //
 
 import UIKit
@@ -37,14 +39,55 @@ enum RentedOutLogic {
     }
 }
 
+/// Rent orders still reserved (#496 "Chưa lấy đồ"), split at the start of today's Vietnam civil day
+enum NotPickedUpLogic {
+    /// Pickup day before today (overdue, with its days) and the others, each by pickup day ascending
+    /// (no pickup day last, with the others)
+    static func groups(_ orders: [Order], now: Date = Date(),
+                       timeZone: TimeZone = Date.shopTimeZone) -> (overdue: [Order], upcoming: [Order]) {
+        let reserved = orders.filter { $0.orderType == .rent && $0.status == .reserved }
+        let sorted = reserved.enumerated().sorted { a, b in
+            switch (a.element.pickupPlanAt, b.element.pickupPlanAt) {
+            case let (x?, y?) where x != y: return x < y
+            case (nil, _?): return false
+            case (_?, nil): return true
+            default: return a.offset < b.offset
+            }
+        }.map(\.element)
+        var overdue: [Order] = []
+        var upcoming: [Order] = []
+        for order in sorted {
+            if overdueDays(order, now: now, timeZone: timeZone) > 0 { overdue.append(order) } else { upcoming.append(order) }
+        }
+        return (overdue, upcoming)
+    }
+
+    /// Civil days from the pickup day to today (0 when the pickup day is today, later, or unknown)
+    static func overdueDays(_ order: Order, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> Int {
+        OrdersHomeLogic.lateDays(orderType: order.orderType, status: order.status, pickupPlanAt: order.pickupPlanAt,
+                                 returnPlanAt: order.returnPlanAt, now: now, timeZone: timeZone)
+    }
+}
+
 final class RentedOutOrdersViewController: BaseViewControler {
+    /// What the screen lists: rentals out now (#484) or rentals not picked up yet (#496)
+    enum Mode: Equatable {
+        case rentedOut(startsAtLate: Bool)
+        case notPickedUp
+    }
+
+    /// `late` is TRỄ HẠN TRẢ / QUÁ NGÀY LẤY, `onTime` CÒN HẠN / SẼ THU KHI KHÁCH LẤY ĐỒ
     private enum SectionKind { case late, onTime }
 
     private static let pageSize = 100
     /// Safety stop: 20 pages of 100 rentals
     private static let maxPages = 20
 
-    private let startsAtLate: Bool
+    private let mode: Mode
+    private var startsAtLate: Bool {
+        if case .rentedOut(let startsAtLate) = mode { return startsAtLate }
+        return false
+    }
     private var orders: [Order] = []
     private var sections: [(kind: SectionKind, orders: [Order])] = []
     private var isLoading = false
@@ -78,7 +121,12 @@ final class RentedOutOrdersViewController: BaseViewControler {
 
     /// `startsAtLate`: opened from "Đang thuê · trễ hạn trả"; the list opens at the late group (the whole list stays)
     init(startsAtLate: Bool = false) {
-        self.startsAtLate = startsAtLate
+        self.mode = .rentedOut(startsAtLate: startsAtLate)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    init(mode: Mode) {
+        self.mode = mode
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -99,6 +147,10 @@ final class RentedOutOrdersViewController: BaseViewControler {
 
     override func setupUI() {
         view.backgroundColor = DS.Color.surface
+        if mode == .notPickedUp {
+            titleLabel.text = "notPickedUp.title.plain".localized()
+            emptyLabel.text = "notPickedUp.empty".localized()
+        }
         let back = CustomersV2UI.iconButton("chevron.left", label: "Back".localized(), size: DS.Icon.lg)
         back.addTarget(self, action: #selector(close), for: .touchUpInside)
         titleLabel.accessibilityTraits = UIAccessibilityTraitHeader
@@ -160,9 +212,9 @@ final class RentedOutOrdersViewController: BaseViewControler {
             page: page,
             limit: RentedOutOrdersViewController.pageSize,
             orderType: .rent,
-            sortBy: "returnPlanAt",
+            sortBy: mode == .notPickedUp ? "pickupPlanAt" : "returnPlanAt",
             sortOrder: "asc",
-            status: .pickuped
+            status: mode == .notPickedUp ? .reserved : .pickuped
         ) { [weak self] response, error in
             DispatchQueue.main.async {
                 guard let self, token == self.generation else { return }
@@ -194,12 +246,18 @@ final class RentedOutOrdersViewController: BaseViewControler {
     }
 
     private func render() {
-        let groups = RentedOutLogic.groups(orders)
+        let groups: (late: [Order], onTime: [Order])
+        if mode == .notPickedUp {
+            let split = NotPickedUpLogic.groups(orders)
+            groups = (split.overdue, split.upcoming)
+        } else {
+            groups = RentedOutLogic.groups(orders)
+        }
         sections = []
         if !groups.late.isEmpty { sections.append((.late, groups.late)) }
         if !groups.onTime.isEmpty { sections.append((.onTime, groups.onTime)) }
         let total = groups.late.count + groups.onTime.count
-        titleLabel.text = String(format: "rentedOut.title".localized(), total)
+        titleLabel.text = String(format: (mode == .notPickedUp ? "notPickedUp.title" : "rentedOut.title").localized(), total)
         emptyLabel.isHidden = total > 0 || isLoading
         ordersTableView.reloadData()
 
@@ -212,9 +270,14 @@ final class RentedOutOrdersViewController: BaseViewControler {
     }
 
     private func headerTitle(_ section: (kind: SectionKind, orders: [Order])) -> String {
+        let notPickedUp = mode == .notPickedUp
         switch section.kind {
-        case .late: return String(format: "rentedOut.section.late".localized(), section.orders.count)
-        case .onTime: return String(format: "rentedOut.section.onTime".localized(), section.orders.count)
+        case .late:
+            return String(format: (notPickedUp ? "notPickedUp.section.overdue" : "rentedOut.section.late").localized(),
+                          section.orders.count)
+        case .onTime:
+            return String(format: (notPickedUp ? "notPickedUp.section.upcoming" : "rentedOut.section.onTime").localized(),
+                          section.orders.count)
         }
     }
 }
@@ -232,7 +295,7 @@ extension RentedOutOrdersViewController: UITableViewDataSource, UITableViewDeleg
         let cell = tableView.dequeueReusableCell(withIdentifier: OrderRowCell.reuseId, for: indexPath) as! OrderRowCell
         let order = sections[indexPath.section].orders[indexPath.row]
         let row = OrdersHomeLogic.orderRows([order], timeZone: Date.shopTimeZone)[0]
-        cell.configure(row, context: .list, hidesMoney: hidesMoney)
+        cell.configure(row, context: mode == .notPickedUp ? .notPickedUp : .list, hidesMoney: hidesMoney)
         return cell
     }
 

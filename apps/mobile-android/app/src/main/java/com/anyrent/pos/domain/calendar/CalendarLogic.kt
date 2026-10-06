@@ -3,6 +3,7 @@ package com.anyrent.pos.domain.calendar
 import com.anyrent.pos.data.model.optionalAmount
 import org.json.JSONObject
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
@@ -26,6 +27,10 @@ data class CalendarDayOrder(
     val amountDue: Double? = null,
     val refundDue: Double? = null,
     val lateFee: Double? = null,
+    /** #496 the row's date lines; null when missing */
+    val createdAt: Instant? = null,
+    val pickupPlanAt: Instant? = null,
+    val returnPlanAt: Instant? = null,
 )
 
 /** Note under a day row's total (board Lich, #390) */
@@ -117,6 +122,8 @@ object CalendarLogic {
         return CalendarMonthCounts(byDate, data.optInt("lateReturns", 0))
     }
 
+    private fun instant(value: String?): Instant? = value?.let { runCatching { Instant.parse(it) }.getOrNull() }
+
     fun dayOrdersFromJson(data: JSONObject): List<CalendarDayOrder> {
         val orders = data.optJSONArray("orders") ?: return emptyList()
         return (0 until orders.length()).mapNotNull { index ->
@@ -142,6 +149,9 @@ object CalendarLogic {
                 amountDue = optionalAmount(o, "amountDue"),
                 refundDue = optionalAmount(o, "refundDue"),
                 lateFee = optionalAmount(o, "lateFee"),
+                createdAt = instant(text("createdAt")),
+                pickupPlanAt = instant(text("pickupPlanAt")),
+                returnPlanAt = instant(text("returnPlanAt")),
             )
         }
     }

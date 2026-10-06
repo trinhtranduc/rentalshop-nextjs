@@ -55,6 +55,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.orders.OrderRowDates
+import com.anyrent.pos.ui.orders.v2.OrderRowDateLines
+import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
+import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.domain.calendar.CalendarCell
 import com.anyrent.pos.domain.calendar.CalendarDayMarks
 import com.anyrent.pos.domain.calendar.CalendarDayRow
@@ -281,9 +285,20 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                     fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                row.order.itemsSummary.ifBlank { row.order.orderNumber }, fontSize = DS.TextSize.Body, color = Color(0xFF334155),
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            // #496: no product line; "#code · tạo …" then the task of the row
+            OrderRowDateLines(
+                OrderRowDates.lines(
+                    OrderRowDates.Input(
+                        code = OrdersBoardLogic.shortNumber(row.order.orderNumber),
+                        orderType = "RENT",
+                        status = if (row.kind == CalendarRowKind.HAND_OVER) "RESERVED" else "PICKUPED",
+                        createdAt = row.order.createdAt,
+                        pickupPlanAt = row.order.pickupPlanAt,
+                        returnPlanAt = row.order.returnPlanAt,
+                        late = row.lateDays > 0,
+                    ),
+                    orderRowTexts(),
+                ),
             )
         }
         Column(horizontalAlignment = Alignment.End) {

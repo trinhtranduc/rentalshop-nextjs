@@ -30,7 +30,7 @@ class Issue430ResourcesTest {
 
     private val names = listOf(
         "v2_cart_days", "v2_calc_per_day", "v2_cart_bar", "orders_v2_count", "orders_v2_search_summary",
-        "orders_v2_when_days", "orders_v2_filter_show_count", "detail_late_fee_days",
+        "orders_v2_filter_show_count", "detail_late_fee_days", "not_picked_up_overdue_days",
     )
 
     @Test

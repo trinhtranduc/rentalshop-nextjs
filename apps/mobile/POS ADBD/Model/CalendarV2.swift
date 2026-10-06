@@ -67,14 +67,22 @@ struct CalendarDayOrder: Decodable, Equatable {
     let amountDue: Double?
     let refundDue: Double?
     let lateFee: Double?
+    /// #496: the row's date lines; nil when the API left them out
+    let createdAt: Date?
+    let pickupPlanAt: Date?
+    let returnPlanAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, status, orderType, totalAmount, orderItems, amountDue, refundDue, lateFee
+        case createdAt, pickupPlanAt, returnPlanAt
     }
 
     init(id: Int, orderNumber: String, customerName: String?, status: String?, orderType: String?,
          totalAmount: Double, orderItems: [Item], amountDue: Double? = nil, refundDue: Double? = nil,
-         lateFee: Double? = nil) {
+         lateFee: Double? = nil, createdAt: Date? = nil, pickupPlanAt: Date? = nil, returnPlanAt: Date? = nil) {
+        self.createdAt = createdAt
+        self.pickupPlanAt = pickupPlanAt
+        self.returnPlanAt = returnPlanAt
         self.amountDue = amountDue
         self.refundDue = refundDue
         self.lateFee = lateFee
@@ -99,15 +107,9 @@ struct CalendarDayOrder: Decodable, Equatable {
         amountDue = (try? c.decodeIfPresent(Double.self, forKey: .amountDue)) ?? nil
         refundDue = (try? c.decodeIfPresent(Double.self, forKey: .refundDue)) ?? nil
         lateFee = (try? c.decodeIfPresent(Double.self, forKey: .lateFee)) ?? nil
-    }
-
-    /// "Áo dài ×2, Cà vạt lụa"
-    var itemsSummary: String {
-        orderItems.compactMap { item -> String? in
-            guard let name = item.productName, !name.isEmpty else { return nil }
-            let quantity = item.quantity ?? 1
-            return quantity > 1 ? "\(name) ×\(quantity)" : name
-        }.joined(separator: ", ")
+        createdAt = (try? c.decodeIfPresent(Date.self, forKey: .createdAt)) ?? nil
+        pickupPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .pickupPlanAt)) ?? nil
+        returnPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .returnPlanAt)) ?? nil
     }
 }
 

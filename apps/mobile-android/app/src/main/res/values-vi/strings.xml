@@ -880,17 +880,6 @@
     <string name="orders_v2_not_prepared">Chưa soạn đồ</string>
     <string name="orders_v2_pay_due">còn thu %1$s</string>
     <string name="orders_v2_pay_refund">trả cọc %1$s</string>
-    <string name="orders_v2_when_hand_over_due">hẹn giao %1$s</string>
-    <string name="orders_v2_when_return_due">hạn trả %1$s</string>
-    <plurals name="orders_v2_when_days">
-        <item quantity="other">%1$d ngày</item>
-    </plurals>
-    <string name="orders_v2_when_created_today">tạo hôm nay</string>
-    <string name="orders_v2_when_created">tạo %1$s</string>
-    <string name="orders_v2_when_due">hạn %1$s</string>
-    <string name="orders_v2_when_cancelled">huỷ %1$s</string>
-    <string name="orders_v2_when_returns">trả %1$s</string>
-    <string name="orders_v2_when_sold">bán %1$s</string>
     <string name="orders_v2_sort_created">Mới tạo nhất</string>
     <string name="orders_v2_sort_pickup">Ngày giao gần nhất</string>
     <string name="orders_v2_sort_return">Ngày trả gần nhất</string>
@@ -1123,6 +1112,30 @@
     <string name="rented_out_title">Đang cho thuê · %1$d</string>
     <string name="rented_out_late">Trễ hạn trả · %1$d</string>
     <string name="rented_out_on_time">Còn hạn · %1$d</string>
+    <!-- #496 order list rows: "#0053 · tạo T2 05/10", then the task of the status -->
+    <string name="order_row_weekdays">T2,T3,T4,T5,T6,T7,CN</string>
+    <string name="order_row_created">tạo %1$s</string>
+    <string name="order_row_hand_over">Giao %1$s</string>
+    <string name="order_row_hand_over_return">trả %1$s</string>
+    <string name="order_row_returns">Trả %1$s</string>
+    <string name="order_row_return_due">Hạn trả %1$s</string>
+    <string name="order_row_returned">Đã trả %1$s</string>
+    <string name="order_row_sold">Bán %1$s</string>
+    <string name="order_row_cancelled">Huỷ %1$s</string>
+    <!-- #496 overview "Việc hôm nay" and "Chưa lấy đồ" -->
+    <string name="overview_v2_today_work">Việc hôm nay</string>
+    <string name="overview_v2_pickups_today">Cần giao hôm nay</string>
+    <string name="overview_v2_pickups_done">Đã giao %1$d/%2$d</string>
+    <string name="overview_v2_returns_today">Cần nhận trả hôm nay</string>
+    <string name="overview_v2_returns_done">Đã nhận %1$d/%2$d</string>
+    <string name="overview_v2_no_shows">Quá ngày lấy, khách chưa đến</string>
+    <string name="not_picked_up">Chưa lấy đồ</string>
+    <string name="not_picked_up_title">Chưa lấy đồ · %1$d</string>
+    <string name="not_picked_up_overdue">Quá ngày lấy, chưa thu · %1$d</string>
+    <string name="not_picked_up_upcoming">Sẽ thu khi khách lấy đồ · %1$d</string>
+    <plurals name="not_picked_up_overdue_days">
+        <item quantity="other">Quá %1$d ngày · nên gọi khách</item>
+    </plurals>
     <string name="store_v2_name">Tên cửa hàng</string>
     <string name="store_v2_phone">Số điện thoại</string>
     <string name="store_v2_address_section">Địa chỉ</string>

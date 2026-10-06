@@ -87,10 +87,9 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         """)
         let orders = response.data?.orders ?? []
         XCTAssertEqual(orders.count, 2)
-        XCTAssertEqual(orders[0].itemsSummary, "Áo dài ×2, Cà vạt")
+        XCTAssertNil(orders[0].pickupPlanAt, "#496: dates are optional (an older API sends none)")
         XCTAssertNil(orders[1].customerName)
         XCTAssertEqual(orders[1].totalAmount, 0)
-        XCTAssertEqual(orders[1].itemsSummary, "")
 
         let rows = CalendarV2Logic.rows(dayKey: "2026-10-01", todayKey: "2026-10-03", pickups: [orders[1]], returns: [orders[0]])
         XCTAssertEqual(rows.map(\.kind), [.handOver, .takeBack])
