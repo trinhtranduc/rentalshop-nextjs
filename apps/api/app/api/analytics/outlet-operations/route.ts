@@ -108,7 +108,7 @@ function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) =>
  * RENT orders to hand over, to take back, overdue, no-shows, and due back in the next 3 days
  * (each: count + up to 50 rows), handovers/returns already done today (`doneToday`), and new orders
  * per day for the last 7 days (`newOrdersByDay`, oldest first, counts only).
- * `cash` (deposits held, deposits due back today, fees on returns today) only with analytics.view.revenue.
+ * `cash` (deposits held, deposits due back today, fees on returns today, collateral to collect and to return) only with analytics.view.revenue.
  *
  * Access: analytics.view.dashboard.
  * - OUTLET_ADMIN / OUTLET_STAFF: own outlet only (outletIds is ignored).

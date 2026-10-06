@@ -99,7 +99,7 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
   }
 
   const depositSum = { depositAmount: true, securityDeposit: true } as const;
-  const [held, dueToday, fees] = await Promise.all([
+  const [held, dueToday, fees, toCollect, toReturn] = await Promise.all([
     prisma.order.aggregate({
       where: { ...base, status: 'PICKUPED' },
       _sum: depositSum,
@@ -109,6 +109,18 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
     prisma.order.aggregate({
       where: { outletId: { in: outletIds }, deletedAt: null, status: { not: 'CANCELLED' }, returnedAt: { gte: start, lte: end } },
       _sum: { lateFee: true, damageFee: true },
+      _count: { _all: true },
+    }),
+    // Collateral still to be received at pickup (#494)
+    prisma.order.aggregate({
+      where: { ...base, status: 'RESERVED', securityDeposit: { gt: 0 } },
+      _sum: { securityDeposit: true },
+      _count: { _all: true },
+    }),
+    // Collateral held now, handed back at return (#494); unlike depositsHeld, counts only orders with collateral
+    prisma.order.aggregate({
+      where: { ...base, status: 'PICKUPED', securityDeposit: { gt: 0 } },
+      _sum: { securityDeposit: true },
       _count: { _all: true },
     }),
   ]);
@@ -139,6 +151,14 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
         lateFee: fees._sum.lateFee ?? 0,
         damageFee: fees._sum.damageFee ?? 0,
         orders: fees._count._all,
+      },
+      collateralToCollect: {
+        securityDeposit: toCollect._sum.securityDeposit ?? 0,
+        orders: toCollect._count._all,
+      },
+      collateralToReturn: {
+        securityDeposit: toReturn._sum.securityDeposit ?? 0,
+        orders: toReturn._count._all,
       },
     },
   };

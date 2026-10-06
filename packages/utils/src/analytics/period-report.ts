@@ -14,12 +14,18 @@ import {
 import { SHOP_TIMEZONE } from '../core/date';
 import {
   addDaysToDateKey,
+  formatDateKeyInTimeZone,
   getUtcRangeForDateKeys,
   listCivilDays,
   listCivilMonths,
   toDateKeyInTimeZone
 } from '../core/date-range';
-import { summarizeOrderValue, type OrderValueSummary } from './order-value';
+import {
+  splitOutstanding,
+  summarizeOrderValue,
+  type OrderValueSummary,
+  type OutstandingBreakdown
+} from './order-value';
 import { paginateRanked, type RankingPage } from './ranking-page';
 import { rankOutletsByRevenue, type TopOutletRank } from './top-outlet-rank';
 import {
@@ -32,7 +38,13 @@ export type { RankingPage, RankingSortBy } from './ranking-page';
 export { paginateRanked, parseRankingQuery } from './ranking-page';
 export type { TopOutletRank } from './top-outlet-rank';
 export { rankOutletsByRevenue } from './top-outlet-rank';
-export { summarizeOrderValue, type OrderValueSummary } from './order-value';
+export {
+  splitOutstanding,
+  summarizeOrderValue,
+  type OrderValueSummary,
+  type OutstandingBreakdown,
+  type OutstandingPart
+} from './order-value';
 export type { ProductRankSortBy } from './top-product-rank';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -95,6 +107,10 @@ export interface AnalyticsPeriodReport {
     collected?: number;
     /** Where `collected` came from: deposits + pickupAndSale + fees - refunds (#492) */
     collectedBreakdown?: { deposits: number; pickupAndSale: number; fees: number; refunds: number };
+    /** Collateral received and handed back in the period (#494). Not part of `collected`. */
+    collateralFlow?: { received: number; returned: number };
+    /** Where `outstanding` will come from, split at the start of today (#494) */
+    outstandingBreakdown?: OutstandingBreakdown;
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -562,7 +578,11 @@ export async function buildAnalyticsPeriodReport(
     return income;
   };
 
-  const computeOrderValue = async (start: Date = rangeStart, end: Date = rangeEnd): Promise<OrderValueSummary> => {
+  const todayStart = getUtcRangeForDateKeys({ from: formatDateKeyInTimeZone(new Date(), timeZone) }, timeZone).start;
+  const computeOrderValue = async (
+    start: Date = rangeStart,
+    end: Date = rangeEnd
+  ): Promise<OrderValueSummary & { outstandingBreakdown: OutstandingBreakdown }> => {
     const created = await prisma.order.findMany({
       where: {
         ...outletFilter,
@@ -570,10 +590,10 @@ export async function buildAnalyticsPeriodReport(
         createdAt: { gte: start, lte: end },
         status: { not: ORDER_STATUS.CANCELLED as any }
       } as any,
-      select: { orderType: true, status: true, totalAmount: true, depositAmount: true },
+      select: { orderType: true, status: true, totalAmount: true, depositAmount: true, pickupPlanAt: true },
       take: 10000
     });
-    return summarizeOrderValue(created);
+    return { ...summarizeOrderValue(created), outstandingBreakdown: splitOutstanding(created, todayStart) };
   };
 
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
@@ -807,7 +827,11 @@ export async function buildAnalyticsPeriodReport(
   };
 
   const operational = valueOr(settled[0], null, 'operational');
-  const orderValue = valueOr<OrderValueSummary | null>(settled[6], null, 'orderValue');
+  const orderValue = valueOr<(OrderValueSummary & { outstandingBreakdown: OutstandingBreakdown }) | null>(
+    settled[6],
+    null,
+    'orderValue'
+  );
   const series = valueOr(settled[1], [], 'series');
   const growth = valueOr(
     settled[2],
@@ -845,11 +869,18 @@ export async function buildAnalyticsPeriodReport(
       totalRevenue: operational?.totalRevenue ?? growth.revenue.current,
       totalActualRevenue: operational?.totalActualRevenue ?? growth.revenue.current,
       totalOrders: totalOrdersFromOps,
-      ...(orderValue ? { totalOrderValue: orderValue.totalOrderValue, outstanding: orderValue.outstanding } : {}),
+      ...(orderValue
+        ? {
+            totalOrderValue: orderValue.totalOrderValue,
+            outstanding: orderValue.outstanding,
+            outstandingBreakdown: orderValue.outstandingBreakdown
+          }
+        : {}),
       ...(operational
         ? {
             collected: operational.totalCollected,
-            collectedBreakdown: operational.collectedBreakdown
+            collectedBreakdown: operational.collectedBreakdown,
+            collateralFlow: operational.collateralFlow
           }
         : {})
     },

@@ -324,6 +324,38 @@ export function addToCollectedBreakdown(
   return breakdown;
 }
 
+/** Collateral (thế chân) that changed hands (#494): `received` at pickup, `returned` at return or cancellation. */
+export interface CollateralFlow {
+  received: number;
+  returned: number;
+}
+
+export function emptyCollateralFlow(): CollateralFlow {
+  return { received: 0, returned: 0 };
+}
+
+/**
+ * Adds the collateral moved by one order (#494). `withCollateral` and `plain` are that order's events from
+ * `getOrderRevenueEvents(order)` and `getOrderRevenueEvents(withoutCollateral(order))`, already filtered to the
+ * period. Each event's collateral part is its revenue minus the same event without collateral: positive at
+ * pickup (received), negative at return or cancellation (handed back). A same-day rent and return moves none.
+ */
+export function addToCollateralFlow(
+  flow: CollateralFlow,
+  withCollateral: RevenueEvent[],
+  plain: RevenueEvent[]
+): CollateralFlow {
+  const keyOf = (e: RevenueEvent) => `${e.revenueType}@${new Date(e.date).getTime()}`;
+  const deltas = new Map<string, number>();
+  for (const e of withCollateral) deltas.set(keyOf(e), (deltas.get(keyOf(e)) || 0) + e.revenue);
+  for (const e of plain) deltas.set(keyOf(e), (deltas.get(keyOf(e)) || 0) - e.revenue);
+  for (const delta of deltas.values()) {
+    if (delta > 0) flow.received += delta;
+    else if (delta < 0) flow.returned -= delta;
+  }
+  return flow;
+}
+
 /**
  * The same order with collateral (securityDeposit) removed, for "money collected" totals that leave out
  * collateral: it is held at pickup and handed back at return, so it is never the shop's money (#484).
