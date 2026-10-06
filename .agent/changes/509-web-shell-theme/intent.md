@@ -1,4 +1,4 @@
-# Intent — #509 New shop web shell, light/dark theme, login and sign-up
+# Intent — #509 New shop web shell and light/dark theme
 
 Issue: #509 · Author: Trinh (via Claude) · Status: accepted · Created: 2026-10-06
 
@@ -17,7 +17,7 @@ Every signed-in page sits inside the new shell. The shell has:
 - a top bar: search, theme switch, bell with the real unread count;
 - light and dark tokens; Be Vietnam Pro.
 
-Login and sign-up use the 4A dotted-background style. Later phases redraw the pages inside the shell.
+Later phases redraw the pages inside the shell. Login and sign-up are #510.
 
 ## Affected users and systems
 
@@ -41,4 +41,7 @@ All web roles (`MERCHANT`, `OUTLET_ADMIN`, `OUTLET_STAFF`). App: `client` only. 
 
 - 2026-10-06 — Design boards and 7-phase plan approved ("chốt") (Trinh)
 - 2026-10-06 — Theme follows the OS on first visit; the user's choice is remembered (Trinh asked for light/dark)
-- 2026-10-06 — Phase 1 ships as two PRs on this issue: shell + theme first, then login and sign-up (Claude, to keep each review small)
+- 2026-10-06 — Login and sign-up split into #510 so each PR stays small and closes its own issue (Claude)
+- 2026-10-06 — Notification panel from the Thông báo board ships here, because the bell needs somewhere to open (Claude)
+- 2026-10-06 — Danh mục and Chi nhánh stay in the QUẢN LÝ group until Cài đặt absorbs branches in phase 7 (Claude)
+- 2026-10-06 — The outlet card shows the name only; switching arrives with Tổng quan in phase 2 (Claude)

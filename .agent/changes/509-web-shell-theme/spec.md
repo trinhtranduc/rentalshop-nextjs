@@ -1,10 +1,10 @@
-# Spec — #509 New shop web shell, light/dark theme, login and sign-up
+# Spec — #509 New shop web shell and light/dark theme
 
 Issue: #509 · Status: accepted · Intent: ./intent.md
 
 ## Behavior
 
-### Shell (PR 1)
+### Shell
 
 1. Signed-in pages that showed the old sidebar now render inside `ShopShell`. Public, auth, blog and `/edit` pages do not.
 2. The sidebar is 248px wide on `lg` and up and contains, in order:
@@ -30,7 +30,7 @@ Issue: #509 · Status: accepted · Intent: ./intent.md
      The panel closes on Escape or an outside click.
 7. Inside the shell the font is Be Vietnam Pro. Public pages keep Inter.
 
-### Theme (PR 1)
+### Theme
 
 8. Light and dark token sets are CSS variables on `:root` and `.dark`. The `.dark` set is used only when the `dark` class is on `<html>`.
 9. With no saved choice, the theme follows `prefers-color-scheme` and changes live when the OS setting changes.
@@ -38,17 +38,9 @@ Issue: #509 · Status: accepted · Intent: ./intent.md
 11. An inline script in `<head>` sets the class before first paint, so a dark user sees no white flash.
 12. The switch renders only when `NEXT_PUBLIC_ENABLE_THEME_SWITCH === 'true'`. While it is hidden, the theme is always light, even if the OS is dark.
 
-### Login and sign-up (PR 2)
-
-13. `/login` and `/register` use the 4A layout:
-    - a dotted background fading downward;
-    - a 72px logo, "AnyRent", and a heading;
-    - fields with a blue focus ring.
-    The login, Google login, register steps and validation logic are unchanged.
-14. `apps/admin` `/login` renders exactly as before.
-
 ## Out of scope
 
+- Login and sign-up redraw. It moved to #510.
 - Redrawing pages inside the shell (phases 2 to 7).
 - A working outlet switcher. Phase 1 shows the outlet name only; switching comes with Tổng quan (phase 2).
 - A full-page notification list and per-type deep links. Phase 7 handles both.

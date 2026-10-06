@@ -1,10 +1,8 @@
-# Plan — #509 New shop web shell, light/dark theme, login and sign-up
+# Plan — #509 New shop web shell and light/dark theme
 
 Issue: #509 · Status: accepted · Spec: ./spec.md
 
 ## Steps
-
-### PR 1: shell and theme
 
 1. Tokens:
    - Add `--ar-*` light and dark variables in `apps/client/app/globals.css`.
@@ -23,12 +21,7 @@ Issue: #509 · Status: accepted · Spec: ./spec.md
 6. Tests:
    - `tests/` unit tests for the nav role filter and `resolveTheme`;
    - the notification day grouping under both time zones.
-7. Verify (`verify-change`), then open PR 1 with `Refs #509`.
-
-### PR 2: login and sign-up
-
-8. Add `apps/client/app/components/auth/AuthScreen.tsx` (dotted background, logo, heading). Restyle the client `/login` and `/register` steps around the existing hooks and handlers. Do not touch `packages/ui` `LoginForm`, which admin uses.
-9. Verify, then open PR 2 with `Fixes #509`.
+7. Verify (`verify-change`), then open the PR with `Fixes #509`.
 
 ## Files
 
@@ -39,7 +32,6 @@ Issue: #509 · Status: accepted · Spec: ./spec.md
 - `apps/client/app/components/ClientLayout.tsx` — use the new shell
 - `locales/*/common.json` — strings
 - `tests/unit/web-shell/*.test.ts` — nav filter, theme resolution
-- PR 2: `apps/client/app/login/page.tsx`, `apps/client/app/register/**`, `apps/client/app/components/auth/*`
 
 ## Risks
 
