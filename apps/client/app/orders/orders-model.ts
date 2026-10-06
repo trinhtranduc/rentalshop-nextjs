@@ -328,20 +328,64 @@ export interface OrderDetailLike extends OrderRowLike {
   damageFee?: Num;
   discountAmount?: Num;
   payments?: PaymentLike[] | null;
+  orderItems?: Array<{ quantity?: number | null; unitPrice?: Num; totalPrice?: Num }> | null;
   createdBy?: { firstName?: string | null; lastName?: string | null; name?: string | null } | null;
+}
+
+// ----------------------------------------------------------------------------
+// Money (#560): one model for the Thanh toán card, the next-step button and the Giao đồ / Nhận trả
+// dialogs, as iOS `OrderDetailLogic` (HandOverMoney / ReturnMoney / balance) and the API
+// (`apps/api/lib/order-balance.ts`). Rows carry no sign: the label says what the amount is.
+// ----------------------------------------------------------------------------
+
+const paidOf = (o: OrderDetailLike, purpose: string) =>
+  (o.payments || []).filter((p) => p.status === 'COMPLETED' && p.notes === purpose).reduce((s, p) => s + pos(p.amount), 0);
+
+export interface HandOverMoney {
+  total: number;
+  deposit: number;
+  collateral: number;
+  paidBefore: number;
+  /** Thu khi giao: total − deposit + thế chân − completed PICKUP payments, never below 0 */
+  due: number;
+}
+
+export function handOverMoney(o: OrderDetailLike): HandOverMoney {
+  const total = pos(o.totalAmount);
+  const deposit = pos(o.depositAmount);
+  const collateral = pos(o.securityDeposit);
+  const paidBefore = paidOf(o, 'PICKUP');
+  return { total, deposit, collateral, paidBefore, due: Math.max(0, total - deposit + collateral - paidBefore) };
+}
+
+export interface ReturnMoney {
+  lateFee: number;
+  damageFee: number;
+  collateral: number;
+  settledBefore: number;
+  /** late + damage − thế chân − completed RETURN_ADJUSTMENT payments; negative = give back */
+  net: number;
+  collect: number;
+  refund: number;
+}
+
+/** `fees` are the values typed in the Nhận trả dialog; the saved ones otherwise. */
+export function returnMoney(o: OrderDetailLike, fees?: { lateFee?: number; damageFee?: number }): ReturnMoney {
+  const lateFee = pos(fees?.lateFee ?? o.lateFee);
+  const damageFee = pos(fees?.damageFee ?? o.damageFee);
+  const collateral = pos(o.securityDeposit);
+  const settledBefore = paidOf(o, 'RETURN_ADJUSTMENT');
+  const net = lateFee + damageFee - collateral - settledBefore;
+  return { lateFee, damageFee, collateral, settledBefore, net, collect: Math.max(0, net), refund: Math.max(0, -net) };
 }
 
 /** Same rule as the API (`apps/api/lib/order-balance.ts`), so the page and the list agree. */
 export function orderBalance(o: OrderDetailLike): { amountDue: number; refundDue: number } {
-  const paid = (notes: string) =>
-    (o.payments || []).filter((p) => p.status === 'COMPLETED' && p.notes === notes).reduce((s, p) => s + (p.amount || 0), 0);
-  if (o.orderType === 'SALE') return { amountDue: Math.max(0, pos(o.totalAmount) - paid('SALE')), refundDue: 0 };
-  if (o.orderType === 'RENT' && o.status === 'RESERVED') {
-    return { amountDue: Math.max(0, pos(o.totalAmount) - pos(o.depositAmount) + pos(o.securityDeposit) - paid('PICKUP')), refundDue: 0 };
-  }
+  if (o.orderType === 'SALE') return { amountDue: Math.max(0, pos(o.totalAmount) - paidOf(o, 'SALE')), refundDue: 0 };
+  if (o.orderType === 'RENT' && o.status === 'RESERVED') return { amountDue: handOverMoney(o).due, refundDue: 0 };
   if (o.orderType === 'RENT' && o.status === 'PICKUPED') {
-    const net = pos(o.damageFee) + pos(o.lateFee) - pos(o.securityDeposit) - paid('RETURN_ADJUSTMENT');
-    return { amountDue: Math.max(0, net), refundDue: Math.max(0, -net) };
+    const m = returnMoney(o);
+    return { amountDue: m.collect, refundDue: m.refund };
   }
   return { amountDue: 0, refundDue: 0 };
 }
@@ -401,62 +445,77 @@ export function buildNextStep(o: OrderDetailLike, todayKey: string, toDayKey: To
   return null;
 }
 
-export type PayLine =
-  | { kind: 'rent' | 'saleTotal' | 'deposit' | 'paid' | 'lateFee' | 'damageFee' | 'collateralHeld'; amount: number; sign: 1 | -1 | 0 };
+export type PayRowKey =
+  | 'orderTotal'
+  | 'orderTotalDiscount'
+  | 'goodsTotal'
+  | 'discount'
+  | 'depositPaid'
+  | 'collateralMoney'
+  | 'collateralHeld'
+  | 'collateral'
+  | 'paidBefore'
+  | 'settledBefore'
+  | 'lateFee'
+  | 'damageFee';
 
-export type PayTotal =
-  | { kind: 'dueAtPickup' | 'collectAtReturn' | 'refundAtReturn' | 'due'; amount: number }
-  | { kind: 'settled' | 'noRevenue' | 'nothingAtReturn' };
+export type PayTotalKey = 'collectAtPickup' | 'returnRefund' | 'returnCollect' | 'saleCollected' | 'saleTotal' | 'saleDue' | 'noRevenue';
+
+export interface PayRow {
+  key: PayRowKey;
+  amount: number;
+}
 
 export interface PaySummary {
-  lines: PayLine[];
-  total: PayTotal;
-  /** Collateral money taken at hand-over (reserved rentals), already inside the total */
-  collateral: number;
-  /** Total struck through: the order is cancelled */
+  rows: PayRow[];
+  /** null: iOS shows no total line (handed-back rental, nothing to settle at return) */
+  total: { key: PayTotalKey; amount: number | null } | null;
+  /** `orderTotalDiscount` label value */
+  discount: number;
+  /** Amounts struck through: the order is cancelled */
   struck: boolean;
 }
 
-const paidOf = (o: OrderDetailLike, notes: string[]) =>
-  (o.payments || []).filter((p) => p.status === 'COMPLETED' && notes.includes(p.notes || '')).reduce((s, p) => s + (p.amount || 0), 0);
-
-/** Lines of the Thanh toán card, by order state. */
+/**
+ * Thanh toán card, rows and order of the iOS order detail (`OrderDetailViewController.moneyRows`).
+ * The thế chân row is named by stage so no sign is needed: thu thêm (before hand-over, inside "Thu khi
+ * giao"), đang giữ (out on rent, offsets the fees), tiền thế chân (afterwards).
+ */
 export function buildPaySummary(o: OrderDetailLike): PaySummary {
   const total = pos(o.totalAmount);
-  const balance = orderBalance(o);
-  if (o.status === 'CANCELLED') {
-    return { lines: [{ kind: o.orderType === 'SALE' ? 'saleTotal' : 'rent', amount: total, sign: 0 }], total: { kind: 'noRevenue' }, collateral: 0, struck: true };
-  }
+  const discount = pos(o.discountAmount);
+  const cancelled = o.status === 'CANCELLED';
+  const rows: PayRow[] = [];
+
   if (o.orderType === 'SALE') {
-    const paid = paidOf(o, ['SALE']);
-    const lines: PayLine[] = [{ kind: 'saleTotal', amount: total, sign: 0 }];
-    if (paid > 0) lines.push({ kind: 'paid', amount: paid, sign: -1 });
-    return { lines, total: balance.amountDue > 0 ? { kind: 'due', amount: balance.amountDue } : { kind: 'settled' }, collateral: 0, struck: false };
+    const goods = (o.orderItems || []).reduce((s, i) => s + (pos(i.totalPrice) || (i.quantity || 1) * pos(i.unitPrice)), 0) || total + discount;
+    rows.push({ key: 'goodsTotal', amount: goods });
+    if (discount > 0) rows.push({ key: 'discount', amount: discount });
+    if (cancelled) return { rows, total: { key: 'noRevenue', amount: null }, discount, struck: true };
+    if (o.status === 'COMPLETED') return { rows, total: { key: 'saleCollected', amount: total }, discount, struck: false };
+    return { rows, total: { key: 'saleDue', amount: orderBalance(o).amountDue }, discount, struck: false };
   }
-  const lines: PayLine[] = [{ kind: 'rent', amount: total, sign: 0 }, { kind: 'deposit', amount: pos(o.depositAmount), sign: -1 }];
+
+  rows.push({ key: discount > 0 ? 'orderTotalDiscount' : 'orderTotal', amount: total });
+  if (pos(o.depositAmount) > 0) rows.push({ key: 'depositPaid', amount: pos(o.depositAmount) });
+  const collateral = pos(o.securityDeposit);
+  if (collateral > 0) {
+    rows.push({ key: o.status === 'RESERVED' ? 'collateralMoney' : o.status === 'PICKUPED' ? 'collateralHeld' : 'collateral', amount: collateral });
+  }
   if (o.status === 'RESERVED') {
-    const paid = paidOf(o, ['PICKUP']);
-    if (paid > 0) lines.push({ kind: 'paid', amount: paid, sign: -1 });
-    return {
-      lines,
-      total: balance.amountDue > 0 ? { kind: 'dueAtPickup', amount: balance.amountDue } : { kind: 'settled' },
-      collateral: pos(o.securityDeposit),
-      struck: false,
-    };
+    const m = handOverMoney(o);
+    if (m.paidBefore > 0) rows.push({ key: 'paidBefore', amount: m.paidBefore });
+    return { rows, total: { key: 'collectAtPickup', amount: m.due }, discount, struck: false };
   }
-  if (pos(o.lateFee) > 0) lines.push({ kind: 'lateFee', amount: pos(o.lateFee), sign: 1 });
-  if (pos(o.damageFee) > 0) lines.push({ kind: 'damageFee', amount: pos(o.damageFee), sign: 1 });
+  if (pos(o.lateFee) > 0) rows.push({ key: 'lateFee', amount: pos(o.lateFee) });
+  if (pos(o.damageFee) > 0) rows.push({ key: 'damageFee', amount: pos(o.damageFee) });
   if (o.status === 'PICKUPED') {
-    if (pos(o.securityDeposit) > 0) lines.push({ kind: 'collateralHeld', amount: pos(o.securityDeposit), sign: -1 });
-    const t: PayTotal =
-      balance.refundDue > 0
-        ? { kind: 'refundAtReturn', amount: balance.refundDue }
-        : balance.amountDue > 0
-          ? { kind: 'collectAtReturn', amount: balance.amountDue }
-          : { kind: 'nothingAtReturn' };
-    return { lines, total: t, collateral: 0, struck: false };
+    const m = returnMoney(o);
+    if (m.settledBefore > 0) rows.push({ key: 'settledBefore', amount: m.settledBefore });
+    const t = m.refund > 0 ? { key: 'returnRefund' as const, amount: m.refund } : m.collect > 0 ? { key: 'returnCollect' as const, amount: m.collect } : null;
+    return { rows, total: t, discount, struck: false };
   }
-  return { lines, total: { kind: 'settled' }, collateral: 0, struck: false };
+  return { rows, total: cancelled ? { key: 'noRevenue', amount: null } : null, discount, struck: cancelled };
 }
 
 export type HistoryEvent =
