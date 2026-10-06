@@ -1,413 +1,216 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+/**
+ * /affiliate/guide (#582): public page (PUBLIC_ROUTES, outside the shell) on the landing look. A signed-in
+ * shop with a referral code (referralLink, else tenantKey) also sees its sign-up link with Copy.
+ * `examples.note` carries <strong>, so it renders with `t.rich` (was an IntlError).
+ */
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Button, LanguageSwitcher, Card, CardContent, Badge } from '@rentalshop/ui';
-import { LandingBrandLogo } from '../../components/LandingBrandLogo';
-import {
-  Share2,
-  CheckCircle,
-  DollarSign,
-  TrendingUp,
-  Users,
-  ArrowRight,
-  Link2,
-  Copy,
-  ExternalLink,
-  User,
-  Check
-} from 'lucide-react';
+import { ArrowRight, Check, CheckCircle, Copy, DollarSign, Link2, Share2, TrendingUp, Users } from 'lucide-react';
 import { useToast } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
+import PublicSiteHeader from '../../components/PublicSiteHeader';
+import PublicSiteFooter from '../../components/PublicSiteFooter';
+import { moneyText } from '../../settings/subscription-model';
+
+const card = 'rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8';
+const iconBox = 'flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-sky-50 text-sky-800';
+
+const EXAMPLES = [
+  { key: 'example1', price: 1_000_000 },
+  { key: 'example2', price: 5_000_000 },
+] as const;
+const COMMISSION = 0.1;
 
 export default function AffiliateGuidePage() {
-  const router = useRouter();
   const { toastSuccess } = useToast();
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const t = useTranslations('affiliate.guide');
 
-  // Get referral code from user (merchant or outlet merchant)
-  // Try referralLink first, fallback to tenantKey (referralLink is tenantKey)
-  const merchantRef = user?.merchant as any
-  const outletMerchantRef = user?.outlet?.merchant as any
-  const referralCode = 
-    merchantRef?.referralLink || 
-    merchantRef?.tenantKey || 
-    outletMerchantRef?.referralLink || 
-    outletMerchantRef?.tenantKey
+  // Referral code: merchant (or the outlet's merchant) referralLink, else its tenantKey
+  const merchantRef = user?.merchant as { referralLink?: string; tenantKey?: string } | undefined;
+  const outletMerchantRef = user?.outlet?.merchant as { referralLink?: string; tenantKey?: string } | undefined;
+  const referralCode = merchantRef?.referralLink || merchantRef?.tenantKey || outletMerchantRef?.referralLink || outletMerchantRef?.tenantKey;
 
-  // Debug: Log user data to see what we have
-  useEffect(() => {
-    if (user) {
-      console.log('🔍 Affiliate Guide Page - User:', user)
-      console.log('🔍 Affiliate Guide Page - Merchant:', user.merchant)
-      console.log('🔍 Affiliate Guide Page - Outlet:', user.outlet)
-      console.log('🔍 Affiliate Guide Page - Referral Code:', referralCode)
-    }
-  }, [user, referralCode])
+  const registrationLink = referralCode
+    ? `${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop'}/register?referralCode=${referralCode}`
+    : null;
 
-  // Generate registration link with referral code
-  const getRegistrationLink = () => {
-    if (!referralCode) return null
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop'
-    return `${baseUrl}/register?referralCode=${referralCode}`
-  }
-
-  const registrationLink = getRegistrationLink()
-
-  // Copy registration link to clipboard
   const handleCopyLink = async () => {
-    if (!registrationLink) return
+    if (!registrationLink) return;
     try {
-      await navigator.clipboard.writeText(registrationLink)
-      setCopied(true)
-      toastSuccess(t('copied'))
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(registrationLink);
+      setCopied(true);
+      toastSuccess(t('copied'));
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy link:', error)
+      console.error('Failed to copy link:', error);
     }
   };
 
+  const overview = [
+    { icon: DollarSign, value: '10%', label: t('overview.commission') },
+    { icon: TrendingUp, value: t('overview.autoPayment'), label: t('overview.payment') },
+    { icon: Users, value: t('overview.unlimitedLabel'), label: t('overview.unlimited') },
+  ];
+  const details = [
+    { key: 'rate', badge: '10%' },
+    { key: 'payment', badge: t('overview.autoPayment') },
+    { key: 'tracking', badge: t('commissionDetails.tracking.badge') },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header - Similar to landing page */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <LandingBrandLogo />
-            </Link>
-            <div className="flex items-center gap-4">
-              <LanguageSwitcher variant="compact" />
-              {user ? (
-                <Button
-                  onClick={() => router.push('/dashboard')}
-                  variant="default"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2"
-                >
-                  <User className="h-4 w-4" />
-                  {user.name || 'User'}
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  variant="default"
-                  className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg px-4 py-2 text-sm font-medium"
-                >
-                  <Link href="/login">
-                    {t('login')}
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-slate-50">
+      <PublicSiteHeader />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-3 bg-orange-100 rounded-full mb-6">
-            <Share2 className="h-8 w-8 text-orange-600" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {t('title')}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            {t('subtitle')}
-          </p>
-        </div>
+      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <p className="mb-3 text-sm font-medium text-sky-700">{t('eyebrow')}</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">{t('title')}</h1>
+        <p className="mt-4 max-w-2xl text-lg text-slate-600">{t('subtitle')}</p>
 
-        {/* Affiliate Link Card - Only show if user is logged in and has referral code */}
         {user && registrationLink && (
-          <Card className="mb-8 border-2 border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <Share2 className="h-5 w-5 text-orange-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {t('yourLink')}
-                </h2>
+          <section className="mt-10 rounded-2xl border border-sky-100 bg-white/90 p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className={iconBox}>
+                <Share2 className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-slate-900">{t('yourLink')}</h2>
+                <p className="text-sm text-slate-600">{t('linkHint')}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                  <span className="text-sm text-gray-700 break-all font-mono">{registrationLink}</span>
-                </div>
-                <Button
-                  onClick={handleCopyLink}
-                  variant={copied ? "outline" : "default"}
-                  size="sm"
-                  className={`flex items-center gap-2 whitespace-nowrap ${copied ? 'bg-green-50 border-green-300 text-green-700' : 'bg-orange-600 hover:bg-orange-700 text-white'}`}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      {t('copied')}
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                      {t('copy')}
-                    </>
-                  )}
-                </Button>
+            </div>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                <Link2 aria-hidden="true" className="h-4 w-4 flex-none text-sky-700" />
+                <span className="min-w-0 break-all font-mono text-sm text-slate-800">{registrationLink}</span>
               </div>
-            </CardContent>
-          </Card>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className={`inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-[15px] font-semibold ${
+                  copied ? 'border border-green-200 bg-green-50 text-green-700' : 'bg-blue-700 text-white hover:bg-blue-800'
+                }`}
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? t('copied') : t('copy')}
+              </button>
+            </div>
+          </section>
         )}
 
-        {/* Overview Section */}
-        <Card className="mb-8 border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100">
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center p-3 bg-orange-200 rounded-lg mb-4">
-                  <DollarSign className="h-6 w-6 text-orange-700" />
-                </div>
-                <div className="text-3xl font-bold text-orange-700 mb-2">10%</div>
-                <div className="text-sm text-gray-600">{t('overview.commission')}</div>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center p-3 bg-orange-200 rounded-lg mb-4">
-                  <TrendingUp className="h-6 w-6 text-orange-700" />
-                </div>
-                <div className="text-3xl font-bold text-orange-700 mb-2">{t('overview.autoPayment')}</div>
-                <div className="text-sm text-gray-600">{t('overview.payment')}</div>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center p-3 bg-orange-200 rounded-lg mb-4">
-                  <Users className="h-6 w-6 text-orange-700" />
-                </div>
-                <div className="text-3xl font-bold text-orange-700 mb-2">{t('overview.unlimitedLabel')}</div>
-                <div className="text-sm text-gray-600">{t('overview.unlimited')}</div>
-              </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {overview.map(({ icon: Icon, value, label }) => (
+            <div key={label} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+              <span className={iconBox}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <p className="mt-4 text-2xl font-bold text-slate-900">{value}</p>
+              <p className="mt-1 text-sm text-slate-600">{label}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* How It Works */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">{t('howItWorks.title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 font-bold text-xl mb-4">
-                  1
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{t('howItWorks.step1.title')}</h3>
-                <p className="text-sm text-gray-600">
-                  {t('howItWorks.step1.description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 font-bold text-xl mb-4">
-                  2
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{t('howItWorks.step2.title')}</h3>
-                <p className="text-sm text-gray-600">
-                  {t('howItWorks.step2.description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 font-bold text-xl mb-4">
-                  3
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{t('howItWorks.step3.title')}</h3>
-                <p className="text-sm text-gray-600">
-                  {t('howItWorks.step3.description')}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          ))}
         </div>
 
-        {/* Commission Details */}
-        <Card className="mb-8">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('commissionDetails.title')}</h2>
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold">{t('commissionDetails.rate.label')}</span>
-                  <Badge variant="default" className="text-lg bg-orange-600">10%</Badge>
-                </div>
-                <p className="text-sm text-gray-600">
-                  {t('commissionDetails.rate.description')}
-                </p>
-              </div>
+        <section className="mt-14">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{t('howItWorks.title')}</h2>
+          <ol className="mt-6 grid list-none gap-4 p-0 sm:grid-cols-3">
+            {(['step1', 'step2', 'step3'] as const).map((step, i) => (
+              <li key={step} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-700 text-[15px] font-bold text-white">{i + 1}</span>
+                <h3 className="mt-4 font-semibold text-slate-900">{t(`howItWorks.${step}.title`)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{t(`howItWorks.${step}.description`)}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-              <div className="p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold">{t('commissionDetails.payment.label')}</span>
-                  <Badge variant="default" className="bg-green-600">{t('overview.autoPayment')}</Badge>
+        <section className={`${card} mt-14`}>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{t('commissionDetails.title')}</h2>
+          <ul className="mt-6 flex list-none flex-col gap-3 p-0">
+            {details.map(({ key, badge }) => (
+              <li key={key} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold text-slate-900">{t(`commissionDetails.${key}.label`)}</span>
+                  <span className="whitespace-nowrap rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-bold text-blue-800">{badge}</span>
                 </div>
-                <p className="text-sm text-gray-600">
-                  {t('commissionDetails.payment.description')}
-                </p>
-              </div>
+                <p className="mt-1.5 text-sm text-slate-600">{t(`commissionDetails.${key}.description`)}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-              <div className="p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold">{t('commissionDetails.tracking.label')}</span>
-                  <Badge variant="default" className="bg-blue-600">Real-time</Badge>
+        <section className={`${card} mt-6`}>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{t('examples.title')}</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {EXAMPLES.map(({ key, price }) => (
+              <div key={key} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle aria-hidden="true" className="h-5 w-5 text-green-600" />
+                  <span className="font-semibold text-slate-900">{t(`examples.${key}.title`)}</span>
                 </div>
-                <p className="text-sm text-gray-600">
-                  {t('commissionDetails.tracking.description')}
-                </p>
+                <dl className="mt-3 flex flex-col gap-1.5 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-600">{t(`examples.${key}.label1`)}</dt>
+                    <dd className="m-0 font-medium tabular-nums text-slate-900">{moneyText(price, 'VND')}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-600">{t(`examples.${key}.label2`)}</dt>
+                    <dd className="m-0 text-blue-700">{t(`examples.${key}.confirmed`)}</dd>
+                  </div>
+                  <div className="mt-1 flex justify-between gap-3 border-t border-slate-200 pt-2">
+                    <dt className="text-slate-600">{t(`examples.${key}.label3`)}</dt>
+                    <dd className="m-0 font-bold tabular-nums text-green-700">{moneyText(price * COMMISSION, 'VND')}</dd>
+                  </div>
+                </dl>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+          <p className="mt-4 rounded-xl border border-sky-100 bg-sky-50 p-4 text-sm leading-relaxed text-slate-700">
+            {t.rich('examples.note', { strong: (chunks) => <strong className="font-semibold text-slate-900">{chunks}</strong> })}
+          </p>
+        </section>
 
-        {/* Example Calculation */}
-        <Card className="mb-8">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('examples.title')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="font-semibold">{t('examples.example1.title')}</span>
-                </div>
-                <div className="ml-7 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t('examples.example1.label1')}</span>
-                    <span className="font-medium">1,000,000 VND</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t('examples.example1.label2')}</span>
-                    <span className="text-blue-600">{t('examples.example1.confirmed')}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-1 mt-1">
-                    <span className="text-gray-600">{t('examples.example1.label3')}</span>
-                    <span className="font-bold text-green-600">100,000 VND</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="font-semibold">{t('examples.example2.title')}</span>
-                </div>
-                <div className="ml-7 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t('examples.example2.label1')}</span>
-                    <span className="font-medium">5,000,000 VND</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t('examples.example2.label2')}</span>
-                    <span className="text-blue-600">{t('examples.example2.confirmed')}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-1 mt-1">
-                    <span className="text-gray-600">{t('examples.example2.label3')}</span>
-                    <span className="font-bold text-green-600">500,000 VND</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: t('examples.note') }} />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Best Practices */}
-        <Card className="mb-8">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('tips.title')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+        <section className={`${card} mt-6`}>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{t('tips.title')}</h2>
+          <ul className="mt-6 grid list-none gap-5 p-0 md:grid-cols-2">
+            {(['tip1', 'tip2', 'tip3', 'tip4'] as const).map((tip) => (
+              <li key={tip} className="flex gap-3">
+                <CheckCircle aria-hidden="true" className="mt-0.5 h-5 w-5 flex-none text-green-600" />
                 <div>
-                  <h4 className="font-semibold mb-1">{t('tips.tip1.title')}</h4>
-                  <p className="text-sm text-gray-600">
-                    {t('tips.tip1.description')}
-                  </p>
+                  <h3 className="font-semibold text-slate-900">{t(`tips.${tip}.title`)}</h3>
+                  <p className="mt-1 text-sm text-slate-600">{t(`tips.${tip}.description`)}</p>
                 </div>
-              </div>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-              <div className="flex gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold mb-1">{t('tips.tip2.title')}</h4>
-                  <p className="text-sm text-gray-600">
-                    {t('tips.tip2.description')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold mb-1">{t('tips.tip3.title')}</h4>
-                  <p className="text-sm text-gray-600">
-                    {t('tips.tip3.description')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold mb-1">{t('tips.tip4.title')}</h4>
-                  <p className="text-sm text-gray-600">
-                    {t('tips.tip4.description')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* CTA Section */}
-        <Card className="border-2 border-orange-500 bg-gradient-to-r from-orange-50 to-orange-100">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-bold mb-2">{t('cta.title')}</h3>
-            <p className="text-gray-600 mb-6">
-              {t('cta.description')}
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button
-                variant="default"
-                onClick={() => router.push('/register')}
-                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
+        {!user && (
+          <section className="mt-10 rounded-2xl border border-sky-100 bg-white/90 p-8 text-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">{t('cta.title')}</h2>
+            <p className="mx-auto mt-2 max-w-xl text-slate-600">{t('cta.description')}</p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/register"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-[15px] font-semibold text-white shadow-sm hover:bg-blue-800"
               >
                 {t('cta.register')}
                 <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => router.push('/login')}
-                className="flex items-center gap-2"
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-[15px] font-semibold text-slate-800 hover:bg-slate-50"
               >
                 {t('cta.login')}
-              </Button>
+              </Link>
             </div>
-          </CardContent>
-        </Card>
+          </section>
+        )}
       </main>
 
-      {/* Footer - Simple */}
-      <footer className="bg-white border-t border-gray-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-sm text-gray-600">
-            <p>© 2025 AnyRent. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </div>
   );
 }

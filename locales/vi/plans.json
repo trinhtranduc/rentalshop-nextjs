@@ -148,6 +148,51 @@
     "unlimitedUsers": "Không giới hạn người dùng",
     "unlimitedProducts": "Không giới hạn sản phẩm",
     "unlimitedCustomers": "Không giới hạn khách hàng"
+  },
+  "web": {
+    "title": "Gói dịch vụ",
+    "subtitle": "Chọn gói phù hợp với cửa hàng của bạn.",
+    "currentLine": "Cửa hàng đang dùng gói {plan}.",
+    "trialNote": "Gói dùng thử sắp kết thúc.",
+    "current": "Đang dùng",
+    "popular": "Phổ biến",
+    "perMonth": "/tháng",
+    "free": "Miễn phí",
+    "features": "Tính năng",
+    "limitsTitle": "Giới hạn",
+    "unlimited": "Không giới hạn",
+    "choose": "Chọn gói",
+    "chosen": "Đã chọn",
+    "currentButton": "Gói đang dùng",
+    "selectedTitle": "Gói đã chọn: {plan}",
+    "cycleLabel": "Chu kỳ thanh toán",
+    "discount": "Giảm {percent}%",
+    "pay": "Thanh toán",
+    "confirmTitle": "Xác nhận thanh toán",
+    "confirmHint": "Kiểm tra gói và chu kỳ trước khi thanh toán.",
+    "plan": "Gói",
+    "total": "Tạm tính",
+    "method": "Phương thức",
+    "methodLemon": "Thẻ / PayPal (Lemon Squeezy)",
+    "terms": "Khi thanh toán, bạn đồng ý với điều khoản dịch vụ và chính sách thanh toán của AnyRent.",
+    "cancel": "Huỷ",
+    "redirecting": "Đang mở trang thanh toán…",
+    "empty": "Chưa có gói dịch vụ nào.",
+    "loadFailed": "Không tải được danh sách gói.",
+    "retry": "Thử lại",
+    "close": "Đóng",
+    "estimateNote": "Số tiền cuối cùng hiện ở trang thanh toán.",
+    "cycle": {
+      "monthly": "Hằng tháng",
+      "quarterly": "Hằng quý",
+      "yearly": "Hằng năm"
+    },
+    "limit": {
+      "outlets": "Chi nhánh",
+      "users": "Nhân viên",
+      "products": "Sản phẩm",
+      "customers": "Khách hàng",
+      "orders": "Đơn hàng"
+    }
   }
 }
-

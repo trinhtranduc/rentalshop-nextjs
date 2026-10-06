@@ -1,431 +1,314 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { plansApi, subscriptionsApi, lemonsqueezyApi } from '@rentalshop/utils';
+/**
+ * Gói dịch vụ (/plans, #582) on the shell tokens. Same flow as before: pick a plan → billing cycle →
+ * confirm → `lemonsqueezyApi.createSubscriptionCheckout` → the Lemon Squeezy page. Limits, features,
+ * prices and the cycle estimate come from `plans-model.ts`; money reads like Cài đặt → Gói dịch vụ.
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { lemonsqueezyApi, plansApi, subscriptionsApi } from '@rentalshop/utils';
+import type { Plan } from '@rentalshop/types';
+import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
+import { Modal } from '../orders/create/parts';
+import { planLabel } from '../settings/subscription-model';
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Button,
-  Badge,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  PageWrapper,
-  PageLoadingIndicator
-} from '@rentalshop/ui';
-import { 
-  CreditCard,
-  CheckCircle,
-  Star,
-  Zap,
-  Shield,
-  Building,
-  Package,
-  ArrowRight,
-  Check
-} from 'lucide-react';
-import type { Plan, Subscription } from '@rentalshop/types';
+  BILLING_CYCLES,
+  cycleDiscount,
+  cycleTotalText,
+  isCurrentPlan,
+  limitText,
+  planFeatures,
+  planLimits,
+  planPriceText,
+  type BillingCycle,
+} from './plans-model';
+
+interface CurrentSub {
+  planId: number | null;
+  planName: string | null;
+  dbStatus: string | null;
+}
+
+const CHECK = 'M20 6 9 17l-5-5';
+
+function Tick() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="mt-[3px] h-4 w-4 flex-none text-ar-done" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d={CHECK} />
+    </svg>
+  );
+}
 
 export default function PlansPage() {
+  const t = useTranslations('plans.web') as unknown as T;
+  const tSub = useTranslations('settings.web') as unknown as T;
+  const locale = useLocale();
+  const n = useCallback((v: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(v), [locale]);
+
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [load, setLoad] = useState<'loading' | 'ok' | 'failed'>('loading');
+  const [attempt, setAttempt] = useState(0);
+  const [current, setCurrent] = useState<CurrentSub | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [purchaseData, setPurchaseData] = useState({
-    paymentMethod: 'LEMON_SQUEEZY',
-    billingInfo: {
-      name: '',
-      email: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: 'US'
-    },
-    planId: 0,
-    billingCycle: 'monthly'
-  });
-
-  // Fetch data
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch plans
-      const plansResult = await plansApi.getPlans();
-      if (plansResult.success && plansResult.data) {
-        setPlans(plansResult.data.plans || []);
-      }
-
-      // Fetch current subscription
-      const subscriptionResult = await subscriptionsApi.getCurrentUserSubscriptionStatus();
-      if (subscriptionResult.success && subscriptionResult.data) {
-        // Map flat response to Subscription object
-        const data = subscriptionResult.data;
-        const subscription: Subscription = {
-          id: data.subscriptionId,
-          merchantId: data.merchantId,
-          planId: data.planId,
-          status: data.status,
-          amount: data.billingAmount,
-          currency: data.billingCurrency,
-          interval: data.billingInterval,
-          intervalCount: data.billingIntervalCount,
-          currentPeriodStart: data.currentPeriodStart,
-          currentPeriodEnd: data.currentPeriodEnd,
-          plan: {
-            id: data.planId || 0,
-            name: data.planName,
-            basePrice: data.planPrice,
-            currency: data.planCurrency
-          }
-        } as unknown as Subscription;
-        setCurrentSubscription(subscription);
-      }
-
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      // Error automatically handled by useGlobalErrorHandler
-    } finally{
-      setLoading(false);
-    }
-  };
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    let alive = true;
+    (async () => {
+      try {
+        setLoad('loading');
+        const plansResult = await plansApi.getPlans();
+        if (!alive) return;
+        if (plansResult.success && plansResult.data) {
+          setPlans(plansResult.data.plans || []);
+          setLoad('ok');
+        } else {
+          setLoad('failed');
+        }
+        const sub = await subscriptionsApi.getCurrentUserSubscriptionStatus();
+        if (!alive) return;
+        if (sub.success && sub.data) {
+          const d = sub.data as { planId?: number | null; planName?: string | null; dbStatus?: string | null; status?: string | null };
+          setCurrent({ planId: d.planId ?? null, planName: d.planName ?? null, dbStatus: d.dbStatus ?? d.status ?? null });
+        }
+      } catch (err) {
+        // API errors are toasted by useGlobalErrorHandler
+        console.error('Error fetching plans:', err);
+        if (alive) setLoad((l) => (l === 'loading' ? 'failed' : l));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [attempt]);
 
-  const getPlanFeatures = (plan: Plan) => {
-    if (Array.isArray(plan.features)) {
-      return plan.features;
-    }
-    try {
-      return JSON.parse(plan.features || '[]');
-    } catch {
-      return [];
-    }
-  };
-
-
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
-  };
-
-  const handleSelectPlan = (plan: Plan) => {
-    setSelectedPlan(plan);
-  };
-
-  const handlePurchase = () => {
-    if (selectedPlan) {
-      setShowPurchaseModal(true);
-    }
-  };
+  const sortedPlans = useMemo(
+    () => plans.filter((p) => p.isActive !== false).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+    [plans],
+  );
 
   const handleConfirmPurchase = async () => {
+    if (!selectedPlan || paying) return;
     try {
-      if (!selectedPlan) return;
-
+      setPaying(true);
       const origin = window.location.origin;
-      const successUrl = `${origin}/plans?checkout=success`;
-      const cancelUrl = `${origin}/plans?checkout=cancel`;
-
       const result = await lemonsqueezyApi.createSubscriptionCheckout({
         planId: selectedPlan.id,
-        billingInterval: purchaseData.billingCycle,
-        successUrl,
-        cancelUrl,
+        billingInterval: billingCycle,
+        successUrl: `${origin}/plans?checkout=success`,
+        cancelUrl: `${origin}/plans?checkout=cancel`,
       });
       if (result.success && result.data?.url) {
         window.location.href = result.data.url;
         return;
       }
       // Error automatically handled by useGlobalErrorHandler
+      setPaying(false);
     } catch (err) {
       console.error('Error purchasing plan:', err);
-      // Error automatically handled by useGlobalErrorHandler
+      setPaying(false);
     }
   };
 
-  const isCurrentPlan = (plan: Plan) => {
-    return currentSubscription?.planId === plan.id;
-  };
-
-  const getPlanIcon = (planName: string) => {
-    if (planName.toLowerCase().includes('trial')) return <Zap className="h-6 w-6" />;
-    if (planName.toLowerCase().includes('basic') || planName.toLowerCase().includes('starter')) return <Package className="h-6 w-6" />;
-    if (planName.toLowerCase().includes('professional') || planName.toLowerCase().includes('pro')) return <Shield className="h-6 w-6" />;
-    if (planName.toLowerCase().includes('enterprise') || planName.toLowerCase().includes('business')) return <Building className="h-6 w-6" />;
-    return <CreditCard className="h-6 w-6" />;
-  };
+  const isTrial = String(current?.dbStatus || '').toUpperCase() === 'TRIAL';
 
   return (
-    <PageWrapper>
-      {/* Page Loading Indicator - Floating, non-blocking */}
-      <PageLoadingIndicator loading={loading} />
-      <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900">Choose Your Plan</h1>
-        <p className="text-xl text-gray-600 mt-4">
-          Select the perfect plan for your rental business
-        </p>
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
+      <div className="flex flex-col gap-1">
+        <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
+        <p className="m-0 text-[15px] text-ar-muted">{t('subtitle')}</p>
       </div>
 
-      {/* Current Subscription Alert */}
-      {currentSubscription && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-blue-700" />
-              <div>
-                <h3 className="font-medium text-blue-800">Current Plan</h3>
-                <p className="text-sm text-blue-700">
-                  You&apos;re currently on the <strong>{currentSubscription.plan?.name}</strong> plan.
-                  {String(currentSubscription.status).toLowerCase() === 'trial' && ' Your trial ends soon.'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {current?.planName && (
+        <p className="m-0 rounded-xl border border-ar-line-soft bg-ar-primary-soft px-4 py-3 text-[15px] text-ar-primary-ink">
+          {t('currentLine', { plan: planLabel(current.planName, tSub) })}
+          {isTrial ? ` ${t('trialNote')}` : ''}
+        </p>
       )}
 
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan) => {
-          const isCurrent = isCurrentPlan(plan);
-          const isPopular = plan.isPopular;
-          
-          return (
-            <Card 
-              key={plan.id} 
-              className={`relative ${isCurrent ? 'ring-2 ring-blue-500' : ''} ${isPopular ? 'border-orange-200' : ''}`}
-            >
-              {isPopular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-orange-500 text-white px-3 py-1">
-                    <Star className="h-3 w-3 mr-1" />
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
-              
-              {isCurrent && (
-                <div className="absolute -top-3 right-4">
-                  <Badge className="bg-blue-500 text-white px-3 py-1">
-                    <Check className="h-3 w-3 mr-1" />
-                    Current Plan
-                  </Badge>
-                </div>
-              )}
-
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-2">
-                  {getPlanIcon(plan.name)}
-                </div>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <p className="text-gray-600">{plan.description}</p>
-                <div className="mt-4">
-                  <div className="text-3xl font-bold">
-                    {formatCurrency(plan.basePrice, plan.currency)}
+      {load === 'loading' && plans.length === 0 ? (
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className={`${cardClass} flex flex-col gap-3 p-5`}>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ))}
+        </div>
+      ) : load === 'failed' && plans.length === 0 ? (
+        <div className={`${cardClass} flex flex-wrap items-center gap-3 p-5`}>
+          <p className="m-0 text-[15px] text-ar-danger">{t('loadFailed')}</p>
+          <button type="button" onClick={() => setAttempt((x) => x + 1)} className={outlineBtn}>
+            {t('retry')}
+          </button>
+        </div>
+      ) : sortedPlans.length === 0 ? (
+        <p className={`${cardClass} m-0 px-4 py-6 text-center text-[15px] text-ar-muted`}>{t('empty')}</p>
+      ) : (
+        <ul className="m-0 grid list-none gap-4 p-0 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+          {sortedPlans.map((plan) => {
+            const isCurrent = isCurrentPlan(plan, current?.planId);
+            const isSelected = selectedPlan?.id === plan.id;
+            const features = planFeatures(plan);
+            const limits = planLimits(plan);
+            const price = planPriceText(plan, t);
+            const free = !(plan.basePrice > 0);
+            return (
+              <li
+                key={plan.id}
+                className={`${cardClass} flex flex-col overflow-hidden ${isSelected ? 'ring-2 ring-ar-primary' : isCurrent ? 'ring-1 ring-ar-line-strong' : ''}`}
+              >
+                <div className="flex flex-1 flex-col gap-4 px-5 py-[18px]">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="m-0 text-lg font-bold">{planLabel(plan.name, tSub)}</h2>
+                      {isCurrent && <span className="rounded-[7px] bg-ar-done-bg px-2 py-[3px] text-xs font-bold text-ar-done">{t('current')}</span>}
+                      {plan.isPopular && <span className="rounded-[7px] bg-ar-reserved-bg px-2 py-[3px] text-xs font-bold text-ar-reserved">{t('popular')}</span>}
+                    </div>
+                    {plan.description && <p className="m-0 text-sm text-ar-muted">{plan.description}</p>}
                   </div>
-                  <div className="text-sm text-gray-500">per month</div>
-                </div>
-              </CardHeader>
+                  <p className="m-0 flex flex-wrap items-baseline gap-x-1">
+                    <span className="text-[28px] font-bold leading-9 tabular-nums">{price}</span>
+                    {!free && <span className="text-[15px] text-ar-muted">{t('perMonth')}</span>}
+                  </p>
 
-              <CardContent className="space-y-4">
-                {/* Plan Features */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Features</h4>
-                  <div className="space-y-2">
-                    {getPlanFeatures(plan).map((feature: string, index: number) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                  {features.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <h3 className="m-0 text-xs font-bold uppercase tracking-[0.04em] text-ar-muted">{t('features')}</h3>
+                      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                        {features.map((f) => (
+                          <li key={f} className="flex gap-2 text-[15px] text-ar-ink-2">
+                            <Tick />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {/* Plan Limits */}
-                <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Limits</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Outlets</span>
-                      <span className="font-medium">
-                        {plan.limits?.outlets === -1 ? 'Unlimited' : plan.limits?.outlets || 'Not set'}
-                      </span>
+                  {limits.length > 0 && (
+                    <div className="flex flex-col gap-2 border-t border-ar-line-soft pt-4">
+                      <h3 className="m-0 text-xs font-bold uppercase tracking-[0.04em] text-ar-muted">{t('limitsTitle')}</h3>
+                      <dl className="m-0 flex flex-col gap-1.5">
+                        {limits.map((row) => (
+                          <div key={row.key} className="flex items-baseline justify-between gap-3 text-[15px]">
+                            <dt className="text-ar-ink-2">{t(`limit.${row.key}`)}</dt>
+                            <dd className="m-0 font-semibold tabular-nums">{limitText(row, t, n)}</dd>
+                          </div>
+                        ))}
+                      </dl>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Users</span>
-                      <span className="font-medium">
-                        {plan.limits?.users === -1 ? 'Unlimited' : plan.limits?.users || 'Not set'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Products</span>
-                      <span className="font-medium">
-                        {plan.limits?.products === -1 ? 'Unlimited' : plan.limits?.products || 'Not set'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Customers</span>
-                      <span className="font-medium">
-                        {plan.limits?.customers === -1 ? 'Unlimited' : plan.limits?.customers || 'Not set'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Button */}
-                <div className="pt-4">
-                  {isCurrent ? (
-                    <Button disabled className="w-full">
-                      <Check className="h-4 w-4 mr-2" />
-                      Current Plan
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={() => handleSelectPlan(plan)}
-                      className="w-full"
-                      variant={isPopular ? 'default' : 'outline'}
-                    >
-                      {selectedPlan?.id === plan.id ? 'Selected' : 'Select Plan'}
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Selected Plan Details */}
-      {selectedPlan && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CreditCard className="h-5 w-5" />
-              <span>Selected Plan: {selectedPlan.name}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Billing Cycle */}
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Billing Cycle</Label>
-                <Select 
-                  value={purchaseData.billingCycle} 
-                  onValueChange={(value) => setPurchaseData({...purchaseData, billingCycle: value})}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly - {formatCurrency(selectedPlan.basePrice, selectedPlan.currency)}</SelectItem>
-                    <SelectItem value="quarterly">Quarterly - {formatCurrency(selectedPlan.basePrice * 3, selectedPlan.currency)} (0% off)</SelectItem>
-                    <SelectItem value="yearly">Yearly - {formatCurrency(selectedPlan.basePrice * 12 * 0.9, selectedPlan.currency)} (10% off)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Purchase Button */}
-              <div className="flex justify-center">
-                <Button 
-                  onClick={handlePurchase}
-                  size="lg"
-                  className="px-8"
-                >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Purchase Plan
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="border-t border-ar-subtle bg-ar-surface-muted px-5 py-3.5">
+                  {isCurrent ? (
+                    <button type="button" disabled className={`${outlineBtn} w-full`}>
+                      {t('currentButton')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => setSelectedPlan(plan)}
+                      className={`${isSelected || plan.isPopular ? primaryBtn : outlineBtn} w-full`}
+                    >
+                      {isSelected ? t('chosen') : t('choose')}
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
-      {/* Purchase Modal */}
-      <Dialog open={showPurchaseModal} onOpenChange={setShowPurchaseModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Complete Your Purchase</DialogTitle>
-            <DialogDescription>
-              Review your plan selection and complete the purchase.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedPlan && (
-              <div className="space-y-2">
-                <h4 className="font-medium">Plan Details</h4>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between">
-                    <span>Plan:</span>
-                    <span className="font-medium">{selectedPlan.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Billing:</span>
-                    <span className="font-medium capitalize">{purchaseData.billingCycle}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span>{formatCurrency(
-                      purchaseData.billingCycle === 'monthly' ? selectedPlan.basePrice :
-                      purchaseData.billingCycle === 'quarterly' ? selectedPlan.basePrice * 3 * 0.9 :
-                      selectedPlan.basePrice * 12 * 0.8, 
-                      selectedPlan.currency
-                    )}</span>
-                  </div>
-                </div>
+      {selectedPlan && (
+        <section className={`${cardClass} overflow-hidden`} aria-labelledby="plans-selected-title">
+          <div className="flex flex-col gap-4 px-5 py-[18px]">
+            <h2 id="plans-selected-title" className="m-0 text-lg font-bold">
+              {t('selectedTitle', { plan: planLabel(selectedPlan.name, tSub) })}
+            </h2>
+            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+              <legend className="mb-2 p-0 text-sm font-semibold text-ar-ink-2">{t('cycleLabel')}</legend>
+              <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
+                {BILLING_CYCLES.map((cycle) => {
+                  const on = billingCycle === cycle;
+                  const off = cycleDiscount(cycle);
+                  return (
+                    <label
+                      key={cycle}
+                      className={`flex cursor-pointer flex-col gap-0.5 rounded-xl border px-4 py-3 ${on ? 'border-ar-primary bg-ar-primary-soft' : 'border-ar-line bg-ar-surface hover:bg-ar-subtle'}`}
+                    >
+                      <input type="radio" name="billing-cycle" value={cycle} checked={on} onChange={() => setBillingCycle(cycle)} className="sr-only" />
+                      <span className="flex items-center justify-between gap-2 text-[15px] font-semibold">
+                        {t(`cycle.${cycle}`)}
+                        {off > 0 && <span className="rounded-[7px] bg-ar-done-bg px-2 py-[2px] text-xs font-bold text-ar-done">{t('discount', { percent: off })}</span>}
+                      </span>
+                      <span className="text-[15px] tabular-nums text-ar-ink-2">{cycleTotalText(selectedPlan, cycle, t)}</span>
+                    </label>
+                  );
+                })}
               </div>
-            )}
-
-            <div>
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select
-                value={purchaseData.paymentMethod}
-                onValueChange={(value) => setPurchaseData(prev => ({ ...prev, paymentMethod: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LEMON_SQUEEZY">Card / PayPal (Lemon Squeezy)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="text-sm text-gray-600">
-              By purchasing this plan, you agree to our terms of service and billing policies.
-            </div>
+            </fieldset>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPurchaseModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmPurchase}>
-              Complete Purchase
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      </div>
-    </PageWrapper>
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-ar-subtle bg-ar-surface-muted px-5 py-3.5">
+            <button type="button" onClick={() => setSelectedPlan(null)} className={outlineBtn}>
+              {t('cancel')}
+            </button>
+            <button type="button" onClick={() => setConfirmOpen(true)} className={primaryBtn}>
+              {t('pay')}
+            </button>
+          </div>
+        </section>
+      )}
+
+      <Modal
+        open={confirmOpen && !!selectedPlan}
+        title={t('confirmTitle')}
+        onClose={() => !paying && setConfirmOpen(false)}
+        closeLabel={t('close')}
+        footer={
+          <>
+            <button type="button" onClick={() => setConfirmOpen(false)} disabled={paying} className={outlineBtn}>
+              {t('cancel')}
+            </button>
+            <button type="button" onClick={handleConfirmPurchase} disabled={paying} className={primaryBtn}>
+              {paying ? t('redirecting') : t('pay')}
+            </button>
+          </>
+        }
+      >
+        {selectedPlan && (
+          <div className="flex flex-col gap-4">
+            <p className="m-0 text-[15px] text-ar-muted">{t('confirmHint')}</p>
+            <dl className="m-0 flex flex-col gap-2 rounded-xl bg-ar-surface-muted px-4 py-3">
+              <div className="flex justify-between gap-3 text-[15px]">
+                <dt className="text-ar-ink-2">{t('plan')}</dt>
+                <dd className="m-0 font-semibold">{planLabel(selectedPlan.name, tSub)}</dd>
+              </div>
+              <div className="flex justify-between gap-3 text-[15px]">
+                <dt className="text-ar-ink-2">{t('cycleLabel')}</dt>
+                <dd className="m-0 font-semibold">{t(`cycle.${billingCycle}`)}</dd>
+              </div>
+              <div className="flex justify-between gap-3 text-[15px]">
+                <dt className="text-ar-ink-2">{t('method')}</dt>
+                <dd className="m-0 text-right font-semibold">{t('methodLemon')}</dd>
+              </div>
+              <div className="flex justify-between gap-3 border-t border-ar-line-soft pt-2 text-[17px]">
+                <dt className="font-semibold">{t('total')}</dt>
+                <dd className="m-0 font-bold tabular-nums">{cycleTotalText(selectedPlan, billingCycle, t)}</dd>
+              </div>
+            </dl>
+            <p className="m-0 text-sm text-ar-muted">
+              {t('estimateNote')} {t('terms')}
+            </p>
+          </div>
+        )}
+      </Modal>
+    </div>
   );
 }
