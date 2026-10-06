@@ -1155,6 +1155,7 @@
     <string name="settings_v2_allow_overlap_hint">Tắt thì không tạo được đơn khi đồ đã được thuê hết trong những ngày đó.</string>
     <string name="settings_v2_allow_overlap_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
     <string name="api_error_order_schedule_conflict">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
+    <string name="api_error_invalid_timezone">Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).</string>
     <string name="v2_cart_overlap_line">Hết đồ %1$s · đã thuê ở đơn %2$s</string>
     <string name="v2_cart_overlap_line_no_order">Hết đồ %1$s</string>
     <string name="v2_cart_overlap_blocked">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>

@@ -17,6 +17,7 @@ import { getDefaultPricingConfig, normalizeBusinessTags, deriveBusinessTypeFromT
 import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
 import { verifyGoogleIdToken } from '../../../../../lib/verify-google-id-token';
 import { buildAuthLoginSuccessResponse } from '../../../../../lib/build-auth-login-response';
+import { registerTimeZone } from '../../../../../lib/shop-timezone';
 
 function parseName(name: string): { firstName: string; lastName: string } {
   const parts = name.trim().split(/\s+/);
@@ -194,6 +195,8 @@ export async function POST(request: NextRequest) {
           pricingType: validated.pricingType || 'FIXED',
           referredByMerchantId,
           pricingConfig: buildPricingConfig(businessType, validated.pricingType),
+          // #567 the registering device's zone; missing/invalid (old apps) → Asia/Ho_Chi_Minh, never a 400
+          timezone: registerTimeZone(body),
         } as any,
       });
 

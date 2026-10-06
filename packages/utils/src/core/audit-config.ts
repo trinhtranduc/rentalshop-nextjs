@@ -160,7 +160,7 @@ export const defaultAuditConfig: AuditConfig = {
       enabled: true,
       logLevel: 'CREATE_UPDATE_DELETE',
       fields: {
-        include: ['name', 'status', 'plan', 'settings'],
+        include: ['name', 'status', 'plan', 'settings', 'timezone'], // timezone: #567 shop time zone changes
         exclude: ['apiKey', 'webhookSecret'],
         sensitive: ['email', 'phone']
       },
