@@ -902,7 +902,54 @@
       "loadFailed": "Could not load this order.",
       "notFound": "Order not found.",
       "backToList": "Back to orders",
-      "readyFailed": "Could not save the prepared state."
+      "readyFailed": "Could not save the prepared state.",
+      "dialog": {
+        "close": "Close",
+        "lateDays": "returned {days} days late",
+        "handover": {
+          "title": "Hand over to customer",
+          "confirm": "Hand over · collect {amount}",
+          "confirmFree": "Confirm hand-over"
+        },
+        "takeBack": {
+          "title": "Take back items",
+          "confirmCollect": "Take back · collect {amount}",
+          "confirmRefund": "Take back · give back {amount}",
+          "confirmFree": "Confirm return",
+          "lateFee": "Late fee",
+          "lateFeeDays": "Late fee ({days} days)",
+          "damageFee": "Damage fee"
+        },
+        "rows": {
+          "orderTotal": "Order total",
+          "depositPaid": "Deposit paid at booking",
+          "collateralMoney": "Collateral money",
+          "paidBefore": "Already collected",
+          "fees": "Late + damage fees",
+          "collateralHeld": "Collateral money held",
+          "settledBefore": "Already settled"
+        },
+        "result": {
+          "due": "Collect now",
+          "collect": "Collect more",
+          "refund": "Give back to customer",
+          "nothing": "Nothing to settle"
+        },
+        "papersKeep": "Papers kept",
+        "papersReturn": "Give back papers",
+        "cancel": {
+          "title": "Cancel order",
+          "message": "Cancel order {number}? This cannot be undone.",
+          "keep": "Keep order",
+          "confirm": "Cancel order"
+        },
+        "delete": {
+          "title": "Delete order",
+          "message": "Delete order {number} for good? This cannot be undone.",
+          "keep": "Keep",
+          "confirm": "Delete order"
+        }
+      }
     }
   }
 }

@@ -902,7 +902,54 @@
       "loadFailed": "Không tải được đơn này.",
       "notFound": "Không tìm thấy đơn này.",
       "backToList": "Về danh sách đơn",
-      "readyFailed": "Không lưu được trạng thái soạn đồ."
+      "readyFailed": "Không lưu được trạng thái soạn đồ.",
+      "dialog": {
+        "close": "Đóng",
+        "lateDays": "trả trễ {days} ngày",
+        "handover": {
+          "title": "Giao đồ cho khách",
+          "confirm": "Giao đồ · thu {amount}",
+          "confirmFree": "Xác nhận giao đồ"
+        },
+        "takeBack": {
+          "title": "Nhận trả đồ",
+          "confirmCollect": "Nhận trả · thu {amount}",
+          "confirmRefund": "Nhận trả · trả khách {amount}",
+          "confirmFree": "Xác nhận nhận trả",
+          "lateFee": "Phí trễ",
+          "lateFeeDays": "Phí trễ ({days} ngày)",
+          "damageFee": "Phí hư hỏng"
+        },
+        "rows": {
+          "orderTotal": "Tổng đơn hàng",
+          "depositPaid": "Đã cọc khi đặt",
+          "collateralMoney": "Thế chân thu thêm",
+          "paidBefore": "Đã thu trước",
+          "fees": "Phí trễ + hư hỏng",
+          "collateralHeld": "Thế chân đang giữ",
+          "settledBefore": "Đã thanh toán trước"
+        },
+        "result": {
+          "due": "Thu bây giờ",
+          "collect": "Thu thêm",
+          "refund": "Trả lại khách",
+          "nothing": "Không phát sinh"
+        },
+        "papersKeep": "Giấy tờ để lại",
+        "papersReturn": "Trả lại giấy tờ",
+        "cancel": {
+          "title": "Huỷ đơn hàng",
+          "message": "Bạn có muốn huỷ đơn {number}? Không hoàn tác được.",
+          "keep": "Giữ đơn",
+          "confirm": "Huỷ đơn"
+        },
+        "delete": {
+          "title": "Xoá đơn",
+          "message": "Xoá hẳn đơn {number}? Không hoàn tác được.",
+          "keep": "Giữ lại",
+          "confirm": "Xoá đơn"
+        }
+      }
     }
   }
 }
