@@ -1,20 +1,16 @@
-import { PageWrapper, PageHeader, PageTitle, CategoriesLoading } from '@rentalshop/ui';
+import { Skeleton, cardClass } from '../orders/list/parts';
 
-/**
- * Next.js App Router Loading UI for Categories
- * Shows instantly during navigation to /categories
- */
+/** Route loading UI for Danh mục (#543): the page frame in shell tokens, no text. */
 export default function Loading() {
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-      <PageHeader className="flex-shrink-0">
-        <PageTitle>Categories</PageTitle>
-        <p className="text-sm text-gray-600">Manage your product categories</p>
-      </PageHeader>
-      <div className="flex-1 min-h-0 overflow-auto">
-        <CategoriesLoading />
-      </div>
-    </PageWrapper>
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 sm:px-8" aria-busy="true">
+      <Skeleton className="h-8 w-40" />
+      <section className={`${cardClass} flex flex-col gap-3 px-4 py-4`}>
+        <Skeleton className="h-9 w-full md:w-[320px]" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-11 w-full" />
+        ))}
+      </section>
+    </div>
   );
 }
-
