@@ -7,12 +7,12 @@
    - pickupAndSale: `SALE`, `RENT_PICKUP`, and the rent part of a same-day `RENT_RETURN`
    - fees: damageFee + lateFee of `RENT_RETURN` events
    - refunds: the amount of `RENT_CANCELLED` / `SALE_CANCELLED` events, as a positive number
-2. `revenue.collateralReceived`: the securityDeposit of RENT orders picked up in the period, whatever their status now.
-3. The same two values are on `operational` (`collectedBreakdown`, `collateralReceived`).
+2. The same value is on `operational.collectedBreakdown`.
+3. "Thế chân đang giữ" keeps coming from `GET /api/analytics/outlet-operations` (`cash.depositsHeld.securityDeposit`).
 
 ## Mobile (iOS and Android, boards Tong-quan and Tong-quan-giai-thich)
 4. Hero "Thực thu" with "Chi tiết ›". Tapping it opens the breakdown sheet.
-5. Tiles: Tiền cọc đã thu, Thế chân đã nhận (sub-line: đang giữ, from outlet-operations), Tổng giá trị đơn, Còn phải thu.
+5. Tiles: Cọc khi tạo đơn, Thế chân đang giữ ("sẽ trả lại khách · không tính vào thực thu"), Tổng giá trị đơn, Còn phải thu.
 6. The (i) info button is removed. The sheet explains the figures.
 7. The ĐƠN "collateral held" row is removed.
 8. Vietnamese copy says "thế chân" for securityDeposit.

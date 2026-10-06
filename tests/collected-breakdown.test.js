@@ -71,7 +71,7 @@ describe('collected breakdown (#492)', () => {
   });
 });
 
-describe('period summary: breakdown and collateral received (#492)', () => {
+describe('period summary: breakdown (#492)', () => {
   const { computeIncomePeriodSummary } = require('../packages/utils/src/analytics/income-period-summary');
   const order = {
     id: 1,
@@ -92,7 +92,7 @@ describe('period summary: breakdown and collateral received (#492)', () => {
     order: { findMany: jest.fn(async (args) => (args?.select?.orderNumber ? [order] : [])) }
   };
 
-  it('splits collected money and reports collateral taken at pickup outside it', async () => {
+  it('splits collected money; collateral stays out', async () => {
     const { summary } = await computeIncomePeriodSummary(prisma, {
       startDate: '2026-10-01',
       endDate: '2026-10-03',
@@ -100,6 +100,5 @@ describe('period summary: breakdown and collateral received (#492)', () => {
     });
     expect(summary.totalCollected).toBe(200000);
     expect(summary.collectedBreakdown).toEqual({ deposits: 50000, pickupAndSale: 150000, fees: 0, refunds: 0 });
-    expect(summary.collateralReceived).toBe(1000000);
   });
 });

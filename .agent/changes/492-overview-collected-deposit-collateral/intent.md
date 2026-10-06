@@ -12,3 +12,5 @@ thế chân (a guarantee, handed back) are different and owners track both.
 - Days are Vietnam civil days (reuses the #355 summary).
 - Collateral never counts in Thực thu (#486).
 - No cancelled-orders row: the owner said cancellations are rare.
+
+**Decision 2026-10-06:** the owner found "thế chân đã nhận" vs "đang giữ" confusing. Only "Thế chân đang giữ" is shown; the deposit tile is "Cọc khi tạo đơn".

@@ -93,8 +93,6 @@ export interface AnalyticsPeriodReport {
     collected?: number;
     /** Where `collected` came from: deposits + pickupAndSale + fees - refunds (#492) */
     collectedBreakdown?: { deposits: number; pickupAndSale: number; fees: number; refunds: number };
-    /** Collateral (thế chân) taken at pickups in the period; not part of `collected` (#492) */
-    collateralReceived?: number;
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -837,8 +835,7 @@ export async function buildAnalyticsPeriodReport(
       ...(operational
         ? {
             collected: operational.totalCollected,
-            collectedBreakdown: operational.collectedBreakdown,
-            collateralReceived: operational.collateralReceived
+            collectedBreakdown: operational.collectedBreakdown
           }
         : {})
     },

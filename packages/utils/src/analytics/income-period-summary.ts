@@ -31,8 +31,6 @@ export interface IncomePeriodSummary {
   totalCollected: number;
   /** Where `totalCollected` came from (#492) */
   collectedBreakdown: CollectedBreakdown;
-  /** Collateral (securityDeposit) taken at pickups in the period, whatever happened after (#492) */
-  collateralReceived: number;
 }
 
 export interface IncomePeriodDayRow {
@@ -152,7 +150,6 @@ export async function computeIncomePeriodSummary(
   const returnOrdersCounted = new Set<string>();
   const cancelledOrdersCounted = new Set<string>();
   const collectedBreakdown = emptyCollectedBreakdown();
-  let collateralReceived = 0;
 
   const ensureDay = (date: Date): DailyBucket => {
     const { date: dateKey, dateISO } = civilDayBucket(date, timeZone);
@@ -201,10 +198,6 @@ export async function computeIncomePeriodSummary(
       if (event.date < filterStart || event.date > filterEnd) continue;
       ensureDay(event.date).collected += event.revenue;
       addToCollectedBreakdown(collectedBreakdown, orderData, event);
-    }
-    if (order.orderType === ORDER_TYPE.RENT && order.pickedUpAt) {
-      const pickedUpDate = new Date(order.pickedUpAt);
-      if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) collateralReceived += order.securityDeposit || 0;
     }
 
     if (order.createdAt) {
@@ -415,8 +408,7 @@ export async function computeIncomePeriodSummary(
     totalRevenuePlan,
     totalDepositRefund,
     totalCollected,
-    collectedBreakdown,
-    collateralReceived
+    collectedBreakdown
   };
 
   return {
