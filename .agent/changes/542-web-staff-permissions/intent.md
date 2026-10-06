@@ -33,6 +33,9 @@ MERCHANT, OUTLET_ADMIN (OUTLET_STAFF sees a no-access note). `apps/client` only.
   `packages/auth` only reads role defaults + `MerchantRole`. So the switches are saved but do not change
   access today. Out of scope here (API/auth change); reported to the owner.
 
+- Found during the fix: the per-user permission endpoints reference a `UserPermission` model that is no
+  longer in the schema (GET 422, save fails). Filed #548; the page keeps the same calls (UI-only rule).
+
 ## Decision log
 
 - 2026-10-06 — split from the add/detail redraw (#544): bug first, as asked (agent).

@@ -249,6 +249,125 @@
       "rolePermissions": "See permissions per role",
       "permissions": "Grant extra permissions"
     },
+    "permissions": {
+      "title": "Extra staff permissions",
+      "hint": "Turn on extra permissions per staff member, on top of their role defaults.",
+      "noAccess": "Staff accounts cannot manage permissions.",
+      "pickTitle": "Pick staff",
+      "picked": "{count} picked",
+      "pickAll": "Pick all",
+      "pickNone": "Clear",
+      "noStaff": "No staff yet (Staff role)",
+      "switchTitle": "Extra permissions",
+      "pickFirst": "Pick at least one staff member on the left.",
+      "forOne": "Editing permissions of {name}.",
+      "forMany": "Editing {count} staff: starts from all off, Save applies to all {count}.",
+      "allOn": "Turn all on",
+      "allOff": "Turn all off",
+      "cancel": "Clear",
+      "save": "Save permissions",
+      "saving": "Saving…",
+      "savedTitle": "Saved",
+      "saved": "Permissions saved for {count} staff",
+      "errorTitle": "Error",
+      "saveFailed": "Could not save permissions. Try again.",
+      "readFailed": "Could not read this staff member’s saved permissions. Save writes every extra permission exactly as switched below.",
+      "groups": {
+        "outlet": "Outlet",
+        "orders": "Orders",
+        "products": "Products",
+        "customers": "Customers",
+        "users": "Staff",
+        "dashboard": "Overview"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "View outlet",
+        "desc": "See outlet information"
+      },
+      "outlet_manage": {
+        "label": "Manage outlet",
+        "desc": "Edit outlet information and settings"
+      },
+      "users_view": {
+        "label": "View staff",
+        "desc": "See the staff list and details"
+      },
+      "users_manage": {
+        "label": "Manage staff",
+        "desc": "Add, edit, lock and delete staff"
+      },
+      "products_view": {
+        "label": "View products",
+        "desc": "See the product list and details"
+      },
+      "products_create": {
+        "label": "Add products",
+        "desc": "Add new products"
+      },
+      "products_update": {
+        "label": "Edit products",
+        "desc": "Edit existing products, prices included"
+      },
+      "products_manage": {
+        "label": "Manage products",
+        "desc": "Full access: delete, Excel import, cost price"
+      },
+      "products_export": {
+        "label": "Export products",
+        "desc": "Download products as Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Create orders",
+        "desc": "Create rental and sale orders"
+      },
+      "orders_view": {
+        "label": "View orders",
+        "desc": "See the order list and details"
+      },
+      "orders_update": {
+        "label": "Edit orders",
+        "desc": "Edit orders, hand over, take returns"
+      },
+      "orders_delete": {
+        "label": "Delete orders",
+        "desc": "Delete orders"
+      },
+      "orders_export": {
+        "label": "Export orders",
+        "desc": "Download orders as Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Manage orders",
+        "desc": "Full access to orders"
+      },
+      "customers_view": {
+        "label": "View customers",
+        "desc": "See the customer list and details"
+      },
+      "customers_manage": {
+        "label": "Manage customers",
+        "desc": "Add, edit and delete customers"
+      },
+      "customers_export": {
+        "label": "Export customers",
+        "desc": "Download customers as Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "View overview",
+        "desc": "See the Overview page and figures"
+      }
+    },
+    "rolePermissions": {
+      "title": "Permissions by role",
+      "hint": "Default permissions of each role. Read only.",
+      "roleLabel": "Role",
+      "count": "{count} permissions",
+      "granted": "Granted",
+      "notGranted": "Not granted",
+      "note": "These are the role defaults. To turn on more for one person, use Extra staff permissions."
+    },
     "empty": "No staff yet",
     "emptySearch": "No staff match these filters",
     "loadFailed": "Couldn't load staff.",

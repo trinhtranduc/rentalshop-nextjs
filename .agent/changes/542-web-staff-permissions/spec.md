@@ -16,7 +16,8 @@ Issue: #542 · Status: accepted · Intent: ./intent.md
    "Tắt hết".
 5. With nothing picked the switches are disabled and the card says to pick staff first.
 6. With exactly one staff picked the switches load from `GET /api/users/{id}/permissions` (enabled rows on,
-   the rest off). With several picked they start from all off.
+   the rest off); if that read fails, a warning line says the saved permissions could not be read and that
+   Lưu writes every switch as shown. With several picked they start from all off.
 7. Lưu → `POST {API}/api/users/permissions/bulk` via `authenticatedFetch` with `userIds` and **every** key
    with its boolean (`permissionPayload`). Success toast "Đã lưu quyền cho n nhân viên"; error toast from the
    API message.
@@ -26,6 +27,12 @@ Issue: #542 · Status: accepted · Intent: ./intent.md
    (not granted), from `ROLE_PERMISSIONS`. Note: these are defaults; extra permissions are on Phân quyền.
    Link "Phân quyền thêm cho nhân viên" → `/users/permissions`. OUTLET_STAFF: no-access note.
 10. Light and dark via `ar-*` tokens only; 390px has no horizontal scroll (cards stack).
+
+## Known API gap (#548)
+
+The API has no `UserPermission` model any more (removed in 7bff2ff0d): `GET /api/users/{id}/permissions`
+answers 422 and the bulk save fails on the server. This change only fixes the page (crash, URL, payload);
+the save works once #548 is decided. Filed as #548, not fixed here (API / schema / auth, out of scope).
 
 ## Out of scope
 
