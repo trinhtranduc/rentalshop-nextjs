@@ -334,6 +334,7 @@
         "toList": "Về danh sách khách",
         "again": "Nhập file khác"
       }
-    }
+    },
+    "orderCount": "{count} đơn"
   }
 }

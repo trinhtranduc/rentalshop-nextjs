@@ -242,7 +242,7 @@ export function CustomersTable({
               <span className="flex items-baseline justify-between gap-3">
                 <span className={`truncate font-semibold ${customerName(c) ? 'text-ar-ink' : 'text-ar-muted'}`}>{nameOf(c)}</span>
                 <span className="shrink-0 text-sm tabular-nums text-ar-muted">
-                  {c.orderCount ?? 0} {t('cols.orders').toLowerCase()}
+                  {t('orderCount', { count: c.orderCount ?? 0 })}
                 </span>
               </span>
               {c.phone && <span className="text-sm tabular-nums text-ar-muted">{formatPhone(c.phone)}</span>}

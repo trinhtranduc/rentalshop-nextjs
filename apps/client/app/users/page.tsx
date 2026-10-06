@@ -12,7 +12,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
-import { getLocalDateKey, outletsApi, SHOP_TIMEZONE, usersApi } from '@rentalshop/utils';
+import { apiUrls, authenticatedFetch, getLocalDateKey, outletsApi, SHOP_TIMEZONE, usersApi } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { shortDayLabel } from '../components/shell/notification-groups';
 import { FilterMenu, Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
@@ -26,10 +26,12 @@ import {
   parseStaffPage,
   parseStaffPageSize,
   readStaffPage,
+  staffQuery,
   roleTone,
   staffContact,
   staffInitials,
   staffName,
+  type StaffFilters,
   type StaffLike,
   type StaffRoleTone,
 } from './users-model';
@@ -57,6 +59,13 @@ interface ListState {
   failed: boolean;
 }
 
+/** GET /api/users as raw JSON, so `pagination.total` survives (see `staffQuery`). */
+async function searchStaff(filters: StaffFilters): Promise<unknown> {
+  const query = staffQuery(filters);
+  const res = await authenticatedFetch(query ? `${apiUrls.users.list}?${query}` : apiUrls.users.list);
+  return res.json();
+}
+
 function useStaffPage(filters: Record<string, unknown> | null, nonce: number): ListState {
   const [state, setState] = useState<ListState>({ rows: [], total: 0, totalPages: 1, loading: true, failed: false });
   const key = filters ? JSON.stringify(filters) : '';
@@ -65,8 +74,7 @@ function useStaffPage(filters: Record<string, unknown> | null, nonce: number): L
     let cancelled = false;
     const f = JSON.parse(key) as Record<string, unknown>;
     setState((s) => ({ ...s, loading: true, failed: false }));
-    usersApi
-      .searchUsers(f)
+    searchStaff(f as StaffFilters)
       .then((res) => {
         if (cancelled) return;
         const page = readStaffPage<StaffLike>(res, Number(f.limit) || 20);
@@ -99,8 +107,7 @@ function useOutletChips(enabled: boolean, nonce: number) {
         setOutlets(list);
         return Promise.all(
           list.map((o) =>
-            usersApi
-              .searchUsers({ outletId: o.id, page: 1, limit: 1 })
+            searchStaff({ outletId: o.id, page: 1, limit: 1 })
               .then((r) => readStaffPage(r, 1)?.total ?? null)
               .catch(() => null),
           ),
