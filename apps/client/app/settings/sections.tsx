@@ -73,7 +73,6 @@ export interface ShopForm {
   state: string;
   zipCode: string;
   country: string;
-  /** Outlet only */
   description?: string;
   /** Merchant only (sent back unchanged when not shown) */
   taxId?: string;
@@ -114,6 +113,7 @@ export function ShopInfoSection({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return setProblem(t('form.nameRequired'));
+    if (kind === 'outlet' && !form.address.trim()) return setProblem(t('form.addressRequired'));
     if (kind === 'merchant' && !tenantKeyValid(form.tenantKey || '')) return setProblem(t('form.tenantKeyInvalid'));
     setSaving(true);
     await onSave(form);
@@ -143,30 +143,37 @@ export function ShopInfoSection({
             </>
           )}
         </div>
-        <fieldset className="m-0 grid gap-3.5 rounded-xl border border-ar-line px-4 pb-4 pt-3.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-          <legend className="px-1.5 text-sm font-bold text-ar-ink-2">{t('form.address')}</legend>
-          <Field label={t('form.street')} className="col-span-full">
+        {kind === 'merchant' ? (
+          <fieldset className="m-0 grid gap-3.5 rounded-xl border border-ar-line px-4 pb-4 pt-3.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+            <legend className="px-1.5 text-sm font-bold text-ar-ink-2">{t('form.address')}</legend>
+            <Field label={t('form.street')} className="col-span-full">
+              <input name="address" value={form.address} onChange={set('address')} disabled={!canEdit} className={inputClass} />
+            </Field>
+            <Field label={t('form.city')}>
+              <input name="city" value={form.city} onChange={set('city')} disabled={!canEdit} className={inputClass} />
+            </Field>
+            <Field label={t('form.state')}>
+              <input name="state" value={form.state} onChange={set('state')} disabled={!canEdit} className={inputClass} />
+            </Field>
+            <Field label={t('form.country')}>
+              <input name="country" list={listId} value={form.country} onChange={set('country')} disabled={!canEdit} className={inputClass} />
+              <datalist id={listId}>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.name} />
+                ))}
+              </datalist>
+            </Field>
+            <Field label={t('form.zip')}>
+              <input name="zipCode" value={form.zipCode} onChange={set('zipCode')} disabled={!canEdit} placeholder={t('form.optional')} className={inputClass} />
+            </Field>
+          </fieldset>
+        ) : (
+          // PUT /api/settings/outlet stores name, address, phone and description only, and needs the address.
+          <Field label={t('form.address')} required={canEdit ? t('form.required') : undefined}>
             <input name="address" value={form.address} onChange={set('address')} disabled={!canEdit} className={inputClass} />
           </Field>
-          <Field label={t('form.city')}>
-            <input name="city" value={form.city} onChange={set('city')} disabled={!canEdit} className={inputClass} />
-          </Field>
-          <Field label={t('form.state')}>
-            <input name="state" value={form.state} onChange={set('state')} disabled={!canEdit} className={inputClass} />
-          </Field>
-          <Field label={t('form.country')}>
-            <input name="country" list={listId} value={form.country} onChange={set('country')} disabled={!canEdit} className={inputClass} />
-            <datalist id={listId}>
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.name} />
-              ))}
-            </datalist>
-          </Field>
-          <Field label={t('form.zip')}>
-            <input name="zipCode" value={form.zipCode} onChange={set('zipCode')} disabled={!canEdit} placeholder={t('form.optional')} className={inputClass} />
-          </Field>
-        </fieldset>
-        {kind === 'merchant' ? (
+        )}
+        {kind === 'merchant' && (
           <Field label={t('form.tenantKey')} hint={t('form.tenantKeyHint')}>
             <input
               name="tenantKey"
@@ -179,18 +186,17 @@ export function ShopInfoSection({
               className={`${inputClass} lowercase`}
             />
           </Field>
-        ) : (
-          <Field label={t('form.description')}>
-            <textarea
-              name="description"
-              rows={3}
-              value={form.description || ''}
-              onChange={set('description')}
-              disabled={!canEdit}
-              className={`${inputClass} h-auto resize-y py-2.5`}
-            />
-          </Field>
         )}
+        <Field label={t('form.description')}>
+          <textarea
+            name="description"
+            rows={3}
+            value={form.description || ''}
+            onChange={set('description')}
+            disabled={!canEdit}
+            className={`${inputClass} h-auto resize-y py-2.5`}
+          />
+        </Field>
         {problem && (
           <p role="alert" className="m-0 text-sm text-ar-danger">
             {problem}

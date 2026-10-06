@@ -410,6 +410,7 @@
       "tenantKeyHint": "Lowercase letters, numbers and hyphens only. Used in your public product link.",
       "tenantKeyInvalid": "The URL key may only contain lowercase letters, numbers and hyphens.",
       "nameRequired": "Enter a name before saving.",
+      "addressRequired": "Enter an address",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving…",

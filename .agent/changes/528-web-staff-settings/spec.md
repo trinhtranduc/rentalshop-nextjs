@@ -21,12 +21,13 @@ falls back to the default (URL replaced once the role is known). `loyalty` → `
 ## Cards
 
 1. **Thông tin cửa hàng**: tên (required), SĐT, địa chỉ (số nhà đường, thành phố, quận/huyện, quốc gia,
-   mã bưu chính), email (read-only), mã URL cửa hàng (`[a-z0-9-]`), mã số thuế; read-only without
+   mã bưu chính), email (read-only), mã URL cửa hàng (`[a-z0-9-]`), mã số thuế, mô tả; read-only without
    `merchant.manage`. Huỷ / Lưu enabled only when changed. Below: **Chi nhánh** list (Chính badge, address,
    phone) with "Thêm chi nhánh" / "Sửa" → `/outlets` and per-outlet bank accounts, then the public
    product and referral links (copy / open). The shop currency follows the UI
    language as before (vi → VND, else USD).
-2. **Thông tin chi nhánh**: tên (required), SĐT, địa chỉ, mô tả; read-only without `outlet.manage` (staff). Share links below.
+2. **Thông tin chi nhánh**: tên (required), SĐT, địa chỉ (required), mô tả: the fields `PUT /api/settings/outlet`
+   stores (it ignores city / state / zip / country); read-only without `outlet.manage` (staff). Share links below.
 3. **Tài khoản ngân hàng**, **Gói dịch vụ**: the shared sections, unchanged, inside `.ar-legacy`.
 4. **Phiếu in**: one note per outlet the caller sees, 500 characters, saved one by one.
 5. **Tài khoản của tôi**: họ, tên, SĐT; email read-only.
