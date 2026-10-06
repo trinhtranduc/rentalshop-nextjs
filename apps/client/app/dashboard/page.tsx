@@ -10,6 +10,7 @@ import { useLocale } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth, useDashboardTranslations, usePermissions } from '@rentalshop/hooks';
 import { analyticsApi, formatDateKeyInTimeZone, getLocalDateKey, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { useOutletOperations } from './OutletOperationsPanel';
 import {
   OVERVIEW_PERIODS,
@@ -19,7 +20,6 @@ import {
   buildTodayWork,
   chartRange,
   formatRangeLabel,
-  isDayKey,
   periodRange,
   type DayRange,
   type OverviewPeriod,
@@ -103,8 +103,6 @@ export default function DashboardPage() {
   const upcoming = cash ? { toReturn: cash.collateralToReturn, toCollect: cash.collateralToCollect } : null;
 
   const [customOpen, setCustomOpen] = useState(period === 'custom');
-  const [draft, setDraft] = useState({ from: range.startDate, to: range.endDate });
-  useEffect(() => setDraft({ from: range.startDate, to: range.endDate }), [range.startDate, range.endDate]);
 
   const go = (next: OverviewPeriod, extra?: { from: string; to: string }) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -125,12 +123,6 @@ export default function DashboardPage() {
     }
     setCustomOpen(false);
     go(next);
-  };
-
-  const applyCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isDayKey(draft.from) || !isDayKey(draft.to)) return;
-    go('custom', { from: draft.from, to: draft.to });
   };
 
   const periods = canViewRevenue ? OVERVIEW_PERIODS : (['today'] as OverviewPeriod[]);
@@ -167,30 +159,22 @@ export default function DashboardPage() {
       </div>
 
       {customOpen && canViewRevenue && (
-        <form onSubmit={applyCustom} className="flex flex-wrap items-end justify-end gap-3">
-          <label className="flex flex-col gap-1 text-sm text-ar-muted">
-            {t('home.custom.from')}
-            <input
-              type="date"
-              value={draft.from}
-              max={todayKey}
-              onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))}
-              className="h-10 rounded-[10px] border border-ar-line bg-ar-surface px-3 text-[15px] text-ar-ink"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-ar-muted">
-            {t('home.custom.to')}
-            <input
-              type="date"
-              value={draft.to}
-              onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))}
-              className="h-10 rounded-[10px] border border-ar-line bg-ar-surface px-3 text-[15px] text-ar-ink"
-            />
-          </label>
-          <button type="submit" className="h-10 rounded-[10px] bg-ar-primary px-4 text-[15px] font-semibold text-ar-on-primary hover:opacity-95">
-            {t('home.custom.apply')}
-          </button>
-        </form>
+        <div className="flex justify-end">
+          <DateRangeField
+            from={range.startDate > todayKey ? todayKey : range.startDate}
+            to={range.endDate > todayKey ? todayKey : range.endDate}
+            todayKey={todayKey}
+            max={todayKey}
+            align="end"
+            initialOpen={period !== 'custom'}
+            ariaLabel={t('home.periods.custom')}
+            className="sm:w-auto"
+            onChange={(from, to) => go('custom', { from, to })}
+            onClose={() => {
+              if (period !== 'custom') setCustomOpen(false);
+            }}
+          />
+        </div>
       )}
 
       {canViewRevenue && <KpiCards kpis={kpis} loading={!ready || report.loading} t={t} money={money} />}
