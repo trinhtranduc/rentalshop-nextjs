@@ -14,6 +14,7 @@ import {
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
+import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
@@ -771,20 +772,22 @@ export const PUT = async (
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
-      const auditHelper = createAuditHelper(prisma);
-      await auditHelper.logUpdate({
-        entityType: 'Order',
-        entityId: String(orderIdNum),
-        entityName: existingOrder.orderNumber || String(orderIdNum),
-        oldValues: existingOrder as Record<string, any>,
-        newValues: updatedOrder as Record<string, any>,
-        description: `Order updated: ${existingOrder.orderNumber || orderIdNum}`,
-        context: buildAuditContext(request, user, userScope)
-      }).catch((err) => console.error('Audit log update failed:', err));
       console.log('✅ Order updated successfully:', updatedOrder);
 
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
+
+      // #519: snapshots (dates, totals, deposits, note + image count, items) so the change history
+      // can show "Giao đồ", "Sửa món", "Thu cọc", … for this edit. The full re-read has the item names.
+      await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
+        entityType: 'Order',
+        entityId: String(orderIdNum),
+        entityName: existingOrder.orderNumber || String(orderIdNum),
+        oldValues: buildOrderAuditSnapshot(existingOrder),
+        newValues: buildOrderAuditSnapshot(fullOrder ?? updatedOrder),
+        description: `Order updated: ${existingOrder.orderNumber || orderIdNum}`,
+        context: buildAuditContext(request, user, userScope)
+      }));
       
       console.log('🔍 PUT /api/orders/[orderId]: Full order after update:', {
         orderId: orderIdNum,
@@ -1038,7 +1041,7 @@ export const DELETE = async (
         entityType: 'Order',
         entityId: String(orderIdNum),
         entityName: existingOrder.orderNumber || String(orderIdNum),
-        oldValues: existingOrder as Record<string, any>,
+        oldValues: buildOrderAuditSnapshot(existingOrder),
         description: `Order deleted: ${existingOrder.orderNumber || orderIdNum}`,
         context: buildAuditContext(request, user, userScope)
       }).catch((err) => console.error('Audit log delete failed:', err));

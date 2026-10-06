@@ -37,6 +37,7 @@ import {
 } from '@rentalshop/loyalty';
 import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
+import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
@@ -956,15 +957,15 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
-    const auditHelper = createAuditHelper(prisma);
-    if (!isReplay) await auditHelper.logCreate({
+    if (!isReplay) await safeAudit('create', () => createAuditHelper(prisma).logCreate({
       entityType: 'Order',
       entityId: String(loyaltyOrder.id),
       entityName: loyaltyOrder.orderNumber || String(loyaltyOrder.id),
-      newValues: { orderNumber: loyaltyOrder.orderNumber, orderType: loyaltyOrder.orderType, status: loyaltyOrder.status, outletId: loyaltyOrder.outletId, customerId: loyaltyOrder.customerId },
+      // #519: full snapshot (dates, totals, deposits, items) so the change history can diff later rows
+      newValues: { ...buildOrderAuditSnapshot(loyaltyOrder), outletId: loyaltyOrder.outletId },
       description: `Order created: ${loyaltyOrder.orderNumber || loyaltyOrder.id}`,
       context: buildAuditContext(request, user, userScope)
-    }).catch((err) => console.error('Audit log create failed:', err));
+    }));
     console.log('✅ Order created successfully:', loyaltyOrder);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
@@ -1282,16 +1283,15 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
     
     // Use simplified database API with basic update
     const updatedOrder = await db.orders.update(id, updateData);
-    const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logUpdate({
+    await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
       entityType: 'Order',
       entityId: String(id),
       entityName: existingOrder.orderNumber || String(id),
-      oldValues: existingOrder as Record<string, any>,
-      newValues: updatedOrder as Record<string, any>,
+      oldValues: buildOrderAuditSnapshot(existingOrder),
+      newValues: buildOrderAuditSnapshot(updatedOrder),
       description: `Order updated: ${existingOrder.orderNumber || id}`,
       context: buildAuditContext(request, user, userScope)
-    }).catch((err) => console.error('Audit log update failed:', err));
+    }));
     console.log('✅ Order updated successfully:', updatedOrder);
 
     // Push when status changed via PUT /api/orders
