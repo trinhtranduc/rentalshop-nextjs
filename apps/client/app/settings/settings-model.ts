@@ -151,3 +151,44 @@ export function mapSubscriptionStatus(data: any) {
     features: data.features,
   };
 }
+
+// ---------------------------------------------------------------- dialog URL (#539)
+
+/** Query key that opens the Cài đặt dialog on any shop page: `?settings=<tab>`. */
+export const SETTINGS_PARAM = 'settings';
+
+/** Params that only mean something while the dialog is open (subscription return / deep links). */
+const DIALOG_ONLY_PARAMS = ['checkout', 'action'];
+
+const withQuery = (pathname: string, params: URLSearchParams) => {
+  const q = params.toString();
+  return q ? `${pathname}?${q}` : pathname;
+};
+
+/**
+ * Current page with the dialog open on `tab` (page params kept, `checkout` / `action` dropped once
+ * read). Empty tab = the role's default.
+ */
+export function settingsHref(pathname: string, search: string, tab: string = ''): string {
+  const params = new URLSearchParams(search);
+  for (const key of DIALOG_ONLY_PARAMS) params.delete(key);
+  params.set(SETTINGS_PARAM, tab);
+  return withQuery(pathname, params);
+}
+
+/** Current page with the dialog closed. */
+export function closeSettingsHref(pathname: string, search: string): string {
+  const params = new URLSearchParams(search);
+  params.delete(SETTINGS_PARAM);
+  for (const key of DIALOG_ONLY_PARAMS) params.delete(key);
+  return withQuery(pathname, params);
+}
+
+/** Old `/settings?tab=x&…` → `/dashboard?settings=x&…` (checkout / action kept for the subscription tab). */
+export function legacySettingsRedirect(search: string): string {
+  const params = new URLSearchParams(search);
+  const tab = params.get('tab') || '';
+  params.delete('tab');
+  params.set(SETTINGS_PARAM, tab);
+  return withQuery('/dashboard', params);
+}

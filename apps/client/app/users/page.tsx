@@ -322,7 +322,7 @@ export default function UsersPage() {
   const chip = (on: boolean) =>
     `h-9 whitespace-nowrap rounded-full px-3 text-sm ${on ? 'bg-ar-ink font-semibold text-ar-page' : 'border border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'}`;
   const th = 'px-2 py-2.5 text-left text-xs font-bold uppercase tracking-[0.06em] text-ar-muted';
-  const detailHref = (row: StaffLike) => (row === owner ? '/settings?tab=profile' : `/users/${row.id}`);
+  const detailHref = (row: StaffLike) => (row === owner ? '/users?settings=profile' : `/users/${row.id}`);
 
   const roleTag = (row: StaffLike) => {
     const tone = roleTone(row.role);

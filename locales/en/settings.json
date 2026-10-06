@@ -482,6 +482,8 @@
     },
     "bank": {
       "title": "Bank accounts"
-    }
+    },
+    "close": "Close",
+    "dialogTitle": "Settings"
   }
 }

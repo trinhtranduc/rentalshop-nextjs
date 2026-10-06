@@ -482,6 +482,8 @@
     },
     "bank": {
       "title": "Tài khoản ngân hàng"
-    }
+    },
+    "close": "Đóng",
+    "dialogTitle": "Cài đặt"
   }
 }

@@ -3,9 +3,11 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { SHELL_MAIN_NAV, SHELL_MANAGE_NAV, filterNavForRole, isNavActive, type ShellNavItem } from './nav';
 import { ICONS, ShellIcon } from './Icon';
+import { settingsHref } from '../../settings/settings-model';
 
 export interface ShopSidebarUser {
   firstName?: string;
@@ -19,6 +21,8 @@ export interface ShopSidebarUser {
 interface ShopSidebarProps {
   user?: ShopSidebarUser | null;
   pathname: string | null;
+  /** Cài đặt dialog is open (#539): the settings item shows active. */
+  settingsOpen?: boolean;
   onNavigate?: () => void;
   onLogout: () => void;
 }
@@ -37,8 +41,9 @@ function initials(user?: ShopSidebarUser | null): string {
   return (words.length > 1 ? first[0] + last[0] : last.slice(0, 2)).toUpperCase();
 }
 
-export function ShopSidebar({ user, pathname, onNavigate, onLogout }: ShopSidebarProps) {
+export function ShopSidebar({ user, pathname, settingsOpen = false, onNavigate, onLogout }: ShopSidebarProps) {
   const t = useCommonTranslations();
+  const router = useRouter();
   const role = user?.role;
   const main = filterNavForRole(SHELL_MAIN_NAV, role);
   const manage = filterNavForRole(SHELL_MANAGE_NAV, role);
@@ -46,17 +51,39 @@ export function ShopSidebar({ user, pathname, onNavigate, onLogout }: ShopSideba
   const shopName = user?.merchant?.name || 'AnyRent';
   const outletName = user?.outlet?.name || t('shell.allOutlets');
 
+  const itemClass = (active: boolean) =>
+    `flex min-h-[40px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[15px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ar-primary ${
+      active ? 'bg-ar-primary-soft font-semibold text-ar-primary-ink' : 'font-medium text-ar-ink-2 hover:bg-ar-subtle'
+    }`;
+
   const renderItem = (item: ShellNavItem) => {
-    const active = isNavActive(pathname, item.href);
+    // Cài đặt opens as a dialog over the current page (#539) instead of navigating.
+    if (item.key === 'settings') {
+      return (
+        <button
+          key={item.key}
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+          onClick={() => {
+            onNavigate?.();
+            router.replace(settingsHref(pathname || '/dashboard', window.location.search), { scroll: false });
+          }}
+          className={`border-0 ${settingsOpen ? "" : "bg-transparent"} ${itemClass(settingsOpen)}`}
+        >
+          <ShellIcon d={item.icon} />
+          <span className="flex-1">{t(`shell.nav.${item.key}`)}</span>
+        </button>
+      );
+    }
+    const active = !settingsOpen && isNavActive(pathname, item.href);
     return (
       <Link
         key={item.key}
         href={item.href}
         onClick={onNavigate}
         aria-current={active ? 'page' : undefined}
-        className={`flex min-h-[40px] items-center gap-2.5 rounded-[10px] px-2.5 text-[15px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ar-primary ${
-          active ? 'bg-ar-primary-soft font-semibold text-ar-primary-ink' : 'font-medium text-ar-ink-2 hover:bg-ar-subtle'
-        }`}
+        className={itemClass(active)}
       >
         <ShellIcon d={item.icon} />
         <span className="flex-1">{t(`shell.nav.${item.key}`)}</span>
