@@ -1,290 +1,183 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { 
-  Button, 
-  CustomerPageHeader, 
-  CustomerOrdersSummaryCard,
-  Orders,
-  PageWrapper,
-  Breadcrumb
-} from '@rentalshop/ui';
-import type { BreadcrumbItem } from '@rentalshop/ui';
-import { ArrowLeft } from 'lucide-react';
-import { customersApi } from "@rentalshop/utils";
-import { ordersApi } from "@rentalshop/utils";
-import { useAuth, useDedupedApi } from '@rentalshop/hooks';
-import type { Customer, OrderFilters as OrderFiltersType } from '@rentalshop/types';
-import type { OrderStatus } from '@rentalshop/constants';
+/**
+ * Đơn của khách (#541): the Đơn hàng table filtered to one customer. GET /api/customers/{id}/orders
+ * (role-scoped by the API; summary.totalAmount leaves out cancelled orders) and the PICKUPED count.
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useFormatCurrency } from '@rentalshop/ui';
+import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import type { OrderFilters } from '@rentalshop/types';
+import { ICONS, ShellIcon } from '../../../components/shell/Icon';
+import { OrdersTable, Skeleton, TableFooter, cardClass, primaryBtn, type T } from '../../../orders/list/parts';
+import { buildOrderRow, type OrderRowLike } from '../../../orders/orders-model';
+import { customerName, parsePage, parsePageSize, summaryOf, type CustomerSummary } from '../../customers-model';
+import { parseCustomerId } from '../../customer-form-model';
+import { BackLink, LoadProblem, StatsGrid, pageClass, useCustomer } from '../../profile/parts';
 
-// Use the Order type from the types package to match API response
-import type { Order } from '@rentalshop/types';
-
-interface CustomerOrdersData {
-  orders: Order[];
+interface OrdersState {
+  rows: OrderRowLike[];
   total: number;
-  currentPage: number;
   totalPages: number;
-  hasMore: boolean;
+  summary: CustomerSummary;
+  loading: boolean;
+  failed: boolean;
+}
+
+function useOrders(id: number | null, page: number, limit: number, nonce: number): OrdersState {
+  const empty: CustomerSummary = { orders: null, spent: null, renting: null };
+  const [state, setState] = useState<OrdersState>({ rows: [], total: 0, totalPages: 1, summary: empty, loading: true, failed: false });
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setState((s) => ({ ...s, loading: true, failed: false }));
+    Promise.all([
+      ordersApi.getOrdersByCustomer(id, page, limit).catch(() => null),
+      ordersApi
+        .searchOrders({ customerId: id, status: 'PICKUPED' as OrderFilters['status'], page: 1, limit: 1 })
+        .then((r) => (r.success && r.data ? ((r.data as { total?: number }).total ?? null) : null))
+        .catch(() => null),
+    ]).then(([res, renting]) => {
+      if (cancelled) return;
+      if (res && res.success && res.data) {
+        const data = res.data as unknown as { orders?: OrderRowLike[]; total?: number; totalPages?: number; summary?: { totalOrders?: number; totalAmount?: number } };
+        setState({
+          rows: data.orders || [],
+          total: data.total || 0,
+          totalPages: Math.max(1, data.totalPages || 1),
+          summary: summaryOf(data, renting),
+          loading: false,
+          failed: false,
+        });
+      } else setState((s) => ({ ...s, loading: false, failed: true, summary: summaryOf(null, renting) }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, page, limit, nonce]);
+  return state;
 }
 
 export default function CustomerOrdersPage() {
-  const router = useRouter();
   const params = useParams();
-  const { user } = useAuth();
-  const id = params.id as string; // Fix: use params.id instead of params.id
-  
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
-  
-  // Debug: Log when orders state changes
-  useEffect(() => {
-    console.log('🔍 CustomerOrdersPage: Orders state changed to:', orders.length, 'orders');
-    console.log('🔍 CustomerOrdersPage: First order:', orders[0]);
-  }, [orders]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  
-  // Pagination and filters - Updated to match main orders page
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
-  
-  // Initialize filters to match main orders page structure
-  const [filters, setFilters] = useState<OrderFiltersType>({
-    search: '',
-    status: undefined,
-    orderType: undefined,
-    outlet: '',
-    dateRange: {
-      start: '',
-      end: ''
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const t = useTranslations('customers.web') as unknown as T;
+  const to = useTranslations('orders.web') as unknown as T;
+  const money = useFormatCurrency();
+  const id = parseCustomerId(params.id as string | string[] | undefined);
+
+  const page = parsePage(searchParams.get('page'));
+  const limit = parsePageSize(searchParams.get('limit'));
+  const update = useCallback(
+    (patch: Record<string, string | number | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === '') next.delete(k);
+        else next.set(k, String(v));
+      }
+      if (!('page' in patch)) next.delete('page');
+      const query = next.toString();
+      router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
     },
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-  });
+    [pathname, router, searchParams],
+  );
 
-  // ============================================================================
-  // FETCH CUSTOMER DETAILS - Using Official useDedupedApi Hook
-  // ============================================================================
-  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
-  const { 
-    data: customerData, 
-    loading: customerLoading, 
-    error: customerError 
-  } = useDedupedApi({
-    filters: { customerId: id },
-    fetchFn: async () => {
-      // Validate public ID format (should be numeric)
-      const numericId = parseInt(id);
-      if (isNaN(numericId) || numericId <= 0) {
-        throw new Error('Invalid customer ID format');
-      }
-      
-      const response = await customersApi.getCustomerById(numericId);
-      
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch customer');
-      }
-      
-      return response.data;
-    },
-    enabled: !!id,
-    staleTime: 60000, // 60 seconds cache
-    cacheTime: 300000, // 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
-  });
+  const [customerNonce, setCustomerNonce] = useState(0);
+  const { customer, loading: customerLoading, failed } = useCustomer(id, customerNonce);
+  const [nonce, setNonce] = useState(0);
+  const list = useOrders(customer ? customer.id : null, page, limit, nonce);
 
-  // Sync customer data to local state
+  const weekdays = useMemo(() => to('weekdays').split(','), [to]);
+  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const rows = useMemo(() => list.rows.map((o) => buildOrderRow(o, todayKey, getLocalDateKey)), [list.rows, todayKey]);
+
+  // A page past the end goes back to the last one
   useEffect(() => {
-    setCustomer(customerData || null);
-    setIsLoading(customerLoading);
-  }, [customerData, customerLoading]);
+    if (!list.loading && !list.failed && list.total > 0 && page > list.totalPages) update({ page: list.totalPages > 1 ? list.totalPages : null });
+  }, [list.loading, list.failed, list.total, list.totalPages, page, update]);
 
-  // Fetch customer orders
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!customer) return;
-      
-      try {
-        setIsLoadingOrders(true);
-        
-        console.log('🔍 CustomerOrdersPage: Fetching orders for customer:', customer.id);
-        
-        // SECURITY: Use dedicated endpoint /api/customers/[id]/orders
-        // This endpoint ensures proper role-based filtering and only returns orders for this specific customer
-        console.log('🔒 CustomerOrdersPage: Using dedicated customer orders endpoint - backend handles security');
-        console.log('🔒 CustomerOrdersPage: User role:', user?.role);
-        console.log('🔒 CustomerOrdersPage: User outlet ID:', user?.outletId);
-
-        // Use dedicated getOrdersByCustomer method with pagination
-        const response = await ordersApi.getOrdersByCustomer(customer.id, currentPage, 10);
-        
-        if (response.success && response.data) {
-          console.log('✅ CustomerOrdersPage: Orders fetched successfully:', response.data);
-          console.log('🔍 CustomerOrdersPage: Orders data:', response.data);
-          console.log('🔍 CustomerOrdersPage: Setting orders state with:', response.data?.orders?.length || 0, 'orders');
-          setOrders(response.data?.orders || []);
-          setTotalOrders(response.data?.total || 0);
-          setTotalPages(response.data?.totalPages || 1);
-        } else {
-          console.error('❌ CustomerOrdersPage: API error:', response);
-          setOrders([]);
-          setTotalOrders(0);
-          setTotalPages(1);
-        }
-        
-      } catch (error) {
-        console.error('❌ CustomerOrdersPage: Error fetching orders:', error);
-        setOrders([]);
-        setTotalOrders(0);
-        setTotalPages(1);
-      } finally {
-        setIsLoadingOrders(false);
-      }
-    };
-
-    if (customer) {
-      fetchOrders();
-    }
-  }, [customer, currentPage]); // Removed filters dependency since we removed frontend filtering
-
-  // SECURITY: Frontend filtering removed - all filtering is handled securely by backend
-  // This prevents security vulnerabilities where hackers could bypass filters
-
-  // Handle search change
-  const handleSearchChange = (searchValue: string) => {
-    setFilters(prev => ({ ...prev, search: searchValue }));
-    setCurrentPage(1);
-  };
-
-  // Handle filters change
-  const handleFiltersChange = (newFilters: Partial<OrderFiltersType>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setCurrentPage(1);
-  };
-
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      status: undefined,
-      orderType: undefined,
-      outlet: '',
-      dateRange: {
-        start: '',
-        end: ''
-      },
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
-    setCurrentPage(1);
-  };
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Handle order action
-  const handleOrderAction = (action: string, orderNumber: string) => {
-    console.log('🔍 CustomerOrdersPage: Order action:', action, orderNumber);
-    
-    switch (action) {
-      case 'view':
-        router.push(`/orders/${orderNumber}`);
-        break;
-      case 'edit':
-        router.push(`/orders/${orderNumber}/edit`);
-        break;
-      default:
-        console.log('🔍 CustomerOrdersPage: Unknown order action:', action);
-    }
-  };
-
-  // Loading state
-  if (isLoading) {
+  if (customerLoading) {
     return (
-      <PageWrapper>
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-      </PageWrapper>
+      <div className={pageClass}>
+        <BackLink href="/customers" label={t('form.backList')} />
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-80 w-full rounded-2xl" />
+      </div>
+    );
+  }
+  if (failed || !customer) {
+    return (
+      <div className={pageClass}>
+        <BackLink href="/customers" label={t('form.backList')} />
+        <LoadProblem failed={failed || 'notFound'} onRetry={() => setCustomerNonce((n) => n + 1)} t={t} />
+      </div>
     );
   }
 
-  // Error state
-  if (!customer) {
-    return (
-      <PageWrapper>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Customer Not Found</h1>
-            <p className="text-gray-600 mb-6">The customer you're looking for doesn't exist or has been removed.</p>
-            <Button onClick={() => router.push('/customers')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Customers
-            </Button>
-          </div>
-      </PageWrapper>
-    );
-  }
-
-  // Breadcrumb items
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: 'Customers', href: '/customers' },
-    { label: [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'Customer', href: `/customers/${id}` },
-    { label: 'Orders' }
-  ];
+  const name = customerName(customer) || t('noName');
 
   return (
-    <PageWrapper>
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} showHome={false} className="mb-6" />
-        {/* Customer Summary Card */}
-        <div className="mb-8">
-          <CustomerOrdersSummaryCard 
-            customer={customer}
-            orderStats={{
-              totalOrders: totalOrders,
-              totalRevenue: Array.isArray(orders) ? orders.reduce((sum, order) => sum + order.totalAmount, 0) : 0,
-              averageOrderValue: totalOrders > 0 && Array.isArray(orders) ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / totalOrders : 0,
-              lastOrderDate: Array.isArray(orders) && orders.length > 0 ? orders[0].createdAt : undefined
-            }}
-          />
-        </div>
+    <div className={pageClass}>
+      <BackLink href={`/customers/${customer.id}`} label={name} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="m-0 min-w-0 text-2xl font-bold text-ar-ink">
+          {t('orders.title', { name })}
+          {list.total > 0 && <span className="text-base font-normal text-ar-muted"> · {list.total}</span>}
+        </h1>
+        <Link href="/orders/create" className={primaryBtn}>
+          <ShellIcon d={ICONS.plus} size={18} />
+          {t('orders.create')}
+        </Link>
+      </div>
 
-        {/* Orders - Use shared Orders component for consistent UI */}
-        <Orders
-          data={{
-            orders: orders as any,
-            total: totalOrders,
-            hasMore: currentPage < totalPages,
-            currentPage: currentPage,
-            limit: 10,
-            totalPages: totalPages,
-            stats: undefined
-          }}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
-          onOrderAction={handleOrderAction}
-          onPageChange={handlePageChange}
-          onSort={(column: string) => {
-            const newSortOrder = filters.sortBy === column && filters.sortOrder === 'desc' ? 'asc' : 'desc';
-            handleFiltersChange({ sortBy: column, sortOrder: newSortOrder });
-          }}
-          showStats={false}
-          userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
-        />
-    </PageWrapper>
+      <section className={`${cardClass} flex flex-col gap-2.5 px-5 py-4`}>
+        <StatsGrid summary={list.summary} loading={list.loading && list.summary.orders === null} t={t} money={money} />
+        <span className="text-sm text-ar-muted">{t('detail.spentNote')}</span>
+      </section>
+
+      <section className={`${cardClass} overflow-hidden`}>
+        {list.failed ? (
+          <div role="alert" className="flex flex-wrap items-center gap-3 px-5 py-6 text-[15px] text-ar-muted">
+            <span>{t('orders.loadFailed')}</span>
+            <button
+              type="button"
+              onClick={() => setNonce((n) => n + 1)}
+              className="h-9 rounded-[10px] border border-ar-line px-3 text-sm font-semibold text-ar-ink hover:bg-ar-subtle"
+            >
+              {t('retry')}
+            </button>
+          </div>
+        ) : (
+          <OrdersTable
+            rows={rows}
+            loading={list.loading}
+            failed={false}
+            onRetry={() => setNonce((n) => n + 1)}
+            emptyText={t('orders.empty')}
+            weekdays={weekdays}
+            t={to}
+            money={money}
+            skeletonRows={Math.min(limit, 10)}
+          />
+        )}
+        {list.total > 0 && (
+          <TableFooter
+            page={Math.min(page, list.totalPages)}
+            limit={limit}
+            total={list.total}
+            totalPages={list.totalPages}
+            onPage={(p) => update({ page: p > 1 ? p : null })}
+            onLimit={(n) => update({ limit: n === 10 ? null : n })}
+            t={to}
+          />
+        )}
+      </section>
+    </div>
   );
 }

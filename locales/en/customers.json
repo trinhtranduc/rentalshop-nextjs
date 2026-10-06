@@ -335,6 +335,80 @@
         "again": "Import another file"
       }
     },
-    "orderCount": "{count, plural, one {# order} other {# orders}}"
+    "orderCount": "{count, plural, one {# order} other {# orders}}",
+    "form": {
+      "backList": "Customers",
+      "titleCreate": "New customer",
+      "titleEdit": "Edit customer",
+      "hintCreate": "Only the name is needed. A phone number makes the customer quicker to find when creating an order.",
+      "contact": "Contact",
+      "addressTitle": "Address",
+      "moreTitle": "ID and notes",
+      "name": "Full name",
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Street address",
+      "city": "District / city",
+      "state": "Province / state",
+      "zipCode": "Postal code",
+      "idNumber": "ID number",
+      "idNumberHint": "ID card, passport or driving licence the customer leaves when renting.",
+      "notes": "Notes",
+      "required": "required",
+      "namePlaceholder": "e.g. Nguyen Thi Mai",
+      "phonePlaceholder": "e.g. 0912 555 018",
+      "emailPlaceholder": "name@example.com",
+      "notesPlaceholder": "Measurements, preferences, delivery notes…",
+      "errors": {
+        "nameRequired": "Enter the customer's name.",
+        "nameShort": "The name needs at least 2 characters.",
+        "phoneRequired": "This customer has a phone number; it cannot be left empty.",
+        "phoneInvalid": "Use digits and + - ( ) only.",
+        "phoneShort": "The phone number needs at least 8 digits.",
+        "emailInvalid": "This email is not valid."
+      },
+      "duplicate": "Another customer already has this phone number or email.",
+      "saveFailed": "Could not save. Try again.",
+      "cancel": "Cancel",
+      "saveCreate": "Save customer",
+      "saveEdit": "Save changes",
+      "saving": "Saving…",
+      "created": "Customer added",
+      "updated": "Changes saved",
+      "notFound": "This customer was not found.",
+      "loadFailed": "Could not load the customer.",
+      "toList": "Back to customers"
+    },
+    "profile": {
+      "since": "Customer since {day}",
+      "orders": "Customer orders",
+      "edit": "Edit",
+      "call": "Call {name}",
+      "contact": "Contact",
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Address",
+      "idNumber": "ID number",
+      "notes": "Notes",
+      "none": "Not provided",
+      "recent": "Recent orders",
+      "summary": "Summary",
+      "loyalty": {
+        "title": "Reward points",
+        "points": "Points now",
+        "earned": "Earned",
+        "redeemed": "Redeemed",
+        "history": "Points history",
+        "noHistory": "No point transactions yet.",
+        "pointsValue": "{points} points"
+      },
+      "delete": "Delete customer"
+    },
+    "orders": {
+      "title": "Orders of {name}",
+      "create": "New order",
+      "empty": "This customer has no orders yet.",
+      "loadFailed": "Could not load this customer's orders."
+    }
   }
 }
