@@ -745,6 +745,18 @@
         "createAnyway": "Create anyway",
         "saveAnyway": "Save anyway",
         "blocked": "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked."
+      },
+      "confirm": {
+        "rentTitle": "Create rental order?",
+        "saleTitle": "Sell and collect?",
+        "customer": "Customer",
+        "dates": "Rental dates",
+        "range": "{range} · {days, plural, one {# day} other {# days}}",
+        "items": "Items",
+        "days": "{days, plural, one {# day} other {# days}}",
+        "collectDeposit": "Collect deposit now",
+        "collectSale": "Collect now",
+        "sell": "Sell & collect"
       }
     },
     "tabs": {

@@ -745,6 +745,18 @@
         "createAnyway": "Vẫn tạo đơn",
         "saveAnyway": "Vẫn lưu thay đổi",
         "blocked": "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết."
+      },
+      "confirm": {
+        "rentTitle": "Tạo đơn thuê?",
+        "saleTitle": "Bán & thu tiền?",
+        "customer": "Khách",
+        "dates": "Lịch thuê",
+        "range": "{range} · {days} ngày",
+        "items": "Món",
+        "days": "{days} ngày",
+        "collectDeposit": "Thu cọc ngay",
+        "collectSale": "Thu ngay",
+        "sell": "Bán & thu tiền"
       }
     },
     "tabs": {
