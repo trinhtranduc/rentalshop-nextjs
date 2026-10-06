@@ -10,6 +10,7 @@
   "TOKEN_INVALIDATED_PERMISSIONS_CHANGED": "권한이 변경되었습니다. 다시 로그인해 주세요.",
   "MERCHANT_DUPLICATE": "이 이메일 또는 전화번호를 가진 사업자가 이미 존재합니다. 다른 이메일 또는 전화번호를 사용해주세요.",
   "INVALID_ORDER_STATUS": "이 주문은 이 상태로 변경할 수 없습니다.",
+  "ORDER_SCHEDULE_CONFLICT": "이 매장은 일정이 겹치는 주문을 허용하지 않습니다. 날짜를 바꾸거나 수량을 줄이거나 예약이 찬 상품을 빼 주세요.",
   "STOCK_BELOW_RENTED": "재고는 현재 대여 중인 수량보다 적을 수 없습니다.",
   "OUTLET_REQUIRED": "매장을 선택하거나 기본 매장을 설정하세요.",
   "PRODUCT_HAS_OPEN_ORDERS": "이 상품은 예약 중이거나 대여 중인 주문에 포함되어 있습니다. 삭제하기 전에 해당 주문을 완료하거나 취소하세요.",

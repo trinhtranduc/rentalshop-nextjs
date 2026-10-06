@@ -70,6 +70,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         website: userProfile.merchant.website,
         description: userProfile.merchant.description,
         tenantKey: userProfile.merchant.tenantKey, // Include tenantKey for referral code
+        // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
+        allowOverlappingOrders: (userProfile.merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
         totalRevenue: userProfile.merchant.totalRevenue,

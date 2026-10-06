@@ -100,6 +100,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PRODUCT_HAS_NO_IMAGES': 'Add at least one product photo before syncing image search',
   'ORDER_NOT_FOUND': 'Order not found',
   'INVALID_ORDER_STATUS': 'This status change is not allowed for this order.',
+  'ORDER_SCHEDULE_CONFLICT': 'This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.',
   'CUSTOMER_NOT_FOUND': 'Customer not found',
   'CATEGORY_NOT_FOUND': 'Category not found',
   'PLAN_NOT_FOUND': 'Plan not found',
@@ -494,6 +495,7 @@ export function getErrorStatusCode(error: any, defaultCode: number = 500): numbe
   if (code?.includes('_EXISTS')) return 409;
   if (code?.includes('_DUPLICATE')) return 409;
   if (code === 'DUPLICATE_ENTRY') return 409;
+  if (code === 'ORDER_SCHEDULE_CONFLICT') return 409;
   
   // Business rule violations (422)
   if (code === 'BUSINESS_RULE_VIOLATION') return 422;

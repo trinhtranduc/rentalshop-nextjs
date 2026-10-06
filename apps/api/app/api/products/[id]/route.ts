@@ -18,6 +18,7 @@ import {
 import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
+import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 
 function buildImageUploadErrorResponse(detail?: string) {
@@ -632,16 +633,16 @@ export async function PUT(
 
       // Update the product using the simplified database API with nested write
       const updatedProduct = await db.products.update(productId, finalUpdateData);
-      const auditHelper = createAuditHelper(prisma);
-      await auditHelper.logUpdate({
+      // #519: snapshots with prices, pricing options, per-outlet stock and images (never costPrice)
+      await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
         entityType: 'Product',
         entityId: String(productId),
         entityName: existingProduct.name,
-        oldValues: existingProduct as Record<string, any>,
-        newValues: updatedProduct as Record<string, any>,
+        oldValues: buildProductAuditSnapshot(existingProduct),
+        newValues: buildProductAuditSnapshot(updatedProduct),
         description: `Product updated: ${existingProduct.name}`,
         context: buildAuditContext(request, user, userScope)
-      }).catch((err) => console.error('Audit log update failed:', err));
+      }));
       console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
       // Sync Product.totalStock = sum of all OutletStock.stock
@@ -944,7 +945,7 @@ export async function DELETE(
         entityType: 'Product',
         entityId: String(productId),
         entityName: existingProduct.name,
-        oldValues: existingProduct as Record<string, any>,
+        oldValues: buildProductAuditSnapshot(existingProduct),
         description: `Product deleted: ${existingProduct.name}`,
         context: buildAuditContext(request, user, userScope)
       }).catch((err) => console.error('Audit log delete failed:', err));

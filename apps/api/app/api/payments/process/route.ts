@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { createAuditHelper } from '@rentalshop/utils/server';
+import { safeAudit } from '../../../../lib/change-timeline';
 import {
   API,
   PAYMENT_METHOD,
@@ -93,6 +95,27 @@ export async function POST(request: NextRequest) {
         processedBy: String(user.id),
         metadata: JSON.stringify({ kind, source: 'ANDROID_POS' }),
       });
+
+      // #519: the order's change history shows the money collected / refunded
+      await safeAudit('payment', () => createAuditHelper(prisma).logCustom({
+        action: 'CUSTOM',
+        entityType: 'Order',
+        entityId: String(orderId),
+        entityName: order.orderNumber || String(orderId),
+        description: `Order payment ${kind === 'REFUND' ? 'refunded' : 'collected'}: ${amount}`,
+        category: 'BUSINESS',
+        newValues: { payment: { kind, amount, method } },
+        context: {
+          userId: String(user.id),
+          userEmail: user.email,
+          userRole: user.role,
+          merchantId: outlet.merchantId != null ? String(outlet.merchantId) : undefined,
+          outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+          userAgent: request.headers.get('user-agent') || undefined,
+          requestId: request.headers.get('x-request-id') || undefined,
+        },
+      }));
 
       return NextResponse.json(
         ResponseBuilder.success('ORDER_PAYMENT_PROCESSED', { payment }),

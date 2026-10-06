@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 
 /**
  * PUT /api/settings/merchant
@@ -10,6 +10,8 @@ import { API } from '@rentalshop/constants';
  * 
  * Authorization: Only roles with 'merchant.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT
+ * - `allowOverlappingOrders` (#518, boolean): role MERCHANT or ADMIN only (403 INSUFFICIENT_PERMISSIONS
+ *   otherwise). A body with only that field updates just the setting (no name required).
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user, userScope }) => {
@@ -40,11 +42,36 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       taxId, 
       website, 
       description,
-      tenantKey
+      tenantKey,
+      allowOverlappingOrders
     } = body;
 
+    // #518 "Cho tạo đơn khi trùng lịch": boolean, and only the shop owner (or platform ADMIN) may change it,
+    // even when a custom role was granted merchant.manage.
+    if (allowOverlappingOrders !== undefined) {
+      if (typeof allowOverlappingOrders !== 'boolean') {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT && user.role !== USER_ROLE.ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // A body carrying only the setting (new apps' toggle) updates just that field; every other body is the
+    // business-info form as before and still needs a name.
+    const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
+    const settingOnly =
+      allowOverlappingOrders !== undefined &&
+      BUSINESS_FIELDS.every((field) => body[field] === undefined);
+
     // Validate required fields
-    if (!name) {
+    if (!name && !settingOnly) {
       return NextResponse.json(
         ResponseBuilder.error('BUSINESS_NAME_REQUIRED'),
         { status: API.STATUS.BAD_REQUEST }
@@ -97,19 +124,24 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
 
     // Update merchant using the centralized database function
     console.log('🔍 MERCHANT API: Calling updateMerchant with id:', dbUser.merchant.id);
-    const updateData: any = {
-      name,
-      phone,
-      address,
-      city,
-      state,
-      zipCode,
-      country,
-      businessType,
-      taxId,
-      website,
-      description
-    };
+    const updateData: any = settingOnly
+      ? {}
+      : {
+          name,
+          phone,
+          address,
+          city,
+          state,
+          zipCode,
+          country,
+          businessType,
+          taxId,
+          website,
+          description
+        };
+    if (allowOverlappingOrders !== undefined) {
+      updateData.allowOverlappingOrders = allowOverlappingOrders;
+    }
     
     // Only include tenantKey if it's provided (allows clearing tenantKey by passing empty string)
     if (tenantKey !== undefined) {
@@ -135,6 +167,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         website: updatedMerchant.website,
         description: updatedMerchant.description,
         tenantKey: updatedMerchant.tenantKey,
+        allowOverlappingOrders: (updatedMerchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscription?.status,

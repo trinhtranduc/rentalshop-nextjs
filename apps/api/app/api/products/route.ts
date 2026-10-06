@@ -5,6 +5,7 @@ import { productsQuerySchema, productCreateSchema, handleApiError, ResponseBuild
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { deleteFromS3, commitStagingFiles, generateAccessUrl, uploadToS3, getBucketName } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../lib/image-compression';
+import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
@@ -668,15 +669,15 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       }
     });
 
-    const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logCreate({
+    await safeAudit('create', () => createAuditHelper(prisma).logCreate({
       entityType: 'Product',
       entityId: String(product.id),
       entityName: product.name,
-      newValues: { name: product.name, rentPrice: product.rentPrice, salePrice: product.salePrice, merchantId: merchant.id },
+      // #519: prices, pricing options, per-outlet stock, images, category (never costPrice)
+      newValues: buildProductAuditSnapshot(product),
       description: `Product created: ${product.name}`,
       context: buildAuditContext(request, user, userScope)
-    }).catch((err) => console.error('Audit log create failed:', err));
+    }));
 
     // Sync totalStock
     try {

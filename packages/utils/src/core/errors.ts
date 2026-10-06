@@ -50,6 +50,7 @@ export enum ErrorCode {
   ORDER_ALREADY_EXISTS = 'ORDER_ALREADY_EXISTS',
   PRODUCT_OUT_OF_STOCK = 'PRODUCT_OUT_OF_STOCK',
   INVALID_ORDER_STATUS = 'INVALID_ORDER_STATUS',
+  ORDER_SCHEDULE_CONFLICT = 'ORDER_SCHEDULE_CONFLICT',
   PAYMENT_FAILED = 'PAYMENT_FAILED',
   INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
   
@@ -138,6 +139,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.ORDER_ALREADY_EXISTS]: 'Order already exists',
   [ErrorCode.PRODUCT_OUT_OF_STOCK]: 'Product is out of stock',
   [ErrorCode.INVALID_ORDER_STATUS]: 'Invalid order status',
+  [ErrorCode.ORDER_SCHEDULE_CONFLICT]: 'This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.',
   [ErrorCode.PAYMENT_FAILED]: 'Payment processing failed',
   [ErrorCode.INVALID_PAYMENT_METHOD]: 'Invalid payment method',
   
@@ -211,6 +213,7 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.ORDER_ALREADY_EXISTS]: 409,
   [ErrorCode.PRODUCT_OUT_OF_STOCK]: 422,
   [ErrorCode.INVALID_ORDER_STATUS]: 422,
+  [ErrorCode.ORDER_SCHEDULE_CONFLICT]: 409,
   [ErrorCode.PAYMENT_FAILED]: 402,
   [ErrorCode.INVALID_PAYMENT_METHOD]: 400,
   

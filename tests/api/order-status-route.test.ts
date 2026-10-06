@@ -20,6 +20,10 @@ jest.mock('@rentalshop/utils', () => ({
   ResponseBuilder: { error: (code: string) => ({ success: false, code, message: code, error: code }) },
   handleApiError: (e: any) => ({ response: { success: false, message: String(e) }, statusCode: 500 }),
 }));
+// #519: the route now records the status move in the audit log
+jest.mock('@rentalshop/utils/server', () => ({
+  createAuditHelper: () => ({ logUpdate: () => Promise.resolve() }),
+}));
 jest.mock('@rentalshop/loyalty', () => ({
   handleLoyaltyOnCancel: jest.fn(),
   merchantHasLoyaltyFeature: jest.fn().mockResolvedValue(false),

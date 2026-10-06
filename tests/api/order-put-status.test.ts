@@ -28,10 +28,11 @@ jest.mock('@rentalshop/utils', () => ({
   extractStagingKeysFromUrls: () => [],
   mapStagingUrlsToProductionUrls: (a: any) => a,
 }));
+const mockLogUpdate = jest.fn((_params: any) => Promise.resolve());
 jest.mock('@rentalshop/utils/server', () => ({
   uploadToS3: jest.fn(),
   commitStagingFiles: jest.fn(),
-  createAuditHelper: () => ({ logUpdate: () => Promise.resolve() }),
+  createAuditHelper: () => ({ logUpdate: mockLogUpdate }),
 }));
 jest.mock('@rentalshop/loyalty', () => ({
   adjustRedeemOnOrderEdit: jest.fn(),
@@ -47,6 +48,7 @@ jest.mock('../../apps/api/lib/image-compression', () => ({
 jest.mock('../../apps/api/lib/push-notifications', () => ({ notifyOutletOrderEvent: jest.fn() }));
 
 import { PUT } from '../../apps/api/app/api/orders/[orderId]/route';
+import { buildChangeEntry } from '../../apps/api/lib/change-timeline';
 
 const merchant = { user: { id: 2, role: 'MERCHANT', merchantId: 2, email: 'm@x' }, userScope: { merchantId: 2 } };
 const staffOutlet1 = {
@@ -103,5 +105,33 @@ describe('PUT /api/orders/:id status changes (#361)', () => {
     const res: any = await PUT(put({ outletId: 7, notes: 'x' }), { params: { orderId: '5' } });
     expect(res.status).toBe(403);
     expect(mockDb.orders.update).not.toHaveBeenCalled();
+  });
+
+  it('#519: a pickup through PUT records a "Giao đồ" (ORDER_PICKED_UP) audit row with snapshots', async () => {
+    givenOrder({ orderType: 'RENT', status: 'RESERVED' });
+    mockDb.orders.findByIdDetail.mockImplementation(async () => ({
+      id: 5, orderNumber: 'ORD-001-0005', outletId: 1, status: 'PICKUPED', totalAmount: 100000,
+      pickedUpAt: new Date('2026-10-06T08:10:00Z'), outlet: { name: 'Outlet 1' }, orderItems: [], payments: [],
+    }));
+    const res: any = await PUT(put({ status: 'PICKUPED' }), { params: { orderId: '5' } });
+    expect(res.status).toBe(200);
+    expect(mockLogUpdate).toHaveBeenCalledTimes(1);
+    const params = mockLogUpdate.mock.calls[0][0];
+    expect(params.oldValues).toEqual(expect.objectContaining({ status: 'RESERVED', totalAmount: 100000, items: [] }));
+    expect(params.newValues).toEqual(expect.objectContaining({ status: 'PICKUPED', totalAmount: 100000 }));
+    const entry = buildChangeEntry(
+      { id: 1, action: 'UPDATE', createdAt: new Date(), details: { oldValues: params.oldValues, newValues: params.newValues } },
+      'Order'
+    );
+    expect(entry.kind).toBe('ORDER_PICKED_UP');
+  });
+
+  it('#519: an audit helper that throws does not break the update', async () => {
+    givenOrder({ orderType: 'RENT', status: 'RESERVED' });
+    mockLogUpdate.mockImplementationOnce(() => { throw new Error('audit down'); });
+    const err = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const res: any = await PUT(put({ notes: 'x' }), { params: { orderId: '5' } });
+    err.mockRestore();
+    expect(res.status).toBe(200);
   });
 });
