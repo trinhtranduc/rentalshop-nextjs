@@ -64,6 +64,11 @@ scripts/mobile-e2e/adb-ui.sh dump | tap "~Giao đồ" | shot 20-detail-handover 
   `test3CartSale`, `test4OrdersTab`, `test5OrderDetailActions`, `test6Calendar`, `test7Overview`,
   `test8StaffRestrictions` (staff run only), `test9SettingsLogout`. One failure does not stop the rest. Methods
   behind an off flag are skipped; order-changing flows (cart, detail actions) run for the merchant account only.
+  Newer screens (#530): `test5cOrderActionSheet` (⋯ sheet), `test5dOrderChangeHistory`, `test7dProductChangeHistory`
+  (changes Product 25's daily price, then removes it again), `test7eOverlapSetting` (turns "Cho tạo đơn khi trùng
+  lịch" OFF and back ON in a teardown block), `test7fCartPricingSheet`, `test7gChangePasswordSheet` (never changes the
+  password), `test7hOrdersByProductAndCustomer`, `test7iNotifications`, `test7jTodayWorkAndNotPickedUp`. The seed has no
+  notifications: insert a long one into your own DB to exercise wrapping.
   Soft checks print `E2E_NOTE: SOFT CHECK FAILED …` in the log instead of failing.
 - The test handles the notification prompt ("Don’t Allow" / "Không cho phép") and onboarding ("Skip" / "Bỏ qua"),
   logs in, and relaunches once so app-config flags apply.
