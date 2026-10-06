@@ -378,88 +378,109 @@
     "description": "Use at least 6 characters. You will need to log in again on other devices."
   },
   "web": {
-    "title": "Shop settings",
+    "title": "Store settings",
     "navLabel": "Settings sections",
-    "tabs": {
-      "merchant": "Shop information",
-      "outlet": "My outlet",
+    "loading": "Loading…",
+    "nav": {
+      "merchant": "Store information",
+      "outlet": "Outlet information",
       "bank-accounts": "Bank accounts",
-      "receipt": "Receipt printing",
-      "subscription": "Plan",
+      "receipt": "Receipt",
+      "subscription": "Subscription",
       "profile": "My account",
       "account": "Change password",
       "language": "Language"
     },
-    "fields": {
-      "shopName": "Shop name",
-      "outletName": "Outlet name",
-      "phone": "Phone",
+    "form": {
+      "required": "required",
+      "optional": "Optional",
       "address": "Address",
       "street": "Street address",
       "city": "City",
-      "district": "District",
+      "state": "District",
       "country": "Country",
-      "zipCode": "Postal code",
+      "zip": "Postal code",
       "description": "Description",
-      "tenantKey": "Shop URL key",
-      "tenantKeyHint": "Lowercase letters, digits and hyphens. Used for the public product page.",
+      "shopName": "Store name",
+      "outletName": "Outlet name",
+      "phone": "Phone",
+      "email": "Email",
       "taxId": "Tax ID",
+      "tenantKey": "Store URL key",
+      "tenantKeyHint": "Lowercase letters, numbers and hyphens only. Used in your public product link.",
+      "tenantKeyInvalid": "The URL key may only contain lowercase letters, numbers and hyphens.",
+      "nameRequired": "Enter a name before saving.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "readOnly": "You can only view this section."
+    },
+    "outlets": {
+      "title": "Outlets",
+      "add": "Add outlet",
+      "edit": "Edit",
+      "main": "Main",
+      "bank": "Bank accounts",
+      "empty": "No outlets yet",
+      "loadFailed": "Couldn't load outlets.",
+      "retry": "Try again"
+    },
+    "links": {
+      "title": "Share your store",
+      "product": "Public product page",
+      "productHint": "Send this link so customers can browse your rentals without signing in.",
+      "registration": "Referral link",
+      "registrationHint": "Send it to other shop owners to sign up with your referral code.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "open": "Open page",
+      "none": "Not available yet. Set a store URL key first."
+    },
+    "receipt": {
+      "title": "Receipt",
+      "empty": "No outlets yet",
+      "loadFailed": "Couldn't load receipt notes.",
+      "retry": "Try again"
+    },
+    "profile": {
+      "title": "My account",
       "firstName": "First name",
       "lastName": "Last name",
-      "email": "Email",
-      "currentPassword": "Current password",
-      "newPassword": "New password",
-      "confirmPassword": "Repeat new password"
+      "role": "Role"
     },
-    "errors": {
-      "nameRequired": "Enter a name",
-      "addressRequired": "Enter an address",
-      "tenantKey": "Use lowercase letters, digits and hyphens only",
-      "currentRequired": "Enter your current password",
-      "mismatch": "The passwords do not match",
-      "tooShort": "The new password needs at least 6 characters"
+    "password": {
+      "title": "Change password",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "hint": "At least 6 characters. Other devices will need to sign in again.",
+      "submit": "Change password",
+      "changing": "Changing…"
     },
-    "required": "required",
-    "optional": "Optional",
-    "save": "Save",
-    "saving": "Saving…",
-    "cancel": "Cancel",
-    "close": "Close",
-    "retry": "Try again",
-    "loadFailed": "Could not load.",
-    "saved": "Saved",
-    "saveFailed": "Not saved",
-    "merchantSaved": "Shop information updated",
-    "merchantSaveFailed": "Could not update the shop information",
-    "outletSaved": "Outlet updated",
-    "outletSaveFailed": "Could not update the outlet",
-    "profileSaved": "Account updated",
-    "profileSaveFailed": "Could not update the account",
-    "publicPage": "Public product page",
-    "referralLink": "Referral link",
-    "outlets": "Outlets",
-    "manageOutlets": "Manage outlets",
-    "mainOutlet": "Main",
-    "outletOff": "Off",
-    "noAddress": "No address yet",
-    "noOutlet": "This account is not linked to an outlet.",
-    "outletReadOnly": "Only an outlet admin or the shop owner can edit this.",
-    "receiptNote": "Receipt footer note",
-    "receiptHint": "Printed at the bottom of rent receipts, e.g. a deposit policy or bank details. Up to 500 characters.",
-    "emailLocked": "The sign-in email cannot be changed.",
-    "changePassword": "Change password",
-    "passwordHint": "At least 6 characters.",
-    "passwordChanged": "Password changed",
-    "session": "Session",
-    "signOut": "Sign out",
-    "signOutHint": "Sign out of this browser.",
-    "deleteAccount": "Delete account",
-    "deleteAccountHint": "Permanently delete your account. This cannot be undone.",
-    "deleteAccountTitle": "Delete account?",
-    "deleteAccountBody": "Your account will be deleted permanently and you will be signed out. This cannot be undone.",
-    "deleting": "Deleting…",
-    "accountDeleted": "Account deleted",
-    "accountDeleteFailed": "Could not delete the account",
-    "languageHint": "Your choice is saved in this browser."
+    "session": {
+      "title": "Sign out",
+      "desc": "Sign out of your account on this device.",
+      "button": "Sign out"
+    },
+    "delete": {
+      "title": "Delete account",
+      "desc": "Permanently delete your account and data. This cannot be undone.",
+      "button": "Delete account",
+      "confirmTitle": "Delete account?",
+      "confirmBody": "Your profile, orders, products and all settings will be deleted permanently. This cannot be undone.",
+      "deleting": "Deleting…",
+      "close": "Close"
+    },
+    "language": {
+      "title": "Language",
+      "hint": "Display language on this device. Saved automatically.",
+      "applying": "Changing language…"
+    },
+    "subscription": {
+      "title": "Subscription"
+    },
+    "bank": {
+      "title": "Bank accounts"
+    }
   }
 }

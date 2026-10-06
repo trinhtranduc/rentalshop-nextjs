@@ -380,86 +380,107 @@
   "web": {
     "title": "Cài đặt cửa hàng",
     "navLabel": "Mục cài đặt",
-    "tabs": {
+    "loading": "Đang tải…",
+    "nav": {
       "merchant": "Thông tin cửa hàng",
-      "outlet": "Chi nhánh của tôi",
+      "outlet": "Thông tin chi nhánh",
       "bank-accounts": "Tài khoản ngân hàng",
-      "receipt": "In hoá đơn",
+      "receipt": "Phiếu in",
       "subscription": "Gói dịch vụ",
       "profile": "Tài khoản của tôi",
       "account": "Đổi mật khẩu",
       "language": "Ngôn ngữ"
     },
-    "fields": {
-      "shopName": "Tên cửa hàng",
-      "outletName": "Tên chi nhánh",
-      "phone": "Số điện thoại",
+    "form": {
+      "required": "bắt buộc",
+      "optional": "Không bắt buộc",
       "address": "Địa chỉ",
       "street": "Số nhà, đường",
       "city": "Thành phố",
-      "district": "Quận / huyện",
+      "state": "Quận / huyện",
       "country": "Quốc gia",
-      "zipCode": "Mã bưu chính",
+      "zip": "Mã bưu chính",
       "description": "Mô tả",
-      "tenantKey": "Đường dẫn cửa hàng",
-      "tenantKeyHint": "Chữ thường, số và dấu gạch ngang. Dùng cho trang sản phẩm công khai.",
+      "shopName": "Tên cửa hàng",
+      "outletName": "Tên chi nhánh",
+      "phone": "Số điện thoại",
+      "email": "Email",
       "taxId": "Mã số thuế",
+      "tenantKey": "Mã URL cửa hàng",
+      "tenantKeyHint": "Chỉ chữ thường, số và dấu gạch ngang. Dùng trong link trang sản phẩm công khai.",
+      "tenantKeyInvalid": "Mã URL chỉ gồm chữ thường, số và dấu gạch ngang.",
+      "nameRequired": "Nhập tên trước khi lưu.",
+      "cancel": "Huỷ",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "readOnly": "Bạn chỉ xem được mục này."
+    },
+    "outlets": {
+      "title": "Chi nhánh",
+      "add": "Thêm chi nhánh",
+      "edit": "Sửa",
+      "main": "Chính",
+      "bank": "Tài khoản ngân hàng",
+      "empty": "Chưa có chi nhánh nào",
+      "loadFailed": "Không tải được danh sách chi nhánh.",
+      "retry": "Thử lại"
+    },
+    "links": {
+      "title": "Chia sẻ cửa hàng",
+      "product": "Trang sản phẩm công khai",
+      "productHint": "Gửi link này cho khách xem đồ cho thuê, không cần đăng nhập.",
+      "registration": "Link giới thiệu",
+      "registrationHint": "Gửi cho chủ shop khác để đăng ký với mã giới thiệu của bạn.",
+      "copy": "Sao chép",
+      "copied": "Đã chép",
+      "open": "Mở trang",
+      "none": "Chưa có. Đặt mã URL cửa hàng trước."
+    },
+    "receipt": {
+      "title": "Phiếu in",
+      "empty": "Chưa có chi nhánh nào",
+      "loadFailed": "Không tải được ghi chú phiếu in.",
+      "retry": "Thử lại"
+    },
+    "profile": {
+      "title": "Tài khoản của tôi",
       "firstName": "Tên",
       "lastName": "Họ",
-      "email": "Email",
-      "currentPassword": "Mật khẩu hiện tại",
-      "newPassword": "Mật khẩu mới",
-      "confirmPassword": "Nhập lại mật khẩu mới"
+      "role": "Vai trò"
     },
-    "errors": {
-      "nameRequired": "Nhập tên",
-      "addressRequired": "Nhập địa chỉ",
-      "tenantKey": "Chỉ dùng chữ thường, số và dấu gạch ngang",
-      "currentRequired": "Nhập mật khẩu hiện tại",
-      "mismatch": "Mật khẩu nhập lại không khớp",
-      "tooShort": "Mật khẩu mới cần ít nhất 6 ký tự"
+    "password": {
+      "title": "Đổi mật khẩu",
+      "current": "Mật khẩu hiện tại",
+      "new": "Mật khẩu mới",
+      "confirm": "Nhập lại mật khẩu mới",
+      "hint": "Tối thiểu 6 ký tự. Các thiết bị khác sẽ phải đăng nhập lại.",
+      "submit": "Đổi mật khẩu",
+      "changing": "Đang đổi…"
     },
-    "required": "bắt buộc",
-    "optional": "Không bắt buộc",
-    "save": "Lưu",
-    "saving": "Đang lưu…",
-    "cancel": "Huỷ",
-    "close": "Đóng",
-    "retry": "Thử lại",
-    "loadFailed": "Không tải được.",
-    "saved": "Đã lưu",
-    "saveFailed": "Chưa lưu được",
-    "merchantSaved": "Đã cập nhật thông tin cửa hàng",
-    "merchantSaveFailed": "Không cập nhật được thông tin cửa hàng",
-    "outletSaved": "Đã cập nhật chi nhánh",
-    "outletSaveFailed": "Không cập nhật được chi nhánh",
-    "profileSaved": "Đã cập nhật tài khoản",
-    "profileSaveFailed": "Không cập nhật được tài khoản",
-    "publicPage": "Trang sản phẩm công khai",
-    "referralLink": "Link giới thiệu",
-    "outlets": "Chi nhánh",
-    "manageOutlets": "Quản lý chi nhánh",
-    "mainOutlet": "Chính",
-    "outletOff": "Đã tắt",
-    "noAddress": "Chưa có địa chỉ",
-    "noOutlet": "Tài khoản chưa gắn với chi nhánh nào.",
-    "outletReadOnly": "Chỉ quản lý chi nhánh hoặc chủ cửa hàng sửa được thông tin này.",
-    "receiptNote": "Ghi chú cuối hoá đơn",
-    "receiptHint": "In ở cuối hoá đơn thuê, ví dụ chính sách giữ đồ hay số tài khoản. Tối đa 500 ký tự.",
-    "emailLocked": "Email đăng nhập không đổi được.",
-    "changePassword": "Đổi mật khẩu",
-    "passwordHint": "Ít nhất 6 ký tự.",
-    "passwordChanged": "Đã đổi mật khẩu",
-    "session": "Phiên đăng nhập",
-    "signOut": "Đăng xuất",
-    "signOutHint": "Đăng xuất khỏi trình duyệt này.",
-    "deleteAccount": "Xoá tài khoản",
-    "deleteAccountHint": "Xoá vĩnh viễn tài khoản của bạn. Không hoàn tác được.",
-    "deleteAccountTitle": "Xoá tài khoản?",
-    "deleteAccountBody": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và bạn sẽ bị đăng xuất. Thao tác này không hoàn tác được.",
-    "deleting": "Đang xoá…",
-    "accountDeleted": "Đã xoá tài khoản",
-    "accountDeleteFailed": "Không xoá được tài khoản",
-    "languageHint": "Lựa chọn được lưu trên trình duyệt này."
+    "session": {
+      "title": "Đăng xuất",
+      "desc": "Thoát khỏi tài khoản trên máy này.",
+      "button": "Đăng xuất"
+    },
+    "delete": {
+      "title": "Xoá tài khoản",
+      "desc": "Xoá vĩnh viễn tài khoản và dữ liệu của bạn. Không hoàn tác được.",
+      "button": "Xoá tài khoản",
+      "confirmTitle": "Xoá tài khoản?",
+      "confirmBody": "Hồ sơ, đơn hàng, sản phẩm và mọi cài đặt của bạn sẽ bị xoá vĩnh viễn. Không hoàn tác được.",
+      "deleting": "Đang xoá…",
+      "close": "Đóng"
+    },
+    "language": {
+      "title": "Ngôn ngữ",
+      "hint": "Ngôn ngữ hiển thị trên máy này. Lưu tự động.",
+      "applying": "Đang đổi ngôn ngữ…"
+    },
+    "subscription": {
+      "title": "Gói dịch vụ"
+    },
+    "bank": {
+      "title": "Tài khoản ngân hàng"
+    }
   }
 }

@@ -102,6 +102,7 @@ export function weekdayOfKey(dateKey: string): number {
 /** `T3 06/10` with `weekdays` = short names from Sunday (e.g. CN,T2,…,T7). */
 export function shortDayLabel(dateKey: string, weekdays: string[]): string {
   const w = weekdayOfKey(dateKey);
+  if (w < 0) return '';
   const name = w >= 0 ? weekdays[w] || '' : '';
   return name ? `${name} ${dayMonthFromKey(dateKey)}` : dayMonthFromKey(dateKey);
 }
