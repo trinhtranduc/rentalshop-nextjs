@@ -34,6 +34,7 @@ Map of the [AI-native SDLC playbook](https://academy.claude.com/courses/ai-nativ
 | 6. Prove the change | lint, type-check, tests, eval cases | `verify-change` |
 | 7. Open a PR that links the issue; review in layers | `.github/PULL_REQUEST_TEMPLATE.md` | `review-pr` |
 | 8. A miss or hotfix becomes a new eval and a new intent | `.agent/evals/cases/` | `incident-to-eval` |
+| 9. Release `dev` → `main-real` with a go / no-go verdict | the release PR body | `release-review` |
 
 No pull request without an issue. No implementation without `intent.md` + `spec.md` + `plan.md`
 for anything that is not a one-line typo. Bug fixes still start from a failing test (`bug-fix-tdd`).
@@ -100,6 +101,7 @@ SDLC (`.agents/skills/`):
 - `verify-change` — before saying done
 - `review-pr` — before or during pull request review
 - `incident-to-eval` — hotfix, production bug, or a repeated agent mistake
+- `release-review` — a PR into `main-real`, "release", "deploy to production", or "is dev safe to ship"
 
 Domain (`.claude/skills/`):
 
