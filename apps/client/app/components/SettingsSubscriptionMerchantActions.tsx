@@ -5,7 +5,7 @@
  * chỉ bổ sung dialog chọn gói / thanh toán (Lemon) và form gia hạn (chuyển khoản).
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   SubscriptionSection,
@@ -30,7 +30,9 @@ import type { SubscriptionPanelRenderProps } from '@rentalshop/ui';
 import { subscriptionsApi } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { ChoosePlanDialog } from './ChoosePlanDialog';
+import { settingsHref } from '../settings/settings-model';
 
+/** Lemon Squeezy return: the /settings route reopens the Cài đặt dialog on this tab (#539). */
 const SETTINGS_SUB_TAB = '/settings?tab=subscription';
 
 /** Tạm tắt nút nâng cấp / gia hạn và dialog liên quan. Bật lại → đặt `true`. */
@@ -43,6 +45,7 @@ export function SettingsSubscriptionMerchantActions({
   currentUserRole,
 }: SubscriptionPanelRenderProps) {
   const router = useRouter();
+  const pathname = usePathname() || '/dashboard';
   const searchParams = useSearchParams();
   const t = useTranslations('subscription');
   const { toastSuccess, toastError, toastInfo } = useToast();
@@ -80,8 +83,9 @@ export function SettingsSubscriptionMerchantActions({
         toastInfo(t('page.checkoutCancelTitle'), t('page.checkoutCancelBody'));
       }
     }
-    router.replace('/settings?tab=subscription', { scroll: false });
-  }, [searchParams, router, toastSuccess, toastInfo, t]);
+    // Same page, dialog still on Gói dịch vụ, `checkout` cleared.
+    router.replace(settingsHref(pathname, searchParams.toString(), 'subscription'), { scroll: false });
+  }, [searchParams, pathname, router, toastSuccess, toastInfo, t]);
 
   // Deep link: ?action=plans | ?action=renew
   useEffect(() => {
@@ -95,9 +99,9 @@ export function SettingsSubscriptionMerchantActions({
       }
     }
     if (action === 'plans' || action === 'renew') {
-      router.replace('/settings?tab=subscription', { scroll: false });
+      router.replace(settingsHref(pathname, searchParams.toString(), 'subscription'), { scroll: false });
     }
-  }, [searchParams, hasSub, router]);
+  }, [searchParams, pathname, hasSub, router]);
 
   const showUpgradeExtendUi = SUBSCRIPTION_UPGRADE_EXTEND_ENABLED && isMerchant;
 

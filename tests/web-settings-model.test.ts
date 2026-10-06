@@ -27,12 +27,15 @@ import {
 } from '../apps/client/app/users/users-model';
 import {
   addressLine,
+  closeSettingsHref,
   currencyForLocale,
   defaultTab,
+  legacySettingsRedirect,
   mapSubscriptionStatus,
   passwordProblem,
   publicLinks,
   resolveTab,
+  settingsHref,
   tabsForRole,
   tenantKeyValid,
 } from '../apps/client/app/settings/settings-model';
@@ -213,5 +216,35 @@ describe('store settings (#528)', () => {
     expect(m.isActive).toBe(false);
     expect(m.merchant.id).toBe(2);
     expect(m.daysRemaining).toBe(9);
+  });
+});
+
+describe('Cài đặt dialog URL (#539)', () => {
+  it('opens the dialog on the current page and keeps its params', () => {
+    expect(settingsHref('/orders', '?status=RESERVED&page=2', 'receipt')).toBe('/orders?status=RESERVED&page=2&settings=receipt');
+    expect(settingsHref('/dashboard', '')).toBe('/dashboard?settings=');
+  });
+
+  it('switching tab replaces the tab and drops one-shot subscription params', () => {
+    expect(settingsHref('/dashboard', 'settings=subscription&checkout=success&action=plans', 'subscription')).toBe(
+      '/dashboard?settings=subscription',
+    );
+    expect(settingsHref('/orders', 'q=lan&settings=merchant', 'profile')).toBe('/orders?q=lan&settings=profile');
+  });
+
+  it('closing removes only the dialog params', () => {
+    expect(closeSettingsHref('/orders', 'q=lan&settings=profile&checkout=cancel')).toBe('/orders?q=lan');
+    expect(closeSettingsHref('/dashboard', '?settings=')).toBe('/dashboard');
+  });
+
+  it('old /settings links open the dialog on Tổng quan with the same tab and checkout params', () => {
+    expect(legacySettingsRedirect('tab=subscription&checkout=success')).toBe('/dashboard?checkout=success&settings=subscription');
+    expect(legacySettingsRedirect('')).toBe('/dashboard?settings=');
+    expect(legacySettingsRedirect('?tab=profile')).toBe('/dashboard?settings=profile');
+  });
+
+  it('an empty or forbidden tab in the dialog resolves to the role default', () => {
+    expect(resolveTab('', 'MERCHANT').tab).toBe('merchant');
+    expect(resolveTab('subscription', 'OUTLET_STAFF').tab).toBe('outlet');
   });
 });
