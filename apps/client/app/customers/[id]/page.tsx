@@ -1,317 +1,176 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { Button, 
-  Breadcrumb,
-  EditCustomerDialog,
-  CustomerContactCard,
-  CustomerRecentOrders,
-  CustomerSummaryPanel,
-  CustomerLoyaltyFold,
-  CustomerLoyaltyTab,
-  ConfirmationDialog,
-  PageWrapper,
-  useToast } from '@rentalshop/ui';
-import type { BreadcrumbItem } from '@rentalshop/ui';
-import { customerBreadcrumbs } from '@rentalshop/utils';
-import { ArrowLeft, Edit, ShoppingBag } from 'lucide-react';
-import { customersApi } from "@rentalshop/utils";
-import { useAuth, useCustomerTranslations, useCommonTranslations, useDedupedApi } from '@rentalshop/hooks';
-import type { Customer } from '@rentalshop/types';
-export default function CustomerPage() {
+/**
+ * Hồ sơ khách (#541): contact, latest orders, Số đơn / Đã chi (cancelled excluded) / Đang thuê,
+ * reward points when the shop's loyalty program is on, and delete. Same API calls as the list panel.
+ */
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { usePermissions } from '@rentalshop/hooks';
+import { formatDateKeyInTimeZone, getLocalDateKey, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { cardClass, outlineBtn, type T } from '../../orders/list/parts';
+import { customerName, dayText, formatPhone, initials } from '../customers-model';
+import { fullAddress, parseCustomerId } from '../customer-form-model';
+import { CustomerOrderList, DeleteDialog, useCustomerOrders } from '../list/parts';
+import { Avatar, BackLink, CallButton, LoadProblem, LoyaltyCard, PageSkeleton, StatsGrid, pageClass, useCustomer, type CustomerRecord } from '../profile/parts';
+
+function ContactCard({ customer, t }: { customer: CustomerRecord; t: T }) {
+  const none = <span className="text-ar-muted">{t('profile.none')}</span>;
+  const address = fullAddress(customer);
+  const row = (label: string, value: React.ReactNode) => (
+    <div className="grid grid-cols-[minmax(96px,136px)_minmax(0,1fr)] gap-3 border-t border-ar-subtle py-2.5 first:border-t-0">
+      <dt className="text-[15px] text-ar-muted">{label}</dt>
+      <dd className="m-0 min-w-0 break-words text-[15px] text-ar-ink">{value}</dd>
+    </div>
+  );
+  return (
+    <section aria-labelledby="contact-title" className={`${cardClass} px-5 py-[18px]`}>
+      <h2 id="contact-title" className="m-0 text-lg font-bold">
+        {t('profile.contact')}
+      </h2>
+      <dl className="m-0 mt-2">
+        {row(
+          t('profile.phone'),
+          customer.phone ? (
+            <a href={`tel:${customer.phone}`} className="font-semibold tabular-nums text-ar-primary-ink no-underline hover:underline">
+              {formatPhone(customer.phone)}
+            </a>
+          ) : (
+            none
+          ),
+        )}
+        {row(
+          t('profile.email'),
+          customer.email ? (
+            <a href={`mailto:${customer.email}`} className="text-ar-primary-ink no-underline hover:underline">
+              {customer.email}
+            </a>
+          ) : (
+            none
+          ),
+        )}
+        {row(t('profile.address'), address || none)}
+        {row(t('profile.idNumber'), customer.idNumber ? <span className="tabular-nums">{customer.idNumber}</span> : none)}
+        {row(t('profile.notes'), customer.notes ? <span className="whitespace-pre-wrap">{customer.notes}</span> : none)}
+      </dl>
+    </section>
+  );
+}
+
+export default function CustomerProfilePage() {
   const router = useRouter();
   const params = useParams();
-  const { user } = useAuth();
+  const t = useTranslations('customers.web') as unknown as T;
+  const to = useTranslations('orders.web') as unknown as T;
+  const money = useFormatCurrency();
   const { toastSuccess } = useToast();
-  const t = useCustomerTranslations();
-  const tc = useCommonTranslations();
-  const customerId = params.id as string;
-  
-  console.log('🔍 CustomerPage: Component rendered with params:', params);
-  console.log('🔍 CustomerPage: Customer ID extracted:', customerId);
-  
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-  
-  // Section visibility states
-  const [showEditSection, setShowEditSection] = useState(false);
-  const [showOrdersSection, setShowOrdersSection] = useState(false);
-  const [showLoyaltySection, setShowLoyaltySection] = useState(false);
-  
+  const { canManageCustomers } = usePermissions();
+  const id = parseCustomerId(params.id as string | string[] | undefined);
+  const [nonce, setNonce] = useState(0);
+  const { customer, loading, failed } = useCustomer(id, nonce);
+  const orders = useCustomerOrders(customer ? customer.id : null, 0);
+  const [deleting, setDeleting] = useState(false);
 
-  // ============================================================================
-  // FETCH CUSTOMER DETAILS - Using Official useDedupedApi Hook
-  // ============================================================================
-  // ✅ OFFICIAL PATTERN: useDedupedApi hook (inspired by TanStack Query & SWR)
-  const { 
-    data: customerData, 
-    loading: customerLoading, 
-    error: customerError,
-    refetch: refetchCustomer
-  } = useDedupedApi({
-    filters: { customerId },
-    fetchFn: async () => {
-      // Validate ID format (should be numeric)
-      const numericId = parseInt(customerId);
-      if (isNaN(numericId) || numericId <= 0) {
-        throw new Error('Invalid customer ID format');
-      }
-      
-      const response = await customersApi.getCustomerById(numericId);
-      
-      if (!response.success || !response.data) {
-        throw new Error(response.error || t('messages.loadingCustomers'));
-      }
-      
-      return response.data;
-    },
-    enabled: !!customerId,
-    staleTime: 60000, // 60 seconds cache
-    cacheTime: 300000, // 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
-  });
+  const weekdays = useMemo(() => to('weekdays').split(','), [to]);
+  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
 
-  // Sync customer data to local state
-  const customer = customerData || null;
-  const isLoading = customerLoading;
-
-  // Refresh customer data after updates
-  const refreshCustomerData = async () => {
-    if (!customerId) return;
-    await refetchCustomer();
-  };
-
-
-
-  // Handle customer deletion
-  const handleDeleteCustomer = async () => {
-    if (!customer) return;
-    
-    try {
-      setIsUpdating(true);
-      
-      console.log('🔍 CustomerPage: Deleting customer:', customer.id);
-      
-      const response = await customersApi.deleteCustomer(customer.id);
-      
-      if (response.success) {
-        console.log('✅ CustomerPage: Customer deleted successfully');
-        
-        // Navigate back to customers list
-        router.push('/customers');
-      } else {
-        console.error('❌ CustomerPage: API showError:', response.error);
-        throw new Error(response.error || t('messages.deleteFailed'));
-      }
-      
-    } catch (error) {
-      console.error('❌ CustomerPage: Error deleting customer:', error);
-      // Error automatically handled by useGlobalErrorHandler
-    } finally {
-      setIsUpdating(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
-  // Handle customer update
-  const handleCustomerUpdate = async (customerData: any) => {
-    if (!customer) return;
-    
-    try {
-      setIsUpdating(true);
-      
-      console.log('🔍 CustomerPage: Updating customer:', customerData);
-      
-      const response = await customersApi.updateCustomer(customer.id, customerData);
-      
-      if (response.success) {
-        console.log('✅ CustomerPage: Customer updated successfully');
-        
-        // Refresh customer data
-        await refreshCustomerData();
-        
-        // Hide edit section
-        setShowEditSection(false);
-        
-        // Show success toast
-        toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
-      } else {
-        console.error('❌ CustomerPage: API showError:', response.error);
-        throw new Error(response.error || t('messages.updateFailed'));
-      }
-      
-    } catch (error) {
-      console.error('❌ CustomerPage: Error updating customer:', error);
-      throw error; // the dialog shows it and stays open
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Handle customer deactivation/activation
-  const handleToggleCustomerStatus = async () => {
-    if (!customer) return;
-    
-    try {
-      setIsUpdating(true);
-      
-      const newStatus = !customer.isActive;
-      console.log('🔍 CustomerPage: Toggling customer status to:', newStatus);
-      
-      const response = await customersApi.updateCustomer(customer.id, { 
-        id: customer.id,
-        isActive: newStatus 
-      });
-      
-      if (response.success) {
-        console.log('✅ CustomerPage: Customer status updated successfully');
-        
-        // Refresh customer data
-        await refreshCustomerData();
-        
-        // Hide confirmation dialog
-        setShowDeactivateConfirm(false);
-        
-        // Show success message
-        toastSuccess(tc('messages.updateSuccess'), tc('messages.updateSuccess'));
-      } else {
-        console.error('❌ CustomerPage: API showError:', response.error);
-        throw new Error(response.error || t('messages.updateFailed'));
-      }
-      
-    } catch (error) {
-      console.error('❌ CustomerPage: Error updating customer status:', error);
-      // Error automatically handled by useGlobalErrorHandler
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Handle edit customer
-  const handleEditCustomer = () => {
-    setShowEditSection(true);
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setShowEditSection(false);
-  };
-
-  // Loading state
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        </div>
+      <div className={pageClass}>
+        <BackLink href="/customers" label={t('form.backList')} />
+        <PageSkeleton />
+      </div>
+    );
+  }
+  if (failed || !customer) {
+    return (
+      <div className={pageClass}>
+        <BackLink href="/customers" label={t('form.backList')} />
+        <LoadProblem failed={failed || 'notFound'} onRetry={() => setNonce((n) => n + 1)} t={t} />
       </div>
     );
   }
 
-  // Error state
-  if (!customer) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.noCustomers')}</h1>
-            <p className="text-gray-600 mb-6">{tc('messages.notFound')}</p>
-            <Button onClick={() => router.push('/customers')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {tc('buttons.back')}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || customer.phone || '—';
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: t('title'), href: '/customers' },
-    { label: name }
-  ];
+  const name = customerName(customer) || t('noName');
+  const since = customer.createdAt
+    ? dayText(getLocalDateKey(customer.createdAt instanceof Date ? customer.createdAt.toISOString() : String(customer.createdAt)))
+    : '';
+  const sub = [formatPhone(customer.phone), since ? t('profile.since', { day: since }) : ''].filter(Boolean).join(' · ');
 
   return (
-    <PageWrapper>
-      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
+    <div className={pageClass}>
+      <BackLink href="/customers" label={t('form.backList')} />
 
-      {/* Header: who, and the everyday actions */}
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <Button variant="ghost" onClick={() => router.push('/customers')} size="sm" className="h-9 w-9 shrink-0 p-0" aria-label={tc('buttons.back')}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{name}</h1>
-            {customer.phone && <p className="text-sm tabular-nums text-gray-600">{customer.phone}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar text={initials(customerName(customer) || customer.phone || '?')} />
+          <div className="flex min-w-0 flex-col">
+            <h1 className={`m-0 truncate text-2xl font-bold ${customerName(customer) ? 'text-ar-ink' : 'text-ar-muted'}`}>{name}</h1>
+            {sub && <span className="truncate text-sm tabular-nums text-ar-muted">{sub}</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => router.push(`/customers/${customerId}/orders`)} variant="outline">
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            {t('actions.orders')}
-          </Button>
-          <Button onClick={handleEditCustomer}>
-            <Edit className="mr-2 h-4 w-4" />
-            {t('actions.edit')}
-          </Button>
+          {customer.phone && <CallButton phone={customer.phone} label={t('profile.call', { name })} />}
+          <Link href={`/customers/${customer.id}/orders`} className={outlineBtn}>
+            {t('profile.orders')}
+          </Link>
+          {canManageCustomers && (
+            <Link href={`/customers/${customer.id}/edit`} className={outlineBtn}>
+              {t('profile.edit')}
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Same two columns as product and user pages */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <div className="min-w-0 space-y-4">
-          <CustomerContactCard customer={customer} />
-          <CustomerRecentOrders customer={customer} />
-          <CustomerLoyaltyFold label="Loyalty">
-            <CustomerLoyaltyTab customerId={customer.id} />
-          </CustomerLoyaltyFold>
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex min-w-0 flex-[2_1_560px] flex-col gap-4">
+          <ContactCard customer={customer} t={t} />
+          <section aria-labelledby="recent-title" className={`${cardClass} overflow-hidden`}>
+            <div className="flex flex-wrap items-center justify-between gap-2 px-5 pb-3 pt-[18px]">
+              <h2 id="recent-title" className="m-0 text-lg font-bold">
+                {t('profile.recent')}
+              </h2>
+              <Link href={`/customers/${customer.id}/orders`} className="text-sm font-semibold text-ar-primary-ink no-underline hover:underline">
+                {t('detail.allOrders')}
+              </Link>
+            </div>
+            <CustomerOrderList data={orders} todayKey={todayKey} weekdays={weekdays} t={t} to={to} money={money} />
+          </section>
         </div>
-        <aside className="min-w-0 lg:sticky lg:top-4">
-          <CustomerSummaryPanel customer={customer} onDelete={() => setShowDeleteConfirm(true)} isUpdating={isUpdating} />
-        </aside>
+
+        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
+          <section aria-labelledby="summary-title" className={`${cardClass} overflow-hidden`}>
+            <div className="flex flex-col gap-3.5 px-5 pb-4 pt-[18px]">
+              <h2 id="summary-title" className="m-0 text-lg font-bold">
+                {t('profile.summary')}
+              </h2>
+              <StatsGrid summary={orders.summary} loading={orders.loading} t={t} money={money} />
+              <span className="text-sm text-ar-muted">{t('detail.spentNote')}</span>
+            </div>
+            {canManageCustomers && (
+              <div className="border-t border-ar-subtle px-5 py-3">
+                <button type="button" onClick={() => setDeleting(true)} className="h-8 rounded-lg px-1 text-sm font-semibold text-ar-danger hover:underline">
+                  {t('profile.delete')}
+                </button>
+              </div>
+            )}
+          </section>
+          <LoyaltyCard customerId={customer.id} enabled={!orders.loading && orders.loyaltyActive} t={t} />
+        </div>
       </div>
 
-      {/* Edit in a dialog, as on the customer list */}
-      <EditCustomerDialog
-        open={showEditSection}
-        onOpenChange={setShowEditSection}
-        customer={customer}
-        onCustomerUpdated={handleCustomerUpdate}
+      <DeleteDialog
+        customer={deleting ? customer : null}
+        onClose={() => setDeleting(false)}
+        onDeleted={() => {
+          toastSuccess(t('delete.done'), name);
+          router.push('/customers');
+        }}
+        t={t}
       />
-
-      {/* Confirmation Dialogs */}
-      <ConfirmationDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        type="danger"
-        title={t('actions.deleteCustomer')}
-        description={t('messages.confirmDeleteDetails', { name: [customer.firstName, customer.lastName].filter(Boolean).join(' ') })}
-        confirmText={t('actions.deleteCustomer')}
-        onConfirm={handleDeleteCustomer}
-      />
-
-      <ConfirmationDialog
-        open={showDeactivateConfirm}
-        onOpenChange={setShowDeactivateConfirm}
-        type={customer.isActive ? 'warning' : 'info'}
-        title={customer.isActive ? t('actions.deactivate') : t('actions.activate')}
-        description={tc('messages.confirmAction')}
-        confirmText={customer.isActive ? t('actions.deactivate') : t('actions.activate')}
-        onConfirm={handleToggleCustomerStatus}
-      />
-    </PageWrapper>
+    </div>
   );
 }

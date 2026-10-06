@@ -335,6 +335,80 @@
         "again": "Nhập file khác"
       }
     },
-    "orderCount": "{count} đơn"
+    "orderCount": "{count} đơn",
+    "form": {
+      "backList": "Khách hàng",
+      "titleCreate": "Khách mới",
+      "titleEdit": "Sửa khách",
+      "hintCreate": "Chỉ cần họ tên. Có số điện thoại thì tìm khách nhanh hơn khi tạo đơn.",
+      "contact": "Liên hệ",
+      "addressTitle": "Địa chỉ",
+      "moreTitle": "Giấy tờ và ghi chú",
+      "name": "Họ tên",
+      "phone": "Số điện thoại",
+      "email": "Email",
+      "address": "Số nhà, đường",
+      "city": "Quận / thành phố",
+      "state": "Tỉnh / bang",
+      "zipCode": "Mã bưu chính",
+      "idNumber": "Số giấy tờ",
+      "idNumberHint": "CCCD, hộ chiếu hoặc bằng lái khách để lại khi thuê.",
+      "notes": "Ghi chú",
+      "required": "bắt buộc",
+      "namePlaceholder": "VD: Nguyễn Thị Mai",
+      "phonePlaceholder": "VD: 0912 555 018",
+      "emailPlaceholder": "ten@vidu.com",
+      "notesPlaceholder": "Số đo, sở thích, lưu ý khi giao đồ…",
+      "errors": {
+        "nameRequired": "Nhập họ tên khách.",
+        "nameShort": "Họ tên cần ít nhất 2 ký tự.",
+        "phoneRequired": "Khách đã có số điện thoại, không để trống được.",
+        "phoneInvalid": "Số điện thoại chỉ gồm số và các dấu + - ( ).",
+        "phoneShort": "Số điện thoại cần ít nhất 8 số.",
+        "emailInvalid": "Email sai định dạng."
+      },
+      "duplicate": "Số điện thoại hoặc email này đã có ở khách khác.",
+      "saveFailed": "Không lưu được. Thử lại.",
+      "cancel": "Huỷ",
+      "saveCreate": "Lưu khách",
+      "saveEdit": "Lưu thay đổi",
+      "saving": "Đang lưu…",
+      "created": "Đã thêm khách",
+      "updated": "Đã lưu thay đổi",
+      "notFound": "Không tìm thấy khách này.",
+      "loadFailed": "Không tải được thông tin khách.",
+      "toList": "Về danh sách khách"
+    },
+    "profile": {
+      "since": "Khách từ {day}",
+      "orders": "Đơn của khách",
+      "edit": "Sửa",
+      "call": "Gọi {name}",
+      "contact": "Liên hệ",
+      "phone": "Số điện thoại",
+      "email": "Email",
+      "address": "Địa chỉ",
+      "idNumber": "Số giấy tờ",
+      "notes": "Ghi chú",
+      "none": "Chưa có",
+      "recent": "Đơn gần đây",
+      "summary": "Tổng kết",
+      "loyalty": {
+        "title": "Điểm thưởng",
+        "points": "Điểm hiện có",
+        "earned": "Đã tích",
+        "redeemed": "Đã đổi",
+        "history": "Lịch sử điểm",
+        "noHistory": "Chưa có giao dịch điểm.",
+        "pointsValue": "{points} điểm"
+      },
+      "delete": "Xoá khách"
+    },
+    "orders": {
+      "title": "Đơn của {name}",
+      "create": "Tạo đơn",
+      "empty": "Khách chưa có đơn nào.",
+      "loadFailed": "Không tải được đơn của khách."
+    }
   }
 }

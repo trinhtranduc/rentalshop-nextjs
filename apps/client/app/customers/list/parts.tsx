@@ -259,19 +259,22 @@ export function CustomersTable({
 // Detail panel
 // ----------------------------------------------------------------------------
 
-interface PanelData {
+export interface PanelData {
   loading: boolean;
   failed: boolean;
   orders: OrderRowLike[];
   summary: CustomerSummary;
+  /** `customer.loyaltyStatus` of `GET /api/customers/{id}/orders`: the shop has an active loyalty program. */
+  loyaltyActive: boolean;
 }
 
-function useCustomerOrders(id: number | null, nonce: number): PanelData {
-  const [state, setState] = useState<PanelData>({ loading: !!id, failed: false, orders: [], summary: { orders: null, spent: null, renting: null } });
+/** Latest 5 orders, the order/spent summary and the renting count of one customer (list panel and profile). */
+export function useCustomerOrders(id: number | null, nonce: number): PanelData {
+  const [state, setState] = useState<PanelData>({ loading: !!id, failed: false, orders: [], summary: { orders: null, spent: null, renting: null }, loyaltyActive: false });
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    setState({ loading: true, failed: false, orders: [], summary: { orders: null, spent: null, renting: null } });
+    setState({ loading: true, failed: false, orders: [], summary: { orders: null, spent: null, renting: null }, loyaltyActive: false });
     Promise.all([
       ordersApi.getOrdersByCustomer(id, 1, 5).catch(() => null),
       ordersApi
@@ -281,9 +284,14 @@ function useCustomerOrders(id: number | null, nonce: number): PanelData {
     ]).then(([res, renting]) => {
       if (cancelled) return;
       if (res && res.success && res.data) {
-        const data = res.data as unknown as { orders?: OrderRowLike[]; total?: number; summary?: { totalOrders?: number; totalAmount?: number } };
-        setState({ loading: false, failed: false, orders: data.orders || [], summary: summaryOf(data, renting) });
-      } else setState({ loading: false, failed: true, orders: [], summary: summaryOf(null, renting) });
+        const data = res.data as unknown as {
+          orders?: OrderRowLike[];
+          total?: number;
+          summary?: { totalOrders?: number; totalAmount?: number };
+          customer?: { loyaltyStatus?: string };
+        };
+        setState({ loading: false, failed: false, orders: data.orders || [], summary: summaryOf(data, renting), loyaltyActive: data.customer?.loyaltyStatus === 'active' });
+      } else setState({ loading: false, failed: true, orders: [], summary: summaryOf(null, renting), loyaltyActive: false });
     });
     return () => {
       cancelled = true;
@@ -362,6 +370,43 @@ export function CustomerPanel({
       <div className="border-t border-ar-subtle bg-ar-surface-muted px-5 pb-1.5 pt-2.5">
         <span className="text-xs font-bold uppercase tracking-[0.06em] text-ar-muted">{t('detail.ordersTitle')}</span>
       </div>
+      <CustomerOrderList data={data} todayKey={todayKey} weekdays={weekdays} t={t} to={to} money={money} />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ar-subtle px-5 py-3 text-sm font-semibold">
+        <Link href={`/customers/${customer.id}/orders`} className="text-ar-primary-ink no-underline hover:underline">
+          {t('detail.allOrders')}
+        </Link>
+        <Link href={`/customers/${customer.id}`} className="text-ar-primary-ink no-underline hover:underline">
+          {t('detail.profile')}
+        </Link>
+        <span className="flex-1" />
+        {canDelete && (
+          <button type="button" onClick={onDelete} className="h-8 rounded-lg px-1 text-sm font-semibold text-ar-danger hover:underline">
+            {t('detail.delete')}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** The latest orders of a customer: status, #number · tạo day, schedule, total (cancelled faded and struck). */
+export function CustomerOrderList({
+  data,
+  todayKey,
+  weekdays,
+  t,
+  to,
+  money,
+}: {
+  data: PanelData;
+  todayKey: string;
+  weekdays: string[];
+  t: T;
+  to: T;
+  money: Money;
+}) {
+  return (
+    <>
       {data.loading ? (
         <div className="flex flex-col gap-3 px-5 py-3">
           {[0, 1, 2].map((i) => (
@@ -397,21 +442,7 @@ export function CustomerPanel({
           })}
         </ul>
       )}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ar-subtle px-5 py-3 text-sm font-semibold">
-        <Link href={`/customers/${customer.id}/orders`} className="text-ar-primary-ink no-underline hover:underline">
-          {t('detail.allOrders')}
-        </Link>
-        <Link href={`/customers/${customer.id}`} className="text-ar-primary-ink no-underline hover:underline">
-          {t('detail.profile')}
-        </Link>
-        <span className="flex-1" />
-        {canDelete && (
-          <button type="button" onClick={onDelete} className="h-8 rounded-lg px-1 text-sm font-semibold text-ar-danger hover:underline">
-            {t('detail.delete')}
-          </button>
-        )}
-      </div>
-    </section>
+    </>
   );
 }
 
