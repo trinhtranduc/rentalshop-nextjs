@@ -209,6 +209,11 @@ final class SettingsV2ViewController: BaseViewControler {
         }
         if let presentation = sheet.sheetPresentationController {
             presentation.detents = [.large()]
+            if #available(iOS 16.0, *) {
+                presentation.detents = [.custom { [weak sheet] context in
+                    sheet.map { min(context.maximumDetentValue, $0.fittingHeight()) }
+                }]
+            }
             presentation.prefersGrabberVisible = true
             presentation.preferredCornerRadius = 24
         }
@@ -451,6 +456,17 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
         currentField.becomeFirstResponder()
     }
 
+    /// Height of the form, so the sheet is only as tall as its content (board DMK-doi-mat-khau)
+    func fittingHeight() -> CGFloat {
+        loadViewIfNeeded()
+        guard let content = scroll.subviews.first(where: { $0 is UIStackView }) else { return 520 }
+        let width = (view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width) - 40
+        let size = content.systemLayoutSizeFitting(CGSize(width: width, height: 0),
+                                                   withHorizontalFittingPriority: .required,
+                                                   verticalFittingPriority: .fittingSizeLevel)
+        return 24 + size.height + 20
+    }
+
     private func field(_ textField: UITextField, title: String, message: UILabel, newPassword: Bool) -> UIView {
         let label = V2.label(title, size: DS.TextSize.body, weight: .bold)
         textField.isSecureTextEntry = true
@@ -465,10 +481,13 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
         textField.accessibilityLabel = title
         textField.addTarget(self, action: #selector(edited(_:)), for: .editingChanged)
 
+        // iOS 15+ sizes a side view to its intrinsic size: wrap the icons so the frame keeps their inset
         let lock = UIImageView(image: DS.symbol("lock", DS.Icon.md))
         lock.contentMode = .center
-        lock.frame = CGRect(x: 0, y: 0, width: 44, height: 52)
-        textField.leftView = lock
+        lock.frame = CGRect(x: 14, y: 0, width: 22, height: 52)
+        let lockBox = UIView(frame: CGRect(x: 0, y: 0, width: 44, height: 52))
+        lockBox.addSubview(lock)
+        textField.leftView = lockBox
         textField.leftViewMode = .always
 
         let eye = UIButton(type: .system)
@@ -477,7 +496,9 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
         eye.accessibilityLabel = "settings.v2.password.show".localized()
         eye.frame = CGRect(x: 0, y: 0, width: 48, height: 52)
         eye.addTarget(self, action: #selector(toggleVisible(_:)), for: .touchUpInside)
-        textField.rightView = eye
+        let eyeBox = UIView(frame: CGRect(x: 0, y: 0, width: 52, height: 52))
+        eyeBox.addSubview(eye)
+        textField.rightView = eyeBox
         textField.rightViewMode = .always
         textField.snp.makeConstraints { make in make.height.equalTo(52) }
 
@@ -488,6 +509,9 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
     }
 
     private func render() {
+        defer {
+            if #available(iOS 16.0, *) { sheetPresentationController?.animateChanges { sheetPresentationController?.invalidateDetents() } }
+        }
         let pairs: [(UITextField, UILabel, SettingsV2Logic.PasswordProblem, String?)] = [
             (currentField, currentMessage, .missingCurrent, nil),
             (newField, newMessage, .tooShort, String(format: "settings.v2.password.hint".localized(), SettingsV2Logic.minPasswordLength)),
@@ -498,7 +522,7 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
             let failed = problem == fault
             field.layer.borderWidth = failed ? 1.5 : 1
             field.layer.borderColor = (failed ? danger : UIColor(hexString: "CBD5E1")).cgColor
-            (field.leftView as? UIImageView)?.tintColor = failed ? danger : UIColor(hexString: "64748B")
+            (field.leftView?.subviews.first as? UIImageView)?.tintColor = failed ? danger : UIColor(hexString: "64748B")
             if failed {
                 message.text = text(of: fault)
                 message.textColor = danger
@@ -534,7 +558,7 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
     }
 
     @objc private func toggleVisible(_ sender: UIButton) {
-        guard let field = [currentField, newField, confirmField].first(where: { $0.rightView === sender }) else { return }
+        guard let field = [currentField, newField, confirmField].first(where: { $0.rightView === sender.superview }) else { return }
         field.isSecureTextEntry.toggle()
         sender.setImage(DS.symbol(field.isSecureTextEntry ? "eye" : "eye.slash", DS.Icon.md), for: .normal)
         sender.accessibilityLabel = (field.isSecureTextEntry ? "settings.v2.password.show" : "settings.v2.password.hide").localized()
