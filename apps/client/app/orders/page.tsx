@@ -13,6 +13,7 @@ import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useCanExportData } from '@rentalshop/hooks';
 import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import type { OrderFilters } from '@rentalshop/types';
+import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { useOutletOperations } from '../dashboard/OutletOperationsPanel';
 import {
@@ -107,7 +108,6 @@ function useStatusCounts(base: OrderFilters | null, nonce: number): Record<strin
   return counts;
 }
 
-const dateInput = 'h-9 rounded-[10px] border border-ar-line bg-ar-surface px-2.5 text-sm text-ar-ink';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -362,25 +362,18 @@ export default function OrdersPage() {
               </div>
             </div>
             {preset === 'custom' && (
-              <form
-                className="flex flex-wrap items-end justify-end gap-3 border-b border-ar-subtle px-4 py-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  update({ created: 'custom', from: draft.from, to: draft.to });
-                }}
-              >
-                <label className="flex flex-col gap-1 text-sm text-ar-muted">
-                  {t('created.from')}
-                  <input type="date" value={draft.from} max={todayKey} onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))} className={dateInput} />
-                </label>
-                <label className="flex flex-col gap-1 text-sm text-ar-muted">
-                  {t('created.to')}
-                  <input type="date" value={draft.to} onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))} className={dateInput} />
-                </label>
-                <button type="submit" className="h-9 rounded-[10px] bg-ar-primary px-4 text-sm font-semibold text-ar-on-primary hover:opacity-95">
-                  {t('created.apply')}
-                </button>
-              </form>
+              <div className="flex justify-end border-b border-ar-subtle px-4 py-3">
+                <DateRangeField
+                  from={draft.from}
+                  to={draft.to}
+                  todayKey={todayKey}
+                  max={todayKey}
+                  align="end"
+                  ariaLabel={t('created.label')}
+                  className="h-9 text-sm sm:w-auto"
+                  onChange={(f, tt) => update({ created: 'custom', from: f, to: tt })}
+                />
+              </div>
             )}
           </>
         )}

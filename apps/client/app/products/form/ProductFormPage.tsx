@@ -23,10 +23,12 @@ import {
   PHOTO_ACCEPT,
   buildPayload,
   checkPhotos,
+  effectiveDefaultMode,
   emptyForm,
   firstError,
   formFromProduct,
   generateBarcode,
+  hasDefaultChoice,
   imageSearchState,
   parseCount,
   removedAllSavedPhotos,
@@ -469,21 +471,28 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     }
   };
 
-  const modeBtn = (mode: PricingMode, label: string) => {
-    const active = form.defaultMode === mode;
-    return (
-      <button
-        key={mode}
-        type="button"
-        role="radio"
-        aria-checked={active}
-        onClick={() => patch({ defaultMode: mode }, ['defaultMode'])}
-        className={`h-9 rounded-[9px] px-4 text-sm ${active ? 'bg-ar-surface font-semibold text-ar-ink shadow-ar' : 'text-ar-ink-2 hover:text-ar-ink'}`}
-      >
-        {label}
-      </button>
-    );
-  };
+  // #547: each price carries its own "Mặc định khi tạo đơn" choice, shown only when both prices are set.
+  // A two-option toggle read as "this product is priced one way or the other" (owner feedback).
+  const bothPrices = hasDefaultChoice(form.perRental, form.perDay);
+  const shownDefault = effectiveDefaultMode(form.perRental, form.perDay, form.defaultMode);
+  const defaultChoice = (mode: PricingMode) =>
+    bothPrices ? (
+      <label className="mt-1 inline-flex w-fit cursor-pointer items-center gap-2 text-sm text-ar-ink-2">
+        <input
+          type="radio"
+          name="pf-defaultMode"
+          checked={shownDefault === mode}
+          onChange={() => patch({ defaultMode: mode }, ['defaultMode'])}
+          className="h-4 w-4 accent-[var(--ar-primary)]"
+        />
+        {t('form.defaultForOrders')}
+      </label>
+    ) : null;
+  const setPrice = (key: 'perRental' | 'perDay', n: number) =>
+    patch((f) => {
+      const next = { ...f, [key]: n };
+      return { ...next, defaultMode: effectiveDefaultMode(next.perRental, next.perDay, f.defaultMode) };
+    }, ['perRental', 'defaultMode']);
 
   return wrap(
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -531,28 +540,15 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
-                    <AmountInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => patch({ perRental: n }, ['perRental', 'defaultMode'])} />
+                    <AmountInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => setPrice('perRental', n)} />
+                    {defaultChoice('FIXED')}
                   </Field>
                   <Field id="pf-perDay" label={t('form.perDay')}>
-                    <AmountInput id="pf-perDay" value={form.perDay} onChange={(n) => patch({ perDay: n }, ['perRental', 'defaultMode'])} />
+                    <AmountInput id="pf-perDay" value={form.perDay} onChange={(n) => setPrice('perDay', n)} />
+                    {defaultChoice('DAILY')}
                   </Field>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <span id="pf-mode-label" className={labelText}>
-                    {t('form.defaultMode')}
-                  </span>
-                  <div
-                    id="pf-defaultMode"
-                    tabIndex={-1}
-                    role="radiogroup"
-                    aria-labelledby="pf-mode-label"
-                    className={`inline-flex w-fit gap-1 rounded-xl border p-1 ${errors.defaultMode ? 'border-ar-danger' : 'border-ar-line'} bg-ar-subtle`}
-                  >
-                    {modeBtn('FIXED', t('form.modeFixed'))}
-                    {modeBtn('DAILY', t('form.modeDaily'))}
-                  </div>
-                  {errors.defaultMode ? <span className="text-sm text-ar-danger">{err('defaultMode')}</span> : <span className="text-xs text-ar-muted">{t('form.pricesHint')}</span>}
-                </div>
+                <span className="-mt-2 text-xs text-ar-muted">{t(bothPrices ? 'form.defaultHint' : 'form.pricesHint')}</span>
                 <div className="grid gap-4 border-t border-ar-subtle pt-4 sm:grid-cols-3">
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>
                     <AmountInput id="pf-deposit" value={form.deposit} invalid={!!errors.deposit} onChange={(n) => patch({ deposit: n }, ['deposit'])} />

@@ -93,13 +93,25 @@ export interface PricingOptionPayload {
   isDefault: boolean;
 }
 
+/** The default a set of prices can hold: a default without a price falls back to the mode that has one. */
+export function effectiveDefaultMode(perRental: Num, perDay: Num, defaultMode: PricingMode): PricingMode {
+  const fixed = positive(perRental);
+  const daily = positive(perDay);
+  if (defaultMode === 'DAILY' && daily == null) return 'FIXED';
+  if (defaultMode === 'FIXED' && fixed == null && daily != null) return 'DAILY';
+  return defaultMode;
+}
+
+/** "Mặc định khi tạo đơn" is only a choice when both prices are set; with one price, that one is the default. */
+export function hasDefaultChoice(perRental: Num, perDay: Num): boolean {
+  return positive(perRental) != null && positive(perDay) != null;
+}
+
 /** Priced options only, one default; a default without a price falls back to the mode that has one. */
 export function buildPricingOptions(perRental: Num, perDay: Num, defaultMode: PricingMode): PricingOptionPayload[] {
   const fixed = positive(perRental);
   const daily = positive(perDay);
-  let mode = defaultMode;
-  if (mode === 'DAILY' && daily == null) mode = 'FIXED';
-  if (mode === 'FIXED' && fixed == null && daily != null) mode = 'DAILY';
+  const mode = effectiveDefaultMode(perRental, perDay, defaultMode);
   const out: PricingOptionPayload[] = [];
   if (fixed != null) out.push({ type: 'FIXED', price: fixed, isDefault: mode === 'FIXED' });
   if (daily != null) out.push({ type: 'DAILY', price: daily, isDefault: mode === 'DAILY' });

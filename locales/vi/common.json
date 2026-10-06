@@ -261,6 +261,21 @@
       "loadMore": "Xem thêm",
       "unreadCount": "{count} chưa đọc"
     }
+  },
+  "dateRange": {
+    "title": "Chọn khoảng ngày",
+    "placeholder": "Chọn ngày",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "month": "Tháng {month}, {year}",
+    "prev": "Tháng trước",
+    "next": "Tháng sau",
+    "pickStart": "Bấm ngày đầu, rồi ngày cuối",
+    "pickEnd": "Bấm ngày cuối (bấm lại ngày đầu nếu chỉ một ngày)",
+    "summary": "{from} → {to} · {days} ngày",
+    "single": "{from} · 1 ngày",
+    "tooLong": "Tối đa {days} ngày.",
+    "apply": "Áp dụng",
+    "cancel": "Huỷ",
+    "close": "Đóng"
   }
 }
-

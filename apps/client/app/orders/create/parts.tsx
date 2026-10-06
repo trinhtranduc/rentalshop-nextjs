@@ -9,7 +9,7 @@ import { customersApi } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
 import { outlineBtn, primaryBtn, type Money, type T } from '../list/parts';
-import { dayMark, monthCells, monthOf, pickDay, shiftMonth, type DayRangePick } from './calendar-model';
+import { RangeCalendar } from '../../components/date-range/RangeCalendar';
 import { checkDays, lineModes, needsPrice, quickDays, rentalDays, type CartLine, type CustomerPick, type OrderType, type Stock } from './create-model';
 
 export const fieldClass =
@@ -159,12 +159,11 @@ export function DaysDialog({
           from={from}
           to={to}
           todayKey={todayKey}
-          weekdays={weekdays}
+          hints={{ start: t('editor.days.pickPickup'), end: t('editor.days.pickReturn') }}
           onPick={(r) => {
             setFrom(r.from);
             setTo(r.to);
           }}
-          t={t}
         />
         <p className={`m-0 text-sm ${problem && problem !== 'missing' ? 'text-ar-danger' : 'text-ar-muted'}`} role="status">
           {problem === 'reversed'
@@ -181,104 +180,6 @@ export function DaysDialog({
         </p>
       </div>
     </Modal>
-  );
-}
-
-/**
- * One range calendar (#556), like the old form's date range picker: click the pickup day, then the return day.
- * Monday-first, today ringed, past days allowed; two months side by side on wide screens, one on phones.
- */
-function RangeCalendar({
-  from,
-  to,
-  todayKey,
-  weekdays,
-  onPick,
-  t,
-}: {
-  from: string;
-  to: string;
-  todayKey: string;
-  weekdays: string[];
-  onPick: (range: DayRangePick) => void;
-  t: T;
-}) {
-  const [month, setMonth] = useState(() => monthOf(from || todayKey));
-  const [hover, setHover] = useState<string | null>(null);
-  const range = { from, to };
-  // Monday-first headers from the Sunday-first list ("CN,T2,…,T7")
-  const heads = [1, 2, 3, 4, 5, 6, 0].map((i) => weekdays[i] ?? '');
-  const renderMonth = (m: string, extra = '') => {
-    const [y, mm] = m.split('-').map(Number);
-    return (
-      <div key={m} className={`min-w-0 flex-1 ${extra}`}>
-        <div className="pb-2 text-center text-[15px] font-semibold">{t('editor.days.month', { month: mm, year: y })}</div>
-        <div className="grid grid-cols-7 text-center text-xs text-ar-muted">
-          {heads.map((h, i) => (
-            <span key={i} className="pb-1">
-              {h}
-            </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7" onMouseLeave={() => setHover(null)}>
-          {monthCells(m).map((key, i) => {
-            if (!key) return <span key={`e${i}`} />;
-            const mark = dayMark(range, key, hover);
-            const ends = mark === 'start' || mark === 'end' || mark === 'single';
-            return (
-              <span
-                key={key}
-                className={`flex h-10 items-center justify-center ${mark === 'inside' ? 'bg-ar-primary-soft' : ''} ${
-                  mark === 'start' ? 'rounded-l-full bg-ar-primary-soft' : ''
-                } ${mark === 'end' ? 'rounded-r-full bg-ar-primary-soft' : ''}`}
-              >
-                <button
-                  type="button"
-                  aria-pressed={!!mark && mark !== 'inside'}
-                  aria-label={key.split('-').reverse().join('/')}
-                  onClick={() => onPick(pickDay(range, key))}
-                  onMouseEnter={() => from && !to && setHover(key)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm tabular-nums ${
-                    ends
-                      ? 'bg-ar-primary font-bold text-ar-on-primary'
-                      : `${mark === 'inside' ? 'text-ar-primary-ink' : 'text-ar-ink'} hover:bg-ar-subtle`
-                  } ${key === todayKey && !ends ? 'font-bold ring-1 ring-inset ring-ar-primary' : ''}`}
-                >
-                  {Number(key.slice(8))}
-                </button>
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setMonth((m) => shiftMonth(m, -1))}
-          aria-label={t('editor.days.prev')}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-ar-ink hover:bg-ar-subtle"
-        >
-          <ShellIcon d={ICONS.chevronLeft} size={18} />
-        </button>
-        <span className="text-sm text-ar-muted">{from && !to ? t('editor.days.pickReturn') : t('editor.days.pickPickup')}</span>
-        <button
-          type="button"
-          onClick={() => setMonth((m) => shiftMonth(m, 1))}
-          aria-label={t('editor.days.next')}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-ar-ink hover:bg-ar-subtle"
-        >
-          <ShellIcon d="M9 6l6 6-6 6" size={18} />
-        </button>
-      </div>
-      <div className="flex gap-6">
-        {renderMonth(month)}
-        {renderMonth(shiftMonth(month, 1), 'max-sm:hidden')}
-      </div>
-    </div>
   );
 }
 
