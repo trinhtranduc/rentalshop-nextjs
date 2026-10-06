@@ -91,6 +91,10 @@ export interface AnalyticsPeriodReport {
     outstanding?: number;
     /** Money collected in the period without collateral (#484) */
     collected?: number;
+    /** Where `collected` came from: deposits + pickupAndSale + fees - refunds (#492) */
+    collectedBreakdown?: { deposits: number; pickupAndSale: number; fees: number; refunds: number };
+    /** Collateral (thế chân) taken at pickups in the period; not part of `collected` (#492) */
+    collateralReceived?: number;
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -830,7 +834,13 @@ export async function buildAnalyticsPeriodReport(
       totalActualRevenue: operational?.totalActualRevenue ?? growth.revenue.current,
       totalOrders: totalOrdersFromOps,
       ...(orderValue ? { totalOrderValue: orderValue.totalOrderValue, outstanding: orderValue.outstanding } : {}),
-      ...(operational ? { collected: operational.totalCollected } : {})
+      ...(operational
+        ? {
+            collected: operational.totalCollected,
+            collectedBreakdown: operational.collectedBreakdown,
+            collateralReceived: operational.collateralReceived
+          }
+        : {})
     },
     growth,
     series,
