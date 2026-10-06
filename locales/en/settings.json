@@ -389,7 +389,8 @@
       "subscription": "Subscription",
       "profile": "My account",
       "account": "Change password",
-      "language": "Language"
+      "language": "Language",
+      "appearance": "Appearance"
     },
     "form": {
       "required": "required",
@@ -484,6 +485,14 @@
       "title": "Bank accounts"
     },
     "close": "Close",
-    "dialogTitle": "Settings"
+    "dialogTitle": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "hint": "On this device. Saved automatically.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Match system",
+      "current": "Now: {theme}"
+    }
   }
 }

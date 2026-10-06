@@ -389,7 +389,8 @@
       "subscription": "Gói dịch vụ",
       "profile": "Tài khoản của tôi",
       "account": "Đổi mật khẩu",
-      "language": "Ngôn ngữ"
+      "language": "Ngôn ngữ",
+      "appearance": "Giao diện"
     },
     "form": {
       "required": "bắt buộc",
@@ -484,6 +485,14 @@
       "title": "Tài khoản ngân hàng"
     },
     "close": "Đóng",
-    "dialogTitle": "Cài đặt"
+    "dialogTitle": "Cài đặt",
+    "appearance": {
+      "title": "Giao diện",
+      "hint": "Áp dụng trên máy này. Lưu tự động.",
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Theo hệ thống",
+      "current": "Đang dùng: {theme}"
+    }
   }
 }

@@ -15,8 +15,10 @@ import type { CurrencyCode } from '@rentalshop/types';
 import { SettingsSubscriptionMerchantActions } from '../components/SettingsSubscriptionMerchantActions';
 import { Skeleton, type T } from '../orders/list/parts';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { useTheme } from '../providers/ThemeProvider';
 import {
   AccountSection,
+  AppearanceSection,
   LANGUAGES,
   LanguageSection,
   LegacyPanel,
@@ -81,7 +83,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
   const user = authUser as unknown as SettingsUser | null;
   const role = String(user?.role || '').toUpperCase();
 
-  const tabs = useMemo(() => tabsForRole(role), [role]);
+  const { enabled: themeSwitch, choice: themeChoice } = useTheme();
+  const tabs = useMemo(() => tabsForRole(role, { themeSwitch }), [role, themeSwitch]);
 
   // ---------------------------------------------------------------- merchant
   const [fetchedMerchant, setFetchedMerchant] = useState<Record<string, string> | null>(null);
@@ -279,6 +282,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
         >
           {t(`nav.${id}`)}
           {id === 'language' && <span className="hidden font-normal text-ar-muted lg:inline">{languageName}</span>}
+          {id === 'appearance' && <span className="hidden font-normal text-ar-muted lg:inline">{t(`appearance.${themeChoice}`)}</span>}
         </button>
       </li>
     );
@@ -333,6 +337,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
         return <AccountSection userId={user?.id ?? null} onSignOut={signOut} t={t} />;
       case 'language':
         return <LanguageSection t={t} />;
+      case 'appearance':
+        return <AppearanceSection t={t} />;
       case 'profile':
       default:
         return (

@@ -162,9 +162,9 @@ describe('staff list (#528)', () => {
 
 describe('store settings (#528)', () => {
   it('shows the same tabs per role as the old settings menu', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language']);
-    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language']);
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'profile', 'account', 'language']);
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance']);
+    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance']);
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'profile', 'account', 'language', 'appearance']);
   });
 
   it('resolves ?tab= with the old guards', () => {
@@ -246,5 +246,14 @@ describe('Cài đặt dialog URL (#539)', () => {
   it('an empty or forbidden tab in the dialog resolves to the role default', () => {
     expect(resolveTab('', 'MERCHANT').tab).toBe('merchant');
     expect(resolveTab('subscription', 'OUTLET_STAFF').tab).toBe('outlet');
+  });
+});
+
+describe('Giao diện tab (#539)', () => {
+  it('is in "me" for every role and hidden by the theme kill switch', () => {
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toContain('appearance');
+    expect(tabsForRole('MERCHANT', { themeSwitch: true }).map((t) => t.id)).toContain('appearance');
+    expect(tabsForRole('MERCHANT', { themeSwitch: false }).map((t) => t.id)).not.toContain('appearance');
+    expect(resolveTab('appearance', 'OUTLET_STAFF').tab).toBe('appearance');
   });
 });
