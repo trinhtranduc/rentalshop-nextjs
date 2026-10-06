@@ -21,11 +21,12 @@ final class OrderDetailViewController: BaseViewControler {
     private let bottomBar = UIView()
     private let bottomStack = UIStackView()
     private let stateView = OrdersStateView()
-    private let printButton = UIButton(type: .system)
     private let moreButton = UIButton(type: .system)
     private let pullRefresh = UIRefreshControl()
     /// "Sẵn sàng giao" save in flight (#470)
     private var savingReady = false
+    /// "6 lần thay đổi · gần nhất 15:10 hôm nay" under "Lịch sử thay đổi" in the ⋯ sheet (#519); nil until loaded
+    private var historySummary: String?
 
     init(orderId: Int) {
         self.orderId = orderId
@@ -39,15 +40,12 @@ final class OrderDetailViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         let navBar = setupCustomNavigationBar(title: "", hideBackButton: false)
-        printButton.setImage(DS.symbol("printer", DS.Icon.md), for: .normal)
-        printButton.tintColor = DS.Color.text
-        printButton.accessibilityLabel = "Print receipt".localized()
-        printButton.addTarget(self, action: #selector(printTapped), for: .touchUpInside)
+        // #519 (board CT-thao-tac): only ⋯ in the header; it opens the action sheet (print moved into it)
         moreButton.setImage(DS.symbol("ellipsis", DS.Icon.md), for: .normal)
         moreButton.tintColor = DS.Color.text
         moreButton.accessibilityLabel = "More actions".localized()
-        moreButton.showsMenuAsPrimaryAction = true
-        navBar.addRightButton(printButton)
+        moreButton.accessibilityIdentifier = "order.detail.more"
+        moreButton.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
         navBar.addRightButton(moreButton)
         // #430: a long order number ("#ORD-003-0022") shrinks to fit between the buttons instead of being cut
         let titleLabel = UILabel()
@@ -132,11 +130,22 @@ final class OrderDetailViewController: BaseViewControler {
                     self.orderViewModel = OrderViewModel(order: Order.from(detail: detail))
                     self.stateView.isHidden = true
                     self.render()
+                    self.loadHistorySummary()
                 } else if self.detail == nil {
                     self.stateView.show(.error(error?.localizedDescription.localized() ?? ""))
                 } else if let error {
                     UIAlertController.errorAlert(parent: self, error: error)
                 }
+            }
+        }
+    }
+
+    /// One row of the changes endpoint gives the total and the newest instant; a failure leaves the row without a line
+    private func loadHistorySummary() {
+        TabsV2APIService.shared.orderChanges(orderId: orderId, limit: 1) { [weak self] page, _ in
+            DispatchQueue.main.async {
+                guard let self, let page else { return }
+                self.historySummary = ChangeHistoryLogic.summary(total: page.total, latestAt: page.latestAt)
             }
         }
     }
@@ -512,26 +521,22 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     private func notesSection(_ detail: OrderDetail) -> UIView {
+        let text = detail.notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let urls = noteImageURLs(detail)
+        // #519 (board CT-thao-tac): notes are added and edited from "Ghi chú" in the ⋯ sheet, so the section has no
+        // button of its own and is left out while there is no note
+        guard !text.isEmpty || !urls.isEmpty else { return UIView() }
+
         let title = UILabel()
         title.font = Utils.boldFont(size: DS.TextSize.secondary)
         title.textColor = DS.Color.textMuted
         title.text = "NOTES".localized()
-        let edit = UIButton(type: .system)
-        edit.setTitle("Edit".localized(), for: .normal)
-        edit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
-        edit.tintColor = DS.Color.primary
-        edit.addTarget(self, action: #selector(editNotesTapped), for: .touchUpInside)
-        edit.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
-        let header = UIStackView(arrangedSubviews: [title, UIView(), edit])
-        header.axis = .horizontal
-        header.alignment = .center
+        title.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
 
-        let stack = UIStackView(arrangedSubviews: [header])
+        let stack = UIStackView(arrangedSubviews: [title])
         stack.axis = .vertical
         stack.spacing = DS.Spacing.xs
 
-        let text = detail.notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let urls = noteImageURLs(detail)
         if !text.isEmpty || !urls.isEmpty {
             let box = UIStackView()
             box.axis = .vertical
@@ -623,35 +628,62 @@ final class OrderDetailViewController: BaseViewControler {
         if buttons.count == 2 {
             buttons[1].snp.makeConstraints { make in make.width.equalTo(buttons[0]).multipliedBy(2) }
         }
+    }
 
-        var menu: [UIMenuElement] = []
-        if actions.canEdit {
-            menu.append(UIAction(title: "Edit order".localized(), image: UIImage(systemName: "square.and.pencil")) { [weak self] _ in
-                self?.editOrderTapped()
-            })
+    // MARK: - ⋯ sheet (#519, board CT-thao-tac)
+
+    @objc private func moreTapped() {
+        guard let detail, presentedViewController == nil else { return }
+        let sheetActions = OrderDetailLogic.sheetActions(actions(for: detail), orderType: detail.orderType,
+                                                         canExtend: canExtend(detail))
+        let rows: (OrderSheetAction) -> OrderActionSheet.Row = { [weak self] action in
+            OrderActionSheet.Row(action: action, title: OrderActionSheet.title(of: action),
+                                 subtitle: self?.sheetSubtitle(action, detail: detail))
         }
-        if canExtend(detail) {
-            menu.append(UIAction(title: "order.extend".localized(), image: UIImage(systemName: "calendar.badge.plus")) { [weak self] _ in
-                self?.extendTapped()
-            })
+        let sheet = OrderActionSheet(title: String(format: "order.sheet.title".localized(), detail.orderNumber),
+                                     main: sheetActions.main.map(rows), destructive: sheetActions.destructive.map(rows))
+        sheet.onSelect = { [weak self] action in self?.perform(action) }
+        present(sheet, animated: true)
+    }
+
+    private func sheetSubtitle(_ action: OrderSheetAction, detail: OrderDetail) -> String? {
+        switch action {
+        case .print:
+            let ip = Utils.loadBillPrinter().trimmingCharacters(in: .whitespaces)
+            return ip.isEmpty ? nil : String(format: "order.sheet.print.printer".localized(), ip)
+        case .notes:
+            return OrderDetailLogic.notesSubtitle(text: detail.notes, photoCount: noteImageURLs(detail).count)
+        case .history:
+            return historySummary
+        case .cancel:
+            return "order.sheet.cancel.subtitle".localized()
+        case .delete:
+            return "order.sheet.delete.subtitle".localized()
+        case .edit, .extend:
+            return nil
         }
-        menu.append(UIAction(title: "Notes".localized(), image: UIImage(systemName: "note.text")) { [weak self] _ in
-            self?.editNotesTapped()
-        })
-        menu.append(UIAction(title: "Print receipt".localized(), image: UIImage(systemName: "printer")) { [weak self] _ in
-            self?.printTapped()
-        })
-        if actions.canCancel {
-            menu.append(UIAction(title: "Cancel order".localized(), image: UIImage(systemName: "xmark"), attributes: .destructive) { [weak self] _ in
-                self?.cancelTapped()
-            })
+    }
+
+    /// The same handlers as the bottom bar and the old menu
+    private func perform(_ action: OrderSheetAction) {
+        switch action {
+        case .print: printTapped()
+        case .notes: editNotesTapped()
+        case .edit: editOrderTapped()
+        case .extend: extendTapped()
+        case .history: openHistory()
+        case .cancel: cancelTapped()
+        case .delete: deleteTapped()
         }
-        if actions.canDelete {
-            menu.append(UIAction(title: "Delete Order".localized(), image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                self?.deleteTapped()
-            })
-        }
-        moreButton.menu = UIMenu(children: menu)
+    }
+
+    private func openHistory() {
+        guard let detail, let order = orderViewModel?.currentOrder else { return }
+        let customer = order.customerName.trimmingCharacters(in: .whitespaces)
+        let history = ChangeHistoryViewController(subject: .order(id: orderId, number: detail.orderNumber,
+                                                                  customer: customer.isEmpty ? nil : customer))
+        history.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(history, animated: true)
     }
 
     // MARK: - Actions
@@ -1030,5 +1062,139 @@ final class OrderDetailViewController: BaseViewControler {
             }
         }
         return container
+    }
+}
+
+// MARK: - ⋯ action sheet (#519, board CT-thao-tac)
+
+/// "Đơn #787771" with a close button, the everyday rows, then the red group apart. A row closes the sheet and then
+/// runs its action on the detail screen.
+final class OrderActionSheet: V2FittingSheet {
+    struct Row {
+        let action: OrderSheetAction
+        let title: String
+        let subtitle: String?
+    }
+
+    var onSelect: ((OrderSheetAction) -> Void)?
+    private let titleText: String
+    private let main: [Row]
+    private let destructive: [Row]
+
+    init(title: String, main: [Row], destructive: [Row]) {
+        titleText = title
+        self.main = main
+        self.destructive = destructive
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    static func title(of action: OrderSheetAction) -> String {
+        switch action {
+        case .print: return "order.sheet.print".localized()
+        case .notes: return "order.sheet.notes".localized()
+        case .edit: return "Edit order".localized()
+        case .extend: return "order.extend".localized()
+        case .history: return "order.sheet.history".localized()
+        case .cancel: return "order.sheet.cancel".localized()
+        case .delete: return "order.sheet.delete".localized()
+        }
+    }
+
+    private static func symbol(of action: OrderSheetAction) -> String {
+        switch action {
+        case .print: return "printer"
+        case .notes: return "note.text"
+        case .edit: return "square.and.pencil"
+        case .extend: return "calendar.badge.plus"
+        case .history: return "clock.arrow.circlepath"
+        case .cancel: return "xmark"
+        case .delete: return "trash"
+        }
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        stack.spacing = 0
+
+        let title = V2.label(titleText, size: 20, weight: .bold, lines: 2)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let close = UIButton(type: .system)
+        close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
+        close.tintColor = UIColor(hexString: "475569")
+        close.backgroundColor = UIColor(hexString: "F1F5F9")
+        close.layer.cornerRadius = 18
+        close.accessibilityLabel = "Close".localized()
+        close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        close.snp.makeConstraints { make in make.size.equalTo(36) }
+        let header = UIStackView(arrangedSubviews: [title, close])
+        header.alignment = .center
+        header.spacing = DS.Spacing.md
+        stack.addArrangedSubview(header)
+        stack.setCustomSpacing(6, after: header)
+
+        for row in main {
+            stack.addArrangedSubview(rowView(row))
+        }
+        if !destructive.isEmpty {
+            let gap = UIView()
+            gap.snp.makeConstraints { make in make.height.equalTo(8) }
+            stack.addArrangedSubview(gap)
+            for row in destructive {
+                stack.addArrangedSubview(rowView(row))
+            }
+        }
+    }
+
+    private func rowView(_ row: Row) -> UIView {
+        let danger = row.action.isDestructive
+        let control = UIControl()
+        let iconBox = UIView()
+        iconBox.backgroundColor = UIColor(hexString: danger ? "FEF2F2" : "F1F5F9")
+        iconBox.layer.cornerRadius = 10
+        iconBox.isUserInteractionEnabled = false
+        let icon = UIImageView(image: DS.symbol(OrderActionSheet.symbol(of: row.action), DS.Icon.md))
+        icon.tintColor = danger ? V2.danger : DS.Color.text
+        icon.contentMode = .center
+        iconBox.addSubview(icon)
+        icon.snp.makeConstraints { make in make.center.equalToSuperview() }
+        iconBox.snp.makeConstraints { make in make.size.equalTo(36) }
+
+        let title = V2.label(row.title, size: 16, weight: .medium, color: danger ? V2.danger : DS.Color.text, lines: 2)
+        let subtitle = V2.label(row.subtitle, size: DS.TextSize.secondary, color: UIColor(hexString: "475569"), lines: 2)
+        subtitle.isHidden = (row.subtitle ?? "").isEmpty
+        let texts = UIStackView(arrangedSubviews: [title, subtitle])
+        texts.axis = .vertical
+        let line = UIStackView(arrangedSubviews: [iconBox, texts])
+        line.alignment = .center
+        line.spacing = 14
+        line.isUserInteractionEnabled = false
+        control.addSubview(line)
+        line.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(8)
+            make.leading.trailing.equalToSuperview().inset(4)
+        }
+        let divider = V2.divider()
+        divider.backgroundColor = UIColor(hexString: "F1F5F9")
+        divider.isUserInteractionEnabled = false
+        control.addSubview(divider)
+        divider.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        control.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+        control.isAccessibilityElement = true
+        control.accessibilityTraits = UIAccessibilityTraitButton
+        control.accessibilityLabel = row.title
+        control.accessibilityValue = row.subtitle
+        control.addAction(UIAction { [weak self] _ in self?.select(row.action) }, for: .touchUpInside)
+        return control
+    }
+
+    private func select(_ action: OrderSheetAction) {
+        let onSelect = self.onSelect
+        dismiss(animated: true) { onSelect?(action) }
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
     }
 }

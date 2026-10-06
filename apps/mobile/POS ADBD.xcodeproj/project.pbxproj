@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */; };
+		5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */; };
+		1443F833E4528F38190DA006 /* ChangeHistoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */; };
+		71778FFE5E5E12F097C24D21 /* ChangeHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */; };
+		9C6BC26D8481C7603F0EC26E /* ScheduleConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */; };
 		00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */; };
 		00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C68665233AF9D666CE7E723C /* Phase8Tests.swift */; };
 		021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */; };
@@ -367,6 +372,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryTests.swift; sourceTree = "<group>"; };
+		D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflictTests.swift; sourceTree = "<group>"; };
+		76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryViewController.swift; sourceTree = "<group>"; };
+		E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistory.swift; sourceTree = "<group>"; };
+		EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflict.swift; sourceTree = "<group>"; };
 		003B93F62DB6A075AF2FB1A1 /* Pods-POS ADBD.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBD.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBD/Pods-POS ADBD.debug.xcconfig"; sourceTree = "<group>"; };
 		040085072F00DDC500DF5C81 /* RatingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingManager.swift; sourceTree = "<group>"; };
 		040330DC2EA747F7003BC33E /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
@@ -975,6 +985,8 @@
 				F8174E6BA337B4B259DD6569 /* FormattersTests.swift */,
 				32451210261D4A00E83FEBAA /* OrderStatusTests.swift */,
 				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
+				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
+				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
@@ -1048,6 +1060,8 @@
 				09DFF664402F310DBDA0C7DD /* AuthForms.swift */,
 				F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */,
 				730E16169321964B8996F08C /* RentalExtension.swift */,
+				E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */,
+				EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -1451,6 +1465,7 @@
 			children = (
 				A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */,
 				49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */,
+				76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */,
 				D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */,
 				D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */,
 				86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */,
@@ -1775,6 +1790,8 @@
 				D471767BB75A2DAE01AA6CEC /* FormattersTests.swift in Sources */,
 				81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */,
 				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
+				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
+				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
@@ -1995,6 +2012,7 @@
 				F05A9EEA160D9C22272C8D9E /* OrdersFilterSheet.swift in Sources */,
 				C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */,
 				9B1605DA8A6665412EED39EB /* OrderDetailViewController.swift in Sources */,
+				1443F833E4528F38190DA006 /* ChangeHistoryViewController.swift in Sources */,
 				AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */,
 				8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */,
 				ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */,
@@ -2025,6 +2043,8 @@
 				91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */,
 				9893270E20A560EFFD72653E /* ProductDetailV2Logic.swift in Sources */,
 				B298B580A0C9BA1614A0649B /* RentalExtension.swift in Sources */,
+				71778FFE5E5E12F097C24D21 /* ChangeHistory.swift in Sources */,
+				9C6BC26D8481C7603F0EC26E /* ScheduleConflict.swift in Sources */,
 				83BD6AF23E08F2BB98957B98 /* OrderExtendSheetViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

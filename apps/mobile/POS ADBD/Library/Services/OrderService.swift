@@ -100,6 +100,11 @@ class OrderService: BaseService, OrderServiceProtocol {
                             completion(nil, nsError)
                         }
                     } catch {
+                        // 409 ORDER_SCHEDULE_CONFLICT (#518) sends `data.conflicts`, not an order: keep its message
+                        if let apiError = self.decodeErrorResponse(from: data), !apiError.success {
+                            completion(nil, apiError.toNSError(httpStatusCode: response.response?.statusCode))
+                            return
+                        }
                         print("❌ \(context) JSON Decoding error: \(error)")
                         completion(nil, error as NSError)
                     }

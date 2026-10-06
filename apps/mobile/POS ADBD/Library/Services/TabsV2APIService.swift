@@ -96,6 +96,49 @@ final class TabsV2APIService: BaseService {
         request(APIEndpoint.Path.subscriptionsStatus, completion: completion)
     }
 
+    // MARK: - Order overlap setting (#518)
+
+    private struct ProfileFlags: Decodable {
+        let merchant: MerchantFlags?
+    }
+
+    private struct MerchantFlags: Decodable {
+        let allowOverlappingOrders: Bool?
+    }
+
+    /// `merchant.allowOverlappingOrders` of GET /api/users/profile (missing = ON); nil without a merchant
+    @discardableResult
+    func allowOverlappingOrders(completion: @escaping (Bool?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.userProfile) { (body: ProfileFlags?, error: NSError?) in
+            completion(body?.merchant.map { $0.allowOverlappingOrders ?? true }, error)
+        }
+    }
+
+    /// PUT /api/settings/merchant `{ allowOverlappingOrders }` (MERCHANT / ADMIN; 403 otherwise). Answers the saved value.
+    @discardableResult
+    func setAllowOverlappingOrders(_ allowed: Bool, completion: @escaping (Bool?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.merchantSettings, method: .put,
+                parameters: ["allowOverlappingOrders": allowed]) { (body: MerchantFlags?, error: NSError?) in
+            completion(body.map { $0.allowOverlappingOrders ?? allowed }, error)
+        }
+    }
+
+    // MARK: - Change history (#519)
+
+    @discardableResult
+    func orderChanges(orderId: Int, limit: Int = ChangeHistoryLogic.pageSize, offset: Int = 0,
+                      completion: @escaping (ChangeHistoryPage?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.orderChanges(orderId: orderId), parameters: ["limit": limit, "offset": offset],
+                completion: completion)
+    }
+
+    @discardableResult
+    func productChanges(productId: Int, limit: Int = ChangeHistoryLogic.pageSize, offset: Int = 0,
+                        completion: @escaping (ChangeHistoryPage?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.productChanges(productId: productId), parameters: ["limit": limit, "offset": offset],
+                completion: completion)
+    }
+
     /// POST /api/auth/change-password. The API answers without `data`, so success is `error == nil`.
     func changePassword(current: String, new: String, completion: @escaping (NSError?) -> Void) {
         let url = APIEndpoint.currentBaseURL + APIEndpoint.Path.changePassword

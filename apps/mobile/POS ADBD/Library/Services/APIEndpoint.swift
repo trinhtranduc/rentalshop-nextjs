@@ -88,6 +88,9 @@ enum APIEndpoint {
         static let ordersStatistics = "/api/orders/statistics"
         static let exportOrders = "/api/orders/export"
         static let orderQRCode = "/api/orders" // Will append /{orderId}/qr-code
+        /// GET readable change history (#519): limit (≤100), offset
+        static func orderChanges(orderId: Int) -> String { "/api/orders/\(orderId)/changes" }
+        static func productChanges(productId: Int) -> String { "/api/products/\(productId)/changes" }
         
         // Customers - Updated according to API documentation
         static let customers = "/api/customers"
@@ -102,6 +105,8 @@ enum APIEndpoint {
         // Merchants
         static let merchants = "/api/merchants"
         static let registerMerchant = "/api/merchants/register"
+        /// PUT the signed-in user's shop settings; `{ allowOverlappingOrders }` alone for the #518 switch
+        static let merchantSettings = "/api/settings/merchant"
 
         // Subscriptions
         static let subscriptionsStatus = "/api/subscriptions/status"
