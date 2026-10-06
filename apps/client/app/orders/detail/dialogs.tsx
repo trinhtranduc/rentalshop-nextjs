@@ -7,7 +7,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import type { Money, T } from '../list/parts';
-import { handOverMoney, parseFee, returnMoney, type MoneyRow } from './actions-model';
+import { handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
 import type { OrderDetailLike } from '../orders-model';
 
 const ring = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ar-primary';
@@ -209,7 +209,7 @@ function useSubmit(onClose: () => void) {
 
 export function HandOverDialog({ onConfirm, ...p }: ActionProps & { onConfirm: () => Promise<boolean | void> }) {
   const { submitting, run } = useSubmit(p.onClose);
-  const m = handOverMoney(p.order);
+  const m = handOverView(p.order);
   return (
     <ActionDialog
       open={p.open}
@@ -236,18 +236,28 @@ export function HandOverDialog({ onConfirm, ...p }: ActionProps & { onConfirm: (
   );
 }
 
+const feeState = (v: number | null | undefined) => ({ text: v ? String(v) : '', value: v || 0 });
+const feeInput =
+  'h-11 w-full min-w-0 rounded-xl border border-ar-line bg-ar-surface px-3 text-right text-[15px] tabular-nums text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none focus:ring-2 focus:ring-ar-primary-soft';
+
 export function ReturnDialog({
   onConfirm,
-  initialDamageFee,
   lateDays,
   ...p
-}: ActionProps & { initialDamageFee: number; lateDays: number; onConfirm: (damageFee: number) => Promise<boolean | void> }) {
+}: ActionProps & { lateDays: number; onConfirm: (fees: { lateFee: number; damageFee: number }) => Promise<boolean | void> }) {
   const { submitting, run } = useSubmit(p.onClose);
-  const [damage, setDamage] = useState({ text: initialDamageFee ? String(initialDamageFee) : '', value: initialDamageFee || 0 });
+  // Prefilled with the saved fees, like iOS (the API stores lateFee; nothing computes it)
+  const savedLate = p.order.lateFee;
+  const savedDamage = p.order.damageFee;
+  const [late, setLate] = useState(() => feeState(savedLate));
+  const [damage, setDamage] = useState(() => feeState(savedDamage));
   useEffect(() => {
-    if (p.open) setDamage({ text: initialDamageFee ? String(initialDamageFee) : '', value: initialDamageFee || 0 });
-  }, [p.open, initialDamageFee]);
-  const m = returnMoney(p.order, damage.value);
+    if (!p.open) return;
+    setLate(feeState(savedLate));
+    setDamage(feeState(savedDamage));
+  }, [p.open, savedLate, savedDamage]);
+  const fees = { lateFee: late.value, damageFee: damage.value };
+  const m = returnView(p.order, fees);
   const r = m.result;
   const total =
     r.kind === 'refund'
@@ -261,7 +271,8 @@ export function ReturnDialog({
       : r.kind === 'collect'
         ? p.t('detail.dialog.takeBack.confirmCollect', { amount: p.money(r.amount) })
         : p.t('detail.dialog.takeBack.confirmFree');
-  const fieldId = useId();
+  const lateId = useId();
+  const damageId = useId();
   return (
     <ActionDialog
       open={p.open}
@@ -277,7 +288,7 @@ export function ReturnDialog({
           </button>
           <button
             type="button"
-            onClick={() => run(() => onConfirm(damage.value))}
+            onClick={() => run(() => onConfirm(fees))}
             disabled={submitting}
             className={`${okBtn} bg-ar-primary text-ar-on-primary hover:opacity-95`}
           >
@@ -289,26 +300,16 @@ export function ReturnDialog({
       <Items items={p.items} />
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-ar-ink-2">
+          <label htmlFor={lateId} className="text-sm font-semibold text-ar-ink-2">
             {lateDays > 0 ? p.t('detail.dialog.takeBack.lateFeeDays', { days: lateDays }) : p.t('detail.dialog.takeBack.lateFee')}
-          </span>
-          <span className={`flex h-11 items-center rounded-xl border border-ar-line-soft bg-ar-subtle px-3 text-[15px] tabular-nums ${m.lateFee > 0 ? 'text-ar-danger' : 'text-ar-muted'}`}>
-            {p.money(m.lateFee)}
-          </span>
+          </label>
+          <input id={lateId} inputMode="decimal" autoComplete="off" value={late.text} placeholder="0" onChange={(e) => setLate(parseFee(e.target.value))} className={feeInput} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={fieldId} className="text-sm font-semibold text-ar-ink-2">
+          <label htmlFor={damageId} className="text-sm font-semibold text-ar-ink-2">
             {p.t('detail.dialog.takeBack.damageFee')}
           </label>
-          <input
-            id={fieldId}
-            inputMode="decimal"
-            autoComplete="off"
-            value={damage.text}
-            placeholder="0"
-            onChange={(e) => setDamage(parseFee(e.target.value))}
-            className="h-11 w-full min-w-0 rounded-xl border border-ar-line bg-ar-surface px-3 text-right text-[15px] tabular-nums text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none focus:ring-2 focus:ring-ar-primary-soft"
-          />
+          <input id={damageId} inputMode="decimal" autoComplete="off" value={damage.text} placeholder="0" onChange={(e) => setDamage(parseFee(e.target.value))} className={feeInput} />
         </div>
       </div>
       <MoneyBox rows={m.rows} total={total} t={p.t} money={p.money} />

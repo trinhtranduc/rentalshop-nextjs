@@ -300,42 +300,31 @@ export function NextStepCard({ next, onAct, busy, weekdays, t, money }: { next: 
   );
 }
 
-export function PaymentCard({ summary, collateralLabel, t, money }: { summary: PaySummary; collateralLabel: string; t: T; money: Money }) {
-  const signed = (amount: number, sign: number) => (amount > 0 && sign < 0 ? `−${money(amount)}` : amount > 0 && sign > 0 ? `+${money(amount)}` : money(amount));
+/** Thanh toán: iOS order detail rows (orders-model `buildPaySummary`), no signs: the label says what it is. */
+export function PaymentCard({ summary, t, money }: { summary: PaySummary; t: T; money: Money }) {
   const total = summary.total;
   const totalTone =
-    total.kind === 'dueAtPickup' || total.kind === 'due' || total.kind === 'collectAtReturn'
+    total?.key === 'collectAtPickup' || total?.key === 'returnCollect' || total?.key === 'saleDue'
       ? 'text-ar-unprepared'
-      : total.kind === 'refundAtReturn'
+      : total?.key === 'returnRefund'
         ? 'text-ar-renting'
-        : total.kind === 'settled'
+        : total?.key === 'saleCollected'
           ? 'text-ar-done'
           : 'text-ar-muted';
+  const amountTone = summary.struck ? 'text-ar-muted line-through' : 'text-ar-ink';
   return (
     <section className={`${cardClass} flex flex-col gap-2.5 px-5 py-4`}>
       <h2 className={`${h2Class} mb-0.5`}>{t('detail.pay.title')}</h2>
-      {summary.lines.map((l) => (
-        <div key={l.kind} className="flex justify-between gap-3 text-[15px]">
-          <span className="text-ar-ink">{t(`detail.pay.${l.kind}`)}</span>
-          <span className={`tabular-nums ${summary.struck ? 'text-ar-muted line-through' : l.kind === 'lateFee' || l.kind === 'damageFee' ? 'text-ar-danger' : 'text-ar-ink'}`}>
-            {signed(l.amount, l.sign)}
-          </span>
+      {summary.rows.map((r) => (
+        <div key={r.key} className="flex justify-between gap-3 text-[15px]">
+          <span className="text-ar-ink">{t(`detail.pay.${r.key}`, { amount: money(summary.discount) })}</span>
+          <span className={`tabular-nums ${!summary.struck && (r.key === 'lateFee' || r.key === 'damageFee') ? 'text-ar-danger' : amountTone}`}>{money(r.amount)}</span>
         </div>
       ))}
-      <div className="flex justify-between gap-3 border-t border-ar-line pt-2.5 text-[17px] font-bold">
-        <span className="text-ar-ink">{t(`detail.pay.${total.kind}`)}</span>
-        {'amount' in total && <span className={`tabular-nums ${totalTone}`}>{money(total.amount)}</span>}
-      </div>
-      {summary.collateral > 0 && (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-ar-surface-muted px-3 py-2.5 text-[15px]">
-          <span className="flex flex-col">
-            <span className="text-ar-ink">
-              {t('detail.pay.collateral')}
-              {collateralLabel ? ` · ${collateralLabel}` : ''}
-            </span>
-            <span className="text-sm text-ar-muted">{t('detail.pay.collateralHint')}</span>
-          </span>
-          <span className="font-semibold tabular-nums text-ar-ink">{money(summary.collateral)}</span>
+      {total && (
+        <div className="flex justify-between gap-3 border-t border-ar-line pt-2.5 text-[17px] font-bold">
+          <span className="text-ar-ink">{t(`detail.pay.${total.key}`)}</span>
+          {total.amount !== null && <span className={`tabular-nums ${totalTone}`}>{money(total.amount)}</span>}
         </div>
       )}
     </section>

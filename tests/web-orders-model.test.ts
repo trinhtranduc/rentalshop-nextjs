@@ -187,16 +187,52 @@ describe('order page', () => {
     expect(buildNextStep({ ...base, status: 'RETURNED' }, TODAY, getLocalDateKey)).toBeNull();
   });
 
-  it('builds the payment card by state', () => {
+  it('builds the payment card by state, rows as iOS moneyRows', () => {
     const reserved = buildPaySummary({ ...base, status: 'RESERVED', depositAmount: 100_000 });
-    expect(reserved.lines.map((l) => l.kind)).toEqual(['rent', 'deposit']);
-    expect(reserved.total).toEqual({ kind: 'dueAtPickup', amount: 700_000 });
-    expect(reserved.collateral).toBe(500_000);
+    expect(reserved.rows).toEqual([
+      { key: 'orderTotal', amount: 300_000 },
+      { key: 'depositPaid', amount: 100_000 },
+      { key: 'collateralMoney', amount: 500_000 },
+    ]);
+    // thế chân is inside Thu khi giao, like iOS HandOverMoney.due and the API
+    expect(reserved.total).toEqual({ key: 'collectAtPickup', amount: 700_000 });
     const renting = buildPaySummary({ ...base, status: 'PICKUPED', lateFee: 100_000, damageFee: 600_000 });
-    expect(renting.lines.map((l) => l.kind)).toEqual(['rent', 'deposit', 'lateFee', 'damageFee', 'collateralHeld']);
-    expect(renting.total).toEqual({ kind: 'collectAtReturn', amount: 200_000 });
-    expect(buildPaySummary({ ...base, status: 'CANCELLED' })).toMatchObject({ total: { kind: 'noRevenue' }, struck: true });
-    expect(buildPaySummary({ ...base, orderType: 'SALE', status: 'COMPLETED' }).total).toEqual({ kind: 'due', amount: 300_000 });
+    expect(renting.rows.map((r) => r.key)).toEqual(['orderTotal', 'collateralHeld', 'lateFee', 'damageFee']);
+    expect(renting.total).toEqual({ key: 'returnCollect', amount: 200_000 });
+    expect(buildPaySummary({ ...base, status: 'PICKUPED' }).total).toEqual({ key: 'returnRefund', amount: 500_000 });
+    expect(buildPaySummary({ ...base, status: 'PICKUPED', damageFee: 500_000 }).total).toBeNull();
+    const returned = buildPaySummary({ ...base, status: 'RETURNED', discountAmount: 20_000, damageFee: 50_000 });
+    expect(returned.rows).toEqual([
+      { key: 'orderTotalDiscount', amount: 300_000 },
+      { key: 'collateral', amount: 500_000 },
+      { key: 'damageFee', amount: 50_000 },
+    ]);
+    expect(returned.total).toBeNull();
+    expect(returned.discount).toBe(20_000);
+    expect(buildPaySummary({ ...base, status: 'CANCELLED' })).toMatchObject({ total: { key: 'noRevenue', amount: null }, struck: true });
+    const sale = { ...base, orderType: 'SALE', securityDeposit: 0, discountAmount: 50_000, orderItems: [{ quantity: 2, unitPrice: 175_000 }] };
+    expect(buildPaySummary({ ...sale, status: 'COMPLETED' })).toMatchObject({
+      rows: [{ key: 'goodsTotal', amount: 350_000 }, { key: 'discount', amount: 50_000 }],
+      total: { key: 'saleCollected', amount: 300_000 },
+    });
+    expect(buildPaySummary({ ...sale, status: 'RESERVED' }).total).toEqual({ key: 'saleDue', amount: 300_000 });
+  });
+
+  it('page card, next-step button and orderBalance use the same money', () => {
+    const cases = [
+      { ...base, status: 'RESERVED', depositAmount: 96, totalAmount: 68, securityDeposit: 96 },
+      { ...base, status: 'RESERVED', payments: [{ amount: 200_000, status: 'COMPLETED', notes: 'PICKUP' }] },
+      { ...base, status: 'PICKUPED', lateFee: 700_000, payments: [{ amount: 50_000, status: 'COMPLETED', notes: 'RETURN_ADJUSTMENT' }] },
+      { ...base, status: 'PICKUPED' },
+    ];
+    for (const o of cases) {
+      const balance = orderBalance(o);
+      const next = buildNextStep(o, TODAY, getLocalDateKey)!;
+      const card = buildPaySummary(o).total;
+      expect(next.amount).toBe(balance.amountDue);
+      if (o.status === 'RESERVED') expect(card).toEqual({ key: 'collectAtPickup', amount: balance.amountDue });
+      else expect(card?.amount ?? 0).toBe(balance.refundDue || balance.amountDue);
+    }
   });
 
   it('lists history newest first', () => {
