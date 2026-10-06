@@ -24,9 +24,27 @@ final class CartV2ViewController: BaseViewControler {
     private var pricingChecked = Set<Int>()
     /// One create at a time, one Idempotency-Key per checkout (#341, #476)
     private let submission = CreateOrderSubmission()
+    /// #518: lines booked out for the chosen dates, by product (from the batch availability answer)
+    private var conflicts: [Int: CartScheduleConflict] = [:]
+    private lazy var blockedNotice: UIView = CartOverlapViews.notice("cart.overlap.blocked".localized(), style: .blocked)
 
     private var cart: Cart { CartStore.shared.cart }
     private var isRent: Bool { cart.orderType == .rent }
+
+    /// Conflicts of the lines still in the cart, in cart order
+    private var currentConflicts: [CartScheduleConflict] {
+        guard isRent else { return [] }
+        var seen = Set<Int>()
+        return cart.items.compactMap { item in
+            guard !seen.contains(item.productId), let conflict = conflicts[item.productId] else { return nil }
+            seen.insert(item.productId)
+            return conflict
+        }
+    }
+
+    private var ctaState: ScheduleConflictLogic.CtaState {
+        ScheduleConflictLogic.ctaState(isRent: isRent, conflicts: currentConflicts, allowOverlap: OverlapSetting.isAllowed)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,6 +59,8 @@ final class CartV2ViewController: BaseViewControler {
         render()
         loadAvailability()
         refreshStalePricing()
+        // #518: the owner may have changed "Cho tạo đơn khi trùng lịch" since this user signed in
+        OverlapSetting.refresh { [weak self] _ in self?.render() }
     }
 
     /// #473 — a rent line that does not offer "Theo lần / Theo ngày" may be stale (added before the product got its
@@ -98,19 +118,29 @@ final class CartV2ViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [collectTitle, collectAmount])
         texts.axis = .vertical
         ctaButton.addTarget(self, action: #selector(ctaTapped), for: .touchUpInside)
-        [line, texts, ctaButton].forEach(bottom.addSubview)
+        // #518 (board GH-trung-tat): the "no overlapping orders" notice sits above the CTA row while it is blocked
+        let ctaRow = UIView()
+        [texts, ctaButton].forEach(ctaRow.addSubview)
+        let bottomColumn = UIStackView(arrangedSubviews: [blockedNotice, ctaRow])
+        bottomColumn.axis = .vertical
+        bottomColumn.spacing = 10
+        blockedNotice.isHidden = true
+        [line, bottomColumn].forEach(bottom.addSubview)
         view.addSubview(bottom)
         bottom.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
         line.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
+        bottomColumn.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
+        }
         texts.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(DS.Spacing.lg)
+            make.leading.equalToSuperview()
             make.centerY.equalTo(ctaButton)
         }
         ctaButton.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
+            make.top.bottom.trailing.equalToSuperview()
             make.leading.greaterThanOrEqualTo(texts.snp.trailing).offset(12)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
         }
 
         view.addSubview(scroll)
@@ -208,7 +238,12 @@ final class CartV2ViewController: BaseViewControler {
         collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
         collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
         ctaButton.setTitle((isRent ? "products.cart.create" : "products.cart.sellAndCollect").localized(), for: .normal)
-        ctaButton.alpha = cart.items.isEmpty ? 0.5 : 1
+        // #518 OFF: "Tạo đơn" is greyed and disabled with the notice; the API refuses the order too
+        let blocked = ctaState == .blocked
+        blockedNotice.isHidden = !blocked
+        ctaButton.isEnabled = !blocked
+        ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
+        ctaButton.alpha = cart.items.isEmpty && !blocked ? 0.5 : 1
     }
 
     private func band() -> UIView {
@@ -328,9 +363,15 @@ final class CartV2ViewController: BaseViewControler {
         column.spacing = 6
         column.alignment = .fill
 
-        if let left = CartV2Logic.shortage(item) {
-            let key = isRent ? "products.cart.shortRent" : "products.cart.shortStock"
-            let warn = V2.label(" " + String(format: key.localized(), left) + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
+        // #518 (boards GH-trung-bat / GH-trung-tat): "Hết đồ 03–05/10 · đã thuê ở đơn #482113" when other rentals
+        // hold the item on those days; otherwise the free-units tag as before
+        let overlapText: String? = isRent ? conflicts[item.productId].map(ScheduleConflictLogic.tagText) : nil
+        let shortageText: String? = CartV2Logic.shortage(item).map { left in
+            String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
+        }
+        if let text = overlapText ?? shortageText {
+            let warn = V2.label(" " + text + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
+            warn.numberOfLines = 0
             warn.backgroundColor = UIColor(hexString: "FEE2E2")
             warn.layer.cornerRadius = 6
             warn.clipsToBounds = true
@@ -435,31 +476,56 @@ final class CartV2ViewController: BaseViewControler {
         let requests = Dictionary(grouping: cart.items, by: { $0.productId }).map { productId, items in
             BatchProductRequest(productId: productId, quantity: items.reduce(0) { $0 + $1.quantity })
         }
-        guard !requests.isEmpty else { return }
         let start: Date
         let end: Date
         if isRent {
-            guard let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt else { return }
+            guard !requests.isEmpty, let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt else {
+                clearConflicts()
+                return
+            }
             start = pickup
             end = ret
         } else {
+            clearConflicts()
+            guard !requests.isEmpty else { return }
             start = Date()
             end = start
         }
         availabilityGeneration += 1
         let token = availabilityGeneration
         let outletId = User.current()?.outlet?.id ?? User.current()?.outletId
+        let rent = isRent
+        let names = Dictionary(cart.items.map { ($0.productId, $0.productName ?? "") }, uniquingKeysWith: { first, _ in first })
         OrderService.shared.loadBatchProductAvailability(products: requests, startDate: start, endDate: end,
                                                          outletId: outletId, excludeOrderId: cart.orderId) { [weak self] response, _ in
             DispatchQueue.main.async {
                 guard let self, token == self.availabilityGeneration, let results = response?.data?.results else { return }
+                // #518: which lines are booked out on which days, from the same answer (no extra call)
+                var found: [Int: CartScheduleConflict] = [:]
+                if rent {
+                    for result in results {
+                        if let conflict = ScheduleConflictLogic.conflict(from: result, productName: names[result.productId],
+                                                                         pickup: start, returnDate: end) {
+                            found[result.productId] = conflict
+                        }
+                    }
+                }
+                self.conflicts = found
                 for result in results {
                     let available = result.availabilityByOutlet?.first?.effectivelyAvailable ?? result.totalAvailableStock ?? 0
                     let ok = result.isAvailable && available >= result.requestedQuantity
                     CartStore.shared.updateAvailabilityStatus(for: result.productId, status: AvailabilityStatus(isAvailable: ok, available: available))
                 }
+                // The store posts a change only for lines it updates: draw the conflicts in any case
+                self.render()
             }
         }
+    }
+
+    private func clearConflicts() {
+        guard !conflicts.isEmpty else { return }
+        conflicts = [:]
+        render()
     }
 
     // MARK: - Actions
@@ -575,6 +641,8 @@ final class CartV2ViewController: BaseViewControler {
     @objc private func ctaTapped() {
         // A double tap must not open two previews or sheets (#341)
         guard navigationController?.topViewController === self, presentedViewController == nil else { return }
+        // #518 OFF: blocked until the dates, quantities or lines change (the button is disabled too)
+        guard ctaState != .blocked else { return }
         HapticFeedback.medium()
         var (valid, errors) = cart.validate()
         let missingPrices = CartV2Logic.missingPrices(cart)
@@ -601,7 +669,9 @@ final class CartV2ViewController: BaseViewControler {
 
     private func presentConfirmSheet() {
         let confirm = CreateOrderSheetLogic.confirm(cart)
-        let sheet = CreateOrderConfirmSheet(confirm: confirm)
+        // #518 ON (board GH-trung-bat): an orange "Trùng lịch" block and "Vẫn tạo đơn"
+        let warnings = ctaState == .warnBeforeCreate ? currentConflicts.map(ScheduleConflictLogic.warningLine) : []
+        let sheet = CreateOrderConfirmSheet(confirm: confirm, overlapWarnings: warnings)
         sheet.onConfirm = { [weak self, weak sheet] in self?.submitOrder(confirm: confirm, sheet: sheet) }
         present(sheet, animated: true)
     }

@@ -88,16 +88,27 @@ async function findRecentDuplicate(tx: any, guard: OrderCreateGuard, include: an
   );
 }
 
+export type CreateOrderOnceOptions = {
+  /**
+   * #518: runs inside the transaction after the replay lookup and right before the insert. A non-null
+   * result cancels the insert and is returned as `blocked` (with `order: null`). A retried create
+   * therefore still replays its existing order instead of being blocked by it.
+   */
+  beforeInsert?: (tx: unknown) => Promise<unknown>;
+};
+
 /**
  * Create the order, or return the one this create already made.
  * `replay: true` means nothing was inserted; callers must skip create side effects (stock, loyalty, audit, push).
+ * `blocked` (only with `options.beforeInsert`) means nothing was inserted because the hook refused.
  */
 export async function createOrderOnce(
   guard: OrderCreateGuard,
   data: any,
   include: any,
-  windowMs: number = ORDER_DUPLICATE_WINDOW_MS
-): Promise<{ order: any; replay: boolean }> {
+  windowMs: number = ORDER_DUPLICATE_WINDOW_MS,
+  options: CreateOrderOnceOptions = {}
+): Promise<{ order: any; replay: boolean; blocked?: unknown }> {
   const lockKey = orderCreateLockKey(guard);
   const key = normalizeIdempotencyKey(guard.idempotencyKey);
 
@@ -130,6 +141,11 @@ export async function createOrderOnce(
       if (!keyTableReady) {
         const existing = await findRecentDuplicate(tx, guard, include, windowMs);
         if (existing) return { order: existing, replay: true };
+      }
+
+      if (options.beforeInsert) {
+        const blocked = await options.beforeInsert(tx);
+        if (blocked != null) return { order: null, replay: false, blocked };
       }
 
       const order = await tx.order.create({ data, include });

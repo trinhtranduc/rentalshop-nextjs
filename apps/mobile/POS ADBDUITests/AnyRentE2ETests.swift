@@ -406,8 +406,14 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.dismissAlerts()
         e2e.shot("5a-detail-extended")
 
-        // Print preview from the nav bar printer button.
-        let print = e2e.button(["Print receipt", "In hóa đơn", "In biên nhận"])
+        // Print from the ⋯ action sheet (#519: the header keeps only ⋯).
+        let more = e2e.button(["More actions", "Thêm thao tác"])
+        if more.waitForExistence(timeout: 5) {
+            more.tap()
+            sleep(1)
+            e2e.shot("5a2-detail-action-sheet")
+        }
+        let print = e2e.button(["Print receipt", "In hóa đơn", "In hoá đơn", "In biên nhận"])
         if print.waitForExistence(timeout: 5) {
             print.tap()
             sleep(3)

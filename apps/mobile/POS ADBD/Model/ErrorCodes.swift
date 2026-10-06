@@ -91,6 +91,8 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case trialExpired = "TRIAL_EXPIRED"
     case orderAlreadyExists = "ORDER_ALREADY_EXISTS"
     case productOutOfStock = "PRODUCT_OUT_OF_STOCK"
+    /// #518: the shop turned off "Cho tạo đơn khi trùng lịch" and the items are booked out on those days (409)
+    case orderScheduleConflict = "ORDER_SCHEDULE_CONFLICT"
     case invalidOrderStatus = "INVALID_ORDER_STATUS"
     case paymentFailed = "PAYMENT_FAILED"
     case invalidPaymentMethod = "INVALID_PAYMENT_METHOD"
@@ -675,6 +677,7 @@ struct APIErrorMessages {
         .trialExpired: "Trial period has expired",
         .orderAlreadyExists: "Order already exists",
         .productOutOfStock: "Product is out of stock",
+        .orderScheduleConflict: "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.",
         .invalidOrderStatus: "Invalid order status",
         .paymentFailed: "Payment processing failed",
         .invalidPaymentMethod: "Invalid payment method",
@@ -1030,6 +1033,7 @@ struct APIErrorStatusCodes {
         .trialExpired: 402,
         .orderAlreadyExists: 409,
         .productOutOfStock: 422,
+        .orderScheduleConflict: 409,
         .invalidOrderStatus: 422,
         .paymentFailed: 402,
         .invalidPaymentMethod: 400,

@@ -4,6 +4,14 @@ import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_SCHEDULE_CONFLICT } from '../../../../../lib/schedule-conflict';
+import {
+  findEditScheduleConflicts,
+  scheduleConflictBody,
+  SCHEDULE_CONFLICT_STATUS,
+  type EditableOrder,
+  type ScheduleDbClient,
+} from '../../../../../lib/schedule-conflict-check';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -47,6 +55,22 @@ export async function POST(
         if (outlet && outlet.merchantId !== userScope.merchantId) {
           return NextResponse.json(ResponseBuilder.error('CANNOT_RESTORE_ORDER_FROM_OTHER_MERCHANT'), { status: 403 });
         }
+      }
+
+      // #518: a restored active rental holds stock again; check it like a new one (before = not active).
+      // Only for a soft-deleted row (a live order is not "restored"; db.orders.restore rejects it).
+      const scheduleConflicts = existing.deletedAt
+        ? await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
+            existingOrder: { ...(existing as unknown as EditableOrder), status: 'DELETED' },
+            next: { status: existing.status },
+            resolveMerchantId: async (outletId: number) => (await db.outlets.findById(outletId))?.merchantId,
+          })
+        : [];
+      if (scheduleConflicts.length > 0) {
+        return NextResponse.json(
+          scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), scheduleConflicts),
+          { status: SCHEDULE_CONFLICT_STATUS }
+        );
       }
 
       const restored = await db.orders.restore(orderIdNum);

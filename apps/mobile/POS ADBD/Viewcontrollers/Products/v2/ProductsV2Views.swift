@@ -341,11 +341,20 @@ class V2FittingSheet: UIViewController {
 final class CreateOrderConfirmSheet: V2FittingSheet {
     var onConfirm: (() -> Void)?
     private let confirm: CreateOrderConfirm
+    /// #518 (board GH-trung-bat): lines booked out on the chosen dates while the shop allows it
+    private let overlapWarnings: [String]
     private let confirmButton: UIButton
 
-    init(confirm: CreateOrderConfirm) {
+    init(confirm: CreateOrderConfirm, overlapWarnings: [String] = []) {
         self.confirm = confirm
-        confirmButton = V2.primaryButton((confirm.isSale ? "products.cart.sellAndCollect" : "products.cart.create").localized())
+        self.overlapWarnings = overlapWarnings
+        let title: String
+        if !overlapWarnings.isEmpty {
+            title = "cart.overlap.createAnyway".localized()
+        } else {
+            title = (confirm.isSale ? "products.cart.sellAndCollect" : "products.cart.create").localized()
+        }
+        confirmButton = V2.primaryButton(title)
         super.init()
     }
 
@@ -366,6 +375,10 @@ final class CreateOrderConfirmSheet: V2FittingSheet {
         rows.addArrangedSubview(row("products.cart.confirm.items".localized(), confirm.items))
         rows.addArrangedSubview(row("products.cart.total".localized(), MoneyFormatter.format(confirm.total), bold: true))
         stack.addArrangedSubview(rows)
+        if !overlapWarnings.isEmpty {
+            stack.addArrangedSubview(CartOverlapViews.notice(overlapWarnings.joined(separator: "\n"), style: .warning,
+                                                             title: "cart.overlap.title".localized()))
+        }
 
         let collect = UIView()
         collect.backgroundColor = UIColor(hexString: "EFF6FF")
@@ -479,5 +492,60 @@ final class OrderCreatedSheet: V2FittingSheet {
 
     @objc private func viewOrderTapped() {
         dismiss(animated: true) { [onViewOrder] in onViewOrder?() }
+    }
+}
+
+// MARK: - Trùng lịch (#518, boards GH-trung-bat, GH-trung-tat)
+
+enum CartOverlapViews {
+    enum Style {
+        /// Red: the shop does not allow overlapping orders (cart bottom bar)
+        case blocked
+        /// Orange "Trùng lịch" block of the confirm sheet
+        case warning
+    }
+
+    /// Rounded box with a warning triangle, an optional bold title and the message
+    static func notice(_ message: String, style: Style, title: String? = nil) -> UIView {
+        let text: UIColor
+        let fill: UIColor
+        let stroke: UIColor
+        let iconTint: UIColor
+        switch style {
+        case .blocked:
+            text = UIColor(hexString: "991B1B")
+            fill = UIColor(hexString: "FEF2F2")
+            stroke = UIColor(hexString: "FECACA")
+            iconTint = UIColor(hexString: "B91C1C")
+        case .warning:
+            text = UIColor(hexString: "9A3412")
+            fill = UIColor(hexString: "FFF7ED")
+            stroke = UIColor(hexString: "FED7AA")
+            iconTint = UIColor(hexString: "C2410C")
+        }
+        let icon = UIImageView(image: DS.symbol("exclamationmark.triangle", DS.Icon.md))
+        icon.tintColor = iconTint
+        icon.contentMode = .top
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+        icon.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let texts = UIStackView()
+        texts.axis = .vertical
+        texts.spacing = 2
+        if let title {
+            texts.addArrangedSubview(V2.label(title, size: DS.TextSize.body, weight: .bold, color: text, lines: 0))
+        }
+        texts.addArrangedSubview(V2.label(message, size: DS.TextSize.secondary, color: text, lines: 0))
+        let row = UIStackView(arrangedSubviews: [icon, texts])
+        row.alignment = .top
+        row.spacing = 10
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        row.backgroundColor = fill
+        row.layer.cornerRadius = 12
+        row.layer.borderWidth = 1
+        row.layer.borderColor = stroke.cgColor
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = [title, message].compactMap { $0 }.joined(separator: ". ")
+        return row
     }
 }

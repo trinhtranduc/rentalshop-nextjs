@@ -26,6 +26,8 @@ data class UserProfile(
     val merchantAddress: String? = null,
     val outletPhone: String? = null,
     val outletAddress: String? = null,
+    /** #518 shop setting "Cho tạo đơn khi trùng lịch"; ON when the payload has no merchant or no field */
+    val allowOverlappingOrders: Boolean = true,
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)

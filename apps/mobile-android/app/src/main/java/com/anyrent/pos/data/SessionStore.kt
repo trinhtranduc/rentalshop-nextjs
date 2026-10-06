@@ -3,7 +3,10 @@ package com.anyrent.pos.data
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 /**
@@ -33,6 +36,8 @@ object SessionStore {
     private const val KEY_PENDING_ORDER_ID = "pendingOrderId"
     private const val KEY_ONBOARDING = "onboardingDone"
     private const val KEY_APP_CONFIG = "appConfig"
+    /** #518 shop setting "Cho tạo đơn khi trùng lịch"; absent = ON */
+    private const val KEY_ALLOW_OVERLAP = "allowOverlappingOrders"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -46,7 +51,20 @@ object SessionStore {
 
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        _allowOverlappingOrders.value = prefs.getBoolean(KEY_ALLOW_OVERLAP, true)
     }
+
+    private val _allowOverlappingOrders = MutableStateFlow(true)
+
+    /** #518 "Cho tạo đơn khi trùng lịch" of the user's shop, cached from login / profile; ON when unknown */
+    val allowOverlappingOrdersFlow: StateFlow<Boolean> = _allowOverlappingOrders.asStateFlow()
+
+    var allowOverlappingOrders: Boolean
+        get() = _allowOverlappingOrders.value
+        set(value) {
+            _allowOverlappingOrders.value = value
+            prefs.edit().putBoolean(KEY_ALLOW_OVERLAP, value).apply()
+        }
 
     var accessToken: String?
         get() = prefs.getString(KEY_TOKEN, null)
@@ -192,7 +210,9 @@ object SessionStore {
             .remove(KEY_OUTLET_ADDRESS)
             .remove(KEY_MERCHANT_PHONE)
             .remove(KEY_MERCHANT_ADDRESS)
+            .remove(KEY_ALLOW_OVERLAP)
             .apply()
+        _allowOverlappingOrders.value = true
         if (!rememberedEmail.isNullOrBlank()) {
             lastLoginEmail = rememberedEmail
         }

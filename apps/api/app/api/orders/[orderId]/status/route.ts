@@ -4,6 +4,8 @@ import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, canChangeOrderStatus } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { createAuditHelper } from '@rentalshop/utils/server';
+import { buildOrderAuditSnapshot, safeAudit } from '../../../../../lib/change-timeline';
 import { API } from '@rentalshop/constants';
 import {
   handleLoyaltyOnCancel,
@@ -249,6 +251,26 @@ export async function PATCH(
     }
 
     const finalOrder = (await db.orders.findById(orderPublicId)) || updatedOrder;
+
+    // #519: pickup ("Giao đồ"), return ("Nhận trả"), cancel and complete show in the change history
+    await safeAudit('status', () => createAuditHelper(prisma).logUpdate({
+      entityType: 'Order',
+      entityId: String(orderPublicId),
+      entityName: existingOrder.orderNumber || String(orderPublicId),
+      oldValues: buildOrderAuditSnapshot(existingOrder),
+      newValues: buildOrderAuditSnapshot(finalOrder),
+      description: `Order status: ${existingOrder.status} → ${status}`,
+      context: {
+        userId: String(user.id),
+        userEmail: user.email,
+        userRole: user.role,
+        merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+        outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+        requestId: request.headers.get('x-request-id') || undefined,
+      },
+    }));
 
     // Push status change to outlet users (only when status actually changed)
     if (

@@ -49,6 +49,8 @@ export interface MerchantCreateData {
 }
 
 export interface MerchantUpdateData extends Partial<MerchantCreateData> {
+  /** #518 "Cho tạo đơn khi trùng lịch" */
+  allowOverlappingOrders?: boolean;
   totalRevenue?: number;
   lastActiveAt?: Date;
   isActive?: boolean;
@@ -83,6 +85,7 @@ export async function findById(id: number) {
       taxId: true,
       currency: true,
       tenantKey: true, // Include tenantKey for public product links
+      allowOverlappingOrders: true, // #518 shop setting (POST /api/orders, login payload)
       isActive: true,
       createdAt: true,
       updatedAt: true,

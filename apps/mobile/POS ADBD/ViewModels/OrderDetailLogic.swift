@@ -24,6 +24,20 @@ struct OrderDetailActions: Equatable {
     let canDelete: Bool
 }
 
+/// A row of the ⋯ sheet (#519, board CT-thao-tac)
+enum OrderSheetAction: Equatable {
+    case print, notes, edit, extend, history
+    case cancel, delete
+
+    var isDestructive: Bool { self == .cancel || self == .delete }
+}
+
+/// The ⋯ sheet: everyday actions, then the red group apart
+struct OrderSheetActions: Equatable {
+    let main: [OrderSheetAction]
+    let destructive: [OrderSheetAction]
+}
+
 /// A payment of the order as the money rule needs it
 struct OrderPaymentLine: Equatable {
     let amount: Double
@@ -97,6 +111,50 @@ enum OrderDetailLogic {
             canCancel: cancellable && canManageOrders,
             canDelete: status == .cancelled && canDeleteCancelled
         )
+    }
+
+    // MARK: ⋯ sheet (#519, board CT-thao-tac)
+
+    /// Buttons the bottom bar shows for these actions (the same rule as the screen)
+    static func bottomButtons(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool) -> [OrderSheetAction] {
+        switch actions.primary {
+        case .handOver:
+            return actions.canEdit ? [.edit] : []
+        case .takeReturn:
+            return canExtend ? [.extend] : []
+        case .none:
+            return (orderType == .sale && actions.canCancel) ? [.cancel, .print] : [.print]
+        }
+    }
+
+    /// Only what has no button on the screen: Print (unless the bottom bar has it), Notes, Edit / Extend when allowed
+    /// and not on screen, History; then Cancel / Delete when allowed and not on screen
+    static func sheetActions(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool) -> OrderSheetActions {
+        let onScreen = bottomButtons(actions, orderType: orderType, canExtend: canExtend)
+        var candidates: [OrderSheetAction] = [.print, .notes]
+        if actions.canEdit { candidates.append(.edit) }
+        if canExtend { candidates.append(.extend) }
+        candidates.append(.history)
+        var danger: [OrderSheetAction] = []
+        if actions.canCancel { danger.append(.cancel) }
+        if actions.canDelete { danger.append(.delete) }
+        return OrderSheetActions(main: candidates.filter { !onScreen.contains($0) },
+                                 destructive: danger.filter { !onScreen.contains($0) })
+    }
+
+    /// "Có 1 ghi chú · 2 ảnh", "Có 2 ảnh"; "Thêm ghi chú" when there is none
+    static func notesSubtitle(text: String?, photoCount: Int) -> String {
+        let hasText = !(text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        switch (hasText, photoCount > 0) {
+        case (false, false):
+            return "order.sheet.notes.add".localized()
+        case (true, false):
+            return "order.sheet.notes.text".localized()
+        case (false, true):
+            return PluralText.format("order.sheet.notes.photos", count: photoCount, photoCount)
+        case (true, true):
+            return PluralText.format("order.sheet.notes.textPhotos", count: photoCount, photoCount)
+        }
     }
 
     static func paid(_ payments: [OrderPaymentLine], purpose: String) -> Double {
