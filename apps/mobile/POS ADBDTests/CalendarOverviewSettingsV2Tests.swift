@@ -280,7 +280,7 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
             "overview.v2.chart.money": "Thực thu",
             "overview.v2.newOrderValue": "Tổng giá trị đơn mới",
             "overview.v2.vsPreviousPeriod": "so với kỳ trước",
-            "overview.v2.collectedNote": "Tiền đã vào tiệm",
+            "overview.v2.excludesCollateral": "Không gồm thế chân",
             "overview.v2.outstanding": "Còn phải thu",
             "overview.v2.outstandingNote": "Của các đơn mới",
             "overview.v2.seeDetails": "xem chi tiết",
@@ -293,11 +293,36 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
             "overview.v2.detail.collateralNote": "Không tính vào thực thu vì sẽ trả lại khách.",
             "overview.v2.detail.note": "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.",
             "overview.v2.detail.close": "Đóng",
+            // #494
+            "overview.v2.collateral": "Thế chân",
+            "overview.v2.received.title": "Tiền thực nhận",
+            "overview.v2.received.caption": "Tổng tiền đã nhận, gồm thế chân",
+            "overview.v2.received.collectedNote": "Tiền của tiệm",
+            "overview.v2.received.collateralNote": "Giữ hộ, sẽ trả lại khách",
+            "overview.v2.received.collateralIn": "Đã nhận khi giao đồ",
+            "overview.v2.received.collateralOut": "Đã trả lại khi khách trả đồ",
+            "overview.v2.received.upcoming": "THẾ CHÂN SẮP TỚI",
+            "overview.v2.received.upcomingNote": "chưa tính vào số nào",
+            "overview.v2.received.toReturn": "Sẽ trả lại khách",
+            "overview.v2.received.toReturnOrders": "%d đơn đang thuê",
+            "overview.v2.received.toReturnOrders.one": "%d đơn đang thuê",
+            "overview.v2.received.toCollect": "Sẽ nhận khi giao đồ",
+            "overview.v2.received.toCollectOrders": "%d đơn chưa lấy",
+            "overview.v2.received.toCollectOrders.one": "%d đơn chưa lấy",
+            "overview.v2.outstandingDetail.body": "Phần chưa trả của các đơn tạo trong kỳ. Thế chân không tính ở đây.",
+            "overview.v2.outstandingDetail.atPickup": "Sẽ thu khi khách lấy đồ",
+            "overview.v2.outstandingDetail.atPickupOrders": "%d đơn · ngày lấy từ hôm nay",
+            "overview.v2.outstandingDetail.atPickupOrders.one": "%d đơn · ngày lấy từ hôm nay",
+            "overview.v2.outstandingDetail.overdue": "Quá ngày lấy, chưa thu",
+            "overview.v2.outstandingDetail.overdueOrders": "%d đơn · nên gọi khách",
+            "overview.v2.outstandingDetail.overdueOrders.one": "%d đơn · nên gọi khách",
         ]
         for (key, text) in expected {
             XCTAssertEqual(vi.localizedString(forKey: key, value: "∅", table: nil), text, key)
             XCTAssertNotEqual(en.localizedString(forKey: key, value: "∅", table: nil), "∅", "en: \(key)")
         }
+        // #494: the Thực thu tile no longer says "Tiền đã vào tiệm"
+        XCTAssertEqual(vi.localizedString(forKey: "overview.v2.collectedNote", value: "∅", table: nil), "∅")
         // "thế chân", never "thế chấp", for the security deposit
         let path = try XCTUnwrap(vi.path(forResource: "Localizable", ofType: "strings"))
         let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
@@ -342,6 +367,166 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         // No collateral held known: no bordered box
         XCTAssertFalse(oldTexts.contains("overview.v2.detail.collateralNote".localized()))
         XCTAssertTrue(oldTexts.contains("overview.v2.detail.note".localized()))
+    }
+
+    /// The label and every view above it are shown
+    private func isShown(_ view: UIView, in root: UIView) -> Bool {
+        var current: UIView? = view
+        while let v = current, v !== root {
+            if v.isHidden { return false }
+            current = v.superview
+        }
+        return true
+    }
+
+    private func allViews(_ view: UIView) -> [UIView] {
+        view.subviews.flatMap { [$0] + allViews($0) }
+    }
+
+    private func shownTexts(_ root: UIView) -> [String] {
+        labels(root).filter { isShown($0, in: root) }.compactMap(\.text)
+    }
+
+    func testReportParsingCollateralFlowAndOutstandingBreakdown() throws {
+        let report = try decode(OverviewReport.self, """
+        {"revenue":{"collected":12450000,"totalOrderValue":20000000,"outstanding":5000000,
+          "collateralFlow":{"received":5000000,"returned":1500000},
+          "outstandingBreakdown":{"atPickup":{"amount":3800000,"orders":4},"overduePickup":{"amount":1200000,"orders":2}}}}
+        """)
+        XCTAssertEqual(report.collateralFlow, OverviewReport.CollateralFlow(received: 5_000_000, returned: 1_500_000))
+        XCTAssertEqual(report.collateralFlow?.net, 3_500_000)
+        XCTAssertEqual(report.outstandingBreakdown,
+                       OverviewReport.OutstandingBreakdown(atPickup: .init(amount: 3_800_000, orders: 4),
+                                                           overduePickup: .init(amount: 1_200_000, orders: 2)))
+        XCTAssertEqual(report.outstandingBreakdown?.total, 5_000_000)
+
+        // Older API: neither field, the rest still decodes
+        let old = try decode(OverviewReport.self, #"{"revenue":{"collected":500,"totalOrderValue":800,"outstanding":300}}"#)
+        XCTAssertNil(old.collateralFlow)
+        XCTAssertNil(old.outstandingBreakdown)
+        XCTAssertEqual(old.netRevenue, 500)
+        XCTAssertEqual(old.outstanding, 300)
+        let nulls = try decode(OverviewReport.self, #"{"revenue":{"collected":1,"collateralFlow":null,"outstandingBreakdown":null}}"#)
+        XCTAssertNil(nulls.collateralFlow)
+        XCTAssertNil(nulls.outstandingBreakdown)
+        // Partial objects count a missing part as 0
+        let partial = try decode(OverviewReport.self,
+                                 #"{"revenue":{"collateralFlow":{"received":200},"outstandingBreakdown":{"atPickup":{"amount":50}}}}"#)
+        XCTAssertEqual(partial.collateralFlow, OverviewReport.CollateralFlow(received: 200, returned: 0))
+        XCTAssertEqual(partial.outstandingBreakdown,
+                       OverviewReport.OutstandingBreakdown(atPickup: .init(amount: 50, orders: 0),
+                                                           overduePickup: .init(amount: 0, orders: 0)))
+    }
+
+    func testOperationsParsingUpcomingCollateral() throws {
+        let now = try decode(OverviewNow.self, """
+        {"overdueReturns":{"count":1},
+         "cash":{"depositsHeld":{"securityDeposit":3500000,"orders":9},
+                 "collateralToCollect":{"securityDeposit":2000000,"orders":3},
+                 "collateralToReturn":{"securityDeposit":3000000,"orders":7}}}
+        """)
+        XCTAssertEqual(now.collateralHeld, 3_500_000)
+        XCTAssertEqual(now.collateralToCollect, OverviewNow.Collateral(amount: 2_000_000, orders: 3))
+        XCTAssertEqual(now.collateralToReturn, OverviewNow.Collateral(amount: 3_000_000, orders: 7))
+
+        // Older API: no collateralToCollect; collateralToReturn falls back to the collateral held, with no count
+        let old = try decode(OverviewNow.self, #"{"cash":{"depositsHeld":{"securityDeposit":3500000,"orders":9}}}"#)
+        XCTAssertNil(old.collateralToCollect)
+        XCTAssertEqual(old.collateralToReturn, OverviewNow.Collateral(amount: 3_500_000, orders: nil))
+        // No cash (staff): nothing
+        let staff = try decode(OverviewNow.self, #"{"cash":null}"#)
+        XCTAssertNil(staff.collateralToCollect)
+        XCTAssertNil(staff.collateralToReturn)
+    }
+
+    func testReceivedSheetWithCollateralFlow() throws {
+        let parts = OverviewReport.CollectedBreakdown(deposits: 4_000_000, pickupAndSale: 8_200_000, fees: 550_000, refunds: 300_000)
+        let report = OverviewReport(netRevenue: parts.total, revenueGrowth: nil, newOrders: nil, series: [], topProducts: [],
+                                    collectedBreakdown: parts,
+                                    collateralFlow: .init(received: 5_000_000, returned: 1_500_000))
+        let sheet = OverviewCollectedDetailsSheet(report: report, periodTitle: "7 ngày qua", collateralHeld: 3_500_000,
+                                                  collateralToReturn: .init(amount: 3_000_000, orders: 7),
+                                                  collateralToCollect: .init(amount: 2_000_000, orders: 3))
+        sheet.loadViewIfNeeded()
+        let root = sheet.view!
+        let shown = shownTexts(root)
+        XCTAssertTrue(shown.contains("\("overview.v2.received.title".localized()) · 7 ngày qua"))
+        XCTAssertTrue(shown.contains("overview.v2.received.caption".localized()))
+        XCTAssertTrue(shown.contains(MoneyFormatter.format(12_450_000 + 3_500_000)))
+        XCTAssertTrue(shown.contains(MoneyFormatter.format(12_450_000)))
+        XCTAssertTrue(shown.contains("+" + MoneyFormatter.format(3_500_000)))
+        XCTAssertTrue(shown.contains("overview.v2.received.collectedNote".localized()))
+        XCTAssertTrue(shown.contains("overview.v2.received.collateralNote".localized()))
+        XCTAssertTrue(shown.contains("\("overview.v2.received.upcoming".localized()) · \("overview.v2.received.upcomingNote".localized())"))
+        XCTAssertTrue(shown.contains("overview.v2.received.toReturn".localized()))
+        XCTAssertTrue(shown.contains(PluralText.format("overview.v2.received.toReturnOrders", count: 7, 7)))
+        XCTAssertTrue(shown.contains(MoneyFormatter.format(3_000_000)))
+        XCTAssertTrue(shown.contains("overview.v2.received.toCollect".localized()))
+        XCTAssertTrue(shown.contains(PluralText.format("overview.v2.received.toCollectOrders", count: 3, 3)))
+        // The old "Thế chân đang giữ" box is gone
+        XCTAssertFalse(shown.contains("overview.v2.collateralHeld".localized()))
+        XCTAssertFalse(shown.contains("overview.v2.detail.collateralNote".localized()))
+
+        // Collapsed at first: the lines are there but hidden
+        XCTAssertFalse(shown.contains("overview.v2.depositsAtOrder".localized()))
+        XCTAssertFalse(shown.contains("overview.v2.received.collateralIn".localized()))
+        let sections = allViews(root).compactMap { $0 as? OverviewDisclosureSection }
+        XCTAssertEqual(sections.count, 2)
+        sections.forEach { $0.toggle() }
+        let expanded = shownTexts(root)
+        XCTAssertTrue(expanded.contains("overview.v2.depositsAtOrder".localized()))
+        XCTAssertTrue(expanded.contains("+" + MoneyFormatter.format(8_200_000)))
+        XCTAssertTrue(expanded.contains("+" + MoneyFormatter.format(550_000)))
+        XCTAssertTrue(expanded.contains("−" + MoneyFormatter.format(300_000)))
+        XCTAssertTrue(expanded.contains("+" + MoneyFormatter.format(5_000_000)))
+        XCTAssertTrue(expanded.contains("−" + MoneyFormatter.format(1_500_000)))
+        XCTAssertTrue(expanded.contains("overview.v2.received.collateralOut".localized()))
+        sections[0].toggle()
+        XCTAssertFalse(shownTexts(root).contains("overview.v2.depositsAtOrder".localized()))
+
+        // Older outlet-operations: "Sẽ trả lại khách" from the collateral held, no count; no "Sẽ nhận" row
+        let older = OverviewCollectedDetailsSheet(report: report, periodTitle: "7 ngày qua", collateralHeld: 3_500_000)
+        older.loadViewIfNeeded()
+        let olderTexts = shownTexts(older.view)
+        XCTAssertTrue(olderTexts.contains("overview.v2.received.toReturn".localized()))
+        XCTAssertFalse(olderTexts.contains("overview.v2.received.toCollect".localized()))
+        XCTAssertFalse(olderTexts.contains(PluralText.format("overview.v2.received.toReturnOrders", count: 7, 7)))
+        // Nothing known about upcoming collateral: no gray box
+        let none = OverviewCollectedDetailsSheet(report: report, periodTitle: "7 ngày qua", collateralHeld: nil)
+        none.loadViewIfNeeded()
+        XCTAssertFalse(shownTexts(none.view).contains("overview.v2.received.toReturn".localized()))
+        XCTAssertFalse(shownTexts(none.view).contains { $0.hasPrefix("overview.v2.received.upcoming".localized()) })
+    }
+
+    func testSignedCollateralAmount() {
+        XCTAssertEqual(OverviewCollectedDetailsSheet.signed(3_500_000), "+" + MoneyFormatter.format(3_500_000))
+        XCTAssertEqual(OverviewCollectedDetailsSheet.signed(-200), "−" + MoneyFormatter.format(200))
+        XCTAssertEqual(OverviewCollectedDetailsSheet.signed(0), MoneyFormatter.format(0))
+    }
+
+    func testOutstandingSheetRows() {
+        let parts = OverviewReport.OutstandingBreakdown(atPickup: .init(amount: 3_800_000, orders: 4),
+                                                        overduePickup: .init(amount: 1_200_000, orders: 2))
+        let sheet = OverviewOutstandingDetailsSheet(breakdown: parts, total: 5_000_000, periodTitle: "7 ngày qua")
+        sheet.loadViewIfNeeded()
+        let texts = shownTexts(sheet.view)
+        XCTAssertTrue(texts.contains("\("overview.v2.outstanding".localized()) · 7 ngày qua"))
+        XCTAssertTrue(texts.contains("overview.v2.outstandingDetail.body".localized()))
+        XCTAssertTrue(texts.contains("overview.v2.outstandingDetail.atPickup".localized()))
+        XCTAssertTrue(texts.contains(PluralText.format("overview.v2.outstandingDetail.atPickupOrders", count: 4, 4)))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(3_800_000)))
+        XCTAssertTrue(texts.contains("overview.v2.outstandingDetail.overdue".localized()))
+        XCTAssertTrue(texts.contains(PluralText.format("overview.v2.outstandingDetail.overdueOrders", count: 2, 2)))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(1_200_000)))
+        XCTAssertTrue(texts.contains("overview.v2.outstanding".localized()))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(5_000_000)))
+
+        // No overdue orders: no overdue row
+        let onTime = OverviewOutstandingDetailsSheet(
+            breakdown: .init(atPickup: .init(amount: 300, orders: 1), overduePickup: .init(amount: 0, orders: 0)),
+            total: 300, periodTitle: "Hôm nay")
+        onTime.loadViewIfNeeded()
+        XCTAssertFalse(shownTexts(onTime.view).contains("overview.v2.outstandingDetail.overdue".localized()))
     }
 
     private func rental(id: Int, status: String = "PICKUPED", returns: String) throws -> Order {
