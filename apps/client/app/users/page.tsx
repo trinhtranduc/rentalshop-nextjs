@@ -33,18 +33,8 @@ import {
   staffName,
   type StaffFilters,
   type StaffLike,
-  type StaffRoleTone,
 } from './users-model';
-
-const ROLE_CLASS: Record<StaffRoleTone, string> = {
-  owner: 'bg-ar-line text-ar-ink',
-  admin: 'bg-ar-reserved-bg text-ar-reserved',
-  staff: 'bg-ar-subtle text-ar-ink-2',
-  other: 'bg-ar-subtle text-ar-muted',
-};
-
-const dangerBtn =
-  'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-ar-danger px-3.5 text-[15px] font-semibold text-white hover:opacity-95 disabled:opacity-50';
+import { ROLE_CLASS, dangerBtn } from './staff-parts';
 
 const timeFormatter = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: SHOP_TIMEZONE });
 
