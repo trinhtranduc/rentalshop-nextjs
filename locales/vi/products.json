@@ -529,9 +529,6 @@
       "perRental": "Thuê theo lần",
       "perDay": "Thuê theo ngày",
       "pricesHint": "Để trống giá nào cửa hàng không dùng.",
-      "defaultMode": "Khi tạo đơn, mặc định tính",
-      "modeFixed": "Theo lần",
-      "modeDaily": "Theo ngày",
       "deposit": "Tiền cọc",
       "salePrice": "Giá bán",
       "costPrice": "Giá vốn",
@@ -580,7 +577,9 @@
       "needCategory": "Cần ít nhất một danh mục trước khi thêm sản phẩm.",
       "goCategories": "Mở Danh mục",
       "needOutlet": "Cần ít nhất một chi nhánh trước khi thêm sản phẩm.",
-      "goOutlets": "Mở Chi nhánh"
+      "goOutlets": "Mở Chi nhánh",
+      "defaultForOrders": "Mặc định khi tạo đơn",
+      "defaultHint": "Dùng được cả hai giá. Đơn mới chọn sẵn giá mặc định, vẫn đổi được trong giỏ."
     },
     "detail": {
       "back": "Sản phẩm",
