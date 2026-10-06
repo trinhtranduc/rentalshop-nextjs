@@ -529,9 +529,6 @@
       "perRental": "Rent per rental",
       "perDay": "Rent per day",
       "pricesHint": "Leave a price empty if the shop does not use it.",
-      "defaultMode": "New orders charge",
-      "modeFixed": "Per rental",
-      "modeDaily": "Per day",
       "deposit": "Deposit",
       "salePrice": "Sale price",
       "costPrice": "Cost price",
@@ -580,7 +577,9 @@
       "needCategory": "Add at least one category before adding products.",
       "goCategories": "Open Categories",
       "needOutlet": "Add at least one outlet before adding products.",
-      "goOutlets": "Open Outlets"
+      "goOutlets": "Open Outlets",
+      "defaultForOrders": "Default for new orders",
+      "defaultHint": "Both prices can be used. New orders start on the default; staff can switch in the cart."
     },
     "detail": {
       "back": "Products",
