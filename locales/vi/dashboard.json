@@ -210,5 +210,100 @@
       "handedOver": "Đã giao đồ",
       "takenBack": "Đã nhận trả"
     }
+  },
+  "home": {
+    "title": "Tổng quan",
+    "comparedToPrevious": "so với kỳ trước",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "periods": {
+      "label": "Khoảng thời gian",
+      "today": "Hôm nay",
+      "7d": "7 ngày qua",
+      "month": "Tháng này",
+      "custom": "Tuỳ chọn…"
+    },
+    "custom": {
+      "from": "Từ ngày",
+      "to": "Đến ngày",
+      "apply": "Xem"
+    },
+    "kpi": {
+      "orderValue": "Tổng giá trị đơn mới",
+      "orderValueHint": "{count} đơn · không tính đơn huỷ",
+      "collected": "Thực thu",
+      "collectedHint": "không gồm thế chân",
+      "outstanding": "Còn phải thu",
+      "outstandingHint": "Của các đơn mới",
+      "overdueHint": "{amount} quá ngày lấy",
+      "netReceived": "Tiền thực nhận",
+      "netReceivedHint": "Thực thu + thế chân nhận − trả lại",
+      "new": "Mới"
+    },
+    "chart": {
+      "label": "Biểu đồ",
+      "collectedTitle": "Thực thu theo ngày",
+      "ordersTitle": "Số đơn mới theo ngày",
+      "collected": "Thực thu",
+      "orders": "Số đơn mới",
+      "empty": "Chưa có số liệu trong khoảng này."
+    },
+    "today": {
+      "title": "Việc hôm nay",
+      "pickups": "Cần giao hôm nay",
+      "pickupsDone": "Đã giao {done}/{total}",
+      "returns": "Cần nhận trả hôm nay",
+      "returnsDone": "Đã nhận {done}/{total}",
+      "overdue": "Đang thuê · trễ hạn trả",
+      "noShows": "Quá ngày lấy, khách chưa đến",
+      "tomorrow": "Ngày mai · {day}",
+      "tomorrowCounts": "Giao {pickups} · Trả {returns}"
+    },
+    "money": {
+      "collectedTitle": "Thực thu gồm",
+      "deposits": "Cọc khi tạo đơn",
+      "pickupAndSale": "Thu khi giao đồ, bán hàng",
+      "fees": "Phí hư hỏng, trễ hạn",
+      "refunds": "Hoàn tiền đơn huỷ",
+      "collectedTotal": "Thực thu",
+      "outstandingTitle": "Còn phải thu",
+      "atPickup": "Sẽ thu khi khách lấy đồ",
+      "overduePickup": "Quá ngày lấy, chưa thu",
+      "orders": "{count} đơn",
+      "callCustomers": "{count} đơn · nên gọi khách",
+      "total": "Tổng",
+      "collateralTitle": "Thế chân",
+      "received": "Đã nhận trong kỳ",
+      "returned": "Đã trả lại khách",
+      "upcoming": "Sắp tới · chưa tính vào số nào",
+      "toReturn": "Đang giữ, sẽ trả lại khách",
+      "toCollect": "Sẽ nhận khi giao đồ"
+    },
+    "orders": {
+      "title": "Đơn cần làm hôm nay",
+      "viewAll": "Xem tất cả",
+      "pickupTag": "Cần giao",
+      "returnTag": "Cần trả",
+      "pickupOn": "Giao {day}",
+      "returnOn": "trả {day}",
+      "returnOnly": "Trả {day}",
+      "returnDue": "Hạn trả {day}",
+      "notPrepared": "Chưa soạn đồ",
+      "late": "Trễ {days} ngày",
+      "collect": "còn thu {amount}",
+      "refund": "hoàn cọc {amount}",
+      "fee": "+ phí {amount}",
+      "pickupAction": "Giao đồ",
+      "returnAction": "Nhận trả",
+      "empty": "Hôm nay không có đơn cần giao hay nhận trả."
+    },
+    "top": {
+      "title": "Thuê nhiều nhất",
+      "subtitle": "theo giá trị đơn",
+      "rentals": "{count} lượt thuê",
+      "empty": "Chưa có sản phẩm nào được thuê trong khoảng này.",
+      "imageAlt": "Ảnh {name}"
+    },
+    "loadFailed": "Không tải được số liệu.",
+    "retry": "Thử lại"
   }
 }
