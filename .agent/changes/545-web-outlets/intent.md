@@ -39,3 +39,5 @@ before; the API scopes the list. Bank accounts: `bankAccounts.view` / `bankAccou
 - 2026-10-06 — the disable confirm says "Tạm ngưng chi nhánh" (it sets `isActive: false`); the old one said
   "Xóa cửa hàng", which it never did (agent).
 - 2026-10-06 — the nav label already says "Chi nhánh" (`components/shell/nav.ts`), so no shell change is needed (agent).
+- 2026-10-06 — the list calls `outletsApi.searchOutlets(filters)` (same GET /api/outlets): the old
+  `useOutletsWithFilters` called `getOutlets()` without the filters, so search / sort / paging never reached the API (agent).
