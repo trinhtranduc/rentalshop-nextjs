@@ -1,143 +1,256 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react';
+/**
+ * Thêm nhân viên (#544) on the shell. Same call as before (`usersApi.createUser`) and the same rules
+ * as the old shared UserForm (see staff-form-model). Merchants pick the outlet; an outlet admin's new
+ * staff go to their own outlet. On success the new staff page opens.
+ */
+import React, { useEffect, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { usersApi } from "@rentalshop/utils";
-import type { UserCreateInput, BreadcrumbItem } from '@rentalshop/ui';
-import { useToast, PageWrapper, Breadcrumb, Button, UserForm } from '@rentalshop/ui';
-import { ArrowLeft } from 'lucide-react';
-import { useAuth, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
+import { useTranslations } from 'next-intl';
+import { useAuth } from '@rentalshop/hooks';
+import { useToast } from '@rentalshop/ui';
+import { outletsApi, usersApi } from '@rentalshop/utils';
+import type { UserCreateInput } from '@rentalshop/types';
+import { cardClass, outlineBtn, primaryBtn, type T } from '../../orders/list/parts';
+import {
+  EMPTY_STAFF_FORM,
+  canCreateStaff,
+  canPickOutlet,
+  createPayload,
+  readOutlets,
+  roleChoices,
+  validateStaffForm,
+  type OutletOption,
+  type StaffFormErrors,
+  type StaffFormValues,
+} from '../staff-form-model';
+import { BackLink, Field, NoAccess, OutletChips, PasswordInput, RoleCards, inputClass, pageClass } from '../staff-parts';
+
+type Viewer = {
+  id?: number | string;
+  role?: string;
+  merchantId?: number | null;
+  outletId?: number | null;
+  merchant?: { id?: number; tenantKey?: string | null } | null;
+  outlet?: { id?: number; name?: string | null } | null;
+};
+
+function Section({ title, titleId, children }: { title: string; titleId?: string; children: React.ReactNode }) {
+  return (
+    <section className={`${cardClass} flex flex-col gap-4 px-5 py-[18px]`} aria-labelledby={titleId}>
+      <h2 id={titleId} className="m-0 text-lg font-bold">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
 
 export default function AddUserPage() {
   const router = useRouter();
-  const { user: currentUser } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const t = useTranslations('users.web') as unknown as T;
+  const tm = useTranslations('users.messages');
+  const { user } = useAuth();
   const { toastSuccess } = useToast();
-  const t = useCommonTranslations();
-  const tu = useUsersTranslations();
+  const viewer = (user || null) as Viewer | null;
+  const allowed = canCreateStaff(viewer?.role);
+  const pickOutlet = canPickOutlet(viewer?.role);
+  const merchantId = viewer?.merchantId || viewer?.merchant?.id || null;
+  const ownOutletId = viewer?.outletId || viewer?.outlet?.id || null;
+  const tenantKey = viewer?.merchant?.tenantKey || '';
 
-  // Role-based access control - Can create OUTLET_ADMIN and OUTLET_STAFF
-  const canCreateUsers = currentUser?.role === 'ADMIN' || 
-                        currentUser?.role === 'MERCHANT' || 
-                        currentUser?.role === 'OUTLET_ADMIN';
+  const [form, setForm] = useState<StaffFormValues>(EMPTY_STAFF_FORM);
+  const [errors, setErrors] = useState<StaffFormErrors>({});
+  const [outlets, setOutlets] = useState<OutletOption[]>([]);
+  const [loadingOutlets, setLoadingOutlets] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const roleTitleId = useId();
+  const outletTitleId = useId();
 
-  // Redirect if user doesn't have permission
+  // Outlet admin: their outlet, fixed. Merchant: pick from GET /api/outlets (only one → preselected).
   useEffect(() => {
-    if (currentUser && !canCreateUsers) {
-      // Permission check - redirect only, no toast needed
-      router.push('/users');
-    }
-  }, [currentUser, canCreateUsers, router]);
-
-  // Show loading while checking permissions
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700 mx-auto"></div>
-            <p className="mt-2 text-gray-600">{t('labels.loading')}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render the form if user doesn't have permission
-  if (!canCreateUsers) {
-    return null;
-  }
-
-  // Internal function that only handles UserCreateInput
-  const handleCreateUser = async (userData: UserCreateInput) => {
-    try {
-      setIsSubmitting(true);
-      
-      console.log('🔍 AddUserPage: Creating user:', userData);
-      
-      // Use the real API
-      const response = await usersApi.createUser(userData);
-      
-      if (response.success) {
-        console.log('✅ AddUserPage: User created successfully:', response.data);
-        
-        toastSuccess(tu('messages.createSuccess'), tu('messages.createSuccess'));
-        // Open the new user, as product create does; fall back to the list
-        const newId = (response.data as any)?.id;
-        router.push(newId ? `/users/${newId}` : '/users');
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (err) {
-      console.error('❌ AddUserPage: Error creating user:', err);
-      // Error automatically handled by useGlobalErrorHandler
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Wrapper function that satisfies UserForm's interface but only handles UserCreateInput
-  const handleSave = async (userData: any) => {
-    // Type guard to ensure we only handle UserCreateInput in this add page
-    if (!('password' in userData && 'role' in userData)) {
-      console.error('❌ AddUserPage: Invalid user data type for creation');
-      // Validation error - will be caught by form validation
+    if (!allowed) return;
+    if (!pickOutlet) {
+      if (ownOutletId) setForm((f) => ({ ...f, outletId: ownOutletId }));
       return;
     }
-    
-    await handleCreateUser(userData as UserCreateInput);
+    let cancelled = false;
+    setLoadingOutlets(true);
+    outletsApi
+      .getOutlets()
+      .then((res) => {
+        if (cancelled) return;
+        const list = readOutlets(res?.data);
+        setOutlets(list);
+        if (list.length === 1) setForm((f) => (f.outletId ? f : { ...f, outletId: list[0].id }));
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setLoadingOutlets(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [allowed, pickOutlet, ownOutletId]);
+
+  const set = <K extends keyof StaffFormValues>(key: K, value: StaffFormValues[K]) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+  };
+  const err = (key: keyof StaffFormValues) => (errors[key] ? t(`form.errors.${errors[key]}`) : undefined);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const problems = validateStaffForm(form, 'create');
+    setErrors(problems);
+    if (Object.keys(problems).length > 0) {
+      const first = document.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalid="true"] [role="radio"]');
+      first?.focus();
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await usersApi.createUser(createPayload(form, merchantId) as UserCreateInput);
+      if (res.success) {
+        toastSuccess(tm('createSuccess'), tm('createSuccess'));
+        const newId = (res.data as { id?: number } | undefined)?.id;
+        router.push(newId ? `/users/${newId}` : '/users');
+        return;
+      }
+      // Errors: the global API error handler shows the toast.
+    } catch {
+      // Same.
+    }
+    setSaving(false);
   };
 
-  const handleCancel = () => {
-    router.push('/users');
-  };
+  if (user && !allowed) return <NoAccess title={t('form.addTitle')} text={t('noAccess')} />;
 
-  // Breadcrumb items
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: tu('title'), href: '/users' },
-    { label: tu('addUser') }
-  ];
+  const outletName = viewer?.outlet?.name || (ownOutletId ? `#${ownOutletId}` : '—');
+  const required = t('form.required');
 
   return (
-    <PageWrapper>
-      <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/" className="mb-4" />
-
-      <div className="mb-4 flex items-start gap-3">
-        <Button variant="ghost" onClick={handleCancel} size="sm" className="h-9 w-9 shrink-0 p-0" aria-label={tu('actions.backToUsers')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="min-w-0">
-          <p className="text-xs text-gray-600">{tu('title')}</p>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{tu('addUser')}</h1>
-        </div>
+    <form onSubmit={submit} noValidate className={pageClass}>
+      <div className="flex flex-col gap-2">
+        <BackLink label={t('title')} />
+        <h1 className="m-0 text-2xl font-bold">{t('form.addTitle')}</h1>
       </div>
 
-      {/* Same two columns as the user page: the form, and what each role can do */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <div className="min-w-0">
-          <UserForm
-            mode="create"
-            layout="page"
-            onSave={handleSave}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            currentUser={currentUser as any}
-          />
+      <div className="flex w-full max-w-[880px] flex-col gap-4">
+        <Section title={t('form.infoTitle')}>
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
+            <Field label={t('form.name')} error={err('name')}>
+              {({ id, describedBy, invalid }) => (
+                <input
+                  id={id}
+                  value={form.name}
+                  onChange={(e) => set('name', e.target.value)}
+                  autoComplete="off"
+                  placeholder={t('form.namePlaceholder')}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid || undefined}
+                  className={`${inputClass} ${invalid ? 'border-ar-danger' : ''}`}
+                />
+              )}
+            </Field>
+            <Field label={t('form.phone')} error={err('phone')}>
+              {({ id, describedBy, invalid }) => (
+                <input
+                  id={id}
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => set('phone', e.target.value)}
+                  autoComplete="off"
+                  placeholder={t('form.optional')}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid || undefined}
+                  className={`${inputClass} ${invalid ? 'border-ar-danger' : ''}`}
+                />
+              )}
+            </Field>
+            <Field label={t('form.email')} required={required} error={err('email')} hint={t('form.emailHint')} className="[grid-column:1/-1]">
+              {({ id, describedBy, invalid }) => (
+                <input
+                  id={id}
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set('email', e.target.value)}
+                  autoComplete="off"
+                  placeholder={tenantKey ? `${tenantKey}_` : t('form.emailPlaceholder')}
+                  aria-describedby={describedBy}
+                  aria-invalid={invalid || undefined}
+                  className={`${inputClass} ${invalid ? 'border-ar-danger' : ''}`}
+                />
+              )}
+            </Field>
+          </div>
+        </Section>
+
+        <Section title={t('form.roleTitle')}>
+          <div className="flex flex-col gap-1.5" data-invalid={errors.role ? 'true' : undefined}>
+            <span id={roleTitleId} className="text-sm font-semibold text-ar-ink-2">
+              {t('form.role')} <span className="font-normal text-ar-danger">{required}</span>
+            </span>
+            <RoleCards choices={roleChoices(viewer?.role)} value={form.role} onChange={(r) => set('role', r)} labelledBy={roleTitleId} t={t} />
+            {errors.role && <span className="text-sm text-ar-danger">{err('role')}</span>}
+          </div>
+          <div className="flex flex-col gap-1.5" data-invalid={errors.outletId ? 'true' : undefined}>
+            <span id={outletTitleId} className="text-sm font-semibold text-ar-ink-2">
+              {t('form.outlet')} <span className="font-normal text-ar-danger">{required}</span>
+            </span>
+            {pickOutlet ? (
+              <OutletChips
+                outlets={outlets}
+                value={form.outletId}
+                onChange={(id) => set('outletId', id)}
+                loading={loadingOutlets}
+                labelledBy={outletTitleId}
+                t={t}
+              />
+            ) : (
+              <span className="flex flex-col gap-0.5">
+                <span className="text-[15px] font-semibold text-ar-ink">{outletName}</span>
+                <span className="text-sm text-ar-muted">{t('form.outletFixed')}</span>
+              </span>
+            )}
+            {errors.outletId && <span className="text-sm text-ar-danger">{err('outletId')}</span>}
+          </div>
+        </Section>
+
+        <Section title={t('form.passwordTitle')}>
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
+            <Field label={t('form.password')} required={required} error={err('password')} hint={t('form.passwordHint')}>
+              {({ id, describedBy, invalid }) => (
+                <PasswordInput id={id} value={form.password} onChange={(v) => set('password', v)} autoComplete="new-password" describedBy={describedBy} invalid={invalid} t={t} />
+              )}
+            </Field>
+            <Field label={t('form.confirmPassword')} required={required} error={err('confirmPassword')}>
+              {({ id, describedBy, invalid }) => (
+                <PasswordInput
+                  id={id}
+                  value={form.confirmPassword}
+                  onChange={(v) => set('confirmPassword', v)}
+                  autoComplete="new-password"
+                  describedBy={describedBy}
+                  invalid={invalid}
+                  t={t}
+                />
+              )}
+            </Field>
+          </div>
+          <p className="m-0 text-sm text-ar-muted">{t('form.loginNote')}</p>
+        </Section>
+
+        <div className={`${cardClass} sticky bottom-3 z-10 flex flex-wrap items-center justify-end gap-2 px-4 py-3`}>
+          <button type="button" onClick={() => router.push('/users')} disabled={saving} className={`${outlineBtn} h-11 rounded-xl px-[18px]`}>
+            {t('form.cancel')}
+          </button>
+          <button type="submit" disabled={saving} className={`${primaryBtn} h-11 rounded-xl px-[22px]`}>
+            {saving ? t('form.creating') : t('form.create')}
+          </button>
         </div>
-        <aside className="min-w-0 lg:sticky lg:top-4">
-          <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="role-help-title">
-            <h2 id="role-help-title" className="text-sm font-semibold text-gray-900">{tu('roleHelp.title')}</h2>
-            <dl className="mt-3 space-y-3 text-sm">
-              {(['OUTLET_ADMIN', 'OUTLET_STAFF'] as const).map((role) => (
-                <div key={role}>
-                  <dt className="font-medium text-gray-900">{tu(`roles.${role}`)}</dt>
-                  <dd className="mt-0.5 text-gray-700">{tu(`roleHelp.${role}`)}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-600">{tu('roleHelp.loginNote')}</p>
-          </section>
-        </aside>
       </div>
-    </PageWrapper>
+    </form>
   );
 }
