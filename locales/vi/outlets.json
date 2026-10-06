@@ -76,6 +76,115 @@
     "enterOutletPhone": "Nhập số điện thoại cửa hàng",
     "enterOutletDescription": "Nhập mô tả cửa hàng",
     "enterPrintNote": "Ví dụ: *** Vui lòng mang theo CMND/BLX khi lấy đồ"
+  },
+  "web": {
+    "title": "Chi nhánh",
+    "add": "Thêm chi nhánh",
+    "searchLabel": "Tìm chi nhánh",
+    "searchPlaceholder": "Tìm tên, thành phố, SĐT",
+    "cols": {
+      "name": "Chi nhánh",
+      "address": "Địa chỉ",
+      "phone": "SĐT",
+      "status": "Trạng thái",
+      "createdAt": "Ngày tạo",
+      "actions": "Thao tác"
+    },
+    "sortBy": "Sắp xếp theo {column}",
+    "default": "Mặc định",
+    "status": {
+      "active": "Đang mở",
+      "inactive": "Tạm ngưng"
+    },
+    "staffCount": "{count} nhân viên",
+    "edit": "Sửa",
+    "viewDetails": "Xem chi tiết",
+    "bankAccounts": "Tài khoản ngân hàng",
+    "disable": "Tạm ngưng",
+    "enable": "Mở lại",
+    "more": "Thao tác khác cho {name}",
+    "empty": "Chưa có chi nhánh nào.",
+    "emptySearch": "Không có chi nhánh khớp với tìm kiếm.",
+    "loadFailed": "Không tải được danh sách chi nhánh.",
+    "retry": "Thử lại",
+    "noSession": "Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.",
+    "form": {
+      "addTitle": "Thêm chi nhánh",
+      "editTitle": "Sửa chi nhánh",
+      "name": "Tên chi nhánh",
+      "namePlaceholder": "Ví dụ: Chi nhánh Quận 1",
+      "required": "bắt buộc",
+      "nameRequired": "Nhập tên chi nhánh",
+      "phone": "Số điện thoại",
+      "address": "Số nhà, đường",
+      "city": "Thành phố",
+      "state": "Tỉnh / thành",
+      "zipCode": "Mã bưu chính",
+      "country": "Quốc gia",
+      "optional": "Không bắt buộc",
+      "addressGroup": "Địa chỉ",
+      "description": "Mô tả",
+      "printNote": "Ghi chú in trên phiếu thuê",
+      "printNoteHint": "In ở cuối phiếu thuê, ví dụ nhắc mang CCCD hoặc chính sách đổi trả.",
+      "printNotePlaceholder": "Ví dụ: Vui lòng mang theo CCCD khi lấy đồ",
+      "printNoteTooLong": "Tối đa {max} ký tự",
+      "count": "{count}/{max}",
+      "cancel": "Huỷ",
+      "create": "Thêm chi nhánh",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "close": "Đóng"
+    },
+    "detail": {
+      "title": "Chi tiết chi nhánh",
+      "none": "Chưa có"
+    },
+    "confirm": {
+      "disableTitle": "Tạm ngưng chi nhánh",
+      "disableBody": "Tạm ngưng chi nhánh “{name}”? Bạn có thể mở lại sau.",
+      "cancel": "Giữ lại",
+      "disable": "Tạm ngưng",
+      "working": "Đang lưu…"
+    },
+    "toast": {
+      "created": "Đã thêm chi nhánh",
+      "updated": "Đã lưu chi nhánh",
+      "disabled": "Đã tạm ngưng chi nhánh",
+      "enabled": "Đã mở lại chi nhánh"
+    },
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} chi nhánh",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "bank": {
+      "back": "Chi nhánh",
+      "title": "Tài khoản ngân hàng",
+      "subtitle": "Chi nhánh {name}",
+      "add": "Thêm tài khoản",
+      "cols": {
+        "holder": "Chủ tài khoản",
+        "number": "Số tài khoản",
+        "bank": "Ngân hàng",
+        "branch": "Chi nhánh ngân hàng",
+        "status": "Trạng thái",
+        "actions": "Thao tác"
+      },
+      "active": "Đang dùng",
+      "inactive": "Tạm ngưng",
+      "copy": "Sao chép số tài khoản {number}",
+      "edit": "Sửa",
+      "delete": "Xoá",
+      "loadFailed": "Không tải được tài khoản ngân hàng.",
+      "retry": "Thử lại",
+      "noAccess": "Bạn không có quyền xem tài khoản ngân hàng.",
+      "confirmCancel": "Giữ lại",
+      "deleting": "Đang xoá…",
+      "close": "Đóng"
+    }
   }
 }
-

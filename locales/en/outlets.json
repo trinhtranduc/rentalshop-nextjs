@@ -76,6 +76,115 @@
     "enterOutletPhone": "Enter outlet phone number",
     "enterOutletDescription": "Enter outlet description",
     "enterPrintNote": "e.g. *** Please bring your ID card when picking up"
+  },
+  "web": {
+    "title": "Branches",
+    "add": "Add branch",
+    "searchLabel": "Search branches",
+    "searchPlaceholder": "Search name, city, phone",
+    "cols": {
+      "name": "Branch",
+      "address": "Address",
+      "phone": "Phone",
+      "status": "Status",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "sortBy": "Sort by {column}",
+    "default": "Default",
+    "status": {
+      "active": "Open",
+      "inactive": "Paused"
+    },
+    "staffCount": "{count} staff",
+    "edit": "Edit",
+    "viewDetails": "View details",
+    "bankAccounts": "Bank accounts",
+    "disable": "Pause",
+    "enable": "Reopen",
+    "more": "More actions for {name}",
+    "empty": "No branches yet.",
+    "emptySearch": "No branches match your search.",
+    "loadFailed": "Could not load branches.",
+    "retry": "Retry",
+    "noSession": "Your session has ended. Please sign in again.",
+    "form": {
+      "addTitle": "Add branch",
+      "editTitle": "Edit branch",
+      "name": "Branch name",
+      "namePlaceholder": "e.g. District 1 branch",
+      "required": "required",
+      "nameRequired": "Enter a branch name",
+      "phone": "Phone",
+      "address": "Street address",
+      "city": "City",
+      "state": "State / province",
+      "zipCode": "Postal code",
+      "country": "Country",
+      "optional": "Optional",
+      "addressGroup": "Address",
+      "description": "Description",
+      "printNote": "Note printed on rental slips",
+      "printNoteHint": "Printed at the bottom of rental slips, e.g. bring your ID card or the return policy.",
+      "printNotePlaceholder": "e.g. Please bring your ID card when picking up",
+      "printNoteTooLong": "At most {max} characters",
+      "count": "{count}/{max}",
+      "cancel": "Cancel",
+      "create": "Add branch",
+      "save": "Save",
+      "saving": "Saving…",
+      "close": "Close"
+    },
+    "detail": {
+      "title": "Branch details",
+      "none": "Not set"
+    },
+    "confirm": {
+      "disableTitle": "Pause branch",
+      "disableBody": "Pause the branch “{name}”? You can reopen it later.",
+      "cancel": "Keep",
+      "disable": "Pause",
+      "working": "Saving…"
+    },
+    "toast": {
+      "created": "Branch added",
+      "updated": "Branch saved",
+      "disabled": "Branch paused",
+      "enabled": "Branch reopened"
+    },
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pages",
+      "range": "{from}–{to} of {total} branches",
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "bank": {
+      "back": "Branches",
+      "title": "Bank accounts",
+      "subtitle": "Branch {name}",
+      "add": "Add account",
+      "cols": {
+        "holder": "Account holder",
+        "number": "Account number",
+        "bank": "Bank",
+        "branch": "Bank branch",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "active": "In use",
+      "inactive": "Paused",
+      "copy": "Copy account number {number}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "loadFailed": "Could not load bank accounts.",
+      "retry": "Retry",
+      "noAccess": "You do not have access to bank accounts.",
+      "confirmCancel": "Keep",
+      "deleting": "Deleting…",
+      "close": "Close"
+    }
   }
 }
-
