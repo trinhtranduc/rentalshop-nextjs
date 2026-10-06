@@ -168,6 +168,9 @@ model Merchant {
   /// #518 "Cho tạo đơn khi trùng lịch". true (default) = today's behaviour, no availability check on save.
   /// false = the API rejects RENT orders that would exceed outlet stock on some VN civil day.
   allowOverlappingOrders Boolean            @default(true)
+  /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
+  /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
+  timezone             String               @default("Asia/Ho_Chi_Minh")
   /// ID of merchant who referred this merchant (for referral tracking)
   referredByMerchantId Int?
   categories           Category[]
