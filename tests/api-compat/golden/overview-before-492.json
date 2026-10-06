@@ -1,0 +1,2039 @@
+{
+  "incomeSummaryWeek": {
+    "summary": {
+      "totalDays": 6,
+      "orderCounts": {
+        "new": 11,
+        "pickup": 6,
+        "return": 2,
+        "cancelled": 2
+      },
+      "totalRevenue": 3690000,
+      "totalActualRevenue": -710000,
+      "totalCollateral": 2300000,
+      "totalCollateralPlanExpectedToRefund": 2300000,
+      "totalCollateralPlan": 2300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 4400000,
+      "totalCollected": 1390000
+    },
+    "periods": [
+      {
+        "date": "2026/10/01",
+        "dateISO": "2026-10-01T00:00:00.000Z",
+        "totalRevenue": 2460000,
+        "collected": 460000,
+        "depositRefund": 2000000,
+        "totalCollateral": 2000000,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 4,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      },
+      {
+        "date": "2026/10/02",
+        "dateISO": "2026-10-02T00:00:00.000Z",
+        "totalRevenue": 1970000,
+        "collected": 570000,
+        "depositRefund": 700000,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 2,
+        "pickupOrderCount": 2,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      },
+      {
+        "date": "2026/10/03",
+        "dateISO": "2026-10-03T00:00:00.000Z",
+        "totalRevenue": 100000,
+        "collected": 100000,
+        "depositRefund": 1000000,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 1,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 1,
+        "cancelledOrderCount": 1
+      },
+      {
+        "date": "2026/10/04",
+        "dateISO": "2026-10-04T00:00:00.000Z",
+        "totalRevenue": -910000,
+        "collected": 90000,
+        "depositRefund": 400000,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 2000000,
+        "newOrderCount": 2,
+        "pickupOrderCount": 0,
+        "returnOrderCount": 1,
+        "cancelledOrderCount": 0
+      },
+      {
+        "date": "2026/10/05",
+        "dateISO": "2026-10-05T00:00:00.000Z",
+        "totalRevenue": -180000,
+        "collected": -80000,
+        "depositRefund": 300000,
+        "totalCollateral": 300000,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 1,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 1
+      },
+      {
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "totalRevenue": 250000,
+        "collected": 250000,
+        "depositRefund": 0,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 300000,
+        "newOrderCount": 1,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      }
+    ]
+  },
+  "incomeSummaryTwoMonthsNoDays": {
+    "summary": {
+      "totalDays": 12,
+      "orderCounts": {
+        "new": 15,
+        "pickup": 7,
+        "return": 3,
+        "cancelled": 2
+      },
+      "totalRevenue": 4470000,
+      "totalActualRevenue": -430000,
+      "totalCollateral": 2300000,
+      "totalCollateralPlanExpectedToRefund": 2300000,
+      "totalCollateralPlan": 2300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 4900000,
+      "totalCollected": 2170000
+    }
+  },
+  "incomeSummaryAllOutlets": {
+    "summary": {
+      "totalDays": 6,
+      "orderCounts": {
+        "new": 12,
+        "pickup": 7,
+        "return": 2,
+        "cancelled": 2
+      },
+      "totalRevenue": 4990000,
+      "totalActualRevenue": -210000,
+      "totalCollateral": 3100000,
+      "totalCollateralPlanExpectedToRefund": 3100000,
+      "totalCollateralPlan": 3100000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 5200000,
+      "totalCollected": 1890000
+    },
+    "periods": [
+      {
+        "date": "2026/10/01",
+        "dateISO": "2026-10-01T00:00:00.000Z",
+        "totalRevenue": 2460000,
+        "collected": 460000,
+        "depositRefund": 2000000,
+        "totalCollateral": 2000000,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 4,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      },
+      {
+        "date": "2026/10/02",
+        "dateISO": "2026-10-02T00:00:00.000Z",
+        "totalRevenue": 2070000,
+        "collected": 670000,
+        "depositRefund": 700000,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 3,
+        "pickupOrderCount": 2,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      },
+      {
+        "date": "2026/10/03",
+        "dateISO": "2026-10-03T00:00:00.000Z",
+        "totalRevenue": 1300000,
+        "collected": 500000,
+        "depositRefund": 1800000,
+        "totalCollateral": 800000,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 1,
+        "pickupOrderCount": 2,
+        "returnOrderCount": 1,
+        "cancelledOrderCount": 1
+      },
+      {
+        "date": "2026/10/04",
+        "dateISO": "2026-10-04T00:00:00.000Z",
+        "totalRevenue": -910000,
+        "collected": 90000,
+        "depositRefund": 400000,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 2000000,
+        "newOrderCount": 2,
+        "pickupOrderCount": 0,
+        "returnOrderCount": 1,
+        "cancelledOrderCount": 0
+      },
+      {
+        "date": "2026/10/05",
+        "dateISO": "2026-10-05T00:00:00.000Z",
+        "totalRevenue": -180000,
+        "collected": -80000,
+        "depositRefund": 300000,
+        "totalCollateral": 300000,
+        "totalCollateralPlan": 0,
+        "newOrderCount": 1,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 1
+      },
+      {
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "totalRevenue": 250000,
+        "collected": 250000,
+        "depositRefund": 0,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 1100000,
+        "newOrderCount": 1,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      }
+    ]
+  },
+  "incomeSummaryToday": {
+    "summary": {
+      "totalDays": 1,
+      "orderCounts": {
+        "new": 1,
+        "pickup": 1,
+        "return": 0,
+        "cancelled": 0
+      },
+      "totalRevenue": 250000,
+      "totalActualRevenue": 250000,
+      "totalCollateral": 0,
+      "totalCollateralPlanExpectedToRefund": 300000,
+      "totalCollateralPlan": 300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 0,
+      "totalCollected": 250000
+    },
+    "periods": [
+      {
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "totalRevenue": 250000,
+        "collected": 250000,
+        "depositRefund": 0,
+        "totalCollateral": 0,
+        "totalCollateralPlan": 300000,
+        "newOrderCount": 1,
+        "pickupOrderCount": 1,
+        "returnOrderCount": 0,
+        "cancelledOrderCount": 0
+      }
+    ]
+  },
+  "periodWeekByDay": {
+    "startDate": "2026-10-01",
+    "endDate": "2026-10-07",
+    "groupBy": "day",
+    "operational": {
+      "totalDays": 6,
+      "orderCounts": {
+        "new": 11,
+        "pickup": 6,
+        "return": 2,
+        "cancelled": 2
+      },
+      "totalRevenue": 3690000,
+      "totalActualRevenue": -710000,
+      "totalCollateral": 2300000,
+      "totalCollateralPlanExpectedToRefund": 2300000,
+      "totalCollateralPlan": 2300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 4400000,
+      "totalCollected": 1390000
+    },
+    "revenue": {
+      "totalRevenue": 3690000,
+      "totalActualRevenue": -710000,
+      "totalOrders": 21,
+      "totalOrderValue": 1870000,
+      "outstanding": 750000,
+      "collected": 1390000
+    },
+    "growth": {
+      "orders": {
+        "current": 12,
+        "previous": 4,
+        "growth": 200
+      },
+      "revenue": {
+        "current": 3690000,
+        "previous": 780000,
+        "growth": 373.08
+      },
+      "collected": {
+        "current": 1390000,
+        "previous": 780000,
+        "growth": 78.21
+      }
+    },
+    "series": [
+      {
+        "month": "01/10/26",
+        "date": "2026/10/01",
+        "dateISO": "2026-10-01T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 1,
+        "realIncome": 2460000,
+        "collected": 460000,
+        "futureIncome": 0,
+        "newOrderCount": 4,
+        "orderCount": 5
+      },
+      {
+        "month": "02/10/26",
+        "date": "2026/10/02",
+        "dateISO": "2026-10-02T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 2,
+        "realIncome": 1970000,
+        "collected": 570000,
+        "futureIncome": 0,
+        "newOrderCount": 2,
+        "orderCount": 4
+      },
+      {
+        "month": "03/10/26",
+        "date": "2026/10/03",
+        "dateISO": "2026-10-03T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 3,
+        "realIncome": 100000,
+        "collected": 100000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 4
+      },
+      {
+        "month": "04/10/26",
+        "date": "2026/10/04",
+        "dateISO": "2026-10-04T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 4,
+        "realIncome": -910000,
+        "collected": 90000,
+        "futureIncome": 0,
+        "newOrderCount": 2,
+        "orderCount": 3
+      },
+      {
+        "month": "05/10/26",
+        "date": "2026/10/05",
+        "dateISO": "2026-10-05T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 5,
+        "realIncome": -180000,
+        "collected": -80000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 3
+      },
+      {
+        "month": "06/10/26",
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 6,
+        "realIncome": 250000,
+        "collected": 250000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 2
+      },
+      {
+        "month": "07/10/26",
+        "date": "2026/10/07",
+        "dateISO": "2026-10-07T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 7,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      }
+    ],
+    "topProducts": [],
+    "topCustomers": [
+      {
+        "id": 103,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 2200000
+      },
+      {
+        "id": 104,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 450000
+      },
+      {
+        "id": 101,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 370000
+      },
+      {
+        "id": 102,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 200000
+      },
+      {
+        "id": 105,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 180000
+      }
+    ],
+    "topOutlets": []
+  },
+  "periodTodayOnly": {
+    "startDate": "2026-10-06",
+    "endDate": "2026-10-06",
+    "groupBy": "day",
+    "operational": {
+      "totalDays": 1,
+      "orderCounts": {
+        "new": 1,
+        "pickup": 1,
+        "return": 0,
+        "cancelled": 0
+      },
+      "totalRevenue": 250000,
+      "totalActualRevenue": 250000,
+      "totalCollateral": 0,
+      "totalCollateralPlanExpectedToRefund": 300000,
+      "totalCollateralPlan": 300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 0,
+      "totalCollected": 250000
+    },
+    "revenue": {
+      "totalRevenue": 250000,
+      "totalActualRevenue": 250000,
+      "totalOrders": 2,
+      "totalOrderValue": 300000,
+      "outstanding": 200000,
+      "collected": 250000
+    },
+    "growth": {
+      "orders": {
+        "current": 1,
+        "previous": 1,
+        "growth": 0
+      },
+      "revenue": {
+        "current": 250000,
+        "previous": -180000,
+        "growth": 100
+      },
+      "collected": {
+        "current": 250000,
+        "previous": -80000,
+        "growth": 100
+      }
+    },
+    "series": [
+      {
+        "month": "06/10/26",
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 6,
+        "realIncome": 250000,
+        "collected": 250000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 2
+      }
+    ],
+    "topProducts": [],
+    "topCustomers": [
+      {
+        "id": 105,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 150000
+      },
+      {
+        "id": 108,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 100000
+      }
+    ],
+    "topOutlets": []
+  },
+  "periodYearByMonth": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-12-31",
+    "groupBy": "month",
+    "operational": {
+      "totalDays": 12,
+      "orderCounts": {
+        "new": 15,
+        "pickup": 7,
+        "return": 3,
+        "cancelled": 2
+      },
+      "totalRevenue": 4470000,
+      "totalActualRevenue": -430000,
+      "totalCollateral": 2300000,
+      "totalCollateralPlanExpectedToRefund": 2300000,
+      "totalCollateralPlan": 2300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 4900000,
+      "totalCollected": 2170000
+    },
+    "revenue": {
+      "totalRevenue": 4470000,
+      "totalActualRevenue": -430000,
+      "totalOrders": 27,
+      "totalOrderValue": 3100000,
+      "outstanding": 1000000,
+      "collected": 2170000
+    },
+    "growth": {
+      "orders": {
+        "current": 16,
+        "previous": 0,
+        "growth": 100
+      },
+      "revenue": {
+        "current": 4470000,
+        "previous": 0,
+        "growth": 100
+      },
+      "collected": {
+        "current": 2170000,
+        "previous": 0,
+        "growth": 100
+      }
+    },
+    "series": [
+      {
+        "month": "01/26",
+        "year": 2026,
+        "monthNumber": 1,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "02/26",
+        "year": 2026,
+        "monthNumber": 2,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "03/26",
+        "year": 2026,
+        "monthNumber": 3,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "04/26",
+        "year": 2026,
+        "monthNumber": 4,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "05/26",
+        "year": 2026,
+        "monthNumber": 5,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "06/26",
+        "year": 2026,
+        "monthNumber": 6,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "07/26",
+        "year": 2026,
+        "monthNumber": 7,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "08/26",
+        "year": 2026,
+        "monthNumber": 8,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "09/26",
+        "year": 2026,
+        "monthNumber": 9,
+        "realIncome": 780000,
+        "collected": 780000,
+        "futureIncome": 0,
+        "orderCount": 3,
+        "newOrderCount": 4
+      },
+      {
+        "month": "10/26",
+        "year": 2026,
+        "monthNumber": 10,
+        "realIncome": 3690000,
+        "collected": 1390000,
+        "futureIncome": 550000,
+        "orderCount": 8,
+        "newOrderCount": 10
+      },
+      {
+        "month": "11/26",
+        "year": 2026,
+        "monthNumber": 11,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      },
+      {
+        "month": "12/26",
+        "year": 2026,
+        "monthNumber": 12,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "orderCount": 0,
+        "newOrderCount": 0
+      }
+    ],
+    "topProducts": [],
+    "topCustomers": [
+      {
+        "id": 103,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 2400000
+      },
+      {
+        "id": 104,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 450000
+      },
+      {
+        "id": 101,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 370000
+      },
+      {
+        "id": 114,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 350000
+      },
+      {
+        "id": 102,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 200000
+      }
+    ],
+    "topOutlets": []
+  },
+  "periodAllOutlets": {
+    "startDate": "2026-10-01",
+    "endDate": "2026-10-07",
+    "groupBy": "day",
+    "operational": {
+      "totalDays": 6,
+      "orderCounts": {
+        "new": 12,
+        "pickup": 7,
+        "return": 2,
+        "cancelled": 2
+      },
+      "totalRevenue": 4990000,
+      "totalActualRevenue": -210000,
+      "totalCollateral": 3100000,
+      "totalCollateralPlanExpectedToRefund": 3100000,
+      "totalCollateralPlan": 3100000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 5200000,
+      "totalCollected": 1890000
+    },
+    "revenue": {
+      "totalRevenue": 4990000,
+      "totalActualRevenue": -210000,
+      "totalOrders": 23,
+      "totalOrderValue": 2370000,
+      "outstanding": 750000,
+      "collected": 1890000
+    },
+    "growth": {
+      "orders": {
+        "current": 13,
+        "previous": 4,
+        "growth": 225
+      },
+      "revenue": {
+        "current": 4990000,
+        "previous": 780000,
+        "growth": 539.74
+      },
+      "collected": {
+        "current": 1890000,
+        "previous": 780000,
+        "growth": 142.31
+      }
+    },
+    "series": [
+      {
+        "month": "01/10/26",
+        "date": "2026/10/01",
+        "dateISO": "2026-10-01T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 1,
+        "realIncome": 2460000,
+        "collected": 460000,
+        "futureIncome": 0,
+        "newOrderCount": 4,
+        "orderCount": 5
+      },
+      {
+        "month": "02/10/26",
+        "date": "2026/10/02",
+        "dateISO": "2026-10-02T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 2,
+        "realIncome": 2070000,
+        "collected": 670000,
+        "futureIncome": 0,
+        "newOrderCount": 3,
+        "orderCount": 5
+      },
+      {
+        "month": "03/10/26",
+        "date": "2026/10/03",
+        "dateISO": "2026-10-03T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 3,
+        "realIncome": 1300000,
+        "collected": 500000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 5
+      },
+      {
+        "month": "04/10/26",
+        "date": "2026/10/04",
+        "dateISO": "2026-10-04T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 4,
+        "realIncome": -910000,
+        "collected": 90000,
+        "futureIncome": 0,
+        "newOrderCount": 2,
+        "orderCount": 3
+      },
+      {
+        "month": "05/10/26",
+        "date": "2026/10/05",
+        "dateISO": "2026-10-05T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 5,
+        "realIncome": -180000,
+        "collected": -80000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 3
+      },
+      {
+        "month": "06/10/26",
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 6,
+        "realIncome": 250000,
+        "collected": 250000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 2
+      },
+      {
+        "month": "07/10/26",
+        "date": "2026/10/07",
+        "dateISO": "2026-10-07T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 7,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      }
+    ],
+    "topProducts": [],
+    "topCustomers": [
+      {
+        "id": 103,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 2200000
+      },
+      {
+        "id": 116,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 1300000
+      },
+      {
+        "id": 104,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 450000
+      },
+      {
+        "id": 101,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 370000
+      },
+      {
+        "id": 102,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 200000
+      }
+    ],
+    "topOutlets": []
+  },
+  "periodNoOrders": {
+    "startDate": "2026-10-01",
+    "endDate": "2026-10-07",
+    "groupBy": "day",
+    "operational": {
+      "totalDays": 0,
+      "orderCounts": {
+        "new": 0,
+        "pickup": 0,
+        "return": 0,
+        "cancelled": 0
+      },
+      "totalRevenue": 0,
+      "totalActualRevenue": 0,
+      "totalCollateral": 0,
+      "totalCollateralPlanExpectedToRefund": 0,
+      "totalCollateralPlan": 0,
+      "totalRevenuePlan": 0,
+      "totalDepositRefund": 0,
+      "totalCollected": 0
+    },
+    "revenue": {
+      "totalRevenue": 0,
+      "totalActualRevenue": 0,
+      "totalOrders": 0,
+      "totalOrderValue": 0,
+      "outstanding": 0,
+      "collected": 0
+    },
+    "growth": {
+      "orders": {
+        "current": 0,
+        "previous": 0,
+        "growth": 0
+      },
+      "revenue": {
+        "current": 0,
+        "previous": 0,
+        "growth": 0
+      },
+      "collected": {
+        "current": 0,
+        "previous": 0,
+        "growth": 0
+      }
+    },
+    "series": [
+      {
+        "month": "01/10/26",
+        "date": "2026/10/01",
+        "dateISO": "2026-10-01T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 1,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      },
+      {
+        "month": "02/10/26",
+        "date": "2026/10/02",
+        "dateISO": "2026-10-02T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 2,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      },
+      {
+        "month": "03/10/26",
+        "date": "2026/10/03",
+        "dateISO": "2026-10-03T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 3,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      },
+      {
+        "month": "04/10/26",
+        "date": "2026/10/04",
+        "dateISO": "2026-10-04T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 4,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      },
+      {
+        "month": "05/10/26",
+        "date": "2026/10/05",
+        "dateISO": "2026-10-05T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 5,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      },
+      {
+        "month": "06/10/26",
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 6,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      },
+      {
+        "month": "07/10/26",
+        "date": "2026/10/07",
+        "dateISO": "2026-10-07T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 7,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      }
+    ],
+    "topProducts": [],
+    "topCustomers": [],
+    "topOutlets": []
+  },
+  "periodOutletAdmin": {
+    "startDate": "2026-10-01",
+    "endDate": "2026-10-07",
+    "groupBy": "day",
+    "operational": {
+      "totalDays": 6,
+      "orderCounts": {
+        "new": 11,
+        "pickup": 6,
+        "return": 2,
+        "cancelled": 2
+      },
+      "totalRevenue": 3690000,
+      "totalActualRevenue": -710000,
+      "totalCollateral": 2300000,
+      "totalCollateralPlanExpectedToRefund": 2300000,
+      "totalCollateralPlan": 2300000,
+      "totalRevenuePlan": 550000,
+      "totalDepositRefund": 4400000,
+      "totalCollected": 1390000
+    },
+    "revenue": {
+      "totalRevenue": 3690000,
+      "totalActualRevenue": -710000,
+      "totalOrders": 21,
+      "totalOrderValue": 1870000,
+      "outstanding": 750000,
+      "collected": 1390000
+    },
+    "growth": {
+      "orders": {
+        "current": 12,
+        "previous": 4,
+        "growth": 200
+      },
+      "revenue": {
+        "current": 3690000,
+        "previous": 780000,
+        "growth": 373.08
+      },
+      "collected": {
+        "current": 1390000,
+        "previous": 780000,
+        "growth": 78.21
+      }
+    },
+    "series": [
+      {
+        "month": "01/10/26",
+        "date": "2026/10/01",
+        "dateISO": "2026-10-01T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 1,
+        "realIncome": 2460000,
+        "collected": 460000,
+        "futureIncome": 0,
+        "newOrderCount": 4,
+        "orderCount": 5
+      },
+      {
+        "month": "02/10/26",
+        "date": "2026/10/02",
+        "dateISO": "2026-10-02T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 2,
+        "realIncome": 1970000,
+        "collected": 570000,
+        "futureIncome": 0,
+        "newOrderCount": 2,
+        "orderCount": 4
+      },
+      {
+        "month": "03/10/26",
+        "date": "2026/10/03",
+        "dateISO": "2026-10-03T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 3,
+        "realIncome": 100000,
+        "collected": 100000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 4
+      },
+      {
+        "month": "04/10/26",
+        "date": "2026/10/04",
+        "dateISO": "2026-10-04T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 4,
+        "realIncome": -910000,
+        "collected": 90000,
+        "futureIncome": 0,
+        "newOrderCount": 2,
+        "orderCount": 3
+      },
+      {
+        "month": "05/10/26",
+        "date": "2026/10/05",
+        "dateISO": "2026-10-05T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 5,
+        "realIncome": -180000,
+        "collected": -80000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 3
+      },
+      {
+        "month": "06/10/26",
+        "date": "2026/10/06",
+        "dateISO": "2026-10-06T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 6,
+        "realIncome": 250000,
+        "collected": 250000,
+        "futureIncome": 0,
+        "newOrderCount": 1,
+        "orderCount": 2
+      },
+      {
+        "month": "07/10/26",
+        "date": "2026/10/07",
+        "dateISO": "2026-10-07T00:00:00.000Z",
+        "year": 2026,
+        "dayNumber": 7,
+        "realIncome": 0,
+        "collected": 0,
+        "futureIncome": 0,
+        "newOrderCount": 0,
+        "orderCount": 0
+      }
+    ],
+    "topProducts": [],
+    "topCustomers": [
+      {
+        "id": 103,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 2200000
+      },
+      {
+        "id": 104,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 450000
+      },
+      {
+        "id": 101,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 370000
+      },
+      {
+        "id": 102,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 200000
+      },
+      {
+        "id": 105,
+        "name": "Unknown Customer",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "orderCount": 1,
+        "rentalCount": 1,
+        "saleCount": 0,
+        "totalSpent": 180000
+      }
+    ],
+    "topOutlets": []
+  },
+  "operationsManager": {
+    "pickupsToday": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 6,
+          "orderNumber": "ORD-1-0006",
+          "outletId": 1,
+          "customerId": 106,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 250000,
+          "depositAmount": 50000,
+          "securityDeposit": 700000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-06T09:00:00.000Z",
+          "returnPlanAt": "2026-10-08T09:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "6",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-02T06:00:00.000Z",
+          "updatedAt": "2026-10-02T06:00:00.000Z"
+        }
+      ]
+    },
+    "returnsToday": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 4,
+          "orderNumber": "ORD-1-0004",
+          "outletId": 1,
+          "customerId": 104,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 150000,
+          "depositAmount": 0,
+          "securityDeposit": 300000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-05T10:00:00.000Z",
+          "returnPlanAt": "2026-10-06T08:00:00.000Z",
+          "pickedUpAt": "2026-10-05T16:59:59.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "4",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-04T05:00:00.000Z",
+          "updatedAt": "2026-10-05T16:59:59.000Z"
+        }
+      ]
+    },
+    "overdueReturns": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 3,
+          "orderNumber": "ORD-1-0003",
+          "outletId": 1,
+          "customerId": 103,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 400000,
+          "depositAmount": 200000,
+          "securityDeposit": 2000000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-01T01:00:00.000Z",
+          "returnPlanAt": "2026-10-04T03:00:00.000Z",
+          "pickedUpAt": "2026-10-01T01:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "3",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-09-28T03:00:00.000Z",
+          "updatedAt": "2026-10-01T01:00:00.000Z"
+        }
+      ]
+    },
+    "noShows": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 7,
+          "orderNumber": "ORD-1-0007",
+          "outletId": 1,
+          "customerId": 107,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 150000,
+          "depositAmount": 0,
+          "securityDeposit": 1000000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-04T03:00:00.000Z",
+          "returnPlanAt": "2026-10-05T03:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "7",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-03T07:00:00.000Z",
+          "updatedAt": "2026-10-03T07:00:00.000Z"
+        }
+      ]
+    },
+    "returnsSoon": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 5,
+          "orderNumber": "ORD-1-0005",
+          "outletId": 1,
+          "customerId": 105,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 180000,
+          "depositAmount": 30000,
+          "securityDeposit": 0,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+          "returnPlanAt": "2026-10-09T02:00:00.000Z",
+          "pickedUpAt": "2026-10-06T02:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "5",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-05T02:00:00.000Z",
+          "updatedAt": "2026-10-06T02:00:00.000Z"
+        }
+      ]
+    },
+    "doneToday": {
+      "pickups": 1,
+      "returns": 0
+    },
+    "newOrdersByDay": [
+      {
+        "date": "2026-09-30",
+        "count": 0
+      },
+      {
+        "date": "2026-10-01",
+        "count": 4
+      },
+      {
+        "date": "2026-10-02",
+        "count": 2
+      },
+      {
+        "date": "2026-10-03",
+        "count": 1
+      },
+      {
+        "date": "2026-10-04",
+        "count": 2
+      },
+      {
+        "date": "2026-10-05",
+        "count": 1
+      },
+      {
+        "date": "2026-10-06",
+        "count": 1
+      }
+    ],
+    "tomorrow": {
+      "pickups": 2,
+      "returns": 0
+    },
+    "tomorrowPickups": {
+      "count": 2,
+      "orders": [
+        {
+          "id": 9,
+          "orderNumber": "ORD-1-0009",
+          "outletId": 1,
+          "customerId": 109,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 220000,
+          "depositAmount": 20000,
+          "securityDeposit": 400000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-07T02:00:00.000Z",
+          "returnPlanAt": "2026-10-08T02:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "9",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-04T09:00:00.000Z",
+          "updatedAt": "2026-10-04T09:00:00.000Z"
+        },
+        {
+          "id": 17,
+          "orderNumber": "ORD-1-0017",
+          "outletId": 1,
+          "customerId": 117,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 400000,
+          "depositAmount": 150000,
+          "securityDeposit": 500000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-07T16:59:59.000Z",
+          "returnPlanAt": "2026-10-09T03:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "17",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-09-29T03:00:00.000Z",
+          "updatedAt": "2026-09-29T03:00:00.000Z"
+        }
+      ]
+    },
+    "tomorrowReturns": {
+      "count": 0,
+      "orders": []
+    },
+    "cash": {
+      "depositsHeld": {
+        "depositAmount": 230000,
+        "securityDeposit": 2300000,
+        "orders": 3
+      },
+      "depositsDueToday": {
+        "depositAmount": 0,
+        "securityDeposit": 300000,
+        "orders": 1
+      },
+      "feesToday": {
+        "lateFee": 0,
+        "damageFee": 0,
+        "orders": 0
+      }
+    }
+  },
+  "operationsStaff": {
+    "pickupsToday": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 6,
+          "orderNumber": "ORD-1-0006",
+          "outletId": 1,
+          "customerId": 106,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 250000,
+          "depositAmount": 50000,
+          "securityDeposit": 700000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-06T09:00:00.000Z",
+          "returnPlanAt": "2026-10-08T09:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "6",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-02T06:00:00.000Z",
+          "updatedAt": "2026-10-02T06:00:00.000Z"
+        }
+      ]
+    },
+    "returnsToday": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 4,
+          "orderNumber": "ORD-1-0004",
+          "outletId": 1,
+          "customerId": 104,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 150000,
+          "depositAmount": 0,
+          "securityDeposit": 300000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-05T10:00:00.000Z",
+          "returnPlanAt": "2026-10-06T08:00:00.000Z",
+          "pickedUpAt": "2026-10-05T16:59:59.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "4",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-04T05:00:00.000Z",
+          "updatedAt": "2026-10-05T16:59:59.000Z"
+        }
+      ]
+    },
+    "overdueReturns": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 3,
+          "orderNumber": "ORD-1-0003",
+          "outletId": 1,
+          "customerId": 103,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 400000,
+          "depositAmount": 200000,
+          "securityDeposit": 2000000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-01T01:00:00.000Z",
+          "returnPlanAt": "2026-10-04T03:00:00.000Z",
+          "pickedUpAt": "2026-10-01T01:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "3",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-09-28T03:00:00.000Z",
+          "updatedAt": "2026-10-01T01:00:00.000Z"
+        }
+      ]
+    },
+    "noShows": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 7,
+          "orderNumber": "ORD-1-0007",
+          "outletId": 1,
+          "customerId": 107,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 150000,
+          "depositAmount": 0,
+          "securityDeposit": 1000000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-04T03:00:00.000Z",
+          "returnPlanAt": "2026-10-05T03:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "7",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-03T07:00:00.000Z",
+          "updatedAt": "2026-10-03T07:00:00.000Z"
+        }
+      ]
+    },
+    "returnsSoon": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 5,
+          "orderNumber": "ORD-1-0005",
+          "outletId": 1,
+          "customerId": 105,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 180000,
+          "depositAmount": 30000,
+          "securityDeposit": 0,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+          "returnPlanAt": "2026-10-09T02:00:00.000Z",
+          "pickedUpAt": "2026-10-06T02:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "5",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-05T02:00:00.000Z",
+          "updatedAt": "2026-10-06T02:00:00.000Z"
+        }
+      ]
+    },
+    "doneToday": {
+      "pickups": 1,
+      "returns": 0
+    },
+    "newOrdersByDay": [
+      {
+        "date": "2026-09-30",
+        "count": 0
+      },
+      {
+        "date": "2026-10-01",
+        "count": 4
+      },
+      {
+        "date": "2026-10-02",
+        "count": 2
+      },
+      {
+        "date": "2026-10-03",
+        "count": 1
+      },
+      {
+        "date": "2026-10-04",
+        "count": 2
+      },
+      {
+        "date": "2026-10-05",
+        "count": 1
+      },
+      {
+        "date": "2026-10-06",
+        "count": 1
+      }
+    ],
+    "tomorrow": null,
+    "tomorrowPickups": null,
+    "tomorrowReturns": null,
+    "cash": null
+  },
+  "operationsTwoOutlets": {
+    "pickupsToday": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 6,
+          "orderNumber": "ORD-1-0006",
+          "outletId": 1,
+          "customerId": 106,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 250000,
+          "depositAmount": 50000,
+          "securityDeposit": 700000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-06T09:00:00.000Z",
+          "returnPlanAt": "2026-10-08T09:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "6",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-02T06:00:00.000Z",
+          "updatedAt": "2026-10-02T06:00:00.000Z"
+        }
+      ]
+    },
+    "returnsToday": {
+      "count": 2,
+      "orders": [
+        {
+          "id": 16,
+          "orderNumber": "ORD-1-0016",
+          "outletId": 2,
+          "customerId": 116,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 500000,
+          "depositAmount": 100000,
+          "securityDeposit": 800000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-03T03:00:00.000Z",
+          "returnPlanAt": "2026-10-06T03:00:00.000Z",
+          "pickedUpAt": "2026-10-03T03:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "16",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-02T03:00:00.000Z",
+          "updatedAt": "2026-10-03T03:00:00.000Z"
+        },
+        {
+          "id": 4,
+          "orderNumber": "ORD-1-0004",
+          "outletId": 1,
+          "customerId": 104,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 150000,
+          "depositAmount": 0,
+          "securityDeposit": 300000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-05T10:00:00.000Z",
+          "returnPlanAt": "2026-10-06T08:00:00.000Z",
+          "pickedUpAt": "2026-10-05T16:59:59.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "4",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-04T05:00:00.000Z",
+          "updatedAt": "2026-10-05T16:59:59.000Z"
+        }
+      ]
+    },
+    "overdueReturns": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 3,
+          "orderNumber": "ORD-1-0003",
+          "outletId": 1,
+          "customerId": 103,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 400000,
+          "depositAmount": 200000,
+          "securityDeposit": 2000000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-01T01:00:00.000Z",
+          "returnPlanAt": "2026-10-04T03:00:00.000Z",
+          "pickedUpAt": "2026-10-01T01:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "3",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-09-28T03:00:00.000Z",
+          "updatedAt": "2026-10-01T01:00:00.000Z"
+        }
+      ]
+    },
+    "noShows": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 7,
+          "orderNumber": "ORD-1-0007",
+          "outletId": 1,
+          "customerId": 107,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "RESERVED",
+          "totalAmount": 150000,
+          "depositAmount": 0,
+          "securityDeposit": 1000000,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-04T03:00:00.000Z",
+          "returnPlanAt": "2026-10-05T03:00:00.000Z",
+          "pickedUpAt": null,
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "7",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-03T07:00:00.000Z",
+          "updatedAt": "2026-10-03T07:00:00.000Z"
+        }
+      ]
+    },
+    "returnsSoon": {
+      "count": 1,
+      "orders": [
+        {
+          "id": 5,
+          "orderNumber": "ORD-1-0005",
+          "outletId": 1,
+          "customerId": 105,
+          "deletedAt": null,
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "totalAmount": 180000,
+          "depositAmount": 30000,
+          "securityDeposit": 0,
+          "damageFee": 0,
+          "lateFee": 0,
+          "isReadyToDeliver": false,
+          "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+          "returnPlanAt": "2026-10-09T02:00:00.000Z",
+          "pickedUpAt": "2026-10-06T02:00:00.000Z",
+          "returnedAt": null,
+          "payments": [],
+          "customer": {
+            "firstName": "Khách",
+            "lastName": "5",
+            "phone": "0900000000"
+          },
+          "orderItems": [],
+          "createdAt": "2026-10-05T02:00:00.000Z",
+          "updatedAt": "2026-10-06T02:00:00.000Z"
+        }
+      ]
+    },
+    "doneToday": {
+      "pickups": 1,
+      "returns": 0
+    },
+    "newOrdersByDay": [],
+    "tomorrow": null,
+    "tomorrowPickups": null,
+    "tomorrowReturns": null,
+    "cash": {
+      "depositsHeld": {
+        "depositAmount": 330000,
+        "securityDeposit": 3100000,
+        "orders": 4
+      },
+      "depositsDueToday": {
+        "depositAmount": 100000,
+        "securityDeposit": 1100000,
+        "orders": 2
+      },
+      "feesToday": {
+        "lateFee": 0,
+        "damageFee": 0,
+        "orders": 0
+      }
+    }
+  },
+  "operationsEmptyOutlet": {
+    "pickupsToday": {
+      "count": 0,
+      "orders": []
+    },
+    "returnsToday": {
+      "count": 0,
+      "orders": []
+    },
+    "overdueReturns": {
+      "count": 0,
+      "orders": []
+    },
+    "noShows": {
+      "count": 0,
+      "orders": []
+    },
+    "returnsSoon": {
+      "count": 0,
+      "orders": []
+    },
+    "doneToday": {
+      "pickups": 0,
+      "returns": 0
+    },
+    "newOrdersByDay": [],
+    "tomorrow": null,
+    "tomorrowPickups": null,
+    "tomorrowReturns": null,
+    "cash": {
+      "depositsHeld": {
+        "depositAmount": 0,
+        "securityDeposit": 0,
+        "orders": 0
+      },
+      "depositsDueToday": {
+        "depositAmount": 0,
+        "securityDeposit": 0,
+        "orders": 0
+      },
+      "feesToday": {
+        "lateFee": 0,
+        "damageFee": 0,
+        "orders": 0
+      }
+    }
+  }
+}

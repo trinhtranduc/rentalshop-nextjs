@@ -80,6 +80,8 @@ describe('getOutletOperations (#350)', () => {
     mockPrisma.order.aggregate.mockImplementation(async ({ where }: any) => {
       if (where.returnedAt) return { _sum: { lateFee: 20, damageFee: 30 }, _count: { _all: 2 } };
       if (where.returnPlanAt) return { _sum: { depositAmount: 100, securityDeposit: 50 }, _count: { _all: 1 } };
+      if (where.securityDeposit && where.status === 'RESERVED') return { _sum: { securityDeposit: 700 }, _count: { _all: 3 } };
+      if (where.securityDeposit) return { _sum: { securityDeposit: 150 }, _count: { _all: 2 } };
       return { _sum: { depositAmount: 500, securityDeposit: 200 }, _count: { _all: 4 } };
     });
     const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: true });
@@ -87,6 +89,9 @@ describe('getOutletOperations (#350)', () => {
       depositsHeld: { depositAmount: 500, securityDeposit: 200, orders: 4 },
       depositsDueToday: { depositAmount: 100, securityDeposit: 50, orders: 1 },
       feesToday: { lateFee: 20, damageFee: 30, orders: 2 },
+      // #494: added next to the old fields, which keep their values
+      collateralToCollect: { securityDeposit: 700, orders: 3 },
+      collateralToReturn: { securityDeposit: 150, orders: 2 },
     });
     const feesWhere = whereOf(mockPrisma.order.aggregate, (w) => !!w.returnedAt);
     expect(feesWhere.returnedAt).toEqual({ gte: start, lte: end });
@@ -148,5 +153,49 @@ describe('getOutletOperations (#350)', () => {
   it('tomorrow is null when no window is given', async () => {
     const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
     expect(result.tomorrow).toBeNull();
+  });
+});
+
+describe('getOutletOperations collateral (#494)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPrisma.order.findMany.mockResolvedValue([]);
+    mockPrisma.order.count.mockResolvedValue(0);
+  });
+
+  it('to collect: RESERVED rentals with collateral, in scope, not deleted', async () => {
+    mockPrisma.order.aggregate.mockResolvedValue({ _sum: {}, _count: { _all: 0 } });
+    await getOutletOperations({ outletIds: [1, 3], start, end, soonEnd, includeCash: true });
+    const where = whereOf(mockPrisma.order.aggregate, (w) => w.status === 'RESERVED');
+    expect(where).toEqual({ orderType: 'RENT', deletedAt: null, outletId: { in: [1, 3] }, status: 'RESERVED', securityDeposit: { gt: 0 } });
+  });
+
+  it('to return: PICKUPED rentals with collateral; depositsHeld keeps counting every PICKUPED rental', async () => {
+    mockPrisma.order.aggregate.mockResolvedValue({ _sum: {}, _count: { _all: 0 } });
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: true });
+    const pickuped = mockPrisma.order.aggregate.mock.calls
+      .map(([args]: any) => args.where)
+      .filter((w: any) => w.status === 'PICKUPED' && !w.returnPlanAt);
+    expect(pickuped).toHaveLength(2);
+    expect(pickuped.find((w: any) => !w.securityDeposit)).toEqual({ orderType: 'RENT', deletedAt: null, outletId: { in: [1] }, status: 'PICKUPED' });
+    expect(pickuped.find((w: any) => w.securityDeposit).securityDeposit).toEqual({ gt: 0 });
+  });
+
+  it('empty sums read as 0, never null', async () => {
+    mockPrisma.order.aggregate.mockResolvedValue({ _sum: { depositAmount: null, securityDeposit: null, lateFee: null, damageFee: null }, _count: { _all: 0 } });
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: true });
+    expect(result.cash).toEqual({
+      depositsHeld: { depositAmount: 0, securityDeposit: 0, orders: 0 },
+      depositsDueToday: { depositAmount: 0, securityDeposit: 0, orders: 0 },
+      feesToday: { lateFee: 0, damageFee: 0, orders: 0 },
+      collateralToCollect: { securityDeposit: 0, orders: 0 },
+      collateralToReturn: { securityDeposit: 0, orders: 0 },
+    });
+  });
+
+  it('staff: no collateral queries, cash stays null', async () => {
+    const result = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
+    expect(result.cash).toBeNull();
+    expect(mockPrisma.order.aggregate).not.toHaveBeenCalled();
   });
 });
