@@ -15,6 +15,7 @@ import { authApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
 import { Modal, fieldClass } from '../orders/create/parts';
 import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './settings-model';
+import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 
 const labelClass = 'flex flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
 const inputClass = `${fieldClass} font-normal disabled:cursor-not-allowed disabled:bg-ar-surface-muted disabled:text-ar-muted`;
@@ -680,6 +681,37 @@ export function LanguageSection({ t }: { t: T }) {
         ))}
       </div>
       {pending && <p className="m-0 text-sm text-ar-muted">{t('language.applying')}</p>}
+    </SectionCard>
+  );
+}
+
+/** Giao diện (#539): Sáng / Tối / Theo hệ thống, same as the top-bar switch, saved on this device. */
+export function AppearanceSection({ t }: { t: T }) {
+  const { choice, theme, setChoice } = useTheme();
+  const options: Array<{ value: ThemeChoice; label: string }> = [
+    { value: 'light', label: t('appearance.light') },
+    { value: 'dark', label: t('appearance.dark') },
+    { value: 'system', label: t('appearance.system') },
+  ];
+  return (
+    <SectionCard title={t('appearance.title')}>
+      <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('appearance.hint')}</p>
+      <div role="radiogroup" aria-label={t('appearance.title')} className="flex flex-col gap-2">
+        {options.map((o) => (
+          <label
+            key={o.value}
+            className={`flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border px-4 text-[15px] ${
+              choice === o.value ? 'border-ar-primary bg-ar-primary-soft font-semibold text-ar-primary-ink' : 'border-ar-line text-ar-ink hover:bg-ar-subtle'
+            }`}
+          >
+            <input type="radio" name="appearance" value={o.value} checked={choice === o.value} onChange={() => setChoice(o.value)} className="h-4 w-4 accent-ar-primary" />
+            <span className="flex-1">{o.label}</span>
+            {o.value === 'system' && choice === 'system' && (
+              <span className="text-sm font-normal text-ar-muted">{t('appearance.current', { theme: t(`appearance.${theme}`) })}</span>
+            )}
+          </label>
+        ))}
+      </div>
     </SectionCard>
   );
 }

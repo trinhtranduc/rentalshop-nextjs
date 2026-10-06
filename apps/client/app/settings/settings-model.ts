@@ -11,7 +11,8 @@ export type SettingsTab =
   | 'subscription'
   | 'profile'
   | 'account'
-  | 'language';
+  | 'language'
+  | 'appearance';
 
 export interface SettingsTabDef {
   id: SettingsTab;
@@ -29,11 +30,15 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'profile', group: 'me' },
   { id: 'account', group: 'me' },
   { id: 'language', group: 'me' },
+  { id: 'appearance', group: 'me' },
 ];
 
-export function tabsForRole(role?: string | null): SettingsTabDef[] {
+/** `themeSwitch: false` (the NEXT_PUBLIC_ENABLE_THEME_SWITCH kill switch) hides Giao diện. */
+export function tabsForRole(role?: string | null, opts: { themeSwitch?: boolean } = {}): SettingsTabDef[] {
   const r = String(role || '').toUpperCase();
-  return SETTINGS_TABS.filter((tab) => !tab.roles || tab.roles.includes(r));
+  return SETTINGS_TABS.filter(
+    (tab) => (!tab.roles || tab.roles.includes(r)) && !(tab.id === 'appearance' && opts.themeSwitch === false),
+  );
 }
 
 /** First screen: the shop for owners and outlet users (the board), otherwise "Tài khoản của tôi". */

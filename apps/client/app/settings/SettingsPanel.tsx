@@ -3,8 +3,8 @@
 /**
  * Cài đặt cửa hàng (#528, board Cai-dat), shown in the shell's Cài đặt dialog (#539). Left: the
  * section list. Right: the section, drawn on the shell tokens. Every section and save action of the
- * old shared Settings component is kept with the same API calls; bank accounts and the
- * subscription panel are still the shared panels, wrapped in `.ar-legacy` for dark mode.
+ * old shared Settings component is kept with the same API calls; bank accounts is still the
+ * shared panel, wrapped in `.ar-legacy` for dark mode. Gói dịch vụ is `SubscriptionTab` (#557).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -15,8 +15,10 @@ import type { CurrencyCode } from '@rentalshop/types';
 import { SettingsSubscriptionMerchantActions } from '../components/SettingsSubscriptionMerchantActions';
 import { Skeleton, type T } from '../orders/list/parts';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { useTheme } from '../providers/ThemeProvider';
 import {
   AccountSection,
+  AppearanceSection,
   LANGUAGES,
   LanguageSection,
   LegacyPanel,
@@ -28,7 +30,9 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { currencyForLocale, mapSubscriptionStatus, tabsForRole, type SettingsTab } from './settings-model';
+import { currencyForLocale, tabsForRole, type SettingsTab } from './settings-model';
+import type { SubscriptionLoad } from './SubscriptionTab';
+import type { SubscriptionStatus } from './subscription-model';
 
 /** Loose view of the signed-in user (login payload carries merchant / outlet objects). */
 interface SettingsUser {
@@ -81,7 +85,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
   const user = authUser as unknown as SettingsUser | null;
   const role = String(user?.role || '').toUpperCase();
 
-  const tabs = useMemo(() => tabsForRole(role), [role]);
+  const { enabled: themeSwitch, choice: themeChoice } = useTheme();
+  const tabs = useMemo(() => tabsForRole(role, { themeSwitch }), [role, themeSwitch]);
 
   // ---------------------------------------------------------------- merchant
   const [fetchedMerchant, setFetchedMerchant] = useState<Record<string, string> | null>(null);
@@ -234,22 +239,28 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
   };
 
   // ------------------------------------------------------------ subscription
-  const [subscriptionData, setSubscriptionData] = useState<ReturnType<typeof mapSubscriptionStatus> | null>(null);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  // The flat status payload (#557 reads it directly; no merchant subscription → 'none').
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [subscriptionLoad, setSubscriptionLoad] = useState<SubscriptionLoad>('loading');
   const refreshSubscription = useCallback(async () => {
     if (role !== 'MERCHANT') {
-      setSubscriptionData(null);
-      setSubscriptionLoading(false);
+      setSubscriptionStatus(null);
+      setSubscriptionLoad('none');
       return;
     }
-    setSubscriptionLoading(true);
+    setSubscriptionLoad('loading');
     try {
       const res = await subscriptionsApi.getCurrentUserSubscriptionStatus();
-      setSubscriptionData(res.success && res.data ? mapSubscriptionStatus(res.data) : null);
+      if (res.success && res.data) {
+        setSubscriptionStatus(res.data as SubscriptionStatus);
+        setSubscriptionLoad('ok');
+      } else {
+        setSubscriptionStatus(null);
+        setSubscriptionLoad(res.code === 'NO_SUBSCRIPTION_FOUND' ? 'none' : 'failed');
+      }
     } catch {
-      setSubscriptionData(null);
-    } finally {
-      setSubscriptionLoading(false);
+      setSubscriptionStatus(null);
+      setSubscriptionLoad('failed');
     }
   }, [role]);
   useEffect(() => {
@@ -279,6 +290,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
         >
           {t(`nav.${id}`)}
           {id === 'language' && <span className="hidden font-normal text-ar-muted lg:inline">{languageName}</span>}
+          {id === 'appearance' && <span className="hidden font-normal text-ar-muted lg:inline">{t(`appearance.${themeChoice}`)}</span>}
         </button>
       </li>
     );
@@ -320,19 +332,19 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
         return <ReceiptSection t={t} />;
       case 'subscription':
         return (
-          <LegacyPanel title={t('subscription.title')}>
-            <SettingsSubscriptionMerchantActions
-              subscriptionData={subscriptionData}
-              subscriptionLoading={subscriptionLoading}
-              onSubscriptionRefresh={refreshSubscription}
-              currentUserRole={user?.role}
-            />
-          </LegacyPanel>
+          <SettingsSubscriptionMerchantActions
+            status={subscriptionStatus}
+            load={subscriptionLoad}
+            onSubscriptionRefresh={refreshSubscription}
+            currentUserRole={user?.role}
+          />
         );
       case 'account':
         return <AccountSection userId={user?.id ?? null} onSignOut={signOut} t={t} />;
       case 'language':
         return <LanguageSection t={t} />;
+      case 'appearance':
+        return <AppearanceSection t={t} />;
       case 'profile':
       default:
         return (

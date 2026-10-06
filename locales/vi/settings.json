@@ -521,7 +521,8 @@
       "subscription": "Gói dịch vụ",
       "profile": "Tài khoản của tôi",
       "account": "Đổi mật khẩu",
-      "language": "Ngôn ngữ"
+      "language": "Ngôn ngữ",
+      "appearance": "Giao diện"
     },
     "form": {
       "required": "bắt buộc",
@@ -610,12 +611,110 @@
       "applying": "Đang đổi ngôn ngữ…"
     },
     "subscription": {
-      "title": "Gói dịch vụ"
+      "title": "Gói dịch vụ",
+      "planCard": "Gói đang dùng",
+      "noPlan": "Chưa có gói",
+      "trialPlan": "Dùng thử",
+      "free": "Miễn phí",
+      "perMonth": "/tháng",
+      "perMonths": "/{count} tháng",
+      "perYear": "/năm",
+      "perYears": "/{count} năm",
+      "expiresOn": "Hết hạn {day}",
+      "trialUntil": "Dùng thử đến {day}",
+      "expiredOn": "Đã hết hạn {day}",
+      "usableUntil": "Dùng được đến {day}",
+      "daysLeft": "còn {count} ngày",
+      "cancelNote": "Gói đã huỷ, không tự gia hạn. Cửa hàng dùng được đến hết ngày hết hạn.",
+      "expiredNote": "Gói đã hết hạn. Liên hệ AnyRent để gia hạn.",
+      "loadFailed": "Không tải được thông tin gói dịch vụ.",
+      "retry": "Thử lại",
+      "upgrade": "Nâng cấp gói",
+      "extend": "Gia hạn",
+      "noSubscription": "Cửa hàng chưa có gói dịch vụ.",
+      "tag": {
+        "active": "Đang dùng",
+        "trial": "Dùng thử",
+        "expiring": "Sắp hết hạn",
+        "expired": "Hết hạn",
+        "cancelled": "Đã huỷ",
+        "paused": "Tạm dừng",
+        "pastDue": "Chờ thanh toán"
+      },
+      "usageTitle": "Mức sử dụng",
+      "usageHint": "Số đang dùng so với giới hạn của gói.",
+      "overLimit": "Vượt giới hạn",
+      "unlimited": "Không giới hạn",
+      "usedUnlimited": "{used} · không giới hạn",
+      "upTo": "Tối đa {limit}",
+      "usage": {
+        "outlets": "Chi nhánh",
+        "users": "Nhân viên",
+        "products": "Sản phẩm",
+        "customers": "Khách hàng",
+        "orders": "Đơn hàng"
+      },
+      "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+      "method": {
+        "STRIPE": "Thẻ (Stripe)",
+        "LEMON_SQUEEZY": "Thẻ (Lemon Squeezy)",
+        "TRANSFER": "Chuyển khoản",
+        "MANUAL": "Ghi nhận thủ công",
+        "CASH": "Tiền mặt",
+        "CHECK": "Séc",
+        "PAYPAL": "PayPal",
+        "IAP_APPLE": "App Store",
+        "IAP_GOOGLE": "Google Play"
+      },
+      "history": {
+        "title": "Lịch sử gói",
+        "hint": "Nâng cấp, gia hạn và thanh toán, mới nhất trước.",
+        "empty": "Chưa có thay đổi nào.",
+        "loadFailed": "Không tải được lịch sử gói.",
+        "until": "đến {day}",
+        "fromTo": "{from} → {to}",
+        "trialStarted": "Bắt đầu dùng thử",
+        "started": "Bắt đầu gói {plan}",
+        "startedPlain": "Bắt đầu dùng gói",
+        "upgraded": "Nâng cấp lên {plan}",
+        "downgraded": "Chuyển xuống {plan}",
+        "planChanged": "Đổi sang gói {plan}",
+        "planChangedPlain": "Đổi gói",
+        "extendedDays": "Gia hạn {count} ngày",
+        "extendedMonths": "Gia hạn {count} tháng",
+        "extendedPlain": "Gia hạn gói",
+        "appPurchased": "Mua gói trên ứng dụng",
+        "appRenewed": "Gia hạn trên ứng dụng",
+        "checkout": "Thanh toán gói",
+        "cancelled": "Huỷ gói",
+        "paused": "Tạm dừng gói",
+        "resumed": "Tiếp tục gói",
+        "updated": "Cập nhật gói",
+        "payment": {
+          "SUBSCRIPTION_PAYMENT": "Thanh toán gói",
+          "PLAN_CHANGE": "Thanh toán đổi gói",
+          "PLAN_EXTENSION": "Thanh toán gia hạn"
+        },
+        "paymentStatus": {
+          "PENDING": "Đang chờ",
+          "FAILED": "Thất bại",
+          "REFUNDED": "Đã hoàn tiền",
+          "CANCELLED": "Đã huỷ"
+        }
+      }
     },
     "bank": {
       "title": "Tài khoản ngân hàng"
     },
     "close": "Đóng",
-    "dialogTitle": "Cài đặt"
+    "dialogTitle": "Cài đặt",
+    "appearance": {
+      "title": "Giao diện",
+      "hint": "Áp dụng trên máy này. Lưu tự động.",
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Theo hệ thống",
+      "current": "Đang dùng: {theme}"
+    }
   }
 }

@@ -521,7 +521,8 @@
       "subscription": "Subscription",
       "profile": "My account",
       "account": "Change password",
-      "language": "Language"
+      "language": "Language",
+      "appearance": "Appearance"
     },
     "form": {
       "required": "required",
@@ -610,12 +611,110 @@
       "applying": "Changing language…"
     },
     "subscription": {
-      "title": "Subscription"
+      "title": "Subscription",
+      "planCard": "Current plan",
+      "noPlan": "No plan",
+      "trialPlan": "Trial",
+      "free": "Free",
+      "perMonth": "/month",
+      "perMonths": "/{count} months",
+      "perYear": "/year",
+      "perYears": "/{count} years",
+      "expiresOn": "Expires {day}",
+      "trialUntil": "Trial until {day}",
+      "expiredOn": "Expired {day}",
+      "usableUntil": "Usable until {day}",
+      "daysLeft": "{count} days left",
+      "cancelNote": "The plan is cancelled and will not renew. The shop can use it until the end date.",
+      "expiredNote": "The plan has expired. Contact AnyRent to renew.",
+      "loadFailed": "Could not load the subscription.",
+      "retry": "Try again",
+      "upgrade": "Upgrade plan",
+      "extend": "Renew",
+      "noSubscription": "This shop has no subscription yet.",
+      "tag": {
+        "active": "Active",
+        "trial": "Trial",
+        "expiring": "Expiring soon",
+        "expired": "Expired",
+        "cancelled": "Cancelled",
+        "paused": "Paused",
+        "pastDue": "Payment due"
+      },
+      "usageTitle": "Usage",
+      "usageHint": "What the shop uses against the plan limits.",
+      "overLimit": "Over the limit",
+      "unlimited": "Unlimited",
+      "usedUnlimited": "{used} · unlimited",
+      "upTo": "Up to {limit}",
+      "usage": {
+        "outlets": "Outlets",
+        "users": "Staff",
+        "products": "Products",
+        "customers": "Customers",
+        "orders": "Orders"
+      },
+      "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+      "method": {
+        "STRIPE": "Card (Stripe)",
+        "LEMON_SQUEEZY": "Card (Lemon Squeezy)",
+        "TRANSFER": "Bank transfer",
+        "MANUAL": "Recorded manually",
+        "CASH": "Cash",
+        "CHECK": "Check",
+        "PAYPAL": "PayPal",
+        "IAP_APPLE": "App Store",
+        "IAP_GOOGLE": "Google Play"
+      },
+      "history": {
+        "title": "Plan history",
+        "hint": "Upgrades, renewals and payments, newest first.",
+        "empty": "No changes yet.",
+        "loadFailed": "Could not load the plan history.",
+        "until": "until {day}",
+        "fromTo": "{from} → {to}",
+        "trialStarted": "Trial started",
+        "started": "Started {plan}",
+        "startedPlain": "Plan started",
+        "upgraded": "Upgraded to {plan}",
+        "downgraded": "Moved down to {plan}",
+        "planChanged": "Changed to {plan}",
+        "planChangedPlain": "Plan changed",
+        "extendedDays": "Extended {count} days",
+        "extendedMonths": "Extended {count} months",
+        "extendedPlain": "Plan extended",
+        "appPurchased": "Bought in the app",
+        "appRenewed": "Renewed in the app",
+        "checkout": "Plan payment",
+        "cancelled": "Plan cancelled",
+        "paused": "Plan paused",
+        "resumed": "Plan resumed",
+        "updated": "Plan updated",
+        "payment": {
+          "SUBSCRIPTION_PAYMENT": "Plan payment",
+          "PLAN_CHANGE": "Plan change payment",
+          "PLAN_EXTENSION": "Extension payment"
+        },
+        "paymentStatus": {
+          "PENDING": "Pending",
+          "FAILED": "Failed",
+          "REFUNDED": "Refunded",
+          "CANCELLED": "Cancelled"
+        }
+      }
     },
     "bank": {
       "title": "Bank accounts"
     },
     "close": "Close",
-    "dialogTitle": "Settings"
+    "dialogTitle": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "hint": "On this device. Saved automatically.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Match system",
+      "current": "Now: {theme}"
+    }
   }
 }
