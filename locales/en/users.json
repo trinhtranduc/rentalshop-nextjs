@@ -190,5 +190,79 @@
     "OUTLET_ADMIN": "Runs one outlet: orders, products, customers and the staff of that outlet.",
     "OUTLET_STAFF": "Creates and handles orders. Cannot change product prices.",
     "loginNote": "The new user signs in with this email and password, and can change the password later."
+  },
+  "web": {
+    "title": "Staff",
+    "add": "Add staff",
+    "searchPlaceholder": "Search name, phone, email",
+    "searchLabel": "Search staff",
+    "allOutlets": "All outlets",
+    "outletFilter": "Filter by outlet",
+    "allOutletsValue": "All",
+    "filters": {
+      "role": "Role:",
+      "status": "Status:",
+      "all": "All",
+      "active": "Active",
+      "inactive": "Locked"
+    },
+    "cols": {
+      "staff": "Staff",
+      "role": "Role",
+      "outlet": "Outlet",
+      "lastLogin": "Last sign-in",
+      "actions": "Actions"
+    },
+    "roles": {
+      "owner": "Shop owner",
+      "admin": "Outlet manager",
+      "staff": "Staff",
+      "other": "Other"
+    },
+    "lastSeen": {
+      "current": "Using now",
+      "never": "—",
+      "today": "{time} today",
+      "yesterday": "{time} yesterday",
+      "locked": "Locked"
+    },
+    "edit": "Edit",
+    "more": "More actions for {name}",
+    "activate": "Unlock account",
+    "deactivate": "Lock account",
+    "delete": "Delete staff",
+    "confirm": {
+      "activateTitle": "Unlock account?",
+      "activateBody": "{name} will be able to sign in again.",
+      "deactivateTitle": "Lock account?",
+      "deactivateBody": "{name} cannot sign in until the account is unlocked.",
+      "deleteTitle": "Delete staff?",
+      "deleteBody": "Remove {name} from the shop. This cannot be undone.",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "rolesCard": {
+      "title": "What each role can do",
+      "owner": "Every outlet, money, reports, staff, subscription.",
+      "admin": "One outlet: orders, products, prices, customers, the day's money, that outlet's staff.",
+      "staff": "Create orders, hand over, take returns, add customers. Cannot change product prices or see money reports.",
+      "rolePermissions": "See permissions per role",
+      "permissions": "Grant extra permissions"
+    },
+    "empty": "No staff yet",
+    "emptySearch": "No staff match these filters",
+    "loadFailed": "Couldn't load staff.",
+    "retry": "Try again",
+    "noAccess": "Staff accounts cannot see the staff list.",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pages",
+      "range": "{from}–{to} of {total} staff",
+      "prev": "Previous page",
+      "next": "Next page"
+    }
   }
 }

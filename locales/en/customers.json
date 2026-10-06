@@ -186,5 +186,154 @@
   "form": {
     "moreDetails": "Address, ID number, notes",
     "hideDetails": "Hide extra details"
+  },
+  "web": {
+    "title": "Customers",
+    "importExcel": "Import from Excel",
+    "create": "New customer",
+    "export": "Export Excel",
+    "exportCount": "Export Excel ({count})",
+    "exporting": "Exporting…",
+    "exportDone": "Excel file exported",
+    "exportFailed": "Could not export the file. Try again.",
+    "close": "Close",
+    "cancel": "Cancel",
+    "exportDialog": {
+      "title": "Export customers",
+      "hint": "No customer is selected. Export customers added to the shop in:",
+      "tip": "Want only a few customers? Tick them in the table, then press Export Excel.",
+      "period": {
+        "1month": "Last 30 days",
+        "3months": "Last 3 months",
+        "6months": "Last 6 months",
+        "1year": "Last 12 months"
+      }
+    },
+    "search": {
+      "label": "Search customers",
+      "placeholder": "Name or phone number",
+      "clear": "Clear search"
+    },
+    "selection": {
+      "label": "Selected customers",
+      "count": "{count} customers selected",
+      "all": "Select all {total} customers",
+      "clear": "Clear selection",
+      "page": "Select all on this page",
+      "one": "Select customer {name}"
+    },
+    "cols": {
+      "customer": "Customer",
+      "orders": "Orders",
+      "address": "Address",
+      "created": "Added"
+    },
+    "noName": "Unnamed customer",
+    "empty": "No customers yet. Press “New customer” to add one.",
+    "emptySearch": "No customer matches “{q}”.",
+    "loadFailed": "Could not load customers.",
+    "retry": "Retry",
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pages",
+      "range": "{from}–{to} of {total} customers",
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "detail": {
+      "label": "Customer details",
+      "call": "Call {name}",
+      "edit": "Edit",
+      "orders": "Orders",
+      "spent": "Spent",
+      "renting": "Renting",
+      "spentNote": "Spent leaves out cancelled orders.",
+      "ordersTitle": "Customer orders",
+      "noOrders": "This customer has no orders yet.",
+      "ordersFailed": "Could not load this customer's orders.",
+      "allOrders": "All orders of this customer",
+      "profile": "Open profile",
+      "delete": "Delete customer"
+    },
+    "delete": {
+      "title": "Delete customer?",
+      "body": "Remove {name} from the customer list. A customer with reserved or rented orders cannot be deleted.",
+      "confirm": "Delete customer",
+      "deleting": "Deleting…",
+      "done": "Customer deleted",
+      "failed": "Could not delete the customer"
+    },
+    "import": {
+      "back": "Customers",
+      "title": "Import customers from Excel",
+      "steps": {
+        "label": "Steps",
+        "choose": "1. Choose file",
+        "check": "2. Check rows with errors",
+        "result": "3. Result",
+        "checkHint": "Rows with errors are not imported",
+        "resultHint": "New, reopened and skipped customers"
+      },
+      "template": "Download the customer template (.xlsx)",
+      "templateLoading": "Downloading template…",
+      "templateFailed": "Could not download the template",
+      "drop": {
+        "title": "Drop a file here or click to choose",
+        "hint": ".xlsx, .xls or .csv · up to {max} rows",
+        "button": "Choose file",
+        "reading": "Reading file…"
+      },
+      "columnsHint": "Use the template columns: firstName, lastName, phone, email, address, notes. Only the first name is required.",
+      "notSpreadsheet": "Only .xlsx, .xls or .csv files are accepted.",
+      "fileFailed": "Could not read the file: {message}",
+      "tooMany": "The file has {count} rows; at most {max} rows per import. Split the file and try again.",
+      "emptyFile": "The file has no customer rows.",
+      "fileRows": "{count} rows · read at {time}",
+      "okCount": "{count} valid rows",
+      "errCount": "{count} rows with errors",
+      "change": "Change file",
+      "filter": {
+        "label": "Filter rows",
+        "all": "All {count}",
+        "errors": "Errors first · {count}"
+      },
+      "cols": {
+        "row": "Row",
+        "name": "Name",
+        "phone": "Phone",
+        "email": "Email",
+        "address": "Address",
+        "notes": "Notes",
+        "check": "Check"
+      },
+      "selectAll": "Select all valid rows",
+      "selectRow": "Select row {n}",
+      "ok": "Valid",
+      "issue": {
+        "missingName": "Missing name",
+        "badEmail": "Invalid email",
+        "badIdType": "Invalid ID type"
+      },
+      "more": "Show {count} more rows",
+      "footerHint": "Fix the rows with errors in the file and choose it again, or skip them and import the valid rows.",
+      "submit": "Import {count} customers",
+      "importing": "Importing…",
+      "requestFailed": "Import failed. Try again.",
+      "noMerchant": "This account is not linked to a shop, so it cannot import customers.",
+      "result": {
+        "title": "Import finished",
+        "failedTitle": "No customer was imported",
+        "failedBody": "The whole batch was cancelled because some rows are invalid. Fix the rows below in the file and import again.",
+        "imported": "New customers",
+        "updated": "Existing customers reopened",
+        "skipped": "Skipped, already there (same phone or email)",
+        "errorsTitle": "Rows not imported",
+        "errorRow": "Row {n}",
+        "toList": "Back to customers",
+        "again": "Import another file"
+      }
+    }
   }
 }

@@ -222,7 +222,16 @@
       "yesterday": "어제",
       "empty": "아직 알림이 없습니다",
       "emptyUnread": "읽지 않은 알림이 없습니다",
-      "loadError": "알림을 불러오지 못했습니다. 잠시 후 다시 시도하세요."
+      "loadError": "알림을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+      "weekdays": "일,월,화,수,목,금,토",
+      "seeAll": "모든 알림 보기",
+      "moreActions": "더 보기",
+      "deleteRead": "읽은 알림 삭제",
+      "markRead": "읽음으로 표시",
+      "markUnread": "읽지 않음으로 표시",
+      "retry": "다시 시도",
+      "loadMore": "더 보기",
+      "unreadCount": "읽지 않음 {count}개"
     }
   }
 }

@@ -193,5 +193,79 @@
     "OUTLET_ADMIN": "Quản lý một cửa hàng: đơn hàng, sản phẩm, khách hàng và nhân viên của cửa hàng đó.",
     "OUTLET_STAFF": "Tạo và xử lý đơn hàng. Không sửa được giá sản phẩm.",
     "loginNote": "Người dùng mới đăng nhập bằng email và mật khẩu này, sau đó có thể tự đổi mật khẩu."
+  },
+  "web": {
+    "title": "Nhân viên",
+    "add": "Thêm nhân viên",
+    "searchPlaceholder": "Tìm tên, SĐT, email",
+    "searchLabel": "Tìm nhân viên",
+    "allOutlets": "Tất cả chi nhánh",
+    "outletFilter": "Lọc theo chi nhánh",
+    "allOutletsValue": "Tất cả",
+    "filters": {
+      "role": "Vai trò:",
+      "status": "Trạng thái:",
+      "all": "Tất cả",
+      "active": "Đang hoạt động",
+      "inactive": "Đã khoá"
+    },
+    "cols": {
+      "staff": "Nhân viên",
+      "role": "Vai trò",
+      "outlet": "Chi nhánh",
+      "lastLogin": "Đăng nhập gần nhất",
+      "actions": "Thao tác"
+    },
+    "roles": {
+      "owner": "Chủ cửa hàng",
+      "admin": "Quản lý chi nhánh",
+      "staff": "Nhân viên",
+      "other": "Khác"
+    },
+    "lastSeen": {
+      "current": "Đang dùng",
+      "never": "—",
+      "today": "{time} hôm nay",
+      "yesterday": "{time} hôm qua",
+      "locked": "Đã khoá"
+    },
+    "edit": "Sửa",
+    "more": "Thêm thao tác cho {name}",
+    "activate": "Mở khoá tài khoản",
+    "deactivate": "Khoá tài khoản",
+    "delete": "Xoá nhân viên",
+    "confirm": {
+      "activateTitle": "Mở khoá tài khoản?",
+      "activateBody": "{name} sẽ đăng nhập lại được.",
+      "deactivateTitle": "Khoá tài khoản?",
+      "deactivateBody": "{name} sẽ không đăng nhập được cho tới khi mở khoá.",
+      "deleteTitle": "Xoá nhân viên?",
+      "deleteBody": "Xoá {name} khỏi cửa hàng. Không hoàn tác được.",
+      "cancel": "Huỷ",
+      "close": "Đóng"
+    },
+    "rolesCard": {
+      "title": "Vai trò làm được gì",
+      "owner": "Mọi chi nhánh, tiền, báo cáo, nhân viên, gói dịch vụ.",
+      "admin": "Một chi nhánh: đơn, sản phẩm, giá, khách, tiền trong ngày, nhân viên của chi nhánh.",
+      "staff": "Tạo đơn, giao đồ, nhận trả, thêm khách. Không sửa giá sản phẩm, không xem báo cáo tiền.",
+      "rolePermissions": "Xem quyền từng vai trò",
+      "permissions": "Phân quyền thêm cho nhân viên"
+    },
+    "empty": "Chưa có nhân viên nào",
+    "emptySearch": "Không có nhân viên khớp bộ lọc",
+    "loadFailed": "Không tải được danh sách nhân viên.",
+    "retry": "Thử lại",
+    "noAccess": "Tài khoản nhân viên không xem được danh sách nhân viên.",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} nhân viên",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    }
   }
 }

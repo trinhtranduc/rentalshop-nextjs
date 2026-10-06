@@ -1,20 +1,19 @@
-import { PageWrapper, PageHeader, PageTitle, ProductsLoading } from '@rentalshop/ui';
-
-/**
- * Next.js App Router Loading UI for Products
- * Shows instantly during navigation to /products
- */
+/** Shown while /products loads: the page frame with skeleton rows, no text to translate. */
 export default function Loading() {
+  const bar = 'block animate-pulse rounded-lg bg-ar-subtle';
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-      <PageHeader className="flex-shrink-0">
-        <PageTitle>Products</PageTitle>
-        <p className="text-sm text-gray-600">Manage your product catalog</p>
-      </PageHeader>
-      <div className="flex-1 min-h-0 overflow-auto">
-        <ProductsLoading />
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 sm:px-8" aria-busy="true">
+      <div className="flex items-center justify-between">
+        <span className={`${bar} h-8 w-40`} />
+        <span className={`${bar} h-10 w-36`} />
       </div>
-    </PageWrapper>
+      <span className={`${bar} h-11 w-72 max-w-full`} />
+      <div className="flex flex-col gap-3 rounded-2xl border border-ar-line-soft bg-ar-surface p-4 shadow-ar">
+        <span className={`${bar} h-9 w-full`} />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <span key={i} className={`${bar} h-11 w-full`} />
+        ))}
+      </div>
+    </div>
   );
 }
-

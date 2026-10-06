@@ -308,5 +308,189 @@
     "perDay": "/day",
     "depositHint": "Paid up front, taken off the rent",
     "outlet": "Outlet"
+  },
+  "web": {
+    "title": "Products",
+    "add": "Add product",
+    "importExcel": "Import from Excel",
+    "export": "Export Excel",
+    "exportSelected": "Export Excel ({count})",
+    "exporting": "Exporting...",
+    "exportDone": "Excel file exported",
+    "exportFailed": "Could not export the file. Try again.",
+    "close": "Close",
+    "empty": "No products yet.",
+    "emptyFiltered": "No products match the filters.",
+    "loadFailed": "Could not load products.",
+    "retry": "Retry",
+    "tabs": {
+      "label": "Products",
+      "all": "All products",
+      "categories": "Categories"
+    },
+    "search": {
+      "label": "Search products",
+      "placeholder": "Name or barcode"
+    },
+    "category": {
+      "label": "Category",
+      "all": "All"
+    },
+    "outlet": {
+      "label": "Outlet",
+      "all": "All"
+    },
+    "sort": {
+      "label": "Sort",
+      "name": "Name A–Z",
+      "newest": "Newest",
+      "priceAsc": "Rent price, low first",
+      "priceDesc": "Rent price, high first"
+    },
+    "cols": {
+      "product": "Product",
+      "category": "Category",
+      "once": "Rent per booking",
+      "day": "Rent per day",
+      "sale": "Sale price",
+      "today": "Today",
+      "actions": "Actions"
+    },
+    "selectPage": "Select all on this page",
+    "selectRow": "Select {name}",
+    "selection": {
+      "region": "Selected products",
+      "count": "{count} products selected",
+      "selectAll": "Select all {total} products",
+      "clear": "Clear selection",
+      "delete": "Delete ({count})"
+    },
+    "stock": {
+      "left": "{available}/{total} free",
+      "out": "None free",
+      "renting": "{count} rented out"
+    },
+    "price": {
+      "perHour": "{price}/hour"
+    },
+    "row": {
+      "edit": "Edit",
+      "more": "More actions for {name}",
+      "view": "View details",
+      "orders": "Orders with this product",
+      "delete": "Delete product",
+      "image": "Photo of {name}"
+    },
+    "more": {
+      "label": "More actions",
+      "syncImages": "Sync image search",
+      "syncing": "Syncing..."
+    },
+    "sync": {
+      "indexed": "Every product with a photo is ready for image search.",
+      "queued": "Processing {count} products. Image search works in a few minutes.",
+      "failed": "Could not sync. Try again later."
+    },
+    "imageSearch": {
+      "open": "Search by photo",
+      "result": "Photo search results · {count}",
+      "clear": "Clear photo search"
+    },
+    "searchResult": "Results for “{q}”",
+    "searchClear": "Clear search",
+    "delete": {
+      "title": "Delete products",
+      "one": "Delete “{name}”? This cannot be undone.",
+      "many": "Delete {count} selected products? This cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel",
+      "deleting": "Deleting...",
+      "done": "Deleted {count} products",
+      "partial": "Deleted {deleted} products; {failed} could not be deleted",
+      "failed": "Could not delete the products"
+    },
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pages",
+      "range": "{from}–{to} of {total} products",
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "import": {
+      "back": "Products",
+      "title": "Import products from Excel",
+      "steps": "Steps",
+      "step1": "1. Choose the filled-in file",
+      "step1Hint": ".xlsx or .csv · up to {max} rows",
+      "template": "Download the product template (.xlsx)",
+      "templateFailed": "Could not download the template.",
+      "step2": "2. Check and import",
+      "step2Hint": "Rows with errors are not imported",
+      "step3": "3. Result",
+      "step3Hint": "Products show in the list right away",
+      "pick": "Choose file",
+      "drop": "Drop the file here or click to choose",
+      "columnsHint": "The first row holds the column names: Name, Barcode, Category, Rent price, Sale price, Deposit, Stock (as in the template).",
+      "reading": "Reading the file...",
+      "problem": {
+        "type": "Only .xlsx, .xls or .csv files.",
+        "unreadable": "Could not read the file. Choose another .xlsx, .xls or .csv file.",
+        "empty": "The file has no data rows.",
+        "tooMany": "The file has {count} rows, more than {max} per import. Split the file and try again.",
+        "noNameColumn": "No product name column found. Use the template or name the columns as in it."
+      },
+      "fileRows": "{count} rows · read at {time}",
+      "okCount": "{count} valid rows",
+      "errCount": "{count} rows with errors",
+      "change": "Change file",
+      "filter": {
+        "label": "Filter rows",
+        "all": "All {count}",
+        "errorsFirst": "Errors first · {count}"
+      },
+      "cols": {
+        "row": "Row",
+        "name": "Product name",
+        "barcode": "Barcode",
+        "categoryName": "Category",
+        "rentPrice": "Rent price",
+        "salePrice": "Sale price",
+        "deposit": "Deposit",
+        "stock": "Stock",
+        "check": "Check"
+      },
+      "selectValid": "Select all valid rows",
+      "selectRow": "Select row {row}",
+      "ok": "Valid",
+      "error": {
+        "nameMissing": "Product name missing",
+        "priceInvalid": "Invalid price",
+        "stockInvalid": "Invalid quantity",
+        "categoryUnknown": "Category does not exist",
+        "barcodeDuplicate": "Same barcode as row {row}"
+      },
+      "categoryHint": "Unknown category: create it on the Categories page first, or leave it empty to use the default category.",
+      "openCategories": "Open Categories",
+      "shown": "Showing {shown} of {total} rows",
+      "showMore": "Show more",
+      "footerHint": "Fix the rows with errors in the file and choose it again, or skip them and import the valid rows.",
+      "cancel": "Cancel",
+      "cta": "Import {count} products",
+      "importing": "Importing {count} products...",
+      "noPermission": "This account cannot import products.",
+      "result": {
+        "done": "Imported {count} products",
+        "skipped": "{count} rows skipped: the barcode is already in the shop",
+        "none": "No products were imported",
+        "rejected": "{count} rows were rejected, so nothing was imported. Fix the file and try again.",
+        "errorsTitle": "Rejected rows",
+        "rowLabel": "Row {row}",
+        "failed": "Import failed",
+        "toList": "View products",
+        "again": "Import another file"
+      }
+    }
   }
 }
