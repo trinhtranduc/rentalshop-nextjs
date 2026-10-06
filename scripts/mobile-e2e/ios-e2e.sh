@@ -91,6 +91,8 @@ echo "Running $TARGET (log: $LOG)"
 set +e
 (
   cd "$MOBILE_DIR"
+  # No bridging-header PCH: with derived data under /tmp (a /private/tmp symlink) the importer looks it up
+  # under the other path and fails with "PCH file … not found".
   TEST_RUNNER_E2E_EMAIL="$E2E_EMAIL" \
   TEST_RUNNER_E2E_PASSWORD="$E2E_PASSWORD" \
   TEST_RUNNER_E2E_ROLE="$E2E_ACCOUNT" \
@@ -103,6 +105,7 @@ set +e
     -only-testing:"$TARGET" \
     ${LANG_ARGS[@]+"${LANG_ARGS[@]}"} \
     API_BASE_URL="$(e2e_api_base_url)" \
+    SWIFT_PRECOMPILE_BRIDGING_HEADER=NO \
     test >"$LOG" 2>&1
 )
 STATUS=$?
