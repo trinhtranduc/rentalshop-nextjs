@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Be_Vietnam_Pro } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import ClientLayout from './components/ClientLayout'
 import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
 import Script from 'next/script'
+import { isThemeSwitchEnabled, themeBootScript } from '../lib/theme'
 
 // Static imports - All locale files (build-time optimization)
 import enCommon from '../../../locales/en/common.json';
@@ -69,6 +70,14 @@ import jaFeatures from '../../../locales/ja/features.json';
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
+})
+
+// Shop shell font (#509); applied only inside `.ar-theme`, public pages keep Inter.
+const beVietnam = Be_Vietnam_Pro({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-be-vietnam',
+  display: 'swap',
 })
 
 // Generate metadata based on locale
@@ -759,13 +768,14 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang={locale} className="overflow-x-hidden">
+    <html lang={locale} className="overflow-x-hidden" suppressHydrationWarning>
       <head>
+        {isThemeSwitchEnabled() && <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
       </head>
-      <body className={`${inter.variable} font-sans overflow-x-hidden`}>
+      <body className={`${inter.variable} ${beVietnam.variable} font-sans overflow-x-hidden`}>
         {/* Google Analytics 4 */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
           <>

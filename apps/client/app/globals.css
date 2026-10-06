@@ -442,3 +442,83 @@ a:focus-visible {
     animation: none;
   }
 } 
+/* ==========================================================================
+   AnyRent shop shell tokens (#509). RGB triplets so Tailwind `ar-*` colours
+   accept opacity modifiers. Light by default; dark only inside `.ar-theme`
+   when the boot script sets <html data-ar-theme="dark">, so public pages
+   never change.
+   ========================================================================== */
+:root {
+  --ar-page: 243 244 246;
+  --ar-surface: 255 255 255;
+  --ar-surface-muted: 248 250 252;
+  --ar-subtle: 241 245 249;
+  --ar-line: 226 232 240;
+  --ar-line-soft: 238 240 243;
+  --ar-line-strong: 203 213 225;
+  --ar-ink: 15 23 42;
+  --ar-ink-2: 51 65 85;
+  --ar-muted: 71 85 105;
+  --ar-faint: 148 163 184;
+  --ar-primary: 29 78 216;
+  --ar-primary-ink: 29 78 216;
+  --ar-primary-soft: 239 246 255;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 185 28 28;
+  --ar-danger-soft: 254 226 226;
+  --ar-unread: 248 251 255;
+  /* Order status pills: text on background */
+  --ar-reserved: 30 64 175;
+  --ar-reserved-bg: 219 234 254;
+  --ar-renting: 91 33 182;
+  --ar-renting-bg: 237 233 254;
+  --ar-done: 4 120 87;
+  --ar-done-bg: 209 250 229;
+  --ar-cancelled: 71 85 105;
+  --ar-cancelled-bg: 241 245 249;
+  --ar-late: 153 27 27;
+  --ar-late-bg: 254 226 226;
+  --ar-unprepared: 154 52 18;
+  --ar-unprepared-bg: 255 237 213;
+  --ar-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+html[data-ar-theme='dark'] .ar-theme {
+  color-scheme: dark;
+  --ar-page: 11 17 32;
+  --ar-surface: 17 24 39;
+  --ar-surface-muted: 22 32 50;
+  --ar-subtle: 30 41 59;
+  --ar-line: 39 50 68;
+  --ar-line-soft: 31 41 55;
+  --ar-line-strong: 51 65 85;
+  --ar-ink: 241 245 249;
+  --ar-ink-2: 203 213 225;
+  --ar-muted: 148 163 184;
+  --ar-faint: 100 116 139;
+  --ar-primary: 37 99 235;
+  --ar-primary-ink: 96 165 250;
+  --ar-primary-soft: 23 37 84;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 220 38 38;
+  --ar-danger-soft: 59 13 13;
+  --ar-unread: 21 32 58;
+  --ar-reserved: 147 197 253;
+  --ar-reserved-bg: 23 37 84;
+  --ar-renting: 196 181 253;
+  --ar-renting-bg: 46 16 101;
+  --ar-done: 110 231 183;
+  --ar-done-bg: 5 46 31;
+  --ar-cancelled: 148 163 184;
+  --ar-cancelled-bg: 30 41 59;
+  --ar-late: 252 165 165;
+  --ar-late-bg: 59 13 13;
+  --ar-unprepared: 253 186 116;
+  --ar-unprepared-bg: 58 26 6;
+  --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.ar-theme {
+  font-family: var(--font-be-vietnam), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: rgb(var(--ar-ink));
+}
