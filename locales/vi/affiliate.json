@@ -1,5 +1,5 @@
 {
-  "title": "Hướng dẫn sử dụng Affiliate Link",
+  "title": "Hướng dẫn link giới thiệu (affiliate)",
   "subtitle": "Tìm hiểu cách sử dụng affiliate link để phát triển kinh doanh của bạn",
   "lastUpdated": "Cập nhật lần cuối: Tháng 1, 2025",
   "sections": {
@@ -9,13 +9,13 @@
     },
     "howToGet": {
       "title": "Cách lấy Affiliate Link của bạn",
-      "content": "Affiliate link của bạn được tự động tạo dựa trên tenant key của merchant. Bạn có thể tìm thấy nó trong trang Settings, phần Business hoặc Outlet.",
+      "content": "Link giới thiệu được tạo từ mã URL cửa hàng của bạn. Bạn tìm thấy nó trong Cài đặt cửa hàng, mục \"Chia sẻ cửa hàng\".",
       "steps": [
-        "Vào trang Settings",
-        "Chuyển đến tab Business hoặc Outlet",
-        "Tìm phần \"Referral Link\" hoặc \"Affiliate Link\"",
-        "Sao chép link đăng ký duy nhất của bạn",
-        "Chia sẻ với người dùng tiềm năng"
+        "Mở Cài đặt cửa hàng",
+        "Chọn tab Thông tin cửa hàng (hoặc Thông tin chi nhánh)",
+        "Tìm mục \"Chia sẻ cửa hàng\" → \"Link giới thiệu\"",
+        "Bấm Sao chép để chép link đăng ký của bạn",
+        "Gửi cho chủ shop khác"
       ]
     },
     "howToUse": {
@@ -76,10 +76,10 @@
       "title": "Khắc phục sự cố",
       "content": "Nếu bạn gặp vấn đề với affiliate link:",
       "solutions": [
-        "Đảm bảo bạn đã sao chép toàn bộ link, bao gồm mã giới thiệu",
-        "Xác minh rằng tài khoản merchant của bạn đang hoạt động và trong tình trạng tốt",
-        "Kiểm tra xem link có được định dạng đúng không",
-        "Liên hệ hỗ trợ nếu vấn đề vẫn còn"
+        "Đảm bảo bạn đã sao chép toàn bộ link, gồm cả mã giới thiệu",
+        "Kiểm tra tài khoản cửa hàng của bạn đang hoạt động",
+        "Nếu link giới thiệu trống, hãy đặt mã URL cửa hàng trong Cài đặt cửa hàng trước",
+        "Liên hệ hỗ trợ nếu vẫn còn lỗi"
       ]
     }
   },
@@ -95,10 +95,10 @@
     "title": "Affiliate"
   },
   "guide": {
-    "title": "Hướng dẫn sử dụng Affiliate Link",
-    "subtitle": "Tìm hiểu cách sử dụng affiliate link để phát triển kinh doanh và kiếm hoa hồng",
+    "title": "Giới thiệu AnyRent, nhận hoa hồng",
+    "subtitle": "Chia sẻ link giới thiệu của bạn với chủ shop khác và nhận hoa hồng khi họ thanh toán gói dịch vụ.",
     "login": "Đăng nhập",
-    "yourLink": "Affiliate Link của bạn",
+    "yourLink": "Link giới thiệu của bạn",
     "copy": "Sao chép",
     "copied": "Đã sao chép",
     "overview": {
@@ -135,7 +135,8 @@
       },
       "tracking": {
         "label": "Theo dõi",
-        "description": "Theo dõi số lượng giới thiệu và hoa hồng của bạn trong thời gian thực"
+        "description": "Theo dõi số lượng giới thiệu và hoa hồng của bạn trong thời gian thực",
+        "badge": "Thời gian thực"
       }
     },
     "examples": {
@@ -180,6 +181,15 @@
       "description": "Đăng ký ngay để nhận affiliate link của bạn và bắt đầu kiếm hoa hồng",
       "register": "Đăng ký ngay",
       "login": "Đã có tài khoản? Đăng nhập"
-    }
+    },
+    "eyebrow": "AnyRent · Giới thiệu",
+    "linkHint": "Ai đăng ký bằng link này sẽ được tính là người bạn giới thiệu."
+  },
+  "page": {
+    "eyebrow": "AnyRent · Giới thiệu",
+    "ctaTitle": "Sẵn sàng bắt đầu?",
+    "ctaBody": "Mở Cài đặt cửa hàng để sao chép link giới thiệu của bạn ngay.",
+    "ctaButton": "Mở Cài đặt cửa hàng",
+    "guideLink": "Xem hoa hồng và ví dụ"
   }
 }

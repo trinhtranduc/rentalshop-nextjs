@@ -9,13 +9,13 @@
     },
     "howToGet": {
       "title": "How to Get Your Affiliate Link",
-      "content": "Your affiliate link is automatically generated based on your merchant's tenant key. You can find it in your Settings page under the Business or Outlet section.",
+      "content": "Your affiliate link is made from your store URL key. You find it in Store settings, under \"Share your store\".",
       "steps": [
-        "Go to Settings page",
-        "Navigate to Business or Outlet tab",
-        "Find the \"Referral Link\" or \"Affiliate Link\" section",
-        "Copy your unique registration link",
-        "Share it with potential users"
+        "Open Store settings",
+        "Choose the Store information tab (or Outlet information)",
+        "Find \"Share your store\" → \"Referral link\"",
+        "Click Copy to copy your sign-up link",
+        "Send it to other shop owners"
       ]
     },
     "howToUse": {
@@ -76,9 +76,9 @@
       "title": "Troubleshooting",
       "content": "If you're having issues with your affiliate link:",
       "solutions": [
-        "Make sure you're copying the complete link, including the referral code",
-        "Verify that your merchant account is active and in good standing",
-        "Check that the link is formatted correctly",
+        "Make sure you copy the whole link, including the referral code",
+        "Check that your store account is active",
+        "If the referral link is empty, set a store URL key in Store settings first",
         "Contact support if the issue persists"
       ]
     }
@@ -95,10 +95,10 @@
     "title": "Affiliate"
   },
   "guide": {
-    "title": "Affiliate Link Guide",
-    "subtitle": "Learn how to use your affiliate link to grow your business and earn commissions",
+    "title": "Refer AnyRent, earn commission",
+    "subtitle": "Share your referral link with other shop owners and earn a commission when they pay for a plan.",
     "login": "Login",
-    "yourLink": "Your Affiliate Link",
+    "yourLink": "Your referral link",
     "copy": "Copy",
     "copied": "Copied",
     "overview": {
@@ -135,7 +135,8 @@
       },
       "tracking": {
         "label": "Tracking",
-        "description": "Track your referrals and commissions in real-time"
+        "description": "Track your referrals and commissions in real-time",
+        "badge": "Real-time"
       }
     },
     "examples": {
@@ -180,6 +181,15 @@
       "description": "Register now to get your affiliate link and start earning commissions",
       "register": "Register Now",
       "login": "Already have an account? Login"
-    }
+    },
+    "eyebrow": "AnyRent · Affiliate",
+    "linkHint": "Anyone who signs up with this link is counted as your referral."
+  },
+  "page": {
+    "eyebrow": "AnyRent · Affiliate",
+    "ctaTitle": "Ready to get started?",
+    "ctaBody": "Open Store settings to copy your affiliate link now.",
+    "ctaButton": "Open Store settings",
+    "guideLink": "See commissions and examples"
   }
 }

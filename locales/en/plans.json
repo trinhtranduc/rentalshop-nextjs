@@ -148,6 +148,51 @@
     "unlimitedUsers": "Unlimited Users",
     "unlimitedProducts": "Unlimited Products",
     "unlimitedCustomers": "Unlimited Customers"
+  },
+  "web": {
+    "title": "Plans",
+    "subtitle": "Pick the plan that fits your shop.",
+    "currentLine": "Your shop is on the {plan} plan.",
+    "trialNote": "Your trial ends soon.",
+    "current": "Current",
+    "popular": "Popular",
+    "perMonth": "/month",
+    "free": "Free",
+    "features": "Features",
+    "limitsTitle": "Limits",
+    "unlimited": "Unlimited",
+    "choose": "Choose plan",
+    "chosen": "Chosen",
+    "currentButton": "Current plan",
+    "selectedTitle": "Chosen plan: {plan}",
+    "cycleLabel": "Billing cycle",
+    "discount": "{percent}% off",
+    "pay": "Pay",
+    "confirmTitle": "Confirm payment",
+    "confirmHint": "Check the plan and billing cycle before you pay.",
+    "plan": "Plan",
+    "total": "Estimated total",
+    "method": "Payment method",
+    "methodLemon": "Card / PayPal (Lemon Squeezy)",
+    "terms": "By paying you agree to the AnyRent terms of service and billing policy.",
+    "cancel": "Cancel",
+    "redirecting": "Opening the payment page…",
+    "empty": "No plans available yet.",
+    "loadFailed": "Could not load the plans.",
+    "retry": "Try again",
+    "close": "Close",
+    "estimateNote": "The payment page shows the final amount.",
+    "cycle": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "limit": {
+      "outlets": "Outlets",
+      "users": "Staff",
+      "products": "Products",
+      "customers": "Customers",
+      "orders": "Orders"
+    }
   }
 }
-
