@@ -7,6 +7,7 @@ import { ShopShell } from './shell/ShopShell';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import { useAuth, useCommonTranslations, useGlobalErrorHandler } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
+import { clearAuthData } from '@rentalshop/utils';
 import { isPublicRoute, isAuthRoute, isPublicInfoRoute } from '../../lib/routes';
 
 interface ClientLayoutProps {
@@ -14,7 +15,7 @@ interface ClientLayoutProps {
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
-  const { user, logout, loading, refreshUser } = useAuth();
+  const { user, logout, loading } = useAuth();
   const t = useCommonTranslations();
   const router = useRouter();
   const pathname = usePathname();
@@ -27,11 +28,10 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   // ============================================================================
   const isAuthPage = isAuthRoute(pathname);
   const isPublicPage = isPublicRoute(pathname);
-  // Sửa đơn uses the Tạo đơn screen inside the shell (#523); other edit pages stay full width
-  const isFullWidthPage = pathname?.includes('/edit') && !pathname.startsWith('/orders/');
+  // Every edit page (Sửa đơn #523, Sửa sản phẩm #547, Sửa khách hàng #541) renders inside the shell
   const isAffiliateGuidePage = pathname?.includes('/affiliate/guide');
   const isBlogPage = pathname?.startsWith('/blog');
-  const showSidebar = !isPublicPage && !isFullWidthPage && !isAffiliateGuidePage && !isBlogPage;
+  const showSidebar = !isPublicPage && !isAffiliateGuidePage && !isBlogPage;
   const canRenderWithoutAuth = isPublicPage && !isAuthPage;
 
   // ============================================================================
@@ -40,7 +40,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const hasToken = typeof window !== 'undefined' && (
     localStorage.getItem('authData') || localStorage.getItem('authToken')
   );
-  const merchantCurrency: CurrencyCode = ((user?.merchant as any)?.currency as CurrencyCode) || 'USD';
+  const merchantCurrency: CurrencyCode = ((user?.merchant as { currency?: CurrencyCode } | undefined)?.currency) || 'USD';
   
   // ============================================================================
   // REDIRECT LOGIC - All hooks must be called before early returns
@@ -61,7 +61,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           router.push('/dashboard');
         } else {
           // Token exists but user not synced - likely invalid token
-          const { clearAuthData } = require('@rentalshop/utils');
           clearAuthData();
         }
       }, 1000);
