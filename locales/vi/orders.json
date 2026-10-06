@@ -603,11 +603,16 @@
           "threeDays": "3 ngày"
         },
         "hint": "Chọn ngày để xem số món còn trong lịch đó.",
-        "summary": "{from} → {to} · tính {days} ngày, cả ngày giao và ngày trả",
+        "summary": "{from} → {to} · {days} ngày",
         "reversed": "Ngày trả phải từ ngày giao trở đi.",
         "tooLong": "Một đơn thuê tối đa {days} ngày.",
         "apply": "Chọn · {days} ngày",
-        "applyEmpty": "Chọn"
+        "applyEmpty": "Chọn",
+        "month": "Tháng {month}, {year}",
+        "prev": "Tháng trước",
+        "next": "Tháng sau",
+        "pickPickup": "Bấm ngày giao, rồi ngày trả",
+        "pickReturn": "Bấm ngày trả (bấm lại ngày giao nếu trả trong ngày)"
       },
       "grid": {
         "search": "Tìm tên hoặc quét mã vạch",
@@ -654,7 +659,9 @@
         "more": "Thêm 1 {name}",
         "perDayTimes": "{price} × {qty} × {days} ngày",
         "onlyLeft": "Chỉ còn {free} trong lịch này",
-        "noneLeft": "Hết trong lịch này"
+        "noneLeft": "Hết trong lịch này",
+        "fits": "Còn {free} bộ trong lịch này",
+        "inStock": "Còn {free} trong kho"
       },
       "loyalty": {
         "use": "Dùng điểm thưởng (khách có {points} điểm)",
@@ -689,7 +696,8 @@
         "days": "Chọn ngày giao, trả để tạo đơn.",
         "items": "Thêm ít nhất một món.",
         "customer": "Chọn khách cho đơn.",
-        "outlet": "Chưa có cửa hàng cho đơn."
+        "outlet": "Chưa có cửa hàng cho đơn.",
+        "price": "Nhập giá cho {name}."
       },
       "customer": {
         "title": "Chọn khách",
@@ -707,6 +715,36 @@
         "create": "Tạo đơn",
         "withDeposit": "Tạo đơn · thu cọc {amount}",
         "save": "Lưu thay đổi"
+      },
+      "pricing": {
+        "title": "Cách tính giá",
+        "mode": {
+          "FIXED": "Theo lần",
+          "DAILY": "Theo ngày",
+          "HOURLY": "Theo giờ",
+          "OTHER": "{type}"
+        },
+        "price": "Giá cho đơn này",
+        "priceFor": "Giá cho đơn này · {name}",
+        "unit": {
+          "FIXED": "/lần",
+          "DAILY": "/ngày",
+          "HOURLY": "/giờ",
+          "OTHER": ""
+        },
+        "note": "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.",
+        "done": "Xong",
+        "chipEmpty": "{mode} · Nhập giá"
+      },
+      "overlap": {
+        "tag": "Hết đồ {days} · đã thuê ở đơn {orders}",
+        "tagNoOrders": "Hết đồ {days}",
+        "title": "Trùng lịch",
+        "line": "{name} thiếu {count} bộ ngày {days} (đã thuê ở {orders}).",
+        "lineNoOrders": "{name} thiếu {count} bộ ngày {days}.",
+        "createAnyway": "Vẫn tạo đơn",
+        "saveAnyway": "Vẫn lưu thay đổi",
+        "blocked": "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết."
       }
     },
     "tabs": {

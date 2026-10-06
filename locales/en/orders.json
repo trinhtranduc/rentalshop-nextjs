@@ -603,11 +603,16 @@
           "threeDays": "3 days"
         },
         "hint": "Choose the days to see what is still free for them.",
-        "summary": "{from} → {to} · {days} days, pickup and return days included",
+        "summary": "{from} → {to} · {days, plural, one {# day} other {# days}}",
         "reversed": "The return day must be on or after the pickup day.",
         "tooLong": "A rental can last at most {days} days.",
         "apply": "Choose · {days} days",
-        "applyEmpty": "Choose"
+        "applyEmpty": "Choose",
+        "month": "{month}/{year}",
+        "prev": "Previous month",
+        "next": "Next month",
+        "pickPickup": "Click the pickup day, then the return day",
+        "pickReturn": "Click the return day (the pickup day again for same-day)"
       },
       "grid": {
         "search": "Search name or scan barcode",
@@ -654,7 +659,9 @@
         "more": "One more {name}",
         "perDayTimes": "{price} × {qty} × {days} days",
         "onlyLeft": "Only {free} free for these days",
-        "noneLeft": "None free for these days"
+        "noneLeft": "None free for these days",
+        "fits": "{free} free for these days",
+        "inStock": "{free} in stock"
       },
       "loyalty": {
         "use": "Use reward points (customer has {points})",
@@ -689,7 +696,8 @@
         "days": "Choose pickup and return days to create the order.",
         "items": "Add at least one item.",
         "customer": "Choose a customer for the order.",
-        "outlet": "No outlet for this order yet."
+        "outlet": "No outlet for this order yet.",
+        "price": "Enter a price for {name}."
       },
       "customer": {
         "title": "Choose a customer",
@@ -707,6 +715,36 @@
         "create": "Create order",
         "withDeposit": "Create order · take {amount} deposit",
         "save": "Save changes"
+      },
+      "pricing": {
+        "title": "Pricing",
+        "mode": {
+          "FIXED": "Per rental",
+          "DAILY": "Per day",
+          "HOURLY": "Per hour",
+          "OTHER": "{type}"
+        },
+        "price": "Price for this order",
+        "priceFor": "Price for this order · {name}",
+        "unit": {
+          "FIXED": "/rental",
+          "DAILY": "/day",
+          "HOURLY": "/hr",
+          "OTHER": ""
+        },
+        "note": "Applies to this order only; the product price stays the same.",
+        "done": "Done",
+        "chipEmpty": "{mode} · Enter price"
+      },
+      "overlap": {
+        "tag": "Booked out {days} · in order {orders}",
+        "tagNoOrders": "Booked out {days}",
+        "title": "Schedule overlap",
+        "line": "{name} is short {count, plural, one {# unit} other {# units}} on {days} (booked in {orders}).",
+        "lineNoOrders": "{name} is short {count, plural, one {# unit} other {# units}} on {days}.",
+        "createAnyway": "Create anyway",
+        "saveAnyway": "Save anyway",
+        "blocked": "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked."
       }
     },
     "tabs": {

@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { BUSINESS } from '@rentalshop/constants';
 import { ReceiptPreviewModal, useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useAuth, useOrderTranslations } from '@rentalshop/hooks';
-import { categoriesApi, compressImage, formatDateKeyInTimeZone, getLocalDateKey, ordersApi, outletsApi, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { compressImage, formatDateKeyInTimeZone, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
 import { cardClass, outlineBtn, primaryBtn, type T } from '../list/parts';
@@ -20,7 +20,6 @@ import {
   addProduct,
   buildPayload,
   cardPrices,
-  chooseOption,
   chunk,
   computeTotals,
   dayRangeIso,
@@ -32,24 +31,25 @@ import {
   lineTotal,
   rentalDays,
   repriceLines,
+  selectMode,
+  setLinePrice,
   setQuantity,
   stockOf,
-  type AvailabilityLike,
   type CartLine,
   type CustomerPick,
   type DiscountType,
   type OrderLike,
   type OrderType,
   type ProductLike,
-  type Stock,
 } from './create-model';
-import { CartLineRow, CustomerDialog, DaysDialog, MoneyInput, ProductCard, fieldClass, type StockView } from './parts';
+import { allowsOverlap, conflictFromResult, ctaState, dayRangeText, orderListText, type BatchResultLike, type LineConflict } from './schedule-model';
+import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard, fieldClass, type LineStatus, type StockView } from './parts';
 import { useLoyalty } from './useLoyalty';
 
 const PAGE_SIZE = 60;
 const MAX_NOTE_IMAGES = 5;
 
-type GridProduct = ProductLike & { category?: { id?: number } | null };
+type GridProduct = ProductLike;
 type OutletLite = {
   id: number;
   name: string;
@@ -70,7 +70,7 @@ const listOf = <X,>(data: unknown, key: string): X[] => {
 // Data
 // ----------------------------------------------------------------------------
 
-function useProductGrid(q: string, categoryId: number | null, outletId: number | null) {
+function useProductGrid(q: string, outletId: number | null) {
   const [products, setProducts] = useState<GridProduct[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -78,7 +78,7 @@ function useProductGrid(q: string, categoryId: number | null, outletId: number |
   const [failed, setFailed] = useState(false);
   const [reload, setReload] = useState(0);
 
-  useEffect(() => setPage(1), [q, categoryId, outletId]);
+  useEffect(() => setPage(1), [q, outletId]);
 
   useEffect(() => {
     let live = true;
@@ -87,7 +87,6 @@ function useProductGrid(q: string, categoryId: number | null, outletId: number |
     productsApi
       .searchProducts({
         search: q || undefined,
-        categoryId: categoryId ?? undefined,
         outletId: outletId ?? undefined,
         page,
         limit: PAGE_SIZE,
@@ -109,7 +108,7 @@ function useProductGrid(q: string, categoryId: number | null, outletId: number |
     return () => {
       live = false;
     };
-  }, [q, categoryId, outletId, page, reload]);
+  }, [q, outletId, page, reload]);
 
   return {
     products,
@@ -121,13 +120,17 @@ function useProductGrid(q: string, categoryId: number | null, outletId: number |
   };
 }
 
-/** Free units per product for the chosen days and outlet, fetched for what is on screen. */
+/**
+ * Free units per product for the chosen days and outlet, fetched for what is on screen. The raw answers are kept:
+ * the cart reads other orders holding a product from them (#556). An answer for older days or outlet is dropped.
+ */
 function useAvailability(ids: number[], orderType: OrderType, pickup: string, ret: string, outletId: number | null, excludeOrderId?: number) {
+  const [nonce, setNonce] = useState(0);
   const ready = !!outletId && (orderType === 'SALE' || (!!pickup && !!ret));
-  const key = ready ? `${orderType}|${pickup}|${ret}|${outletId}` : '';
+  const key = ready ? `${orderType}|${pickup}|${ret}|${outletId}|${nonce}` : '';
   const [store, setStore] = useState<{
     key: string;
-    map: Map<number, Stock | null>;
+    map: Map<number, BatchResultLike | null>;
   }>({ key: '', map: new Map() });
   const asked = useRef<{ key: string; ids: Set<number> }>({
     key: '',
@@ -141,6 +144,15 @@ function useAvailability(ids: number[], orderType: OrderType, pickup: string, re
     if (!missing.length) return;
     missing.forEach((id) => asked.current.ids.add(id));
     const range = orderType === 'RENT' ? dayRangeIso(pickup, ret) : {};
+    const save = (part: number[], results: BatchResultLike[] | null) => {
+      // Days or outlet changed while this call was out: its answer no longer applies
+      if (asked.current.key !== key) return;
+      setStore((prev) => {
+        const map = new Map(prev.key === key ? prev.map : []);
+        part.forEach((id) => map.set(id, results ? results.find((r) => r.productId === id) || null : null));
+        return { key, map };
+      });
+    };
     chunk(missing, 100).forEach((part) => {
       productsApi
         .checkBatchProductAvailability({
@@ -151,33 +163,42 @@ function useAvailability(ids: number[], orderType: OrderType, pickup: string, re
           outletId: outletId as number,
           ...(excludeOrderId ? { excludeOrderId } : {}),
         } as Parameters<typeof productsApi.checkBatchProductAvailability>[0])
-        .then((res) => {
-          const results = (res.success && res.data?.results) || [];
-          setStore((prev) => {
-            const map = new Map(prev.key === key ? prev.map : []);
-            part.forEach((id) => map.set(id, stockOf(results.find((r) => r.productId === id) as AvailabilityLike | undefined, outletId)));
-            return { key, map };
-          });
-        })
-        .catch(() => {
-          setStore((prev) => {
-            const map = new Map(prev.key === key ? prev.map : []);
-            part.forEach((id) => map.set(id, null));
-            return { key, map };
-          });
-        });
+        .then((res) => save(part, ((res.success && res.data?.results) || []) as unknown as BatchResultLike[]))
+        .catch(() => save(part, null));
     });
   }, [key, ids, orderType, pickup, ret, outletId, excludeOrderId]);
 
-  return useCallback(
+  const view = useCallback(
     (id: number): StockView => {
       if (!ready) return orderType === 'RENT' ? { kind: 'noDays' } : { kind: 'unknown' };
       if (store.key !== key || !store.map.has(id)) return { kind: 'loading' };
-      const s = store.map.get(id);
+      const s = stockOf(store.map.get(id) || undefined, outletId);
       return s ? { kind: 'stock', stock: s } : { kind: 'unknown' };
     },
-    [ready, orderType, store, key],
+    [ready, orderType, store, key, outletId],
   );
+  const result = useCallback((id: number): BatchResultLike | undefined => (store.key === key ? store.map.get(id) || undefined : undefined), [store, key]);
+  const refresh = useCallback(() => setNonce((n) => n + 1), []);
+  return { view, result, refresh };
+}
+
+/** "Cho tạo đơn khi trùng lịch" (#518): the signed-in shop's value, re-read from the profile like iOS. */
+function useOverlapSetting(merchant: unknown) {
+  const cached = allowsOverlap(merchant as { allowOverlappingOrders?: boolean | null } | null);
+  const [fresh, setFresh] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    profileApi
+      .getProfile()
+      .then((res) => {
+        if (live && res.success && res.data) setFresh(allowsOverlap((res.data as { merchant?: { allowOverlappingOrders?: boolean | null } | null }).merchant));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return { allowed: fresh ?? cached, set: setFresh };
 }
 
 // ----------------------------------------------------------------------------
@@ -255,18 +276,6 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     };
   }, [merchantId, user?.outletId, user?.outlet]);
 
-  // Categories
-  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
-  useEffect(() => {
-    categoriesApi
-      .getCategories()
-      .then(
-        (res) =>
-          res.success && setCategories(listOf<{ id: number; name: string; isActive?: boolean }>(res.data, 'categories').filter((c) => c.isActive !== false)),
-      )
-      .catch(() => undefined);
-  }, []);
-
   // Products
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
@@ -274,8 +283,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     const timer = setTimeout(() => setQ(search.trim()), 300);
     return () => clearTimeout(timer);
   }, [search]);
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const grid = useProductGrid(q, categoryId, outletId);
+  const grid = useProductGrid(q, outletId);
 
   // Saved items have no pricing options: load them once from their products
   // Kiểm tra còn hàng → "Tạo đơn với lịch này": ?pickup=&return=&productId=&outletId= prefill a new order
@@ -323,7 +331,45 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     lines.forEach((l) => set.add(l.productId));
     return Array.from(set);
   }, [grid.products, lines]);
-  const stockView = useAvailability(ids, orderType, pickup, ret, outletId, order?.id);
+  const availability = useAvailability(ids, orderType, pickup, ret, outletId, order?.id);
+  const { view: stockView, result: resultOf } = availability;
+  const overlap = useOverlapSetting(user?.merchant);
+
+  // Trùng lịch (#556): rent lines other orders hold on some of the chosen days, from the same answers
+  const conflicts = useMemo(() => {
+    const map = new Map<number, LineConflict>();
+    if (orderType !== 'RENT' || !pickup || !ret) return map;
+    lines.forEach((l) => {
+      const c = conflictFromResult(resultOf(l.productId), {
+        outletId,
+        productName: l.name,
+        requested: l.quantity,
+        pickupKey: pickup,
+        returnKey: ret,
+      });
+      if (c) map.set(l.productId, c);
+    });
+    return map;
+  }, [resultOf, lines, orderType, pickup, ret, outletId]);
+  const cta = ctaState(orderType === 'RENT', conflicts.size, overlap.allowed);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const statusOf = (l: CartLine): LineStatus => {
+    const c = conflicts.get(l.productId);
+    if (c) {
+      const range = dayRangeText(c.dayKeys);
+      return {
+        kind: 'conflict',
+        text: c.orderNumbers.length
+          ? t('editor.overlap.tag', { days: range, orders: orderListText(c.orderNumbers) })
+          : t('editor.overlap.tagNoOrders', { days: range }),
+      };
+    }
+    const s = stockView(l.productId);
+    if (s.kind !== 'stock') return null;
+    const free = s.stock.free;
+    if (l.quantity > free) return { kind: 'short', text: free > 0 ? t('editor.cart.onlyLeft', { free }) : t('editor.cart.noneLeft') };
+    return { kind: 'ok', text: orderType === 'RENT' ? t('editor.cart.fits', { free }) : t('editor.cart.inStock', { free }) };
+  };
 
   // Money
   const days = orderType === 'RENT' ? rentalDays(pickup, ret) : 0;
@@ -403,12 +449,18 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     }
   };
 
-  const submit = async () => {
+  const submit = async (confirmed = false) => {
     if (missing || submitting || !customer || !outletId) {
       if (missing === 'days') setDaysOpen(true);
       if (missing === 'customer') setCustomerOpen(true);
       return;
     }
+    if (cta === 'blocked') return;
+    if (cta === 'warn' && !confirmed) {
+      setConfirmOpen(true);
+      return;
+    }
+    setConfirmOpen(false);
     setSubmitting(true);
     try {
       const payload = buildPayload({
@@ -431,17 +483,21 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           ...payload,
           id: order.id,
         } as unknown as UpdateInput);
-        if (!res.success) throw new Error(res.error || 'UPDATE_FAILED');
+        if (!res.success) throw scheduleError(res);
         toastSuccess(to('messages.updateSuccess'));
         router.push(`/orders/${order.orderNumber}`);
       } else {
         const res = await ordersApi.createOrder(payload as unknown as CreateInput, photos.length ? { notesImages: photos } : undefined);
-        if (!res.success || !res.data) throw new Error(res.error || 'CREATE_FAILED');
+        if (!res.success || !res.data) throw scheduleError(res);
         toastSuccess(to('messages.createSuccess'));
         setReceipt(res.data as ReceiptProps['order']);
       }
-    } catch {
-      // The global handler shows the API error
+    } catch (e) {
+      // The global handler shows the API error (errors.json). The shop turned "trùng lịch" off: show it here too
+      if (e instanceof Error && e.message === 'ORDER_SCHEDULE_CONFLICT') {
+        overlap.set(false);
+        availability.refresh();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -533,25 +589,6 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
             className="min-w-0 flex-1 border-0 bg-transparent text-[15px] text-ar-ink outline-none placeholder:text-ar-faint"
           />
         </label>
-
-        {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {[{ id: null as number | null, name: t('editor.grid.all') }, ...categories].map((c) => {
-              const on = categoryId === c.id;
-              return (
-                <button
-                  key={c.id ?? 'all'}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setCategoryId(c.id)}
-                  className={`h-9 rounded-full px-3 text-sm ${on ? 'bg-ar-ink font-semibold text-ar-surface' : 'border border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'}`}
-                >
-                  {c.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         <span className="text-sm text-ar-muted">{orderType === 'RENT' ? t('editor.grid.helpRent') : t('editor.grid.helpSale')}</span>
 
@@ -673,23 +710,21 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
             {lines.length === 0 ? (
               <p className="m-0 border-t border-ar-line-soft py-4 text-[15px] text-ar-muted">{t('editor.cart.empty')}</p>
             ) : (
-              lines.map((l) => {
-                const s = stockView(l.productId);
-                return (
-                  <CartLineRow
-                    key={l.productId}
-                    line={l}
-                    orderType={orderType}
-                    total={lineTotal(l, orderType, days)}
-                    days={days}
-                    free={s.kind === 'stock' ? s.stock.free : null}
-                    onQuantity={(n) => setLines((cur) => setQuantity(cur, l.productId, n))}
-                    onOption={(id) => setLines((cur) => chooseOption(cur, l.productId, id))}
-                    t={t}
-                    money={money}
-                  />
-                );
-              })
+              lines.map((l) => (
+                <CartLineRow
+                  key={l.productId}
+                  line={l}
+                  orderType={orderType}
+                  total={lineTotal(l, orderType, days)}
+                  days={days}
+                  status={statusOf(l)}
+                  onQuantity={(n) => setLines((cur) => setQuantity(cur, l.productId, n))}
+                  onMode={(mode) => setLines((cur) => selectMode(cur, l.productId, mode))}
+                  onPrice={(price) => setLines((cur) => setLinePrice(cur, l.productId, price))}
+                  t={t}
+                  money={money}
+                />
+              ))
             )}
           </div>
 
@@ -843,13 +878,20 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
 
           {missing && lines.length > 0 && (
             <p className="m-0 text-sm text-ar-muted" role="status">
-              {t(`editor.missing.${missing}`)}
+              {missing === 'price'
+                ? t('editor.missing.price', { name: lines.find((l) => l.unitPrice <= 0)?.name ?? '' })
+                : t(`editor.missing.${missing}`)}
+            </p>
+          )}
+          {cta === 'blocked' && (
+            <p className="m-0 rounded-xl bg-ar-danger-soft px-3 py-2.5 text-sm font-medium text-ar-danger" role="alert">
+              {t('editor.overlap.blocked')}
             </p>
           )}
           <button
             type="button"
-            onClick={submit}
-            disabled={submitting || compressing || (!!missing && missing !== 'days' && missing !== 'customer')}
+            onClick={() => void submit()}
+            disabled={submitting || compressing || cta === 'blocked' || (!!missing && missing !== 'days' && missing !== 'customer')}
             className="h-[52px] rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
           >
             {submitLabel}
@@ -891,6 +933,35 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         onClose={() => setDaysOpen(false)}
         t={t}
       />
+      <Modal
+        open={confirmOpen}
+        title={t('editor.overlap.title')}
+        onClose={() => setConfirmOpen(false)}
+        closeLabel={t('editor.close')}
+        footer={
+          <>
+            <button type="button" className={outlineBtn} onClick={() => setConfirmOpen(false)}>
+              {t('editor.cancel')}
+            </button>
+            <button type="button" className={primaryBtn} onClick={() => void submit(true)} disabled={submitting}>
+              {editing ? t('editor.overlap.saveAnyway') : t('editor.overlap.createAnyway')}
+            </button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-2 rounded-xl bg-ar-unprepared-bg px-3 py-2.5 text-[15px] text-ar-ink">
+          {Array.from(conflicts.values()).map((c) => {
+            const range = dayRangeText(c.dayKeys);
+            return (
+              <p key={c.productId} className="m-0">
+                {c.orderNumbers.length
+                  ? t('editor.overlap.line', { name: c.productName, count: c.shortBy, days: range, orders: orderListText(c.orderNumbers) })
+                  : t('editor.overlap.lineNoOrders', { name: c.productName, count: c.shortBy, days: range })}
+              </p>
+            );
+          })}
+        </div>
+      </Modal>
       <CustomerDialog
         open={customerOpen}
         merchantId={merchantId}
@@ -914,6 +985,11 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       />
     </div>
   );
+}
+
+/** The create / update call failed: carry the API code so the screen can react to a 409 "trùng lịch". */
+function scheduleError(res: { code?: string; error?: unknown }): Error {
+  return new Error(res.code === 'ORDER_SCHEDULE_CONFLICT' ? 'ORDER_SCHEDULE_CONFLICT' : String(res.error || 'SAVE_FAILED'));
 }
 
 function PhotoThumb({ file, label, onRemove }: { file: File; label: string; onRemove: () => void }) {

@@ -46,6 +46,8 @@ export interface CartLine {
   pricingType: string;
   selectedPricingOptionId: number | null;
   notes: string;
+  /** Prices typed for this order (#556), per mode: Theo lần and Theo ngày are kept apart, like iOS. */
+  customPrices?: Partial<Record<string, number>>;
   product: {
     rentPrice: number;
     salePrice: number;
@@ -155,6 +157,8 @@ export function lineFromOrderItem(item: OrderItemLike): CartLine {
     pricingType,
     selectedPricingOptionId: item.pricingOptionId ?? options.find((o) => o.type.toUpperCase() === pricingType)?.id ?? null,
     notes: item.notes || '',
+    // The saved price is this order's price for its mode: switching mode and back keeps it (#556)
+    customPrices: { [pricingType]: num(item.unitPrice) },
     product: {
       rentPrice,
       salePrice: p.salePrice == null ? rentPrice : num(p.salePrice),
@@ -215,11 +219,13 @@ export function chooseOption(lines: CartLine[], productId: number, optionId: num
   });
 }
 
-/** Thuê ↔ Bán: sale uses the sale price, rent the line's option (or rent price). */
+/** Thuê ↔ Bán: sale uses the sale price, rent the line's option (or rent price); a typed rent price stays (#556). */
 export function repriceLines(lines: CartLine[], orderType: OrderType): CartLine[] {
   return lines.map((l) => {
     const { unitPrice } = repriceOrderLineForOrderType(l, orderType, 1);
     if (orderType === 'SALE') return { ...l, unitPrice };
+    const custom = l.customPrices?.[l.pricingType];
+    if (custom != null) return { ...l, unitPrice: custom };
     const preferred = l.selectedPricingOptionId == null ? getPreferredPricingOption(l.product.pricingOptions) : null;
     return preferred
       ? {
@@ -231,6 +237,55 @@ export function repriceLines(lines: CartLine[], orderType: OrderType): CartLine[
       : { ...l, unitPrice };
   });
 }
+
+// ----------------------------------------------------------------------------
+// Pricing mode and price for this order (#556, iOS CartItem.selectPricingType / setCustomRentalPrice)
+// ----------------------------------------------------------------------------
+
+/** Modes a rent line offers: Theo lần and Theo ngày always, then any other active option type. */
+export function lineModes(line: CartLine): string[] {
+  const modes = ['FIXED', 'DAILY'];
+  line.product.pricingOptions.forEach((o) => {
+    const type = o.type.toUpperCase();
+    if (!modes.includes(type)) modes.push(type);
+  });
+  return modes;
+}
+
+const optionOf = (line: CartLine, type: string): LineOption | null => line.product.pricingOptions.find((o) => o.type.toUpperCase() === type) || null;
+
+/**
+ * Switch a rent line's mode. Price: the one typed for that mode, else the product's option, else 0 ("Nhập giá").
+ * Leaving a mode the product has no option for keeps its current price for the way back.
+ */
+export function selectMode(lines: CartLine[], productId: number, mode: string): CartLine[] {
+  const next = mode.toUpperCase();
+  return lines.map((l) => {
+    if (l.productId !== productId || l.pricingType === next) return l;
+    const custom = { ...(l.customPrices || {}) };
+    if (!optionOf(l, l.pricingType) && custom[l.pricingType] == null) custom[l.pricingType] = l.unitPrice;
+    const option = optionOf(l, next);
+    const typed = custom[next];
+    return {
+      ...l,
+      pricingType: next,
+      selectedPricingOptionId: option?.id ?? null,
+      unitPrice: typed ?? (option ? num(option.price) : 0),
+      customPrices: custom,
+    };
+  });
+}
+
+/** A price typed for this order, kept for the line's current mode only. Never the product's price. */
+export function setLinePrice(lines: CartLine[], productId: number, price: number): CartLine[] {
+  const value = Math.max(0, Math.round(num(price)));
+  return lines.map((l) =>
+    l.productId === productId ? { ...l, unitPrice: value, customPrices: { ...(l.customPrices || {}), [l.pricingType]: value } } : l,
+  );
+}
+
+/** A rent line without a price yet (a mode the product has no price for). */
+export const needsPrice = (line: CartLine, orderType: OrderType): boolean => orderType === 'RENT' && !(line.unitPrice > 0);
 
 export const lineType = (line: CartLine, orderType: OrderType): string => (orderType === 'RENT' ? resolveOrderLinePricingType(line) : 'SALE');
 
@@ -410,7 +465,7 @@ export function computeTotals(input: TotalsInput): Totals {
 // Submit
 // ----------------------------------------------------------------------------
 
-export type Missing = 'days' | 'customer' | 'items' | 'outlet' | null;
+export type Missing = 'days' | 'customer' | 'items' | 'price' | 'outlet' | null;
 
 export function firstMissing(s: {
   orderType: OrderType;
@@ -422,6 +477,7 @@ export function firstMissing(s: {
 }): Missing {
   if (s.orderType === 'RENT' && (!s.pickup || !s.ret)) return 'days';
   if (!s.lines.length) return 'items';
+  if (s.lines.some((l) => needsPrice(l, s.orderType))) return 'price';
   if (!s.customerId) return 'customer';
   if (!s.outletId) return 'outlet';
   return null;
@@ -468,7 +524,10 @@ export function buildPayload(input: PayloadInput) {
     totalAmount: totals.totalAmount,
     notes: input.notes,
     orderItems: input.lines.map((l) => {
-      const type = rent ? resolveOrderLinePricingType(l) : 'FIXED';
+      // The API takes FIXED, HOURLY, DAILY; another option type goes as FIXED without its id (iOS requestPricingType)
+      const lineType = rent ? resolveOrderLinePricingType(l) : 'FIXED';
+      const type = ['FIXED', 'HOURLY', 'DAILY'].includes(lineType) ? lineType : 'FIXED';
+      const optionId = rent && type === lineType ? l.selectedPricingOptionId : null;
       return {
         productId: l.productId,
         quantity: l.quantity,
@@ -478,7 +537,7 @@ export function buildPayload(input: PayloadInput) {
         notes: l.notes,
         rentDays: type === 'DAILY' ? Math.max(1, days) : 1,
         pricingType: type,
-        ...(rent && l.selectedPricingOptionId != null ? { pricingOptionId: l.selectedPricingOptionId } : {}),
+        ...(optionId != null ? { pricingOptionId: optionId } : {}),
       };
     }),
     ...(input.mode === 'create' && input.loyaltyPoints && input.loyaltyPoints > 0 ? { loyaltyRedeem: { points: input.loyaltyPoints } } : {}),
