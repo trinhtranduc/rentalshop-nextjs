@@ -214,6 +214,44 @@
       "showing": "Hiển thị {maxRows} dòng đầu tiên trong tổng số {total} dòng",
       "validStatus": "Hợp lệ"
     }
+  },
+  "shell": {
+    "nav": {
+      "overview": "Tổng quan",
+      "orders": "Đơn hàng",
+      "calendar": "Lịch giao trả",
+      "availability": "Kiểm tra còn hàng",
+      "products": "Sản phẩm",
+      "customers": "Khách hàng",
+      "staff": "Nhân viên",
+      "outlets": "Chi nhánh",
+      "categories": "Danh mục",
+      "loyalty": "Khách thân thiết",
+      "settings": "Cài đặt cửa hàng"
+    },
+    "manage": "Quản lý",
+    "createOrder": "Tạo đơn",
+    "allOutlets": "Tất cả chi nhánh",
+    "mainMenu": "Menu chính",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tìm tên, SĐT, mã đơn, tên đồ",
+    "themeToDark": "Chuyển sang giao diện tối",
+    "themeToLight": "Chuyển sang giao diện sáng",
+    "logout": "Đăng xuất",
+    "notifications": {
+      "title": "Thông báo",
+      "bellLabel": "Thông báo, {count} chưa đọc",
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "markAllRead": "Đã đọc hết",
+      "today": "Hôm nay",
+      "yesterday": "Hôm qua",
+      "empty": "Chưa có thông báo nào",
+      "emptyUnread": "Không có thông báo chưa đọc",
+      "loadError": "Không tải được thông báo. Thử lại sau."
+    }
   }
 }
 

@@ -214,6 +214,44 @@
       "showing": "Showing first {maxRows} of {total} rows",
       "validStatus": "Valid"
     }
+  },
+  "shell": {
+    "nav": {
+      "overview": "Overview",
+      "orders": "Orders",
+      "calendar": "Pickup & return calendar",
+      "availability": "Check availability",
+      "products": "Products",
+      "customers": "Customers",
+      "staff": "Staff",
+      "outlets": "Outlets",
+      "categories": "Categories",
+      "loyalty": "Loyalty",
+      "settings": "Store settings"
+    },
+    "manage": "Manage",
+    "createOrder": "New order",
+    "allOutlets": "All outlets",
+    "mainMenu": "Main menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "search": "Search",
+    "searchPlaceholder": "Search name, phone, order no., item",
+    "themeToDark": "Switch to dark theme",
+    "themeToLight": "Switch to light theme",
+    "logout": "Log out",
+    "notifications": {
+      "title": "Notifications",
+      "bellLabel": "Notifications, {count} unread",
+      "all": "All",
+      "unread": "Unread",
+      "markAllRead": "Mark all read",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "empty": "No notifications yet",
+      "emptyUnread": "No unread notifications",
+      "loadError": "Couldn't load notifications. Try again later."
+    }
   }
 }
 

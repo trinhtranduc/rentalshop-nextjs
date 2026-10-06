@@ -1,34 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ClientSidebar, LoadingIndicator, CurrencyProvider, LanguageSwitcher } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
-import { Menu } from 'lucide-react';
-import { useNavigation } from '../hooks/useNavigation';
+import { LoadingIndicator, CurrencyProvider } from '@rentalshop/ui';
+import { ShopShell } from './shell/ShopShell';
+import { ThemeProvider } from '../providers/ThemeProvider';
 import { useAuth, useCommonTranslations, useGlobalErrorHandler } from '@rentalshop/hooks';
 import type { CurrencyCode } from '@rentalshop/types';
 import { isPublicRoute, isAuthRoute, isPublicInfoRoute } from '../../lib/routes';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
-  notificationsCount?: number;
-  cartItemsCount?: number;
-  onSearch?: (query: string) => void;
 }
 
-export default function ClientLayout({ 
-  children, 
-  notificationsCount = 0,
-  cartItemsCount = 0,
-  onSearch
-}: ClientLayoutProps) {
+export default function ClientLayout({ children }: ClientLayoutProps) {
   const { user, logout, loading, refreshUser } = useAuth();
   const t = useCommonTranslations();
   const router = useRouter();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { navigateTo, prefetchRoute } = useNavigation();
   const pathname = usePathname();
   
   // ✅ GLOBAL ERROR HANDLER: Tự động xử lý và hiển thị toast cho tất cả API errors
@@ -113,7 +101,7 @@ export default function ClientLayout({
   
   function LoadingScreen({ message }: { message: string }) {
     return (
-      <div className="min-h-screen bg-bg-secondary flex items-center justify-center">
+      <div className="ar-theme min-h-screen bg-ar-page flex items-center justify-center">
         <LoadingIndicator variant="circular" size="lg" message={message} />
       </div>
     );
@@ -125,79 +113,21 @@ export default function ClientLayout({
   
   const handleLogout = () => logout();
 
-  const handleSearch = (query: string) => {
-    onSearch?.(query) || console.log('Search query:', query);
-  };
-
   return (
-    <CurrencyProvider merchantCurrency={merchantCurrency}>
-      <div className="flex h-screen bg-bg-primary">
-      {/* Show sidebar on all pages except login */}
-      {showSidebar && (
-        <>
-          {/* Mobile Menu Overlay */}
-          {isMobileMenuOpen && (
-            <div 
-              className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-          )}
-
-          {/* Sidebar */}
-          <div className={`
-            fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
-            ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          `}>
-            <ClientSidebar
-              user={user}
-              isOpen={isMobileMenuOpen}
-              onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              onLogout={handleLogout}
-              currentPath={pathname}
-              isCollapsed={isCollapsed}
-              onCollapseToggle={() => setIsCollapsed(!isCollapsed)}
-              notificationsCount={notificationsCount}
-              cartItemsCount={cartItemsCount}
-              onNavigate={navigateTo}
-              onPrefetch={prefetchRoute}
-            />
-          </div>
-        </>
-      )}
-
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col min-w-0 ${!showSidebar ? 'w-full' : ''}`}>
-        {/* Top Bar for Mobile - Only show if sidebar is visible */}
-        {showSidebar && (
-          <div className="lg:hidden bg-bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">RS</span>
-            </div>
-            <span className="font-semibold text-text-primary">AnyRent</span>
-          </div>
-
-          <div className="w-8" /> {/* Spacer for centering */}
+    <ThemeProvider>
+      <CurrencyProvider merchantCurrency={merchantCurrency}>
+        {showSidebar ? (
+          <ShopShell user={user} pathname={pathname} onLogout={handleLogout}>
+            <div className="w-full min-w-0">{children}</div>
+          </ShopShell>
+        ) : (
+          <div className="flex h-screen bg-bg-primary">
+            <main className="flex-1 bg-bg-primary overflow-y-auto min-w-0">
+              <div className="w-full min-w-0">{children}</div>
+            </main>
           </div>
         )}
-
-        {/* Page Content */}
-        <main className="flex-1 bg-bg-primary overflow-y-auto min-w-0">
-          <div className="w-full min-w-0">
-            {children}
-          </div>
-        </main>
-      </div>
-      </div>
-    </CurrencyProvider>
+      </CurrencyProvider>
+    </ThemeProvider>
   );
 }
