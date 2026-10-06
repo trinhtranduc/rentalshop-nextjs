@@ -2,6 +2,7 @@ package com.anyrent.pos.ui.home.v2
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,6 +32,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,6 +56,8 @@ fun CreateOrderConfirmSheet(
     busy: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    /** #518 (board GH-trung-bat): one sentence per double-booked line; non-empty = "Trùng lịch" + "Vẫn tạo đơn" */
+    overlapLines: List<String> = emptyList(),
 ) {
     ModalBottomSheet(
         onDismissRequest = { if (!busy) onDismiss() },
@@ -77,6 +84,13 @@ fun CreateOrderConfirmSheet(
                 ConfirmRow(stringResource(R.string.v2_create_confirm_items), confirm.items)
                 ConfirmRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(confirm.total), bold = true)
             }
+            if (overlapLines.isNotEmpty()) {
+                OverlapNotice(
+                    title = stringResource(R.string.v2_create_overlap_title),
+                    text = overlapLines.joinToString("\n"),
+                    background = Color(0xFFFFF7ED), borderColor = Color(0xFFFED7AA), tint = Color(0xFFC2410C), textColor = Color(0xFF9A3412),
+                )
+            }
             val navy = Color(0xFF1E3A8A)
             Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFFEFF6FF))
@@ -92,12 +106,50 @@ fun CreateOrderConfirmSheet(
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SheetOutlineButton(stringResource(R.string.v2_review_cancel), Modifier.weight(1f), enabled = !busy, onClick = onDismiss)
                 AppPrimaryButton(
-                    stringResource(if (confirm.isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
+                    stringResource(
+                        when {
+                            confirm.isSale -> R.string.v2_cart_sell_and_collect
+                            overlapLines.isNotEmpty() -> R.string.v2_create_anyway
+                            else -> R.string.v2_cart_create
+                        },
+                    ),
                     modifier = Modifier.weight(1.6f),
                     loading = busy,
                     onClick = onConfirm,
                 )
             }
+        }
+    }
+}
+
+/**
+ * #518 warning box of boards GH-trung-bat (orange, with [title]) and GH-trung-tat (red notice above "Tạo đơn"):
+ * a warning triangle and the text, in the colours given.
+ */
+@Composable
+internal fun OverlapNotice(
+    text: String,
+    background: Color,
+    borderColor: Color,
+    tint: Color,
+    textColor: Color,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(background)
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (title != null) Text(title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = textColor)
+            Text(text, fontSize = DS.TextSize.Secondary, color = textColor)
         }
     }
 }

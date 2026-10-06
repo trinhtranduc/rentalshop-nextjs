@@ -83,6 +83,8 @@ import com.anyrent.pos.ui.home.CartCheckoutScreen
 import com.anyrent.pos.ui.home.HomeScreen
 import com.anyrent.pos.ui.home.v2.CartV2Screen
 import com.anyrent.pos.ui.home.v2.ProductDetailScreen
+import com.anyrent.pos.ui.history.ChangeHistoryScreen
+import com.anyrent.pos.ui.history.ChangeHistoryTarget
 import com.anyrent.pos.ui.home.v2.ProductsHomeScreen
 import com.anyrent.pos.ui.inbox.InboxScreen
 import com.anyrent.pos.ui.inbox.InboxV2Screen
@@ -147,6 +149,8 @@ object Routes {
     // #387 redesigned customer detail (flag newCustomers)
     const val CustomerDetailV2 = "customer-v2/{customerId}"
     const val CustomerEditV2 = "customer-v2-edit/{customerId}"
+    // #519 "Lịch sử thay đổi" of an order or a product (target = order | product)
+    const val ChangeHistory = "changes/{target}/{id}?subtitle={subtitle}"
 
     fun orderDetail(id: Int) = "order/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
@@ -158,6 +162,8 @@ object Routes {
     fun productDetailV2(id: Int) = "product-v2/$id"
     fun customerDetailV2(id: Int) = "customer-v2/$id"
     fun customerEditV2(id: Int) = "customer-v2-edit/$id"
+    fun changeHistory(target: ChangeHistoryTarget, id: Int, subtitle: String) =
+        "changes/${target.name.lowercase()}/$id?subtitle=${android.net.Uri.encode(subtitle)}"
 
     /** The cart the user works in: the redesigned one behind `newProducts`, else the current one */
     fun cart(): String = if (FeatureFlags.isOn(MobileFeature.NEW_PRODUCTS)) CartV2 else Cart
@@ -282,6 +288,9 @@ fun AnyRentNavHost(
                 OrderDetailV2Screen(
                     orderId = id,
                     onBack = { rootNavController.popBackStack() },
+                    onOpenHistory = { subtitle ->
+                        rootNavController.navigate(Routes.changeHistory(ChangeHistoryTarget.ORDER, id, subtitle))
+                    },
                     onEditInCart = {
                         MainTabRouter.openHome()
                         rootNavController.navigate(Routes.cart()) {
@@ -430,6 +439,25 @@ fun AnyRentNavHost(
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                 onOpenCalendar = { id -> rootNavController.navigate(Routes.productAvailability(id)) },
                 onOpenAllOrders = { id -> rootNavController.navigate(Routes.analyticsOrders("product", id)) },
+                onOpenHistory = { id, subtitle ->
+                    rootNavController.navigate(Routes.changeHistory(ChangeHistoryTarget.PRODUCT, id, subtitle))
+                },
+            )
+        }
+        composable(
+            Routes.ChangeHistory,
+            arguments = listOf(
+                navArgument("target") { type = NavType.StringType },
+                navArgument("id") { type = NavType.IntType },
+                navArgument("subtitle") { type = NavType.StringType; nullable = true; defaultValue = null },
+            ),
+        ) { entry ->
+            val target = if (entry.arguments?.getString("target") == "product") ChangeHistoryTarget.PRODUCT else ChangeHistoryTarget.ORDER
+            ChangeHistoryScreen(
+                target = target,
+                id = entry.arguments?.getInt("id") ?: 0,
+                subtitle = entry.arguments?.getString("subtitle").orEmpty(),
+                onBack = { rootNavController.popBackStack() },
             )
         }
         composable(Routes.CartV2) {

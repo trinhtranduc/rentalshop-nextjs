@@ -247,12 +247,15 @@ class DefaultAvailabilityRepository(
                         ?: item.optInt("id").takeIf { it > 0 },
                     orderNumber = item.optString("orderNumber").takeIf { it.isNotBlank() },
                     quantity = item.optInt("quantity", 1),
+                    // batch-availability names them pickupDate / returnDate (#518 cart warning reads the days)
                     pickupAt = item.optString("pickupPlanAt")
                         .ifBlank { item.optString("startDate") }
-                        .takeIf { it.isNotBlank() },
+                        .ifBlank { item.optString("pickupDate") }
+                        .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
                     returnAt = item.optString("returnPlanAt")
                         .ifBlank { item.optString("endDate") }
-                        .takeIf { it.isNotBlank() },
+                        .ifBlank { item.optString("returnDate") }
+                        .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
                     status = item.optString("status").takeIf { it.isNotBlank() },
                     message = item.optString("message").ifBlank {
                         item.optString("orderNumber").ifBlank { "Availability conflict" }

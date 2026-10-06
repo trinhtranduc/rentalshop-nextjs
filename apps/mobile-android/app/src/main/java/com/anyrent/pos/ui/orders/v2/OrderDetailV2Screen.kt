@@ -27,16 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.EditCalendar
-import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material.icons.outlined.Print
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +42,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,15 +72,17 @@ import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
 import com.anyrent.pos.domain.orders.DetailPrimary
+import com.anyrent.pos.domain.orders.OrderActionSheet
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.history.ChangeHistory
+import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.ui.history.changeHistoryTexts
 import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.domain.orders.RentalExtension
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
-import com.anyrent.pos.ui.common.AppMenuAction
-import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.copyUriToCacheFile
@@ -118,7 +114,13 @@ internal fun shortDay(value: String?, zone: ZoneId = ZoneId.systemDefault()): St
  * one primary action by status, ⋯ for the rest, hand-over and return sheets with the API money rule.
  */
 @Composable
-fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Unit) {
+fun OrderDetailV2Screen(
+    orderId: Int,
+    onBack: () -> Unit,
+    onEditInCart: () -> Unit,
+    /** #519 "Lịch sử thay đổi", with the screen subtitle "Đơn #… · <customer>" */
+    onOpenHistory: (subtitle: String) -> Unit = {},
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val factory = remember(orderId) { OrderDetailV2ViewModel.Factory(orderId) }
@@ -128,6 +130,8 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
 
     var sheet by remember { mutableStateOf<DetailSheet?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
+    // #519: "N lần thay đổi · gần nhất …" under "Lịch sử thay đổi", read when the sheet opens
+    var historyPage by remember { mutableStateOf<ChangeHistory.Page?>(null) }
     var confirmCancel by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var extending by remember { mutableStateOf(false) }
@@ -201,7 +205,7 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
     } == true
 
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface).statusBarsPadding()) {
-        // Top bar: back, order code, print, ⋯
+        // Top bar: back, order code, ⋯ (#519: the printer icon moved into the ⋯ sheet)
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -218,46 +222,10 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                 overflow = TextOverflow.Ellipsis,
             )
             if (detail != null && actions != null) {
-                IconButton(onClick = { print(detail) }) {
-                    Icon(Icons.Outlined.Print, contentDescription = stringResource(R.string.detail_print_receipt), modifier = Modifier.size(DS.Icon.Md))
+                // #519 (board CT-thao-tac): only ⋯ in the header; it opens the action sheet
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.detail_more_actions), tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
                 }
-                val menu = buildList {
-                    if (actions.canEdit) {
-                        add(AppMenuAction(stringResource(R.string.edit_order), Icons.Outlined.Edit, {
-                            if (!editing) {
-                                editing = true
-                                scope.launch {
-                                    loadOrderIntoCart(orderId)
-                                        .onSuccess { onEditInCart() }
-                                        .onFailure { toast(it.message) }
-                                    editing = false
-                                }
-                            }
-                        }))
-                    }
-                    if (canExtend) {
-                        add(AppMenuAction(stringResource(R.string.extend_rental), Icons.Outlined.EditCalendar, { extending = true }))
-                    }
-                    add(AppMenuAction(stringResource(R.string.detail_edit_notes), Icons.Outlined.EditNote, { openNotes(detail) }))
-                    add(AppMenuAction(stringResource(R.string.share_order), Icons.Outlined.Share, {
-                        scope.launch { runCatching { shareOrderReceipt(context, detail) }.onFailure { toast(it.message) } }
-                    }))
-                    if (actions.canCancel) {
-                        add(AppMenuAction(stringResource(R.string.cancel_order), Icons.Outlined.Cancel, { confirmCancel = true }, destructive = true))
-                    }
-                    if (actions.canDelete) {
-                        add(AppMenuAction(stringResource(R.string.delete_order), Icons.Outlined.Delete, { confirmDelete = true }, destructive = true))
-                    }
-                }
-                AppOverflowMenuAnchor(
-                    contentDescription = stringResource(R.string.detail_more_actions),
-                    actions = menu,
-                    expanded = menuOpen,
-                    onExpandedChange = { menuOpen = it },
-                    icon = Icons.Outlined.MoreHoriz,
-                    iconSize = DS.Icon.Md,
-                    iconTint = DS.Colors.Text,
-                )
             }
         }
 
@@ -317,6 +285,59 @@ fun OrderDetailV2Screen(orderId: Int, onBack: () -> Unit, onEditInCart: () -> Un
                 )
             }
         }
+    }
+
+    if (menuOpen && detail != null && actions != null) {
+        val isSale = detail.summary.orderType.equals("SALE", ignoreCase = true)
+        val rows = OrderActionSheet.rows(actions, isSale, canExtend)
+        val historyTexts = remember { changeHistoryTexts(context.resources) }
+        LaunchedEffect(orderId) {
+            withContext(Dispatchers.IO) { ApiClient.get().orderChanges(orderId, limit = 1) }
+                .onSuccess { historyPage = it }
+        }
+        val printerConfig = remember { ThermalPrinter.configFromPrefs(printerPrefs) }
+        val historySubtitleText = stringResource(
+            R.string.history_order_subtitle,
+            detail.summary.orderNumber,
+            detail.summary.customerName.orEmpty(),
+        ).let { text -> if (detail.summary.customerName.isNullOrBlank()) text.substringBeforeLast(" · ") else text }
+        OrderActionsSheet(
+            orderNumber = detail.summary.orderNumber,
+            rows = rows,
+            printerSubtitle = OrderActionSheet.printerSubtitle(
+                printerConfig.name, printerConfig.ip, stringResource(R.string.order_sheet_printer),
+            ),
+            notes = detail.summary.notes,
+            notePhotos = detail.notesImages.size,
+            historySubtitle = historyPage?.let { ChangeHistory.countSummary(it.total, it.latestAt, java.time.Instant.now(), historyTexts) },
+            onDismiss = { menuOpen = false },
+            onAction = { action ->
+                // Same handlers as the old ⋯ menu and the bottom bar
+                when (action) {
+                    OrderActionSheet.Action.PRINT -> print(detail)
+                    OrderActionSheet.Action.NOTES -> openNotes(detail)
+                    OrderActionSheet.Action.HISTORY -> onOpenHistory(historySubtitleText)
+                    OrderActionSheet.Action.EDIT -> {
+                        if (!editing) {
+                            editing = true
+                            scope.launch {
+                                loadOrderIntoCart(orderId)
+                                    .onSuccess { onEditInCart() }
+                                    .onFailure { toast(it.message) }
+                                editing = false
+                            }
+                        }
+                    }
+                    OrderActionSheet.Action.EXTEND -> { extending = true }
+                    OrderActionSheet.Action.SHARE -> {
+                        scope.launch { runCatching { shareOrderReceipt(context, detail) }.onFailure { toast(it.message) } }
+                    }
+                    OrderActionSheet.Action.CANCEL -> { confirmCancel = true }
+                    OrderActionSheet.Action.DELETE -> { confirmDelete = true }
+                }
+                menuOpen = false
+            },
+        )
     }
 
     if (detail != null) {

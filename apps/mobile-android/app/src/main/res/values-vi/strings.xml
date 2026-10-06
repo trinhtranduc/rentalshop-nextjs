@@ -1149,4 +1149,137 @@
     <string name="store_v2_optional">(không bắt buộc)</string>
     <string name="store_v2_description">Mô tả</string>
     <string name="store_v2_description_placeholder">Giới thiệu ngắn về cửa hàng</string>
+    <!-- #518 overlap setting, #519 order action sheet and change history -->
+    <string name="settings_v2_group_orders">Đơn hàng</string>
+    <string name="settings_v2_allow_overlap">Cho tạo đơn khi trùng lịch</string>
+    <string name="settings_v2_allow_overlap_hint">Tắt thì không tạo được đơn khi đồ đã được thuê hết trong những ngày đó.</string>
+    <string name="settings_v2_allow_overlap_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
+    <string name="api_error_order_schedule_conflict">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
+    <string name="v2_cart_overlap_line">Hết đồ %1$s · đã thuê ở đơn %2$s</string>
+    <string name="v2_cart_overlap_line_no_order">Hết đồ %1$s</string>
+    <string name="v2_cart_overlap_blocked">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
+    <string name="v2_create_overlap_title">Trùng lịch</string>
+    <string name="v2_create_overlap_line">%1$s thiếu %2$d bộ ngày %3$s (đã thuê ở %4$s).</string>
+    <string name="v2_create_overlap_line_no_order">%1$s thiếu %2$d bộ ngày %3$s.</string>
+    <string name="v2_create_anyway">Vẫn tạo đơn</string>
+    <string name="order_sheet_title">Đơn #%1$s</string>
+    <string name="order_sheet_print">In hoá đơn</string>
+    <string name="order_sheet_printer">Máy in %1$s</string>
+    <string name="order_sheet_notes">Ghi chú</string>
+    <string name="order_sheet_notes_with_text">Có 1 ghi chú</string>
+    <plurals name="order_sheet_notes_photos">
+        <item quantity="other">%1$d ảnh</item>
+    </plurals>
+    <plurals name="order_sheet_notes_photos_only">
+        <item quantity="other">Có %1$d ảnh</item>
+    </plurals>
+    <string name="order_sheet_notes_add">Thêm ghi chú</string>
+    <string name="order_sheet_history">Lịch sử thay đổi</string>
+    <string name="order_sheet_edit">Sửa đơn</string>
+    <string name="order_sheet_extend">Gia hạn</string>
+    <string name="order_sheet_share">Chia sẻ đơn</string>
+    <string name="order_sheet_cancel">Huỷ đơn</string>
+    <string name="order_sheet_cancel_hint">Đơn chuyển sang Đã huỷ, không tính doanh thu</string>
+    <string name="order_sheet_delete">Xoá đơn</string>
+    <string name="history_title">Lịch sử thay đổi</string>
+    <string name="history_order_subtitle">Đơn #%1$s · %2$s</string>
+    <string name="history_empty">Chưa có thay đổi nào</string>
+    <string name="history_load_more">Xem thêm</string>
+    <string name="history_error">Không tải được lịch sử thay đổi</string>
+    <string name="history_today">HÔM NAY · %1$s</string>
+    <string name="history_weekdays">T2,T3,T4,T5,T6,T7,CN</string>
+    <string name="history_other">Cập nhật</string>
+    <string name="history_refund">Hoàn tiền</string>
+    <string name="history_staff_name">%1$s (nhân viên)</string>
+    <string name="history_per_day">/ngày</string>
+    <string name="history_per_rental">/lần</string>
+    <string name="history_per_hour">/giờ</string>
+    <string name="history_quantity">× %1$s</string>
+    <string name="history_item_added">thêm × %1$s</string>
+    <string name="history_item_removed">bỏ</string>
+    <string name="history_images_added">thêm %1$d ảnh</string>
+    <string name="history_images_removed">bỏ %1$d ảnh</string>
+    <string name="history_pricing_other">Giá %1$s</string>
+    <string name="history_count">%1$d lần thay đổi · gần nhất %2$s</string>
+    <string name="history_count_only">%1$d lần thay đổi</string>
+    <string name="history_latest_today">%1$s hôm nay</string>
+    <string-array name="history_kinds">
+        <item>ORDER_CREATED|Tạo đơn</item>
+        <item>ORDER_EDITED|Sửa đơn</item>
+        <item>ORDER_ITEMS|Sửa món</item>
+        <item>ORDER_ITEM_PRICE|Sửa giá trong đơn</item>
+        <item>ORDER_DEPOSIT|Thu cọc</item>
+        <item>ORDER_PAYMENT|Thu tiền</item>
+        <item>ORDER_NOTE|Sửa ghi chú</item>
+        <item>ORDER_PICKED_UP|Giao đồ</item>
+        <item>ORDER_RETURNED|Nhận trả</item>
+        <item>ORDER_COMPLETED|Hoàn tất</item>
+        <item>ORDER_CANCELLED|Huỷ đơn</item>
+        <item>ORDER_RESTORED|Khôi phục</item>
+        <item>ORDER_DELETED|Xoá đơn</item>
+        <item>PRODUCT_CREATED|Tạo sản phẩm</item>
+        <item>PRODUCT_EDITED|Sửa thông tin</item>
+        <item>PRODUCT_PRICE|Sửa giá</item>
+        <item>PRODUCT_STOCK|Sửa tồn kho</item>
+        <item>PRODUCT_IMAGES|Đổi ảnh</item>
+        <item>PRODUCT_DELETED|Xoá sản phẩm</item>
+        <item>PRODUCT_RESTORED|Khôi phục</item>
+        <item>OTHER|Cập nhật</item>
+    </string-array>
+    <string-array name="history_fields">
+        <item>status|Trạng thái</item>
+        <item>orderType|Loại đơn</item>
+        <item>pickupPlanAt|Ngày giao</item>
+        <item>returnPlanAt|Ngày trả</item>
+        <item>pickedUpAt|Đã giao</item>
+        <item>returnedAt|Đã trả</item>
+        <item>totalAmount|Tổng đơn</item>
+        <item>depositAmount|Cọc trả trước</item>
+        <item>securityDeposit|Tiền thế chấp</item>
+        <item>discountType|Kiểu giảm giá</item>
+        <item>discountValue|Mức giảm</item>
+        <item>discountAmount|Giảm giá</item>
+        <item>damageFee|Phí hư hỏng</item>
+        <item>lateFee|Phí trả trễ</item>
+        <item>collateralType|Loại thế chấp</item>
+        <item>collateralDetails|Thế chấp</item>
+        <item>pickupNotes|Ghi chú khi giao</item>
+        <item>returnNotes|Ghi chú khi trả</item>
+        <item>damageNotes|Ghi chú hư hỏng</item>
+        <item>isReadyToDeliver|Sẵn sàng giao</item>
+        <item>paymentCollected|Đã thu</item>
+        <item>paymentRefunded|Đã hoàn</item>
+        <item>paymentMethod|Hình thức</item>
+        <item>notes|Ghi chú</item>
+        <item>name|Tên</item>
+        <item>barcode|Mã vạch</item>
+        <item>category|Danh mục</item>
+        <item>isActive|Đang bán</item>
+        <item>deposit|Tiền cọc</item>
+        <item>rentPrice|Giá thuê</item>
+        <item>salePrice|Giá bán</item>
+        <item>pricingType|Cách tính giá</item>
+        <item>pricing.DAILY|Thuê theo ngày</item>
+        <item>pricing.FIXED|Thuê theo lần</item>
+        <item>pricing.HOURLY|Thuê theo giờ</item>
+        <item>images|Ảnh</item>
+    </string-array>
+    <string-array name="history_values">
+        <item>status.RESERVED|Đã đặt</item>
+        <item>status.PICKUPED|Đang thuê</item>
+        <item>status.RETURNED|Đã trả</item>
+        <item>status.COMPLETED|Hoàn tất</item>
+        <item>status.CANCELLED|Đã huỷ</item>
+        <item>orderType.RENT|Thuê</item>
+        <item>orderType.SALE|Bán</item>
+        <item>pricingType.DAILY|Theo ngày</item>
+        <item>pricingType.FIXED|Theo lần</item>
+        <item>pricingType.HOURLY|Theo giờ</item>
+        <item>discountType.AMOUNT|Số tiền</item>
+        <item>discountType.PERCENTAGE|Phần trăm</item>
+        <item>paymentMethod.CASH|Tiền mặt</item>
+        <item>paymentMethod.BANK_TRANSFER|Chuyển khoản</item>
+        <item>bool.true|Có</item>
+        <item>bool.false|Không</item>
+    </string-array>
 </resources>
