@@ -941,6 +941,44 @@
       "notFound": "Order not found.",
       "backToList": "Back to orders",
       "readyFailed": "Could not save the prepared state."
+    },
+    "receipt": {
+      "title": "Receipt #{number}",
+      "titleNoNumber": "Receipt",
+      "print": "Print",
+      "close": "Close",
+      "paper": "80mm paper",
+      "order": "Order #{number}",
+      "phone": "Tel",
+      "address": "Addr",
+      "customer": "Customer",
+      "walkIn": "Walk-in customer",
+      "rows": {
+        "deposit": "Deposit",
+        "noDeposit": "No deposit",
+        "securityDeposit": "Security deposit",
+        "collateral": "Collateral",
+        "damageFee": "Damage fee",
+        "rentDate": "Rent date",
+        "returnDate": "Return date",
+        "createdAt": "Created"
+      },
+      "note": "Note",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "discountPercent": "Discount ({percent}%)",
+      "loyaltyDiscount": "Loyalty discount",
+      "total": "Total",
+      "customerSignature": "Customer signature",
+      "storeSignature": "Store signature",
+      "thankYou": "Thank you!",
+      "downloadApp": "Download AnyRent on the App Store",
+      "units": {
+        "perDay": "/day",
+        "days": "{n} days",
+        "perHour": "/hour",
+        "hours": "{n} hours"
+      }
     }
   }
 }

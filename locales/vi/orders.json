@@ -941,6 +941,44 @@
       "notFound": "Không tìm thấy đơn này.",
       "backToList": "Về danh sách đơn",
       "readyFailed": "Không lưu được trạng thái soạn đồ."
+    },
+    "receipt": {
+      "title": "Hoá đơn #{number}",
+      "titleNoNumber": "Hoá đơn",
+      "print": "In",
+      "close": "Đóng",
+      "paper": "Khổ 80mm",
+      "order": "Đơn hàng #{number}",
+      "phone": "ĐT",
+      "address": "Đ/c",
+      "customer": "Khách hàng",
+      "walkIn": "Khách lẻ",
+      "rows": {
+        "deposit": "Tiền cọc",
+        "noDeposit": "Không cọc",
+        "securityDeposit": "Thế chân",
+        "collateral": "Giấy tờ thế chân",
+        "damageFee": "Phí hư hại",
+        "rentDate": "Ngày thuê",
+        "returnDate": "Ngày trả",
+        "createdAt": "Ngày tạo"
+      },
+      "note": "Ghi chú",
+      "subtotal": "Tạm tính",
+      "discount": "Giảm giá",
+      "discountPercent": "Giảm giá ({percent}%)",
+      "loyaltyDiscount": "Giảm giá điểm thưởng",
+      "total": "Tổng cộng",
+      "customerSignature": "Chữ ký khách hàng",
+      "storeSignature": "Chữ ký cửa hàng",
+      "thankYou": "Cảm ơn quý khách!",
+      "downloadApp": "Tải AnyRent trên App Store",
+      "units": {
+        "perDay": "/ngày",
+        "days": "{n} ngày",
+        "perHour": "/giờ",
+        "hours": "{n} giờ"
+      }
     }
   }
 }

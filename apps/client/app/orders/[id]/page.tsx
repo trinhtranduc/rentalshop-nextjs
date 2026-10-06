@@ -13,7 +13,6 @@ import {
   COLLATERAL_CODES,
   CollectionReturnModal,
   ConfirmationDialog,
-  ReceiptPreviewModal,
   collateralKey,
   useFormatCurrency,
   useToast,
@@ -46,6 +45,7 @@ import {
   type NoteView,
 } from '../detail/sections';
 import { SettingsEditor, SettingsSummary, type PendingFiles, type SettingsForm } from '../detail/settings';
+import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 
 type AnyOrder = OrderWithDetails & { customerName?: string; customerPhone?: string };
 
