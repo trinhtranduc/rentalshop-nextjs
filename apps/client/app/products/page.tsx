@@ -188,13 +188,27 @@ export default function ProductsPage() {
   }, [imageResults, list.loading, list.failed, list.totalPages, query.page, update]);
 
   // Search box: typed text goes to the URL after a short pause
+  // (the box follows the URL only when the URL changed from elsewhere, so typing is never overwritten)
   const [draft, setDraft] = useState(query.q);
-  useEffect(() => setDraft(query.q), [query.q]);
+  const pushedQ = useRef(query.q);
   useEffect(() => {
-    if (draft.trim() === query.q) return;
-    const id = window.setTimeout(() => update({ q: draft.trim() || null }), 350);
+    if (query.q !== pushedQ.current) {
+      pushedQ.current = query.q;
+      setDraft(query.q);
+    }
+  }, [query.q]);
+  const pushQ = useCallback(
+    (value: string) => {
+      pushedQ.current = value;
+      update({ q: value || null });
+    },
+    [update],
+  );
+  useEffect(() => {
+    if (draft.trim() === pushedQ.current) return;
+    const id = window.setTimeout(() => pushQ(draft.trim()), 350);
     return () => window.clearTimeout(id);
-  }, [draft, query.q, update]);
+  }, [draft, pushQ]);
 
   // Selection (cleared when the filters change)
   const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
@@ -217,8 +231,14 @@ export default function ProductsPage() {
     try {
       const productIds = useSelection && !selection.all ? selection.ids : await collectIds();
       if (productIds.length === 0) return;
-      const blob = await productsApi.exportProducts({ format: 'excel', productIds });
-      saveBlob(blob, `san-pham-${formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE)}.xlsx`);
+      // Ids travel in the query string: one file per 600 so the URL stays well under server header limits
+      const day = formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE);
+      const parts: number[][] = [];
+      for (let i = 0; i < productIds.length; i += 600) parts.push(productIds.slice(i, i + 600));
+      for (let i = 0; i < parts.length; i++) {
+        const blob = await productsApi.exportProducts({ format: 'excel', productIds: parts[i] });
+        saveBlob(blob, parts.length > 1 ? `san-pham-${day}-${i + 1}.xlsx` : `san-pham-${day}.xlsx`);
+      }
       toastSuccess(t('exportDone'));
     } catch {
       toastError(t('exportFailed'));
@@ -380,7 +400,7 @@ export default function ProductsPage() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') update({ q: draft.trim() || null });
+                if (e.key === 'Enter') pushQ(draft.trim());
               }}
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ar-ink outline-none placeholder:text-ar-faint"
             />
