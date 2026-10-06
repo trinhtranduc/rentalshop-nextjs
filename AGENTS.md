@@ -65,7 +65,7 @@ without an explicit human go for that one command (`RELEASE_APPROVED=1`). The ho
 - **API routes** (skill `api-route-standard`): `with*Auth` from `@rentalshop/auth/server`, zod, `ResponseBuilder`, `handleApiError`, data via `db` from `@rentalshop/database`.
 - **Dual IDs:** database primary keys are CUIDs. Every external surface (API JSON, URLs, mobile, forms) uses numeric `publicId` / `id`. Never leak a CUID to a client.
 - **Roles:** `ADMIN`, `OPS`, `ARTICLE`, `MERCHANT`, `OUTLET_ADMIN`, `OUTLET_STAFF`. Scope (`userScope`) is enforced in the API. UI helpers only hide controls.
-- **Orders:** `RENT` / `SALE`. Rent: `RESERVED → PICKUPED → RETURNED`. Sale: `RESERVED → COMPLETED`. Plus `CANCELLED`. Number format `ORD-{outletId}-{sequence}`.
+- **Orders:** `RENT` / `SALE`. Rent: `RESERVED → PICKUPED → RETURNED`. Sale: created `COMPLETED` (older sales `RESERVED → COMPLETED`). Plus `CANCELLED`. Order number: random unique 6-digit string `100000`–`999999` (`POST /api/orders`, `generateOrderNumber`); `ORD-{outletId}-{sequence}` only on old/seed rows.
 - **Time** (skill `timezone-dates`): store UTC, reason in Vietnam civil days (`Asia/Ho_Chi_Minh`). A day is a `YYYY-MM-DD` key via `getUtcRangeForDateKeys` / `getLocalDateKey`. Never use `toISOString().split`, `setHours(0,0,0,0)`, `getDate()`, or `toLocaleDateString()` for day logic. Date tests run under `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh`. A same-day pickup and return still occupies that day.
 - **Shared code:** UI in `packages/ui`, helpers in `packages/utils`, types in `packages/types`. Frontends call the API through `*Api` / `authenticatedFetch`, never raw `fetch`.
 - **i18n** (skill `i18n-keys`): a new key goes into `locales/{en,vi,ja,ko,zh}`. Error codes need `errors.json` entries.

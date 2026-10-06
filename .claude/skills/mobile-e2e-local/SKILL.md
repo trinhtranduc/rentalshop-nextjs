@@ -71,6 +71,19 @@ scripts/mobile-e2e/adb-ui.sh dump | tap "~Giao đồ" | shot 20-detail-handover 
   config already allows cleartext to `10.0.2.2`. `adb input text` cannot type Vietnamese: search with ASCII.
 - Look at every screenshot: `sips -Z 900 <png> --out <small.png>`, then Read it. A green test with a wrong screen is a bug.
 
+## 3b. Business numbers without a device (API e2e)
+
+Before or instead of the UI run, check the money and availability rules over HTTP:
+
+```bash
+scripts/e2e/business-e2e.sh              # own DB anyrent_business_e2e, API :3190, TZ=UTC and TZ=Asia/Ho_Chi_Minh
+```
+
+It reuses `seed-local.sh` and `api-local.sh`, runs `tests/e2e/business/*.e2e.test.js` (catalogue
+`tests/e2e/TEST_CASES.md`: product → order → status → Overview, overbooking, quantity, edits, VN days, scope) and
+prints passed / failed / known-bug counts per time zone. A red case there is an API or rule bug the apps will show;
+report it with the case ID instead of reproducing it on a simulator.
+
 ## 4. Manual checklist (what the UI test does not cover)
 
 Run each line on both platforms; tick it in the report or file a bug.

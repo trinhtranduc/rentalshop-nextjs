@@ -91,6 +91,29 @@ npm run test:watch
 npm exec jest tests/
 ```
 
+## Business e2e suite (local API, #498)
+
+`tests/e2e/` drives the real HTTP endpoints the iOS/Android apps use (login, create product, create order,
+status changes, edits, availability, Overview) against a **local** API on a **local** seeded database and checks
+money, stock and availability numbers. Catalogue: [`e2e/TEST_CASES.md`](e2e/TEST_CASES.md).
+
+```bash
+scripts/e2e/business-e2e.sh            # seed anyrent_business_e2e, API on :3190, run under TZ=UTC and TZ=Asia/Ho_Chi_Minh
+scripts/e2e/business-e2e.sh --no-seed  # keep the data (tests make their own rows; Overview checks are deltas)
+scripts/e2e/business-e2e.sh --build    # build this checkout's API first
+cd tests && E2E_API_URL=http://localhost:3190 yarn test:e2e            # against an API you started
+cd tests && E2E_API_URL=http://localhost:3190 yarn test:e2e overbooking  # one file
+```
+
+- Not part of `yarn test`: the default config ignores `e2e/`, and every e2e `describe` is skipped without `E2E_API_URL`.
+- `E2E_API_URL` must be localhost/127.0.0.1. Never dev-api or production.
+- Logins are single-session and limited to 10 per 15 minutes per IP: `e2e/global-setup.js` logs in each account
+  once and caches the tokens (`BIZ_E2E_TOKENS_FILE`). Accounts: `BIZ_E2E_MERCHANT_EMAIL`,
+  `BIZ_E2E_OTHER_MERCHANT_EMAIL`, `BIZ_E2E_STAFF_EMAIL` (+ `_PASSWORD`); the script reads them from the seeded DB.
+- Cases named `[known bug #NNN]` assert the correct rule with `test.failing` until the bug is fixed;
+  `BIZ_E2E_SHOW_BUGS=1` runs them as plain tests. When one turns red because the bug is fixed, make it a `test`.
+- Avoid running across Vietnam midnight: "today" Overview deltas are read on the VN day the test started.
+
 ## Test Philosophy
 
 These tests focus on **documenting requirements** and **validating business logic** rather than testing implementation details. They serve as:
