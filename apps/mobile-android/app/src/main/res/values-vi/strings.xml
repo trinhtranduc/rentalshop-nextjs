@@ -700,7 +700,7 @@
     <string name="detail_money">TIỀN</string>
     <string name="detail_total_discount">Tổng (giảm %1$s)</string>
     <string name="detail_deposit_paid">Đã cọc khi đặt</string>
-    <string name="detail_collateral_money">Thế chân tiền</string>
+    <string name="detail_collateral_money">Tiền thế chân</string>
     <string name="detail_collect_at_hand_over">Thu khi giao</string>
     <string name="detail_late_fee">Phí trễ</string>
     <string name="detail_return_collateral">Trả lại thế chân</string>

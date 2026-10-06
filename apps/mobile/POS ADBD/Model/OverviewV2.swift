@@ -4,6 +4,7 @@
 //
 //  Redesigned overview (#374): period presets in the device time zone, GET /api/analytics/period, and the
 //  "now" figures of GET /api/analytics/outlet-operations (`overdueReturns.count`, `cash.depositsHeld`).
+//  #492: `revenue.collectedBreakdown` (optional, newer API).
 //
 
 import Foundation
@@ -238,12 +239,46 @@ struct OverviewReport: Decodable, Equatable {
         }
     }
 
+    /// Parts of `revenue.collected` (#492): deposits + pickupAndSale + fees − refunds = collected
+    struct CollectedBreakdown: Decodable, Equatable {
+        /// Deposits paid when booking
+        let deposits: Double
+        /// Paid at hand-over and sales
+        let pickupAndSale: Double
+        /// Damage and late fees
+        let fees: Double
+        /// Refunds of cancelled orders (a positive amount, subtracted)
+        let refunds: Double
+
+        var total: Double { deposits + pickupAndSale + fees - refunds }
+
+        enum CodingKeys: String, CodingKey { case deposits, pickupAndSale, fees, refunds }
+
+        init(deposits: Double, pickupAndSale: Double, fees: Double, refunds: Double) {
+            self.deposits = deposits
+            self.pickupAndSale = pickupAndSale
+            self.fees = fees
+            self.refunds = refunds
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let amount: (CodingKeys) -> Double = { key in ((try? c.decodeIfPresent(Double.self, forKey: key)) ?? nil) ?? 0 }
+            deposits = amount(.deposits)
+            pickupAndSale = amount(.pickupAndSale)
+            fees = amount(.fees)
+            refunds = amount(.refunds)
+        }
+    }
+
     /// Money collected in the period without collateral (`revenue.collected`, #484), else `totalActualRevenue`, else `totalRevenue`
     let netRevenue: Double
     /// Total of the orders created in the period, cancelled left out (`revenue.totalOrderValue`, #484); nil on an older API
     let totalOrderValue: Double?
     /// Part of those orders not collected yet (`revenue.outstanding`, #484); nil on an older API
     let outstanding: Double?
+    /// Parts of `netRevenue` (`revenue.collectedBreakdown`, #492); nil on an older API
+    let collectedBreakdown: CollectedBreakdown?
     /// % change of revenue against the previous period of the same length
     let revenueGrowth: Double?
     /// Orders created in the period (`operational.orderCounts.new`)
@@ -252,15 +287,18 @@ struct OverviewReport: Decodable, Equatable {
     let topProducts: [TopProduct]
 
     private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts }
-    private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding }
+    private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding,
+                                                         collectedBreakdown }
     private enum GrowthKeys: String, CodingKey { case collected, revenue }
     private enum ChangeKeys: String, CodingKey { case growth }
     private enum OperationalKeys: String, CodingKey { case orderCounts }
     private enum CountKeys: String, CodingKey { case new }
 
     init(netRevenue: Double, revenueGrowth: Double?, newOrders: Int?, series: [Point], topProducts: [TopProduct],
-         totalOrderValue: Double? = nil, outstanding: Double? = nil) {
+         totalOrderValue: Double? = nil, outstanding: Double? = nil,
+         collectedBreakdown: CollectedBreakdown? = nil) {
         self.netRevenue = netRevenue
+        self.collectedBreakdown = collectedBreakdown
         self.totalOrderValue = totalOrderValue
         self.outstanding = outstanding
         self.revenueGrowth = revenueGrowth
@@ -276,10 +314,12 @@ struct OverviewReport: Decodable, Equatable {
             netRevenue = amount(.collected) ?? amount(.totalActualRevenue) ?? amount(.totalRevenue) ?? 0
             totalOrderValue = (try? revenue.decodeIfPresent(Double.self, forKey: .totalOrderValue)) ?? nil
             outstanding = (try? revenue.decodeIfPresent(Double.self, forKey: .outstanding)) ?? nil
+            collectedBreakdown = (try? revenue.decodeIfPresent(CollectedBreakdown.self, forKey: .collectedBreakdown)) ?? nil
         } else {
             netRevenue = 0
             totalOrderValue = nil
             outstanding = nil
+            collectedBreakdown = nil
         }
         if let growth = try? c.nestedContainer(keyedBy: GrowthKeys.self, forKey: .growth),
            let change = (try? growth.nestedContainer(keyedBy: ChangeKeys.self, forKey: .collected))
