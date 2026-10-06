@@ -74,12 +74,16 @@ enum ScheduleConflictLogic {
         return keys
     }
 
-    /// Days of the window on which `stock` minus the other bookings of that day is below `requested`.
-    /// Without a stock figure, `available` (units free for the whole window) decides for every day.
+    /// Days of the window that other bookings hold and on which `stock` minus those bookings is below `requested`.
+    /// A day no other order holds is never a conflict (same rule as the API: shops that keep stock at 0 are not blocked).
+    /// Without a stock figure, `available` (units free for the whole window) decides for every day, but only when
+    /// other orders hold the product (`heldByOthers`, defaulting to "some booking was read").
     static func conflict(productId: Int, productName: String, requested: Int, stock: Int?, available: Int?,
                          bookings: [ScheduleBooking], pickup: Date, returnDate: Date,
+                         heldByOthers: Bool? = nil,
                          timeZone: TimeZone = ScheduleConflictLogic.timeZone) -> CartScheduleConflict? {
         guard requested > 0 else { return nil }
+        guard heldByOthers ?? !bookings.isEmpty else { return nil }
         let window = dayKeys(from: pickup, to: returnDate, timeZone: timeZone)
         guard !window.isEmpty else { return nil }
         let held = bookings.map { (booking: $0, days: Set(dayKeys(from: $0.pickup, to: $0.returnDate, timeZone: timeZone))) }
@@ -90,7 +94,7 @@ enum ScheduleConflictLogic {
             for key in window {
                 let booked = held.filter { $0.days.contains(key) }.reduce(0) { $0 + max(0, $1.booking.quantity) }
                 let free = max(0, stock - booked)
-                if free < requested {
+                if booked > 0 && free < requested {
                     shortDays.append(key)
                     worst = max(worst, requested - free)
                 }
@@ -127,7 +131,8 @@ enum ScheduleConflictLogic {
         let name = (productName?.isEmpty == false ? productName : result.productName) ?? ""
         return conflict(productId: result.productId, productName: name, requested: result.requestedQuantity,
                         stock: outlet?.stock ?? result.totalStock, available: available, bookings: bookings,
-                        pickup: pickup, returnDate: returnDate, timeZone: timeZone)
+                        pickup: pickup, returnDate: returnDate,
+                        heldByOthers: !(outlet?.conflicts ?? []).isEmpty, timeZone: timeZone)
     }
 
     // MARK: Texts

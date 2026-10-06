@@ -19,10 +19,10 @@ final class ScheduleConflictTests: XCTestCase {
     private let windowReturn = "2026-10-06T03:00:00Z"
 
     private func conflict(requested: Int, stock: Int?, available: Int? = nil,
-                          bookings: [ScheduleBooking]) -> CartScheduleConflict? {
+                          bookings: [ScheduleBooking], heldByOthers: Bool? = nil) -> CartScheduleConflict? {
         ScheduleConflictLogic.conflict(productId: 7, productName: "Vest đen slim fit", requested: requested, stock: stock,
                                        available: available, bookings: bookings, pickup: at(windowPickup),
-                                       returnDate: at(windowReturn), timeZone: vn)
+                                       returnDate: at(windowReturn), heldByOthers: heldByOthers, timeZone: vn)
     }
 
     // MARK: Days
@@ -112,12 +112,34 @@ final class ScheduleConflictTests: XCTestCase {
     }
 
     func testWithoutStockTheAvailableFigureDecidesForTheWholeWindow() {
-        let result = conflict(requested: 2, stock: nil, available: 0, bookings: [])
+        let result = conflict(requested: 2, stock: nil, available: 0, bookings: [], heldByOthers: true)
         XCTAssertEqual(result?.dayKeys, ["2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06"])
         XCTAssertEqual(result?.shortBy, 2)
         XCTAssertEqual(result?.orderNumbers, [])
         XCTAssertNil(conflict(requested: 2, stock: nil, available: 2, bookings: []))
         XCTAssertNil(conflict(requested: 2, stock: nil, available: nil, bookings: []))
+    }
+
+    func testDaysNoOtherOrderHoldsAreNeverAConflict() {
+        // Shops that keep stock at 0: no booking, no conflict (API: booked > 0 && booked + requested > stock)
+        XCTAssertNil(conflict(requested: 1, stock: 0, bookings: []))
+        XCTAssertNil(conflict(requested: 2, stock: nil, available: 0, bookings: []))
+        // A booking on 03/10 only: just that day is short, the free days around it are not
+        let result = conflict(requested: 1, stock: 0, bookings: [
+            booking("ORD-1-482113", 1, "2026-10-03T02:00:00Z", "2026-10-03T10:00:00Z")
+        ])
+        XCTAssertEqual(result?.dayKeys, ["2026-10-03"])
+        XCTAssertEqual(result?.orderNumbers, ["482113"])
+    }
+
+    func testBatchResultWithoutOtherOrdersIsNoConflict() throws {
+        let result = try batch("""
+        {"productId": 7, "requestedQuantity": 1, "isAvailable": false, "stockAvailable": false, "hasNoConflicts": true,
+         "totalStock": 0, "totalAvailableStock": 0,
+         "availabilityByOutlet": [{"outletId": 1, "stock": 0, "effectivelyAvailable": 0, "canFulfillRequest": false, "conflicts": []}]}
+        """)
+        XCTAssertNil(ScheduleConflictLogic.conflict(from: result, productName: "Vest", pickup: at(windowPickup),
+                                                    returnDate: at(windowReturn), timeZone: vn))
     }
 
     func testDuplicateAndBlankOrderNumbersAreDropped() {
