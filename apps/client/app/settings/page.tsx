@@ -150,6 +150,7 @@ export default function SettingsPage() {
     pricingType: str(merchant.pricingType),
     taxId: str(merchant.taxId),
     tenantKey: str(merchant.tenantKey) || tenantKey,
+    description: str(merchant.description),
   };
 
   const saveMerchant = async (form: ShopForm) => {
@@ -165,6 +166,7 @@ export default function SettingsPage() {
       pricingType: form.pricingType || '',
       taxId: form.taxId || '',
       tenantKey: form.tenantKey || '',
+      description: form.description || '',
     };
     try {
       const res = await settingsApi.updateMerchantInfo(payload);
@@ -182,25 +184,22 @@ export default function SettingsPage() {
 
   // ------------------------------------------------------------------ outlet
   const outlet = user?.outlet || {};
+  // The outlet form shows only what PUT /api/settings/outlet stores (name, address, phone, description).
   const outletForm: ShopForm = {
     name: str(outlet.name),
     phone: str(outlet.phone),
     address: str(outlet.address),
-    city: str(outlet.city),
-    state: str(outlet.state),
-    zipCode: str(outlet.zipCode),
-    country: str(outlet.country),
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
     description: str(outlet.description),
   };
   const saveOutlet = async (form: ShopForm) => {
     const payload = {
-      name: form.name,
+      name: form.name.trim(),
       phone: form.phone,
-      address: form.address,
-      city: form.city,
-      state: form.state,
-      zipCode: form.zipCode,
-      country: form.country,
+      address: form.address.trim(),
       description: form.description || '',
     };
     try {
@@ -261,11 +260,10 @@ export default function SettingsPage() {
   }, [tab, refreshSubscription]);
 
   const signOut = () => {
-    try {
-      logout();
-    } catch {
-      // logout clears local auth even when the request fails.
-    }
+    // logout clears local auth even when the request fails.
+    void Promise.resolve()
+      .then(() => logout())
+      .catch(() => undefined);
   };
 
   // ------------------------------------------------------------------ render

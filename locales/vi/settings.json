@@ -410,6 +410,7 @@
       "tenantKeyHint": "Chỉ chữ thường, số và dấu gạch ngang. Dùng trong link trang sản phẩm công khai.",
       "tenantKeyInvalid": "Mã URL chỉ gồm chữ thường, số và dấu gạch ngang.",
       "nameRequired": "Nhập tên trước khi lưu.",
+      "addressRequired": "Nhập địa chỉ",
       "cancel": "Huỷ",
       "save": "Lưu",
       "saving": "Đang lưu…",
