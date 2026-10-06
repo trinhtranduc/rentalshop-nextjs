@@ -4,6 +4,8 @@
  */
 import { describe, expect, it } from '@jest/globals';
 import {
+  effectiveDefaultMode,
+  hasDefaultChoice,
   MAX_PHOTO_BYTES,
   buildPayload,
   buildPricingOptions,
@@ -264,5 +266,20 @@ describe('photos', () => {
     expect(imageSearchState(null, true)).toBe('updating');
     expect(imageSearchState('2026-10-06T00:00:00Z', false)).toBe('ready');
     expect(imageSearchState(null, false)).toBe('none');
+  });
+});
+
+describe('default price for new orders (#547 owner feedback: no either/or toggle)', () => {
+  it('is a choice only when both prices are set', () => {
+    expect(hasDefaultChoice(50000, 20000)).toBe(true);
+    expect(hasDefaultChoice(50000, 0)).toBe(false);
+    expect(hasDefaultChoice(0, 20000)).toBe(false);
+  });
+
+  it('falls back to the price that exists', () => {
+    expect(effectiveDefaultMode(50000, 0, 'DAILY')).toBe('FIXED');
+    expect(effectiveDefaultMode(0, 20000, 'FIXED')).toBe('DAILY');
+    expect(effectiveDefaultMode(50000, 20000, 'DAILY')).toBe('DAILY');
+    expect(effectiveDefaultMode(0, 0, 'FIXED')).toBe('FIXED');
   });
 });
