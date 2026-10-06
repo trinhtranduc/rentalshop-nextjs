@@ -175,6 +175,12 @@ function randomDate(start, end) {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 }
 
+// "08/10/2026": the Vietnam civil day of an instant (dd/MM/yyyy), whatever the process TZ (#570)
+const vnDateFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' });
+function vnDate(date) {
+  return vnDateFormat.format(date);
+}
+
 // Helper function to pick random item from array
 function pickRandom(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -847,9 +853,9 @@ async function createOrders(outlets, customers, products, outletUsers) {
             isReadyToDeliver: status === 'RESERVED' && Math.random() > 0.3,
             collateralType: orderType === 'RENT' ? pickRandom(['CASH', 'DOCUMENT', 'ID_CARD', 'CREDIT_CARD']) : null,
             collateralDetails: orderType === 'RENT' ? pickRandom(['ID Card', 'Passport', 'Driver License', 'Credit Card', 'Cash Deposit']) : null,
-            notes: `${orderType} order for ${customer.firstName} ${customer.lastName} - ${status}`,
-            pickupNotes: pickupPlanAt ? `Scheduled pickup on ${pickupPlanAt.toLocaleDateString()}` : null,
-            returnNotes: returnPlanAt && orderType === 'RENT' ? `Expected return on ${returnPlanAt.toLocaleDateString()}` : null,
+            notes: `${orderType === 'RENT' ? 'Đơn thuê' : 'Đơn bán'} của ${customer.firstName} ${customer.lastName}`,
+            pickupNotes: pickupPlanAt ? `Hẹn giao ngày ${vnDate(pickupPlanAt)}` : null,
+            returnNotes: returnPlanAt && orderType === 'RENT' ? `Hẹn trả ngày ${vnDate(returnPlanAt)}` : null,
             damageNotes: '',
             outletId: outlet.id,
             customerId: customer.id,
