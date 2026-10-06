@@ -2,8 +2,8 @@
 
 /**
  * Chi tiết đơn (#516). `[id]` is the order number. Data from GET /api/orders/by-number/[n]; the
- * hand-over / take-back dialog, receipt and settings editor are the shared ones from @rentalshop/ui.
- * Progress, next step, payment and history come from ../orders-model (unit-tested).
+ * receipt is the shared one from @rentalshop/ui. Giao đồ / Nhận trả / Huỷ / Xoá dialogs are ../detail/dialogs
+ * (#560, iOS rows). Progress, next step, payment and history come from ../orders-model (unit-tested).
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -11,8 +11,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   COLLATERAL_CODES,
-  CollectionReturnModal,
-  ConfirmationDialog,
   ReceiptPreviewModal,
   collateralKey,
   useFormatCurrency,
@@ -28,6 +26,7 @@ import {
   buildPaySummary,
   buildProgress,
   customerNameOf,
+  formatDayLabel,
   type OrderDetailLike,
 } from '../orders-model';
 import { StatusTag, cardClass, outlineBtn, primaryBtn, type T } from '../list/parts';
@@ -46,6 +45,8 @@ import {
   type NoteView,
 } from '../detail/sections';
 import { SettingsEditor, SettingsSummary, type PendingFiles, type SettingsForm } from '../detail/settings';
+import { DangerDialog, HandOverDialog, ReturnDialog, type DialogItem } from '../detail/dialogs';
+import { scheduleRange } from '../detail/actions-model';
 
 type AnyOrder = OrderWithDetails & { customerName?: string; customerPhone?: string };
 
@@ -162,6 +163,7 @@ export default function OrderDetailPage() {
   const canDelete = canDeleteOrders && status === 'CANCELLED';
   const settingsOpen = isRent && status !== 'CANCELLED';
 
+  const dialogItems: DialogItem[] = [];
   const items: ItemView[] = ((order.orderItems || []) as unknown as ItemLike[]).map((item, i) => {
     const itemName: string = item.product?.name || item.productName || '—';
     const qty = item.quantity || 1;
@@ -175,10 +177,12 @@ export default function OrderDetailPage() {
     if (isRent && pricing === 'DAILY') parts.push(t('detail.items.daily'), t('detail.items.perDay', { amount: money(unit), days }));
     else if (isRent) parts.push(t('detail.items.fixed'), money(unit));
     else if (qty > 1) parts.push(money(unit));
+    const image = images(item.productImages)[0] || images(item.product?.images)[0] || null;
+    dialogItems.push({ id: item.id ?? i, name: itemName, qty, image });
     return {
       id: item.id ?? i,
       name: itemName,
-      image: images(item.productImages)[0] || images(item.product?.images)[0] || null,
+      image,
       sub: parts.join(' · '),
       total: item.totalPrice || qty * unit,
     };
@@ -195,6 +199,21 @@ export default function OrderDetailPage() {
 
   const code = collateralKey(settings.collateralType);
   const collateralLabel = code && code !== 'OTHER' ? to(`detailSettings.collateral.${code}`) : '';
+  // Papers for the dialogs: details that only repeat the type ("ID Card" next to CCCD) are not shown twice
+  const papersDetails = collateralKey(settings.collateralDetails) === code ? '' : settings.collateralDetails.trim();
+  const papers = [collateralLabel, papersDetails].filter(Boolean).join(' · ');
+  const range = scheduleRange(detail, getLocalDateKey);
+  const lateDays = next?.kind === 'return' ? next.lateDays : 0;
+  // "T5 08/10" stays on one line
+  const day = (key: string) => formatDayLabel(key, weekdays).replace(/ /g, ' ');
+  const dialogSubtitle = (late: number) =>
+    [
+      name,
+      `#${order.orderNumber}`,
+      late > 0 ? t('detail.dialog.lateDays', { days: late }) : range ? `${day(range.from)} → ${day(range.to)}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
 
   const done = async (ok: boolean) => {
     if (ok) {
@@ -376,33 +395,54 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <CollectionReturnModal isOpen={handover} onClose={() => setHandover(false)} order={order} settingsForm={settings} mode="collection" onConfirmPickup={confirmPickup} />
-      <CollectionReturnModal isOpen={takeBack} onClose={() => setTakeBack(false)} order={order} settingsForm={settings} mode="return" onConfirmReturn={confirmReturn} />
+      <HandOverDialog
+        open={handover}
+        onClose={() => setHandover(false)}
+        order={detail}
+        subtitle={dialogSubtitle(0)}
+        items={dialogItems}
+        papers={papers}
+        onConfirm={confirmPickup}
+        t={t}
+        money={money}
+      />
+      <ReturnDialog
+        open={takeBack}
+        onClose={() => setTakeBack(false)}
+        order={detail}
+        subtitle={dialogSubtitle(lateDays)}
+        items={dialogItems}
+        papers={papers}
+        initialDamageFee={settings.damageFee}
+        lateDays={lateDays}
+        onConfirm={(damageFee) => confirmReturn({ damageFee })}
+        t={t}
+        money={money}
+      />
 
-      <ConfirmationDialog
+      <DangerDialog
         open={confirm === 'cancel'}
-        onOpenChange={(open) => !open && setConfirm(null)}
-        type="danger"
-        title={to('detail.cancelOrderTitle')}
-        description={to('detail.cancelOrderMessage')}
-        confirmText={to('actions.cancelOrder')}
-        cancelText={to('detail.keepOrder')}
-        isLoading={busy}
+        title={t('detail.dialog.cancel.title')}
+        message={t('detail.dialog.cancel.message', { number: `#${order.orderNumber}` })}
+        keepLabel={t('detail.dialog.cancel.keep')}
+        confirmLabel={t('detail.dialog.cancel.confirm')}
+        closeLabel={t('detail.dialog.close')}
+        busy={busy}
+        onClose={() => setConfirm(null)}
         onConfirm={async () => {
           await changeStatus(() => ordersApi.cancelOrder(order.id));
           setConfirm(null);
         }}
-        onCancel={() => setConfirm(null)}
       />
-      <ConfirmationDialog
+      <DangerDialog
         open={confirm === 'delete'}
-        onOpenChange={(open) => !open && setConfirm(null)}
-        type="danger"
-        title={to('actions.delete')}
-        description={to('messages.confirmDelete')}
-        confirmText={to('actions.delete')}
-        cancelText={to('actions.cancel')}
-        isLoading={busy}
+        title={t('detail.dialog.delete.title')}
+        message={t('detail.dialog.delete.message', { number: `#${order.orderNumber}` })}
+        keepLabel={t('detail.dialog.delete.keep')}
+        confirmLabel={t('detail.dialog.delete.confirm')}
+        closeLabel={t('detail.dialog.close')}
+        busy={busy}
+        onClose={() => setConfirm(null)}
         onConfirm={async () => {
           setBusy(true);
           try {
@@ -418,7 +458,6 @@ export default function OrderDetailPage() {
             setConfirm(null);
           }
         }}
-        onCancel={() => setConfirm(null)}
       />
 
       <ReceiptPreviewModal
