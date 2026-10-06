@@ -261,6 +261,15 @@ export const GET = async (
         throw new Error('Order not found');
       }
 
+      // The order must belong to the caller's merchant (#521); same rule as PUT (#361). Not found, not
+      // forbidden, so ids of other shops are not confirmed.
+      if (user.role !== USER_ROLE.ADMIN) {
+        const orderOutlet = await db.outlets.findById(order.outletId);
+        if (!orderOutlet || orderOutlet.merchantId !== userMerchantId) {
+          return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+        }
+      }
+
       console.log('✅ Order found:', order);
 
       // Flatten order items for mobile (iOS/Android cart edit needs productName/productId
