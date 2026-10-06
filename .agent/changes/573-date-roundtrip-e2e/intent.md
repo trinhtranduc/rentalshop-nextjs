@@ -1,6 +1,6 @@
 # Chosen rental days round trip (API + shop web e2e)
 
-Issue: #573 · Author: Claude (for Trinh Tran) · Status: in progress · Created: 2026-10-06
+Issue: #573 · Author: Claude (for Trinh Tran) · Status: done (PR #583) · Created: 2026-10-06
 
 ## Problem
 
@@ -36,3 +36,6 @@ Tests only, no app code. Local API and DB. Day keys in test logic (`timezone-dat
 
 - 2026-10-06 — Calendar by-date lists an order on its pickup day (default) and on its return day only with
   `kind=return` for PICKUPED orders; the middle days are not listed there (availability covers them). (Claude, from route code)
+- 2026-10-06 — Findings filed, not fixed here: #575 (batch availability, App Store iOS UTC-day window: day before
+  pickup busy), #576 (old Android `T23:59:59Z` window not read as a VN day), #577 (pre-#413 Android return stored as
+  R+1; the open question above goes there), #579 (web `/availability?productId=` deep link race). (Claude)

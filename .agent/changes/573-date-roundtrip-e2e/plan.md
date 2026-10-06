@@ -1,6 +1,6 @@
 # Plan — Chosen rental days round trip
 
-Issue: #573 · Status: in progress · Spec: ./spec.md
+Issue: #573 · Status: done (PR #583) · Spec: ./spec.md
 
 ## Steps
 

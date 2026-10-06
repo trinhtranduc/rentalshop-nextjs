@@ -1,6 +1,6 @@
 # Spec — Chosen rental days round trip
 
-Issue: #573 · Status: in progress · Intent: ./intent.md
+Issue: #573 · Status: done (PR #583) · Intent: ./intent.md
 
 ## Behavior
 
