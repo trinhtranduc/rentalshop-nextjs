@@ -1123,6 +1123,7 @@
 "INVALID_REQUEST" = "Định dạng yêu cầu không hợp lệ";
 "INVALID_SESSION_ID" = "ID phiên không hợp lệ";
 "INVALID_TENANT_KEY" = "Khóa tenant được cung cấp không hợp lệ";
+"INVALID_TIMEZONE" = "Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).";
 "INVALID_USER_ID" = "ID người dùng không hợp lệ";
 "INVALID_USER_ROLE" = "Vai trò người dùng không hợp lệ";
 "LOGIN_SUCCESS" = "Đăng nhập thành công";

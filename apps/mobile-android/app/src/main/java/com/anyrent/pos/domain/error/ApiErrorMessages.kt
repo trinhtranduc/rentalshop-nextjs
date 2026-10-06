@@ -50,6 +50,8 @@ object ApiErrorMessages {
         "RATE_LIMIT_EXCEEDED" -> R.string.api_error_rate_limit_exceeded
         // #518: 409 when the shop turned "Cho tạo đơn khi trùng lịch" off and the rental is double-booked
         "ORDER_SCHEDULE_CONFLICT" -> R.string.api_error_order_schedule_conflict
+        // #567: 400 when a shop time zone is not a known IANA id (PUT /api/settings/merchant)
+        "INVALID_TIMEZONE" -> R.string.api_error_invalid_timezone
         else -> 0
     }
 

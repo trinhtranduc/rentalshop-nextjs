@@ -1125,6 +1125,7 @@
 "INVALID_REQUEST" = "Invalid request format";
 "INVALID_SESSION_ID" = "Invalid session ID";
 "INVALID_TENANT_KEY" = "Invalid tenant key provided";
+"INVALID_TIMEZONE" = "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).";
 "INVALID_USER_ID" = "Invalid user ID";
 "INVALID_USER_ROLE" = "Invalid user role";
 "LOGIN_SUCCESS" = "Login successful";

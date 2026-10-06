@@ -5,6 +5,7 @@ import { generateToken, generateMobileToken, generateRefreshableToken, getUserPe
 import { ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform } from './platform-detector';
+import { merchantTimeZoneField } from './shop-timezone';
 
 type LoginUserRow = NonNullable<Awaited<ReturnType<typeof db.users.findByEmail>>>;
 
@@ -94,6 +95,8 @@ export async function buildAuthLoginSuccessResponse(
         tenantKey: (merchant as any).tenantKey || (await db.merchants.ensureTenantKey(merchant.id)) || undefined,
         // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
         allowOverlappingOrders: (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
+        ...merchantTimeZoneField(merchant),
         subscription: subscriptionData,
       };
     }

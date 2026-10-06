@@ -4,6 +4,7 @@ import { withAnyAuth } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
+import { merchantTimeZoneField } from '../../../../lib/shop-timezone';
 
 /**
  * GET /api/users/profile
@@ -72,6 +73,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         tenantKey: userProfile.merchant.tenantKey, // Include tenantKey for referral code
         // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
         allowOverlappingOrders: (userProfile.merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
+        ...merchantTimeZoneField(userProfile.merchant),
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
         totalRevenue: userProfile.merchant.totalRevenue,

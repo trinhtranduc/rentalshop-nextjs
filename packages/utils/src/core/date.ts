@@ -1,4 +1,6 @@
 import { format, addDays, differenceInDays, isAfter, isBefore, isValid, parseISO } from 'date-fns';
+import { DEFAULT_SHOP_TIMEZONE, usesDefaultShopTimeZone } from './timezone';
+import { formatDateKeyInTimeZone, getUtcRangeForDateKeys } from './date-range';
 // Note: useLocale import removed - React hooks should not be in server-side code
 // Client-side date hooks are now in @rentalshop/utils/client
 
@@ -434,6 +436,7 @@ export function formatDateTimeByLocale(date: string | Date, locale: string): str
  * Dates like "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25) should return "2026-02-25"
  * 
  * @param date - UTC datetime string or Date object from database
+ * @param timeZone - Shop IANA zone (#567). Omitted, Vietnam or invalid → the Vietnam day as before.
  * @returns Local date in YYYY-MM-DD format (based on local date after timezone conversion)
  * 
  * @example
@@ -441,12 +444,18 @@ export function formatDateTimeByLocale(date: string | Date, locale: string): str
  * // This function returns: "2026-02-25" (after converting to VN UTC+7)
  * getLocalDateKey("2026-02-24T17:00:00.000Z") // "2026-02-25"
  */
-export function getLocalDateKey(date: Date | string | null | undefined): string {
+export function getLocalDateKey(date: Date | string | null | undefined, timeZone?: string): string {
   if (!date) return '';
   
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '';
+
+    // #567: a shop on another zone gets that zone's civil day (IANA math, DST-aware).
+    // No zone / Vietnam keeps the historical UTC+7 path below, byte for byte.
+    if (!usesDefaultShopTimeZone(timeZone)) {
+      return formatDateKeyInTimeZone(dateObj, timeZone as string);
+    }
     
     // ✅ FIX: Convert UTC datetime to local date (VN UTC+7) for date-only fields
     // Dates are stored as "2026-02-24T17:00:00.000Z" (17:00 UTC = 00:00 VN ngày 25)
@@ -567,8 +576,11 @@ export function normalizeDateToISO(date: Date | string | null | undefined): stri
   return normalized ? normalized.toISOString() : '';
 }
 
-/** Shop civil-day timezone — same as Order Check / Lịch Thuê (VN UTC+7). */
-export const SHOP_TIMEZONE = 'Asia/Ho_Chi_Minh';
+/**
+ * Shop civil-day timezone — same as Order Check / Lịch Thuê (VN UTC+7).
+ * Kept for existing callers; equals `DEFAULT_SHOP_TIMEZONE` (#567: each shop now has its own zone).
+ */
+export const SHOP_TIMEZONE = DEFAULT_SHOP_TIMEZONE;
 const SHOP_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 /**
@@ -577,10 +589,13 @@ const SHOP_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
  * VN midnight on 2026-09-28 = 2026-09-27T17:00:00.000Z (NOT 2026-09-28T17:00:00.000Z).
  * Same encoding as `getAvailabilityCivilDayBounds` / iOS `dateServerISOString` on picked days.
  *
+ * @param timeZone - Shop IANA zone (#567). Omitted, Vietnam or invalid → the fixed UTC+7 encoding as before.
+ *
  * @example
  * convertLocalDateToUTCDatetime("2026-09-28") // "2026-09-27T17:00:00.000Z"
+ * convertLocalDateToUTCDatetime("2026-09-28", "Asia/Tokyo") // "2026-09-27T15:00:00.000Z"
  */
-export function convertLocalDateToUTCDatetime(dateStr: string | null | undefined): string {
+export function convertLocalDateToUTCDatetime(dateStr: string | null | undefined, timeZone?: string): string {
   if (!dateStr) return '';
 
   try {
@@ -589,6 +604,15 @@ export function convertLocalDateToUTCDatetime(dateStr: string | null | undefined
     if (isNaN(year) || isNaN(month) || isNaN(day)) return '';
     if (month < 1 || month > 12) return '';
     if (day < 1 || day > 31) return '';
+
+    // #567: midnight of that civil day in a non-default shop zone (IANA math, DST-aware). The calendar date is
+    // normalised the same way as the Vietnam path below (e.g. 2026-02-30 rolls to 2026-03-02).
+    if (!usesDefaultShopTimeZone(timeZone)) {
+      const civil = new Date(Date.UTC(year, month - 1, day));
+      if (isNaN(civil.getTime())) return '';
+      const key = `${String(civil.getUTCFullYear()).padStart(4, '0')}-${String(civil.getUTCMonth() + 1).padStart(2, '0')}-${String(civil.getUTCDate()).padStart(2, '0')}`;
+      return getUtcRangeForDateKeys({ from: key }, timeZone as string).start.toISOString();
+    }
 
     // Shop civil midnight → previous UTC day at 17:00 (VN UTC+7)
     const utcDate = new Date(Date.UTC(year, month - 1, day) - SHOP_UTC_OFFSET_MS);

@@ -42,6 +42,8 @@ export interface MerchantCreateData {
   website?: string;
   description?: string;
   currency?: string; // Currency code (USD, VND), defaults to USD
+  /** #567 shop time zone (IANA id); the column defaults to Asia/Ho_Chi_Minh. Validate before passing. */
+  timezone?: string;
   pricingConfig?: string;
   planId?: number;
   referredByMerchantId?: number; // ID of merchant who referred this merchant
@@ -86,6 +88,7 @@ export async function findById(id: number) {
       currency: true,
       tenantKey: true, // Include tenantKey for public product links
       allowOverlappingOrders: true, // #518 shop setting (POST /api/orders, login payload)
+      timezone: true, // #567 shop time zone (login payload, GET /api/merchants/[id])
       isActive: true,
       createdAt: true,
       updatedAt: true,

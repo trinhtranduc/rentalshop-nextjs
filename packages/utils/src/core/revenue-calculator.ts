@@ -33,16 +33,21 @@
 
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { SHOP_TIMEZONE } from './date';
+import { usesDefaultShopTimeZone } from './timezone';
 import { formatDateKeyInTimeZone, getUtcRangeForDateKeys } from './date-range';
 
-/** Vietnam civil day (`YYYY-MM-DD`) of an instant: "same day" and "today" are shop days, not UTC days (#355). */
-function shopDayKey(date: Date): string {
-  return formatDateKeyInTimeZone(date, SHOP_TIMEZONE);
+/**
+ * Shop civil day (`YYYY-MM-DD`) of an instant: "same day" and "today" are shop days, not UTC days (#355).
+ * #567: `timeZone` is the shop's zone; omitted or invalid → Vietnam (`SHOP_TIMEZONE`), as before.
+ */
+export function shopDayKey(date: Date, timeZone?: string): string {
+  return formatDateKeyInTimeZone(date, usesDefaultShopTimeZone(timeZone) ? SHOP_TIMEZONE : (timeZone as string));
 }
 
 /** UTC bounds of the shop day that contains `date`. */
-function shopDayBounds(date: Date): { start: Date; end: Date } {
-  return getUtcRangeForDateKeys({ from: shopDayKey(date) }, SHOP_TIMEZONE);
+function shopDayBounds(date: Date, timeZone?: string): { start: Date; end: Date } {
+  const zone = usesDefaultShopTimeZone(timeZone) ? SHOP_TIMEZONE : (timeZone as string);
+  return getUtcRangeForDateKeys({ from: shopDayKey(date, zone) }, zone);
 }
 
 export interface OrderRevenueData {

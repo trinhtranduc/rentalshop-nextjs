@@ -177,6 +177,7 @@
   "INVALID_ACTION": "Invalid action specified",
   "INVALID_REQUEST": "Invalid request format",
   "INVALID_TENANT_KEY": "Invalid tenant key provided",
+  "INVALID_TIMEZONE": "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).",
   "TENANT_KEY_ALREADY_EXISTS": "This store URL key is already taken. Please choose a different one.",
   "MISSING_ENDPOINT_OR_TOKEN": "Missing endpoint or token in request",
   "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Payment method and transaction ID are required",
