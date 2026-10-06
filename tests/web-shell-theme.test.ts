@@ -1,8 +1,29 @@
 /**
  * #509 light/dark theme: saved choice wins, otherwise the OS; disabled switch = always light.
+ * #528: the switch is on unless NEXT_PUBLIC_ENABLE_THEME_SWITCH is 'false'.
  */
 import { describe, expect, it } from '@jest/globals';
-import { parseThemeChoice, resolveTheme, themeBootScript, THEME_STORAGE_KEY } from '../apps/client/lib/theme';
+import {
+  isThemeSwitchEnabledFor,
+  parseThemeChoice,
+  resolveTheme,
+  themeBootScript,
+  THEME_STORAGE_KEY,
+} from '../apps/client/lib/theme';
+
+describe('isThemeSwitchEnabledFor (#528: on by default)', () => {
+  it('is on when the env var is unset or anything but false', () => {
+    expect(isThemeSwitchEnabledFor(undefined)).toBe(true);
+    expect(isThemeSwitchEnabledFor('')).toBe(true);
+    expect(isThemeSwitchEnabledFor('true')).toBe(true);
+    expect(isThemeSwitchEnabledFor('1')).toBe(true);
+  });
+
+  it('is off only when the env var is false', () => {
+    expect(isThemeSwitchEnabledFor('false')).toBe(false);
+    expect(isThemeSwitchEnabledFor(' FALSE ')).toBe(false);
+  });
+});
 
 describe('resolveTheme', () => {
   it('follows the OS when nothing is saved', () => {

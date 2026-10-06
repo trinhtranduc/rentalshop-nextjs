@@ -107,7 +107,10 @@ export function OrdersTable({
   t,
   money,
   skeletonRows = 6,
+  selection,
 }: {
+  /** Row checkboxes for "Xuất Excel" of the chosen orders (#526). */
+  selection?: { ids: Set<number>; toggle: (id: number) => void; setMany: (ids: number[], on: boolean) => void };
   rows: OrderRow[];
   loading: boolean;
   failed: boolean;
@@ -143,13 +146,36 @@ export function OrdersTable({
   }
 
   const href = (r: OrderRow) => `/orders/${r.orderNumber}`;
+  const allOn = !!selection && rows.length > 0 && rows.every((r) => selection.ids.has(r.id));
+  const box = (r: OrderRow) =>
+    selection && (
+      <input
+        type="checkbox"
+        checked={selection.ids.has(r.id)}
+        onChange={() => selection.toggle(r.id)}
+        onClick={(e) => e.stopPropagation()}
+        aria-label={t('select.row', { number: r.orderNumber })}
+        className="h-4 w-4 cursor-pointer accent-ar-primary"
+      />
+    );
   return (
     <div className={loading ? 'opacity-60 transition-opacity' : undefined} aria-busy={loading || undefined}>
       {/* Wide screens: the board's table */}
       <table className="hidden w-full border-collapse text-[15px] md:table">
         <thead>
           <tr className="bg-ar-surface-muted text-left">
-            <th scope="col" className={`${th} w-[120px] pl-4`}>{t('cols.status')}</th>
+            {selection && (
+              <th scope="col" className={`${th} w-10 pl-4`}>
+                <input
+                  type="checkbox"
+                  checked={allOn}
+                  onChange={() => selection.setMany(rows.map((r) => r.id), !allOn)}
+                  aria-label={t('select.page')}
+                  className="h-4 w-4 cursor-pointer accent-ar-primary"
+                />
+              </th>
+            )}
+            <th scope="col" className={`${th} w-[120px] ${selection ? 'pl-2' : 'pl-4'}`}>{t('cols.status')}</th>
             <th scope="col" className={th}>{t('cols.customer')}</th>
             <th scope="col" className={th}>{t('cols.schedule')}</th>
             <th scope="col" className={th}>{t('cols.note')}</th>
@@ -164,7 +190,8 @@ export function OrdersTable({
               onClick={() => router.push(href(r))}
               className={`cursor-pointer border-t border-ar-subtle hover:bg-ar-surface-muted ${r.cancelled ? 'opacity-[.55]' : ''}`}
             >
-              <td className="py-3 pl-4 pr-2 align-middle">
+              {selection && <td className="py-3 pl-4 pr-1 align-middle">{box(r)}</td>}
+              <td className={`py-3 pr-2 align-middle ${selection ? 'pl-2' : 'pl-4'}`}>
                 <StatusTag status={r.status} t={t} />
               </td>
               <td className="px-2 py-3 align-middle">
@@ -191,8 +218,9 @@ export function OrdersTable({
       {/* Phones: one card per order, same facts */}
       <ul className="m-0 list-none p-0 md:hidden">
         {rows.map((r) => (
-          <li key={r.id} className={`border-t border-ar-subtle first:border-t-0 ${r.cancelled ? 'opacity-[.55]' : ''}`}>
-            <Link href={href(r)} className="flex flex-col gap-1.5 px-4 py-3 text-inherit no-underline">
+          <li key={r.id} className={`flex items-start border-t border-ar-subtle first:border-t-0 ${r.cancelled ? 'opacity-[.55]' : ''}`}>
+            {selection && <span className="flex-none py-3.5 pl-4">{box(r)}</span>}
+            <Link href={href(r)} className="flex min-w-0 flex-1 flex-col gap-1.5 px-4 py-3 text-inherit no-underline">
               <span className="flex items-start justify-between gap-3">
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-semibold text-ar-ink">{r.name || t('row.walkIn')}</span>

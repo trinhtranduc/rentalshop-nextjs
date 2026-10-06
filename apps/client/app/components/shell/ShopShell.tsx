@@ -20,6 +20,14 @@ export function ShopShell({ user, pathname, onLogout, children }: ShopShellProps
 
   useEffect(() => setDrawerOpen(false), [pathname]);
 
+  // Marks <html> while the shell is mounted so portalled shared dialogs/toasts pick up the
+  // dark tokens (globals.css "Dark dialogs", #528). Public pages never get the class.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('ar-shell');
+    return () => root.classList.remove('ar-shell');
+  }, []);
+
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {

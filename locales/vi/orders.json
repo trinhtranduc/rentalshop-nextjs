@@ -571,6 +571,12 @@
     "exporting": "Đang xuất…",
     "exportDone": "Đã xuất file Excel",
     "exportFailed": "Không xuất được file. Thử lại sau.",
+    "select": {
+      "row": "Chọn đơn #{number}",
+      "page": "Chọn cả trang",
+      "export": "Xuất Excel ({count} đơn)",
+      "clear": "Bỏ chọn"
+    },
     "create": "Tạo đơn",
     "editor": {
       "title": "Tạo đơn",

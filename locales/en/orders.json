@@ -571,6 +571,12 @@
     "exporting": "Exporting…",
     "exportDone": "Excel file exported",
     "exportFailed": "Could not export the file. Try again later.",
+    "select": {
+      "row": "Select order #{number}",
+      "page": "Select this page",
+      "export": "Export Excel ({count} orders)",
+      "clear": "Clear selection"
+    },
     "create": "New order",
     "editor": {
       "title": "New order",

@@ -308,5 +308,189 @@
     "perDay": "/ngày",
     "depositHint": "Khách trả trước, trừ vào tiền thuê",
     "outlet": "Cửa hàng"
+  },
+  "web": {
+    "title": "Sản phẩm",
+    "add": "Thêm sản phẩm",
+    "importExcel": "Nhập từ Excel",
+    "export": "Xuất Excel",
+    "exportSelected": "Xuất Excel ({count})",
+    "exporting": "Đang xuất...",
+    "exportDone": "Đã xuất file Excel",
+    "exportFailed": "Không xuất được file. Thử lại.",
+    "close": "Đóng",
+    "empty": "Chưa có sản phẩm nào.",
+    "emptyFiltered": "Không có sản phẩm khớp bộ lọc.",
+    "loadFailed": "Không tải được danh sách sản phẩm.",
+    "retry": "Thử lại",
+    "tabs": {
+      "label": "Sản phẩm",
+      "all": "Tất cả sản phẩm",
+      "categories": "Danh mục"
+    },
+    "search": {
+      "label": "Tìm sản phẩm",
+      "placeholder": "Tên hoặc mã vạch"
+    },
+    "category": {
+      "label": "Danh mục",
+      "all": "Tất cả"
+    },
+    "outlet": {
+      "label": "Chi nhánh",
+      "all": "Tất cả"
+    },
+    "sort": {
+      "label": "Sắp xếp",
+      "name": "Tên A–Z",
+      "newest": "Mới thêm",
+      "priceAsc": "Giá thuê thấp trước",
+      "priceDesc": "Giá thuê cao trước"
+    },
+    "cols": {
+      "product": "Sản phẩm",
+      "category": "Danh mục",
+      "once": "Thuê theo lần",
+      "day": "Thuê theo ngày",
+      "sale": "Giá bán",
+      "today": "Hôm nay",
+      "actions": "Thao tác"
+    },
+    "selectPage": "Chọn tất cả trên trang",
+    "selectRow": "Chọn {name}",
+    "selection": {
+      "region": "Sản phẩm đã chọn",
+      "count": "Đã chọn {count} sản phẩm",
+      "selectAll": "Chọn cả {total} sản phẩm",
+      "clear": "Bỏ chọn",
+      "delete": "Xoá ({count})"
+    },
+    "stock": {
+      "left": "Còn {available}/{total}",
+      "out": "Hết",
+      "renting": "{count} đang thuê"
+    },
+    "price": {
+      "perHour": "{price}/giờ"
+    },
+    "row": {
+      "edit": "Sửa",
+      "more": "Thao tác khác cho {name}",
+      "view": "Xem chi tiết",
+      "orders": "Xem đơn có sản phẩm này",
+      "delete": "Xoá sản phẩm",
+      "image": "Ảnh {name}"
+    },
+    "more": {
+      "label": "Thêm thao tác",
+      "syncImages": "Đồng bộ tìm bằng ảnh",
+      "syncing": "Đang đồng bộ..."
+    },
+    "sync": {
+      "indexed": "Mọi sản phẩm có ảnh đã sẵn sàng để tìm bằng ảnh.",
+      "queued": "Đang xử lý {count} sản phẩm. Tìm bằng ảnh dùng được sau vài phút.",
+      "failed": "Không đồng bộ được. Thử lại sau."
+    },
+    "imageSearch": {
+      "open": "Tìm bằng ảnh",
+      "result": "Kết quả tìm bằng ảnh · {count}",
+      "clear": "Bỏ kết quả tìm bằng ảnh"
+    },
+    "searchResult": "Kết quả cho “{q}”",
+    "searchClear": "Xoá tìm kiếm",
+    "delete": {
+      "title": "Xoá sản phẩm",
+      "one": "Xoá “{name}”? Không hoàn tác được.",
+      "many": "Xoá {count} sản phẩm đã chọn? Không hoàn tác được.",
+      "confirm": "Xoá",
+      "cancel": "Huỷ",
+      "deleting": "Đang xoá...",
+      "done": "Đã xoá {count} sản phẩm",
+      "partial": "Đã xoá {deleted} sản phẩm, {failed} sản phẩm không xoá được",
+      "failed": "Không xoá được sản phẩm"
+    },
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} sản phẩm",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "import": {
+      "back": "Sản phẩm",
+      "title": "Nhập sản phẩm từ Excel",
+      "steps": "Các bước",
+      "step1": "1. Chọn file đã điền",
+      "step1Hint": ".xlsx hoặc .csv · tối đa {max} dòng",
+      "template": "Tải file mẫu sản phẩm (.xlsx)",
+      "templateFailed": "Không tải được file mẫu.",
+      "step2": "2. Kiểm tra và nhập",
+      "step2Hint": "Dòng lỗi sẽ không được nhập",
+      "step3": "3. Kết quả",
+      "step3Hint": "Sản phẩm vào danh sách ngay",
+      "pick": "Chọn file",
+      "drop": "Kéo file vào đây hoặc bấm để chọn",
+      "columnsHint": "Hàng đầu là tên cột: Tên sản phẩm, Mã vạch, Danh mục, Giá thuê, Giá bán, Tiền cọc, Số lượng (như file mẫu).",
+      "reading": "Đang đọc file...",
+      "problem": {
+        "type": "Chỉ nhận file .xlsx, .xls hoặc .csv.",
+        "unreadable": "Không đọc được file. Chọn file .xlsx, .xls hoặc .csv khác.",
+        "empty": "File không có dòng dữ liệu nào.",
+        "tooMany": "File có {count} dòng, quá {max} dòng cho một lần nhập. Chia nhỏ file rồi nhập lại.",
+        "noNameColumn": "Không thấy cột Tên sản phẩm. Dùng file mẫu hoặc đặt tên cột như file mẫu."
+      },
+      "fileRows": "{count} dòng · đọc xong lúc {time}",
+      "okCount": "{count} dòng hợp lệ",
+      "errCount": "{count} dòng lỗi",
+      "change": "Đổi file",
+      "filter": {
+        "label": "Lọc dòng",
+        "all": "Tất cả {count}",
+        "errorsFirst": "Lỗi trước · {count}"
+      },
+      "cols": {
+        "row": "Dòng",
+        "name": "Tên sản phẩm",
+        "barcode": "Mã vạch",
+        "categoryName": "Danh mục",
+        "rentPrice": "Giá thuê",
+        "salePrice": "Giá bán",
+        "deposit": "Tiền cọc",
+        "stock": "Số lượng",
+        "check": "Kiểm tra"
+      },
+      "selectValid": "Chọn tất cả dòng hợp lệ",
+      "selectRow": "Chọn dòng {row}",
+      "ok": "Hợp lệ",
+      "error": {
+        "nameMissing": "Thiếu tên sản phẩm",
+        "priceInvalid": "Giá không hợp lệ",
+        "stockInvalid": "Số lượng không hợp lệ",
+        "categoryUnknown": "Danh mục chưa có",
+        "barcodeDuplicate": "Mã vạch trùng dòng {row}"
+      },
+      "categoryHint": "Danh mục chưa có: tạo ở trang Danh mục trước, hoặc để trống để dùng danh mục mặc định.",
+      "openCategories": "Mở trang Danh mục",
+      "shown": "Đang hiện {shown}/{total} dòng",
+      "showMore": "Xem thêm",
+      "footerHint": "Sửa dòng lỗi trong file rồi chọn lại, hoặc bỏ qua và nhập các dòng hợp lệ.",
+      "cancel": "Huỷ",
+      "cta": "Nhập {count} sản phẩm",
+      "importing": "Đang nhập {count} sản phẩm...",
+      "noPermission": "Tài khoản này không được nhập sản phẩm.",
+      "result": {
+        "done": "Đã nhập {count} sản phẩm",
+        "skipped": "{count} dòng bỏ qua vì mã vạch đã có trong cửa hàng",
+        "none": "Chưa nhập sản phẩm nào",
+        "rejected": "{count} dòng không hợp lệ nên chưa nhập dòng nào. Sửa file rồi nhập lại.",
+        "errorsTitle": "Dòng bị từ chối",
+        "rowLabel": "Dòng {row}",
+        "failed": "Nhập không thành công",
+        "toList": "Xem danh sách sản phẩm",
+        "again": "Nhập file khác"
+      }
+    }
   }
 }

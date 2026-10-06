@@ -278,6 +278,33 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const grid = useProductGrid(q, categoryId, outletId);
 
   // Saved items have no pricing options: load them once from their products
+  // Kiểm tra còn hàng → "Tạo đơn với lịch này": ?pickup=&return=&productId=&outletId= prefill a new order
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (editing || prefilled.current) return;
+    prefilled.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const key = /^\d{4}-\d{2}-\d{2}$/;
+    const from = params.get('pickup') || '';
+    const to = params.get('return') || '';
+    if (key.test(from) && key.test(to) && to >= from) {
+      setPickup(from);
+      setRet(to);
+      setDaysOpen(false);
+    }
+    const outlet = Number(params.get('outletId'));
+    if (outlet > 0 && !user?.outletId) setOutletId(outlet);
+    const productId = Number(params.get('productId'));
+    if (productId > 0) {
+      productsApi
+        .getProduct(productId)
+        .then((res) => {
+          if (res.success && res.data) setLines((cur) => (cur.length ? cur : addProduct(cur, res.data as unknown as ProductLike, 'RENT')));
+        })
+        .catch(() => undefined);
+    }
+  }, [editing, user?.outletId]);
+
   const hydrated = useRef(false);
   useEffect(() => {
     if (!editing || hydrated.current || !draft?.lines.length) return;

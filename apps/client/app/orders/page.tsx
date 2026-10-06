@@ -180,17 +180,44 @@ export default function OrdersPage() {
     if (tab === 'all' && !list.loading && !list.failed && page > list.totalPages) update({ page: list.totalPages > 1 ? list.totalPages : null });
   }, [tab, list.loading, list.failed, list.totalPages, page, update]);
 
+  // Orders ticked for "Xuất Excel" (#526); kept across pages and filters until cleared
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const selection = useMemo(
+    () => ({
+      ids: selected,
+      toggle: (id: number) =>
+        setSelected((cur) => {
+          const next = new Set(cur);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        }),
+      setMany: (ids: number[], on: boolean) =>
+        setSelected((cur) => {
+          const next = new Set(cur);
+          ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
+          return next;
+        }),
+    }),
+    [selected],
+  );
+
   const [exporting, setExporting] = useState(false);
   const exportExcel = async () => {
     setExporting(true);
     try {
-      const blob = await ordersApi.exportOrders({
-        format: 'excel',
-        dateField: 'createdAt',
-        ...(range ? { period: 'custom' as const, startDate: range.startDate, endDate: range.endDate } : { period: '1year' as const }),
-        status: status || undefined,
-        orderType: type || undefined,
-      });
+      const chosen = Array.from(selected);
+      const blob = await ordersApi.exportOrders(
+        chosen.length
+          ? { format: 'excel', orderIds: chosen }
+          : {
+              format: 'excel',
+              dateField: 'createdAt',
+              ...(range ? { period: 'custom' as const, startDate: range.startDate, endDate: range.endDate } : { period: '1year' as const }),
+              status: status || undefined,
+              orderType: type || undefined,
+            },
+      );
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -231,10 +258,17 @@ export default function OrdersPage() {
         <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
         <div className="flex flex-wrap gap-2">
           {canExport && tab === 'all' && (
-            <button type="button" onClick={exportExcel} disabled={exporting} className={outlineBtn}>
-              <ShellIcon d={ICONS.download} size={18} />
-              {exporting ? t('exporting') : t('export')}
-            </button>
+            <>
+              {selected.size > 0 && (
+                <button type="button" onClick={() => setSelected(new Set())} className={outlineBtn}>
+                  {t('select.clear')}
+                </button>
+              )}
+              <button type="button" onClick={exportExcel} disabled={exporting} className={outlineBtn}>
+                <ShellIcon d={ICONS.download} size={18} />
+                {exporting ? t('exporting') : selected.size > 0 ? t('select.export', { count: selected.size }) : t('export')}
+              </button>
+            </>
           )}
           <Link href="/orders/create" className={primaryBtn}>
             <ShellIcon d={ICONS.plus} size={18} />
@@ -361,6 +395,7 @@ export default function OrdersPage() {
           t={t}
           money={money}
           skeletonRows={tab === 'all' ? Math.min(limit, 10) : 4}
+          selection={canExport && tab === 'all' ? selection : undefined}
         />
 
         {tab === 'all' && list.total > 0 && (

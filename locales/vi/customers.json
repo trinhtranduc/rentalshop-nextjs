@@ -186,5 +186,154 @@
   "form": {
     "moreDetails": "Địa chỉ, CCCD, ghi chú",
     "hideDetails": "Ẩn bớt"
+  },
+  "web": {
+    "title": "Khách hàng",
+    "importExcel": "Nhập từ Excel",
+    "create": "Khách mới",
+    "export": "Xuất Excel",
+    "exportCount": "Xuất Excel ({count})",
+    "exporting": "Đang xuất…",
+    "exportDone": "Đã xuất file Excel",
+    "exportFailed": "Không xuất được file. Thử lại.",
+    "close": "Đóng",
+    "cancel": "Huỷ",
+    "exportDialog": {
+      "title": "Xuất danh sách khách",
+      "hint": "Chưa chọn khách nào. Xuất các khách được thêm vào cửa hàng trong:",
+      "tip": "Muốn xuất vài khách cụ thể? Đánh dấu họ trong bảng rồi bấm Xuất Excel.",
+      "period": {
+        "1month": "30 ngày qua",
+        "3months": "3 tháng qua",
+        "6months": "6 tháng qua",
+        "1year": "12 tháng qua"
+      }
+    },
+    "search": {
+      "label": "Tìm khách",
+      "placeholder": "Tên hoặc số điện thoại",
+      "clear": "Xoá tìm kiếm"
+    },
+    "selection": {
+      "label": "Khách đã chọn",
+      "count": "Đã chọn {count} khách",
+      "all": "Chọn cả {total} khách",
+      "clear": "Bỏ chọn",
+      "page": "Chọn tất cả trên trang",
+      "one": "Chọn khách {name}"
+    },
+    "cols": {
+      "customer": "Khách",
+      "orders": "Số đơn",
+      "address": "Địa chỉ",
+      "created": "Ngày thêm"
+    },
+    "noName": "Khách chưa có tên",
+    "empty": "Chưa có khách nào. Bấm “Khách mới” để thêm.",
+    "emptySearch": "Không có khách khớp “{q}”.",
+    "loadFailed": "Không tải được danh sách khách.",
+    "retry": "Thử lại",
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} khách",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "detail": {
+      "label": "Chi tiết khách",
+      "call": "Gọi {name}",
+      "edit": "Sửa",
+      "orders": "Số đơn",
+      "spent": "Đã chi",
+      "renting": "Đang thuê",
+      "spentNote": "Đã chi không tính đơn huỷ.",
+      "ordersTitle": "Đơn của khách",
+      "noOrders": "Khách chưa có đơn nào.",
+      "ordersFailed": "Không tải được đơn của khách.",
+      "allOrders": "Tất cả đơn của khách",
+      "profile": "Xem hồ sơ",
+      "delete": "Xoá khách"
+    },
+    "delete": {
+      "title": "Xoá khách?",
+      "body": "Xoá {name} khỏi danh sách khách. Khách còn đơn đang đặt hoặc đang thuê thì không xoá được.",
+      "confirm": "Xoá khách",
+      "deleting": "Đang xoá…",
+      "done": "Đã xoá khách",
+      "failed": "Không xoá được khách"
+    },
+    "import": {
+      "back": "Khách hàng",
+      "title": "Nhập khách hàng từ Excel",
+      "steps": {
+        "label": "Các bước",
+        "choose": "1. Chọn file",
+        "check": "2. Kiểm tra dòng lỗi",
+        "result": "3. Kết quả",
+        "checkHint": "Dòng lỗi sẽ không được nhập",
+        "resultHint": "Khách mới, khách cũ và dòng bỏ qua"
+      },
+      "template": "Tải file mẫu khách hàng (.xlsx)",
+      "templateLoading": "Đang tải file mẫu…",
+      "templateFailed": "Không tải được file mẫu",
+      "drop": {
+        "title": "Kéo file vào đây hoặc bấm để chọn",
+        "hint": ".xlsx, .xls hoặc .csv · tối đa {max} dòng",
+        "button": "Chọn file",
+        "reading": "Đang đọc file…"
+      },
+      "columnsHint": "Dùng các cột của file mẫu: tên (firstName), họ (lastName), số điện thoại (phone), email, địa chỉ (address), ghi chú (notes). Chỉ tên là bắt buộc.",
+      "notSpreadsheet": "Chỉ nhận file .xlsx, .xls hoặc .csv.",
+      "fileFailed": "Không đọc được file: {message}",
+      "tooMany": "File có {count} dòng, tối đa {max} dòng mỗi lần nhập. Chia nhỏ file rồi thử lại.",
+      "emptyFile": "File không có dòng khách nào.",
+      "fileRows": "{count} dòng · đọc xong lúc {time}",
+      "okCount": "{count} dòng hợp lệ",
+      "errCount": "{count} dòng lỗi",
+      "change": "Đổi file",
+      "filter": {
+        "label": "Lọc dòng",
+        "all": "Tất cả {count}",
+        "errors": "Lỗi trước · {count}"
+      },
+      "cols": {
+        "row": "Dòng",
+        "name": "Họ tên",
+        "phone": "Số điện thoại",
+        "email": "Email",
+        "address": "Địa chỉ",
+        "notes": "Ghi chú",
+        "check": "Kiểm tra"
+      },
+      "selectAll": "Chọn tất cả dòng hợp lệ",
+      "selectRow": "Chọn dòng {n}",
+      "ok": "Hợp lệ",
+      "issue": {
+        "missingName": "Thiếu họ tên",
+        "badEmail": "Email sai định dạng",
+        "badIdType": "Loại giấy tờ không hợp lệ"
+      },
+      "more": "Xem thêm {count} dòng",
+      "footerHint": "Sửa dòng lỗi trong file rồi chọn lại, hoặc bỏ qua và nhập các dòng hợp lệ.",
+      "submit": "Nhập {count} khách",
+      "importing": "Đang nhập…",
+      "requestFailed": "Không nhập được. Thử lại.",
+      "noMerchant": "Tài khoản này chưa gắn với cửa hàng nên không nhập được khách.",
+      "result": {
+        "title": "Đã nhập xong",
+        "failedTitle": "Chưa nhập khách nào",
+        "failedBody": "Cả lô bị huỷ vì có dòng không hợp lệ. Sửa các dòng dưới đây trong file rồi nhập lại.",
+        "imported": "Khách mới",
+        "updated": "Khách cũ được mở lại",
+        "skipped": "Bỏ qua vì đã có (trùng SĐT hoặc email)",
+        "errorsTitle": "Dòng không nhập được",
+        "errorRow": "Dòng {n}",
+        "toList": "Về danh sách khách",
+        "again": "Nhập file khác"
+      }
+    }
   }
 }

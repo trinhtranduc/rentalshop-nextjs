@@ -130,5 +130,62 @@
   },
   "remove": "Remove {name}",
   "decrease": "Decrease quantity",
-  "increase": "Increase quantity"
+  "increase": "Increase quantity",
+  "web": {
+    "title": "Check availability",
+    "outlet": "Outlet",
+    "product": "Product",
+    "productPlaceholder": "Search product name or code",
+    "noProducts": "No products found",
+    "searching": "Searching…",
+    "pickup": "Pickup day",
+    "return": "Return day",
+    "quantity": "Quantity",
+    "check": "Check",
+    "quick": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "weekend": "Weekend",
+      "threeDays": "3 days"
+    },
+    "reversed": "The return day must be on or after the pickup day.",
+    "pickProduct": "Pick a product to see how many units are free for these days.",
+    "pickOutlet": "Pick an outlet to check.",
+    "has": "{total} units · {from} → {to}",
+    "free": "{free}/{total} free for these days",
+    "short": "{missing} short · {free}/{total} free",
+    "none": "None free for these days",
+    "checking": "Checking…",
+    "checkFailed": "Could not check.",
+    "retry": "Retry",
+    "createOrder": "Create order for these days",
+    "dayLeft": "Free on the day",
+    "dayAria": "{day}: {count} free. Click to start the period on this day",
+    "note": "A day counts both the pickup and the return day, also when both are the same day. The light blue area is the period being checked. Click a day to move the period there.",
+    "status": {
+      "RESERVED": "Reserved",
+      "PICKUPED": "Renting"
+    },
+    "bar": {
+      "returnOn": "returns {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "Orders holding this product",
+    "noHolders": "No order holds this product.",
+    "holdersFailed": "Could not load the orders holding this product.",
+    "units": "{count} units",
+    "walkIn": "Walk-in customer",
+    "similar": "Same category, free for these days",
+    "similarFree": "{count} free",
+    "similarEmpty": "No product of this category is free for these days.",
+    "priceSuffix": {
+      "DAILY": "{price}/day",
+      "HOURLY": "{price}/hour",
+      "FIXED": "{price}/rental",
+      "WEEKLY": "{price}/week",
+      "MONTHLY": "{price}/month"
+    },
+    "change": "Change product",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat"
+  }
 }

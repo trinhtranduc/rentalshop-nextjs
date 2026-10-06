@@ -250,7 +250,16 @@
       "yesterday": "Hôm qua",
       "empty": "Chưa có thông báo nào",
       "emptyUnread": "Không có thông báo chưa đọc",
-      "loadError": "Không tải được thông báo. Thử lại sau."
+      "loadError": "Không tải được thông báo. Thử lại sau.",
+      "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+      "seeAll": "Xem tất cả thông báo",
+      "moreActions": "Thêm thao tác",
+      "deleteRead": "Xoá thông báo đã đọc",
+      "markRead": "Đánh dấu đã đọc",
+      "markUnread": "Đánh dấu chưa đọc",
+      "retry": "Thử lại",
+      "loadMore": "Xem thêm",
+      "unreadCount": "{count} chưa đọc"
     }
   }
 }

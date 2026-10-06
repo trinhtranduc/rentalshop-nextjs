@@ -250,7 +250,16 @@
       "yesterday": "Yesterday",
       "empty": "No notifications yet",
       "emptyUnread": "No unread notifications",
-      "loadError": "Couldn't load notifications. Try again later."
+      "loadError": "Couldn't load notifications. Try again later.",
+      "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+      "seeAll": "See all notifications",
+      "moreActions": "More actions",
+      "deleteRead": "Delete read notifications",
+      "markRead": "Mark read",
+      "markUnread": "Mark unread",
+      "retry": "Try again",
+      "loadMore": "Load more",
+      "unreadCount": "{count} unread"
     }
   }
 }
