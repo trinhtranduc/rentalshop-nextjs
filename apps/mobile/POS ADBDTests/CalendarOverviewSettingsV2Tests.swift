@@ -223,6 +223,127 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertNil(old.outstanding)
     }
 
+    // MARK: - #492 Thực thu breakdown
+
+    func testReportParsingOfCollectedBreakdown() throws {
+        let report = try decode(OverviewReport.self, """
+        {"revenue":{"collected":12450000,"totalOrderValue":15800000,"outstanding":3350000,
+                    "collectedBreakdown":{"deposits":4000000,"pickupAndSale":8200000,"fees":550000,"refunds":300000}}}
+        """)
+        XCTAssertEqual(report.netRevenue, 12_450_000)
+        XCTAssertEqual(report.collectedBreakdown,
+                       OverviewReport.CollectedBreakdown(deposits: 4_000_000, pickupAndSale: 8_200_000, fees: 550_000, refunds: 300_000))
+        // deposits + pickupAndSale + fees − refunds = collected
+        XCTAssertEqual(report.collectedBreakdown?.total, report.netRevenue)
+        XCTAssertEqual(OverviewReport.CollectedBreakdown(deposits: 0, pickupAndSale: 0, fees: 0, refunds: 120).total, -120)
+    }
+
+    func testReportParsingOfOrderValueGrowth() throws {
+        let report = try decode(OverviewReport.self, """
+        {"revenue":{"collected":12450000,"totalOrderValue":15800000},
+         "growth":{"collected":{"current":12450000,"previous":10000000,"growth":24.5},
+                   "orderValue":{"current":15800000,"previous":20000000,"growth":-21}}}
+        """)
+        XCTAssertEqual(report.orderValueGrowth, -21)
+        XCTAssertEqual(report.revenueGrowth, 24.5)
+        XCTAssertEqual(report.totalOrderValue, 15_800_000)
+
+        // Older API: no growth.orderValue, the hero shows no % part
+        let old = try decode(OverviewReport.self, #"{"growth":{"revenue":{"growth":5}}}"#)
+        XCTAssertNil(old.orderValueGrowth)
+        XCTAssertEqual(old.revenueGrowth, 5)
+        XCTAssertNil(try decode(OverviewReport.self, #"{"growth":{"orderValue":null}}"#).orderValueGrowth)
+        XCTAssertNil(try decode(OverviewReport.self, "{}").orderValueGrowth)
+    }
+
+    func testReportParsingWithoutBreakdown() throws {
+        // Older API: no breakdown, so the sheet shows only the total
+        let old = try decode(OverviewReport.self, #"{"revenue":{"collected":500,"totalOrderValue":800,"outstanding":300}}"#)
+        XCTAssertNil(old.collectedBreakdown)
+        XCTAssertEqual(old.netRevenue, 500)
+        let nulls = try decode(OverviewReport.self, #"{"revenue":{"collected":500,"collectedBreakdown":null}}"#)
+        XCTAssertNil(nulls.collectedBreakdown)
+        // A partial breakdown counts a missing part as 0
+        let partial = try decode(OverviewReport.self, #"{"revenue":{"collected":700,"collectedBreakdown":{"deposits":200,"pickupAndSale":500}}}"#)
+        XCTAssertEqual(partial.collectedBreakdown,
+                       OverviewReport.CollectedBreakdown(deposits: 200, pickupAndSale: 500, fees: 0, refunds: 0))
+        XCTAssertEqual(partial.collectedBreakdown?.total, 700)
+        let empty = try decode(OverviewReport.self, "{}")
+        XCTAssertNil(empty.collectedBreakdown)
+    }
+
+    func testVietnameseCopyOfTheCollectedDetails() throws {
+        let vi = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "vi-VN", ofType: "lproj"))))
+        let en = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))))
+        let expected: [String: String] = [
+            "overview.v2.collected": "Thực thu",
+            "overview.v2.chart.money": "Thực thu",
+            "overview.v2.newOrderValue": "Tổng giá trị đơn mới",
+            "overview.v2.vsPreviousPeriod": "so với kỳ trước",
+            "overview.v2.collectedNote": "Tiền đã vào tiệm",
+            "overview.v2.outstanding": "Còn phải thu",
+            "overview.v2.outstandingNote": "Của các đơn mới",
+            "overview.v2.seeDetails": "xem chi tiết",
+            "overview.v2.depositsAtOrder": "Cọc khi tạo đơn",
+            "overview.v2.collateralHeld": "Thế chân đang giữ",
+            "overview.v2.detail.body": "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.",
+            "overview.v2.detail.pickupAndSale": "Thu khi giao đồ, bán hàng",
+            "overview.v2.detail.fees": "Phí hư hỏng, trễ hạn",
+            "overview.v2.detail.refunds": "Hoàn tiền đơn huỷ",
+            "overview.v2.detail.collateralNote": "Không tính vào thực thu vì sẽ trả lại khách.",
+            "overview.v2.detail.note": "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.",
+            "overview.v2.detail.close": "Đóng",
+        ]
+        for (key, text) in expected {
+            XCTAssertEqual(vi.localizedString(forKey: key, value: "∅", table: nil), text, key)
+            XCTAssertNotEqual(en.localizedString(forKey: key, value: "∅", table: nil), "∅", "en: \(key)")
+        }
+        // "thế chân", never "thế chấp", for the security deposit
+        let path = try XCTUnwrap(vi.path(forResource: "Localizable", ofType: "strings"))
+        let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
+        XCTAssertFalse(table.isEmpty)
+        for (key, value) in table {
+            XCTAssertFalse(value.lowercased().contains("thế chấp"), key)
+        }
+    }
+
+    private func sheetTexts(_ report: OverviewReport, held: Double?) -> [String] {
+        let sheet = OverviewCollectedDetailsSheet(report: report, periodTitle: "7 ngày qua", collateralHeld: held)
+        sheet.loadViewIfNeeded()
+        return labels(sheet.view).compactMap(\.text)
+    }
+
+    func testCollectedDetailsSheetRows() {
+        let parts = OverviewReport.CollectedBreakdown(deposits: 4_000_000, pickupAndSale: 8_200_000, fees: 550_000, refunds: 300_000)
+        let full = OverviewReport(netRevenue: parts.total, revenueGrowth: nil, newOrders: nil, series: [], topProducts: [],
+                                  collectedBreakdown: parts)
+        let texts = sheetTexts(full, held: 3_500_000)
+        XCTAssertTrue(texts.contains("\("overview.v2.collected".localized()) · 7 ngày qua"))
+        XCTAssertTrue(texts.contains("+" + MoneyFormatter.format(4_000_000)))
+        XCTAssertTrue(texts.contains("+" + MoneyFormatter.format(8_200_000)))
+        XCTAssertTrue(texts.contains("+" + MoneyFormatter.format(550_000)))
+        XCTAssertTrue(texts.contains("−" + MoneyFormatter.format(300_000)))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(12_450_000)))
+        XCTAssertTrue(texts.contains("overview.v2.depositsAtOrder".localized()))
+        XCTAssertTrue(texts.contains("overview.v2.collateralHeld".localized()))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(3_500_000)))
+        XCTAssertTrue(texts.contains("overview.v2.detail.collateralNote".localized()))
+
+        // No refunds: no refunds row
+        let noRefunds = OverviewReport(netRevenue: 100, revenueGrowth: nil, newOrders: nil, series: [], topProducts: [],
+                                       collectedBreakdown: .init(deposits: 100, pickupAndSale: 0, fees: 0, refunds: 0))
+        XCTAssertFalse(sheetTexts(noRefunds, held: nil).contains("overview.v2.detail.refunds".localized()))
+
+        // Older API: only the total row and the texts
+        let old = OverviewReport(netRevenue: 500, revenueGrowth: nil, newOrders: nil, series: [], topProducts: [])
+        let oldTexts = sheetTexts(old, held: nil)
+        XCTAssertTrue(oldTexts.contains(MoneyFormatter.format(500)))
+        XCTAssertFalse(oldTexts.contains("overview.v2.depositsAtOrder".localized()))
+        // No collateral held known: no bordered box
+        XCTAssertFalse(oldTexts.contains("overview.v2.detail.collateralNote".localized()))
+        XCTAssertTrue(oldTexts.contains("overview.v2.detail.note".localized()))
+    }
+
     private func rental(id: Int, status: String = "PICKUPED", returns: String) throws -> Order {
         let json = #"{"id":\#(id),"orderNumber":"000\#(id)","orderType":"RENT","status":"\#(status)","createdAt":"2026-09-20T03:00:00.000Z","updatedAt":"2026-09-20T03:00:00.000Z","pickupPlanAt":"2026-09-25T02:00:00.000Z","returnPlanAt":"\#(returns)","customerName":"Minh","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":1,"orderItems":[]}"#
         return try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))

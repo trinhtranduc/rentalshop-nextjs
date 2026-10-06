@@ -1,6 +1,12 @@
 import type { PrismaClient } from '@prisma/client';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { getOrderRevenueEvents, withoutCollateral } from '../core/revenue-calculator';
+import {
+  addToCollectedBreakdown,
+  emptyCollectedBreakdown,
+  getOrderRevenueEvents,
+  withoutCollateral,
+  type CollectedBreakdown
+} from '../core/revenue-calculator';
 import { SHOP_TIMEZONE } from '../core/date';
 import { addDaysToDateKey, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '../core/date-range';
 
@@ -23,6 +29,8 @@ export interface IncomePeriodSummary {
   totalDepositRefund: number;
   /** Money collected without collateral (#484): deposits, rent/sale balances, fees, minus cancellation refunds */
   totalCollected: number;
+  /** Where `totalCollected` came from (#492) */
+  collectedBreakdown: CollectedBreakdown;
 }
 
 export interface IncomePeriodDayRow {
@@ -141,6 +149,7 @@ export async function computeIncomePeriodSummary(
   const pickupOrdersCounted = new Set<string>();
   const returnOrdersCounted = new Set<string>();
   const cancelledOrdersCounted = new Set<string>();
+  const collectedBreakdown = emptyCollectedBreakdown();
 
   const ensureDay = (date: Date): DailyBucket => {
     const { date: dateKey, dateISO } = civilDayBucket(date, timeZone);
@@ -188,6 +197,7 @@ export async function computeIncomePeriodSummary(
     for (const event of getOrderRevenueEvents(withoutCollateral(orderData), filterStart, filterEnd)) {
       if (event.date < filterStart || event.date > filterEnd) continue;
       ensureDay(event.date).collected += event.revenue;
+      addToCollectedBreakdown(collectedBreakdown, orderData, event);
     }
 
     if (order.createdAt) {
@@ -397,7 +407,8 @@ export async function computeIncomePeriodSummary(
     totalCollateralPlan,
     totalRevenuePlan,
     totalDepositRefund,
-    totalCollected
+    totalCollected,
+    collectedBreakdown
   };
 
   return {

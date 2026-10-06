@@ -35,6 +35,10 @@ data class OverviewReport(
     val totalOrderValue: Double? = null,
     /** #484: the part of those orders not collected yet; null on an older API (tile hidden) */
     val outstanding: Double? = null,
+    /** #492: what makes up [netRevenue]; null on an older API (cọc tile hidden, sheet shows only the total) */
+    val collectedBreakdown: CollectedBreakdown? = null,
+    /** #492: `growth.orderValue`, the hero's change vs the previous period; null on an older API (hero falls back) */
+    val orderValueGrowth: OverviewGrowth? = null,
 ) {
     /**
      * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
@@ -43,6 +47,17 @@ data class OverviewReport(
     data class Point(val dayKey: String?, val monthLabel: String?, val realIncome: Double, val newOrderCount: Int? = null)
     data class TopProduct(val id: Int?, val name: String, val rentalCount: Int, val totalRevenue: Double, val image: String?)
 }
+
+/**
+ * #492 `revenue.collectedBreakdown`: [deposits] + [pickupAndSale] + [fees] - [refunds] = `revenue.collected`.
+ * [refunds] is a positive amount that is subtracted.
+ */
+data class CollectedBreakdown(val deposits: Double, val pickupAndSale: Double, val fees: Double, val refunds: Double) {
+    val total: Double get() = deposits + pickupAndSale + fees - refunds
+}
+
+/** #492 one `growth.*` entry of `GET /api/analytics/period`; [growth] is a percentage (8.0 = 8%) */
+data class OverviewGrowth(val current: Double?, val previous: Double?, val growth: Double?)
 
 /** "Now" figures of `GET /api/analytics/outlet-operations`; [rentedOut] and [collateralHeld] need the revenue right */
 data class OverviewNow(val lateReturns: Int, val rentedOut: Int?, val collateralHeld: Double?)
@@ -169,6 +184,17 @@ object OverviewLogic {
             },
             totalOrderValue = number(revenue, "totalOrderValue"),
             outstanding = number(revenue, "outstanding"),
+            orderValueGrowth = data.optJSONObject("growth")?.optJSONObject("orderValue")?.let { g ->
+                OverviewGrowth(current = number(g, "current"), previous = number(g, "previous"), growth = number(g, "growth"))
+            },
+            collectedBreakdown = revenue?.optJSONObject("collectedBreakdown")?.let { b ->
+                CollectedBreakdown(
+                    deposits = number(b, "deposits") ?: 0.0,
+                    pickupAndSale = number(b, "pickupAndSale") ?: 0.0,
+                    fees = number(b, "fees") ?: 0.0,
+                    refunds = number(b, "refunds") ?: 0.0,
+                )
+            },
         )
     }
 

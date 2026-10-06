@@ -16,15 +16,26 @@ class Issue484ResourcesTest {
     }
 
     private val boardVietnamese = mapOf(
-        "overview_v2_collected" to "Tiền đã thu",
-        "overview_v2_total_order_value" to "Tổng giá trị đơn",
+        "overview_v2_collected" to "Thực thu",
         "overview_v2_outstanding" to "Còn phải thu",
-        "overview_v2_chart_money" to "Tiền thu",
+        "overview_v2_chart_money" to "Thực thu",
         "overview_v2_chart_orders" to "Số đơn",
         "overview_v2_top_rented" to "Thuê nhiều nhất · theo giá trị đơn",
-        "overview_v2_info_ok" to "Đã hiểu",
-        "overview_v2_info_cancelled" to "Đơn huỷ",
-        "overview_v2_info_refunds" to "trừ lại tiền đã hoàn",
+        // #492 board Tong-quan, Tong-quan-giai-thich
+        "overview_v2_new_order_value" to "Tổng giá trị đơn mới",
+        "overview_v2_vs_previous_period" to "so với kỳ trước",
+        "overview_v2_excludes_cancelled" to "không tính đơn huỷ",
+        "overview_v2_collected_sub" to "Tiền đã vào tiệm",
+        "overview_v2_outstanding_sub" to "Của các đơn mới",
+        "overview_v2_collected_tile_accessibility" to "Thực thu %1\$s, xem chi tiết",
+        "overview_v2_collateral_held" to "Thế chân đang giữ",
+        "overview_v2_info_body" to "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.",
+        "overview_v2_info_deposit" to "Cọc khi tạo đơn",
+        "overview_v2_info_remaining" to "Thu khi giao đồ, bán hàng",
+        "overview_v2_info_fees" to "Phí hư hỏng, trễ hạn",
+        "overview_v2_info_cancelled" to "Hoàn tiền đơn huỷ",
+        "overview_v2_info_note" to "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.",
+        "close" to "Đóng",
         "rented_out_title" to "Đang cho thuê · %1\$d",
         "rented_out_late" to "Trễ hạn trả · %1\$d",
         "rented_out_on_time" to "Còn hạn · %1\$d",
@@ -57,7 +68,14 @@ class Issue484ResourcesTest {
     @Test
     fun explanationSaysCollateralIsNotCounted() {
         val vi = strings("values-vi")
-        assertEquals("Thế chấp (giấy tờ, tiền)", vi["overview_v2_info_collateral"])
-        assertEquals("không tính", vi["overview_v2_info_not_counted"])
+        assertEquals("Không tính vào thực thu vì sẽ trả lại khách.", vi["overview_v2_info_collateral"])
+    }
+
+    /** #492: the security deposit is "thế chân" in every Vietnamese string, never "thế chấp" */
+    @Test
+    fun vietnameseSaysTheChanNotTheChap() {
+        val vi = strings("values-vi")
+        val wrong = vi.filterValues { it.contains("thế chấp", ignoreCase = true) }.keys
+        assertEquals(emptySet<String>(), wrong)
     }
 }

@@ -12,20 +12,21 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -55,13 +57,17 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.overview.CollectedBreakdown
 import com.anyrent.pos.domain.overview.DayRange
 import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.domain.overview.OverviewBar
@@ -110,12 +116,12 @@ fun OverviewV2Screen(
     onOpenList: (String, String, String) -> Unit = { _, _, _ -> },
     /** #388: (product id, start, end) */
     onOpenProduct: (Int, String, String) -> Unit = { _, _, _ -> },
-    /** #484: "Đang cho thuê", "Đang thuê · trễ hạn trả" and the collateral row open the rented-out list */
+    /** #484: "Đang cho thuê" and "Đang thuê · trễ hạn trả" open the rented-out list */
     onOpenRentedOut: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
-    var showInfo by remember { mutableStateOf(false) }
+    var showDetails by remember { mutableStateOf(false) }
     var chart by rememberSaveable { mutableStateOf(OverviewChart.MONEY) }
     var showPicker by remember { mutableStateOf(false) }
     val today = viewModel.today()
@@ -156,7 +162,7 @@ fun OverviewV2Screen(
                         Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
                         RevenueSection(
                             state.report, state.loading, state.reportError, range, chart,
-                            onChart = { chart = it }, onInfo = { showInfo = true }, onRetry = viewModel::load,
+                            onChart = { chart = it }, onDetails = { showDetails = true }, onRetry = viewModel::load,
                         )
                     }
                 }
@@ -167,8 +173,6 @@ fun OverviewV2Screen(
                     state.now?.takeIf { state.showsOperations }?.let {
                         add(StatRowData(R.string.overview_v2_late_returns, it.lateReturns.toString(), if (it.lateReturns > 0) V2Colors.Danger else DS.Colors.Text, OverviewLinks.LATE))
                     }
-                    // The collateral is held by the orders out now: the same list as Đang cho thuê
-                    state.now?.collateralHeld?.let { add(StatRowData(R.string.overview_v2_collateral_held, formatMoneyVnd(it), DS.Colors.Text, OverviewLinks.RENTED)) }
                 }
                 if (stats.isNotEmpty()) {
                     item(key = "orders-band") { SectionBand(stringResource(R.string.overview_v2_orders)) }
@@ -233,13 +237,19 @@ fun OverviewV2Screen(
             )
         }
     }
-    if (showInfo) {
+    val detailsReport = state.report
+    if (showDetails && detailsReport != null) {
         ModalBottomSheet(
-            onDismissRequest = { showInfo = false },
+            onDismissRequest = { showDetails = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = DS.Colors.Surface,
         ) {
-            CollectedInfoSheet(onClose = { showInfo = false })
+            CollectedDetailSheet(
+                report = detailsReport,
+                collateralHeld = state.now?.collateralHeld,
+                periodTitle = periodTitle,
+                onClose = { showDetails = false },
+            )
         }
     }
     if (showPicker) {
@@ -268,50 +278,70 @@ private fun RevenueSection(
     range: DayRange,
     chart: OverviewChart,
     onChart: (OverviewChart) -> Unit,
-    onInfo: () -> Unit,
+    onDetails: () -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 16.dp)) {
-        // #484: "Tiền đã thu" + (i) that explains what the figure counts (board Tong-quan-giai-thich)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "${stringResource(R.string.overview_v2_collected)} · ${longRange(range)}",
-                fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            IconButton(onClick = onInfo, modifier = Modifier.size(48.dp).offset(x = (-8).dp)) {
-                Icon(
-                    Icons.Outlined.Info, contentDescription = stringResource(R.string.overview_v2_collected_info),
-                    tint = Color(0xFF64748B), modifier = Modifier.size(16.dp),
-                )
-            }
-        }
+        // #492 (board Tong-quan): the hero is the value of the new orders; an older API without it keeps "Thực thu"
+        val orderValue = report?.totalOrderValue
+        Text(
+            "${stringResource(if (report != null && orderValue == null) R.string.overview_v2_collected else R.string.overview_v2_new_order_value)} · ${longRange(range)}",
+            fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+            modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
+        )
         when {
             report != null -> {
-                Text(formatMoneyVnd(report.netRevenue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
                 val cancelled = stringResource(R.string.overview_v2_excludes_cancelled)
-                val growth = report.revenueGrowth
-                val previous = stringResource(R.string.overview_v2_vs_previous, OverviewLogic.shortRange(OverviewLogic.previous(range)))
-                Text(
-                    if (growth != null) "${OverviewLogic.changeText(growth)} $previous · $cancelled" else cancelled,
-                    fontSize = DS.TextSize.Secondary,
-                    color = when {
-                        growth == null -> DS.Colors.TextMuted
-                        growth > 0.05 -> V2Colors.Ok
-                        growth < -0.05 -> V2Colors.Danger
-                        else -> DS.Colors.TextMuted
-                    },
-                )
-                // #484: hidden on an older API that does not send them
-                if (report.totalOrderValue != null || report.outstanding != null) {
+                if (orderValue != null) {
+                    Text(formatMoneyVnd(orderValue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
+                    val growth = report.orderValueGrowth?.growth
+                    val previous = stringResource(R.string.overview_v2_vs_previous_period)
+                    Text(
+                        buildAnnotatedString {
+                            if (growth != null) {
+                                withStyle(SpanStyle(color = growthColor(growth))) { append("${OverviewLogic.changeText(growth)} $previous") }
+                                append(" · ")
+                            }
+                            append(cancelled)
+                        },
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                    )
+                } else {
+                    // Older API: the previous hero, "Thực thu" and its growth; the amount still opens the detail
+                    val collectedDescription = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.netRevenue))
+                    Text(
+                        formatMoneyVnd(report.netRevenue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,
+                        modifier = Modifier.clickable(onClick = onDetails).semantics { contentDescription = collectedDescription },
+                    )
+                    val growth = report.revenueGrowth
+                    val previous = stringResource(R.string.overview_v2_vs_previous, OverviewLogic.shortRange(OverviewLogic.previous(range)))
+                    Text(
+                        if (growth != null) "${OverviewLogic.changeText(growth)} $previous · $cancelled" else cancelled,
+                        fontSize = DS.TextSize.Secondary,
+                        color = if (growth == null) DS.Colors.TextMuted else growthColor(growth),
+                    )
+                }
+                // #492: "Thực thu" (opens the detail sheet) and "Còn phải thu", side by side
+                val tiles = buildList {
+                    if (orderValue != null) {
+                        add(
+                            TileData(
+                                stringResource(R.string.overview_v2_collected), formatMoneyVnd(report.netRevenue), DS.Colors.Text,
+                                sub = stringResource(R.string.overview_v2_collected_sub),
+                                onClick = onDetails,
+                                description = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.netRevenue)),
+                            ),
+                        )
+                    }
+                    report.outstanding?.let {
+                        add(TileData(stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber, sub = stringResource(R.string.overview_v2_outstanding_sub)))
+                    }
+                }
+                if (tiles.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        report.totalOrderValue?.let {
-                            MoneyTile(stringResource(R.string.overview_v2_total_order_value), formatMoneyVnd(it), DS.Colors.Text, Modifier.weight(1f))
-                        }
-                        report.outstanding?.let {
-                            MoneyTile(stringResource(R.string.overview_v2_outstanding), formatMoneyVnd(it), OutstandingAmber, Modifier.weight(1f))
-                        }
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        tiles.forEach { tile -> MoneyTile(tile, Modifier.weight(1f).fillMaxHeight()) }
+                        if (tiles.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -384,65 +414,110 @@ private fun Bars(bars: List<OverviewBar>, modifier: Modifier, description: Strin
 }
 
 private val OutstandingAmber = Color(0xFFB45309)
-private val IncludedGreen = Color(0xFF047857)
+
+/** Green when up, red when down, muted around 0 */
+private fun growthColor(growth: Double): Color = when {
+    growth > 0.05 -> V2Colors.Ok
+    growth < -0.05 -> V2Colors.Danger
+    else -> DS.Colors.TextMuted
+}
+
+private data class TileData(
+    val title: String,
+    val value: String,
+    val color: Color,
+    val sub: String? = null,
+    val onClick: (() -> Unit)? = null,
+    /** Spoken instead of the merged texts when set */
+    val description: String? = null,
+)
 
 @Composable
-private fun MoneyTile(title: String, value: String, color: Color, modifier: Modifier) {
+private fun MoneyTile(tile: TileData, modifier: Modifier) {
     Column(
-        modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 12.dp, vertical = 10.dp)
-            .semantics(mergeDescendants = true) {},
+        modifier.clip(RoundedCornerShape(12.dp)).background(V2Colors.Section)
+            .then(tile.onClick?.let { Modifier.clickable(onClick = it) } ?: Modifier)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .semantics(mergeDescendants = true) { tile.description?.let { contentDescription = it } },
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Text(title, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+        Text(tile.title, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(tile.value, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = tile.color, maxLines = 1)
+        tile.sub?.let { Text(it, fontSize = DS.TextSize.Pill, lineHeight = 16.sp, color = DS.Colors.TextMuted) }
+    }
+}
+
+/** One label / amount line of the detail sheet; amounts are right-aligned with tabular figures */
+@Composable
+private fun AmountRow(label: String, amount: String, color: Color = DS.Colors.Text, bold: Boolean = false) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 10.dp).semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val weight = if (bold) FontWeight.Bold else FontWeight.Normal
+        Text(label, fontSize = DS.TextSize.Body, fontWeight = weight, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+        Text(
+            amount, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body,
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, color = color, textAlign = TextAlign.End,
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
+        )
     }
 }
 
 /**
- * #484 "Tiền đã thu" explanation. The collateral row of the board is left out until the product decision lands
- * (spec: out of scope).
+ * #492 "Thực thu" detail (board Tong-quan-giai-thich): what the amount is made of, the collateral it leaves out,
+ * and what the two other tiles mean. An older API sends no breakdown: only the total and the texts.
  */
 @Composable
-private fun CollectedInfoSheet(onClose: () -> Unit) {
-    val included = stringResource(R.string.overview_v2_info_included)
-    val rows = listOf(
-        Triple(stringResource(R.string.overview_v2_info_deposit), included, IncludedGreen),
-        Triple(stringResource(R.string.overview_v2_info_remaining), included, IncludedGreen),
-        Triple(stringResource(R.string.overview_v2_info_damage), included, IncludedGreen),
-        Triple(stringResource(R.string.overview_v2_info_late_fee), included, IncludedGreen),
-        Triple(stringResource(R.string.overview_v2_info_cancelled), stringResource(R.string.overview_v2_info_refunds), OutstandingAmber),
-        Triple(stringResource(R.string.overview_v2_info_collateral), stringResource(R.string.overview_v2_info_not_counted), Color(0xFF475569)),
-    )
+private fun CollectedDetailSheet(report: OverviewReport, collateralHeld: Double?, periodTitle: String, onClose: () -> Unit) {
+    val breakdown: CollectedBreakdown? = report.collectedBreakdown
     Column(
-        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            stringResource(R.string.overview_v2_collected), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+            "${stringResource(R.string.overview_v2_collected)} · $periodTitle", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
             modifier = Modifier.semantics { heading() },
         )
         Text(stringResource(R.string.overview_v2_info_body), fontSize = DS.TextSize.Body, lineHeight = 22.sp, color = Color(0xFF334155))
         Column {
-            rows.forEach { (label, value, color) ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 10.dp).semantics(mergeDescendants = true) {},
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(label, fontSize = DS.TextSize.Body, color = DS.Colors.Text, modifier = Modifier.weight(1f))
-                    Text(value, fontSize = DS.TextSize.Secondary, color = color, textAlign = TextAlign.End)
-                }
+            if (breakdown != null) {
+                AmountRow(stringResource(R.string.overview_v2_info_deposit), "+" + formatMoneyVnd(breakdown.deposits))
                 ThinDivider()
+                AmountRow(stringResource(R.string.overview_v2_info_remaining), "+" + formatMoneyVnd(breakdown.pickupAndSale))
+                ThinDivider()
+                AmountRow(stringResource(R.string.overview_v2_info_fees), "+" + formatMoneyVnd(breakdown.fees))
+                ThinDivider()
+                if (breakdown.refunds > 0) {
+                    AmountRow(stringResource(R.string.overview_v2_info_cancelled), "−" + formatMoneyVnd(breakdown.refunds), OutstandingAmber)
+                    ThinDivider()
+                }
+            }
+            AmountRow(stringResource(R.string.overview_v2_collected), formatMoneyVnd(report.netRevenue), bold = true)
+        }
+        if (collateralHeld != null) {
+            Column(
+                Modifier.fillMaxWidth().border(1.dp, V2Colors.Line, RoundedCornerShape(12.dp)).padding(horizontal = 14.dp, vertical = 4.dp),
+            ) {
+                AmountRow(stringResource(R.string.overview_v2_collateral_held), formatMoneyVnd(collateralHeld))
+                Text(
+                    stringResource(R.string.overview_v2_info_collateral), fontSize = 13.sp, lineHeight = 18.sp, color = DS.Colors.TextMuted,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                )
             }
         }
-        Text(stringResource(R.string.overview_v2_info_note), fontSize = DS.TextSize.Secondary, lineHeight = 21.sp, color = DS.Colors.TextMuted)
+        Text(
+            stringResource(R.string.overview_v2_info_note), fontSize = DS.TextSize.Secondary, lineHeight = 21.sp, color = DS.Colors.TextMuted,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(V2Colors.Section).padding(12.dp),
+        )
         Button(
             onClick = onClose,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Text, contentColor = Color.White),
         ) {
-            Text(stringResource(R.string.overview_v2_info_ok), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.close), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
         }
     }
 }

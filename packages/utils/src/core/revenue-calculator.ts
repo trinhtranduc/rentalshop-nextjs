@@ -281,6 +281,49 @@ export function getOrderRevenueEvents(
   return events;
 }
 
+/** Where collected money came from (#492). `refunds` is a positive amount taken off the total. */
+export interface CollectedBreakdown {
+  deposits: number;
+  pickupAndSale: number;
+  fees: number;
+  refunds: number;
+}
+
+export function emptyCollectedBreakdown(): CollectedBreakdown {
+  return { deposits: 0, pickupAndSale: 0, fees: 0, refunds: 0 };
+}
+
+/**
+ * Adds one event of `getOrderRevenueEvents(withoutCollateral(order))` to its source bucket, so that
+ * deposits + pickupAndSale + fees - refunds equals the collected total (#492).
+ */
+export function addToCollectedBreakdown(
+  breakdown: CollectedBreakdown,
+  order: OrderRevenueData,
+  event: RevenueEvent
+): CollectedBreakdown {
+  switch (event.revenueType) {
+    case 'RENT_DEPOSIT':
+      breakdown.deposits += event.revenue;
+      break;
+    case 'SALE':
+    case 'RENT_PICKUP':
+      breakdown.pickupAndSale += event.revenue;
+      break;
+    case 'RENT_RETURN': {
+      const fees = (order.damageFee || 0) + (order.lateFee || 0);
+      breakdown.fees += fees;
+      breakdown.pickupAndSale += event.revenue - fees;
+      break;
+    }
+    case 'RENT_CANCELLED':
+    case 'SALE_CANCELLED':
+      breakdown.refunds -= event.revenue;
+      break;
+  }
+  return breakdown;
+}
+
 /**
  * The same order with collateral (securityDeposit) removed, for "money collected" totals that leave out
  * collateral: it is held at pickup and handed back at return, so it is never the shop's money (#484).

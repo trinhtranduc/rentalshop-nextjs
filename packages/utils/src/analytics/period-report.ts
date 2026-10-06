@@ -74,6 +74,8 @@ export interface AnalyticsPeriodGrowth {
   revenue: { current: number; previous: number; growth: number };
   /** Same as `revenue`, without collateral (#484) */
   collected?: { current: number; previous: number; growth: number };
+  /** `revenue.totalOrderValue` of this and the previous period (#492) */
+  orderValue?: { current: number; previous: number; growth: number };
 }
 
 export interface AnalyticsPeriodReport {
@@ -91,6 +93,8 @@ export interface AnalyticsPeriodReport {
     outstanding?: number;
     /** Money collected in the period without collateral (#484) */
     collected?: number;
+    /** Where `collected` came from: deposits + pickupAndSale + fees - refunds (#492) */
+    collectedBreakdown?: { deposits: number; pickupAndSale: number; fees: number; refunds: number };
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -558,6 +562,20 @@ export async function buildAnalyticsPeriodReport(
     return income;
   };
 
+  const computeOrderValue = async (start: Date = rangeStart, end: Date = rangeEnd): Promise<OrderValueSummary> => {
+    const created = await prisma.order.findMany({
+      where: {
+        ...outletFilter,
+        deletedAt: null,
+        createdAt: { gte: start, lte: end },
+        status: { not: ORDER_STATUS.CANCELLED as any }
+      } as any,
+      select: { orderType: true, status: true, totalAmount: true, depositAmount: true },
+      take: 10000
+    });
+    return summarizeOrderValue(created);
+  };
+
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
     const fetchRevenue = async (ps: Date, pe: Date): Promise<{ revenue: number; collected: number }> => {
       const orders = await prisma.order.findMany({
@@ -571,11 +589,12 @@ export async function buildAnalyticsPeriodReport(
       return { revenue: realIncome, collected };
     };
 
-    const [curCountRes, prevCountRes, curRevenue, prevRevenue] = await Promise.all([
+    const [curCountRes, prevCountRes, curRevenue, prevRevenue, prevOrderValue] = await Promise.all([
       db.orders.search({ where: { ...outletFilter, createdAt: { gte: rangeStart, lte: rangeEnd } }, limit: 1 }),
       db.orders.search({ where: { ...outletFilter, createdAt: { gte: prevStart, lte: prevEnd } }, limit: 1 }),
       fetchRevenue(rangeStart, rangeEnd),
-      fetchRevenue(prevStart, prevEnd)
+      fetchRevenue(prevStart, prevEnd),
+      computeOrderValue(prevStart, prevEnd).catch(() => null)
     ]);
 
     const curCount = curCountRes.total || 0;
@@ -596,7 +615,8 @@ export async function buildAnalyticsPeriodReport(
         current: curRevenue.collected,
         previous: prevRevenue.collected,
         growth: percentChange(curRevenue.collected, prevRevenue.collected)
-      }
+      },
+      ...(prevOrderValue ? { orderValue: { current: 0, previous: prevOrderValue.totalOrderValue, growth: 0 } } : {})
     };
   };
 
@@ -764,20 +784,6 @@ export async function buildAnalyticsPeriodReport(
     return result;
   };
 
-  const computeOrderValue = async (): Promise<OrderValueSummary> => {
-    const created = await prisma.order.findMany({
-      where: {
-        ...outletFilter,
-        deletedAt: null,
-        createdAt: { gte: rangeStart, lte: rangeEnd },
-        status: { not: ORDER_STATUS.CANCELLED as any }
-      } as any,
-      select: { orderType: true, status: true, totalAmount: true, depositAmount: true },
-      take: 10000
-    });
-    return summarizeOrderValue(created);
-  };
-
   const settled = await Promise.allSettled([
     computeOperational(),
     computeSeries(),
@@ -811,6 +817,16 @@ export async function buildAnalyticsPeriodReport(
     },
     'growth'
   );
+  if (growth.orderValue && orderValue) {
+    const previous = growth.orderValue.previous;
+    growth.orderValue = {
+      current: orderValue.totalOrderValue,
+      previous,
+      growth: percentChange(orderValue.totalOrderValue, previous)
+    };
+  } else {
+    delete growth.orderValue;
+  }
 
   const totalOrdersFromOps =
     operational?.orderCounts != null
@@ -830,7 +846,12 @@ export async function buildAnalyticsPeriodReport(
       totalActualRevenue: operational?.totalActualRevenue ?? growth.revenue.current,
       totalOrders: totalOrdersFromOps,
       ...(orderValue ? { totalOrderValue: orderValue.totalOrderValue, outstanding: orderValue.outstanding } : {}),
-      ...(operational ? { collected: operational.totalCollected } : {})
+      ...(operational
+        ? {
+            collected: operational.totalCollected,
+            collectedBreakdown: operational.collectedBreakdown
+          }
+        : {})
     },
     growth,
     series,

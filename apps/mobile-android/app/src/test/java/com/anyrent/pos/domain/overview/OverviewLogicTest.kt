@@ -112,6 +112,67 @@ class OverviewLogicTest {
     }
 
     /** #484: money tiles and the orders chart; an older API leaves them null and the chart at 0 */
+    /** #492: what makes up "Thực thu" */
+    @Test
+    fun collectedBreakdown() {
+        val report = OverviewLogic.reportFromJson(
+            JSONObject(
+                """{"revenue":{"collected":12450000,
+                "collectedBreakdown":{"deposits":3000000,"pickupAndSale":9200000,"fees":650000,"refunds":400000}}}""",
+            ),
+        )
+        assertEquals(12_450_000.0, report.netRevenue, 0.0)
+        assertEquals(CollectedBreakdown(3_000_000.0, 9_200_000.0, 650_000.0, 400_000.0), report.collectedBreakdown)
+        assertEquals(report.netRevenue, report.collectedBreakdown!!.total, 0.0)
+
+        // A breakdown with a missing part counts it as 0; no refunds is the usual case
+        val partial = OverviewLogic.reportFromJson(
+            JSONObject("""{"revenue":{"collected":700,"collectedBreakdown":{"deposits":500,"pickupAndSale":200,"refunds":null}}}"""),
+        )
+        assertEquals(CollectedBreakdown(500.0, 200.0, 0.0, 0.0), partial.collectedBreakdown)
+        assertEquals(700.0, partial.collectedBreakdown!!.total, 0.0)
+    }
+
+    /** #492: the hero's change comes from `growth.orderValue`; an older API has none */
+    @Test
+    fun orderValueGrowth() {
+        val report = OverviewLogic.reportFromJson(
+            JSONObject(
+                """{"revenue":{"collected":100,"totalOrderValue":15800000},
+                "growth":{"collected":{"growth":-3},"orderValue":{"current":15800000,"previous":14600000,"growth":8.2}}}""",
+            ),
+        )
+        assertEquals(OverviewGrowth(15_800_000.0, 14_600_000.0, 8.2), report.orderValueGrowth)
+        assertEquals(-3.0, report.revenueGrowth!!, 0.0)
+        assertEquals("▲ 8,2%", OverviewLogic.changeText(report.orderValueGrowth!!.growth!!))
+
+        val noPrevious = OverviewLogic.reportFromJson(
+            JSONObject("""{"growth":{"orderValue":{"current":500,"previous":null,"growth":null}}}"""),
+        )
+        assertEquals(OverviewGrowth(500.0, null, null), noPrevious.orderValueGrowth)
+
+        val older = OverviewLogic.reportFromJson(JSONObject("""{"revenue":{"collected":100},"growth":{"collected":{"growth":5}}}"""))
+        assertEquals(null, older.orderValueGrowth)
+        assertEquals(null, older.totalOrderValue)
+        assertEquals(5.0, older.revenueGrowth!!, 0.0)
+        assertEquals(null, OverviewLogic.reportFromJson(JSONObject("{}")).orderValueGrowth)
+    }
+
+    /** #492: an older API sends no breakdown: the detail sheet shows only the total */
+    @Test
+    fun olderApiWithoutBreakdown() {
+        val older = OverviewLogic.reportFromJson(
+            JSONObject("""{"revenue":{"collected":12450000,"totalOrderValue":15800000,"outstanding":3350000}}"""),
+        )
+        assertEquals(null, older.collectedBreakdown)
+        assertEquals(15_800_000.0, older.totalOrderValue!!, 0.0)
+        val nulls = OverviewLogic.reportFromJson(
+            JSONObject("""{"revenue":{"collected":1,"collectedBreakdown":null}}"""),
+        )
+        assertEquals(null, nulls.collectedBreakdown)
+        assertEquals(null, OverviewLogic.reportFromJson(JSONObject("{}")).collectedBreakdown)
+    }
+
     @Test
     fun orderValueOutstandingAndOrdersChart() {
         val report = OverviewLogic.reportFromJson(
