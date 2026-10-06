@@ -200,25 +200,6 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.shortNumber("702293"), "702293")
     }
 
-    func testWorkDateLine() {
-        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0057",
-                               pickupPlanAt: iso.date(from: "2026-10-02T17:30:00Z"), // 03/10 00:30 in Vietnam
-                               returnPlanAt: iso.date(from: "2026-10-05T02:00:00Z"))
-        // Today / tomorrow: span with inclusive days in the device zone
-        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .handOver, isLate: false, timeZone: vietnam, locale: vi),
-                       "03/10 → 05/10 · " + String(format: "orders.v2.when.days".localized(), 3))
-        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .handOver, isLate: false, timeZone: utc, locale: vi),
-                       "02/10 → 05/10 · " + String(format: "orders.v2.when.days".localized(), 4))
-        // Late: the missed day with its weekday
-        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .handOver, isLate: true, timeZone: vietnam, locale: vi),
-                       String(format: "orders.v2.when.handOverDue".localized(), "T7 03/10"))
-        XCTAssertEqual(OrdersHomeLogic.workWhen(row, kind: .takeBack, isLate: true, timeZone: vietnam, locale: vi),
-                       String(format: "orders.v2.when.returnDue".localized(), "T2 05/10"))
-        // Same-day rental is one day
-        XCTAssertEqual(OrdersHomeLogic.inclusiveDays(from: iso.date(from: "2026-10-03T01:00:00Z")!,
-                                                     to: iso.date(from: "2026-10-03T10:00:00Z")!, timeZone: vietnam), 1)
-    }
-
     // MARK: Orders by product / customer (#482)
 
     private func productOrder(id: Int, status: String, type: String = "RENT", total: Double,
@@ -291,49 +272,170 @@ final class OrdersHomeTests: XCTestCase {
         }
     }
 
-    /// #482: a row of another year shows the 2-digit year on every dd/MM of its date line
-    func testListDateLineAddsYearWhenNotThisYear() throws {
-        let now = iso.date(from: "2026-01-02T05:00:00Z")!
-        let old = try order(status: "RESERVED", created: "2025-12-28T03:00:00.000Z",
-                            pickup: "2025-12-30T02:00:00.000Z", returns: "2026-01-03T02:00:00.000Z")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(old, lateDays: 0, now: now, timeZone: vietnam),
-                       String(format: "orders.v2.when.created".localized(), "28/12/25") + " · 30/12/25 → 03/01")
-        let cancelled = try order(status: "CANCELLED", created: "2025-12-28T03:00:00.000Z", updated: "2025-12-29T03:00:00.000Z")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(cancelled, lateDays: 0, now: now, timeZone: vietnam),
-                       String(format: "orders.v2.when.created".localized(), "28/12/25") + " · "
-                       + String(format: "orders.v2.when.cancelled".localized(), "29/12/25"))
-        // 31/12/2025 17:30Z is 01/01/2026 in Vietnam: this year there, last year in UTC
-        let newYear = try order(status: "RESERVED", created: "2025-12-31T17:30:00.000Z",
-                                pickup: "2026-01-04T02:00:00.000Z", returns: "2026-01-05T02:00:00.000Z")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(newYear, lateDays: 0, now: now, timeZone: vietnam),
-                       String(format: "orders.v2.when.created".localized(), "01/01") + " · 04/01 → 05/01")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(newYear, lateDays: 0, now: now, timeZone: utc),
-                       String(format: "orders.v2.when.created".localized(), "31/12/25") + " · 04/01 → 05/01")
-    }
-
-    func testListDateLine() throws {
-        let now = iso.date(from: "2026-10-04T05:00:00Z")!
+    func testStatusTags() throws {
         let booked = try order(status: "RESERVED")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(booked, lateDays: 0, now: now, timeZone: vietnam),
-                       String(format: "orders.v2.when.created".localized(), "02/10") + " · 04/10 → 05/10")
-        let today = try order(status: "RESERVED", created: "2026-10-03T18:00:00.000Z")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(today, lateDays: 0, now: now, timeZone: vietnam),
-                       "orders.v2.when.createdToday".localized() + " · 04/10 → 05/10")
-        let late = try order(status: "PICKUPED", returns: "2026-10-02T02:00:00.000Z")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(late, lateDays: 2, now: now, timeZone: vietnam),
-                       String(format: "orders.v2.when.created".localized(), "02/10") + " · "
-                       + String(format: "orders.v2.when.due".localized(), "02/10"))
-        let cancelled = try order(status: "CANCELLED", updated: "2026-10-03T03:00:00.000Z")
-        XCTAssertEqual(OrdersHomeLogic.listWhen(cancelled, lateDays: 0, now: now, timeZone: vietnam),
-                       String(format: "orders.v2.when.created".localized(), "02/10") + " · "
-                       + String(format: "orders.v2.when.cancelled".localized(), "03/10"))
-        XCTAssertEqual(booked.itemsSummary, "Vest xám kẻ ×2, Cà vạt lụa")
         XCTAssertEqual(OrdersHomeLogic.statusTag(booked), RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver))
         let sale = try order(status: "COMPLETED", type: "SALE")
         XCTAssertEqual(OrdersHomeLogic.statusTag(sale, inSearch: true).text,
                        String(format: "orders.v2.tag.sale".localized(), "orders.v2.status.completed".localized()))
-        XCTAssertEqual(OrdersHomeLogic.searchWhen(sale, lateDays: 0, timeZone: vietnam, locale: vi),
-                       String(format: "orders.v2.when.sold".localized(), "T6 02/10"))
+    }
+
+    // MARK: Row date lines (#496)
+
+    private func text(_ key: String, _ day: String) -> String {
+        String(format: key.localized(), day)
+    }
+
+    private func lines(_ order: Order, lateDays: Int = 0, timeZone: TimeZone? = nil) -> OrderRowLines {
+        OrdersHomeLogic.rowLines(order, lateDays: lateDays, timeZone: timeZone ?? vietnam, locale: vi)
+    }
+
+    func testRowLinesPerStatus() throws {
+        // created 02/10 (Fri), pickup 04/10 (Sun), return 05/10 (Mon), Vietnam days
+        let booked = try order(status: "RESERVED")
+        XCTAssertEqual(lines(booked), OrderRowLines(
+            meta: "#0062 · " + text("orders.row.created", "T6 02/10"),
+            task: text("orders.row.pickup", "CN 04/10") + " · " + text("orders.row.returnAfter", "T2 05/10")))
+
+        let out = try order(status: "PICKUPED")
+        XCTAssertEqual(lines(out).task, text("orders.row.return", "T2 05/10"))
+        let late = try order(status: "PICKUPED", returns: "2026-10-01T02:00:00.000Z")
+        XCTAssertEqual(lines(late, lateDays: 3).task, text("orders.row.dueBack", "T5 01/10"))
+
+        let cancelled = try order(status: "CANCELLED", updated: "2026-09-29T03:00:00.000Z")
+        XCTAssertEqual(lines(cancelled).task, text("orders.row.cancelled", "T3 29/09"))
+        let sale = try order(status: "COMPLETED", type: "SALE")
+        XCTAssertEqual(lines(sale).task, text("orders.row.sold", "T6 02/10"))
+        let reservedSale = try order(status: "RESERVED", type: "SALE")
+        XCTAssertEqual(lines(reservedSale).task, text("orders.row.sold", "T6 02/10"), "any sale that is not cancelled")
+        let cancelledSale = try order(status: "CANCELLED", type: "SALE", updated: "2026-09-29T03:00:00.000Z")
+        XCTAssertEqual(lines(cancelledSale).task, text("orders.row.cancelled", "T3 29/09"))
+
+        let returned = OrdersHomeLogic.rowLines(code: "0062", orderType: .rent, status: .returned,
+                                                createdAt: iso.date(from: "2026-09-25T03:00:00Z"),
+                                                pickupPlanAt: nil, returnPlanAt: nil,
+                                                returnedAt: iso.date(from: "2026-09-28T03:00:00Z"), updatedAt: nil,
+                                                isLate: false, timeZone: vietnam, locale: vi)
+        XCTAssertEqual(returned, OrderRowLines(meta: "#0062 · " + text("orders.row.created", "T6 25/09"),
+                                               task: text("orders.row.returned", "T2 28/09")))
+    }
+
+    func testRowLinesLeaveMissingDatesOut() {
+        let noPickup = OrdersHomeLogic.rowLines(code: "7", orderType: .rent, status: .reserved, createdAt: nil,
+                                                pickupPlanAt: nil, returnPlanAt: iso.date(from: "2026-10-05T02:00:00Z"),
+                                                returnedAt: nil, updatedAt: nil, isLate: false, timeZone: vietnam, locale: vi)
+        XCTAssertEqual(noPickup, OrderRowLines(meta: "#7", task: text("orders.row.return", "T2 05/10")))
+        let noReturn = OrdersHomeLogic.rowLines(code: "7", orderType: .rent, status: .reserved, createdAt: nil,
+                                                pickupPlanAt: iso.date(from: "2026-10-04T02:00:00Z"), returnPlanAt: nil,
+                                                returnedAt: nil, updatedAt: nil, isLate: false, timeZone: vietnam, locale: vi)
+        XCTAssertEqual(noReturn.task, text("orders.row.pickup", "CN 04/10"))
+        let none = OrdersHomeLogic.rowLines(code: "7", orderType: .rent, status: .pickuped, createdAt: nil,
+                                            pickupPlanAt: nil, returnPlanAt: nil, returnedAt: nil, updatedAt: nil,
+                                            isLate: true, timeZone: vietnam, locale: vi)
+        XCTAssertEqual(none, OrderRowLines(meta: "#7", task: ""))
+        let returned = OrdersHomeLogic.rowLines(code: "7", orderType: .rent, status: .returned, createdAt: nil,
+                                                pickupPlanAt: nil, returnPlanAt: nil, returnedAt: nil, updatedAt: nil,
+                                                isLate: false, timeZone: vietnam, locale: vi)
+        XCTAssertEqual(returned.task, "")
+    }
+
+    /// Days are Vietnam civil days whatever zone the device is in
+    func testRowLinesUseTheVietnamDay() throws {
+        // 03/10 18:00 UTC is Sunday 04/10 01:00 in Vietnam
+        let late = try order(status: "RESERVED", created: "2026-10-03T18:00:00.000Z")
+        XCTAssertEqual(lines(late).meta, "#0062 · " + text("orders.row.created", "CN 04/10"))
+        XCTAssertEqual(lines(late, timeZone: utc).meta, "#0062 · " + text("orders.row.created", "T7 03/10"))
+        // The default zone is the shop's, not the device's
+        XCTAssertEqual(OrdersHomeLogic.rowLines(late, lateDays: 0, locale: vi).meta,
+                       "#0062 · " + text("orders.row.created", "CN 04/10"))
+    }
+
+    func testRowDayWeekdayNames() {
+        // Monday 28/09 … Sunday 04/10 (noon in Vietnam)
+        let days = (0..<7).map { iso.date(from: "2026-09-28T05:00:00Z")!.addingTimeInterval(Double($0) * 86_400) }
+        XCTAssertEqual(days.map { OrdersHomeLogic.rowDay($0, timeZone: vietnam, locale: vi) },
+                       ["T2 28/09", "T3 29/09", "T4 30/09", "T5 01/10", "T6 02/10", "T7 03/10", "CN 04/10"])
+    }
+
+    func testRowLineCopyInVietnamese() {
+        let bundle = Bundle(for: OrderRowCell.self)
+        guard let vi = bundle.path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:)) else {
+            return XCTFail("vi-VN.lproj missing")
+        }
+        let copy: (String) -> String = { vi.localizedString(forKey: $0, value: nil, table: nil) }
+        XCTAssertEqual(copy("orders.row.created"), "tạo %@")
+        XCTAssertEqual(copy("orders.row.pickup"), "Giao %@")
+        XCTAssertEqual(copy("orders.row.returnAfter"), "trả %@")
+        XCTAssertEqual(copy("orders.row.return"), "Trả %@")
+        XCTAssertEqual(copy("orders.row.dueBack"), "Hạn trả %@")
+        XCTAssertEqual(copy("orders.row.returned"), "Đã trả %@")
+        XCTAssertEqual(copy("orders.row.sold"), "Bán %@")
+        XCTAssertEqual(copy("orders.row.cancelled"), "Huỷ %@")
+        XCTAssertEqual(copy("overview.v2.todayWork"), "Việc hôm nay · %@")
+        XCTAssertEqual(copy("overview.v2.todayWork.pickups"), "Cần giao hôm nay")
+        XCTAssertEqual(copy("overview.v2.todayWork.pickupsDone"), "Đã giao %d/%d")
+        XCTAssertEqual(copy("overview.v2.todayWork.returns"), "Cần nhận trả hôm nay")
+        XCTAssertEqual(copy("overview.v2.todayWork.returnsDone"), "Đã nhận %d/%d")
+        XCTAssertEqual(copy("overview.v2.noShows"), "Quá ngày lấy, khách chưa đến")
+        XCTAssertEqual(copy("notPickedUp.title"), "Chưa lấy đồ · %d")
+        XCTAssertEqual(copy("notPickedUp.section.overdue"), "Quá ngày lấy, chưa thu · %d")
+        XCTAssertEqual(copy("notPickedUp.section.upcoming"), "Sẽ thu khi khách lấy đồ · %d")
+        XCTAssertEqual(copy("notPickedUp.chip"), "Quá %d ngày · nên gọi khách")
+    }
+
+    // MARK: Chưa lấy đồ (#496)
+
+    private func reserved(_ id: Int, pickup: String?, status: String = "RESERVED") throws -> Order {
+        let pickupJSON = pickup.map { "\"\($0)\"" } ?? "null"
+        let json = #"{"id":\#(id),"orderNumber":"ORD-1-\#(id)","orderType":"RENT","status":"\#(status)","createdAt":"2026-09-20T03:00:00.000Z","updatedAt":"2026-09-20T03:00:00.000Z","pickupPlanAt":\#(pickupJSON),"returnPlanAt":"2026-10-09T02:00:00.000Z","customerName":"Tâm","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":500000,"amountDue":300000,"orderItems":[]}"#
+        return try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+    }
+
+    func testNotPickedUpGroupsSplitAtTheVietnamDay() throws {
+        // Now: 05/10 00:30 in Vietnam (still 04/10 in UTC)
+        let now = iso.date(from: "2026-10-04T17:30:00Z")!
+        let orders = [
+            try reserved(1, pickup: nil),
+            try reserved(2, pickup: "2026-10-04T17:10:00.000Z"), // 05/10 00:10 Vietnam: today
+            try reserved(3, pickup: "2026-10-04T16:00:00.000Z"), // 04/10 23:00 Vietnam: yesterday
+            try reserved(4, pickup: "2026-10-01T02:00:00.000Z"), // 01/10: 4 days ago
+            try reserved(5, pickup: "2026-10-07T02:00:00.000Z"),
+            try reserved(6, pickup: "2026-10-01T02:00:00.000Z", status: "PICKUPED"),
+        ]
+        let groups = NotPickedUpLogic.groups(orders, now: now, timeZone: vietnam)
+        XCTAssertEqual(groups.overdue.map(\.id), [4, 3])
+        XCTAssertEqual(groups.upcoming.map(\.id), [2, 5, 1], "by pickup day, no pickup day last; rented out left out")
+        XCTAssertEqual(NotPickedUpLogic.overdueDays(orders[3], now: now, timeZone: vietnam), 4)
+        XCTAssertEqual(NotPickedUpLogic.overdueDays(orders[2], now: now, timeZone: vietnam), 1)
+        XCTAssertEqual(NotPickedUpLogic.overdueDays(orders[0], now: now, timeZone: vietnam), 0)
+        XCTAssertEqual(orders[1].listAmountDue, 300000)
+        // In UTC the 23:00 pickup would still be today
+        XCTAssertEqual(NotPickedUpLogic.groups(orders, now: now, timeZone: utc).overdue.map(\.id), [4])
+    }
+
+    // MARK: Overview operations counts (#496)
+
+    func testOverviewNowDecodesTodayCounts() throws {
+        let now = try JSONDecoder.shared.decode(OverviewNow.self, from: Data("""
+        {"overdueReturns":{"count":1,"orders":[]},
+         "pickupsToday":{"count":3,"orders":[]},"returnsToday":{"count":2,"orders":[]},
+         "doneToday":{"pickups":4,"returns":1},"noShows":{"count":5,"orders":[]}}
+        """.utf8))
+        XCTAssertEqual(now.today?.pickups, OverviewNow.TodayTask(remaining: 3, done: 4))
+        XCTAssertEqual(now.today?.pickups.total, 7)
+        XCTAssertEqual(now.today?.returns, OverviewNow.TodayTask(remaining: 2, done: 1))
+        XCTAssertEqual(now.noShows, 5)
+        XCTAssertEqual(now.lateReturns, 1)
+
+        // Without doneToday nothing is done yet; without the lists the section is hidden
+        let noDone = try JSONDecoder.shared.decode(OverviewNow.self, from: Data("""
+        {"pickupsToday":{"count":1},"returnsToday":{"count":0}}
+        """.utf8))
+        XCTAssertEqual(noDone.today?.pickups, OverviewNow.TodayTask(remaining: 1, done: 0))
+        XCTAssertNil(noDone.noShows)
+        let old = try JSONDecoder.shared.decode(OverviewNow.self, from: Data(#"{"overdueReturns":{"count":2}}"#.utf8))
+        XCTAssertNil(old.today)
+        XCTAssertNil(old.noShows)
     }
 
     func testSectionTitlesAndSaleSums() throws {
@@ -464,6 +566,24 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(paidTexts.count, dueTexts.count - 1, "fully paid: the total only, no second line")
         XCTAssertFalse(paidTexts.contains { $0.contains("✓") })
         XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
+    }
+
+    /// #496 "Chưa lấy đồ": overdue chip instead of "Trễ N ngày", "còn thu" in the Còn phải thu orange, no item line
+    func testNotPickedUpRowChipAndDueColour() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: #","amountDue":250000,"refundDue":0"#)
+        cell.configure(.order(order, lateDays: 3), context: .notPickedUp, hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertTrue(texts.contains(PluralText.format("notPickedUp.chip", count: 3, 3)))
+        XCTAssertFalse(texts.contains(LateText.days(3)))
+        func labels(_ view: UIView) -> [UILabel] {
+            ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
+        }
+        let due = try XCTUnwrap(labels(cell.contentView).first {
+            $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(250000))
+        })
+        XCTAssertEqual(due.textColor, OrderRowCell.dueColor)
+        XCTAssertTrue(texts.contains(OrdersHomeLogic.rowLines(order, lateDays: 3).meta))
     }
 
     // MARK: #468 — no call button on "Việc cần làm" rows (call from order detail)

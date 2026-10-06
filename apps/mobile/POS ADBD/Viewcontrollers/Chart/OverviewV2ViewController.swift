@@ -10,6 +10,8 @@
 //  tiles under it; collateral held leaves the ĐƠN rows for the breakdown sheet.
 //  #494: with `collateralFlow` the Thực thu sheet becomes "Tiền thực nhận" (money and collateral apart, upcoming
 //  collateral); with `outstandingBreakdown` the Còn phải thu tile opens its own sheet.
+//  #496: "VIỆC HÔM NAY · <today>" above ĐƠN (hand-overs / returns of today, open the Orders tab), the red row
+//  "Quá ngày lấy, khách chưa đến" and both Còn phải thu sheet rows open "Chưa lấy đồ".
 //
 
 import UIKit
@@ -149,23 +151,43 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(revenueSection())
         }
 
+        // #496: today's hand-overs and returns, whatever the period; hidden without the operations figures
+        if showsOperations, let today = now?.today {
+            let title = String(format: "overview.v2.todayWork".localized(), OrdersHomeLogic.rowDay(Date()))
+            contentStack.addArrangedSubview(V2.sectionHeader(title))
+            let openOrders: () -> Void = { [weak self] in self?.openOrdersTab() }
+            contentStack.addArrangedSubview(statRow(
+                "overview.v2.todayWork.pickups".localized(),
+                sub: String(format: "overview.v2.todayWork.pickupsDone".localized(), today.pickups.done, today.pickups.total),
+                value: "\(today.pickups.remaining)", color: DS.Color.text, opens: nil, action: openOrders))
+            contentStack.addArrangedSubview(statRow(
+                "overview.v2.todayWork.returns".localized(),
+                sub: String(format: "overview.v2.todayWork.returnsDone".localized(), today.returns.done, today.returns.total),
+                value: "\(today.returns.remaining)", color: DS.Color.text, opens: nil, action: openOrders))
+        }
+
         // #388: each figure opens its list
-        var stats: [(String, String, UIColor, OverviewRankingOrdersFilter?)] = []
+        var stats: [(String, String, UIColor, OverviewRankingOrdersFilter?, (() -> Void)?)] = []
         if showsRevenue, let newOrders = report?.newOrders {
             let title = "overview.v2.newOrders".localized()
-            stats.append((title, "\(newOrders)", DS.Color.text, .snapshot(.newOrders, title: title)))
+            stats.append((title, "\(newOrders)", DS.Color.text, .snapshot(.newOrders, title: title), nil))
         }
         if let rentedOut = now?.rentedOut {
             let title = "overview.v2.rentedOut".localized()
-            stats.append((title, "\(rentedOut)", DS.Color.text, .rentedOut(title: title)))
+            stats.append((title, "\(rentedOut)", DS.Color.text, .rentedOut(title: title), nil))
         }
         if showsOperations, let now {
             let title = "overview.v2.lateReturns".localized()
-            stats.append((title, "\(now.lateReturns)", now.lateReturns > 0 ? V2.danger : DS.Color.text, .lateReturns(title: title)))
+            stats.append((title, "\(now.lateReturns)", now.lateReturns > 0 ? V2.danger : DS.Color.text, .lateReturns(title: title), nil))
+        }
+        // #496: reserved rentals past their pickup day open "Chưa lấy đồ"
+        if showsOperations, let noShows = now?.noShows {
+            let openList: () -> Void = { [weak self] in self?.openNotPickedUp() }
+            stats.append(("overview.v2.noShows".localized(), "\(noShows)", noShows > 0 ? V2.danger : DS.Color.text, nil, openList))
         }
         if !stats.isEmpty {
             contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.orders".localized()))
-            stats.forEach { contentStack.addArrangedSubview(statRow($0.0, value: $0.1, color: $0.2, opens: $0.3)) }
+            stats.forEach { contentStack.addArrangedSubview(statRow($0.0, value: $0.1, color: $0.2, opens: $0.3, action: $0.4)) }
         }
 
         if showsRevenue, let top = report?.topProducts, !top.isEmpty {
@@ -358,11 +380,31 @@ final class OverviewV2ViewController: BaseViewControler {
                                                      collateralToCollect: now?.collateralToCollect))
     }
 
-    /// #494: where Còn phải thu will come from
+    /// #494: where Còn phải thu will come from; #496: its rows open "Chưa lấy đồ"
     @objc private func openOutstandingDetails() {
         guard let report, let parts = report.outstandingBreakdown else { return }
-        presentDetails(OverviewOutstandingDetailsSheet(breakdown: parts, total: report.outstanding ?? parts.total,
-                                                       periodTitle: periodTitle(period)))
+        let sheet = OverviewOutstandingDetailsSheet(breakdown: parts, total: report.outstanding ?? parts.total,
+                                                    periodTitle: periodTitle(period))
+        sheet.onOpenOrders = { [weak self] in self?.openNotPickedUp() }
+        presentDetails(sheet)
+    }
+
+    /// #496 "Chưa lấy đồ": reserved rentals, overdue pickups first
+    private func openNotPickedUp() {
+        let list = RentedOutOrdersViewController(mode: .notPickedUp)
+        list.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(list, animated: true)
+    }
+
+    /// #496: the Orders tab (its "Việc cần làm" lists today's hand-overs and returns)
+    private func openOrdersTab() {
+        guard let tabs = tabBarController ?? (appDelegate.window?.rootViewController as? UITabBarController) else { return }
+        let index = tabs.viewControllers?.firstIndex { controller in
+            let root = (controller as? UINavigationController)?.viewControllers.first ?? controller
+            return root is OrdersViewController || root is SaleViewController
+        }
+        guard let index else { return }
+        tabs.selectedIndex = index
     }
 
     private func presentDetails(_ sheet: UIViewController) {
@@ -375,18 +417,27 @@ final class OverviewV2ViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
-    private func statRow(_ label: String, value: String, color: UIColor, opens filter: OverviewRankingOrdersFilter?) -> UIView {
+    /// A figure row; `sub` (#496) is a muted line under the title. `filter` opens its list, else `action` runs
+    private func statRow(_ label: String, sub: String? = nil, value: String, color: UIColor,
+                         opens filter: OverviewRankingOrdersFilter?, action: (() -> Void)? = nil) -> UIView {
         let title = V2.label(label, size: DS.TextSize.body)
+        let texts = UIStackView(arrangedSubviews: [title])
+        texts.axis = .vertical
+        texts.spacing = 2
+        if let sub {
+            texts.addArrangedSubview(V2.label(sub, size: DS.TextSize.secondary, color: DS.Color.textMuted))
+        }
         let number = V2.label(value, size: DS.TextSize.name, weight: .bold, color: color)
         number.textAlignment = .right
-        let row = UIStackView(arrangedSubviews: [title, number])
+        let row = UIStackView(arrangedSubviews: [texts, number])
         row.alignment = .center
         row.spacing = DS.Spacing.md
         row.isUserInteractionEnabled = false
         let wrapper = OverviewLinkRow()
-        if let filter {
+        if filter != nil || action != nil {
             row.addArrangedSubview(chevron())
             wrapper.filter = filter
+            wrapper.action = action
             wrapper.addTarget(self, action: #selector(linkTapped(_:)), for: .touchUpInside)
             wrapper.accessibilityTraits = UIAccessibilityTraitButton
         }
@@ -400,7 +451,7 @@ final class OverviewV2ViewController: BaseViewControler {
         wrapper.addSubview(line)
         line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
         wrapper.isAccessibilityElement = true
-        wrapper.accessibilityLabel = "\(label): \(value)"
+        wrapper.accessibilityLabel = [label + ": " + value, sub].compactMap { $0 }.joined(separator: ", ")
         return wrapper
     }
 
@@ -460,6 +511,10 @@ final class OverviewV2ViewController: BaseViewControler {
 
     /// The same period as the figures for Đơn mới and a top product; "now" for the others
     @objc private func linkTapped(_ sender: OverviewLinkRow) {
+        if sender.filter == nil, let action = sender.action {
+            action()
+            return
+        }
         guard let filter = sender.filter else { return }
         // #484: rented out, late returns and collateral open the grouped rented-out list (late group first)
         switch filter {
@@ -543,9 +598,11 @@ private extension UIView {
 /// A tappable overview row that knows which list it opens
 final class OverviewLinkRow: UIControl {
     var filter: OverviewRankingOrdersFilter?
+    /// #496: what a row without a list filter does (open a tab or another screen)
+    var action: (() -> Void)?
 
     override var isHighlighted: Bool {
-        didSet { backgroundColor = isHighlighted && filter != nil ? V2.chipFill : .clear }
+        didSet { backgroundColor = isHighlighted && (filter != nil || action != nil) ? V2.chipFill : .clear }
     }
 }
 
@@ -959,6 +1016,8 @@ final class OverviewDisclosureSection: UIView {
 
 /// "Còn phải thu" split (#494): what is collected at pickup from today on, what is past its pickup day, and the total
 final class OverviewOutstandingDetailsSheet: UIViewController {
+    /// #496: both rows open "Chưa lấy đồ" (run after the sheet is dismissed)
+    var onOpenOrders: (() -> Void)?
     private let breakdown: OverviewReport.OutstandingBreakdown
     private let total: Double
     private let periodTitle: String
@@ -985,21 +1044,34 @@ final class OverviewOutstandingDetailsSheet: UIViewController {
         let list = UIStackView()
         list.axis = .vertical
         let atPickup = breakdown.atPickup
-        list.addArrangedSubview(Parts.noteRow(
+        list.addArrangedSubview(opening(Parts.noteRow(
             "overview.v2.outstandingDetail.atPickup".localized(),
             note: PluralText.format("overview.v2.outstandingDetail.atPickupOrders", count: atPickup.orders, atPickup.orders),
-            value: MoneyFormatter.format(atPickup.amount), divider: true))
+            value: MoneyFormatter.format(atPickup.amount), divider: true)))
         let overdue = breakdown.overduePickup
         if overdue.orders > 0 {
-            list.addArrangedSubview(Parts.noteRow(
+            list.addArrangedSubview(opening(Parts.noteRow(
                 "overview.v2.outstandingDetail.overdue".localized(),
                 note: PluralText.format("overview.v2.outstandingDetail.overdueOrders", count: overdue.orders, overdue.orders),
-                value: MoneyFormatter.format(overdue.amount), color: V2.danger, divider: true))
+                value: MoneyFormatter.format(overdue.amount), color: V2.danger, divider: true)))
         }
         list.addArrangedSubview(Parts.row("overview.v2.outstanding".localized(), MoneyFormatter.format(total),
                                           color: Parts.outstandingColor, bold: true, divider: false))
 
         Parts.layout([title, body, list, Parts.closeButton(target: self, action: #selector(doneTapped))], in: self)
+    }
+
+    /// #496: a row that opens "Chưa lấy đồ" when the overview gave a target
+    private func opening(_ row: UIView) -> UIView {
+        guard onOpenOrders != nil else { return row }
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(rowTapped)))
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        return row
+    }
+
+    @objc private func rowTapped() {
+        let open = onOpenOrders
+        dismiss(animated: true) { open?() }
     }
 
     @objc private func doneTapped() { dismiss(animated: true) }

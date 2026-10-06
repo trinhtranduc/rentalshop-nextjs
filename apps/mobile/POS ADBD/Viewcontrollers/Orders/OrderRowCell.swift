@@ -4,6 +4,7 @@
 //
 //  One row of the redesigned orders tab (#371, boards Main / VL-tat-ca / VL-ban / VL-tim since #401):
 //  a flat row with a tag, the customer, items, a date line, pills, the total and its pay line.
+//  #496: no item line; under the name "#code · tạo T? dd/mm" (muted) and a status line ("Giao … · trả …", "Trả …").
 //
 
 import UIKit
@@ -15,6 +16,8 @@ enum OrderRowContext {
     case list
     case sale
     case search
+    /// #496 "Chưa lấy đồ": overdue rows get "Quá x ngày · nên gọi khách", the right side "còn thu" in orange
+    case notPickedUp
 }
 
 /// Coloured tag of an order row (#468, boards Main / VL-tat-ca / VL-ban):
@@ -72,14 +75,17 @@ final class RowTagLabel: UILabel {
 final class OrderRowCell: UITableViewCell {
     static let reuseId = "OrderRowCell"
 
-    private static let itemsColor = UIColor(hexString: "334155")
+    /// #496: the "#code · tạo …" line
+    static let metaColor = UIColor(hexString: "64748B")
+    /// #496: "còn thu" on the "Chưa lấy đồ" list (Còn phải thu colour)
+    static let dueColor = UIColor(hexString: "B45309")
     private static let callBorder = UIColor(hexString: "CBD5E1")
     private static let chevronColor = UIColor(hexString: "94A3B8")
 
     private let tagLabel = RowTagLabel(style: .status)
     private let nameLabel = UILabel()
-    private let itemsLabel = UILabel()
-    private let whenLabel = UILabel()
+    private let metaLabel = UILabel()
+    private let taskLabel = UILabel()
     private let pillStack = UIStackView()
     private let totalLabel = UILabel()
     private let payLabel = UILabel()
@@ -115,21 +121,21 @@ final class OrderRowCell: UITableViewCell {
         firstLine.spacing = 6
         firstLine.alignment = .center
 
-        itemsLabel.font = Utils.regularFont(size: DS.TextSize.body)
-        itemsLabel.textColor = Self.itemsColor
-        itemsLabel.lineBreakMode = .byTruncatingTail
-        whenLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
-        whenLabel.textColor = DS.Color.textMuted
-        whenLabel.numberOfLines = 2
+        metaLabel.font = Utils.regularFont(size: 13)
+        metaLabel.textColor = Self.metaColor
+        metaLabel.lineBreakMode = .byTruncatingTail
+        taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
+        taskLabel.textColor = DS.Color.text
+        taskLabel.numberOfLines = 2
         pillStack.spacing = 6
         pillStack.alignment = .leading
         let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView()])
 
-        let left = UIStackView(arrangedSubviews: [firstLine, itemsLabel, whenLabel, pillLine])
+        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, taskLabel, pillLine])
         left.axis = .vertical
         left.spacing = DS.Gap.line
         left.alignment = .fill
-        left.setCustomSpacing(DS.Gap.line, after: whenLabel)
+        left.setCustomSpacing(2, after: metaLabel)
 
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
@@ -207,9 +213,11 @@ final class OrderRowCell: UITableViewCell {
             tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
         }
         setName(work.customerName)
-        setItems(work.productNames)
-        whenLabel.text = "#\(OrdersHomeLogic.shortNumber(work.orderNumber)) · "
-            + OrdersHomeLogic.workWhen(work, kind: kind, isLate: isLate)
+        // #496: hand-overs are reserved rentals, take-backs rented out; the API sends no created day for these rows
+        setLines(OrdersHomeLogic.rowLines(code: OrdersHomeLogic.shortNumber(work.orderNumber), orderType: .rent,
+                                          status: kind == .handOver ? .reserved : .pickuped, createdAt: nil,
+                                          pickupPlanAt: work.pickupPlanAt, returnPlanAt: work.returnPlanAt,
+                                          returnedAt: nil, updatedAt: nil, isLate: isLate || work.lateDays > 0))
         if kind == .handOver && !work.isReadyToDeliver {
             addPill("orders.v2.notPrepared".localized(), DS.Status.waiting)
         }
@@ -228,22 +236,26 @@ final class OrderRowCell: UITableViewCell {
         let tag = OrdersHomeLogic.statusTag(order, inSearch: { if case .search = context { return true }; return false }())
         tagLabel.apply(tag.text, tag.colors)
         setName(order.customerName)
-        setItems(order.itemsSummary)
-        let number = "#\(OrdersHomeLogic.shortNumber(order.orderNumber))"
-        switch context {
-        case .sale:
-            whenLabel.text = number
-        case .search:
-            whenLabel.text = number + " · " + OrdersHomeLogic.searchWhen(order, lateDays: lateDays)
-        default:
-            whenLabel.text = number + " · " + OrdersHomeLogic.listWhen(order, lateDays: lateDays)
-        }
-        if lateDays > 0 {
-            addPill(LateText.days(lateDays), DS.Status.late)
-        }
+        setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
         setTotal(order.totalAmount, struck: order.status == .cancelled)
-        // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
-        setPay(OrdersHomeLogic.listPayLine(order))
+        if case .notPickedUp = context {
+            if lateDays > 0 {
+                addPill(PluralText.format("notPickedUp.chip", count: lateDays, lateDays), DS.Status.late)
+            }
+            // Only what is still to collect, in the Còn phải thu colour
+            if let due = order.listAmountDue, due > 0 {
+                setPay(.due(due))
+                payLabel.textColor = Self.dueColor
+            } else {
+                setPay(nil)
+            }
+        } else {
+            if lateDays > 0 {
+                addPill(LateText.days(lateDays), DS.Status.late)
+            }
+            // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
+            setPay(OrdersHomeLogic.listPayLine(order))
+        }
         phone = nil
     }
 
@@ -252,9 +264,10 @@ final class OrderRowCell: UITableViewCell {
         nameLabel.text = trimmed.isEmpty ? "N/A" : trimmed
     }
 
-    private func setItems(_ items: String) {
-        itemsLabel.text = items
-        itemsLabel.isHidden = items.isEmpty
+    private func setLines(_ lines: OrderRowLines) {
+        metaLabel.text = lines.meta
+        taskLabel.text = lines.task
+        taskLabel.isHidden = lines.task.isEmpty
     }
 
     private func setTotal(_ amount: Double, struck: Bool) {

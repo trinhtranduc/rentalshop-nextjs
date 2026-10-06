@@ -388,7 +388,7 @@ final class ProductDetailViewController: BaseViewControler {
         row.tag = index
         row.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
         let name = V2.label(order.customerName, size: DS.TextSize.name, weight: .bold)
-        let meta = V2.label(ProductDetailV2Logic.meta(order, productId: productId), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let meta = V2.label(ProductDetailV2Logic.meta(order), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, meta])
         texts.axis = .vertical
         texts.spacing = DS.Gap.lineTight
