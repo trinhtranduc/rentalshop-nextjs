@@ -24,6 +24,7 @@ import {
   computeTotals,
   dayRangeIso,
   draftFromOrder,
+  pickOutlet,
   findByBarcode,
   firstMissing,
   hydrateLines,
@@ -253,6 +254,8 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           printNote: (user.outlet as { printNote?: string | null }).printNote ?? null,
         },
       ]);
+      // The user can load after the first render (useState above saw no user yet): pick their outlet now.
+      setOutletId((cur) => cur ?? user.outletId ?? null);
       return;
     }
     if (!merchantId) return;
@@ -268,7 +271,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           printNote: o.printNote ?? null,
         }));
         setOutlets(list);
-        setOutletId((cur) => cur ?? (list.find((o) => o.isDefault) || list[0])?.id ?? null);
+        setOutletId((cur) => pickOutlet(cur, user?.outletId ?? null, list));
       })
       .catch(() => undefined);
     return () => {

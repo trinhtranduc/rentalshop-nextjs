@@ -10,6 +10,7 @@ jest.mock('@rentalshop/utils', () => ({
   ...(jest.requireActual('../packages/utils/src/core/rental-days') as object),
 }));
 import {
+  pickOutlet,
   addProduct,
   buildPayload,
   canEditOrder,
@@ -389,5 +390,17 @@ describe('pricing mode and price for this order', () => {
     const blockItem = buildPayload({ ...base, lines: [lineFromProduct(block, 'RENT')] }).orderItems[0];
     expect(blockItem).toMatchObject({ pricingType: 'FIXED', unitPrice: 70_000 });
     expect(blockItem).not.toHaveProperty('pricingOptionId');
+  });
+});
+
+describe('outlet for a new order (owner: "phải có outlet mặc định")', () => {
+  const list = [{ id: 3 }, { id: 1, isDefault: true }];
+  it('keeps a valid choice, else the user outlet, else the default, else the first', () => {
+    expect(pickOutlet(3, null, list)).toBe(3);
+    expect(pickOutlet(null, 3, list)).toBe(3);
+    expect(pickOutlet(null, null, list)).toBe(1);
+    expect(pickOutlet(99, null, list)).toBe(1);
+    expect(pickOutlet(null, null, [{ id: 7 }, { id: 8 }])).toBe(7);
+    expect(pickOutlet(null, 5, [])).toBe(5);
   });
 });

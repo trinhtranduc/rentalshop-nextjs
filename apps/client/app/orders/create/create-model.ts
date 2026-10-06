@@ -629,3 +629,15 @@ export function draftFromOrder(o: OrderLike, toDayKey: (v: string | Date) => str
     notes: o.notes || '',
   };
 }
+
+/**
+ * Outlet for the order: the one already chosen if it is in the list, else the user's own outlet
+ * (outlet admin / staff), else the shop's default outlet, else the first.
+ */
+export function pickOutlet(current: number | null, userOutletId: number | null, list: Array<{ id: number; isDefault?: boolean }>): number | null {
+  const has = (id: number | null) => id != null && list.some((o) => o.id === id);
+  if (has(current)) return current;
+  if (has(userOutletId)) return userOutletId;
+  if (list.length === 0) return current ?? userOutletId;
+  return (list.find((o) => o.isDefault) || list[0]).id;
+}
