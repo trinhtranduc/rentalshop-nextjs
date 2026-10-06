@@ -414,6 +414,7 @@ export const simplifiedUsers = {
             website: true,
             description: true,
             tenantKey: true, // Include tenantKey for referral code
+            allowOverlappingOrders: true, // #518 shop setting for GET /api/users/profile
             isActive: true,
             planId: true,
             // subscriptionStatus removed - use subscription.status

@@ -39,6 +39,15 @@ import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
+import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
+import {
+  findEditScheduleConflicts,
+  loadScheduleConflicts,
+  scheduleConflictBody,
+  SCHEDULE_CONFLICT_STATUS,
+  type EditableOrder,
+  type ScheduleDbClient
+} from '../../../lib/schedule-conflict-check';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -897,23 +906,52 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // #341: one Save / Confirm = one order. A second in-flight or retried create (same optional
     // Idempotency-Key, or for installed apps an identical order within 60 s) returns the existing
     // order instead of inserting; `isReplay` then skips the create side effects below.
-    const { order, replay: isReplay } = await db.orders.createOnce(
-      {
-        outletId: parsed.data.outletId,
-        customerId: parsed.data.customerId ?? null,
-        createdById: user.id,
-        orderType: parsed.data.orderType,
-        totalAmount: parsed.data.totalAmount,
-        pickupPlanAt: orderData.pickupPlanAt,
-        returnPlanAt: orderData.returnPlanAt,
-        items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
-          productId: item.productId,
-          quantity: item.quantity
-        })),
-        idempotencyKey: request.headers.get('idempotency-key')
-      },
-      orderData
-    );
+    const createGuard = {
+      outletId: parsed.data.outletId,
+      customerId: parsed.data.customerId ?? null,
+      createdById: user.id,
+      orderType: parsed.data.orderType,
+      totalAmount: parsed.data.totalAmount,
+      pickupPlanAt: orderData.pickupPlanAt,
+      returnPlanAt: orderData.returnPlanAt,
+      items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
+        productId: item.productId,
+        quantity: item.quantity
+      })),
+      idempotencyKey: request.headers.get('idempotency-key')
+    };
+
+    // #518: a shop with "Cho tạo đơn khi trùng lịch" OFF refuses a rental that would exceed outlet stock on
+    // some VN civil day. Default ON (or missing column) runs no extra query. The check runs inside the create
+    // transaction after the #341 replay lookup, so a retried create still returns its order.
+    const checkSchedule =
+      parsed.data.orderType === ORDER_TYPE.RENT &&
+      (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders === false &&
+      Boolean(orderData.pickupPlanAt && orderData.returnPlanAt);
+    const createResult = checkSchedule
+      ? await db.orders.createOnce(createGuard, orderData, {
+          beforeInsert: async (tx: unknown) => {
+            const conflicts = await loadScheduleConflicts(tx as ScheduleDbClient, {
+              outletId: parsed.data.outletId,
+              pickupPlanAt: orderData.pickupPlanAt,
+              returnPlanAt: orderData.returnPlanAt,
+              items: orderItemsData.map((item: { productId: number; quantity: number; productName?: string | null }) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                productName: item.productName ?? null
+              }))
+            });
+            return conflicts.length > 0 ? conflicts : null;
+          }
+        })
+      : await db.orders.createOnce(createGuard, orderData);
+    if (createResult.blocked) {
+      return NextResponse.json(
+        scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), createResult.blocked as ScheduleConflict[]),
+        { status: SCHEDULE_CONFLICT_STATUS }
+      );
+    }
+    const { order, replay: isReplay } = createResult;
     if (isReplay) {
       console.warn('⚠️ Duplicate order create, returning existing order:', order.orderNumber);
     }
@@ -1278,6 +1316,25 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       ...(parsed.data.outletId !== undefined && { outletId: parsed.data.outletId }),
       // Add other simple fields as needed
     };
+
+    // #518: shop setting "Cho tạo đơn khi trùng lịch" OFF → refuse new dates / outlet / reactivation that
+    // over-book. Answered here: this route's catch would turn any thrown error into a 500.
+    const scheduleConflicts = await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
+      existingOrder: existingOrder as unknown as EditableOrder,
+      next: {
+        status: updateData.status,
+        outletId: updateData.outletId,
+        pickupPlanAt: updateData.pickupPlanAt,
+        returnPlanAt: updateData.returnPlanAt
+      },
+      resolveMerchantId: async (outletId: number) => (await db.outlets.findById(outletId))?.merchantId
+    });
+    if (scheduleConflicts.length > 0) {
+      return NextResponse.json(
+        scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), scheduleConflicts),
+        { status: SCHEDULE_CONFLICT_STATUS }
+      );
+    }
 
     console.log('🔍 Updating order with data:', { id, ...updateData });
     

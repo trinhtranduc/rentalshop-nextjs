@@ -42,6 +42,7 @@
   "ORDER_ALREADY_EXISTS": "Order already exists",
   "PRODUCT_OUT_OF_STOCK": "Product is out of stock",
   "INVALID_ORDER_STATUS": "Invalid order status",
+  "ORDER_SCHEDULE_CONFLICT": "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.",
   "PAYMENT_FAILED": "Payment processing failed",
   "INVALID_PAYMENT_METHOD": "Invalid payment method",
   

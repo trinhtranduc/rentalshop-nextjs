@@ -8,7 +8,7 @@ import type {
 } from '@rentalshop/types';
 import { applyOrderDateRange } from './order-date-range';
 import { findNearestTaskPageIds } from './order-nearest-task';
-import { createOrderOnce, type OrderCreateGuard } from './order-create-guard';
+import { createOrderOnce, type CreateOrderOnceOptions, type OrderCreateGuard } from './order-create-guard';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
@@ -1073,8 +1073,13 @@ export const simplifiedOrders = {
    * Create an order unless this create already made one (#341): a second in-flight or retried
    * POST /api/orders returns the existing order with `replay: true`. See order-create-guard.ts.
    */
-  createOnce: async (guard: OrderCreateGuard, data: any): Promise<{ order: CreatedOrder; replay: boolean }> => {
-    return await createOrderOnce(guard, data, ORDER_CREATE_INCLUDE);
+  createOnce: async (
+    guard: OrderCreateGuard,
+    data: any,
+    options?: CreateOrderOnceOptions
+  ): Promise<{ order: CreatedOrder; replay: boolean; blocked?: unknown }> => {
+    // #518: `blocked` is set only when options.beforeInsert refused; `order` is then null
+    return await createOrderOnce(guard, data, ORDER_CREATE_INCLUDE, undefined, options);
   },
 
   /**

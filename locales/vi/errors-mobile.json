@@ -148,6 +148,7 @@
   "ORDER_ALREADY_EXISTS": "Đơn hàng đã tồn tại",
   "PRODUCT_OUT_OF_STOCK": "Sản phẩm đã hết hàng",
   "INVALID_ORDER_STATUS": "Trạng thái đơn hàng không hợp lệ",
+  "ORDER_SCHEDULE_CONFLICT": "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.",
   "PAYMENT_FAILED": "Thanh toán thất bại",
   "INVALID_PAYMENT_METHOD": "Phương thức thanh toán không hợp lệ",
   "CANNOT_DELETE_DEFAULT_OUTLET": "Không thể xóa cửa hàng mặc định. Đây là cửa hàng chính được tạo khi đăng ký và phải luôn hoạt động.",

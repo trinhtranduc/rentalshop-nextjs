@@ -92,6 +92,8 @@ export async function buildAuthLoginSuccessResponse(
         currency: (merchant as any).currency || 'USD',
         // Older merchants have no key; give them one so the product link and referral code exist
         tenantKey: (merchant as any).tenantKey || (await db.merchants.ensureTenantKey(merchant.id)) || undefined,
+        // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
+        allowOverlappingOrders: (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
         subscription: subscriptionData,
       };
     }

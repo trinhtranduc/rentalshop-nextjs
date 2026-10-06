@@ -15,6 +15,13 @@ import {
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
+import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
+import {
+  findEditScheduleConflicts,
+  scheduleConflictBody,
+  SCHEDULE_CONFLICT_STATUS,
+  type ScheduleDbClient,
+} from '../../../../lib/schedule-conflict-check';
 import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
@@ -724,6 +731,28 @@ export const PUT = async (
 
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
+
+      // #518: shop setting "Cho tạo đơn khi trùng lịch" OFF → refuse an edit that over-books (new dates,
+      // outlet, or more units). Runs before any write (loyalty below). Default ON queries nothing extra.
+      const scheduleConflicts = await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
+        existingOrder,
+        next: {
+          orderType: validUpdateData.orderType,
+          status: validUpdateData.status,
+          outletId: validUpdateData.outletId,
+          pickupPlanAt: validUpdateData.pickupPlanAt,
+          returnPlanAt: validUpdateData.returnPlanAt,
+          orderItems: validUpdateData.orderItems,
+        },
+        resolveMerchantId: async (outletId: number) =>
+          outletId === existingOrder.outletId ? merchantId : (await db.outlets.findById(outletId))?.merchantId,
+      });
+      if (scheduleConflicts.length > 0) {
+        return NextResponse.json(
+          scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), scheduleConflicts),
+          { status: SCHEDULE_CONFLICT_STATUS }
+        );
+      }
 
       // ---- Loyalty on edit (Req 7) ----
       // Detect a customer change and whether this order carries any loyalty state.
