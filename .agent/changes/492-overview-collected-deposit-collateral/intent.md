@@ -14,3 +14,4 @@ thế chân (a guarantee, handed back) are different and owners track both.
 - No cancelled-orders row: the owner said cancellations are rare.
 
 **Decision 2026-10-06:** the owner found "thế chân đã nhận" vs "đang giữ" confusing. Only "Thế chân đang giữ" is shown; the deposit tile is "Cọc khi tạo đơn".
+**Decision 2026-10-06 (later):** the headline is the order value of new orders (with growth). Thực thu and Còn phải thu are two equal tiles; deposit and held collateral live in the detail sheet.
