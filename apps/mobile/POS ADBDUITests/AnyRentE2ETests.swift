@@ -166,7 +166,8 @@ final class AnyRentE2ETests: XCTestCase {
             filter.tap()
             sleep(1)
             e2e.shot("42-orders-filter-sheet")
-            let nearest = e2e.element(labelBeginsWith: ["Nearest task", "Việc gần nhất"])
+            // Exact label: the explanation under the options also begins with "Việc gần nhất:"
+            let nearest = e2e.button(["Nearest task", "Việc gần nhất"])
             e2e.soft(nearest.waitForExistence(timeout: 3), "filter sheet lists Việc gần nhất")
             e2e.tapIfExists(nearest)
             // KHOẢNG NGÀY: planned hand-over day in the next 7 days (exact labels: the sort has "Hand-over date").
@@ -191,7 +192,14 @@ final class AnyRentE2ETests: XCTestCase {
 
         let search = e2e.ordersSearchField
         XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
-        for (query, shot) in [("ORD-001", "44-orders-search-code"), ("555-1006", "45-orders-search-phone"),
+        // Order numbers are 6 random digits (seeded ones read #0001): search the number of the first listed row.
+        let firstCell = app.cells.firstMatch
+        let firstRow = firstCell.waitForExistence(timeout: 5)
+            ? ([firstCell.label] + firstCell.staticTexts.allElementsBoundByIndex.map(\.label)).joined(separator: " ") : ""
+        let listedNumber = firstRow.components(separatedBy: "#").dropFirst().first?
+            .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted).first ?? ""
+        e2e.soft(!listedNumber.isEmpty, "a listed order shows its number (#…)")
+        for (query, shot) in [(listedNumber.isEmpty ? "0001" : listedNumber, "44-orders-search-code"), ("555-1006", "45-orders-search-phone"),
                               ("james", "46-orders-search-name")] {
             search.tap()
             search.clearText()
@@ -340,10 +348,18 @@ final class AnyRentE2ETests: XCTestCase {
         next.tap()
         XCTAssertTrue(e2e.type(into: ["Full name", "Họ và tên"], text: "E2E Owner"), "Owner step opens")
         _ = e2e.type(into: ["Email"], text: "e2e391+\(stamp)@example.com")
-        let secure = app.secureTextFields
-        if secure.count >= 2 {
-            secure.element(boundBy: 0).tap(); secure.element(boundBy: 0).typeText("e2e12345")
-            secure.element(boundBy: 1).tap(); secure.element(boundBy: 1).typeText("e2e12345")
+        // Show both passwords first: a visible field gets no "Use Strong Password" autofill, which otherwise
+        // paints the secure fields yellow and drops what we type (the form then says the password is missing).
+        let showToggles = app.buttons.matching(NSPredicate(format: "label IN %@", ["Show password", "Hiện mật khẩu"]))
+        for _ in 0..<2 where showToggles.firstMatch.exists { showToggles.firstMatch.tap() }
+        let typedNew = e2e.type(into: ["Password", "Mật khẩu"], text: "e2e123456")
+        let typedConfirm = e2e.type(into: ["Re-enter password", "Nhập lại mật khẩu"], text: "e2e123456")
+        if !(typedNew && typedConfirm) {
+            let secure = app.secureTextFields
+            if secure.count >= 2 {
+                e2e.typeSecure(secure.element(boundBy: 0), "e2e123456")
+                e2e.typeSecure(secure.element(boundBy: 1), "e2e123456")
+            }
         }
         e2e.hideKeyboard()
         let terms = app.descendants(matching: .any).matching(NSPredicate(
@@ -530,8 +546,9 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")
         try e2e.start()
-        // Product 1 has a renting order: delete must answer 409 PRODUCT_HAS_OPEN_ORDERS and keep the screen.
-        guard e2e.openProduct(named: "Product 1 - Electronics") else { return XCTFail("Product 1 detail") }
+        // A product with an upcoming or renting order: delete must answer 409 PRODUCT_HAS_OPEN_ORDERS and keep
+        // the screen. Seed ids move on every reseed, so pick by the detail's "Sắp tới" / "Đang thuê" counts.
+        guard e2e.openProduct(where: { $0 > 0 }) != nil else { return XCTFail("No product with open orders") }
         e2e.shot("7c-product-detail-strip")
         let delete = e2e.button(["Delete product", "Xóa sản phẩm", "Delete", "Xóa"])
         XCTAssertTrue(delete.waitForExistence(timeout: 5), "Merchant sees Xóa on product detail")
@@ -560,15 +577,17 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
 
         // A product without open orders is deleted and leaves the list.
-        let name = "Product 30 - Maintenance Equipment"
-        guard e2e.openProduct(named: name) else { return XCTFail("\(name) detail") }
+        guard e2e.openProduct(where: { $0 == 0 }) != nil else { return XCTFail("No product without open orders") }
         e2e.button(["Delete product", "Xóa sản phẩm", "Delete", "Xóa"]).tap()
         let ok = app.sheets.buttons.matching(NSPredicate(format: "label IN %@", ["Delete product", "Xóa sản phẩm"])).firstMatch
         if ok.waitForExistence(timeout: 5) { ok.tap() }
         sleep(3)
         e2e.dismissAlerts()
         e2e.shot("7g-product-deleted")
-        e2e.soft(app.tables.cells.firstMatch.waitForExistence(timeout: 8), "back on the product list after delete")
+        // Back on the product list; the search still holds the deleted product's name, so "no match" also counts.
+        let noMatch = e2e.element(labelBeginsWith: ["No products match", "Không có sản phẩm nào khớp"])
+        e2e.soft(app.tables.cells.firstMatch.waitForExistence(timeout: 8) || noMatch.exists,
+                 "back on the product list after delete")
     }
 
     func test7cSettingsUsers() throws {
@@ -896,6 +915,56 @@ private final class E2E {
         return button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10)
     }
 
+    /// Upcoming + renting orders on the open product detail (chips "Sắp tới N" / "Đang thuê N"); nil without chips
+    func productOpenOrderCount() -> Int? {
+        var total = 0
+        var found = false
+        for prefix in ["Sắp tới ", "Upcoming ", "Đang thuê ", "Rented "] {
+            let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+            guard chip.waitForExistence(timeout: 1),
+                  let count = Int(chip.label.components(separatedBy: " ").last ?? "") else { continue }
+            total += count
+            found = true
+        }
+        return found ? total : nil
+    }
+
+    /// Opens the first seed product ("Product N - …") whose open-order count matches; returns its search key
+    func openProduct(where match: (Int) -> Bool, upTo last: Int = 20) -> String? {
+        for index in 1...last {
+            let key = "Product \(index) -"
+            guard openProduct(named: key) else { continue }
+            if let count = productOpenOrderCount(), match(count) { return key }
+            goBackOnce()
+        }
+        return nil
+    }
+
+    /// The App Store "Enjoying AnyRent?" prompt can follow a created order; it blocks taps until dismissed
+    func dismissRatingPrompt() {
+        let labels = ["Not Now", "Để sau", "Không phải bây giờ"]
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for owner in [app, springboard] {
+            let notNow = owner.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+            if notNow.waitForExistence(timeout: 2) { notNow.tap(); sleep(1); return }
+        }
+    }
+
+    /// Types into a secure field, retrying when the keyboard switch drops the text. A ".newPassword" field gets
+    /// iOS's "Use Strong Password" offer, which fills the field yellow and clears our text: choose our own instead.
+    func typeSecure(_ field: XCUIElement, _ text: String) {
+        for _ in 0..<3 {
+            field.tap()
+            let ownPassword = app.buttons.matching(NSPredicate(
+                format: "label CONTAINS[c] 'Own Password' OR label CONTAINS[c] 'riêng' OR label CONTAINS[c] 'Other Options'")).firstMatch
+            if ownPassword.waitForExistence(timeout: 1) { ownPassword.tap(); field.tap() }
+            field.clearText()
+            field.typeText(text)
+            if let value = field.value as? String, !value.isEmpty, value != field.placeholderValue { return }
+        }
+        note("secure field stayed empty")
+    }
+
     /// In the customer picker: "Khách mới" → phone + name → "Lưu và chọn". Returns the name, or nil.
     func createCustomerInPicker(name: String, phone: String) -> String? {
         let row = element(labelBeginsWith: ["Choose customer", "Chọn khách hàng"])
@@ -1080,6 +1149,10 @@ private final class E2E {
     }
 
     /// Cart CTA → preview → create → payment sheet confirm. True when the app is back on Home with an empty cart.
+    /// Number of the last order created from the cart ("Đã tạo đơn #787771" → "787771")
+    private(set) var lastCreatedOrderNumber: String?
+
+    /// Cart CTA → confirm sheet ("Tạo đơn thuê?" / "Bán & thu tiền?", #476) → "Đã tạo đơn #NNNNNN" sheet → "Tạo đơn mới".
     func createOrderFromCart(cta: [String], shotPrefix: String) -> Bool {
         let ctaButton = button(cta)
         guard ctaButton.waitForExistence(timeout: 5) else {
@@ -1089,32 +1162,35 @@ private final class E2E {
         ctaButton.tap()
         sleep(2)
         dismissAlerts()
-        // The preview's footer button reads "Create Order" / "Tạo đơn".
-        let create = app.buttons.matching(NSPredicate(format: "label IN %@", ["Create Order", "Create order", "Tạo đơn"]))
-        guard create.firstMatch.waitForExistence(timeout: 10) else {
+        let sheetTitle = app.staticTexts.matching(NSPredicate(
+            format: "label IN %@", ["Tạo đơn thuê?", "Create rental order?", "Bán & thu tiền?", "Sell & collect?"])).firstMatch
+        guard sheetTitle.waitForExistence(timeout: 10) else {
             shot("\(shotPrefix)-no-preview")
-            XCTFail("Preview did not open")
+            XCTFail("Confirm sheet did not open")
             return false
         }
         shot("\(shotPrefix)-preview")
-        let footer = create.allElementsBoundByIndex.filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
-        (footer ?? create.firstMatch).tap()
-        sleep(1)
-        shot("\(shotPrefix)-after-create-tap")
-        let confirm = button(["Confirm", "Xác nhận"])
-        if confirm.waitForExistence(timeout: 8) {
-            shot("\(shotPrefix)-payment")
-            confirm.tap()
-        } else {
-            note("No payment sheet after Create")
-        }
-        sleep(4)
+        // The sheet's confirm button has the same label as the cart CTA: take the lowest one on screen.
+        let confirm = app.buttons.matching(NSPredicate(format: "label IN %@", cta))
+        let sheetButton = confirm.allElementsBoundByIndex.filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
+        (sheetButton ?? confirm.firstMatch).tap()
+        sleep(2)
         dismissAlerts()
-        let backHome = app.tabBars.firstMatch.waitForExistence(timeout: 15)
+        let created = app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH 'Đã tạo đơn #' OR (label BEGINSWITH 'Order #' AND label ENDSWITH 'created')")).firstMatch
+        guard created.waitForExistence(timeout: 15) else {
+            shot("\(shotPrefix)-not-created")
+            if let alert = lastAlert { note("Order not created; last alert: \(alert)") }
+            return false
+        }
+        lastCreatedOrderNumber = created.label.components(separatedBy: "#").last?
+            .components(separatedBy: CharacterSet.decimalDigits.inverted).first
         shot("\(shotPrefix)-created")
-        let created = backHome && !cartBar.exists
-        if !created, let alert = lastAlert { note("Order not created; last alert: \(alert)") }
-        return created
+        soft(lastCreatedOrderNumber?.count == 6, "created order number has 6 digits (\(created.label))")
+        tapIfExists(button(["Tạo đơn mới", "New order"]), timeout: 3)
+        sleep(1)
+        dismissRatingPrompt()
+        return true
     }
 
     // MARK: Reporting
