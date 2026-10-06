@@ -59,7 +59,7 @@ final class RentedOutOrdersViewController: BaseViewControler {
         OrdersHomeLogic.hidesMoney(role: User.current()?.role, hideForStaff: Utils.shouldHideFinancialDataForStaff())
     }
 
-    private lazy var tableView: UITableView = {
+    private lazy var ordersTableView: UITableView = {
         let table = UITableView(frame: .zero, style: .plain)
         table.delegate = self
         table.dataSource = self
@@ -112,7 +112,7 @@ final class RentedOutOrdersViewController: BaseViewControler {
         emptyLabel.isHidden = true
         refresh.addTarget(self, action: #selector(pulled), for: .valueChanged)
 
-        [header, headerLine, tableView, emptyLabel, spinner].forEach(view.addSubview)
+        [header, headerLine, ordersTableView, emptyLabel, spinner].forEach(view.addSubview)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
             make.leading.trailing.equalToSuperview().inset(8)
@@ -121,15 +121,15 @@ final class RentedOutOrdersViewController: BaseViewControler {
             make.top.equalTo(header.snp.bottom).offset(4)
             make.leading.trailing.equalToSuperview()
         }
-        tableView.snp.makeConstraints { make in
+        ordersTableView.snp.makeConstraints { make in
             make.top.equalTo(headerLine.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
         emptyLabel.snp.makeConstraints { make in
-            make.center.equalTo(tableView)
+            make.center.equalTo(ordersTableView)
             make.leading.trailing.equalToSuperview().inset(32)
         }
-        spinner.snp.makeConstraints { make in make.center.equalTo(tableView) }
+        spinner.snp.makeConstraints { make in make.center.equalTo(ordersTableView) }
     }
 
     @objc private func close() {
@@ -201,13 +201,13 @@ final class RentedOutOrdersViewController: BaseViewControler {
         let total = groups.late.count + groups.onTime.count
         titleLabel.text = String(format: "rentedOut.title".localized(), total)
         emptyLabel.isHidden = total > 0 || isLoading
-        tableView.reloadData()
+        ordersTableView.reloadData()
 
         // From "trễ hạn trả": open at the late group (it comes first, so this keeps the top in view)
         if startsAtLate, !didInitialScroll, let index = sections.firstIndex(where: { $0.kind == .late }) {
             didInitialScroll = true
-            tableView.layoutIfNeeded()
-            tableView.scrollToRow(at: IndexPath(row: 0, section: index), at: .top, animated: false)
+            ordersTableView.layoutIfNeeded()
+            ordersTableView.scrollToRow(at: IndexPath(row: 0, section: index), at: .top, animated: false)
         }
     }
 

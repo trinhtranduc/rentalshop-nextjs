@@ -272,9 +272,8 @@ struct OverviewReport: Decodable, Equatable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         if let revenue = try? c.nestedContainer(keyedBy: RevenueKeys.self, forKey: .revenue) {
-            netRevenue = ((try? revenue.decodeIfPresent(Double.self, forKey: .collected)) ?? nil)
-                ?? ((try? revenue.decodeIfPresent(Double.self, forKey: .totalActualRevenue)) ?? nil)
-                ?? ((try? revenue.decodeIfPresent(Double.self, forKey: .totalRevenue)) ?? nil) ?? 0
+            let amount: (RevenueKeys) -> Double? = { key in (try? revenue.decodeIfPresent(Double.self, forKey: key)) ?? nil }
+            netRevenue = amount(.collected) ?? amount(.totalActualRevenue) ?? amount(.totalRevenue) ?? 0
             totalOrderValue = (try? revenue.decodeIfPresent(Double.self, forKey: .totalOrderValue)) ?? nil
             outstanding = (try? revenue.decodeIfPresent(Double.self, forKey: .outstanding)) ?? nil
         } else {
