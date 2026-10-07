@@ -17,16 +17,24 @@ import {
   OVERVIEW_PERIODS,
   buildKpis,
   buildMoney,
+  buildTiles,
   buildTodayRows,
   buildTodayWork,
+  chartBars,
   chartRange,
+  forecastBar,
   formatRangeLabel,
+  isDayKey,
+  parseDetail,
   periodRange,
+  sparkPoints,
   type DayRange,
+  type DetailKind,
   type OverviewPeriod,
   type PeriodReportLike,
 } from './overview-model';
-import { CollectedChart, KpiCards, MoneyCards, TodayOrders, TodayWorkCard, TopProducts, type T } from './overview/sections';
+import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopProducts, type T } from './overview/sections';
+import { DetailDrawer } from './overview/DetailDrawer';
 
 interface Loadable<V> {
   data: V | null;
@@ -109,13 +117,54 @@ export default function DashboardPage() {
   const kpis = useMemo(() => buildKpis(report.data), [report.data]);
   const moneyParts = useMemo(() => buildMoney(report.data), [report.data]);
   const cash = ops.data?.cash ?? null;
-  const upcoming = cash ? { toReturn: cash.collateralToReturn, toCollect: cash.collateralToCollect } : null;
+  const tiles = useMemo(() => buildTiles(report.data, cash), [report.data, cash]);
+  // Only Thực thu has a per-day series; the other tiles get no sparkline rather than an invented one
+  const spark = useMemo(
+    () => ({ collected: chartState.loading ? null : sparkPoints(
+            chartBars(series, 'collected', weekdays, todayKey)
+              .filter((b) => !isDayKey(b.key) || b.key <= todayKey) // future days are not zero takings
+              .map((b) => b.value),
+          ) }),
+    [series, weekdays, todayKey, chartState.loading],
+  );
+  const forecast = useMemo(() => forecastBar(kpis.collected, series, todayKey), [kpis.collected, series, todayKey]);
+
+  // Tile detail lives in the URL (?detail=) so back, refresh and links work
+  const detail = canViewRevenue ? parseDetail(searchParams.get('detail')) : null;
+  const lastDetail = useRef<DetailKind | null>(null);
+  useEffect(() => {
+    if (detail) {
+      lastDetail.current = detail;
+      return;
+    }
+    const kind = lastDetail.current;
+    lastDetail.current = null;
+    if (kind) document.querySelector<HTMLElement>(`[data-detail-tile="${kind}"]`)?.focus();
+  }, [detail]);
+  const setDetail = useCallback(
+    (kind: DetailKind | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (kind) params.set('detail', kind);
+      else params.delete('detail');
+      const qs = params.toString();
+      router.push(qs ? `/dashboard?${qs}` : '/dashboard', { scroll: false });
+    },
+    [router, searchParams],
+  );
+  const created = `created=custom&from=${range.startDate}&to=${range.endDate}`;
+  const ordersHref: Record<DetailKind, string> = {
+    orderValue: `/orders?${created}`,
+    collected: `/orders?${created}`,
+    outstanding: `/orders?status=RESERVED&${created}`,
+    collateral: '/orders?status=PICKUPED',
+  };
 
   const [customOpen, setCustomOpen] = useState(period === 'custom');
 
   const go = (next: OverviewPeriod, extra?: { from: string; to: string }) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('period', next);
+    params.delete('detail');
     params.delete('from');
     params.delete('to');
     if (extra) {
@@ -139,10 +188,10 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-5 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('home.title')}</h1>
-          <span className="text-sm text-ar-muted">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <h1 className="m-0 text-[26px] font-bold text-ar-ink">{t('home.title')}</h1>
+          <span className="text-[15px] text-ar-muted">
             {formatRangeLabel(range, weekdays)}
             {canViewRevenue && range.startDate !== range.endDate ? ` · ${t('home.comparedToPrevious')}` : ''}
           </span>
@@ -186,7 +235,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {canViewRevenue && <KpiCards kpis={kpis} loading={!ready || report.loading} t={t} money={money} />}
+      {canViewRevenue && (
+        <KpiTiles
+          tiles={tiles}
+          spark={spark}
+          forecast={forecast}
+          loading={!ready || report.loading}
+          t={t}
+          money={money}
+          onOpen={setDetail}
+        />
+      )}
 
       <div className="flex flex-wrap gap-4">
         {canViewRevenue && (
@@ -199,19 +258,33 @@ export default function DashboardPage() {
             todayKey={todayKey}
             locale={locale}
             t={t}
+            money={money}
           />
         )}
-        <TodayWorkCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
+        <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
       </div>
-
-      {canViewRevenue && <MoneyCards parts={moneyParts} upcoming={upcoming} loading={!ready || report.loading} t={t} money={money} />}
 
       <div className="flex flex-wrap gap-4">
-        <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} money={money} />
+        <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />
         {canViewRevenue && (
-          <TopProducts products={report.data?.topProducts ?? []} loading={!ready || report.loading} t={t} money={money} />
+          <TopProducts products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
         )}
       </div>
+
+      {detail && (
+        <DetailDrawer
+          kind={detail}
+          tile={tiles.find((x) => x.kind === detail)!}
+          parts={moneyParts}
+          cash={cash}
+          newOrders={kpis.newOrders}
+          periodLabel={period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`)}
+          ordersHref={ordersHref[detail]}
+          onClose={() => setDetail(null)}
+          t={t}
+          money={money}
+        />
+      )}
     </div>
   );
 }

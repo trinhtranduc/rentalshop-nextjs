@@ -481,6 +481,13 @@ a:focus-visible {
   --ar-unprepared: 154 52 18;
   --ar-unprepared-bg: 255 237 213;
   --ar-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  /* Chart series (#604): validated categorical palette; text never wears these */
+  --ar-chart-blue: 37 99 235;
+  --ar-chart-blue-soft: 191 219 254;
+  --ar-chart-amber: 217 119 6;
+  --ar-chart-green: 5 150 105;
+  --ar-chart-violet: 124 58 237;
+  --ar-chart-red: 220 38 38;
 }
 
 html[data-ar-theme='dark'] .ar-theme {
@@ -516,6 +523,12 @@ html[data-ar-theme='dark'] .ar-theme {
   --ar-unprepared: 253 186 116;
   --ar-unprepared-bg: 58 26 6;
   --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ar-chart-blue: 59 130 246;
+  --ar-chart-blue-soft: 30 58 138;
+  --ar-chart-amber: 217 119 6;
+  --ar-chart-green: 5 150 105;
+  --ar-chart-violet: 139 92 246;
+  --ar-chart-red: 239 68 68;
 }
 
 .ar-theme {
