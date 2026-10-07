@@ -274,7 +274,11 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {todayWork && <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />}
+      {todayWork && (
+        <div className="flex flex-wrap gap-4">
+          <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />
+        </div>
+      )}
 
       {canViewRevenue && (
         <div className="flex flex-wrap gap-4">
