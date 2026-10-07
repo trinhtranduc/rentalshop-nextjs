@@ -2269,3 +2269,4 @@
 "products.category.hasProducts" = "Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.";
 /* #633 Tổng quan top lists */
 "overview.dash.top.viewAll" = "Xem tất cả";
+"settings.v2.categories" = "Danh mục";

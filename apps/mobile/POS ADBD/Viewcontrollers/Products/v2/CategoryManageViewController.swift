@@ -2,8 +2,9 @@
 //  CategoryManageViewController.swift
 //  POS ADBD
 //
-//  #632: "Quản lý danh mục" opened from the product form's category picker (MERCHANT). Lists the shop's categories;
-//  tap a row to rename it or delete it (never the default one). Add uses the same name prompt as the picker.
+//  #632: "Quản lý danh mục", opened from Cài đặt → Danh mục (MERCHANT, OUTLET_ADMIN) or from the product form's
+//  category picker (MERCHANT). Lists the shop's categories; + adds one; MERCHANT taps a row to rename it or delete it
+//  (never the default one). Add uses the same name prompt as the picker.
 //  The API is the real gate (PUT/DELETE /api/categories/{id} accept MERCHANT and ADMIN only).
 //
 
@@ -51,9 +52,17 @@ final class CategoryManageViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
+    /// Pushed from Settings (pop) or presented over the product form (dismiss)
     @objc private func backTapped() {
-        dismiss(animated: true)
+        if let nav = navigationController, nav.viewControllers.first !== self {
+            nav.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
+
+    /// Rename / delete: MERCHANT only, like `PUT`/`DELETE /api/categories/{id}`
+    private var canManage: Bool { CategoryRules.canManage(role: ProductAccess.currentRole) }
 
     // MARK: - Data
 
@@ -171,12 +180,14 @@ extension CategoryManageViewController: UITableViewDataSource, UITableViewDelega
             content.secondaryTextProperties.color = DS.Color.textMuted
         }
         cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
+        cell.accessoryType = canManage ? .disclosureIndicator : .none
+        cell.selectionStyle = canManage ? .default : .none
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        guard canManage else { return }
         let category = categories[indexPath.row]
         let sheet = UIAlertController(title: category.name, message: nil, preferredStyle: .actionSheet)
         sheet.addAction(UIAlertAction(title: "products.category.rename".localized(), style: .default) { [weak self] _ in

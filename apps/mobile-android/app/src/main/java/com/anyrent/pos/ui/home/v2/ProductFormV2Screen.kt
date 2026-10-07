@@ -431,7 +431,7 @@ fun ProductFormV2Screen(
         }
     }
     if (managingCategories) {
-        CategoryManageDialog(onDismiss = { managingCategories = false }) { fresh ->
+        CategoryManageScreen(onDismiss = { managingCategories = false }) { fresh ->
             categories = fresh
             val chosen = fresh.firstOrNull { it.id == categoryId }
             if (categoryId != null && chosen == null) categoryId = null

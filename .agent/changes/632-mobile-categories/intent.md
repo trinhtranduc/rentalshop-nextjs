@@ -27,7 +27,7 @@ MERCHANT, OUTLET_ADMIN, OUTLET_STAFF. iOS, Android. Reads `GET/POST /api/categor
 - Roles follow the API: POST needs `products.manage` (MERCHANT, OUTLET_ADMIN); PUT/DELETE only MERCHANT
   (ADMIN is the platform role). UI only hides controls; the API already enforces.
 - iOS is the reference; Android matches it.
-- Keep it lean: name only (no description field on mobile), no new tab, no Settings row.
+- Keep it lean: name only (no description field on mobile), no new tab.
 
 ## Open questions
 
@@ -37,3 +37,4 @@ MERCHANT, OUTLET_ADMIN, OUTLET_STAFF. iOS, Android. Reads `GET/POST /api/categor
 
 - 2026-10-07 — Entry point is the product form's category picker, not Settings (owner)
 - 2026-10-07 — Roles exactly as the API allows (owner)
+- 2026-10-07 — Category management also needs its own screen outside the form: Cài đặt → Danh mục (owner: "quản lý danh mục cần view riêng")

@@ -2271,3 +2271,4 @@
 "products.category.hasProducts" = "This category still has products. Move them to another category before deleting it.";
 /* #633 Overview top lists */
 "overview.dash.top.viewAll" = "View all";
+"settings.v2.categories" = "Categories";

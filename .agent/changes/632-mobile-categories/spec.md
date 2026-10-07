@@ -18,11 +18,13 @@ Status: accepted · Intent: ./intent.md
    `CATEGORY_NAME_REQUIRED`, `CANNOT_DELETE_DEFAULT_CATEGORY`, and 409 `BUSINESS_RULE_VIOLATION` on delete
    ("Danh mục còn sản phẩm, chuyển sản phẩm sang danh mục khác trước"). Other errors: the generic message.
 8. iOS and Android behave the same (texts, roles, order of entries).
+9. Cài đặt → QUẢN LÝ gets "Danh mục" (first row) for MERCHANT and OUTLET_ADMIN, never OUTLET_STAFF. It opens the
+   same full screen as "Quản lý danh mục": + adds; MERCHANT taps a row to rename / delete; OUTLET_ADMIN only adds.
 
 ## Out of scope
 
 - Description field, sorting, search inside the picker, product counts per category.
-- A Settings row or a separate tab for categories.
+- A separate tab for categories.
 - Any API, schema or web change.
 - Delete check counts soft-deleted products too (API `getStats({categoryId})`); unchanged.
 

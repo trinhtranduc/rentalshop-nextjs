@@ -1329,4 +1329,5 @@
     <string name="v2_category_name_too_short">Tên danh mục cần ít nhất 2 ký tự</string>
     <string name="v2_category_name_too_long">Tên danh mục tối đa 50 ký tự</string>
     <string name="v2_category_has_products">Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.</string>
+    <string name="settings_v2_categories">Danh mục</string>
 </resources>

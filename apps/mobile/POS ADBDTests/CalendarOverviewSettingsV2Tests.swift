@@ -580,11 +580,11 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms, hasPlan: true)
         XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
         XCTAssertEqual(merchant[0].items, [.storeInfo, .receiptNote, .printer, .bankAccounts])
-        XCTAssertEqual(merchant[1].items, [.users, .export])
+        XCTAssertEqual(merchant[1].items, [.categories, .users, .export])
         XCTAssertEqual(merchant[2].items, [.plan, .language, .password, .appInfo, .deleteAccount])
 
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
-        XCTAssertEqual(outletAdmin[1].items, [.users, .export])
+        XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])
         XCTAssertEqual(outletAdmin[2].items, [.language, .password, .appInfo, .deleteAccount])
 
         // Staff: no users, no export (even with an export right), so no QUẢN LÝ group at all
@@ -592,6 +592,7 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertEqual(staff.map(\.group), [.store, .account])
         XCTAssertFalse(staff.flatMap(\.items).contains(.users))
         XCTAssertFalse(staff.flatMap(\.items).contains(.export))
+        XCTAssertFalse(staff.flatMap(\.items).contains(.categories), "#632: staff cannot add a category")
     }
 
     func testPlanParsingAndText() throws {

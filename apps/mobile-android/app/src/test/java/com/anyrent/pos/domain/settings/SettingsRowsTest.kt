@@ -18,14 +18,14 @@ class SettingsRowsTest {
             listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER, SettingsItem.BANK_ACCOUNTS),
             merchant[0].items,
         )
-        assertEquals(listOf(SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
+        assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
         assertEquals(
             listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT),
             merchant[2].items,
         )
 
         val outletAdmin = SettingsRows.sections("OUTLET_ADMIN", hasPlan = false)
-        assertEquals(listOf(SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
+        assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
         assertFalse(outletAdmin[2].items.contains(SettingsItem.PLAN))
 
         val staff = SettingsRows.sections("OUTLET_STAFF", hasPlan = true)

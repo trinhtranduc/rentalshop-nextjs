@@ -1347,4 +1347,5 @@
     <string name="v2_category_name_too_short">A category name needs at least 2 characters</string>
     <string name="v2_category_name_too_long">A category name has at most 50 characters</string>
     <string name="v2_category_has_products">This category still has products. Move them to another category before deleting it.</string>
+    <string name="settings_v2_categories">Categories</string>
 </resources>
