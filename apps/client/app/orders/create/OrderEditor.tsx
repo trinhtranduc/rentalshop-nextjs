@@ -13,7 +13,8 @@ import { BUSINESS } from '@rentalshop/constants';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { useAuth, useOrderTranslations } from '@rentalshop/hooks';
-import { compressImage, formatDateKeyInTimeZone, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { compressImage, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { useShopToday } from '../../hooks/useShopToday';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
 import { cardClass, outlineBtn, primaryBtn, type T } from '../list/parts';
@@ -218,7 +219,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const { toastSuccess } = useToast();
   const { user } = useAuth();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
   const merchantId = (user?.merchant?.id ?? (user as { merchantId?: number } | null)?.merchantId ?? null) as number | null;
 
   const draft = useMemo(() => (order ? draftFromOrder(order, getLocalDateKey) : null), [order]);
@@ -472,6 +473,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           securityDeposit,
           notes,
           loyaltyPoints: loyalty.redeemPoints,
+          original: order ? { pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt } : null,
         })
       : null;
 

@@ -53,9 +53,8 @@ function loadPlaywright() {
  * "known"; one that passes is reported as "fixed?" and fails the run (like jest test.failing), so the entry is removed.
  */
 const CHECK_DEEP_LINK = 'availability: the product page link (?productId=) opens that product';
-const KNOWN = {
-  [`*:${CHECK_DEEP_LINK}`]: '#579'
-};
+// #579 fixed in #589: the deep link check is a normal check now
+const KNOWN = {};
 
 function knownIssue(caseId, check, zone) {
   for (const key of [`${caseId}:${check}@${zone}`, `${caseId}:${check}`, `*:${check}@${zone}`, `*:${check}`]) {
@@ -203,7 +202,7 @@ async function todayWork(page) {
 
 /** /availability strip: free units per day key for the product (aria "T5 08/10: còn N. …"). */
 async function availabilityStrip(page, product, outletId, P, R) {
-  // The ?productId= deep link drops the product (#579): pick it in the search box instead
+  // Picks the product in the search box (the ?productId= deep link has its own check below)
   await go(page, `/availability?pickup=${P}&return=${R}&outletId=${outletId}`);
   await page.getByPlaceholder('Tìm tên hoặc mã sản phẩm').fill(product.name);
   await page.getByRole('listbox').getByRole('button', { name: product.name }).click({ timeout: 30000 });
@@ -347,7 +346,7 @@ async function runCase(page, api, fx, c, zone) {
 
     if (!fx.deepLinkDone.has(zone)) {
       fx.deepLinkDone.add(zone);
-      // #579 is a race (the URL sync drops productId before the product loads): 5 tries, all must open the product
+      // #579 was a race (the URL sync dropped productId before the product loaded): 5 tries, all must open the product
       await check(CHECK_DEEP_LINK, async () => {
         for (let i = 1; i <= 5; i += 1) {
           await go(page, `/availability?productId=${fx.product.id}&pickup=${P}&return=${R}&outletId=${fx.outletId}`);
@@ -391,7 +390,68 @@ async function runCase(page, api, fx, c, zone) {
   }
 }
 
+// ------------------------------------------------------------------ WEB-RT-05: today rolls over with the tab open
+
+/** 23:30 Vietnam on Mon 05/10/2026; one hour later it is 00:30 on Tue 06/10. */
+const CLOCK_START = '2026-10-05T16:30:00.000Z';
+
+/** The dashboard subtitle under the title: the period label ("T2 05/10" for today). */
+const dashboardDayLabel = (page) => page.locator('h1').first().locator('xpath=following-sibling::span[1]').innerText({ timeout: 30000 });
+
+/**
+ * WEB-2 (#589): the browser clock is set to 23:30 VN, the dashboard loads "today" = 05/10; the clock runs 1 hour
+ * (the midnight timer fires) and the tab gets focus: the dashboard shows 06/10 and asks the API for 2026-10-06.
+ */
+async function runRollover(browser, api, zone) {
+  current = { caseId: 'WEB-RT-05', zone, page: null };
+  console.log(`\nWEB-RT-05 today rolls over at Vietnam midnight with the tab open (browser ${zone})`);
+  const ctx = await newContext(browser, zone, api);
+  const page = await ctx.newPage();
+  current.page = page;
+  try {
+    await check('dashboard: an open tab moves to the new Vietnam day at midnight', async () => {
+      await page.clock.install({ time: new Date(CLOCK_START) });
+      await go(page, '/dashboard');
+      eq((await dashboardDayLabel(page)).trim(), dayLabel('2026-10-05'), 'label at 23:30 VN');
+      const asked = page.waitForRequest((r) => r.url().includes('/api/analytics/period?') && new URL(r.url()).searchParams.get('startDate') === '2026-10-06', {
+        timeout: 60000
+      });
+      await page.clock.fastForward('01:00:00');
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await asked;
+      const t0 = Date.now();
+      let label = '';
+      while (Date.now() - t0 < 20000 && label !== dayLabel('2026-10-06')) {
+        label = (await dashboardDayLabel(page)).trim();
+        if (label !== dayLabel('2026-10-06')) await page.waitForTimeout(300);
+      }
+      eq(label, dayLabel('2026-10-06'), 'label at 00:30 VN');
+    });
+  } finally {
+    await ctx.close().catch(() => {});
+  }
+}
+
 // ------------------------------------------------------------------ main
+
+async function newContext(browser, zone, api) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'vi-VN', timezoneId: zone, colorScheme: 'light' });
+  await ctx.addInitScript(
+    ([a]) => {
+      try {
+        localStorage.setItem('anyrent-theme', 'light');
+        if (!localStorage.getItem('authData')) {
+          localStorage.setItem('authData', a);
+          localStorage.setItem('last_login_time', String(Date.now()));
+        }
+      } catch {
+        /* storage blocked */
+      }
+    },
+    [JSON.stringify(api.auth)]
+  );
+  return ctx;
+}
 
 async function main() {
   fs.mkdirSync(CFG.out, { recursive: true });
@@ -421,21 +481,7 @@ async function main() {
   const browser = await chromium.launch({ executablePath: CFG.chrome, headless: !CFG.headed });
   try {
     for (const zone of CFG.zones) {
-      const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'vi-VN', timezoneId: zone, colorScheme: 'light' });
-      await ctx.addInitScript(
-        ([a]) => {
-          try {
-            localStorage.setItem('anyrent-theme', 'light');
-            if (!localStorage.getItem('authData')) {
-              localStorage.setItem('authData', a);
-              localStorage.setItem('last_login_time', String(Date.now()));
-            }
-          } catch {
-            /* storage blocked */
-          }
-        },
-        [JSON.stringify(api.auth)]
-      );
+      const ctx = await newContext(browser, zone, api);
       const page = await ctx.newPage();
       for (const c of buildCases(vnDateKey())) {
         try {
@@ -448,6 +494,16 @@ async function main() {
         }
       }
       await ctx.close();
+      if (!CFG.cases.length || CFG.cases.includes('WEB-RT-05')) {
+        try {
+          await runRollover(browser, api, zone);
+        } catch (e) {
+          current = { caseId: 'WEB-RT-05', zone, page: null };
+          await check('case ran to the end', async () => {
+            throw e;
+          });
+        }
+      }
     }
   } finally {
     await browser.close().catch(() => {});

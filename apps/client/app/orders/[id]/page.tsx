@@ -16,7 +16,8 @@ import {
   useToast,
 } from '@rentalshop/ui';
 import { useAuth, useCommonTranslations, useDedupedApi, useOrderTranslations, usePermissions } from '@rentalshop/hooks';
-import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { getLocalDateKey, ordersApi } from '@rentalshop/utils';
+import { useShopToday } from '../../hooks/useShopToday';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import {
@@ -92,7 +93,7 @@ export default function OrderDetailPage() {
   const { canDeleteOrders, canManageOrders } = usePermissions();
 
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
 
   const { data, loading, error, refetch } = useDedupedApi({
     filters: { orderNumber },
