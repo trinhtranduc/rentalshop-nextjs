@@ -4,19 +4,17 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRepository
 import com.anyrent.pos.domain.orders.TodayWorkRow
-import com.anyrent.pos.ui.common.deviceTimeZoneId
+import com.anyrent.pos.domain.overview.OverviewLogic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.net.URLEncoder
 import java.time.Instant
 
-/** Today's work of the outlet team for the device day (#371) */
+/** Today's work of the outlet team for the shop day (#371, #602) */
 class DefaultTodayWorkRepository(
     private val fetch: () -> JSONObject = {
-        val zone = URLEncoder.encode(deviceTimeZoneId(), "UTF-8")
-        ApiClient.get().authedGet("/api/analytics/outlet-operations?timeZone=$zone")
+        ApiClient.get().authedGet(OverviewLogic.outletOperationsPath())
     },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : TodayWorkRepository {

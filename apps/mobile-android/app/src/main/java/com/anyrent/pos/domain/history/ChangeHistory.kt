@@ -16,7 +16,7 @@ import java.time.ZoneId
  * - Pure and unit tested; the screen passes [Texts] built from string resources, the defaults are the boards' copy.
  */
 object ChangeHistory {
-    val shopZone: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+    val shopZone: ZoneId get() = com.anyrent.pos.domain.ShopTime.zone
 
     /** Page size of the screen */
     const val PAGE_SIZE = 50

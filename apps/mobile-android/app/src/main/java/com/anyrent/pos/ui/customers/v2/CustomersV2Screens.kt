@@ -108,7 +108,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.ZoneId
 
 private val AvatarText = Color(0xFF1E40AF)
 private val AvatarFill = Color(0xFFDBEAFE)
@@ -683,7 +682,7 @@ fun CustomerDetailV2Screen(
 @Composable
 private fun OrderRowItem(order: CustomerOrderRow, onClick: () -> Unit) {
     val items = pluralStringResource(R.plurals.customers_v2_items, order.itemCount, order.itemCount)
-    val dates = CustomerRules.orderDates(order, ZoneId.systemDefault()) { formatDayShort(it) }
+    val dates = CustomerRules.orderDates(order) { formatDayShort(it) }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onClick).semantics(mergeDescendants = true) { role = Role.Button }

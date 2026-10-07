@@ -69,6 +69,7 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderItem
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
 import com.anyrent.pos.domain.orders.DetailPrimary
@@ -77,9 +78,7 @@ import com.anyrent.pos.domain.orders.OrderDetailLogic
 import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.ui.history.changeHistoryTexts
-import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.domain.orders.RentalExtension
-import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -104,8 +103,8 @@ private enum class DetailSheet { HAND_OVER, RETURN, NOTES }
 internal fun OrderDetail.balancePayments(): List<BalancePayment> =
     payments.map { BalancePayment(it.amount, it.status, it.notes) }
 
-/** `03/10` — civil day in the device zone */
-internal fun shortDay(value: String?, zone: ZoneId = ZoneId.systemDefault()): String =
+/** `03/10` — shop civil day (#602) */
+internal fun shortDay(value: String?, zone: ZoneId = ShopTime.zone): String =
     OrdersHomeLogic.parseInstant(value)?.atZone(zone)?.toLocalDate()
         ?.let { "%02d/%02d".format(it.dayOfMonth, it.monthValue) } ?: "—"
 
@@ -408,7 +407,7 @@ fun OrderDetailV2Screen(
             onDismiss = { extending = false },
             onExtended = { day ->
                 extending = false
-                toast(doneTemplate.format(formatDayShort(day.atStartOfDay(ZoneId.systemDefault()).toInstant())))
+                toast(doneTemplate.format(formatDayShort(day)))
                 vm.load()
             },
         )
@@ -576,10 +575,7 @@ private fun DetailBody(
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         if (isRent) {
             // Day count after the dates, the cart's inclusive count (#425: it follows a Gia hạn)
-            val zone = ZoneId.systemDefault()
-            val days = OrderPlanDays.dayOf(summary.pickupPlanAt, zone)?.let { from ->
-                OrderPlanDays.dayOf(summary.returnPlanAt, zone)?.let { to -> CartV2Logic.rentalDays(from, to) }
-            }
+            val days = OrderDetailLogic.rentalDays(summary.pickupPlanAt, summary.returnPlanAt)
             val dates = "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}"
             InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + pluralStringResource(R.plurals.v2_cart_days, it, it) } ?: dates)
             readyRow?.invoke()

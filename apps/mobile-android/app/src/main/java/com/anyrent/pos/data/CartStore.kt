@@ -6,6 +6,7 @@ import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.domain.products.PricingTypes
@@ -47,10 +48,10 @@ object CartStore {
     private val _orderType = MutableStateFlow("RENT")
     val orderType: StateFlow<String> = _orderType.asStateFlow()
 
-    private val _pickupDate = MutableStateFlow(LocalDate.now())
+    private val _pickupDate = MutableStateFlow(ShopTime.today())
     val pickupDate: StateFlow<LocalDate> = _pickupDate.asStateFlow()
 
-    private val _returnDate = MutableStateFlow(LocalDate.now().plusDays(1))
+    private val _returnDate = MutableStateFlow(ShopTime.today().plusDays(1))
     val returnDate: StateFlow<LocalDate> = _returnDate.asStateFlow()
 
     /**
@@ -321,8 +322,8 @@ object CartStore {
         depositManual = false
         _securityDeposit.value = 0.0
         _collateralDetails.value = ""
-        _pickupDate.value = LocalDate.now()
-        _returnDate.value = LocalDate.now().plusDays(1)
+        _pickupDate.value = ShopTime.today()
+        _returnDate.value = ShopTime.today().plusDays(1)
         _datesChosen.value = false
         _orderType.value = "RENT"
         if (persistToDisk) persist() else persistEnabled = false
@@ -343,7 +344,7 @@ object CartStore {
         }
 
         val sale = summary.orderType.equals("SALE", ignoreCase = true)
-        val pickup = parseOrderDate(summary.pickupPlanAt) ?: LocalDate.now()
+        val pickup = parseOrderDate(summary.pickupPlanAt) ?: ShopTime.today()
         val ret = parseOrderDate(summary.returnPlanAt) ?: pickup.plusDays(1).let { candidate ->
             if (candidate.isBefore(pickup)) pickup else candidate
         }
@@ -517,8 +518,8 @@ object CartStore {
     private fun applyJson(json: JSONObject) {
         _editingOrderId.value = json.optInt("editingOrderId", 0).takeIf { it > 0 }
         _orderType.value = json.optString("orderType").ifBlank { "RENT" }
-        _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(LocalDate.now())
-        _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(LocalDate.now().plusDays(1))
+        _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(ShopTime.today())
+        _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(ShopTime.today().plusDays(1))
         // A draft saved before #448 has no flag: keep its dates as chosen
         _datesChosen.value = !json.has("datesChosen") || json.optBoolean("datesChosen")
         _notes.value = json.optString("notes")
@@ -586,7 +587,7 @@ object CartStore {
         else _depositAmount.value != autoDeposit(_lines.value)
     }
 
-    /** Day in the device zone, the same zone the cart sends with `isoPickup` / `isoReturn` (#413) */
+    /** Shop day (#602), the same zone the cart sends with `isoPickup` / `isoReturn` (#413) */
     private fun parseOrderDate(raw: String?): LocalDate? = OrderPlanDays.dayOf(raw)
 
     fun isoPickup(): String = OrderPlanDays.pickupInstant(_pickupDate.value)

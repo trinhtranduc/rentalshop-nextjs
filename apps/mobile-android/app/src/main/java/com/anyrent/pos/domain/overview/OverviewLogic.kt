@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.overview
 
+import com.anyrent.pos.domain.ShopTime
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.YearMonth
@@ -131,6 +132,14 @@ object OverviewLogic {
     }
 
     fun groupBy(range: DayRange): String = if (range.dayCount <= MAX_DAILY_BARS) "day" else "month"
+
+    /** Report of a range of shop days; `timeZone` is the shop zone (#602, iOS `overviewReportParameters`) */
+    fun periodPath(range: DayRange): String =
+        "/api/analytics/period?startDate=${range.start}&endDate=${range.end}" +
+            "&groupBy=${groupBy(range)}&limit=3&timeZone=${ShopTime.timeZoneParam()}"
+
+    /** "Now" figures and today's work of the outlet for the shop today (#602, iOS `outletOperationsParameters`) */
+    fun outletOperationsPath(): String = "/api/analytics/outlet-operations?timeZone=${ShopTime.timeZoneParam()}"
 
     fun dayMonth(date: LocalDate): String = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
 

@@ -71,7 +71,6 @@ import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.theme.DS
 import java.time.LocalDate
-import java.time.ZoneId
 
 private val ReturnRing = Color(0xFF6D28D9)
 private val OtherMonth = Color(0xFF94A3B8)
@@ -197,7 +196,7 @@ private fun Legend(kind: MarkKind, label: String) {
 
 @Composable
 private fun DayCell(cell: CalendarCell, marks: CalendarDayMarks, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    val label = formatDayShort(LocalDate.parse(cell.key).atStartOfDay(ZoneId.systemDefault()).plusHours(12).toInstant())
+    val label = formatDayShort(LocalDate.parse(cell.key))
     val (fill, textColor) = when {
         cell.isToday && cell.inMonth -> DS.Colors.Text to Color.White
         selected && cell.inMonth -> DS.Status.HandOver.fill to DS.Status.HandOver.text
@@ -238,7 +237,7 @@ private fun DayCell(cell: CalendarCell, marks: CalendarDayMarks, selected: Boole
 @Composable
 private fun DayHeader(selectedKey: String, todayKey: String, counts: com.anyrent.pos.domain.calendar.CalendarMonthCounts?) {
     val isToday = selectedKey == todayKey
-    val dayLabel = formatDayShort(LocalDate.parse(selectedKey).atStartOfDay(ZoneId.systemDefault()).plusHours(12).toInstant())
+    val dayLabel = formatDayShort(LocalDate.parse(selectedKey))
     val title = if (isToday) "${stringResource(R.string.calendar_v2_today).uppercase()} · $dayLabel" else dayLabel.uppercase()
     val day = counts?.byDate?.get(selectedKey)
     val late = counts?.lateReturns ?: 0

@@ -10,13 +10,13 @@ import org.junit.runners.Parameterized
 import java.time.LocalDate
 import java.util.TimeZone
 
-/** #413: reading an order back into the cart uses the device zone, the zone the cart sends in. */
+/** #413 / #602: reading an order back into the cart uses the shop zone (Vietnam), the zone the cart sends in. */
 @RunWith(Parameterized::class)
 class OrderPlanDaysTest(private val zone: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun zones(): List<String> = listOf("Asia/Ho_Chi_Minh", "UTC")
+        fun zones(): List<String> = listOf("Asia/Ho_Chi_Minh", "UTC", "Asia/Tokyo", "America/Los_Angeles")
     }
 
     private lateinit var savedZone: TimeZone
@@ -46,9 +46,9 @@ class OrderPlanDaysTest(private val zone: String) {
     }
 
     @Test
-    fun `instants around Vietnam midnight fall on the device zone day`() {
+    fun `instants around Vietnam midnight fall on the Vietnam day`() {
         assertEquals(LocalDate.of(2026, 10, 4), OrderPlanDays.dayOf("2026-10-04T16:59:59.000Z"))
-        val after = if (zone == "UTC") LocalDate.of(2026, 10, 4) else LocalDate.of(2026, 10, 5)
+        val after = LocalDate.of(2026, 10, 5)
         assertEquals(after, OrderPlanDays.dayOf("2026-10-04T17:00:00Z"))
         assertEquals(after, OrderPlanDays.dayOf("2026-10-05T00:00:00+07:00"))
     }
@@ -57,7 +57,7 @@ class OrderPlanDaysTest(private val zone: String) {
     fun `an iOS order loads on its days instead of the UTC day before`() {
         // iOS in Vietnam books 04/10 → 05/10 as these instants
         val pickup = OrderPlanDays.dayOf("2026-10-03T17:00:00.000Z")
-        val expected = if (zone == "UTC") LocalDate.of(2026, 10, 3) else LocalDate.of(2026, 10, 4)
+        val expected = LocalDate.of(2026, 10, 4)
         assertEquals(expected, pickup)
     }
 

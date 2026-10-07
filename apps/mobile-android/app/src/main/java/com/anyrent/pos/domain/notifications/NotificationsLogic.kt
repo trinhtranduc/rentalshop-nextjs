@@ -30,7 +30,7 @@ data class NotificationRowStyle(
 
 object NotificationsLogic {
     /** Days of the inbox are Vietnam civil days (timezone-dates rule 8) */
-    val zone: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+    val zone: ZoneId get() = com.anyrent.pos.domain.ShopTime.zone
 
     /** The API sends `ORDER_CREATED` and `ORDER_STATUS_CHANGED` (+ `data.status`). Future types are matched by name. */
     fun kind(type: String, status: String?): NotificationKind {

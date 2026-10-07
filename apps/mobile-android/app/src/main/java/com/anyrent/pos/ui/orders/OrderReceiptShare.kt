@@ -24,7 +24,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -109,7 +108,8 @@ private class ReceiptPainter(
     // iOS: dateTimeInString = "dd/MM/yy HH:mm", dateInString = "dd/MM/yy"
     private val dateTimeFmt = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm")
     private val dateFmt = DateTimeFormatter.ofPattern("dd/MM/yy")
-    private val zone = ZoneId.systemDefault()
+    /** Receipt days and stamps in the shop zone (#602) */
+    private val zone = com.anyrent.pos.domain.ShopTime.zone
 
     private fun textPaint(size: Float, bold: Boolean, italic: Boolean = false): TextPaint {
         val style = when {

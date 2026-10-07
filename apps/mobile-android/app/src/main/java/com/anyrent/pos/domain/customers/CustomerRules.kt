@@ -1,6 +1,7 @@
 package com.anyrent.pos.domain.customers
 
 import com.anyrent.pos.data.model.Customer
+import com.anyrent.pos.domain.ShopTime
 import org.json.JSONObject
 import java.time.Instant
 import java.time.ZoneId
@@ -137,7 +138,7 @@ object CustomerRules {
     fun orderTitle(row: CustomerOrderRow, items: String): String = "#${row.orderNumber} · $items"
 
     /** Rent: "T7 03/10 → T2 05/10" (one day when both fall on the same civil day); sale: the created day */
-    fun orderDates(row: CustomerOrderRow, zone: ZoneId, format: (Instant) -> String): String {
+    fun orderDates(row: CustomerOrderRow, zone: ZoneId = ShopTime.zone, format: (Instant) -> String): String {
         val pickup = row.pickupPlanAt
         if (row.orderType.equals("RENT", ignoreCase = true) && pickup != null) {
             val from = format(pickup)

@@ -58,6 +58,7 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.AvailabilityRequest
 import com.anyrent.pos.domain.availability.OverlapWarnings
 import com.anyrent.pos.domain.availability.ProductAvailability
@@ -90,7 +91,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import java.time.ZoneId
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
@@ -179,7 +179,7 @@ fun CartV2Screen(
             return@LaunchedEffect
         }
         delay(300)
-        val today = LocalDate.now(ZoneId.systemDefault())
+        val today = ShopTime.today()
         val result = runCatching {
             app.container.availabilityRepository.checkBatchAvailability(
                 requests = lines.map { AvailabilityRequest(it.product.id, it.quantity) },
@@ -584,7 +584,7 @@ fun CartV2Screen(
 }
 
 private fun formatDay(date: LocalDate): String =
-    formatDayShort(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
+    formatDayShort(date)
 
 @Composable
 private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {

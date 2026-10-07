@@ -204,7 +204,7 @@ object OrderDetailLogic {
     }
 
     /** Shop zone of the created stamp (timezone-dates skill) */
-    private val shopZone: java.time.ZoneId = java.time.ZoneId.of("Asia/Ho_Chi_Minh")
+    private val shopZone: java.time.ZoneId get() = com.anyrent.pos.domain.ShopTime.zone
 
     /**
      * #482 step "Đã đặt": "14:32 28/09" in the shop zone; "14:32 28/12/25" when not the current year (iOS
@@ -222,6 +222,16 @@ object OrderDetailLogic {
         var text = "%02d:%02d %02d/%02d".format(local.hour, local.minute, local.dayOfMonth, local.monthValue)
         if (local.year != now.atZone(zone).year) text += "/%02d".format(local.year % 100)
         return text
+    }
+
+    /**
+     * Inclusive shop days from the planned pickup to the planned return (the cart's count, #425), whatever the
+     * phone zone (#602, iOS `OrderDetailLogic.rentalDays`); null when a date is missing.
+     */
+    fun rentalDays(pickupPlanAt: String?, returnPlanAt: String?, zone: java.time.ZoneId = shopZone): Int? {
+        val from = OrderPlanDays.dayOf(pickupPlanAt, zone) ?: return null
+        val to = OrderPlanDays.dayOf(returnPlanAt, zone) ?: return null
+        return com.anyrent.pos.domain.products.CartV2Logic.rentalDays(from, to)
     }
 
     /** Instants (ISO strings) under the three steps of the rent step bar: the actual day once it happened (#434, iOS) */

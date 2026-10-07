@@ -5,12 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewNow
 import com.anyrent.pos.domain.overview.OverviewPeriod
 import com.anyrent.pos.domain.overview.OverviewPreset
 import com.anyrent.pos.domain.overview.OverviewReport
-import com.anyrent.pos.ui.common.deviceTimeZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.net.URLEncoder
 import java.time.LocalDate
 
 data class OverviewV2State(
@@ -40,7 +39,7 @@ data class OverviewV2State(
 /** Redesigned overview (#374): one period of `analytics/period` plus the "now" figures of outlet-operations */
 class OverviewV2ViewModel(
     private val fetch: (String) -> JSONObject = { ApiClient.get().authedGet(it) },
-    private val today: () -> LocalDate = { LocalDate.now() },
+    private val today: () -> LocalDate = { ShopTime.today() },
     role: String? = SessionStore.role,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
@@ -76,19 +75,14 @@ class OverviewV2ViewModel(
                     val report = async {
                         if (!snapshot.showsRevenue) null
                         else runCatching {
-                            val zone = URLEncoder.encode(deviceTimeZoneId(), "UTF-8")
-                            val json = fetch(
-                                "/api/analytics/period?startDate=${range.start}&endDate=${range.end}" +
-                                    "&groupBy=${OverviewLogic.groupBy(range)}&limit=3&timeZone=$zone",
-                            )
+                            val json = fetch(OverviewLogic.periodPath(range))
                             OverviewLogic.reportFromJson(json.optJSONObject("data") ?: JSONObject())
                         }
                     }
                     val now = async {
                         if (!snapshot.showsOperations) null
                         else runCatching {
-                            val zone = URLEncoder.encode(deviceTimeZoneId(), "UTF-8")
-                            OverviewLogic.nowFromJson(fetch("/api/analytics/outlet-operations?timeZone=$zone").optJSONObject("data") ?: JSONObject())
+                            OverviewLogic.nowFromJson(fetch(OverviewLogic.outletOperationsPath()).optJSONObject("data") ?: JSONObject())
                         }.getOrNull()
                     }
                     report.await() to now.await()

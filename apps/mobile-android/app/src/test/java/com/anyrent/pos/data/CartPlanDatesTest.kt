@@ -10,8 +10,8 @@ import java.time.LocalDate
 import java.util.TimeZone
 
 /**
- * #413: the cart sends the chosen days as the device zone's day boundaries, the same instants
- * iOS sends (`Date.startOfDay()` / `Date.endOfDay()` → `dateServerISOString()`).
+ * #413 / #602: the cart sends the chosen days as the shop zone's (Vietnam) day boundaries, whatever the phone
+ * zone, the same instants iOS sends (`CartV2Logic.rentalBounds`, #601).
  */
 @RunWith(Parameterized::class)
 class CartPlanDatesTest(
@@ -30,12 +30,10 @@ class CartPlanDatesTest(
                 "2026-10-05T16:59:59.000Z",
                 "2026-12-31T16:59:59.000Z",
             ),
-            arrayOf(
-                "UTC",
-                "2026-10-04T00:00:00.000Z",
-                "2026-10-05T23:59:59.000Z",
-                "2026-12-31T23:59:59.000Z",
-            ),
+            // #602: the shop zone (Vietnam) whatever the phone zone
+            arrayOf("UTC", "2026-10-03T17:00:00.000Z", "2026-10-05T16:59:59.000Z", "2026-12-31T16:59:59.000Z"),
+            arrayOf("Asia/Tokyo", "2026-10-03T17:00:00.000Z", "2026-10-05T16:59:59.000Z", "2026-12-31T16:59:59.000Z"),
+            arrayOf("America/Los_Angeles", "2026-10-03T17:00:00.000Z", "2026-10-05T16:59:59.000Z", "2026-12-31T16:59:59.000Z"),
         )
     }
 
@@ -55,7 +53,7 @@ class CartPlanDatesTest(
     }
 
     @Test
-    fun `pickup and return are the start and the last second of the chosen days in the device zone`() {
+    fun `pickup and return are the start and the last second of the chosen Vietnam days`() {
         CartStore.setPickup(LocalDate.of(2026, 10, 4))
         CartStore.setReturn(LocalDate.of(2026, 10, 5))
 
