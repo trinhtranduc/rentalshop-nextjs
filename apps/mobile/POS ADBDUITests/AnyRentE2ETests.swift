@@ -484,23 +484,36 @@ final class AnyRentE2ETests: XCTestCase {
         guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
             throw XCTSkip("No Reports tab for this account")
         }
-        sleep(3)
+        sleep(4)
         e2e.shot("70-overview")
-        let period = e2e.element(labelBeginsWith: ["Period:", "Khoảng thời gian:"], type: .button)
+        // #616: period chips, four tiles that open a detail sheet, Thực thu theo ngày, Hôm nay
+        let week = e2e.element(labelBeginsWith: ["7 days", "7 ngày"], type: .button)
         if e2e.role == "merchant" {
-            XCTAssertTrue(period.waitForExistence(timeout: 8), "Period selector on Overview")
+            XCTAssertTrue(week.waitForExistence(timeout: 8), "Period chips on Overview")
         }
-        guard period.waitForExistence(timeout: 2) else { return }
-        period.tap()
+        e2e.soft(e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .staticText).exists, "Hôm nay card")
+        guard week.waitForExistence(timeout: 2) else { return }
+        let collected = e2e.element(labelBeginsWith: ["Collected", "Thực thu"], type: .button)
+        XCTAssertTrue(collected.waitForExistence(timeout: 8), "Thực thu tile")
+        collected.tap()
+        sleep(2)
+        e2e.soft(e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button).waitForExistence(timeout: 5),
+                 "detail sheet links to the orders")
+        e2e.shot("71-overview-sheet-collected")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
         sleep(1)
-        e2e.shot("71-overview-period-sheet")
-        let option = e2e.element(labelBeginsWith: ["Last 30 days", "30 ngày qua"])
-        XCTAssertTrue(option.waitForExistence(timeout: 5), "Period sheet lists 30 ngày qua")
-        option.tap()
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("72-overview-today-card")
+        app.swipeDown()
+        sleep(1)
+        week.tap()
         sleep(3)
-        e2e.soft(e2e.element(labelBeginsWith: ["Period: Last 30", "Khoảng thời gian: 30"], type: .button).exists,
-                 "period button shows the new period")
-        e2e.shot("72-overview-30-days")
+        e2e.soft(week.isSelected, "7 ngày chip is selected")
+        e2e.shot("73-overview-7-days")
+        e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button).tap()
+        sleep(3)
+        e2e.shot("74-overview-today")
     }
 
 
@@ -1210,6 +1223,9 @@ private final class E2E {
             $0.trimmingCharacters(in: .whitespaces)
         })
         outDir = env["E2E_OUT_DIR"] ?? (NSTemporaryDirectory() as NSString).appendingPathComponent("anyrent-e2e")
+        // Extra launch arguments, e.g. "-OverviewForceDark YES" (#616 review of the dark Overview)
+        let extra = (env["E2E_LAUNCH_ARGS"] ?? "").split(separator: " ").map(String.init)
+        app.launchArguments += extra
     }
 
     // MARK: Gates

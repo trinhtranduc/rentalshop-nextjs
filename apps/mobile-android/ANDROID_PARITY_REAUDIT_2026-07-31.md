@@ -358,6 +358,12 @@ PR B và PR C có thể phát triển song song sau khi HTTP/error foundation c�
 - TalkBack label/touch target/font scale cho màn bị ảnh hưởng.
 - `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug` xanh.
 
+## Gap mở sau re-audit
+
+- #616 (2026-10-07): iOS Tổng quan vẽ lại theo canvas điện thoại (chip kỳ, 4 ô KPI + sheet chi tiết, "Thực thu
+  theo ngày" có dự kiến gạch chéo, thẻ "Hôm nay" + ngày mai). Android chưa có; làm theo
+  `.agent/changes/616-ios-overview-redesign/spec.md` trong một issue riêng.
+
 ## Ngoài scope hiện tại
 
 - AI image search.
