@@ -745,6 +745,18 @@
         "createAnyway": "Create anyway",
         "saveAnyway": "Save anyway",
         "blocked": "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked."
+      },
+      "confirm": {
+        "rentTitle": "Create rental order?",
+        "saleTitle": "Sell and collect?",
+        "customer": "Customer",
+        "dates": "Rental dates",
+        "range": "{range} · {days, plural, one {# day} other {# days}}",
+        "items": "Items",
+        "days": "{days, plural, one {# day} other {# days}}",
+        "collectDeposit": "Collect deposit now",
+        "collectSale": "Collect now",
+        "sell": "Sell & collect"
       }
     },
     "tabs": {
@@ -908,22 +920,25 @@
       },
       "pay": {
         "title": "Payment",
-        "rent": "Rental",
-        "saleTotal": "Total",
-        "deposit": "Deposit paid",
-        "paid": "Paid",
+        "orderTotal": "Order total",
+        "orderTotalDiscount": "Total (discount {amount})",
+        "goodsTotal": "Goods total",
+        "discount": "Discount",
+        "depositPaid": "Deposit paid at booking",
+        "collateralMoney": "Collateral money",
+        "collateralHeld": "Collateral money held",
+        "collateral": "Collateral money",
+        "paidBefore": "Already collected",
+        "settledBefore": "Already settled",
         "lateFee": "Late fee",
         "damageFee": "Damage fee",
-        "collateralHeld": "Collateral held",
-        "dueAtPickup": "To collect at pickup",
-        "collectAtReturn": "To collect at return",
-        "refundAtReturn": "To refund at return",
-        "due": "To collect",
-        "settled": "Paid in full",
-        "noRevenue": "No revenue",
-        "nothingAtReturn": "Nothing to settle at return",
-        "collateral": "Collateral at pickup",
-        "collateralHint": "Included above, handed back at return"
+        "collectAtPickup": "Collect at hand-over",
+        "returnRefund": "At return: give back",
+        "returnCollect": "At return: collect",
+        "saleCollected": "Collected",
+        "saleTotal": "Order total",
+        "saleDue": "To collect",
+        "noRevenue": "No revenue"
       },
       "settings": {
         "title": "Notes, collateral and fees",
@@ -977,7 +992,7 @@
         "papersReturn": "Give back papers",
         "cancel": {
           "title": "Cancel order",
-          "message": "Cancel order {number}? This cannot be undone.",
+          "message": "Do you want to cancel order {number}?",
           "keep": "Keep order",
           "confirm": "Cancel order"
         },

@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { isValidTimeZone, recordShopTimeZoneChange } from '../../../../lib/shop-timezone';
 
 /**
  * GET /api/merchants/[id]
@@ -86,6 +87,11 @@ export async function PUT(
       const body = await request.json();
       console.log('🔍 PUT /api/merchants/[id] - Update request body:', body);
 
+      // #567 shop time zone (ADMIN sets it here; the owner also via PUT /api/settings/merchant): a known IANA id only
+      if (body.timezone !== undefined && !isValidTimeZone(body.timezone)) {
+        return NextResponse.json(ResponseBuilder.error('INVALID_TIMEZONE'), { status: API.STATUS.BAD_REQUEST });
+      }
+
       // Normalize niche tags and derive businessType when tags are sent
       if (body.businessTags !== undefined) {
         const { normalizeBusinessTags, deriveBusinessTypeFromTags } = await import('@rentalshop/constants');
@@ -123,6 +129,10 @@ export async function PUT(
 
       // Update the merchant using the simplified database API
       const updatedMerchant = await db.merchants.update(merchantId, body);
+      const previousTimeZone = (existingMerchant as { timezone?: string | null }).timezone;
+      if (body.timezone !== undefined && body.timezone !== previousTimeZone) {
+        await recordShopTimeZoneChange(request, user, merchantId, updatedMerchant?.name, previousTimeZone, body.timezone);
+      }
       console.log('✅ Merchant updated successfully:', updatedMerchant);
 
       return NextResponse.json({

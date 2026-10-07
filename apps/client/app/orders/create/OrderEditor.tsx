@@ -47,6 +47,8 @@ import {
 import { allowsOverlap, conflictFromResult, ctaState, dayRangeText, orderListText, type BatchResultLike, type LineConflict } from './schedule-model';
 import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard, fieldClass, type LineStatus, type StockView } from './parts';
 import { useLoyalty } from './useLoyalty';
+import { confirmView } from './confirm-model';
+import { CreateConfirmDialog } from './ConfirmDialog';
 
 const PAGE_SIZE = 60;
 const MAX_NOTE_IMAGES = 5;
@@ -453,6 +455,48 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     }
   };
 
+  // The body sent, and the source of every amount in the confirm dialog (#569)
+  const payloadNow = () =>
+    customer && outletId
+      ? buildPayload({
+          mode: editing ? 'edit' : 'create',
+          orderType,
+          customerId: customer.id,
+          outletId,
+          pickup,
+          ret,
+          lines,
+          discountType,
+          discountValue,
+          depositAmount,
+          securityDeposit,
+          notes,
+          loyaltyPoints: loyalty.redeemPoints,
+        })
+      : null;
+
+  const overlapLines = Array.from(conflicts.values()).map((c) => {
+    const range = dayRangeText(c.dayKeys);
+    return c.orderNumbers.length
+      ? t('editor.overlap.line', { name: c.productName, count: c.shortBy, days: range, orders: orderListText(c.orderNumbers) })
+      : t('editor.overlap.lineNoOrders', { name: c.productName, count: c.shortBy, days: range });
+  });
+
+  const confirmPayload = confirmOpen && !editing ? payloadNow() : null;
+  const confirmData = confirmPayload
+    ? confirmView({
+        payload: confirmPayload,
+        totals,
+        names: Object.fromEntries(lines.map((l) => [l.productId, l.name])),
+        customer,
+        pickup,
+        ret,
+        days,
+        weekdays,
+        warnings: cta === 'warn' ? overlapLines : [],
+      })
+    : null;
+
   const submit = async (confirmed = false) => {
     if (missing || submitting || !customer || !outletId) {
       if (missing === 'days') setDaysOpen(true);
@@ -460,28 +504,16 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       return;
     }
     if (cta === 'blocked') return;
-    if (cta === 'warn' && !confirmed) {
+    // A new order is confirmed first (iOS CreateOrderConfirmSheet, #569); an edit only on a schedule overlap
+    if (!confirmed && (!editing || cta === 'warn')) {
       setConfirmOpen(true);
       return;
     }
-    setConfirmOpen(false);
+    if (editing) setConfirmOpen(false);
+    const payload = payloadNow();
+    if (!payload) return;
     setSubmitting(true);
     try {
-      const payload = buildPayload({
-        mode: editing ? 'edit' : 'create',
-        orderType,
-        customerId: customer.id,
-        outletId,
-        pickup,
-        ret,
-        lines,
-        discountType,
-        discountValue,
-        depositAmount,
-        securityDeposit,
-        notes,
-        loyaltyPoints: loyalty.redeemPoints,
-      });
       if (order) {
         const res = await ordersApi.updateOrder(order.id, {
           ...payload,
@@ -493,12 +525,15 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       } else {
         const res = await ordersApi.createOrder(payload as unknown as CreateInput, photos.length ? { notesImages: photos } : undefined);
         if (!res.success || !res.data) throw scheduleError(res);
+        setConfirmOpen(false);
         toastSuccess(to('messages.createSuccess'));
         setReceipt(res.data as ReceiptProps['order']);
       }
     } catch (e) {
       // The global handler shows the API error (errors.json). The shop turned "trùng lịch" off: show it here too
+      // Any other error keeps the confirm open for a retry
       if (e instanceof Error && e.message === 'ORDER_SCHEDULE_CONFLICT') {
+        setConfirmOpen(false);
         overlap.set(false);
         availability.refresh();
       }
@@ -937,8 +972,9 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         onClose={() => setDaysOpen(false)}
         t={t}
       />
+      {/* Sửa đơn: iOS edits go to its review screen, not the create confirm; only the overlap warning here */}
       <Modal
-        open={confirmOpen}
+        open={confirmOpen && editing}
         title={t('editor.overlap.title')}
         onClose={() => setConfirmOpen(false)}
         closeLabel={t('editor.close')}
@@ -948,24 +984,28 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
               {t('editor.cancel')}
             </button>
             <button type="button" className={primaryBtn} onClick={() => void submit(true)} disabled={submitting}>
-              {editing ? t('editor.overlap.saveAnyway') : t('editor.overlap.createAnyway')}
+              {t('editor.overlap.saveAnyway')}
             </button>
           </>
         }
       >
         <div className="flex flex-col gap-2 rounded-xl bg-ar-unprepared-bg px-3 py-2.5 text-[15px] text-ar-ink">
-          {Array.from(conflicts.values()).map((c) => {
-            const range = dayRangeText(c.dayKeys);
-            return (
-              <p key={c.productId} className="m-0">
-                {c.orderNumbers.length
-                  ? t('editor.overlap.line', { name: c.productName, count: c.shortBy, days: range, orders: orderListText(c.orderNumbers) })
-                  : t('editor.overlap.lineNoOrders', { name: c.productName, count: c.shortBy, days: range })}
-              </p>
-            );
-          })}
+          {overlapLines.map((line, i) => (
+            <p key={`${i}-${line}`} className="m-0">
+              {line}
+            </p>
+          ))}
         </div>
       </Modal>
+      <CreateConfirmDialog
+        open={confirmOpen && !editing}
+        view={confirmData}
+        busy={submitting}
+        onConfirm={() => void submit(true)}
+        onClose={() => setConfirmOpen(false)}
+        t={t}
+        money={money}
+      />
       <CustomerDialog
         open={customerOpen}
         merchantId={merchantId}

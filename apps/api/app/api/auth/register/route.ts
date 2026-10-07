@@ -11,6 +11,7 @@ import { prisma } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '@rentalshop/utils';
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { registerTimeZone } from '../../../../lib/shop-timezone';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {
   getDefaultPricingConfig,
@@ -304,7 +305,9 @@ export async function POST(request: NextRequest) {
             businessTags: businessTags.length > 0 ? businessTags : undefined,
             pricingType: validatedData.pricingType || 'FIXED',
             referredByMerchantId,
-            pricingConfig: buildPricingConfig(businessType, validatedData.pricingType)
+            pricingConfig: buildPricingConfig(businessType, validatedData.pricingType),
+            // #567 the registering device's zone; missing/invalid (old apps) → Asia/Ho_Chi_Minh, never a 400
+            timezone: registerTimeZone(body),
           } as any
         });
         

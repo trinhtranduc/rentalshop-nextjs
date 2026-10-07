@@ -35,4 +35,22 @@ Same themed dialog, danger confirm. Cancel calls `cancelOrder(id)`; delete calls
 then goes to `/orders`. Who sees them is unchanged.
 
 ## Not changed
-Request bodies, permissions, the Thanh toán card, the receipt (shared, `packages/**`).
+The receipt (shared, `packages/**`). Pickup, cancel and delete bodies.
+
+## Additions after the owner's answers (decision log in intent.md)
+
+### Thanh toán card (iOS `moneyRows`)
+RENT: Tổng đơn hàng (or "Tổng (giảm X)") · Đã cọc khi đặt · thế chân named by stage (Thế chân thu thêm /
+Thế chân đang giữ / Tiền thế chân) · RESERVED: Đã thu trước, total **Thu khi giao** · PICKUPED: Phí trễ,
+Phí hư hỏng, Đã thanh toán trước, total **Khi nhận trả: trả khách / thu thêm** (none when 0) · after
+return: fees only, no total. SALE: Tiền hàng · Giảm giá · **Đã thu** (COMPLETED) / **Còn thu**.
+CANCELLED: amounts struck, "Không tính doanh thu" (kept from the web board). No signs.
+
+### Nhận trả fees
+Phí trễ and Phí hư hỏng are inputs prefilled with the saved values. When either changed:
+`PUT /api/orders/{id} {"damageFee":d,"lateFee":l}` (both, like iOS), then `PATCH …/status {"status":"RETURNED"}`.
+The PUT route has no zod schema; `db.orders.update` whitelists `lateFee`; permission `orders.update`.
+
+### Huỷ đơn
+Shown for `orders.manage` on RENT RESERVED/PICKUPED and SALE RESERVED/COMPLETED (API
+`ORDER_STATUS_TRANSITIONS`). Text: "Huỷ đơn hàng" / "Bạn có muốn huỷ đơn hàng #N?".

@@ -3,6 +3,11 @@ import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { z } from 'zod';
+import { isValidTimeZone, merchantTimeZoneField, recordShopTimeZoneChange } from '../../../../lib/shop-timezone';
+
+/** #567 `timezone`: an IANA id that Intl accepts (Asia/Ho_Chi_Minh, Asia/Tokyo, America/New_York, …). */
+const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone');
 
 /**
  * PUT /api/settings/merchant
@@ -12,6 +17,9 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * - Automatically includes: ADMIN, MERCHANT
  * - `allowOverlappingOrders` (#518, boolean): role MERCHANT or ADMIN only (403 INSUFFICIENT_PERMISSIONS
  *   otherwise). A body with only that field updates just the setting (no name required).
+ * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
+ *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
+ *   updates just those (no name required). A change is written to the audit log (entity Merchant).
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user, userScope }) => {
@@ -43,7 +51,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       website, 
       description,
       tenantKey,
-      allowOverlappingOrders
+      allowOverlappingOrders,
+      timezone
     } = body;
 
     // #518 "Cho tạo đơn khi trùng lịch": boolean, and only the shop owner (or platform ADMIN) may change it,
@@ -63,11 +72,27 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       }
     }
 
-    // A body carrying only the setting (new apps' toggle) updates just that field; every other body is the
-    // business-info form as before and still needs a name.
+    // #567 shop time zone: a valid IANA id, and only the shop owner may change it here.
+    if (timezone !== undefined) {
+      if (!timezoneSchema.safeParse(timezone).success) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_TIMEZONE'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // A body carrying only shop settings (new apps' toggle, the time zone picker) updates just those fields;
+    // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      allowOverlappingOrders !== undefined &&
+      (allowOverlappingOrders !== undefined || timezone !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -142,13 +167,22 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (allowOverlappingOrders !== undefined) {
       updateData.allowOverlappingOrders = allowOverlappingOrders;
     }
+    if (timezone !== undefined) {
+      updateData.timezone = timezone;
+    }
     
     // Only include tenantKey if it's provided (allows clearing tenantKey by passing empty string)
     if (tenantKey !== undefined) {
       updateData.tenantKey = tenantKey || null;
     }
     
+    const previousTimeZone = (dbUser.merchant as { timezone?: string | null }).timezone;
     const updatedMerchant = await db.merchants.update(dbUser.merchant.id, updateData);
+
+    // #567: a zone change moves every day label of the shop; keep who changed it and when (Q2 decision).
+    if (timezone !== undefined && timezone !== previousTimeZone) {
+      await recordShopTimeZoneChange(request, user, dbUser.merchant.id, updatedMerchant?.name, previousTimeZone, timezone);
+    }
 
     console.log('🔍 MERCHANT API: Update successful, returning response');
     return NextResponse.json(
@@ -168,6 +202,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         description: updatedMerchant.description,
         tenantKey: updatedMerchant.tenantKey,
         allowOverlappingOrders: (updatedMerchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        ...merchantTimeZoneField(updatedMerchant),
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscription?.status,

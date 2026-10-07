@@ -745,6 +745,18 @@
         "createAnyway": "Vẫn tạo đơn",
         "saveAnyway": "Vẫn lưu thay đổi",
         "blocked": "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết."
+      },
+      "confirm": {
+        "rentTitle": "Tạo đơn thuê?",
+        "saleTitle": "Bán & thu tiền?",
+        "customer": "Khách",
+        "dates": "Lịch thuê",
+        "range": "{range} · {days} ngày",
+        "items": "Món",
+        "days": "{days} ngày",
+        "collectDeposit": "Thu cọc ngay",
+        "collectSale": "Thu ngay",
+        "sell": "Bán & thu tiền"
       }
     },
     "tabs": {
@@ -908,22 +920,25 @@
       },
       "pay": {
         "title": "Thanh toán",
-        "rent": "Tiền thuê",
-        "saleTotal": "Tổng tiền",
-        "deposit": "Cọc đã thu",
-        "paid": "Đã thanh toán",
+        "orderTotal": "Tổng đơn hàng",
+        "orderTotalDiscount": "Tổng (giảm {amount})",
+        "goodsTotal": "Tiền hàng",
+        "discount": "Giảm giá",
+        "depositPaid": "Đã cọc khi đặt",
+        "collateralMoney": "Thế chân thu thêm",
+        "collateralHeld": "Thế chân đang giữ",
+        "collateral": "Tiền thế chân",
+        "paidBefore": "Đã thu trước",
+        "settledBefore": "Đã thanh toán trước",
         "lateFee": "Phí trễ",
         "damageFee": "Phí hư hỏng",
-        "collateralHeld": "Thế chân đang giữ",
-        "dueAtPickup": "Còn thu khi giao",
-        "collectAtReturn": "Thu thêm khi trả",
-        "refundAtReturn": "Hoàn lại khi trả",
-        "due": "Còn thu",
-        "settled": "Đã thanh toán đủ",
-        "noRevenue": "Không tính doanh thu",
-        "nothingAtReturn": "Không phát sinh tiền khi trả",
-        "collateral": "Thế chân khi giao",
-        "collateralHint": "Đã gồm trong số còn thu, trả lại khách khi nhận đồ"
+        "collectAtPickup": "Thu khi giao",
+        "returnRefund": "Khi nhận trả: trả khách",
+        "returnCollect": "Khi nhận trả: thu thêm",
+        "saleCollected": "Đã thu",
+        "saleTotal": "Tổng đơn hàng",
+        "saleDue": "Còn thu",
+        "noRevenue": "Không tính doanh thu"
       },
       "settings": {
         "title": "Ghi chú, thế chấp và phí",
@@ -977,7 +992,7 @@
         "papersReturn": "Trả lại giấy tờ",
         "cancel": {
           "title": "Huỷ đơn hàng",
-          "message": "Bạn có muốn huỷ đơn {number}? Không hoàn tác được.",
+          "message": "Bạn có muốn huỷ đơn hàng {number}?",
           "keep": "Giữ đơn",
           "confirm": "Huỷ đơn"
         },

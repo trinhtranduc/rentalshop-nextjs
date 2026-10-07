@@ -46,7 +46,7 @@ import {
 import { SettingsEditor, SettingsSummary, type PendingFiles, type SettingsForm } from '../detail/settings';
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { DangerDialog, HandOverDialog, ReturnDialog, type DialogItem } from '../detail/dialogs';
-import { scheduleRange } from '../detail/actions-model';
+import { canCancelOrder, returnFeesUpdate, scheduleRange } from '../detail/actions-model';
 
 type AnyOrder = OrderWithDetails & { customerName?: string; customerPhone?: string };
 
@@ -89,7 +89,7 @@ export default function OrderDetailPage() {
   const money = useFormatCurrency();
   const { toastSuccess, toastError } = useToast();
   const { user } = useAuth();
-  const { canDeleteOrders } = usePermissions();
+  const { canDeleteOrders, canManageOrders } = usePermissions();
 
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
   const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
@@ -159,7 +159,7 @@ export default function OrderDetailPage() {
   const history = buildHistory(detail);
 
   const canEdit = (isRent && status === 'RESERVED') || (!isRent && status === 'COMPLETED');
-  const canCancel = canDeleteOrders && !['PICKUPED', 'RETURNED', 'CANCELLED'].includes(status);
+  const canCancel = canCancelOrder(order.orderType, status, canManageOrders);
   const canDelete = canDeleteOrders && status === 'CANCELLED';
   const settingsOpen = isRent && status !== 'CANCELLED';
 
@@ -235,12 +235,13 @@ export default function OrderDetailPage() {
   };
 
   const confirmPickup = () => changeStatus(() => ordersApi.pickupOrder(order.id));
-  const confirmReturn = (overrides?: { damageFee?: number }) =>
+  const confirmReturn = (fees: { lateFee: number; damageFee: number }) =>
     changeStatus(async () => {
-      const fee = overrides?.damageFee ?? settings.damageFee ?? 0;
-      // returnOrder only changes the status: save the damage fee from the dialog first
-      if (fee !== (order.damageFee || 0)) {
-        const saved = await ordersApi.updateOrderSettings(order.id, { damageFee: fee });
+      // returnOrder only changes the status: like iOS, PUT both fees first when either was changed
+      const update = returnFeesUpdate(order, fees);
+      if (update) {
+        // PUT /api/orders/[id] stores lateFee (db.orders.update whitelist); the client type does not list it
+        const saved = await ordersApi.updateOrderSettings(order.id, update);
         if (!saved.success) return saved;
       }
       return ordersApi.returnOrder(order.id);
@@ -381,7 +382,7 @@ export default function OrderDetailPage() {
               money={money}
             />
           )}
-          <PaymentCard summary={pay} collateralLabel={collateralLabel} t={t} money={money} />
+          <PaymentCard summary={pay} t={t} money={money} />
           {settingsOpen && (
             <SettingsSummary settings={settings} collateralLabel={collateralLabel} onEdit={editNotes} t={t} to={to as unknown as T} money={money} />
           )}
@@ -413,9 +414,8 @@ export default function OrderDetailPage() {
         subtitle={dialogSubtitle(lateDays)}
         items={dialogItems}
         papers={papers}
-        initialDamageFee={settings.damageFee}
         lateDays={lateDays}
-        onConfirm={(damageFee) => confirmReturn({ damageFee })}
+        onConfirm={confirmReturn}
         t={t}
         money={money}
       />

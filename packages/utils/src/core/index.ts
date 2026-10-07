@@ -171,6 +171,9 @@ export * from './subscription-billing-calculations';
 // Use: import { ... } from '@rentalshop/utils/server'
 // export * from './order-number-manager';
 
+// Shop time zone (#567): DEFAULT_SHOP_TIMEZONE, isValidTimeZone, resolveShopTimeZone
+export * from './timezone';
+
 // Date utilities
 export * from './date';
 export * from './date-range';

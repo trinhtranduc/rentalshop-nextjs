@@ -1,91 +1,117 @@
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
-import { LanguageSwitcher, CheckEmailVerification } from '@rentalshop/ui';
-import { Suspense } from 'react';
+/**
+ * Kiểm tra email sau khi tạo cửa hàng (#582) on the /login 4A look. Same behaviour as the shared
+ * CheckEmailVerification it replaces: `?email=`, resend with `authApi.resendVerificationEmail`,
+ * a 5-minute countdown after a resend or a rate limit, and back to /login.
+ */
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ShopAuthHeading, useToast } from '@rentalshop/ui';
+import { authApi } from '@rentalshop/utils';
+import { AuthBadge, AuthFrame, AuthNotice, authLinkBtn, authOutlineBtn } from '../components/auth/shop-auth';
+
+const RESEND_WAIT_SECONDS = 300;
 
 function EmailVerificationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+  const t = useTranslations('auth.checkEmail');
+  const { toastSuccess, toastError } = useToast();
   const email = searchParams.get('email') || '';
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px); }
-          25% { transform: translateY(-20px) translateX(10px); }
-          50% { transform: translateY(-10px) translateX(-10px); }
-          75% { transform: translateY(-15px) translateX(5px); }
-        }
-        
-        @keyframes float-slow {
-          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
-          50% { transform: translateY(-30px) translateX(-20px) scale(1.1); }
-        }
-        
-        @keyframes rotate-move {
-          0% { transform: rotate(0deg) translate(-50%, -50%); }
-          25% { transform: rotate(90deg) translate(-30%, -70%); }
-          50% { transform: rotate(180deg) translate(-50%, -50%); }
-          75% { transform: rotate(270deg) translate(-70%, -30%); }
-          100% { transform: rotate(360deg) translate(-50%, -50%); }
-        }
-        
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.5; }
-        }
-        
-        .float-1 { animation: float 8s ease-in-out infinite; }
-        .float-2 { animation: float 10s ease-in-out infinite 1s; }
-        .float-3 { animation: float 12s ease-in-out infinite 2s; }
-        .float-4 { animation: float-slow 15s ease-in-out infinite 0.5s; }
-        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
-      `}</style>
-      
-      {/* Background Pattern */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: `radial-gradient(circle, #c7d2fe 1.5px, transparent 1.5px)`,
-        backgroundSize: '50px 50px',
-        opacity: 0.4
-      }}></div>
-      
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-blue-400 rounded-full opacity-30 blur-2xl pointer-events-none float-1 pulse-glow"></div>
-      <div className="absolute top-40 right-20 w-24 h-24 bg-indigo-400 rounded-full opacity-40 blur-2xl pointer-events-none float-2 pulse-glow"></div>
-      <div className="absolute bottom-32 left-20 w-20 h-20 bg-purple-400 rounded-full opacity-35 blur-2xl pointer-events-none float-3 pulse-glow"></div>
-      <div className="absolute bottom-20 right-32 w-36 h-36 bg-blue-500 rounded-full opacity-30 blur-2xl pointer-events-none float-4 pulse-glow"></div>
-      
-      {/* Decorative Shapes */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-blue-200 to-transparent rounded-full opacity-40 blur-3xl pointer-events-none" style={{
-        animation: 'rotate-move 30s ease-in-out infinite',
-        transformOrigin: 'center'
-      }}></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-indigo-200 to-transparent rounded-full opacity-35 blur-3xl pointer-events-none" style={{
-        animation: 'rotate-move 25s ease-in-out infinite reverse',
-        transformOrigin: 'center'
-      }}></div>
-      
-      {/* Language Switcher */}
-      <div className="absolute top-4 right-4 z-10">
-        <LanguageSwitcher variant="compact" />
-      </div>
+  const [isResending, setIsResending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
-      <div className="relative z-10 w-full">
-        <CheckEmailVerification 
-          email={email}
-          onBackToLogin={() => router.push('/login')}
-        />
-      </div>
-    </div>
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const handleResend = async () => {
+    if (countdown > 0 || isResending || !email) return;
+    setIsResending(true);
+    setResendSuccess(false);
+    try {
+      const result = await authApi.resendVerificationEmail(email);
+      if (result.success) {
+        setResendSuccess(true);
+        setCountdown(RESEND_WAIT_SECONDS);
+        toastSuccess(t('resendSuccess'), t('resendSuccessMessage'));
+        setTimeout(() => setResendSuccess(false), 3000);
+      } else {
+        throw new Error(result.message || result.error || t('sendErrorMessage'));
+      }
+    } catch (err: unknown) {
+      const errorMessage = (err as Error)?.message || '';
+      if (errorMessage.includes('quá nhiều') || errorMessage.includes('rate limit') || errorMessage.toLowerCase().includes('too many')) {
+        setCountdown(RESEND_WAIT_SECONDS);
+        toastError(t('rateLimitError'), t('rateLimitMessage'));
+      } else {
+        toastError(t('sendError'), errorMessage || t('sendErrorMessage'));
+      }
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  return (
+    <AuthFrame>
+      <AuthBadge tone="info" />
+      <ShopAuthHeading title={t('title')} subtitle={t('subtitle')} />
+
+      {email && (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="text-sm text-slate-600">{t('emailSentTo')}</span>
+          <span className="break-all text-lg font-semibold text-slate-900">{email}</span>
+        </div>
+      )}
+
+      <AuthNotice tone="info">
+        <p className="m-0 font-semibold">{t('nextSteps')}</p>
+        <ol className="m-0 mt-1 list-decimal pl-5">
+          <li>{t('step1')}</li>
+          <li>{t('step2')}</li>
+          <li>{t('step3')}</li>
+        </ol>
+      </AuthNotice>
+      <AuthNotice tone="warn">{t('spamWarning')}</AuthNotice>
+
+      {email && (
+        <div className="flex justify-center" aria-live="polite">
+          {isResending ? (
+            <span className="inline-flex items-center gap-1.5 text-[15px] text-slate-600">
+              <RefreshCw aria-hidden="true" className="h-4 w-4 animate-spin" />
+              {t('sending')}
+            </span>
+          ) : countdown > 0 ? (
+            <span className="text-[15px] text-slate-600">{t('resendAfter', { minutes: Math.ceil(countdown / 60) })}</span>
+          ) : resendSuccess ? (
+            <span className="text-[15px] font-semibold text-green-700">{t('emailResent')}</span>
+          ) : (
+            <button type="button" onClick={handleResend} className={authLinkBtn}>
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+              {t('resendEmail')}
+            </button>
+          )}
+        </div>
+      )}
+
+      <button type="button" onClick={() => router.push('/login')} className={authOutlineBtn}>
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+        {t('backToLogin')}
+      </button>
+    </AuthFrame>
   );
 }
 
 export default function EmailVerificationPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
       <EmailVerificationContent />
     </Suspense>
   );

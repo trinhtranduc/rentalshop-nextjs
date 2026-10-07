@@ -307,6 +307,7 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case invalidRequest = "INVALID_REQUEST"
     case invalidSessionId = "INVALID_SESSION_ID"
     case invalidTenantKey = "INVALID_TENANT_KEY"
+    case invalidTimezone = "INVALID_TIMEZONE"
     case invalidUserId = "INVALID_USER_ID"
     case invalidUserRole = "INVALID_USER_ROLE"
 
@@ -831,6 +832,7 @@ struct APIErrorMessages {
         .invalidRequest: "Invalid request format",
         .invalidSessionId: "Invalid session ID",
         .invalidTenantKey: "Invalid tenant key provided",
+        .invalidTimezone: "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).",
         .invalidUserId: "Invalid user ID",
         .invalidUserRole: "Invalid user role",
         .loginSuccess: "Login successful",
@@ -1187,6 +1189,7 @@ struct APIErrorStatusCodes {
         .invalidRequest: 400,
         .invalidSessionId: 400,
         .invalidTenantKey: 400,
+        .invalidTimezone: 400,
         .invalidUserId: 400,
         .invalidUserRole: 400,
         .loginSuccess: 200,

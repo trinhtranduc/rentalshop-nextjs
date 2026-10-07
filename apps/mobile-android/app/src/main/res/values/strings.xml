@@ -1171,6 +1171,7 @@
     <string name="settings_v2_allow_overlap_hint">When off, an order cannot be created if the items are fully booked on those days.</string>
     <string name="settings_v2_allow_overlap_failed">Could not save the setting. Please try again.</string>
     <string name="api_error_order_schedule_conflict">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
+    <string name="api_error_invalid_timezone">Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).</string>
     <string name="v2_cart_overlap_line">Booked out %1$s · rented in order %2$s</string>
     <string name="v2_cart_overlap_line_no_order">Booked out %1$s</string>
     <string name="v2_cart_overlap_blocked">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>

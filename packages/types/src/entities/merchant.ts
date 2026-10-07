@@ -38,6 +38,8 @@ export interface Merchant extends BaseEntity, Address, ContactInfo {
   pricingType?: string; // FIXED, HOURLY, DAILY
   taxId?: string;
   currency: string; // Currency code (USD, VND)
+  /** #567 shop time zone (IANA id). Missing on older payloads = Asia/Ho_Chi_Minh. */
+  timezone?: string;
   isActive: boolean;
   avatar?: string; // Avatar image URL
   
@@ -110,6 +112,7 @@ export interface MerchantCreateInput extends BaseFormInput {
   phone?: string;
   description?: string;
   currency?: string; // Currency code (USD, VND), defaults to USD
+  timezone?: string; // #567 shop time zone (IANA id), defaults to Asia/Ho_Chi_Minh
   businessType?: string; // Business type (CLOTHING, VEHICLE, EQUIPMENT, GENERAL)
   businessTags?: string[]; // Niche tags (AO_DAI, WEDDING_DRESS, ...)
   pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
@@ -136,6 +139,7 @@ export interface MerchantUpdateInput extends BaseUpdateInput {
   pricingType?: string; // Pricing type (FIXED, HOURLY, DAILY)
   taxId?: number;
   currency?: string; // Currency code (USD, VND)
+  timezone?: string; // #567 shop time zone (IANA id)
   isActive?: boolean;
   avatar?: string; // Avatar image URL
 }

@@ -1,152 +1,118 @@
 'use client';
 
+/**
+ * Xác thực email (#582) on the /login 4A look. Same params as before: `?token=` is verified with
+ * `authApi.verifyEmail`; `?success=true&token=` (API redirect) and `?error=` are shown as they come.
+ * Success goes to /login after 2 s; the token is not stored (the user logs in).
+ */
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent, Button } from '@rentalshop/ui';
-import { authApi, storeAuthData } from '@rentalshop/utils';
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { ShopAuthHeading } from '@rentalshop/ui';
+import { authApi } from '@rentalshop/utils';
+import { AuthBadge, AuthFrame, AuthSpinner, authOutlineBtn, authPrimaryBtn } from '../components/auth/shop-auth';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+  const t = useTranslations('auth.verifyEmail');
+
   const token = searchParams.get('token');
   const success = searchParams.get('success');
   const error = searchParams.get('error');
-  
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState<string>('');
 
   useEffect(() => {
-    // If token is provided in URL, verify it via API
-    if (token && !success && !error) {
-      verifyToken(token);
-    } else if (success === 'true' && token) {
-      // Token already verified by API redirect, just save it
-      handleVerifiedToken(token);
-    } else if (error) {
-      // Error from API redirect
-      setStatus('error');
-      setMessage(decodeURIComponent(error));
-    } else {
-      // No token, success, or error - invalid state
-      setStatus('error');
-      setMessage('Link xác thực không hợp lệ. Vui lòng kiểm tra lại email.');
-    }
-  }, [token, success, error]);
-
-  const verifyToken = async (verificationToken: string) => {
-    try {
-      setStatus('loading');
-      const result = await authApi.verifyEmail(verificationToken);
-      
-      if (result.success && result.data?.token) {
-        // Save token and user data
-        handleVerifiedToken(result.data.token, result.data.user);
-      } else {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const verified = () => {
+      setStatus('success');
+      setMessage(t('successMessage'));
+      timer = setTimeout(() => router.push('/login'), 2000);
+    };
+    const verifyToken = async (verificationToken: string) => {
+      try {
+        setStatus('loading');
+        const result = await authApi.verifyEmail(verificationToken);
+        if (result.success && result.data?.token) {
+          verified();
+        } else {
+          setStatus('error');
+          setMessage(result.message || result.error || t('tokenInvalid'));
+        }
+      } catch (err: unknown) {
         setStatus('error');
-        setMessage(result.message || result.error || 'Token không hợp lệ hoặc đã hết hạn');
+        setMessage((err as Error)?.message || t('failed'));
       }
-    } catch (err: any) {
-      setStatus('error');
-      setMessage(err.message || 'Lỗi xác thực email');
-    }
-  };
+    };
 
-  const handleVerifiedToken = (jwtToken: string, user?: any) => {
-    // Don't save token - user will need to login
-    // Email is verified, now redirect to login page
-    
-    setStatus('success');
-    setMessage('Email đã được xác thực thành công!');
-    
-    // Redirect to login after 2 seconds
-    setTimeout(() => {
-      router.push('/login');
-    }, 2000);
-  };
+    if (token && !success && !error) {
+      void verifyToken(token);
+    } else if (success === 'true' && token) {
+      // Token already verified by the API redirect
+      verified();
+    } else if (error) {
+      setStatus('error');
+      let text = error;
+      try {
+        text = decodeURIComponent(error);
+      } catch {
+        // keep the raw text
+      }
+      setMessage(text);
+    } else {
+      setStatus('error');
+      setMessage(t('invalidLink'));
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+    // t is stable per locale; re-running on it would verify the token twice
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, success, error, router]);
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center space-y-4 py-8">
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-              <p className="text-gray-600">Đang xác thực email...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthFrame>
+        <div className="flex flex-col items-center gap-4 py-6" role="status">
+          <AuthSpinner light={false} />
+          <p className="m-0 text-base text-slate-600">{t('verifying')}</p>
+        </div>
+      </AuthFrame>
     );
   }
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Xác thực thành công!
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-center text-gray-600">{message}</p>
-            <p className="text-center text-sm text-gray-500">
-              Đang chuyển hướng đến trang đăng nhập...
-            </p>
-            <Button
-              onClick={() => router.push('/login')}
-              className="w-full"
-            >
-              Đi tới Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthFrame>
+        <AuthBadge tone="success" />
+        <ShopAuthHeading title={t('successTitle')} subtitle={message} />
+        <button type="button" onClick={() => router.push('/login')} className={authPrimaryBtn}>
+          {t('goToLogin')}
+        </button>
+        <p className="m-0 text-center text-sm text-slate-500">{t('redirecting')}</p>
+      </AuthFrame>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <XCircle className="w-10 h-10 text-red-600" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            Xác thực thất bại
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-center text-gray-600">{message}</p>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => router.push('/login')}
-              variant="outline"
-              className="flex-1"
-            >
-              Đăng nhập
-            </Button>
-            <Button
-              onClick={() => router.push('/email-verification')}
-              className="flex-1"
-            >
-              Gửi lại email
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthFrame>
+      <AuthBadge tone="error" />
+      <ShopAuthHeading title={t('failedTitle')} subtitle={message} />
+      <button type="button" onClick={() => router.push('/email-verification')} className={authPrimaryBtn}>
+        {t('resend')}
+      </button>
+      <button type="button" onClick={() => router.push('/login')} className={authOutlineBtn}>
+        {t('login')}
+      </button>
+    </AuthFrame>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
       <VerifyEmailContent />
     </Suspense>
   );
