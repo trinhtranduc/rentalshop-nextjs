@@ -729,7 +729,14 @@
       "width": "Rộng (mm)",
       "height": "Cao (mm)",
       "range": "Rộng 20–110 mm, cao 10–100 mm.",
-      "page": "Trang in {w} × {h} mm"
+      "page": "Trang in {w} × {h} mm",
+      "billSection": "Hoá đơn",
+      "labelSection": "Tem nhãn",
+      "preview": "Xem trước",
+      "previewOutlet": "Chi nhánh xem trước",
+      "testPrint": "In thử",
+      "sample": "Đơn mẫu để xem trước, không phải đơn thật.",
+      "labelTip": "Khi in: chọn máy in nhãn, khổ giấy đúng khổ tem, tỉ lệ 100%, lề Không."
     }
   }
 }

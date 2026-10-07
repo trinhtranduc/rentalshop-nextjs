@@ -162,16 +162,16 @@ describe('staff list (#528)', () => {
 
 describe('store settings (#528)', () => {
   it('shows the same tabs per role as the old settings menu', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance', 'printer']);
-    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance', 'printer']);
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'profile', 'account', 'language', 'appearance', 'printer']);
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance']);
+    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance']);
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language', 'appearance']);
   });
 
   it('resolves ?tab= with the old guards', () => {
     expect(resolveTab(null, 'MERCHANT')).toEqual({ tab: 'merchant' });
     expect(resolveTab('subscription', 'MERCHANT')).toEqual({ tab: 'subscription' });
     expect(resolveTab('subscription', 'OUTLET_ADMIN')).toEqual({ tab: 'outlet' });
-    expect(resolveTab('receipt', 'OUTLET_STAFF')).toEqual({ tab: 'outlet' });
+    expect(resolveTab('receipt', 'OUTLET_STAFF')).toEqual({ tab: 'receipt' });
     expect(resolveTab('bank-accounts', 'MERCHANT')).toEqual({ tab: 'merchant' });
     expect(resolveTab('loyalty', 'MERCHANT')).toEqual({ tab: 'merchant', redirect: '/loyalty' });
     expect(resolveTab('profile', 'OUTLET_STAFF')).toEqual({ tab: 'profile' });
@@ -258,11 +258,12 @@ describe('Giao diện tab (#539)', () => {
   });
 });
 
-describe('Máy in tab (#623)', () => {
-  it('every role sees it, in the "me" group, and ?settings=printer opens it', () => {
+describe('Phiếu in tab with paper sizes (#623, merged #626)', () => {
+  it('every role sees Phiếu in, and the old ?settings=printer opens it', () => {
     for (const role of ['MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'ADMIN', '']) {
-      expect(tabsForRole(role).find((t) => t.id === 'printer')?.group).toBe('me');
-      expect(resolveTab('printer', role).tab).toBe('printer');
+      expect(tabsForRole(role).find((t) => t.id === 'receipt')?.group).toBe('shop');
+      expect(tabsForRole(role).some((t) => (t.id as string) === 'printer')).toBe(false);
+      expect(resolveTab('printer', role).tab).toBe('receipt');
     }
   });
 });

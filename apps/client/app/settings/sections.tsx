@@ -5,7 +5,7 @@
  * @rentalshop/ui Settings component they replace (settingsApi, authApi, usersApi, outletsApi,
  * merchantsApi); admin keeps the shared component.
  */
-import React, { useEffect, useId, useState, useTransition } from 'react';
+import React, { useEffect, useId, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -17,6 +17,7 @@ import { Modal, fieldClass } from '../orders/create/parts';
 import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './settings-model';
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 import { usePrintSettings } from '../components/usePrintSettings';
+import { BillPreview, BillTestPrint, LabelPreview, useLabelTestPrint } from './PrintPreviews';
 import { BILL_WIDTHS, LABEL_H, LABEL_PRESETS, LABEL_W, clampMm, labelLayout, labelSizeText, type LabelChoice } from '../../lib/print-settings';
 
 const labelClass = 'flex flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
@@ -369,7 +370,12 @@ export function ShareLinksSection({
 const NOTE_MAX = 500;
 type NoteRow = { id: number; name: string; saved: string; draft: string; saving: boolean };
 
-export function ReceiptSection({ t }: { t: T }) {
+/**
+ * Phiếu in (#626, merges Máy in #623): bill paper + printed note with a full bill preview, label size with a
+ * real-size label preview, and "In thử" for both. Paper sizes are this computer's; the note is the outlet's
+ * (saved through the API, owner / outlet admin only).
+ */
+export function ReceiptSection({ t, canEditNote }: { t: T; canEditNote: boolean }) {
   const to = useTranslations('outlets');
   const ts = useTranslations('settings');
   const { toastSuccess, toastError } = useToast();
@@ -393,57 +399,207 @@ export function ReceiptSection({ t }: { t: T }) {
     }
   };
 
+  const [settings, saveSettings] = usePrintSettings();
+    const layout = labelLayout(settings);
+  // W / H are typed freely and saved once they are inside the limits (clamped on blur)
+  const [draft, setDraft] = useState({ w: String(settings.custom.w), h: String(settings.custom.h) });
+  useEffect(() => setDraft({ w: String(settings.custom.w), h: String(settings.custom.h) }), [settings.custom.w, settings.custom.h]);
+  const typeSize = (key: 'w' | 'h', value: string) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    const range = key === 'w' ? LABEL_W : LABEL_H;
+    const n = Number(value);
+    if (value.trim() !== '' && Number.isInteger(n) && n >= range.min && n <= range.max) saveSettings({ ...settings, custom: { ...settings.custom, [key]: n } });
+  };
+  const commitSize = (key: 'w' | 'h') => {
+    const n = clampMm(draft[key], key === 'w' ? LABEL_W : LABEL_H, settings.custom[key]);
+    setDraft((d) => ({ ...d, [key]: String(n) }));
+    if (n !== settings.custom[key]) saveSettings({ ...settings, custom: { ...settings.custom, [key]: n } });
+  };
+  const option = (on: boolean) =>
+    `flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border px-4 text-[15px] ${
+      on ? 'border-ar-primary bg-ar-primary-soft font-semibold text-ar-primary-ink' : 'border-ar-line text-ar-ink hover:bg-ar-subtle'
+    }`;
+  const labels: Array<{ value: LabelChoice; label: string }> = [
+    ...LABEL_PRESETS.map((p) => ({ value: p as LabelChoice, label: labelSizeText(labelLayout({ label: p, custom: settings.custom })) })),
+    { value: 'custom', label: t('printer.custom') },
+  ];
+
+  // The preview shows one outlet's header and its note as it is being typed
+  const [previewId, setPreviewId] = useState<number | null>(null);
+  const previewRow = rows.find((r) => r.id === previewId) ?? rows.find((r) => r.isDefault) ?? rows[0];
+  const previewNote = notes.find((n) => n.id === previewRow?.id);
+  const previewOutlet = useMemo(
+    () => ({
+      name: previewRow?.name || '',
+      phone: previewRow?.phone || '',
+      address: addressLine(previewRow),
+      printNote: previewNote?.draft ?? previewRow?.printNote ?? '',
+    }),
+    [previewRow, previewNote?.draft],
+  );
+  const [billTest, setBillTest] = useState(false);
+  const labelTest = useLabelTestPrint(layout);
+
+  const testBtn = (onClick: () => void, busy = false) => (
+    <button type="button" onClick={onClick} disabled={busy} className={smallBtn}>
+      <PrinterIcon />
+      {t('printer.testPrint')}
+    </button>
+  );
+
   return (
-    <SectionCard title={t('receipt.title')}>
-      <p className="-mt-2 mb-0 text-sm text-ar-muted">{to('fields.printNoteHint')}</p>
-      {failed ? (
-        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ar-muted">
-          <span>{t('receipt.loadFailed')}</span>
-          <button type="button" onClick={retry} className={smallBtn}>
-            {t('receipt.retry')}
-          </button>
+    <>
+      <SectionCard title={t('printer.billSection')} action={testBtn(() => setBillTest(true))}>
+        <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('printer.hint')}</p>
+        <div role="radiogroup" aria-label={t('printer.billTitle')} className="grid gap-2 sm:grid-cols-2">
+          {BILL_WIDTHS.map((w) => (
+            <label key={w} className={option(settings.billWidth === w)}>
+              <input
+                type="radio"
+                name="bill-width"
+                checked={settings.billWidth === w}
+                onChange={() => saveSettings({ ...settings, billWidth: w })}
+                className="h-4 w-4 accent-ar-primary"
+              />
+              {t(w === 80 ? 'printer.bill80' : 'printer.bill58')}
+            </label>
+          ))}
         </div>
-      ) : loading ? (
-        <Skeleton className="h-24 w-full" />
-      ) : notes.length === 0 ? (
-        <p className="m-0 text-sm text-ar-muted">{t('receipt.empty')}</p>
-      ) : (
-        <ul className="m-0 flex list-none flex-col gap-5 p-0">
-          {notes.map((n) => {
-            const dirty = n.draft !== n.saved;
-            return (
-              <li key={n.id} className="flex flex-col gap-1.5 border-t border-ar-subtle pt-4 first:border-t-0 first:pt-0">
-                <label className={labelClass}>
-                  {notes.length > 1 ? n.name : to('fields.printNote')}
-                  <textarea
-                    rows={3}
-                    maxLength={NOTE_MAX}
-                    value={n.draft}
-                    onChange={(e) => patch(n.id, { draft: e.target.value })}
-                    className={`${inputClass} h-auto resize-y py-2.5`}
-                  />
-                </label>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs tabular-nums text-ar-muted">
-                    {n.draft.length}/{NOTE_MAX}
-                  </span>
-                  <span className="flex gap-2">
-                    {dirty && (
-                      <button type="button" onClick={() => patch(n.id, { draft: n.saved })} disabled={n.saving} className={smallBtn}>
-                        {t('form.cancel')}
-                      </button>
-                    )}
-                    <button type="button" onClick={() => save(n)} disabled={!dirty || n.saving} className={`${primaryBtn} h-9 text-sm`}>
-                      {n.saving ? t('form.saving') : t('form.save')}
-                    </button>
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </SectionCard>
+
+        {canEditNote && (
+          <div className="flex flex-col gap-3 border-t border-ar-subtle pt-4">
+            <span className="text-[15px] font-semibold text-ar-ink">{to('fields.printNote')}</span>
+            <p className="-mt-2 mb-0 text-sm text-ar-muted">{to('fields.printNoteHint')}</p>
+            {failed ? (
+              <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ar-muted">
+                <span>{t('receipt.loadFailed')}</span>
+                <button type="button" onClick={retry} className={smallBtn}>
+                  {t('receipt.retry')}
+                </button>
+              </div>
+            ) : loading ? (
+              <Skeleton className="h-24 w-full" />
+            ) : notes.length === 0 ? (
+              <p className="m-0 text-sm text-ar-muted">{t('receipt.empty')}</p>
+            ) : (
+              <ul className="m-0 flex list-none flex-col gap-5 p-0">
+                {notes.map((n) => {
+                  const dirty = n.draft !== n.saved;
+                  return (
+                    <li key={n.id} className="flex flex-col gap-1.5 border-t border-ar-subtle pt-4 first:border-t-0 first:pt-0">
+                      <label className={labelClass}>
+                        {notes.length > 1 ? n.name : to('fields.printNote')}
+                        <textarea
+                          rows={3}
+                          maxLength={NOTE_MAX}
+                          value={n.draft}
+                          onChange={(e) => patch(n.id, { draft: e.target.value })}
+                          className={`${inputClass} h-auto resize-y py-2.5`}
+                        />
+                      </label>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs tabular-nums text-ar-muted">
+                          {n.draft.length}/{NOTE_MAX}
+                        </span>
+                        <span className="flex gap-2">
+                          {dirty && (
+                            <button type="button" onClick={() => patch(n.id, { draft: n.saved })} disabled={n.saving} className={smallBtn}>
+                              {t('form.cancel')}
+                            </button>
+                          )}
+                          <button type="button" onClick={() => save(n)} disabled={!dirty || n.saving} className={`${primaryBtn} h-9 text-sm`}>
+                            {n.saving ? t('form.saving') : t('form.save')}
+                          </button>
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2 border-t border-ar-subtle pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[15px] font-semibold text-ar-ink">{t('printer.preview')}</span>
+            {rows.length > 1 && (
+              <select
+                aria-label={t('printer.previewOutlet')}
+                value={previewRow?.id ?? ''}
+                onChange={(e) => setPreviewId(Number(e.target.value))}
+                className={`${inputClass} h-9 w-auto py-0 text-sm`}
+              >
+                {rows.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <BillPreview outlet={previewOutlet} width={settings.billWidth} />
+          <p className="m-0 text-xs text-ar-muted">{t('printer.sample')}</p>
+        </div>
+      </SectionCard>
+
+      <SectionCard title={t('printer.labelSection')} action={testBtn(labelTest.start, labelTest.printing)}>
+        <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('printer.labelHint')}</p>
+        <div role="radiogroup" aria-label={t('printer.labelTitle')} className="grid gap-2 sm:grid-cols-2">
+          {labels.map((o) => (
+            <label key={o.value} className={option(settings.label === o.value)}>
+              <input
+                type="radio"
+                name="label-size"
+                checked={settings.label === o.value}
+                onChange={() => saveSettings({ ...settings, label: o.value })}
+                className="h-4 w-4 accent-ar-primary"
+              />
+              <span className="flex-1">{o.label}</span>
+              {o.value === '2x35x22' && <span className="text-sm font-normal text-ar-muted">{t('printer.twoUp')}</span>}
+            </label>
+          ))}
+        </div>
+        {settings.label === 'custom' && (
+          <div className="grid grid-cols-2 gap-3">
+            {(['w', 'h'] as const).map((key) => (
+              <Field key={key} label={t(key === 'w' ? 'printer.width' : 'printer.height')}>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={key === 'w' ? LABEL_W.min : LABEL_H.min}
+                  max={key === 'w' ? LABEL_W.max : LABEL_H.max}
+                  value={draft[key]}
+                  onChange={(e) => typeSize(key, e.target.value)}
+                  onBlur={() => commitSize(key)}
+                  className={inputClass}
+                />
+              </Field>
+            ))}
+            <p className="col-span-2 m-0 text-xs text-ar-muted">{t('printer.range')}</p>
+          </div>
+        )}
+        <div className="flex flex-col gap-2 border-t border-ar-subtle pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[15px] font-semibold text-ar-ink">{t('printer.preview')}</span>
+            <span className="text-sm tabular-nums text-ar-muted">{t('printer.page', { w: layout.pageW, h: layout.pageH })}</span>
+          </div>
+          <LabelPreview layout={layout} />
+          <p className="m-0 text-xs text-ar-muted">{t('printer.labelTip')}</p>
+        </div>
+      </SectionCard>
+
+      <BillTestPrint outlet={previewOutlet} open={billTest} onClose={() => setBillTest(false)} />
+      {labelTest.node}
+    </>
+  );
+}
+
+function PrinterIcon() {
+  return (
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+      <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z" />
+    </svg>
   );
 }
 
@@ -725,108 +881,5 @@ export function LegacyPanel({ title, children }: { title: string; children: Reac
       <h2 className="m-0 px-5 pb-1 pt-[18px] text-lg font-bold">{title}</h2>
       <div className="px-2 pb-3 sm:px-3">{children}</div>
     </section>
-  );
-}
-
-
-/** Máy in (#623): bill paper width and label size of this computer, saved at once in this browser. */
-export function PrinterSection({ t }: { t: T }) {
-  const [settings, save] = usePrintSettings();
-  const layout = labelLayout(settings);
-  // W / H are typed freely and saved once they are inside the limits (clamped on blur)
-  const [draft, setDraft] = useState({ w: String(settings.custom.w), h: String(settings.custom.h) });
-  useEffect(() => setDraft({ w: String(settings.custom.w), h: String(settings.custom.h) }), [settings.custom.w, settings.custom.h]);
-  const typeSize = (key: 'w' | 'h', value: string) => {
-    setDraft((d) => ({ ...d, [key]: value }));
-    const range = key === 'w' ? LABEL_W : LABEL_H;
-    const n = Number(value);
-    if (value.trim() !== '' && Number.isInteger(n) && n >= range.min && n <= range.max) save({ ...settings, custom: { ...settings.custom, [key]: n } });
-  };
-  const commitSize = (key: 'w' | 'h') => {
-    const n = clampMm(draft[key], key === 'w' ? LABEL_W : LABEL_H, settings.custom[key]);
-    setDraft((d) => ({ ...d, [key]: String(n) }));
-    if (n !== settings.custom[key]) save({ ...settings, custom: { ...settings.custom, [key]: n } });
-  };
-  const option = (on: boolean) =>
-    `flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border px-4 text-[15px] ${
-      on ? 'border-ar-primary bg-ar-primary-soft font-semibold text-ar-primary-ink' : 'border-ar-line text-ar-ink hover:bg-ar-subtle'
-    }`;
-  const labels: Array<{ value: LabelChoice; label: string }> = [
-    ...LABEL_PRESETS.map((p) => ({ value: p as LabelChoice, label: labelSizeText(labelLayout({ label: p, custom: settings.custom })) })),
-    { value: 'custom', label: t('printer.custom') },
-  ];
-  // Preview box: the label drawn at 1 mm = 3 px, so 110 mm still fits the dialog
-  const scale = 3;
-  return (
-    <>
-      <SectionCard title={t('printer.billTitle')}>
-        <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('printer.hint')}</p>
-        <div role="radiogroup" aria-label={t('printer.billTitle')} className="grid gap-2 sm:grid-cols-2">
-          {BILL_WIDTHS.map((w) => (
-            <label key={w} className={option(settings.billWidth === w)}>
-              <input
-                type="radio"
-                name="bill-width"
-                checked={settings.billWidth === w}
-                onChange={() => save({ ...settings, billWidth: w })}
-                className="h-4 w-4 accent-ar-primary"
-              />
-              {t(w === 80 ? 'printer.bill80' : 'printer.bill58')}
-            </label>
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title={t('printer.labelTitle')}>
-        <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('printer.labelHint')}</p>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <div role="radiogroup" aria-label={t('printer.labelTitle')} className="flex min-w-0 flex-1 flex-col gap-2">
-            {labels.map((o) => (
-              <label key={o.value} className={option(settings.label === o.value)}>
-                <input
-                  type="radio"
-                  name="label-size"
-                  checked={settings.label === o.value}
-                  onChange={() => save({ ...settings, label: o.value })}
-                  className="h-4 w-4 accent-ar-primary"
-                />
-                <span className="flex-1">{o.label}</span>
-                {o.value === '2x35x22' && <span className="text-sm font-normal text-ar-muted">{t('printer.twoUp')}</span>}
-              </label>
-            ))}
-            {settings.label === 'custom' && (
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                {(['w', 'h'] as const).map((key) => (
-                  <Field key={key} label={t(key === 'w' ? 'printer.width' : 'printer.height')}>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={key === 'w' ? LABEL_W.min : LABEL_H.min}
-                      max={key === 'w' ? LABEL_W.max : LABEL_H.max}
-                      value={draft[key]}
-                      onChange={(e) => typeSize(key, e.target.value)}
-                      onBlur={() => commitSize(key)}
-                      className={inputClass}
-                    />
-                  </Field>
-                ))}
-                <p className="col-span-2 m-0 text-xs text-ar-muted">{t('printer.range')}</p>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-none flex-col items-center gap-2 rounded-xl bg-ar-subtle p-4 sm:w-[360px]">
-            <div className="flex" aria-hidden="true">
-              {Array.from({ length: layout.perRow }).map((_, i) => (
-                <span
-                  key={i}
-                  style={{ width: layout.labelW * scale, height: layout.labelH * scale }}
-                  className="box-border border border-dashed border-ar-line-strong bg-white"
-                />
-              ))}
-            </div>
-            <span className="text-sm tabular-nums text-ar-muted">{t('printer.page', { w: layout.pageW, h: layout.pageH })}</span>
-          </div>
-        </div>
-      </SectionCard>
-    </>
   );
 }
