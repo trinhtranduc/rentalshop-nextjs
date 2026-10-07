@@ -43,7 +43,8 @@ final class ShopTimeZoneTests: XCTestCase {
     private func inEachZone(_ zones: [String] = ShopTimeZoneTests.zones, _ body: (String) throws -> Void) rethrows {
         for id in zones {
             setPhoneZone(TimeZone(identifier: id)!)
-            XCTAssertEqual(TimeZone.current.identifier, id, "the phone zone must reach TimeZone.current")
+            // TZ=UTC reads back as "GMT"
+            XCTAssertEqual(TimeZone.current.identifier, id == "UTC" ? "GMT" : id, "the phone zone must reach TimeZone.current")
             try body(id)
         }
         restoreZone()
