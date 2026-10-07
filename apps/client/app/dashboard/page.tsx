@@ -35,9 +35,13 @@ import {
   type OverviewPeriod,
   type PeriodReportLike,
   showsTodayWork,
+  parseTop,
+  TOP_ALL_LIMIT,
+  type TopKind,
 } from './overview-model';
 import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopCustomers, TopProducts, type T } from './overview/sections';
 import { DetailDrawer } from './overview/DetailDrawer';
+import { TopDrawer } from './overview/TopDrawer';
 
 interface Loadable<V> {
   data: V | null;
@@ -156,6 +160,20 @@ export default function DashboardPage() {
     },
     [router, searchParams],
   );
+  // "Xem tất cả" of a top list lives in the URL too (?top=); the full ranking loads only when open (#620)
+  const top = canViewRevenue ? parseTop(searchParams.get('top')) : null;
+  const topReport = usePeriodReport(range, TOP_ALL_LIMIT, ready && top !== null, nonce);
+  const setTop = useCallback(
+    (kind: TopKind | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (kind) params.set('top', kind);
+      else params.delete('top');
+      const qs = params.toString();
+      router.push(qs ? `/dashboard?${qs}` : '/dashboard', { scroll: false });
+    },
+    [router, searchParams],
+  );
+  const periodLabel = period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`);
   const created = `created=custom&from=${range.startDate}&to=${range.endDate}`;
   const ordersHref: Record<DetailKind, string> = {
     orderValue: `/orders?${created}`,
@@ -170,6 +188,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set('period', next);
     params.delete('detail');
+    params.delete('top');
     params.delete('from');
     params.delete('to');
     if (extra) {
@@ -281,9 +300,23 @@ export default function DashboardPage() {
 
       {canViewRevenue && (
         <div className="flex flex-wrap gap-4">
-          <TopProducts products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
-          <TopCustomers customers={report.data?.topCustomers ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+          <TopProducts onViewAll={() => setTop('products')} products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+          <TopCustomers onViewAll={() => setTop('customers')} customers={report.data?.topCustomers ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
         </div>
+      )}
+
+      {top && (
+        <TopDrawer
+          kind={top}
+          report={topReport.data}
+          loading={!ready || topReport.loading}
+          failed={topReport.failed}
+          onRetry={retry}
+          periodLabel={periodLabel}
+          onClose={() => setTop(null)}
+          t={t}
+          money={money}
+        />
       )}
 
       {detail && (
@@ -293,7 +326,7 @@ export default function DashboardPage() {
           parts={moneyParts}
           cash={cash}
           newOrders={kpis.newOrders}
-          periodLabel={period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`)}
+          periodLabel={periodLabel}
           ordersHref={ordersHref[detail]}
           onClose={() => setDetail(null)}
           t={t}

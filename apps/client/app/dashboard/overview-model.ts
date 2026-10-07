@@ -673,3 +673,12 @@ export function topCustomerBars(customers: TopCustomerLike[] | null | undefined,
 export function showsTodayWork(period: OverviewPeriod): boolean {
   return period === 'today';
 }
+
+export type TopKind = 'products' | 'customers';
+/** Rows in the "Xem tất cả" drawer; the period API caps `limit` at 50. */
+export const TOP_ALL_LIMIT = 50;
+
+/** `?top=` → which full ranking is open (#620). */
+export function parseTop(value: string | null | undefined): TopKind | null {
+  return value === 'products' || value === 'customers' ? value : null;
+}

@@ -14,6 +14,7 @@ import {
   initials,
   outstandingSplit,
   parseDetail,
+  parseTop,
   showsTodayWork,
   sparkPoints,
   topBars,
@@ -282,5 +283,17 @@ describe('topCustomerBars (#620)', () => {
   it('shows today work only on the today period', () => {
     expect(showsTodayWork('today')).toBe(true);
     for (const p of ['7d', 'month', 'custom'] as const) expect(showsTodayWork(p)).toBe(false);
+  });
+});
+
+describe('Xem tất cả (#620)', () => {
+  it('reads ?top= and lists every row it gets', () => {
+    expect(parseTop('products')).toBe('products');
+    expect(parseTop('customers')).toBe('customers');
+    expect(parseTop('outlets')).toBeNull();
+    expect(parseTop(null)).toBeNull();
+    const many = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `C${i}`, orderCount: 1, totalSpent: 100 - i }));
+    expect(topCustomerBars(many, Infinity)).toHaveLength(12);
+    expect(topBars(many.map((c) => ({ id: c.id, name: c.name, totalRevenue: c.totalSpent })), Infinity)).toHaveLength(12);
   });
 });

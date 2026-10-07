@@ -582,6 +582,7 @@ export function TodayOrders({
 
 export function TopProducts({
   products,
+  onViewAll,
   loading,
   locale,
   t,
@@ -592,9 +593,11 @@ export function TopProducts({
   locale: string;
   t: T;
   money: Money;
+  onViewAll?: () => void;
 }) {
   return (
     <TopList
+      onViewAll={onViewAll}
       ns="home.top"
       countKey="home.top.rentals"
       bars={topBars(products)}
@@ -610,6 +613,7 @@ export function TopProducts({
 /** Top customers of the period (#620): who brought the most money in. */
 export function TopCustomers({
   customers,
+  onViewAll,
   loading,
   locale,
   t,
@@ -620,9 +624,11 @@ export function TopCustomers({
   locale: string;
   t: T;
   money: Money;
+  onViewAll?: () => void;
 }) {
   return (
     <TopList
+      onViewAll={onViewAll}
       ns="home.topCustomers"
       countKey="home.topCustomers.orders"
       bars={topCustomerBars(customers)}
@@ -636,6 +642,7 @@ export function TopCustomers({
 }
 
 function TopList({
+  onViewAll,
   ns,
   countKey,
   bars,
@@ -653,13 +660,25 @@ function TopList({
   locale: string;
   t: T;
   money: Money;
+  onViewAll?: () => void;
 }) {
   const compact = useCompact(locale);
   return (
     <section className={`${cardClass} flex min-w-0 flex-[1_1_320px] flex-col gap-3 px-[22px] py-5`}>
-      <h2 className={h2Class}>
-        {t(`${ns}.title`)} <span className="text-[13px] font-normal text-ar-muted">· {t(`${ns}.subtitle`)}</span>
-      </h2>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className={h2Class}>
+          {t(`${ns}.title`)} <span className="text-[13px] font-normal text-ar-muted">· {t(`${ns}.subtitle`)}</span>
+        </h2>
+        {onViewAll && !loading && bars.length > 0 && (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="flex-none text-[13px] font-semibold text-ar-primary-ink hover:underline"
+          >
+            {t('home.orders.viewAll')}
+          </button>
+        )}
+      </div>
       {loading ? (
         <div className="flex flex-col gap-3">
           {[0, 1, 2].map((i) => (
