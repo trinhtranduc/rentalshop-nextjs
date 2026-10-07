@@ -14,7 +14,10 @@ class SettingsRowsTest {
     fun rowsByRole() {
         val merchant = SettingsRows.sections("MERCHANT", hasPlan = true)
         assertEquals(listOf(SettingsGroup.STORE, SettingsGroup.MANAGEMENT, SettingsGroup.ACCOUNT), merchant.map { it.group })
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER), merchant[0].items)
+        assertEquals(
+            listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER, SettingsItem.BANK_ACCOUNTS),
+            merchant[0].items,
+        )
         assertEquals(listOf(SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
         assertEquals(
             listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT),
