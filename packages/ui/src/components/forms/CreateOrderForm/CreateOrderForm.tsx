@@ -276,7 +276,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               productId: item.productId,
               quantity: item.quantity || 1,
             })),
-            ...availabilityWindow(formData.pickupPlanAt, formData.returnPlanAt),
+            ...availabilityWindow(formData.pickupPlanAt as string, formData.returnPlanAt as string), // both set (checked above)
             includeTimePrecision: true,
             timeZone: 'UTC',
             outletId: formData.outletId,
