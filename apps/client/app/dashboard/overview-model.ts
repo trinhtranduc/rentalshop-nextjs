@@ -121,7 +121,12 @@ export interface SeriesPointLike {
   newOrderCount?: Num;
   /** Expected collections still to come that day (#604 follow-up). Absent until the API sends it. */
   forecast?: Num;
+  /** The API's name for `forecast` (#605): GET /api/analytics/period `series[].expectedCollected` */
+  expectedCollected?: Num;
 }
+
+/** Forecast of a series point: `forecast`, else the API's `expectedCollected` (#605) */
+const forecastOf = (p: SeriesPointLike | undefined): number => Math.max(0, num(p?.forecast) ?? num(p?.expectedCollected) ?? 0);
 
 export interface TopProductLike {
   id: number | string;
@@ -254,7 +259,7 @@ export function chartBars(
   const values = points.map((p) =>
     mode === 'collected' ? num(p.collected) ?? num(p.realIncome) ?? 0 : num(p.newOrderCount) ?? num(p.orderCount) ?? 0,
   );
-  const forecasts = points.map((p) => (mode === 'collected' ? Math.max(0, num(p.forecast) ?? 0) : 0));
+  const forecasts = points.map((p) => (mode === 'collected' ? forecastOf(p) : 0));
   const max = Math.max(0, ...values.map((v, i) => v + forecasts[i]));
   const days = points.map(seriesDayKey);
   const currentIndex = currentKey && days.includes(currentKey) ? days.indexOf(currentKey) : points.length - 1;
@@ -284,7 +289,7 @@ export function forecastBar(
   todayKey: string,
 ): { collected: number; forecast: number; pct: number } | null {
   const point = (series ?? []).find((p) => seriesDayKey(p) === todayKey);
-  const forecast = Math.max(0, num(point?.forecast) ?? 0);
+  const forecast = forecastOf(point);
   if (collected == null || forecast <= 0) return null;
   const done = Math.max(0, collected);
   return { collected, forecast, pct: (done / (done + forecast)) * 100 };
