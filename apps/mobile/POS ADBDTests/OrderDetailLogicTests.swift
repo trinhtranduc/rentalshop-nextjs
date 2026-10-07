@@ -191,4 +191,118 @@ final class OrderDetailLogicTests: XCTestCase {
             XCTAssertEqual(json["isReadyToDeliver"] as? Bool, value)
         }
     }
+
+    // MARK: Header (#643)
+
+    private let vn = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+    private func at(_ text: String) -> Date { ISO8601DateFormatter().date(from: text)! }
+
+    func testTitleNamesTheOrderType() {
+        XCTAssertEqual(OrderDetailLogic.titleKey(orderType: .rent), "order.header.title.rent")
+        XCTAssertEqual(OrderDetailLogic.titleKey(orderType: .sale), "order.header.title.sale")
+    }
+
+    func testCustomerWithoutNameIsWalkInAndWithoutPhoneHasNoCall() {
+        XCTAssertEqual(OrderDetailLogic.headerCustomer(name: "Jessica Lopez", phone: "+1-555 1011"),
+                       OrderHeaderCustomer(name: "Jessica Lopez", phone: "+1-5551011"))
+        XCTAssertEqual(OrderDetailLogic.headerCustomer(name: "  ", phone: nil), OrderHeaderCustomer(name: nil, phone: nil))
+        XCTAssertEqual(OrderDetailLogic.headerCustomer(name: "N/A", phone: ""), OrderHeaderCustomer(name: nil, phone: nil))
+        XCTAssertNil(OrderDetailLogic.headerCustomer(name: "An", phone: "  ").phone)
+    }
+
+    func testStepsShowForOpenAndReturnedRentalsOnly() {
+        for status in [OrderStatus.reserved, .pickuped, .returned] {
+            XCTAssertTrue(OrderDetailLogic.showsSteps(orderType: .rent, status: status), "\(status)")
+        }
+        XCTAssertFalse(OrderDetailLogic.showsSteps(orderType: .rent, status: .cancelled))
+        for status in [OrderStatus.completed, .reserved, .cancelled] {
+            XCTAssertFalse(OrderDetailLogic.showsSteps(orderType: .sale, status: status), "\(status)")
+        }
+    }
+
+    func testStepLabelsTurnPastTenseWhenDone() {
+        let created = at("2026-09-14T07:33:00Z"), pickupPlan = at("2026-10-01T02:00:00Z")
+        let picked = at("2026-10-01T03:00:00Z"), returnPlan = at("2026-10-07T02:00:00Z")
+        let reserved = OrderDetailLogic.headerSteps(status: .reserved, createdAt: created, pickupPlanAt: pickupPlan,
+                                                    pickedUpAt: nil, returnPlanAt: returnPlan, returnedAt: nil)
+        XCTAssertEqual(reserved.map(\.labelKey), ["order.header.step.booked", "order.header.step.handOver", "order.header.step.return"])
+        XCTAssertEqual(reserved.map(\.done), [true, false, false])
+        XCTAssertEqual(reserved.map(\.date), [created, pickupPlan, returnPlan])
+
+        let pickuped = OrderDetailLogic.headerSteps(status: .pickuped, createdAt: created, pickupPlanAt: pickupPlan,
+                                                    pickedUpAt: picked, returnPlanAt: returnPlan, returnedAt: nil)
+        XCTAssertEqual(pickuped.map(\.labelKey), ["order.header.step.booked", "order.header.step.handedOver", "order.header.step.return"])
+        XCTAssertEqual(pickuped[1].date, picked)
+
+        let returnedAt = at("2026-10-06T10:00:00Z")
+        let returned = OrderDetailLogic.headerSteps(status: .returned, createdAt: created, pickupPlanAt: pickupPlan,
+                                                    pickedUpAt: picked, returnPlanAt: returnPlan, returnedAt: returnedAt)
+        XCTAssertEqual(returned.map(\.labelKey), ["order.header.step.booked", "order.header.step.handedOver", "order.header.step.returned"])
+        XCTAssertEqual(returned.map(\.done), [true, true, true])
+        XCTAssertEqual(returned[2].date, returnedAt)
+    }
+
+    func testStepDayLabelsUseVietnamDayWithWeekdayAndNoTime() {
+        // 2026-09-30 18:00 UTC is Thursday 01/10 01:00 in Vietnam
+        let label = DayFormatter.short(at("2026-09-30T18:00:00Z"), timeZone: vn, locale: Locale(identifier: "vi_VN"))
+        XCTAssertEqual(label, "T5 01/10")
+    }
+
+    private func remainder(_ status: OrderStatus, now: String, pickup: Date? = nil, ret: Date? = nil) -> OrderHeaderRemainder {
+        OrderDetailLogic.headerRemainder(status: status, pickupPlanAt: pickup, returnPlanAt: ret, now: at(now), timeZone: vn)
+    }
+
+    func testReservedCountsToTheHandOverVietnamDay() {
+        let pickup = at("2026-10-01T02:00:00Z") // 01/10 09:00 in Vietnam
+        let ret = at("2026-10-07T02:00:00Z")
+        // 29/09 23:30 in Vietnam: two days, although less than 48 hours
+        XCTAssertEqual(remainder(.reserved, now: "2026-09-29T16:30:00Z", pickup: pickup, ret: ret), .handOverIn(2))
+        // 30/09 18:00 UTC is already 01/10 in Vietnam
+        XCTAssertEqual(remainder(.reserved, now: "2026-09-30T18:00:00Z", pickup: pickup, ret: ret), .handOverToday)
+        // Pickup day passed: "quá ngày lấy", never a late return
+        XCTAssertEqual(remainder(.reserved, now: "2026-10-03T03:00:00Z", pickup: pickup, ret: ret), .pickupOverdue(2))
+        XCTAssertEqual(remainder(.reserved, now: "2026-10-03T03:00:00Z", ret: ret), .none)
+    }
+
+    func testPickedUpCountsToTheReturnDayAndLateSaysNothing() {
+        let ret = at("2026-10-07T02:00:00Z") // 07/10 09:00 in Vietnam
+        XCTAssertEqual(remainder(.pickuped, now: "2026-10-05T16:30:00Z", ret: ret), .returnIn(2))
+        XCTAssertEqual(remainder(.pickuped, now: "2026-10-06T18:00:00Z", ret: ret), .returnToday)
+        XCTAssertEqual(remainder(.pickuped, now: "2026-10-07T16:59:00Z", ret: ret), .returnToday)
+        // Late return: the red banner says it; the box keeps only the day count
+        XCTAssertEqual(remainder(.pickuped, now: "2026-10-09T03:00:00Z", ret: ret), .none)
+        XCTAssertEqual(remainder(.pickuped, now: "2026-10-05T03:00:00Z"), .none)
+    }
+
+    func testReturnedAndCancelledRemainders() {
+        let ret = at("2026-10-07T02:00:00Z")
+        XCTAssertEqual(remainder(.returned, now: "2026-10-09T03:00:00Z", ret: ret), .returned)
+        XCTAssertEqual(remainder(.cancelled, now: "2026-10-05T03:00:00Z", ret: ret), .none)
+    }
+
+    func testSummaryJoinsDaysAndRemainder() {
+        let days7 = PluralText.format("%d days", count: 7, 7)
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)),
+                       days7 + " · " + PluralText.format("order.header.returnIn", count: 2, 2))
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnToday),
+                       days7 + " · " + "order.header.returnToday".localized())
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)),
+                       days7 + " · " + PluralText.format("order.header.handOverIn", count: 1, 1))
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverToday),
+                       days7 + " · " + "order.header.handOverToday".localized())
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)),
+                       days7 + " · " + PluralText.format("order.header.pickupOverdue", count: 3, 3))
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returned),
+                       days7 + " · " + "order.header.returned".localized())
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .none), days7)
+        XCTAssertNil(OrderDetailLogic.headerSummary(days: nil, remainder: .none))
+        // Every key resolves in the bundle (no raw key on screen)
+        for key in ["order.header.returnIn", "order.header.returnToday", "order.header.returned",
+                    "order.header.handOverIn", "order.header.handOverToday", "order.header.pickupOverdue",
+                    "order.header.title.rent", "order.header.title.sale", "order.header.walkIn", "order.header.call",
+                    "order.header.step.booked", "order.header.step.handOver", "order.header.step.handedOver",
+                    "order.header.step.return", "order.header.step.returned"] {
+            XCTAssertNotEqual(key.localized(), key)
+        }
+    }
 }

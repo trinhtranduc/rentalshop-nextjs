@@ -81,6 +81,42 @@ struct StatusErrorOutcome: Equatable {
     let reload: Bool
 }
 
+/// #643 header box: what the right side of the status line says (Vietnam civil days)
+enum OrderHeaderRemainder: Equatable {
+    /// Reserved: "giao sau K ngày" / "giao hôm nay" / "quá ngày lấy K ngày"
+    case handOverIn(Int)
+    case handOverToday
+    case pickupOverdue(Int)
+    /// Picked up: "trả sau K ngày" / "trả hôm nay"; a late return says nothing here (the red banner says it)
+    case returnIn(Int)
+    case returnToday
+    case returned
+    case none
+}
+
+/// #643 header box: one of the three rental steps ("Đặt / T2 14/09", "Đã giao / T4 01/10", "Trả / T3 07/10")
+struct OrderHeaderStep: Equatable {
+    enum Kind: Equatable { case booked, handOver, returnBack }
+    let kind: Kind
+    let done: Bool
+    let date: Date?
+
+    /// Localizable key of the step label: "Giao" turns "Đã giao" and "Trả" turns "Đã trả" once done
+    var labelKey: String {
+        switch kind {
+        case .booked: return "order.header.step.booked"
+        case .handOver: return done ? "order.header.step.handedOver" : "order.header.step.handOver"
+        case .returnBack: return done ? "order.header.step.returned" : "order.header.step.return"
+        }
+    }
+}
+
+/// #643 the customer line: nil name means "Khách lẻ"; nil phone hides the phone and the call button
+struct OrderHeaderCustomer: Equatable {
+    let name: String?
+    let phone: String?
+}
+
 enum OrderDetailLogic {
     static let maxNotePhotos = 5
 
@@ -233,5 +269,87 @@ enum OrderDetailLogic {
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: pickup),
                                            to: calendar.startOfDay(for: returnDate)).day ?? 0
         return max(1, days + 1)
+    }
+
+    // MARK: Header (#643)
+
+    /// "Đơn thuê #100234" / "Đơn bán #100234"
+    static func titleKey(orderType: OrderType) -> String {
+        orderType == .sale ? "order.header.title.sale" : "order.header.title.rent"
+    }
+
+    static func headerCustomer(name: String?, phone: String?) -> OrderHeaderCustomer {
+        let trimmedName = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPhone = (phone ?? "").replacingOccurrences(of: " ", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasName = !trimmedName.isEmpty && trimmedName != "N/A"
+        return OrderHeaderCustomer(name: hasName ? trimmedName : nil,
+                                   phone: trimmedPhone.isEmpty ? nil : trimmedPhone)
+    }
+
+    /// Rentals that are not cancelled show the three steps (and then the "Lịch thuê" row is not needed)
+    static func showsSteps(orderType: OrderType, status: OrderStatus) -> Bool {
+        orderType == .rent && [.reserved, .pickuped, .returned].contains(status)
+    }
+
+    /// Đặt (created) · Giao (handed over, else planned) · Trả (returned, else planned)
+    static func headerSteps(status: OrderStatus, createdAt: Date, pickupPlanAt: Date?, pickedUpAt: Date?,
+                            returnPlanAt: Date?, returnedAt: Date?) -> [OrderHeaderStep] {
+        let reached: Int
+        switch status {
+        case .reserved: reached = 1
+        case .pickuped: reached = 2
+        case .returned: reached = 3
+        default: reached = 0
+        }
+        return [
+            OrderHeaderStep(kind: .booked, done: reached >= 1, date: createdAt),
+            OrderHeaderStep(kind: .handOver, done: reached >= 2, date: pickedUpAt ?? pickupPlanAt),
+            OrderHeaderStep(kind: .returnBack, done: reached >= 3, date: returnedAt ?? returnPlanAt),
+        ]
+    }
+
+    /// Planned day against today, both Vietnam civil days (#643): reserved counts to the hand-over day,
+    /// picked up to the return day; a late return leaves the box with the day count only
+    static func headerRemainder(status: OrderStatus, pickupPlanAt: Date?, returnPlanAt: Date?, now: Date = Date(),
+                                timeZone: TimeZone = Date.shopTimeZone) -> OrderHeaderRemainder {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        func daysUntil(_ date: Date) -> Int {
+            calendar.dateComponents([.day], from: calendar.startOfDay(for: now),
+                                    to: calendar.startOfDay(for: date)).day ?? 0
+        }
+        switch status {
+        case .returned:
+            return .returned
+        case .reserved:
+            guard let pickupPlanAt else { return .none }
+            let days = daysUntil(pickupPlanAt)
+            if days > 0 { return .handOverIn(days) }
+            return days == 0 ? .handOverToday : .pickupOverdue(-days)
+        case .pickuped:
+            guard let returnPlanAt else { return .none }
+            let days = daysUntil(returnPlanAt)
+            if days > 0 { return .returnIn(days) }
+            return days == 0 ? .returnToday : .none
+        default:
+            return .none
+        }
+    }
+
+    /// "7 ngày · trả sau 2 ngày"; "7 ngày" alone when nothing remains to say
+    static func headerSummary(days: Int?, remainder: OrderHeaderRemainder) -> String? {
+        var parts: [String] = []
+        if let days { parts.append(PluralText.format("%d days", count: days, days)) }
+        switch remainder {
+        case .returnIn(let k): parts.append(PluralText.format("order.header.returnIn", count: k, k))
+        case .returnToday: parts.append("order.header.returnToday".localized())
+        case .handOverIn(let k): parts.append(PluralText.format("order.header.handOverIn", count: k, k))
+        case .handOverToday: parts.append("order.header.handOverToday".localized())
+        case .pickupOverdue(let k): parts.append(PluralText.format("order.header.pickupOverdue", count: k, k))
+        case .returned: parts.append("order.header.returned".localized())
+        case .none: break
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }

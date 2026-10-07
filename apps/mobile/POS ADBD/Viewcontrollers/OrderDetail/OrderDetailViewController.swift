@@ -179,7 +179,8 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func render() {
         guard let detail, let order = orderViewModel?.currentOrder else { return }
-        customNavBar?.title = "#\(detail.orderNumber)"
+        customNavBar?.title = String(format: OrderDetailLogic.titleKey(orderType: detail.orderType).localized(),
+                                     detail.orderNumber)
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         contentStack.addArrangedSubview(headerView(detail, order: order))
         contentStack.addArrangedSubview(infoRows(detail, order: order))
@@ -196,43 +197,98 @@ final class OrderDetailViewController: BaseViewControler {
         renderActions(detail)
     }
 
+    /// #643 (mockups/header-truoc-sau.png): name large with the phone under it and a round call button; then one
+    /// light box with the status pill, "7 ngày · trả sau 2 ngày" and the three steps (sale: pill and date only)
     private func headerView(_ detail: OrderDetail, order: Order) -> UIView {
+        let customer = OrderDetailLogic.headerCustomer(name: order.customerName, phone: detail.customer.phone)
         let name = UILabel()
         name.font = Utils.boldFont(size: 22)
         name.textColor = DS.Color.text
         name.numberOfLines = 2
-        name.text = order.customerName.isEmpty ? "N/A" : order.customerName
-        // #482 (board CT-gon): the order list's status tag, left of the name; the name takes the rest
-        let tag = RowTagLabel(style: .status)
-        let status = OrdersHomeLogic.statusTag(detail.status)
-        tag.apply(status.text, status.colors)
-        name.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let nameRow = UIStackView(arrangedSubviews: [tag, name])
-        nameRow.axis = .horizontal
-        nameRow.alignment = .center
-        nameRow.spacing = DS.Spacing.sm
+        name.text = customer.name ?? "order.header.walkIn".localized()
+        name.accessibilityIdentifier = "order.detail.customer"
+        let texts = UIStackView(arrangedSubviews: [name])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let customerRow = UIStackView(arrangedSubviews: [texts])
+        customerRow.axis = .horizontal
+        customerRow.alignment = .center
+        customerRow.spacing = DS.Spacing.md
+        if let phone = customer.phone {
+            let phoneLabel = UILabel()
+            phoneLabel.font = Utils.regularFont(size: DS.TextSize.body)
+            phoneLabel.textColor = DS.Color.textMuted
+            phoneLabel.text = phone
+            texts.addArrangedSubview(phoneLabel)
+            customerRow.addArrangedSubview(callButton(phone))
+        }
 
-        let stack = UIStackView(arrangedSubviews: [nameRow])
+        let stack = UIStackView(arrangedSubviews: [customerRow])
         stack.axis = .vertical
-        stack.spacing = 10
+        stack.spacing = DS.Spacing.md
 
         let late = lateDays(for: detail)
         if late > 0 {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
-        if let phone = detail.customer.phone?.removeWhiteSpace(), !phone.isEmpty {
-            let call = makeButton(title: phone, style: .tinted, symbol: "phone")
-            call.addAction(UIAction { _ in
-                if let url = URL(string: "tel://\(phone)") { UIApplication.shared.open(url) }
-            }, for: .touchUpInside)
-            call.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
-            stack.addArrangedSubview(call)
-        }
-        if detail.orderType == .rent && detail.status != .cancelled {
-            stack.addArrangedSubview(progressView(detail))
-        }
+        stack.addArrangedSubview(statusBox(detail))
         return padded(stack, top: DS.Spacing.xs, bottom: DS.Spacing.lg, thickBottom: true)
+    }
+
+    /// Round 46 pt green button that dials the customer
+    private func callButton(_ phone: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(DS.symbol("phone", DS.Icon.md), for: .normal)
+        button.tintColor = DS.Status.done.text
+        button.backgroundColor = DS.Status.done.fill
+        button.layer.cornerRadius = 23
+        button.accessibilityLabel = "order.header.call".localized()
+        button.accessibilityIdentifier = "order.detail.call"
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.snp.makeConstraints { make in make.size.equalTo(46) }
+        button.addAction(UIAction { _ in
+            if let url = URL(string: "tel://\(phone)") { UIApplication.shared.open(url) }
+        }, for: .touchUpInside)
+        return button
+    }
+
+    private func statusBox(_ detail: OrderDetail) -> UIView {
+        let tag = RowTagLabel(style: .status)
+        let status = OrdersHomeLogic.statusTag(detail.status)
+        tag.apply(status.text, status.colors)
+        let summary = UILabel()
+        summary.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.secondary) ?? Utils.boldFont(size: DS.TextSize.secondary)
+        summary.textColor = DS.Color.text
+        summary.textAlignment = .right
+        summary.numberOfLines = 2
+        summary.adjustsFontSizeToFitWidth = true
+        summary.minimumScaleFactor = 0.8
+        summary.accessibilityIdentifier = "order.detail.summary"
+        if detail.orderType == .sale {
+            summary.text = DayFormatter.short(detail.createdAt)
+        } else {
+            let days = detail.rentalDuration
+                ?? OrderDetailLogic.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt)
+            let remainder = OrderDetailLogic.headerRemainder(status: detail.status, pickupPlanAt: detail.pickupPlanAt,
+                                                             returnPlanAt: detail.returnPlanAt)
+            summary.text = OrderDetailLogic.headerSummary(days: days, remainder: remainder)
+        }
+        let topRow = UIStackView(arrangedSubviews: [tag, summary])
+        topRow.axis = .horizontal
+        topRow.alignment = .center
+        topRow.spacing = DS.Spacing.sm
+
+        let box = UIStackView(arrangedSubviews: [topRow])
+        box.axis = .vertical
+        box.spacing = 14
+        box.isLayoutMarginsRelativeArrangement = true
+        box.layoutMargins = UIEdgeInsets(top: 12, left: 14, bottom: 14, right: 14)
+        box.backgroundColor = UIColor(hexString: "F8FAFC")
+        box.layer.cornerRadius = DS.Radius.card
+        if OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
+            box.addArrangedSubview(progressView(detail))
+        }
+        return box
     }
 
     private func lateBanner(_ detail: OrderDetail, days: Int) -> UIView {
@@ -268,41 +324,38 @@ final class OrderDetailViewController: BaseViewControler {
         return row
     }
 
+    /// Three steps, each a bar and a two-line label: "Đặt / T2 14/09", "Đã giao / T4 01/10", "Trả / T3 07/10" (no time)
     private func progressView(_ detail: OrderDetail) -> UIView {
-        let reached: Int
-        switch detail.status {
-        case .reserved: reached = 1
-        case .pickuped: reached = 2
-        case .returned: reached = 3
-        default: reached = 0
-        }
-        let steps: [(String, Date?)] = [
-            ("Booked".localized(), detail.createdAt),
-            ("Hand over".localized(), detail.pickedUpAt ?? detail.pickupPlanAt),
-            ("Return step".localized(), detail.returnedAt ?? detail.returnPlanAt),
-        ]
+        let steps = OrderDetailLogic.headerSteps(status: detail.status, createdAt: detail.createdAt,
+                                                 pickupPlanAt: detail.pickupPlanAt, pickedUpAt: detail.pickedUpAt,
+                                                 returnPlanAt: detail.returnPlanAt, returnedAt: detail.returnedAt)
         let row = UIStackView()
         row.axis = .horizontal
-        row.spacing = 6
+        row.spacing = 8
         row.distribution = .fillEqually
-        for (index, step) in steps.enumerated() {
-            let done = index < reached
+        row.alignment = .top
+        for step in steps {
             let bar = UIView()
             bar.layer.cornerRadius = 2
-            bar.backgroundColor = done ? DS.Color.primary : UIColor(hexString: "E2E8F0")
+            bar.backgroundColor = step.done ? DS.Color.primary : UIColor(hexString: "CBD5E1")
             bar.snp.makeConstraints { make in make.height.equalTo(4) }
             let label = UILabel()
-            label.font = done ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
-            label.textColor = done ? DS.Color.primary : DS.Color.textMuted
-            // #482: the booked step carries the created time ("Đã đặt 14:32 28/09")
-            let stamp: String? = index == 0 ? step.1.map { OrderDetailLogic.createdStamp($0) } : step.1.map { OrderDetailLogic.dayMonth($0) }
-            label.text = [step.0, stamp].compactMap { $0 }.joined(separator: " ")
-            label.numberOfLines = 2
-            label.adjustsFontSizeToFitWidth = true
-            label.minimumScaleFactor = 0.8
-            let column = UIStackView(arrangedSubviews: [bar, label])
+            label.font = Utils.regularFont(size: 13)
+            label.textColor = DS.Color.textMuted
+            label.text = step.labelKey.localized()
+            let day = UILabel()
+            day.font = Utils.boldFont(size: DS.TextSize.body)
+            // The accent marks a hand-over or return that happened; the booked day stays plain
+            day.textColor = step.done && step.kind != .booked ? DS.Color.primary : DS.Color.text
+            day.text = step.date.map { DayFormatter.short($0) } ?? "—"
+            day.adjustsFontSizeToFitWidth = true
+            day.minimumScaleFactor = 0.8
+            let column = UIStackView(arrangedSubviews: [bar, label, day])
             column.axis = .vertical
-            column.spacing = 5
+            column.spacing = 2
+            column.setCustomSpacing(8, after: bar)
+            column.isAccessibilityElement = true
+            column.accessibilityLabel = "\(label.text ?? "") \(day.text ?? "")"
             row.addArrangedSubview(column)
         }
         return row
@@ -312,7 +365,9 @@ final class OrderDetailViewController: BaseViewControler {
         let stack = UIStackView()
         stack.axis = .vertical
         if detail.orderType == .rent {
-            if let from = detail.pickupPlanAt, let to = detail.returnPlanAt {
+            // #643: the steps carry the dates; the row stays only where there are no steps (cancelled)
+            if let from = detail.pickupPlanAt, let to = detail.returnPlanAt,
+               !OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
                 let days = detail.rentalDuration ?? OrderDetailLogic.rentalDays(pickup: from, return: to) ?? 1
                 stack.addArrangedSubview(keyValue("Rental dates".localized(),
                     "\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to)) · " + PluralText.format("%d days", count: days, days),
@@ -328,11 +383,8 @@ final class OrderDetailViewController: BaseViewControler {
             if let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
                 stack.addArrangedSubview(keyValue("Collateral".localized(), papers))
             }
-        } else {
-            let by = order.createdByName.trimmingCharacters(in: .whitespaces)
-            stack.addArrangedSubview(keyValue("Sale date".localized(),
-                DayFormatter.short(detail.createdAt) + (by.isEmpty ? "" : " · \(by)")))
         }
+        // #643: a sale's day is in the header box; the "Ngày bán" row is gone
         return padded(stack, top: 0, bottom: 0)
     }
 
