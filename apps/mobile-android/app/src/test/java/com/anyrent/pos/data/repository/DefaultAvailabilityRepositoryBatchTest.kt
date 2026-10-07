@@ -93,6 +93,32 @@ class DefaultAvailabilityRepositoryBatchTest {
     }
 
     @Test
+    fun `batch and single windows are Vietnam day bounds whatever the phone zone (602)`() {
+        listOf("Asia/Tokyo", "America/Los_Angeles", "UTC", "Asia/Ho_Chi_Minh").forEach { zone ->
+            TimeZone.setDefault(TimeZone.getTimeZone(zone))
+            seen.clear()
+            bodies.clear()
+            val repo = repository { request ->
+                if (request.url.encodedPath == BATCH) 200 to batchBody else 200 to singleBody
+            }
+            runBlocking {
+                repo.checkBatchAvailability(
+                    requests = listOf(AvailabilityRequest(31, 1)),
+                    startDate = LocalDate.of(2026, 10, 10),
+                    endDate = LocalDate.of(2026, 12, 31),
+                )
+                repo.checkAvailability(62, LocalDate.of(2026, 10, 10), LocalDate.of(2026, 12, 31), 1)
+            }
+            val sent = JSONObject(bodies.single())
+            assertEquals(zone, "2026-10-09T17:00:00.000Z", sent.getString("startDate"))
+            assertEquals(zone, "2026-12-31T16:59:59.000Z", sent.getString("endDate"))
+            val single = seen.last().url
+            assertEquals(zone, "2026-10-09T17:00:00.000Z", single.queryParameter("startDate"))
+            assertEquals(zone, "2026-12-31T16:59:59.000Z", single.queryParameter("endDate"))
+        }
+    }
+
+    @Test
     fun `an entry with an error falls back to the single check for that product only`() {
         val withError = JSONObject(batchBody).apply {
             val results = getJSONObject("data").getJSONArray("results")
