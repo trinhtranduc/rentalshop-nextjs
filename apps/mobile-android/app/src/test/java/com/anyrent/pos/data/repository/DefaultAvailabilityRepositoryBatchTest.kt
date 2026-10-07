@@ -189,6 +189,37 @@ class DefaultAvailabilityRepositoryBatchTest {
         assertEquals(setOf(31, 62), result.keys)
     }
 
+    @Test
+    fun `editing an order sends excludeOrderId so the order does not count against itself (#634)`() {
+        val repo = repository { 200 to batchBody }
+
+        runBlocking {
+            repo.checkBatchAvailability(
+                requests = listOf(AvailabilityRequest(31, 1)),
+                startDate = LocalDate.of(2026, 10, 4),
+                endDate = LocalDate.of(2026, 10, 5),
+                excludeOrderId = 482,
+            )
+        }
+
+        assertEquals(482, JSONObject(bodies.single()).optInt("excludeOrderId"))
+    }
+
+    @Test
+    fun `a new order sends no excludeOrderId (#634)`() {
+        val repo = repository { 200 to batchBody }
+
+        runBlocking {
+            repo.checkBatchAvailability(
+                requests = listOf(AvailabilityRequest(31, 1)),
+                startDate = LocalDate.of(2026, 10, 4),
+                endDate = LocalDate.of(2026, 10, 5),
+            )
+        }
+
+        assertFalse(JSONObject(bodies.single()).has("excludeOrderId"))
+    }
+
     private fun repository(
         outletId: Int? = 2,
         answer: (Request) -> Pair<Int, String>,
