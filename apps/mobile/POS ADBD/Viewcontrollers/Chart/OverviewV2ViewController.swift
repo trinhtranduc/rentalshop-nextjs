@@ -197,7 +197,8 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(tilesGrid())
             contentStack.addArrangedSubview(chartCard())
         }
-        if showsOperations {
+        // #620: the Hôm nay counters belong to today only
+        if showsOperations, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey) {
             contentStack.addArrangedSubview(todayCard())
         }
         if showsRevenue, reportFailed == nil {

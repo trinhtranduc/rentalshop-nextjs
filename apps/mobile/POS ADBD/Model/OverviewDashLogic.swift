@@ -339,6 +339,11 @@ enum OverviewDashLogic {
     /// "2/3": done of planned
     static func doneOfTotal(_ task: OverviewNow.TodayTask) -> String { "\(task.done)/\(task.total)" }
 
+    /// The Hôm nay card (today's counters and the Ngày mai line) belongs to today only (#620)
+    static func showsTodayCard(range: DayKeyRange, todayKey: String) -> Bool {
+        range.start == todayKey && range.end == todayKey
+    }
+
     // MARK: Top lists (#620)
 
     static let topLimit = 5

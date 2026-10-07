@@ -359,4 +359,22 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertTrue(try decode(OverviewReport.self, #"{"revenue":{"collected":1},"topCustomers":"x"}"#).topCustomers.isEmpty)
         XCTAssertTrue(try decode(OverviewReport.self, #"{"revenue":{"collected":1},"topCustomers":null}"#).topCustomers.isEmpty)
     }
+
+    func testTodayCardOnlyForTheTodayPeriod() {
+        inEachZone { zone in
+            let today = "2026-10-07"
+            func shows(_ chip: OverviewChip, custom: DayKeyRange? = nil) -> Bool {
+                OverviewDashLogic.showsTodayCard(range: OverviewDashLogic.range(of: chip, todayKey: today, custom: custom),
+                                                 todayKey: today)
+            }
+            XCTAssertTrue(shows(.today), zone)
+            XCTAssertFalse(shows(.last7), zone)
+            XCTAssertFalse(shows(.thisMonth), zone)
+            XCTAssertFalse(shows(.custom, custom: DayKeyRange(start: CalendarV2Logic.shift(today, days: -3), end: today)), zone)
+            let yesterday = CalendarV2Logic.shift(today, days: -1)
+            XCTAssertFalse(shows(.custom, custom: DayKeyRange(start: yesterday, end: yesterday)), zone)
+            // A custom range of just today is today
+            XCTAssertTrue(shows(.custom, custom: DayKeyRange(start: today, end: today)), zone)
+        }
+    }
 }
