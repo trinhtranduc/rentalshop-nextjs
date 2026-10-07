@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.HorizontalDivider
@@ -54,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -145,10 +148,10 @@ fun ProductDetailScreen(
             .onSuccess { product = it; error = null }
             .onFailure { if (product == null) error = it.message }
         val todayKey = dayKey(Instant.now())
-        val keys = ProductDetailLogic.weekKeys(todayKey)
+        val keys = ProductDetailLogic.weekKeys(todayKey, ProductDetailLogic.DETAIL_STRIP_DAYS)
         withContext(Dispatchers.IO) { ProductsV2Api.availabilityCalendar(productId, keys.first(), keys.last(), SessionStore.outletId) }
             .onSuccess {
-                strip = ProductDetailLogic.strip(todayKey, it.available)
+                strip = ProductDetailLogic.strip(todayKey, it.available, ProductDetailLogic.DETAIL_STRIP_DAYS)
                 stripStock = it.stock
             }
         withContext(Dispatchers.IO) { ApiClient.get().searchProductOrders(productId, page = 1, limit = 1) }
@@ -253,7 +256,7 @@ fun ProductDetailScreen(
                         fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 4.dp),
                     )
                 } else {
-                    FreeStrip(strip, Modifier.padding(top = 4.dp))
+                    FreeStrip(strip, onOpenCalendar = { onOpenCalendar(current.id) }, modifier = Modifier.padding(top = 4.dp))
                     Text(stringResource(R.string.v2_detail_strip_caption, stripStock ?: 0), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
             }
@@ -309,30 +312,16 @@ fun ProductDetailScreen(
             Spacer(Modifier.height(24.dp))
         }
 
-        // Bottom actions
+        // Bottom action (#642: "Lịch trống" moved to the calendar tile of the strip)
         HorizontalDivider(color = DS.Colors.Border)
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Box(
-                Modifier.weight(1f).height(50.dp).clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, V2Colors.Border, RoundedCornerShape(12.dp))
-                    .clickable { onOpenCalendar(current.id) }
-                    .semantics { role = Role.Button },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(stringResource(R.string.v2_detail_free_calendar), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1, color = DS.Colors.Text)
-            }
-            AppPrimaryButton(
-                stringResource(R.string.v2_detail_add_to_cart),
-                onClick = {
-                    CartStore.addProduct(current)
-                    Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.weight(2f),
-            )
-        }
+        AppPrimaryButton(
+            stringResource(R.string.v2_detail_add_to_cart),
+            onClick = {
+                CartStore.addProduct(current)
+                Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
+            },
+            modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+        )
     }
 
     if (confirmDelete && current != null) {
@@ -410,10 +399,11 @@ private fun PriceTile(title: String, value: Double, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun FreeStrip(days: List<FreeStripDay>, modifier: Modifier = Modifier) {
+private fun FreeStrip(days: List<FreeStripDay>, onOpenCalendar: () -> Unit, modifier: Modifier = Modifier) {
     val description = stringResource(R.string.v2_detail_strip_accessibility) + ": " + days.joinToString(", ") { "${it.day}: ${it.free}" }
-    Row(modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        days.forEach { day ->
+    val calendarLabel = stringResource(R.string.v2_detail_free_calendar)
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        days.forEachIndexed { index, day ->
             val (fill, text) = when (day.tone) {
                 FreeStripDay.Tone.NONE -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
                 FreeStripDay.Tone.LOW -> Color(0xFFFFEDD5) to Color(0xFF9A3412)
@@ -423,12 +413,25 @@ private fun FreeStrip(days: List<FreeStripDay>, modifier: Modifier = Modifier) {
             Column(
                 Modifier.weight(1f).clip(shape).background(fill)
                     .then(if (day.isToday) Modifier.border(2.dp, DS.Colors.Text, shape) else Modifier)
+                    // The whole strip is read once, on the first tile
+                    .then(if (index == 0) Modifier.clearAndSetSemantics { contentDescription = description } else Modifier.clearAndSetSemantics { })
                     .padding(vertical = 5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(day.day, fontSize = DS.TextSize.Pill, color = text)
                 Text(day.free.toString(), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = text)
             }
+        }
+        // #642: 7th tile, same size: the month calendar ("Lịch trống")
+        val shape = RoundedCornerShape(10.dp)
+        Box(
+            Modifier.weight(1f).fillMaxHeight().clip(shape).background(Color.White)
+                .border(1.5.dp, DS.Colors.Primary, shape)
+                .clickable(onClick = onOpenCalendar)
+                .semantics { contentDescription = calendarLabel; role = Role.Button },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Md))
         }
     }
 }
