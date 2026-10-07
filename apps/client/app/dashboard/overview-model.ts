@@ -66,10 +66,14 @@ export function periodRange(period: OverviewPeriod, todayKey: string, custom?: {
   }
 }
 
-/** The chart needs more than one bar: "Hôm nay" charts the last 7 days. */
+/**
+ * The chart needs more than one bar. "Hôm nay" charts 7 days back and 7 days ahead, so the hatched
+ * "dự kiến" bars (#605) show (#610); a custom single day charts the 7 days up to it.
+ */
 export function chartRange(period: OverviewPeriod, range: DayRange): DayRange {
-  if (range.startDate === range.endDate) return { startDate: addDays(range.endDate, -6), endDate: range.endDate };
-  return range;
+  if (range.startDate !== range.endDate) return range;
+  if (period === 'today') return { startDate: addDays(range.endDate, -6), endDate: addDays(range.endDate, 7) };
+  return { startDate: addDays(range.endDate, -6), endDate: range.endDate };
 }
 
 /** "T3 06/10" from a day key; `weekdays` is Sunday-first (CN, T2 … T7 in Vietnamese). */
