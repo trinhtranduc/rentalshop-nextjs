@@ -522,7 +522,8 @@
       "profile": "Tài khoản của tôi",
       "account": "Đổi mật khẩu",
       "language": "Ngôn ngữ",
-      "appearance": "Giao diện"
+      "appearance": "Giao diện",
+      "printer": "Máy in"
     },
     "form": {
       "required": "bắt buộc",
@@ -715,6 +716,20 @@
       "dark": "Tối",
       "system": "Theo hệ thống",
       "current": "Đang dùng: {theme}"
+    },
+    "printer": {
+      "hint": "Áp dụng trên máy này. Lưu tự động.",
+      "billTitle": "Khổ giấy hoá đơn",
+      "bill80": "80 mm (mặc định)",
+      "bill58": "58 mm",
+      "labelTitle": "Khổ tem nhãn",
+      "labelHint": "Chọn đúng khổ cuộn tem đang lắp trong máy in nhãn.",
+      "custom": "Tuỳ chỉnh",
+      "twoUp": "2 tem/hàng",
+      "width": "Rộng (mm)",
+      "height": "Cao (mm)",
+      "range": "Rộng 20–110 mm, cao 10–100 mm.",
+      "page": "Trang in {w} × {h} mm"
     }
   }
 }

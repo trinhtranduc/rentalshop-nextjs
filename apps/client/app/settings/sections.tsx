@@ -16,6 +16,8 @@ import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/l
 import { Modal, fieldClass } from '../orders/create/parts';
 import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './settings-model';
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
+import { usePrintSettings } from '../components/usePrintSettings';
+import { BILL_WIDTHS, LABEL_H, LABEL_PRESETS, LABEL_W, clampMm, labelLayout, labelSizeText, type LabelChoice } from '../../lib/print-settings';
 
 const labelClass = 'flex flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
 const inputClass = `${fieldClass} font-normal disabled:cursor-not-allowed disabled:bg-ar-surface-muted disabled:text-ar-muted`;
@@ -726,3 +728,105 @@ export function LegacyPanel({ title, children }: { title: string; children: Reac
   );
 }
 
+
+/** Máy in (#623): bill paper width and label size of this computer, saved at once in this browser. */
+export function PrinterSection({ t }: { t: T }) {
+  const [settings, save] = usePrintSettings();
+  const layout = labelLayout(settings);
+  // W / H are typed freely and saved once they are inside the limits (clamped on blur)
+  const [draft, setDraft] = useState({ w: String(settings.custom.w), h: String(settings.custom.h) });
+  useEffect(() => setDraft({ w: String(settings.custom.w), h: String(settings.custom.h) }), [settings.custom.w, settings.custom.h]);
+  const typeSize = (key: 'w' | 'h', value: string) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    const range = key === 'w' ? LABEL_W : LABEL_H;
+    const n = Number(value);
+    if (value.trim() !== '' && Number.isInteger(n) && n >= range.min && n <= range.max) save({ ...settings, custom: { ...settings.custom, [key]: n } });
+  };
+  const commitSize = (key: 'w' | 'h') => {
+    const n = clampMm(draft[key], key === 'w' ? LABEL_W : LABEL_H, settings.custom[key]);
+    setDraft((d) => ({ ...d, [key]: String(n) }));
+    if (n !== settings.custom[key]) save({ ...settings, custom: { ...settings.custom, [key]: n } });
+  };
+  const option = (on: boolean) =>
+    `flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border px-4 text-[15px] ${
+      on ? 'border-ar-primary bg-ar-primary-soft font-semibold text-ar-primary-ink' : 'border-ar-line text-ar-ink hover:bg-ar-subtle'
+    }`;
+  const labels: Array<{ value: LabelChoice; label: string }> = [
+    ...LABEL_PRESETS.map((p) => ({ value: p as LabelChoice, label: labelSizeText(labelLayout({ label: p, custom: settings.custom })) })),
+    { value: 'custom', label: t('printer.custom') },
+  ];
+  // Preview box: the label drawn at 1 mm = 3 px, so 110 mm still fits the dialog
+  const scale = 3;
+  return (
+    <>
+      <SectionCard title={t('printer.billTitle')}>
+        <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('printer.hint')}</p>
+        <div role="radiogroup" aria-label={t('printer.billTitle')} className="grid gap-2 sm:grid-cols-2">
+          {BILL_WIDTHS.map((w) => (
+            <label key={w} className={option(settings.billWidth === w)}>
+              <input
+                type="radio"
+                name="bill-width"
+                checked={settings.billWidth === w}
+                onChange={() => save({ ...settings, billWidth: w })}
+                className="h-4 w-4 accent-ar-primary"
+              />
+              {t(w === 80 ? 'printer.bill80' : 'printer.bill58')}
+            </label>
+          ))}
+        </div>
+      </SectionCard>
+      <SectionCard title={t('printer.labelTitle')}>
+        <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('printer.labelHint')}</p>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <div role="radiogroup" aria-label={t('printer.labelTitle')} className="flex min-w-0 flex-1 flex-col gap-2">
+            {labels.map((o) => (
+              <label key={o.value} className={option(settings.label === o.value)}>
+                <input
+                  type="radio"
+                  name="label-size"
+                  checked={settings.label === o.value}
+                  onChange={() => save({ ...settings, label: o.value })}
+                  className="h-4 w-4 accent-ar-primary"
+                />
+                <span className="flex-1">{o.label}</span>
+                {o.value === '2x35x22' && <span className="text-sm font-normal text-ar-muted">{t('printer.twoUp')}</span>}
+              </label>
+            ))}
+            {settings.label === 'custom' && (
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                {(['w', 'h'] as const).map((key) => (
+                  <Field key={key} label={t(key === 'w' ? 'printer.width' : 'printer.height')}>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={key === 'w' ? LABEL_W.min : LABEL_H.min}
+                      max={key === 'w' ? LABEL_W.max : LABEL_H.max}
+                      value={draft[key]}
+                      onChange={(e) => typeSize(key, e.target.value)}
+                      onBlur={() => commitSize(key)}
+                      className={inputClass}
+                    />
+                  </Field>
+                ))}
+                <p className="col-span-2 m-0 text-xs text-ar-muted">{t('printer.range')}</p>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-none flex-col items-center gap-2 rounded-xl bg-ar-subtle p-4 sm:w-[360px]">
+            <div className="flex" aria-hidden="true">
+              {Array.from({ length: layout.perRow }).map((_, i) => (
+                <span
+                  key={i}
+                  style={{ width: layout.labelW * scale, height: layout.labelH * scale }}
+                  className="box-border border border-dashed border-ar-line-strong bg-white"
+                />
+              ))}
+            </div>
+            <span className="text-sm tabular-nums text-ar-muted">{t('printer.page', { w: layout.pageW, h: layout.pageH })}</span>
+          </div>
+        </div>
+      </SectionCard>
+    </>
+  );
+}

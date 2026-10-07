@@ -15,6 +15,7 @@ import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { Modal } from '../../orders/create/parts';
 import { PRODUCT_ICON } from '../list/parts';
+import { BARCODE_ICON } from '../labels/LabelSheet';
 import { productPrices, type ProductLike } from '../list/list-model';
 import { defaultModeOf, imagesOf, type ProductSource } from '../form/form-model';
 
@@ -200,6 +201,10 @@ export default function ProductDetailPage() {
           <Link href={`/products/${p.id}/orders`} className={outlineBtn}>
             <ShellIcon d={LIST_ICON} size={18} />
             {t('detail.orders')}
+          </Link>
+          <Link href={`/products/labels?ids=${p.id}`} className={outlineBtn}>
+            <ShellIcon d={BARCODE_ICON} size={18} />
+            {t('labels.open')}
           </Link>
           {canUpdateProducts && (
             <Link href={`/products/${p.id}/edit`} className={primaryBtn}>

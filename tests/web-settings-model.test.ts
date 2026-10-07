@@ -162,9 +162,9 @@ describe('staff list (#528)', () => {
 
 describe('store settings (#528)', () => {
   it('shows the same tabs per role as the old settings menu', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance']);
-    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance']);
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'profile', 'account', 'language', 'appearance']);
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance', 'printer']);
+    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance', 'printer']);
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'profile', 'account', 'language', 'appearance', 'printer']);
   });
 
   it('resolves ?tab= with the old guards', () => {
@@ -255,5 +255,14 @@ describe('Giao diện tab (#539)', () => {
     expect(tabsForRole('MERCHANT', { themeSwitch: true }).map((t) => t.id)).toContain('appearance');
     expect(tabsForRole('MERCHANT', { themeSwitch: false }).map((t) => t.id)).not.toContain('appearance');
     expect(resolveTab('appearance', 'OUTLET_STAFF').tab).toBe('appearance');
+  });
+});
+
+describe('Máy in tab (#623)', () => {
+  it('every role sees it, in the "me" group, and ?settings=printer opens it', () => {
+    for (const role of ['MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'ADMIN', '']) {
+      expect(tabsForRole(role).find((t) => t.id === 'printer')?.group).toBe('me');
+      expect(resolveTab('printer', role).tab).toBe('printer');
+    }
   });
 });

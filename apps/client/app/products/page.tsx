@@ -17,6 +17,7 @@ import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { FilterMenu, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { Modal } from '../orders/create/parts';
 import { ProductsTable, SelectionBar } from './list/parts';
+import { BARCODE_ICON } from './labels/LabelSheet';
 import {
   EMPTY_SELECTION,
   SORT_KEYS,
@@ -305,6 +306,9 @@ export default function ProductsPage() {
     }
   };
 
+  // In tem: the picked rows come along (not "all matching", which can be thousands)
+  const labelsHref = !selection.all && selection.ids.length > 0 ? `/products/labels?ids=${selection.ids.slice(0, 100).join(',')}` : '/products/labels';
+
   const role = typedUser?.role;
   const showOutletFilter = (role === 'MERCHANT' || role === 'ADMIN') && outlets.length > 1;
   const chip = (active: boolean) =>
@@ -315,6 +319,10 @@ export default function ProductsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
         <div className="flex flex-wrap gap-2">
+          <Link href={labelsHref} className={outlineBtn}>
+            <ShellIcon d={BARCODE_ICON} size={18} />
+            {t('labels.open')}
+          </Link>
           {canExport && (
             <button type="button" onClick={() => exportExcel(false)} disabled={exporting || total === 0} className={outlineBtn}>
               <ShellIcon d={ICONS.download} size={18} />
