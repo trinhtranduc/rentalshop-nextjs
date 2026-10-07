@@ -178,9 +178,49 @@ export function DetailDrawer({
   t: T;
   money: Money;
 }) {
+  const titleId = `detail-${kind}-title`;
+  return (
+    <DrawerShell
+      titleId={titleId}
+      onClose={onClose}
+      t={t}
+      header={
+        <>
+          <span id={titleId} className="text-sm text-ar-ink-2">
+            {t(TILE_LABEL[kind])} · {periodLabel}
+          </span>
+          <span className="text-[30px] font-bold leading-9 tabular-nums">{tileValue(tile, money)}</span>
+        </>
+      }
+    >
+      {kind === 'collected' && <CollectedBody parts={parts} t={t} money={money} />}
+      {kind === 'outstanding' && <OutstandingBody parts={parts} t={t} money={money} />}
+      {kind === 'collateral' && <CollateralBody parts={parts} cash={cash} t={t} money={money} />}
+      {kind === 'orderValue' && <OrderValueBody tile={tile} newOrders={newOrders} t={t} money={money} />}
+
+      <Link href={ordersHref} className="mt-auto self-start text-sm font-semibold text-ar-primary-ink no-underline hover:underline">
+        {t('home.detail.viewOrders')}
+      </Link>
+    </DrawerShell>
+  );
+}
+
+/** Right-side drawer (bottom sheet on phones): focus trap, Escape and backdrop close, body scroll lock. */
+export function DrawerShell({
+  titleId,
+  header,
+  onClose,
+  t,
+  children,
+}: {
+  titleId: string;
+  header: React.ReactNode;
+  onClose: () => void;
+  t: T;
+  children: React.ReactNode;
+}) {
   const panel = React.useRef<HTMLDivElement>(null);
   const closeRef = React.useRef<HTMLButtonElement>(null);
-  const titleId = `detail-${kind}-title`;
 
   React.useEffect(() => {
     closeRef.current?.focus();
@@ -222,12 +262,7 @@ export function DetailDrawer({
         className="absolute inset-x-0 bottom-0 box-border flex max-h-[85vh] flex-col gap-[18px] overflow-y-auto rounded-t-2xl border-t border-ar-line bg-ar-surface p-6 text-ar-ink shadow-ar sm:inset-y-0 sm:left-auto sm:right-0 sm:max-h-none sm:w-[440px] sm:max-w-full sm:rounded-none sm:border-l sm:border-t-0"
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span id={titleId} className="text-sm text-ar-ink-2">
-              {t(TILE_LABEL[kind])} · {periodLabel}
-            </span>
-            <span className="text-[30px] font-bold leading-9 tabular-nums">{tileValue(tile, money)}</span>
-          </div>
+          <div className="flex min-w-0 flex-col gap-0.5">{header}</div>
           <button
             ref={closeRef}
             type="button"
@@ -240,15 +275,7 @@ export function DetailDrawer({
             </svg>
           </button>
         </div>
-
-        {kind === 'collected' && <CollectedBody parts={parts} t={t} money={money} />}
-        {kind === 'outstanding' && <OutstandingBody parts={parts} t={t} money={money} />}
-        {kind === 'collateral' && <CollateralBody parts={parts} cash={cash} t={t} money={money} />}
-        {kind === 'orderValue' && <OrderValueBody tile={tile} newOrders={newOrders} t={t} money={money} />}
-
-        <Link href={ordersHref} className="mt-auto self-start text-sm font-semibold text-ar-primary-ink no-underline hover:underline">
-          {t('home.detail.viewOrders')}
-        </Link>
+        {children}
       </div>
     </div>
   );

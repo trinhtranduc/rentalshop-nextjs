@@ -6,7 +6,8 @@
  * changes its import. Shell tokens (light/dark), the slip on white paper, In + Đóng; full screen on a phone.
  *
  * In prints with `window.print()`: while the dialog is open a print stylesheet hides every other child of
- * <body> and the dialog chrome, so only the slip prints, on 80mm paper as before.
+ * <body> and the dialog chrome, so only the slip prints, on the paper width chosen in Cài đặt → Máy in
+ * (80mm by default, same CSS as before; 58mm since #623).
  */
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -17,15 +18,16 @@ import { outletsApi } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { outlineBtn, primaryBtn } from '../list/parts';
 import { buildReceipt, type ReceiptOrderInput, type ReceiptOutletInput } from './receipt-model';
-import { ReceiptSlip, SLIP_CSS } from './ReceiptSlip';
+import { ReceiptSlip, SLIP_58_CSS, SLIP_CSS } from './ReceiptSlip';
+import { usePrintSettings } from '../../components/usePrintSettings';
 
 type Tr = (key: string, values?: Record<string, string | number>) => string;
 
 const PRINTER = 'M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z';
 
-/** 80mm wide, as long as the slip (an invalid `80mm auto` made browsers fall back to A4 / Letter). */
-const pageCss = (heightMm: number | null) =>
-  `@media print { @page { size: 80mm ${heightMm ? `${heightMm}mm` : 'auto'}; margin: 0; } }`;
+/** Paper wide, as long as the slip (an invalid `80mm auto` made browsers fall back to A4 / Letter). */
+const pageCss = (heightMm: number | null, widthMm: 80 | 58 = 80) =>
+  `@media print { @page { size: ${widthMm}mm ${heightMm ? `${heightMm}mm` : 'auto'}; margin: 0; } }`;
 
 const PRINT_CSS = `
 @media print {
@@ -85,6 +87,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
   const [heightMm, setHeightMm] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const [{ billWidth }] = usePrintSettings();
 
   const outletDetails = useOutletDetails(isOpen, order, outlet);
   // "{n} ngày" stays a template: the model fills in each line's days
@@ -121,7 +124,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
     ro?.observe(el);
     return () => ro?.disconnect();
-  }, [isOpen, model, mounted]);
+  }, [isOpen, model, mounted, billWidth]);
 
   if (!isOpen || !model || !mounted) return null;
 
@@ -132,7 +135,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
 
   return createPortal(
     <div className="ar-theme ar-receipt-root fixed inset-0 z-[60] flex items-stretch justify-center sm:items-center sm:p-4">
-      <style>{SLIP_CSS + PRINT_CSS + pageCss(heightMm)}</style>
+      <style>{SLIP_CSS + (billWidth === 58 ? SLIP_58_CSS : '') + PRINT_CSS + pageCss(heightMm, billWidth)}</style>
       <div className="rc-chrome absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
@@ -155,11 +158,11 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
         </div>
         <div className="rc-body min-h-0 flex-1 overflow-y-auto bg-ar-subtle px-4 py-6">
           <div ref={paperRef} className="rc-paper mx-auto w-fit max-w-full rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.10)]">
-            <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} />
+            <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={billWidth} />
           </div>
         </div>
         <div className="rc-chrome flex items-center gap-2 border-t border-ar-line-soft px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <span className="mr-auto hidden text-sm text-ar-muted sm:inline">{t('paper')}</span>
+          <span className="mr-auto hidden text-sm text-ar-muted sm:inline">{t('paper', { width: billWidth })}</span>
           <button type="button" onClick={onClose} className={`${outlineBtn} flex-1 sm:flex-none`}>
             {t('close')}
           </button>

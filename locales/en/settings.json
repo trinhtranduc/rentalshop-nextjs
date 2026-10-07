@@ -522,7 +522,8 @@
       "profile": "My account",
       "account": "Change password",
       "language": "Language",
-      "appearance": "Appearance"
+      "appearance": "Appearance",
+      "printer": "Printer"
     },
     "form": {
       "required": "required",
@@ -715,6 +716,20 @@
       "dark": "Dark",
       "system": "Match system",
       "current": "Now: {theme}"
+    },
+    "printer": {
+      "hint": "Applies to this computer. Saved automatically.",
+      "billTitle": "Bill paper",
+      "bill80": "80 mm (default)",
+      "bill58": "58 mm",
+      "labelTitle": "Label size",
+      "labelHint": "Pick the size of the label roll loaded in your label printer.",
+      "custom": "Custom",
+      "twoUp": "2 labels per row",
+      "width": "Width (mm)",
+      "height": "Height (mm)",
+      "range": "Width 20–110 mm, height 10–100 mm.",
+      "page": "Printed page {w} × {h} mm"
     }
   }
 }

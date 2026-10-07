@@ -1009,7 +1009,7 @@
       "titleNoNumber": "Hoá đơn",
       "print": "In",
       "close": "Đóng",
-      "paper": "Khổ 80mm",
+      "paper": "Khổ {width}mm",
       "order": "Đơn hàng #{number}",
       "phone": "ĐT",
       "address": "Đ/c",

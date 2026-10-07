@@ -292,6 +292,13 @@
       "empty": "Chưa có sản phẩm nào được thuê trong khoảng này.",
       "tooltip": "{name}: {amount} · {rentals}"
     },
+    "topCustomers": {
+      "title": "Khách chi nhiều nhất",
+      "subtitle": "theo tiền đã thu",
+      "orders": "{count} đơn",
+      "empty": "Chưa có khách nào đặt đơn trong khoảng này.",
+      "tooltip": "{name}: {amount} · {rentals}"
+    },
     "loadFailed": "Không tải được số liệu.",
     "retry": "Thử lại",
     "tiles": {

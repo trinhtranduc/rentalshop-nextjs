@@ -89,7 +89,8 @@ final class TabsV2APIService: BaseService {
     }
 
     static func overviewReportParameters(_ range: DayKeyRange) -> [String: Any] {
-        ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range), "limit": 3,
+        // #620: `limit` sizes topProducts / topCustomers (API default 3); the overview shows five, as web
+        ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range), "limit": OverviewDashLogic.topLimit,
          "timeZone": Date.shopTimeZone.identifier]
     }
 

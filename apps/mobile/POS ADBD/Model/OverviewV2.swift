@@ -192,14 +192,22 @@ struct OverviewReport: Decodable, Equatable {
         let realIncome: Double
         /// Orders created that day / month (#484); nil on an older API
         let newOrderCount: Int?
+        /// #616: money still expected that day from reserved rentals (`expectedCollected`, #609); nil on an older API
+        let expectedCollected: Double?
+        /// #616: value of the orders created that day (`newOrderValue`, #609); nil on an older API
+        let newOrderValue: Double?
 
-        enum CodingKeys: String, CodingKey { case date, month, realIncome, collected, monthNumber, newOrderCount }
+        enum CodingKeys: String, CodingKey { case date, month, realIncome, collected, monthNumber, newOrderCount,
+                                                 expectedCollected, newOrderValue }
 
-        init(dayKey: String?, monthLabel: String?, realIncome: Double, newOrderCount: Int? = nil) {
+        init(dayKey: String?, monthLabel: String?, realIncome: Double, newOrderCount: Int? = nil,
+             expectedCollected: Double? = nil, newOrderValue: Double? = nil) {
             self.dayKey = dayKey
             self.monthLabel = monthLabel
             self.realIncome = realIncome
             self.newOrderCount = newOrderCount
+            self.expectedCollected = expectedCollected
+            self.newOrderValue = newOrderValue
         }
 
         init(from decoder: Decoder) throws {
@@ -212,6 +220,28 @@ struct OverviewReport: Decodable, Equatable {
             realIncome = ((try? c.decodeIfPresent(Double.self, forKey: .collected)) ?? nil)
                 ?? ((try? c.decodeIfPresent(Double.self, forKey: .realIncome)) ?? nil) ?? 0
             newOrderCount = (try? c.decodeIfPresent(Int.self, forKey: .newOrderCount)) ?? nil
+            expectedCollected = (try? c.decodeIfPresent(Double.self, forKey: .expectedCollected)) ?? nil
+            newOrderValue = (try? c.decodeIfPresent(Double.self, forKey: .newOrderValue)) ?? nil
+        }
+    }
+
+    /// #616: `revenue.orderValueByType` (#609): the new orders' value split into rentals and sales
+    struct OrderValueByType: Decodable, Equatable {
+        let rent: AmountPart
+        let sale: AmountPart
+
+        enum CodingKeys: String, CodingKey { case rent, sale }
+
+        init(rent: AmountPart, sale: AmountPart) {
+            self.rent = rent
+            self.sale = sale
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let none = AmountPart(amount: 0, orders: 0)
+            rent = ((try? c.decodeIfPresent(AmountPart.self, forKey: .rent)) ?? nil) ?? none
+            sale = ((try? c.decodeIfPresent(AmountPart.self, forKey: .sale)) ?? nil) ?? none
         }
     }
 
@@ -239,6 +269,43 @@ struct OverviewReport: Decodable, Equatable {
             rentalCount = ((try? c.decodeIfPresent(Int.self, forKey: .rentalCount)) ?? nil) ?? 0
             totalRevenue = ((try? c.decodeIfPresent(Double.self, forKey: .totalRevenue)) ?? nil) ?? 0
             image = (try? c.decodeIfPresent(String.self, forKey: .image)) ?? nil
+        }
+    }
+
+    /// #620: one of `topCustomers` (top spenders of the period). `totalSpent` is null for OUTLET_STAFF: counts as 0
+    struct TopCustomer: Decodable, Equatable {
+        /// Public numeric id
+        let id: Int?
+        let name: String
+        let phone: String?
+        let orderCount: Int
+        let rentalCount: Int
+        let saleCount: Int
+        let totalSpent: Double?
+
+        enum CodingKeys: String, CodingKey { case id, name, phone, orderCount, rentalCount, saleCount, totalSpent }
+
+        init(id: Int?, name: String, phone: String? = nil, orderCount: Int, rentalCount: Int = 0, saleCount: Int = 0,
+             totalSpent: Double?) {
+            self.id = id
+            self.name = name
+            self.phone = phone
+            self.orderCount = orderCount
+            self.rentalCount = rentalCount
+            self.saleCount = saleCount
+            self.totalSpent = totalSpent
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let count: (CodingKeys) -> Int = { key in ((try? c.decodeIfPresent(Int.self, forKey: key)) ?? nil) ?? 0 }
+            id = (try? c.decodeIfPresent(Int.self, forKey: .id)) ?? nil
+            name = ((try? c.decodeIfPresent(String.self, forKey: .name)) ?? nil) ?? ""
+            phone = (try? c.decodeIfPresent(String.self, forKey: .phone)) ?? nil
+            orderCount = count(.orderCount)
+            rentalCount = count(.rentalCount)
+            saleCount = count(.saleCount)
+            totalSpent = (try? c.decodeIfPresent(Double.self, forKey: .totalSpent)) ?? nil
         }
     }
 
@@ -352,6 +419,8 @@ struct OverviewReport: Decodable, Equatable {
     let collateralFlow: CollateralFlow?
     /// Parts of `outstanding` (`revenue.outstandingBreakdown`, #494); nil on an older API
     let outstandingBreakdown: OutstandingBreakdown?
+    /// Rent / sale split of `totalOrderValue` (`revenue.orderValueByType`, #609); nil on an older API
+    let orderValueByType: OrderValueByType?
     /// % change of revenue against the previous period of the same length
     let revenueGrowth: Double?
     /// % change of the new orders' value against the previous period (`growth.orderValue.growth`, #492); nil on an older API
@@ -360,10 +429,12 @@ struct OverviewReport: Decodable, Equatable {
     let newOrders: Int?
     let series: [Point]
     let topProducts: [TopProduct]
+    /// #620: top customers of the period; empty when the API leaves them out or sends something else
+    let topCustomers: [TopCustomer]
 
-    private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts }
+    private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts, topCustomers }
     private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding,
-                                                         collectedBreakdown, collateralFlow, outstandingBreakdown }
+                                                         collectedBreakdown, collateralFlow, outstandingBreakdown, orderValueByType }
     private enum GrowthKeys: String, CodingKey { case collected, revenue, orderValue }
     private enum ChangeKeys: String, CodingKey { case growth }
     private enum OperationalKeys: String, CodingKey { case orderCounts }
@@ -372,7 +443,10 @@ struct OverviewReport: Decodable, Equatable {
     init(netRevenue: Double, revenueGrowth: Double?, newOrders: Int?, series: [Point], topProducts: [TopProduct],
          totalOrderValue: Double? = nil, outstanding: Double? = nil,
          collectedBreakdown: CollectedBreakdown? = nil, orderValueGrowth: Double? = nil,
-         collateralFlow: CollateralFlow? = nil, outstandingBreakdown: OutstandingBreakdown? = nil) {
+         collateralFlow: CollateralFlow? = nil, outstandingBreakdown: OutstandingBreakdown? = nil,
+         orderValueByType: OrderValueByType? = nil, topCustomers: [TopCustomer] = []) {
+        self.topCustomers = topCustomers
+        self.orderValueByType = orderValueByType
         self.orderValueGrowth = orderValueGrowth
         self.collateralFlow = collateralFlow
         self.outstandingBreakdown = outstandingBreakdown
@@ -396,7 +470,9 @@ struct OverviewReport: Decodable, Equatable {
             collectedBreakdown = (try? revenue.decodeIfPresent(CollectedBreakdown.self, forKey: .collectedBreakdown)) ?? nil
             collateralFlow = (try? revenue.decodeIfPresent(CollateralFlow.self, forKey: .collateralFlow)) ?? nil
             outstandingBreakdown = (try? revenue.decodeIfPresent(OutstandingBreakdown.self, forKey: .outstandingBreakdown)) ?? nil
+            orderValueByType = (try? revenue.decodeIfPresent(OrderValueByType.self, forKey: .orderValueByType)) ?? nil
         } else {
+            orderValueByType = nil
             netRevenue = 0
             totalOrderValue = nil
             outstanding = nil
@@ -425,6 +501,7 @@ struct OverviewReport: Decodable, Equatable {
         }
         series = ((try? c.decodeIfPresent([Point].self, forKey: .series)) ?? nil) ?? []
         topProducts = ((try? c.decodeIfPresent([TopProduct].self, forKey: .topProducts)) ?? nil) ?? []
+        topCustomers = ((try? c.decodeIfPresent([TopCustomer].self, forKey: .topCustomers)) ?? nil) ?? []
     }
 }
 
@@ -453,6 +530,26 @@ struct OverviewNow: Decodable, Equatable {
     let today: TodayTasks?
     /// #496: reserved rentals whose pickup day has passed (`noShows.count`); nil when the API left it out
     let noShows: Int?
+    /// #616: tomorrow's hand-overs and returns (`tomorrow`); nil when the API left it out
+    let tomorrow: Tomorrow?
+
+    struct Tomorrow: Decodable, Equatable {
+        let pickups: Int
+        let returns: Int
+
+        private enum CodingKeys: String, CodingKey { case pickups, returns }
+
+        init(pickups: Int, returns: Int) {
+            self.pickups = pickups
+            self.returns = returns
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            pickups = ((try? c.decodeIfPresent(Int.self, forKey: .pickups)) ?? nil) ?? 0
+            returns = ((try? c.decodeIfPresent(Int.self, forKey: .returns)) ?? nil) ?? 0
+        }
+    }
 
     /// Today's hand-overs (or returns): `remaining` still to do, `done` already done
     struct TodayTask: Equatable {
@@ -487,7 +584,7 @@ struct OverviewNow: Decodable, Equatable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case overdueReturns, cash, pickupsToday, returnsToday, doneToday, noShows }
+    private enum CodingKeys: String, CodingKey { case overdueReturns, cash, pickupsToday, returnsToday, doneToday, noShows, tomorrow }
     private enum GroupKeys: String, CodingKey { case count }
     private enum DoneKeys: String, CodingKey { case pickups, returns }
     private enum CashKeys: String, CodingKey { case depositsHeld, collateralToCollect, collateralToReturn }
@@ -496,7 +593,8 @@ struct OverviewNow: Decodable, Equatable {
     /// `collateralToReturn` defaults to `collateralHeld` without an order count, as on an older API
     init(lateReturns: Int, rentedOut: Int?, collateralHeld: Double?,
          collateralToCollect: Collateral? = nil, collateralToReturn: Collateral? = nil,
-         today: TodayTasks? = nil, noShows: Int? = nil) {
+         today: TodayTasks? = nil, noShows: Int? = nil, tomorrow: Tomorrow? = nil) {
+        self.tomorrow = tomorrow
         self.today = today
         self.noShows = noShows
         self.lateReturns = lateReturns
@@ -518,6 +616,7 @@ struct OverviewNow: Decodable, Equatable {
             return (try? group.decodeIfPresent(Int.self, forKey: .count)) ?? nil
         }
         noShows = count(.noShows)
+        tomorrow = (try? c.decodeIfPresent(Tomorrow.self, forKey: .tomorrow)) ?? nil
         // The section needs both lists; `doneToday` missing counts as nothing done yet
         if let pickups = count(.pickupsToday), let returns = count(.returnsToday) {
             let done = try? c.nestedContainer(keyedBy: DoneKeys.self, forKey: .doneToday)

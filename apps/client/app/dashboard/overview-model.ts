@@ -113,6 +113,7 @@ export interface PeriodReportLike {
   } | null;
   series?: SeriesPointLike[] | null;
   topProducts?: TopProductLike[] | null;
+  topCustomers?: TopCustomerLike[] | null;
 }
 
 export interface SeriesPointLike {
@@ -138,6 +139,14 @@ export interface TopProductLike {
   rentalCount?: Num;
   totalRevenue?: Num;
   image?: string | null;
+}
+
+export interface TopCustomerLike {
+  id: number | string;
+  name: string;
+  orderCount?: Num;
+  /** null for OUTLET_STAFF */
+  totalSpent?: Num;
 }
 
 export type Growth = { kind: 'none' } | { kind: 'new' } | { kind: 'pct'; value: number; up: boolean };
@@ -291,13 +300,16 @@ export function forecastBar(
   collected: number | null,
   series: SeriesPointLike[] | null | undefined,
   todayKey: string,
+  range?: DayRange,
 ): { collected: number; forecast: number; pct: number; until: string } | null {
   // #612: every day of the selected range from today on (a future range sums its whole forecast).
+  // #618: the series may be the wider chart range; count only days inside the selected period.
   let forecast = 0;
   let until = '';
   for (const point of series ?? []) {
     const key = seriesDayKey(point);
     if (!key || key < todayKey) continue;
+    if (range && (key < range.startDate || key > range.endDate)) continue;
     const value = forecastOf(point);
     if (value > 0) {
       forecast += value;
@@ -648,4 +660,28 @@ export function topBars(products: TopProductLike[] | null | undefined, limit = 5
     const value = num(p.totalRevenue) ?? 0;
     return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
   });
+}
+
+/** Top customers as bars (#620), in the API's order (by money collected), at most `limit`. */
+export function topCustomerBars(customers: TopCustomerLike[] | null | undefined, limit = 5): TopBar[] {
+  const list = (customers ?? []).slice(0, limit);
+  const max = Math.max(0, ...list.map((c) => num(c.totalSpent) ?? 0));
+  return list.map((c) => {
+    const value = num(c.totalSpent) ?? 0;
+    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+  });
+}
+
+/** Today's work (Hôm nay card, today's orders) belongs to the today period only (#620). */
+export function showsTodayWork(period: OverviewPeriod): boolean {
+  return period === 'today';
+}
+
+export type TopKind = 'products' | 'customers';
+/** Rows in the "Xem tất cả" drawer; the period API caps `limit` at 50. */
+export const TOP_ALL_LIMIT = 50;
+
+/** `?top=` → which full ranking is open (#620). */
+export function parseTop(value: string | null | undefined): TopKind | null {
+  return value === 'products' || value === 'customers' ? value : null;
 }

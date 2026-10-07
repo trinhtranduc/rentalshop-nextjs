@@ -2,7 +2,7 @@
 
 /**
  * The paper slip of the shop web Hoá đơn (#562). Black on white in every theme: it is what prints.
- * Its CSS is self-contained (`SLIP_CSS`) so the screen preview and the 80mm print look the same.
+ * Its CSS is self-contained (`SLIP_CSS`, plus `SLIP_58_CSS` on 58mm paper) so the screen preview and the print look the same.
  * Lines come from ./receipt-model; this file only lays them out and translates labels.
  */
 import React from 'react';
@@ -36,10 +36,28 @@ export const SLIP_CSS = `
 .rc-foot{text-align:center;margin-top:6px}
 `;
 
-export function ReceiptSlip({ model, t, collateralLabel }: { model: ReceiptModel; t: Tr; collateralLabel: (type: string | null | undefined) => string }) {
+/** 58mm paper (#623, Cài đặt → Máy in): narrower slip, 3mm sides, smaller text. 80mm keeps SLIP_CSS alone. */
+export const SLIP_58_CSS = `
+.rc-slip.rc-58{width:58mm;padding:6mm 3mm 8mm;font-size:11px}
+.rc-58 .rc-shop{font-size:13px}
+.rc-58 .rc-title,.rc-58 .rc-total{font-size:13px}
+`;
+
+export function ReceiptSlip({
+  model,
+  t,
+  collateralLabel,
+  width = 80,
+}: {
+  model: ReceiptModel;
+  t: Tr;
+  collateralLabel: (type: string | null | undefined) => string;
+  /** Paper width in mm (80 or 58). */
+  width?: 80 | 58;
+}) {
   const { shop, customer } = model;
   return (
-    <div className="rc-slip" data-receipt-content>
+    <div className={width === 58 ? 'rc-slip rc-58' : 'rc-slip'} data-receipt-content>
       <div className="rc-shop">{shop.name || 'AnyRent'}</div>
       {shop.phone && (
         <div className="rc-center rc-soft">

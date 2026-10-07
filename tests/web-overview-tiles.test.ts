@@ -14,8 +14,11 @@ import {
   initials,
   outstandingSplit,
   parseDetail,
+  parseTop,
+  showsTodayWork,
   sparkPoints,
   topBars,
+  topCustomerBars,
   toGrowth,
   waterfallRows,
   type PeriodReportLike,
@@ -214,6 +217,21 @@ describe('forecast (optional, fed by a later API change)', () => {
     expect(forecastBar(300, [{ date: '2026/10/07', collected: 300 }], '2026-10-07')).toBeNull();
   });
 
+  it('sums only the selected period, not the wider chart series (#618)', () => {
+    // Hôm nay: the chart shows D−6..D+7, the tile must count today only
+    const chart = [
+      { date: '2026/10/06', collected: 50, expectedCollected: 40 },
+      { date: '2026/10/07', collected: 300, expectedCollected: 100 },
+      { date: '2026/10/08', collected: 0, expectedCollected: 200 },
+      { date: '2026/10/14', collected: 0, expectedCollected: 700 },
+    ];
+    const today = { startDate: '2026-10-07', endDate: '2026-10-07' };
+    expect(forecastBar(300, chart, '2026-10-07', today)).toEqual({ collected: 300, forecast: 100, pct: 75, until: '2026-10-07' });
+    // a future range keeps its whole forecast
+    const next = { startDate: '2026-10-07', endDate: '2026-10-08' };
+    expect(forecastBar(300, chart, '2026-10-07', next)).toEqual({ collected: 300, forecast: 300, pct: 50, until: '2026-10-08' });
+  });
+
   it('offers future quick ranges for the custom picker (#612)', () => {
     expect(futureQuickRanges('2026-10-07')).toEqual([
       { key: 'next7', from: '2026-10-07', to: '2026-10-13' },
@@ -254,5 +272,43 @@ describe('topBars', () => {
       ['E', 1, 100, 10],
     ]);
     expect(topBars(null)).toEqual([]);
+  });
+});
+
+describe('topCustomerBars (#620)', () => {
+  it('keeps the API order, max 5, orders as count, null money as 0', () => {
+    const customers = [
+      { id: 7, name: 'Lan', orderCount: 4, totalSpent: 2_000_000 },
+      { id: 8, name: 'Minh', orderCount: 1, totalSpent: 500_000 },
+      { id: 9, name: 'Staff view', orderCount: 2, totalSpent: null },
+      { id: 10, name: 'D', orderCount: 1, totalSpent: 100 },
+      { id: 11, name: 'E', orderCount: 1, totalSpent: 100 },
+      { id: 12, name: 'F', orderCount: 1, totalSpent: 100 },
+    ];
+    expect(topCustomerBars(customers).map((b) => [b.id, b.rentals, b.value, b.width])).toEqual([
+      [7, 4, 2_000_000, 100],
+      [8, 1, 500_000, 25],
+      [9, 2, 0, 0],
+      [10, 1, 100, 0.005],
+      [11, 1, 100, 0.005],
+    ]);
+    expect(topCustomerBars(undefined)).toEqual([]);
+  });
+
+  it('shows today work only on the today period', () => {
+    expect(showsTodayWork('today')).toBe(true);
+    for (const p of ['7d', 'month', 'custom'] as const) expect(showsTodayWork(p)).toBe(false);
+  });
+});
+
+describe('Xem tất cả (#620)', () => {
+  it('reads ?top= and lists every row it gets', () => {
+    expect(parseTop('products')).toBe('products');
+    expect(parseTop('customers')).toBe('customers');
+    expect(parseTop('outlets')).toBeNull();
+    expect(parseTop(null)).toBeNull();
+    const many = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `C${i}`, orderCount: 1, totalSpent: 100 - i }));
+    expect(topCustomerBars(many, Infinity)).toHaveLength(12);
+    expect(topBars(many.map((c) => ({ id: c.id, name: c.name, totalRevenue: c.totalSpent })), Infinity)).toHaveLength(12);
   });
 });

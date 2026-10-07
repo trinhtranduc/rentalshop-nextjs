@@ -23,6 +23,7 @@ import {
   LanguageSection,
   LegacyPanel,
   OutletsSection,
+  PrinterSection,
   ProfileSection,
   ReceiptSection,
   ShareLinksSection,
@@ -345,6 +346,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
         return <LanguageSection t={t} />;
       case 'appearance':
         return <AppearanceSection t={t} />;
+      case 'printer':
+        return <PrinterSection t={t} />;
       case 'profile':
       default:
         return (
