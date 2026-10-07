@@ -1,0 +1,329 @@
+//
+//  OverviewDashLogic.swift
+//  POS ADBD
+//
+//  #616: the redesigned Tổng quan (canvas phone boards, web #608 #611 #612 #613). Pure mapping from
+//  GET /api/analytics/period and GET /api/analytics/outlet-operations to what the screen draws. No clock and no
+//  device zone: callers pass the shop's today key (`DayFormatter.key(Date())`, shop zone).
+//
+
+import Foundation
+
+/// Period chips of the board: Hôm nay / 7 ngày / Tháng này / Tuỳ chọn
+enum OverviewChip: CaseIterable, Equatable {
+    case today, last7, thisMonth, custom
+
+    var title: String {
+        switch self {
+        case .today: return "overview.dash.period.today".localized()
+        case .last7: return "overview.dash.period.last7".localized()
+        case .thisMonth: return "overview.dash.period.thisMonth".localized()
+        case .custom: return "overview.dash.period.custom".localized()
+        }
+    }
+}
+
+/// The four tiles, in display order
+enum OverviewTileKind: CaseIterable, Equatable {
+    case orderValue, collected, outstanding, collateral
+
+    var title: String {
+        switch self {
+        case .orderValue: return "overview.dash.kpi.orderValue".localized()
+        case .collected: return "overview.dash.kpi.collected".localized()
+        case .outstanding: return "overview.dash.kpi.outstanding".localized()
+        case .collateral: return "overview.dash.kpi.collateral".localized()
+        }
+    }
+}
+
+enum OverviewChipTone: Equatable {
+    case up, down, warn, info
+}
+
+/// One status chip: a string key, its count (if any) and a tone
+struct OverviewTileChip: Equatable {
+    let tone: OverviewChipTone
+    let key: String
+    let count: Int?
+
+    var text: String {
+        guard let count else { return key.localized() }
+        return String(format: key.localized(), count)
+    }
+}
+
+struct OverviewTile: Equatable {
+    let kind: OverviewTileKind
+    let value: Double?
+    /// "+" before a positive value (net collateral)
+    let signed: Bool
+    let chip: OverviewTileChip?
+}
+
+/// Thực thu against what is still expected from today to the end of the period (web `forecastBar`, #612)
+struct OverviewForecast: Equatable {
+    let collected: Double
+    let forecast: Double
+    /// Collected share of collected + forecast, 0…1
+    let collectedShare: Double
+    /// Last day with an expected amount (`yyyy-MM-dd`)
+    let until: String
+}
+
+struct OverviewDashBar: Equatable {
+    /// `yyyy-MM-dd`, or the month label of a monthly point
+    let key: String
+    let value: Double
+    let forecast: Double
+    /// Height of value + forecast against the tallest bar, 0…1
+    let ratio: Double
+    /// Height of the forecast part alone, 0…1
+    let forecastRatio: Double
+    let isToday: Bool
+    /// A day bar (false: a month)
+    let isDay: Bool
+}
+
+struct OverviewWaterfallRow: Equatable {
+    enum Key: Equatable { case deposits, pickupAndSale, fees, refunds, total }
+    let key: Key
+    /// Signed contribution; the total row carries the total
+    let amount: Double
+    /// Bar start and width, 0…1 of the track
+    let left: Double
+    let width: Double
+    let isTotal: Bool
+}
+
+struct OverviewCollateralRow: Equatable {
+    enum Key: Equatable { case received, returned, toCollect, toReturn }
+    let key: Key
+    let amount: Double
+    let orders: Int?
+    /// Hatched: not in the period's numbers yet
+    let upcoming: Bool
+    /// 0…1 of the largest row
+    let width: Double
+}
+
+/// One part of a stacked bar
+struct OverviewSplitPart: Equatable {
+    let amount: Double
+    let orders: Int
+    /// Share of the bar, 0…1
+    let share: Double
+}
+
+enum OverviewDashLogic {
+    // MARK: Periods
+
+    /// Civil-day range of a chip. Tháng này is the whole month (as web), so its forecast reaches the month end.
+    /// A custom chip without a range falls back to today.
+    static func range(of chip: OverviewChip, todayKey: String, custom: DayKeyRange? = nil) -> DayKeyRange {
+        switch chip {
+        case .today:
+            return DayKeyRange(start: todayKey, end: todayKey)
+        case .last7:
+            return DayKeyRange(start: CalendarV2Logic.shift(todayKey, days: -6), end: todayKey)
+        case .thisMonth:
+            guard let t = CalendarV2Logic.parts(of: todayKey) else { return DayKeyRange(start: todayKey, end: todayKey) }
+            return DayKeyRange(start: CalendarV2Logic.key(year: t.year, month: t.month, day: 1),
+                               end: CalendarV2Logic.key(year: t.year, month: t.month,
+                                                        day: CalendarV2Logic.daysInMonth(year: t.year, month: t.month)))
+        case .custom:
+            guard let custom else { return DayKeyRange(start: todayKey, end: todayKey) }
+            return custom.start <= custom.end ? custom : DayKeyRange(start: custom.end, end: custom.start)
+        }
+    }
+
+    /// The chart needs more than one bar: Hôm nay charts the 7 days up to today and the 7 days after it (14 bars,
+    /// web #610 `chartRange` and the canvas: 01/10 … 07/10 … 14/10); another one-day range charts the 7 days up to it
+    static func chartRange(of chip: OverviewChip, range: DayKeyRange) -> DayKeyRange {
+        guard range.start == range.end else { return range }
+        if chip == .today {
+            return DayKeyRange(start: CalendarV2Logic.shift(range.end, days: -6), end: CalendarV2Logic.shift(range.end, days: 7))
+        }
+        return DayKeyRange(start: CalendarV2Logic.shift(range.end, days: -6), end: range.end)
+    }
+
+    /// Latest day the custom picker allows (web #612: a year ahead)
+    static func customMaxKey(todayKey: String) -> String { CalendarV2Logic.shift(todayKey, days: 365) }
+
+    // MARK: Tiles
+
+    enum Growth: Equatable {
+        case none, new
+        case pct(Int, up: Bool)
+    }
+
+    /// Same rule as web: 1000 %+ means the previous period was (almost) empty; 0 / unknown shows nothing
+    static func growth(_ value: Double?) -> Growth {
+        guard let value, value.isFinite, value != 0 else { return .none }
+        if abs(value) >= 1000 { return .new }
+        let pct = Int(abs(value).rounded())
+        return pct == 0 ? .none : .pct(pct, up: value > 0)
+    }
+
+    static func growthChip(_ value: Double?) -> OverviewTileChip? {
+        switch growth(value) {
+        case .none: return nil
+        case .new: return OverviewTileChip(tone: .up, key: "overview.dash.chip.new", count: nil)
+        case .pct(let pct, let up):
+            return OverviewTileChip(tone: up ? .up : .down, key: up ? "overview.dash.chip.up" : "overview.dash.chip.down", count: pct)
+        }
+    }
+
+    /// The four tiles. Chips only say what the data supports (web `buildTiles`)
+    static func tiles(report: OverviewReport?, now: OverviewNow?) -> [OverviewTile] {
+        var outstandingChip: OverviewTileChip?
+        if let parts = report?.outstandingBreakdown {
+            if parts.overduePickup.orders > 0 {
+                outstandingChip = OverviewTileChip(tone: .warn, key: "overview.dash.chip.overdue", count: parts.overduePickup.orders)
+            } else if parts.atPickup.orders > 0 {
+                outstandingChip = OverviewTileChip(tone: .info, key: "overview.dash.chip.waiting", count: parts.atPickup.orders)
+            }
+        }
+        var collateralChip: OverviewTileChip?
+        if let held = now?.rentedOut, held > 0 {
+            collateralChip = OverviewTileChip(tone: .info, key: "overview.dash.chip.held", count: held)
+        }
+        return [
+            OverviewTile(kind: .orderValue, value: report?.totalOrderValue, signed: false,
+                         chip: growthChip(report?.orderValueGrowth)),
+            OverviewTile(kind: .collected, value: report?.netRevenue, signed: false, chip: growthChip(report?.revenueGrowth)),
+            OverviewTile(kind: .outstanding, value: report?.outstanding, signed: false, chip: outstandingChip),
+            OverviewTile(kind: .collateral, value: report?.collateralFlow?.net, signed: true, chip: collateralChip),
+        ]
+    }
+
+    /// Σ `expectedCollected` of the period's days from today on; nil without a forecast (or on an older API)
+    static func forecast(collected: Double?, series: [OverviewReport.Point], todayKey: String) -> OverviewForecast? {
+        var total = 0.0
+        var until = ""
+        for point in series {
+            guard let key = point.dayKey, key >= todayKey else { continue }
+            let value = max(0, point.expectedCollected ?? 0)
+            if value > 0 {
+                total += value
+                if key > until { until = key }
+            }
+        }
+        guard let collected, total > 0 else { return nil }
+        let done = max(0, collected)
+        return OverviewForecast(collected: collected, forecast: total, collectedShare: done / (done + total), until: until)
+    }
+
+    // MARK: Money text
+
+    /// Tile value: full below a million ("450.000"), else "18,65 tr" / "1,2 tỷ" (en "18.65M" / "1.2B");
+    /// two decimals at most, trailing zeros dropped
+    static func compact(_ amount: Double, vietnamese: Bool) -> String {
+        let magnitude = abs(amount)
+        guard magnitude >= 1_000_000 else { return MoneyFormatter.format(amount) }
+        let billion = magnitude >= 1_000_000_000
+        var scaled = magnitude / (billion ? 1_000_000_000 : 1_000_000)
+        scaled = (scaled * 100).rounded() / 100
+        var text = String(format: "%.2f", scaled)
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        if vietnamese { text = text.replacingOccurrences(of: ".", with: ",") }
+        let unit = vietnamese ? (billion ? " tỷ" : " tr") : (billion ? "B" : "M")
+        return (amount < 0 ? "−" : "") + text + unit
+    }
+
+    /// Value of a tile: "—" when unknown, "+" before a positive signed value
+    static func tileText(_ tile: OverviewTile, vietnamese: Bool, compact useCompact: Bool = true) -> String {
+        guard let value = tile.value else { return "—" }
+        let text = useCompact ? compact(value, vietnamese: vietnamese) : MoneyFormatter.format(value)
+        return tile.signed && value > 0 ? "+" + text : text
+    }
+
+    // MARK: Chart
+
+    /// One bar per day of `range` (missing days are 0) or, past 45 days, the API's monthly points
+    static func chartBars(report: OverviewReport, range: DayKeyRange, todayKey: String) -> [OverviewDashBar] {
+        var raw: [(key: String, value: Double, forecast: Double, isDay: Bool)] = []
+        if OverviewLogic.groupBy(range) == "month" {
+            raw = report.series.map { ($0.monthLabel ?? "", $0.realIncome, max(0, $0.expectedCollected ?? 0), false) }
+        } else {
+            var values: [String: Double] = [:]
+            var forecasts: [String: Double] = [:]
+            for point in report.series {
+                guard let key = point.dayKey else { continue }
+                values[key, default: 0] += point.realIncome
+                forecasts[key, default: 0] += max(0, point.expectedCollected ?? 0)
+            }
+            raw = (0..<range.dayCount).map { offset in
+                let key = CalendarV2Logic.shift(range.start, days: offset)
+                return (key, values[key] ?? 0, forecasts[key] ?? 0, true)
+            }
+        }
+        let top = raw.map { max(0, $0.value) + $0.forecast }.max() ?? 0
+        return raw.map { bar in
+            let total = max(0, bar.value) + bar.forecast
+            return OverviewDashBar(key: bar.key, value: bar.value, forecast: bar.forecast,
+                                   ratio: top > 0 ? total / top : 0, forecastRatio: top > 0 ? bar.forecast / top : 0,
+                                   isToday: bar.isDay && bar.key == todayKey, isDay: bar.isDay)
+        }
+    }
+
+    /// Indexes of the bars that get an axis label: first, today, last
+    static func axisLabelIndexes(_ bars: [OverviewDashBar]) -> [Int] {
+        guard !bars.isEmpty else { return [] }
+        var indexes = [0]
+        if let today = bars.firstIndex(where: { $0.isToday }), today != 0, today != bars.count - 1 { indexes.append(today) }
+        if bars.count > 1 { indexes.append(bars.count - 1) }
+        return indexes
+    }
+
+    // MARK: Detail sheets
+
+    /// Thực thu as a waterfall: three additions, minus refunds, = total. Handles a negative total (web `waterfallRows`)
+    static func waterfall(_ parts: OverviewReport.CollectedBreakdown, total: Double) -> [OverviewWaterfallRow] {
+        let steps: [(OverviewWaterfallRow.Key, Double)] = [
+            (.deposits, parts.deposits), (.pickupAndSale, parts.pickupAndSale), (.fees, parts.fees), (.refunds, -parts.refunds),
+        ]
+        var spans: [(key: OverviewWaterfallRow.Key, amount: Double, from: Double, to: Double, total: Bool)] = []
+        var run = 0.0
+        for (key, amount) in steps {
+            spans.append((key, amount, run, run + amount, false))
+            run += amount
+        }
+        spans.append((.total, total, 0, total, true))
+        let lo = min(0, spans.map { min($0.from, $0.to) }.min() ?? 0)
+        let hi = max(0, spans.map { max($0.from, $0.to) }.max() ?? 0)
+        let width = hi - lo == 0 ? 1 : hi - lo
+        return spans.map { span in
+            OverviewWaterfallRow(key: span.key, amount: span.amount, left: (min(span.from, span.to) - lo) / width,
+                                 width: abs(span.to - span.from) / width, isTotal: span.total)
+        }
+    }
+
+    /// Two parts of one stacked bar (shares of their sum; negatives count as 0)
+    static func split(_ a: OverviewReport.AmountPart, _ b: OverviewReport.AmountPart) -> (OverviewSplitPart, OverviewSplitPart) {
+        let x = max(0, a.amount)
+        let y = max(0, b.amount)
+        let sum = x + y
+        return (OverviewSplitPart(amount: a.amount, orders: a.orders, share: sum > 0 ? x / sum : 0),
+                OverviewSplitPart(amount: b.amount, orders: b.orders, share: sum > 0 ? y / sum : 0))
+    }
+
+    /// Thế chân: received / returned in the period, then the upcoming ones from today's cash (web `collateralRows`)
+    static func collateralRows(flow: OverviewReport.CollateralFlow?, now: OverviewNow?) -> [OverviewCollateralRow] {
+        var rows: [(OverviewCollateralRow.Key, Double, Int?, Bool)] = []
+        if let flow {
+            rows.append((.received, flow.received, nil, false))
+            rows.append((.returned, flow.returned, nil, false))
+        }
+        if let toCollect = now?.collateralToCollect { rows.append((.toCollect, toCollect.amount, toCollect.orders, true)) }
+        if let toReturn = now?.collateralToReturn { rows.append((.toReturn, toReturn.amount, toReturn.orders, true)) }
+        let top = rows.map { abs($0.1) }.max() ?? 0
+        return rows.map { OverviewCollateralRow(key: $0.0, amount: $0.1, orders: $0.2, upcoming: $0.3, width: top > 0 ? abs($0.1) / top : 0) }
+    }
+
+    // MARK: Hôm nay
+
+    /// "2/3": done of planned
+    static func doneOfTotal(_ task: OverviewNow.TodayTask) -> String { "\(task.done)/\(task.total)" }
+}
