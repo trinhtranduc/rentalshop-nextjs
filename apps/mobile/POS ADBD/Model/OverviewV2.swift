@@ -98,13 +98,13 @@ enum OverviewLogic {
     }
 
     /// Noon of a key in `timeZone`, for weekday labels
-    static func date(of key: String, timeZone: TimeZone = .current) -> Date? {
+    static func date(of key: String, timeZone: TimeZone = Date.shopTimeZone) -> Date? {
         guard let p = CalendarV2Logic.parts(of: key) else { return nil }
         return CalendarV2Logic.gregorian(timeZone).date(from: DateComponents(year: p.year, month: p.month, day: p.day, hour: 12))
     }
 
     /// "CN 27/09 – T7 03/10" (one day: "T7 03/10")
-    static func longRange(_ range: DayKeyRange, timeZone: TimeZone = .current, locale: Locale = .current) -> String {
+    static func longRange(_ range: DayKeyRange, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = .current) -> String {
         func label(_ key: String) -> String {
             guard let date = date(of: key, timeZone: timeZone) else { return key }
             return DayFormatter.short(date, timeZone: timeZone, locale: locale)
@@ -114,7 +114,7 @@ enum OverviewLogic {
 
     /// Bars of the chart: one per day of the range (missing days are 0) or, per month, the API points as sent.
     /// `.orders` plots `newOrderCount` (0 when an older API leaves it out, #484)
-    static func bars(report: OverviewReport, range: DayKeyRange, timeZone: TimeZone = .current,
+    static func bars(report: OverviewReport, range: DayKeyRange, timeZone: TimeZone = Date.shopTimeZone,
                      locale: Locale = .current, mode: OverviewChartMode = .money) -> [OverviewBar] {
         func value(_ point: OverviewReport.Point) -> Double {
             switch mode {

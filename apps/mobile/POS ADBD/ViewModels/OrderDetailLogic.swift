@@ -206,7 +206,7 @@ enum OrderDetailLogic {
     }
 
     /// `dd/MM` civil day
-    static func dayMonth(_ date: Date, timeZone: TimeZone = .current) -> String {
+    static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let parts = calendar.dateComponents([.day, .month], from: date)
@@ -226,7 +226,7 @@ enum OrderDetailLogic {
     }
 
     /// Whole civil days from pickup to return (a same-day rental is 1 day)
-    static func rentalDays(pickup: Date?, return returnDate: Date?, timeZone: TimeZone = .current) -> Int? {
+    static func rentalDays(pickup: Date?, return returnDate: Date?, timeZone: TimeZone = Date.shopTimeZone) -> Int? {
         guard let pickup, let returnDate else { return nil }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone

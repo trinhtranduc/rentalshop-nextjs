@@ -290,7 +290,9 @@ class ExportViewController: BaseViewControler {
     // MARK: - Helper Methods
     
     private func getDateRangeForPeriod(_ period: ExportPeriod) -> (startDate: Date, endDate: Date) {
-        let endDate = Date()
+        // Presets count back from the shop's today (#596). Export sends device-zone keys (`dateServerInString`, the
+        // same keys a tapped FSCalendar day gives), so the shop days are carried as the same days in the phone zone.
+        let endDate = Date().devicePickFromShopDay()
         let calendar = Calendar.current
         var startDate = endDate
         

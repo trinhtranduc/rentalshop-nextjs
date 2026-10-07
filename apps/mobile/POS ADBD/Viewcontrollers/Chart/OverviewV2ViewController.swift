@@ -566,7 +566,9 @@ final class OverviewV2ViewController: BaseViewControler {
         let picker = DatePickerViewController.instance()
         picker.delegate = self
         let current = range
-        picker.configureForDateRange(startDate: OverviewLogic.date(of: current.start), endDate: OverviewLogic.date(of: current.end),
+        // FSCalendar draws the phone's days: select the range's shop days there (#596)
+        picker.configureForDateRange(startDate: OverviewLogic.date(of: current.start)?.devicePickFromShopDay(),
+                                     endDate: OverviewLogic.date(of: current.end)?.devicePickFromShopDay(),
                                      minimumDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()),
                                      maximumDate: Date())
         present(picker, animated: true)
@@ -575,13 +577,14 @@ final class OverviewV2ViewController: BaseViewControler {
 
 extension OverviewV2ViewController: DatePickerViewControllerDelegate {
     func didSelectDate(_ date: Date, sender: DatePickerViewController) {
-        let key = DayFormatter.key(date)
+        // The tapped day (FSCalendar, phone zone) as a shop-day key (#596)
+        let key = DayFormatter.key(date.shopDayFromDevicePick())
         period = .custom(DayKeyRange(start: key, end: key))
         load()
     }
 
     func didSelectDateRange(start: Date, end: Date, sender: DatePickerViewController) {
-        let keys = [DayFormatter.key(start), DayFormatter.key(end)].sorted()
+        let keys = [DayFormatter.key(start.shopDayFromDevicePick()), DayFormatter.key(end.shopDayFromDevicePick())].sorted()
         period = .custom(DayKeyRange(start: keys[0], end: keys[1]))
         load()
     }

@@ -119,7 +119,7 @@ enum OrdersHomeLogic {
     /// Days past the planned hand-over (RENT still RESERVED) or return (still PICKUPED), in civil days of `timeZone`.
     /// A note ("Trễ N ngày"), never a status. 0 when not late.
     static func lateDays(orderType: OrderType, status: OrderStatus, pickupPlanAt: Date?, returnPlanAt: Date?,
-                         now: Date = Date(), timeZone: TimeZone = .current) -> Int {
+                         now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> Int {
         guard orderType == .rent else { return 0 }
         let planned: Date?
         switch status {
@@ -159,7 +159,7 @@ enum OrdersHomeLogic {
     }
 
     /// Items grouped by civil day of `date`, keeping the incoming order (newest first from the API)
-    static func groupByDay<T>(_ items: [T], date: (T) -> Date, timeZone: TimeZone = .current) -> [(key: String, day: Date, items: [T])] {
+    static func groupByDay<T>(_ items: [T], date: (T) -> Date, timeZone: TimeZone = Date.shopTimeZone) -> [(key: String, day: Date, items: [T])] {
         var groups: [(key: String, day: Date, items: [T])] = []
         for item in items {
             let day = date(item)
@@ -190,7 +190,7 @@ enum OrdersHomeLogic {
     }
 
     /// Order rows with their late days, in the API order (Orders tab lists and overview drill-down lists, #458)
-    static func orderRows(_ orders: [Order], now: Date = Date(), timeZone: TimeZone = .current) -> [OrdersRow] {
+    static func orderRows(_ orders: [Order], now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> [OrdersRow] {
         orders.map { order in
             .order(order, lateDays: lateDays(orderType: order.orderType, status: order.status,
                                              pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
@@ -324,7 +324,7 @@ enum OrdersHomeLogic {
     }
 
     /// "TRỄ HẠN · 3", "HÔM NAY · T7 03/10", "NGÀY MAI · CN 04/10", "HÔM QUA · T6 02/10", "T5 01/10"
-    static func sectionTitle(_ section: OrdersSection, now: Date = Date(), timeZone: TimeZone = .current,
+    static func sectionTitle(_ section: OrdersSection, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone,
                              locale: Locale = .current) -> String? {
         let calendar = calendar(timeZone)
         let short: (Date) -> String = { DayFormatter.short($0, timeZone: timeZone, locale: locale) }
@@ -354,7 +354,7 @@ enum OrdersHomeLogic {
 
     /// First and last civil day of a date range preset, as the start of each day in `timeZone`
     static func dayBounds(_ range: RentOrdersFilter.DateRange, now: Date = Date(),
-                          timeZone: TimeZone = .current) -> (start: Date, end: Date)? {
+                          timeZone: TimeZone = Date.shopTimeZone) -> (start: Date, end: Date)? {
         let calendar = calendar(timeZone)
         let today = calendar.startOfDay(for: now)
         switch range {
@@ -376,7 +376,7 @@ enum OrdersHomeLogic {
     }
 
     /// The rent list request for a filter
-    static func rentQuery(_ filter: RentOrdersFilter, page: Int = 1, now: Date = Date(), timeZone: TimeZone = .current) -> OrdersQuery {
+    static func rentQuery(_ filter: RentOrdersFilter, page: Int = 1, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> OrdersQuery {
         var query = OrdersQuery(keyword: nil, orderType: .rent, status: filter.status, sortBy: filter.sortBy, page: page)
         if let bounds = dayBounds(filter.dateRange, now: now, timeZone: timeZone) {
             query.startDate = bounds.start
@@ -462,7 +462,7 @@ final class OrdersHomeViewModel {
 
     init(dataSource: OrdersHomeDataSource = LiveOrdersHomeDataSource(),
          now: @escaping () -> Date = Date.init,
-         timeZone: @escaping () -> TimeZone = { .current },
+         timeZone: @escaping () -> TimeZone = { Date.shopTimeZone },
          searchDelay: TimeInterval = 0.3) {
         self.dataSource = dataSource
         self.now = now

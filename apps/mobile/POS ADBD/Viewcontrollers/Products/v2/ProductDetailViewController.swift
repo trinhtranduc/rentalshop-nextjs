@@ -498,7 +498,7 @@ final class ProductDetailViewController: BaseViewControler {
         }
     }
 
-    /// Free units for today and the next 6 days, in device-zone day keys
+    /// Free units for today and the next 6 days, in shop-zone day keys (#596)
     private func loadStrip(productId: Int, token: Int) {
         let todayKey = DayFormatter.key(Date())
         let keys = ProductDetailV2Logic.weekKeys(from: todayKey)

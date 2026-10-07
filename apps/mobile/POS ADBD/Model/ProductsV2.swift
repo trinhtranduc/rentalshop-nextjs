@@ -453,8 +453,16 @@ enum CartV2Logic {
         cart.orderType == .rent ? cart.depositAmount : cart.amountDue
     }
 
+    /// Days tapped in the device-zone date picker → the cart's instants (#596): pickup at the first second of the
+    /// first shop day, return at the last second of the last shop day (`[D-1T17:00:00Z, DT16:59:59Z]` for Vietnam).
+    /// On a phone set to the shop zone this is the old `start.startOfDay()` / `max(start, end).endOfDay()`.
+    static func rentalBounds(pickedStart: Date, pickedEnd: Date) -> (pickup: Date, return: Date) {
+        (pickedStart.shopDayFromDevicePick().startOfShopDay(),
+         max(pickedStart, pickedEnd).shopDayFromDevicePick().endOfShopDay())
+    }
+
     /// Inclusive civil days between pickup and return ("T7 03/10 → T2 05/10" = 3 ngày)
-    static func rentalDays(pickup: Date, return returnDate: Date, timeZone: TimeZone = .current) -> Int {
+    static func rentalDays(pickup: Date, return returnDate: Date, timeZone: TimeZone = Date.shopTimeZone) -> Int {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: pickup),
@@ -517,7 +525,7 @@ struct CreatedOrderSummary: Equatable {
 }
 
 enum CreateOrderSheetLogic {
-    static func confirm(_ cart: Cart, timeZone: TimeZone = .current) -> CreateOrderConfirm {
+    static func confirm(_ cart: Cart, timeZone: TimeZone = Date.shopTimeZone) -> CreateOrderConfirm {
         let isSale = cart.orderType == .sale
         var range: String?
         var days: Int?
@@ -552,7 +560,7 @@ enum CreateOrderSheetLogic {
     }
 
     /// `03/10`, the civil day in `timeZone`
-    static func dayMonth(_ date: Date, timeZone: TimeZone = .current) -> String {
+    static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let parts = calendar.dateComponents([.day, .month], from: date)

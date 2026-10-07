@@ -173,7 +173,7 @@ final class OrdersFilterSheet: UIViewController {
         case .next7Days: return "orders.v2.range.next7".localized()
         case .thisMonth: return "orders.v2.range.month".localized()
         case .custom(let from, let to):
-            return "\(OrdersHomeLogic.dayMonth(from, timeZone: .current)) – \(OrdersHomeLogic.dayMonth(to, timeZone: .current))"
+            return "\(OrdersHomeLogic.dayMonth(from, timeZone: Date.shopTimeZone)) – \(OrdersHomeLogic.dayMonth(to, timeZone: Date.shopTimeZone))"
         }
     }
 
@@ -342,7 +342,7 @@ final class OrdersDateRangePicker: UIViewController {
         [fromPicker, toPicker].forEach { picker in
             picker.datePickerMode = .date
             picker.preferredDatePickerStyle = .compact
-            picker.timeZone = .current
+            picker.timeZone = Date.shopTimeZone
         }
         fromPicker.date = from
         toPicker.date = to

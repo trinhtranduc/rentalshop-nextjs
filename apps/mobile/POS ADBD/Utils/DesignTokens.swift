@@ -109,15 +109,10 @@ enum DS {
     }
 }
 
-/// Device time zone, sent as `timeZone` on day-based API calls
-enum DeviceTimeZone {
-    static var identifier: String { TimeZone.current.identifier }
-}
-
-/// Day labels of the redesign, in the device time zone unless told otherwise
+/// Day labels and keys of the redesign, in the shop zone (`Date.shopTimeZone`) unless told otherwise (#596)
 enum DayFormatter {
     /// `T7 03/10` in Vietnamese, `Sat 03/10` otherwise
-    static func short(_ date: Date, timeZone: TimeZone = .current, locale: Locale = .current) -> String {
+    static func short(_ date: Date, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = .current) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let parts = calendar.dateComponents([.weekday, .day, .month], from: date)
@@ -137,7 +132,7 @@ enum DayFormatter {
     }
 
     /// `yyyy-MM-dd` civil day
-    static func key(_ date: Date, timeZone: TimeZone = .current) -> String {
+    static func key(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let parts = calendar.dateComponents([.year, .month, .day], from: date)

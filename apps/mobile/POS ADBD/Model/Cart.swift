@@ -960,12 +960,8 @@ class Cart {
             return nil
         }
         
-        let calendar = Calendar.current
-        let startDay = calendar.startOfDay(for: pickup)
-        let endDay = calendar.startOfDay(for: returnDate)
-        let components = calendar.dateComponents([.day], from: startDay, to: endDay)
-        // +1 because rental is inclusive (e.g. pickup Monday, return Tuesday = 2 days)
-        return max(1, (components.day ?? 0) + 1)
+        // Shop days, inclusive (pickup Monday, return Tuesday = 2 days), whatever the phone zone (#596)
+        return CartV2Logic.rentalDays(pickup: pickup, return: returnDate)
     }
     
     /// Get current user ID from user session

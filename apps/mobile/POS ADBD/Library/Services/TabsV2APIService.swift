@@ -52,41 +52,55 @@ final class TabsV2APIService: BaseService {
 
     @discardableResult
     func calendarMonth(year: Int, month: Int, completion: @escaping (CalendarMonthCounts?, NSError?) -> Void) -> DataRequest {
-        request(APIEndpoint.Path.calendarOrdersCount,
-                parameters: ["month": month, "year": year, "timeZone": DeviceTimeZone.identifier],
+        request(APIEndpoint.Path.calendarOrdersCount, parameters: Self.calendarMonthParameters(year: year, month: month),
                 completion: completion)
+    }
+
+    /// `timeZone` is the shop zone, so counts and lists are shop days whatever the phone zone (#596)
+    static func calendarMonthParameters(year: Int, month: Int) -> [String: Any] {
+        ["month": month, "year": year, "timeZone": Date.shopTimeZone.identifier]
     }
 
     /// Hand-overs (`RESERVED` by pickup plan) or returns (`kind=return`) of one day
     @discardableResult
     func calendarDay(_ dayKey: String, returns: Bool,
                      completion: @escaping ([CalendarDayOrder]?, NSError?) -> Void) -> DataRequest {
-        var params: [String: Any] = ["date": dayKey, "timeZone": DeviceTimeZone.identifier, "limit": 200]
+        request(APIEndpoint.Path.calendarOrdersByDate,
+                parameters: Self.calendarDayParameters(dayKey, returns: returns)) { (body: CalendarDayOrdersResponse.DataBody?, error) in
+            completion(body?.orders, error)
+        }
+    }
+
+    static func calendarDayParameters(_ dayKey: String, returns: Bool) -> [String: Any] {
+        var params: [String: Any] = ["date": dayKey, "timeZone": Date.shopTimeZone.identifier, "limit": 200]
         if returns {
             params["kind"] = "return"
         } else {
             params["status"] = "RESERVED"
         }
-        return request(APIEndpoint.Path.calendarOrdersByDate, parameters: params) { (body: CalendarDayOrdersResponse.DataBody?, error) in
-            completion(body?.orders, error)
-        }
+        return params
     }
 
     // MARK: - Overview
 
     @discardableResult
     func overviewReport(_ range: DayKeyRange, completion: @escaping (OverviewReport?, NSError?) -> Void) -> DataRequest {
-        request(APIEndpoint.Path.analyticsPeriod,
-                parameters: ["startDate": range.start, "endDate": range.end,
-                             "groupBy": OverviewLogic.groupBy(range), "limit": 3,
-                             "timeZone": DeviceTimeZone.identifier],
-                completion: completion)
+        request(APIEndpoint.Path.analyticsPeriod, parameters: Self.overviewReportParameters(range), completion: completion)
+    }
+
+    static func overviewReportParameters(_ range: DayKeyRange) -> [String: Any] {
+        ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range), "limit": 3,
+         "timeZone": Date.shopTimeZone.identifier]
     }
 
     @discardableResult
     func overviewNow(completion: @escaping (OverviewNow?, NSError?) -> Void) -> DataRequest {
-        request(APIEndpoint.Path.outletOperations, parameters: ["timeZone": DeviceTimeZone.identifier],
-                completion: completion)
+        request(APIEndpoint.Path.outletOperations, parameters: Self.outletOperationsParameters(), completion: completion)
+    }
+
+    /// Today's work and the overview "now" block for the shop day (also `AnalyticsAPIService.loadOutletOperations`)
+    static func outletOperationsParameters() -> [String: Any] {
+        ["timeZone": Date.shopTimeZone.identifier]
     }
 
     // MARK: - Settings

@@ -181,15 +181,13 @@ final class DraftOrderReminder {
     }
 
     private func rentalDays(from pickup: Date, to returned: Date) -> Int {
-        let calendar = Calendar.current
-        let start = calendar.startOfDay(for: pickup)
-        let end = calendar.startOfDay(for: returned)
-        return max(1, (calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1)
+        CartV2Logic.rentalDays(pickup: pickup, return: returned) // shop days, like the cart (#596)
     }
 
     private func shortDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = .current
+        formatter.timeZone = Date.shopTimeZone
         formatter.dateFormat = Locale.current.languageCode?.hasPrefix("vi") == true ? "dd/MM" : "d MMM"
         return formatter.string(from: date)
     }

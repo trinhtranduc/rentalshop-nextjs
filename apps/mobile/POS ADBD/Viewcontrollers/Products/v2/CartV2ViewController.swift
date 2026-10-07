@@ -613,7 +613,9 @@ final class CartV2ViewController: BaseViewControler {
         picker.delegate = self
         picker.tag = 3
         let today = Date()
-        picker.configureForDateRange(startDate: cart.pickupPlanAt, endDate: cart.returnPlanAt,
+        // FSCalendar draws the phone's days: select the cart's shop days there (#596)
+        picker.configureForDateRange(startDate: cart.pickupPlanAt?.devicePickFromShopDay(),
+                                     endDate: cart.returnPlanAt?.devicePickFromShopDay(),
                                      minimumDate: Calendar.current.date(byAdding: .year, value: -1, to: today),
                                      maximumDate: Calendar.current.date(byAdding: .year, value: 1, to: today))
         present(picker, animated: true)
@@ -761,10 +763,11 @@ extension CartV2ViewController: DatePickerViewControllerDelegate {
         setDates(start: start, end: end)
     }
 
-    /// Same day bounds as the old cart: pickup at the start of its day, return at the end of its day
+    /// Pickup at the start of its shop day, return at the end of its shop day, whatever the phone zone (#596)
     private func setDates(start: Date, end: Date) {
-        CartStore.shared.setPickupDate(start.startOfDay())
-        CartStore.shared.setReturnDate(max(start, end).endOfDay())
+        let bounds = CartV2Logic.rentalBounds(pickedStart: start, pickedEnd: end)
+        CartStore.shared.setPickupDate(bounds.pickup)
+        CartStore.shared.setReturnDate(bounds.return)
         loadAvailability()
     }
 }
