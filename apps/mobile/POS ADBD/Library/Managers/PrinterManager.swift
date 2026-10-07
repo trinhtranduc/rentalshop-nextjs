@@ -547,17 +547,23 @@ class PrinterManager: NSObject {
             return
         }
         
-        // Get print data from order (using toPrintData() to match reference format)
-        let printData = order.toPrintData()
-        
-        // Use connection-per-request pattern (RECOMMENDED)
-        // This is the standard approach for network printing:
-        // - Creates a new connection for each print job
-        // - Automatically manages connection lifecycle
-        // - Thread-safe with proper error handling
-        // - No race conditions with state handlers
-        // - Perfect for multiple devices printing to the same printer
-        printWithConnection(data: printData, ip: printerIP, port: 9100, completion: completion)
+        // Connection per print job (see printWithConnection): safe when several devices share the printer.
+        // #622: with the printer switch on, the outlet's bank account + VietQR goes at the end of the bill.
+        // No account, a failed load or no answer within 5 s → the bill prints as before, without an error.
+        guard Utils.loadPrintBankQr() else {
+            printWithConnection(data: BillBankQR.billData(for: order, switchOn: false, account: nil), ip: printerIP, port: 9100, completion: completion)
+            return
+        }
+        DispatchQueue.main.async {
+            var sent = false
+            let send: (BankAccount?) -> Void = { [weak self] account in
+                guard !sent else { return }
+                sent = true
+                self?.printWithConnection(data: BillBankQR.billData(for: order, switchOn: true, account: account), ip: printerIP, port: 9100, completion: completion)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { send(nil) }
+            BankAccountService.shared.printAccount(outletId: order.outletId, completion: send)
+        }
     }
     
     // private func printOrderBluetooth(_ order: Order, completion: @escaping (Result<Void, PrinterError>) -> Void) {

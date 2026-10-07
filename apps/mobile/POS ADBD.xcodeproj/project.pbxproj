@@ -55,6 +55,7 @@
 		04276C0A2EE4537F005EAC05 /* PaymentQRCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */; };
 		04276C0C2EE453AE005EAC05 /* QRCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */; };
 		04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */; };
+		A622B0000000000000000001 /* VietQR.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000001 /* VietQR.swift */; };
 		04276C102EE4582E005EAC05 /* BankPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */; };
 		04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */; };
 		043F06372D85473C0047DC11 /* HapticButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043F06362D85473C0047DC11 /* HapticButton.swift */; };
@@ -414,6 +415,7 @@
 		04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentQRCodeViewController.swift; sourceTree = "<group>"; };
 		04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeGenerator.swift; sourceTree = "<group>"; };
 		04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietnamBankCodes.swift; sourceTree = "<group>"; };
+		A622F0000000000000000001 /* VietQR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietQR.swift; sourceTree = "<group>"; };
 		04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankPickerViewController.swift; sourceTree = "<group>"; };
 		04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductAvailabilityCache.swift; sourceTree = "<group>"; };
 		043F06362D85473C0047DC11 /* HapticButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticButton.swift; sourceTree = "<group>"; };
@@ -1299,6 +1301,7 @@
 			children = (
 				04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */,
 				04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */,
+				A622F0000000000000000001 /* VietQR.swift */,
 				04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */,
 				0403310A2EACEC7E003BC33E /* LoadingState.swift */,
 				040330ED2EA8913D003BC33E /* JSONHelper.swift */,
@@ -1867,6 +1870,7 @@
 				04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */,
 				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
+				A622B0000000000000000001 /* VietQR.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,
 				88E4149E21A99E9D00BAF4A1 /* RCError.swift in Sources */,

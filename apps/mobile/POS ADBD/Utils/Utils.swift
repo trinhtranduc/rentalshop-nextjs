@@ -156,6 +156,14 @@ class Utils: NSObject {
         return UserDefaults.standard.string(forKey: "IpLabelPrinter") ?? "*** Vui lòng mang theo CMND/BLX khi lấy đồ"
     }
     
+    /// #622: print the default bank account + VietQR at the end of bills (this device only, off by default)
+    class func savePrintBankQr(_ isOn: Bool) {
+        UserDefaults.standard.set(isOn, forKey: "PrintBankQr")
+    }
+    class func loadPrintBankQr() -> Bool {
+        return UserDefaults.standard.bool(forKey: "PrintBankQr")
+    }
+
     // MARK: - Print Method Management
     class func savePrintMethod(method: String) {
         UserDefaults.standard.set(method, forKey: "PrintMethod")

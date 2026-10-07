@@ -2187,3 +2187,10 @@
 "history.item.added" = "Thêm %@ × %d";
 "history.item.removed" = "Bỏ %@ × %d";
 "history.note.cleared" = "Xoá ghi chú";
+
+// MARK: - #622 Bank accounts + VietQR on bills
+"bankAccounts.empty" = "Chưa có tài khoản ngân hàng. Bấm + để thêm.";
+"printer.bankQr.title" = "In QR chuyển khoản trên bill";
+"printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.";
+"bill.bankQr.title" = "CHUYỂN KHOẢN";
+"bill.bankQr.accountNumber" = "STK: %@";

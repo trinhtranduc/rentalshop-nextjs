@@ -1351,7 +1351,8 @@ extension UpdateOrderRequest {
 // MARK: - Print Data Extension
 
 extension Order {
-    func toPrintData() -> Data {
+    /// `bankAccount` (#622): printed as a transfer block with a VietQR before the thank-you line. Nil → same bytes as before.
+    func toPrintData(bankAccount: BankAccount? = nil) -> Data {
         var data = Data()
         
         // Initialize printer
@@ -1482,6 +1483,11 @@ extension Order {
             data.append("\n\n\n\n".data(using: .utf8)!)
         }
         
+        // #622: bank transfer block, only when the printer switch is on and the outlet has an account
+        if let bankAccount = bankAccount {
+            data.append(BillBankQR.printData(for: bankAccount))
+        }
+
         // Thank you message
         data.append("\n".data(using: .utf8)!)
         data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.center.rawValue))
