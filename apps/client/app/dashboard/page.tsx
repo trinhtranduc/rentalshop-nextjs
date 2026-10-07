@@ -255,8 +255,8 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="flex flex-wrap gap-4">
-        {canViewRevenue && (
+      {canViewRevenue && (
+        <div className="flex flex-wrap gap-4">
           <CollectedChart
             series={series}
             loading={!ready || chartState.loading}
@@ -268,15 +268,14 @@ export default function DashboardPage() {
             t={t}
             money={money}
           />
-        )}
-        {todayWork && (
-          <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
-        )}
-      </div>
+        </div>
+      )}
 
+      {/* Hôm nay: today's orders with the today card beside them (#620) */}
       {todayWork && (
         <div className="flex flex-wrap gap-4">
           <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />
+          <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
         </div>
       )}
 
