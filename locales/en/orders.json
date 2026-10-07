@@ -1009,7 +1009,7 @@
       "titleNoNumber": "Receipt",
       "print": "Print",
       "close": "Close",
-      "paper": "80mm paper",
+      "paper": "{width}mm paper",
       "order": "Order #{number}",
       "phone": "Tel",
       "address": "Addr",
