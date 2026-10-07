@@ -247,7 +247,7 @@ model Product {
   id                   Int                    @id @default(autoincrement())
   name                 String
   description          String?
-  barcode              String?                @unique
+  barcode              String? // unique per shop (@@unique below), not system-wide (#629)
   totalStock           Int                    @default(0)
   rentPrice            Float
   salePrice            Float?
@@ -270,6 +270,7 @@ model Product {
   category             Category               @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   merchant             Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
+  @@unique([merchantId, barcode])
   @@index([merchantId])
   @@index([categoryId])
   @@index([barcode])
