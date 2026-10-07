@@ -234,4 +234,44 @@ class ProductRulesTest {
         assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 0))
         assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 2))
     }
+
+    // #632 — categories from the product form (same table as iOS ProductsV2Tests)
+
+    @Test
+    fun categoryAddIsMerchantAndOutletAdminNeverStaff() {
+        assertTrue(CategoryRules.canAdd(UserRole.MERCHANT))
+        assertTrue(CategoryRules.canAdd(UserRole.OUTLET_ADMIN))
+        assertFalse(CategoryRules.canAdd(UserRole.OUTLET_STAFF))
+        assertFalse(CategoryRules.canAdd(UserRole.UNKNOWN))
+    }
+
+    @Test
+    fun categoryRenameAndDeleteOnlyMerchant() {
+        assertTrue(CategoryRules.canManage(UserRole.MERCHANT))
+        assertTrue(CategoryRules.canManage(UserRole.ADMIN))
+        assertFalse(CategoryRules.canManage(UserRole.OUTLET_ADMIN))
+        assertFalse(CategoryRules.canManage(UserRole.OUTLET_STAFF))
+        assertFalse(CategoryRules.canManage(UserRole.UNKNOWN))
+    }
+
+    @Test
+    fun defaultCategoryIsNeverDeletable() {
+        assertTrue(CategoryRules.canDelete(isDefault = false))
+        assertFalse(CategoryRules.canDelete(isDefault = true))
+    }
+
+    @Test
+    fun categoryNameIsTrimmedAndTwoToFiftyCharacters() {
+        assertEquals(CategoryRules.NameError.REQUIRED, CategoryRules.validateName("   "))
+        assertEquals(CategoryRules.NameError.TOO_SHORT, CategoryRules.validateName(" Á "))
+        assertEquals(null, CategoryRules.validateName(" Áo "))
+        assertEquals(null, CategoryRules.validateName("đ".repeat(50)))
+        assertEquals(CategoryRules.NameError.TOO_LONG, CategoryRules.validateName("đ".repeat(51)))
+    }
+
+    @Test
+    fun categoryErrorCodesHaveTheirOwnText() {
+        assertEquals(R.string.api_error_category_name_exists, ApiErrorMessages.stringId("CATEGORY_NAME_EXISTS"))
+        assertEquals(R.string.api_error_cannot_delete_default_category, ApiErrorMessages.stringId("CANNOT_DELETE_DEFAULT_CATEGORY"))
+    }
 }

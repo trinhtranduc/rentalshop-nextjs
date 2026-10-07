@@ -39,6 +39,39 @@ enum ProductAccess {
     static var currentPermissions: [String] { User.current()?.permissions ?? [] }
 }
 
+// MARK: - Categories from the product form (#632)
+
+/// Same gates as the API: `POST /api/categories` needs `products.manage` (MERCHANT, OUTLET_ADMIN);
+/// `PUT`/`DELETE /api/categories/{id}` only MERCHANT (and ADMIN). Same name rule as the web form.
+enum CategoryRules {
+    static let nameMin = 2
+    static let nameMax = 50
+
+    enum NameError: Equatable { case required, tooShort, tooLong }
+
+    static func canAdd(role: Role?, permissions: [String]) -> Bool {
+        guard role != .outletStaff else { return false }
+        return permissions.contains("products.manage")
+    }
+
+    static func canManage(role: Role?) -> Bool {
+        role == .merchant || role == .admin
+    }
+
+    /// The default category ("General") is never deleted, only renamed
+    static func canDelete(_ category: Category) -> Bool {
+        category.isDefault != true
+    }
+
+    static func validateName(_ name: String) -> NameError? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return .required }
+        if trimmed.count < nameMin { return .tooShort }
+        if trimmed.count > nameMax { return .tooLong }
+        return nil
+    }
+}
+
 // MARK: - Prices of a product
 
 enum ProductPricingMode: String {

@@ -81,6 +81,7 @@ import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BarcodeMatch
+import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
 import com.anyrent.pos.domain.products.PricingMode
 import com.anyrent.pos.domain.products.ProductAccess
@@ -153,6 +154,8 @@ fun ProductFormV2Screen(
     }
     var categories by remember { mutableStateOf<List<ApiParity.Category>>(emptyList()) }
     var showCategories by remember { mutableStateOf(false) }
+    var addingCategory by remember { mutableStateOf(false) }
+    var managingCategories by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -395,10 +398,45 @@ fun ProductFormV2Screen(
                             }.padding(vertical = 12.dp),
                         )
                     }
+                    // #632: add a category without leaving the form; the owner also renames / deletes
+                    if (CategoryRules.canAdd(PermissionManager.role)) {
+                        Text(
+                            stringResource(R.string.v2_category_add), fontSize = 16.sp, color = DS.Colors.Primary, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.fillMaxWidth().clickable { showCategories = false; addingCategory = true }.padding(vertical = 12.dp),
+                        )
+                    }
+                    if (CategoryRules.canManage(PermissionManager.role)) {
+                        Text(
+                            stringResource(R.string.v2_category_manage), fontSize = 16.sp, color = DS.Colors.Primary, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.fillMaxWidth().clickable { showCategories = false; managingCategories = true }.padding(vertical = 12.dp),
+                        )
+                    }
                 }
             },
             confirmButton = { TextButton(onClick = { showCategories = false }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+    if (addingCategory) {
+        CategoryNameDialog(stringResource(R.string.v2_category_add_title), null, onDismiss = { addingCategory = false }) { name ->
+            withContext(Dispatchers.IO) { ApiParity.createCategory(name) }.fold(
+                onSuccess = { created ->
+                    categories = categories + created
+                    categoryId = created.id
+                    categoryName = created.name
+                    addingCategory = false
+                    null
+                },
+                onFailure = { it.message },
+            )
+        }
+    }
+    if (managingCategories) {
+        CategoryManageDialog(onDismiss = { managingCategories = false }) { fresh ->
+            categories = fresh
+            val chosen = fresh.firstOrNull { it.id == categoryId }
+            if (categoryId != null && chosen == null) categoryId = null
+            categoryName = chosen?.name
+        }
     }
     if (showScan) {
         AppFormSheet(onDismiss = { showScan = false }, nested = true) {

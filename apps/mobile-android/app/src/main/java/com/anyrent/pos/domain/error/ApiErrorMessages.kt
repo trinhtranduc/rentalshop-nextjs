@@ -52,6 +52,10 @@ object ApiErrorMessages {
         "ORDER_SCHEDULE_CONFLICT" -> R.string.api_error_order_schedule_conflict
         // #567: 400 when a shop time zone is not a known IANA id (PUT /api/settings/merchant)
         "INVALID_TIMEZONE" -> R.string.api_error_invalid_timezone
+        // #632: categories from the product form
+        "CATEGORY_NAME_EXISTS" -> R.string.api_error_category_name_exists
+        "CATEGORY_NAME_REQUIRED" -> R.string.api_error_category_name_required
+        "CANNOT_DELETE_DEFAULT_CATEGORY" -> R.string.api_error_cannot_delete_default_category
         else -> 0
     }
 

@@ -2248,3 +2248,22 @@
 "printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.";
 "bill.bankQr.title" = "CHUYỂN KHOẢN";
 "bill.bankQr.accountNumber" = "STK: %@";
+
+/* #632 categories from the product form */
+"CATEGORY_NAME_EXISTS" = "Tên danh mục đã tồn tại";
+"CATEGORY_NAME_REQUIRED" = "Vui lòng nhập tên danh mục";
+"products.category.add" = "+ Thêm danh mục";
+"products.category.manage" = "Quản lý danh mục";
+"products.category.addTitle" = "Thêm danh mục";
+"products.category.renameTitle" = "Đổi tên danh mục";
+"products.category.namePlaceholder" = "Tên danh mục";
+"products.category.save" = "Lưu";
+"products.category.rename" = "Đổi tên";
+"products.category.delete" = "Xoá";
+"products.category.deleteTitle" = "Xoá danh mục \"%@\"?";
+"products.category.default" = "Mặc định";
+"products.category.empty" = "Chưa có danh mục";
+"products.category.nameRequired" = "Vui lòng nhập tên danh mục";
+"products.category.nameTooShort" = "Tên danh mục cần ít nhất 2 ký tự";
+"products.category.nameTooLong" = "Tên danh mục tối đa 50 ký tự";
+"products.category.hasProducts" = "Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.";

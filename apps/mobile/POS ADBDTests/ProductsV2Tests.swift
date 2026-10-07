@@ -745,4 +745,40 @@ extension ProductsV2Tests {
         XCTAssertNotEqual(submission.idempotencyKey, key, "the next cart is a new checkout")
         XCTAssertFalse(submission.inFlight)
     }
+
+
+    // MARK: - Categories from the product form (#632)
+
+    func testCategoryAddFollowsProductsManageNeverStaff() {
+        XCTAssertTrue(CategoryRules.canAdd(role: .merchant, permissions: ["products.manage"]))
+        XCTAssertTrue(CategoryRules.canAdd(role: .outletAdmin, permissions: ["products.manage", "products.view"]))
+        XCTAssertFalse(CategoryRules.canAdd(role: .outletStaff, permissions: ["products.view", "products.create"]))
+        XCTAssertFalse(CategoryRules.canAdd(role: .outletStaff, permissions: ["products.manage"]), "staff never, whatever the list says")
+        XCTAssertFalse(CategoryRules.canAdd(role: nil, permissions: []))
+    }
+
+    func testCategoryRenameAndDeleteOnlyMerchant() {
+        XCTAssertTrue(CategoryRules.canManage(role: .merchant))
+        XCTAssertTrue(CategoryRules.canManage(role: .admin))
+        XCTAssertFalse(CategoryRules.canManage(role: .outletAdmin), "PUT/DELETE /api/categories/{id} reject OUTLET_ADMIN")
+        XCTAssertFalse(CategoryRules.canManage(role: .outletStaff))
+        XCTAssertFalse(CategoryRules.canManage(role: nil))
+    }
+
+    func testDefaultCategoryIsNeverDeletable() {
+        var category = Category()
+        XCTAssertTrue(CategoryRules.canDelete(category))
+        category.isDefault = false
+        XCTAssertTrue(CategoryRules.canDelete(category))
+        category.isDefault = true
+        XCTAssertFalse(CategoryRules.canDelete(category))
+    }
+
+    func testCategoryNameIsTrimmedAndTwoToFiftyCharacters() {
+        XCTAssertEqual(CategoryRules.validateName("   "), .required)
+        XCTAssertEqual(CategoryRules.validateName(" Á "), .tooShort)
+        XCTAssertNil(CategoryRules.validateName(" Áo "))
+        XCTAssertNil(CategoryRules.validateName(String(repeating: "đ", count: 50)))
+        XCTAssertEqual(CategoryRules.validateName(String(repeating: "đ", count: 51)), .tooLong)
+    }
 }

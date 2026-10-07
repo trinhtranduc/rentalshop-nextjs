@@ -2250,3 +2250,22 @@
 "printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. This device only.";
 "bill.bankQr.title" = "BANK TRANSFER";
 "bill.bankQr.accountNumber" = "Account: %@";
+
+/* #632 categories from the product form */
+"CATEGORY_NAME_EXISTS" = "A category with this name already exists";
+"CATEGORY_NAME_REQUIRED" = "Please enter a category name";
+"products.category.add" = "+ Add category";
+"products.category.manage" = "Manage categories";
+"products.category.addTitle" = "Add category";
+"products.category.renameTitle" = "Rename category";
+"products.category.namePlaceholder" = "Category name";
+"products.category.save" = "Save";
+"products.category.rename" = "Rename";
+"products.category.delete" = "Delete";
+"products.category.deleteTitle" = "Delete category \"%@\"?";
+"products.category.default" = "Default";
+"products.category.empty" = "No categories yet";
+"products.category.nameRequired" = "Please enter a category name";
+"products.category.nameTooShort" = "A category name needs at least 2 characters";
+"products.category.nameTooLong" = "A category name has at most 50 characters";
+"products.category.hasProducts" = "This category still has products. Move them to another category before deleting it.";

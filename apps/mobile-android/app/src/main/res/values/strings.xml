@@ -1324,4 +1324,23 @@
     <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. This device only.</string>
     <string name="bill_bank_qr_title">BANK TRANSFER</string>
     <string name="bill_bank_qr_account">Account: %1$s</string>
+    <!-- #632 categories from the product form -->
+    <string name="api_error_category_name_exists">A category with this name already exists</string>
+    <string name="api_error_category_name_required">Please enter a category name</string>
+    <string name="api_error_cannot_delete_default_category">The default category cannot be deleted</string>
+    <string name="v2_category_add">+ Add category</string>
+    <string name="v2_category_manage">Manage categories</string>
+    <string name="v2_category_add_title">Add category</string>
+    <string name="v2_category_rename_title">Rename category</string>
+    <string name="v2_category_name_placeholder">Category name</string>
+    <string name="v2_category_save">Save</string>
+    <string name="v2_category_rename">Rename</string>
+    <string name="v2_category_delete">Delete</string>
+    <string name="v2_category_delete_title">Delete category \"%1$s\"?</string>
+    <string name="v2_category_default">Default</string>
+    <string name="v2_category_empty">No categories yet</string>
+    <string name="v2_category_name_required">Please enter a category name</string>
+    <string name="v2_category_name_too_short">A category name needs at least 2 characters</string>
+    <string name="v2_category_name_too_long">A category name has at most 50 characters</string>
+    <string name="v2_category_has_products">This category still has products. Move them to another category before deleting it.</string>
 </resources>
