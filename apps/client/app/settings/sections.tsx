@@ -563,12 +563,14 @@ export function ReceiptSection({ t, canEditNote, bankLink = null }: { t: T; canE
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {rows.map((r) => (
                 <li key={r.id} className="flex min-h-[44px] items-center justify-between gap-3">
-                  <span className="text-[15px] text-ar-ink">{rows.length > 1 ? r.name : t('printer.bankQr')}</span>
+                  <span id={`${qrTitleId}-${r.id}`} className="text-[15px] text-ar-ink">
+                    {r.name}
+                  </span>
                   <Switch
                     checked={qrOn[r.id] === true}
                     onChange={(next) => toggleQr(r, next)}
                     disabled={!canEditNote || qrSaving[r.id]}
-                    labelledBy={rows.length > 1 ? undefined : qrTitleId}
+                    labelledBy={`${qrTitleId} ${qrTitleId}-${r.id}`}
                     describedBy={qrHintId}
                   />
                 </li>
