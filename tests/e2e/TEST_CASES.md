@@ -34,6 +34,7 @@ Run: `scripts/e2e/business-e2e.sh` (seed, API, both time zones) or `E2E_API_URL=
 | BF-PROD-04 | Có trong danh sách / tìm kiếm | create, `GET /api/products?search=<name>` | row with rentPrice and stock 4 at the outlet |
 | BF-PROD-05 | Đổi giá chỉ áp dụng đơn mới | order at 100.000, PUT product 130.000 | old order total/unit/line stay 100.000; Overview Δ 0; new order 130.000 |
 | BF-PROD-06 | Theo giờ cần cấu hình | HOURLY without / with durationConfig | 400 / 200 |
+| BF-PROD-07 | Mã vạch duy nhất trong từng shop (#629) | main merchant creates barcode X; other merchant creates X; main merchant creates X again | 200 / 200 (other shop may reuse X) / 409 `DUPLICATE_ENTRY` |
 
 ## BF-PRICE — Tính tiền (`products-pricing.e2e.test.js`)
 
