@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculateSubscriptionPrice, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
+import { calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -608,7 +608,7 @@ export async function changePlan(
       endDate: updatedSubscription.currentPeriodEnd,
       duration: updatedSubscription.interval,
       isActive: updatedSubscription.status === SUBSCRIPTION_STATUS.ACTIVE, // ✅ Use enum constant
-      daysRemaining: Math.ceil((updatedSubscription.currentPeriodEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+      daysRemaining: civilDaysBetween(new Date(), updatedSubscription.currentPeriodEnd), // VN civil days (#588)
       nextBillingDate: updatedSubscription.currentPeriodEnd
     }
   };

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, USER_ROLE, PAYMENT_STATUS, PLATFORM_OPS_ROLES} from '@rentalshop/constants';
 
 // Manual payment creation schema
@@ -74,8 +74,11 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
     if (validatedData.extendSubscription && merchant.subscription && validatedData.monthsToExtend) {
       const currentSubscription = merchant.subscription;
       if (currentSubscription.currentPeriodEnd) {
-        const newEndDate = new Date(currentSubscription.currentPeriodEnd);
-        newEndDate.setMonth(newEndDate.getMonth() + validatedData.monthsToExtend);
+        // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
+        const newEndDate = addMonthsInTimeZone(
+          new Date(currentSubscription.currentPeriodEnd),
+          validatedData.monthsToExtend
+        );
 
         await db.subscriptions.update(currentSubscription.id, {
           currentPeriodEnd: newEndDate,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_STATUS } from '@rentalshop/constants';
 import { verifyLemonSqueezyWebhookSignature } from '../../../../lib/lemonsqueezy';
 
@@ -120,8 +120,8 @@ export async function POST(request: NextRequest) {
               : billingIntervalRaw === 'annual'
                 ? 12
                 : 1;
-        const currentPeriodStart = new Date(currentPeriodEnd);
-        currentPeriodStart.setMonth(currentPeriodStart.getMonth() - months);
+        // Calendar months on the Vietnam day, clamped (31 Mar - 1 = 28/29 Feb) (#588)
+        const currentPeriodStart = addMonthsInTimeZone(currentPeriodEnd, -months);
 
         const planId = custom.planId;
         if (!planId) break;

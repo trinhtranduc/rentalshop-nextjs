@@ -12,6 +12,9 @@ import {
   sendSubscriptionExtensionEmail,
   normalizeBillingInterval,
   calculateExtensionTotal,
+  civilDaysBetween,
+  formatDateKeyInTimeZone,
+  SHOP_TIMEZONE,
 } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
@@ -94,9 +97,11 @@ async function handleExtendSubscription(
 
     // Calculate extension duration
     const oldEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
-    const extensionDays = Math.ceil((endDate.getTime() - oldEndDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Vietnam civil days from the old end day to the new end day (#588). Acceptance stays on the
+    // instants as before: any new end after the old end is valid (a same-day move counts 0 days).
+    const extensionDays = Math.max(0, civilDaysBetween(oldEndDate, endDate));
 
-    if (extensionDays <= 0) {
+    if (endDate.getTime() <= oldEndDate.getTime()) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_EXTENSION_DURATION'),
         { status: 400 }
@@ -167,7 +172,7 @@ async function handleExtendSubscription(
     await db.subscriptionActivities.create({
       subscriptionId,
       type: 'subscription_extended',
-      description: `Subscription extended by ${extensionDays} day${extensionDays !== 1 ? 's' : ''} until ${endDate.toISOString().split('T')[0]}`,
+      description: `Subscription extended by ${extensionDays} day${extensionDays !== 1 ? 's' : ''} until ${formatDateKeyInTimeZone(endDate, SHOP_TIMEZONE)}`,
       metadata: {
         planId: subscription.planId,
         planName: subscription.plan?.name,

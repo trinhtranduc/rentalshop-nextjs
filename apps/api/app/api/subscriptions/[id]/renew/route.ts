@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
@@ -60,8 +60,8 @@ export async function POST(
 
       // Calculate new period end based on duration (months)
       const currentPeriodEnd = new Date(existing.currentPeriodEnd || new Date());
-      const newPeriodEnd = new Date(currentPeriodEnd);
-      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + duration);
+      // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
+      const newPeriodEnd = addMonthsInTimeZone(currentPeriodEnd, duration);
 
       // Calculate renewal amount with discount based on duration
       // Apply discount: 1 month = 0%, 3 months = 5%, 6 months = 10%, 12 months = 20%

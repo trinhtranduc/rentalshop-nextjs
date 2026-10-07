@@ -1,6 +1,7 @@
 import type { BillingInterval, Plan, Subscription } from '@rentalshop/types';
 import { calculateSubscriptionPrice } from './pricing-calculator';
 import { normalizeBillingInterval } from './billing-interval';
+import { addMonthsInTimeZone, civilDaysBetween } from './billing-dates';
 
 export interface PlanChangeCalculation {
   oldPlanPeriodPrice: number;
@@ -20,20 +21,9 @@ export interface ExtensionCalculation {
   totalDue: number;
 }
 
+/** Vietnam civil days from the day of `start` to the day of `end` (#588). */
 function daysBetween(start: Date, end: Date): number {
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function addMonthsPreserveDay(start: Date, months: number): Date {
-  const end = new Date(start);
-  const originalDay = start.getDate();
-  end.setMonth(end.getMonth() + months);
-  if (end.getDate() !== originalDay) {
-    end.setDate(1);
-    end.setMonth(end.getMonth() + 1);
-    end.setDate(0);
-  }
-  return end;
+  return civilDaysBetween(start, end);
 }
 
 function intervalMonths(interval: BillingInterval): number {
@@ -107,7 +97,7 @@ export function calculateExtensionTotal(params: {
   const selectedInterval = normalizeBillingInterval(params.selectedInterval);
 
   const extensionDays = Math.max(0, daysBetween(params.oldEndDate, params.newEndDate));
-  const selectedIntervalEnd = addMonthsPreserveDay(params.oldEndDate, intervalMonths(selectedInterval));
+  const selectedIntervalEnd = addMonthsInTimeZone(params.oldEndDate, intervalMonths(selectedInterval));
   const selectedIntervalDays = Math.max(1, daysBetween(params.oldEndDate, selectedIntervalEnd));
 
   const plan: Plan = { basePrice: params.plan.basePrice } as any;
