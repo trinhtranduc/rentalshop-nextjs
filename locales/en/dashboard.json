@@ -225,7 +225,12 @@
     "custom": {
       "from": "From",
       "to": "To",
-      "apply": "Show"
+      "apply": "Show",
+      "quick": {
+        "next7": "Next 7 days",
+        "next30": "Next 30 days",
+        "nextMonth": "Next month"
+      }
     },
     "kpi": {
       "orderValue": "New order value",
@@ -299,7 +304,9 @@
       "open": "{label}: {value}. Show details",
       "trend": "Collected per day",
       "forecast": "{amount} more expected today",
-      "forecastTip": "Collected {collected} · {forecast} more expected today"
+      "forecastTip": "Collected {collected} · {forecast} more expected today",
+      "forecastUntil": "{amount} more expected until {day}",
+      "forecastTipUntil": "Collected {collected} · {forecast} more expected until {day}"
     },
     "detail": {
       "close": "Close",

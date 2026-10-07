@@ -90,6 +90,7 @@ export function KpiTiles({
   tiles,
   spark,
   forecast,
+  todayKey,
   loading,
   t,
   money,
@@ -98,8 +99,10 @@ export function KpiTiles({
   tiles: Tile[];
   /** Sparkline points per tile; a tile without a per-day series has none */
   spark: Partial<Record<DetailKind, string | null>>;
-  /** Thực thu: collected vs expected today, only when the API sends a forecast */
-  forecast: { collected: number; forecast: number; pct: number } | null;
+  /** Thực thu: collected vs expected from today to the end of the range (#612), only when the API sends one */
+  forecast: { collected: number; forecast: number; pct: number; until: string } | null;
+  /** Shop today, to word the forecast "hôm nay" or "đến DD/MM" */
+  todayKey: string;
   loading: boolean;
   t: T;
   money: Money;
@@ -137,7 +140,11 @@ export function KpiTiles({
               <span className="flex w-full flex-col gap-1.5">
                 <span
                   className="flex h-1.5 w-full gap-[2px]"
-                  title={t('home.tiles.forecastTip', { collected: money(forecast.collected), forecast: money(forecast.forecast) })}
+                  title={
+                    forecast.until === todayKey
+                      ? t('home.tiles.forecastTip', { collected: money(forecast.collected), forecast: money(forecast.forecast) })
+                      : t('home.tiles.forecastTipUntil', { collected: money(forecast.collected), forecast: money(forecast.forecast), day: `${forecast.until.slice(8, 10)}/${forecast.until.slice(5, 7)}` })
+                  }
                 >
                   <span className="rounded-l-[3px] bg-ar-chart-blue" style={{ width: `${forecast.pct}%` }} />
                   <span
@@ -146,7 +153,9 @@ export function KpiTiles({
                   />
                 </span>
                 <span className="text-xs text-ar-muted">
-                  {t('home.tiles.forecast', { amount: money(forecast.forecast) })}
+                  {forecast.until === todayKey
+                    ? t('home.tiles.forecast', { amount: money(forecast.forecast) })
+                    : t('home.tiles.forecastUntil', { amount: money(forecast.forecast), day: `${forecast.until.slice(8, 10)}/${forecast.until.slice(5, 7)}` })}
                 </span>
               </span>
             )}

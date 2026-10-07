@@ -225,7 +225,12 @@
     "custom": {
       "from": "Từ ngày",
       "to": "Đến ngày",
-      "apply": "Xem"
+      "apply": "Xem",
+      "quick": {
+        "next7": "7 ngày tới",
+        "next30": "30 ngày tới",
+        "nextMonth": "Tháng sau"
+      }
     },
     "kpi": {
       "orderValue": "Giá trị đơn mới",
@@ -299,7 +304,9 @@
       "open": "{label}: {value}. Xem chi tiết",
       "trend": "Thực thu theo ngày",
       "forecast": "dự kiến thêm {amount} hôm nay",
-      "forecastTip": "Đã thu {collected} · dự kiến thêm {forecast} hôm nay"
+      "forecastTip": "Đã thu {collected} · dự kiến thêm {forecast} hôm nay",
+      "forecastUntil": "dự kiến thêm {amount} đến {day}",
+      "forecastTipUntil": "Đã thu {collected} · dự kiến thêm {forecast} đến {day}"
     },
     "detail": {
       "close": "Đóng",

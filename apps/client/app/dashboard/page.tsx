@@ -23,6 +23,8 @@ import {
   chartBars,
   chartRange,
   forecastBar,
+  futureQuickRanges,
+  addDays,
   formatRangeLabel,
   isDayKey,
   parseDetail,
@@ -219,10 +221,12 @@ export default function DashboardPage() {
       {customOpen && canViewRevenue && (
         <div className="flex justify-end">
           <DateRangeField
-            from={range.startDate > todayKey ? todayKey : range.startDate}
-            to={range.endDate > todayKey ? todayKey : range.endDate}
+            from={range.startDate}
+            to={range.endDate}
             todayKey={todayKey}
-            max={todayKey}
+            // #612: future days are open so a range can show the expected collections ("dự kiến thu")
+            max={addDays(todayKey, 365)}
+            quick={futureQuickRanges(todayKey).map((q) => ({ ...q, label: t(`home.custom.quick.${q.key}`) }))}
             align="end"
             initialOpen={period !== 'custom'}
             ariaLabel={t('home.periods.custom')}
@@ -240,6 +244,7 @@ export default function DashboardPage() {
           tiles={tiles}
           spark={spark}
           forecast={forecast}
+          todayKey={todayKey}
           loading={!ready || report.loading}
           t={t}
           money={money}
