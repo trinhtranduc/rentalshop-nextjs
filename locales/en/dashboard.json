@@ -292,6 +292,13 @@
       "empty": "Nothing rented in this period.",
       "tooltip": "{name}: {amount} · {rentals}"
     },
+    "topCustomers": {
+      "title": "Top customers",
+      "subtitle": "by money collected",
+      "orders": "{count} orders",
+      "empty": "No customer has ordered in this range.",
+      "tooltip": "{name}: {amount} · {rentals}"
+    },
     "loadFailed": "Couldn't load the numbers.",
     "retry": "Try again",
     "tiles": {

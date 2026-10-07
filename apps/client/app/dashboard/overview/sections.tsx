@@ -12,6 +12,9 @@ import {
   initials,
   progressPercent,
   topBars,
+  topCustomerBars,
+  type TopBar,
+  type TopCustomerLike,
   type ChartMode,
   type ChipTone,
   type DetailKind,
@@ -590,12 +593,72 @@ export function TopProducts({
   t: T;
   money: Money;
 }) {
-  const bars = topBars(products);
+  return (
+    <TopList
+      ns="home.top"
+      countKey="home.top.rentals"
+      bars={topBars(products)}
+      href={(id) => `/products/${id}`}
+      loading={loading}
+      locale={locale}
+      t={t}
+      money={money}
+    />
+  );
+}
+
+/** Top customers of the period (#620): who brought the most money in. */
+export function TopCustomers({
+  customers,
+  loading,
+  locale,
+  t,
+  money,
+}: {
+  customers: TopCustomerLike[];
+  loading: boolean;
+  locale: string;
+  t: T;
+  money: Money;
+}) {
+  return (
+    <TopList
+      ns="home.topCustomers"
+      countKey="home.topCustomers.orders"
+      bars={topCustomerBars(customers)}
+      href={(id) => `/customers/${id}`}
+      loading={loading}
+      locale={locale}
+      t={t}
+      money={money}
+    />
+  );
+}
+
+function TopList({
+  ns,
+  countKey,
+  bars,
+  href,
+  loading,
+  locale,
+  t,
+  money,
+}: {
+  ns: string;
+  countKey: string;
+  bars: TopBar[];
+  href: (id: TopBar['id']) => string;
+  loading: boolean;
+  locale: string;
+  t: T;
+  money: Money;
+}) {
   const compact = useCompact(locale);
   return (
     <section className={`${cardClass} flex min-w-0 flex-[1_1_320px] flex-col gap-3 px-[22px] py-5`}>
       <h2 className={h2Class}>
-        {t('home.top.title')} <span className="text-[13px] font-normal text-ar-muted">· {t('home.top.subtitle')}</span>
+        {t(`${ns}.title`)} <span className="text-[13px] font-normal text-ar-muted">· {t(`${ns}.subtitle`)}</span>
       </h2>
       {loading ? (
         <div className="flex flex-col gap-3">
@@ -604,14 +667,14 @@ export function TopProducts({
           ))}
         </div>
       ) : bars.length === 0 ? (
-        <p className="m-0 text-[15px] text-ar-muted">{t('home.top.empty')}</p>
+        <p className="m-0 text-[15px] text-ar-muted">{t(`${ns}.empty`)}</p>
       ) : (
         bars.map((p) => {
-          const tip = t('home.top.tooltip', { name: p.name, amount: money(p.value), rentals: t('home.top.rentals', { count: p.rentals }) });
+          const tip = t(`${ns}.tooltip`, { name: p.name, amount: money(p.value), rentals: t(countKey, { count: p.rentals }) });
           return (
             <Link
               key={p.id}
-              href={`/products/${p.id}`}
+              href={href(p.id)}
               title={tip}
               aria-label={tip}
               className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg text-ar-ink no-underline hover:bg-ar-surface-muted"

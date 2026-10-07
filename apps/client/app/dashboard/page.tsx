@@ -34,8 +34,9 @@ import {
   type DetailKind,
   type OverviewPeriod,
   type PeriodReportLike,
+  showsTodayWork,
 } from './overview-model';
-import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopProducts, type T } from './overview/sections';
+import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopCustomers, TopProducts, type T } from './overview/sections';
 import { DetailDrawer } from './overview/DetailDrawer';
 
 interface Loadable<V> {
@@ -96,6 +97,8 @@ export default function DashboardPage() {
     [period, todayKey, customFrom, customTo],
   );
   const chart = useMemo(() => chartRange(period, range), [period, range]);
+  // Hôm nay card and today's orders belong to the today period only (#620)
+  const todayWork = showsTodayWork(period);
   const sameRange = chart.startDate === range.startDate && chart.endDate === range.endDate;
 
   const [nonce, setNonce] = useState(0);
@@ -266,15 +269,19 @@ export default function DashboardPage() {
             money={money}
           />
         )}
-        <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
-      </div>
-
-      <div className="flex flex-wrap gap-4">
-        <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />
-        {canViewRevenue && (
-          <TopProducts products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+        {todayWork && (
+          <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
         )}
       </div>
+
+      {todayWork && <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />}
+
+      {canViewRevenue && (
+        <div className="flex flex-wrap gap-4">
+          <TopProducts products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+          <TopCustomers customers={report.data?.topCustomers ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+        </div>
+      )}
 
       {detail && (
         <DetailDrawer
