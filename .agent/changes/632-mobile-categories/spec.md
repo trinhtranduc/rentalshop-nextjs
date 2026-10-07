@@ -4,22 +4,21 @@ Status: accepted · Intent: ./intent.md
 
 ## Behaviors
 
-1. The category picker lists "Không danh mục" + the shop's active categories, as today.
-2. MERCHANT and OUTLET_ADMIN see a "+ Thêm danh mục" entry. It asks for a name (trimmed, 2–50 chars, same
-   rule as the web `validateCategory`). Save → `POST /api/categories {name}`; on success the list reloads and
-   the new category is selected in the form.
-3. OUTLET_STAFF sees no add and no manage entry.
-4. MERCHANT sees "Quản lý danh mục": a list of the shop's categories. Each row: rename, and delete except the
-   default category (`isDefault`), same as web `rowActions`.
-5. Rename → `PUT /api/categories/{id} {name}`; the list and the form's selected name update.
-6. Delete asks for confirmation → `DELETE /api/categories/{id}`. If the form had that category selected, the
-   selection is cleared.
-7. Errors are shown in the user's language: `CATEGORY_NAME_EXISTS` ("Danh mục đã tồn tại"),
-   `CATEGORY_NAME_REQUIRED`, `CANNOT_DELETE_DEFAULT_CATEGORY`, and 409 `BUSINESS_RULE_VIOLATION` on delete
-   ("Danh mục còn sản phẩm, chuyển sản phẩm sang danh mục khác trước"). Other errors: the generic message.
-8. iOS and Android behave the same (texts, roles, order of entries).
-9. Cài đặt → QUẢN LÝ gets "Danh mục" (first row) for MERCHANT and OUTLET_ADMIN, never OUTLET_STAFF. It opens the
-   same full screen as "Quản lý danh mục": + adds; MERCHANT taps a row to rename / delete; OUTLET_ADMIN only adds.
+One category screen, two entries (owner, 2026-10-07: "bấm danh mục ở tạo sản phẩm nên ra new screen").
+
+1. Product form (add and edit, also via Chi tiết sản phẩm → Sửa): tapping Danh mục opens the screen in **pick
+   mode**: "Không chọn" first, then the shop's active categories, ✓ on the current one. A tap picks and goes back.
+2. Cài đặt → QUẢN LÝ → "Danh mục" (first row; MERCHANT and OUTLET_ADMIN, never OUTLET_STAFF) opens the same screen
+   in **manage mode** (no "Không chọn", no ✓, tapping a row does nothing).
+3. Search box: accent- and case-insensitive contains ("ao cuoi" finds "Áo cưới"); "Không chọn" hides while searching.
+4. ＋ in the header for MERCHANT and OUTLET_ADMIN: name (trimmed, 2–50 chars, like web `validateCategory`) →
+   `POST /api/categories`; in pick mode the new category is picked and the screen closes.
+5. ⋯ on each row for MERCHANT only: Đổi tên (`PUT /api/categories/{id}`), Xoá (confirm → `DELETE`), no Xoá on the
+   default category. After a delete the form clears its choice if that category was picked.
+6. OUTLET_STAFF in the form: pick only (no ＋, no ⋯).
+7. Errors in the user's language: `CATEGORY_NAME_EXISTS`, `CATEGORY_NAME_REQUIRED`, `CANNOT_DELETE_DEFAULT_CATEGORY`,
+   409 `BUSINESS_RULE_VIOLATION` on delete ("Danh mục còn sản phẩm…"); other errors: the API message.
+8. iOS and Android behave the same.
 
 ## Out of scope
 

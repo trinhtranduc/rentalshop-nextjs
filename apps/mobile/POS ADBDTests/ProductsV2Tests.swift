@@ -774,6 +774,14 @@ extension ProductsV2Tests {
         XCTAssertFalse(CategoryRules.canDelete(category))
     }
 
+    func testCategorySearchIgnoresAccentsAndCase() {
+        XCTAssertTrue(CategoryRules.matches("Áo cưới", query: "ao cuoi"))
+        XCTAssertTrue(CategoryRules.matches("Đầm dạ hội", query: "dam"))
+        XCTAssertTrue(CategoryRules.matches("Váy", query: "  "))
+        XCTAssertFalse(CategoryRules.matches("Áo dài", query: "vay"))
+        XCTAssertFalse(CategoryRules.matches(nil, query: "a"))
+    }
+
     func testCategoryNameIsTrimmedAndTwoToFiftyCharacters() {
         XCTAssertEqual(CategoryRules.validateName("   "), .required)
         XCTAssertEqual(CategoryRules.validateName(" Á "), .tooShort)

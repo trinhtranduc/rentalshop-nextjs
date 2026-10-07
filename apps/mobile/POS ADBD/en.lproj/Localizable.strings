@@ -2254,8 +2254,6 @@
 /* #632 categories from the product form */
 "CATEGORY_NAME_EXISTS" = "A category with this name already exists";
 "CATEGORY_NAME_REQUIRED" = "Please enter a category name";
-"products.category.add" = "+ Add category";
-"products.category.manage" = "Manage categories";
 "products.category.addTitle" = "Add category";
 "products.category.renameTitle" = "Rename category";
 "products.category.namePlaceholder" = "Category name";
@@ -2272,3 +2270,4 @@
 /* #633 Overview top lists */
 "overview.dash.top.viewAll" = "View all";
 "settings.v2.categories" = "Categories";
+"products.category.search" = "Search categories";

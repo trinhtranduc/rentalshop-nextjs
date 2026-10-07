@@ -1314,8 +1314,6 @@
     <string name="api_error_category_name_exists">Tên danh mục đã tồn tại</string>
     <string name="api_error_category_name_required">Vui lòng nhập tên danh mục</string>
     <string name="api_error_cannot_delete_default_category">Không thể xoá danh mục mặc định</string>
-    <string name="v2_category_add">+ Thêm danh mục</string>
-    <string name="v2_category_manage">Quản lý danh mục</string>
     <string name="v2_category_add_title">Thêm danh mục</string>
     <string name="v2_category_rename_title">Đổi tên danh mục</string>
     <string name="v2_category_name_placeholder">Tên danh mục</string>
@@ -1330,4 +1328,5 @@
     <string name="v2_category_name_too_long">Tên danh mục tối đa 50 ký tự</string>
     <string name="v2_category_has_products">Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.</string>
     <string name="settings_v2_categories">Danh mục</string>
+    <string name="v2_category_search">Tìm danh mục</string>
 </resources>

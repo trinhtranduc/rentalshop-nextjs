@@ -2252,8 +2252,6 @@
 /* #632 categories from the product form */
 "CATEGORY_NAME_EXISTS" = "Tên danh mục đã tồn tại";
 "CATEGORY_NAME_REQUIRED" = "Vui lòng nhập tên danh mục";
-"products.category.add" = "+ Thêm danh mục";
-"products.category.manage" = "Quản lý danh mục";
 "products.category.addTitle" = "Thêm danh mục";
 "products.category.renameTitle" = "Đổi tên danh mục";
 "products.category.namePlaceholder" = "Tên danh mục";
@@ -2270,3 +2268,4 @@
 /* #633 Tổng quan top lists */
 "overview.dash.top.viewAll" = "Xem tất cả";
 "settings.v2.categories" = "Danh mục";
+"products.category.search" = "Tìm danh mục";

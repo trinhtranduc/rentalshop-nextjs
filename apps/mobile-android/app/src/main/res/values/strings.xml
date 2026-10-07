@@ -1332,8 +1332,6 @@
     <string name="api_error_category_name_exists">A category with this name already exists</string>
     <string name="api_error_category_name_required">Please enter a category name</string>
     <string name="api_error_cannot_delete_default_category">The default category cannot be deleted</string>
-    <string name="v2_category_add">+ Add category</string>
-    <string name="v2_category_manage">Manage categories</string>
     <string name="v2_category_add_title">Add category</string>
     <string name="v2_category_rename_title">Rename category</string>
     <string name="v2_category_name_placeholder">Category name</string>
@@ -1348,4 +1346,5 @@
     <string name="v2_category_name_too_long">A category name has at most 50 characters</string>
     <string name="v2_category_has_products">This category still has products. Move them to another category before deleting it.</string>
     <string name="settings_v2_categories">Categories</string>
+    <string name="v2_category_search">Search categories</string>
 </resources>

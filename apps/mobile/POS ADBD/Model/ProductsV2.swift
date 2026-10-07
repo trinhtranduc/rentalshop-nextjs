@@ -63,6 +63,18 @@ enum CategoryRules {
         category.isDefault != true
     }
 
+    /// Search box of the category screen: accent- and case-insensitive ("ao cuoi" finds "Áo cưới"); blank keeps all
+    static func matches(_ name: String?, query: String) -> Bool {
+        let needle = fold(query)
+        return needle.isEmpty || fold(name ?? "").contains(needle)
+    }
+
+    private static func fold(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "vi_VN"))
+            .replacingOccurrences(of: "đ", with: "d")
+    }
+
     static func validateName(_ name: String) -> NameError? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return .required }

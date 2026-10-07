@@ -261,6 +261,15 @@ class ProductRulesTest {
     }
 
     @Test
+    fun categorySearchIgnoresAccentsAndCase() {
+        assertTrue(CategoryRules.matches("Áo cưới", "ao cuoi"))
+        assertTrue(CategoryRules.matches("Đầm dạ hội", "dam"))
+        assertTrue(CategoryRules.matches("Váy", "  "))
+        assertFalse(CategoryRules.matches("Áo dài", "vay"))
+        assertFalse(CategoryRules.matches(null, "a"))
+    }
+
+    @Test
     fun categoryNameIsTrimmedAndTwoToFiftyCharacters() {
         assertEquals(CategoryRules.NameError.REQUIRED, CategoryRules.validateName("   "))
         assertEquals(CategoryRules.NameError.TOO_SHORT, CategoryRules.validateName(" Á "))

@@ -47,6 +47,17 @@ object CategoryRules {
     /** The default category ("General") is never deleted, only renamed */
     fun canDelete(isDefault: Boolean): Boolean = !isDefault
 
+    /** Search box of the category screen: accent- and case-insensitive ("ao cuoi" finds "Áo cưới"); blank keeps all */
+    fun matches(name: String?, query: String): Boolean {
+        val needle = fold(query)
+        return needle.isEmpty() || fold(name.orEmpty()).contains(needle)
+    }
+
+    private fun fold(text: String): String =
+        java.text.Normalizer.normalize(text.trim().lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .replace('đ', 'd')
+
     fun validateName(name: String): NameError? {
         val trimmed = name.trim()
         return when {

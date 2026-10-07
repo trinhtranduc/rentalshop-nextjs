@@ -38,3 +38,4 @@ MERCHANT, OUTLET_ADMIN, OUTLET_STAFF. iOS, Android. Reads `GET/POST /api/categor
 - 2026-10-07 — Entry point is the product form's category picker, not Settings (owner)
 - 2026-10-07 — Roles exactly as the API allows (owner)
 - 2026-10-07 — Category management also needs its own screen outside the form: Cài đặt → Danh mục (owner: "quản lý danh mục cần view riêng")
+- 2026-10-07 — Tapping Danh mục in the product form opens the category screen (pick mode) instead of an action sheet / dialog; one screen for pick and manage (owner)
