@@ -17,12 +17,11 @@ import {
   apiUrls,
   authenticatedFetch,
   calendarApi,
-  formatDateKeyInTimeZone,
   getLocalDateKey,
   parseApiResponse,
-  SHOP_TIMEZONE,
   type CalendarOrderSummary,
 } from '@rentalshop/utils';
+import { useShopToday } from '../hooks/useShopToday';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { formatDayLabel } from '../dashboard/overview-model';
@@ -148,7 +147,7 @@ function CalendarContent() {
   const { user, loading: authLoading } = useAuth();
   const outletId = user?.outletId ?? undefined;
 
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
   const monthNames = useMemo(() => t('monthNames').split(','), [t]);
 

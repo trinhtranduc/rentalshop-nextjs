@@ -25,10 +25,11 @@ import {
 import { AlertTriangle, CheckCircle, CreditCard } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth, useSubscriptionStatusInfo } from '@rentalshop/hooks';
-import { lemonsqueezyApi, publicPlansApi, normalizeBillingInterval } from '@rentalshop/utils';
+import { formatDateKeyInTimeZone, lemonsqueezyApi, publicPlansApi, normalizeBillingInterval, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import type { Plan } from '@rentalshop/types';
 import { useRouter } from 'next/navigation';
+import { expiredDaysAgo } from './renewal-model';
 
 export interface SubscriptionRenewalBottomBarProps {
   /** Notify layout to add bottom padding so content is not hidden behind the fixed bar */
@@ -98,9 +99,9 @@ export default function SubscriptionRenewalBottomBar({ onInsetChange }: Subscrip
     const st = String(subscription.status ?? '').toUpperCase();
     const endRaw = subscription.currentPeriodEnd;
     if (endRaw && (st === 'EXPIRED' || !hasAccess)) {
-      const end = new Date(endRaw);
-      if (!Number.isNaN(end.getTime()) && end.getTime() < Date.now()) {
-        const days = Math.floor((Date.now() - end.getTime()) / 86400000);
+      // Vietnam civil days, not 24-hour blocks (#589)
+      const days = expiredDaysAgo(endRaw, new Date(), (d) => formatDateKeyInTimeZone(d, SHOP_TIMEZONE));
+      if (days != null) {
         if (days <= 0) return t('expiredToday');
         if (days === 1) return t('expiredOneDayAgo');
         return t('expiredDaysAgo', { days });

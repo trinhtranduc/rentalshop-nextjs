@@ -13,7 +13,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
-import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, outletsApi, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { getLocalDateKey, ordersApi, outletsApi, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { useShopToday } from '../hooks/useShopToday';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { ShellIcon } from '../components/shell/Icon';
 import { formatDayLabel } from '../dashboard/overview-model';
@@ -366,7 +367,7 @@ function AvailabilityContent() {
   const money = useFormatCurrency() as Money;
   const { user, loading: authLoading } = useAuth();
 
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
 
   // URL state
@@ -382,30 +383,46 @@ function AvailabilityContent() {
   const outletId: number | null = user?.outletId ?? (outlets.some((o) => o.id === pickedOutlet) ? pickedOutlet : outlets[0]?.id ?? null);
 
   const [product, setProduct] = useState<ProductRow | null>(null);
+  // Deep link (?productId=, product page button): the id stays in the URL until the product has loaded, so the URL
+  // sync below cannot drop it and cancel the load (#579)
+  const [linkedId, setLinkedId] = useState<number | null>(productParam);
   useEffect(() => {
-    if (!productParam || product?.id === productParam) return;
+    if (productParam && productParam !== product?.id) setLinkedId(productParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a new deep link only
+  }, [productParam]);
+  useEffect(() => {
+    if (!linkedId) return;
     let live = true;
     productsApi
-      .getProduct(productParam)
-      .then((res) => live && res.success && res.data && setProduct(res.data as unknown as ProductRow))
-      .catch(() => undefined);
+      .getProduct(linkedId)
+      .then((res) => {
+        if (live && res.success && res.data) setProduct(res.data as unknown as ProductRow);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (live) setLinkedId(null);
+      });
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link only
-  }, [productParam]);
+  }, [linkedId]);
+  const pickProduct = (p: ProductRow) => {
+    setLinkedId(null);
+    setProduct(p);
+  };
 
   const reversed = !!from && !!to && to < from;
   useEffect(() => {
     const params = new URLSearchParams();
-    if (product) params.set('productId', String(product.id));
+    const productId = product?.id ?? linkedId;
+    if (productId) params.set('productId', String(productId));
     if (from) params.set('pickup', from);
     if (to) params.set('return', to);
     if (quantity > 1) params.set('qty', String(quantity));
     if (showOutletSelect && outletId) params.set('outletId', String(outletId));
     const qs = params.toString();
     if (typeof window !== 'undefined' && window.location.search !== (qs ? `?${qs}` : '')) router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
-  }, [product, from, to, quantity, outletId, showOutletSelect, pathname, router]);
+  }, [product, linkedId, from, to, quantity, outletId, showOutletSelect, pathname, router]);
 
   const [nonce, setNonce] = useState(0);
   const check = usePeriodCheck(product?.id ?? null, reversed ? '' : from, to, quantity, outletId, nonce);
@@ -471,7 +488,7 @@ function AvailabilityContent() {
         }}
       >
         <div className="flex flex-wrap items-end gap-3">
-          <ProductPicker value={product} outletId={outletId} onPick={setProduct} t={t} />
+          <ProductPicker value={product} outletId={outletId} onPick={pickProduct} t={t} />
           <div className="flex min-w-0 flex-[2_1_260px] flex-col gap-1.5 text-sm text-ar-muted">
             <span aria-hidden="true">{`${t('pickup')} → ${t('return')}`}</span>
             <DateRangeField
@@ -635,7 +652,7 @@ function AvailabilityContent() {
               <Skeleton className="h-11 w-full" />
             </div>
           ) : (
-            <SimilarList similar={similar} productId={product.id} quantity={quantity} onPick={setProduct} t={t} money={money} />
+            <SimilarList similar={similar} productId={product.id} quantity={quantity} onPick={pickProduct} t={t} money={money} />
           )}
         </section>
       )}

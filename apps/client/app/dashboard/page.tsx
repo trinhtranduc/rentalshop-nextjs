@@ -4,12 +4,13 @@
  * Tổng quan (#514). Money and rankings come from GET /api/analytics/period, the day's work from
  * GET /api/analytics/outlet-operations. Mapping lives in ./overview-model (unit-tested).
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth, useDashboardTranslations, usePermissions } from '@rentalshop/hooks';
-import { analyticsApi, formatDateKeyInTimeZone, getLocalDateKey, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { analyticsApi, getLocalDateKey } from '@rentalshop/utils';
+import { useShopToday } from '../hooks/useShopToday';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { useOutletOperations } from './OutletOperationsPanel';
 import {
@@ -73,7 +74,7 @@ export default function DashboardPage() {
   const ready = !authLoading && !!user;
 
   const weekdays = useMemo(() => t('home.weekdays').split(','), [t]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
 
   // Period from the URL; without revenue access only today exists.
   const urlPeriod = searchParams.get('period') as OverviewPeriod | null;
@@ -95,6 +96,14 @@ export default function DashboardPage() {
   const chartState = sameRange ? report : chartReport;
 
   const ops = useOutletOperations();
+  // "Việc hôm nay" is the API's day: load it again when the Vietnam day turns with the tab open (#589)
+  const opsDay = useRef(todayKey);
+  const reloadOps = ops.reload;
+  useEffect(() => {
+    if (opsDay.current === todayKey) return;
+    opsDay.current = todayKey;
+    void reloadOps();
+  }, [todayKey, reloadOps]);
   const work = useMemo(() => (ops.data ? buildTodayWork(ops.data) : null), [ops.data]);
   const rows = useMemo(() => (ops.data ? buildTodayRows(ops.data, getLocalDateKey) : []), [ops.data]);
   const kpis = useMemo(() => buildKpis(report.data), [report.data]);

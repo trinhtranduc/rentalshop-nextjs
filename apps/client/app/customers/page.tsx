@@ -11,7 +11,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { usePermissions } from '@rentalshop/hooks';
-import { customersApi, formatDateKeyInTimeZone, getLocalDateKey, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { customersApi, getLocalDateKey } from '@rentalshop/utils';
+import { useShopToday } from '../hooks/useShopToday';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { TableFooter, cardClass, outlineBtn, primaryBtn } from '../orders/list/parts';
 import {
@@ -90,7 +91,7 @@ export default function CustomersPage() {
   const wide = useWide();
 
   const weekdays = useMemo(() => to('weekdays').split(','), [to]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
 
   // URL state
   const q = parseQuery(searchParams.get('q'));

@@ -10,7 +10,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { usePermissions } from '@rentalshop/hooks';
-import { formatDateKeyInTimeZone, getLocalDateKey, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { getLocalDateKey } from '@rentalshop/utils';
+import { useShopToday } from '../../hooks/useShopToday';
 import { cardClass, outlineBtn, type T } from '../../orders/list/parts';
 import { customerName, dayText, formatPhone, initials } from '../customers-model';
 import { fullAddress, parseCustomerId } from '../customer-form-model';
@@ -75,7 +76,7 @@ export default function CustomerProfilePage() {
   const [deleting, setDeleting] = useState(false);
 
   const weekdays = useMemo(() => to('weekdays').split(','), [to]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
 
   if (loading) {
     return (

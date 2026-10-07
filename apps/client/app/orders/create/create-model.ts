@@ -497,6 +497,21 @@ export interface PayloadInput {
   securityDeposit: number;
   notes: string;
   loyaltyPoints?: number;
+  /** Edit: the order's saved plan instants, kept when their Vietnam day is still the chosen one (#589). */
+  original?: { pickupPlanAt?: string | Date | null; returnPlanAt?: string | Date | null } | null;
+}
+
+/**
+ * The saved instant when it falls on the Vietnam day `key`, else 00:00 Vietnam of `key`. Sửa đơn must not move a
+ * pickup at 09:30 to 00:00 just because the order was saved again (#589, WEB-3).
+ */
+export function planInstantFor(key: string, saved?: string | Date | null): string {
+  const start = dayStartIso(key);
+  if (saved) {
+    const at = (saved instanceof Date ? saved : new Date(saved)).getTime();
+    if (!Number.isNaN(at) && at >= Date.parse(start) && at < Date.parse(dayStartIso(addDays(key, 1)))) return new Date(at).toISOString();
+  }
+  return start;
 }
 
 /**
@@ -508,12 +523,13 @@ export function buildPayload(input: PayloadInput) {
   const rent = input.orderType === 'RENT';
   const days = rent ? rentalDays(input.pickup, input.ret) : 0;
   const totals = computeTotals({ ...input, days });
+  const keep = input.mode === 'edit' ? input.original : null;
   return {
     orderType: input.orderType,
     customerId: input.customerId,
     outletId: input.outletId,
-    pickupPlanAt: rent && input.pickup ? dayStartIso(input.pickup) : undefined,
-    returnPlanAt: rent && input.ret ? dayStartIso(input.ret) : undefined,
+    pickupPlanAt: rent && input.pickup ? planInstantFor(input.pickup, keep?.pickupPlanAt) : undefined,
+    returnPlanAt: rent && input.ret ? planInstantFor(input.ret, keep?.returnPlanAt) : undefined,
     subtotal: totals.subtotal,
     taxAmount: 0,
     discountType: input.discountType,

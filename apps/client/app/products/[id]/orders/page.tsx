@@ -10,7 +10,8 @@ import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
-import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { getLocalDateKey, ordersApi, productsApi } from '@rentalshop/utils';
+import { useShopToday } from '../../../hooks/useShopToday';
 import type { OrderFilters } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../../components/shell/Icon';
 import { OrdersTable, Skeleton, TableFooter, cardClass, type T } from '../../../orders/list/parts';
@@ -114,7 +115,7 @@ export default function ProductOrdersPage() {
   const t = useTranslations('orders.web') as unknown as T;
   const money = useFormatCurrency();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
 
   const status = parseStatus(searchParams.get('status'));
   const page = parsePage(searchParams.get('page'));

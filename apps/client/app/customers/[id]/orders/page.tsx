@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
-import { formatDateKeyInTimeZone, getLocalDateKey, ordersApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { getLocalDateKey, ordersApi } from '@rentalshop/utils';
+import { useShopToday } from '../../../hooks/useShopToday';
 import type { OrderFilters } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../../components/shell/Icon';
 import { OrdersTable, Skeleton, TableFooter, cardClass, primaryBtn, type T } from '../../../orders/list/parts';
@@ -93,7 +94,7 @@ export default function CustomerOrdersPage() {
   const list = useOrders(customer ? customer.id : null, page, limit, nonce);
 
   const weekdays = useMemo(() => to('weekdays').split(','), [to]);
-  const todayKey = useMemo(() => formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE), []);
+  const todayKey = useShopToday();
   const rows = useMemo(() => list.rows.map((o) => buildOrderRow(o, todayKey, getLocalDateKey)), [list.rows, todayKey]);
 
   // A page past the end goes back to the last one
