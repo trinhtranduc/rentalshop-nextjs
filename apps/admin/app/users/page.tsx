@@ -18,7 +18,7 @@ import { useAuth, useUsersData } from '@rentalshop/hooks';
 import { PAGINATION } from '@rentalshop/constants';
 import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { usersApi, authApi } from '@rentalshop/utils';
+import { usersApi, authApi, getShopTodayKey } from '@rentalshop/utils';
 
 /**
  * ✅ MODERN USERS PAGE (URL State Pattern)
@@ -322,7 +322,7 @@ export default function UsersPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `users-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            a.download = `users-export-${getShopTodayKey()}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

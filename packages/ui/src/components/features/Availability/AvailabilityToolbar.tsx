@@ -10,6 +10,7 @@ import {
   SelectValue,
   DateRangePicker,
 } from '@rentalshop/ui';
+import { dateKeyToPickerDate, getShopTodayKey } from '@rentalshop/utils';
 import type { DateRange } from '@rentalshop/ui';
 import { useAvailabilityTranslations } from '@rentalshop/hooks';
 import { ProductSearchField } from './ProductSearchField';
@@ -76,7 +77,7 @@ export const AvailabilityToolbar: React.FC<AvailabilityToolbarProps> = ({
           <DateRangePicker
             value={dateRange}
             onChange={onDateRangeChange}
-            minDate={new Date()}
+            minDate={dateKeyToPickerDate(getShopTodayKey())}
             placeholder={`${t('pickupDate')} – ${t('returnDate')}`}
             disabled={disabled}
           />

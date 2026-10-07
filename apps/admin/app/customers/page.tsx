@@ -27,7 +27,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download, Upload, MoreVertical, Trash2 } from 'lucide-react';
 import { useAuth, useCustomersData, useCanExportData, usePermissions } from '@rentalshop/hooks';
-import { customersApi, authenticatedFetch, apiUrls } from '@rentalshop/utils';
+import { customersApi, authenticatedFetch, apiUrls, getShopTodayKey } from '@rentalshop/utils';
 import type { CustomerFilters, Customer, CustomerUpdateInput } from '@rentalshop/types';
 
 /**
@@ -521,7 +521,7 @@ export default function AdminCustomersPage() {
               const url = window.URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = `customers-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+              a.download = `customers-export-${getShopTodayKey()}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);

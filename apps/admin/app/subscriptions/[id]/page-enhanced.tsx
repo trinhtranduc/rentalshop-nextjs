@@ -15,7 +15,7 @@ import { Card,
   UpgradeTrialModal,
   useToast } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
-import { subscriptionsApi, plansApi } from '@rentalshop/utils';
+import { subscriptionsApi, plansApi, formatInShopZone } from '@rentalshop/utils';
 import { 
   ArrowLeft,
   Edit,
@@ -363,7 +363,7 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
               <div>
                 <p className="text-sm text-gray-600">Next Billing</p>
                 <p className="text-xl font-bold mt-1">
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {formatInShopZone(subscription.currentPeriodEnd, 'en-US', { month: 'short', day: 'numeric' })}
                 </p>
               </div>
               <Calendar className="w-8 h-8 text-gray-300" />

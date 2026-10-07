@@ -54,6 +54,7 @@ import {
 // Import the PlanVariant type from the types package
 import type { PlanVariant, Plan } from '@rentalshop/types';
 import PlanVariantForm from '../components/PlanVariantForm';
+import { formatInShopZone } from '@rentalshop/utils';
 
 export default function PlanVariantsPage() {
   const [variants, setVariants] = useState<PlanVariant[]>([]);
@@ -626,7 +627,7 @@ export default function PlanVariantsPage() {
                                   <Calendar className="w-4 h-4 text-text-tertiary" />
                                   <span className="text-text-secondary">Deleted:</span>
                                   <span className="font-medium text-text-primary">
-                                    {variant.deletedAt ? new Date(variant.deletedAt).toLocaleDateString() : 'Unknown'}
+                                    {variant.deletedAt ? formatInShopZone(variant.deletedAt, 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Unknown'}
                                   </span>
                                 </div>
                               </div>

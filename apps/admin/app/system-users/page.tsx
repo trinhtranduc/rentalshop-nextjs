@@ -26,7 +26,7 @@ import {
 import { Plus, Search, Pencil, Trash2, UserCheck, UserX, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth, useDedupedApi } from '@rentalshop/hooks';
-import { usersApi } from '@rentalshop/utils';
+import { usersApi, formatInShopZone } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -435,7 +435,7 @@ export default function SystemUsersPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {new Date(u.createdAt).toLocaleDateString('vi-VN')}
+                      {formatInShopZone(u.createdAt, 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

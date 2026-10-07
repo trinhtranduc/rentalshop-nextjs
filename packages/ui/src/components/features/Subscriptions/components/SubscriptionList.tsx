@@ -32,6 +32,7 @@ import { SubscriptionViewDialog } from './SubscriptionViewDialog';
 import { SubscriptionExtendDialogEnhanced } from './SubscriptionExtendDialogEnhanced';
 import { SubscriptionChangePlanDialog } from './SubscriptionChangePlanDialog';
 import { SubscriptionEditDialog } from './SubscriptionEditDialog';
+import { formatInShopZone } from '@rentalshop/utils';
 
 interface SubscriptionListProps {
   subscriptions?: Subscription[];
@@ -103,8 +104,9 @@ export function SubscriptionList({
     return <StatusBadge status={mappedStatus} />;
   };
 
+  // Business dates in Vietnam time, whatever the browser zone (#578 ADM-9)
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('vi-VN', {
+    return formatInShopZone(date, 'vi-VN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

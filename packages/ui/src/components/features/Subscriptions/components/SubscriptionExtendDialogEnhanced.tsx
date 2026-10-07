@@ -23,6 +23,12 @@ import { Calendar, Loader2, Package } from 'lucide-react';
 import type { Subscription, BillingInterval, PlanLimitAddon } from '@rentalshop/types';
 import { subscriptionsApi } from '@rentalshop/utils';
 import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
+import {
+  extensionBaseKey,
+  extensionEndKeyForMonths,
+  defaultCustomExtensionKey,
+  extensionEndInstant,
+} from './subscription-dates';
 // Type assertion for calculateExtensionPrice (newly added function)
 const api = subscriptionsApi as typeof subscriptionsApi & {
   calculateExtensionPrice: (id: number, newEndDate: Date | string, options?: { billingInterval?: string }) => Promise<any>;
@@ -120,43 +126,22 @@ export function SubscriptionExtendDialogEnhanced({
     orders: 0
   });
 
-  // Calculate end date from billing period
-  const calculateEndDateFromPeriod = (startDate: Date, interval: BillingInterval): Date => {
-    const end = new Date(startDate);
+  // New end day (Vietnam key) = Vietnam day of the current end + the billing period's months, clamped to the end
+  // of the month (31 Jan + 1 month = 28/29 Feb). Browser-local month math lost or gained a day (#578 ADM-5).
+  const endKeyFromPeriod = (interval: BillingInterval): string => {
     const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
-    if (!cycleConfig) return end;
-    
-    const originalDay = startDate.getDate();
-    end.setMonth(end.getMonth() + cycleConfig.months);
-    
-    // Handle month boundary issues
-    if (end.getDate() !== originalDay) {
-      end.setDate(1);
-      end.setMonth(end.getMonth() + 1);
-      end.setDate(0);
-    }
-    
-    return end;
+    return extensionEndKeyForMonths(subscription?.currentPeriodEnd, cycleConfig ? cycleConfig.months : 0);
   };
 
   // Initialize when dialog opens
   useEffect(() => {
     if (isOpen && subscription) {
-      const currentEnd = subscription.currentPeriodEnd 
-        ? new Date(subscription.currentPeriodEnd)
-        : new Date();
-      
       if (extensionMode === 'period') {
         // Calculate end date from billing period
-        const calculatedEnd = calculateEndDateFromPeriod(currentEnd, billingPeriod);
-        calculatedEnd.setHours(0, 0, 0, 0);
-        setNewEndDate(calculatedEnd.toISOString().split('T')[0]);
+        setNewEndDate(endKeyFromPeriod(billingPeriod));
       } else if (extensionMode === 'custom' && !newEndDate) {
         // Default to 30 days for custom mode (only if newEndDate is empty)
-        const defaultDate = new Date(currentEnd);
-        defaultDate.setDate(defaultDate.getDate() + 30);
-        defaultDate.setHours(0, 0, 0, 0);
-        setNewEndDate(defaultDate.toISOString().split('T')[0]);
+        setNewEndDate(defaultCustomExtensionKey(subscription.currentPeriodEnd));
       }
     }
   }, [isOpen, subscription, extensionMode]);
@@ -164,13 +149,7 @@ export function SubscriptionExtendDialogEnhanced({
   // Update newEndDate when billing period changes (only in period mode)
   useEffect(() => {
     if (extensionMode === 'period' && subscription && billingPeriod && isOpen) {
-      const currentEnd = subscription.currentPeriodEnd 
-        ? new Date(subscription.currentPeriodEnd)
-        : new Date();
-      const calculatedEnd = calculateEndDateFromPeriod(currentEnd, billingPeriod);
-      calculatedEnd.setHours(0, 0, 0, 0);
-      const newDateStr = calculatedEnd.toISOString().split('T')[0];
-      setNewEndDate(newDateStr);
+      setNewEndDate(endKeyFromPeriod(billingPeriod));
     }
   }, [billingPeriod, extensionMode, subscription, isOpen]);
 
@@ -287,7 +266,8 @@ export function SubscriptionExtendDialogEnhanced({
   const handleSubmit = () => {
     if (!subscription || !newEndDate || !calculation) return;
     
-    const calculatedEndDate = new Date(newEndDate + 'T23:59:59');
+    // 23:59:59.999 Vietnam time of the chosen day (was 23:59:59 in the browser zone)
+    const calculatedEndDate = extensionEndInstant(newEndDate);
     
     // Use manual price if provided, otherwise use calculated total price
     const finalPrice = manualPrice ? parseFloat(manualPrice) : (calculation.totalPrice || calculation.extensionPrice);
@@ -319,9 +299,8 @@ export function SubscriptionExtendDialogEnhanced({
 
   if (!subscription) return null;
 
-  const oldEndDate = subscription.currentPeriodEnd 
-    ? new Date(subscription.currentPeriodEnd)
-    : new Date();
+  // Earliest pickable end day: the Vietnam day of the current end (or Vietnam today)
+  const minEndKey = extensionBaseKey(subscription.currentPeriodEnd);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -465,7 +444,7 @@ export function SubscriptionExtendDialogEnhanced({
                   type="date"
                   value={newEndDate}
                   onChange={(e) => setNewEndDate(e.target.value)}
-                  min={oldEndDate.toISOString().split('T')[0]}
+                  min={minEndKey}
                   className="w-full text-sm"
                 />
               </div>

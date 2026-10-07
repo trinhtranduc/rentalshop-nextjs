@@ -16,7 +16,7 @@ import {
 import { Plus, Download } from 'lucide-react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth, useOrdersData, useCanExportData } from '@rentalshop/hooks';
-import { ordersApi } from '@rentalshop/utils';
+import { ordersApi, getShopTodayKey, toDateKeyInTimeZone, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { useFormatCurrency } from '@rentalshop/ui';
 import type { OrderFilters } from '@rentalshop/types';
 
@@ -207,13 +207,9 @@ export default function AdminOrdersPage() {
   const handleDateRangeChange = useCallback((rangeId: string, start: Date, end: Date) => {
     const params = new URLSearchParams(searchParams.toString());
     
-    // Format dates as yyyy-mm-dd (clean URL format)
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
+    // Vietnam day keys (yyyy-mm-dd) of the range. The filter hands out Vietnam day bounds, so this is the day
+    // the admin chose whatever the browser zone; local getters moved it a day in UTC/LA browsers (#578 ADM-4).
+    const formatDate = (date: Date) => toDateKeyInTimeZone(date, SHOP_TIMEZONE) || '';
     
     // Set date range with simple format
     params.set('startDate', formatDate(start));
@@ -459,7 +455,7 @@ export default function AdminOrdersPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `orders-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            a.download = `orders-export-${getShopTodayKey()}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

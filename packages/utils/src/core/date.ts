@@ -1,6 +1,7 @@
 import { format, addDays, differenceInDays, isAfter, isBefore, isValid, parseISO } from 'date-fns';
 import { DEFAULT_SHOP_TIMEZONE, usesDefaultShopTimeZone } from './timezone';
 import { formatDateKeyInTimeZone, getUtcRangeForDateKeys } from './date-range';
+import { formatInShopZone, getShopZoneParts } from './shop-day';
 // Note: useLocale import removed - React hooks should not be in server-side code
 // Client-side date hooks are now in @rentalshop/utils/client
 
@@ -22,8 +23,44 @@ const toDate = (date: Date | string | null | undefined): Date | null => {
   }
 };
 
-export const formatDate = (date: Date | string | null | undefined, formatString: string = 'dd/MM/yyyy'): string => {
+const DAY_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
+
+const pad2 = (value: number): string => String(value).padStart(2, '0');
+
+/**
+ * Shop wall-clock fields of a business date (#578 PKG-5): an instant is read in the shop zone (Vietnam), so the
+ * day does not depend on the browser or server zone. A plain `YYYY-MM-DD` / `YYYY-MM` key is already a civil day
+ * and is read as written.
+ */
+const shopFields = (
+  date: Date | string | null | undefined
+): { year: number; month: number; day: number; hour: number; minute: number; second: number } | null => {
+  if (typeof date === 'string') {
+    const text = date.trim();
+    if (DAY_KEY_PATTERN.test(text) || MONTH_KEY_PATTERN.test(text)) {
+      const [year, month, day = 1] = text.split('-').map(Number);
+      if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+      return { year, month, day, hour: 0, minute: 0, second: 0 };
+    }
+  }
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (!dateObj || isNaN(dateObj.getTime())) return null;
+  return getShopZoneParts(dateObj, SHOP_TIMEZONE);
+};
+
+/** A local Date whose fields are the shop wall-clock time, for date-fns `format` patterns. */
+const toShopWallDate = (date: Date | string | null | undefined): Date | null => {
+  if (typeof date === 'string' && DAY_KEY_PATTERN.test(date.trim())) return toDate(date.trim());
   const dateObj = toDate(date);
+  if (!dateObj) return null;
+  const f = getShopZoneParts(dateObj, SHOP_TIMEZONE);
+  return new Date(f.year, f.month - 1, f.day, f.hour, f.minute, f.second, dateObj.getUTCMilliseconds());
+};
+
+/** Date-only or date-time in the shop zone (default `dd/MM/yyyy`). A `YYYY-MM-DD` key is that day. */
+export const formatDate = (date: Date | string | null | undefined, formatString: string = 'dd/MM/yyyy'): string => {
+  const dateObj = toShopWallDate(date);
   if (!dateObj) return 'Invalid Date';
   
   try {
@@ -33,15 +70,12 @@ export const formatDate = (date: Date | string | null | undefined, formatString:
   }
 };
 
+/** `dd/MM/yyyy HH:mm` in the shop zone. */
 export const formatDateTime = (date: Date | string | null | undefined): string => {
-  const dateObj = toDate(date);
-  if (!dateObj) return 'Invalid Date';
-  
-  try {
-    return format(dateObj, 'dd/MM/yyyy HH:mm');
-  } catch {
-    return 'Invalid Date';
-  }
+  if (!toDate(date)) return 'Invalid Date';
+  const f = shopFields(date);
+  if (!f) return 'Invalid Date';
+  return `${pad2(f.day)}/${pad2(f.month)}/${f.year} ${pad2(f.hour)}:${pad2(f.minute)}`;
 };
 
 export const addDaysToDate = (date: Date, days: number): Date => {
@@ -76,11 +110,11 @@ export const formatDateLong = (date: Date | string | null | undefined): string =
   if (!dateObj) return 'Invalid Date';
   
   try {
-    return new Intl.DateTimeFormat('en-US', {
+    return formatInShopZone(typeof date === 'string' ? date : dateObj, 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    }).format(dateObj);
+    }) || 'Invalid Date';
   } catch {
     return 'Invalid Date';
   }
@@ -94,14 +128,14 @@ export const formatDateTimeLong = (date: Date | string | null | undefined): stri
   if (!dateObj) return 'Invalid Date';
   
   try {
-    return new Intl.DateTimeFormat('en-US', {
+    return formatInShopZone(typeof date === 'string' ? date : dateObj, 'en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
-    }).format(dateObj);
+    }) || 'Invalid Date';
   } catch {
     return 'Invalid Date';
   }
@@ -115,11 +149,11 @@ export const formatDateShort = (date: Date | string | null | undefined): string 
   if (!dateObj) return 'Invalid Date';
   
   try {
-    return new Intl.DateTimeFormat('en-US', {
+    return formatInShopZone(typeof date === 'string' ? date : dateObj, 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
-    }).format(dateObj);
+    }) || 'Invalid Date';
   } catch {
     return 'Invalid Date';
   }
@@ -133,14 +167,14 @@ export const formatDateTimeShort = (date: Date | string | null | undefined): str
   if (!dateObj) return 'Invalid Date';
   
   try {
-    return new Intl.DateTimeFormat('en-US', {
+    return formatInShopZone(typeof date === 'string' ? date : dateObj, 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
-    }).format(dateObj);
+    }) || 'Invalid Date';
   } catch {
     return 'Invalid Date';
   }
@@ -167,7 +201,7 @@ export const formatDateWithLocale = (
   
   try {
     const localeCode = locale === 'vi' ? 'vi-VN' : 'en-US';
-    return new Intl.DateTimeFormat(localeCode, options).format(dateObj);
+    return formatInShopZone(typeof date === 'string' ? date : dateObj, localeCode, options) || 'Invalid Date';
   } catch {
     return 'Invalid Date';
   }
@@ -208,14 +242,22 @@ export function formatDateByLocale(
   options: DateFormatOptions = { month: 'short', year: 'numeric' }
 ): string {
   try {
+    const dateLocale = getDateLocale(locale);
+    // A day/month key is a civil day already: format its noon UTC in UTC so no zone can move it.
+    if (typeof date === 'string' && (DAY_KEY_PATTERN.test(date.trim()) || MONTH_KEY_PATTERN.test(date.trim()))) {
+      const f = shopFields(date);
+      if (!f) return date.toString();
+      return new Date(Date.UTC(f.year, f.month - 1, f.day, 12)).toLocaleDateString(dateLocale, { ...options, timeZone: 'UTC' });
+    }
+
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     
     if (isNaN(dateObj.getTime())) {
       return date.toString(); // Return original if invalid date
     }
     
-    const dateLocale = getDateLocale(locale);
-    return dateObj.toLocaleDateString(dateLocale, options);
+    // Business dates are shown in the shop zone, whatever the browser zone (#578 PKG-5)
+    return dateObj.toLocaleDateString(dateLocale, { ...options, timeZone: SHOP_TIMEZONE });
   } catch (error) {
     console.warn('Date formatting error:', error);
     return date.toString(); // Fallback to original
@@ -231,14 +273,10 @@ export function formatDateByLocale(
  */
 export function formatChartPeriod(date: string | Date, locale: string): string {
   if (locale === 'vi') {
-    // Vietnamese format: mm/yy
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return date.toString();
-    
-    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString().slice(-2);
-    
-    return `${month}/${year}`;
+    // Vietnamese format: mm/yy (shop zone)
+    const f = shopFields(date);
+    if (!f) return date.toString();
+    return `${pad2(f.month)}/${String(f.year).slice(-2)}`;
   }
   
   // English format: Dec 2024
@@ -325,14 +363,10 @@ export function formatFullDateByLocale(date: string | Date, locale: string): str
  */
 export function formatMonthOnlyByLocale(date: string | Date, locale: string): string {
   if (locale === 'vi') {
-    // Vietnamese format: mm/yy
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return date.toString();
-    
-    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString().slice(-2);
-    
-    return `${month}/${year}`;
+    // Vietnamese format: mm/yy (shop zone)
+    const f = shopFields(date);
+    if (!f) return date.toString();
+    return `${pad2(f.month)}/${String(f.year).slice(-2)}`;
   }
   
   return formatDateByLocale(date, locale, { month: 'short', year: 'numeric' });
@@ -347,14 +381,10 @@ export function formatMonthOnlyByLocale(date: string | Date, locale: string): st
  */
 export function formatDailyByLocale(date: string | Date, locale: string): string {
   if (locale === 'vi') {
-    // Vietnamese format: dd/mm
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return date.toString();
-    
-    const day = dateObj.getDate().toString().padStart(2, '0');
-    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    
-    return `${day}/${month}`;
+    // Vietnamese format: dd/mm (shop zone)
+    const f = shopFields(date);
+    if (!f) return date.toString();
+    return `${pad2(f.day)}/${pad2(f.month)}`;
   }
   
   return formatDateByLocale(date, locale, { day: 'numeric', month: 'short' });
@@ -380,17 +410,10 @@ export function formatTimeByLocale(date: string | Date, locale: string): string 
  */
 export function formatDateTimeByLocale(date: string | Date, locale: string): string {
   if (locale === 'vi') {
-    // Vietnamese format: dd/mm/yyyy hh:mm
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return date.toString();
-    
-    const day = dateObj.getDate().toString().padStart(2, '0');
-    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString(); // Full 4-digit year
-    const hours = dateObj.getHours().toString().padStart(2, '0');
-    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-    
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
+    // Vietnamese format: dd/mm/yyyy hh:mm (shop zone)
+    const f = shopFields(date);
+    if (!f) return date.toString();
+    return `${pad2(f.day)}/${pad2(f.month)}/${f.year} ${pad2(f.hour)}:${pad2(f.minute)}`;
   }
   
   return formatDateByLocale(date, locale, { 

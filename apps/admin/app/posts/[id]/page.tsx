@@ -17,7 +17,7 @@ import {
 } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
 import { useRouter, useParams } from 'next/navigation';
-import { postsApi } from '@rentalshop/utils';
+import { postsApi, formatInShopZone } from '@rentalshop/utils';
 import { ArrowLeft, Edit, Eye, Calendar, User, Tag } from 'lucide-react';
 import { PostContent } from '@rentalshop/ui';
 import type { Post } from '@rentalshop/types';
@@ -148,7 +148,7 @@ export default function PostDetailPage() {
                   <Calendar className="h-4 w-4 text-text-tertiary" />
                   <span className="text-sm text-text-tertiary">Created:</span>
                   <span className="text-sm font-medium">
-                    {new Date(post.createdAt).toLocaleDateString('en-US', {
+                    {formatInShopZone(post.createdAt, 'en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -160,7 +160,7 @@ export default function PostDetailPage() {
                     <Eye className="h-4 w-4 text-text-tertiary" />
                     <span className="text-sm text-text-tertiary">Published:</span>
                     <span className="text-sm font-medium">
-                      {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                      {formatInShopZone(post.publishedAt, 'en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -172,7 +172,7 @@ export default function PostDetailPage() {
                   <Calendar className="h-4 w-4 text-text-tertiary" />
                   <span className="text-sm text-text-tertiary">Last Updated:</span>
                   <span className="text-sm font-medium">
-                    {new Date(post.updatedAt).toLocaleDateString('en-US', {
+                    {formatInShopZone(post.updatedAt, 'en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
