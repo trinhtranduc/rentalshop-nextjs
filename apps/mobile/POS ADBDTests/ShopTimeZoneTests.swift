@@ -11,23 +11,42 @@ final class ShopTimeZoneTests: XCTestCase {
     private let vi = Locale(identifier: "vi")
     private var savedZone: TimeZone!
 
+    private var savedTZ: String?
+
     override func setUp() {
         super.setUp()
         savedZone = NSTimeZone.default
+        savedTZ = ProcessInfo.processInfo.environment["TZ"]
     }
 
     override func tearDown() {
-        NSTimeZone.default = savedZone
+        restoreZone()
         super.tearDown()
+    }
+
+    /// Sets the phone zone: on iOS 17+ `NSTimeZone.default` alone does not move `TimeZone.current`, so the process
+    /// `TZ` is set too and the cached system zone reset (what a phone does when the user changes zone).
+    private func setPhoneZone(_ zone: TimeZone) {
+        setenv("TZ", zone.identifier, 1)
+        tzset()
+        NSTimeZone.resetSystemTimeZone()
+        NSTimeZone.default = zone
+    }
+
+    private func restoreZone() {
+        if let savedTZ { setenv("TZ", savedTZ, 1) } else { unsetenv("TZ") }
+        tzset()
+        NSTimeZone.resetSystemTimeZone()
+        NSTimeZone.default = savedZone
     }
 
     private func inEachZone(_ zones: [String] = ShopTimeZoneTests.zones, _ body: (String) throws -> Void) rethrows {
         for id in zones {
-            NSTimeZone.default = TimeZone(identifier: id)!
-            XCTAssertEqual(TimeZone.current.identifier, id, "NSTimeZone.default must reach TimeZone.current")
+            setPhoneZone(TimeZone(identifier: id)!)
+            XCTAssertEqual(TimeZone.current.identifier, id, "the phone zone must reach TimeZone.current")
             try body(id)
         }
-        NSTimeZone.default = savedZone
+        restoreZone()
     }
 
     private func at(_ text: String) -> Date {
@@ -120,6 +139,9 @@ final class ShopTimeZoneTests: XCTestCase {
         inEachZone { zone in
             let cart = Cart()
             cart.orderType = .rent
+            var customer = Customer()
+            customer.customer_id = 7 // without a customer the request leaves the dates out
+            cart.customer = customer
             cart.pickupPlanAt = at("2026-10-09T17:00:00Z")   // VN 10/10 00:00
             cart.returnPlanAt = at("2026-10-10T16:59:59Z")   // VN 10/10 23:59:59
             let create = cart.toCreateOrderRequest()
