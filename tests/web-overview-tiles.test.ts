@@ -230,7 +230,8 @@ describe('forecast (optional, fed by a later API change)', () => {
       { date: '2026/10/08', collected: 0, expectedCollected: 200 },
     ];
     expect(chartBars(api, 'collected', VI, '2026-10-07').map((b) => b.forecast)).toEqual([100, 200]);
-    expect(forecastBar(300, api, '2026-10-07')).toEqual({ collected: 300, forecast: 100, pct: 75 });
+    // #612: the tile sums the range from today on (was today only)
+    expect(forecastBar(300, api, '2026-10-07')).toEqual({ collected: 300, forecast: 300, pct: 50, until: '2026-10-08' });
   });
 });
 

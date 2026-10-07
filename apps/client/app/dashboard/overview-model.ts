@@ -287,12 +287,37 @@ export function forecastBar(
   collected: number | null,
   series: SeriesPointLike[] | null | undefined,
   todayKey: string,
-): { collected: number; forecast: number; pct: number } | null {
-  const point = (series ?? []).find((p) => seriesDayKey(p) === todayKey);
-  const forecast = forecastOf(point);
+): { collected: number; forecast: number; pct: number; until: string } | null {
+  // #612: every day of the selected range from today on (a future range sums its whole forecast).
+  let forecast = 0;
+  let until = '';
+  for (const point of series ?? []) {
+    const key = seriesDayKey(point);
+    if (!key || key < todayKey) continue;
+    const value = forecastOf(point);
+    if (value > 0) {
+      forecast += value;
+      if (key > until) until = key;
+    }
+  }
   if (collected == null || forecast <= 0) return null;
   const done = Math.max(0, collected);
-  return { collected, forecast, pct: (done / (done + forecast)) * 100 };
+  return { collected, forecast, pct: (done / (done + forecast)) * 100, until };
+}
+
+/** Future quick picks for the custom range (#612): 7 and 30 days from today, and next calendar month. */
+export function futureQuickRanges(todayKey: string): Array<{ key: 'next7' | 'next30' | 'nextMonth'; from: string; to: string }> {
+  const y = Number(todayKey.slice(0, 4));
+  const m = Number(todayKey.slice(5, 7));
+  const ny = m === 12 ? y + 1 : y;
+  const nm = m === 12 ? 1 : m + 1;
+  const first = `${ny}-${String(nm).padStart(2, '0')}-01`;
+  const lastDay = new Date(Date.UTC(ny, nm, 0)).getUTCDate();
+  return [
+    { key: 'next7', from: todayKey, to: addDays(todayKey, 6) },
+    { key: 'next30', from: todayKey, to: addDays(todayKey, 29) },
+    { key: 'nextMonth', from: first, to: `${first.slice(0, 8)}${String(lastDay).padStart(2, '0')}` },
+  ];
 }
 
 // ----------------------------------------------------------------------------
