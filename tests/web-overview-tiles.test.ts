@@ -209,6 +209,15 @@ describe('forecast (optional, fed by a later API change)', () => {
     expect(forecastBar(null, series, '2026-10-07')).toBeNull();
     expect(forecastBar(300, [{ date: '2026/10/07', collected: 300 }], '2026-10-07')).toBeNull();
   });
+
+  it('reads the API field series[].expectedCollected (#605) as the forecast', () => {
+    const api = [
+      { date: '2026/10/07', collected: 300, expectedCollected: 100 },
+      { date: '2026/10/08', collected: 0, expectedCollected: 200 },
+    ];
+    expect(chartBars(api, 'collected', VI, '2026-10-07').map((b) => b.forecast)).toEqual([100, 200]);
+    expect(forecastBar(300, api, '2026-10-07')).toEqual({ collected: 300, forecast: 100, pct: 75 });
+  });
 });
 
 describe('topBars', () => {
