@@ -693,6 +693,31 @@
         <item quantity="other">Trễ giao %1$d ngày</item>
     </plurals>
     <string name="detail_due_on">Hạn %1$s</string>
+    <!-- #643 calmer order detail header -->
+    <string name="detail_title_rent">Đơn thuê #%1$s</string>
+    <string name="detail_title_sale">Đơn bán #%1$s</string>
+    <string name="detail_walk_in">Khách lẻ</string>
+    <string name="detail_call_customer">Gọi khách</string>
+    <string name="detail_step_booked">Đặt</string>
+    <string name="detail_step_hand_over">Giao</string>
+    <string name="detail_step_handed_over">Đã giao</string>
+    <string name="detail_step_return">Trả</string>
+    <string name="detail_step_returned">Đã trả</string>
+    <plurals name="detail_note_days">
+        <item quantity="other">%1$d ngày</item>
+    </plurals>
+    <plurals name="detail_note_return_in">
+        <item quantity="other">trả sau %1$d ngày</item>
+    </plurals>
+    <string name="detail_note_return_today">trả hôm nay</string>
+    <plurals name="detail_note_hand_over_in">
+        <item quantity="other">giao sau %1$d ngày</item>
+    </plurals>
+    <string name="detail_note_hand_over_today">giao hôm nay</string>
+    <plurals name="detail_note_past_pickup">
+        <item quantity="other">quá ngày lấy %1$d ngày</item>
+    </plurals>
+    <string name="detail_note_returned">đã trả</string>
     <string name="detail_schedule">Lịch thuê</string>
     <string name="detail_ready_to_deliver_subtitle">Đã soạn đủ đồ cho đơn này</string>
     <string name="detail_sale_day">Ngày bán</string>

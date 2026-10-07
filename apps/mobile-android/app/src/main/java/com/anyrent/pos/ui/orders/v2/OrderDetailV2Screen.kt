@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -57,7 +58,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -74,6 +78,7 @@ import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
 import com.anyrent.pos.domain.orders.DetailPrimary
 import com.anyrent.pos.domain.orders.OrderActionSheet
+import com.anyrent.pos.domain.orders.OrderDetailHeader
 import com.anyrent.pos.domain.orders.OrderDetailLogic
 import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.data.ApiClient
@@ -212,10 +217,18 @@ fun OrderDetailV2Screen(
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back), modifier = Modifier.size(DS.Icon.Lg))
             }
+            // #643: "Đơn thuê #n" / "Đơn bán #n", centred between ← and ⋯
             Text(
-                detail?.summary?.orderNumber?.let { "#$it" } ?: stringResource(R.string.order_detail),
-                color = DS.Colors.TextMuted,
-                fontSize = DS.TextSize.Body,
+                detail?.summary?.let {
+                    stringResource(
+                        if (OrderDetailHeader.isRent(it.orderType)) R.string.detail_title_rent else R.string.detail_title_sale,
+                        it.orderNumber,
+                    )
+                } ?: stringResource(R.string.order_detail),
+                color = DS.Colors.Text,
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -225,6 +238,8 @@ fun OrderDetailV2Screen(
                 IconButton(onClick = { menuOpen = true }) {
                     Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.detail_more_actions), tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
                 }
+            } else {
+                Spacer(Modifier.size(48.dp))
             }
         }
 
@@ -456,8 +471,9 @@ fun OrderDetailV2Screen(
 private fun DetailHeader(detail: OrderDetail) {
     val context = LocalContext.current
     val summary = detail.summary
-    val isRent = summary.orderType.equals("RENT", ignoreCase = true)
+    val isRent = OrderDetailHeader.isRent(summary.orderType)
     val status = summary.status.uppercase()
+    val weekdays = stringResource(R.string.order_row_weekdays).split(',').map { it.trim() }
     val lateDays = OrdersHomeLogic.lateDays(
         summary.orderType,
         summary.status,
@@ -469,18 +485,38 @@ private fun DetailHeader(detail: OrderDetail) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .padding(top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // #482 (board CT-gon): the order list's status tag, left of the name; the name takes the rest
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Tag(stringResource(OrderStatusTag.labelRes(summary.status)), OrderStatusTag.colors(summary.status), RowTagStyle.STATUS)
-            Text(
-                summary.customerName?.takeIf { it.isNotBlank() } ?: "—",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = DS.Colors.Text,
-                modifier = Modifier.weight(1f),
-            )
+        // #643: name large, phone small under it, a round call button on the right (no full-width phone bar)
+        val dial = OrderDetailHeader.dialNumber(summary.customerPhone)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DS.Colors.Text,
+                )
+                if (dial != null) {
+                    Text(summary.customerPhone.orEmpty().trim(), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+                }
+            }
+            if (dial != null) {
+                val callLabel = stringResource(R.string.detail_call_customer)
+                Box(
+                    Modifier
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .background(DS.Status.Done.fill)
+                        .clickable(onClickLabel = callLabel) {
+                            context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$dial")))
+                        }
+                        .semantics { contentDescription = callLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Status.Done.text, modifier = Modifier.size(DS.Icon.Md))
+                }
+            }
         }
         if (lateDays > 0) {
             val returning = status == "PICKUPED"
@@ -512,54 +548,85 @@ private fun DetailHeader(detail: OrderDetail) {
                 }
             }
         }
-        summary.customerPhone?.filterNot { it.isWhitespace() }?.takeIf { it.isNotBlank() }?.let { phone ->
-            Button(
-                onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))) },
-                modifier = Modifier.fillMaxWidth().height(DS.TouchTarget),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Divider, contentColor = DS.Colors.Text),
-            ) {
-                Icon(Icons.Outlined.Phone, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.size(6.dp))
-                Text(summary.customerPhone.orEmpty(), fontWeight = FontWeight.SemiBold)
+        // #643: one light box: status pill + note (rent) or sale day, then the three steps of a rent
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF8FAFC), RoundedCornerShape(14.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tag(stringResource(OrderStatusTag.labelRes(summary.status)), OrderStatusTag.colors(summary.status), RowTagStyle.STATUS)
+                Spacer(Modifier.weight(1f))
+                val note = if (isRent) OrderDetailHeader.note(summary) else null
+                val text = if (isRent) note?.let { headerNoteText(it) }.orEmpty() else OrderDetailHeader.saleDay(summary, weekdays)
+                if (text.isNotEmpty()) {
+                    Text(
+                        text,
+                        fontSize = DS.TextSize.Secondary,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (note?.due is OrderDetailHeader.Due.PastPickup) DS.Status.Late.text else DS.Colors.TextMuted,
+                        textAlign = TextAlign.End,
+                    )
+                }
             }
-        }
-        if (isRent && status != "CANCELLED") {
-            val reached = when (status) {
-                "RESERVED" -> 1
-                "PICKUPED", "PICKED_UP" -> 2
-                "RETURNED" -> 3
-                else -> 0
-            }
-            val days = OrderDetailLogic.progressDays(summary)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(
-                    // #482: the booked step carries the created time ("Đã đặt 14:32 28/09")
-                    stringResource(R.string.detail_progress_booked, OrderDetailLogic.createdStamp(days.booked)),
-                    stringResource(R.string.detail_progress_hand_over, shortDay(days.handOver)),
-                    stringResource(R.string.detail_progress_return, shortDay(days.returned)),
-                ).forEachIndexed { index, label ->
-                    val done = index < reached
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .background(if (done) DS.Colors.Primary else Color(0xFFE2E8F0), RoundedCornerShape(4.dp)),
-                        )
-                        Text(
-                            label,
-                            fontSize = DS.TextSize.Secondary,
-                            fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (done) DS.Colors.Primary else DS.Colors.TextMuted,
-                            maxLines = 2,
-                        )
+            val steps = OrderDetailHeader.steps(summary, weekdays)
+            if (steps.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    steps.forEach { step ->
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .background(if (step.done) DS.Colors.Primary else Color(0xFFCBD5E1), RoundedCornerShape(4.dp)),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                stringResource(
+                                    when (step.title) {
+                                        OrderDetailHeader.StepTitle.BOOKED -> R.string.detail_step_booked
+                                        OrderDetailHeader.StepTitle.HAND_OVER -> R.string.detail_step_hand_over
+                                        OrderDetailHeader.StepTitle.HANDED_OVER -> R.string.detail_step_handed_over
+                                        OrderDetailHeader.StepTitle.RETURN -> R.string.detail_step_return
+                                        OrderDetailHeader.StepTitle.RETURNED -> R.string.detail_step_returned
+                                    },
+                                ),
+                                fontSize = DS.TextSize.Secondary,
+                                color = DS.Colors.TextMuted,
+                                maxLines = 1,
+                            )
+                            Text(
+                                step.day,
+                                fontSize = DS.TextSize.Body,
+                                fontWeight = FontWeight.Bold,
+                                color = if (step.accent) DS.Colors.Primary else DS.Colors.Text,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }
         }
     }
     Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
+}
+
+/** "7 ngày · trả sau 2 ngày" (#643) */
+@Composable
+private fun headerNoteText(note: OrderDetailHeader.Note): String {
+    val days = note.rentalDays?.let { pluralStringResource(R.plurals.detail_note_days, it, it) }
+    val due = when (val d = note.due) {
+        is OrderDetailHeader.Due.ReturnIn -> pluralStringResource(R.plurals.detail_note_return_in, d.days, d.days)
+        OrderDetailHeader.Due.ReturnToday -> stringResource(R.string.detail_note_return_today)
+        is OrderDetailHeader.Due.HandOverIn -> pluralStringResource(R.plurals.detail_note_hand_over_in, d.days, d.days)
+        OrderDetailHeader.Due.HandOverToday -> stringResource(R.string.detail_note_hand_over_today)
+        is OrderDetailHeader.Due.PastPickup -> pluralStringResource(R.plurals.detail_note_past_pickup, d.days, d.days)
+        OrderDetailHeader.Due.Returned -> stringResource(R.string.detail_note_returned)
+        null -> null
+    }
+    return listOfNotNull(days, due).joinToString(" · ")
 }
 
 @Composable
@@ -573,16 +640,8 @@ private fun DetailBody(
     val isRent = summary.orderType.equals("RENT", ignoreCase = true)
     val status = summary.status.uppercase()
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        if (isRent) {
-            // Day count after the dates, the cart's inclusive count (#425: it follows a Gia hạn)
-            val days = OrderDetailLogic.rentalDays(summary.pickupPlanAt, summary.returnPlanAt)
-            val dates = "${shortDay(summary.pickupPlanAt)} → ${shortDay(summary.returnPlanAt)}"
-            InfoRow(stringResource(R.string.detail_schedule), days?.let { dates + " · " + pluralStringResource(R.plurals.v2_cart_days, it, it) } ?: dates)
-            readyRow?.invoke()
-        } else {
-            val day = OrdersHomeLogic.parseInstant(summary.createdAt)?.let { formatDayShort(it) } ?: "—"
-            InfoRow(stringResource(R.string.detail_sale_day), listOfNotNull(day, summary.createdByName).joinToString(" · "))
-        }
+        // #643: no "Lịch thuê" / "Ngày bán" rows; the header box carries the days, the steps and the sale day
+        if (isRent) readyRow?.invoke()
         detail.collateralDetails?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.collateral), it) }
 
         SectionTitle(stringResource(R.string.detail_items_count, detail.items.sumOf { it.quantity }))
