@@ -1330,4 +1330,36 @@
     <string name="settings_v2_categories">Danh mục</string>
     <string name="v2_category_search">Tìm danh mục</string>
     <string name="v2_category_actions">Đổi tên hoặc xoá</string>
+    <!-- #640 order share image -->
+    <string name="share_kind_rent">Đơn thuê</string>
+    <string name="share_kind_sale">Đơn bán</string>
+    <string name="share_kind_draft">%1$s · lập %2$s</string>
+    <string name="share_draft_title">Đơn nháp</string>
+    <string name="share_status_reserved">Chờ giao đồ</string>
+    <string name="share_status_pickuped">Đang thuê</string>
+    <string name="share_status_returned">Đã trả đồ</string>
+    <string name="share_status_completed">Đã thanh toán</string>
+    <string name="share_status_cancelled">Đã huỷ</string>
+    <string name="share_status_draft">Chưa chốt</string>
+    <string name="share_customer">Khách hàng</string>
+    <string name="share_walk_in">Khách lẻ</string>
+    <string name="share_pickup">Nhận đồ</string>
+    <string name="share_return">Trả đồ</string>
+    <string name="share_items_rent">Đồ thuê · %1$d món</string>
+    <string name="share_items_sale">Hàng mua · %1$d món</string>
+    <string name="share_rent_total">Tổng tiền thuê</string>
+    <string name="share_deposit_paid">Đã đặt cọc</string>
+    <string name="share_collateral">Thế chân khi nhận đồ</string>
+    <string name="share_amount_due">Còn phải trả</string>
+    <string name="share_subtotal">Tạm tính</string>
+    <string name="share_discount">Giảm giá</string>
+    <string name="share_total">Tổng cộng</string>
+    <string name="share_draft_deposit">Cọc giữ đồ</string>
+    <string name="share_draft_estimate">Tạm tính</string>
+    <string name="share_draft_note">Đơn chưa chốt. Shop sẽ xác nhận lịch và giá trước khi giữ đồ.</string>
+    <string name="share_qr_title">Quét để chuyển khoản</string>
+    <string name="share_qr_content">Nội dung: %1$s</string>
+    <string name="share_thanks">Cảm ơn quý khách đã tin chọn %1$s</string>
+    <string name="share_made_with">Tạo bằng AnyRent</string>
+    <string name="share_draft_action">Chia sẻ đơn nháp</string>
 </resources>
