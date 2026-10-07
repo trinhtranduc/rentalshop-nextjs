@@ -1037,6 +1037,7 @@ export const simplifiedOrders = {
             name: true,
             merchantId: true,
             printNote: true, // RENT receipt footer (#347)
+            printBankQr: true, // bank block + VietQR on the bill (#628)
             merchant: { select: { id: true, name: true } }
           } 
         },
@@ -2098,6 +2099,7 @@ export const simplifiedOrders = {
             country: true,
             isActive: true,
             printNote: true, // RENT receipt footer (#347)
+            printBankQr: true, // bank block + VietQR on the bill (#628)
             merchant: {
               select: {
                 id: true,

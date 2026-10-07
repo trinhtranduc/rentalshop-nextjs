@@ -433,6 +433,7 @@ export const simplifiedUsers = {
             description: true,
             isActive: true,
             isDefault: true,
+            printBankQr: true, // bill bank QR switch (#628)
             createdAt: true,
             merchant: {
               select: {

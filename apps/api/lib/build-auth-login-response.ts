@@ -114,6 +114,7 @@ export async function buildAuthLoginSuccessResponse(
         address: outlet.address || undefined,
         phone: outlet.phone || undefined,
         merchantId: outlet.merchantId,
+        printBankQr: outlet.printBankQr ?? false, // #628 bill bank QR switch
         defaultBankAccount: defaultBankAccount || undefined,
         merchant: (outlet as any).merchant
           ? {
