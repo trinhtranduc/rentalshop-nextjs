@@ -68,43 +68,77 @@ export function getAvailabilityCivilDayBounds(
 }
 
 /**
- * Detect store-app Order Check windows:
- *   startDate=YYYY-MM-DDT00:00:00.000Z
- *   endDate=YYYY-MM-DDT23:59:59.999Z
- * (same UTC calendar day). Those are NOT shop civil days.
+ * UTC instant bounds for the inclusive VN civil days `fromYmd..toYmd`:
+ * `[fromYmd 00:00 VN, day after toYmd 00:00 VN)`, `end` exclusive.
  */
-function extractUtcCivilDayWindowYmd(start: Date, end: Date): string | null {
-  const startIso = start.toISOString();
-  const endIso = end.toISOString();
-  const startMatch = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000)?Z$/.exec(startIso);
-  const endMatch = /^(\d{4}-\d{2}-\d{2})T23:59:59(?:\.999)?Z$/.exec(endIso);
-  if (!startMatch || !endMatch) return null;
-  if (startMatch[1] !== endMatch[1]) return null;
-  return startMatch[1];
+export function getAvailabilityCivilRangeBounds(
+  fromYmd: string,
+  toYmd: string
+): { start: Date; end: Date } | null {
+  const first = getAvailabilityCivilDayBounds(fromYmd);
+  const last = getAvailabilityCivilDayBounds(toYmd);
+  if (!first || !last) return null;
+  return { start: first.start, end: last.end };
 }
 
 /**
- * Resolve rental window for GET /availability and batch-availability.
+ * Detect UTC-day windows sent by installed apps (#575, #576):
+ *   startDate = X T00:00:00[.000]Z, endDate = Y T23:59:59[.mmm]Z, Y >= X
+ * - App Store iOS Order Check: one day, `.999`
+ * - Android before #413 (main-real): `${P}T00:00:00Z … ${R}T23:59:59Z` (no ms → `.000` once parsed)
+ * - admin create order in a UTC browser: `.000`
+ * They mean the days X..Y; they are NOT the UTC instants (07:00 VN of X … 06:59 VN of Y+1).
+ * A phone or browser on Vietnam time never produces 00:00:00Z as a day start (that is 07:00 VN).
+ */
+function extractUtcDayWindowKeys(start: Date, end: Date): { fromYmd: string; toYmd: string } | null {
+  const startMatch = /^(\d{4}-\d{2}-\d{2})T00:00:00\.000Z$/.exec(start.toISOString());
+  const endMatch = /^(\d{4}-\d{2}-\d{2})T23:59:59\.\d{3}Z$/.exec(end.toISOString());
+  if (!startMatch || !endMatch) return null;
+  if (endMatch[1] < startMatch[1]) return null;
+  return { fromYmd: startMatch[1], toYmd: endMatch[1] };
+}
+
+export type AvailabilityQueryWindow = {
+  /** Window as resolved (echoed in `rentalPeriod`): VN-day bounds for day inputs, else the instants sent. */
+  start: Date;
+  end: Date;
+  /** The VN day when the input named exactly one day (`date=` or a one-day UTC-day window). */
+  civilDayYmd: string | null;
+  /** Inclusive VN civil days the request covers. */
+  fromYmd: string;
+  toYmd: string;
+  /** `[fromYmd 00:00 VN, toYmd+1 00:00 VN)` — use for the conflict query (pickup < end AND return >= start). */
+  bounds: { start: Date; end: Date };
+};
+
+/**
+ * Resolve the rental window of GET /api/products/[id]/availability and POST /api/products/batch-availability
+ * into Vietnam civil days (#590, #578 §A).
  *
- * Why API-side (not app-only): the iOS app on the App Store still sends UTC
- * civil-day `T00:00Z…T23:59Z` windows. Reinterpret those as Asia/Ho_Chi_Minh
- * civil days — same model as Lịch Thuê / occupancy calendar — so store builds
- * highlight the correct day without an App Store update.
+ * - `date=D` → D..D
+ * - a UTC-day window (installed iOS / Android / admin in UTC, see `extractUtcDayWindowKeys`) → its UTC dates as VN days
+ * - any other ISO window (web Tạo đơn `dayRangeIso`, current iOS / Android carts) → VN day of start .. VN day of end;
+ *   `start` / `end` are kept as sent for the response echo.
  *
- * Real multi-day ISO ranges (e.g. cart `26T17Z`→`28T17Z`) pass through unchanged.
- *
- * @returns `{ start, end }` with exclusive `end` for civil-day windows
- *   (overlap: pickup < end AND return >= start).
+ * Conflicts use `bounds`: an order is on the window iff its VN pickup day ≤ toYmd and its VN return day ≥ fromYmd
+ * (`orderOverlapsAvailabilityBounds`), the same day model as Lịch Thuê / `calendarDayAvailability`.
  */
 export function resolveAvailabilityQueryWindow(input: {
   date?: string | null;
   startDate?: string | null;
   endDate?: string | null;
-}): { start: Date; end: Date; civilDayYmd: string | null } | null {
+}): AvailabilityQueryWindow | null {
   if (input.date) {
     const bounds = getAvailabilityCivilDayBounds(input.date);
     if (!bounds) return null;
-    return { start: bounds.start, end: bounds.end, civilDayYmd: input.date };
+    return {
+      start: bounds.start,
+      end: bounds.end,
+      civilDayYmd: input.date,
+      fromYmd: input.date,
+      toYmd: input.date,
+      bounds,
+    };
   }
 
   if (!input.startDate || !input.endDate) return null;
@@ -113,14 +147,43 @@ export function resolveAvailabilityQueryWindow(input: {
   const end = new Date(input.endDate);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
 
-  const utcDayYmd = extractUtcCivilDayWindowYmd(start, end);
-  if (utcDayYmd) {
-    const bounds = getAvailabilityCivilDayBounds(utcDayYmd);
+  const utcDays = extractUtcDayWindowKeys(start, end);
+  if (utcDays) {
+    const bounds = getAvailabilityCivilRangeBounds(utcDays.fromYmd, utcDays.toYmd);
     if (!bounds) return null;
-    return { start: bounds.start, end: bounds.end, civilDayYmd: utcDayYmd };
+    return {
+      start: bounds.start,
+      end: bounds.end,
+      civilDayYmd: utcDays.fromYmd === utcDays.toYmd ? utcDays.fromYmd : null,
+      fromYmd: utcDays.fromYmd,
+      toYmd: utcDays.toYmd,
+      bounds,
+    };
   }
 
-  return { start, end, civilDayYmd: null };
+  const fromYmd = toAvailabilityCivilDateKey(start);
+  const toYmd = toAvailabilityCivilDateKey(end);
+  // Keys come from toAvailabilityCivilDateKey, so the bounds always parse
+  const bounds = getAvailabilityCivilRangeBounds(fromYmd, toYmd)!;
+  return { start, end, civilDayYmd: null, fromYmd, toYmd, bounds };
+}
+
+/**
+ * Whether an order holds stock on the VN days `bounds` covers (inclusive pickup and return days).
+ * - no pickup → never
+ * - no planned return → held from its pickup day on
+ * Same rule as the SQL filter `pickupPlanAt < bounds.end AND returnPlanAt >= bounds.start`.
+ */
+export function orderOverlapsAvailabilityBounds(
+  order: { pickupPlanAt: Date | null; returnPlanAt: Date | null },
+  bounds: { start: Date; end: Date }
+): boolean {
+  const pickup = order.pickupPlanAt;
+  if (!pickup) return false;
+  if (pickup.getTime() >= bounds.end.getTime()) return false;
+  const ret = order.returnPlanAt;
+  if (!ret) return true;
+  return ret.getTime() >= bounds.start.getTime();
 }
 
 /**

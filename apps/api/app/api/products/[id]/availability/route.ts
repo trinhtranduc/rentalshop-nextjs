@@ -287,6 +287,7 @@ export async function GET(
         outletId: finalOutletId,
         rentalStart: rentalStart.toISOString(),
         rentalEnd: rentalEnd.toISOString(),
+        days: `${resolvedWindow.fromYmd}..${resolvedWindow.toYmd}`,
         productId,
         queryVersion: 'v2-simplified-overlap'
       });
@@ -302,10 +303,10 @@ export async function GET(
           deletedAt: null,
           // Exclude a specific order from conflict check (used when editing an existing order)
           ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
-          // Overlap (inclusive civil days): orderPickup < rentalEnd AND orderReturn >= rentalStart
+          // Overlap (inclusive VN civil days of the window, #590): orderPickup < day-bounds end AND orderReturn >= start
           // Same-day rentals store pickup==return at VN midnight — `gt` would miss them.
-          pickupPlanAt: { lt: rentalEnd },
-          returnPlanAt: { gte: rentalStart },
+          pickupPlanAt: { lt: resolvedWindow.bounds.end },
+          returnPlanAt: { gte: resolvedWindow.bounds.start },
           orderItems: {
             some: {
               productId: productId,
