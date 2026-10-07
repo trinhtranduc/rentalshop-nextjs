@@ -145,9 +145,16 @@ git diff --name-status $BASE...$HEAD_REF -- apps/api/app/api/cron apps/api/app/a
 When the same data now shows different numbers (revenue days, "today" counts, totals), say who notices and
 why it is a fix. Revenue and rankings exclude `CANCELLED`; day logic uses the Vietnam civil day.
 
+## 6b. API change log
+
+Every `.agent/api-changes/LOG.md` row with status `dev` whose PR is in this release: check its compat row
+against the release diff, then (in the release PR) set the status to `main-real` and, after deploy, fill
+"Checked after release" with what was verified on production (old build screen, logs, error rate). A
+change in the release diff with no LOG row is a **NO-GO** until the row exists.
+
 ## 7. Verdict and PR body
 
-- **NO-GO** if any of: a hotfix missing from `dev`, a new failing suite, a high-risk compat row, a changed
+- **NO-GO** if any of: an API change without a LOG row, a hotfix missing from `dev`, a new failing suite, a high-risk compat row, a changed
   mobile endpoint without proof, a destructive migration, a required env var with no plan.
 - **GO with conditions**: only human steps remain (backup, variables, store build live first).
 - **GO**: nothing open.
