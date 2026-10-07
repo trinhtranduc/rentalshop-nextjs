@@ -90,7 +90,11 @@ object ThermalPrinter {
         Result.Success
     }.getOrElse { Result.Failure(it.message ?: "Print failed") }
 
-    private fun lookupBankAccount(order: OrderDetail, lookup: (Int) -> OutletBankAccount?): OutletBankAccount? {
+    /** The bill's account of [order]'s outlet, 5 s at most; also the share image's (#640) */
+    internal fun lookupBankAccount(
+        order: OrderDetail,
+        lookup: (Int) -> OutletBankAccount? = BankAccountRepository::printAccount,
+    ): OutletBankAccount? {
         val outletId = order.outletId ?: runCatching { SessionStore.outletId }.getOrNull() ?: return null
         val executor = Executors.newSingleThreadExecutor()
         return try {

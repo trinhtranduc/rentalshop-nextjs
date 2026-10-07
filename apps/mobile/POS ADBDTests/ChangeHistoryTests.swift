@@ -357,25 +357,25 @@ final class ChangeHistoryTests: XCTestCase {
     }
 
     func testReservedRentalSheetLeavesEditToTheBottomBar() {
-        XCTAssertEqual(sheet(.rent, .reserved), OrderSheetActions(main: [.print, .notes, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .reserved), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: [.cancel]))
     }
 
     func testRentingSheetLeavesExtendToTheBottomBar() {
-        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: true), OrderSheetActions(main: [.print, .notes, .history], destructive: [.cancel]))
-        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: false), OrderSheetActions(main: [.print, .notes, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: true), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: false), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: [.cancel]))
     }
 
     func testCompletedSaleKeepsPrintAndCancelOnScreen() {
-        XCTAssertEqual(sheet(.sale, .completed), OrderSheetActions(main: [.notes, .edit, .history], destructive: []))
+        XCTAssertEqual(sheet(.sale, .completed), OrderSheetActions(main: [.share, .notes, .edit, .history], destructive: []))
     }
 
     func testReturnedAndCancelledOrders() {
-        XCTAssertEqual(sheet(.rent, .returned), OrderSheetActions(main: [.notes, .history], destructive: []))
-        XCTAssertEqual(sheet(.rent, .cancelled), OrderSheetActions(main: [.notes, .history], destructive: [.delete]))
+        XCTAssertEqual(sheet(.rent, .returned), OrderSheetActions(main: [.share, .notes, .history], destructive: []))
+        XCTAssertEqual(sheet(.rent, .cancelled), OrderSheetActions(main: [.share, .notes, .history], destructive: [.delete]))
     }
 
     func testStaffWithoutOrderRightsGetsNoEditOrCancel() {
-        XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.print, .notes, .history], destructive: []))
+        XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: []))
     }
 
     func testSheetNeverRepeatsABottomButton() {

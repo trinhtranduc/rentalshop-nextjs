@@ -711,6 +711,8 @@ final class OrderDetailViewController: BaseViewControler {
             return "order.sheet.cancel.subtitle".localized()
         case .delete:
             return "order.sheet.delete.subtitle".localized()
+        case .share:
+            return "order.sheet.share.subtitle".localized()
         case .edit, .extend:
             return nil
         }
@@ -720,6 +722,7 @@ final class OrderDetailViewController: BaseViewControler {
     private func perform(_ action: OrderSheetAction) {
         switch action {
         case .print: printTapped()
+        case .share: shareTapped()
         case .notes: editNotesTapped()
         case .edit: editOrderTapped()
         case .extend: extendTapped()
@@ -748,6 +751,12 @@ final class OrderDetailViewController: BaseViewControler {
                 }
             }
         }
+    }
+
+    /// #640: the share image (order detail with its payments, the bill's VietQR), then the share sheet
+    private func shareTapped() {
+        guard let detail else { return }
+        OrderSharePresenter.share(OrderShareSource(detail: detail), from: self, sourceView: moreButton)
     }
 
     @objc private func editOrderTapped() {
@@ -1145,6 +1154,7 @@ final class OrderActionSheet: V2FittingSheet {
     static func title(of action: OrderSheetAction) -> String {
         switch action {
         case .print: return "order.sheet.print".localized()
+        case .share: return "order.sheet.share".localized()
         case .notes: return "order.sheet.notes".localized()
         case .edit: return "Edit order".localized()
         case .extend: return "order.extend".localized()
@@ -1157,6 +1167,7 @@ final class OrderActionSheet: V2FittingSheet {
     private static func symbol(of action: OrderSheetAction) -> String {
         switch action {
         case .print: return "printer"
+        case .share: return "square.and.arrow.up"
         case .notes: return "note.text"
         case .edit: return "square.and.pencil"
         case .extend: return "calendar.badge.plus"

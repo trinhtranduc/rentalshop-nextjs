@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,6 +82,7 @@ import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.customers.CustomersScreen
+import com.anyrent.pos.ui.orders.shareIsVietnamese
 import com.anyrent.pos.ui.customers.v2.CustomerPickerSheet
 import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
@@ -289,6 +291,35 @@ fun CartV2Screen(
                 stringResource(if (editingOrderId != null) R.string.v2_cart_edit_title else R.string.v2_cart_title),
                 fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
             )
+            // #640: the cart as a draft image ("Đơn nháp"), once it has lines (rent: dates chosen)
+            val shareContext = LocalContext.current
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        runCatching {
+                            com.anyrent.pos.ui.orders.shareOrderImage(
+                                shareContext,
+                                com.anyrent.pos.domain.orders.OrderShareModel.fromDraft(
+                                    lines = lines,
+                                    customer = customer,
+                                    isSale = isSale,
+                                    pickup = pickup.takeIf { datesChosen },
+                                    returnDate = ret.takeIf { datesChosen },
+                                    discountAmount = discountAmount,
+                                    deposit = deposit,
+                                    securityDeposit = CartStore.securityDeposit.value,
+                                    collateralDetails = CartStore.collateralDetails.value,
+                                    shop = com.anyrent.pos.ui.orders.shareShop(),
+                                    vi = shareContext.shareIsVietnamese(),
+                                ),
+                            )
+                        }.onFailure { error = it.message }
+                    }
+                },
+                enabled = lines.isNotEmpty() && (isSale || datesChosen),
+            ) {
+                Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.share_draft_action), modifier = Modifier.size(DS.Icon.Lg))
+            }
             V2Segmented(
                 titles = listOf(stringResource(R.string.v2_cart_rent), stringResource(R.string.v2_cart_sale)),
                 selected = if (isSale) 1 else 0,

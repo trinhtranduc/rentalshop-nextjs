@@ -17,6 +17,8 @@ final class CartV2ViewController: BaseViewControler {
     private let collectTitle = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let collectAmount = V2.label(size: DS.TextSize.amount, weight: .bold)
     private let ctaButton = V2.primaryButton("products.cart.create".localized())
+    /// #640: share the cart as a draft image (lines, and for a rental both dates)
+    private let shareButton = UIButton(type: .system)
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
     /// Bumped on each availability call; an older answer is dropped
     private var availabilityGeneration = 0
@@ -90,7 +92,12 @@ final class CartV2ViewController: BaseViewControler {
         let title = V2.label((cart.isEditMode ? "products.cart.editTitle" : "products.cart.title").localized(), size: 20, weight: .bold)
         typeToggle.addTarget(self, action: #selector(typeChanged), for: .valueChanged)
         typeToggle.accessibilityLabel = "products.cart.type".localized()
-        [back, title, typeToggle].forEach(header.addSubview)
+        shareButton.setImage(DS.symbol("square.and.arrow.up", DS.Icon.md, weight: .semibold), for: .normal)
+        shareButton.tintColor = DS.Color.text
+        shareButton.accessibilityLabel = "share.draft.action".localized()
+        shareButton.accessibilityIdentifier = "cart.share"
+        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
+        [back, title, shareButton, typeToggle].forEach(header.addSubview)
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
@@ -109,6 +116,12 @@ final class CartV2ViewController: BaseViewControler {
         typeToggle.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
             make.centerY.equalToSuperview()
+        }
+        shareButton.snp.makeConstraints { make in
+            make.trailing.equalTo(typeToggle.snp.leading).offset(-4)
+            make.leading.greaterThanOrEqualTo(title.snp.trailing).offset(4)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(DS.touchTarget)
         }
 
         let bottom = UIView()
@@ -168,6 +181,10 @@ final class CartV2ViewController: BaseViewControler {
         typeToggle.select(isRent ? 0 : 1)
         typeToggle.isEnabled = !cart.isEditMode
         typeToggle.alpha = cart.isEditMode ? 0.6 : 1
+        let canShare = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
+                                               pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
+        shareButton.isEnabled = canShare
+        shareButton.alpha = canShare ? 1 : 0.35
 
         content.arrangedSubviews.forEach { $0.removeFromSuperview() }
         content.addArrangedSubview(band())
@@ -529,6 +546,12 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     // MARK: - Actions
+
+    @objc private func shareTapped() {
+        guard DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
+                                      pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt) else { return }
+        OrderSharePresenter.share(OrderShareSource(cart: cart, shop: ShareShop.current()), from: self, sourceView: shareButton)
+    }
 
     @objc private func goBack() {
         navigationController?.popViewController(animated: true)

@@ -1377,4 +1377,36 @@
     <string name="settings_v2_categories">Categories</string>
     <string name="v2_category_search">Search categories</string>
     <string name="v2_category_actions">Rename or delete</string>
+    <!-- #640 order share image -->
+    <string name="share_kind_rent">Rental order</string>
+    <string name="share_kind_sale">Sale order</string>
+    <string name="share_kind_draft">%1$s · created %2$s</string>
+    <string name="share_draft_title">Draft order</string>
+    <string name="share_status_reserved">Awaiting pickup</string>
+    <string name="share_status_pickuped">On rent</string>
+    <string name="share_status_returned">Returned</string>
+    <string name="share_status_completed">Paid</string>
+    <string name="share_status_cancelled">Cancelled</string>
+    <string name="share_status_draft">Not confirmed</string>
+    <string name="share_customer">Customer</string>
+    <string name="share_walk_in">Walk-in customer</string>
+    <string name="share_pickup">Pickup</string>
+    <string name="share_return">Return</string>
+    <string name="share_items_rent">Rental items · %1$d</string>
+    <string name="share_items_sale">Items bought · %1$d</string>
+    <string name="share_rent_total">Rental total</string>
+    <string name="share_deposit_paid">Deposit paid</string>
+    <string name="share_collateral">Collateral at pickup</string>
+    <string name="share_amount_due">Still to pay</string>
+    <string name="share_subtotal">Subtotal</string>
+    <string name="share_discount">Discount</string>
+    <string name="share_total">Total</string>
+    <string name="share_draft_deposit">Holding deposit</string>
+    <string name="share_draft_estimate">Estimate</string>
+    <string name="share_draft_note">Not confirmed yet. The shop will confirm the dates and prices before holding the items.</string>
+    <string name="share_qr_title">Scan to transfer</string>
+    <string name="share_qr_content">Content: %1$s</string>
+    <string name="share_thanks">Thank you for choosing %1$s</string>
+    <string name="share_made_with">Made with AnyRent</string>
+    <string name="share_draft_action">Share draft</string>
 </resources>

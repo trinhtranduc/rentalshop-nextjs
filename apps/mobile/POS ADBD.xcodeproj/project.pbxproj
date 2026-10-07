@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */; };
+		A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000003 /* OrderShareImageTests.swift */; };
 		5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */; };
 		1443F833E4528F38190DA006 /* ChangeHistoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */; };
 		71778FFE5E5E12F097C24D21 /* ChangeHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */; };
@@ -50,12 +51,14 @@
 		04276C012EE451B7005EAC05 /* BankAccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C002EE451B7005EAC05 /* BankAccountViewController.swift */; };
 		04276C022EE451B7005EAC05 /* BankAccountFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276BFF2EE451B7005EAC05 /* BankAccountFormViewController.swift */; };
 		04276C042EE451E0005EAC05 /* BankAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C032EE451E0005EAC05 /* BankAccount.swift */; };
+		A640B0000000000000000001 /* OrderShareImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000001 /* OrderShareImage.swift */; };
 		04276C072EE45331005EAC05 /* QRCodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C062EE45331005EAC05 /* QRCodeService.swift */; };
 		04276C082EE45331005EAC05 /* BankAccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C052EE45331005EAC05 /* BankAccountService.swift */; };
 		04276C0A2EE4537F005EAC05 /* PaymentQRCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */; };
 		04276C0C2EE453AE005EAC05 /* QRCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */; };
 		04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */; };
 		A622B0000000000000000001 /* VietQR.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000001 /* VietQR.swift */; };
+		A640B0000000000000000002 /* OrderShareRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000002 /* OrderShareRenderer.swift */; };
 		04276C102EE4582E005EAC05 /* BankPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */; };
 		04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */; };
 		043F06372D85473C0047DC11 /* HapticButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043F06362D85473C0047DC11 /* HapticButton.swift */; };
@@ -381,6 +384,7 @@
 
 /* Begin PBXFileReference section */
 		6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryTests.swift; sourceTree = "<group>"; };
+		A640F0000000000000000003 /* OrderShareImageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareImageTests.swift; sourceTree = "<group>"; };
 		D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflictTests.swift; sourceTree = "<group>"; };
 		76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryViewController.swift; sourceTree = "<group>"; };
 		E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistory.swift; sourceTree = "<group>"; };
@@ -416,12 +420,14 @@
 		04276BFF2EE451B7005EAC05 /* BankAccountFormViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccountFormViewController.swift; sourceTree = "<group>"; };
 		04276C002EE451B7005EAC05 /* BankAccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccountViewController.swift; sourceTree = "<group>"; };
 		04276C032EE451E0005EAC05 /* BankAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccount.swift; sourceTree = "<group>"; };
+		A640F0000000000000000001 /* OrderShareImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareImage.swift; sourceTree = "<group>"; };
 		04276C052EE45331005EAC05 /* BankAccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccountService.swift; sourceTree = "<group>"; };
 		04276C062EE45331005EAC05 /* QRCodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeService.swift; sourceTree = "<group>"; };
 		04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentQRCodeViewController.swift; sourceTree = "<group>"; };
 		04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeGenerator.swift; sourceTree = "<group>"; };
 		04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietnamBankCodes.swift; sourceTree = "<group>"; };
 		A622F0000000000000000001 /* VietQR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietQR.swift; sourceTree = "<group>"; };
+		A640F0000000000000000002 /* OrderShareRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareRenderer.swift; sourceTree = "<group>"; };
 		04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankPickerViewController.swift; sourceTree = "<group>"; };
 		04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductAvailabilityCache.swift; sourceTree = "<group>"; };
 		043F06362D85473C0047DC11 /* HapticButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticButton.swift; sourceTree = "<group>"; };
@@ -1003,6 +1009,7 @@
 				32451210261D4A00E83FEBAA /* OrderStatusTests.swift */,
 				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
 				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
+				A640F0000000000000000003 /* OrderShareImageTests.swift */,
 				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
@@ -1051,6 +1058,7 @@
 			isa = PBXGroup;
 			children = (
 				04276C032EE451E0005EAC05 /* BankAccount.swift */,
+				A640F0000000000000000001 /* OrderShareImage.swift */,
 				040331082EAC8C4A003BC33E /* ProductRequest.swift */,
 				040331032EA9D0FE003BC33E /* Order.swift */,
 				040330F02EA8C8AB003BC33E /* Cart.swift */,
@@ -1320,6 +1328,7 @@
 				04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */,
 				04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */,
 				A622F0000000000000000001 /* VietQR.swift */,
+				A640F0000000000000000002 /* OrderShareRenderer.swift */,
 				04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */,
 				0403310A2EACEC7E003BC33E /* LoadingState.swift */,
 				040330ED2EA8913D003BC33E /* JSONHelper.swift */,
@@ -1815,6 +1824,7 @@
 				81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */,
 				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
 				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
+				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
 				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
@@ -1891,6 +1901,7 @@
 				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
 				A622B0000000000000000001 /* VietQR.swift in Sources */,
+				A640B0000000000000000002 /* OrderShareRenderer.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,
 				88E4149E21A99E9D00BAF4A1 /* RCError.swift in Sources */,
@@ -1969,6 +1980,7 @@
 				04276C0A2EE4537F005EAC05 /* PaymentQRCodeViewController.swift in Sources */,
 				88A07DCF21AA8CF600023F69 /* FirebaseExtension.swift in Sources */,
 				04276C042EE451E0005EAC05 /* BankAccount.swift in Sources */,
+				A640B0000000000000000001 /* OrderShareImage.swift in Sources */,
 				04E55FB32E220F77003F00D0 /* WebViewController.swift in Sources */,
 				040331092EAC8C4B003BC33E /* ProductRequest.swift in Sources */,
 				040330F42EA8C8AB003BC33E /* CartItem.swift in Sources */,
