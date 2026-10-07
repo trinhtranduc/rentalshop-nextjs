@@ -129,7 +129,7 @@ export default function DashboardPage() {
           ) }),
     [series, weekdays, todayKey, chartState.loading],
   );
-  const forecast = useMemo(() => forecastBar(kpis.collected, series, todayKey), [kpis.collected, series, todayKey]);
+  const forecast = useMemo(() => forecastBar(kpis.collected, series, todayKey, range), [kpis.collected, series, todayKey, range]);
 
   // Tile detail lives in the URL (?detail=) so back, refresh and links work
   const detail = canViewRevenue ? parseDetail(searchParams.get('detail')) : null;

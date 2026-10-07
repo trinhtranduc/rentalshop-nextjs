@@ -291,13 +291,16 @@ export function forecastBar(
   collected: number | null,
   series: SeriesPointLike[] | null | undefined,
   todayKey: string,
+  range?: DayRange,
 ): { collected: number; forecast: number; pct: number; until: string } | null {
   // #612: every day of the selected range from today on (a future range sums its whole forecast).
+  // #618: the series may be the wider chart range; count only days inside the selected period.
   let forecast = 0;
   let until = '';
   for (const point of series ?? []) {
     const key = seriesDayKey(point);
     if (!key || key < todayKey) continue;
+    if (range && (key < range.startDate || key > range.endDate)) continue;
     const value = forecastOf(point);
     if (value > 0) {
       forecast += value;
