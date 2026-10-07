@@ -40,6 +40,9 @@ sealed interface ProductOrderRowState {
 object ProductDetailLogic {
     const val STRIP_LENGTH = 7
 
+    /** #642: the detail shows 6 days, the 7th tile is the calendar icon */
+    const val DETAIL_STRIP_DAYS = 6
+
     /** [count] day keys from [todayKey] */
     fun weekKeys(todayKey: String, count: Int = STRIP_LENGTH): List<String> {
         val start = runCatching { LocalDate.parse(todayKey) }.getOrNull() ?: return emptyList()
@@ -47,8 +50,8 @@ object ProductDetailLogic {
     }
 
     /** Cells for the strip; a day missing from the answer counts as 0 free */
-    fun strip(todayKey: String, available: Map<String, Int>): List<FreeStripDay> =
-        weekKeys(todayKey).map { key ->
+    fun strip(todayKey: String, available: Map<String, Int>, count: Int = STRIP_LENGTH): List<FreeStripDay> =
+        weekKeys(todayKey, count).map { key ->
             FreeStripDay(key = key, day = key.takeLast(2), free = (available[key] ?: 0).coerceAtLeast(0), isToday = key == todayKey)
         }
 

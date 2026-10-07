@@ -2290,6 +2290,26 @@
 "order.header.handOverToday" = "giao hôm nay";
 "order.header.pickupOverdue" = "quá ngày lấy %d ngày";
 "order.header.pickupOverdue.one" = "quá ngày lấy %d ngày";
+/* #642 Lịch trống của sản phẩm */
+"products.calendar.month" = "Tháng %1$d, %2$d";
+"products.calendar.total" = "Tổng %d cái";
+"products.calendar.free" = "còn %d";
+"products.calendar.out" = "hết";
+"products.calendar.legend.full" = "Còn đủ";
+"products.calendar.legend.low" = "Còn ít";
+"products.calendar.legend.out" = "Hết";
+"products.calendar.legend.selected" = "Ngày chọn";
+"products.calendar.dayOrders" = "%d đơn đang giữ đồ";
+"products.calendar.noOrders" = "Không có đơn nào giữ đồ ngày này";
+"products.calendar.orderDays" = "Giao %1$@ · trả %2$@";
+"products.calendar.qty" = "%d cái";
+"products.calendar.days" = "%d ngày";
+"products.calendar.days.one" = "%d ngày";
+"products.calendar.minFree" = "còn ít nhất %d cái";
+"products.calendar.pickStart" = "Chạm ngày giao rồi ngày trả";
+"products.calendar.pickEnd" = "chạm ngày trả";
+"products.calendar.add" = "Thêm vào giỏ với ngày này";
+"products.calendar.overlapNote" = "Đã hết đồ trong những ngày này. Cửa hàng vẫn cho tạo đơn trùng lịch.";
 "order.sheet.share" = "Chia sẻ đơn";
 "order.sheet.share.subtitle" = "Ảnh hoá đơn để lưu hoặc gửi";
 /* #640 order share image */

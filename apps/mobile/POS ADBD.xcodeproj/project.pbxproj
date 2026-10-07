@@ -18,6 +18,7 @@
 		596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */; };
 		021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */; };
 		039E4564507EC2529E6A9529 /* Phase7GapsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1128874207B931039540DAB /* Phase7GapsTests.swift */; };
+		522155F33DE03599AFDCA6B1 /* ProductCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A288BC7B1179860A2FFADF5F /* ProductCalendarTests.swift */; };
 		A430B0000000000000000001 /* Issue430Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A430F0000000000000000001 /* Issue430Tests.swift */; };
 		A344B0000000000000000001 /* AuthSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A344F0000000000000000001 /* AuthSessionTests.swift */; };
 		040085082F00DDC500DF5C81 /* RatingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040085072F00DDC500DF5C81 /* RatingManager.swift */; };
@@ -193,6 +194,7 @@
 		5150715066E3694042E01913 /* HandOverCollateralTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */; };
 		5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */; };
 		523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */; };
+		595B59EBE56AE7BE95B3F06E /* ProductCalendarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */; };
 		55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DFF664402F310DBDA0C7DD /* AuthForms.swift */; };
 		57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */; };
 		A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A632F0000000000000000001 /* CategoryManageViewController.swift */; };
@@ -270,6 +272,7 @@
 		9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */; };
 		941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */; };
 		9893270E20A560EFFD72653E /* ProductDetailV2Logic.swift in Sources */ = {isa = PBXBuildFile; fileRef = F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */; };
+		EED9B2DE2A382145A9AC11F1 /* ProductCalendarLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A005FCE2694ADE8CD58016 /* ProductCalendarLogic.swift */; };
 		9B1605DA8A6665412EED39EB /* OrderDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */; };
 		9D1B768177A1200AC6AE8A9D /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */; };
 		A4B110012F1E0101000001 /* DraftOrderAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000011 /* DraftOrderAttributes.swift */; };
@@ -577,6 +580,7 @@
 		A616F0000000000000000001 /* OverviewDashLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashLogic.swift; sourceTree = "<group>"; };
 		652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Views.swift; sourceTree = "<group>"; };
 		665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductDetailViewController.swift; sourceTree = "<group>"; };
+		2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductCalendarViewController.swift; sourceTree = "<group>"; };
 		68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2ViewController.swift; sourceTree = "<group>"; };
 		730E16169321964B8996F08C /* RentalExtension.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RentalExtension.swift; sourceTree = "<group>"; };
 		7AC45E729C448084B4969B27 /* OnboardingV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2ViewController.swift; sourceTree = "<group>"; };
@@ -660,6 +664,7 @@
 		B854361D12543F58020DE847 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2.swift; sourceTree = "<group>"; };
 		C1128874207B931039540DAB /* Phase7GapsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase7GapsTests.swift; sourceTree = "<group>"; };
+		A288BC7B1179860A2FFADF5F /* ProductCalendarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductCalendarTests.swift; sourceTree = "<group>"; };
 		A430F0000000000000000001 /* Issue430Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Issue430Tests.swift; sourceTree = "<group>"; };
 		A344F0000000000000000001 /* AuthSessionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthSessionTests.swift; sourceTree = "<group>"; };
 		C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsHomeViewModel.swift; sourceTree = "<group>"; };
@@ -703,6 +708,7 @@
 		EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeViewModel.swift; sourceTree = "<group>"; };
 		EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ForgotPasswordV2ViewController.swift; sourceTree = "<group>"; };
 		F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductDetailV2Logic.swift; sourceTree = "<group>"; };
+		51A005FCE2694ADE8CD58016 /* ProductCalendarLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductCalendarLogic.swift; sourceTree = "<group>"; };
 		F8174E6BA337B4B259DD6569 /* FormattersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FormattersTests.swift; sourceTree = "<group>"; };
 		FDAA71945D1F2C820062603E /* DesignTokens.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -993,6 +999,7 @@
 				B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */,
 				A47201AA0000000000000002 /* ImageViewerViewController.swift */,
 				665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */,
+				2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */,
 				C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */,
 				A632F0000000000000000001 /* CategoryManageViewController.swift */,
 				A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */,
@@ -1023,6 +1030,7 @@
 				286EED8E25240975FDF5D455 /* IconTokensTests.swift */,
 				A424B0010000000000000002 /* TypeScaleTests.swift */,
 				C1128874207B931039540DAB /* Phase7GapsTests.swift */,
+				A288BC7B1179860A2FFADF5F /* ProductCalendarTests.swift */,
 				A430F0000000000000000001 /* Issue430Tests.swift */,
 				A344F0000000000000000001 /* AuthSessionTests.swift */,
 				C68665233AF9D666CE7E723C /* Phase8Tests.swift */,
@@ -1088,6 +1096,7 @@
 				B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */,
 				09DFF664402F310DBDA0C7DD /* AuthForms.swift */,
 				F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */,
+				51A005FCE2694ADE8CD58016 /* ProductCalendarLogic.swift */,
 				730E16169321964B8996F08C /* RentalExtension.swift */,
 				E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */,
 				EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */,
@@ -1838,6 +1847,7 @@
 				DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */,
 				A424B0010000000000000001 /* TypeScaleTests.swift in Sources */,
 				039E4564507EC2529E6A9529 /* Phase7GapsTests.swift in Sources */,
+				522155F33DE03599AFDCA6B1 /* ProductCalendarTests.swift in Sources */,
 				A430B0000000000000000001 /* Issue430Tests.swift in Sources */,
 				A344B0000000000000000001 /* AuthSessionTests.swift in Sources */,
 				00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */,
@@ -2043,6 +2053,7 @@
 				C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */,
 				A47201AA0000000000000001 /* ImageViewerViewController.swift in Sources */,
 				523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */,
+				595B59EBE56AE7BE95B3F06E /* ProductCalendarViewController.swift in Sources */,
 				57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */,
 				A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */,
 				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,
@@ -2086,6 +2097,7 @@
 				3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */,
 				91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */,
 				9893270E20A560EFFD72653E /* ProductDetailV2Logic.swift in Sources */,
+				EED9B2DE2A382145A9AC11F1 /* ProductCalendarLogic.swift in Sources */,
 				B298B580A0C9BA1614A0649B /* RentalExtension.swift in Sources */,
 				71778FFE5E5E12F097C24D21 /* ChangeHistory.swift in Sources */,
 				9C6BC26D8481C7603F0EC26E /* ScheduleConflict.swift in Sources */,
