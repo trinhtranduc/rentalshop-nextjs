@@ -181,6 +181,7 @@ private class FakeAvailabilityRepository(
         requests: List<AvailabilityRequest>,
         startDate: LocalDate,
         endDate: LocalDate,
+        excludeOrderId: Int?,
     ): Map<Int, ProductAvailability> = requests.associate {
         it.productId to checkAvailability(it.productId, startDate, endDate, it.quantity)
     }

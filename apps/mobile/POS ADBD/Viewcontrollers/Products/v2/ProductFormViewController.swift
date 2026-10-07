@@ -471,22 +471,31 @@ final class ProductFormViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
+    /// #632: the category screen in pick mode (search, + add, ⋯ rename / delete by role); a tap picks and comes back
     @objc private func pickCategory() {
-        let sheet = UIAlertController(title: "products.form.category".localized(), message: nil, preferredStyle: .actionSheet)
-        sheet.addAction(UIAlertAction(title: "products.form.noCategory".localized(), style: .default) { [weak self] _ in
-            self?.categoryId = nil
-            self?.renderCategory()
-        })
-        for category in categories {
-            sheet.addAction(UIAlertAction(title: category.name, style: .default) { [weak self] _ in
-                self?.categoryId = category.id
-                self?.renderCategory()
-            })
+        let screen = CategoryManageViewController()
+        screen.selectedId = categoryId
+        screen.onChange = { [weak self] categories in
+            guard let self else { return }
+            self.categories = categories
+            if let id = self.categoryId, !categories.contains(where: { $0.id == id }) {
+                self.categoryId = nil
+            }
+            self.renderCategory()
         }
-        sheet.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        sheet.popoverPresentationController?.sourceView = categoryRow
-        sheet.popoverPresentationController?.sourceRect = categoryRow.bounds
-        present(sheet, animated: true)
+        screen.onPick = { [weak self] category in
+            guard let self else { return }
+            if let category, !self.categories.contains(where: { $0.id == category.id }) {
+                self.categories.append(category)
+            }
+            self.categoryId = category?.id
+            self.renderCategory()
+        }
+        if let nav = navigationController {
+            nav.pushViewController(screen, animated: true)
+        } else {
+            presentWithHiddenNavigationBar(screen, fullScreen: true)
+        }
     }
 
     @objc private func scanBarcode() {

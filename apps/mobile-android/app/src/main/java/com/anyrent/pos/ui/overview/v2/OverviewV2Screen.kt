@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
@@ -81,6 +82,8 @@ import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewPeriod
 import com.anyrent.pos.domain.overview.OverviewPreset
 import com.anyrent.pos.domain.overview.OverviewReport
+import com.anyrent.pos.domain.overview.OverviewTopKind
+import com.anyrent.pos.domain.overview.OverviewTopRow
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
@@ -96,7 +99,7 @@ private fun dayLabel(date: LocalDate): String =
     formatDayShort(date)
 
 /** "CN 27/09 – T7 03/10" (one day: "T7 03/10") */
-private fun longRange(range: DayRange): String =
+internal fun longRange(range: DayRange): String =
     if (range.start == range.end) dayLabel(range.start) else "${dayLabel(range.start)} – ${dayLabel(range.end)}"
 
 @Composable
@@ -120,6 +123,10 @@ fun OverviewV2Screen(
     onOpenList: (String, String, String) -> Unit = { _, _, _ -> },
     /** #388: (product id, start, end) */
     onOpenProduct: (Int, String, String) -> Unit = { _, _, _ -> },
+    /** #633: (customer id, start, end), the customer's orders in the period */
+    onOpenCustomer: (Int, String, String) -> Unit = { _, _, _ -> },
+    /** #633: "Xem tất cả" of a top list: ([OverviewTopKind.key], start, end) */
+    onOpenTopAll: (String, String, String) -> Unit = { _, _, _ -> },
     /** #484: "Đang cho thuê" and "Đang thuê · trễ hạn trả" open the rented-out list */
     onOpenRentedOut: () -> Unit = {},
     /** #496: "Quá ngày lấy, khách chưa đến" and both "Còn phải thu" rows open "Chưa lấy đồ" */
@@ -232,11 +239,28 @@ fun OverviewV2Screen(
                         ThinDivider()
                     }
                 }
-                val top = state.report?.topProducts.orEmpty()
-                if (state.showsRevenue && top.isNotEmpty()) {
-                    item(key = "top-band") { SectionBand(stringResource(R.string.overview_v2_top_rented)) }
-                    items(top, key = { "top-${it.id}-${it.name}" }) { product ->
-                        TopRow(product, onClick = product.id?.let { id -> { onOpenProduct(id, range.start.toString(), range.end.toString()) } })
+                // #633: Top sản phẩm / Top khách hàng, five rows each; "Xem tất cả" opens up to 50 (hidden without rows)
+                val report = state.report
+                if (state.showsRevenue && report != null) {
+                    OverviewTopKind.entries.forEach { kind ->
+                        val rows = OverviewLogic.topRows(report, kind)
+                        if (rows.isEmpty()) return@forEach
+                        item(key = "top-band-${kind.key}") {
+                            SectionBand(stringResource(topTitle(kind))) {
+                                ViewAllLink { onOpenTopAll(kind.key, range.start.toString(), range.end.toString()) }
+                            }
+                        }
+                        itemsIndexed(rows, key = { index, row -> "top-${kind.key}-$index-${row.id}" }) { index, row ->
+                            OverviewTopRowItem(
+                                row, kind, rank = index + 1,
+                                onClick = row.id?.let { id ->
+                                    {
+                                        val open = if (kind == OverviewTopKind.PRODUCTS) onOpenProduct else onOpenCustomer
+                                        open(id, range.start.toString(), range.end.toString())
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
                 if (!state.showsRevenue && !state.showsOperations) {
@@ -817,20 +841,64 @@ private fun Chevron() {
     Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
 }
 
+/** #633 title of a top list, on the overview band and on "Xem tất cả" */
+internal fun topTitle(kind: OverviewTopKind): Int = when (kind) {
+    OverviewTopKind.PRODUCTS -> R.string.overview_v2_top_rented
+    OverviewTopKind.CUSTOMERS -> R.string.overview_v2_top_customers
+}
+
 @Composable
-private fun TopRow(product: OverviewReport.TopProduct, onClick: (() -> Unit)?) {
+private fun ViewAllLink(onClick: () -> Unit) {
+    Text(
+        stringResource(R.string.overview_v2_view_all),
+        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(horizontal = 6.dp, vertical = 4.dp),
+    )
+}
+
+private val CustomerBar = Color(0xFF7C3AED)
+
+/**
+ * #633 one row of a top list (overview and "Xem tất cả"): rank, a product's photo, name and amount, then a thin bar
+ * against the first row and "N lượt thuê" / "N đơn". A row without id is not tappable.
+ */
+@Composable
+internal fun OverviewTopRowItem(row: OverviewTopRow, kind: OverviewTopKind, rank: Int? = null, onClick: (() -> Unit)?) {
     Row(
         Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 6.dp),
+            .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 6.dp)
+            .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ProductThumb(product.image, 44.dp, 10.dp)
-        Column(Modifier.weight(1f)) {
-            Text(product.name, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(R.string.overview_v2_rentals, product.rentalCount), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        rank?.let {
+            Text(
+                it.toString(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted,
+                textAlign = TextAlign.Center, modifier = Modifier.size(width = 22.dp, height = 20.dp),
+            )
         }
-        Text(formatMoneyVnd(product.totalRevenue), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+        if (kind == OverviewTopKind.PRODUCTS) ProductThumb(row.image, 44.dp, 10.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    row.name.ifBlank { "—" }, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                )
+                Text(formatMoneyVnd(row.amount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(V2Colors.Line)) {
+                    Box(
+                        Modifier.fillMaxWidth(row.ratio.toFloat().coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(2.dp))
+                            .background(if (kind == OverviewTopKind.PRODUCTS) DS.Colors.Primary else CustomerBar),
+                    )
+                }
+                Text(
+                    stringResource(if (kind == OverviewTopKind.PRODUCTS) R.string.overview_v2_rentals else R.string.overview_v2_customer_orders, row.count),
+                    fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1,
+                )
+            }
+        }
     }
     ThinDivider()
 }

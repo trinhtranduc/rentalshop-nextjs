@@ -171,7 +171,7 @@ fun CartV2Screen(
     )
 
     // Batch availability for the dates (rent) or today (sale), same call as the old cart's check
-    val availabilityKey = lines.map { it.product.id to it.quantity } to listOf(isSale, pickup, ret, datesChosen)
+    val availabilityKey = lines.map { it.product.id to it.quantity } to listOf(isSale, pickup, ret, datesChosen, editingOrderId)
     LaunchedEffect(availabilityKey) {
         // iOS checks a rental only once dates are picked
         if (lines.isEmpty() || (!isSale && !datesChosen)) {
@@ -185,17 +185,19 @@ fun CartV2Screen(
                 requests = lines.map { AvailabilityRequest(it.product.id, it.quantity) },
                 startDate = if (isSale) today else pickup,
                 endDate = if (isSale) today else ret,
+                // #634: an edited order does not count against itself (iOS `excludeOrderId: cart.orderId`)
+                excludeOrderId = editingOrderId,
             )
         }
         result.onSuccess { map -> availability = map }
     }
 
     // #518 "Cho tạo đơn khi trùng lịch": the shop setting (re-read once per screen, the owner may change it on the
-    // web) and the rental lines other orders already hold on the chosen days. Not for an edited order: the batch
-    // check would count the order itself.
+    // web) and the rental lines other orders already hold on the chosen days. An edited order is excluded from the
+    // batch check (#634), so its conflicts are the other orders' only, as on iOS.
     val allowOverlap by SessionStore.allowOverlappingOrdersFlow.collectAsState()
     LaunchedEffect(Unit) { withContext(Dispatchers.IO) { ApiClient.get().refreshAllowOverlappingOrders() } }
-    val overlapConflicts = if (isSale || !datesChosen || editingOrderId != null) {
+    val overlapConflicts = if (isSale || !datesChosen) {
         emptyList<OverlapWarnings.LineConflict>()
     } else {
         lines.mapNotNull { line ->

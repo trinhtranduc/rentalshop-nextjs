@@ -99,7 +99,7 @@ class VietnamPhoneSameRequestsTest {
             CalendarLogic.dayPath("2026-10-10"),
         )
         assertEquals(
-            "/api/analytics/period?startDate=2026-10-01&endDate=2026-10-31&groupBy=day&limit=3&timeZone=$zone",
+            "/api/analytics/period?startDate=2026-10-01&endDate=2026-10-31&groupBy=day&limit=5&timeZone=$zone",
             OverviewLogic.periodPath(DayRange(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31))),
         )
         assertEquals("/api/analytics/outlet-operations?timeZone=$zone", OverviewLogic.outletOperationsPath())

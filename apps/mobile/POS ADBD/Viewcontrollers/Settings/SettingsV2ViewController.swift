@@ -178,6 +178,7 @@ final class SettingsV2ViewController: BaseViewControler {
         case .receiptNote: return "settings.v2.receiptNote".localized()
         case .printer: return "settings.v2.printer".localized()
         case .bankAccounts: return "Bank Accounts".localized()
+        case .categories: return "settings.v2.categories".localized()
         case .customers: return "customers.v2.title".localized()
         case .users: return "settings.v2.users".localized()
         case .export: return "Export Data".localized()
@@ -224,6 +225,10 @@ final class SettingsV2ViewController: BaseViewControler {
         case .bankAccounts:
             let page = BankAccountViewController()
             page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
+        case .categories:
+            let page = CategoryManageViewController()
+            page.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(page, animated: true)
         case .customers:
             let list = CustomersV2ListViewController(mode: .browse)

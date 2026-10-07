@@ -10,7 +10,7 @@ import Foundation
 
 enum SettingsV2Item: Equatable {
     case storeInfo, receiptNote, printer, bankAccounts
-    case customers, users, export
+    case categories, customers, users, export
     case plan, language, password, appInfo, deleteAccount
 }
 
@@ -35,12 +35,14 @@ enum SettingsV2Logic {
     /// - export: any export right and never OUTLET_STAFF (as today)
     /// - plan: shown once `subscriptions/status` answered
     /// - bankAccounts (#622): MERCHANT and OUTLET_ADMIN (the API rejects writes from OUTLET_STAFF)
+    /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo, .receiptNote, .printer]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
+        if CategoryRules.canAdd(role: role, permissions: permissions) { management.append(.categories) }
         if showsCustomers, permissions.contains(where: { ["customers.view", "customers.manage"].contains($0) }) {
             management.append(.customers)
         }

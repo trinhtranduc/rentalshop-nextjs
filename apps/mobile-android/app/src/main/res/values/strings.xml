@@ -779,6 +779,10 @@
     <string name="overview_v2_collateral_held">Security deposit held</string>
     <string name="overview_v2_top_rented">Most rented · by order value</string>
     <string name="overview_v2_rentals">%1$d rentals</string>
+    <string name="overview_v2_view_all">View all</string>
+    <string name="overview_v2_top_customers">Top customers</string>
+    <string name="overview_v2_customer_orders">%1$d orders</string>
+    <string name="overview_v2_top_empty">Nothing in this period yet.</string>
     <string name="overview_v2_no_access">Your account cannot see reports</string>
     <string name="overview_v2_bars">Real income per day</string>
     <string name="settings_v2_title">Settings</string>
@@ -1324,4 +1328,24 @@
     <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. This device only.</string>
     <string name="bill_bank_qr_title">BANK TRANSFER</string>
     <string name="bill_bank_qr_account">Account: %1$s</string>
+    <!-- #632 categories from the product form -->
+    <string name="api_error_category_name_exists">A category with this name already exists</string>
+    <string name="api_error_category_name_required">Please enter a category name</string>
+    <string name="api_error_cannot_delete_default_category">The default category cannot be deleted</string>
+    <string name="v2_category_add_title">Add category</string>
+    <string name="v2_category_rename_title">Rename category</string>
+    <string name="v2_category_name_placeholder">Category name</string>
+    <string name="v2_category_save">Save</string>
+    <string name="v2_category_rename">Rename</string>
+    <string name="v2_category_delete">Delete</string>
+    <string name="v2_category_delete_title">Delete category \"%1$s\"?</string>
+    <string name="v2_category_default">Default</string>
+    <string name="v2_category_empty">No categories yet</string>
+    <string name="v2_category_name_required">Please enter a category name</string>
+    <string name="v2_category_name_too_short">A category name needs at least 2 characters</string>
+    <string name="v2_category_name_too_long">A category name has at most 50 characters</string>
+    <string name="v2_category_has_products">This category still has products. Move them to another category before deleting it.</string>
+    <string name="settings_v2_categories">Categories</string>
+    <string name="v2_category_search">Search categories</string>
+    <string name="v2_category_actions">Rename or delete</string>
 </resources>

@@ -1,5 +1,7 @@
 package com.anyrent.pos.data
 
+import com.anyrent.pos.AnyRentApp
+import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
@@ -341,7 +343,7 @@ object ApiParity {
             json.optJSONObject("data")?.toString() ?: json.toString()
         }
 
-    data class Category(val id: Int, val name: String)
+    data class Category(val id: Int, val name: String, val isDefault: Boolean = false)
 
     data class AvailabilityConflict(
         val orderId: Int?,
@@ -357,8 +359,33 @@ object ApiParity {
         val arr = data.optJSONArray("categories") ?: JSONArray()
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
-            Category(id = o.optInt("id"), name = o.optString("name"))
+            Category(id = o.optInt("id"), name = o.optString("name"), isDefault = o.optBoolean("isDefault"))
         }
+    }
+
+    /** #632: `POST /api/categories` (MERCHANT, OUTLET_ADMIN) */
+    fun createCategory(name: String): Result<Category> = runCatching {
+        val body = JSONObject().put("name", name).toString().toRequestBody(jsonMedia)
+        val o = ApiClient.get().authedPost("/api/categories", body).optJSONObject("data") ?: JSONObject()
+        Category(id = o.optInt("id"), name = o.optString("name", name), isDefault = o.optBoolean("isDefault"))
+    }
+
+    /** #632: `PUT /api/categories/{id}` (MERCHANT only) */
+    fun renameCategory(id: Int, name: String): Result<Unit> = runCatching {
+        val body = JSONObject().put("name", name).toString().toRequestBody(jsonMedia)
+        ApiClient.get().authedPut("/api/categories/$id", body)
+        Unit
+    }
+
+    /** #632: `DELETE /api/categories/{id}` (MERCHANT only); 409 BUSINESS_RULE_VIOLATION = it still has products */
+    fun deleteCategory(id: Int): Result<Unit> = runCatching {
+        try {
+            ApiClient.get().authedDelete("/api/categories/$id")
+        } catch (e: AppError) {
+            if (e.code != "BUSINESS_RULE_VIOLATION") throw e
+            throw AppError.InvalidResponse(AnyRentApp.instance?.getString(R.string.v2_category_has_products) ?: e.message, code = e.code)
+        }
+        Unit
     }
 
     fun updateProductFull(

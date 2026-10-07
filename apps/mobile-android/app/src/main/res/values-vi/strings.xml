@@ -770,6 +770,10 @@
     <string name="overview_v2_collateral_held">Thế chân đang giữ</string>
     <string name="overview_v2_top_rented">Thuê nhiều nhất · theo giá trị đơn</string>
     <string name="overview_v2_rentals">%1$d lượt thuê</string>
+    <string name="overview_v2_view_all">Xem tất cả</string>
+    <string name="overview_v2_top_customers">Top khách hàng</string>
+    <string name="overview_v2_customer_orders">%1$d đơn</string>
+    <string name="overview_v2_top_empty">Chưa có trong khoảng này.</string>
     <string name="overview_v2_no_access">Tài khoản của bạn không xem được báo cáo</string>
     <string name="overview_v2_bars">Thực thu từng ngày</string>
     <string name="settings_v2_title">Cài đặt</string>
@@ -1306,4 +1310,24 @@
     <string name="printer_bank_qr_hint">In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.</string>
     <string name="bill_bank_qr_title">CHUYỂN KHOẢN</string>
     <string name="bill_bank_qr_account">STK: %1$s</string>
+    <!-- #632 categories from the product form -->
+    <string name="api_error_category_name_exists">Tên danh mục đã tồn tại</string>
+    <string name="api_error_category_name_required">Vui lòng nhập tên danh mục</string>
+    <string name="api_error_cannot_delete_default_category">Không thể xoá danh mục mặc định</string>
+    <string name="v2_category_add_title">Thêm danh mục</string>
+    <string name="v2_category_rename_title">Đổi tên danh mục</string>
+    <string name="v2_category_name_placeholder">Tên danh mục</string>
+    <string name="v2_category_save">Lưu</string>
+    <string name="v2_category_rename">Đổi tên</string>
+    <string name="v2_category_delete">Xoá</string>
+    <string name="v2_category_delete_title">Xoá danh mục \"%1$s\"?</string>
+    <string name="v2_category_default">Mặc định</string>
+    <string name="v2_category_empty">Chưa có danh mục</string>
+    <string name="v2_category_name_required">Vui lòng nhập tên danh mục</string>
+    <string name="v2_category_name_too_short">Tên danh mục cần ít nhất 2 ký tự</string>
+    <string name="v2_category_name_too_long">Tên danh mục tối đa 50 ký tự</string>
+    <string name="v2_category_has_products">Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.</string>
+    <string name="settings_v2_categories">Danh mục</string>
+    <string name="v2_category_search">Tìm danh mục</string>
+    <string name="v2_category_actions">Đổi tên hoặc xoá</string>
 </resources>

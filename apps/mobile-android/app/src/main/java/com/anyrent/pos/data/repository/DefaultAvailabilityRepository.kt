@@ -88,6 +88,7 @@ class DefaultAvailabilityRepository(
         requests: List<AvailabilityRequest>,
         startDate: LocalDate,
         endDate: LocalDate,
+        excludeOrderId: Int?,
     ): Map<Int, ProductAvailability> = withContext(ioDispatcher) {
         validateBatch(requests, startDate, endDate)
         if (requests.isEmpty()) return@withContext emptyMap()
@@ -109,6 +110,7 @@ class DefaultAvailabilityRepository(
             .put("startDate", OrderPlanDays.pickupInstant(startDate))
             .put("endDate", OrderPlanDays.returnInstant(endDate))
             .apply { outletId?.let { put("outletId", it) } }
+            .apply { excludeOrderId?.let { put("excludeOrderId", it) } }
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 

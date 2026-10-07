@@ -123,6 +123,7 @@ private class BatchFakeRepository(
         requests: List<AvailabilityRequest>,
         startDate: LocalDate,
         endDate: LocalDate,
+        excludeOrderId: Int?,
     ): Map<Int, ProductAvailability> {
         this.requests = requests
         return batch(requests)

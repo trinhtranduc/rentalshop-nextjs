@@ -95,6 +95,10 @@ import com.anyrent.pos.domain.overview.OverviewLinks
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
 import com.anyrent.pos.ui.overview.v2.NotPickedUpScreen
+import com.anyrent.pos.ui.overview.v2.OverviewTopAllScreen
+import java.time.LocalDate
+import com.anyrent.pos.domain.overview.DayRange
+import com.anyrent.pos.domain.overview.OverviewTopKind
 import com.anyrent.pos.ui.overview.v2.RentedOutScreen
 import com.anyrent.pos.ui.settings.AppInfoScreen
 import com.anyrent.pos.ui.settings.ExportAuthScreen
@@ -133,6 +137,8 @@ object Routes {
     const val RentedOut = "rented-out"
     // #496: "Chưa lấy đồ" list of the redesigned overview (past pickup day first)
     const val NotPickedUp = "not-picked-up"
+    // #633: "Xem tất cả" of the overview's Top sản phẩm / Top khách hàng
+    const val OverviewTopAll = "overview-top/{kind}/{startDate}/{endDate}"
     const val Cart = "cart"
     const val CartPreview = "cart-preview"
     const val ProductAvailability = "product-availability/{productId}"
@@ -160,6 +166,8 @@ object Routes {
         "analytics-orders/$entityType/$entityId?start=$start&end=$end"
     fun overviewStatusOrders(kind: String, startDate: String, endDate: String) =
         "overview-orders/$kind/$startDate/$endDate"
+    fun overviewTopAll(kind: String, startDate: String, endDate: String) =
+        "overview-top/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
     fun productDetailV2(id: Int) = "product-v2/$id"
     fun customerDetailV2(id: Int) = "customer-v2/$id"
@@ -405,6 +413,29 @@ fun AnyRentNavHost(
         composable(Routes.RentedOut) {
             RentedOutScreen(
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onBack = { rootNavController.popBackStack() },
+            )
+        }
+        composable(
+            Routes.OverviewTopAll,
+            arguments = listOf(
+                navArgument("kind") { type = NavType.StringType },
+                navArgument("startDate") { type = NavType.StringType },
+                navArgument("endDate") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val kind = OverviewTopKind.from(entry.arguments?.getString("kind"))
+            val range = DayRange(
+                LocalDate.parse(entry.arguments?.getString("startDate").orEmpty()),
+                LocalDate.parse(entry.arguments?.getString("endDate").orEmpty()),
+            )
+            OverviewTopAllScreen(
+                kind = kind,
+                range = range,
+                onOpenRow = { id, start, end ->
+                    val type = if (kind == OverviewTopKind.PRODUCTS) "product" else "customer"
+                    rootNavController.navigate(Routes.analyticsOrders(type, id, start, end))
+                },
                 onBack = { rootNavController.popBackStack() },
             )
         }
@@ -851,6 +882,8 @@ private fun MainTabs(
                 OverviewV2Screen(
                     onOpenList = { kind, start, end -> rootNavController.navigate(Routes.overviewStatusOrders(kind, start, end)) },
                     onOpenProduct = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("product", id, start, end)) },
+                    onOpenCustomer = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("customer", id, start, end)) },
+                    onOpenTopAll = { kind, start, end -> rootNavController.navigate(Routes.overviewTopAll(kind, start, end)) },
                     onOpenRentedOut = { rootNavController.navigate(Routes.RentedOut) { launchSingleTop = true } },
                     onOpenNotPickedUp = { rootNavController.navigate(Routes.NotPickedUp) { launchSingleTop = true } },
                     // #496: "Việc hôm nay" rows open the Orders tab, like tapping the tab

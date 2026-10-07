@@ -81,6 +81,7 @@ import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BarcodeMatch
+import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
 import com.anyrent.pos.domain.products.PricingMode
 import com.anyrent.pos.domain.products.ProductAccess
@@ -377,27 +378,22 @@ fun ProductFormV2Screen(
         }
     }
 
+    // #632: the category screen in pick mode (search, + add, ⋯ rename / delete by role); a tap picks and comes back
     if (showCategories) {
-        AlertDialog(
-            onDismissRequest = { showCategories = false },
-            title = { Text(stringResource(R.string.v2_form_category)) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    (listOf<ApiParity.Category?>(null) + categories).forEach { category ->
-                        Text(
-                            category?.name ?: stringResource(R.string.v2_form_no_category),
-                            fontSize = 16.sp,
-                            fontWeight = if (category?.id == categoryId) FontWeight.Bold else FontWeight.Normal,
-                            modifier = Modifier.fillMaxWidth().clickable {
-                                categoryId = category?.id
-                                categoryName = category?.name
-                                showCategories = false
-                            }.padding(vertical = 12.dp),
-                        )
-                    }
-                }
+        CategoryManageScreen(
+            onDismiss = { showCategories = false },
+            onChanged = { fresh ->
+                categories = fresh
+                val chosen = fresh.firstOrNull { it.id == categoryId }
+                if (categoryId != null && chosen == null) categoryId = null
+                if (chosen != null) categoryName = chosen.name else if (categoryId == null) categoryName = null
             },
-            confirmButton = { TextButton(onClick = { showCategories = false }) { Text(stringResource(R.string.cancel)) } },
+            selectedId = categoryId,
+            onPick = { picked ->
+                if (picked != null && categories.none { it.id == picked.id }) categories = categories + picked
+                categoryId = picked?.id
+                categoryName = picked?.name
+            },
         )
     }
     if (showScan) {

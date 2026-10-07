@@ -28,6 +28,47 @@ object ProductAccess {
     fun showsPriceFields(role: UserRole): Boolean = canEdit(role)
 }
 
+/**
+ * #632 — categories from the product form, same gates as the API and iOS `CategoryRules`:
+ * `POST /api/categories` needs `products.manage` (MERCHANT, OUTLET_ADMIN); `PUT`/`DELETE /api/categories/{id}`
+ * only MERCHANT (and ADMIN). Same name rule as the web form.
+ */
+object CategoryRules {
+    const val NAME_MIN = 2
+    const val NAME_MAX = 50
+
+    enum class NameError { REQUIRED, TOO_SHORT, TOO_LONG }
+
+    fun canAdd(role: UserRole): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+
+    fun canManage(role: UserRole): Boolean = role == UserRole.ADMIN || role == UserRole.MERCHANT
+
+    /** The default category ("General") is never deleted, only renamed */
+    fun canDelete(isDefault: Boolean): Boolean = !isDefault
+
+    /** Search box of the category screen: accent- and case-insensitive ("ao cuoi" finds "Áo cưới"); blank keeps all */
+    fun matches(name: String?, query: String): Boolean {
+        val needle = fold(query)
+        return needle.isEmpty() || fold(name.orEmpty()).contains(needle)
+    }
+
+    private fun fold(text: String): String =
+        java.text.Normalizer.normalize(text.trim().lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .replace('đ', 'd')
+
+    fun validateName(name: String): NameError? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.isEmpty() -> NameError.REQUIRED
+            trimmed.length < NAME_MIN -> NameError.TOO_SHORT
+            trimmed.length > NAME_MAX -> NameError.TOO_LONG
+            else -> null
+        }
+    }
+}
+
 enum class PricingMode(val apiType: String) {
     PER_RENTAL("FIXED"),
     PER_DAY("DAILY"),

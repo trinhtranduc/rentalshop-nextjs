@@ -32,6 +32,8 @@ data class OverviewReport(
     val newOrders: Int?,
     val series: List<Point>,
     val topProducts: List<TopProduct>,
+    /** #633 top spenders of the period; empty when the API leaves them out */
+    val topCustomers: List<TopCustomer> = emptyList(),
     /** #484: orders created in the period, not cancelled; null on an older API (tile hidden) */
     val totalOrderValue: Double? = null,
     /** #484: the part of those orders not collected yet; null on an older API (tile hidden) */
@@ -51,7 +53,27 @@ data class OverviewReport(
      */
     data class Point(val dayKey: String?, val monthLabel: String?, val realIncome: Double, val newOrderCount: Int? = null)
     data class TopProduct(val id: Int?, val name: String, val rentalCount: Int, val totalRevenue: Double, val image: String?)
+
+    /** #633 one of `topCustomers`; [totalSpent] null (hidden) counts as 0 */
+    data class TopCustomer(val id: Int?, val name: String, val orderCount: Int, val totalSpent: Double?)
 }
+
+/** #633 which ranking: Top sản phẩm or Top khách hàng; [key] is the route segment */
+enum class OverviewTopKind(val key: String) {
+    PRODUCTS("products"),
+    CUSTOMERS("customers"),
+    ;
+
+    companion object {
+        fun from(key: String?): OverviewTopKind = entries.firstOrNull { it.key == key } ?: PRODUCTS
+    }
+}
+
+/**
+ * #633 one row of a top list: [count] is rentals of a product, orders of a customer; [ratio] is the bar width against
+ * the first (largest) row, 0…1. A null [id] does not open anything.
+ */
+data class OverviewTopRow(val id: Int?, val name: String, val amount: Double, val count: Int, val ratio: Double, val image: String? = null)
 
 /**
  * #492 `revenue.collectedBreakdown`: [deposits] + [pickupAndSale] + [fees] - [refunds] = `revenue.collected`.
@@ -133,10 +155,37 @@ object OverviewLogic {
 
     fun groupBy(range: DayRange): String = if (range.dayCount <= MAX_DAILY_BARS) "day" else "month"
 
-    /** Report of a range of shop days; `timeZone` is the shop zone (#602, iOS `overviewReportParameters`) */
-    fun periodPath(range: DayRange): String =
+    /** Rows of a top list on the overview (#633, iOS `OverviewDashLogic.topLimit`) */
+    const val TOP_LIMIT = 5
+
+    /** Rows of "Xem tất cả" (#633): the API cap, same as web `TOP_ALL_LIMIT` */
+    const val TOP_ALL_LIMIT = 50
+
+    /**
+     * Report of a range of shop days; `timeZone` is the shop zone (#602, iOS `overviewReportParameters`).
+     * [limit] sizes `topProducts` / `topCustomers` (#633).
+     */
+    fun periodPath(range: DayRange, limit: Int = TOP_LIMIT): String =
         "/api/analytics/period?startDate=${range.start}&endDate=${range.end}" +
-            "&groupBy=${groupBy(range)}&limit=3&timeZone=${ShopTime.timeZoneParam()}"
+            "&groupBy=${groupBy(range)}&limit=$limit&timeZone=${ShopTime.timeZoneParam()}"
+
+    /** #633 Top sản phẩm: the API's order (largest revenue first), [limit] rows at most */
+    fun topProductRows(products: List<OverviewReport.TopProduct>, limit: Int = TOP_LIMIT): List<OverviewTopRow> =
+        topRows(products.take(limit).map { OverviewTopRow(it.id, it.name, it.totalRevenue, it.rentalCount, 0.0, it.image) })
+
+    /** #633 Top khách hàng: the API's order, [limit] rows at most; a hidden `totalSpent` counts as 0 */
+    fun topCustomerRows(customers: List<OverviewReport.TopCustomer>, limit: Int = TOP_LIMIT): List<OverviewTopRow> =
+        topRows(customers.take(limit).map { OverviewTopRow(it.id, it.name, it.totalSpent ?: 0.0, it.orderCount, 0.0) })
+
+    fun topRows(report: OverviewReport, kind: OverviewTopKind, limit: Int = TOP_LIMIT): List<OverviewTopRow> = when (kind) {
+        OverviewTopKind.PRODUCTS -> topProductRows(report.topProducts, limit)
+        OverviewTopKind.CUSTOMERS -> topCustomerRows(report.topCustomers, limit)
+    }
+
+    private fun topRows(rows: List<OverviewTopRow>): List<OverviewTopRow> {
+        val top = rows.maxOfOrNull { it.amount.coerceAtLeast(0.0) } ?: 0.0
+        return rows.map { it.copy(ratio = if (top > 0) it.amount.coerceAtLeast(0.0) / top else 0.0) }
+    }
 
     /** "Now" figures and today's work of the outlet for the shop today (#602, iOS `outletOperationsParameters`) */
     fun outletOperationsPath(): String = "/api/analytics/outlet-operations?timeZone=${ShopTime.timeZoneParam()}"
@@ -210,6 +259,7 @@ object OverviewLogic {
         val counts = data.optJSONObject("operational")?.optJSONObject("orderCounts")
         val series = data.optJSONArray("series")
         val top = data.optJSONArray("topProducts")
+        val customers = data.optJSONArray("topCustomers")
         return OverviewReport(
             netRevenue = number(revenue, "collected") ?: number(revenue, "totalActualRevenue") ?: number(revenue, "totalRevenue") ?: 0.0,
             revenueGrowth = number(growth, "growth"),
@@ -233,6 +283,15 @@ object OverviewLogic {
                     rentalCount = p.optInt("rentalCount", 0),
                     totalRevenue = number(p, "totalRevenue") ?: 0.0,
                     image = if (p.isNull("image")) null else p.optString("image").takeIf { it.isNotBlank() },
+                )
+            },
+            topCustomers = (0 until (customers?.length() ?: 0)).mapNotNull { i ->
+                val c = customers?.optJSONObject(i) ?: return@mapNotNull null
+                OverviewReport.TopCustomer(
+                    id = if (c.has("id") && !c.isNull("id")) c.optInt("id") else null,
+                    name = if (c.isNull("name")) "" else c.optString("name"),
+                    orderCount = c.optInt("orderCount", 0),
+                    totalSpent = number(c, "totalSpent"),
                 )
             },
             totalOrderValue = number(revenue, "totalOrderValue"),

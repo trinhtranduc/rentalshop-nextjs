@@ -71,6 +71,7 @@ import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.settings.roleDisplayValue
+import com.anyrent.pos.ui.home.v2.CategoryManageScreen
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -99,6 +100,7 @@ fun SettingsV2Screen(
     var confirmDelete by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
+    var showCategories by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var passwordDone by remember { mutableStateOf(false) }
     val role = SessionStore.role
@@ -212,6 +214,7 @@ fun SettingsV2Screen(
                     when (item) {
                         SettingsItem.STORE_INFO -> onOpenStore()
                         SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER -> onOpenPrinter()
+                        SettingsItem.CATEGORIES -> showCategories = true
                         SettingsItem.CUSTOMERS -> onOpenCustomers()
                         SettingsItem.USERS -> onOpenUsers()
                         SettingsItem.EXPORT -> onOpenExport()
@@ -257,6 +260,10 @@ fun SettingsV2Screen(
                 signOut()
             },
         )
+    }
+    // #632: Cài đặt → Danh mục, the same screen the product form opens
+    if (showCategories) {
+        CategoryManageScreen(onDismiss = { showCategories = false })
     }
     if (confirmDelete) {
         // Same as the current settings screen
@@ -368,6 +375,7 @@ private fun itemTitle(item: SettingsItem): String = stringResource(
         SettingsItem.RECEIPT_NOTE -> R.string.settings_v2_receipt_note
         SettingsItem.PRINTER -> R.string.settings_v2_printer
         SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts
+        SettingsItem.CATEGORIES -> R.string.settings_v2_categories
         SettingsItem.CUSTOMERS -> R.string.customers
         SettingsItem.USERS -> R.string.settings_v2_users
         SettingsItem.EXPORT -> R.string.export_data

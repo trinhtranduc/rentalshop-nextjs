@@ -39,6 +39,51 @@ enum ProductAccess {
     static var currentPermissions: [String] { User.current()?.permissions ?? [] }
 }
 
+// MARK: - Categories from the product form (#632)
+
+/// Same gates as the API: `POST /api/categories` needs `products.manage` (MERCHANT, OUTLET_ADMIN);
+/// `PUT`/`DELETE /api/categories/{id}` only MERCHANT (and ADMIN). Same name rule as the web form.
+enum CategoryRules {
+    static let nameMin = 2
+    static let nameMax = 50
+
+    enum NameError: Equatable { case required, tooShort, tooLong }
+
+    static func canAdd(role: Role?, permissions: [String]) -> Bool {
+        guard role != .outletStaff else { return false }
+        return permissions.contains("products.manage")
+    }
+
+    static func canManage(role: Role?) -> Bool {
+        role == .merchant || role == .admin
+    }
+
+    /// The default category ("General") is never deleted, only renamed
+    static func canDelete(_ category: Category) -> Bool {
+        category.isDefault != true
+    }
+
+    /// Search box of the category screen: accent- and case-insensitive ("ao cuoi" finds "Áo cưới"); blank keeps all
+    static func matches(_ name: String?, query: String) -> Bool {
+        let needle = fold(query)
+        return needle.isEmpty || fold(name ?? "").contains(needle)
+    }
+
+    private static func fold(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "vi_VN"))
+            .replacingOccurrences(of: "đ", with: "d")
+    }
+
+    static func validateName(_ name: String) -> NameError? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return .required }
+        if trimmed.count < nameMin { return .tooShort }
+        if trimmed.count > nameMax { return .tooLong }
+        return nil
+    }
+}
+
 // MARK: - Prices of a product
 
 enum ProductPricingMode: String {

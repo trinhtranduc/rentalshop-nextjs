@@ -1,11 +1,13 @@
 package com.anyrent.pos.domain.settings
 
+import com.anyrent.pos.data.UserRole
 import com.anyrent.pos.domain.bank.BankAccountRules
+import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
     STORE_INFO, RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
-    CUSTOMERS, USERS, EXPORT,
+    CATEGORIES, CUSTOMERS, USERS, EXPORT,
     PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
 }
 
@@ -28,9 +30,11 @@ object SettingsRows {
      * - export: never OUTLET_STAFF (`PermissionManager.canExport`)
      * - plan: once `subscriptions/status` answered, not for ADMIN
      * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
+     * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
+            if (CategoryRules.canAdd(UserRole.from(role))) add(SettingsItem.CATEGORIES)
             add(SettingsItem.CUSTOMERS)
             if (role in setOf("ADMIN", "MERCHANT", "OUTLET_ADMIN")) add(SettingsItem.USERS)
             if (role in setOf("ADMIN", "MERCHANT", "OUTLET_ADMIN")) add(SettingsItem.EXPORT)

@@ -347,19 +347,21 @@ enum OverviewDashLogic {
     // MARK: Top lists (#620)
 
     static let topLimit = 5
+    /// "Xem tất cả" (#633): the whole ranking of the period, like the web drawer (`TOP_ALL_LIMIT`) and the API cap
+    static let topAllLimit = 50
 
-    /// Top sản phẩm: the API's order (largest revenue first), five at most
-    static func topProductRows(_ products: [OverviewReport.TopProduct]) -> [OverviewTopRow] {
-        topRows(products.map { ($0.id, $0.name, $0.totalRevenue, $0.rentalCount) })
+    /// Top sản phẩm: the API's order (largest revenue first), five at most on the card
+    static func topProductRows(_ products: [OverviewReport.TopProduct], limit: Int = topLimit) -> [OverviewTopRow] {
+        topRows(products.map { ($0.id, $0.name, $0.totalRevenue, $0.rentalCount) }, limit: limit)
     }
 
-    /// Top khách hàng: the API's order, five at most; a hidden `totalSpent` (null) counts as 0
-    static func topCustomerRows(_ customers: [OverviewReport.TopCustomer]) -> [OverviewTopRow] {
-        topRows(customers.map { ($0.id, $0.name, $0.totalSpent ?? 0, $0.orderCount) })
+    /// Top khách hàng: the API's order, five at most on the card; a hidden `totalSpent` (null) counts as 0
+    static func topCustomerRows(_ customers: [OverviewReport.TopCustomer], limit: Int = topLimit) -> [OverviewTopRow] {
+        topRows(customers.map { ($0.id, $0.name, $0.totalSpent ?? 0, $0.orderCount) }, limit: limit)
     }
 
-    private static func topRows(_ items: [(id: Int?, name: String, amount: Double, count: Int)]) -> [OverviewTopRow] {
-        let kept = items.prefix(topLimit)
+    private static func topRows(_ items: [(id: Int?, name: String, amount: Double, count: Int)], limit: Int) -> [OverviewTopRow] {
+        let kept = items.prefix(max(0, limit))
         let top = kept.map { max(0, $0.amount) }.max() ?? 0
         return kept.map { item in
             OverviewTopRow(id: item.id, name: item.name, amount: item.amount, count: item.count,

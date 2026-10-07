@@ -158,6 +158,9 @@ class CategoryService: BaseService, CategoryServiceProtocol {
             
             if apiResponse.success {
                 completion(nil)
+            } else if apiResponse.code == "BUSINESS_RULE_VIOLATION" {
+                // #632: the API's only 409 here is "category still has products"; its message is English only
+                completion(NSError.errorWithOwnMessage(message: "products.category.hasProducts".localized(), domain: "RC", code: 409))
             } else {
                 // Use error code model for localized messages
                 let nsError = self.createErrorFromResponse(
