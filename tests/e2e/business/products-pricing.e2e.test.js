@@ -11,7 +11,8 @@ const {
   futureWindow,
   rentBody,
   watchOverview,
-  pick
+  pick,
+  uniqueName
 } = require('../helpers/api');
 
 describeE2E('BF-PROD products', () => {
@@ -84,6 +85,25 @@ describeE2E('BF-PROD products', () => {
     });
     expect(ok.status).toBe(200);
     expect(ok.body.data.pricingType).toBe('HOURLY');
+  });
+
+  test('BF-PROD-07 a barcode is unique per shop, not system-wide (#629)', async () => {
+    const other = await Session.login('otherMerchant');
+    const barcode = `E2E${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const body = async (session) => {
+      const outletId = await session.defaultOutletId();
+      return { name: uniqueName('SP BARCODE'), barcode, rentPrice: 50000, totalStock: 1, outletStock: [{ outletId, stock: 1 }] };
+    };
+    const first = await s.postForm('/api/products', await body(s));
+    expect(first.status).toBe(200);
+    expect(first.body.data.barcode).toBe(barcode);
+    // another shop may use the same barcode
+    const otherShop = await other.postForm('/api/products', await body(other));
+    expect({ status: otherShop.status, code: otherShop.body.code }).toEqual({ status: 200, code: 'PRODUCT_CREATED_SUCCESS' });
+    expect(otherShop.body.data.barcode).toBe(barcode);
+    // the same shop still may not
+    const again = await s.postForm('/api/products', await body(s));
+    expect({ status: again.status, code: again.body.code }).toEqual({ status: 409, code: 'DUPLICATE_ENTRY' });
   });
 });
 
