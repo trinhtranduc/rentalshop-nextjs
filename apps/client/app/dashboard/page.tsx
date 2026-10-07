@@ -34,9 +34,14 @@ import {
   type DetailKind,
   type OverviewPeriod,
   type PeriodReportLike,
+  showsTodayWork,
+  parseTop,
+  TOP_ALL_LIMIT,
+  type TopKind,
 } from './overview-model';
-import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopProducts, type T } from './overview/sections';
+import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopCustomers, TopProducts, type T } from './overview/sections';
 import { DetailDrawer } from './overview/DetailDrawer';
+import { TopDrawer } from './overview/TopDrawer';
 
 interface Loadable<V> {
   data: V | null;
@@ -96,6 +101,8 @@ export default function DashboardPage() {
     [period, todayKey, customFrom, customTo],
   );
   const chart = useMemo(() => chartRange(period, range), [period, range]);
+  // Hôm nay card and today's orders belong to the today period only (#620)
+  const todayWork = showsTodayWork(period);
   const sameRange = chart.startDate === range.startDate && chart.endDate === range.endDate;
 
   const [nonce, setNonce] = useState(0);
@@ -153,6 +160,20 @@ export default function DashboardPage() {
     },
     [router, searchParams],
   );
+  // "Xem tất cả" of a top list lives in the URL too (?top=); the full ranking loads only when open (#620)
+  const top = canViewRevenue ? parseTop(searchParams.get('top')) : null;
+  const topReport = usePeriodReport(range, TOP_ALL_LIMIT, ready && top !== null, nonce);
+  const setTop = useCallback(
+    (kind: TopKind | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (kind) params.set('top', kind);
+      else params.delete('top');
+      const qs = params.toString();
+      router.push(qs ? `/dashboard?${qs}` : '/dashboard', { scroll: false });
+    },
+    [router, searchParams],
+  );
+  const periodLabel = period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`);
   const created = `created=custom&from=${range.startDate}&to=${range.endDate}`;
   const ordersHref: Record<DetailKind, string> = {
     orderValue: `/orders?${created}`,
@@ -167,6 +188,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set('period', next);
     params.delete('detail');
+    params.delete('top');
     params.delete('from');
     params.delete('to');
     if (extra) {
@@ -252,8 +274,8 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="flex flex-wrap gap-4">
-        {canViewRevenue && (
+      {canViewRevenue && (
+        <div className="flex flex-wrap gap-4">
           <CollectedChart
             series={series}
             loading={!ready || chartState.loading}
@@ -265,16 +287,37 @@ export default function DashboardPage() {
             t={t}
             money={money}
           />
-        )}
-        <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
-      </div>
+        </div>
+      )}
 
-      <div className="flex flex-wrap gap-4">
-        <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />
-        {canViewRevenue && (
-          <TopProducts products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
-        )}
-      </div>
+      {/* Hôm nay: today's orders with the today card beside them (#620) */}
+      {todayWork && (
+        <div className="flex flex-wrap gap-4">
+          <TodayOrders rows={rows} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} t={t} money={money} />
+          <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
+        </div>
+      )}
+
+      {canViewRevenue && (
+        <div className="flex flex-wrap gap-4">
+          <TopProducts onViewAll={() => setTop('products')} products={report.data?.topProducts ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+          <TopCustomers onViewAll={() => setTop('customers')} customers={report.data?.topCustomers ?? []} loading={!ready || report.loading} locale={locale} t={t} money={money} />
+        </div>
+      )}
+
+      {top && (
+        <TopDrawer
+          kind={top}
+          report={topReport.data}
+          loading={!ready || topReport.loading}
+          failed={topReport.failed}
+          onRetry={retry}
+          periodLabel={periodLabel}
+          onClose={() => setTop(null)}
+          t={t}
+          money={money}
+        />
+      )}
 
       {detail && (
         <DetailDrawer
@@ -283,7 +326,7 @@ export default function DashboardPage() {
           parts={moneyParts}
           cash={cash}
           newOrders={kpis.newOrders}
-          periodLabel={period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`)}
+          periodLabel={periodLabel}
           ordersHref={ordersHref[detail]}
           onClose={() => setDetail(null)}
           t={t}
