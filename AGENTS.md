@@ -70,7 +70,7 @@ without an explicit human go for that one command (`RELEASE_APPROVED=1`). The ho
 - **Shared code:** UI in `packages/ui`, helpers in `packages/utils`, types in `packages/types`. Frontends call the API through `*Api` / `authenticatedFetch`, never raw `fetch`.
 - **i18n** (skill `i18n-keys`): a new key goes into `locales/{en,vi,ja,ko,zh}`. Error codes need `errors.json` entries.
 - **Mobile** (skill `mobile-parity`): an order, availability, or response-shape change updates iOS and Android.
-- **API compatibility** (skill `api-compat-review`): customers run installed apps that cannot be force-updated. Any change to `apps/api`, a package the API uses, a business rule, `prisma/`, or an API env var gets a compatibility review before merge, and the PR carries its table. Additive only; never remove, rename, or retype a field old apps read.
+- **API compatibility** (skill `api-compat-review`): customers run installed apps that cannot be force-updated. Any change to `apps/api`, a package the API uses, a business rule, `prisma/`, or an API env var gets an impact review **twice**: in the issue before work starts (the old callers on `main-real`, with `file:line`, and the verdict), and in the PR before merge (the `## API compatibility` table). Every such change adds a row to `.agent/api-changes/LOG.md`, and `release-review` moves it to `main-real`. Additive only; never remove, rename, or retype a field old apps read, and never change the meaning of a field old apps read (add a new field instead). `pr-governance.yml` fails a PR that touches API paths without both.
 - **Migrations** (skill `db-migration`): never edit an applied file under `prisma/migrations/`. Add a new migration.
 - **Config:** extend `tsconfig.base.json` / `tsup.config.base.ts`. Never commit `.env*`, keystores, or `*.p8`.
 - **Commits:** `type(scope): subject`. Scopes: `api`, `admin`, `client`, `mobile`, `orders`, `availability`, `seo`. Branches: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`, `hotfix/<issue>-<slug>`.
@@ -124,4 +124,5 @@ Domain (`.claude/skills/`):
 - Never edit an applied migration. Never `new PrismaClient()` in a route.
 - A change to an order or availability endpoint usually needs both mobile apps.
 - Opening a PR that does not name the issue it closes.
-- Changing an API without checking the installed apps on `main-real` (`api-compat-review`).
+- Changing an API without checking the installed apps on `main-real` (`api-compat-review`), or without a row in `.agent/api-changes/LOG.md`.
+- Filling or redefining an existing response field for a new screen (e.g. daily `futureIncome`, which old Android adds to revenue). Add a new field.

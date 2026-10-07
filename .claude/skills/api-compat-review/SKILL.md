@@ -6,8 +6,14 @@ description: Use before merging any change to an API route, a package the API us
 # API backward-compatibility review
 
 Customers run iOS and Android builds made from `main-real` or older. Those builds cannot be updated
-on our schedule. The API must keep serving them. Do this review for every API-affecting change. Put the
-table from step 6 in the PR body.
+on our schedule. The API must keep serving them. Do this review for every API-affecting change, **twice**:
+
+- **At issue time** (before any code): steps 1–3 on the planned change; put the table from step 6 in the
+  issue body and add a `planned` row to `.agent/api-changes/LOG.md` in the first commit of the branch.
+- **At PR time** (before merge): redo steps 1–5 on the real diff; put the table in the PR body under
+  `## API compatibility` and update the LOG row (status `dev` once merged).
+
+`.github/workflows/pr-governance.yml` fails a PR that touches API paths without that section and a LOG row.
 
 ## 1. Find what changed
 
@@ -71,3 +77,13 @@ old param, or put the new behavior behind a header or a new endpoint. "Users wil
 - Name the old-app code you read, as `file:line` on `origin/main-real`.
 - "Not verified" is allowed. Guessing is not.
 - High risk, auth, or migrations → human review (`review-pr`).
+- Never change the meaning of a field an old app reads (filling a field that was always 0, a new unit, a new
+  day boundary for the same key) without saying who sees what in the Risk column; for a new screen, add a new
+  field instead.
+
+## 7. Track it
+
+Add or update one row per change in `.agent/api-changes/LOG.md`: date, issue / PR, route / area, change,
+old iOS, old Android, web (each with `file:line`), risk, status (`planned` → `dev` → `main-real`).
+`release-review` sets `main-real` and fills "Checked after release" (what was spot-checked on production
+after deploy, e.g. an old build's screen, logs, error rate). Never delete a row.

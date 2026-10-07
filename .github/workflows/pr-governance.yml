@@ -36,3 +36,39 @@ jobs:
           fi
           echo "::error::Open a GitHub issue first, then add 'Fixes #<number>' to the PR body. See AGENTS.md and .agents/skills/issue-first/SKILL.md."
           exit 1
+
+  api-impact:
+    name: API impact reviewed and tracked
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require the compat table and a LOG row when API paths change
+        env:
+          ACTOR: ${{ github.actor }}
+          BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -eu
+          case "$ACTOR" in
+            dependabot[bot]|renovate[bot]) echo "Bot PR, skip"; exit 0 ;;
+          esac
+          changed=$(git diff --name-only "$BASE"..."$HEAD")
+          api=$(printf '%s\n' "$changed" | grep -E '^(apps/api/|prisma/|packages/(database|utils|constants|auth|validation)/src/)' | grep -vE '(\.test\.|\.spec\.|/__tests__/)' || true)
+          if [ -z "$api" ]; then
+            echo "No API path changed"
+            exit 0
+          fi
+          echo "API paths changed:"; printf '  %s\n' $api
+          fail=0
+          if ! printf '%s\n' "$BODY" | grep -Eq '^##[[:space:]]+API compatibility'; then
+            echo "::error::This PR changes API paths. Add a '## API compatibility' section with the api-compat-review table (old iOS / Android / web with file:line on main-real). See AGENTS.md."
+            fail=1
+          fi
+          if ! printf '%s\n' "$changed" | grep -qx '.agent/api-changes/LOG.md'; then
+            echo "::error::This PR changes API paths. Add or update its row in .agent/api-changes/LOG.md (skill api-compat-review, step 7)."
+            fail=1
+          fi
+          exit $fail
