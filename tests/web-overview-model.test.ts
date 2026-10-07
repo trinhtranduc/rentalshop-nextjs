@@ -45,8 +45,20 @@ describe('periodRange', () => {
     });
   });
 
-  it('charts the last 7 days for a single day', () => {
+  it('charts 7 days back and 7 days ahead for Hôm nay, so forecasts show (#610)', () => {
     expect(chartRange('today', { startDate: '2026-10-06', endDate: '2026-10-06' })).toEqual({
+      startDate: '2026-09-30',
+      endDate: '2026-10-13',
+    });
+    // month and year edges stay on calendar days
+    expect(chartRange('today', { startDate: '2026-12-28', endDate: '2026-12-28' })).toEqual({
+      startDate: '2026-12-22',
+      endDate: '2027-01-04',
+    });
+  });
+
+  it('charts the last 7 days for a custom single day', () => {
+    expect(chartRange('custom', { startDate: '2026-10-06', endDate: '2026-10-06' })).toEqual({
       startDate: '2026-09-30',
       endDate: '2026-10-06',
     });
