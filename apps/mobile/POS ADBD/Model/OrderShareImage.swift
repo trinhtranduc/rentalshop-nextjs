@@ -49,7 +49,7 @@ struct OrderShareSource {
     var customerPhone: String?
     var pickup: Date?
     var returnDate: Date?
-    /// Rental days as the app counts them (`rentalDuration`, else civil days pickup → return)
+    /// Civil days pickup → return, both ends counted (as Android and the detail header); `rentalDuration` only without dates
     var rentalDays: Int?
     var createdAt: Date
     var items: [Item]
@@ -308,6 +308,12 @@ extension OrderShareSource {
     }
 
     /// The order detail screen's order (payments included, so the amount due is the screen's)
+    /// Civil days pickup → return, both ends counted (as Android and the detail header): 10/10 → 12/10 is 3 days
+    /// even when the order stores a billing `rentalDuration` of 2. The stored value only fills in without dates.
+    static func rentalDays(pickup: Date?, return returnDate: Date?, stored: Int?) -> Int? {
+        OrderDetailLogic.rentalDays(pickup: pickup, return: returnDate) ?? stored
+    }
+
     init(detail: OrderDetail) {
         let payments = detail.payments.map { OrderPaymentLine(amount: $0.amount, status: $0.status, notes: $0.notes) }
         let customer = [detail.customer.firstName, detail.customer.lastName]
@@ -318,7 +324,7 @@ extension OrderShareSource {
             outletAddress: detail.outlet.address, outletId: detail.outletId,
             customerName: customer, customerPhone: detail.customer.phone,
             pickup: detail.pickupPlanAt, returnDate: detail.returnPlanAt,
-            rentalDays: detail.rentalDuration ?? OrderDetailLogic.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt),
+            rentalDays: Self.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt, stored: detail.rentalDuration),
             createdAt: detail.createdAt,
             items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice) },
             discount: detail.discountAmount, total: detail.totalAmount, deposit: detail.depositAmount,
@@ -336,7 +342,7 @@ extension OrderShareSource {
             outletPhone: shop.phone, outletAddress: shop.address, outletId: order.outletId,
             customerName: order.customerName, customerPhone: order.customerPhone,
             pickup: order.pickupPlanAt, returnDate: order.returnPlanAt,
-            rentalDays: order.rentalDuration ?? OrderDetailLogic.rentalDays(pickup: order.pickupPlanAt, return: order.returnPlanAt),
+            rentalDays: Self.rentalDays(pickup: order.pickupPlanAt, return: order.returnPlanAt, stored: order.rentalDuration),
             createdAt: order.createdAt,
             items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice) },
             discount: order.discountAmount, total: order.totalAmount, deposit: order.depositAmount,

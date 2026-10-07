@@ -132,6 +132,15 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertNil(model(Self.sale()).strip, "sales have no strip")
     }
 
+    func testOrdersCountCivilDaysNotTheStoredBillingDuration() {
+        // Store run: T7 10/10 → T2 12/10 with rentalDuration 2 printed "2 ngày" on iOS, "3 days" on Android
+        let pickup = Self.day("2026-10-10", hour: 9)
+        let back = Self.day("2026-10-12", hour: 18)
+        XCTAssertEqual(OrderShareSource.rentalDays(pickup: pickup, return: back, stored: 2), 3)
+        XCTAssertEqual(OrderShareSource.rentalDays(pickup: nil, return: back, stored: 2), 2, "no dates: the stored value")
+        XCTAssertNil(OrderShareSource.rentalDays(pickup: nil, return: nil, stored: nil))
+    }
+
     // MARK: - Items and totals
 
     func testItemLinesAndMoneyFormat() {
