@@ -377,4 +377,10 @@ final class OverviewDashLogicTests: XCTestCase {
             XCTAssertTrue(shows(.custom, custom: DayKeyRange(start: today, end: today)), zone)
         }
     }
+
+    func testPeriodRequestAsksForFiveTopRows() {
+        let parameters = TabsV2APIService.overviewReportParameters(DayKeyRange(start: "2026-10-01", end: "2026-10-31"))
+        XCTAssertEqual(parameters["limit"] as? Int, 5)
+        XCTAssertEqual(OverviewDashLogic.topLimit, 5)
+    }
 }
