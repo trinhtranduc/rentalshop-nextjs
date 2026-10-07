@@ -191,6 +191,7 @@ export function CollectedChart({
   money: Money;
 }) {
   const [mode, setMode] = React.useState<ChartMode>('collected');
+  const [hover, setHover] = React.useState<number | null>(null);
   const bars = chartBars(series, mode, weekdays, todayKey);
   const compact = useCompact(locale);
   const empty = !loading && !failed && bars.every((b) => b.value === 0 && b.forecast === 0);
@@ -254,15 +255,61 @@ export function CollectedChart({
                 </div>
               )}
               <ul className="relative m-0 grid h-[200px] list-none items-end gap-2 border-b border-ar-line px-1 sm:gap-3.5" style={cols}>
-                {bars.map((b) => {
+                {bars.map((b, i) => {
                   const tip = b.forecast > 0
                     ? t('home.chart.tipForecast', { day: b.label, value: fmt(b.value), forecast: fmt(b.forecast) })
                     : t('home.chart.tip', { day: b.label, value: fmt(b.value) });
                   const total = b.ratio * 160;
                   const fh = b.forecastRatio * 160;
                   const ah = Math.max(total - fh, b.value > 0 ? 3 : b.forecast > 0 ? 0 : 2);
+                  const active = hover === i;
+                  const dim = hover !== null && !active;
+                  // Keep the tooltip inside the card at both ends of the chart.
+                  const edge = i < 2 ? 'left-0' : i > bars.length - 3 ? 'right-0' : 'left-1/2 -translate-x-1/2';
                   return (
-                    <li key={b.key} title={tip} aria-label={tip} className="flex h-full flex-col items-center justify-end gap-1">
+                    <li
+                      key={b.key}
+                      tabIndex={0}
+                      aria-label={tip}
+                      onMouseEnter={() => setHover(i)}
+                      onMouseLeave={() => setHover((h) => (h === i ? null : h))}
+                      onFocus={() => setHover(i)}
+                      onBlur={() => setHover((h) => (h === i ? null : h))}
+                      onClick={() => setHover((h) => (h === i ? null : i))}
+                      className={`relative flex h-full cursor-default flex-col items-center justify-end gap-1 rounded-md outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ar-primary ${
+                        active ? 'bg-ar-subtle' : ''
+                      } ${dim ? 'opacity-40' : ''}`}
+                    >
+                      {active && (
+                        <span
+                          role="tooltip"
+                          className={`pointer-events-none absolute top-0 z-10 flex min-w-[148px] flex-col gap-1 whitespace-nowrap rounded-lg border border-ar-line bg-ar-surface px-3 py-2 text-left text-[12px] text-ar-ink shadow-[0_4px_16px_rgba(15,23,42,0.12)] ${edge}`}
+                        >
+                          <span className="font-semibold">{b.label}</span>
+                          <span className="flex items-center justify-between gap-3">
+                            <span className="flex items-center gap-1.5 text-ar-ink-2">
+                              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[2px] bg-ar-chart-blue" />
+                              {mode === 'collected' ? t('home.chart.collected') : t('home.chart.orders')}
+                            </span>
+                            <span className="font-semibold tabular-nums">{fmt(b.value)}</span>
+                          </span>
+                          {b.forecast > 0 && (
+                            <>
+                              <span className="flex items-center justify-between gap-3">
+                                <span className="flex items-center gap-1.5 text-ar-ink-2">
+                                  <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[2px] border-[1.5px] border-ar-chart-blue" style={{ background: hatch('chart-blue') }} />
+                                  {t('home.chart.forecast')}
+                                </span>
+                                <span className="font-semibold tabular-nums">{fmt(b.forecast)}</span>
+                              </span>
+                              <span className="flex items-center justify-between gap-3 border-t border-ar-line pt-1">
+                                <span className="text-ar-ink-2">{t('home.chart.total')}</span>
+                                <span className="font-bold tabular-nums">{fmt(b.value + b.forecast)}</span>
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      )}
                       {!many && (
                         <span className={`text-[11px] tabular-nums ${b.current ? 'font-bold text-ar-ink' : 'text-ar-muted'}`}>
                           {mode === 'collected' ? compact.format(b.value + b.forecast) : String(b.value)}
@@ -277,7 +324,7 @@ export function CollectedChart({
                         )}
                         {ah > 0 && (
                           <span
-                            className={`block ${b.forecast > 0 ? '' : 'rounded-t'} ${b.current ? 'bg-ar-chart-blue' : 'bg-ar-chart-blue-soft'}`}
+                            className={`block ${b.forecast > 0 ? '' : 'rounded-t'} ${b.current || active ? 'bg-ar-chart-blue' : 'bg-ar-chart-blue-soft'}`}
                             style={{ height: `${ah}px` }}
                           />
                         )}

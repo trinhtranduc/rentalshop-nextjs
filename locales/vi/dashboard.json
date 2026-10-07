@@ -244,7 +244,8 @@
       "forecast": "Dự kiến",
       "today": "Hôm nay",
       "tip": "{day}: {value}",
-      "tipForecast": "{day}: {value} · dự kiến thêm {forecast}"
+      "tipForecast": "{day}: {value} · dự kiến thêm {forecast}",
+      "total": "Tổng"
     },
     "today": {
       "title": "Hôm nay",
