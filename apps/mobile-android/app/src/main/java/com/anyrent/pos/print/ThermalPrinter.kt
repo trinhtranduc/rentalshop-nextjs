@@ -7,8 +7,6 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.charset.Charset
 import java.text.NumberFormat
-import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -217,19 +215,13 @@ object ThermalPrinter {
 
     private fun formatDate(iso: String?): String? {
         if (iso.isNullOrBlank()) return null
-        return runCatching {
-            Instant.parse(iso).atZone(ZoneId.systemDefault()).toLocalDate().format(dateFmt)
-        }.getOrElse {
-            // Already a display string / date-only
-            iso.take(10)
-        }
+        // Shop day (#602); already a display string / date-only: as is
+        return ReceiptDates.day(iso, dateFmt) ?: iso.take(10)
     }
 
     private fun formatDateTime(iso: String?): String? {
         if (iso.isNullOrBlank()) return null
-        return runCatching {
-            Instant.parse(iso).atZone(ZoneId.systemDefault()).format(dateTimeFmt)
-        }.getOrElse { iso.take(16).replace('T', ' ') }
+        return ReceiptDates.dateTime(iso, dateTimeFmt) ?: iso.take(16).replace('T', ' ')
     }
 
     private fun buildBytes(paperWidthMm: Int, block: EscPosBuilder.() -> Unit): ByteArray {

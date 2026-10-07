@@ -11,7 +11,7 @@ import java.time.ZoneId
  */
 object OrderRowDates {
     /** Day logic runs in shop days, never the device zone */
-    val shopZone: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+    val shopZone: ZoneId get() = com.anyrent.pos.domain.ShopTime.zone
 
     /** Templates; the defaults are the Vietnamese copy, the screens pass the string resources */
     data class Texts(

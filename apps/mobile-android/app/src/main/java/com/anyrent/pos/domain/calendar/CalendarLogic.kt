@@ -1,6 +1,7 @@
 package com.anyrent.pos.domain.calendar
 
 import com.anyrent.pos.data.model.optionalAmount
+import com.anyrent.pos.domain.ShopTime
 import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.Instant
@@ -54,8 +55,16 @@ enum class CalendarRowKind { HAND_OVER, TAKE_BACK }
 
 data class CalendarDayRow(val kind: CalendarRowKind, val order: CalendarDayOrder, val lateDays: Int)
 
-/** Pure logic of the redesigned calendar; days are `yyyy-MM-dd` keys in the device time zone */
+/** Pure logic of the redesigned calendar; days are `yyyy-MM-dd` keys in the shop zone (#602) */
 object CalendarLogic {
+    /** Month marks; `timeZone` is the shop zone, whatever the phone zone (#602, iOS `calendarMonthParameters`) */
+    fun monthCountPath(month: YearMonth): String =
+        "/api/calendar/orders/count?month=${month.monthValue}&year=${month.year}&timeZone=${ShopTime.timeZoneParam()}"
+
+    /** Orders of one shop day; the caller adds `&status=RESERVED` or `&kind=return` */
+    fun dayPath(key: String): String =
+        "/api/calendar/orders/by-date?date=$key&timeZone=${ShopTime.timeZoneParam()}&limit=200"
+
     /** Month grid, weeks starting on Monday, whole weeks only */
     fun monthGrid(month: YearMonth, todayKey: String): List<CalendarCell> {
         val first = month.atDay(1)

@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.overview.CollateralCount
 import com.anyrent.pos.domain.overview.CollateralFlow
@@ -90,10 +91,9 @@ import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.home.v2.V2Segmented
 import com.anyrent.pos.ui.theme.DS
 import java.time.LocalDate
-import java.time.ZoneId
 
 private fun dayLabel(date: LocalDate): String =
-    formatDayShort(date.atStartOfDay(ZoneId.systemDefault()).plusHours(12).toInstant())
+    formatDayShort(date)
 
 /** "CN 27/09 – T7 03/10" (one day: "T7 03/10") */
 private fun longRange(range: DayRange): String =
@@ -186,7 +186,7 @@ fun OverviewV2Screen(
                 if (todayTasks.isNotEmpty()) {
                     item(key = "today-band") {
                         val weekdays = stringResource(R.string.order_row_weekdays).split(',').map { it.trim() }
-                        SectionBand("${stringResource(R.string.overview_v2_today_work)} · ${OrderRowDates.day(LocalDate.now(OrderRowDates.shopZone), weekdays)}")
+                        SectionBand("${stringResource(R.string.overview_v2_today_work)} · ${OrderRowDates.day(ShopTime.today(), weekdays)}")
                     }
                     items(todayTasks, key = { "today-${it.first}" }) { (label, sub, task) ->
                         TodayTaskRow(stringResource(label), stringResource(sub, task.done, task.total), task.remaining, onOpenOrdersTab)

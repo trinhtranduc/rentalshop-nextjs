@@ -91,6 +91,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.TodayWorkRow
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
@@ -105,7 +106,6 @@ import com.anyrent.pos.ui.navigation.MainTabRouter
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.Instant
-import java.time.ZoneId
 
 /** Board colours not in `DS` */
 private object BoardColors {
@@ -555,7 +555,7 @@ private fun Chip(text: String, selected: Boolean, height: Int, fontSize: TextUni
 @Composable
 private fun SectionBand(section: OrdersSection) {
     val now = Instant.now()
-    val zone = ZoneId.systemDefault()
+    val zone = ShopTime.zone
     val late = section.kind == SectionKind.LATE
     val title = when (section.kind) {
         SectionKind.LATE -> "${stringResource(R.string.orders_section_late)} · ${section.rows.size}"

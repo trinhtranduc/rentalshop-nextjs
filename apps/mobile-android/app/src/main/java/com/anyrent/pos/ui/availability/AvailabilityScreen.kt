@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.availability.AvailabilityOrder
 import androidx.compose.ui.draw.alpha
@@ -293,8 +294,8 @@ fun AvailabilityScreen(
                                 occupancyLoaded = state.occupancyLoaded,
                                 occupancyMonth = state.occupancyMonth,
                                 stock = state.result?.totalStock ?: state.selectedProduct?.stock ?: 0,
-                                minDate = LocalDate.now(),
-                                maxDate = LocalDate.now().plusYears(1),
+                                minDate = ShopTime.today(),
+                                maxDate = ShopTime.today().plusYears(1),
                                 onMonthChange = { visibleMonth = it },
                                 onSelect = { day ->
                                     val sameDay = day == state.selectedDate
@@ -699,7 +700,7 @@ private fun OccupancyMonthCalendar(
                             dayNumber = dayNumber,
                             selected = date == selected,
                             enabled = !date.isBefore(minDate) && !date.isAfter(maxDate),
-                            isToday = date == LocalDate.now(),
+                            isToday = date == ShopTime.today(),
                             remaining = if (occupancyReady && !date.isBefore(minDate) && !date.isAfter(maxDate)) {
                                 availableByDate[date] ?: 0
                             } else {

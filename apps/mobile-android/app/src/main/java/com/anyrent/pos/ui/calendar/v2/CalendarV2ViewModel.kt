@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.calendar.CalendarDayOrder
 import com.anyrent.pos.domain.calendar.CalendarDayRow
 import com.anyrent.pos.domain.calendar.CalendarLogic
 import com.anyrent.pos.domain.calendar.CalendarMonthCounts
-import com.anyrent.pos.ui.common.deviceTimeZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.URLEncoder
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -37,7 +36,7 @@ data class CalendarV2State(
 /** Redesigned calendar (#374): month marks and the hand-overs and returns of the selected day */
 class CalendarV2ViewModel(
     private val fetch: (String) -> org.json.JSONObject = { ApiClient.get().authedGet(it) },
-    private val today: () -> LocalDate = { LocalDate.now() },
+    private val today: () -> LocalDate = { ShopTime.today() },
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         today().let { CalendarV2State(YearMonth.from(it), it.toString()) },
@@ -74,15 +73,13 @@ class CalendarV2ViewModel(
         loadDay()
     }
 
-    private fun zone() = URLEncoder.encode(deviceTimeZoneId(), "UTF-8")
-
     private fun loadMonth() {
         monthJob?.cancel()
         val month = _state.value.month
         monthJob = viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val json = fetch("/api/calendar/orders/count?month=${month.monthValue}&year=${month.year}&timeZone=${zone()}")
+                    val json = fetch(CalendarLogic.monthCountPath(month))
                     CalendarLogic.countsFromJson(json.optJSONObject("data") ?: org.json.JSONObject())
                 }
             }
@@ -101,7 +98,7 @@ class CalendarV2ViewModel(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     coroutineScope {
-                        val base = "/api/calendar/orders/by-date?date=$key&timeZone=${zone()}&limit=200"
+                        val base = CalendarLogic.dayPath(key)
                         val pickups = async { orders(fetch("$base&status=RESERVED")) }
                         val returns = async { orders(fetch("$base&kind=return")) }
                         CalendarLogic.rows(key, todayKey, pickups.await(), returns.await())

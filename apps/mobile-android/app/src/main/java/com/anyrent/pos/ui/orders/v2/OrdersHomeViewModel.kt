@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiClient.PageResult
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRepository
@@ -83,7 +84,7 @@ object OrdersHomeLogic {
     fun isSearch(query: String) = query.trim().length >= MIN_SEARCH_LENGTH
 
     /**
-     * Days past the planned hand-over (RENT still RESERVED) or return (still PICKUPED), in civil days of [zone].
+     * Days past the planned hand-over (RENT still RESERVED) or return (still PICKUPED), in shop civil days (#602, same rule as `RentedOutLogic.isLate`).
      * A note ("Trễ N ngày"), never a status. 0 when not late.
      */
     fun lateDays(
@@ -92,7 +93,7 @@ object OrdersHomeLogic {
         pickupPlanAt: Instant?,
         returnPlanAt: Instant?,
         now: Instant = Instant.now(),
-        zone: ZoneId = ZoneId.systemDefault(),
+        zone: ZoneId = ShopTime.zone,
     ): Int {
         if (!orderType.equals("RENT", ignoreCase = true)) return 0
         val planned = when (status.uppercase()) {
@@ -108,7 +109,7 @@ object OrdersHomeLogic {
     fun orderRows(
         orders: List<OrderSummary>,
         now: Instant = Instant.now(),
-        zone: ZoneId = ZoneId.systemDefault(),
+        zone: ZoneId = ShopTime.zone,
     ): List<OrdersRow.Order> = orders.map { order ->
         OrdersRow.Order(
             order,
@@ -132,7 +133,7 @@ object OrdersHomeLogic {
     }
 
     /** Sale orders under civil-day headers of [zone], keeping the API order (newest first) */
-    fun saleSections(rows: List<OrdersRow.Order>, zone: ZoneId = ZoneId.systemDefault()): List<OrdersSection> =
+    fun saleSections(rows: List<OrdersRow.Order>, zone: ZoneId = ShopTime.zone): List<OrdersSection> =
         rows.groupBy { row -> parseInstant(row.order.createdAt)?.let { dayKey(it, zone) } ?: "" }
             .map { (_, group) ->
                 val day = parseInstant(group.first().order.createdAt)
@@ -173,7 +174,7 @@ class OrdersHomeViewModel(
     private val todayWork: TodayWorkRepository,
     private val orders: OrdersPageLoader = LiveOrdersPageLoader,
     private val now: () -> Instant = Instant::now,
-    private val zone: () -> ZoneId = ZoneId::systemDefault,
+    private val zone: () -> ZoneId = { ShopTime.zone },
     private val searchDelayMs: Long = 300,
 ) : ViewModel() {
     private val _state = MutableStateFlow(OrdersHomeState())

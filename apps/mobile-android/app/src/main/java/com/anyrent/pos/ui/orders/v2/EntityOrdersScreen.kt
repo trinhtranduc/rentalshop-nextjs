@@ -73,13 +73,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import java.time.ZoneId
 
 /** "CN 27/09 – T7 03/10" from the route's `yyyy-MM-dd` days (iOS `OverviewLogic.longRange`); null without a period */
 internal fun entityPeriodRange(start: String?, end: String?): String? {
     val from = start?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
     val to = end?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: from
-    fun label(day: LocalDate) = formatDayShort(day.atStartOfDay(ZoneId.systemDefault()).plusHours(12).toInstant())
+    fun label(day: LocalDate) = formatDayShort(day)
     return if (from == to) label(from) else "${label(from)} – ${label(to)}"
 }
 

@@ -67,6 +67,7 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.model.RankingItem
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatDisplayDate
@@ -110,7 +111,7 @@ private enum class OverviewPeriod {
 private val OverviewDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
 private fun OverviewPeriod.range(customStart: LocalDate?, customEnd: LocalDate?): Pair<LocalDate, LocalDate> {
-    val end = LocalDate.now()
+    val end = ShopTime.today()
     return when (this) {
         OverviewPeriod.TODAY -> end to end
         OverviewPeriod.D7 -> end.minusDays(6) to end
@@ -620,7 +621,7 @@ private fun OverviewDateFilterSheet(
         OverviewPeriod.D180,
         OverviewPeriod.CUSTOM,
     )
-    val today = remember { LocalDate.now() }
+    val today = remember { ShopTime.today() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

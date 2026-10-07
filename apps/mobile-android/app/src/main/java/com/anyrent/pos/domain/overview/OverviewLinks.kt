@@ -3,6 +3,7 @@ package com.anyrent.pos.domain.overview
 import androidx.annotation.StringRes
 import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.ui.orders.v2.OrdersHomeLogic
 import java.time.Instant
 import java.time.ZoneId
@@ -39,7 +40,7 @@ object OverviewLinks {
         orders: List<OrderSummary>,
         hasMore: Boolean,
         now: Instant = Instant.now(),
-        zone: ZoneId = ZoneId.systemDefault(),
+        zone: ZoneId = ShopTime.zone,
     ): Pair<List<OrderSummary>, Boolean> {
         val late = orders.takeWhile { order ->
             OrdersHomeLogic.lateDays(

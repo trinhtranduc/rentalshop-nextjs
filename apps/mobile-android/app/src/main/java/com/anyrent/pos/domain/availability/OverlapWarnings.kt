@@ -17,7 +17,7 @@ import java.time.ZoneId
  * Days are Vietnam civil days ([shopZone]) whatever the device zone. Pure and unit tested.
  */
 object OverlapWarnings {
-    val shopZone: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+    val shopZone: ZoneId get() = com.anyrent.pos.domain.ShopTime.zone
 
     data class LineConflict(
         val productId: Int,

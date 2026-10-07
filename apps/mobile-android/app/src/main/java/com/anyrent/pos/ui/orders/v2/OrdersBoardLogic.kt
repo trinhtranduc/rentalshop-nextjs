@@ -1,6 +1,7 @@
 package com.anyrent.pos.ui.orders.v2
 
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.TodayWorkRow
 import java.time.Instant
@@ -155,8 +156,8 @@ object OrdersBoardLogic {
         }
     }
 
-    /** First and last civil day of a range choice */
-    fun dayBounds(range: DateRangeChoice, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()): Pair<LocalDate, LocalDate>? {
+    /** First and last shop civil day of a range choice (#602); sent as `YYYY-MM-DD` keys */
+    fun dayBounds(range: DateRangeChoice, now: Instant = Instant.now(), zone: ZoneId = ShopTime.zone): Pair<LocalDate, LocalDate>? {
         val today = now.atZone(zone).toLocalDate()
         return when (range) {
             DateRangeChoice.Any -> null
@@ -168,7 +169,7 @@ object OrdersBoardLogic {
     }
 
     /** The rent list request for a filter */
-    fun rentQuery(filter: RentOrdersFilter, page: Int = 1, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()): OrdersQuery {
+    fun rentQuery(filter: RentOrdersFilter, page: Int = 1, now: Instant = Instant.now(), zone: ZoneId = ShopTime.zone): OrdersQuery {
         val bounds = dayBounds(filter.range, now, zone)
         return OrdersQuery(
             orderType = "RENT",

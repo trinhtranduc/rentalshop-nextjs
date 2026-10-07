@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.shared.model.OrderStatusFlow
 import com.anyrent.shared.model.SharedOrderStatus
 import com.anyrent.shared.model.SharedOrderType
@@ -76,6 +77,8 @@ fun maskedPhoneNumber(phone: String): String {
 val DisplayDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy")
 val DisplayDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
 
+/** Days in the shop zone (#602); date-time stamps keep the device clock */
+private val shopZone: ZoneId get() = ShopTime.zone
 private val zone: ZoneId get() = ZoneId.systemDefault()
 
 fun formatDisplayDate(date: LocalDate): String = date.format(DisplayDateFormatter)
@@ -86,9 +89,9 @@ fun formatDisplayDate(value: String?): String {
         ?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
         ?: return "N/A"
     return runCatching {
-        Instant.parse(raw).atZone(zone).toLocalDate().format(DisplayDateFormatter)
+        Instant.parse(raw).atZone(shopZone).toLocalDate().format(DisplayDateFormatter)
     }.recoverCatching {
-        OffsetDateTime.parse(raw.replace(" ", "T")).atZoneSameInstant(zone)
+        OffsetDateTime.parse(raw.replace(" ", "T")).atZoneSameInstant(shopZone)
             .toLocalDate().format(DisplayDateFormatter)
     }.recoverCatching {
         LocalDate.parse(raw.take(10)).format(DisplayDateFormatter)
@@ -153,19 +156,18 @@ fun orderLinePricingText(
 }
 
 // ---------------------------------------------------------------------------------------------
-// Redesign formatters (#370): dates in the device time zone, money in Vietnamese style
+// Redesign formatters (#370): days in the shop zone (#602), money in Vietnamese style
 // ---------------------------------------------------------------------------------------------
-
-/** IANA zone of the device, sent as `timeZone` on day-based API calls */
-fun deviceTimeZoneId(): String = ZoneId.systemDefault().id
 
 /** `T7 03/10` in Vietnamese, `Sat 03/10` otherwise, for the civil day of [instant] in [zone] */
 fun formatDayShort(
     instant: Instant,
-    zone: ZoneId = ZoneId.systemDefault(),
+    zone: ZoneId = ShopTime.zone,
     locale: Locale = Locale.getDefault(),
-): String {
-    val date = instant.atZone(zone).toLocalDate()
+): String = formatDayShort(instant.atZone(zone).toLocalDate(), locale)
+
+/** `T7 03/10` of a picked day (no zone: the day itself) */
+fun formatDayShort(date: LocalDate, locale: Locale = Locale.getDefault()): String {
     val dayMonth = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
     val weekday = if (locale.language == "vi") {
         when (date.dayOfWeek) {
@@ -179,7 +181,7 @@ fun formatDayShort(
 }
 
 /** `yyyy-MM-dd` civil day of [instant] in [zone] */
-fun dayKey(instant: Instant, zone: ZoneId = ZoneId.systemDefault()): String =
+fun dayKey(instant: Instant, zone: ZoneId = ShopTime.zone): String =
     instant.atZone(zone).toLocalDate().toString()
 
 /**

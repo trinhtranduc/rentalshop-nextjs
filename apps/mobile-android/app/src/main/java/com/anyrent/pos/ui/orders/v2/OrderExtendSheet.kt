@@ -41,6 +41,7 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.repository.DefaultAvailabilityRepository
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.error.ApiErrorMessages
@@ -55,7 +56,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.ZoneOffset
 
 /**
@@ -68,9 +68,9 @@ import java.time.ZoneOffset
 fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (LocalDate) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = remember { ShopTime.zone }
     val current = remember(detail) {
-        RentalExtension.currentReturnDay(detail.summary.returnPlanAt, zone) ?: LocalDate.now(zone)
+        RentalExtension.currentReturnDay(detail.summary.returnPlanAt, zone) ?: ShopTime.today()
     }
     val first = RentalExtension.firstSelectableDay(current)
     val picker = rememberDatePickerState(
@@ -91,7 +91,7 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
     var extraText by remember { mutableStateOf("") }
     val extra = MoneyInput.parse(extraText)
     val newTotal = RentalExtension.newTotal(detail.summary.totalAmount, extra)
-    fun dayText(day: LocalDate) = formatDayShort(day.atStartOfDay(zone).toInstant(), zone)
+    fun dayText(day: LocalDate) = formatDayShort(day)
     val window = chosen?.let { RentalExtension.window(current, it) }
     val unavailableTemplate = stringResource(R.string.extend_rental_unavailable)
 
