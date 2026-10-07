@@ -164,6 +164,35 @@ object VietQr {
         return body + crc16(body)
     }
 
+    /**
+     * #640 share image: the bill's VietQR of [account] plus the amount (54, when > 0) and the transfer content
+     * (62/08, ASCII), as the web `generateVietQRString` with amount and content; dynamic (01 = 12) when either is set.
+     * Null under the same rules as [payload].
+     */
+    fun payload(account: OutletBankAccount, amount: Double, content: String?): String? {
+        val number = account.accountNumber.trim()
+        val bin = bin(account.bankName, account.bankCode) ?: return null
+        if (number.length !in 8..16 || !number.all { it in '0'..'9' }) return null
+        val rounded = Math.round(amount)
+        val text = content?.let { ascii(it) }?.takeIf { it.isNotBlank() }
+        if (rounded <= 0 && text == null) return payload(bin, number)
+        val beneficiary = tlv("00", bin) + tlv("01", number)
+        val merchant = tlv("00", "A000000727") + tlv("01", beneficiary) + tlv("02", "QRIBFTTA")
+        var body = tlv("00", "01") + tlv("01", "12") + tlv("38", merchant) + tlv("53", "704")
+        if (rounded > 0) body += tlv("54", rounded.toString())
+        body += tlv("58", "VN")
+        if (text != null) body += tlv("62", tlv("08", text))
+        body += "6304"
+        return body + crc16(body)
+    }
+
+    /** Accents removed (đ → d), ASCII only, as the web `convertToASCII` */
+    private fun ascii(text: String): String =
+        java.text.Normalizer.normalize(text.replace('đ', 'd').replace('Đ', 'D'), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .filter { it.code in 32..126 }
+            .trim()
+
     fun tlv(tag: String, value: String): String = tag + value.toByteArray(Charsets.UTF_8).size.toString().padStart(2, '0') + value
 
     /** CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF), 4 uppercase hex digits */

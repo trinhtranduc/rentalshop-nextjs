@@ -126,7 +126,7 @@ class SuggestionTextField: BaseViewControler {
     private var currentSearchKeyword: String?
     
     // Debounce properties
-    private lazy var searchDebouncer = DebounceManager(delay: 0.7) // 1s debounce
+    private lazy var searchDebouncer = DebounceManager(delay: 0.3) // #639: same wait as the new screens, web and Android
     
     var isSearching = false {
         didSet {
