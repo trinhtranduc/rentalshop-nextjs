@@ -243,6 +243,39 @@ light theme, 1440 × 900. A fresh product (FIXED, stock 3) and customer per run;
 | BF-SCOPE-06 | Không lộ CUID | no `c[a-z0-9]{24}` string in order, list row, product, period, availability, customer orders, operations, login user; ids are integers |
 | BF-NUM-01 | Mã đơn 6 chữ số ngẫu nhiên | 12 orders: `^[1-9]\d{5}$`, unique; search and `/api/orders/by-number/{n}` find it |
 
+## BF-STAFF — Quyền nhân viên chi nhánh (`staff-permissions.e2e.test.js`, #635)
+
+Matrix = `ROLE_PERMISSIONS['OUTLET_STAFF']` (`packages/auth/src/permissions.ts`). Allowed calls return 2xx; denied
+calls return 403 and the data read back as the merchant is unchanged. BF-SCOPE-04/05 cover price edit and own outlet.
+
+| ID | Case | Calls (as staff) | Expected |
+|---|---|---|---|
+| BF-STAFF-01 | Xem chi nhánh mình | `GET /api/outlets` | 200, only its outlet |
+| BF-STAFF-02 | Xem sản phẩm, không thấy giá vốn | `GET /api/products?search`, `GET /api/products/{id}` | 200; no `costPrice` |
+| BF-STAFF-03 | Thêm sản phẩm không có giá | `POST /api/products` (name, stock at own outlet) | 200; rentPrice = salePrice = 0, stock 2 |
+| BF-STAFF-04 | Không sửa sản phẩm | `PUT /api/products/{id}`, `PUT /api/merchants/{m}/products/{id}` (name, stock) | 403; name and stock unchanged |
+| BF-STAFF-05 | Không xoá sản phẩm | `DELETE /api/products/{id}`, `POST /api/products/batch-delete` | 403; product still there |
+| BF-STAFF-06 | Không xuất / nhập sản phẩm | `GET /api/products/export`, `POST /api/products/bulk-import` | 403; nothing imported |
+| BF-STAFF-07 | Xem danh mục để chọn | `GET /api/categories` | 200, lists the merchant's category |
+| BF-STAFF-08 | Không thêm danh mục | `POST /api/categories` | 403; not created |
+| BF-STAFF-09 | Không đổi tên / xoá danh mục | `PUT`, `DELETE /api/categories/{id}` | 403; name unchanged, still listed |
+| BF-STAFF-10 | Xem và sửa đơn chi nhánh mình | `GET /api/orders?search`, `GET /api/orders/{id}`, `PUT /api/orders/{id}` notes | 200; notes saved |
+| BF-STAFF-11 | Không xoá đơn | `DELETE /api/orders/{id}`, `POST /api/orders/batch-delete` | 403; order still RESERVED |
+| BF-STAFF-12 | Không xuất đơn | `GET /api/orders/export` | 403 |
+| BF-STAFF-13 | Xem, thêm, sửa khách | `GET /api/customers?search`, `POST /api/customers`, `PUT /api/customers/{id}` | 200; edit saved |
+| BF-STAFF-14 | Không xuất khách | `GET /api/customers/export` | 403 |
+| BF-STAFF-15 | Tổng quan hôm nay, thu theo ngày | `today-metrics`, `dashboard`, `outlet-operations`, `income/daily` | 200 |
+| BF-STAFF-16 | Không xem phân tích đầy đủ | `top-products`, `top-customers`, `period`, `income`, `growth-metrics`, `analytics/orders`, `recent-orders` | 403 |
+| BF-STAFF-17 | Không quản lý nhân viên | `GET /api/users`, `POST /api/users` | 403; user not created |
+| BF-STAFF-18 | Không sửa tài khoản ngân hàng | `POST`, `PUT`, `DELETE /api/merchants/{m}/outlets/{o}/bank-accounts[/{id}]` | 403; count and holder name unchanged |
+| BF-STAFF-19 | Không đổi thông tin cửa hàng | `PUT /api/settings/merchant` name, `PUT /api/settings/currency`, `PUT /api/merchants/{m}` | 403; name, currency unchanged |
+| BF-STAFF-20 | Không đổi "Cho tạo đơn khi trùng lịch" | `PUT /api/settings/merchant` `allowOverlappingOrders` | 403; setting unchanged |
+| BF-STAFF-21 | Không sửa chi nhánh | `PUT /api/outlets?id=`, `PUT /api/merchants/{m}/outlets/{o}` | 403; name unchanged |
+| BF-STAFF-22 | Không sửa chi nhánh qua cài đặt (#636) | `PUT /api/settings/outlet` name, address | 403; unchanged |
+| BF-STAFF-23 | Xem gói dịch vụ | `GET /api/subscriptions/status` | 200 |
+| BF-STAFF-24 | Không đổi gói | `PUT /api/merchants/{m}/plan`, `POST /api/subscriptions` | 403; planId unchanged |
+| BF-STAFF-25 | Xem chương trình khách thân thiết | `GET /api/loyalty/program` | 200 |
+
 ## Questions for the owner (current behaviour asserted)
 
 - **Q1** No server-side stock check: POST and PUT `/api/orders` accept a booking or edit that overbooks (BF-DUP-04,
