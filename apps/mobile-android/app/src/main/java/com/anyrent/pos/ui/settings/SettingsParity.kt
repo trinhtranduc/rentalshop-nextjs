@@ -26,6 +26,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -318,6 +322,12 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     }
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    // #622: saved as soon as it changes, like iOS
+    var printBankQr by remember { mutableStateOf(prefs.getBoolean(ThermalPrinter.KEY_PRINT_BANK_QR, false)) }
+    fun setPrintBankQr(value: Boolean) {
+        printBankQr = value
+        prefs.edit().putBoolean(ThermalPrinter.KEY_PRINT_BANK_QR, value).apply()
+    }
 
     fun persist() {
         prefs.edit()
@@ -386,6 +396,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                     label = stringResource(R.string.printer_note), value = note, onValueChange = { note = it },
                     singleLine = false, minLines = 4,
                 )
+                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
                 message?.let { SettingsDetailNote(it, DS.Colors.Primary) }
             }
         }
@@ -482,11 +493,38 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                             singleLine = false,
                             minLines = 4,
                         )
+                        PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
                     }
                 }
                 message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             }
         }
+    }
+}
+
+/** "In QR chuyển khoản trên bill" + hint, switch on the right (#622) */
+@Composable
+private fun PrintBankQrRow(checked: Boolean, onChange: (Boolean) -> Unit) {
+    val title = stringResource(R.string.printer_bank_qr_title)
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+            Text(stringResource(R.string.printer_bank_qr_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            modifier = Modifier.semantics { contentDescription = title },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF34C759),
+                checkedBorderColor = Color(0xFF34C759),
+            ),
+        )
     }
 }
 

@@ -1301,4 +1301,27 @@
         <item>bool.true|Yes</item>
         <item>bool.false|No</item>
     </string-array>
+    <!-- #622 Bank accounts + VietQR on bills -->
+    <string name="bank_accounts">Bank accounts</string>
+    <string name="bank_accounts_empty">No bank account yet. Tap + to add one.</string>
+    <string name="bank_account_add">Add bank account</string>
+    <string name="bank_account_edit">Edit bank account</string>
+    <string name="bank_account_bank">Bank name *</string>
+    <string name="bank_account_select_bank">Select bank</string>
+    <string name="bank_account_search">Search bank…</string>
+    <string name="bank_account_number">Account number *</string>
+    <string name="bank_account_holder">Account holder name *</string>
+    <string name="bank_account_branch">Branch</string>
+    <string name="bank_account_set_default">Set as default</string>
+    <string name="bank_account_default">Default</string>
+    <string name="bank_account_outlet">Outlet</string>
+    <string name="bank_account_delete_title">Delete bank account</string>
+    <string name="bank_account_delete_message">Are you sure you want to delete %1$s?</string>
+    <string name="bank_account_need_bank">Please select a bank</string>
+    <string name="bank_account_need_number">Please check account number</string>
+    <string name="bank_account_need_holder">Please check account holder name</string>
+    <string name="printer_bank_qr_title">Print transfer QR on bills</string>
+    <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. This device only.</string>
+    <string name="bill_bank_qr_title">BANK TRANSFER</string>
+    <string name="bill_bank_qr_account">Account: %1$s</string>
 </resources>

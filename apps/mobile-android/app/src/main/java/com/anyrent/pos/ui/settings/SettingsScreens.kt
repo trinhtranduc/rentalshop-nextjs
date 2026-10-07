@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.bank.BankAccountRules
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
@@ -112,6 +114,7 @@ fun SettingsScreen(
     onOpenSubscription: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onLoggedOut: () -> Unit,
+    onOpenBankAccounts: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -176,6 +179,11 @@ fun SettingsScreen(
             SectionLabel(stringResource(R.string.tools))
             AppCard {
                 SettingsCardRow(Icons.Default.Print, stringResource(R.string.printer_config), onOpenPrinter)
+                // #622: MERCHANT / OUTLET_ADMIN (as iOS)
+                if (BankAccountRules.canManage(SessionStore.role)) {
+                    HorizontalDivider(Modifier.padding(start = 56.dp))
+                    SettingsCardRow(Icons.Default.AccountBalance, stringResource(R.string.bank_accounts), onOpenBankAccounts)
+                }
                 if (PermissionManager.canExport()) {
                     HorizontalDivider(Modifier.padding(start = 56.dp))
                     SettingsCardRow(Icons.Default.Upload, stringResource(R.string.export_data), onOpenExport)

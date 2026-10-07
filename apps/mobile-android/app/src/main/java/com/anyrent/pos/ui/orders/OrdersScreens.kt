@@ -1099,7 +1099,9 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     }
                     OutlinedButton(
                         onClick = {
-                            val config = ThermalPrinter.configFromPrefs(printerPrefs)
+                            val config = ThermalPrinter.configFromPrefs(
+                                printerPrefs, context.getString(R.string.bill_bank_qr_title), context.getString(R.string.bill_bank_qr_account),
+                            )
                             scope.launch {
                                 val result = withContext(Dispatchers.IO) {
                                     ThermalPrinter.printOrder(config, current)

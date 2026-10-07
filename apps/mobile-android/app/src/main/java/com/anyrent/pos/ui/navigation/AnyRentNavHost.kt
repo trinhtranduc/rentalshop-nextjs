@@ -103,6 +103,7 @@ import com.anyrent.pos.ui.settings.SettingsScreen
 import com.anyrent.pos.ui.settings.StoreInfoScreen
 import com.anyrent.pos.ui.settings.SubscriptionScreen
 import com.anyrent.pos.ui.settings.UserManagementScreen
+import com.anyrent.pos.ui.settings.v2.BankAccountsScreen
 import com.anyrent.pos.ui.settings.v2.SettingsV2Screen
 import com.anyrent.pos.ui.theme.AppMuted
 import kotlinx.coroutines.Dispatchers
@@ -140,6 +141,7 @@ object Routes {
     const val Users = "users"
     const val Export = "export"
     const val Printer = "printer"
+    const val BankAccounts = "bank-accounts"
     const val AppInfo = "app-info"
     const val Subscription = "subscription"
     // #373 redesigned products and cart (flag newProducts)
@@ -666,6 +668,9 @@ fun AnyRentNavHost(
             val features by FeatureFlags.enabled.collectAsState()
             PrinterNetworkScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
         }
+        composable(Routes.BankAccounts) {
+            BankAccountsScreen(onBack = { rootNavController.popBackStack() })
+        }
         composable(Routes.AppInfo) {
             val features by FeatureFlags.enabled.collectAsState()
             AppInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
@@ -873,6 +878,7 @@ private fun MainTabs(
                         onOpenUsers = { rootNavController.navigate(Routes.Users) },
                         onOpenExport = { rootNavController.navigate(Routes.Export) },
                         onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
+                        onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
                         onLoggedOut = {
                             rootNavController.navigate(Routes.Login) {
                                 popUpTo(Routes.Main) { inclusive = true }
@@ -890,6 +896,7 @@ private fun MainTabs(
                     onOpenStore = { rootNavController.navigate(Routes.StoreInfo) },
                     onOpenSubscription = { rootNavController.navigate(Routes.Subscription) },
                     onOpenNotifications = { rootNavController.navigate(Routes.Inbox) },
+                    onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
                     onLoggedOut = {
                         rootNavController.navigate(Routes.Login) {
                             popUpTo(Routes.Main) { inclusive = true }

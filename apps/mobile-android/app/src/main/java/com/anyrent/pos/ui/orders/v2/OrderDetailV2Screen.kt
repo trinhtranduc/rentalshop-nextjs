@@ -162,7 +162,7 @@ fun OrderDetailV2Screen(
     fun print(detail: OrderDetail) {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                ThermalPrinter.printOrder(ThermalPrinter.configFromPrefs(printerPrefs), detail)
+                ThermalPrinter.printOrder(ThermalPrinter.configFromPrefs(printerPrefs, context.getString(R.string.bill_bank_qr_title), context.getString(R.string.bill_bank_qr_account)), detail)
             }
             when (result) {
                 is ThermalPrinter.Result.Success -> Unit

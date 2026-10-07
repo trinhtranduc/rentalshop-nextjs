@@ -90,6 +90,7 @@ fun SettingsV2Screen(
     onOpenExport: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onLoggedOut: () -> Unit,
+    onOpenBankAccounts: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -214,6 +215,7 @@ fun SettingsV2Screen(
                         SettingsItem.CUSTOMERS -> onOpenCustomers()
                         SettingsItem.USERS -> onOpenUsers()
                         SettingsItem.EXPORT -> onOpenExport()
+                        SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
                         SettingsItem.PLAN -> Unit
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -365,6 +367,7 @@ private fun itemTitle(item: SettingsItem): String = stringResource(
         SettingsItem.STORE_INFO -> R.string.store_info
         SettingsItem.RECEIPT_NOTE -> R.string.settings_v2_receipt_note
         SettingsItem.PRINTER -> R.string.settings_v2_printer
+        SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts
         SettingsItem.CUSTOMERS -> R.string.customers
         SettingsItem.USERS -> R.string.settings_v2_users
         SettingsItem.EXPORT -> R.string.export_data

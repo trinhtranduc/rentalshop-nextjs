@@ -1283,4 +1283,27 @@
         <item>bool.true|Có</item>
         <item>bool.false|Không</item>
     </string-array>
+    <!-- #622 Tài khoản ngân hàng + VietQR trên bill -->
+    <string name="bank_accounts">Tài khoản ngân hàng</string>
+    <string name="bank_accounts_empty">Chưa có tài khoản ngân hàng. Bấm + để thêm.</string>
+    <string name="bank_account_add">Thêm tài khoản ngân hàng</string>
+    <string name="bank_account_edit">Sửa tài khoản ngân hàng</string>
+    <string name="bank_account_bank">Tên ngân hàng *</string>
+    <string name="bank_account_select_bank">Chọn ngân hàng</string>
+    <string name="bank_account_search">Tìm kiếm ngân hàng…</string>
+    <string name="bank_account_number">Số tài khoản *</string>
+    <string name="bank_account_holder">Tên chủ tài khoản *</string>
+    <string name="bank_account_branch">Chi nhánh</string>
+    <string name="bank_account_set_default">Đặt làm mặc định</string>
+    <string name="bank_account_default">Mặc định</string>
+    <string name="bank_account_outlet">Cửa hàng</string>
+    <string name="bank_account_delete_title">Xóa tài khoản ngân hàng</string>
+    <string name="bank_account_delete_message">Bạn có chắc chắn muốn xóa %1$s?</string>
+    <string name="bank_account_need_bank">Vui lòng chọn ngân hàng</string>
+    <string name="bank_account_need_number">Vui lòng kiểm tra số tài khoản</string>
+    <string name="bank_account_need_holder">Vui lòng kiểm tra tên chủ tài khoản</string>
+    <string name="printer_bank_qr_title">In QR chuyển khoản trên bill</string>
+    <string name="printer_bank_qr_hint">In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.</string>
+    <string name="bill_bank_qr_title">CHUYỂN KHOẢN</string>
+    <string name="bill_bank_qr_account">STK: %1$s</string>
 </resources>
