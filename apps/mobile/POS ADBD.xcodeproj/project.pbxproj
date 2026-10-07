@@ -55,6 +55,7 @@
 		04276C0A2EE4537F005EAC05 /* PaymentQRCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */; };
 		04276C0C2EE453AE005EAC05 /* QRCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */; };
 		04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */; };
+		A622B0000000000000000001 /* VietQR.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000001 /* VietQR.swift */; };
 		04276C102EE4582E005EAC05 /* BankPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */; };
 		04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */; };
 		043F06372D85473C0047DC11 /* HapticButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043F06362D85473C0047DC11 /* HapticButton.swift */; };
@@ -180,6 +181,7 @@
 		A616B0000000000000000001 /* OverviewDashLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000001 /* OverviewDashLogic.swift */; };
 		3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */; };
 		3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */; };
+		A622B0000000000000000002 /* BankQRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000002 /* BankQRTests.swift */; };
 		A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000003 /* OverviewDashLogicTests.swift */; };
 		3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */; };
 		4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */; };
@@ -417,6 +419,7 @@
 		04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentQRCodeViewController.swift; sourceTree = "<group>"; };
 		04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeGenerator.swift; sourceTree = "<group>"; };
 		04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietnamBankCodes.swift; sourceTree = "<group>"; };
+		A622F0000000000000000001 /* VietQR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietQR.swift; sourceTree = "<group>"; };
 		04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankPickerViewController.swift; sourceTree = "<group>"; };
 		04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductAvailabilityCache.swift; sourceTree = "<group>"; };
 		043F06362D85473C0047DC11 /* HapticButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticButton.swift; sourceTree = "<group>"; };
@@ -532,6 +535,7 @@
 		04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCCustomNavigationBar.swift; sourceTree = "<group>"; };
 		072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.debug.xcconfig"; sourceTree = "<group>"; };
 		08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarOverviewSettingsV2Tests.swift; sourceTree = "<group>"; };
+		A622F0000000000000000002 /* BankQRTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BankQRTests.swift; sourceTree = "<group>"; };
 		A616F0000000000000000003 /* OverviewDashLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashLogicTests.swift; sourceTree = "<group>"; };
 		09DFF664402F310DBDA0C7DD /* AuthForms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthForms.swift; sourceTree = "<group>"; };
 		0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
@@ -1000,6 +1004,7 @@
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
+				A622F0000000000000000002 /* BankQRTests.swift */,
 				A616F0000000000000000003 /* OverviewDashLogicTests.swift */,
 				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
 				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
@@ -1308,6 +1313,7 @@
 			children = (
 				04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */,
 				04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */,
+				A622F0000000000000000001 /* VietQR.swift */,
 				04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */,
 				0403310A2EACEC7E003BC33E /* LoadingState.swift */,
 				040330ED2EA8913D003BC33E /* JSONHelper.swift */,
@@ -1809,6 +1815,7 @@
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
+				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
 				A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */,
 				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
 				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
@@ -1877,6 +1884,7 @@
 				04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */,
 				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
+				A622B0000000000000000001 /* VietQR.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,
 				88E4149E21A99E9D00BAF4A1 /* RCError.swift in Sources */,

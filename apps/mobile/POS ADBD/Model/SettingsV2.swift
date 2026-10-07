@@ -9,7 +9,7 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
-    case storeInfo, receiptNote, printer
+    case storeInfo, receiptNote, printer, bankAccounts
     case customers, users, export
     case plan, language, password, appInfo, deleteAccount
 }
@@ -34,8 +34,11 @@ enum SettingsV2Logic {
     /// - users: `users.manage` (as today)
     /// - export: any export right and never OUTLET_STAFF (as today)
     /// - plan: shown once `subscriptions/status` answered
+    /// - bankAccounts (#622): MERCHANT and OUTLET_ADMIN (the API rejects writes from OUTLET_STAFF)
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
-        let store = SettingsV2Section(group: .store, items: [.storeInfo, .receiptNote, .printer])
+        var storeItems: [SettingsV2Item] = [.storeInfo, .receiptNote, .printer]
+        if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
+        let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
         if showsCustomers, permissions.contains(where: { ["customers.view", "customers.manage"].contains($0) }) {
@@ -55,6 +58,11 @@ enum SettingsV2Logic {
         return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]
             .filter { !$0.items.isEmpty }
+    }
+
+    /// Bank accounts screen (#622): owners and outlet admins; staff only print the account
+    static func canManageBankAccounts(role: Role?) -> Bool {
+        role == .merchant || role == .outletAdmin
     }
 
     /// "MT" from "Merchant Tran"; one letter for one word; "?" when empty

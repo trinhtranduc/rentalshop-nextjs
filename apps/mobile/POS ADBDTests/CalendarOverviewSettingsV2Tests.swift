@@ -579,7 +579,7 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
     func testSettingsRowsByRole() {
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms, hasPlan: true)
         XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
-        XCTAssertEqual(merchant[0].items, [.storeInfo, .receiptNote, .printer])
+        XCTAssertEqual(merchant[0].items, [.storeInfo, .receiptNote, .printer, .bankAccounts])
         XCTAssertEqual(merchant[1].items, [.users, .export])
         XCTAssertEqual(merchant[2].items, [.plan, .language, .password, .appInfo, .deleteAccount])
 

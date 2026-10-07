@@ -1,9 +1,10 @@
 package com.anyrent.pos.domain.settings
 
+import com.anyrent.pos.domain.bank.BankAccountRules
 import org.json.JSONObject
 
 enum class SettingsItem {
-    STORE_INFO, RECEIPT_NOTE, PRINTER,
+    STORE_INFO, RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
     CUSTOMERS, USERS, EXPORT,
     PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
 }
@@ -26,6 +27,7 @@ object SettingsRows {
      * - users: MERCHANT, OUTLET_ADMIN, ADMIN (`PermissionManager.canManageUsers`)
      * - export: never OUTLET_STAFF (`PermissionManager.canExport`)
      * - plan: once `subscriptions/status` answered, not for ADMIN
+     * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
@@ -38,7 +40,11 @@ object SettingsRows {
             addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT))
         }
         return listOf(
-            SettingsSection(SettingsGroup.STORE, listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER)),
+            SettingsSection(
+                SettingsGroup.STORE,
+                listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
+                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }),
+            ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),
         ).filter { it.items.isNotEmpty() }

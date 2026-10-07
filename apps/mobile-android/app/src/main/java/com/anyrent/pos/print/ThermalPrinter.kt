@@ -3,19 +3,24 @@ package com.anyrent.pos.print
 import android.content.SharedPreferences
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.OrderDetail
+import com.anyrent.pos.data.repository.BankAccountRepository
+import com.anyrent.pos.domain.bank.OutletBankAccount
+import com.anyrent.pos.domain.bank.VietQr
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.charset.Charset
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Network thermal printer (ESC/POS over TCP :9100).
  *
  * Mirrors iOS `PrinterManager` + `Order.toPrintData()`:
  * store header, rent/sale details, line items, totals, printer note +
- * signature block (RENT), thank-you, Code128 barcode, feed + cut.
+ * signature block (RENT), bank account + VietQR when switched on (#622), thank-you, Code128 barcode, feed + cut.
  * Connection-per-request (same recommended pattern as iOS network path).
  */
 object ThermalPrinter {
@@ -33,6 +38,11 @@ object ThermalPrinter {
         val name: String = "",
         /** Footer note for RENT receipts — iOS `Utils.loadNotePrinter()`. */
         val note: String = DEFAULT_PRINTER_NOTE,
+        /** #622: print the outlet's bank account + VietQR (this device only, off by default) — iOS `Utils.loadPrintBankQr()` */
+        val printBankQr: Boolean = false,
+        /** Bank block labels (string resources at the call site) */
+        val bankTitle: String = "BANK TRANSFER",
+        val bankAccountLabel: String = "Account: %s",
     )
 
     sealed class Result {
@@ -42,13 +52,23 @@ object ThermalPrinter {
 
     const val DEFAULT_PRINTER_NOTE = "*** Vui lòng mang theo CMND/BLX khi lấy đồ"
 
-    fun configFromPrefs(prefs: SharedPreferences): Config = Config(
+    /** SharedPreferences `anyrent.printer` key of the bank QR switch (#622) */
+    const val KEY_PRINT_BANK_QR = "printBankQr"
+
+    fun configFromPrefs(
+        prefs: SharedPreferences,
+        bankTitle: String = "BANK TRANSFER",
+        bankAccountLabel: String = "Account: %s",
+    ): Config = Config(
         ip = prefs.getString("printerIp", "").orEmpty(),
         port = prefs.getString("printerPort", "9100")?.toIntOrNull() ?: 9100,
         paperWidthMm = prefs.getString("paperWidth", "80")?.toIntOrNull() ?: 80,
         name = prefs.getString("printerName", "").orEmpty(),
         note = prefs.getString("printerNote", DEFAULT_PRINTER_NOTE).orEmpty()
             .ifBlank { DEFAULT_PRINTER_NOTE },
+        printBankQr = prefs.getBoolean(KEY_PRINT_BANK_QR, false),
+        bankTitle = bankTitle,
+        bankAccountLabel = bankAccountLabel,
     )
 
     fun testPrint(config: Config): Result = runCatching {
@@ -56,10 +76,33 @@ object ThermalPrinter {
         Result.Success
     }.getOrElse { Result.Failure(it.message ?: "Print failed") }
 
-    fun printOrder(config: Config, order: OrderDetail): Result = runCatching {
-        send(config, buildOrderReceipt(config, order))
+    /**
+     * Blocking (run on Dispatchers.IO). With the bank QR switch on, the order's outlet account is loaded first;
+     * no account, a failed load or no answer within 5 s prints the bill as before, without an error (#622).
+     */
+    fun printOrder(
+        config: Config,
+        order: OrderDetail,
+        bankLookup: (Int) -> OutletBankAccount? = BankAccountRepository::printAccount,
+    ): Result = runCatching {
+        val account = if (config.printBankQr) lookupBankAccount(order, bankLookup) else null
+        send(config, buildOrderReceipt(config, order, account))
         Result.Success
     }.getOrElse { Result.Failure(it.message ?: "Print failed") }
+
+    private fun lookupBankAccount(order: OrderDetail, lookup: (Int) -> OutletBankAccount?): OutletBankAccount? {
+        val outletId = order.outletId ?: runCatching { SessionStore.outletId }.getOrNull() ?: return null
+        val executor = Executors.newSingleThreadExecutor()
+        return try {
+            runCatching { executor.submit<OutletBankAccount?> { lookup(outletId) }.get(5, TimeUnit.SECONDS) }.getOrNull()
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    /** Bytes sent for an order: the bank block only when the switch is on and an account was found */
+    internal fun billBytes(config: Config, order: OrderDetail, account: OutletBankAccount?): ByteArray =
+        buildOrderReceipt(config, order, if (config.printBankQr) account else null)
 
     private fun send(config: Config, payload: ByteArray) {
         require(config.ip.isNotBlank()) { "Printer IP required" }
@@ -95,10 +138,10 @@ object ThermalPrinter {
         cut()
     }
 
-    private fun buildOrderReceipt(config: Config, order: OrderDetail): ByteArray {
+    internal fun buildOrderReceipt(config: Config, order: OrderDetail, bankAccount: OutletBankAccount? = null): ByteArray {
         val summary = order.summary
         val isRent = summary.orderType.equals("RENT", ignoreCase = true)
-        val store = (SessionStore.outletName ?: SessionStore.merchantName ?: "AnyRent")
+        val store = (runCatching { SessionStore.outletName ?: SessionStore.merchantName }.getOrNull() ?: "AnyRent")
             .uppercase(Locale.getDefault())
         val chars = if (config.paperWidthMm <= 58) 32 else 42
         val divider = "-".repeat(chars.coerceAtMost(48))
@@ -195,6 +238,9 @@ object ThermalPrinter {
                 text("")
             }
 
+            // #622: bank transfer block, only when the printer switch is on and the outlet has an account
+            bankAccount?.let { bankBlock(config, it, divider) }
+
             text("")
             alignCenter()
             text("THANK YOU FOR SHOPPING")
@@ -213,6 +259,23 @@ object ThermalPrinter {
         }
     }
 
+    /** Centered: title, bank name, account number, holder name, then the VietQR (only when the bank has a BIN) */
+    private fun EscPosBuilder.bankBlock(config: Config, account: OutletBankAccount, divider: String) {
+        alignCenter()
+        text(divider)
+        bold(true)
+        text(config.bankTitle)
+        bold(false)
+        text(account.bankName)
+        text(runCatching { config.bankAccountLabel.format(account.accountNumber) }.getOrDefault(account.accountNumber))
+        text(account.accountHolderName.uppercase(Locale.getDefault()))
+        VietQr.payload(account)?.let {
+            qrCode(it)
+            text("")
+        }
+        alignLeft()
+    }
+
     private fun formatDate(iso: String?): String? {
         if (iso.isNullOrBlank()) return null
         // Shop day (#602); already a display string / date-only: as is
@@ -222,6 +285,17 @@ object ThermalPrinter {
     private fun formatDateTime(iso: String?): String? {
         if (iso.isNullOrBlank()) return null
         return ReceiptDates.dateTime(iso, dateTimeFmt) ?: iso.take(16).replace('T', ' ')
+    }
+
+    internal fun escPosQr(data: String, size: Int = 6): ByteArray {
+        val bytes = data.toByteArray(Charsets.UTF_8)
+        val length = bytes.size + 3
+        return byteArrayOf(0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00) +
+            byteArrayOf(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, size.coerceIn(1, 16).toByte()) +
+            byteArrayOf(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x31) +
+            byteArrayOf(0x1D, 0x28, 0x6B, (length and 0xFF).toByte(), (length shr 8).toByte(), 0x31, 0x50, 0x30) +
+            bytes +
+            byteArrayOf(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30)
     }
 
     private fun buildBytes(paperWidthMm: Int, block: EscPosBuilder.() -> Unit): ByteArray {
@@ -297,6 +371,14 @@ object ThermalPrinter {
             out += byteArrayOf(0x1D, 0x6B, 0x49, bytes.size.toByte()).toList()
             out += bytes.toList()
             out += 0x0A
+        }
+
+        /**
+         * ESC/POS QR (GS ( k): model 2, module size, error correction M, store, print — iOS `PrinterCommand.printQRCode`.
+         * Size 6 keeps a VietQR (version 6, 41 modules) about 31 mm wide, inside 58 mm paper.
+         */
+        fun qrCode(data: String, size: Int = 6) {
+            out += escPosQr(data, size).toList()
         }
 
         fun toByteArray(): ByteArray = out.toByteArray()

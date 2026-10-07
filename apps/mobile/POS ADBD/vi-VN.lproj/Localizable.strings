@@ -2241,3 +2241,10 @@
 "overview.dash.top.empty" = "Chưa có trong khoảng này.";
 "overview.dash.top.rentals" = "%d lượt thuê";
 "overview.dash.top.rentals.one" = "%d lượt thuê";
+
+// MARK: - #622 Bank accounts + VietQR on bills
+"bankAccounts.empty" = "Chưa có tài khoản ngân hàng. Bấm + để thêm.";
+"printer.bankQr.title" = "In QR chuyển khoản trên bill";
+"printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.";
+"bill.bankQr.title" = "CHUYỂN KHOẢN";
+"bill.bankQr.accountNumber" = "STK: %@";

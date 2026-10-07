@@ -58,6 +58,16 @@ class PrinterConfigurationViewController: BaseViewControler {
         return textView
     }()
 
+    /// #622: print the outlet's bank account + VietQR at the end of bills (this device only)
+    private lazy var bankQrSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.onTintColor = APP_TONE_COLOR
+        toggle.accessibilityLabel = "printer.bankQr.title".localized()
+        toggle.accessibilityIdentifier = "printer.bankQr.switch"
+        toggle.addTarget(self, action: #selector(bankQrChanged), for: .valueChanged)
+        return toggle
+    }()
+
     private lazy var supportLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.regularFont(size: 12)
@@ -121,7 +131,10 @@ class PrinterConfigurationViewController: BaseViewControler {
         let settingsCard = makeCard()
         let ipRow = makeValueRow(title: "IP Address".localized(), field: ipField)
         let noteBlock = makeNoteBlock()
-        let settingsStack = UIStackView(arrangedSubviews: [ipRow, makeSeparator(), noteBlock])
+        let bankQrRow = makeBankQrRow()
+        bankQrRow.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        bankQrRow.isLayoutMarginsRelativeArrangement = true
+        let settingsStack = UIStackView(arrangedSubviews: [ipRow, makeSeparator(), noteBlock, makeSeparator(), bankQrRow])
         settingsStack.axis = .vertical
         settingsStack.spacing = 0
         settingsCard.addSubview(settingsStack)
@@ -186,6 +199,7 @@ class PrinterConfigurationViewController: BaseViewControler {
             hintLabel,
             SettingsDetailV2.field("IP Address".localized(), ipField.textField),
             SettingsDetailV2.textArea("Printer Notes".localized(), noteTextView),
+            makeBankQrRow(),
             supportLabel,
         ])
         form.axis = .vertical
@@ -223,6 +237,34 @@ class PrinterConfigurationViewController: BaseViewControler {
     private func loadCurrentConfig() {
         ipField.textField.text = Utils.loadBillPrinter()
         noteTextView.text = Utils.loadNotePrinter()
+        bankQrSwitch.isOn = Utils.loadPrintBankQr()
+    }
+
+    /// "In QR chuyển khoản trên bill" + one-line hint, switch on the right
+    private func makeBankQrRow() -> UIStackView {
+        let title = UILabel()
+        title.font = Utils.boldFont(size: 16)
+        title.textColor = .textPrimary
+        title.numberOfLines = 0
+        title.text = "printer.bankQr.title".localized()
+        let hint = UILabel()
+        hint.font = Utils.regularFont(size: 14)
+        hint.textColor = .textSecondary
+        hint.numberOfLines = 0
+        hint.text = "printer.bankQr.hint".localized()
+        let texts = UIStackView(arrangedSubviews: [title, hint])
+        texts.axis = .vertical
+        texts.spacing = 2
+        bankQrSwitch.setContentCompressionResistancePriority(.required, for: .horizontal)
+        bankQrSwitch.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [texts, bankQrSwitch])
+        row.spacing = 12
+        row.alignment = .center
+        return row
+    }
+
+    @objc private func bankQrChanged() {
+        Utils.savePrintBankQr(bankQrSwitch.isOn)
     }
 
     private func makeCard() -> UIView {

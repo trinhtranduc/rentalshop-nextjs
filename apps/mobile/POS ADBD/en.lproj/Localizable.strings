@@ -2243,3 +2243,10 @@
 "overview.dash.top.empty" = "Nothing in this period yet.";
 "overview.dash.top.rentals" = "%d rentals";
 "overview.dash.top.rentals.one" = "%d rental";
+
+// MARK: - #622 Bank accounts + VietQR on bills
+"bankAccounts.empty" = "No bank account yet. Tap + to add one.";
+"printer.bankQr.title" = "Print transfer QR on bills";
+"printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. This device only.";
+"bill.bankQr.title" = "BANK TRANSFER";
+"bill.bankQr.accountNumber" = "Account: %@";
