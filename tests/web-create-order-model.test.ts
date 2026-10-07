@@ -249,6 +249,58 @@ describe('submit', () => {
     expect('loyaltyRedeem' in p).toBe(false);
   });
 
+  // #589 (WEB-3): Sửa đơn must not rewrite a pickup / return time when its Vietnam day did not change
+  describe('edit keeps the saved instants of unchanged days', () => {
+    const edit = (original: { pickupPlanAt?: string | null; returnPlanAt?: string | null }, days: { pickup?: string; ret?: string } = {}) =>
+      buildPayload({ ...base, ...days, mode: 'edit', original });
+
+    it('keeps 09:30 / 17:00 Vietnam when both days are the same', () => {
+      // 2026-10-07 09:30 VN, 2026-10-09 17:00 VN
+      const p = edit({ pickupPlanAt: '2026-10-07T02:30:00.000Z', returnPlanAt: '2026-10-09T10:00:00.000Z' });
+      expect([p.pickupPlanAt, p.returnPlanAt]).toEqual(['2026-10-07T02:30:00.000Z', '2026-10-09T10:00:00.000Z']);
+    });
+
+    it('a moved day saves 00:00 Vietnam of the new day; the other keeps its time', () => {
+      const p = edit({ pickupPlanAt: '2026-10-07T02:30:00.000Z', returnPlanAt: '2026-10-09T10:00:00.000Z' }, { ret: '2026-10-10' });
+      expect([p.pickupPlanAt, p.returnPlanAt]).toEqual(['2026-10-07T02:30:00.000Z', '2026-10-09T17:00:00.000Z']);
+    });
+
+    it('16:59:59Z is the last second of the Vietnam day, 17:00:00Z the first of the next', () => {
+      // 2026-10-06T16:59:59Z = 23:59:59 VN on 06/10 → not the 07/10 pickup day
+      expect(edit({ pickupPlanAt: '2026-10-06T16:59:59.000Z' }).pickupPlanAt).toBe('2026-10-06T17:00:00.000Z');
+      expect(edit({ pickupPlanAt: '2026-10-06T16:59:59.000Z' }, { pickup: '2026-10-06' }).pickupPlanAt).toBe('2026-10-06T16:59:59.000Z');
+      // 2026-10-06T17:00:00Z = 00:00 VN on 07/10; 2026-10-07T16:59:59Z = 23:59:59 VN on 07/10
+      expect(edit({ pickupPlanAt: '2026-10-06T17:00:00.000Z' }).pickupPlanAt).toBe('2026-10-06T17:00:00.000Z');
+      expect(edit({ pickupPlanAt: '2026-10-07T16:59:59.000Z' }).pickupPlanAt).toBe('2026-10-07T16:59:59.000Z');
+      expect(edit({ returnPlanAt: '2026-10-09T17:00:00.000Z' }).returnPlanAt).toBe('2026-10-08T17:00:00.000Z');
+    });
+
+    it('month and year ends', () => {
+      const p = buildPayload({
+        ...base,
+        mode: 'edit',
+        pickup: '2026-12-31',
+        ret: '2027-01-01',
+        original: { pickupPlanAt: '2026-12-31T16:59:59.000Z', returnPlanAt: '2026-12-31T17:00:00.000Z' },
+      });
+      expect([p.pickupPlanAt, p.returnPlanAt]).toEqual(['2026-12-31T16:59:59.000Z', '2026-12-31T17:00:00.000Z']);
+    });
+
+    it('accepts a Date, ignores a bad value, and create never uses it', () => {
+      expect(buildPayload({ ...base, mode: 'edit', original: { pickupPlanAt: new Date('2026-10-07T02:30:00Z') } }).pickupPlanAt).toBe(
+        '2026-10-07T02:30:00.000Z',
+      );
+      expect(edit({ pickupPlanAt: 'not a date' }).pickupPlanAt).toBe('2026-10-06T17:00:00.000Z');
+      const created = buildPayload({ ...base, mode: 'create', original: { pickupPlanAt: '2026-10-07T02:30:00.000Z' } });
+      expect(created.pickupPlanAt).toBe('2026-10-06T17:00:00.000Z');
+    });
+
+    it('a sale has no plan days', () => {
+      const p = buildPayload({ ...base, orderType: 'SALE', mode: 'edit', original: { pickupPlanAt: '2026-10-07T02:30:00.000Z' } });
+      expect([p.pickupPlanAt, p.returnPlanAt]).toEqual([undefined, undefined]);
+    });
+  });
+
   it('sends no days on a sale', () => {
     const p = buildPayload({ ...base, orderType: 'SALE', lines: repriceLines(base.lines, 'SALE'), mode: 'create' });
     expect(p.pickupPlanAt).toBeUndefined();

@@ -213,6 +213,7 @@ light theme, 1440 × 900. A fresh product (FIXED, stock 3) and customer per run;
 | WEB-RT-02 | same day (today + 2) |
 | WEB-RT-03 | pickup tomorrow, 3 days |
 | WEB-RT-04 | cross-month (last day of the month → + 2) |
+| WEB-RT-05 | no order: browser clock 2026-10-05T16:30Z (23:30 VN), `/dashboard`, fast-forward 1 h + focus (#589) |
 
 | Check | Expected |
 |---|---|
@@ -223,8 +224,9 @@ light theme, 1440 × 900. A fresh product (FIXED, stock 3) and customer per run;
 | calendar month | `/calendar` cell aria "d/m, giao N": Δ +1 on P only (P ± 1, R, R + 1 unchanged) |
 | calendar day | day panel P "Cần giao" lists `#n` with "trả R" (same day: "giao và trả trong ngày"); P ± 1 do not |
 | availability | `/availability` (product picked in the search box), per-day "còn": stock − 1 on P..R, stock on P − 1 and R + 1 |
-| availability deep link (first case of each zone, 5 loads) | **known #579**: `/availability?productId=` (product page button) drops the product on some loads (race) |
+| availability deep link (first case of each zone, 5 loads) | `/availability?productId=` (product page button) opens the product on every load (#579, fixed in #589) |
 | dashboard (WEB-RT-01, 03) | "Việc hôm nay" label = today (VN); P = today: "Cần giao hôm nay" +1 and lists `#n`; P = tomorrow: "Ngày mai · <label>" Giao +1, today +0 |
+| today rolls over (WEB-RT-05) | dashboard subtitle "T2 05/10" at 23:30 VN; after 1 h + focus "T3 06/10" and `GET /api/analytics/period?startDate=2026-10-06` (#589, WEB-2) |
 | after hand-over | PICKUPED via API: calendar Δ "trả" +1 on R only; R panel "Cần nhận trả" lists it, R + 1 does not |
 
 ## BF-SCOPE / BF-NUM — Phạm vi, quyền, mã đơn (`scope-roles.e2e.test.js`)
