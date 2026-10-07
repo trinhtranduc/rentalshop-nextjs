@@ -50,3 +50,13 @@ body:
       description: Decisions that are not made yet. Leave blank if there are none.
     validations:
       required: false
+  - type: textarea
+    id: api-impact
+    attributes:
+      label: API impact (installed apps)
+      description: >-
+        Required if this changes an API route, a package the API uses, a business rule, prisma/ or an API env var.
+        Routes touched, which old iOS / Android / web code on main-real calls them (file:line), and the verdict
+        (skill api-compat-review). Write "No API change" otherwise. The PR adds a row to .agent/api-changes/LOG.md.
+    validations:
+      required: true
