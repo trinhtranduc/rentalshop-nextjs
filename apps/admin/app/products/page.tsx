@@ -22,7 +22,7 @@ import {
 } from '@rentalshop/ui';
 import { Plus, Download, Upload, MoreVertical, Trash2 } from 'lucide-react';
 import { useAuth, useProductsData, usePermissions } from '@rentalshop/hooks';
-import { productsApi } from '@rentalshop/utils';
+import { productsApi, getShopTodayKey } from '@rentalshop/utils';
 import type { ProductFilters, ProductWithDetails } from '@rentalshop/types';
 
 /**
@@ -424,7 +424,7 @@ export default function AdminProductsPage() {
               const url = window.URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = `products-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+              a.download = `products-export-${getShopTodayKey()}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);

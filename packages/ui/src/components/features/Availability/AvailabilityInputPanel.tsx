@@ -14,7 +14,7 @@ import {
 } from '@rentalshop/ui';
 import type { DateRange } from '@rentalshop/ui';
 import { useAvailabilityTranslations } from '@rentalshop/hooks';
-import { parseProductImages } from '@rentalshop/utils';
+import { parseProductImages, dateKeyToPickerDate, getShopTodayKey } from '@rentalshop/utils';
 import { ProductSearchField } from './ProductSearchField';
 import { Package, X, Minus, Plus } from 'lucide-react';
 import { cn } from '../../../lib/cn';
@@ -226,7 +226,7 @@ export const AvailabilityInputPanel: React.FC<AvailabilityInputPanelProps> = ({
           <DateRangePicker
             value={dateRange}
             onChange={onDateRangeChange}
-            minDate={new Date()}
+            minDate={dateKeyToPickerDate(getShopTodayKey())}
             placeholder={`${t('pickupDate')} – ${t('returnDate')}`}
             disabled={disabled}
           />

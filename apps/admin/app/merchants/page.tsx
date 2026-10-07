@@ -13,7 +13,7 @@ import {
 } from '@rentalshop/ui';
 import { Download } from 'lucide-react';
 import { useMerchantsData } from '@rentalshop/hooks';
-import { merchantsApi } from '@rentalshop/utils';
+import { merchantsApi, getShopTodayKey } from '@rentalshop/utils';
 
 /**
  * ✅ MODERN MERCHANTS PAGE (URL State Pattern)
@@ -276,7 +276,7 @@ export default function MerchantsPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `merchants-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+            a.download = `merchants-export-${getShopTodayKey()}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

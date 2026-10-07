@@ -24,7 +24,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
-import { ordersApi, productsApi, formatPhoneNumber } from '@rentalshop/utils';
+import { ordersApi, productsApi, formatPhoneNumber, formatInShopZone } from '@rentalshop/utils';
 import { Copy } from 'lucide-react';
 import { useDedupedApi } from '@rentalshop/hooks';
 
@@ -126,9 +126,9 @@ export default function ProductOrdersPage() {
     }).format(amount);
   };
 
+  // Order dates in Vietnam time, whatever the browser zone (#578 ADM-9)
   const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
+    return formatInShopZone(date, 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

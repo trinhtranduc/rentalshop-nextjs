@@ -1,12 +1,13 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { formatInShopZone } from "@rentalshop/utils"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 /**
- * Format a date to a readable string
+ * Format a business date-time in the shop zone (Vietnam)
  * @param date - Date to format
  * @param locale - Locale for formatting (default: 'vi-VN')
  * @returns Formatted date string
@@ -14,17 +15,14 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | string | null | undefined, locale: string = 'vi-VN'): string {
   if (!date) return 'N/A';
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  if (isNaN(dateObj.getTime())) return 'Invalid Date';
-  
-  return new Intl.DateTimeFormat(locale, {
+  // Business dates in the shop zone (Vietnam), whatever the browser zone (#578 ADM-9)
+  return formatInShopZone(date, locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(dateObj);
+  }) || 'Invalid Date';
 }
 
 /**
@@ -38,13 +36,12 @@ export function formatDateOnly(
   locale: string = 'vi-VN'
 ): string {
   if (!date) return 'N/A';
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(dateObj.getTime())) return 'Invalid Date';
-  return new Intl.DateTimeFormat(locale, {
+  // Shop civil day (Vietnam); a `YYYY-MM-DD` key is that day (#578 ADM-9)
+  return formatInShopZone(date, locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(dateObj);
+  }) || 'Invalid Date';
 }
 
 // formatCurrency is now exported from @rentalshop/utils for centralized currency management 

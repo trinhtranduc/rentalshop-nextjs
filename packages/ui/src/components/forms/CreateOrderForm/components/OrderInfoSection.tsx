@@ -29,7 +29,7 @@ import {
 } from '@rentalshop/ui';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { getLocalDateKey, countRentalDays } from '@rentalshop/utils';
+import { countRentalDays, dateKeyToPickerDate, pickerDateToDateKey } from '@rentalshop/utils';
 import { 
   User, 
   Search, 
@@ -495,8 +495,9 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 initialStartDate={formData.pickupPlanAt}
                 initialEndDate={formData.returnPlanAt}
                 onPeriodChange={(startAt, endAt) => {
-                  const startDate = getLocalDateKey(startAt);
-                  const endDate = getLocalDateKey(endAt);
+                  // The tapped cells' local y/m/d are the days the admin chose, in any browser zone (#578 PKG-3)
+                  const startDate = pickerDateToDateKey(startAt);
+                  const endDate = pickerDateToDateKey(endAt);
                   
                   onFormDataChange('pickupPlanAt', startDate);
                   onFormDataChange('returnPlanAt', endDate);
@@ -516,12 +517,13 @@ export const OrderInfoSection: React.FC<OrderInfoSectionProps> = ({
                 </label>
                 <DateRangePicker
                   value={{
-                    from: formData.pickupPlanAt ? new Date(formData.pickupPlanAt) : undefined,
-                    to: formData.returnPlanAt ? new Date(formData.returnPlanAt) : undefined
+                    // Keys (or stored instants) shown on the local calendar cell of that Vietnam day (#578 PKG-3)
+                    from: dateKeyToPickerDate(formData.pickupPlanAt),
+                    to: dateKeyToPickerDate(formData.returnPlanAt)
                   }}
                   onChange={(range) => {
-                    const startDate = range.from ? getLocalDateKey(range.from) : '';
-                    const endDate = range.to ? getLocalDateKey(range.to) : '';
+                    const startDate = range.from ? pickerDateToDateKey(range.from) : '';
+                    const endDate = range.to ? pickerDateToDateKey(range.to) : '';
                     
                     onFormDataChange('pickupPlanAt', startDate);
                     onFormDataChange('returnPlanAt', endDate);

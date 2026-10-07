@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardHeader,
@@ -36,6 +36,8 @@ import type {
   Plan,
   Merchant
 } from '@rentalshop/types';
+import { toShopDateTimeLocalValue, fromShopDateTimeLocalValue } from '@rentalshop/utils';
+import { initialSubscriptionFormDates, shiftShopDate } from './subscription-dates';
 
 interface SubscriptionFormData {
   merchantId: number;
@@ -87,6 +89,11 @@ export function SubscriptionForm({
   title,
   submitText
 }: SubscriptionFormProps) {
+  // The edit page passes startDate/endDate/nextBillingDate; reading only currentPeriodStart/End replaced them with
+  // "now" on every save without edits (#578 ADM-6).
+  const initialDates = initialSubscriptionFormDates(initialData);
+  // In edit mode the stored dates are kept until the admin changes the start, the status or the plan.
+  const datesTouched = useRef(mode !== 'edit');
   const [formData, setFormData] = useState<SubscriptionFormData>({
     merchantId: initialData?.merchantId || 0,
     planId: initialData?.planId || 0,
@@ -109,9 +116,9 @@ export function SubscriptionForm({
     autoRenew: initialData?.autoRenew ?? true,
     changeReason: initialData?.changeReason || '',
     // Initialize additional fields
-    startDate: initialData?.currentPeriodStart || new Date(),
-    endDate: initialData?.currentPeriodEnd || new Date(),
-    nextBillingDate: initialData?.currentPeriodEnd || new Date()
+    startDate: initialDates.startDate,
+    endDate: initialDates.endDate,
+    nextBillingDate: initialDates.nextBillingDate
   });
 
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -186,9 +193,9 @@ export function SubscriptionForm({
 
   // Calculate trial end date when start date or plan changes
   useEffect(() => {
+    if (!datesTouched.current) return;
     if (selectedPlan && formData.status === 'trial' && selectedPlan.trialDays > 0) {
-      const endDate = new Date(formData.startDate || formData.currentPeriodStart);
-      endDate.setDate(endDate.getDate() + selectedPlan.trialDays);
+      const endDate = shiftShopDate(new Date(formData.startDate || formData.currentPeriodStart), { days: selectedPlan.trialDays });
       
       setFormData(prev => ({
         ...prev,
@@ -201,9 +208,10 @@ export function SubscriptionForm({
 
   // Calculate end date for active subscriptions
   useEffect(() => {
+    if (!datesTouched.current) return;
     if (formData.status === 'ACTIVE' && selectedPlan) {
-      const endDate = new Date(formData.startDate || formData.currentPeriodStart);
-      endDate.setMonth(endDate.getMonth() + 1); // Default to 1 month
+      // Default to 1 month (Vietnam calendar month, end-of-month clamp)
+      const endDate = shiftShopDate(new Date(formData.startDate || formData.currentPeriodStart), { months: 1 });
       
       setFormData(prev => ({
         ...prev,
@@ -266,6 +274,9 @@ export function SubscriptionForm({
   };
 
   const handleInputChange = (field: keyof SubscriptionFormData, value: any) => {
+    if (field === 'startDate' || field === 'status' || field === 'planId') {
+      datesTouched.current = true;
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -427,8 +438,8 @@ export function SubscriptionForm({
               </Label>
               <Input
                 type="datetime-local"
-                value={formData.startDate?.toISOString().slice(0, 16) || ''}
-                onChange={(e) => handleInputChange('startDate', new Date(e.target.value))}
+                value={toShopDateTimeLocalValue(formData.startDate)}
+                onChange={(e) => handleInputChange('startDate', fromShopDateTimeLocalValue(e.target.value) ?? undefined)}
                 disabled={mode === 'view'}
                 className={errors.startDate ? 'border-red-500' : ''}
               />
@@ -447,8 +458,8 @@ export function SubscriptionForm({
               </Label>
               <Input
                 type="datetime-local"
-                value={formData.nextBillingDate.toISOString().slice(0, 16)}
-                onChange={(e) => handleInputChange('nextBillingDate', new Date(e.target.value))}
+                value={toShopDateTimeLocalValue(formData.nextBillingDate)}
+                onChange={(e) => handleInputChange('nextBillingDate', fromShopDateTimeLocalValue(e.target.value) ?? undefined)}
                 disabled={mode === 'view'}
                 className={errors.nextBillingDate ? 'border-red-500' : ''}
               />
@@ -470,8 +481,8 @@ export function SubscriptionForm({
               </Label>
               <Input
                 type="datetime-local"
-                value={formData.endDate.toISOString().slice(0, 16)}
-                onChange={(e) => handleInputChange('endDate', new Date(e.target.value))}
+                value={toShopDateTimeLocalValue(formData.endDate)}
+                onChange={(e) => handleInputChange('endDate', fromShopDateTimeLocalValue(e.target.value) ?? undefined)}
                 disabled={mode === 'view'}
                 className={errors.endDate ? 'border-red-500' : ''}
               />
@@ -493,8 +504,8 @@ export function SubscriptionForm({
               </Label>
               <Input
                 type="datetime-local"
-                value={formData.endDate.toISOString().slice(0, 16)}
-                onChange={(e) => handleInputChange('endDate', new Date(e.target.value))}
+                value={toShopDateTimeLocalValue(formData.endDate)}
+                onChange={(e) => handleInputChange('endDate', fromShopDateTimeLocalValue(e.target.value) ?? undefined)}
                 disabled={mode === 'view'}
               />
             </div>

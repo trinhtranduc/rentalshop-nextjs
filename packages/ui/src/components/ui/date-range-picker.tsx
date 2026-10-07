@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { useCommonTranslations } from '@rentalshop/hooks';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { addDaysToDateKey, dateKeyToPickerDate, getShopTodayKey, pickerDateToDateKey } from '@rentalshop/utils';
 import { Button } from './button';
 import { Input } from './input';
 import { cn } from '../../lib/cn';
@@ -23,7 +24,8 @@ export interface DateRangePickerProps {
    * Minimum selectable date.
    * 
    * - If omitted, **all past dates are allowed** (no lower bound).
-   * - Pass `new Date()` if you explicitly want to block past dates.
+   * - Pass `dateKeyToPickerDate(getShopTodayKey())` to block days before the Vietnam today.
+   * Dates in and out of this picker are calendar cells: their local y/m/d is the day (`pickerDateToDateKey`).
    */
   minDate?: Date;
   maxDate?: Date;
@@ -111,23 +113,27 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     return { daysInMonth, startingDayOfWeek };
   };
 
+  // Cells, values and limits are compared by calendar day (the cell's local y/m/d), so a value with a time of
+  // day (hourly rentals) still highlights its cell and a `minDate` of "now" does not disable today (#578 PKG-9).
+  const dayKey = (date: Date) => pickerDateToDateKey(date);
+
   const isDateInRange = (date: Date) => {
     if (!tempRange.from && !tempRange.to) return false;
     
-    const dateTime = date.getTime();
-    const fromTime = tempRange.from?.getTime() || 0;
-    const toTime = tempRange.to?.getTime() || 0;
+    const key = dayKey(date);
+    const fromKey = tempRange.from ? dayKey(tempRange.from) : '';
+    const toKey = tempRange.to ? dayKey(tempRange.to) : '';
     
     if (tempRange.from && tempRange.to) {
-      return dateTime >= fromTime && dateTime <= toTime;
+      return key >= fromKey && key <= toKey;
     }
     
     if (tempRange.from) {
-      return dateTime >= fromTime;
+      return key >= fromKey;
     }
     
     if (tempRange.to) {
-      return dateTime <= toTime;
+      return key <= toKey;
     }
     
     return false;
@@ -136,19 +142,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const isDateSelected = (date: Date) => {
     if (!tempRange.from && !tempRange.to) return false;
     
-    const dateTime = date.getTime();
-    const fromTime = tempRange.from?.getTime() || 0;
-    const toTime = tempRange.to?.getTime() || 0;
-    
-    return dateTime === fromTime || dateTime === toTime;
+    const key = dayKey(date);
+    return (!!tempRange.from && key === dayKey(tempRange.from)) || (!!tempRange.to && key === dayKey(tempRange.to));
   };
 
   const isDateDisabled = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (minDate && date < minDate) return true;
-    if (maxDate && date > maxDate) return true;
+    const key = dayKey(date);
+    if (minDate && key < dayKey(minDate)) return true;
+    if (maxDate && key > dayKey(maxDate)) return true;
     
     return false;
   };
@@ -161,7 +162,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       setTempRange({ from: date, to: undefined });
     } else {
       // Complete range
-      if (date < tempRange.from!) {
+      if (dayKey(date) < dayKey(tempRange.from!)) {
         setTempRange({ from: date, to: tempRange.from });
       } else {
         setTempRange({ from: tempRange.from, to: date });
@@ -191,12 +192,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   };
 
   const handlePresetClick = (days: number) => {
-    const today = new Date();
-    const from = new Date(today);
-    from.setDate(today.getDate() + 1); // Tomorrow
-    
-    const to = new Date(from);
-    to.setDate(from.getDate() + days - 1);
+    // Tomorrow in Vietnam, drawn on its local calendar cell
+    const fromKey = addDaysToDateKey(getShopTodayKey(), 1);
+    const from = dateKeyToPickerDate(fromKey) as Date;
+    const to = dateKeyToPickerDate(addDaysToDateKey(fromKey, days - 1)) as Date;
     
     const newRange = { from, to };
     setTempRange(newRange);

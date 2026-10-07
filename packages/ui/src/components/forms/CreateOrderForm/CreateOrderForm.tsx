@@ -56,6 +56,7 @@ import { LoyaltyRedeemSection } from './components/LoyaltyRedeemSection';
 import { LoyaltyOrderInfo } from '../../features/Loyalty/LoyaltyOrderInfo';
 import { Card, CardHeader, CardTitle, CardContent } from '@rentalshop/ui';
 import { CustomerCreationDialog } from './components/CustomerCreationDialog';
+import { shopDayRangeIso } from '../../features/Availability/availability-days';
 import { EditCustomerDialog } from '@rentalshop/ui';
 
 import type { 
@@ -65,6 +66,17 @@ import type {
   ProductAvailabilityStatus 
 } from './types';
 import type { Customer, CustomerUpdateInput } from '@rentalshop/types';
+
+
+/**
+ * Availability window of the chosen Vietnam days: 00:00:00.000 of pickup to 23:59:59.000 of return, Vietnam time.
+ * These are the exact bytes a Vietnam browser sent before (`new Date(key + 'T00:00:00')` in browser time); other
+ * browser zones sent another day's window (#578 PKG-3).
+ */
+function availabilityWindow(pickupKey: string, returnKey: string): { startDate: string; endDate: string } {
+  const { startDate, endDate } = shopDayRangeIso(pickupKey, returnKey);
+  return { startDate, endDate: new Date(Date.parse(endDate) - 999).toISOString() };
+}
 
 export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   // Free units per item for the period, reported by the item rows (short-stock warning in the summary)
@@ -264,8 +276,7 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
               productId: item.productId,
               quantity: item.quantity || 1,
             })),
-            startDate: new Date(formData.pickupPlanAt + 'T00:00:00').toISOString(),
-            endDate: new Date(formData.returnPlanAt + 'T23:59:59').toISOString(),
+            ...availabilityWindow(formData.pickupPlanAt as string, formData.returnPlanAt as string), // both set (checked above)
             includeTimePrecision: true,
             timeZone: 'UTC',
             outletId: formData.outletId,
@@ -408,8 +419,11 @@ export const CreateOrderForm: React.FC<CreateOrderFormProps> = (props) => {
   ): Promise<ProductAvailabilityStatus> => {
     // Check if we have cached batch results for this product
     // Only use cache if dates match current form dates
-    const currentPickupDate = formData.pickupPlanAt ? new Date(formData.pickupPlanAt + 'T00:00:00').toISOString() : undefined;
-    const currentReturnDate = formData.returnPlanAt ? new Date(formData.returnPlanAt + 'T23:59:59').toISOString() : undefined;
+    const currentWindow = formData.pickupPlanAt && formData.returnPlanAt
+      ? availabilityWindow(formData.pickupPlanAt, formData.returnPlanAt)
+      : undefined;
+    const currentPickupDate = currentWindow?.startDate;
+    const currentReturnDate = currentWindow?.endDate;
     
     if (
       batchAvailabilityCache.has(product.id) &&

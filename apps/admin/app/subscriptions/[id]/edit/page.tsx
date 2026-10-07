@@ -120,9 +120,11 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
     planId: subscription.planId,
     planVariantId: subscription.planVariantId,
     status: subscription.status as 'TRIAL' | 'ACTIVE' | 'CANCELLED' | 'SUSPENDED',
-    startDate: new Date(subscription.startDate),
-    endDate: subscription.endDate ? new Date(subscription.endDate) : undefined,
-    nextBillingDate: new Date(subscription.nextBillingDate),
+    // The API returns currentPeriodStart/End (no startDate/endDate/nextBillingDate): pass the stored instants so a
+    // save without edits keeps them; `new Date(subscription.startDate)` was an Invalid Date and the form fell back
+    // to "now" (#578 ADM-6). The form derives start/end/next billing from these.
+    currentPeriodStart: new Date(subscription.currentPeriodStart),
+    currentPeriodEnd: new Date(subscription.currentPeriodEnd),
     amount: subscription.amount,
     currency: subscription.currency,
     autoRenew: subscription.autoRenew,

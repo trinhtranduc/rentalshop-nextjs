@@ -27,7 +27,8 @@ import {
   ActivityFeed
 } from '@rentalshop/ui';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { analyticsApi, addDaysToDateKey, formatDateKeyInTimeZone, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { analyticsApi, formatInShopZone } from '@rentalshop/utils';
+import { getDashboardWindow, bucketByShopPeriod, groupCountsByShopPeriod, inDashboardWindow, type DashboardWindow } from './dashboard-buckets';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { TopProduct, TopOutlet } from '@rentalshop/types';
 import { 
@@ -277,240 +278,28 @@ export default function AdminDashboard() {
     router.push(`${currentPathname}?${params.toString()}`, { scroll: false });
   }, [currentPathname, router, searchParams]);
 
-  // Calculate subscription revenue data for chart based on subscription creation/success date
-  const calculateSubscriptionRevenueData = (subscriptions: any[], timePeriod: string, startDate: Date, endDate: Date) => {
-    // Filter subscriptions that were created/successful in the time period
-    const subscriptionsInPeriod = subscriptions.filter((s: any) => {
-      const createdAt = new Date(s.createdAt);
-      const status = String(s.status).toLowerCase();
-      return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(status);
-    });
-    
-    if (timePeriod === 'today') {
-      // For today, show hourly breakdown of subscriptions created today
-      const hourlyData = [];
-      for (let hour = 0; hour < 24; hour++) {
-        const hourStart = new Date(startDate);
-        hourStart.setHours(hour, 0, 0, 0);
-        const hourEnd = new Date(startDate);
-        hourEnd.setHours(hour + 1, 0, 0, 0);
-        
-        // Calculate revenue for subscriptions created in this hour
-        const hourlyRevenue = subscriptionsInPeriod.reduce((sum, sub) => {
-          const createdAt = new Date(sub.createdAt);
-          
-          // Check if subscription was created in this hour
-          if (createdAt >= hourStart && createdAt < hourEnd) {
-            return sum + (sub.amount || 0);
-          }
-          return sum;
-        }, 0);
-        
-        hourlyData.push({
-          period: hourStart.toLocaleTimeString('en-US', { hour: '2-digit', hour12: false }),
-          actual: hourlyRevenue
-        });
-      }
-      return hourlyData;
-      
-    } else if (timePeriod === 'month') {
-      // For month, show daily breakdown of subscriptions created in this month
-      const dailyData = [];
-      const current = new Date(startDate);
-      
-      while (current <= endDate) {
-        const dayStart = new Date(current);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(current);
-        dayEnd.setHours(23, 59, 59, 999);
-        
-        // Calculate revenue for subscriptions created on this day
-        const dailyRevenue = subscriptionsInPeriod.reduce((sum, sub) => {
-          const createdAt = new Date(sub.createdAt);
-          
-          // Check if subscription was created on this day
-          if (createdAt >= dayStart && createdAt <= dayEnd) {
-            return sum + (sub.amount || 0);
-          }
-          return sum;
-        }, 0);
-        
-        dailyData.push({
-          period: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          actual: dailyRevenue
-        });
-        
-        current.setDate(current.getDate() + 1);
-      }
-      return dailyData;
-      
-    } else if (timePeriod === 'year') {
-      // For year, show monthly breakdown of subscriptions created in this year
-      const monthlyData = [];
-      const current = new Date(startDate);
-      
-      while (current <= endDate) {
-        const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
-        const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
-        
-        // Calculate revenue for subscriptions created during this month
-        const monthlyRevenue = subscriptionsInPeriod.reduce((sum, sub) => {
-          const createdAt = new Date(sub.createdAt);
-          
-          // Check if subscription was created during this month
-          if (createdAt >= monthStart && createdAt <= monthEnd) {
-            return sum + (sub.amount || 0);
-          }
-          return sum;
-        }, 0);
-        
-        monthlyData.push({
-          period: current.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          actual: monthlyRevenue
-        });
-        
-        current.setMonth(current.getMonth() + 1);
-      }
-      return monthlyData;
-    }
-    
-    return [];
-  };
+  // Chart data on Vietnam hours / days / months, whatever the browser zone (#578 ADM-7)
+  const calculateSubscriptionRevenueData = (subscriptions: any[], dashWindow: DashboardWindow) =>
+    bucketByShopPeriod(
+      subscriptions.filter((s: any) => ['active', 'trial'].includes(String(s.status).toLowerCase())),
+      dashWindow,
+      (s: any) => s.createdAt,
+      (s: any) => s.amount || 0
+    );
 
-  // Calculate merchants registration data for chart based on merchant creation date
-  const calculateMerchantsRegistrationData = (merchants: any[], timePeriod: string, startDate: Date, endDate: Date) => {
-    // Filter merchants that were created in the time period
-    const merchantsInPeriod = merchants.filter((m: any) => {
-      const createdAt = new Date(m.createdAt);
-      return createdAt >= startDate && createdAt <= endDate;
-    });
-    
-    if (timePeriod === 'today') {
-      // For today, show hourly breakdown of merchants created today
-      const hourlyData = [];
-      for (let hour = 0; hour < 24; hour++) {
-        const hourStart = new Date(startDate);
-        hourStart.setHours(hour, 0, 0, 0);
-        const hourEnd = new Date(startDate);
-        hourEnd.setHours(hour + 1, 0, 0, 0);
-        
-        // Count merchants created in this hour
-        const hourlyCount = merchantsInPeriod.filter((m: any) => {
-          const createdAt = new Date(m.createdAt);
-          return createdAt >= hourStart && createdAt < hourEnd;
-        }).length;
-        
-        hourlyData.push({
-          period: hourStart.toLocaleTimeString('en-US', { hour: '2-digit', hour12: false }),
-          actual: hourlyCount
-        });
-      }
-      return hourlyData;
-      
-    } else if (timePeriod === 'month') {
-      // For month, show daily breakdown of merchants created in this month
-      const dailyData = [];
-      const current = new Date(startDate);
-      
-      while (current <= endDate) {
-        const dayStart = new Date(current);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(current);
-        dayEnd.setHours(23, 59, 59, 999);
-        
-        // Count merchants created on this day
-        const dailyCount = merchantsInPeriod.filter((m: any) => {
-          const createdAt = new Date(m.createdAt);
-          return createdAt >= dayStart && createdAt <= dayEnd;
-        }).length;
-        
-        dailyData.push({
-          period: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          actual: dailyCount
-        });
-        
-        current.setDate(current.getDate() + 1);
-      }
-      return dailyData;
-      
-    } else if (timePeriod === 'year') {
-      // For year, show monthly breakdown of merchants created in this year
-      const monthlyData = [];
-      const current = new Date(startDate);
-      
-      while (current <= endDate) {
-        const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
-        const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
-        
-        // Count merchants created during this month
-        const monthlyCount = merchantsInPeriod.filter((m: any) => {
-          const createdAt = new Date(m.createdAt);
-          return createdAt >= monthStart && createdAt <= monthEnd;
-        }).length;
-        
-        monthlyData.push({
-          period: current.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          actual: monthlyCount
-        });
-        
-        current.setMonth(current.getMonth() + 1);
-      }
-      return monthlyData;
-    }
-    
-    return [];
-  };
+  const calculateMerchantsRegistrationData = (merchants: any[], dashWindow: DashboardWindow) =>
+    bucketByShopPeriod(merchants, dashWindow, (m: any) => m.createdAt, () => 1);
 
   // Simple fetch function - can be called from useEffect or button
   const fetchSystemMetrics = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Create date range based on selected time period
-      const today = new Date();
-      let startDate: Date;
-      let endDate: Date;
-      let groupBy: 'day' | 'month' | 'year';
-
-      switch (period) {
-        case 'today':
-          // For today, we want to include the entire current day
-          // Use UTC to avoid timezone issues
-          const todayUTC = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
-          startDate = new Date(todayUTC.getFullYear(), todayUTC.getMonth(), todayUTC.getDate());
-          endDate = new Date(todayUTC.getFullYear(), todayUTC.getMonth(), todayUTC.getDate() + 1);
-          groupBy = 'day';
-          break;
-        case 'month':
-          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-          groupBy = 'day';
-          break;
-        case 'year':
-          startDate = new Date(today.getFullYear(), 0, 1);
-          endDate = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
-          groupBy = 'month';
-          break;
-        default:
-          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-          groupBy = 'day';
-      }
-      
-      // API date range as shop civil days (YYYY-MM-DD, Asia/Ho_Chi_Minh), which the analytics API reads as
-      // Vietnam days (#355). toISOString() on the local-midnight Dates above sent the previous day as the start
-      // (and two days for "today"). The Dates stay for the merchant/subscription filters below.
-      const todayKey = formatDateKeyInTimeZone(today, SHOP_TIMEZONE);
-      const monthStartKey = `${todayKey.slice(0, 7)}-01`;
-      const apiRange =
-        period === 'today'
-          ? { startDate: todayKey, endDate: todayKey }
-          : period === 'year'
-            ? { startDate: `${todayKey.slice(0, 4)}-01-01`, endDate: `${todayKey.slice(0, 4)}-12-31` }
-            : {
-                startDate: monthStartKey,
-                endDate: addDaysToDateKey(`${addDaysToDateKey(monthStartKey, 31).slice(0, 7)}-01`, -1)
-              };
+      // Vietnam days of the period (#355, #578 ADM-7): the API reads the keys as Vietnam days and the
+      // merchant/subscription charts below use the same window, whatever the browser zone.
+      const dashWindow = getDashboardWindow(period);
+      const groupBy: 'day' | 'month' = dashWindow.groupBy;
+      const apiRange = { startDate: dashWindow.startKey, endDate: dashWindow.endKey };
 
       const filters = {
         startDate: apiRange.startDate,
@@ -565,48 +354,13 @@ export default function AdminDashboard() {
       if (merchantsResponse.success && merchantsResponse.data) {
         const merchantsArray = merchantsResponse.data.merchants || [];
         
-        // Filter merchants within the selected time period
-        const filteredMerchants = merchantsArray.filter((merchant: any) => {
-          if (!merchant.createdAt) return false;
-          const createdDate = new Date(merchant.createdAt);
-          return createdDate >= startDate && createdDate <= endDate;
-        });
-        
-        // Group merchants by creation date period
-        const merchantsByPeriod = new Map<string, { period: string; count: number; sortKey: string }>();
-        
-        filteredMerchants.forEach((merchant: any) => {
-          const date = new Date(merchant.createdAt);
-          let period: string;
-          let sortKey: string;
-          
-          if (groupBy === 'day') {
-            // For day grouping: "Jan 15"
-            period = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            sortKey = date.toISOString().split('T')[0]; // YYYY-MM-DD for sorting
-          } else {
-            // For month grouping: "Jan"
-            period = date.toLocaleDateString('en-US', { month: 'short' });
-            sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM for sorting
-          }
-          
-          const existing = merchantsByPeriod.get(sortKey);
-          if (existing) {
-            existing.count += 1;
-          } else {
-            merchantsByPeriod.set(sortKey, { period, count: 1, sortKey });
-          }
-        });
-        
-        // Transform to chart format and sort chronologically
-        const transformedMerchants = Array.from(merchantsByPeriod.values())
-          .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-          .map(({ period, count }) => ({
-            period,
-            actual: count,
-            projected: 0
-          }));
-        
+        // New merchants per Vietnam day (month view) or month (year view), sorted and labelled by that same day
+        const transformedMerchants = groupCountsByShopPeriod(
+          merchantsArray.filter((merchant: any) => !!merchant.createdAt),
+          dashWindow,
+          (merchant: any) => merchant.createdAt
+        );
+
         setOrdersData(transformedMerchants);
       }
 
@@ -637,7 +391,7 @@ export default function AdminDashboard() {
         setNewMerchants(newMerchantsData);
 
         // Calculate merchants registration data for chart based on time period
-        const merchantsRegistrationChartData = calculateMerchantsRegistrationData(merchantsArray, period, startDate, endDate);
+        const merchantsRegistrationChartData = calculateMerchantsRegistrationData(merchantsArray, dashWindow);
         setMerchantsRegistrationData(merchantsRegistrationChartData);
       }
 
@@ -664,16 +418,15 @@ export default function AdminDashboard() {
           pro: subscriptions.filter((s: any) => String(s.plan?.name || '').toLowerCase().includes('pro')).length,
           totalRevenue: subscriptions
             .filter((s: any) => {
-              const createdAt = new Date(s.createdAt);
               const status = String(s.status).toLowerCase();
-              return createdAt >= startDate && createdAt <= endDate && ['active', 'trial'].includes(status);
+              return inDashboardWindow(s.createdAt, dashWindow) && ['active', 'trial'].includes(status);
             })
             .reduce((sum: number, s: any) => sum + (s.amount || 0), 0)
         };
         setSubscriptionStats(stats);
 
         // Calculate subscription revenue data for chart based on time period
-        const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, period, startDate, endDate);
+        const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, dashWindow);
         setSubscriptionRevenueData(subscriptionRevenueChartData);
       }
     } catch (error) {
@@ -1105,7 +858,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="text-xs text-gray-500">
-                            {new Date(merchant.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {formatInShopZone(merchant.createdAt, 'en', { month: 'short', day: 'numeric' })}
                           </div>
                           <StatusBadge 
                             status={merchant.subscriptionStatus} 

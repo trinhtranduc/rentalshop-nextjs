@@ -20,7 +20,7 @@ import {
   LoadingIndicator,
 } from '@rentalshop/ui';
 import { Package, Trash2, Upload, Download, MoreVertical } from 'lucide-react';
-import { merchantsApi, productsApi } from '@rentalshop/utils';
+import { merchantsApi, productsApi, getShopTodayKey } from '@rentalshop/utils';
 import { useAuth, useProductsData, usePermissions } from '@rentalshop/hooks';
 import type { ProductFilters } from '@rentalshop/types';
 
@@ -232,7 +232,7 @@ export default function MerchantProductsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `products-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
+      a.download = `products-${getShopTodayKey()}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

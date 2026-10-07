@@ -1,11 +1,13 @@
 import React from 'react';
 import { Button, Badge } from '../../../ui';
 import { Calendar, Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import { orderPresetKeys, rangeForKeys } from './order-date-presets';
 
 export interface QuickFilterOption {
   id: string;
   label: string;
   icon?: React.ReactNode;
+  /** Vietnam day bounds (00:00 … 23:59:59.999 VN) of the preset, whatever the browser zone */
   startDate: Date;
   endDate: Date;
   description?: string;
@@ -30,62 +32,12 @@ export function OrderQuickFilters({
   onFilterChange,
   showWarning = false
 }: OrderQuickFiltersProps) {
-  const now = new Date();
-  
-  // Calculate date ranges
-  const getDateRange = (days: number): { start: Date; end: Date } => {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-    start.setHours(0, 0, 0, 0);
-    
-    return { start, end };
-  };
-  
-  const getTodayRange = (): { start: Date; end: Date } => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  };
-  
-  const getThisWeekRange = (): { start: Date; end: Date } => {
-    const start = new Date();
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Monday
-    start.setDate(diff);
-    start.setHours(0, 0, 0, 0);
-    
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  };
-  
-  const getThisMonthRange = (): { start: Date; end: Date } => {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  };
-  
-  const getThisQuarterRange = (): { start: Date; end: Date } => {
-    const quarter = Math.floor(now.getMonth() / 3);
-    const start = new Date(now.getFullYear(), quarter * 3, 1);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  };
-  
   // Quick filter options
-  const todayRange = getTodayRange();
-  const weekRange = getThisWeekRange();
-  const monthRange = getDateRange(30);
-  const quarterRange = getThisQuarterRange();
+  // Vietnam days from the Vietnam today (#578 PKG-4)
+  const todayRange = rangeForKeys(orderPresetKeys('today'));
+  const weekRange = rangeForKeys(orderPresetKeys('week'));
+  const monthRange = rangeForKeys(orderPresetKeys('month'));
+  const quarterRange = rangeForKeys(orderPresetKeys('quarter'));
   
   const quickFilters: QuickFilterOption[] = [
     {

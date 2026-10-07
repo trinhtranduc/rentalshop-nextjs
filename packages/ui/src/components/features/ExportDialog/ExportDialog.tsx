@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Download, Calendar } from 'lucide-react';
+import { getShopTodayKey } from '@rentalshop/utils';
+import { exportCustomDefaultKeys } from '../Orders/components/order-date-presets';
 
 export type DateRangePeriod = '1month' | '3months' | '6months' | '1year' | 'custom';
 
@@ -53,7 +55,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   // Generate file name based on format - updates when format changes
   const generatedFileName = React.useMemo(() => {
     if (!hasSelection) return undefined;
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = getShopTodayKey();
     const extension = format === 'csv' ? 'csv' : 'xlsx';
     return `${resourceName.toLowerCase()}-export-${dateStr}.${extension}`;
   }, [hasSelection, resourceName, format]);
@@ -86,12 +88,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   // Calculate default dates for custom range (last 30 days)
   React.useEffect(() => {
     if (period === 'custom' && !startDate && !endDate) {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - 30);
-      
-      setEndDate(end.toISOString().split('T')[0]);
-      setStartDate(start.toISOString().split('T')[0]);
+      // Last 30 Vietnam days (the UTC day was yesterday before 07:00 VN) — #578 PKG-4
+      const defaults = exportCustomDefaultKeys();
+      setEndDate(defaults.endDate);
+      setStartDate(defaults.startDate);
     }
   }, [period, startDate, endDate]);
 
@@ -195,7 +195,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        max={endDate || new Date().toISOString().split('T')[0]}
+                        max={endDate || getShopTodayKey()}
                       />
                     </div>
                     <div className="space-y-2">
@@ -206,7 +206,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         min={startDate}
-                        max={new Date().toISOString().split('T')[0]}
+                        max={getShopTodayKey()}
                       />
                     </div>
                   </div>
