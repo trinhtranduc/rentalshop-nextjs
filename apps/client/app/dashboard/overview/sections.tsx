@@ -278,7 +278,7 @@ export function CollectedChart({
                       onClick={() => setHover((h) => (h === i ? null : i))}
                       className={`relative flex h-full cursor-default flex-col items-center justify-end gap-1 rounded-md outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ar-primary ${
                         active ? 'bg-ar-subtle' : ''
-                      } ${dim ? 'opacity-45' : ''}`}
+                      } ${dim ? 'opacity-40' : ''}`}
                     >
                       {active && (
                         <span
