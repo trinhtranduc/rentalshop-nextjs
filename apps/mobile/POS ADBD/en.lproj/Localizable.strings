@@ -2269,3 +2269,5 @@
 "products.category.nameTooShort" = "A category name needs at least 2 characters";
 "products.category.nameTooLong" = "A category name has at most 50 characters";
 "products.category.hasProducts" = "This category still has products. Move them to another category before deleting it.";
+/* #633 Overview top lists */
+"overview.dash.top.viewAll" = "View all";

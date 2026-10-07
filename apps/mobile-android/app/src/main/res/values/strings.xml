@@ -779,6 +779,10 @@
     <string name="overview_v2_collateral_held">Security deposit held</string>
     <string name="overview_v2_top_rented">Most rented · by order value</string>
     <string name="overview_v2_rentals">%1$d rentals</string>
+    <string name="overview_v2_view_all">View all</string>
+    <string name="overview_v2_top_customers">Top customers</string>
+    <string name="overview_v2_customer_orders">%1$d orders</string>
+    <string name="overview_v2_top_empty">Nothing in this period yet.</string>
     <string name="overview_v2_no_access">Your account cannot see reports</string>
     <string name="overview_v2_bars">Real income per day</string>
     <string name="settings_v2_title">Settings</string>

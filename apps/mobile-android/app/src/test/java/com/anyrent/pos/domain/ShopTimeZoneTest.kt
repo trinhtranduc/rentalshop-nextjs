@@ -214,7 +214,7 @@ class ShopTimeZoneTest(private val phoneZone: String) {
             CalendarLogic.dayPath("2026-10-10"),
         )
         assertEquals(
-            "/api/analytics/period?startDate=2026-10-01&endDate=2026-10-10&groupBy=day&limit=3&timeZone=Asia%2FHo_Chi_Minh",
+            "/api/analytics/period?startDate=2026-10-01&endDate=2026-10-10&groupBy=day&limit=5&timeZone=Asia%2FHo_Chi_Minh",
             OverviewLogic.periodPath(DayRange(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 10))),
         )
         assertEquals("/api/analytics/outlet-operations?timeZone=Asia%2FHo_Chi_Minh", OverviewLogic.outletOperationsPath())

@@ -383,4 +383,25 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertEqual(parameters["limit"] as? Int, 5)
         XCTAssertEqual(OverviewDashLogic.topLimit, 5)
     }
+
+    // MARK: Xem tất cả (#633)
+
+    func testViewAllKeepsUpToFiftyRowsInTheApiOrder() {
+        let products = (1...60).map { OverviewReport.TopProduct(id: $0, name: "SP \($0)", rentalCount: 1, totalRevenue: Double(1000 - $0), image: nil) }
+        XCTAssertEqual(OverviewDashLogic.topProductRows(products).count, 5, "the card stays at five")
+        let all = OverviewDashLogic.topProductRows(products, limit: OverviewDashLogic.topAllLimit)
+        XCTAssertEqual(all.count, 50)
+        XCTAssertEqual(all.first?.id, 1)
+        XCTAssertEqual(all.last?.id, 50)
+        XCTAssertEqual(all.first?.ratio, 1)
+        let customers = (1...7).map { OverviewReport.TopCustomer(id: $0, name: "K \($0)", orderCount: 1, totalSpent: 100) }
+        XCTAssertEqual(OverviewDashLogic.topCustomerRows(customers, limit: OverviewDashLogic.topAllLimit).count, 7)
+    }
+
+    func testViewAllRequestAsksForFiftyTopRows() {
+        let parameters = TabsV2APIService.overviewReportParameters(DayKeyRange(start: "2026-10-01", end: "2026-10-31"),
+                                                                   limit: OverviewDashLogic.topAllLimit)
+        XCTAssertEqual(parameters["limit"] as? Int, 50)
+        XCTAssertEqual(parameters["startDate"] as? String, "2026-10-01")
+    }
 }

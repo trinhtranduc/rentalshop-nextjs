@@ -382,20 +382,48 @@ final class OverviewV2ViewController: BaseViewControler {
             return card([title, OVFont.label("overview.dash.top.empty".localized(), DS.TextSize.secondary, color: OVColor.muted, lines: 0)])
         }
         let views: [UIView] = rows.map { row in
-            let subtitle = products ? PluralText.format("overview.dash.top.rentals", count: row.count, row.count)
-                                    : PluralText.format("overview.dash.orders", count: row.count, row.count)
-            let view = OverviewTopRowView(row: row, amountText: OverviewDashLogic.compact(row.amount, vietnamese: vietnamese),
-                                          subtitle: subtitle, color: products ? OVColor.blue : OVColor.violet)
+            let view = Self.topRowView(row, products: products, vietnamese: vietnamese)
             if row.id != nil {
-                view.accessibilityTraits = UIAccessibilityTraitButton
                 view.addTarget(self, action: products ? #selector(topProductTapped(_:)) : #selector(topCustomerTapped(_:)),
                                for: .touchUpInside)
-            } else {
-                view.isUserInteractionEnabled = false
             }
             return view
         }
-        return card([title] + views, spacing: 4)
+        // #633: "Xem tất cả" opens the period's ranking (up to 50), like the web drawer
+        let viewAll = UIButton(type: .system)
+        viewAll.setTitle("overview.dash.top.viewAll".localized(), for: .normal)
+        viewAll.titleLabel?.font = OVFont.make(DS.TextSize.secondary, .semibold)
+        viewAll.setTitleColor(OVColor.blue, for: .normal)
+        viewAll.setContentHuggingPriority(.required, for: .horizontal)
+        viewAll.addTarget(self, action: products ? #selector(viewAllProductsTapped) : #selector(viewAllCustomersTapped), for: .touchUpInside)
+        let header = UIStackView(arrangedSubviews: [title, viewAll])
+        header.alignment = .center
+        header.spacing = 8
+        return card([header] + views, spacing: 4)
+    }
+
+    /// One ranking row (the card and "Xem tất cả" share it); not tappable without an id
+    static func topRowView(_ row: OverviewTopRow, products: Bool, vietnamese: Bool) -> OverviewTopRowView {
+        let subtitle = products ? PluralText.format("overview.dash.top.rentals", count: row.count, row.count)
+                                : PluralText.format("overview.dash.orders", count: row.count, row.count)
+        let view = OverviewTopRowView(row: row, amountText: OverviewDashLogic.compact(row.amount, vietnamese: vietnamese),
+                                      subtitle: subtitle, color: products ? OVColor.blue : OVColor.violet)
+        if row.id != nil {
+            view.accessibilityTraits = UIAccessibilityTraitButton
+        } else {
+            view.isUserInteractionEnabled = false
+        }
+        return view
+    }
+
+    @objc private func viewAllProductsTapped() { openTopAll(products: true) }
+
+    @objc private func viewAllCustomersTapped() { openTopAll(products: false) }
+
+    private func openTopAll(products: Bool) {
+        let controller = OverviewTopAllViewController(products: products, range: range, vietnamese: vietnamese)
+        controller.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     @objc private func topProductTapped(_ sender: OverviewTopRowView) {

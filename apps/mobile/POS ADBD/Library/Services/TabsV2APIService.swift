@@ -84,13 +84,15 @@ final class TabsV2APIService: BaseService {
     // MARK: - Overview
 
     @discardableResult
-    func overviewReport(_ range: DayKeyRange, completion: @escaping (OverviewReport?, NSError?) -> Void) -> DataRequest {
-        request(APIEndpoint.Path.analyticsPeriod, parameters: Self.overviewReportParameters(range), completion: completion)
+    func overviewReport(_ range: DayKeyRange, limit: Int = OverviewDashLogic.topLimit,
+                        completion: @escaping (OverviewReport?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.analyticsPeriod, parameters: Self.overviewReportParameters(range, limit: limit), completion: completion)
     }
 
-    static func overviewReportParameters(_ range: DayKeyRange) -> [String: Any] {
-        // #620: `limit` sizes topProducts / topCustomers (API default 3); the overview shows five, as web
-        ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range), "limit": OverviewDashLogic.topLimit,
+    static func overviewReportParameters(_ range: DayKeyRange, limit: Int = OverviewDashLogic.topLimit) -> [String: Any] {
+        // #620: `limit` sizes topProducts / topCustomers (API default 3, max 50); the overview shows five, as web;
+        // "Xem tất cả" (#633) asks for `topAllLimit`
+        ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range), "limit": limit,
          "timeZone": Date.shopTimeZone.identifier]
     }
 

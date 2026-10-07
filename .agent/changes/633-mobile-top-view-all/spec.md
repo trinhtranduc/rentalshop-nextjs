@@ -6,8 +6,8 @@ Status: accepted · Intent: ./intent.md
    none while loading, on error, or when empty.
 2. Tapping it opens a screen titled like the card, with the period under the title, listing up to 50 rows from the
    same endpoint with `limit=50`, same range as the card.
-3. Rows keep the API order (largest revenue first), show rank, name, amount, rentals (products) / orders
-   (customers), with the bar ratio against the first row, like the card.
+3. Rows keep the API order (largest revenue first) and are the card's row (name, amount, rentals for products /
+   orders for customers, bar ratio against the first row). No rank number, as on the card.
 4. A row with an id opens the same screen the card row opens; a row without id is not tappable.
 5. Loading shows a spinner; failure shows the error text and a retry; empty shows the card's empty text.
 6. The card itself still shows 5 rows and still asks `limit=5`.

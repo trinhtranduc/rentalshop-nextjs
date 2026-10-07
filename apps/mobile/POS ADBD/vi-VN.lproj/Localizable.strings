@@ -2267,3 +2267,5 @@
 "products.category.nameTooShort" = "Tên danh mục cần ít nhất 2 ký tự";
 "products.category.nameTooLong" = "Tên danh mục tối đa 50 ký tự";
 "products.category.hasProducts" = "Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.";
+/* #633 Tổng quan top lists */
+"overview.dash.top.viewAll" = "Xem tất cả";
