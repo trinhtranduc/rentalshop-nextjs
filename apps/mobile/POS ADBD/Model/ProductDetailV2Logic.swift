@@ -133,7 +133,7 @@ enum ProductDetailV2Logic {
 /// Overview "Trễ hạn" list: PICKUPED rent orders sorted by return day ascending, cut at the first one not late
 enum OverviewLateFilter {
     /// The late rows of a page and whether the next page can still hold late rows
-    static func page(_ orders: [Order], hasMore: Bool, now: Date = Date(), timeZone: TimeZone = .current) -> (orders: [Order], hasMore: Bool) {
+    static func page(_ orders: [Order], hasMore: Bool, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> (orders: [Order], hasMore: Bool) {
         let late = orders.prefix { order in
             OrdersHomeLogic.lateDays(orderType: order.orderType, status: order.status, pickupPlanAt: order.pickupPlanAt,
                                      returnPlanAt: order.returnPlanAt, now: now, timeZone: timeZone) > 0

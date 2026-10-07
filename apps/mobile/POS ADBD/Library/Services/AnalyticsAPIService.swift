@@ -903,9 +903,9 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
 
 // MARK: - Outlet Operations (#371)
 extension AnalyticsAPIService {
-    /// GET /api/analytics/outlet-operations for the device day. A user without the dashboard permission gets an
+    /// GET /api/analytics/outlet-operations for the shop day (#596). A user without the dashboard permission gets an
     /// error with code 403, so the caller can hide "Việc cần làm".
-    func loadOutletOperations(timeZone: String = DeviceTimeZone.identifier,
+    func loadOutletOperations(timeZone: String = Date.shopTimeZone.identifier,
                               completion: @escaping (TodayWork?, NSError?) -> Void) -> DataRequest {
         let fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.outletOperations
         return AuthSession.shared.request(fullURL, method: .get, parameters: ["timeZone": timeZone], headers: BaseService.jsonHeader)

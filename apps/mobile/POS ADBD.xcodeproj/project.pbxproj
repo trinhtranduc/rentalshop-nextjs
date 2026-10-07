@@ -14,6 +14,7 @@
 		9C6BC26D8481C7603F0EC26E /* ScheduleConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */; };
 		00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */; };
 		00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C68665233AF9D666CE7E723C /* Phase8Tests.swift */; };
+		596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */; };
 		021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */; };
 		039E4564507EC2529E6A9529 /* Phase7GapsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1128874207B931039540DAB /* Phase7GapsTests.swift */; };
 		A430B0000000000000000001 /* Issue430Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A430F0000000000000000001 /* Issue430Tests.swift */; };
@@ -647,6 +648,7 @@
 		C466A2A395154AD70553624A /* OrderRowCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderRowCell.swift; sourceTree = "<group>"; };
 		C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductFormViewController.swift; sourceTree = "<group>"; };
 		C68665233AF9D666CE7E723C /* Phase8Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase8Tests.swift; sourceTree = "<group>"; };
+		596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShopTimeZoneTests.swift; sourceTree = "<group>"; };
 		C914E00F23A48955008B3EDF /* PreviewHeaderCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewHeaderCell.swift; sourceTree = "<group>"; };
 		C914E01423A49075008B3EDF /* UIScrollView+Additions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIScrollView+Additions.swift"; sourceTree = "<group>"; };
 		C914E01523A49077008B3EDF /* UIView+Additions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+Additions.swift"; sourceTree = "<group>"; };
@@ -1000,6 +1002,7 @@
 				A430F0000000000000000001 /* Issue430Tests.swift */,
 				A344F0000000000000000001 /* AuthSessionTests.swift */,
 				C68665233AF9D666CE7E723C /* Phase8Tests.swift */,
+				596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */,
 				4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */,
 			);
 			name = "POS ADBDTests";
@@ -1805,6 +1808,7 @@
 				A430B0000000000000000001 /* Issue430Tests.swift in Sources */,
 				A344B0000000000000000001 /* AuthSessionTests.swift in Sources */,
 				00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */,
+				596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */,
 				5150715066E3694042E01913 /* HandOverCollateralTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

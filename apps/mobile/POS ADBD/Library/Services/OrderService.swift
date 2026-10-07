@@ -418,8 +418,8 @@ class OrderService: BaseService, OrderServiceProtocol {
     func loadOverviewOrder(from: Date?, to: Date?, completion: @escaping ([Order]?, NSError?) -> Void) {
         let path = APIEndpoint.Path.orders
         var params: [String: Any] = [:]
-        params["startDate"] = from?.dateServerInString() ?? Date().dateServerInString()
-        params["endDate"] = to?.dateServerInString() ?? Date().dateServerInString()
+        params["startDate"] = from?.dateServerInString() ?? Date().shopDateKeyString() // shop today (#596)
+        params["endDate"] = to?.dateServerInString() ?? Date().shopDateKeyString()
         
         performGET(
             path: path,

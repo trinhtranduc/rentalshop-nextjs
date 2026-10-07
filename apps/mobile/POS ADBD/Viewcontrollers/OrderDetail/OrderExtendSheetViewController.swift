@@ -51,7 +51,7 @@ final class OrderExtendSheetViewController: UIViewController {
         let first = RentalExtension.firstSelectableDay(after: currentReturn)
         picker.datePickerMode = .date
         picker.preferredDatePickerStyle = .inline
-        picker.timeZone = .current
+        picker.timeZone = Date.shopTimeZone
         picker.minimumDate = first
         picker.date = first
         picker.tintColor = DS.Color.primary

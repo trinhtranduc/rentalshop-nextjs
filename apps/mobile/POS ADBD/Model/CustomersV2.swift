@@ -234,7 +234,7 @@ enum CustomersV2Logic {
     }
 
     /// Rent: "T7 03/10 → T2 05/10" (one day when both are the same day); sale: the created day
-    static func orderDates(_ row: CustomerOrderRow, timeZone: TimeZone = .current) -> String {
+    static func orderDates(_ row: CustomerOrderRow, timeZone: TimeZone = Date.shopTimeZone) -> String {
         if row.orderType == .rent, let pickup = row.pickupPlanAt {
             let from = DayFormatter.short(pickup, timeZone: timeZone)
             guard let ret = row.returnPlanAt else { return from }

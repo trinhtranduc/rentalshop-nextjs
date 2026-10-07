@@ -3,7 +3,7 @@
 //  POS ADBD
 //
 //  "Gia hạn" of a rental (#390): a later return day, checked over the added days only with the batch availability
-//  call, then saved as `returnPlanAt` with the new day count and, when the staff typed extra rent, the new total (#425). Days are device-zone days, like the cart: the new return day ends at its last
+//  call, then saved as `returnPlanAt` with the new day count and, when the staff typed extra rent, the new total (#425). Days are shop-zone days (`Date.shopTimeZone`, #596), like the cart: the new return day ends at its last
 //  second (`endOfDay`), so a one-day extension still occupies that day.
 //
 
@@ -22,20 +22,20 @@ enum RentalExtension {
     }
 
     /// Start of the day after the current return day: the first day the picker allows
-    static func firstSelectableDay(after currentReturn: Date, timeZone: TimeZone = .current) -> Date {
+    static func firstSelectableDay(after currentReturn: Date, timeZone: TimeZone = Date.shopTimeZone) -> Date {
         let calendar = calendar(timeZone)
         let day = calendar.startOfDay(for: currentReturn)
         return calendar.date(byAdding: .day, value: 1, to: day) ?? day
     }
 
     /// Last second of `day`'s civil day, as the cart sends a return day
-    static func returnPlanAt(_ day: Date, timeZone: TimeZone = .current) -> Date {
+    static func returnPlanAt(_ day: Date, timeZone: TimeZone = Date.shopTimeZone) -> Date {
         let calendar = calendar(timeZone)
         let start = calendar.startOfDay(for: day)
         return calendar.date(byAdding: DateComponents(day: 1, second: -1), to: start) ?? day
     }
 
-    static func extraDays(currentReturn: Date, newDay: Date, timeZone: TimeZone = .current) -> Int {
+    static func extraDays(currentReturn: Date, newDay: Date, timeZone: TimeZone = Date.shopTimeZone) -> Int {
         let calendar = calendar(timeZone)
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: currentReturn),
                                            to: calendar.startOfDay(for: newDay)).day ?? 0
@@ -44,7 +44,7 @@ enum RentalExtension {
 
     /// The added days to check: start of the day after the current return day → end of the new day; nil when no day
     /// is added
-    static func window(currentReturn: Date, newDay: Date, timeZone: TimeZone = .current) -> (start: Date, end: Date)? {
+    static func window(currentReturn: Date, newDay: Date, timeZone: TimeZone = Date.shopTimeZone) -> (start: Date, end: Date)? {
         guard extraDays(currentReturn: currentReturn, newDay: newDay, timeZone: timeZone) > 0 else { return nil }
         return (firstSelectableDay(after: currentReturn, timeZone: timeZone), returnPlanAt(newDay, timeZone: timeZone))
     }
@@ -76,14 +76,14 @@ enum RentalExtension {
     }
 
     /// Inclusive days from the pickup day to the new return day, as the cart counts them; nil without a pickup day
-    static func rentalDuration(pickup: Date?, newDay: Date, timeZone: TimeZone = .current) -> Int? {
+    static func rentalDuration(pickup: Date?, newDay: Date, timeZone: TimeZone = Date.shopTimeZone) -> Int? {
         guard let pickup else { return nil }
         return CartV2Logic.rentalDays(pickup: pickup, return: newDay, timeZone: timeZone)
     }
 
     /// The `PUT /api/orders/{id}` body: new return day, new day count, and the new total only with extra rent
     static func updateRequest(pickup: Date?, newDay: Date, oldTotal: Double, extra: Double?,
-                              timeZone: TimeZone = .current) -> UpdateOrderRequest {
+                              timeZone: TimeZone = Date.shopTimeZone) -> UpdateOrderRequest {
         UpdateOrderRequest(totalAmount: newTotal(oldTotal: oldTotal, extra: extra),
                            returnPlanAt: returnPlanAt(newDay, timeZone: timeZone).dateServerISOString(),
                            rentalDuration: rentalDuration(pickup: pickup, newDay: newDay, timeZone: timeZone))

@@ -171,7 +171,7 @@ struct CalendarDayRow: Equatable {
 }
 
 enum CalendarV2Logic {
-    static func gregorian(_ timeZone: TimeZone = .current) -> Calendar {
+    static func gregorian(_ timeZone: TimeZone = Date.shopTimeZone) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         return calendar
