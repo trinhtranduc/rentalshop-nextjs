@@ -196,6 +196,7 @@ export interface OutletReference {
   merchant?: MerchantReference;
   defaultBankAccount?: BankAccountReference; // Default bank account for payments
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  printBankQr?: boolean; // Bank block + VietQR on bills (#628)
 }
 
 /**

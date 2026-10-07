@@ -204,6 +204,8 @@ model Outlet {
   description  String?
   /// Printed at the bottom of RENT receipts, e.g. "Vui lòng mang theo CMND khi lấy đồ" (#347)
   printNote    String?
+  /// Print the default bank account + VietQR on bills of this outlet (#628). Synced web ↔ mobile.
+  printBankQr  Boolean       @default(false)
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())
