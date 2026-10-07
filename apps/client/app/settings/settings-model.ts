@@ -12,7 +12,8 @@ export type SettingsTab =
   | 'profile'
   | 'account'
   | 'language'
-  | 'appearance';
+  | 'appearance'
+  | 'printer';
 
 export interface SettingsTabDef {
   id: SettingsTab;
@@ -31,6 +32,8 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'account', group: 'me' },
   { id: 'language', group: 'me' },
   { id: 'appearance', group: 'me' },
+  /** Máy in (#623): bill and label paper sizes of this computer. */
+  { id: 'printer', group: 'me' },
 ];
 
 /** `themeSwitch: false` (the NEXT_PUBLIC_ENABLE_THEME_SWITCH kill switch) hides Giao diện. */
