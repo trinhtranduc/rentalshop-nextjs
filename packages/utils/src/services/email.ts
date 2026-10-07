@@ -5,6 +5,12 @@
 // Lazy load env to avoid initialization issues in browser
 // AWS SES will be imported dynamically to avoid requiring it if not used
 
+/**
+ * Dates in emails are printed on the shop's calendar (Vietnam), not the server zone (UTC on Railway),
+ * so an end at 00:00–06:59 VN does not print as the previous day (#588). Same value as `SHOP_TIMEZONE`.
+ */
+const EMAIL_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -868,10 +874,11 @@ export function generatePlanChangeEmail(data: PlanChangeData): string {
   const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'zh' ? 'zh-CN' : locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : 'en-US';
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat(dateLocale, { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Intl.DateTimeFormat(dateLocale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: EMAIL_TIME_ZONE,
     }).format(new Date(date));
   };
 
@@ -966,10 +973,11 @@ export function generateSubscriptionRenewalEmail(data: SubscriptionRenewalData):
   // Note: amount and currency are included in data for tracking/logging but not displayed in email
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: EMAIL_TIME_ZONE,
     }).format(new Date(date));
   };
 
@@ -1072,10 +1080,11 @@ export function generateSubscriptionExtensionEmail(data: SubscriptionExtensionDa
   const dateLocale = locale === 'vi' ? 'vi-VN' : locale === 'zh' ? 'zh-CN' : locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : 'en-US';
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat(dateLocale, { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Intl.DateTimeFormat(dateLocale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: EMAIL_TIME_ZONE,
     }).format(new Date(date));
   };
 
@@ -1180,7 +1189,8 @@ export function generateSubscriptionExpiryReminderEmail(data: SubscriptionExpiry
     return new Intl.DateTimeFormat(dateLocale, {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: EMAIL_TIME_ZONE,
     }).format(new Date(date));
   };
 
@@ -1321,10 +1331,11 @@ export function generateSubscriptionStatusChangeEmail(data: SubscriptionStatusCh
   const { merchantName, planName, status, reason, periodEnd } = data;
   
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: EMAIL_TIME_ZONE,
     }).format(new Date(date));
   };
 

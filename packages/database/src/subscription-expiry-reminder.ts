@@ -5,7 +5,7 @@
 // (POST /api/cron/subscription-expiry-reminders).
 
 import { prisma } from './client';
-import { getCalendarDayRangeInTimeZone } from '../../utils/src/core/date-range';
+import { formatDateKeyInTimeZone, getCalendarDayRangeInTimeZone } from '../../utils/src/core/date-range';
 import { SUBSCRIPTION_EXPIRY_CONFIG } from '../../constants/src/subscription';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '../../constants/src/status';
 
@@ -155,7 +155,7 @@ export async function recordExpiryReminderSent(params: {
     data: {
       subscriptionId,
       type: SUBSCRIPTION_EXPIRY_CONFIG.REMINDER_ACTIVITY_TYPE,
-      description: `Expiry reminder sent ${daysBefore} day${daysBefore !== 1 ? 's' : ''} before ${periodEnd.toISOString().split('T')[0]}`,
+      description: `Expiry reminder sent ${daysBefore} day${daysBefore !== 1 ? 's' : ''} before ${formatDateKeyInTimeZone(periodEnd, SUBSCRIPTION_EXPIRY_CONFIG.REMINDER_TIMEZONE)}`,
       reason: reminderKey,
       metadata: JSON.stringify({
         daysBefore,

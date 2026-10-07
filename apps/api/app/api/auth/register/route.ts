@@ -12,7 +12,7 @@ import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { registerTimeZone } from '../../../../lib/shop-timezone';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { civilDaysBetween, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {
   getDefaultPricingConfig,
   normalizeBusinessTags,
@@ -428,9 +428,8 @@ export async function POST(request: NextRequest) {
           subscription: {
             planName: result.trialPlan.name,
             trialEnd: result.trialEndDate,
-            daysRemaining: Math.ceil(
-              (result.trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-            )
+            // Vietnam civil days from today to the trial end day (#588)
+            daysRemaining: civilDaysBetween(new Date(), result.trialEndDate)
           },
           requiresEmailVerification: true
         }),

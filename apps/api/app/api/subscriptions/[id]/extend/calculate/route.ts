@@ -12,6 +12,7 @@ import {
   normalizeBillingInterval,
   calculateSubscriptionPrice,
   calculateExtensionTotal,
+  civilDaysBetween,
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
@@ -95,11 +96,10 @@ async function handleCalculateExtensionPrice(
     const oldEndDate = subscription.currentPeriodEnd 
       ? new Date(subscription.currentPeriodEnd) 
       : new Date();
-    const extensionDays = Math.ceil(
-      (newEndDate.getTime() - oldEndDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    // Vietnam civil days (#588); a new end after the old end stays valid as before.
+    const extensionDays = Math.max(0, civilDaysBetween(oldEndDate, newEndDate));
 
-    if (extensionDays <= 0) {
+    if (newEndDate.getTime() <= oldEndDate.getTime()) {
       return NextResponse.json(
         ResponseBuilder.error('INVALID_EXTENSION_DURATION'),
         { status: 400 }
@@ -123,9 +123,10 @@ async function handleCalculateExtensionPrice(
       ? new Date(subscription.currentPeriodStart)
       : new Date();
     const now = new Date();
-    const currentPeriodDays = Math.ceil((oldEndDate.getTime() - currentPeriodStart.getTime()) / (1000 * 60 * 60 * 24));
-    const usedDays = Math.max(0, Math.ceil((now.getTime() - currentPeriodStart.getTime()) / (1000 * 60 * 60 * 24)));
-    const remainingDays = Math.max(0, Math.ceil((oldEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    // Vietnam civil days (#588)
+    const currentPeriodDays = Math.max(1, civilDaysBetween(currentPeriodStart, oldEndDate));
+    const usedDays = Math.max(0, civilDaysBetween(currentPeriodStart, now));
+    const remainingDays = Math.max(0, civilDaysBetween(now, oldEndDate));
     
     // Shared pure logic (no API call): keep extension proration consistent everywhere.
     const extensionCalc = calculateExtensionTotal({
