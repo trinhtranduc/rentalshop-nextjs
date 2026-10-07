@@ -271,7 +271,7 @@ calls return 403 and the data read back as the merchant is unchanged. BF-SCOPE-0
 | BF-STAFF-19 | Không đổi thông tin cửa hàng | `PUT /api/settings/merchant` name, `PUT /api/settings/currency`, `PUT /api/merchants/{m}` | 403; name, currency unchanged |
 | BF-STAFF-20 | Không đổi "Cho tạo đơn khi trùng lịch" | `PUT /api/settings/merchant` `allowOverlappingOrders` | 403; setting unchanged |
 | BF-STAFF-21 | Không sửa chi nhánh | `PUT /api/outlets?id=`, `PUT /api/merchants/{m}/outlets/{o}` | 403; name unchanged |
-| BF-STAFF-22 | **Known bug #636** Không sửa chi nhánh qua cài đặt | `PUT /api/settings/outlet` name, address | 403; unchanged (today 200, outlet renamed; restored by the test) |
+| BF-STAFF-22 | Không sửa chi nhánh qua cài đặt (#636) | `PUT /api/settings/outlet` name, address | 403; unchanged |
 | BF-STAFF-23 | Xem gói dịch vụ | `GET /api/subscriptions/status` | 200 |
 | BF-STAFF-24 | Không đổi gói | `PUT /api/merchants/{m}/plan`, `POST /api/subscriptions` | 403; planId unchanged |
 | BF-STAFF-25 | Xem chương trình khách thân thiết | `GET /api/loyalty/program` | 200 |

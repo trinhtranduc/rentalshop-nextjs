@@ -8,7 +8,6 @@
 const {
   Session,
   describeE2E,
-  knownBug,
   must,
   request,
   vnDateKey,
@@ -298,7 +297,7 @@ describeE2E('BF-STAFF OUTLET_STAFF permissions', () => {
     expect((await outletRow(outletId)).name).toBe(before.name);
   });
 
-  knownBug('#636', 'BF-STAFF-22 cannot update the outlet through PUT /api/settings/outlet', async () => {
+  test('BF-STAFF-22 cannot update the outlet through PUT /api/settings/outlet (#636)', async () => {
     const before = await outletRow(outletId);
     let r;
     try {
