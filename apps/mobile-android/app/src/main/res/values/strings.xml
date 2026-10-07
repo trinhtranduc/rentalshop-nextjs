@@ -994,7 +994,7 @@
     <string name="v2_detail_chip_renting">Rented</string>
     <string name="v2_detail_chip_done">Done</string>
     <string name="v2_detail_strip_caption">Free units per day · %1$d in this shop</string>
-    <string name="v2_detail_strip_accessibility">Free in the next 7 days</string>
+    <string name="v2_detail_strip_accessibility">Free in the next 6 days</string>
     <string name="v2_detail_state_pickup_today">Hand over today</string>
     <string name="v2_detail_state_pickup_on">Hand over %1$s</string>
     <string name="v2_detail_state_return_today">Return today</string>
@@ -1348,6 +1348,32 @@
     <string name="settings_v2_categories">Categories</string>
     <string name="v2_category_search">Search categories</string>
     <string name="v2_category_actions">Rename or delete</string>
+    <!-- #642 Lịch trống month screen -->
+    <string name="v2_calendar_total">%1$d in total</string>
+    <string name="v2_calendar_month">%3$s %2$d</string>
+    <string name="v2_calendar_prev_month">Previous month</string>
+    <string name="v2_calendar_next_month">Next month</string>
+    <string name="v2_calendar_left">%1$d left</string>
+    <string name="v2_calendar_none">none</string>
+    <string name="v2_calendar_legend_full">All free</string>
+    <string name="v2_calendar_legend_low">Few left</string>
+    <string name="v2_calendar_legend_none">None</string>
+    <string name="v2_calendar_legend_chosen">Chosen</string>
+    <plurals name="v2_calendar_day_orders">
+        <item quantity="one">%1$s · %2$d order holding it</item>
+        <item quantity="other">%1$s · %2$d orders holding it</item>
+    </plurals>
+    <string name="v2_calendar_no_orders">No order holds it on this day</string>
+    <string name="v2_calendar_quantity">%1$d pcs</string>
+    <plurals name="v2_calendar_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="v2_calendar_min_left">at least %1$d free</string>
+    <string name="v2_calendar_pick_start">Tap the pickup day</string>
+    <string name="v2_calendar_pick_end">%1$s → tap the return day</string>
+    <string name="v2_calendar_add">Add to cart with these days</string>
+    <string name="v2_calendar_overlap_note">Some days have none left · the shop allows overlapping orders</string>
     <!-- #640 order share image -->
     <string name="share_kind_rent">Rental order</string>
     <string name="share_kind_sale">Sale order</string>

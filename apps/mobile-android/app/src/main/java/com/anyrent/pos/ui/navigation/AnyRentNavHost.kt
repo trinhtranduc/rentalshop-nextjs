@@ -82,6 +82,7 @@ import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.CartCheckoutScreen
 import com.anyrent.pos.ui.home.HomeScreen
 import com.anyrent.pos.ui.home.v2.CartV2Screen
+import com.anyrent.pos.ui.home.v2.ProductCalendarScreen
 import com.anyrent.pos.ui.home.v2.ProductDetailScreen
 import com.anyrent.pos.ui.history.ChangeHistoryScreen
 import com.anyrent.pos.ui.history.ChangeHistoryTarget
@@ -152,6 +153,8 @@ object Routes {
     const val Subscription = "subscription"
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
+    // #642 "Lịch trống" month screen opened from the new product detail (the old availability route stays)
+    const val ProductCalendar = "product-calendar/{productId}"
     const val CartV2 = "cart-v2"
     const val CartV2Preview = "cart-v2-preview"
     // #387 redesigned customer detail (flag newCustomers)
@@ -170,6 +173,7 @@ object Routes {
         "overview-top/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
     fun productDetailV2(id: Int) = "product-v2/$id"
+    fun productCalendar(id: Int) = "product-calendar/$id"
     fun customerDetailV2(id: Int) = "customer-v2/$id"
     fun customerEditV2(id: Int) = "customer-v2-edit/$id"
     fun changeHistory(target: ChangeHistoryTarget, id: Int, subtitle: String) =
@@ -470,11 +474,21 @@ fun AnyRentNavHost(
                 productId = entry.arguments?.getInt("productId") ?: 0,
                 onBack = { rootNavController.popBackStack() },
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
-                onOpenCalendar = { id -> rootNavController.navigate(Routes.productAvailability(id)) },
+                onOpenCalendar = { id -> rootNavController.navigate(Routes.productCalendar(id)) },
                 onOpenAllOrders = { id -> rootNavController.navigate(Routes.analyticsOrders("product", id)) },
                 onOpenHistory = { id, subtitle ->
                     rootNavController.navigate(Routes.changeHistory(ChangeHistoryTarget.PRODUCT, id, subtitle))
                 },
+            )
+        }
+        composable(
+            Routes.ProductCalendar,
+            arguments = listOf(navArgument("productId") { type = NavType.IntType }),
+        ) { entry ->
+            ProductCalendarScreen(
+                productId = entry.arguments?.getInt("productId") ?: 0,
+                onBack = { rootNavController.popBackStack() },
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
             )
         }
         composable(
