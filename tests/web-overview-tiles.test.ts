@@ -214,6 +214,21 @@ describe('forecast (optional, fed by a later API change)', () => {
     expect(forecastBar(300, [{ date: '2026/10/07', collected: 300 }], '2026-10-07')).toBeNull();
   });
 
+  it('sums only the selected period, not the wider chart series (#618)', () => {
+    // Hôm nay: the chart shows D−6..D+7, the tile must count today only
+    const chart = [
+      { date: '2026/10/06', collected: 50, expectedCollected: 40 },
+      { date: '2026/10/07', collected: 300, expectedCollected: 100 },
+      { date: '2026/10/08', collected: 0, expectedCollected: 200 },
+      { date: '2026/10/14', collected: 0, expectedCollected: 700 },
+    ];
+    const today = { startDate: '2026-10-07', endDate: '2026-10-07' };
+    expect(forecastBar(300, chart, '2026-10-07', today)).toEqual({ collected: 300, forecast: 100, pct: 75, until: '2026-10-07' });
+    // a future range keeps its whole forecast
+    const next = { startDate: '2026-10-07', endDate: '2026-10-08' };
+    expect(forecastBar(300, chart, '2026-10-07', next)).toEqual({ collected: 300, forecast: 300, pct: 50, until: '2026-10-08' });
+  });
+
   it('offers future quick ranges for the custom picker (#612)', () => {
     expect(futureQuickRanges('2026-10-07')).toEqual([
       { key: 'next7', from: '2026-10-07', to: '2026-10-13' },
