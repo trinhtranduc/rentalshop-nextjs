@@ -4,6 +4,7 @@ import { withAnyAuth } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
+import { merchantTimeZoneField } from '../../../../lib/shop-timezone';
 
 /**
  * GET /api/users/profile
@@ -70,6 +71,10 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         website: userProfile.merchant.website,
         description: userProfile.merchant.description,
         tenantKey: userProfile.merchant.tenantKey, // Include tenantKey for referral code
+        // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
+        allowOverlappingOrders: (userProfile.merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
+        ...merchantTimeZoneField(userProfile.merchant),
         isActive: userProfile.merchant.isActive,
         planId: userProfile.merchant.planId,
         totalRevenue: userProfile.merchant.totalRevenue,
@@ -85,6 +90,7 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         description: userProfile.outlet.description,
         isActive: userProfile.outlet.isActive,
         isDefault: userProfile.outlet.isDefault,
+        printBankQr: userProfile.outlet.printBankQr ?? false, // #628
         createdAt: userProfile.outlet.createdAt?.toISOString() || null,
         merchant: userProfile.outlet.merchant ? {
           id: userProfile.outlet.merchant.id,

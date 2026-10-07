@@ -564,5 +564,487 @@
       "nothing": "No money changes hands",
       "confirm": "Confirm take-back"
     }
+  },
+  "web": {
+    "title": "Orders",
+    "export": "Export Excel",
+    "exporting": "Exporting…",
+    "exportDone": "Excel file exported",
+    "exportFailed": "Could not export the file. Try again later.",
+    "select": {
+      "row": "Select order #{number}",
+      "page": "Select this page",
+      "export": "Export Excel ({count} orders)",
+      "clear": "Clear selection"
+    },
+    "create": "New order",
+    "editor": {
+      "title": "New order",
+      "editTitle": "Edit order #{number}",
+      "backToOrder": "Back to order #{number}",
+      "notEditable": "This order can no longer be edited. Only reserved rentals and completed sales can be edited.",
+      "outlet": "Outlet",
+      "pickDays": "Choose pickup and return days",
+      "daysButton": "Pickup {from} → Return {to} · {days} days",
+      "bar": "View order · {count} items",
+      "close": "Close",
+      "cancel": "Cancel",
+      "retry": "Try again",
+      "loading": "Loading…",
+      "saving": "Saving…",
+      "days": {
+        "title": "Pickup and return",
+        "pickup": "Pickup day",
+        "return": "Return day",
+        "quick": {
+          "today": "Today",
+          "tomorrow": "Tomorrow",
+          "weekend": "Weekend",
+          "threeDays": "3 days"
+        },
+        "hint": "Choose the days to see what is still free for them.",
+        "summary": "{from} → {to} · {days, plural, one {# day} other {# days}}",
+        "reversed": "The return day must be on or after the pickup day.",
+        "tooLong": "A rental can last at most {days} days.",
+        "apply": "Choose · {days} days",
+        "applyEmpty": "Choose",
+        "month": "{month}/{year}",
+        "prev": "Previous month",
+        "next": "Next month",
+        "pickPickup": "Click the pickup day, then the return day",
+        "pickReturn": "Click the return day (the pickup day again for same-day)"
+      },
+      "grid": {
+        "search": "Search name or scan barcode",
+        "searchLabel": "Search products",
+        "all": "All",
+        "helpRent": "\"Left\" counts units free for the chosen days.",
+        "helpSale": "\"Left\" counts units in stock today.",
+        "left": "Left {free}/{total}",
+        "out": "None free for these days",
+        "pickDays": "Choose days to see",
+        "add": "Add {name} to the order",
+        "image": "Photo of {name}",
+        "more": "Show more products",
+        "empty": "No products yet.",
+        "noMatch": "No products match \"{q}\".",
+        "failed": "Could not load products."
+      },
+      "per": {
+        "DAILY": "{price}/day",
+        "HOURLY": "{price}/hour",
+        "FIXED": "{price}/rental",
+        "SALE": "{price}"
+      },
+      "option": {
+        "DAILY": "Per day · {price}/day",
+        "HOURLY": "Per hour · {price}/hour",
+        "FIXED": "Per rental · {price}",
+        "SALE": "Sale price · {price}"
+      },
+      "cart": {
+        "label": "Order being created",
+        "type": "Order type",
+        "RENT": "Rent",
+        "SALE": "Sell",
+        "customer": "Customer",
+        "pickCustomer": "Choose a customer",
+        "change": "Change",
+        "choose": "Choose",
+        "rentItems": "Rented items · {count}",
+        "saleItems": "Sold items · {count}",
+        "empty": "Press + on a product to add it.",
+        "priceFor": "Pricing for {name}",
+        "less": "One less {name}",
+        "more": "One more {name}",
+        "perDayTimes": "{price} × {qty} × {days} days",
+        "onlyLeft": "Only {free} free for these days",
+        "noneLeft": "None free for these days",
+        "fits": "{free} free for these days",
+        "inStock": "{free} in stock"
+      },
+      "loyalty": {
+        "use": "Use reward points (customer has {points})",
+        "points": "Points to use",
+        "max": "max {max}",
+        "invalid": "These points cannot be used."
+      },
+      "notes": {
+        "open": "Add a note or photos",
+        "openEdit": "Edit note",
+        "label": "Note",
+        "placeholder": "For example: deliver before 9am, alter the dress",
+        "addPhoto": "Photos {count}/{max}",
+        "removePhoto": "Remove photo",
+        "photosOnOrder": "Note photos are edited on the order page."
+      },
+      "money": {
+        "rent": "Rental",
+        "goods": "Items",
+        "discount": "Discount",
+        "discountType": "Discount type",
+        "amount": "Amount",
+        "add": "Add",
+        "loyalty": "Reward points",
+        "total": "Order total",
+        "deposit": "Deposit now",
+        "security": "Security at pickup",
+        "dueAtPickup": "Due at pickup",
+        "includesSecurity": "Includes security {amount}"
+      },
+      "missing": {
+        "days": "Choose pickup and return days to create the order.",
+        "items": "Add at least one item.",
+        "customer": "Choose a customer for the order.",
+        "outlet": "No outlet for this order yet.",
+        "price": "Enter a price for {name}."
+      },
+      "customer": {
+        "title": "Choose a customer",
+        "search": "Search name or phone",
+        "add": "New customer",
+        "addNamed": "New customer \"{q}\"",
+        "none": "No matching customers.",
+        "newTitle": "New customer",
+        "name": "Full name",
+        "phone": "Phone",
+        "back": "Back",
+        "save": "Save and choose"
+      },
+      "submit": {
+        "create": "Create order",
+        "withDeposit": "Create order · take {amount} deposit",
+        "save": "Save changes"
+      },
+      "pricing": {
+        "title": "Pricing",
+        "mode": {
+          "FIXED": "Per rental",
+          "DAILY": "Per day",
+          "HOURLY": "Per hour",
+          "OTHER": "{type}"
+        },
+        "price": "Price for this order",
+        "priceFor": "Price for this order · {name}",
+        "unit": {
+          "FIXED": "/rental",
+          "DAILY": "/day",
+          "HOURLY": "/hr",
+          "OTHER": ""
+        },
+        "note": "Applies to this order only; the product price stays the same.",
+        "done": "Done",
+        "chipEmpty": "{mode} · Enter price"
+      },
+      "overlap": {
+        "tag": "Booked out {days} · in order {orders}",
+        "tagNoOrders": "Booked out {days}",
+        "title": "Schedule overlap",
+        "line": "{name} is short {count, plural, one {# unit} other {# units}} on {days} (booked in {orders}).",
+        "lineNoOrders": "{name} is short {count, plural, one {# unit} other {# units}} on {days}.",
+        "createAnyway": "Create anyway",
+        "saveAnyway": "Save anyway",
+        "blocked": "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked."
+      },
+      "confirm": {
+        "rentTitle": "Create rental order?",
+        "saleTitle": "Sell and collect?",
+        "customer": "Customer",
+        "dates": "Rental dates",
+        "range": "{range} · {days, plural, one {# day} other {# days}}",
+        "items": "Items",
+        "days": "{days, plural, one {# day} other {# days}}",
+        "collectDeposit": "Collect deposit now",
+        "collectSale": "Collect now",
+        "sell": "Sell & collect"
+      }
+    },
+    "tabs": {
+      "label": "Order lists",
+      "todo": "To do",
+      "all": "All orders",
+      "noshow": "Not picked up"
+    },
+    "status": {
+      "label": "Filter by status",
+      "all": "All",
+      "RESERVED": "Reserved",
+      "PICKUPED": "Renting",
+      "RETURNED": "Returned",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "type": {
+      "label": "Type:",
+      "all": "Rent, Sale",
+      "RENT": "Rent",
+      "SALE": "Sale"
+    },
+    "created": {
+      "label": "Created:",
+      "any": "Any day",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "month": "This month",
+      "custom": "Custom",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply"
+    },
+    "sort": {
+      "label": "Sort:",
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "nearest": "Next task first",
+      "total": "Highest total"
+    },
+    "search": {
+      "result": "Results for “{q}”",
+      "clear": "Clear search"
+    },
+    "cols": {
+      "status": "Status",
+      "customer": "Customer · order",
+      "schedule": "Schedule",
+      "note": "Note",
+      "total": "Total",
+      "pay": "Payment"
+    },
+    "row": {
+      "created": "created {day}",
+      "pickupReturn": "Pick up {pickup} · return {ret}",
+      "pickupOnly": "Pick up {pickup}",
+      "returnOn": "Return {day}",
+      "dueOn": "Due {day}",
+      "returnedOn": "Returned {day}",
+      "saleOn": "Sold {day}",
+      "cancelledOn": "Cancelled {day}",
+      "walkIn": "Walk-in customer"
+    },
+    "note": {
+      "late": "{days} days late",
+      "overduePickup": "{days} days overdue · call the customer",
+      "unprepared": "Not prepared",
+      "sale": "Sale"
+    },
+    "pay": {
+      "due": "to collect {amount}",
+      "fee": "+ late fee {amount}",
+      "refund": "refund {amount}",
+      "noRevenue": "no revenue"
+    },
+    "empty": {
+      "all": "No orders match these filters.",
+      "todo": "Nothing left to hand over or take back today.",
+      "noshow": "No overdue pickups."
+    },
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pagination",
+      "range": "{from}–{to} of {total} orders",
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "loadFailed": "Could not load orders.",
+    "retry": "Retry",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "detail": {
+      "back": "Orders",
+      "rent": "Rental",
+      "sale": "Sale",
+      "created": "created {time}",
+      "by": "by {name}",
+      "print": "Print",
+      "edit": "Edit order",
+      "more": "More actions",
+      "cancel": "Cancel order",
+      "delete": "Delete order",
+      "progress": {
+        "label": "Progress",
+        "RESERVED": "Reserved",
+        "PICKUP": "Pick up",
+        "RETURN": "Return",
+        "today": "Today · {day}",
+        "late": "Overdue · {day}"
+      },
+      "items": {
+        "rent": "Rented items",
+        "sale": "Sold items",
+        "ready": "Prepared",
+        "qty": "Qty {count}",
+        "code": "code {code}",
+        "daily": "Per day",
+        "fixed": "Fixed price",
+        "perDay": "{amount}/day × {days} days",
+        "empty": "This order has no items.",
+        "image": "Photo of {name}"
+      },
+      "notes": {
+        "title": "Notes",
+        "edit": "Edit notes",
+        "empty": "No notes yet.",
+        "general": "General",
+        "pickup": "At pickup",
+        "return": "At return",
+        "damage": "Damage",
+        "photo": "View note photo {n}"
+      },
+      "history": {
+        "title": "History",
+        "created": "{by} created the order",
+        "createdNoBy": "Order created",
+        "payment": "Payment recorded {amount}",
+        "refund": "Refunded {amount}",
+        "pickedUp": "Handed over to the customer",
+        "returned": "Items taken back",
+        "cancelled": "Order cancelled"
+      },
+      "next": {
+        "label": "Next step",
+        "pickupToday": "Hand over today",
+        "pickupOn": "Hand over {day}",
+        "pickupLate": "{days} days overdue for pickup",
+        "returnToday": "Take back today",
+        "returnOn": "Take back {day}",
+        "returnLate": "{days} days late",
+        "pickupBtn": "Hand over · collect {amount}",
+        "pickupBtnFree": "Hand over",
+        "returnBtn": "Take back · collect {amount}",
+        "returnBtnRefund": "Take back · refund {amount}",
+        "returnBtnFree": "Take back",
+        "pickupHelp": "Opens the confirmation: amount to collect and collateral received.",
+        "returnHelp": "Opens the confirmation: damage fee, amount to collect or refund.",
+        "lateHelp": "Call the customer first."
+      },
+      "pay": {
+        "title": "Payment",
+        "orderTotal": "Order total",
+        "orderTotalDiscount": "Total (discount {amount})",
+        "goodsTotal": "Goods total",
+        "discount": "Discount",
+        "depositPaid": "Deposit paid at booking",
+        "collateralMoney": "Collateral money",
+        "collateralHeld": "Collateral money held",
+        "collateral": "Collateral money",
+        "paidBefore": "Already collected",
+        "settledBefore": "Already settled",
+        "lateFee": "Late fee",
+        "damageFee": "Damage fee",
+        "collectAtPickup": "Collect at hand-over",
+        "returnRefund": "At return: give back",
+        "returnCollect": "At return: collect",
+        "saleCollected": "Collected",
+        "saleTotal": "Order total",
+        "saleDue": "To collect",
+        "noRevenue": "No revenue"
+      },
+      "settings": {
+        "title": "Notes, collateral and fees",
+        "edit": "Edit collateral & fees",
+        "photos": "Note photos",
+        "addPhoto": "Add photo",
+        "removePhoto": "Remove photo"
+      },
+      "customer": {
+        "title": "Customer",
+        "view": "View customer",
+        "call": "Call {name}"
+      },
+      "loadFailed": "Could not load this order.",
+      "notFound": "Order not found.",
+      "backToList": "Back to orders",
+      "readyFailed": "Could not save the prepared state.",
+      "dialog": {
+        "close": "Close",
+        "lateDays": "returned {days} days late",
+        "handover": {
+          "title": "Hand over to customer",
+          "confirm": "Hand over · collect {amount}",
+          "confirmFree": "Confirm hand-over"
+        },
+        "takeBack": {
+          "title": "Take back items",
+          "confirmCollect": "Take back · collect {amount}",
+          "confirmRefund": "Take back · give back {amount}",
+          "confirmFree": "Confirm return",
+          "lateFee": "Late fee",
+          "lateFeeDays": "Late fee ({days} days)",
+          "damageFee": "Damage fee"
+        },
+        "rows": {
+          "orderTotal": "Order total",
+          "depositPaid": "Deposit paid at booking",
+          "collateralMoney": "Collateral money",
+          "paidBefore": "Already collected",
+          "fees": "Late + damage fees",
+          "collateralHeld": "Collateral money held",
+          "settledBefore": "Already settled"
+        },
+        "result": {
+          "due": "Collect now",
+          "collect": "Collect more",
+          "refund": "Give back to customer",
+          "nothing": "Nothing to settle"
+        },
+        "papersKeep": "Papers kept",
+        "papersReturn": "Give back papers",
+        "cancel": {
+          "title": "Cancel order",
+          "message": "Do you want to cancel order {number}?",
+          "keep": "Keep order",
+          "confirm": "Cancel order"
+        },
+        "delete": {
+          "title": "Delete order",
+          "message": "Delete order {number} for good? This cannot be undone.",
+          "keep": "Keep",
+          "confirm": "Delete order"
+        }
+      }
+    },
+    "receipt": {
+      "title": "Receipt #{number}",
+      "titleNoNumber": "Receipt",
+      "print": "Print",
+      "close": "Close",
+      "paper": "{width}mm paper",
+      "order": "Order #{number}",
+      "phone": "Tel",
+      "address": "Addr",
+      "customer": "Customer",
+      "walkIn": "Walk-in customer",
+      "rows": {
+        "deposit": "Deposit",
+        "noDeposit": "No deposit",
+        "securityDeposit": "Security deposit",
+        "collateral": "Collateral",
+        "damageFee": "Damage fee",
+        "rentDate": "Rent date",
+        "returnDate": "Return date",
+        "createdAt": "Created"
+      },
+      "note": "Note",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "discountPercent": "Discount ({percent}%)",
+      "loyaltyDiscount": "Loyalty discount",
+      "total": "Total",
+      "customerSignature": "Customer signature",
+      "storeSignature": "Store signature",
+      "thankYou": "Thank you!",
+      "downloadApp": "Download AnyRent on the App Store",
+      "units": {
+        "perDay": "/day",
+        "days": "{n} days",
+        "perHour": "/hour",
+        "hours": "{n} hours"
+      },
+      "bankTitle": "Bank transfer",
+      "bankName": "Bank",
+      "bankAccount": "Account no.",
+      "bankHolder": "Holder"
+    }
   }
 }

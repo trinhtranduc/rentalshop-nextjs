@@ -79,7 +79,7 @@ class ApiClientErrorTest {
     private fun apiReturning(
         status: Int,
         body: String,
-        onUnauthorized: () -> Unit = {},
+        onUnauthorized: (String?) -> Unit = {},
     ): ApiClient {
         val client = OkHttpClient.Builder()
             .addInterceptor { chain ->

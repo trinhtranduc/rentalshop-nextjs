@@ -54,9 +54,40 @@ struct CartItem: Codable {
         return pricingType?.uppercased() == "DAILY"
     }
 
+    /// #482: the pricing type the order API accepts (FIXED, HOURLY, DAILY). Another option type chosen in the sheet
+    /// (BLOCK) is sent as FIXED: its total is already unit price × quantity, so the payload keeps today's shape.
+    var requestPricingType: String {
+        let type = pricingType?.uppercased() ?? "FIXED"
+        return ["FIXED", "HOURLY", "DAILY"].contains(type) ? type : "FIXED"
+    }
+
+    /// The chosen option id, left out when the type is sent as FIXED in its place
+    var requestPricingOptionId: Int? {
+        requestPricingType == (pricingType?.uppercased() ?? "FIXED") ? selectedPricingOptionId : nil
+    }
+
     /// Whether this cart item offers more than one pricing option
     var hasMultiplePricingOptions: Bool {
         return (pricingOptions?.count ?? 0) > 1
+    }
+
+    /// #473 — A line built before the product had both prices (added earlier, restored from disk, or loaded from
+    /// an edited order) takes the product's options, so the cart offers "Theo lần / Theo ngày". Only when those
+    /// options hold both prices and the line does not offer both yet. Quantity, mode and prices stay.
+    mutating func adoptPricingOptions(_ options: [PricingOption]?) {
+        let active = (options ?? []).filter { $0.isActive != false }
+        var fresh = self
+        fresh.pricingOptions = active
+        guard CartV2Logic.offersBothModes(fresh), !CartV2Logic.offersBothModes(self) else { return }
+        pricingOptions = active
+        if selectedPricingOptionId == nil {
+            let current = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+            selectedPricingOptionId = active.first { $0.type.uppercased() == current }?.id
+        }
+    }
+
+    mutating func refreshPricing(from product: Product) {
+        adoptPricingOptions(product.pricingOptions)
     }
 
     /// Switch to a different pricing option (updates price + pricingType)
@@ -94,8 +125,11 @@ struct CartItem: Codable {
         pricingType = normalizedType
         if normalizedType == "DAILY" {
             price = customDailyPrice ?? option?.price ?? 0
-        } else {
+        } else if normalizedType == "FIXED" {
             price = customFixedPrice ?? option?.price ?? 0
+        } else {
+            // #482: another option type (BLOCK, HOURLY) starts at its own price
+            price = option?.price ?? 0
         }
         customRentPrice = price
     }
@@ -106,7 +140,7 @@ struct CartItem: Codable {
         let currentType = pricingType?.uppercased() ?? "FIXED"
         if currentType == "DAILY" {
             customDailyPrice = value
-        } else {
+        } else if currentType == "FIXED" {
             customFixedPrice = value
         }
         customRentPrice = value

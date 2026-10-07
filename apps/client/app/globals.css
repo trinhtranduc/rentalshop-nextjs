@@ -442,3 +442,433 @@ a:focus-visible {
     animation: none;
   }
 } 
+/* ==========================================================================
+   AnyRent shop shell tokens (#509). RGB triplets so Tailwind `ar-*` colours
+   accept opacity modifiers. Light by default; dark only inside `.ar-theme`
+   when the boot script sets <html data-ar-theme="dark">, so public pages
+   never change.
+   ========================================================================== */
+:root {
+  --ar-page: 243 244 246;
+  --ar-surface: 255 255 255;
+  --ar-surface-muted: 248 250 252;
+  --ar-subtle: 241 245 249;
+  --ar-line: 226 232 240;
+  --ar-line-soft: 238 240 243;
+  --ar-line-strong: 203 213 225;
+  --ar-ink: 15 23 42;
+  --ar-ink-2: 51 65 85;
+  --ar-muted: 71 85 105;
+  --ar-faint: 148 163 184;
+  --ar-primary: 29 78 216;
+  --ar-primary-ink: 29 78 216;
+  --ar-primary-soft: 239 246 255;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 185 28 28;
+  --ar-danger-soft: 254 226 226;
+  --ar-unread: 248 251 255;
+  /* Order status pills: text on background */
+  --ar-reserved: 30 64 175;
+  --ar-reserved-bg: 219 234 254;
+  --ar-renting: 91 33 182;
+  --ar-renting-bg: 237 233 254;
+  --ar-done: 4 120 87;
+  --ar-done-bg: 209 250 229;
+  --ar-cancelled: 71 85 105;
+  --ar-cancelled-bg: 241 245 249;
+  --ar-late: 153 27 27;
+  --ar-late-bg: 254 226 226;
+  --ar-unprepared: 154 52 18;
+  --ar-unprepared-bg: 255 237 213;
+  --ar-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  /* Chart series (#604): validated categorical palette; text never wears these */
+  --ar-chart-blue: 37 99 235;
+  --ar-chart-blue-soft: 191 219 254;
+  --ar-chart-amber: 217 119 6;
+  --ar-chart-green: 5 150 105;
+  --ar-chart-violet: 124 58 237;
+  --ar-chart-red: 220 38 38;
+}
+
+html[data-ar-theme='dark'] .ar-theme {
+  color-scheme: dark;
+  --ar-page: 11 17 32;
+  --ar-surface: 17 24 39;
+  --ar-surface-muted: 22 32 50;
+  --ar-subtle: 30 41 59;
+  --ar-line: 39 50 68;
+  --ar-line-soft: 31 41 55;
+  --ar-line-strong: 51 65 85;
+  --ar-ink: 241 245 249;
+  --ar-ink-2: 203 213 225;
+  --ar-muted: 148 163 184;
+  --ar-faint: 100 116 139;
+  --ar-primary: 37 99 235;
+  --ar-primary-ink: 96 165 250;
+  --ar-primary-soft: 23 37 84;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 220 38 38;
+  --ar-danger-soft: 59 13 13;
+  --ar-unread: 21 32 58;
+  --ar-reserved: 147 197 253;
+  --ar-reserved-bg: 23 37 84;
+  --ar-renting: 196 181 253;
+  --ar-renting-bg: 46 16 101;
+  --ar-done: 110 231 183;
+  --ar-done-bg: 5 46 31;
+  --ar-cancelled: 148 163 184;
+  --ar-cancelled-bg: 30 41 59;
+  --ar-late: 252 165 165;
+  --ar-late-bg: 59 13 13;
+  --ar-unprepared: 253 186 116;
+  --ar-unprepared-bg: 58 26 6;
+  --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ar-chart-blue: 59 130 246;
+  --ar-chart-blue-soft: 30 58 138;
+  --ar-chart-amber: 217 119 6;
+  --ar-chart-green: 5 150 105;
+  --ar-chart-violet: 139 92 246;
+  --ar-chart-red: 239 68 68;
+}
+
+.ar-theme {
+  font-family: var(--font-be-vietnam), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: rgb(var(--ar-ink));
+}
+
+/* ==========================================================================
+   Dark dialogs (#528). Shared @rentalshop/ui dialogs, toasts and select menus
+   render in portals under <body>, outside `.ar-theme`, so they missed the dark
+   tokens. While the shop shell is mounted (ShopShell sets <html class="ar-shell">)
+   and the theme is dark, every direct child of <body> that is not the app tree
+   (i.e. a portal) gets the dark tokens plus overrides for the light Tailwind
+   classes those shared components hard-code. The same overrides apply inside
+   `.ar-legacy`, a wrapper for shared panels still embedded in redrawn pages
+   (Cài đặt → bank accounts, subscription). apps/admin is untouched.
+   The receipt slip ([data-receipt-content]) stays white paper: it is what prints.
+   Browsers without :has() keep the old light dialogs.
+   ========================================================================== */
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) {
+  color-scheme: dark;
+  color: rgb(var(--ar-ink));
+  --ar-page: 11 17 32;
+  --ar-surface: 17 24 39;
+  --ar-surface-muted: 22 32 50;
+  --ar-subtle: 30 41 59;
+  --ar-line: 39 50 68;
+  --ar-line-soft: 31 41 55;
+  --ar-line-strong: 51 65 85;
+  --ar-ink: 241 245 249;
+  --ar-ink-2: 203 213 225;
+  --ar-muted: 148 163 184;
+  --ar-faint: 100 116 139;
+  --ar-primary: 37 99 235;
+  --ar-primary-ink: 96 165 250;
+  --ar-primary-soft: 23 37 84;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 220 38 38;
+  --ar-danger-soft: 59 13 13;
+  --ar-unread: 21 32 58;
+  --ar-reserved: 147 197 253;
+  --ar-reserved-bg: 23 37 84;
+  --ar-renting: 196 181 253;
+  --ar-renting-bg: 46 16 101;
+  --ar-done: 110 231 183;
+  --ar-done-bg: 5 46 31;
+  --ar-cancelled: 148 163 184;
+  --ar-cancelled-bg: 30 41 59;
+  --ar-late: 252 165 165;
+  --ar-late-bg: 59 13 13;
+  --ar-unprepared: 253 186 116;
+  --ar-unprepared-bg: 58 26 6;
+  --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  /* shadcn HSL tokens used by Dialog / AlertDialog / Select / Card */
+  --background: 221 39% 11%;
+  --foreground: 210 40% 96%;
+  --card: 221 39% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 221 39% 11%;
+  --popover-foreground: 210 40% 96%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 96%;
+  --border: 217 27% 21%;
+  --input: 217 27% 21%;
+  /* legacy tokens */
+  --background-card: rgb(17 24 39);
+  --background-primary: rgb(22 32 50);
+  --background-secondary: rgb(30 41 59);
+  --text-primary: rgb(241 245 249);
+  --text-secondary: rgb(148 163 184);
+  --text-tertiary: rgb(100 116 139);
+  --border-color: rgb(39 50 68);
+}
+html[data-ar-theme='dark'] .ar-theme .ar-legacy {
+  color: rgb(var(--ar-ink));
+  /* shadcn HSL tokens used by Dialog / AlertDialog / Select / Card */
+  --background: 221 39% 11%;
+  --foreground: 210 40% 96%;
+  --card: 221 39% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 221 39% 11%;
+  --popover-foreground: 210 40% 96%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 96%;
+  --border: 217 27% 21%;
+  --input: 217 27% 21%;
+  /* legacy tokens */
+  --background-card: rgb(17 24 39);
+  --background-primary: rgb(22 32 50);
+  --background-secondary: rgb(30 41 59);
+  --text-primary: rgb(241 245 249);
+  --text-secondary: rgb(148 163 184);
+  --text-tertiary: rgb(100 116 139);
+  --border-color: rgb(39 50 68);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-white,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-bg-card,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-background,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-card,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-popover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .focus\:bg-white:focus,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-white,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-bg-card,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-background,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-card,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-popover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .focus\:bg-white:focus {
+  background-color: rgb(17 24 39);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-gray-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-slate-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-gray-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-slate-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-muted,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-secondary,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-gray-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-slate-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-gray-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-slate-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-muted,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-secondary {
+  background-color: rgb(30 41 59);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-gray-50:hover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-gray-100:hover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-slate-50:hover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-slate-100:hover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-slate-200:hover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-accent:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-gray-50:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-gray-100:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-slate-50:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-slate-100:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-slate-200:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-accent:hover {
+  background-color: rgb(51 65 85);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-black,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-gray-900,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-gray-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-gray-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-slate-900,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-slate-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-slate-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-foreground,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-text-primary,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:text-slate-800:hover,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:text-slate-900:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-black,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-gray-900,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-gray-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-gray-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-slate-900,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-slate-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-slate-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-foreground,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-text-primary,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:text-slate-800:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:text-slate-900:hover {
+  color: rgb(241 245 249);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-gray-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-gray-500,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-slate-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-slate-500,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-muted-foreground,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-text-secondary,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-gray-600,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-gray-500,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-slate-600,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-slate-500,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-muted-foreground,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-text-secondary {
+  color: rgb(148 163 184);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-gray-400,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-slate-400,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-text-tertiary,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-gray-400,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-slate-400,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-text-tertiary {
+  color: rgb(100 116 139);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-gray-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-gray-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-gray-300,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-slate-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-slate-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-slate-300,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-border,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-input,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .divide-gray-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .divide-slate-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-gray-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-gray-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-gray-300,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-slate-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-slate-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-slate-300,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-border,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-input,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .divide-gray-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .divide-slate-100 {
+  border-color: rgb(39 50 68);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-blue-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-blue-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-blue-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-blue-900,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-blue-600,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-blue-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-blue-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-blue-900 {
+  color: rgb(147 197 253);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-green-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-green-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-green-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-green-900,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-emerald-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-emerald-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-green-600,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-green-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-green-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-green-900,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-emerald-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-emerald-800 {
+  color: rgb(110 231 183);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-red-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-red-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-red-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-red-900,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-red-600,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-red-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-red-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-red-900 {
+  color: rgb(252 165 165);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-yellow-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-orange-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-orange-800,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-amber-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .text-amber-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-yellow-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-orange-600,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-orange-800,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-amber-700,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .text-amber-800 {
+  color: rgb(253 186 116);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-blue-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-blue-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-blue-50:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-blue-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-blue-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-blue-50:hover {
+  background-color: rgb(23 37 84);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-green-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-green-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-emerald-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-emerald-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-green-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-green-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-emerald-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-emerald-100 {
+  background-color: rgb(5 46 31);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-red-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-red-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-red-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-red-100 {
+  background-color: rgb(59 13 13);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-yellow-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-yellow-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-orange-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-orange-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-amber-50,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-amber-100,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .hover\:bg-orange-50:hover,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-yellow-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-yellow-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-orange-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-orange-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-amber-50,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .bg-amber-100,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .hover\:bg-orange-50:hover {
+  background-color: rgb(58 26 6);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-blue-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-blue-300,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-green-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-emerald-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-red-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-yellow-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-orange-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-orange-300,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .border-amber-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-blue-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-blue-300,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-green-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-emerald-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-red-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-yellow-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-orange-200,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-orange-300,
+html[data-ar-theme='dark'] .ar-theme .ar-legacy .border-amber-200 {
+  border-color: rgb(51 65 85);
+}
+/* Overlay a little deeper so the dark sheet stands off the dark page */
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) .bg-black\/20 {
+  background-color: rgb(0 0 0 / 0.55);
+}
+
+/* Printed slip: keep the receipt white paper with black text */
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] {
+  color-scheme: light;
+  color: rgb(15 23 42);
+  background-color: #ffffff;
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .bg-white {
+  background-color: #ffffff;
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .text-gray-900,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .text-gray-700,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .text-gray-600,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .text-gray-500 {
+  color: rgb(15 23 42);
+}
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .border-gray-200,
+html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .border {
+  border-color: rgb(226 232 240);
+}

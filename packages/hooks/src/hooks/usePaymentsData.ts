@@ -1,5 +1,5 @@
 import { useDedupedApi } from '../utils/useDedupedApi';
-import { paymentsApi } from '@rentalshop/utils';
+import { paymentsApi, getShopTodayKey, toDateKeyInTimeZone, SHOP_TIMEZONE } from '@rentalshop/utils';
 
 // ============================================================================
 // TYPES
@@ -104,17 +104,17 @@ export function usePaymentsData(options: UsePaymentsDataOptions): UsePaymentsDat
       }
       
       if (filters.dateFilter && filters.dateFilter !== 'all') {
-        const now = new Date();
+        // Vietnam days, whatever the browser zone (#578 PKG-9)
+        const todayKey = getShopTodayKey();
         filteredPayments = filteredPayments.filter((p: any) => {
-          const paymentDate = new Date(p.createdAt);
+          const paymentKey = toDateKeyInTimeZone(p.createdAt, SHOP_TIMEZONE) || '';
           
           if (filters.dateFilter === 'today') {
-            return now.toDateString() === paymentDate.toDateString();
+            return paymentKey === todayKey;
           } else if (filters.dateFilter === 'this_month') {
-            return now.getMonth() === paymentDate.getMonth() && 
-                   now.getFullYear() === paymentDate.getFullYear();
+            return paymentKey.slice(0, 7) === todayKey.slice(0, 7);
           } else if (filters.dateFilter === 'this_year') {
-            return now.getFullYear() === paymentDate.getFullYear();
+            return paymentKey.slice(0, 4) === todayKey.slice(0, 4);
           }
           
           return true;

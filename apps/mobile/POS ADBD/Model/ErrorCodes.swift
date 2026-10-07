@@ -91,6 +91,8 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case trialExpired = "TRIAL_EXPIRED"
     case orderAlreadyExists = "ORDER_ALREADY_EXISTS"
     case productOutOfStock = "PRODUCT_OUT_OF_STOCK"
+    /// #518: the shop turned off "Cho tạo đơn khi trùng lịch" and the items are booked out on those days (409)
+    case orderScheduleConflict = "ORDER_SCHEDULE_CONFLICT"
     case invalidOrderStatus = "INVALID_ORDER_STATUS"
     case paymentFailed = "PAYMENT_FAILED"
     case invalidPaymentMethod = "INVALID_PAYMENT_METHOD"
@@ -122,6 +124,8 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case merchantNotFound = "MERCHANT_NOT_FOUND"
     case outletNotFound = "OUTLET_NOT_FOUND"
     case productNotFound = "PRODUCT_NOT_FOUND"
+    case productHasOpenOrders = "PRODUCT_HAS_OPEN_ORDERS"
+    case stockBelowRented = "STOCK_BELOW_RENTED"
     case orderNotFound = "ORDER_NOT_FOUND"
     case customerNotFound = "CUSTOMER_NOT_FOUND"
     case categoryNotFound = "CATEGORY_NOT_FOUND"
@@ -303,6 +307,7 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case invalidRequest = "INVALID_REQUEST"
     case invalidSessionId = "INVALID_SESSION_ID"
     case invalidTenantKey = "INVALID_TENANT_KEY"
+    case invalidTimezone = "INVALID_TIMEZONE"
     case invalidUserId = "INVALID_USER_ID"
     case invalidUserRole = "INVALID_USER_ROLE"
 
@@ -604,7 +609,7 @@ struct APIErrorMessages {
         
         // Verification Errors
         .verificationEmailSent: "Verification email has been sent successfully.",
-        .rateLimitExceeded: "Too many requests. Please wait a few minutes before requesting another verification email.",
+        .rateLimitExceeded: "Too many requests. Please wait a few minutes and try again.",
         .emailSendFailed: "Failed to send verification email. Please try again later.",
         
         // Validation Errors
@@ -673,6 +678,7 @@ struct APIErrorMessages {
         .trialExpired: "Trial period has expired",
         .orderAlreadyExists: "Order already exists",
         .productOutOfStock: "Product is out of stock",
+        .orderScheduleConflict: "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.",
         .invalidOrderStatus: "Invalid order status",
         .paymentFailed: "Payment processing failed",
         .invalidPaymentMethod: "Invalid payment method",
@@ -702,6 +708,8 @@ struct APIErrorMessages {
         .merchantNotFound: "Merchant not found",
         .outletNotFound: "Outlet not found",
         .productNotFound: "Product not found",
+        .productHasOpenOrders: "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.",
+        .stockBelowRented: "Quantity cannot be lower than the units out on rent.",
         .orderNotFound: "Order not found",
         .customerNotFound: "Customer not found",
         .categoryNotFound: "Category not found",
@@ -824,6 +832,7 @@ struct APIErrorMessages {
         .invalidRequest: "Invalid request format",
         .invalidSessionId: "Invalid session ID",
         .invalidTenantKey: "Invalid tenant key provided",
+        .invalidTimezone: "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).",
         .invalidUserId: "Invalid user ID",
         .invalidUserRole: "Invalid user role",
         .loginSuccess: "Login successful",
@@ -865,7 +874,7 @@ struct APIErrorMessages {
         .outletCreatedSuccess: "Outlet created successfully",
         .outletDeletedSuccess: "Outlet deleted successfully",
         .outletInfoUpdatedSuccess: "Outlet information updated successfully",
-        .outletRequired: "Outlet ID is required",
+        .outletRequired: "Choose an outlet, or set a default outlet for your shop.",
         .outletStockRequired: "Outlet stock information is required",
         .outletUpdatedSuccess: "Outlet updated successfully",
         .passwordChangedSuccess: "Password changed successfully",
@@ -1026,6 +1035,7 @@ struct APIErrorStatusCodes {
         .trialExpired: 402,
         .orderAlreadyExists: 409,
         .productOutOfStock: 422,
+        .orderScheduleConflict: 409,
         .invalidOrderStatus: 422,
         .paymentFailed: 402,
         .invalidPaymentMethod: 400,
@@ -1055,6 +1065,8 @@ struct APIErrorStatusCodes {
         .merchantNotFound: 404,
         .outletNotFound: 404,
         .productNotFound: 404,
+        .productHasOpenOrders: 409,
+        .stockBelowRented: 400,
         .orderNotFound: 404,
         .customerNotFound: 404,
         .categoryNotFound: 404,
@@ -1177,6 +1189,7 @@ struct APIErrorStatusCodes {
         .invalidRequest: 400,
         .invalidSessionId: 400,
         .invalidTenantKey: 400,
+        .invalidTimezone: 400,
         .invalidUserId: 400,
         .invalidUserRole: 400,
         .loginSuccess: 200,
@@ -1218,7 +1231,7 @@ struct APIErrorStatusCodes {
         .outletCreatedSuccess: 200,
         .outletDeletedSuccess: 200,
         .outletInfoUpdatedSuccess: 200,
-        .outletRequired: 500,
+        .outletRequired: 400,
         .outletStockRequired: 500,
         .outletUpdatedSuccess: 200,
         .passwordChangedSuccess: 200,

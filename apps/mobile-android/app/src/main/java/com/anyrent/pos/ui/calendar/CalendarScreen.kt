@@ -58,12 +58,12 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.OrderDetail
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.ui.common.EmptyOrError
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.MaskedPhoneRow
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
-import com.anyrent.pos.ui.common.orderStatusColor
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.StatusBadge
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +79,7 @@ import coil.compose.AsyncImage
 
 @Composable
 fun CalendarScreen(onOpenOrder: (Int) -> Unit) {
-    val today = remember { LocalDate.now() }
+    val today = remember { ShopTime.today() }
     var yearMonth by remember { mutableStateOf(YearMonth.from(today)) }
     var counts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var selectedDate by remember { mutableStateOf(today.toString()) }

@@ -605,6 +605,12 @@ extension ImageSearchResultsViewController: ProductCellDelegate {
 
     private func addProductToCart(product: Product) {
         guard let infoVC = findInfoMainViewController() else {
+            // Redesigned Home (#373) has no InfoMainViewController; add straight to the cart store
+            if FeatureFlags.shared.isOn(.newProducts) {
+                ProductsCartBridge.add(product)
+                showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
+                return
+            }
             showToast(message: "Unable to add product to cart".localized(), icon: UIImage(systemName: "exclamationmark.triangle"))
             return
         }
@@ -683,9 +689,7 @@ extension ImageSearchResultsViewController: OrderCheckViewControllerDelegate {
                 }
                 let fullOrder = Order.from(detail: detail)
                 guard let nav = self.navigationController else { return }
-                let preview = PreviewViewController(order: fullOrder)
-                preview.hidesBottomBarWhenPushed = true
-                preview.delegate = self
+                let preview = OrderDetailRouter.detailController(for: fullOrder, delegate: self)
                 nav.pushViewController(preview, animated: true)
             }
         }

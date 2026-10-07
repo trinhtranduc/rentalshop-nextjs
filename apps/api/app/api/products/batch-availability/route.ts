@@ -138,8 +138,18 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || (userOutletId || 0);
+      } else if (user.role === USER_ROLE.MERCHANT && !queryOutletId) {
+        // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one
+        const defaultOutlet = await db.outlets.findDefaultForMerchant(userMerchantId);
+        if (!defaultOutlet) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_REQUIRED'),
+            { status: 400 }
+          );
+        }
+        finalOutletId = defaultOutlet.id;
       } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.ADMIN) {
-        // Merchants/Admins: outletId is required in query
+        // Merchants sending an outletId, and admins (who must send one)
         if (!queryOutletId) {
           return NextResponse.json(
             ResponseBuilder.error('OUTLET_REQUIRED'),
@@ -166,13 +176,16 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       // Parse rental dates with timezone support (only for RENT orders)
       let rentalStart: Date | null = null;
       let rentalEnd: Date | null = null;
+      // VN civil days of the window, end exclusive: what the conflict query uses (#590)
+      let dayBoundsStart: Date | null = null;
+      let dayBoundsEnd: Date | null = null;
       let durationMs = 0;
       let durationHours = 0;
       let durationDays = 0;
       
       if (orderType === 'RENT') {
         // RENT orders require dates for conflict checking.
-        // Store app may send UTC civil-day windows; map to VN civil day like Lịch Thuê.
+        // Every window (date=, installed apps' UTC-day windows, ISO instants) is read as VN civil days.
         const resolvedWindow = resolveAvailabilityQueryWindow({ date, startDate, endDate });
         if (!resolvedWindow) {
           return NextResponse.json(
@@ -182,6 +195,8 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         }
         rentalStart = resolvedWindow.start;
         rentalEnd = resolvedWindow.end;
+        dayBoundsStart = resolvedWindow.bounds.start;
+        dayBoundsEnd = resolvedWindow.bounds.end;
 
         // Validate date range
         if (rentalStart > rentalEnd) {
@@ -205,6 +220,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       const products = await db.prisma.product.findMany({
         where: {
           id: { in: productIdsList },
+          deletedAt: null, // #389 a soft-deleted product is not found
           ...(user.role !== USER_ROLE.ADMIN && userMerchantId ? { merchantId: userMerchantId } : {}),
         },
         select: {
@@ -284,27 +300,18 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         whereClause.status = {
           in: [ORDER_STATUS.RESERVED as any, ORDER_STATUS.PICKUPED as any],
         };
+        // Inclusive VN civil days (#590, #575): the order's pickup day ≤ last day AND its return day ≥ first day,
+        // on the half-open bounds [first day 00:00 VN, day after the last 00:00 VN).
+        // Same rule as GET /api/products/[id]/availability, the calendar and the #518 schedule check.
         whereClause.OR = [
-          // Pickup during requested period
           {
-            AND: [
-              { pickupPlanAt: { lte: rentalEnd } },
-              { pickupPlanAt: { gte: rentalStart } },
-            ],
+            pickupPlanAt: { lt: dayBoundsEnd },
+            returnPlanAt: { gte: dayBoundsStart },
           },
-          // Return during requested period
+          // No planned return: held when picked up inside the window (unchanged rule)
           {
-            AND: [
-              { returnPlanAt: { lte: rentalEnd } },
-              { returnPlanAt: { gte: rentalStart } },
-            ],
-          },
-          // Rental spans across requested period
-          {
-            AND: [
-              { pickupPlanAt: { lte: rentalStart } },
-              { returnPlanAt: { gte: rentalEnd } },
-            ],
+            returnPlanAt: null,
+            pickupPlanAt: { gte: dayBoundsStart, lt: dayBoundsEnd },
           },
         ];
       } else if (orderType === 'SALE') {

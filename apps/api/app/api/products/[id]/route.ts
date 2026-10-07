@@ -17,6 +17,8 @@ import {
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
+import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
+import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
 
 function buildImageUploadErrorResponse(detail?: string) {
@@ -631,16 +633,16 @@ export async function PUT(
 
       // Update the product using the simplified database API with nested write
       const updatedProduct = await db.products.update(productId, finalUpdateData);
-      const auditHelper = createAuditHelper(prisma);
-      await auditHelper.logUpdate({
+      // #519: snapshots with prices, pricing options, per-outlet stock and images (never costPrice)
+      await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
         entityType: 'Product',
         entityId: String(productId),
         entityName: existingProduct.name,
-        oldValues: existingProduct as Record<string, any>,
-        newValues: updatedProduct as Record<string, any>,
+        oldValues: buildProductAuditSnapshot(existingProduct),
+        newValues: buildProductAuditSnapshot(updatedProduct),
         description: `Product updated: ${existingProduct.name}`,
         context: buildAuditContext(request, user, userScope)
-      }).catch((err) => console.error('Audit log update failed:', err));
+      }));
       console.log('✅ Product updated successfully with outletStock:', updatedProduct);
 
       // Sync Product.totalStock = sum of all OutletStock.stock
@@ -840,11 +842,11 @@ export async function PUT(
 
 /**
  * DELETE /api/products/[id]
- * Delete product by ID (hard delete)
- * - Always hard delete products (permanently remove, including S3 images and Qdrant embeddings)
- * - Order items store product info separately (productId, productName, productBarcode, productImages)
- *   so product records can be safely deleted without losing order history
- * 
+ * Soft delete (#389): sets `deletedAt` and `isActive = false`. The row, its images and its order links stay, so
+ * orders keep showing the product; lists, search, availability and detail hide it (404).
+ * - 409 PRODUCT_HAS_OPEN_ORDERS while the product is on a RESERVED or PICKUPED order (nothing changes).
+ * - Response shape unchanged: { id, name, images }, code PRODUCT_DELETED_SUCCESS.
+ *
  * Authorization: All roles with 'products.manage' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
@@ -883,9 +885,13 @@ export async function DELETE(
       }
 
       // Check if product exists and user has access to it
+      // Unknown or already deleted (findById hides soft-deleted products)
       const existingProduct = await db.products.findById(productId);
       if (!existingProduct) {
-        throw new Error('Product not found');
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
       }
 
       // ============================================================================
@@ -924,98 +930,45 @@ export async function DELETE(
       }
 
       // ============================================================================
-      // DELETE PRODUCT (Hard Delete)
+      // DELETE PRODUCT (Soft Delete, #389)
       // ============================================================================
-      // Note: Order items store product info separately (productId, productName, productBarcode, productImages)
-      // so product records can be safely deleted without losing order history
+      const { blockedIds } = await softDeleteProducts(prisma, [productId]);
+      if (blockedIds.length > 0) {
+        return NextResponse.json(
+          ResponseBuilder.error(PRODUCT_HAS_OPEN_ORDERS),
+          { status: API.STATUS.CONFLICT }
+        );
+      }
 
       const auditHelper = createAuditHelper(prisma);
       await auditHelper.logDelete({
         entityType: 'Product',
         entityId: String(productId),
         entityName: existingProduct.name,
-        oldValues: existingProduct as Record<string, any>,
+        oldValues: buildProductAuditSnapshot(existingProduct),
         description: `Product deleted: ${existingProduct.name}`,
         context: buildAuditContext(request, user, userScope)
       }).catch((err) => console.error('Audit log delete failed:', err));
-      
-      // Get product info before deletion for response
-      const productInfo = {
-        id: productId, // publicId from route params
-        name: existingProduct.name,
-        images: existingProduct.images,
-      };
 
-      // Always hard delete (order items store product info separately)
-      const imageUrls = parseProductImages(existingProduct.images);
-
-      // Delete all product images from S3 storage
-      if (imageUrls.length > 0) {
-        console.log(`🗑️ Deleting ${imageUrls.length} image(s) from S3 for product ${productId}`);
-        const deletePromises = imageUrls.map(async (imageUrl) => {
-          try {
-            const s3Key = extractS3KeyFromUrl(imageUrl);
-            if (s3Key) {
-              const deleted = await deleteFromS3(s3Key);
-              if (deleted) {
-                console.log(`✅ Deleted image from S3: ${s3Key}`);
-                return { success: true, key: s3Key };
-              } else {
-                console.warn(`⚠️ Failed to delete image from S3: ${s3Key}`);
-                return { success: false, key: s3Key, error: 'Delete failed' };
-              }
-            } else {
-              console.warn(`⚠️ Could not extract S3 key from URL: ${imageUrl}`);
-              return { success: false, key: null, error: 'Could not extract S3 key' };
-            }
-          } catch (error) {
-            console.error(`❌ Error deleting image ${imageUrl}:`, error);
-            return { success: false, key: imageUrl, error: error instanceof Error ? error.message : 'Unknown error' };
-          }
-        });
-        
-        const results = await Promise.all(deletePromises);
-        const successCount = results.filter(r => r.success).length;
-        const failCount = results.filter(r => !r.success).length;
-        
-        console.log(`📊 Image deletion summary for product ${productId}: ${successCount} deleted, ${failCount} failed`);
-        
-        if (failCount > 0) {
-          console.warn(`⚠️ Warning: ${failCount} image(s) failed to delete from S3. Product will still be deleted.`);
-        }
-      }
-
-      // Delete embeddings from Qdrant
+      // Image search must not find it any more; images stay in S3 for the orders that show them
       try {
         const { getVectorStore } = await import('@rentalshop/database/server');
-        const vectorStore = getVectorStore();
-        vectorStore.deleteProductEmbeddings(productId).catch((error: any) => {
+        getVectorStore().deleteProductEmbeddings(productId).catch((error: any) => {
           console.error(`Error deleting embeddings for product ${productId}:`, error);
         });
       } catch (error) {
         console.error('Error starting embedding deletion:', error);
-        // Don't fail the request if embedding deletion fails
       }
-
-      // Hard delete: permanently remove product from database
-      await prisma.product.delete({
-        where: { id: productId },
-      });
-      
-      console.log('✅ Product hard deleted successfully:', productInfo);
-
-      // Return product info (without dates since it's deleted)
-      const responseProduct = {
-        id: productInfo.id,
-        name: productInfo.name,
-        images: imageUrls
-      };
 
       return NextResponse.json({
         success: true,
-        data: responseProduct,
+        data: {
+          id: productId,
+          name: existingProduct.name,
+          images: parseProductImages(existingProduct.images),
+        },
         code: 'PRODUCT_DELETED_SUCCESS',
-        message: `Product "${existingProduct.name}" has been permanently deleted from the system.`
+        message: `Product "${existingProduct.name}" has been deleted.`
       });
 
     } catch (error) {

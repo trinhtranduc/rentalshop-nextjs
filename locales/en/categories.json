@@ -82,6 +82,63 @@
     "nameMaxLength": "Category name must be less than 50 characters",
     "descriptionMaxLength": "Description must be less than 200 characters",
     "characters": "characters"
+  },
+  "web": {
+    "title": "Categories",
+    "add": "Add category",
+    "searchLabel": "Search categories",
+    "searchPlaceholder": "Search category name",
+    "cols": {
+      "name": "Name",
+      "description": "Description",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "sortBy": "Sort by {column}",
+    "default": "Default",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "viewDetails": "View details",
+    "more": "More actions for {name}",
+    "empty": "No categories yet. Add one to group your products.",
+    "emptySearch": "No categories match your search.",
+    "loadFailed": "Could not load categories.",
+    "retry": "Retry",
+    "form": {
+      "addTitle": "Add category",
+      "editTitle": "Edit category",
+      "name": "Category name",
+      "namePlaceholder": "e.g. Dresses",
+      "required": "required",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional",
+      "count": "{count}/{max}",
+      "cancel": "Cancel",
+      "create": "Add",
+      "save": "Save",
+      "saving": "Saving…",
+      "close": "Close"
+    },
+    "detail": {
+      "title": "Category details",
+      "noDescription": "No description"
+    },
+    "confirm": {
+      "deleteTitle": "Delete category",
+      "deleteBody": "Delete the category “{name}”? This cannot be undone.",
+      "cancel": "Keep",
+      "delete": "Delete category",
+      "deleting": "Deleting…"
+    },
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pages",
+      "range": "{from}–{to} of {total} categories",
+      "prev": "Previous page",
+      "next": "Next page"
+    }
   }
 }
-

@@ -32,7 +32,23 @@
  */
 
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { getUTCDateKey } from './date';
+import { SHOP_TIMEZONE } from './date';
+import { usesDefaultShopTimeZone } from './timezone';
+import { formatDateKeyInTimeZone, getUtcRangeForDateKeys } from './date-range';
+
+/**
+ * Shop civil day (`YYYY-MM-DD`) of an instant: "same day" and "today" are shop days, not UTC days (#355).
+ * #567: `timeZone` is the shop's zone; omitted or invalid → Vietnam (`SHOP_TIMEZONE`), as before.
+ */
+export function shopDayKey(date: Date, timeZone?: string): string {
+  return formatDateKeyInTimeZone(date, usesDefaultShopTimeZone(timeZone) ? SHOP_TIMEZONE : (timeZone as string));
+}
+
+/** UTC bounds of the shop day that contains `date`. */
+function shopDayBounds(date: Date, timeZone?: string): { start: Date; end: Date } {
+  const zone = usesDefaultShopTimeZone(timeZone) ? SHOP_TIMEZONE : (timeZone as string);
+  return getUtcRangeForDateKeys({ from: shopDayKey(date, zone) }, zone);
+}
 
 export interface OrderRevenueData {
   orderType: string;
@@ -41,6 +57,8 @@ export interface OrderRevenueData {
   depositAmount: number;
   securityDeposit: number;
   damageFee: number;
+  /** Late fee charged at return; collected with the damage fee (#484) */
+  lateFee?: number;
   createdAt: Date | string | null;
   pickedUpAt: Date | string | null;
   returnedAt: Date | string | null;
@@ -57,13 +75,13 @@ export interface RevenueEvent {
 }
 
 /**
- * Check if two dates are on the same day (using UTC date key)
+ * Check if two dates are on the same shop day (Vietnam civil day)
  */
 function isSameDay(date1: Date | string | null, date2: Date | string | null): boolean {
   if (!date1 || !date2) return false;
   const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
   const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
-  return getUTCDateKey(d1) === getUTCDateKey(d2);
+  return shopDayKey(d1) === shopDayKey(d2);
 }
 
 /**
@@ -112,6 +130,7 @@ export function getOrderRevenueEvents(
   const depositAmount = order.depositAmount || 0;
   const securityDeposit = order.securityDeposit || 0;
   const damageFee = order.damageFee || 0;
+  const returnFees = damageFee + (order.lateFee || 0);
 
   // ============================================================================
   // SALE ORDERS
@@ -211,12 +230,12 @@ export function getOrderRevenueEvents(
 
       if (isSameDayReturn) {
         // Same day return: totalAmount + damageFee (KHÔNG tính deposit và pickup riêng)
-        returnRevenue = totalAmount + damageFee;
+        returnRevenue = totalAmount + returnFees;
         description = 'Thuê và trả trong cùng ngày';
       } else {
         // Different day: damageFee - securityDeposit
         // Note: âm vì securityDeposit đã thu ở pickup, giờ trừ đi
-        returnRevenue = damageFee - securityDeposit;
+        returnRevenue = returnFees - securityDeposit;
         if (returnRevenue > 0) {
           description = 'Thu phí hư hỏng';
         } else if (returnRevenue < 0) {
@@ -265,6 +284,90 @@ export function getOrderRevenueEvents(
   }
 
   return events;
+}
+
+/** Where collected money came from (#492). `refunds` is a positive amount taken off the total. */
+export interface CollectedBreakdown {
+  deposits: number;
+  pickupAndSale: number;
+  fees: number;
+  refunds: number;
+}
+
+export function emptyCollectedBreakdown(): CollectedBreakdown {
+  return { deposits: 0, pickupAndSale: 0, fees: 0, refunds: 0 };
+}
+
+/**
+ * Adds one event of `getOrderRevenueEvents(withoutCollateral(order))` to its source bucket, so that
+ * deposits + pickupAndSale + fees - refunds equals the collected total (#492).
+ */
+export function addToCollectedBreakdown(
+  breakdown: CollectedBreakdown,
+  order: OrderRevenueData,
+  event: RevenueEvent
+): CollectedBreakdown {
+  switch (event.revenueType) {
+    case 'RENT_DEPOSIT':
+      breakdown.deposits += event.revenue;
+      break;
+    case 'SALE':
+    case 'RENT_PICKUP':
+      breakdown.pickupAndSale += event.revenue;
+      break;
+    case 'RENT_RETURN': {
+      const fees = (order.damageFee || 0) + (order.lateFee || 0);
+      breakdown.fees += fees;
+      breakdown.pickupAndSale += event.revenue - fees;
+      break;
+    }
+    case 'RENT_CANCELLED':
+    case 'SALE_CANCELLED':
+      breakdown.refunds -= event.revenue;
+      break;
+  }
+  return breakdown;
+}
+
+/** Collateral (thế chân) that changed hands (#494): `received` at pickup, `returned` at return or cancellation. */
+export interface CollateralFlow {
+  received: number;
+  returned: number;
+}
+
+export function emptyCollateralFlow(): CollateralFlow {
+  return { received: 0, returned: 0 };
+}
+
+/**
+ * Adds the collateral moved by one order (#494). `withCollateral` and `plain` are that order's events from
+ * `getOrderRevenueEvents(order)` and `getOrderRevenueEvents(withoutCollateral(order))`, already filtered to the
+ * period. Each event's collateral part is its revenue minus the same event without collateral: positive at
+ * pickup (received), negative at return or cancellation (handed back). A same-day rent and return moves none.
+ */
+export function addToCollateralFlow(
+  flow: CollateralFlow,
+  withCollateral: RevenueEvent[],
+  plain: RevenueEvent[]
+): CollateralFlow {
+  const keyOf = (e: RevenueEvent) => `${e.revenueType}@${new Date(e.date).getTime()}`;
+  const deltas = new Map<string, number>();
+  for (const e of withCollateral) deltas.set(keyOf(e), (deltas.get(keyOf(e)) || 0) + e.revenue);
+  for (const e of plain) deltas.set(keyOf(e), (deltas.get(keyOf(e)) || 0) - e.revenue);
+  for (const delta of deltas.values()) {
+    if (delta > 0) flow.received += delta;
+    else if (delta < 0) flow.returned -= delta;
+  }
+  return flow;
+}
+
+/**
+ * The same order with collateral (securityDeposit) removed, for "money collected" totals that leave out
+ * collateral: it is held at pickup and handed back at return, so it is never the shop's money (#484).
+ * Pickup then collects `totalAmount - depositAmount`, return collects `damageFee + lateFee`.
+ */
+export function withoutCollateral<T extends OrderRevenueData>(order: T): T {
+  return { ...order, securityDeposit: 0 };
 }
 
 /**
@@ -393,12 +496,8 @@ export function getRevenueByDate(
   order: OrderRevenueData,
   targetDate: Date
 ): RevenueEvent[] {
-  // Calculate start and end of target date
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Shop day (Vietnam) that contains targetDate, whatever the server TZ is
+  const { start: startOfDay, end: endOfDay } = shopDayBounds(targetDate);
 
   // Get real revenue events (đã xảy ra)
   const realEvents = getOrderRevenueEvents(order, startOfDay, endOfDay);
@@ -453,8 +552,8 @@ export function getOrderRevenueForDate(
   targetDate: Date
 ): number {
   const now = new Date();
-  const targetDateKey = getUTCDateKey(targetDate);
-  const nowDateKey = getUTCDateKey(now);
+  const targetDateKey = shopDayKey(targetDate);
+  const nowDateKey = shopDayKey(now);
 
   // Convert dates to Date objects
   const createdAt = order.createdAt ? new Date(order.createdAt) : null;
@@ -467,17 +566,18 @@ export function getOrderRevenueForDate(
   const depositAmount = order.depositAmount || 0;
   const securityDeposit = order.securityDeposit || 0;
   const damageFee = order.damageFee || 0;
+  const returnFees = damageFee + (order.lateFee || 0);
 
   // ============================================================================
   // CASE 1: Order đã RETURNED và returnedAt < targetDate (quá khứ)
   // ============================================================================
   if (order.status === ORDER_STATUS.RETURNED && returnedAt) {
-    const returnedAtKey = getUTCDateKey(returnedAt);
+    const returnedAtKey = shopDayKey(returnedAt);
     
     // Nếu order đã trả và targetDate sau ngày trả → return tổng doanh thu thực tế
     if (returnedAtKey < targetDateKey) {
       // Order đã hoàn tất trong quá khứ, return tổng doanh thu thực tế
-      return totalAmount + damageFee;
+      return totalAmount + returnFees;
     }
     
     // Nếu targetDate = returnedAt (ngày trả hàng) → tính theo return event logic
@@ -486,11 +586,11 @@ export function getOrderRevenueForDate(
       const isSameDayReturn = isSameDay(pickedUpAt || createdAt, returnedAt);
       
       if (isSameDayReturn) {
-        // Same day return: totalAmount + damageFee
-        return totalAmount + damageFee;
+        // Same day return: totalAmount + damageFee + lateFee
+        return totalAmount + returnFees;
       } else {
-        // Different day return: damageFee - securityDeposit
-        return damageFee - securityDeposit;
+        // Different day return: damageFee + lateFee - securityDeposit
+        return returnFees - securityDeposit;
       }
     }
   }
@@ -505,7 +605,7 @@ export function getOrderRevenueForDate(
     if (order.orderType === ORDER_TYPE.RENT && 
         order.status === ORDER_STATUS.RESERVED && 
         pickupPlanAt) {
-      const pickupPlanAtKey = getUTCDateKey(pickupPlanAt);
+      const pickupPlanAtKey = shopDayKey(pickupPlanAt);
       if (pickupPlanAtKey === targetDateKey) {
         // Future pickup revenue = totalAmount - depositAmount
         futureRevenue += totalAmount - depositAmount;
@@ -516,7 +616,7 @@ export function getOrderRevenueForDate(
     if (order.orderType === ORDER_TYPE.RENT && 
         order.status === ORDER_STATUS.PICKUPED && 
         returnPlanAt) {
-      const returnPlanAtKey = getUTCDateKey(returnPlanAt);
+      const returnPlanAtKey = shopDayKey(returnPlanAt);
       if (returnPlanAtKey === targetDateKey) {
         // Future return revenue = damageFee - securityDeposit
         futureRevenue += damageFee - securityDeposit;
@@ -529,12 +629,8 @@ export function getOrderRevenueForDate(
   // ============================================================================
   // CASE 3: targetDate trong quá khứ hoặc hiện tại (chưa return hoặc đang trong quá trình)
   // ============================================================================
-  // Tính real events đã xảy ra trong ngày đó
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Tính real events đã xảy ra trong ngày đó (ngày theo giờ Việt Nam)
+  const { start: startOfDay, end: endOfDay } = shopDayBounds(targetDate);
 
   const events = getOrderRevenueEvents(order, startOfDay, endOfDay);
   return events.reduce((sum, event) => sum + event.revenue, 0);
@@ -562,7 +658,7 @@ export function calculatePeriodRevenue(
   periodEnd: Date
 ): { realIncome: number; futureIncome: number } {
   const now = new Date();
-  const nowDateKey = getUTCDateKey(now);
+  const nowDateKey = shopDayKey(now);
 
   // Get real revenue events in period
   const realEvents = getOrderRevenueEvents(order, periodStart, periodEnd);
@@ -575,7 +671,7 @@ export function calculatePeriodRevenue(
 
   // Sum real income (events that have already occurred)
   for (const event of realEvents) {
-    const eventDateKey = getUTCDateKey(event.date);
+    const eventDateKey = shopDayKey(event.date);
     
     if (eventDateKey <= nowDateKey) {
       // Past or current date: real income
@@ -680,7 +776,7 @@ export function calculateOrderRevenueByStatus(order: OrderRevenueData): number {
       // RETURNED: đơn đã hoàn tất, tính tổng doanh thu thực tế cuối cùng
       // Luôn tính totalAmount + damageFee (bất kể pickup/return có cùng ngày hay không)
       // Lý do: Đơn đã hoàn tất, tổng doanh thu thực tế = totalAmount + damageFee
-      return (order.totalAmount || 0) + (order.damageFee || 0);
+      return (order.totalAmount || 0) + (order.damageFee || 0) + (order.lateFee || 0);
 
     case ORDER_STATUS.CANCELLED:
       return 0; // Cancelled = refunded

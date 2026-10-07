@@ -43,7 +43,10 @@ jest.mock('@rentalshop/utils/server', () => ({
   extractS3KeyFromUrl: jest.fn(),
   createAuditHelper: () => ({ logUpdate: () => Promise.resolve() }),
 }));
-jest.mock('../../apps/api/lib/image-compression', () => ({ compressImageTo1MB: jest.fn() }));
+jest.mock('../../apps/api/lib/image-compression', () => ({
+  ...jest.requireActual('../../apps/api/lib/image-compression'),
+  compressImageTo1MB: jest.fn(),
+}));
 
 import { PUT } from '../../apps/api/app/api/products/[id]/route';
 

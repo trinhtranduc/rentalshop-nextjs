@@ -25,9 +25,11 @@ object ApiErrorMessages {
         }
     }
 
-    private fun stringId(code: String?): Int = when (code?.uppercase()) {
+    internal fun stringId(code: String?): Int = when (code?.uppercase()) {
         "PLAN_LIMIT_EXCEEDED" -> R.string.api_error_plan_limit_exceeded
         "PRODUCT_NAME_EXISTS" -> R.string.api_error_product_name_exists
+        "PRODUCT_HAS_OPEN_ORDERS" -> R.string.api_error_product_has_open_orders
+        "STOCK_BELOW_RENTED" -> R.string.api_error_stock_below_rented
         "CUSTOMER_DUPLICATE" -> R.string.api_error_customer_duplicate
         "EMAIL_EXISTS" -> R.string.api_error_email_exists
         "PHONE_EXISTS" -> R.string.api_error_phone_exists
@@ -41,6 +43,19 @@ object ApiErrorMessages {
         "UNAUTHORIZED", "SESSION_EXPIRED", "TOKEN_EXPIRED", "INVALID_TOKEN" ->
             R.string.api_error_session_expired
         "SESSION_REPLACED" -> R.string.api_error_session_replaced
+        "INVALID_ORDER_STATUS" -> R.string.api_error_invalid_order_status
+        "OUTLET_REQUIRED" -> R.string.api_error_outlet_required
+        "CURRENT_PASSWORD_INCORRECT" -> R.string.api_error_current_password_incorrect
+        "PASSWORD_MIN_LENGTH" -> R.string.api_error_password_min_length
+        "RATE_LIMIT_EXCEEDED" -> R.string.api_error_rate_limit_exceeded
+        // #518: 409 when the shop turned "Cho tạo đơn khi trùng lịch" off and the rental is double-booked
+        "ORDER_SCHEDULE_CONFLICT" -> R.string.api_error_order_schedule_conflict
+        // #567: 400 when a shop time zone is not a known IANA id (PUT /api/settings/merchant)
+        "INVALID_TIMEZONE" -> R.string.api_error_invalid_timezone
+        // #632: categories from the product form
+        "CATEGORY_NAME_EXISTS" -> R.string.api_error_category_name_exists
+        "CATEGORY_NAME_REQUIRED" -> R.string.api_error_category_name_required
+        "CANNOT_DELETE_DEFAULT_CATEGORY" -> R.string.api_error_cannot_delete_default_category
         else -> 0
     }
 

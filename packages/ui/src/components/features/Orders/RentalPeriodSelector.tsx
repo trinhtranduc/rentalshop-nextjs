@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label, Badge, Alert, AlertDescription, DateRangePicker } from '@rentalshop/ui';
-import { PricingResolver, PricingValidator, formatCurrency } from '@rentalshop/utils';
+import { PricingResolver, PricingValidator, formatCurrency, dateKeyToPickerDate } from '@rentalshop/utils';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import type { Product, Merchant } from '@rentalshop/types';
 import type { PricingType } from '@rentalshop/constants';
@@ -26,11 +26,13 @@ export const RentalPeriodSelector: React.FC<RentalPeriodSelectorProps> = ({
 }) => {
   const t = useOrderTranslations();
   // Initialize with formData values if available
+  // A day key (or stored instant) opens on the local calendar cell of that Vietnam day. `new Date(key)` is UTC
+  // midnight, the day before in browsers west of UTC (#578 PKG-3).
   const [rentalStartAt, setRentalStartAt] = useState<Date | null>(() => 
-    initialStartDate ? new Date(initialStartDate) : null
+    dateKeyToPickerDate(initialStartDate) ?? null
   );
   const [rentalEndAt, setRentalEndAt] = useState<Date | null>(() => 
-    initialEndDate ? new Date(initialEndDate) : null
+    dateKeyToPickerDate(initialEndDate) ?? null
   );
   const [validationResult, setValidationResult] = useState<any>(null);
   const [lastNotifiedDates, setLastNotifiedDates] = useState<string>('');

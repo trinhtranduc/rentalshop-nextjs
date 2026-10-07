@@ -102,7 +102,7 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: '2026-01-16T10:00:00Z',
           pickedUpAt: null,
-          returnedAt: '2026-01-16T18:00:00Z' // same day
+          returnedAt: '2026-01-16T16:00:00Z' // same day
         };
 
         const revenue = calculateOrderRevenueByStatus(order);
@@ -174,7 +174,7 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: '2026-01-16T10:00:00Z',
           pickedUpAt: '2026-01-16T14:00:00Z', // same day
-          returnedAt: '2026-01-16T18:00:00Z' // same day
+          returnedAt: '2026-01-16T16:00:00Z' // same day
         };
 
         const revenue = calculateOrderRevenueByStatus(order);
@@ -765,8 +765,8 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: new Date('2026-01-16T10:00:00Z'),
           pickedUpAt: new Date('2026-01-16T14:00:00Z'), // same day
-          returnedAt: new Date('2026-01-16T18:00:00Z'), // same day return
-          updatedAt: new Date('2026-01-16T18:00:00Z')
+          returnedAt: new Date('2026-01-16T16:00:00Z'), // same day return
+          updatedAt: new Date('2026-01-16T16:00:00Z')
         };
 
         const events = getOrderRevenueEvents(order, startDate, endDate);
@@ -800,8 +800,8 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: new Date('2026-01-16T10:00:00Z'),
           pickedUpAt: new Date('2026-01-16T14:00:00Z'),
-          returnedAt: new Date('2026-01-16T18:00:00Z'), // all same day
-          updatedAt: new Date('2026-01-16T18:00:00Z')
+          returnedAt: new Date('2026-01-16T16:00:00Z'), // all same day
+          updatedAt: new Date('2026-01-16T16:00:00Z')
         };
 
         const events = getOrderRevenueEvents(order, startDate, endDate);
@@ -878,8 +878,8 @@ describe('Revenue Calculator Utility', () => {
         damageFee: 50000,
         createdAt: new Date('2026-01-16T10:00:00Z'),
         pickedUpAt: new Date('2026-01-16T14:00:00Z'),
-        returnedAt: new Date('2026-01-16T18:00:00Z'), // same day
-        updatedAt: new Date('2026-01-16T18:00:00Z')
+        returnedAt: new Date('2026-01-16T16:00:00Z'), // same day
+        updatedAt: new Date('2026-01-16T16:00:00Z')
       };
 
       const totalRevenue = calculateOrderRevenue(order);
@@ -950,8 +950,8 @@ describe('Revenue Calculator Utility', () => {
           damageFee: 50000,
           createdAt: new Date('2026-01-16T10:00:00Z'),
           pickedUpAt: new Date('2026-01-16T14:00:00Z'), // same day
-          returnedAt: new Date('2026-01-16T18:00:00Z'), // same day return
-          updatedAt: new Date('2026-01-16T18:00:00Z')
+          returnedAt: new Date('2026-01-16T16:00:00Z'), // same day return
+          updatedAt: new Date('2026-01-16T16:00:00Z')
         };
 
         // targetDate = returnedAt (ngày trả hàng)
@@ -1680,6 +1680,54 @@ describe('Revenue Calculator Utility', () => {
       expect(realIncome).toBe(700000);
       // Future income: 1000000 - 300000 = 700000 (future pickup)
       expect(futureIncome).toBe(700000);
+    });
+  });
+
+  // ============================================================================
+  // LATE FEE (#484): collected at return like damageFee (see order-money.ts)
+  // ============================================================================
+  describe('lateFee counts as collected money at return (#484)', () => {
+    const base = {
+      orderType: ORDER_TYPE.RENT,
+      status: ORDER_STATUS.RETURNED,
+      totalAmount: 800000,
+      depositAmount: 200000,
+      securityDeposit: 300000,
+      damageFee: 100000,
+      lateFee: 50000
+    };
+
+    it('different-day return event is damageFee + lateFee - securityDeposit', () => {
+      const order = {
+        ...base,
+        createdAt: '2026-01-16T03:00:00Z',
+        pickedUpAt: '2026-01-17T03:00:00Z',
+        returnedAt: '2026-01-19T03:00:00Z'
+      };
+      const events = getOrderRevenueEvents(order);
+      const ret = events.find((e) => e.revenueType === 'RENT_RETURN');
+      expect(ret.revenue).toBe(100000 + 50000 - 300000);
+    });
+
+    it('same-day pickup and return is totalAmount + damageFee + lateFee', () => {
+      const order = {
+        ...base,
+        createdAt: '2026-01-16T02:00:00Z',
+        pickedUpAt: '2026-01-16T03:00:00Z',
+        returnedAt: '2026-01-16T08:00:00Z'
+      };
+      const total = getOrderRevenueEvents(order).reduce((sum, e) => sum + e.revenue, 0);
+      expect(total).toBe(800000 + 100000 + 50000);
+    });
+
+    it('RETURNED by status is totalAmount + damageFee + lateFee', () => {
+      const order = {
+        ...base,
+        createdAt: '2026-01-16T03:00:00Z',
+        pickedUpAt: '2026-01-17T03:00:00Z',
+        returnedAt: '2026-01-19T03:00:00Z'
+      };
+      expect(calculateOrderRevenueByStatus(order)).toBe(950000);
     });
   });
 });

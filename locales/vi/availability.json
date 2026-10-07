@@ -130,5 +130,62 @@
   },
   "remove": "Bỏ {name}",
   "decrease": "Giảm số lượng",
-  "increase": "Tăng số lượng"
+  "increase": "Tăng số lượng",
+  "web": {
+    "title": "Kiểm tra còn hàng",
+    "outlet": "Cửa hàng",
+    "product": "Sản phẩm",
+    "productPlaceholder": "Tìm tên hoặc mã sản phẩm",
+    "noProducts": "Không tìm thấy sản phẩm",
+    "searching": "Đang tìm…",
+    "pickup": "Ngày giao",
+    "return": "Ngày trả",
+    "quantity": "Số lượng",
+    "check": "Kiểm tra",
+    "quick": {
+      "today": "Hôm nay",
+      "tomorrow": "Ngày mai",
+      "weekend": "Cuối tuần",
+      "threeDays": "3 ngày"
+    },
+    "reversed": "Ngày trả phải từ ngày giao trở đi.",
+    "pickProduct": "Chọn sản phẩm để xem còn bao nhiêu cái trong lịch này.",
+    "pickOutlet": "Chọn cửa hàng để kiểm tra.",
+    "has": "Có {total} cái · {from} → {to}",
+    "free": "Còn {free}/{total} cho cả lịch này",
+    "short": "Thiếu {missing} · còn {free}/{total}",
+    "none": "Hết trong lịch này",
+    "checking": "Đang kiểm tra…",
+    "checkFailed": "Không kiểm tra được.",
+    "retry": "Thử lại",
+    "createOrder": "Tạo đơn với lịch này",
+    "dayLeft": "Còn lại trong ngày",
+    "dayAria": "{day}: còn {count}. Bấm để bắt đầu lịch từ ngày này",
+    "note": "Một ngày tính cả ngày giao và ngày trả, kể cả khi giao và trả cùng ngày. Vùng xanh nhạt là lịch đang kiểm tra. Bấm một ngày để dời lịch sang ngày đó.",
+    "status": {
+      "RESERVED": "Đã đặt",
+      "PICKUPED": "Đang thuê"
+    },
+    "bar": {
+      "returnOn": "trả {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "Đơn đang giữ sản phẩm",
+    "noHolders": "Chưa có đơn nào giữ sản phẩm này.",
+    "holdersFailed": "Không tải được đơn đang giữ sản phẩm.",
+    "units": "{count} cái",
+    "walkIn": "Khách lẻ",
+    "similar": "Cùng danh mục, còn trong lịch này",
+    "similarFree": "Còn {count}",
+    "similarEmpty": "Không có sản phẩm cùng danh mục còn đủ trong lịch này.",
+    "priceSuffix": {
+      "DAILY": "{price}/ngày",
+      "HOURLY": "{price}/giờ",
+      "FIXED": "{price}/lần",
+      "WEEKLY": "{price}/tuần",
+      "MONTHLY": "{price}/tháng"
+    },
+    "change": "Đổi sản phẩm",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7"
+  }
 }

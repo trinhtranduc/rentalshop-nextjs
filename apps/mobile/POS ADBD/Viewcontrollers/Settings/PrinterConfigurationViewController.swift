@@ -4,6 +4,9 @@ import SnapKit
 /// Network thermal printer (ESC/POS over TCP). Form layout so IP and notes
 /// can actually be typed — the old table accessoryView clipped the field.
 class PrinterConfigurationViewController: BaseViewControler {
+    /// #459: new style, set by Settings v2 before the page is shown
+    var v2 = false
+
     private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.keyboardDismissMode = .interactive
@@ -55,6 +58,16 @@ class PrinterConfigurationViewController: BaseViewControler {
         return textView
     }()
 
+    /// #622: print the outlet's bank account + VietQR at the end of bills (this device only)
+    private lazy var bankQrSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.onTintColor = APP_TONE_COLOR
+        toggle.accessibilityLabel = "printer.bankQr.title".localized()
+        toggle.accessibilityIdentifier = "printer.bankQr.switch"
+        toggle.addTarget(self, action: #selector(bankQrChanged), for: .valueChanged)
+        return toggle
+    }()
+
     private lazy var supportLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.regularFont(size: 12)
@@ -85,7 +98,9 @@ class PrinterConfigurationViewController: BaseViewControler {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
+        if !v2 {
+            setupNavigationBar()
+        }
         setupUI()
         loadCurrentConfig()
     }
@@ -96,6 +111,10 @@ class PrinterConfigurationViewController: BaseViewControler {
     }
 
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
@@ -112,7 +131,10 @@ class PrinterConfigurationViewController: BaseViewControler {
         let settingsCard = makeCard()
         let ipRow = makeValueRow(title: "IP Address".localized(), field: ipField)
         let noteBlock = makeNoteBlock()
-        let settingsStack = UIStackView(arrangedSubviews: [ipRow, makeSeparator(), noteBlock])
+        let bankQrRow = makeBankQrRow()
+        bankQrRow.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        bankQrRow.isLayoutMarginsRelativeArrangement = true
+        let settingsStack = UIStackView(arrangedSubviews: [ipRow, makeSeparator(), noteBlock, makeSeparator(), bankQrRow])
         settingsStack.axis = .vertical
         settingsStack.spacing = 0
         settingsCard.addSubview(settingsStack)
@@ -149,6 +171,59 @@ class PrinterConfigurationViewController: BaseViewControler {
         }
     }
 
+    /// v2: ‹ header, labelled IP and note fields, Kiểm tra máy in + Lưu at the bottom (same actions)
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        let line = SettingsDetailV2.installHeader(on: view, title: "Printer Configuration".localized(), back: back)
+
+        let test = V2.secondaryButton("Test Printer".localized())
+        test.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+        test.setContentHuggingPriority(.required, for: .horizontal)
+        test.addTarget(self, action: #selector(testPrinter), for: .touchUpInside)
+        let save = V2.primaryButton("Save".localized())
+        save.addTarget(self, action: #selector(self.save), for: .touchUpInside)
+        let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [test, save])
+
+        hintLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
+        hintLabel.textColor = DS.Color.textMuted
+        supportLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
+        supportLabel.textColor = V2.warn
+        noteTextView.isScrollEnabled = true
+        let form = UIStackView(arrangedSubviews: [
+            hintLabel,
+            SettingsDetailV2.field("IP Address".localized(), ipField.textField),
+            SettingsDetailV2.textArea("Printer Notes".localized(), noteTextView),
+            makeBankQrRow(),
+            supportLabel,
+        ])
+        form.axis = .vertical
+        form.spacing = 16
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(form)
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bar.snp.top)
+        }
+        form.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-16)
+            make.width.equalToSuperview().offset(-2 * DS.Spacing.lg)
+        }
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
     private func setupNavigationBar() {
         setupCustomNavigationBar(
             title: "Printer Configuration".localized(),
@@ -162,6 +237,34 @@ class PrinterConfigurationViewController: BaseViewControler {
     private func loadCurrentConfig() {
         ipField.textField.text = Utils.loadBillPrinter()
         noteTextView.text = Utils.loadNotePrinter()
+        bankQrSwitch.isOn = Utils.loadPrintBankQr()
+    }
+
+    /// "In QR chuyển khoản trên bill" + one-line hint, switch on the right
+    private func makeBankQrRow() -> UIStackView {
+        let title = UILabel()
+        title.font = Utils.boldFont(size: 16)
+        title.textColor = .textPrimary
+        title.numberOfLines = 0
+        title.text = "printer.bankQr.title".localized()
+        let hint = UILabel()
+        hint.font = Utils.regularFont(size: 14)
+        hint.textColor = .textSecondary
+        hint.numberOfLines = 0
+        hint.text = "printer.bankQr.hint".localized()
+        let texts = UIStackView(arrangedSubviews: [title, hint])
+        texts.axis = .vertical
+        texts.spacing = 2
+        bankQrSwitch.setContentCompressionResistancePriority(.required, for: .horizontal)
+        bankQrSwitch.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [texts, bankQrSwitch])
+        row.spacing = 12
+        row.alignment = .center
+        return row
+    }
+
+    @objc private func bankQrChanged() {
+        Utils.savePrintBankQr(bankQrSwitch.isOn)
     }
 
     private func makeCard() -> UIView {

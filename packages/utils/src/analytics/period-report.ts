@@ -5,12 +5,27 @@ import {
   getOrderRevenueEvents,
   parseProductImages
 } from '@rentalshop/utils';
+import { withoutCollateral } from '../core/revenue-calculator';
 import {
   computeIncomePeriodSummary,
   type IncomePeriodDayRow,
   type IncomePeriodSummary
 } from './income-period-summary';
-import { getUTCDateKey } from '../core/date';
+import { SHOP_TIMEZONE } from '../core/date';
+import {
+  addDaysToDateKey,
+  formatDateKeyInTimeZone,
+  getUtcRangeForDateKeys,
+  listCivilDays,
+  listCivilMonths,
+  toDateKeyInTimeZone
+} from '../core/date-range';
+import {
+  splitOutstanding,
+  summarizeOrderValue,
+  type OrderValueSummary,
+  type OutstandingBreakdown
+} from './order-value';
 import { paginateRanked, type RankingPage } from './ranking-page';
 import { rankOutletsByRevenue, type TopOutletRank } from './top-outlet-rank';
 import {
@@ -23,6 +38,13 @@ export type { RankingPage, RankingSortBy } from './ranking-page';
 export { paginateRanked, parseRankingQuery } from './ranking-page';
 export type { TopOutletRank } from './top-outlet-rank';
 export { rankOutletsByRevenue } from './top-outlet-rank';
+export {
+  splitOutstanding,
+  summarizeOrderValue,
+  type OrderValueSummary,
+  type OutstandingBreakdown,
+  type OutstandingPart
+} from './order-value';
 export type { ProductRankSortBy } from './top-product-rank';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -34,6 +56,7 @@ const revenueSelect = {
   depositAmount: true,
   securityDeposit: true,
   damageFee: true,
+  lateFee: true,
   createdAt: true,
   pickedUpAt: true,
   returnedAt: true,
@@ -52,11 +75,31 @@ export interface AnalyticsPeriodSeriesPoint {
   realIncome: number;
   futureIncome: number;
   orderCount: number;
+  /** Orders created in the bucket, not cancelled (#484). Older apps ignore it. */
+  newOrderCount?: number;
+  /** `realIncome` without collateral (#484) */
+  collected?: number;
+  /**
+   * Still to collect at hand-over (no collateral) of RENT orders RESERVED for this day, today or later (#605).
+   * Not `futureIncome`: old Android adds `futureIncome` to the revenue bar. Left out when it cannot be computed.
+   */
+  expectedCollected?: number;
+  /** `totalAmount` of the orders created in the bucket, not cancelled (#605); sums to `revenue.totalOrderValue` */
+  newOrderValue?: number;
+}
+
+export interface OrderValueByType {
+  rent: { amount: number; orders: number };
+  sale: { amount: number; orders: number };
 }
 
 export interface AnalyticsPeriodGrowth {
   orders: { current: number; previous: number; growth: number };
   revenue: { current: number; previous: number; growth: number };
+  /** Same as `revenue`, without collateral (#484) */
+  collected?: { current: number; previous: number; growth: number };
+  /** `revenue.totalOrderValue` of this and the previous period (#492) */
+  orderValue?: { current: number; previous: number; growth: number };
 }
 
 export interface AnalyticsPeriodReport {
@@ -68,6 +111,20 @@ export interface AnalyticsPeriodReport {
     totalRevenue: number;
     totalActualRevenue: number;
     totalOrders: number;
+    /** Sum of `totalAmount` of orders created in the period, not cancelled (#484) */
+    totalOrderValue?: number;
+    /** Part of `totalOrderValue` not collected yet (#484) */
+    outstanding?: number;
+    /** Money collected in the period without collateral (#484) */
+    collected?: number;
+    /** Where `collected` came from: deposits + pickupAndSale + fees - refunds (#492) */
+    collectedBreakdown?: { deposits: number; pickupAndSale: number; fees: number; refunds: number };
+    /** Collateral received and handed back in the period (#494). Not part of `collected`. */
+    collateralFlow?: { received: number; returned: number };
+    /** Where `outstanding` will come from, split at the start of today (#494) */
+    outstandingBreakdown?: OutstandingBreakdown;
+    /** `totalOrderValue` split by order type (#605); `rent.amount + sale.amount = totalOrderValue` */
+    orderValueByType?: OrderValueByType;
   };
   growth: AnalyticsPeriodGrowth;
   series: AnalyticsPeriodSeriesPoint[];
@@ -171,6 +228,7 @@ export interface TopProductShopRank {
   category: string;
   note: string | null;
   rentalCount: number;
+  saleCount: number;
   quantity: number;
   totalRevenue: number;
   image: string | null;
@@ -206,9 +264,20 @@ export async function computeTopProductsByShop(
       productId: true,
       quantity: true,
       totalPrice: true,
-      order: { select: { outletId: true } }
+      order: { select: { outletId: true, orderType: true } }
     }
   });
+
+  // "rentals" = quantity on RENT lines, sales = quantity on SALE lines, per product and shop (#429)
+  const quantityByType = new Map<string, { rent: number; sale: number }>();
+  for (const row of rows) {
+    if (!row.productId) continue;
+    const key = `${row.productId}:${row.order.outletId}`;
+    const entry = quantityByType.get(key) ?? { rent: 0, sale: 0 };
+    if (row.order.orderType === ORDER_TYPE.RENT) entry.rent += row.quantity || 0;
+    else if (row.order.orderType === ORDER_TYPE.SALE) entry.sale += row.quantity || 0;
+    quantityByType.set(key, entry);
+  }
 
   const ranked = rankProductShops(
     aggregateProductShopSales(
@@ -262,13 +331,15 @@ export async function computeTopProductsByShop(
       const product = productById.get(row.productId);
       const outlet = outletById.get(row.outletId);
       const images = parseProductImages(product?.images);
+      const byType = quantityByType.get(`${row.productId}:${row.outletId}`);
       return {
         id: product?.id || row.productId,
         name: product?.name || 'Unknown Product',
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',
         note: product?.description || null,
-        rentalCount: row.quantity,
+        rentalCount: byType?.rent || 0,
+        saleCount: byType?.sale || 0,
         quantity: row.quantity,
         totalRevenue: row.totalRevenue,
         image: images.length > 0 ? images[0] : null,
@@ -304,56 +375,23 @@ export function emptyAnalyticsPeriodReport(
   };
 }
 
-function parseUTCStart(s: string): Date {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
-  }
-  const dt = new Date(s);
-  return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), 0, 0, 0, 0));
-}
-
-function parseUTCEnd(s: string): Date {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999));
-  }
-  const dt = new Date(s);
-  return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), 23, 59, 59, 999));
-}
-
-/** Previous period with the same number of calendar days (7d→prev 7d, 30d→prev 30d, year→prev year). */
-export function resolvePreviousPeriod(rangeStart: Date, rangeEnd: Date): { prevStart: Date; prevEnd: Date } {
+/**
+ * Previous period with the same number of civil days (7d→prev 7d, 30d→prev 30d, full year→prev year).
+ * Keys are `YYYY-MM-DD` civil days; the caller turns them into UTC bounds in its time zone (#355).
+ */
+export function resolvePreviousPeriodKeys(startKey: string, endKey: string): { prevStartKey: string; prevEndKey: string } {
   const isFullCalendarYear =
-    rangeStart.getUTCMonth() === 0 &&
-    rangeStart.getUTCDate() === 1 &&
-    rangeEnd.getUTCMonth() === 11 &&
-    rangeEnd.getUTCDate() === 31 &&
-    rangeStart.getUTCFullYear() === rangeEnd.getUTCFullYear();
-
+    startKey.slice(5) === '01-01' && endKey.slice(5) === '12-31' && startKey.slice(0, 4) === endKey.slice(0, 4);
   if (isFullCalendarYear) {
-    const y = rangeStart.getUTCFullYear() - 1;
-    return {
-      prevStart: new Date(Date.UTC(y, 0, 1, 0, 0, 0, 0)),
-      prevEnd: new Date(Date.UTC(y, 11, 31, 23, 59, 59, 999))
-    };
+    const y = Number(startKey.slice(0, 4)) - 1;
+    return { prevStartKey: `${y}-01-01`, prevEndKey: `${y}-12-31` };
   }
-
-  const startDay = Date.UTC(rangeStart.getUTCFullYear(), rangeStart.getUTCMonth(), rangeStart.getUTCDate());
-  const endDay = Date.UTC(rangeEnd.getUTCFullYear(), rangeEnd.getUTCMonth(), rangeEnd.getUTCDate());
-  const daySpan = Math.max(Math.round((endDay - startDay) / DAY_MS) + 1, 1);
-
-  const prevEndDay = new Date(startDay - DAY_MS);
-  const prevStartDay = new Date(prevEndDay.getTime() - (daySpan - 1) * DAY_MS);
-
-  return {
-    prevStart: new Date(
-      Date.UTC(prevStartDay.getUTCFullYear(), prevStartDay.getUTCMonth(), prevStartDay.getUTCDate(), 0, 0, 0, 0)
-    ),
-    prevEnd: new Date(
-      Date.UTC(prevEndDay.getUTCFullYear(), prevEndDay.getUTCMonth(), prevEndDay.getUTCDate(), 23, 59, 59, 999)
-    )
-  };
+  const daySpan = Math.max(
+    Math.round((Date.parse(`${endKey}T00:00:00Z`) - Date.parse(`${startKey}T00:00:00Z`)) / DAY_MS) + 1,
+    1
+  );
+  const prevEndKey = addDaysToDateKey(startKey, -1);
+  return { prevStartKey: addDaysToDateKey(prevEndKey, -(daySpan - 1)), prevEndKey };
 }
 
 /**
@@ -377,6 +415,7 @@ function mapRevenueOrder(order: any) {
     depositAmount: order.depositAmount || 0,
     securityDeposit: order.securityDeposit || 0,
     damageFee: order.damageFee || 0,
+    lateFee: order.lateFee || 0,
     createdAt: order.createdAt,
     pickedUpAt: order.pickedUpAt,
     returnedAt: order.returnedAt,
@@ -419,51 +458,87 @@ function buildEventWhere(
 
 function mapDayRowsToSeries(
   periods: IncomePeriodDayRow[],
-  rangeStart: Date,
-  rangeEnd: Date
+  startKey: string,
+  endKey: string,
+  timeZone: string
 ): AnalyticsPeriodSeriesPoint[] {
   const byDate = new Map(periods.map((p) => [p.date, p]));
-  const series: AnalyticsPeriodSeriesPoint[] = [];
-
-  let currentMs = Date.UTC(
-    rangeStart.getUTCFullYear(),
-    rangeStart.getUTCMonth(),
-    rangeStart.getUTCDate()
-  );
-  const endMs = Date.UTC(
-    rangeEnd.getUTCFullYear(),
-    rangeEnd.getUTCMonth(),
-    rangeEnd.getUTCDate()
-  );
-
-  while (currentMs <= endMs) {
-    const current = new Date(currentMs);
-    const dateKey = getUTCDateKey(current);
-    const [y, m, d] = dateKey.split('/');
+  return listCivilDays(startKey, endKey, timeZone).map(({ dateKey: key }) => {
+    const [y, m, d] = key.split('-');
+    const dateKey = `${y}/${m}/${d}`;
     const yearNum = parseInt(y, 10);
-    const monthNum = parseInt(m, 10);
-    const dayNum = parseInt(d, 10);
     const row = byDate.get(dateKey);
-
-    series.push({
-      month: `${String(dayNum).padStart(2, '0')}/${String(monthNum).padStart(2, '0')}/${String(yearNum).slice(-2)}`,
+    return {
+      month: `${d}/${m}/${y.slice(-2)}`,
       date: dateKey,
       dateISO: row?.dateISO ?? `${y}-${m}-${d}T00:00:00.000Z`,
       year: yearNum,
-      dayNumber: dayNum,
+      dayNumber: parseInt(d, 10),
       realIncome: row?.totalRevenue ?? 0,
+      collected: row?.collected ?? 0,
       futureIncome: 0,
+      newOrderCount: row?.newOrderCount ?? 0,
       orderCount:
         (row?.newOrderCount ?? 0) +
         (row?.pickupOrderCount ?? 0) +
         (row?.returnOrderCount ?? 0) +
         (row?.cancelledOrderCount ?? 0)
-    });
+    };
+  });
+}
 
-    currentMs += DAY_MS;
+type CreatedOrderRow = { orderType: string; status: string; totalAmount?: number | null; createdAt?: Date | string | null };
+
+/** Rent / sale split of the order value (#605): same rows and rule as `summarizeOrderValue().totalOrderValue` */
+export function splitOrderValueByType(orders: CreatedOrderRow[]): OrderValueByType {
+  const result: OrderValueByType = { rent: { amount: 0, orders: 0 }, sale: { amount: 0, orders: 0 } };
+  for (const o of orders) {
+    if (o.status === ORDER_STATUS.CANCELLED) continue;
+    const part = o.orderType === ORDER_TYPE.SALE ? result.sale : o.orderType === ORDER_TYPE.RENT ? result.rent : null;
+    if (!part) continue;
+    part.amount += o.totalAmount || 0;
+    part.orders += 1;
   }
+  return result;
+}
 
-  return series;
+/**
+ * What the hand-over of a RESERVED rent order will still collect, without collateral (#605):
+ * total − deposit − completed PICKUP payments, never below 0. Same rule as "Thu khi giao" on the order page
+ * (`handOverMoney`) and `apps/api/lib/order-balance.ts`, minus the collateral term.
+ */
+export function expectedAtHandOver(order: {
+  totalAmount?: number | null;
+  depositAmount?: number | null;
+  payments?: Array<{ amount?: number | null; status?: string | null; notes?: string | null }> | null;
+}): number {
+  const paidAtPickup = (order.payments || [])
+    .filter((p) => p.status === 'COMPLETED' && p.notes === 'PICKUP')
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  return Math.max(0, (order.totalAmount || 0) - (order.depositAmount || 0) - paidAtPickup);
+}
+
+/** Bucket key of a series point: `YYYY-MM-DD` for a day, `YYYY-MM` for a month */
+function seriesPointKey(point: AnalyticsPeriodSeriesPoint): string | null {
+  if (point.date) return point.date.replace(/\//g, '-');
+  if (point.year && point.monthNumber) return `${point.year}-${String(point.monthNumber).padStart(2, '0')}`;
+  return null;
+}
+
+/** Sums amounts into day keys (`YYYY-MM-DD`) or, for a monthly series, month keys (`YYYY-MM`) */
+function sumByBucket(
+  rows: Array<{ at: Date | string | null | undefined; amount: number }>,
+  groupBy: 'day' | 'month',
+  timeZone: string
+): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.at) continue;
+    const dayKey = formatDateKeyInTimeZone(new Date(row.at), timeZone);
+    const key = groupBy === 'month' ? dayKey.slice(0, 7) : dayKey;
+    out.set(key, (out.get(key) || 0) + row.amount);
+  }
+  return out;
 }
 
 export interface BuildAnalyticsPeriodReportParams {
@@ -473,6 +548,8 @@ export interface BuildAnalyticsPeriodReportParams {
   limit: number;
   outletFilter: Record<string, any>;
   userRole: string;
+  /** IANA zone whose civil days and months the report uses (default Vietnam, #355) */
+  timeZone?: string;
 }
 
 /**
@@ -483,17 +560,22 @@ export async function buildAnalyticsPeriodReport(
   db: DbApi,
   params: BuildAnalyticsPeriodReportParams
 ): Promise<AnalyticsPeriodReport> {
-  const { startDate, endDate, groupBy, limit, outletFilter, userRole } = params;
-  const rangeStart = parseUTCStart(startDate);
-  const rangeEnd = parseUTCEnd(endDate);
-  const { prevStart, prevEnd } = resolvePreviousPeriod(rangeStart, rangeEnd);
+  const { startDate, endDate, groupBy, limit, outletFilter, userRole, timeZone = SHOP_TIMEZONE } = params;
+  // Civil days of `timeZone` (#355): 2026-10-02 in Vietnam is 2026-10-01T17:00Z .. 2026-10-02T16:59:59.999Z
+  const startKey = toDateKeyInTimeZone(startDate, timeZone);
+  const endKey = toDateKeyInTimeZone(endDate, timeZone);
+  if (!startKey || !endKey) throw new Error(`Invalid period: ${startDate}..${endDate}`);
+  const { start: rangeStart, end: rangeEnd } = getUtcRangeForDateKeys({ from: startKey, to: endKey }, timeZone);
+  const { prevStartKey, prevEndKey } = resolvePreviousPeriodKeys(startKey, endKey);
+  const { start: prevStart, end: prevEnd } = getUtcRangeForDateKeys({ from: prevStartKey, to: prevEndKey }, timeZone);
 
   const computeOperational = async () => {
     const { summary } = await computeIncomePeriodSummary(prisma, {
       startDate,
       endDate,
       outletFilter,
-      includeDailyPeriods: groupBy === 'day'
+      includeDailyPeriods: groupBy === 'day',
+      timeZone
     });
     return summary;
   };
@@ -504,27 +586,18 @@ export async function buildAnalyticsPeriodReport(
         startDate,
         endDate,
         outletFilter,
-        includeDailyPeriods: true
+        includeDailyPeriods: true,
+        timeZone
       });
-      return mapDayRowsToSeries(periods ?? [], rangeStart, rangeEnd);
+      return mapDayRowsToSeries(periods ?? [], startKey, endKey, timeZone);
     }
 
     const income: AnalyticsPeriodSeriesPoint[] = [];
-    let current = new Date(
-      Date.UTC(rangeStart.getUTCFullYear(), rangeStart.getUTCMonth(), 1, 0, 0, 0, 0)
-    );
-    const endMonthDate = new Date(
-      Date.UTC(rangeEnd.getUTCFullYear(), rangeEnd.getUTCMonth(), 1, 0, 0, 0, 0)
-    );
-
-    while (current <= endMonthDate) {
-      const year = current.getUTCFullYear();
-      const month = current.getUTCMonth();
-      const monthStr = String(month + 1).padStart(2, '0');
-      const yearStr = String(year).slice(-2);
-      const periodLabel = `${monthStr}/${yearStr}`;
-      const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-      const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+    for (const civilMonth of listCivilMonths(startKey, endKey, timeZone)) {
+      const year = civilMonth.year;
+      const periodLabel = `${String(civilMonth.month).padStart(2, '0')}/${String(year).slice(-2)}`;
+      const startOfMonth = civilMonth.start;
+      const endOfMonth = civilMonth.end;
 
       const monthOrders = await prisma.order.findMany({
         where: buildEventWhere(outletFilter, startOfMonth, endOfMonth),
@@ -532,8 +605,10 @@ export async function buildAnalyticsPeriodReport(
         take: 10000
       });
 
-      const { realIncome, futureIncome } = calculatePeriodRevenueBatch(
-        monthOrders.map(mapRevenueOrder),
+      const monthRevenueOrders = monthOrders.map(mapRevenueOrder);
+      const { realIncome, futureIncome } = calculatePeriodRevenueBatch(monthRevenueOrders, startOfMonth, endOfMonth);
+      const { realIncome: collected } = calculatePeriodRevenueBatch(
+        monthRevenueOrders.map(withoutCollateral),
         startOfMonth,
         endOfMonth
       );
@@ -548,37 +623,99 @@ export async function buildAnalyticsPeriodReport(
         }
       });
 
+      const newOrderCount = await db.orders.getStats({
+        where: {
+          ...outletFilter,
+          createdAt: { gte: startOfMonth, lte: endOfMonth },
+          status: { not: ORDER_STATUS.CANCELLED as any }
+        }
+      });
+
       income.push({
         month: periodLabel,
         year,
-        monthNumber: month + 1,
+        monthNumber: civilMonth.month,
         realIncome,
+        collected,
         futureIncome,
-        orderCount
+        orderCount,
+        newOrderCount
       });
-
-      current = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
     }
 
     return income;
   };
 
+  const todayStart = getUtcRangeForDateKeys({ from: formatDateKeyInTimeZone(new Date(), timeZone) }, timeZone).start;
+  const computeOrderValue = async (
+    start: Date = rangeStart,
+    end: Date = rangeEnd
+  ): Promise<OrderValueSummary & { outstandingBreakdown: OutstandingBreakdown; created: CreatedOrderRow[] }> => {
+    const created = await prisma.order.findMany({
+      where: {
+        ...outletFilter,
+        deletedAt: null,
+        createdAt: { gte: start, lte: end },
+        status: { not: ORDER_STATUS.CANCELLED as any }
+      } as any,
+      select: {
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        pickupPlanAt: true,
+        createdAt: true
+      },
+      take: 10000
+    });
+    return { ...summarizeOrderValue(created), outstandingBreakdown: splitOutstanding(created, todayStart), created };
+  };
+
+  // #605: one query, only when the range reaches today; pickup days before today are never expected (no-shows)
+  const computeExpectedCollected = async (): Promise<Map<string, number>> => {
+    if (rangeEnd < todayStart) return new Map();
+    const reserved = await prisma.order.findMany({
+      where: {
+        ...outletFilter,
+        deletedAt: null,
+        orderType: ORDER_TYPE.RENT as any,
+        status: ORDER_STATUS.RESERVED as any,
+        pickupPlanAt: { gte: rangeStart > todayStart ? rangeStart : todayStart, lte: rangeEnd }
+      } as any,
+      select: {
+        totalAmount: true,
+        depositAmount: true,
+        pickupPlanAt: true,
+        payments: { where: { status: 'COMPLETED', notes: 'PICKUP' }, select: { amount: true, status: true, notes: true } }
+      },
+      take: 10000
+    });
+    return sumByBucket(
+      reserved.map((o: any) => ({ at: o.pickupPlanAt, amount: expectedAtHandOver(o) })),
+      groupBy,
+      timeZone
+    );
+  };
+
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
-    const fetchRevenue = async (ps: Date, pe: Date): Promise<number> => {
+    const fetchRevenue = async (ps: Date, pe: Date): Promise<{ revenue: number; collected: number }> => {
       const orders = await prisma.order.findMany({
         where: buildEventWhere(outletFilter, ps, pe),
         select: revenueSelect,
         take: 10000
       });
-      const { realIncome } = calculatePeriodRevenueBatch(orders.map(mapRevenueOrder), ps, pe);
-      return realIncome;
+      const mapped = orders.map(mapRevenueOrder);
+      const { realIncome } = calculatePeriodRevenueBatch(mapped, ps, pe);
+      const { realIncome: collected } = calculatePeriodRevenueBatch(mapped.map(withoutCollateral), ps, pe);
+      return { revenue: realIncome, collected };
     };
 
-    const [curCountRes, prevCountRes, curRevenue, prevRevenue] = await Promise.all([
+    const [curCountRes, prevCountRes, curRevenue, prevRevenue, prevOrderValue] = await Promise.all([
       db.orders.search({ where: { ...outletFilter, createdAt: { gte: rangeStart, lte: rangeEnd } }, limit: 1 }),
       db.orders.search({ where: { ...outletFilter, createdAt: { gte: prevStart, lte: prevEnd } }, limit: 1 }),
       fetchRevenue(rangeStart, rangeEnd),
-      fetchRevenue(prevStart, prevEnd)
+      fetchRevenue(prevStart, prevEnd),
+      computeOrderValue(prevStart, prevEnd).catch(() => null)
     ]);
 
     const curCount = curCountRes.total || 0;
@@ -591,19 +728,31 @@ export async function buildAnalyticsPeriodReport(
         growth: percentChange(curCount, prevCount)
       },
       revenue: {
-        current: curRevenue,
-        previous: prevRevenue,
-        growth: percentChange(curRevenue, prevRevenue)
-      }
+        current: curRevenue.revenue,
+        previous: prevRevenue.revenue,
+        growth: percentChange(curRevenue.revenue, prevRevenue.revenue)
+      },
+      collected: {
+        current: curRevenue.collected,
+        previous: prevRevenue.collected,
+        growth: percentChange(curRevenue.collected, prevRevenue.collected)
+      },
+      ...(prevOrderValue ? { orderValue: { current: 0, previous: prevOrderValue.totalOrderValue, growth: 0 } } : {})
     };
   };
 
   const computeTopProducts = async () => {
     const orders = await db.orders.search({
-      where: { ...outletFilter, createdAt: { gte: rangeStart, lte: rangeEnd } },
+      where: {
+        ...outletFilter,
+        createdAt: { gte: rangeStart, lte: rangeEnd },
+        // Rankings never count cancelled orders (#361)
+        status: { not: ORDER_STATUS.CANCELLED }
+      },
       limit: 10000
     });
-    const orderIds = orders.data?.map((o: { id: number }) => o.id) || [];
+    const orderRows: Array<{ id: number; orderType?: string }> = orders.data || [];
+    const orderIds = orderRows.map((o) => o.id);
     if (orderIds.length === 0) return [];
 
     const grouped = await db.orderItems.groupBy({
@@ -614,6 +763,30 @@ export async function buildAnalyticsPeriodReport(
       orderBy: { _sum: { totalPrice: 'desc' } },
       take: limit
     });
+
+    // "rentals" count RENT order lines only; SALE lines are `saleCount` (#429)
+    const rankedIds = grouped
+      .map((item: { productId: number | null }) => Number(item.productId))
+      .filter((id: number) => Number.isFinite(id) && id > 0);
+    const countLinesByProduct = async (orderType: string): Promise<Map<number, number>> => {
+      const typedOrderIds = orderRows.filter((o) => o.orderType === orderType).map((o) => o.id);
+      if (typedOrderIds.length === 0 || rankedIds.length === 0) return new Map();
+      const counts = await db.orderItems.groupBy({
+        by: ['productId'],
+        where: { orderId: { in: typedOrderIds }, productId: { in: rankedIds } },
+        _count: { productId: true }
+      });
+      return new Map(
+        counts.map((c: { productId: number | null; _count?: { productId?: number } }) => [
+          Number(c.productId),
+          Number(c._count?.productId) || 0
+        ])
+      );
+    };
+    const [rentLines, saleLines] = await Promise.all([
+      countLinesByProduct(ORDER_TYPE.RENT),
+      countLinesByProduct(ORDER_TYPE.SALE)
+    ]);
 
     const result: any[] = [];
     for (const item of grouped) {
@@ -628,7 +801,8 @@ export async function buildAnalyticsPeriodReport(
         rentPrice: product?.rentPrice || 0,
         category: product?.category?.name || 'Uncategorized',
         note: product?.description || null,
-        rentalCount: (item._count as any).productId,
+        rentalCount: rentLines.get(productId) || 0,
+        saleCount: saleLines.get(productId) || 0,
         totalRevenue: item._sum?.totalPrice || 0,
         image: images.length > 0 ? images[0] : null
       });
@@ -653,6 +827,7 @@ export async function buildAnalyticsPeriodReport(
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,
+        lateFee: true,
         createdAt: true,
         pickedUpAt: true,
         returnedAt: true,
@@ -742,7 +917,9 @@ export async function buildAnalyticsPeriodReport(
       rangeEnd,
       page: 1,
       limit
-    })
+    }),
+    computeOrderValue(),
+    computeExpectedCollected()
   ]);
 
   const valueOr = <T>(result: PromiseSettledResult<T>, fallback: T, label: string): T => {
@@ -752,6 +929,13 @@ export async function buildAnalyticsPeriodReport(
   };
 
   const operational = valueOr(settled[0], null, 'operational');
+  const orderValue = valueOr<
+    (OrderValueSummary & { outstandingBreakdown: OutstandingBreakdown; created: CreatedOrderRow[] }) | null
+  >(
+    settled[6],
+    null,
+    'orderValue'
+  );
   const series = valueOr(settled[1], [], 'series');
   const growth = valueOr(
     settled[2],
@@ -761,6 +945,45 @@ export async function buildAnalyticsPeriodReport(
     },
     'growth'
   );
+  if (growth.orderValue && orderValue) {
+    const previous = growth.orderValue.previous;
+    growth.orderValue = {
+      current: orderValue.totalOrderValue,
+      previous,
+      growth: percentChange(orderValue.totalOrderValue, previous)
+    };
+  } else {
+    delete growth.orderValue;
+  }
+
+  // #605 fields: each one isolated, so a failure leaves that field out and every other field as it was
+  const expectedByBucket = valueOr<Map<string, number> | null>(settled[7], null, 'expectedCollected');
+  let orderValueByType: OrderValueByType | null = null;
+  try {
+    const newValueByBucket = orderValue
+      ? sumByBucket(
+          orderValue.created
+            .filter((o) => o.status !== ORDER_STATUS.CANCELLED)
+            .map((o) => ({ at: o.createdAt, amount: o.totalAmount || 0 })),
+          groupBy,
+          timeZone
+        )
+      : null;
+    if (orderValue) orderValueByType = splitOrderValueByType(orderValue.created);
+    for (const point of series) {
+      const key = seriesPointKey(point);
+      if (key == null) continue;
+      if (expectedByBucket) point.expectedCollected = expectedByBucket.get(key) || 0;
+      if (newValueByBucket) point.newOrderValue = newValueByBucket.get(key) || 0;
+    }
+  } catch (error) {
+    console.error('Analytics period section failed (#605 fields):', error);
+    orderValueByType = null;
+    for (const point of series) {
+      delete point.expectedCollected;
+      delete point.newOrderValue;
+    }
+  }
 
   const totalOrdersFromOps =
     operational?.orderCounts != null
@@ -778,7 +1001,22 @@ export async function buildAnalyticsPeriodReport(
     revenue: {
       totalRevenue: operational?.totalRevenue ?? growth.revenue.current,
       totalActualRevenue: operational?.totalActualRevenue ?? growth.revenue.current,
-      totalOrders: totalOrdersFromOps
+      totalOrders: totalOrdersFromOps,
+      ...(orderValue
+        ? {
+            totalOrderValue: orderValue.totalOrderValue,
+            outstanding: orderValue.outstanding,
+            outstandingBreakdown: orderValue.outstandingBreakdown,
+            ...(orderValueByType ? { orderValueByType } : {})
+          }
+        : {}),
+      ...(operational
+        ? {
+            collected: operational.totalCollected,
+            collectedBreakdown: operational.collectedBreakdown,
+            collateralFlow: operational.collateralFlow
+          }
+        : {})
     },
     growth,
     series,

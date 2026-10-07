@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { subscriptionsApi, planLimitAddonsApi } from '@rentalshop/utils';
+import { subscriptionsApi, planLimitAddonsApi, formatInShopZone } from '@rentalshop/utils';
 import { SubscriptionExtendDialogEnhanced } from '@rentalshop/ui';
 import type { PlanLimitAddon } from '@rentalshop/types';
 import { Card,
@@ -262,8 +262,9 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     return <StatusBadge status={status} />;
   };
 
+  // Business dates in Vietnam time, whatever the browser zone (#578 ADM-9)
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return formatInShopZone(date, 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

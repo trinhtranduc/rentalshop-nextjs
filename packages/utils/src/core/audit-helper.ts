@@ -31,6 +31,18 @@ export interface AuditHelperContext {
   metadata?: Record<string, any>;
 }
 
+/** Content equality for audit diffs: Dates compare by instant, objects/arrays by JSON. */
+export function sameAuditValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return a == b;
+  if (typeof a !== 'object' && typeof b !== 'object') return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
 export class AuditHelper {
   private auditLogger: AuditLogger;
   private prisma: PrismaClient;
@@ -207,6 +219,9 @@ export class AuditHelper {
     severity?: 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
     category?: 'GENERAL' | 'SECURITY' | 'BUSINESS' | 'SYSTEM' | 'COMPLIANCE';
     metadata?: Record<string, any>;
+    /** Optional snapshots kept on the row (e.g. an order payment for the change history, #519). */
+    oldValues?: Record<string, any>;
+    newValues?: Record<string, any>;
   }) {
     try {
       await this.auditLogger.log({
@@ -214,6 +229,8 @@ export class AuditHelper {
         entityType: params.entityType,
         entityId: params.entityId,
         entityName: params.entityName,
+        ...(params.oldValues ? { oldValues: params.oldValues } : {}),
+        ...(params.newValues ? { newValues: params.newValues } : {}),
         description: params.description,
         severity: params.severity || 'INFO',
         category: params.category || 'GENERAL',
@@ -231,7 +248,8 @@ export class AuditHelper {
   }
 
   /**
-   * Calculate changes between old and new values
+   * Calculate changes between old and new values.
+   * Values are compared by content (#519): two equal Dates or two equal arrays are not a change.
    */
   private calculateChanges(oldValues: Record<string, any>, newValues: Record<string, any>): Record<string, { old: any; new: any }> {
     const changes: Record<string, { old: any; new: any }> = {};
@@ -240,7 +258,7 @@ export class AuditHelper {
     for (const key in newValues) {
       if (key === 'id' || key === 'createdAt' || key === 'updatedAt') continue;
       
-      if (oldValues[key] !== newValues[key]) {
+      if (!sameAuditValue(oldValues[key], newValues[key])) {
         changes[key] = {
           old: oldValues[key],
           new: newValues[key]

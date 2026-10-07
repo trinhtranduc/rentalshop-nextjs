@@ -3,9 +3,14 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { getAuditLogger, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { canReadProductHistory, type HistoryDb } from '../../../../../lib/change-history';
 
 /**
- * GET /api/products/[id]/history - Get change history for a product
+ * GET /api/products/[id]/history - Get change history for a product (raw audit rows)
+ *
+ * Access (#519): the product must belong to the caller's merchant; ADMIN / OPS any product.
+ * Otherwise 404 PRODUCT_NOT_FOUND. Response shape unchanged.
+ * Reads AuditLog by the (entityType, entityId) index.
  */
 export async function GET(
   request: NextRequest,
@@ -20,6 +25,14 @@ export async function GET(
         return NextResponse.json(ResponseBuilder.error('INVALID_PRODUCT_ID_FORMAT'), { status: 400 });
       }
       const productId = parseInt(id);
+      const allowed = await canReadProductHistory(prisma as unknown as HistoryDb, productId, {
+        role: user.role,
+        merchantId: userScope.merchantId,
+        outletId: userScope.outletId,
+      });
+      if (!allowed) {
+        return NextResponse.json(ResponseBuilder.error('PRODUCT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+      }
       const { searchParams } = new URL(request.url);
       const limit = Math.min(parseInt(searchParams.get('limit') || '50') || 50, 100);
       const offset = Math.max(0, parseInt(searchParams.get('offset') || '0') || 0);

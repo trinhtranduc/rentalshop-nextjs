@@ -17,7 +17,7 @@ Rental-shop POS and management platform. Yarn 1 + Turborepo monorepo:
 - `prisma/schema.prisma` — PostgreSQL
 - `apps/mobile` — iOS (Swift), `apps/mobile-android` — Android (Kotlin)
 
-`dev` deploys to dev-api.anyrent.shop. `main` is production. Pull requests target `main`.
+`dev` deploys to dev-api.anyrent.shop. `main-real` is production (`main` is stale). Pull requests target `dev`.
 
 ## SDLC (do not skip stages)
 
@@ -34,6 +34,7 @@ Map of the [AI-native SDLC playbook](https://academy.claude.com/courses/ai-nativ
 | 6. Prove the change | lint, type-check, tests, eval cases | `verify-change` |
 | 7. Open a PR that links the issue; review in layers | `.github/PULL_REQUEST_TEMPLATE.md` | `review-pr` |
 | 8. A miss or hotfix becomes a new eval and a new intent | `.agent/evals/cases/` | `incident-to-eval` |
+| 9. Release `dev` → `main-real` with a go / no-go verdict | the release PR body | `release-review` |
 
 No pull request without an issue. No implementation without `intent.md` + `spec.md` + `plan.md`
 for anything that is not a one-line typo. Bug fixes still start from a failing test (`bug-fix-tdd`).
@@ -64,11 +65,12 @@ without an explicit human go for that one command (`RELEASE_APPROVED=1`). The ho
 - **API routes** (skill `api-route-standard`): `with*Auth` from `@rentalshop/auth/server`, zod, `ResponseBuilder`, `handleApiError`, data via `db` from `@rentalshop/database`.
 - **Dual IDs:** database primary keys are CUIDs. Every external surface (API JSON, URLs, mobile, forms) uses numeric `publicId` / `id`. Never leak a CUID to a client.
 - **Roles:** `ADMIN`, `OPS`, `ARTICLE`, `MERCHANT`, `OUTLET_ADMIN`, `OUTLET_STAFF`. Scope (`userScope`) is enforced in the API. UI helpers only hide controls.
-- **Orders:** `RENT` / `SALE`. Rent: `RESERVED → PICKUPED → RETURNED`. Sale: `RESERVED → COMPLETED`. Plus `CANCELLED`. Number format `ORD-{outletId}-{sequence}`.
+- **Orders:** `RENT` / `SALE`. Rent: `RESERVED → PICKUPED → RETURNED`. Sale: created `COMPLETED` (older sales `RESERVED → COMPLETED`). Plus `CANCELLED`. Order number: random unique 6-digit string `100000`–`999999` (`POST /api/orders`, `generateOrderNumber`); `ORD-{outletId}-{sequence}` only on old/seed rows.
 - **Time** (skill `timezone-dates`): store UTC, reason in Vietnam civil days (`Asia/Ho_Chi_Minh`). A day is a `YYYY-MM-DD` key via `getUtcRangeForDateKeys` / `getLocalDateKey`. Never use `toISOString().split`, `setHours(0,0,0,0)`, `getDate()`, or `toLocaleDateString()` for day logic. Date tests run under `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh`. A same-day pickup and return still occupies that day.
 - **Shared code:** UI in `packages/ui`, helpers in `packages/utils`, types in `packages/types`. Frontends call the API through `*Api` / `authenticatedFetch`, never raw `fetch`.
 - **i18n** (skill `i18n-keys`): a new key goes into `locales/{en,vi,ja,ko,zh}`. Error codes need `errors.json` entries.
 - **Mobile** (skill `mobile-parity`): an order, availability, or response-shape change updates iOS and Android.
+- **API compatibility** (skill `api-compat-review`): customers run installed apps that cannot be force-updated. Any change to `apps/api`, a package the API uses, a business rule, `prisma/`, or an API env var gets an impact review **twice**: in the issue before work starts (the old callers on `main-real`, with `file:line`, and the verdict), and in the PR before merge (the `## API compatibility` table). Every such change adds a row to `.agent/api-changes/LOG.md`, and `release-review` moves it to `main-real`. Additive only; never remove, rename, or retype a field old apps read, and never change the meaning of a field old apps read (add a new field instead). `pr-governance.yml` fails a PR that touches API paths without both.
 - **Migrations** (skill `db-migration`): never edit an applied file under `prisma/migrations/`. Add a new migration.
 - **Config:** extend `tsconfig.base.json` / `tsup.config.base.ts`. Never commit `.env*`, keystores, or `*.p8`.
 - **Commits:** `type(scope): subject`. Scopes: `api`, `admin`, `client`, `mobile`, `orders`, `availability`, `seo`. Branches: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`, `hotfix/<issue>-<slug>`.
@@ -99,6 +101,7 @@ SDLC (`.agents/skills/`):
 - `verify-change` — before saying done
 - `review-pr` — before or during pull request review
 - `incident-to-eval` — hotfix, production bug, or a repeated agent mistake
+- `release-review` — a PR into `main-real`, "release", "deploy to production", or "is dev safe to ship"
 
 Domain (`.claude/skills/`):
 
@@ -107,7 +110,9 @@ Domain (`.claude/skills/`):
 - `db-migration` — schema change
 - `i18n-keys` — user-facing string or error code
 - `mobile-parity` — API shape or business-rule change
+- `api-compat-review` — any API, shared-package, rule, migration, or API env change (installed apps)
 - `bug-fix-tdd` — any bug or hotfix
+- `mobile-e2e-local` — test the iOS/Android apps end to end on a simulator against a local seeded API
 
 ## Things agents get wrong
 
@@ -119,3 +124,5 @@ Domain (`.claude/skills/`):
 - Never edit an applied migration. Never `new PrismaClient()` in a route.
 - A change to an order or availability endpoint usually needs both mobile apps.
 - Opening a PR that does not name the issue it closes.
+- Changing an API without checking the installed apps on `main-real` (`api-compat-review`), or without a row in `.agent/api-changes/LOG.md`.
+- Filling or redefining an existing response field for a new screen (e.g. daily `futureIncome`, which old Android adds to revenue). Add a new field.

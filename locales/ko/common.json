@@ -186,5 +186,52 @@
   },
   "actions": {
     "selectAll": "모두 선택"
+  },
+  "shell": {
+    "nav": {
+      "overview": "개요",
+      "orders": "주문",
+      "calendar": "대여·반납 일정",
+      "availability": "재고 확인",
+      "products": "상품",
+      "customers": "고객",
+      "staff": "직원",
+      "outlets": "지점",
+      "categories": "카테고리",
+      "loyalty": "단골 고객",
+      "settings": "매장 설정"
+    },
+    "manage": "관리",
+    "createOrder": "주문 생성",
+    "allOutlets": "전체 지점",
+    "mainMenu": "메인 메뉴",
+    "openMenu": "메뉴 열기",
+    "closeMenu": "메뉴 닫기",
+    "search": "검색",
+    "searchPlaceholder": "이름, 전화번호, 주문번호, 상품명 검색",
+    "themeToDark": "다크 테마로 전환",
+    "themeToLight": "라이트 테마로 전환",
+    "logout": "로그아웃",
+    "notifications": {
+      "title": "알림",
+      "bellLabel": "알림, 읽지 않음 {count}개",
+      "all": "전체",
+      "unread": "읽지 않음",
+      "markAllRead": "모두 읽음",
+      "today": "오늘",
+      "yesterday": "어제",
+      "empty": "아직 알림이 없습니다",
+      "emptyUnread": "읽지 않은 알림이 없습니다",
+      "loadError": "알림을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+      "weekdays": "일,월,화,수,목,금,토",
+      "seeAll": "모든 알림 보기",
+      "moreActions": "더 보기",
+      "deleteRead": "읽은 알림 삭제",
+      "markRead": "읽음으로 표시",
+      "markUnread": "읽지 않음으로 표시",
+      "retry": "다시 시도",
+      "loadMore": "더 보기",
+      "unreadCount": "읽지 않음 {count}개"
+    }
   }
 }

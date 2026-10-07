@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { civilDaysBetween, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -125,14 +125,18 @@ export async function GET(request: NextRequest) {
       if (isExpired) {
         // Period đã hết → EXPIRED
         computedStatus = 'EXPIRED';
-        const daysExpired = Math.floor((now.getTime() - periodEnd!.getTime()) / (1000 * 60 * 60 * 24));
+        // Vietnam civil days since the end day (#588)
+        const daysExpired = Math.max(0, civilDaysBetween(periodEnd!, now));
           statusReason = `Expired ${daysExpired} day${daysExpired !== 1 ? 's' : ''} ago`;
       } else if (periodEnd) {
         // Period chưa hết → ACTIVE (dù có cancel hay không)
         computedStatus = 'ACTIVE';
-        const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        // Vietnam civil days from today to the end day (#588); 0 = expires later today
+        const daysLeft = civilDaysBetween(now, periodEnd);
           if (subscription.canceledAt) {
             statusReason = `Active (${daysLeft} days left) - Canceled but access until period end`;
+          } else if (daysLeft <= 0) {
+            statusReason = 'Active - Expires today';
           } else {
             statusReason = daysLeft <= 7 
               ? `Active - Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
@@ -145,15 +149,17 @@ export async function GET(request: NextRequest) {
       }
       
       // Calculate days remaining (for UI display)
-      // Chỉ dùng periodEnd
+      // Chỉ dùng periodEnd. Vietnam civil days from today to the end day (#588):
+      // the same number all day, 0 on the last day (period still active until periodEnd).
       let daysRemaining: number | null = null;
       if (periodEnd && periodEnd > now) {
-        daysRemaining = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        daysRemaining = Math.max(0, civilDaysBetween(now, periodEnd));
       }
       
       // Calculate access permissions - Đơn giản!
       const hasAccess = computedStatus === 'ACTIVE';  // Chỉ cần ACTIVE
-      const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0;
+      // Still active with 0..7 VN days left (0 = expires today, was missed by `> 0` before)
+      const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining >= 0;
 
       // ============================================================================
       // BUILD CLEAN RESPONSE STRUCTURE (EXPERT-LEVEL SIMPLICITY)

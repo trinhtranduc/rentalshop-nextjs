@@ -6,14 +6,18 @@ import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.domain.orders.OrderPlanDays
+import com.anyrent.pos.domain.products.CartV2Logic
+import com.anyrent.pos.domain.products.PricingTypes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 /**
@@ -44,14 +48,30 @@ object CartStore {
     private val _orderType = MutableStateFlow("RENT")
     val orderType: StateFlow<String> = _orderType.asStateFlow()
 
-    private val _pickupDate = MutableStateFlow(LocalDate.now())
+    private val _pickupDate = MutableStateFlow(ShopTime.today())
     val pickupDate: StateFlow<LocalDate> = _pickupDate.asStateFlow()
 
-    private val _returnDate = MutableStateFlow(LocalDate.now().plusDays(1))
+    private val _returnDate = MutableStateFlow(ShopTime.today().plusDays(1))
     val returnDate: StateFlow<LocalDate> = _returnDate.asStateFlow()
+
+    /**
+     * The user picked rental dates (or they came from an order / saved draft). The new cart shows
+     * "Chọn ngày thuê" and blocks the review until then, like iOS `Cart.pickupPlanAt == nil` (#448).
+     * The old cart ignores it and keeps showing the default today → tomorrow.
+     */
+    private val _datesChosen = MutableStateFlow(false)
+    val datesChosen: StateFlow<Boolean> = _datesChosen.asStateFlow()
 
     private val _notes = MutableStateFlow("")
     val notes: StateFlow<String> = _notes.asStateFlow()
+
+    /**
+     * #480: note photos picked in the cart note editor (cache files, at most MAX_NOTE_PHOTOS), compressed to ~180KB
+     * and sent as `notesImages` when the order is created. Memory only: not in the saved draft, so they are gone
+     * after an app restart. Cleared (and the files deleted) with the cart.
+     */
+    private val _noteImageFiles = MutableStateFlow<List<File>>(emptyList())
+    val noteImageFiles: StateFlow<List<File>> = _noteImageFiles.asStateFlow()
 
     private val _discount = MutableStateFlow(0.0)
     val discount: StateFlow<Double> = _discount.asStateFlow()
@@ -61,6 +81,12 @@ object CartStore {
 
     private val _depositAmount = MutableStateFlow(0.0)
     val depositAmount: StateFlow<Double> = _depositAmount.asStateFlow()
+
+    /**
+     * The user typed the deposit, or it came from an order being edited: item changes keep it (iOS
+     * `Cart.isDepositManuallyOverridden`). Otherwise the deposit follows the items (#388).
+     */
+    private var depositManual = false
 
     private val _securityDeposit = MutableStateFlow(0.0)
     val securityDeposit: StateFlow<Double> = _securityDeposit.asStateFlow()
@@ -121,17 +147,29 @@ object CartStore {
     fun setPickup(date: LocalDate) {
         _pickupDate.value = date
         if (_returnDate.value.isBefore(date)) _returnDate.value = date.plusDays(1)
+        _datesChosen.value = true
         syncRentalDays()
         persist()
     }
     fun setReturn(date: LocalDate) {
         _returnDate.value = if (date.isBefore(_pickupDate.value)) _pickupDate.value else date
+        _datesChosen.value = true
         syncRentalDays()
         persist()
     }
     fun setNotes(value: String) {
         _notes.value = value
         persist()
+    }
+
+    /** #480: photos of the cart note (replaces the previous set; extra photos past the limit are dropped) */
+    fun setNoteImageFiles(files: List<File>) {
+        _noteImageFiles.value = files.take(com.anyrent.pos.domain.orders.OrderDetailLogic.MAX_NOTE_PHOTOS)
+    }
+
+    private fun dropNoteImages() {
+        _noteImageFiles.value.forEach { runCatching { it.delete() } }
+        _noteImageFiles.value = emptyList()
     }
     fun setDiscount(value: Double) {
         _discount.value = value
@@ -143,7 +181,15 @@ object CartStore {
     }
     fun setDeposit(value: Double) {
         _depositAmount.value = value
+        depositManual = true
         persist()
+    }
+
+    /** iOS `Cart.depositAmount`: Σ item deposit × quantity */
+    fun autoDeposit(lines: List<CartLine>): Double = lines.sumOf { it.product.deposit * it.quantity }
+
+    private fun refreshAutoDeposit() {
+        if (!depositManual) _depositAmount.value = autoDeposit(_lines.value)
     }
     fun setSecurityDeposit(value: Double) {
         _securityDeposit.value = value
@@ -173,17 +219,23 @@ object CartStore {
             if (existing >= 0) {
                 current.toMutableList().also {
                     val line = it[existing]
-                    it[existing] = line.copy(quantity = line.quantity + quantity)
+                    // A stale line takes the product's prices (#473)
+                    it[existing] = CartV2Logic.withFreshPricing(line.copy(quantity = line.quantity + quantity), product)
                 }
             } else {
                 current + CartLine(product = product, quantity = quantity, rentalDays = days, isSale = sale)
             }
         }
-        // Auto deposit = sum of item deposits for rent
-        if (!sale) {
-            val auto = _lines.value.sumOf { it.product.deposit * it.quantity }
-            if (_depositAmount.value <= 0) _depositAmount.value = auto
-        }
+        refreshAutoDeposit()
+        persist()
+    }
+
+    /** #473 — lines of [product] take its current prices when it has both and they do not offer both yet */
+    fun refreshPricing(product: Product) {
+        val before = _lines.value
+        val after = before.map { if (it.product.id == product.id) CartV2Logic.withFreshPricing(it, product) else it }
+        if (after == before) return
+        _lines.value = after
         persist()
     }
 
@@ -195,6 +247,7 @@ object CartStore {
         _lines.update { list ->
             list.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         }
+        refreshAutoDeposit()
         persist()
     }
 
@@ -215,24 +268,36 @@ object CartStore {
         persist()
     }
 
+    /** #482 "Áp dụng" of the pricing sheet: pricing type (rent) and the line price for this order only */
+    fun applyLinePricing(productId: Int, type: String?, price: Double) {
+        _lines.update { list ->
+            list.map { line ->
+                if (line.product.id != productId) line
+                else com.anyrent.pos.domain.products.CartV2Logic.applyPricing(line, type, price, rentalDaysInclusive())
+            }
+        }
+        persist()
+    }
+
     fun setPricingType(productId: Int, type: String) {
         val normalized = if (type.equals("DAILY", ignoreCase = true)) "DAILY" else "FIXED"
         _lines.update { list ->
             list.map { line ->
                 if (line.product.id != productId) return@map line
-                // iOS CartItem.applyPricingOption: switching FIXED/DAILY also updates
-                // the unit price to that option's catalog price so totals refresh.
-                val catalogPrice = line.product.pricingOptions.firstOrNull {
+                // iOS CartItem.applyPricingOption: switching FIXED/DAILY also moves the
+                // unit price to that option's catalog price so totals refresh.
+                // When the catalog has that price, drop the override instead of pinning it:
+                // CartLine.unitPrice then gives the same rent price, and a later switch to
+                // SALE uses the sale price instead of this rent price (#373).
+                // A mode the product has no price for starts at 0 and the cart asks for the price
+                // (#473, owner 2026-10-05; iOS `selectPricingType` does the same).
+                val hasCatalogPrice = line.product.pricingOptions.any {
                     it.type.equals(normalized, ignoreCase = true)
-                }?.price ?: if (line.product.pricingType.equals(normalized, ignoreCase = true)) {
-                    line.product.rentPrice
-                } else {
-                    line.unitPrice
-                }
+                } || line.product.pricingType.equals(normalized, ignoreCase = true)
                 line.copy(
                     pricingType = normalized,
                     rentalDays = rentalDaysInclusive(),
-                    unitPriceOverride = catalogPrice,
+                    unitPriceOverride = if (hasCatalogPrice) null else 0.0,
                 )
             }
         }
@@ -241,10 +306,12 @@ object CartStore {
 
     fun remove(productId: Int) {
         _lines.update { it.filterNot { line -> line.product.id == productId } }
+        refreshAutoDeposit()
         persist()
     }
 
     fun clear(persistToDisk: Boolean = true) {
+        dropNoteImages()
         _editingOrderId.value = null
         _lines.value = emptyList()
         _customer.value = null
@@ -252,10 +319,12 @@ object CartStore {
         _discount.value = 0.0
         _discountType.value = DiscountType.AMOUNT
         _depositAmount.value = 0.0
+        depositManual = false
         _securityDeposit.value = 0.0
         _collateralDetails.value = ""
-        _pickupDate.value = LocalDate.now()
-        _returnDate.value = LocalDate.now().plusDays(1)
+        _pickupDate.value = ShopTime.today()
+        _returnDate.value = ShopTime.today().plusDays(1)
+        _datesChosen.value = false
         _orderType.value = "RENT"
         if (persistToDisk) persist() else persistEnabled = false
     }
@@ -275,7 +344,7 @@ object CartStore {
         }
 
         val sale = summary.orderType.equals("SALE", ignoreCase = true)
-        val pickup = parseOrderDate(summary.pickupPlanAt) ?: LocalDate.now()
+        val pickup = parseOrderDate(summary.pickupPlanAt) ?: ShopTime.today()
         val ret = parseOrderDate(summary.returnPlanAt) ?: pickup.plusDays(1).let { candidate ->
             if (candidate.isBefore(pickup)) pickup else candidate
         }
@@ -328,13 +397,16 @@ object CartStore {
         }
 
         // Assign after building so collectors never see a cleared mid-load cart.
+        dropNoteImages()
         _editingOrderId.value = summary.id
         _orderType.value = if (sale) "SALE" else "RENT"
         _pickupDate.value = pickup
         _returnDate.value = ret
+        _datesChosen.value = true
         _notes.value = summary.notes.orEmpty()
         _collateralDetails.value = detail.collateralDetails.orEmpty()
         _depositAmount.value = summary.depositAmount.takeUnless { it.isNaN() } ?: 0.0
+        depositManual = true
         _securityDeposit.value = detail.securityDeposit.takeUnless { it.isNaN() } ?: 0.0
         _discount.value = when {
             detail.discountValue > 0 -> detail.discountValue
@@ -431,10 +503,12 @@ object CartStore {
             .put("orderType", _orderType.value)
             .put("pickup", _pickupDate.value.toString())
             .put("return", _returnDate.value.toString())
+            .put("datesChosen", _datesChosen.value)
             .put("notes", _notes.value)
             .put("discount", _discount.value)
             .put("discountType", _discountType.value.name)
             .put("deposit", _depositAmount.value)
+            .put("depositManual", depositManual)
             .put("security", _securityDeposit.value)
             .put("collateral", _collateralDetails.value)
             .put("customer", customerJson ?: JSONObject.NULL)
@@ -444,8 +518,10 @@ object CartStore {
     private fun applyJson(json: JSONObject) {
         _editingOrderId.value = json.optInt("editingOrderId", 0).takeIf { it > 0 }
         _orderType.value = json.optString("orderType").ifBlank { "RENT" }
-        _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(LocalDate.now())
-        _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(LocalDate.now().plusDays(1))
+        _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(ShopTime.today())
+        _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(ShopTime.today().plusDays(1))
+        // A draft saved before #448 has no flag: keep its dates as chosen
+        _datesChosen.value = !json.has("datesChosen") || json.optBoolean("datesChosen")
         _notes.value = json.optString("notes")
         _discount.value = json.optDouble("discount", 0.0)
         _discountType.value = runCatching {
@@ -473,7 +549,7 @@ object CartStore {
                 val option = optionsArray.optJSONObject(optionIndex) ?: return@mapNotNull null
                 PricingOption(
                     id = option.optInt("id", 0).takeIf { it > 0 },
-                    type = option.optString("type"),
+                    type = PricingTypes.normalizeOption(option.optString("type")),
                     price = option.optDouble("price", 0.0),
                     isDefault = option.optBoolean("isDefault"),
                 )
@@ -492,7 +568,7 @@ object CartStore {
                 categoryName = productJson.optString("categoryName").takeIf { it.isNotBlank() && it != "null" },
                 imageUrl = productJson.optString("imageUrl").takeIf { it.isNotBlank() && it != "null" },
                 deposit = productJson.optDouble("deposit", 0.0),
-                pricingType = productJson.optString("pricingType").ifBlank { "FIXED" },
+                pricingType = PricingTypes.normalize(productJson.optString("pricingType")),
                 pricingOptions = options,
                 note = productJson.optString("note").takeIf { it.isNotBlank() && it != "null" },
             )
@@ -502,28 +578,18 @@ object CartStore {
                 quantity = line.optInt("quantity", 1).coerceAtLeast(1),
                 rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),
                 isSale = line.optBoolean("isSale"),
-                pricingType = line.optString("pricingType").ifBlank { product.pricingType },
+                pricingType = PricingTypes.normalizeOption(line.optString("pricingType").ifBlank { product.pricingType }),
                 unitPriceOverride = override,
             )
         }
+        // A draft saved before #388 has no flag: keep its deposit when it differs from the items' sum
+        depositManual = if (json.has("depositManual")) json.optBoolean("depositManual")
+        else _depositAmount.value != autoDeposit(_lines.value)
     }
 
-    private fun parseOrderDate(raw: String?): LocalDate? {
-        if (raw.isNullOrBlank()) return null
-        val trimmed = raw.trim()
-        return runCatching { LocalDate.parse(trimmed.take(10)) }.getOrNull()
-            ?: runCatching {
-                java.time.OffsetDateTime.parse(trimmed).toLocalDate()
-            }.getOrNull()
-            ?: runCatching {
-                java.time.Instant.parse(trimmed).atZone(java.time.ZoneOffset.UTC).toLocalDate()
-            }.getOrNull()
-            ?: runCatching {
-                // "2024-01-15 00:00:00" style
-                LocalDate.parse(trimmed.take(10).replace(' ', 'T').take(10))
-            }.getOrNull()
-    }
+    /** Shop day (#602), the same zone the cart sends with `isoPickup` / `isoReturn` (#413) */
+    private fun parseOrderDate(raw: String?): LocalDate? = OrderPlanDays.dayOf(raw)
 
-    fun isoPickup(): String = _pickupDate.value.atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
-    fun isoReturn(): String = _returnDate.value.atTime(23, 59).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
+    fun isoPickup(): String = OrderPlanDays.pickupInstant(_pickupDate.value)
+    fun isoReturn(): String = OrderPlanDays.returnInstant(_returnDate.value)
 }

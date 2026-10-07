@@ -75,7 +75,8 @@ export const defaultAuditConfig: AuditConfig = {
       fields: {
         include: ['*'],
         exclude: ['paymentToken', 'cardNumber'],
-        sensitive: ['customerId', 'totalAmount']
+        // #519: totalAmount is shown in the change history ("Tổng đơn"), so it is no longer redacted
+        sensitive: ['customerId']
       },
       sampling: { enabled: false, rate: 1.0 },
       async: true,
@@ -114,8 +115,14 @@ export const defaultAuditConfig: AuditConfig = {
       enabled: true,
       logLevel: 'CREATE_UPDATE_DELETE',
       fields: {
-        include: ['name', 'price', 'stock', 'category', 'isActive'],
-        exclude: ['description', 'images'],
+        // #519: the change history needs prices, pricing options, per-outlet stock and images.
+        // costPrice is excluded: outlet staff read this history and must not see it.
+        include: [
+          'name', 'price', 'stock', 'category', 'isActive',
+          'barcode', 'rentPrice', 'salePrice', 'deposit', 'pricingType',
+          'pricingOptions', 'outletStock', 'images'
+        ],
+        exclude: ['description', 'costPrice'],
         sensitive: ['cost', 'margin']
       },
       sampling: { enabled: false, rate: 1.0 },
@@ -153,7 +160,7 @@ export const defaultAuditConfig: AuditConfig = {
       enabled: true,
       logLevel: 'CREATE_UPDATE_DELETE',
       fields: {
-        include: ['name', 'status', 'plan', 'settings'],
+        include: ['name', 'status', 'plan', 'settings', 'timezone'], // timezone: #567 shop time zone changes
         exclude: ['apiKey', 'webhookSecret'],
         sensitive: ['email', 'phone']
       },

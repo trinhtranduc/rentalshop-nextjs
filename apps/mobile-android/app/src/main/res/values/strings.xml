@@ -422,6 +422,9 @@
     <string name="status_returned">Returned</string>
     <string name="status_completed">Completed</string>
     <string name="status_cancelled">Cancelled</string>
+    <string name="update_required_title">Update required</string>
+    <string name="update_required_message">A new version of AnyRent is needed to keep working. Please update the app.</string>
+    <string name="update_required_button">Update</string>
     <string name="order_search_hint">Order number, name, phone number…</string>
     <string name="phone_visible">Phone number shown</string>
     <string name="item_count">%1$d items</string>
@@ -531,6 +534,7 @@
     <string name="request_failed">Something went wrong. Please try again.</string>
     <string name="api_error_plan_limit_exceeded">Plan limit exceeded. Upgrade your subscription to add more.</string>
     <string name="api_error_product_name_exists">A product with this name already exists. Please choose a different name.</string>
+    <string name="api_error_product_has_open_orders">This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.</string>
     <string name="api_error_customer_duplicate">A customer with this email or phone already exists.</string>
     <string name="api_error_email_exists">This email is already registered.</string>
     <string name="api_error_phone_exists">This phone number is already registered.</string>
@@ -543,4 +547,892 @@
     <string name="api_error_invalid_credentials">Incorrect email or password.</string>
     <string name="api_error_session_expired">Your session has expired. Please sign in again.</string>
     <string name="api_error_session_replaced">Your account was signed in on another device. Please sign in again.</string>
+
+    <!-- Products and cart redesign (#373) -->
+    <string name="api_error_stock_below_rented">Quantity cannot be lower than the units out on rent.</string>
+    <string name="v2_home_title">Choose products</string>
+    <string name="v2_search_placeholder">Name, barcode…</string>
+    <string name="v2_search_empty">No matching products</string>
+    <string name="v2_products_empty">No products yet</string>
+    <string name="v2_stock_free">%1$d free</string>
+    <string name="v2_stock_none_today">None free today</string>
+    <string name="v2_stock_summary">On rent %1$d · free %2$d · total %3$d</string>
+    <string name="v2_unit_per_rental">/rental</string>
+    <string name="v2_unit_per_day">/day</string>
+    <string name="v2_price_per_rental">Per rental</string>
+    <string name="v2_price_per_day">Per day</string>
+    <string name="v2_price_sale">Sale price</string>
+    <string name="v2_price_sale_short">sale %1$s</string>
+    <string name="v2_add_to_cart_named">Add %1$s to cart</string>
+    <string name="v2_view_image_named">View photo of %1$s</string>
+    <string name="v2_view_image_hint">Opens the photo full screen</string>
+    <string name="v2_add_in_cart_named">%1$s: %2$d in cart, add 1</string>
+    <string name="v2_added_to_cart">Added to cart</string>
+    <string name="v2_scan_not_found">No product with code %1$s</string>
+    <string name="v2_stepper_minus">One less</string>
+    <string name="v2_stepper_plus">One more</string>
+    <string name="v2_detail_edit">Edit</string>
+    <string name="v2_detail_deposit">deposit %1$s</string>
+    <string name="v2_detail_orders">Orders of this product</string>
+    <string name="v2_detail_orders_count">All %1$d ›</string>
+    <string name="v2_detail_no_orders">No orders yet</string>
+    <string name="v2_detail_free_calendar">Free days</string>
+    <string name="v2_detail_add_to_cart">Add to cart</string>
+    <string name="v2_form_add_title">Add product</string>
+    <string name="v2_form_edit_title">Edit product</string>
+    <string name="v2_form_photos_hint">Take or choose up to %1$d photos. The first one is the cover.</string>
+    <string name="v2_form_add_photo">Add photo</string>
+    <string name="v2_form_cover">Cover</string>
+    <string name="v2_form_remove_photo">Remove photo</string>
+    <string name="v2_form_photo_unreadable">Could not read the selected photo</string>
+    <string name="v2_form_name">Product name</string>
+    <string name="v2_form_name_placeholder">E.g. Blue ao dai</string>
+    <string name="v2_form_category">Category</string>
+    <string name="v2_form_choose">Choose</string>
+    <string name="v2_form_no_category">None</string>
+    <string name="v2_form_barcode">Barcode</string>
+    <string name="v2_form_barcode_placeholder">Scan or type</string>
+    <string name="v2_form_barcode_used">Barcode already used by %1$s</string>
+    <string name="v2_form_prices">Prices</string>
+    <string name="v2_form_per_rental">Rent per rental</string>
+    <string name="v2_form_per_day">Rent per day</string>
+    <string name="v2_form_default_pricing">New orders charge by default</string>
+    <string name="v2_form_sale_price">Sale price</string>
+    <string name="v2_form_not_for_sale">Not for sale</string>
+    <string name="v2_form_deposit">Deposit per item</string>
+    <string name="v2_form_stock">Stock</string>
+    <string name="v2_form_quantity">Quantity</string>
+    <string name="v2_form_stock_note">On rent %1$d · free %2$d</string>
+    <string name="v2_form_save">Save product</string>
+    <string name="v2_form_save_changes">Save changes</string>
+    <string name="v2_form_error_name">Enter the product name.</string>
+    <string name="v2_form_error_negative">Prices and deposit cannot be negative.</string>
+    <string name="v2_form_error_daily_default">Charging per day by default needs a per-day price.</string>
+    <string name="v2_form_error_quantity">Quantity cannot be negative.</string>
+    <string name="v2_form_error_below_rented">Quantity cannot be lower than the %1$d units on rent.</string>
+    <string name="v2_form_error_photos">At most %1$d photos.</string>
+    <string name="v2_form_error_outlet">Could not tell which store keeps this stock.</string>
+    <string name="v2_cart_title">New order</string>
+    <string name="v2_cart_edit_title">Edit order</string>
+    <string name="v2_cart_back">Back to products</string>
+    <string name="v2_cart_rent">Rent</string>
+    <string name="v2_cart_sale">Sale</string>
+    <string name="v2_cart_pick_customer">Choose customer</string>
+    <string name="v2_cart_change">Change</string>
+    <plurals name="v2_cart_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="v2_cart_items">Items · %1$d</string>
+    <string name="v2_cart_add_more">Add</string>
+    <string name="v2_cart_empty">The cart is empty. Add products from the list.</string>
+    <string name="v2_calc_per_rental">%1$s/rental × %2$d</string>
+    <plurals name="v2_calc_per_day">
+        <item quantity="one">%1$s/day × %2$d day</item>
+        <item quantity="other">%1$s/day × %2$d days</item>
+    </plurals>
+    <string name="v2_calc_sale">Sale price %1$s × %2$d</string>
+    <string name="v2_cart_short_rent">Only %1$d free on these dates</string>
+    <string name="v2_cart_short_stock">Only %1$d in stock</string>
+    <string name="v2_cart_in_stock">%1$d in stock</string>
+    <string name="v2_cart_money">Money</string>
+    <string name="v2_cart_rent_subtotal">Rental</string>
+    <string name="v2_cart_sale_subtotal">Items</string>
+    <string name="v2_cart_discount">Discount</string>
+    <string name="v2_cart_discount_amount">Amount</string>
+    <string name="v2_cart_total">Order total</string>
+    <string name="v2_cart_deposit">Deposit paid now</string>
+    <string name="v2_cart_note">Note</string>
+    <string name="v2_cart_add_note">Add</string>
+    <string name="v2_cart_collect_deposit">Collect now · deposit</string>
+    <string name="v2_cart_customer_pays">Customer pays</string>
+    <string name="v2_cart_create">Create order</string>
+    <string name="v2_cart_sell_and_collect">Sell &amp; collect</string>
+    <string name="v2_create_confirm_rent_title">Create rental order?</string>
+    <string name="v2_create_confirm_sale_title">Sell &amp; collect?</string>
+    <string name="v2_create_confirm_customer">Customer</string>
+    <string name="v2_create_confirm_dates">Rental dates</string>
+    <string name="v2_create_confirm_items">Items</string>
+    <string name="v2_create_confirm_collect_deposit">Collect deposit now</string>
+    <string name="v2_create_confirm_collect_sale">Collect now</string>
+    <string name="v2_create_done_title">Order #%1$s created</string>
+    <string name="v2_create_done_paid_deposit">Deposit collected %1$s</string>
+    <string name="v2_create_done_paid_sale">Collected %1$s</string>
+    <string name="v2_create_done_new_order">New order</string>
+    <string name="v2_create_done_view_order">View order</string>
+    <string name="v2_cart_need_price">Enter a price for %s</string>
+    <string name="v2_cart_edit_price">Edit price for this order</string>
+    <plurals name="v2_cart_bar">
+        <item quantity="one">Cart · %1$d item</item>
+        <item quantity="other">Cart · %1$d items</item>
+    </plurals>
+    <string name="v2_cart_remove_title">Remove this item from the cart?</string>
+    <string name="v2_cart_remove">Remove</string>
+    <!-- Orders tab (#371) -->
+    <string name="orders_to_do">To do</string>
+    <string name="orders_all">All orders</string>
+    <string name="orders_section_late">Late</string>
+    <string name="orders_section_today">Today</string>
+    <string name="orders_section_tomorrow">Tomorrow</string>
+    <plurals name="orders_late_days">
+        <item quantity="one">%1$d day late</item>
+        <item quantity="other">%1$d days late</item>
+    </plurals>
+    <string name="orders_hand_over">Hand over</string>
+    <string name="nothing_to_do_today">Nothing to do today</string>
+    <string name="retry">Retry</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <!-- Order detail (#372) -->
+    <string name="api_error_invalid_order_status">This status change is not allowed for this order. It may have just been updated.</string>
+    <string name="api_error_outlet_required">Choose an outlet, or set a default outlet for your shop.</string>
+    <string name="detail_more_actions">More actions</string>
+    <string name="detail_print_receipt">Print receipt</string>
+    <string name="detail_call">Call</string>
+    <string name="detail_progress_booked">Booked %1$s</string>
+    <string name="detail_progress_hand_over">Hand over %1$s</string>
+    <string name="detail_progress_return">Return %1$s</string>
+    <plurals name="detail_late_return">
+        <item quantity="one">Return %1$d day late</item>
+        <item quantity="other">Return %1$d days late</item>
+    </plurals>
+    <plurals name="detail_late_hand_over">
+        <item quantity="one">Hand-over %1$d day late</item>
+        <item quantity="other">Hand-over %1$d days late</item>
+    </plurals>
+    <string name="detail_due_on">Due %1$s</string>
+    <!-- #643 calmer order detail header -->
+    <string name="detail_title_rent">Rental #%1$s</string>
+    <string name="detail_title_sale">Sale #%1$s</string>
+    <string name="detail_walk_in">Walk-in customer</string>
+    <string name="detail_call_customer">Call customer</string>
+    <string name="detail_step_booked">Booked</string>
+    <string name="detail_step_hand_over">Hand over</string>
+    <string name="detail_step_handed_over">Handed over</string>
+    <string name="detail_step_return">Return</string>
+    <string name="detail_step_returned">Returned</string>
+    <plurals name="detail_note_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="detail_note_return_in">
+        <item quantity="one">return in %1$d day</item>
+        <item quantity="other">return in %1$d days</item>
+    </plurals>
+    <string name="detail_note_return_today">return today</string>
+    <plurals name="detail_note_hand_over_in">
+        <item quantity="one">hand over in %1$d day</item>
+        <item quantity="other">hand over in %1$d days</item>
+    </plurals>
+    <string name="detail_note_hand_over_today">hand over today</string>
+    <plurals name="detail_note_past_pickup">
+        <item quantity="one">%1$d day past pickup</item>
+        <item quantity="other">%1$d days past pickup</item>
+    </plurals>
+    <string name="detail_note_returned">returned</string>
+    <string name="detail_schedule">Rental</string>
+    <string name="detail_ready_to_deliver_subtitle">All items packed for this order</string>
+    <string name="detail_sale_day">Sale day</string>
+    <string name="detail_items_count">ITEMS · %1$d</string>
+    <string name="detail_money">MONEY</string>
+    <string name="detail_total_discount">Total (discount %1$s)</string>
+    <string name="detail_deposit_paid">Deposit paid</string>
+    <string name="detail_collateral_money">Collateral money</string>
+    <string name="detail_collect_at_hand_over">Collect at hand-over</string>
+    <string name="detail_late_fee">Late fee</string>
+    <string name="detail_return_collateral">Collateral back</string>
+    <string name="detail_on_return_refund">On return: give back</string>
+    <string name="detail_on_return_collect">On return: collect</string>
+    <string name="detail_goods">Goods</string>
+    <string name="detail_paid">Paid</string>
+    <string name="detail_to_collect">To collect</string>
+    <string name="detail_edit_notes">Edit notes</string>
+    <string name="detail_hand_over">Hand over</string>
+    <string name="detail_hand_over_collect">Hand over · collect %1$s</string>
+    <string name="detail_take_return">Take return</string>
+    <string name="detail_paid_before">Already paid</string>
+    <string name="detail_collect_now">Collect now</string>
+    <string name="detail_handed_over">Handed over</string>
+    <string name="detail_handed_over_collect">Handed over · collect %1$s</string>
+    <string name="detail_fees">Late + damage fees</string>
+    <string name="detail_collateral_held">Collateral held</string>
+    <string name="detail_settled_before">Already settled</string>
+    <string name="detail_give_back">Give back</string>
+    <string name="detail_collect_more">Collect</string>
+    <string name="detail_received">Received</string>
+    <string name="detail_received_refund">Received · give back %1$s</string>
+    <string name="detail_received_collect">Received · collect %1$s</string>
+    <plurals name="detail_late_fee_days">
+        <item quantity="one">Late fee (%1$d day)</item>
+        <item quantity="other">Late fee (%1$d days)</item>
+    </plurals>
+    <string name="detail_photos_count">%1$d/%2$d photos</string>
+    <string name="detail_hand_over_subtitle">%1$s · %2$s · %3$s</string>
+    <plurals name="detail_return_late_subtitle">
+        <item quantity="one">%1$s · %2$s · %3$d day late</item>
+        <item quantity="other">%1$s · %2$s · %3$d days late</item>
+    </plurals>
+
+    <!-- #374 Calendar, overview, settings -->
+    <string name="calendar_v2_title">Calendar</string>
+    <string name="calendar_v2_prev_month">Previous month</string>
+    <string name="calendar_v2_next_month">Next month</string>
+    <string name="calendar_v2_month">%1$d/%2$d</string>
+    <string name="calendar_v2_weekdays">Mon,Tue,Wed,Thu,Fri,Sat,Sun</string>
+    <string name="calendar_v2_legend_hand_over">Hand-over</string>
+    <string name="calendar_v2_legend_return">Return</string>
+    <string name="calendar_v2_legend_late">Late return</string>
+    <string name="calendar_v2_today">Today</string>
+    <string name="calendar_v2_late_count">%1$d late</string>
+    <string name="calendar_v2_day_counts">out %1$d · back %2$d</string>
+    <string name="calendar_v2_tag_return">Return</string>
+    <string name="calendar_v2_empty">No hand-overs or returns on this day</string>
+    <string name="calendar_v2_error">Something went wrong</string>
+    <string name="overview_v2_title">Overview</string>
+    <string name="overview_v2_period_today">Today</string>
+    <string name="overview_v2_period_yesterday">Yesterday</string>
+    <string name="overview_v2_period_last7">Last 7 days</string>
+    <string name="overview_v2_period_last30">Last 30 days</string>
+    <string name="overview_v2_period_this_month">This month</string>
+    <string name="overview_v2_period_last_month">Last month</string>
+    <string name="overview_v2_period_title">Period</string>
+    <string name="overview_v2_period_custom">Pick dates…</string>
+    <string name="overview_v2_period_accessibility">Period: %1$s</string>
+    <string name="overview_v2_from">From</string>
+    <string name="overview_v2_to">To</string>
+    <string name="overview_v2_excludes_cancelled">cancelled orders excluded</string>
+    <string name="overview_v2_vs_previous">vs %1$s</string>
+    <string name="overview_v2_orders">Orders</string>
+    <string name="overview_v2_new_orders">New orders</string>
+    <string name="overview_v2_rented_out">Rented out</string>
+    <string name="overview_v2_late_returns">Rented · late return</string>
+    <string name="overview_v2_collateral_held">Security deposit held</string>
+    <string name="overview_v2_top_rented">Most rented · by order value</string>
+    <string name="overview_v2_rentals">%1$d rentals</string>
+    <string name="overview_v2_view_all">View all</string>
+    <string name="overview_v2_top_customers">Top customers</string>
+    <string name="overview_v2_customer_orders">%1$d orders</string>
+    <string name="overview_v2_top_empty">Nothing in this period yet.</string>
+    <string name="overview_v2_no_access">Your account cannot see reports</string>
+    <string name="overview_v2_bars">Real income per day</string>
+    <string name="settings_v2_title">Settings</string>
+    <string name="settings_v2_group_store">Store</string>
+    <string name="settings_v2_group_management">Management</string>
+    <string name="settings_v2_group_account">Account</string>
+    <string name="settings_v2_receipt_note">Receipt note</string>
+    <string name="settings_v2_printer">Printer</string>
+    <string name="settings_v2_printer_none">Not set</string>
+    <string name="settings_v2_users">Users</string>
+    <string name="settings_v2_plan">Plan</string>
+    <string name="settings_v2_plan_trial">Trial</string>
+    <string name="settings_v2_plan_expired">expired</string>
+    <string name="settings_v2_plan_days_left">%1$d days left</string>
+    <string name="settings_v2_language">Language</string>
+    <string name="settings_v2_password_current">Current password</string>
+    <string name="settings_v2_password_new">New password</string>
+    <string name="settings_v2_password_confirm">Repeat new password</string>
+    <string name="settings_v2_password_missing_current">Enter your current password</string>
+    <string name="settings_v2_password_too_short">The new password needs at least 6 characters</string>
+    <string name="settings_v2_password_mismatch">The passwords do not match</string>
+    <string name="api_error_current_password_incorrect">Current password is incorrect</string>
+    <string name="api_error_password_min_length">The new password needs at least 6 characters</string>
+    <string name="api_error_rate_limit_exceeded">Too many requests. Please wait a few minutes and try again.</string>
+    <string name="settings_v2_password_done">Password changed. Please sign in again.</string>
+
+    <!-- #387 onboarding and customers (newAuth, newCustomers) -->
+    <string name="customers_v2_title">Customers</string>
+    <string name="customers_v2_tile_orders">Orders</string>
+    <string name="customers_v2_tile_spent">Total spent</string>
+    <string name="customers_v2_tile_renting">Renting</string>
+    <string name="customers_v2_search">Search customers</string>
+    <string name="customers_v2_search_placeholder">Name or phone number</string>
+    <string name="customers_v2_new">New customer</string>
+    <string name="customers_v2_pick_title">Choose customer</string>
+    <string name="customers_v2_close">Close</string>
+    <string name="customers_v2_add">Add customer</string>
+    <string name="customers_v2_empty">No customers yet</string>
+    <string name="customers_v2_no_match">No matching customers</string>
+    <string name="customers_v2_recent">RECENT</string>
+    <string name="customers_v2_new_title">New customer</string>
+    <string name="customers_v2_save_and_pick">Save and select</string>
+    <string name="customers_v2_phone">Phone number</string>
+    <string name="customers_v2_name">Full name</string>
+    <string name="customers_v2_note">Note</string>
+    <string name="customers_v2_optional">(optional)</string>
+    <string name="customers_v2_note_placeholder">E.g. size M, wedding 12/10</string>
+    <string name="customers_v2_hint">Add address, ID and birthday later in the customer profile.</string>
+    <string name="customers_v2_duplicate">This phone number already belongs to:</string>
+    <string name="customers_v2_use_existing">Select this customer</string>
+    <string name="customers_v2_open_existing">Open this customer</string>
+    <string name="customers_v2_need_phone">Enter a phone number</string>
+    <string name="customers_v2_need_name">Enter the full name</string>
+    <string name="customers_v2_edit">Edit</string>
+    <string name="customers_v2_call">Call customer</string>
+    <string name="customers_v2_recent_orders">Recent orders</string>
+    <string name="customers_v2_no_orders">No orders yet</string>
+    <string name="customers_v2_create_order">Create order for this customer</string>
+    <string name="onboarding_v2_step">Step %1$d/%2$d</string>
+    <string name="onboarding_v2_product_title">Add rental items</string>
+    <string name="onboarding_v2_product_body">Add a photo, price and stock. Your team finds it by search or scan when creating an order.</string>
+    <string name="onboarding_v2_customer_title">Save customers</string>
+    <string name="onboarding_v2_customer_body">Save a customer once and reuse them for every rental and sale.</string>
+    <string name="onboarding_v2_order_title">Create orders</string>
+    <string name="onboarding_v2_order_body">Pick a customer, add items, set the dates and finish in a few taps.</string>
+    <string name="onboarding_v2_skip">Skip</string>
+    <string name="onboarding_v2_next">Next</string>
+    <string name="onboarding_v2_start">Get started</string>
+    <plurals name="customers_v2_orders">
+        <item quantity="one">%d order</item>
+        <item quantity="other">%d orders</item>
+    </plurals>
+    <plurals name="customers_v2_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <string name="customers_v2_cancel">Cancel</string>
+    <string name="customers_v2_edit_title">Edit customer</string>
+    <string name="customers_v2_email_placeholder">name@email.com</string>
+    <string name="customers_v2_more_info">More details</string>
+    <string name="customers_v2_id_number">ID / document</string>
+    <string name="customers_v2_date_of_birth">Date of birth</string>
+    <string name="customers_v2_address">Address</string>
+    <string name="customers_v2_bad_email">Invalid email</string>
+    <string name="customers_v2_bad_date">Enter the date as dd/MM/yyyy</string>
+    <string name="customers_v2_phone_taken">This phone number belongs to another customer</string>
+    <!-- Orders tab boards (#401) -->
+    <string name="orders_v2_title_rent">Rentals</string>
+    <string name="orders_v2_title_sale">Sales</string>
+    <string name="orders_v2_search_placeholder">Name, phone, order number, item</string>
+    <string name="orders_v2_search_cancel">Cancel</string>
+    <string name="orders_v2_search_clear">Clear search</string>
+    <plurals name="orders_v2_search_summary">
+        <item quantity="one">%1$d order matches “%2$s” · all statuses, item names too</item>
+        <item quantity="other">%1$d orders match “%2$s” · all statuses, item names too</item>
+    </plurals>
+    <plurals name="orders_v2_count">
+        <item quantity="one">%1$d order</item>
+        <item quantity="other">%1$d orders</item>
+    </plurals>
+    <string name="orders_v2_band_work">hand over %1$d · take back %2$d</string>
+    <string name="orders_v2_yesterday">Yesterday</string>
+    <string name="orders_v2_tag_hand_over">To hand over</string>
+    <string name="orders_v2_tag_take_back">To take back</string>
+    <string name="orders_v2_tag_sale">Sale · %1$s</string>
+    <string name="orders_v2_status_all">All</string>
+    <string name="orders_v2_status_reserved">Booked</string>
+    <string name="orders_v2_status_renting">Renting</string>
+    <string name="orders_v2_status_returned">Returned</string>
+    <string name="orders_v2_status_completed">Completed</string>
+    <string name="orders_v2_status_cancelled">Cancelled</string>
+    <string name="orders_v2_not_prepared">Not prepared</string>
+    <string name="orders_v2_pay_due">to collect %1$s</string>
+    <string name="orders_v2_pay_refund">refund deposit %1$s</string>
+    <string name="orders_v2_sort_created">Newest first</string>
+    <string name="orders_v2_sort_pickup">Hand-over date</string>
+    <string name="orders_v2_sort_return">Return date</string>
+    <string name="orders_v2_filter_title">Filter &amp; sort</string>
+    <string name="orders_v2_filter_sort">SORT</string>
+    <string name="orders_v2_filter_range">DATE RANGE</string>
+    <string name="orders_v2_filter_show">Show orders</string>
+    <plurals name="orders_v2_filter_show_count">
+        <item quantity="one">Show %1$d order</item>
+        <item quantity="other">Show %1$d orders</item>
+    </plurals>
+    <string name="orders_v2_basis_created">Created</string>
+    <string name="orders_v2_basis_pickup">Handed over</string>
+    <string name="orders_v2_basis_return">Returned</string>
+    <string name="orders_v2_range_any">Any time</string>
+    <string name="orders_v2_range_today">Today</string>
+    <string name="orders_v2_range_next7">Next 7 days</string>
+    <string name="orders_v2_range_month">This month</string>
+    <string name="orders_v2_range_from">From</string>
+    <string name="orders_v2_range_to">To</string>
+    <!-- #386 new auth screens (newAuth) -->
+    <string name="authv2_login_title">Hello</string>
+    <string name="authv2_login_subtitle">Sign in to your shop.</string>
+    <string name="authv2_email">Email</string>
+    <string name="authv2_email_placeholder">name@yourshop.com</string>
+    <string name="authv2_password">Password</string>
+    <string name="authv2_password_show">Show password</string>
+    <string name="authv2_password_hide">Hide password</string>
+    <string name="authv2_forgot_link">Forgot password?</string>
+    <string name="authv2_login_button">Sign in</string>
+    <string name="authv2_no_store">No shop yet?</string>
+    <string name="authv2_create_store">Create a new shop</string>
+    <string name="authv2_have_store">Already have a shop?</string>
+    <string name="authv2_remember_password">Remembered your password?</string>
+    <string name="authv2_store_name_placeholder">e.g. Minh Chau Ao Dai</string>
+    <string name="authv2_phone_placeholder">e.g. 0901 234 567</string>
+    <string name="authv2_full_name_placeholder">e.g. Nguyen Van A</string>
+    <string name="authv2_back">Back</string>
+    <string name="authv2_step">Step %1$d/%2$d</string>
+    <string name="authv2_store_title">Your shop</string>
+    <string name="authv2_store_subtitle">Printed on receipts. You can change it later.</string>
+    <string name="authv2_store_name">Shop name</string>
+    <string name="authv2_phone">Phone number</string>
+    <string name="authv2_address">Address</string>
+    <string name="authv2_address_placeholder">Number, street, district</string>
+    <string name="authv2_rent_what">What do you rent?</string>
+    <string name="authv2_rent_what_hint">(pick any)</string>
+    <string name="authv2_tag_ao_dai">Ao dai</string>
+    <string name="authv2_tag_wedding_dress">Wedding dresses</string>
+    <string name="authv2_tag_costume">Costumes</string>
+    <string name="authv2_tag_film_equipment">Film equipment</string>
+    <string name="authv2_tag_vehicle">Vehicles</string>
+    <string name="authv2_tag_equipment">Tools</string>
+    <string name="authv2_tag_other">Other</string>
+    <string name="authv2_continue">Continue</string>
+    <string name="authv2_owner_title">Owner account</string>
+    <string name="authv2_owner_subtitle">You sign in with this email.</string>
+    <string name="authv2_full_name">Full name</string>
+    <string name="authv2_password_hint">At least 6 characters.</string>
+    <string name="authv2_confirm_password">Re-enter password</string>
+    <string name="authv2_terms">I agree to the %1$s and the %2$s.</string>
+    <string name="authv2_terms_link">Terms</string>
+    <string name="authv2_privacy_policy">Privacy Policy</string>
+    <string name="authv2_create_store_button">Create shop</string>
+    <string name="authv2_forgot_title">Forgot password</string>
+    <string name="authv2_forgot_text">Enter your sign-in email. We\'ll send a link to set a new password.</string>
+    <string name="authv2_forgot_send">Send link</string>
+    <string name="authv2_forgot_staff_note">Staff who forgot a password: ask the shop owner to reset it in Settings › Users.</string>
+    <string name="authv2_sent_title">Check your email</string>
+    <string name="authv2_sent_reset">We sent a password reset link to %1$s. No email? Check your spam folder too.</string>
+    <string name="authv2_sent_verify">We sent an activation email to %1$s. No email? Check your spam folder too.</string>
+    <string name="authv2_back_to_login">Back to sign in</string>
+    <string name="authv2_resend">Resend email</string>
+    <string name="authv2_resend_in">Resend email (%1$ds)</string>
+    <string name="authv2_email_required">Email is required</string>
+    <string name="authv2_email_invalid">Please enter a valid email address</string>
+    <string name="authv2_password_required">Password is required</string>
+    <string name="authv2_password_too_short">Password must be at least 6 characters</string>
+    <string name="authv2_store_name_required">Shop name is required</string>
+    <string name="authv2_store_name_too_short">Shop name must be at least 3 characters</string>
+    <string name="authv2_phone_required">Phone number is required</string>
+    <string name="authv2_phone_invalid">Please enter a valid phone number</string>
+    <string name="authv2_address_required">Address is required</string>
+    <string name="authv2_address_too_short">Please enter a fuller address</string>
+    <string name="authv2_name_required">Name is required</string>
+    <string name="authv2_name_too_short">Name must be at least 2 characters</string>
+    <string name="authv2_confirm_required">Please confirm your password</string>
+    <string name="authv2_passwords_mismatch">The passwords don\'t match.</string>
+    <string name="authv2_terms_required">Please accept the Terms of Service and Privacy Policy to continue.</string>
+    <string name="authv2_error_account_deactivated">This account has been deactivated.</string>
+    <string name="authv2_error_merchant_duplicate">A shop with this email or phone number already exists.</string>
+    <string name="authv2_error_rate_limited">Too many requests. Please try again later.</string>
+    <!-- #388 phase 7 gaps -->
+    <string name="v2_detail_chip_upcoming">Upcoming</string>
+    <string name="v2_detail_chip_renting">Rented</string>
+    <string name="v2_detail_chip_done">Done</string>
+    <string name="v2_detail_strip_caption">Free units per day · %1$d in this shop</string>
+    <string name="v2_detail_strip_accessibility">Free in the next 6 days</string>
+    <string name="v2_detail_state_pickup_today">Hand over today</string>
+    <string name="v2_detail_state_pickup_on">Hand over %1$s</string>
+    <string name="v2_detail_state_return_today">Return today</string>
+    <string name="v2_detail_state_return_on">Return %1$s</string>
+    <!-- #390 phase 8 -->
+    <string name="orders_v2_sort_nearest">Nearest task</string>
+    <string name="orders_v2_sort_nearest_hint">Nearest task: late returns first, then the next hand-overs and returns.</string>
+    <string name="calendar_v2_fee">fee %1$s</string>
+    <string name="v2_product_deleted">Product deleted</string>
+    <string name="extend_rental">Extend</string>
+    <string name="extend_rental_title">Extend rental</string>
+    <string name="extend_rental_current">Due back %1$s</string>
+    <plurals name="extend_rental_extra_days">
+        <item quantity="one">%1$d more day</item>
+        <item quantity="other">%1$d more days</item>
+    </plurals>
+    <string name="extend_rental_pick">Pick a later return day</string>
+    <string name="extend_rental_confirm">Extend to %1$s</string>
+    <string name="extend_rental_unavailable">Not enough stock on the added days: %1$s</string>
+    <string name="extend_rental_done">Extended to %1$s</string>
+    <string name="detail_hand_over_papers">Papers left</string>
+    <string name="detail_hand_over_papers_hint">e.g. ID card, driver\'s license</string>
+    <string name="detail_hand_over_deposit">Security deposit</string>
+    <string name="extend_rental_extra_rent">Extra rent</string>
+    <string name="extend_rental_new_total">New total: %1$s</string>
+    <!-- #448: new cart and review match iOS -->
+    <string name="v2_cart_pick_dates">Choose rental dates</string>
+    <string name="v2_cart_need_pickup">Please set pickup date for rental order.</string>
+    <string name="v2_cart_need_return">Please set return date for rental order.</string>
+    <string name="v2_cart_need_items">Cart is empty. Please add at least one item.</string>
+    <string name="v2_cart_need_customer">Please select a customer.</string>
+    <string name="v2_review_title">Create Order</string>
+    <string name="v2_review_edit_title">Edit Order</string>
+    <string name="v2_review_create">Create Order</string>
+    <string name="v2_review_update">Update Order</string>
+    <string name="v2_review_info">Information</string>
+    <string name="v2_review_dates">Date Information</string>
+    <string name="v2_review_products">Products</string>
+    <string name="v2_review_deposit_papers">Deposit &amp; Collateral Details</string>
+    <string name="v2_review_deposit">Deposit</string>
+    <string name="v2_review_papers">Document</string>
+    <string name="v2_review_security_deposit">Security Deposit</string>
+    <string name="v2_review_collect_deposit">Collect Deposit</string>
+    <string name="v2_review_collect_deposit_text">Please collect the deposit amount from the customer.</string>
+    <string name="v2_review_collect_payment">Collect Payment</string>
+    <string name="v2_review_collect_payment_text">Please collect the full payment amount from the customer.</string>
+    <string name="v2_review_collect_papers">Collect Collateral Documents</string>
+    <string name="v2_review_cancel">Cancel</string>
+    <string name="v2_review_confirm">Confirm</string>
+
+    <!-- #477 Notifications and note editor (new UI) -->
+    <string name="notifications_v2_mark_all">Mark all read</string>
+    <string name="notifications_v2_more">More actions</string>
+    <string name="notifications_v2_delete_read">Delete read</string>
+    <string name="notifications_v2_delete_read_confirm">Delete all read notifications?</string>
+    <string name="notifications_v2_all">All</string>
+    <string name="notifications_v2_unread">Unread · %1$d</string>
+    <string name="notifications_v2_today">Today</string>
+    <string name="notifications_v2_yesterday">Yesterday</string>
+    <string name="notifications_v2_empty_unread">No unread notifications</string>
+    <string name="notifications_v2_unread_a11y">Unread</string>
+    <string name="notes_v2_discard">Close without saving</string>
+    <string name="notes_v2_content">Note</string>
+    <string name="notes_v2_photos">Photos</string>
+    <string name="notes_v2_photo">Note photo</string>
+    <string name="notes_v2_add">Add</string>
+    <string name="notes_v2_photo_hint">Pick photos from the library. Tap a photo to view it larger.</string>
+    <string name="notes_v2_save">Save note</string>
+    <!-- #482 -->
+    <string name="orders_entity_free">%1$d free today</string>
+    <string name="orders_entity_tile_orders">Orders</string>
+    <string name="orders_entity_tile_rentals">Rentals</string>
+    <string name="orders_entity_tile_revenue">Revenue</string>
+    <string name="orders_entity_tile_spent">Spent</string>
+    <string name="orders_entity_tile_renting">Renting</string>
+    <string name="orders_entity_section">ORDERS</string>
+    <string name="orders_entity_million">%1$d.%2$dM</string>
+    <string name="orders_entity_million_whole">%1$dM</string>
+    <!-- #482 -->
+    <string name="v2_pricing_title">Pricing</string>
+    <string name="v2_pricing_block">Per block</string>
+    <string name="v2_pricing_hourly">Per hour</string>
+    <string name="v2_pricing_sale">Sale price</string>
+    <string name="v2_pricing_enter_price">Enter price</string>
+    <string name="v2_pricing_per_day_suffix">%1$s/day</string>
+    <string name="v2_pricing_price_field">Price for this order</string>
+    <string name="v2_pricing_note">Applies to this order only, the product price stays.</string>
+    <string name="v2_pricing_apply">Apply</string>
+    <string name="v2_pricing_change">Change pricing for %1$s</string>
+    <string name="v2_pricing_unit">đ</string>
+    <string name="v2_pricing_unit_daily">đ/day</string>
+    <!-- #482 -->
+    <string name="settings_v2_password_hint">At least %1$d characters.</string>
+    <string name="settings_v2_password_submit">Change password</string>
+    <string name="settings_v2_password_show">Show password</string>
+    <string name="settings_v2_password_hide">Hide password</string>
+    <!-- #484 overview money, rented-out list, store info -->
+    <string name="overview_v2_collected">Real income</string>
+    <string name="overview_v2_outstanding">Still to collect</string>
+    <string name="overview_v2_chart_money">Real income</string>
+    <string name="overview_v2_chart_orders">Orders</string>
+    <string name="overview_v2_bars_orders">New orders per day</string>
+    <string name="overview_v2_info_body">Money customers actually paid the shop, counted on the day it was received.</string>
+    <string name="overview_v2_info_deposit">Deposits at order</string>
+    <string name="overview_v2_info_remaining">Collected at pickup and on sales</string>
+    <string name="overview_v2_info_cancelled">Refunds for cancelled orders</string>
+    <string name="overview_v2_info_collateral">Not in real income because it goes back to the customer.</string>
+    <string name="overview_v2_info_note">Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.</string>
+    <string name="overview_v2_info_fees">Damage and late fees</string>
+    <string name="overview_v2_new_order_value">New order value</string>
+    <string name="overview_v2_vs_previous_period">vs previous period</string>
+    <string name="overview_v2_outstanding_sub">From new orders</string>
+    <string name="overview_v2_collected_tile_accessibility">Real income %1$s, see details</string>
+    <string name="overview_v2_collected_excludes_collateral">Excludes collateral</string>
+    <string name="overview_v2_received_title">Money received</string>
+    <string name="overview_v2_received_total">Total received, collateral included</string>
+    <string name="overview_v2_collected_shop">The shop\'s money</string>
+    <string name="overview_v2_collateral">Collateral</string>
+    <string name="overview_v2_collateral_sub">Held for customers, to be returned</string>
+    <string name="overview_v2_collateral_received">Received at pickup</string>
+    <string name="overview_v2_collateral_returned">Returned when items came back</string>
+    <string name="overview_v2_collateral_upcoming">UPCOMING COLLATERAL</string>
+    <string name="overview_v2_collateral_upcoming_note">not counted in any figure</string>
+    <string name="overview_v2_collateral_to_return">To return to customers</string>
+    <string name="overview_v2_collateral_to_return_orders">%1$d orders rented out</string>
+    <string name="overview_v2_collateral_to_collect">To receive at pickup</string>
+    <string name="overview_v2_collateral_to_collect_orders">%1$d orders not picked up</string>
+    <string name="overview_v2_outstanding_tile_accessibility">Still to collect %1$s, see details</string>
+    <string name="overview_v2_outstanding_body">The unpaid part of orders created in the period. Collateral is not counted here.</string>
+    <string name="overview_v2_outstanding_at_pickup">To collect when customers pick up</string>
+    <string name="overview_v2_outstanding_at_pickup_orders">%1$d orders · pickup from today</string>
+    <string name="overview_v2_outstanding_overdue">Past pickup date, not collected</string>
+    <string name="overview_v2_outstanding_overdue_orders">%1$d orders · call the customer</string>
+    <string name="rented_out_title">Rented out · %1$d</string>
+    <string name="rented_out_late">Late return · %1$d</string>
+    <string name="rented_out_on_time">Not due yet · %1$d</string>
+    <!-- #496 order list rows: "#0053 · created Mon 05/10", then the task of the status -->
+    <string name="order_row_weekdays">Mon,Tue,Wed,Thu,Fri,Sat,Sun</string>
+    <string name="order_row_created">created %1$s</string>
+    <string name="order_row_hand_over">Hand over %1$s</string>
+    <string name="order_row_hand_over_return">return %1$s</string>
+    <string name="order_row_returns">Return %1$s</string>
+    <string name="order_row_return_due">Due back %1$s</string>
+    <string name="order_row_returned">Returned %1$s</string>
+    <string name="order_row_sold">Sold %1$s</string>
+    <string name="order_row_cancelled">Cancelled %1$s</string>
+    <!-- #496 overview "Today's work" and "Not picked up" -->
+    <string name="overview_v2_today_work">Today\'s work</string>
+    <string name="overview_v2_pickups_today">To hand over today</string>
+    <string name="overview_v2_pickups_done">Handed over %1$d/%2$d</string>
+    <string name="overview_v2_returns_today">To take back today</string>
+    <string name="overview_v2_returns_done">Taken back %1$d/%2$d</string>
+    <string name="overview_v2_no_shows">Past pickup day, customer not in</string>
+    <string name="not_picked_up">Not picked up</string>
+    <string name="not_picked_up_title">Not picked up · %1$d</string>
+    <string name="not_picked_up_overdue">Past pickup day, not collected · %1$d</string>
+    <string name="not_picked_up_upcoming">To collect at pickup · %1$d</string>
+    <plurals name="not_picked_up_overdue_days">
+        <item quantity="one">%1$d day late · call the customer</item>
+        <item quantity="other">%1$d days late · call the customer</item>
+    </plurals>
+    <string name="store_v2_name">Store name</string>
+    <string name="store_v2_phone">Phone number</string>
+    <string name="store_v2_address_section">Address</string>
+    <string name="store_v2_street">Street address</string>
+    <string name="store_v2_state">Ward / District</string>
+    <string name="store_v2_city">City / Province</string>
+    <string name="store_v2_country">Country</string>
+    <string name="store_v2_country_pick">Select country</string>
+    <string name="store_v2_postal">Postal code</string>
+    <string name="store_v2_other">Other</string>
+    <string name="store_v2_optional">(optional)</string>
+    <string name="store_v2_description">Description</string>
+    <string name="store_v2_description_placeholder">A short introduction of the store</string>
+    <!-- #518 overlap setting, #519 order action sheet and change history -->
+    <string name="settings_v2_group_orders">Orders</string>
+    <string name="settings_v2_allow_overlap">Allow overlapping bookings</string>
+    <string name="settings_v2_allow_overlap_hint">When off, an order cannot be created if the items are fully booked on those days.</string>
+    <string name="settings_v2_allow_overlap_failed">Could not save the setting. Please try again.</string>
+    <string name="api_error_order_schedule_conflict">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
+    <string name="api_error_invalid_timezone">Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).</string>
+    <string name="v2_cart_overlap_line">Booked out %1$s · rented in order %2$s</string>
+    <string name="v2_cart_overlap_line_no_order">Booked out %1$s</string>
+    <string name="v2_cart_overlap_blocked">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
+    <string name="v2_create_overlap_title">Overlapping booking</string>
+    <string name="v2_create_overlap_line">%1$s is short %2$d on %3$s (rented in %4$s).</string>
+    <string name="v2_create_overlap_line_no_order">%1$s is short %2$d on %3$s.</string>
+    <string name="v2_create_anyway">Create anyway</string>
+    <string name="order_sheet_title">Order #%1$s</string>
+    <string name="order_sheet_print">Print receipt</string>
+    <string name="order_sheet_printer">Printer %1$s</string>
+    <string name="order_sheet_notes">Notes</string>
+    <string name="order_sheet_notes_with_text">1 note</string>
+    <plurals name="order_sheet_notes_photos">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <plurals name="order_sheet_notes_photos_only">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="order_sheet_notes_add">Add a note</string>
+    <string name="order_sheet_history">Change history</string>
+    <string name="order_sheet_edit">Edit order</string>
+    <string name="order_sheet_extend">Extend</string>
+    <string name="order_sheet_share">Share order</string>
+    <string name="order_sheet_cancel">Cancel order</string>
+    <string name="order_sheet_cancel_hint">The order becomes Cancelled and is left out of revenue</string>
+    <string name="order_sheet_delete">Delete order</string>
+    <string name="history_title">Change history</string>
+    <string name="history_order_subtitle">Order #%1$s · %2$s</string>
+    <string name="history_empty">No changes yet</string>
+    <string name="history_load_more">Load more</string>
+    <string name="history_error">Could not load the change history</string>
+    <string name="history_today">TODAY · %1$s</string>
+    <string name="history_weekdays">Mon,Tue,Wed,Thu,Fri,Sat,Sun</string>
+    <string name="history_other">Update</string>
+    <string name="history_refund">Refund</string>
+    <string name="history_staff_name">%1$s (staff)</string>
+    <string name="history_per_day">/day</string>
+    <string name="history_per_rental">/rental</string>
+    <string name="history_per_hour">/hour</string>
+    <string name="history_quantity">× %1$s</string>
+    <string name="history_item_added">added × %1$s</string>
+    <string name="history_item_removed">removed</string>
+    <string name="history_images_added">added %1$d photo(s)</string>
+    <string name="history_images_removed">removed %1$d photo(s)</string>
+    <string name="history_pricing_other">%1$s price</string>
+    <string name="history_count">%1$d changes · latest %2$s</string>
+    <string name="history_count_only">%1$d changes</string>
+    <string name="history_latest_today">%1$s today</string>
+    <string-array name="history_kinds">
+        <item>ORDER_CREATED|Order created</item>
+        <item>ORDER_EDITED|Order edited</item>
+        <item>ORDER_ITEMS|Items changed</item>
+        <item>ORDER_ITEM_PRICE|Price changed in order</item>
+        <item>ORDER_DEPOSIT|Deposit taken</item>
+        <item>ORDER_PAYMENT|Payment</item>
+        <item>ORDER_NOTE|Note edited</item>
+        <item>ORDER_PICKED_UP|Handed over</item>
+        <item>ORDER_RETURNED|Taken back</item>
+        <item>ORDER_COMPLETED|Completed</item>
+        <item>ORDER_CANCELLED|Order cancelled</item>
+        <item>ORDER_RESTORED|Restored</item>
+        <item>ORDER_DELETED|Order deleted</item>
+        <item>PRODUCT_CREATED|Product created</item>
+        <item>PRODUCT_EDITED|Details edited</item>
+        <item>PRODUCT_PRICE|Price changed</item>
+        <item>PRODUCT_STOCK|Stock changed</item>
+        <item>PRODUCT_IMAGES|Photos changed</item>
+        <item>PRODUCT_DELETED|Product deleted</item>
+        <item>PRODUCT_RESTORED|Restored</item>
+        <item>OTHER|Update</item>
+    </string-array>
+    <string-array name="history_fields">
+        <item>status|Status</item>
+        <item>orderType|Order type</item>
+        <item>pickupPlanAt|Pickup day</item>
+        <item>returnPlanAt|Return day</item>
+        <item>pickedUpAt|Handed over</item>
+        <item>returnedAt|Returned</item>
+        <item>totalAmount|Order total</item>
+        <item>depositAmount|Prepaid deposit</item>
+        <item>securityDeposit|Security deposit</item>
+        <item>discountType|Discount type</item>
+        <item>discountValue|Discount value</item>
+        <item>discountAmount|Discount</item>
+        <item>damageFee|Damage fee</item>
+        <item>lateFee|Late fee</item>
+        <item>collateralType|Collateral type</item>
+        <item>collateralDetails|Collateral</item>
+        <item>pickupNotes|Pickup notes</item>
+        <item>returnNotes|Return notes</item>
+        <item>damageNotes|Damage notes</item>
+        <item>isReadyToDeliver|Ready to deliver</item>
+        <item>paymentCollected|Collected</item>
+        <item>paymentRefunded|Refunded</item>
+        <item>paymentMethod|Method</item>
+        <item>notes|Note</item>
+        <item>name|Name</item>
+        <item>barcode|Barcode</item>
+        <item>category|Category</item>
+        <item>isActive|On sale</item>
+        <item>deposit|Deposit</item>
+        <item>rentPrice|Rent price</item>
+        <item>salePrice|Sale price</item>
+        <item>pricingType|Pricing</item>
+        <item>pricing.DAILY|Rent per day</item>
+        <item>pricing.FIXED|Rent per rental</item>
+        <item>pricing.HOURLY|Rent per hour</item>
+        <item>images|Photos</item>
+    </string-array>
+    <string-array name="history_values">
+        <item>status.RESERVED|Booked</item>
+        <item>status.PICKUPED|Renting</item>
+        <item>status.RETURNED|Returned</item>
+        <item>status.COMPLETED|Completed</item>
+        <item>status.CANCELLED|Cancelled</item>
+        <item>orderType.RENT|Rent</item>
+        <item>orderType.SALE|Sale</item>
+        <item>pricingType.DAILY|Per day</item>
+        <item>pricingType.FIXED|Per rental</item>
+        <item>pricingType.HOURLY|Per hour</item>
+        <item>discountType.AMOUNT|Amount</item>
+        <item>discountType.PERCENTAGE|Percent</item>
+        <item>paymentMethod.CASH|Cash</item>
+        <item>paymentMethod.BANK_TRANSFER|Bank transfer</item>
+        <item>bool.true|Yes</item>
+        <item>bool.false|No</item>
+    </string-array>
+    <!-- #622 Bank accounts + VietQR on bills -->
+    <string name="bank_accounts">Bank accounts</string>
+    <string name="bank_accounts_empty">No bank account yet. Tap + to add one.</string>
+    <string name="bank_account_add">Add bank account</string>
+    <string name="bank_account_edit">Edit bank account</string>
+    <string name="bank_account_bank">Bank name *</string>
+    <string name="bank_account_select_bank">Select bank</string>
+    <string name="bank_account_search">Search bank…</string>
+    <string name="bank_account_number">Account number *</string>
+    <string name="bank_account_holder">Account holder name *</string>
+    <string name="bank_account_branch">Branch</string>
+    <string name="bank_account_set_default">Set as default</string>
+    <string name="bank_account_default">Default</string>
+    <string name="bank_account_outlet">Outlet</string>
+    <string name="bank_account_delete_title">Delete bank account</string>
+    <string name="bank_account_delete_message">Are you sure you want to delete %1$s?</string>
+    <string name="bank_account_need_bank">Please select a bank</string>
+    <string name="bank_account_need_number">Please check account number</string>
+    <string name="bank_account_need_holder">Please check account holder name</string>
+    <string name="printer_bank_qr_title">Print transfer QR on bills</string>
+    <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. This device only.</string>
+    <string name="bill_bank_qr_title">BANK TRANSFER</string>
+    <string name="bill_bank_qr_account">Account: %1$s</string>
+    <!-- #632 categories from the product form -->
+    <string name="api_error_category_name_exists">A category with this name already exists</string>
+    <string name="api_error_category_name_required">Please enter a category name</string>
+    <string name="api_error_cannot_delete_default_category">The default category cannot be deleted</string>
+    <string name="v2_category_add_title">Add category</string>
+    <string name="v2_category_rename_title">Rename category</string>
+    <string name="v2_category_name_placeholder">Category name</string>
+    <string name="v2_category_save">Save</string>
+    <string name="v2_category_rename">Rename</string>
+    <string name="v2_category_delete">Delete</string>
+    <string name="v2_category_delete_title">Delete category \"%1$s\"?</string>
+    <string name="v2_category_default">Default</string>
+    <string name="v2_category_empty">No categories yet</string>
+    <string name="v2_category_name_required">Please enter a category name</string>
+    <string name="v2_category_name_too_short">A category name needs at least 2 characters</string>
+    <string name="v2_category_name_too_long">A category name has at most 50 characters</string>
+    <string name="v2_category_has_products">This category still has products. Move them to another category before deleting it.</string>
+    <string name="settings_v2_categories">Categories</string>
+    <string name="v2_category_search">Search categories</string>
+    <string name="v2_category_actions">Rename or delete</string>
+    <!-- #642 Lịch trống month screen -->
+    <string name="v2_calendar_total">%1$d in total</string>
+    <string name="v2_calendar_month">%3$s %2$d</string>
+    <string name="v2_calendar_prev_month">Previous month</string>
+    <string name="v2_calendar_next_month">Next month</string>
+    <string name="v2_calendar_left">%1$d left</string>
+    <string name="v2_calendar_none">none</string>
+    <string name="v2_calendar_legend_full">All free</string>
+    <string name="v2_calendar_legend_low">Few left</string>
+    <string name="v2_calendar_legend_none">None</string>
+    <string name="v2_calendar_legend_chosen">Chosen</string>
+    <plurals name="v2_calendar_day_orders">
+        <item quantity="one">%1$s · %2$d order holding it</item>
+        <item quantity="other">%1$s · %2$d orders holding it</item>
+    </plurals>
+    <string name="v2_calendar_no_orders">No order holds it on this day</string>
+    <string name="v2_calendar_quantity">%1$d pcs</string>
+    <plurals name="v2_calendar_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="v2_calendar_min_left">at least %1$d free</string>
+    <string name="v2_calendar_pick_start">Tap the pickup day</string>
+    <string name="v2_calendar_pick_end">%1$s → tap the return day</string>
+    <string name="v2_calendar_add">Add to cart with these days</string>
+    <string name="v2_calendar_overlap_note">Some days have none left · the shop allows overlapping orders</string>
+    <!-- #640 order share image -->
+    <string name="share_kind_rent">Rental order</string>
+    <string name="share_kind_sale">Sale order</string>
+    <string name="share_kind_draft">%1$s · created %2$s</string>
+    <string name="share_draft_title">Draft order</string>
+    <string name="share_status_reserved">Awaiting pickup</string>
+    <string name="share_status_pickuped">On rent</string>
+    <string name="share_status_returned">Returned</string>
+    <string name="share_status_completed">Paid</string>
+    <string name="share_status_cancelled">Cancelled</string>
+    <string name="share_status_draft">Not confirmed</string>
+    <string name="share_customer">Customer</string>
+    <string name="share_walk_in">Walk-in customer</string>
+    <string name="share_pickup">Pickup</string>
+    <string name="share_return">Return</string>
+    <string name="share_items_rent">Rental items · %1$d</string>
+    <string name="share_items_sale">Items bought · %1$d</string>
+    <string name="share_rent_total">Rental total</string>
+    <string name="share_deposit_paid">Deposit paid</string>
+    <string name="share_collateral">Collateral at pickup</string>
+    <string name="share_amount_due">Still to pay</string>
+    <string name="share_subtotal">Subtotal</string>
+    <string name="share_discount">Discount</string>
+    <string name="share_total">Total</string>
+    <string name="share_draft_deposit">Holding deposit</string>
+    <string name="share_draft_estimate">Estimate</string>
+    <string name="share_draft_note">Not confirmed yet. The shop will confirm the dates and prices before holding the items.</string>
+    <string name="share_qr_title">Scan to transfer</string>
+    <string name="share_qr_content">Content: %1$s</string>
+    <string name="share_thanks">Thank you for choosing %1$s</string>
+    <string name="share_made_with">Made with AnyRent</string>
+    <string name="share_draft_action">Share draft</string>
 </resources>

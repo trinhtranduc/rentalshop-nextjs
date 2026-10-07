@@ -1,509 +1,543 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { 
-  PageWrapper,
-  PageHeader,
-  PageTitle,
-  Users,
-  UsersLoading,
-  useToast,
-  UserDetailDialog,
-  AddUserDialog,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  UserForm,
-  ConfirmationDialog,
-  Button,
-  LoadingIndicator
-} from '@rentalshop/ui';
-import { Plus, Download } from 'lucide-react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useUsersData, useCanExportData, useCommonTranslations, useUsersTranslations } from '@rentalshop/hooks';
-import { usersApi } from '@rentalshop/utils';
-import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
-
 /**
- * ✅ MODERN NEXT.JS 13+ USERS PAGE - URL STATE PATTERN
- * 
- * Architecture:
- * ✅ URL params as single source of truth
- * ✅ Clean data fetching with useUsersData hook
- * ✅ No duplicate state management
- * ✅ Smooth transitions with useTransition
- * ✅ Shareable URLs (bookmarkable filters)
- * ✅ Browser back/forward support
- * ✅ Auto-refresh on URL change
+ * Nhân viên (#528, board Nhan-vien). Reads GET /api/users (the API scopes it: a merchant sees
+ * the outlet roles of every outlet, an outlet admin only their outlet; OUTLET_STAFF has no
+ * `users.view`). Outlet chips for merchants, role / status filters, search and paging live in
+ * the URL. "Sửa" opens /users/[id]; ⋯ locks, unlocks or deletes; "Thêm nhân viên" → /users/add.
  */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useAuth } from '@rentalshop/hooks';
+import { useToast } from '@rentalshop/ui';
+import { apiUrls, authenticatedFetch, getLocalDateKey, outletsApi, SHOP_TIMEZONE, usersApi } from '@rentalshop/utils';
+import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { shortDayLabel } from '../components/shell/notification-groups';
+import { FilterMenu, Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
+import { Modal } from '../orders/create/parts';
+import {
+  canFilterByOutlet,
+  canManageRow,
+  canSeeStaffPage,
+  lastSeen,
+  parseOutletParam,
+  parseStaffPage,
+  parseStaffPageSize,
+  readStaffPage,
+  staffQuery,
+  roleTone,
+  staffContact,
+  staffInitials,
+  staffName,
+  type StaffFilters,
+  type StaffLike,
+} from './users-model';
+import { ROLE_CLASS, dangerBtn } from './staff-parts';
+
+const timeFormatter = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: SHOP_TIMEZONE });
+
+type Outlet = { id: number; name: string };
+type Confirm = { kind: 'activate' | 'deactivate' | 'delete'; row: StaffLike } | null;
+
+interface ListState {
+  rows: StaffLike[];
+  total: number;
+  totalPages: number;
+  loading: boolean;
+  failed: boolean;
+}
+
+/** GET /api/users as raw JSON, so `pagination.total` survives (see `staffQuery`). */
+async function searchStaff(filters: StaffFilters): Promise<unknown> {
+  const query = staffQuery(filters);
+  const res = await authenticatedFetch(query ? `${apiUrls.users.list}?${query}` : apiUrls.users.list);
+  return res.json();
+}
+
+function useStaffPage(filters: Record<string, unknown> | null, nonce: number): ListState {
+  const [state, setState] = useState<ListState>({ rows: [], total: 0, totalPages: 1, loading: true, failed: false });
+  const key = filters ? JSON.stringify(filters) : '';
+  useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+    const f = JSON.parse(key) as Record<string, unknown>;
+    setState((s) => ({ ...s, loading: true, failed: false }));
+    searchStaff(f as StaffFilters)
+      .then((res) => {
+        if (cancelled) return;
+        const page = readStaffPage<StaffLike>(res, Number(f.limit) || 20);
+        if (page) setState({ ...page, loading: false, failed: false });
+        else setState((s) => ({ ...s, loading: false, failed: true }));
+      })
+      .catch(() => {
+        if (!cancelled) setState((s) => ({ ...s, loading: false, failed: true }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, nonce]);
+  return state;
+}
+
+/** Merchant only: outlets plus a head-count per outlet (one `limit=1` request each). */
+function useOutletChips(enabled: boolean, nonce: number) {
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [counts, setCounts] = useState<Record<number, number | null>>({});
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    outletsApi
+      .getOutlets()
+      .then((res) => {
+        const data = res?.data as { outlets?: Outlet[] } | Outlet[] | undefined;
+        const list = (Array.isArray(data) ? data : data?.outlets || []).map((o) => ({ id: o.id, name: o.name }));
+        if (cancelled) return;
+        setOutlets(list);
+        return Promise.all(
+          list.map((o) =>
+            searchStaff({ outletId: o.id, page: 1, limit: 1 })
+              .then((r) => readStaffPage(r, 1)?.total ?? null)
+              .catch(() => null),
+          ),
+        ).then((totals) => {
+          if (!cancelled) setCounts(Object.fromEntries(list.map((o, i) => [o.id, totals[i]])));
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, nonce]);
+  return { outlets, counts };
+}
+
+function RowMenu({ row, t, onPick }: { row: StaffLike; t: T; onPick: (kind: 'activate' | 'deactivate' | 'delete') => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  const item = 'flex h-9 w-full items-center rounded-lg px-3 text-left text-sm hover:bg-ar-subtle';
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('more', { name: staffName(row) })}
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-9 w-9 items-center justify-center rounded-[10px] text-ar-ink hover:bg-ar-subtle"
+      >
+        <ShellIcon d={ICONS.more} size={18} />
+      </button>
+      {open && (
+        <ul role="menu" className="absolute right-0 z-30 m-0 mt-1 min-w-[200px] list-none rounded-xl border border-ar-line-soft bg-ar-surface p-1 text-left shadow-ar">
+          <li role="none">
+            <button
+              role="menuitem"
+              type="button"
+              className={`${item} text-ar-ink`}
+              onClick={() => {
+                setOpen(false);
+                onPick(row.isActive === false ? 'activate' : 'deactivate');
+              }}
+            >
+              {row.isActive === false ? t('activate') : t('deactivate')}
+            </button>
+          </li>
+          <li role="none">
+            <button
+              role="menuitem"
+              type="button"
+              className={`${item} text-ar-danger`}
+              onClick={() => {
+                setOpen(false);
+                onPick('delete');
+              }}
+            >
+              {t('delete')}
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations('users.web') as unknown as T;
+  const tm = useTranslations('users.messages');
   const { user } = useAuth();
   const { toastSuccess } = useToast();
-  const t = useCommonTranslations();
-  const tu = useUsersTranslations();
-  const canExport = useCanExportData();
-  
-  // Dialog states
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showActivateConfirm, setShowActivateConfirm] = useState(false);
-  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [userToActivate, setUserToActivate] = useState<User | null>(null);
-  const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
 
-  // ============================================================================
-  // URL PARAMS - Single Source of Truth
-  // ============================================================================
-  
-  const search = searchParams.get('q') || '';
-  const role = searchParams.get('role') || '';
-  const status = searchParams.get('status') || '';
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '25');
-  const sortBy = searchParams.get('sortBy') || 'createdAt';
-  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+  const viewerRole = String(user?.role || '').toUpperCase();
+  const allowed = canSeeStaffPage(viewerRole);
+  const byOutlet = canFilterByOutlet(viewerRole);
+  const weekdays = useMemo(() => t('weekdays').split(','), [t]);
 
-  // ============================================================================
-  // DATA FETCHING - Clean & Simple
-  // ============================================================================
-  
-  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
-  const filters: UserFilters = useMemo(() => ({
-    q: search || undefined,
-    search: search || undefined,
-    role: (role as any) || undefined,
-    isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  }), [search, role, status, page, limit, sortBy, sortOrder]);
+  // URL state
+  const q = (searchParams.get('q') || '').trim();
+  const outletId = byOutlet ? parseOutletParam(searchParams.get('outlet')) : null;
+  const role = ['OUTLET_ADMIN', 'OUTLET_STAFF'].includes(searchParams.get('role') || '') ? (searchParams.get('role') as string) : '';
+  const status = ['active', 'inactive'].includes(searchParams.get('status') || '') ? (searchParams.get('status') as string) : '';
+  const page = parseStaffPage(searchParams.get('page'));
+  const limit = parseStaffPageSize(searchParams.get('limit'));
 
-  const { data, loading, error, refetch } = useUsersData({ filters });
+  const [draft, setDraft] = useState(q);
+  useEffect(() => setDraft(q), [q]);
+  const [nonce, setNonce] = useState(0);
+  const [confirm, setConfirm] = useState<Confirm>(null);
+  const [busy, setBusy] = useState(false);
 
-  // ============================================================================
-  // URL UPDATE HELPER
-  // ============================================================================
-  
-  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      // Special handling for page: always set it, even if it's 1
-      if (key === 'page') {
-        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
-        if (pageNum > 0) {
-          params.set(key, pageNum.toString());
-        } else {
-          params.delete(key);
-        }
-      } else if (value && value !== '' && value !== 'all') {
-        params.set(key, value.toString());
-      } else {
-        params.delete(key);
+  const update = useCallback(
+    (patch: Record<string, string | number | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === '' || v === undefined) params.delete(k);
+        else params.set(k, String(v));
       }
-    });
-    
-    const newURL = `${pathname}?${params.toString()}`;
-    router.push(newURL, { scroll: false });
-  }, [pathname, router, searchParams]);
+      if (!('page' in patch)) params.delete('page');
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
-  // ============================================================================
-  // FILTER HANDLERS
-  // ============================================================================
-  
-  const handleSearchChange = useCallback((searchValue: string) => {
-    console.log('🔍 Page: Search changed to:', searchValue);
-    updateURL({ q: searchValue, page: 1 });
-  }, [updateURL]);
+  const filters = useMemo(
+    () =>
+      allowed && user
+        ? {
+            q: q || undefined,
+            search: q || undefined,
+            role: role || undefined,
+            status: status || undefined,
+            outletId: outletId || undefined,
+            page,
+            limit,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+          }
+        : null,
+    [allowed, user, q, role, status, outletId, page, limit],
+  );
+  const list = useStaffPage(filters, nonce);
+  const { outlets, counts } = useOutletChips(allowed && byOutlet && !!user, nonce);
 
-  const handleFiltersChange = useCallback((newFilters: Partial<UserFilters>) => {
-    console.log('🔧 Page: Filters changed:', newFilters);
-    
-    const updates: Record<string, string | number | undefined> = { page: 1 };
-    
-    if ('role' in newFilters) {
-      updates.role = newFilters.role as any;
-    }
-    if ('isActive' in newFilters) {
-      if (newFilters.isActive === true) {
-        updates.status = 'active';
-      } else if (newFilters.isActive === false) {
-        updates.status = 'inactive';
-      } else {
-        updates.status = undefined;
-      }
-    }
-    if ('sortBy' in newFilters) {
-      updates.sortBy = newFilters.sortBy;
-    }
-    if ('sortOrder' in newFilters) {
-      updates.sortOrder = newFilters.sortOrder;
-    }
-    
-    updateURL(updates);
-  }, [updateURL]);
-
-  const handleClearFilters = useCallback(() => {
-    console.log('🔧 Page: Clear all filters');
-    router.push(pathname, { scroll: false });
-  }, [pathname, router]);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    console.log('📄 Page: Page changed to:', newPage);
-    updateURL({ page: newPage });
-  }, [updateURL]);
-
-  const handleSort = useCallback((column: string) => {
-    console.log('🔀 Page: Sort changed:', column);
-    const newSortBy = column;
-    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
-  }, [sortBy, sortOrder, updateURL]);
-
-  // ============================================================================
-  // USER ACTION HANDLERS
-  // ============================================================================
-  
-  const handleUserAction = useCallback(async (action: string, userId: number) => {
-    console.log('🎬 User action:', action, userId);
-    
-    const userItem = data?.users.find(u => u.id === userId);
-    
-    switch (action) {
-      case 'view':
-        // One design for view and edit: the user page (the dialogs showed less and looked different)
-        router.push(`/users/${userId}`);
-        break;
-        
-      case 'edit':
-        // Editing is a quick change, so it stays in a dialog
-        if (userItem) {
-          setSelectedUser(userItem);
-          setShowEditDialog(true);
+  // The owner is not in GET /api/users for a merchant (outlet roles only); the board pins them first.
+  const owner: StaffLike | null =
+    viewerRole === 'MERCHANT' && user && !q && !role && !status && !outletId && page === 1
+      ? {
+          id: Number(user.id),
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: 'MERCHANT',
+          isActive: true,
         }
-        break;
-        
-      case 'activate':
-        // Show activate confirmation dialog
-        if (userItem) {
-          setUserToActivate(userItem);
-          setShowActivateConfirm(true);
-        }
-        break;
-        
-      case 'deactivate':
-        // Show deactivate confirmation dialog
-        if (userItem) {
-          setUserToDeactivate(userItem);
-          setShowDeactivateConfirm(true);
-        }
-        break;
-        
-      case 'delete':
-        // Show delete confirmation dialog
-        if (userItem) {
-          setUserToDelete(userItem);
-          setShowDeleteConfirm(true);
-        }
-        break;
-        
-      default:
-        console.log('Unknown action:', action);
-    }
-  }, [data?.users, router, toastSuccess, refetch]);
-  
-  // Handle user update from edit dialog
-  const handleUserUpdate = useCallback(async (userData: UserCreateInput | UserUpdateInput) => {
-    if (!selectedUser) return;
-    
+      : null;
+
+  const lastSeenText = (row: StaffLike): string => {
+    if (owner && row === owner) return t('lastSeen.current');
+    const seen = lastSeen(row.lastLoginAt, new Date(), getLocalDateKey, (d) => timeFormatter.format(d));
+    const text =
+      seen.kind === 'today'
+        ? t('lastSeen.today', { time: seen.time })
+        : seen.kind === 'yesterday'
+          ? t('lastSeen.yesterday', { time: seen.time })
+          : seen.kind === 'day'
+            ? shortDayLabel(seen.dateKey, weekdays)
+            : '';
+    if (row.isActive === false) return text ? `${t('lastSeen.locked')} · ${text}` : t('lastSeen.locked');
+    return text || t('lastSeen.never');
+  };
+
+  const outletText = (row: StaffLike) => (row === owner ? t('allOutletsValue') : row.outlet?.name || '—');
+
+  const runConfirm = async () => {
+    if (!confirm) return;
+    const { kind, row } = confirm;
+    setBusy(true);
     try {
-      const response = await usersApi.updateUser(selectedUser.id, userData as UserUpdateInput);
-      if (response.success) {
-        toastSuccess(tu('messages.updateSuccess'), tu('messages.updateSuccess'));
-        setShowEditDialog(false);
-        setSelectedUser(null);
-        refetch();
+      const res =
+        kind === 'activate'
+          ? await usersApi.activateUser(row.id)
+          : kind === 'deactivate'
+            ? await usersApi.deactivateUser(row.id)
+            : await usersApi.deleteUser(row.id);
+      if (res.success) {
+        // Same toasts as the old page (users.messages.*).
+        const done = tm(kind === 'activate' ? 'activateSuccess' : kind === 'deactivate' ? 'deactivateSuccess' : 'deleteSuccess');
+        toastSuccess(done, `${done} - "${staffName(row)}"`);
+        setConfirm(null);
+        setNonce((n) => n + 1);
       }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
-      throw error;
+      // Errors: the global API error handler shows the toast.
+    } catch {
+      // Same: handled globally.
+    } finally {
+      setBusy(false);
     }
-  }, [selectedUser, toastSuccess, refetch, tu]);
-  
-  // Handle delete confirmation
-  const handleConfirmDelete = useCallback(async () => {
-    if (!userToDelete) return;
-    
-    try {
-      const response = await usersApi.deleteUser(userToDelete.id);
-      if (response.success) {
-        toastSuccess(tu('messages.deleteSuccess'), `${tu('messages.deleteSuccess')} - "${userToDelete.firstName} ${userToDelete.lastName}"`);
-        setShowDeleteConfirm(false);
-        setUserToDelete(null);
-        refetch();
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
-    }
-  }, [userToDelete, toastSuccess, refetch, tu]);
-  
-  // Handle activate confirmation
-  const handleConfirmActivate = useCallback(async () => {
-    if (!userToActivate) return;
-    
-    try {
-      // Use dedicated activateUser API method instead of updateUser
-      const response = await usersApi.activateUser(userToActivate.id);
-      if (response.success) {
-        toastSuccess(tu('messages.activateSuccess'), `${tu('messages.activateSuccess')} - "${userToActivate.firstName} ${userToActivate.lastName}"`);
-        setShowActivateConfirm(false);
-        setUserToActivate(null);
-        refetch();
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
-    }
-  }, [userToActivate, toastSuccess, tu, refetch]);
-  
-  // Handle deactivate confirmation
-  const handleConfirmDeactivate = useCallback(async () => {
-    if (!userToDeactivate) return;
-    
-    try {
-      // Use dedicated deactivateUser API method instead of updateUser
-      const response = await usersApi.deactivateUser(userToDeactivate.id);
-      if (response.success) {
-        toastSuccess(tu('messages.deactivateSuccess'), `${tu('messages.deactivateSuccess')} - "${userToDeactivate.firstName} ${userToDeactivate.lastName}"`);
-        setShowDeactivateConfirm(false);
-        setUserToDeactivate(null);
-        refetch();
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
-    }
-  }, [userToDeactivate, toastSuccess, tu, refetch]);
+  };
 
-  // ============================================================================
-  // TRANSFORM DATA FOR UI
-  // ============================================================================
-  
-  const userData = useMemo(() => {
-    if (!data) {
-      return {
-        items: [],
-        users: [],
-        total: 0,
-        page: 1,
-        totalPages: 1,
-        limit: 25,
-        hasMore: false
-      };
-    }
+  if (user && !allowed) {
+    return (
+      <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
+        <h1 className="m-0 text-2xl font-bold">{t('title')}</h1>
+        <p className={`${cardClass} m-0 px-5 py-6 text-[15px] text-ar-muted`}>{t('noAccess')}</p>
+      </div>
+    );
+  }
 
-    return {
-      items: data.users,
-      users: data.users,
-      total: data.total,
-      page: data.currentPage,
-      totalPages: data.totalPages,
-      limit: data.limit,
-      hasMore: data.hasMore
-    };
-  }, [data]);
+  const rows: StaffLike[] = owner ? [owner, ...list.rows.filter((r) => r.id !== owner.id)] : list.rows;
+  const headCount = list.total + (owner ? 1 : 0);
+  const chip = (on: boolean) =>
+    `h-9 whitespace-nowrap rounded-full px-3 text-sm ${on ? 'bg-ar-ink font-semibold text-ar-page' : 'border border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'}`;
+  const th = 'px-2 py-2.5 text-left text-xs font-bold uppercase tracking-[0.06em] text-ar-muted';
+  const detailHref = (row: StaffLike) => (row === owner ? '/users?settings=profile' : `/users/${row.id}`);
 
-  // ============================================================================
-  // RENDER - Page renders immediately, show loading indicator
-  // ============================================================================
+  const roleTag = (row: StaffLike) => {
+    const tone = roleTone(row.role);
+    return <span className={`inline-block whitespace-nowrap rounded-[7px] px-2 py-[3px] text-sm font-bold ${ROLE_CLASS[tone]}`}>{t(`roles.${tone}`)}</span>;
+  };
+  const avatar = (row: StaffLike) => (
+    <span aria-hidden="true" className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-ar-subtle text-sm font-bold text-ar-ink-2">
+      {staffInitials(row)}
+    </span>
+  );
+  const actions = (row: StaffLike) => (
+    <span className="flex items-center justify-end gap-1">
+      <Link href={detailHref(row)} className="inline-flex h-9 items-center rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-sm font-semibold text-ar-ink no-underline hover:bg-ar-subtle">
+        {t('edit')}
+      </Link>
+      {row !== owner && canManageRow(row, user?.id ? Number(user.id) : null) && (
+        <RowMenu row={row} t={t} onPick={(kind) => setConfirm({ kind, row })} />
+      )}
+    </span>
+  );
+
+  const emptyText = q || role || status || outletId ? t('emptySearch') : t('empty');
 
   return (
-    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden">
-      <PageHeader className="flex-shrink-0">
-        <div className="flex justify-between items-start">
-          <div>
-            <PageTitle>{tu('title')}</PageTitle>
-            <p className="text-sm text-gray-600">{tu('subtitle')}</p>
-          </div>
-          <div className="flex gap-3">
-            {/* Export feature - temporarily hidden, will be enabled in the future */}
-            {/* {canExport && (
-              <Button
-                onClick={() => {
-                  toastSuccess(t('labels.info'), tc('messages.comingSoon'));
-                }}
-                variant="default"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {t('buttons.export')}
-              </Button>
-            )} */}
-            <Button 
-              onClick={() => setShowAddDialog(true)}
-              variant="default"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {tu('addUser')}
-            </Button>
-          </div>
-        </div>
-      </PageHeader>
-
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        {/* Center Loading Indicator - Shows when waiting for API */}
-        {loading && !data ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={tu('labels.loading') || 'Loading users...'}
-            />
-          </div>
-        ) : (
-          /* Users Content - Only render when data is loaded */
-          <Users
-            data={userData}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
-            onUserAction={handleUserAction}
-            onPageChange={handlePageChange}
-            onSort={handleSort}
-          />
-        )}
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="m-0 text-2xl font-bold">
+          {t('title')}
+          {!list.loading && !list.failed && <span className="text-base font-normal text-ar-muted"> · {headCount}</span>}
+        </h1>
+        <Link href="/users/add" className={primaryBtn}>
+          <ShellIcon d={ICONS.plus} size={18} />
+          {t('add')}
+        </Link>
       </div>
 
-      {/* User Detail Dialog */}
-      {selectedUser && (
-        <UserDetailDialog
-          user={selectedUser}
-          open={showDetailDialog}
-          onOpenChange={setShowDetailDialog}
-        />
-      )}
-
-      {/* Add User Dialog */}
-      <AddUserDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        currentUser={user}
-        onUserCreated={async (userData) => {
-          try {
-            const response = await usersApi.createUser(userData);
-            console.log('🔍 page.tsx: createUser response:', {
-              success: response.success,
-              hasCode: !!(response as any).code,
-              code: (response as any).code,
-              message: (response as any).message,
-              isError: response instanceof Error,
-              type: typeof response,
-              fullResponse: response
-            });
-            
-            if (response.success) {
-              const createdName = (userData as { name?: string }).name || [userData.firstName, userData.lastName].filter(Boolean).join(' ');
-              toastSuccess(tu('messages.createSuccess'), createdName);
-              refetch();
-            } else {
-              // Keep the dialog open with what was typed (e.g. plan limit reached)
-              throw response;
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error: any) {
-            // Error automatically handled by useGlobalErrorHandler
-            throw error; // Re-throw to let dialog handle it
-          }
-        }}
-        onError={(error) => {
-          // ✅ onUserCreated already shows toast, so onError is only for logging
-          // Don't show toast again to avoid duplicate toasts
-          console.log('🔍 page.tsx: onError callback (toast already shown by onUserCreated):', error);
-        }}
-      />
-
-      {/* Edit User Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{tu('editUser')}</DialogTitle>
-            {selectedUser && <p className="text-sm text-gray-600">{[selectedUser.firstName, selectedUser.lastName].filter(Boolean).join(' ')}</p>}
-          </DialogHeader>
-          {selectedUser && (
-            <UserForm
-              layout="dialog"
-              user={selectedUser}
-              onSave={handleUserUpdate}
-              onCancel={() => {
-                setShowEditDialog(false);
-                setSelectedUser(null);
+      <div className="flex flex-wrap items-start gap-4">
+        <section className={`${cardClass} min-w-0 flex-[3_1_560px] overflow-hidden`}>
+          <div className="flex flex-wrap items-center gap-2 border-b border-ar-subtle px-4 py-3.5">
+            {byOutlet && outlets.length > 0 && (
+              <div role="group" aria-label={t('outletFilter')} className="flex flex-wrap gap-2">
+                <button type="button" aria-pressed={!outletId} onClick={() => update({ outlet: null })} className={chip(!outletId)}>
+                  {t('allOutlets')}
+                </button>
+                {outlets.map((o) => (
+                  <button key={o.id} type="button" aria-pressed={outletId === o.id} onClick={() => update({ outlet: o.id })} className={chip(outletId === o.id)}>
+                    {o.name}
+                    {typeof counts[o.id] === 'number' && (
+                      <span className={outletId === o.id ? 'opacity-80' : 'text-ar-muted'}> {counts[o.id]}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            <span className="hidden flex-1 md:block" />
+            <form
+              role="search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                update({ q: draft.trim() || null });
               }}
-              mode="edit"
+              className="w-full md:w-auto"
+            >
+              <label className="flex h-9 items-center gap-2 rounded-[10px] bg-ar-subtle px-3 text-ar-muted focus-within:ring-2 focus-within:ring-ar-primary md:w-[240px]">
+                <ShellIcon d={ICONS.search} size={16} />
+                <input
+                  type="search"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  aria-label={t('searchLabel')}
+                  placeholder={t('searchPlaceholder')}
+                  className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ar-ink outline-none placeholder:text-ar-muted"
+                />
+              </label>
+            </form>
+            <FilterMenu
+              label={t('filters.role')}
+              value={role || 'all'}
+              options={[
+                { value: 'all', label: t('filters.all') },
+                { value: 'OUTLET_ADMIN', label: t('roles.admin') },
+                { value: 'OUTLET_STAFF', label: t('roles.staff') },
+              ]}
+              onChange={(v) => update({ role: v === 'all' ? null : v })}
+            />
+            <FilterMenu
+              label={t('filters.status')}
+              value={status || 'all'}
+              options={[
+                { value: 'all', label: t('filters.all') },
+                { value: 'active', label: t('filters.active') },
+                { value: 'inactive', label: t('filters.inactive') },
+              ]}
+              onChange={(v) => update({ status: v === 'all' ? null : v })}
+            />
+          </div>
+
+          {list.failed ? (
+            <div role="alert" className="flex flex-wrap items-center gap-3 px-5 py-6 text-[15px] text-ar-muted">
+              <span>{t('loadFailed')}</span>
+              <button type="button" onClick={() => setNonce((n) => n + 1)} className="h-9 rounded-[10px] border border-ar-line px-3 text-sm font-semibold text-ar-ink hover:bg-ar-subtle">
+                {t('retry')}
+              </button>
+            </div>
+          ) : list.loading && list.rows.length === 0 ? (
+            <div className="flex flex-col gap-3 px-4 py-4" aria-busy="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-11 w-full" />
+              ))}
+            </div>
+          ) : rows.length === 0 ? (
+            <p className="m-0 px-5 py-8 text-center text-[15px] text-ar-muted">{emptyText}</p>
+          ) : (
+            <div className={list.loading ? 'opacity-60 transition-opacity' : undefined} aria-busy={list.loading || undefined}>
+              <table className="hidden w-full border-collapse text-[15px] md:table">
+                <thead>
+                  <tr className="bg-ar-surface-muted">
+                    <th scope="col" className={`${th} pl-4`}>{t('cols.staff')}</th>
+                    <th scope="col" className={th}>{t('cols.role')}</th>
+                    <th scope="col" className={th}>{t('cols.outlet')}</th>
+                    <th scope="col" className={th}>{t('cols.lastLogin')}</th>
+                    <th scope="col" className={`${th} pr-4`}>
+                      <span className="sr-only">{t('cols.actions')}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row === owner ? 'owner' : row.id} className={`border-t border-ar-subtle ${row.isActive === false ? 'opacity-[.55]' : ''}`}>
+                      <td className="py-2.5 pl-4 pr-2 align-middle">
+                        <Link href={detailHref(row)} className="flex items-center gap-2.5 text-inherit no-underline">
+                          {avatar(row)}
+                          <span className="flex min-w-0 flex-col">
+                            <span className="max-w-[260px] truncate font-semibold text-ar-ink">{staffName(row)}</span>
+                            <span className="max-w-[260px] truncate text-sm tabular-nums text-ar-muted">{staffContact(row)}</span>
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="px-2 py-2.5 align-middle">{roleTag(row)}</td>
+                      <td className="px-2 py-2.5 align-middle text-ar-ink-2">{outletText(row)}</td>
+                      <td className="px-2 py-2.5 align-middle text-sm tabular-nums text-ar-muted">{lastSeenText(row)}</td>
+                      <td className="py-2.5 pl-2 pr-4 text-right align-middle">{actions(row)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <ul className="m-0 list-none p-0 md:hidden">
+                {rows.map((row) => (
+                  <li
+                    key={row === owner ? 'owner' : row.id}
+                    className={`flex items-start gap-3 border-t border-ar-subtle px-4 py-3 first:border-t-0 ${row.isActive === false ? 'opacity-[.55]' : ''}`}
+                  >
+                    {avatar(row)}
+                    <Link href={detailHref(row)} className="flex min-w-0 flex-1 flex-col gap-1 text-inherit no-underline">
+                      <span className="truncate font-semibold text-ar-ink">{staffName(row)}</span>
+                      <span className="truncate text-sm tabular-nums text-ar-muted">{staffContact(row)}</span>
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ar-ink-2">
+                        {roleTag(row)}
+                        <span>{outletText(row)}</span>
+                      </span>
+                      <span className="text-sm tabular-nums text-ar-muted">{lastSeenText(row)}</span>
+                    </Link>
+                    {actions(row)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!list.failed && list.total > 0 && (list.total > limit || page > 1) && (
+            <TableFooter
+              page={page}
+              limit={limit}
+              total={list.total}
+              totalPages={list.totalPages}
+              onPage={(p) => update({ page: p })}
+              onLimit={(n) => update({ limit: n })}
+              t={t}
             />
           )}
-        </DialogContent>
-      </Dialog>
+        </section>
 
-      {/* Delete User Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        type="danger"
-        title={tu('actions.delete')}
-        description={tu('messages.confirmDelete')}
-        confirmText={tu('actions.delete')}
-        cancelText={t('buttons.cancel')}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setUserToDelete(null);
-        }}
-      />
+        <aside className={`${cardClass} flex min-w-0 flex-[1_1_300px] flex-col gap-3.5 px-5 py-4`}>
+          <h2 className="m-0 text-lg font-bold">{t('rolesCard.title')}</h2>
+          {(['owner', 'admin', 'staff'] as const).map((tone) => (
+            <div key={tone} className="flex flex-col gap-1">
+              <span className={`self-start rounded-[7px] px-2 py-[3px] text-sm font-bold ${ROLE_CLASS[tone]}`}>{t(`roles.${tone}`)}</span>
+              <span className="text-sm leading-[21px] text-ar-ink-2">{t(`rolesCard.${tone}`)}</span>
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2 border-t border-ar-subtle pt-3">
+            <Link href="/users/role-permissions" className={`${outlineBtn} h-9 text-sm`}>
+              {t('rolesCard.rolePermissions')}
+            </Link>
+            <Link href="/users/permissions" className={`${outlineBtn} h-9 text-sm`}>
+              {t('rolesCard.permissions')}
+            </Link>
+          </div>
+        </aside>
+      </div>
 
-      {/* Activate User Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showActivateConfirm}
-        onOpenChange={setShowActivateConfirm}
-        type="info"
-        title={tu('messages.confirmActivateAccount')}
-        description={userToActivate ? `${tu('messages.confirmActivate')} "${userToActivate.firstName} ${userToActivate.lastName}"? ${tu('messages.confirmActivateDetails')}` : ''}
-        confirmText={tu('actions.activateAccount')}
-        cancelText={t('buttons.cancel')}
-        onConfirm={handleConfirmActivate}
-        onCancel={() => {
-          setShowActivateConfirm(false);
-          setUserToActivate(null);
-        }}
-      />
-
-      {/* Deactivate User Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showDeactivateConfirm}
-        onOpenChange={setShowDeactivateConfirm}
-        type="warning"
-        title={tu('messages.confirmDeactivateAccount')}
-        description={userToDeactivate ? `${tu('messages.confirmDeactivate')} "${userToDeactivate.firstName} ${userToDeactivate.lastName}"? ${tu('messages.confirmDeactivateDetails')}` : ''}
-        confirmText={tu('actions.deactivateAccount')}
-        cancelText={t('buttons.cancel')}
-        onConfirm={handleConfirmDeactivate}
-        onCancel={() => {
-          setShowDeactivateConfirm(false);
-          setUserToDeactivate(null);
-        }}
-      />
-    </PageWrapper>
+      <Modal
+        open={!!confirm}
+        title={confirm ? t(`confirm.${confirm.kind}Title`) : ''}
+        onClose={() => (busy ? undefined : setConfirm(null))}
+        closeLabel={t('confirm.close')}
+        footer={
+          <>
+            <button type="button" onClick={() => setConfirm(null)} disabled={busy} className={outlineBtn}>
+              {t('confirm.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={runConfirm}
+              disabled={busy}
+              className={confirm?.kind === 'activate' ? primaryBtn : dangerBtn}
+            >
+              {confirm ? t(confirm.kind) : ''}
+            </button>
+          </>
+        }
+      >
+        <p className="m-0 text-[15px] text-ar-ink-2">{confirm ? t(`confirm.${confirm.kind}Body`, { name: staffName(confirm.row) }) : ''}</p>
+      </Modal>
+    </div>
   );
 }

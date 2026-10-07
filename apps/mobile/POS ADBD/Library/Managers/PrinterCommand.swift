@@ -105,22 +105,25 @@ class PrinterCommand {
     }
 
     // MARK: - QR Code Commands
-    static func printQRCode(_ data: String, size: Int = 8) -> Data {
+    /// ESC/POS QR (GS ( k): model 2, module `size` dots, error correction M, store, print.
+    /// #622: size 6 keeps a VietQR (version 6, 41 modules) about 31 mm wide, inside 58 mm paper.
+    static func printQRCode(_ data: String, size: Int = 6) -> Data {
         var command = Data()
+        let bytes = Array(data.utf8)
 
-        // Select QR code model
-        command.append(Data([Command.GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, UInt8(size)]))
+        // Function 165: QR model 2
+        command.append(Data([Command.GS, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]))
+        // Function 167: module size (1-16 dots)
+        command.append(Data([Command.GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, UInt8(max(1, min(16, size)))]))
+        // Function 169: error correction M
+        command.append(Data([Command.GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x31]))
 
-        // Store QR code data
-        let dataLength = data.count + 3
-        command.append(
-            Data([
-                Command.GS, 0x28, 0x6B, UInt8(dataLength & 0xFF), UInt8(dataLength >> 8), 0x31,
-                0x50, 0x30,
-            ]))
-        command.append(data.data(using: .ascii)!)
+        // Function 180: store the data (length counts the 3 bytes "31 50 30")
+        let dataLength = bytes.count + 3
+        command.append(Data([Command.GS, 0x28, 0x6B, UInt8(dataLength & 0xFF), UInt8(dataLength >> 8), 0x31, 0x50, 0x30]))
+        command.append(Data(bytes))
 
-        // Print QR code
+        // Function 181: print the stored symbol
         command.append(Data([Command.GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]))
 
         return command

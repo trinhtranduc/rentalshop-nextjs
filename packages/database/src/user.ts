@@ -414,6 +414,8 @@ export const simplifiedUsers = {
             website: true,
             description: true,
             tenantKey: true, // Include tenantKey for referral code
+            allowOverlappingOrders: true, // #518 shop setting for GET /api/users/profile
+            timezone: true, // #567 shop time zone for GET /api/users/profile
             isActive: true,
             planId: true,
             // subscriptionStatus removed - use subscription.status
@@ -431,6 +433,7 @@ export const simplifiedUsers = {
             description: true,
             isActive: true,
             isDefault: true,
+            printBankQr: true, // bill bank QR switch (#628)
             createdAt: true,
             merchant: {
               select: {

@@ -1,734 +1,452 @@
-"use client";
-
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  PageWrapper,
-  PageHeader,
-  PageTitle,
-  PageContent,
-  Outlets,
-  OutletsLoading,
-  useToast,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  ConfirmationDialog,
-  AddOutletDialog,
-  Input,
-  Label,
-  Textarea,
-  Button,
-  LoadingIndicator,
-} from "@rentalshop/ui";
-import { Plus, Download } from "lucide-react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import {
-  useAuth,
-  useOutletsWithFilters,
-  useCanExportData,
-  useCommonTranslations,
-  useOutletsTranslations,
-} from "@rentalshop/hooks";
-import { outletsApi } from "@rentalshop/utils";
-import type {
-  OutletFilters,
-  Outlet,
-  OutletUpdateInput,
-} from "@rentalshop/types";
-
-interface OutletFormData {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  phone: string;
-  description: string;
-  printNote: string;
-}
+'use client';
 
 /**
- * ✅ MODERN NEXT.JS 13+ OUTLETS PAGE - URL STATE PATTERN
+ * Chi nhánh (#545) on the shop shell. Same endpoints as the old page: the list is GET /api/outlets
+ * (now through `outletsApi.searchOutlets`, so q / page / sort reach the API: the old
+ * `useOutletsWithFilters` called `getOutlets()`, which drops every filter), `outletsApi.createOutlet`,
+ * `outletsApi.updateOutlet` (fields, receipt note, isActive). Bank accounts → /outlets/[id]/bank-accounts.
+ * The page is in the nav for the shop owner only; the API scopes what an outlet user gets (as before).
  */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useAuth } from '@rentalshop/hooks';
+import { useToast } from '@rentalshop/ui';
+import { outletsApi } from '@rentalshop/utils';
+import type { OutletFilters } from '@rentalshop/types';
+import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
+import { Modal } from '../orders/create/parts';
+import { OutletFormDialog, RowMenu, smallBtn } from './parts';
+import {
+  EMPTY_OUTLET_FORM,
+  formatOutletDate,
+  nextSort,
+  outletActions,
+  outletAddress,
+  outletCreatePayload,
+  outletFormFrom,
+  outletUpdatePayload,
+  parseOutletParams,
+  type OutletForm,
+  type OutletLike,
+  type OutletSortBy,
+} from './outlets-model';
+
+const dangerBtn =
+  'inline-flex h-10 items-center justify-center whitespace-nowrap rounded-[10px] bg-ar-danger px-3.5 text-[15px] font-semibold text-white hover:opacity-95 disabled:opacity-50';
+
+interface ListData {
+  outlets: OutletLike[];
+  total: number;
+  totalPages: number;
+}
+
+/** GET /api/outlets with the filters; `refetch` reloads the same page. */
+function useOutletList(filters: OutletFilters | null) {
+  const [state, setState] = useState<{ data: ListData | null; loading: boolean; error: boolean }>({ data: null, loading: true, error: false });
+  const [nonce, setNonce] = useState(0);
+  const key = filters ? JSON.stringify(filters) : '';
+  useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+    setState((s) => ({ ...s, loading: true, error: false }));
+    outletsApi
+      .searchOutlets(JSON.parse(key) as OutletFilters)
+      .then((res) => {
+        if (cancelled) return;
+        const d = res?.success ? (res.data as unknown as { outlets?: OutletLike[]; total?: number; totalPages?: number }) : null;
+        if (d) setState({ data: { outlets: d.outlets || [], total: d.total || 0, totalPages: d.totalPages || 1 }, loading: false, error: false });
+        else setState((s) => ({ ...s, loading: false, error: true }));
+      })
+      .catch(() => {
+        if (!cancelled) setState((s) => ({ ...s, loading: false, error: true }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, nonce]);
+  const refetch = useCallback(() => setNonce((n) => n + 1), []);
+  return { ...state, refetch };
+}
+
+type Dialog =
+  | { kind: 'add' }
+  | { kind: 'edit'; row: OutletLike }
+  | { kind: 'view'; row: OutletLike }
+  | { kind: 'disable'; row: OutletLike }
+  | null;
+
 export default function OutletsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations('outlets.web') as unknown as T;
   const { user } = useAuth();
   const { toastSuccess } = useToast();
-  const t = useCommonTranslations();
-  const to = useOutletsTranslations();
-  const canExport = useCanExportData();
 
-  // Dialog states
-  const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
-  const [outletToDisable, setOutletToDisable] = useState<Outlet | null>(null);
-  const [formData, setFormData] = useState<OutletFormData>({
-    name: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "",
-    phone: "",
-    description: "",
-    printNote: "",
-  });
-
-  // ============================================================================
-  // URL PARAMS - Single Source of Truth
-  // ============================================================================
-
-  const search = searchParams.get("q") || "";
-  const status = searchParams.get("status") || "";
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "25");
-  const sortBy = searchParams.get("sortBy") || "createdAt";
-  const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
-
+  const { q, page, limit, sortBy, sortOrder } = parseOutletParams(searchParams);
   const merchantId = user?.merchant?.id || user?.merchantId;
 
-  // ============================================================================
-  // DATA FETCHING - Clean & Simple
-  // ============================================================================
-
-  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
-  const filters: OutletFilters = useMemo(
-    () => ({
-      q: search || undefined,
-      merchantId: merchantId ? Number(merchantId) : undefined,
-      isActive:
-        status === "active" ? true : status === "inactive" ? false : undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    }),
-    [search, merchantId, status, page, limit, sortBy, sortOrder]
+  const filters: OutletFilters | null = useMemo(
+    () => (merchantId ? { q: q || undefined, merchantId: Number(merchantId), page, limit, sortBy, sortOrder } : null),
+    [q, merchantId, page, limit, sortBy, sortOrder],
   );
+  const { data, loading, error, refetch } = useOutletList(filters);
 
-  // Only fetch when merchantId is available (prevent fetch with undefined merchantId)
-  const { data, loading, error, refetch } = useOutletsWithFilters({ 
-    filters,
-    enabled: !!merchantId // Only fetch when merchantId is available
-  });
-
-  // ============================================================================
-  // URL UPDATE HELPER
-  // ============================================================================
-
-  const updateURL = useCallback(
-    (updates: Record<string, string | number | undefined>) => {
+  const update = useCallback(
+    (patch: Record<string, string | number | null>, replace = false) => {
       const params = new URLSearchParams(searchParams.toString());
-
-      Object.entries(updates).forEach(([key, value]) => {
-        // Special handling for page: always set it, even if it's 1
-        if (key === 'page') {
-          const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
-          if (pageNum > 0) {
-            params.set(key, pageNum.toString());
-          } else {
-            params.delete(key);
-          }
-        } else if (value && value !== "" && value !== "all") {
-          params.set(key, value.toString());
-        } else {
-          params.delete(key);
-        }
-      });
-
-      const newURL = `${pathname}?${params.toString()}`;
-      router.push(newURL, { scroll: false });
-    },
-    [pathname, router, searchParams]
-  );
-
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
-
-  const handleSearchChange = useCallback(
-    (searchValue: string) => {
-      updateURL({ q: searchValue, page: 1 });
-    },
-    [updateURL]
-  );
-
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      updateURL({ page: newPage });
-    },
-    [updateURL]
-  );
-
-  const handleSort = useCallback(
-    (column: string) => {
-      const newSortBy = column;
-      const newSortOrder =
-        sortBy === column && sortOrder === "asc" ? "desc" : "asc";
-      updateURL({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
-    },
-    [sortBy, sortOrder, updateURL]
-  );
-
-  const handleOutletAction = useCallback(
-    async (action: string, outletId: number) => {
-      const outlet = data?.outlets.find((o: Outlet) => o.id === outletId);
-
-      switch (action) {
-        case "view":
-          if (outlet) {
-            setSelectedOutlet(outlet);
-            setShowViewDialog(true);
-          }
-          break;
-
-        case "edit":
-          // Show edit dialog
-          if (outlet) {
-            setSelectedOutlet(outlet);
-            setFormData({
-              name: outlet.name,
-              address: outlet.address || "",
-              city: (outlet as any).city || "",
-              state: (outlet as any).state || "",
-              zipCode: (outlet as any).zipCode || "",
-              country: (outlet as any).country || "",
-              phone: outlet.phone || "",
-              description: outlet.description || "",
-              printNote: outlet.printNote || "",
-            });
-            setShowEditDialog(true);
-          }
-          break;
-
-        case "manageBanks":
-          // Navigate to bank accounts page for this outlet
-          router.push(`/outlets/${outletId}/bank-accounts`);
-          break;
-
-        case "disable":
-        case "enable":
-          if (outlet) {
-            if (outlet.isActive) {
-              setOutletToDisable(outlet);
-              setShowDisableConfirm(true);
-            } else {
-              try {
-                const response = await outletsApi.updateOutlet(outletId, {
-                  id: outletId,
-                  isActive: true,
-                });
-                if (response.success) {
-                  toastSuccess(
-                    to("messages.enableSuccess"),
-                    `${to("messages.enableSuccess")} - "${outlet.name}"`
-                  );
-                  refetch();
-                }
-                // Error automatically handled by useGlobalErrorHandler
-              } catch (err) {
-                // Error automatically handled by useGlobalErrorHandler
-              }
-            }
-          }
-          break;
-
-        default:
-          console.log("Unknown action:", action);
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === '') params.delete(k);
+        else params.set(k, String(v));
       }
+      if (!('page' in patch)) params.delete('page');
+      const qs = params.toString();
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      if (replace) router.replace(href, { scroll: false });
+      else router.push(href, { scroll: false });
     },
-    [data?.outlets, router, toastSuccess, refetch]
+    [pathname, router, searchParams],
   );
 
-  const handleConfirmDisable = useCallback(async () => {
-    if (!outletToDisable) return;
+  // Search box: debounced into ?q= (the API searches name, city and phone).
+  const [draft, setDraft] = useState(q);
+  useEffect(() => setDraft(q), [q]);
+  useEffect(() => {
+    const next = draft.trim();
+    if (next === q) return;
+    const id = window.setTimeout(() => update({ q: next || null }, true), 300);
+    return () => window.clearTimeout(id);
+  }, [draft, q, update]);
 
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [working, setWorking] = useState(false);
+  const busyRef = useRef(false);
+
+  const rows = data?.outlets || [];
+  const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+
+  const sort = (column: OutletSortBy) => update({ ...nextSort({ sortBy, sortOrder }, column), page: null });
+
+  const create = async (form: OutletForm) => {
     try {
-      const response = await outletsApi.updateOutlet(outletToDisable.id, {
-        id: outletToDisable.id,
-        isActive: false,
-      });
-      if (response.success) {
-        toastSuccess(
-          to("messages.disableSuccess"),
-          `${to("messages.disableSuccess")} - "${outletToDisable.name}"`
-        );
+      const res = await outletsApi.createOutlet(outletCreatePayload(form, Number(merchantId) || 0) as Parameters<typeof outletsApi.createOutlet>[0]);
+      if (res.success) {
+        toastSuccess(t('toast.created'), form.name.trim());
+        setDialog(null);
+        refetch();
+        return true;
+      }
+    } catch {
+      // The global API error handler shows the toast (as before).
+    }
+    return false;
+  };
+
+  const save = (row: OutletLike) => async (form: OutletForm) => {
+    try {
+      const res = await outletsApi.updateOutlet(row.id, outletUpdatePayload(row.id, form) as Parameters<typeof outletsApi.updateOutlet>[1]);
+      if (res.success) {
+        toastSuccess(t('toast.updated'), form.name.trim());
+        setDialog(null);
+        refetch();
+        return true;
+      }
+    } catch {
+      // Handled globally.
+    }
+    return false;
+  };
+
+  const setActive = async (row: OutletLike, isActive: boolean) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setWorking(true);
+    try {
+      const res = await outletsApi.updateOutlet(row.id, { id: row.id, isActive } as Parameters<typeof outletsApi.updateOutlet>[1]);
+      if (res.success) {
+        toastSuccess(isActive ? t('toast.enabled') : t('toast.disabled'), row.name);
+        setDialog(null);
         refetch();
       }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (err) {
-      // Error automatically handled by useGlobalErrorHandler
+    } catch {
+      // Handled globally.
     } finally {
-      setShowDisableConfirm(false);
-      setOutletToDisable(null);
+      busyRef.current = false;
+      setWorking(false);
     }
-  }, [outletToDisable, toastSuccess, refetch]);
+  };
 
-  // Handle outlet update from edit dialog
-  const handleOutletUpdate = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!selectedOutlet) return;
-
-      try {
-        const response = await outletsApi.updateOutlet(selectedOutlet.id, {
-          id: selectedOutlet.id,
-          name: formData.name,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          country: formData.country,
-          phone: formData.phone,
-          description: formData.description,
-          printNote: formData.printNote,
-        });
-
-        if (response.success) {
-          toastSuccess(
-            to("messages.updateSuccess"),
-            `${to("messages.updateSuccess")} - "${formData.name}"`
-          );
-          setShowEditDialog(false);
-          setSelectedOutlet(null);
-          refetch();
-        }
-        // Error automatically handled by useGlobalErrorHandler
-      } catch (err) {
-        // Error automatically handled by useGlobalErrorHandler
-      }
-    },
-    [selectedOutlet, formData, toastSuccess, refetch]
+  const th = 'px-2 py-2.5 text-left text-xs font-bold uppercase tracking-[0.06em] text-ar-muted';
+  const sortHeader = (column: OutletSortBy, label: string, extra = '') => (
+    <th scope="col" className={`${th} ${extra}`} aria-sort={sortBy === column ? (sortOrder === 'asc' ? 'ascending' : 'descending') : undefined}>
+      <button type="button" onClick={() => sort(column)} aria-label={t('sortBy', { column: label })} className="inline-flex items-center gap-1 uppercase tracking-[0.06em] hover:text-ar-ink">
+        {label}
+        {sortBy === column && <span aria-hidden="true">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+      </button>
+    </th>
   );
 
-  // ============================================================================
-  // TRANSFORM DATA
-  // ============================================================================
+  const defaultTag = (row: OutletLike) =>
+    row.isDefault ? (
+      <span className="inline-block whitespace-nowrap rounded-[7px] bg-ar-reserved-bg px-2 py-[2px] text-xs font-bold text-ar-reserved">{t('default')}</span>
+    ) : null;
+  const statusTag = (row: OutletLike) =>
+    row.isActive === false ? (
+      <span className="inline-block whitespace-nowrap rounded-[7px] bg-ar-cancelled-bg px-2 py-[3px] text-sm font-bold text-ar-cancelled">{t('status.inactive')}</span>
+    ) : (
+      <span className="inline-block whitespace-nowrap rounded-[7px] bg-ar-done-bg px-2 py-[3px] text-sm font-bold text-ar-done">{t('status.active')}</span>
+    );
+  const staffText = (row: OutletLike) =>
+    typeof row._count?.users === 'number' ? t('staffCount', { count: row._count.users }) : '';
 
-  const outletData = useMemo(() => {
-    if (!data) {
-      return {
-        outlets: [],
-        total: 0,
-        page: 1,
-        totalPages: 1,
-        limit: 25,
-        hasMore: false,
-      };
-    }
-
-    return {
-      outlets: data.outlets,
-      total: data.total,
-      page: data.currentPage,
-      totalPages: data.totalPages,
-      limit: data.limit,
-      hasMore: data.hasMore,
-    };
-  }, [data]);
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-
-  if (!merchantId) {
+  const actions = (row: OutletLike) => {
+    const allowed = outletActions(row);
     return (
-      <PageWrapper>
-        <PageContent>
-          <div className="p-8 text-center text-muted-foreground">
-              <div className="mb-4">{t("messages.unauthorized")}</div>
-            <div className="text-sm text-text-secondary">
-                {t("messages.sessionExpired")}
-              </div>
-          </div>
-        </PageContent>
-      </PageWrapper>
+      <span className="flex items-center justify-end gap-1">
+        <button type="button" onClick={() => setDialog({ kind: 'edit', row })} className={smallBtn}>
+          {t('edit')}
+        </button>
+        <RowMenu
+          label={t('more', { name: row.name })}
+          items={[
+            { key: 'view', text: t('viewDetails'), onPick: () => setDialog({ kind: 'view', row }) },
+            { key: 'bank', text: t('bankAccounts'), href: `/outlets/${row.id}/bank-accounts` },
+            ...(allowed.includes('disable')
+              ? [{ key: 'disable', text: t('disable'), danger: true, onPick: () => setDialog({ kind: 'disable', row }) }]
+              : []),
+            ...(allowed.includes('enable') ? [{ key: 'enable', text: t('enable'), onPick: () => setActive(row, true) }] : []),
+          ]}
+        />
+      </span>
+    );
+  };
+
+  const nameCell = (row: OutletLike) => (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex min-w-0 items-center gap-2">
+        <button type="button" onClick={() => setDialog({ kind: 'view', row })} className="min-w-0 truncate text-left font-semibold text-ar-ink hover:underline">
+          {row.name}
+        </button>
+        {defaultTag(row)}
+      </span>
+      {staffText(row) && <span className="text-sm text-ar-muted">{staffText(row)}</span>}
+    </span>
+  );
+
+  const container = 'mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8';
+
+  if (user && !merchantId) {
+    return (
+      <div className={container}>
+        <h1 className="m-0 text-2xl font-bold">{t('title')}</h1>
+        <p className={`${cardClass} m-0 px-5 py-6 text-[15px] text-ar-muted`}>{t('noSession')}</p>
+      </div>
     );
   }
 
-  return (
-    <PageWrapper
-      spacing="none"
-      maxWidth="full"
-      className="h-screen flex flex-col px-4 pt-4 pb-0 overflow-hidden"
-    >
-      <PageHeader className="flex-shrink-0">
-        <div className="flex justify-between items-start">
-          <div>
-            <PageTitle>{to("title")}</PageTitle>
-            <p className="text-sm text-gray-600">{to("title")}</p>
-          </div>
-          <div className="flex gap-3">
-            {/* Export feature - temporarily hidden, will be enabled in the future */}
-            {/* {canExport && (
-              <Button
-                onClick={() => {
-                  toastSuccess('Export Feature', 'Export functionality coming soon!');
-                }}
-                variant="default"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {to('actions.export')}
-              </Button>
-            )} */}
-            <Button
-              onClick={() => setShowAddDialog(true)}
-              variant="default"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {to("addOutlet")}
-            </Button>
-          </div>
-        </div>
-      </PageHeader>
+  const showFooter = !error && total > 0 && (total > limit || page > 1);
+  const view = dialog?.kind === 'view' ? dialog.row : null;
 
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        {/* Center Loading Indicator - Shows when waiting for API */}
-        {loading && !data ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={t('labels.loading') || 'Loading outlets...'}
-            />
-          </div>
-        ) : (
-          /* Outlets Content - Only render when data is loaded */
-          <Outlets
-            data={outletData}
-            filters={filters}
-            onSearchChange={handleSearchChange}
-            onOutletAction={handleOutletAction}
-            onPageChange={handlePageChange}
-            onSort={handleSort}
-          />
-        )}
+  return (
+    <div className={container}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="m-0 text-2xl font-bold">
+          {t('title')}
+          {data && !error && !q && <span className="text-base font-normal text-ar-muted"> · {total}</span>}
+        </h1>
+        <button type="button" onClick={() => setDialog({ kind: 'add' })} className={primaryBtn}>
+          <ShellIcon d={ICONS.plus} size={18} />
+          {t('add')}
+        </button>
       </div>
 
-      {/* View Outlet Dialog */}
-      {selectedOutlet && (
-        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-            <DialogHeader className="px-6 py-4 border-b">
-              <DialogTitle className="text-lg font-semibold">
-                {to("dialogs.outletDetails")}
-              </DialogTitle>
-              <DialogDescription className="mt-1">
-                {to("dialogs.outletDetails") || "View outlet information"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="px-6 py-4 overflow-y-auto">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                    {to("fields.name")}
-                    </label>
-                    <p className="text-sm font-semibold">
-                    {selectedOutlet.name}
-                  </p>
-                </div>
-                <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      {to("fields.phone")}
-                    </label>
-                    <p className="text-sm">
-                    {selectedOutlet.phone || to("fields.notAvailable")}
-                  </p>
-                </div>
-                <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      {to("fields.address")}
-                    </label>
-                    <p className="text-sm">
-                    {selectedOutlet.address || to("fields.notAvailable")}
-                  </p>
-                </div>
-                {selectedOutlet.description && (
-                  <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      {to("fields.description")}
-                      </label>
-                      <p className="text-sm whitespace-pre-wrap">
-                      {selectedOutlet.description}
-                    </p>
-                  </div>
-                )}
-                {selectedOutlet.printNote && (
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      {to("fields.printNote")}
-                    </label>
-                    <p className="text-sm whitespace-pre-wrap">{selectedOutlet.printNote}</p>
-                  </div>
-                )}
-              </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowViewDialog(false)}
-                >
-                  {t("buttons.close")}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Edit Outlet Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="text-lg font-semibold">
-              {selectedOutlet?.name 
-                ? (to("dialogs.editOutletName", { name: selectedOutlet.name }) || `Sửa cửa hàng: ${selectedOutlet.name}`)
-                : (to("dialogs.editOutletTitle") || "Sửa cửa hàng")}
-            </DialogTitle>
-            <DialogDescription className="mt-1">
-              {to("dialogs.editOutletTitle") || "Update outlet information"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleOutletUpdate} className="px-6 py-4">
-            <div className="space-y-4">
-                <div>
-                <Label htmlFor="name" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {to("fields.name")} <span className="text-red-500">*</span>
-                </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder={to("placeholders.enterOutletName")}
-                required
+      <section className={`${cardClass} min-w-0 overflow-hidden`}>
+        <div className="flex flex-wrap items-center gap-2 border-b border-ar-subtle px-4 py-3.5">
+          <form
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              update({ q: draft.trim() || null });
+            }}
+            className="w-full md:w-auto"
+          >
+            <label className="flex h-9 items-center gap-2 rounded-[10px] bg-ar-subtle px-3 text-ar-muted focus-within:ring-2 focus-within:ring-ar-primary md:w-[320px]">
+              <ShellIcon d={ICONS.search} size={16} />
+              <input
+                type="search"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                aria-label={t('searchLabel')}
+                placeholder={t('searchPlaceholder')}
+                className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ar-ink outline-none placeholder:text-ar-muted"
               />
-            </div>
-
-            {/* Address Information */}
-              <div className="border-t pt-4 mt-4">
-                <h3 className="text-sm font-medium text-text-primary mb-4">
-                {t("labels.addressInformation")}
-              </h3>
-
-                <div className="space-y-4">
-              <div>
-                    <Label htmlFor="address" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      {to("fields.address")}
-                    </Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      address: e.target.value,
-                    }))
-                  }
-                  placeholder={to("placeholders.enterStreetAddress")}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                      <Label htmlFor="city" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        {to("fields.city")}
-                      </Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, city: e.target.value }))
-                    }
-                    placeholder={to("placeholders.enterCity")}
-                  />
-                </div>
-
-                <div>
-                      <Label htmlFor="state" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        {to("fields.state")}
-                      </Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        state: e.target.value,
-                      }))
-                    }
-                    placeholder={to("placeholders.enterState")}
-                  />
-                </div>
-
-                <div>
-                      <Label htmlFor="zipCode" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        {to("fields.zipCode")}
-                      </Label>
-                  <Input
-                    id="zipCode"
-                    value={formData.zipCode}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        zipCode: e.target.value,
-                      }))
-                    }
-                    placeholder={to("placeholders.enterZipCode")}
-                  />
-                </div>
-              </div>
-
-              <div>
-                    <Label htmlFor="country" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      {to("fields.country")}
-                    </Label>
-                <Input
-                  id="country"
-                  value={formData.country}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      country: e.target.value,
-                    }))
-                  }
-                  placeholder={to("placeholders.enterCountry")}
-                />
-                  </div>
-              </div>
-            </div>
-
-            <div>
-                <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {to("fields.phone")}
-                </Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder={to("placeholders.enterOutletPhone")}
-              />
-            </div>
-
-            <div>
-                <Label htmlFor="description" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  {to("fields.description")}
-                </Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder={to("placeholders.enterOutletDescription")}
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="printNote" className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                {to("fields.printNote")}
-              </Label>
-              <Textarea
-                id="printNote"
-                value={formData.printNote}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    printNote: e.target.value,
-                  }))
-                }
-                placeholder={to("placeholders.enterPrintNote")}
-                rows={3}
-                maxLength={500}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">{to("fields.printNoteHint")}</p>
-            </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowEditDialog(false);
-                      setSelectedOutlet(null);
-                    }}
-                  >
-                    {t("buttons.cancel")}
-                  </Button>
-                  <Button type="submit">{to("actions.editOutlet")}</Button>
-                </div>
-            </div>
+            </label>
           </form>
-        </DialogContent>
-      </Dialog>
+        </div>
 
-      {/* Add Outlet Dialog */}
-      <AddOutletDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        merchantId={merchantId}
-        onOutletCreated={async (outletData) => {
-          try {
-            const response = await outletsApi.createOutlet({
-              ...outletData,
-              merchantId: merchantId || 0,
-            });
+        {error ? (
+          <div role="alert" className="flex flex-wrap items-center gap-3 px-5 py-6 text-[15px] text-ar-muted">
+            <span>{t('loadFailed')}</span>
+            <button type="button" onClick={() => refetch()} className={smallBtn}>
+              {t('retry')}
+            </button>
+          </div>
+        ) : !data ? (
+          <div className="flex flex-col gap-3 px-4 py-4" aria-busy="true">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="m-0 px-5 py-8 text-center text-[15px] text-ar-muted">{q ? t('emptySearch') : t('empty')}</p>
+        ) : (
+          <div className={loading ? 'opacity-60 transition-opacity' : undefined} aria-busy={loading || undefined}>
+            <table className="hidden w-full table-fixed border-collapse text-[15px] lg:table">
+              <thead>
+                <tr className="bg-ar-surface-muted">
+                  {sortHeader('name', t('cols.name'), 'w-[32%] pl-4')}
+                  <th scope="col" className={th}>
+                    {t('cols.address')}
+                  </th>
+                  <th scope="col" className={`${th} w-[140px]`}>
+                    {t('cols.phone')}
+                  </th>
+                  <th scope="col" className={`${th} w-[120px]`}>
+                    {t('cols.status')}
+                  </th>
+                  {sortHeader('createdAt', t('cols.createdAt'), 'w-[120px]')}
+                  <th scope="col" className={`${th} w-[120px] pr-4`}>
+                    <span className="sr-only">{t('cols.actions')}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id} className={`border-t border-ar-subtle ${row.isActive === false ? 'opacity-[.6]' : ''}`}>
+                    <td className="py-2.5 pl-4 pr-2 align-middle">{nameCell(row)}</td>
+                    <td className="px-2 py-2.5 align-middle text-ar-ink-2">
+                      <span className="line-clamp-2">{outletAddress(row) || <span className="text-ar-faint">—</span>}</span>
+                    </td>
+                    <td className="truncate px-2 py-2.5 align-middle tabular-nums text-ar-ink-2">{row.phone || <span className="text-ar-faint">—</span>}</td>
+                    <td className="px-2 py-2.5 align-middle">{statusTag(row)}</td>
+                    <td className="px-2 py-2.5 align-middle text-sm tabular-nums text-ar-muted">{formatOutletDate(row.createdAt)}</td>
+                    <td className="py-2.5 pl-2 pr-4 text-right align-middle">{actions(row)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-            if (response.success) {
-              toastSuccess(
-                to("messages.createSuccess"),
-                to("messages.createSuccess")
-              );
-              refetch();
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error: any) {
-            // Error automatically handled by useGlobalErrorHandler
-            throw error; // Re-throw to let dialog handle it
-          }
-        }}
-        onError={(error) => {
-          // ✅ onOutletCreated already shows toast, so onError is only for logging
-          console.error('❌ AddOutletDialog: Error occurred:', error);
-        }}
+            <ul className="m-0 list-none p-0 lg:hidden">
+              {rows.map((row) => (
+                <li key={row.id} className={`flex items-start gap-3 border-t border-ar-subtle px-4 py-3 first:border-t-0 ${row.isActive === false ? 'opacity-[.6]' : ''}`}>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    {nameCell(row)}
+                    {outletAddress(row) && <span className="text-sm text-ar-ink-2">{outletAddress(row)}</span>}
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums text-ar-muted">
+                      {statusTag(row)}
+                      {row.phone && <span>{row.phone}</span>}
+                    </span>
+                  </span>
+                  {actions(row)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {showFooter && (
+          <TableFooter page={page} limit={limit} total={total} totalPages={totalPages} onPage={(p) => update({ page: p })} onLimit={(n) => update({ limit: n })} t={t} />
+        )}
+      </section>
+
+      <OutletFormDialog
+        open={dialog?.kind === 'add'}
+        mode="add"
+        initial={EMPTY_OUTLET_FORM}
+        onClose={() => setDialog(null)}
+        onSubmit={create}
+        t={t}
+      />
+      <OutletFormDialog
+        open={dialog?.kind === 'edit'}
+        mode="edit"
+        initial={dialog?.kind === 'edit' ? outletFormFrom(dialog.row) : EMPTY_OUTLET_FORM}
+        onClose={() => setDialog(null)}
+        onSubmit={dialog?.kind === 'edit' ? save(dialog.row) : async () => false}
+        t={t}
       />
 
-      {/* Disable Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showDisableConfirm}
-        onOpenChange={setShowDisableConfirm}
-        type="warning"
-        title={to("actions.deleteOutlet")}
-        description={to("messages.confirmDelete")}
-        confirmText={to("actions.deleteOutlet")}
-        cancelText={t("buttons.cancel")}
-        onConfirm={handleConfirmDisable}
-        onCancel={() => {
-          setShowDisableConfirm(false);
-          setOutletToDisable(null);
-        }}
-      />
-    </PageWrapper>
+      <Modal
+        open={!!view}
+        title={t('detail.title')}
+        onClose={() => setDialog(null)}
+        closeLabel={t('form.close')}
+        footer={
+          view ? (
+            <>
+              <Link href={`/outlets/${view.id}/bank-accounts`} className={outlineBtn}>
+                {t('bankAccounts')}
+              </Link>
+              <button type="button" onClick={() => setDialog({ kind: 'edit', row: view })} className={primaryBtn}>
+                {t('edit')}
+              </button>
+            </>
+          ) : undefined
+        }
+      >
+        {view && (
+          <dl className="m-0 flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <dt className="text-sm font-semibold text-ar-muted">{t('form.name')}</dt>
+              <dd className="m-0 flex flex-wrap items-center gap-2 text-[15px] font-semibold">
+                {view.name}
+                {defaultTag(view)}
+                {statusTag(view)}
+              </dd>
+            </div>
+            {(
+              [
+                ['phone', view.phone],
+                ['addressGroup', outletAddress(view)],
+                ['description', view.description],
+                ['printNote', view.printNote],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key} className="flex flex-col gap-1">
+                <dt className="text-sm font-semibold text-ar-muted">{t(`form.${key}`)}</dt>
+                <dd className={`m-0 whitespace-pre-wrap text-[15px] ${value ? 'text-ar-ink-2' : 'text-ar-faint'}`}>{value || t('detail.none')}</dd>
+              </div>
+            ))}
+            <div className="flex flex-col gap-1">
+              <dt className="text-sm font-semibold text-ar-muted">{t('cols.createdAt')}</dt>
+              <dd className="m-0 text-[15px] tabular-nums text-ar-ink-2">{formatOutletDate(view.createdAt)}</dd>
+            </div>
+          </dl>
+        )}
+      </Modal>
+
+      <Modal
+        open={dialog?.kind === 'disable'}
+        title={t('confirm.disableTitle')}
+        onClose={() => (working ? undefined : setDialog(null))}
+        closeLabel={t('form.close')}
+        footer={
+          <>
+            <button type="button" onClick={() => setDialog(null)} disabled={working} className={outlineBtn}>
+              {t('confirm.cancel')}
+            </button>
+            <button type="button" onClick={() => dialog?.kind === 'disable' && setActive(dialog.row, false)} disabled={working} className={dangerBtn}>
+              {working ? t('confirm.working') : t('confirm.disable')}
+            </button>
+          </>
+        }
+      >
+        <p className="m-0 text-[15px] text-ar-ink-2">{dialog?.kind === 'disable' ? t('confirm.disableBody', { name: dialog.row.name }) : ''}</p>
+      </Modal>
+    </div>
   );
 }

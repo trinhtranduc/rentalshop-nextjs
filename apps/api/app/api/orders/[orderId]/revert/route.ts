@@ -4,6 +4,14 @@ import { prisma, db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_SCHEDULE_CONFLICT } from '../../../../../lib/schedule-conflict';
+import {
+  findEditScheduleConflicts,
+  scheduleConflictBody,
+  SCHEDULE_CONFLICT_STATUS,
+  type EditableOrder,
+  type ScheduleDbClient,
+} from '../../../../../lib/schedule-conflict-check';
 
 const SENSITIVE_KEYS = ['password', 'token', 'secret', 'createdAt', 'updatedAt', 'id', 'orderNumber', 'orderItems'];
 
@@ -79,6 +87,25 @@ export async function POST(
       }
       if (user.role === USER_ROLE.OUTLET_ADMIN && existing.outletId !== userScope.outletId) {
         return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: 403 });
+      }
+
+      // #518: reverting dates / outlet / status can over-book a shop that turned overlapping orders off
+      const scheduleConflicts = await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
+        existingOrder: existing as unknown as EditableOrder,
+        next: {
+          orderType: updatePayload.orderType,
+          status: updatePayload.status,
+          outletId: updatePayload.outletId,
+          pickupPlanAt: updatePayload.pickupPlanAt,
+          returnPlanAt: updatePayload.returnPlanAt,
+        },
+        resolveMerchantId: async (outletId: number) => (await db.outlets.findById(outletId))?.merchantId,
+      });
+      if (scheduleConflicts.length > 0) {
+        return NextResponse.json(
+          scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), scheduleConflicts),
+          { status: SCHEDULE_CONFLICT_STATUS }
+        );
       }
 
       const reverted = await db.orders.update(orderIdNum, updatePayload);

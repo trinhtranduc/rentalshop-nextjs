@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, canChangeOrderStatus } from '@rentalshop/constants';
 import { z } from 'zod';
-import { handleApiError } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { createAuditHelper } from '@rentalshop/utils/server';
+import { buildOrderAuditSnapshot, safeAudit } from '../../../../../lib/change-timeline';
 import { API } from '@rentalshop/constants';
 import {
   handleLoyaltyOnCancel,
@@ -102,6 +104,32 @@ export async function PATCH(
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: API.STATUS.NOT_FOUND }
+      );
+    }
+
+    // Scope (#361): outlet roles only their outlet, other merchant roles only their merchant
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (existingOrder.outletId !== userScope.outletId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    } else if (!(PLATFORM_OPS_ROLES as readonly string[]).includes(user.role)) {
+      const orderOutlet = await db.outlets.findById(existingOrder.outletId);
+      if (!orderOutlet || orderOutlet.merchantId !== userScope.merchantId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // Only valid status changes (#361); the same status again is a no-op
+    if (!canChangeOrderStatus(existingOrder.orderType, existingOrder.status, status)) {
+      return NextResponse.json(
+        ResponseBuilder.error('INVALID_ORDER_STATUS'),
+        { status: 400 }
       );
     }
 
@@ -223,6 +251,26 @@ export async function PATCH(
     }
 
     const finalOrder = (await db.orders.findById(orderPublicId)) || updatedOrder;
+
+    // #519: pickup ("Giao đồ"), return ("Nhận trả"), cancel and complete show in the change history
+    await safeAudit('status', () => createAuditHelper(prisma).logUpdate({
+      entityType: 'Order',
+      entityId: String(orderPublicId),
+      entityName: existingOrder.orderNumber || String(orderPublicId),
+      oldValues: buildOrderAuditSnapshot(existingOrder),
+      newValues: buildOrderAuditSnapshot(finalOrder),
+      description: `Order status: ${existingOrder.status} → ${status}`,
+      context: {
+        userId: String(user.id),
+        userEmail: user.email,
+        userRole: user.role,
+        merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+        outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+        requestId: request.headers.get('x-request-id') || undefined,
+      },
+    }));
 
     // Push status change to outlet users (only when status actually changed)
     if (

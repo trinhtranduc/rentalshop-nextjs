@@ -5,6 +5,7 @@
 
 import UIKit
 import SnapKit
+import Kingfisher
 
 enum OverviewSnapshotKind {
     case newOrders
@@ -40,10 +41,82 @@ enum OverviewSnapshotKind {
     }
 }
 
+// MARK: - #482 Đơn theo sản phẩm / khách hàng (boards DT-don-theo-sp, DT-don-theo-kh)
+
+/// One of the three tiles under the header
+struct EntityOrdersTile: Equatable {
+    let title: String
+    let value: String
+    var accent: Bool = false
+}
+
+/// Header figures of the orders-by-product / by-customer screen, from what the list endpoints return
+enum EntityOrdersLogic {
+    /// Non-cancelled rent orders among the loaded ones ("Lượt thuê")
+    static func rentals(_ orders: [Order]) -> Int {
+        orders.filter { $0.orderType == .rent && $0.status != .cancelled }.count
+    }
+
+    /// The product's line totals in the loaded non-cancelled orders; the order total when a row has no items
+    static func productRevenue(_ orders: [Order], productId: Int) -> Double {
+        orders.filter { $0.status != .cancelled }.reduce(0) { sum, order in
+            guard !order.orderItems.isEmpty else { return sum + order.totalAmount }
+            return sum + order.orderItems.filter { $0.productId == productId }.reduce(0) { $0 + $1.totalPrice }
+        }
+    }
+
+    /// Money of the loaded non-cancelled orders (customer "Đã chi" when the API sent no summary)
+    static func spent(_ orders: [Order]) -> Double {
+        orders.filter { $0.status != .cancelled }.reduce(0) { $0 + $1.totalAmount }
+    }
+
+    /// "2,1tr" from a million up (board), the full amount below
+    static func compactMoney(_ amount: Double) -> String {
+        guard amount >= 1_000_000 else { return MoneyFormatter.format(amount) }
+        let tenths = Int((amount / 100_000).rounded())
+        let whole = tenths / 10
+        let tenth = tenths % 10
+        return tenth == 0
+            ? String(format: "orders.entity.millionWhole".localized(), whole)
+            : String(format: "orders.entity.million".localized(), whole, tenth)
+    }
+
+    /// Số đơn (all matching orders), Lượt thuê and Doanh thu (loaded pages: "+" while more pages exist)
+    static func productTiles(orders: [Order], productId: Int, total: Int, hasMore: Bool, hidesMoney: Bool) -> [EntityOrdersTile] {
+        let more = hasMore ? "+" : ""
+        return [
+            EntityOrdersTile(title: "orders.entity.tile.orders".localized(), value: "\(total)"),
+            EntityOrdersTile(title: "orders.entity.tile.rentals".localized(), value: "\(rentals(orders))" + more),
+            EntityOrdersTile(title: "orders.entity.tile.revenue".localized(),
+                             value: hidesMoney ? "—" : compactMoney(productRevenue(orders, productId: productId)) + more),
+        ]
+    }
+
+    /// Số đơn and Đã chi (API summary, cancelled excluded), Đang thuê (orders out now; "—" until known)
+    static func customerTiles(total: Int, spent: Double?, renting: Int?, hidesMoney: Bool) -> [EntityOrdersTile] {
+        [
+            EntityOrdersTile(title: "orders.entity.tile.orders".localized(), value: "\(total)"),
+            EntityOrdersTile(title: "orders.entity.tile.spent".localized(),
+                             value: hidesMoney ? "—" : spent.map(compactMoney) ?? "—"),
+            EntityOrdersTile(title: "orders.entity.tile.renting".localized(), value: renting.map(String.init) ?? "—", accent: true),
+        ]
+    }
+
+    /// "VS-004 · Còn 1 hôm nay"; the free part only when something is free
+    static func productSubtitle(code: String?, freeToday: Int?) -> String {
+        let free = freeToday.flatMap { $0 > 0 ? String(format: "orders.entity.free".localized(), $0) : nil }
+        return [code, free].compactMap { $0 }.joined(separator: " · ")
+    }
+}
+
 enum OverviewRankingOrdersFilter {
     case customer(id: Int, name: String)
     case product(id: Int, name: String)
     case snapshot(OverviewSnapshotKind, title: String)
+    /// #388 overview: orders out now (PICKUPED)
+    case rentedOut(title: String)
+    /// #388 overview: rentals past their return day
+    case lateReturns(title: String)
 
     var navigationTitle: String {
         switch self {
@@ -51,7 +124,7 @@ enum OverviewRankingOrdersFilter {
             return "Orders by customer".localized()
         case .product:
             return "Orders by product".localized()
-        case .snapshot(_, let title):
+        case .snapshot(_, let title), .rentedOut(let title), .lateReturns(let title):
             return title
         }
     }
@@ -60,7 +133,7 @@ enum OverviewRankingOrdersFilter {
         switch self {
         case .customer(_, let name), .product(_, let name):
             return name
-        case .snapshot(_, let title):
+        case .snapshot(_, let title), .rentedOut(let title), .lateReturns(let title):
             return title
         }
     }
@@ -68,6 +141,14 @@ enum OverviewRankingOrdersFilter {
     var customerId: Int? {
         if case .customer(let id, _) = self { return id }
         return nil
+    }
+
+    /// #482: product and customer lists get the flat header of the DT boards
+    var hasEntityHeader: Bool {
+        switch self {
+        case .customer, .product: return true
+        default: return false
+        }
     }
 }
 
@@ -89,15 +170,21 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
     /// Prefer API `summary.totalAmount` (all matching orders); fall back to loaded pages.
     private var summaryAmountTotal: Double?
     private var loadedAmountTotal: Double = 0
+    /// #458: with the new orders UI the rows are the Orders tab row (search context), else the old order card
+    private let usesOrderRows = FeatureFlags.shared.isOn(.newOrders)
+    private var hidesMoney: Bool {
+        OrdersHomeLogic.hidesMoney(role: User.current()?.role, hideForStaff: Utils.shouldHideFinancialDataForStaff())
+    }
 
     private lazy var ordersTableView: UITableView = {
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
         let table = UITableView(frame: .zero, style: .plain)
         table.delegate = self
         table.dataSource = self
-        // Same order card cell as the main Orders tab (SaleDetailCell_Option5).
+        // Same row as the main Orders tab: OrderRowCell with the new orders UI (#458), else SaleDetailCell_Option5.
         table.register(SaleDetailCell_Option5.self, forCellReuseIdentifier: "SaleDetailCell")
-        table.backgroundColor = .backgroundPrimary
+        table.register(OrderRowCell.self, forCellReuseIdentifier: OrderRowCell.reuseId)
+        table.backgroundColor = usesOrderRows ? DS.Color.surface : .backgroundPrimary
         table.separatorStyle = .none
         table.rowHeight = UITableViewAutomaticDimension
         table.estimatedRowHeight = isIPad ? 132 : 118
@@ -108,6 +195,21 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
         }
         return table
     }()
+
+    /// #482 flat header (product / customer)
+    private let entityHeader = UIView()
+    private let entityThumb = V2.thumbnail(size: 56, radius: 12)
+    private let entityAvatar = CustomersV2UI.avatar(size: 52, fontSize: 17)
+    private let entityName = V2.label(size: DS.TextSize.name, weight: .bold, lines: 2)
+    private let entitySub = V2.label(size: DS.TextSize.secondary, color: UIColor(hexString: "64748B"), lines: 2)
+    private let entityCall = UIButton(type: .system)
+    private let entityIdentity = UIControl()
+    private let periodChip = UIButton(type: .system)
+    private let tilesRow = UIStackView()
+    private let ordersBand = UIView()
+    private var product: Product?
+    private var renting: Int?
+    private var phone: String?
 
     private let headerCard = UIView()
     private let entityLabel = UILabel()
@@ -222,6 +324,7 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
         setupUI()
         applyLoyaltyHeader()
         loadOrders(reset: true)
+        loadEntityHeader()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -293,6 +396,34 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
 
         guard let customNavBar = customNavBar else { return }
 
+        if filter.hasEntityHeader {
+            buildEntityHeader()
+            view.backgroundColor = DS.Color.surface
+            ordersTableView.backgroundColor = DS.Color.surface
+            ordersTableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 18, right: 0)
+            view.addSubview(entityHeader)
+            view.addSubview(ordersBand)
+            view.addSubview(ordersTableView)
+            view.addSubview(emptyStateLabel)
+            entityHeader.snp.makeConstraints { make in
+                make.top.equalTo(customNavBar.snp.bottom)
+                make.leading.trailing.equalToSuperview()
+            }
+            ordersBand.snp.makeConstraints { make in
+                make.top.equalTo(entityHeader.snp.bottom)
+                make.leading.trailing.equalToSuperview()
+            }
+            ordersTableView.snp.makeConstraints { make in
+                make.top.equalTo(ordersBand.snp.bottom)
+                make.leading.trailing.bottom.equalToSuperview()
+            }
+            emptyStateLabel.snp.makeConstraints { make in
+                make.center.equalTo(ordersTableView)
+                make.leading.trailing.equalToSuperview().inset(32)
+            }
+            return
+        }
+
         view.addSubview(headerCard)
         view.addSubview(ordersTableView)
         view.addSubview(emptyStateLabel)
@@ -311,6 +442,212 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
             make.center.equalTo(ordersTableView)
             make.leading.trailing.equalToSuperview().inset(32)
         }
+    }
+
+    // MARK: - #482 Flat header
+
+    private func buildEntityHeader() {
+        entityHeader.backgroundColor = DS.Color.surface
+        let isProduct: Bool
+        if case .product = filter { isProduct = true } else { isProduct = false }
+
+        entityThumb.image = V2.placeholder
+        entityThumb.contentMode = .center
+        entityThumb.isHidden = !isProduct
+        entityAvatar.isHidden = isProduct
+        entityAvatar.text = CustomersV2Logic.initials(filter.entityName)
+        entityName.text = filter.entityName
+        entitySub.font = UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.secondary, weight: .regular)
+        entitySub.isHidden = true
+
+        let texts = UIStackView(arrangedSubviews: [entityName, entitySub])
+        texts.axis = .vertical
+        texts.spacing = 2
+        texts.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        // The name block opens the product / customer detail
+        let identity = entityIdentity
+        identity.addTarget(self, action: #selector(entityTapped), for: .touchUpInside)
+        identity.isAccessibilityElement = true
+        identity.accessibilityTraits = UIAccessibilityTraitButton
+        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm, weight: .semibold))
+        chevron.tintColor = UIColor(hexString: "94A3B8")
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        chevron.isHidden = !isProduct
+        let inner = UIStackView(arrangedSubviews: [entityThumb, entityAvatar, texts, chevron])
+        inner.spacing = DS.Spacing.md
+        inner.alignment = .center
+        inner.isUserInteractionEnabled = false
+        identity.addSubview(inner)
+        inner.snp.makeConstraints { make in make.edges.equalToSuperview() }
+
+        entityCall.setImage(DS.symbol("phone", DS.Icon.sm), for: .normal)
+        entityCall.tintColor = DS.Color.text
+        entityCall.layer.cornerRadius = 10
+        entityCall.layer.borderWidth = 1
+        entityCall.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
+        entityCall.accessibilityLabel = "Call customer".localized()
+        entityCall.addTarget(self, action: #selector(callTapped), for: .touchUpInside)
+        entityCall.snp.makeConstraints { make in make.size.equalTo(40) }
+        entityCall.isHidden = true
+        let identityRow = UIStackView(arrangedSubviews: [identity, entityCall])
+        identityRow.spacing = DS.Spacing.md
+        identityRow.alignment = .center
+
+        periodChip.setTitle(" " + periodSubtitle, for: .normal)
+        periodChip.setImage(DS.symbol("calendar", 14, weight: .semibold), for: .normal)
+        periodChip.tintColor = UIColor(hexString: "1E40AF")
+        periodChip.setTitleColor(UIColor(hexString: "1E40AF"), for: .normal)
+        periodChip.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
+        periodChip.backgroundColor = UIColor(hexString: "EFF6FF")
+        periodChip.layer.cornerRadius = 16
+        periodChip.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        periodChip.isUserInteractionEnabled = false
+        periodChip.snp.makeConstraints { make in make.height.equalTo(32) }
+        let chipRow = UIStackView(arrangedSubviews: [periodChip, UIView()])
+
+        tilesRow.axis = .horizontal
+        tilesRow.spacing = DS.Spacing.sm
+        tilesRow.distribution = .fillEqually
+
+        let stack = UIStackView(arrangedSubviews: [identityRow, chipRow, tilesRow])
+        stack.axis = .vertical
+        stack.spacing = DS.Spacing.md
+        entityHeader.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(DS.Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        let gap = UIView()
+        gap.backgroundColor = DS.Color.background
+        entityHeader.addSubview(gap)
+        gap.snp.makeConstraints { make in
+            make.top.equalTo(stack.snp.bottom).offset(DS.Spacing.lg)
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(8)
+        }
+
+        // "ĐƠN HÀNG" band over the rows
+        ordersBand.backgroundColor = V2.sectionFill
+        let bandTitle = V2.label("orders.entity.section".localized(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
+        bandTitle.attributedText = NSAttributedString(string: "orders.entity.section".localized(), attributes: [
+            NSAttributedString.Key.kern: 0.56,
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+        ])
+        ordersBand.addSubview(bandTitle)
+        bandTitle.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
+            make.bottom.equalToSuperview().offset(-6)
+            make.leading.equalToSuperview().offset(DS.Spacing.lg)
+        }
+        let bandLine = V2.divider()
+        ordersBand.addSubview(bandLine)
+        bandLine.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+
+        renderEntityHeader()
+    }
+
+    private func renderEntityHeader() {
+        guard filter.hasEntityHeader else { return }
+        let tiles: [EntityOrdersTile]
+        switch filter {
+        case .product(let id, _):
+            if let product {
+                entityName.text = product.name ?? filter.entityName
+                let subtitle = ProductRowLogic.subtitle(product)
+                let text = EntityOrdersLogic.productSubtitle(code: subtitle.code, freeToday: subtitle.free)
+                entitySub.text = text
+                entitySub.isHidden = text.isEmpty
+                if let url = ProductImages.thumbnailUrl(product), let link = URL(string: url) {
+                    entityThumb.kf.setImage(with: link, placeholder: V2.placeholder) { [weak self] result in
+                        if case .success = result { self?.entityThumb.contentMode = .scaleAspectFill }
+                    }
+                }
+            }
+            tiles = EntityOrdersLogic.productTiles(orders: orders, productId: id, total: totalOrderCount,
+                                                   hasMore: hasMorePages && !orders.isEmpty, hidesMoney: hidesMoney)
+        default:
+            let name = customer.map(CustomersV2Logic.displayName) ?? filter.entityName
+            entityName.text = name
+            entityAvatar.text = CustomersV2Logic.initials(name)
+            phone = customer?.phone?.nilIfEmpty
+            entitySub.text = phone
+            entitySub.isHidden = phone == nil
+            entityCall.isHidden = CustomersV2Logic.phoneDigits(phone).isEmpty
+            let spent = summaryAmountTotal ?? (orders.isEmpty && isLoading ? nil : EntityOrdersLogic.spent(orders))
+            tiles = EntityOrdersLogic.customerTiles(total: totalOrderCount, spent: spent, renting: renting, hidesMoney: hidesMoney)
+        }
+        entityIdentity.accessibilityLabel = [entityName.text, entitySub.text].compactMap { $0 }.joined(separator: ", ")
+        tilesRow.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for tile in tiles {
+            let box = UIView()
+            box.backgroundColor = V2.sectionFill
+            box.layer.cornerRadius = DS.Radius.card
+            let title = V2.label(tile.title, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            title.adjustsFontSizeToFitWidth = true
+            title.minimumScaleFactor = 0.8
+            let value = V2.label(tile.value, size: 18, weight: .bold, color: tile.accent ? DS.Status.returning.text : DS.Color.text)
+            value.font = UIFont.monospacedDigitSystemFont(ofSize: 18, weight: .bold)
+            value.adjustsFontSizeToFitWidth = true
+            value.minimumScaleFactor = 0.6
+            let column = UIStackView(arrangedSubviews: [title, value])
+            column.axis = .vertical
+            column.spacing = 2
+            box.addSubview(column)
+            column.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)) }
+            box.isAccessibilityElement = true
+            box.accessibilityLabel = "\(tile.title), \(tile.value)"
+            tilesRow.addArrangedSubview(box)
+        }
+    }
+
+    /// Product photo, code and free units (`GET /api/products/{id}`); the customer's renting count
+    private func loadEntityHeader() {
+        switch filter {
+        case .product(let id, _):
+            ProductService.shared.loadProduct(productId: id) { [weak self] product, _ in
+                DispatchQueue.main.async {
+                    guard let self, let product else { return }
+                    self.product = product
+                    self.renderEntityHeader()
+                }
+            }
+        case .customer(let id, _):
+            LiveCustomersV2DataSource().countRenting(customerId: id) { [weak self] count in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.renting = count
+                    self.renderEntityHeader()
+                }
+            }
+        default:
+            break
+        }
+    }
+
+    @objc private func entityTapped() {
+        switch filter {
+        case .product:
+            // The detail needs the loaded product (photo, prices); until then the tap waits
+            guard let item = product else { return }
+            let detail = ProductDetailViewController(product: item)
+            detail.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(detail, animated: true)
+        case .customer:
+            guard let item = customer else { return }
+            let detail = CustomerDetailV2ViewController(customer: item)
+            detail.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(detail, animated: true)
+        default:
+            break
+        }
+    }
+
+    @objc private func callTapped() {
+        let digits = CustomersV2Logic.phoneDigits(phone)
+        guard !digits.isEmpty, let url = URL(string: "tel://\(digits)") else { return }
+        UIApplication.shared.open(url)
     }
 
     private func setupNavigationBar() {
@@ -427,6 +764,31 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
                 status: nil
             ) { [weak self] response, error in
                 self?.handleOrdersResponse(response, error: error, reset: reset)
+            }
+        case .rentedOut, .lateReturns:
+            let lateOnly: Bool
+            if case .lateReturns = filter { lateOnly = true } else { lateOnly = false }
+            OrderService.shared.loadOrders(
+                productIds: nil,
+                keyword: nil,
+                page: currentPage,
+                limit: 20,
+                orderType: lateOnly ? .rent : nil,
+                sortBy: "returnPlanAt",
+                sortOrder: "asc",
+                status: .pickuped
+            ) { [weak self] response, error in
+                guard let self else { return }
+                guard lateOnly else {
+                    self.handleOrdersResponse(response, error: error, reset: reset)
+                    return
+                }
+                let page = OverviewLateFilter.page(response?.data?.orders ?? [], hasMore: response?.data?.hasMore ?? false)
+                DispatchQueue.main.async {
+                    let loaded = reset ? 0 : self.orders.count
+                    self.handleMappedOrders(page.orders, total: loaded + page.orders.count, hasMore: page.hasMore,
+                                            error: error, reset: reset)
+                }
             }
         case .snapshot(let kind, _):
             AnalyticsAPIService.shared.loadIncomeOrders(
@@ -547,6 +909,7 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
     }
 
     private func updateSummaryHeader() {
+        renderEntityHeader()
         let countText = "\(totalOrderCount.formatStringInCommon()) " + "Overview_Orders_Count".localized()
         if let summaryAmount = summaryAmountTotal {
             // Accurate all-matching total from dedicated API — no "+" needed.
@@ -575,6 +938,13 @@ extension OverviewRankingOrdersViewController: UITableViewDataSource, UITableVie
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if usesOrderRows || filter.hasEntityHeader {
+            let rowCell = tableView.dequeueReusableCell(withIdentifier: OrderRowCell.reuseId, for: indexPath) as! OrderRowCell
+            let row = OrdersHomeLogic.orderRows([orders[indexPath.row]])[0]
+            // #482: product / customer lists use the Orders tab "Tất cả" row
+            rowCell.configure(row, context: filter.hasEntityHeader ? .list : .search, hidesMoney: hidesMoney)
+            return rowCell
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: "SaleDetailCell", for: indexPath) as! SaleDetailCell_Option5
         cell.bind(order: orders[indexPath.row])
         cell.backgroundColor = .clear
@@ -599,8 +969,7 @@ extension OverviewRankingOrdersViewController: UITableViewDataSource, UITableVie
                     return
                 }
                 guard let detail = orderDetail else { return }
-                let preview = PreviewViewController(order: Order.from(detail: detail))
-                preview.hidesBottomBarWhenPushed = true
+                let preview = OrderDetailRouter.detailController(for: Order.from(detail: detail), delegate: nil)
                 self?.navigationController?.pushViewController(preview, animated: true)
             }
         }

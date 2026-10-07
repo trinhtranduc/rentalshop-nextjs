@@ -13,8 +13,16 @@ import {
   mapStagingUrlsToProductionUrls
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
-import { compressImageTo1MB } from '../../../../lib/image-compression';
-import { API, USER_ROLE, ORDER_STATUS, VALIDATION } from '@rentalshop/constants';
+import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
+import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
+import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
+import {
+  findEditScheduleConflicts,
+  scheduleConflictBody,
+  SCHEDULE_CONFLICT_STATUS,
+  type ScheduleDbClient,
+} from '../../../../lib/schedule-conflict-check';
+import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
   calculateAmountDue,
@@ -260,6 +268,15 @@ export const GET = async (
         throw new Error('Order not found');
       }
 
+      // The order must belong to the caller's merchant (#521); same rule as PUT (#361). Not found, not
+      // forbidden, so ids of other shops are not confirmed.
+      if (user.role !== USER_ROLE.ADMIN) {
+        const orderOutlet = await db.outlets.findById(order.outletId);
+        if (!orderOutlet || orderOutlet.merchantId !== userMerchantId) {
+          return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+        }
+      }
+
       console.log('✅ Order found:', order);
 
       // Flatten order items for mobile (iOS/Android cart edit needs productName/productId
@@ -423,6 +440,9 @@ export const PUT = async (
             typeof entry === 'object' &&
             typeof (entry as File).arrayBuffer === 'function'
         );
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.notesImages) + notesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (notesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(notesImageFiles, userMerchantId || 0);
@@ -456,6 +476,9 @@ export const PUT = async (
         
         // Upload and process pickupNotesImages
         const pickupNotesImageFiles = formData.getAll('pickupNotesImages') as File[];
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.pickupNotesImages) + pickupNotesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (pickupNotesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(pickupNotesImageFiles, userMerchantId || 0);
@@ -476,6 +499,9 @@ export const PUT = async (
         
         // Upload and process returnNotesImages
         const returnNotesImageFiles = formData.getAll('returnNotesImages') as File[];
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.returnNotesImages) + returnNotesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (returnNotesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(returnNotesImageFiles, userMerchantId || 0);
@@ -496,6 +522,9 @@ export const PUT = async (
         
         // Upload and process damageNotesImages
         const damageNotesImageFiles = formData.getAll('damageNotesImages') as File[];
+        if (exceedsNoteImageLimit(noteImageCount(existingOrder.damageNotesImages) + damageNotesImageFiles.length)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
         if (damageNotesImageFiles.length > 0) {
           try {
             const uploadResult = await uploadOrderNotesImages(damageNotesImageFiles, userMerchantId || 0);
@@ -518,6 +547,9 @@ export const PUT = async (
       } else {
         // Parse JSON request body (backward compatibility)
         body = await request.json();
+        if (bodyExceedsNoteImageLimit(body)) {
+          return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+        }
       }
 
       // JSON clients (Android two-step, web delete/set-list) may send staging CDN URLs
@@ -562,6 +594,27 @@ export const PUT = async (
       } else {
         // Remove temporary field used for FormData processing
         delete body._existingOrder;
+      }
+
+      // The order itself must belong to the caller's merchant (#361), whatever outletId the body carries
+      if (user.role !== USER_ROLE.ADMIN) {
+        const orderOutlet = await db.outlets.findById(existingOrder.outletId);
+        if (!orderOutlet || orderOutlet.merchantId !== userScope.merchantId) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT'),
+            { status: 403 }
+          );
+        }
+      }
+
+      // Only valid status changes (#361); iOS/Android send status through this route, and an echo of
+      // the current status is a no-op
+      if (body.status !== undefined && body.status !== null &&
+          !canChangeOrderStatus(existingOrder.orderType, existingOrder.status, body.status)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_ORDER_STATUS'),
+          { status: 400 }
+        );
       }
 
       // ✅ Validate outletId if provided in update
@@ -679,6 +732,28 @@ export const PUT = async (
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
 
+      // #518: shop setting "Cho tạo đơn khi trùng lịch" OFF → refuse an edit that over-books (new dates,
+      // outlet, or more units). Runs before any write (loyalty below). Default ON queries nothing extra.
+      const scheduleConflicts = await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
+        existingOrder,
+        next: {
+          orderType: validUpdateData.orderType,
+          status: validUpdateData.status,
+          outletId: validUpdateData.outletId,
+          pickupPlanAt: validUpdateData.pickupPlanAt,
+          returnPlanAt: validUpdateData.returnPlanAt,
+          orderItems: validUpdateData.orderItems,
+        },
+        resolveMerchantId: async (outletId: number) =>
+          outletId === existingOrder.outletId ? merchantId : (await db.outlets.findById(outletId))?.merchantId,
+      });
+      if (scheduleConflicts.length > 0) {
+        return NextResponse.json(
+          scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), scheduleConflicts),
+          { status: SCHEDULE_CONFLICT_STATUS }
+        );
+      }
+
       // ---- Loyalty on edit (Req 7) ----
       // Detect a customer change and whether this order carries any loyalty state.
       const newCustomerId =
@@ -735,20 +810,22 @@ export const PUT = async (
 
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
-      const auditHelper = createAuditHelper(prisma);
-      await auditHelper.logUpdate({
-        entityType: 'Order',
-        entityId: String(orderIdNum),
-        entityName: existingOrder.orderNumber || String(orderIdNum),
-        oldValues: existingOrder as Record<string, any>,
-        newValues: updatedOrder as Record<string, any>,
-        description: `Order updated: ${existingOrder.orderNumber || orderIdNum}`,
-        context: buildAuditContext(request, user, userScope)
-      }).catch((err) => console.error('Audit log update failed:', err));
       console.log('✅ Order updated successfully:', updatedOrder);
 
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
+
+      // #519: snapshots (dates, totals, deposits, note + image count, items) so the change history
+      // can show "Giao đồ", "Sửa món", "Thu cọc", … for this edit. The full re-read has the item names.
+      await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
+        entityType: 'Order',
+        entityId: String(orderIdNum),
+        entityName: existingOrder.orderNumber || String(orderIdNum),
+        oldValues: buildOrderAuditSnapshot(existingOrder),
+        newValues: buildOrderAuditSnapshot(fullOrder ?? updatedOrder),
+        description: `Order updated: ${existingOrder.orderNumber || orderIdNum}`,
+        context: buildAuditContext(request, user, userScope)
+      }));
       
       console.log('🔍 PUT /api/orders/[orderId]: Full order after update:', {
         orderId: orderIdNum,
@@ -1002,7 +1079,7 @@ export const DELETE = async (
         entityType: 'Order',
         entityId: String(orderIdNum),
         entityName: existingOrder.orderNumber || String(orderIdNum),
-        oldValues: existingOrder as Record<string, any>,
+        oldValues: buildOrderAuditSnapshot(existingOrder),
         description: `Order deleted: ${existingOrder.orderNumber || orderIdNum}`,
         context: buildAuditContext(request, user, userScope)
       }).catch((err) => console.error('Audit log delete failed:', err));

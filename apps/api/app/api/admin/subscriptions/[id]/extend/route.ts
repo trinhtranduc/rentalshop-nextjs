@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
@@ -73,8 +73,8 @@ export async function POST(
         ? subscription.currentPeriodEnd
         : now;
       
-      const newPeriodEnd = new Date(currentEnd);
-      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + months);
+      // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
+      const newPeriodEnd = addMonthsInTimeZone(new Date(currentEnd), months);
 
       // Update subscription — update billing info to match manual extension
       const intervalValue = months <= 1 ? 'monthly' : months <= 3 ? 'quarterly' : months <= 6 ? 'semi_annual' : 'annual';

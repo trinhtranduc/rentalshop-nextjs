@@ -24,7 +24,7 @@ import { Settings, Save, Edit, Upload, X, Image as ImageIcon, Loader2 } from 'lu
 import { collateralKey } from '../collateral';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { useFormatCurrency } from '@rentalshop/ui';
-import { uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
+import { compressImage, uploadImage, getAuthToken, type UploadProgress } from '@rentalshop/utils';
 import type { OrderWithDetails } from '@rentalshop/types';
 
 interface SettingsForm {
@@ -136,7 +136,10 @@ const PendingFilePreview: React.FC<{
   );
 };
 
-const MAX_NOTES_IMAGES = 3;
+const MAX_NOTES_IMAGES = 5;
+
+/** ~180KB so the file stays under the API 200KB note-image cap after server recompress. */
+const NOTE_IMAGE_MAX_MB = 0.18;
 
 const NotesImagesField: React.FC<{
   label: string;
@@ -149,15 +152,35 @@ const NotesImagesField: React.FC<{
   maxImages?: number;
 }> = ({ label, images, pendingFiles = [], onRemoveUrl, onRemovePendingFile, onAddFiles, onPreviewImage, maxImages = MAX_NOTES_IMAGES }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const totalCount = images.length + pendingFiles.length;
   const canAddMore = totalCount < maxImages;
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = '';
-    if (!files.length || !canAddMore) return;
+    if (!files.length || totalCount >= maxImages) return;
     const remaining = maxImages - totalCount;
     const toAdd = files.slice(0, remaining);
-    if (toAdd.length) onAddFiles(toAdd);
+    if (!toAdd.length) return;
+    setIsCompressing(true);
+    try {
+      const compressed = await Promise.all(
+        toAdd.map(async (file) => {
+          try {
+            return await compressImage(file, {
+              maxSizeMB: NOTE_IMAGE_MAX_MB,
+              maxWidthOrHeight: 1920,
+            });
+          } catch (error) {
+            console.error('Note image compression failed, sending original:', error);
+            return file;
+          }
+        })
+      );
+      onAddFiles(compressed);
+    } finally {
+      setIsCompressing(false);
+    }
   };
   return (
     <div>
@@ -194,13 +217,14 @@ const NotesImagesField: React.FC<{
             onRemove={onRemovePendingFile ? () => onRemovePendingFile(i) : undefined}
           />
         ))}
-        {canAddMore && (
+        {(canAddMore || isCompressing) && (
           <button
             type="button"
+            disabled={isCompressing}
             onClick={() => inputRef.current?.click()}
-            className="w-14 h-14 rounded border border-dashed border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+            className="w-14 h-14 rounded border border-dashed border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-60"
           >
-            <ImageIcon className="w-5 h-5" />
+            {isCompressing ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
           </button>
         )}
         <input

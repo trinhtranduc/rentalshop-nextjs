@@ -1,8 +1,12 @@
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, listCivilDays, listCivilMonths } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { monthKeysOf, readReportRange, reportRangeOfKeys, shopToday } from '../../../../lib/report-days';
+
+/** `toLocaleDateString('en-US', { month: 'short' })` labels, fixed so the server zone never shifts them */
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /**
  * GET /api/analytics/system - Get system analytics (Admin only)
@@ -22,19 +26,17 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
     const endDate = searchParams.get('endDate');
     const groupBy = searchParams.get('groupBy') || 'month';
 
-    // Set default date range if not provided (current month)
-    let dateStart: Date;
-    let dateEnd: Date;
-    
-    if (startDate && endDate) {
-      dateStart = new Date(startDate);
-      dateEnd = new Date(endDate);
-    } else {
-      // Default to current month
-      const now = new Date();
-      dateStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    // Vietnam civil days (#594): the requested days (whole days: `new Date(key)` on both ends made "Today" an
+    // empty window), else the current Vietnam month. Buckets and labels below are Vietnam days/months too.
+    const todayKey = shopToday().dateKey;
+    const requested = startDate && endDate ? readReportRange(startDate, endDate) : null;
+    if (startDate && endDate && !requested) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
     }
+    const thisMonth = monthKeysOf(todayKey);
+    const range = requested ?? reportRangeOfKeys(thisMonth.from, thisMonth.to);
+    const dateStart = range.start;
+    const dateEnd = range.end;
 
     // Fetch system metrics in parallel
     const [
@@ -101,8 +103,8 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       db.merchants.count({ 
         where: { 
           isActive: true,
-          createdAt: { 
-            gte: new Date(new Date().getFullYear(), 0, 1)
+          createdAt: {
+            gte: reportRangeOfKeys(`${todayKey.slice(0, 4)}-01-01`, todayKey).start
           }
         }
       }),
@@ -125,64 +127,41 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
     // Get merchant registration trends based on groupBy parameter
     const merchantTrends = [];
     
-    if (groupBy === 'month') {
-      // Generate trends for each month in the date range
-      const current = new Date(dateStart);
-      while (current <= dateEnd) {
-        const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
-        const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
-        
-        const newMerchants = await db.merchants.count({
-          where: {
-            isActive: true,
-            createdAt: { gte: monthStart, lte: monthEnd }
-          }
-        });
-        
-        const activeMerchants = await db.merchants.count({
-          where: {
-            isActive: true,
-            createdAt: { lte: monthEnd }
-          }
-        });
-        
-        merchantTrends.push({
-          month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
-          newMerchants,
-          activeMerchants
-        });
-        
-        current.setMonth(current.getMonth() + 1);
-      }
-    } else if (groupBy === 'day') {
-      // Generate trends for each day in the date range
-      const current = new Date(dateStart);
-      while (current <= dateEnd) {
-        const dayStart = new Date(current.getFullYear(), current.getMonth(), current.getDate());
-        const dayEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
-        
-        const newMerchants = await db.merchants.count({
-          where: {
-            isActive: true,
-            createdAt: { gte: dayStart, lte: dayEnd }
-          }
-        });
-        
-        const activeMerchants = await db.merchants.count({
-          where: {
-            isActive: true,
-            createdAt: { lte: dayEnd }
-          }
-        });
-        
-        merchantTrends.push({
-          month: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          newMerchants,
-          activeMerchants
-        });
-        
-        current.setDate(current.getDate() + 1);
-      }
+    // Buckets are Vietnam months / days of the range; labels keep their format ("Oct", "Oct 2")
+    const buckets =
+      groupBy === 'month'
+        ? listCivilMonths(range.startKey, range.endKey).map((m) => ({
+            start: m.start,
+            end: m.end,
+            label: MONTH_LABELS[m.month - 1],
+          }))
+        : groupBy === 'day'
+          ? listCivilDays(range.startKey, range.endKey).map((d) => ({
+              start: d.start,
+              end: d.end,
+              label: `${MONTH_LABELS[Number(d.dateKey.slice(5, 7)) - 1]} ${Number(d.dateKey.slice(8, 10))}`,
+            }))
+          : [];
+    for (const bucket of buckets) {
+      const newMerchants = await db.merchants.count({
+        where: {
+          isActive: true,
+          createdAt: { gte: bucket.start, lte: bucket.end }
+        }
+      });
+
+      const activeMerchants = await db.merchants.count({
+        where: {
+          isActive: true,
+          createdAt: { lte: bucket.end }
+        }
+      });
+
+      merchantTrends.push({
+        month: bucket.label,
+        newMerchants,
+        activeMerchants
+      });
     }
 
     // Calculate revenue using calculatePeriodRevenueBatch (single source of truth)
@@ -194,6 +173,7 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       depositAmount: order.depositAmount || 0,
       securityDeposit: order.securityDeposit || 0,
       damageFee: order.damageFee || 0,
+      lateFee: order.lateFee || 0,
       createdAt: order.createdAt,
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,

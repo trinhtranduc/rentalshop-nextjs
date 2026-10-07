@@ -1,5 +1,16 @@
 package com.anyrent.pos.data.model
 
+import org.json.JSONObject
+
+/** A money field the API may not send (older servers): absent, null or not a number reads as null (#390) */
+internal fun optionalAmount(o: JSONObject, key: String): Double? {
+    if (!o.has(key) || o.isNull(key)) return null
+    return when (val value = o.opt(key)) {
+        is Number -> value.toDouble()
+        else -> null
+    }
+}
+
 data class UserProfile(
     val id: Int,
     val email: String,
@@ -15,6 +26,8 @@ data class UserProfile(
     val merchantAddress: String? = null,
     val outletPhone: String? = null,
     val outletAddress: String? = null,
+    /** #518 shop setting "Cho tạo đơn khi trùng lịch"; ON when the payload has no merchant or no field */
+    val allowOverlappingOrders: Boolean = true,
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)
@@ -47,6 +60,20 @@ data class Product(
     val note: String? = null,
     /** ISO timestamp when image search last finished; null = never indexed */
     val embeddingGeneratedAt: String? = null,
+    /** All photo URLs, cover first (#373) */
+    val images: List<String> = emptyList(),
+    /** Stock per outlet (#373) */
+    val outletStock: List<ProductOutletStock> = emptyList(),
+    /** Free today at the user's outlet when the list was asked with `outletId` (#373) */
+    val effectiveAvailableToday: Int? = null,
+)
+
+/** Stock of a product at one outlet */
+data class ProductOutletStock(
+    val outletId: Int,
+    val stock: Int,
+    val renting: Int,
+    val available: Int,
 )
 
 data class Customer(
@@ -77,6 +104,19 @@ data class OrderSummary(
     val isReadyToDeliver: Boolean = false,
     val itemCount: Int = 0,
     val createdByName: String? = null,
+    val updatedAt: String? = null,
+    /** Item names with quantity, from the list's `orderItems` (#401) */
+    val itemsSummary: String = "",
+    /** Units per product id, from the list's `orderItems` (#388) */
+    val productQuantities: Map<Int, Int> = emptyMap(),
+    /** Line totals per product id, from the list's `orderItems` (#482 "Doanh thu" of a product) */
+    val productTotals: Map<Int, Double> = emptyMap(),
+    /** Still to collect / to give back, from `computeOrderBalance` (#389); null on an older API */
+    val amountDue: Double? = null,
+    val refundDue: Double? = null,
+    /** Actual hand-over / return instants (#434); null until they happen or on an older payload */
+    val pickedUpAt: String? = null,
+    val returnedAt: String? = null,
 )
 
 data class OrderItem(
@@ -109,6 +149,8 @@ data class OrderDetail(
     val discountAmount: Double = 0.0,
     /** Store name on the order — preferred over SessionStore for receipt header. */
     val outletName: String? = null,
+    /** Outlet of the order (public id): availability for an extension is checked there (#390) */
+    val outletId: Int? = null,
     /** Nested customer from GET /api/orders/:id — preferred when editing into cart. */
     val customer: Customer? = null,
 )
@@ -129,6 +171,8 @@ data class InboxNotification(
     val isRead: Boolean,
     val createdAt: String?,
     val orderId: Int?,
+    /** `data.status` of an `ORDER_STATUS_CHANGED` notification; picks the icon of the new inbox (#477) */
+    val status: String? = null,
 )
 
 data class CalendarDay(

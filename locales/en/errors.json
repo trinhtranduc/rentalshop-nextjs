@@ -42,6 +42,7 @@
   "ORDER_ALREADY_EXISTS": "Order already exists",
   "PRODUCT_OUT_OF_STOCK": "Product is out of stock",
   "INVALID_ORDER_STATUS": "Invalid order status",
+  "ORDER_SCHEDULE_CONFLICT": "This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.",
   "PAYMENT_FAILED": "Payment processing failed",
   "INVALID_PAYMENT_METHOD": "Invalid payment method",
   
@@ -112,6 +113,11 @@
   "MERCHANT_ACCESS_REQUIRED": "Merchant access required",
   "DELETE_USER_OUT_OF_SCOPE": "Cannot delete user outside your scope",
   "UPDATE_USER_OUT_OF_SCOPE": "Cannot update user outside your scope",
+  "MERCHANT_TRANSFER_ADMIN_ONLY": "Only a system administrator can move an account to another merchant",
+  "MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED": "A merchant owner account cannot be moved to another merchant",
+  "OUTLET_ASSIGNMENT_REQUIRED": "Choose an outlet that belongs to the selected merchant",
+  "OUTLET_MERCHANT_MISMATCH": "The selected outlet does not belong to the selected merchant",
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "Assign another active merchant owner before changing this account",
   "DELETE_OWN_ACCOUNT_ONLY": "You can only delete your own account",
   "ACCESS_TOKEN_REQUIRED": "Access token is required",
   "TOKEN_REQUIRED": "Token is required",
@@ -120,7 +126,7 @@
   "EMAIL_VERIFIED_SUCCESS": "Email verified successfully",
   "VERIFICATION_EMAIL_SENT": "Verification email has been sent",
   "EMAIL_SEND_FAILED": "Failed to send email",
-  "RATE_LIMIT_EXCEEDED": "Rate limit exceeded. Please try again later",
+  "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a few minutes and try again.",
   
   "_comment_validation": "Validation Errors",
   "INVALID_QUERY": "Invalid query parameters",
@@ -166,11 +172,12 @@
   "MISSING_PRODUCT_DATA": "Missing product data",
   "MISSING_STAGING_KEYS": "Missing staging keys",
   "NO_VALID_FIELDS": "No valid fields to update",
-  "OUTLET_REQUIRED": "Outlet ID is required",
+  "OUTLET_REQUIRED": "Choose an outlet, or set a default outlet for your shop.",
   "MULTIPLE_ENTITIES_FOUND": "Multiple entities found with same identifier",
   "INVALID_ACTION": "Invalid action specified",
   "INVALID_REQUEST": "Invalid request format",
   "INVALID_TENANT_KEY": "Invalid tenant key provided",
+  "INVALID_TIMEZONE": "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).",
   "TENANT_KEY_ALREADY_EXISTS": "This store URL key is already taken. Please choose a different one.",
   "MISSING_ENDPOINT_OR_TOKEN": "Missing endpoint or token in request",
   "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Payment method and transaction ID are required",
@@ -374,5 +381,6 @@
   "TEST_API_WORKING": "Test API working",
   "TEST_POST_WORKING": "Test POST working",
   "API_KEYS_WORKING": "API Keys endpoint is working!",
-  "AWS_S3_TEST_FAILED": "AWS S3 test failed"
+  "AWS_S3_TEST_FAILED": "AWS S3 test failed",
+  "PRODUCT_HAS_OPEN_ORDERS": "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it."
 }

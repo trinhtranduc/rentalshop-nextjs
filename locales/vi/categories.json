@@ -82,6 +82,63 @@
     "nameMaxLength": "Tên danh mục phải ít hơn 50 ký tự",
     "descriptionMaxLength": "Mô tả phải ít hơn 200 ký tự",
     "characters": "ký tự"
+  },
+  "web": {
+    "title": "Danh mục",
+    "add": "Thêm danh mục",
+    "searchLabel": "Tìm danh mục",
+    "searchPlaceholder": "Tìm tên danh mục",
+    "cols": {
+      "name": "Tên",
+      "description": "Mô tả",
+      "createdAt": "Ngày tạo",
+      "actions": "Thao tác"
+    },
+    "sortBy": "Sắp xếp theo {column}",
+    "default": "Mặc định",
+    "view": "Xem",
+    "edit": "Sửa",
+    "delete": "Xoá",
+    "viewDetails": "Xem chi tiết",
+    "more": "Thao tác khác cho {name}",
+    "empty": "Chưa có danh mục nào. Thêm danh mục để xếp sản phẩm theo nhóm.",
+    "emptySearch": "Không có danh mục khớp với tìm kiếm.",
+    "loadFailed": "Không tải được danh mục.",
+    "retry": "Thử lại",
+    "form": {
+      "addTitle": "Thêm danh mục",
+      "editTitle": "Sửa danh mục",
+      "name": "Tên danh mục",
+      "namePlaceholder": "Ví dụ: Áo dài",
+      "required": "bắt buộc",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Không bắt buộc",
+      "count": "{count}/{max}",
+      "cancel": "Huỷ",
+      "create": "Thêm",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "close": "Đóng"
+    },
+    "detail": {
+      "title": "Chi tiết danh mục",
+      "noDescription": "Chưa có mô tả"
+    },
+    "confirm": {
+      "deleteTitle": "Xoá danh mục",
+      "deleteBody": "Xoá danh mục “{name}”? Không thể hoàn tác.",
+      "cancel": "Giữ lại",
+      "delete": "Xoá danh mục",
+      "deleting": "Đang xoá…"
+    },
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} danh mục",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    }
   }
 }
-

@@ -5,260 +5,148 @@
 //  Created by Assistant on 2025-01-28.
 //  Copyright © 2025 Trinh Tran. All rights reserved.
 //
+//  /api/merchants/{merchantId}/outlets/{outletId}/bank-accounts[/{id}]
+//  #622: every call takes the outlet. A MERCHANT login has no outletId, so the screen passes the chosen outlet and
+//  the bill passes the order's outlet; nil falls back to the user's own outlet.
+//
 
 import Alamofire
 import Foundation
 
 protocol BankAccountServiceProtocol {
-    func getBankAccounts(completion: @escaping (_ bankAccounts: [BankAccount]?, _ error: NSError?) -> Void)
-    func createBankAccount(withValues: [String: Any], completion: @escaping (_ bankAccount: BankAccount?, _ error: NSError?) -> Void)
-    func updateBankAccount(bankAccountId: Int, withValues: [String: Any], completion: @escaping (_ bankAccount: BankAccount?, _ error: NSError?) -> Void)
-    func deleteBankAccount(bankAccountId: Int, completion: @escaping (_ error: NSError?) -> Void)
+    func getBankAccounts(outletId: Int?, completion: @escaping (_ bankAccounts: [BankAccount]?, _ error: NSError?) -> Void)
+    func createBankAccount(outletId: Int?, withValues: [String: Any], completion: @escaping (_ bankAccount: BankAccount?, _ error: NSError?) -> Void)
+    func updateBankAccount(outletId: Int?, bankAccountId: Int, withValues: [String: Any], completion: @escaping (_ bankAccount: BankAccount?, _ error: NSError?) -> Void)
+    func deleteBankAccount(outletId: Int?, bankAccountId: Int, completion: @escaping (_ error: NSError?) -> Void)
 }
 
 class BankAccountService: BaseService, BankAccountServiceProtocol {
     static let shared = BankAccountService()
-    
+
+    /// Account printed on bills, per outlet, for this app session (#622). Cleared by any write.
+    private var printAccountCache: [Int: BankAccount?] = [:]
+
+    // MARK: - Path
+
+    private func basePath(outletId: Int?) -> String? {
+        guard let user = User.account(), let merchantId = user.merchantId, let outlet = outletId ?? user.outletId else {
+            return nil
+        }
+        return APIEndpoint.Path.bankAccounts(merchantId: merchantId, outletId: outlet)
+    }
+
+    private func missingScopeError() -> NSError {
+        NSError.errorWithOwnMessage(message: "Merchant ID or Outlet ID not found".localized(), domain: "RC")
+    }
+
+    private func responseError(code: String?, message: String?, error: String?, defaultMessage: String) -> NSError {
+        createErrorFromResponse(success: false, code: code, message: message, error: error,
+                                httpStatusCode: nil, defaultMessage: defaultMessage)
+    }
+
     // MARK: - Get Bank Accounts
-    func getBankAccounts(completion: @escaping ([BankAccount]?, NSError?) -> Void) {
-        // Get merchantId and outletId from current user
-        guard let user = User.account(),
-              let merchantId = user.merchantId,
-              let outletId = user.outletId else {
-            let error = NSError.errorWithOwnMessage(
-                message: "Merchant ID or Outlet ID not found".localized(),
-                domain: "RC"
-            )
-            DispatchQueue.main.async {
-                completion(nil, error)
-            }
+
+    func getBankAccounts(outletId: Int?, completion: @escaping ([BankAccount]?, NSError?) -> Void) {
+        guard let path = basePath(outletId: outletId) else {
+            DispatchQueue.main.async { completion(nil, self.missingScopeError()) }
             return
         }
-        
-        let path = APIEndpoint.Path.bankAccounts(merchantId: merchantId, outletId: outletId)
-        
-        performGET(
-            path: path,
-            responseType: APIBankAccountsResponse.self,
-            context: "BankAccountService.getBankAccounts"
-        ) { apiResponse, error in
+        performGET(path: path, responseType: APIBankAccountsResponse.self, context: "BankAccountService.getBankAccounts") { response, error in
+            let result: ([BankAccount]?, NSError?)
             if let error = error {
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
-                return
-            }
-            
-            guard let apiResponse = apiResponse else {
-                let error = NSError.errorWithOwnMessage(message: "No response received", domain: "RC")
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
-                return
-            }
-            
-            if apiResponse.success, let bankAccounts = apiResponse.data {
-                print("✅ Bank accounts loaded successfully: \(bankAccounts.count) accounts")
-                DispatchQueue.main.async {
-                    completion(bankAccounts, nil)
-                }
+                result = (nil, error)
+            } else if let response = response, response.success, let accounts = response.data {
+                result = (accounts, nil)
             } else {
-                let nsError = self.createErrorFromResponse(
-                    success: apiResponse.success,
-                    code: apiResponse.code,
-                    message: apiResponse.message,
-                    error: apiResponse.error,
-                    httpStatusCode: nil,
-                    defaultMessage: "Failed to load bank accounts"
-                )
-                print("❌ Bank accounts load failed: \(nsError.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(nil, nsError)
-                }
+                result = (nil, self.responseError(code: response?.code, message: response?.message, error: response?.error,
+                                                  defaultMessage: "Failed to load bank accounts"))
             }
+            DispatchQueue.main.async { completion(result.0, result.1) }
         }
     }
-    
-    // MARK: - Create Bank Account
-    func createBankAccount(withValues values: [String: Any], completion: @escaping (BankAccount?, NSError?) -> Void) {
-        // Get merchantId and outletId from current user
-        guard let user = User.account(),
-              let merchantId = user.merchantId,
-              let outletId = user.outletId else {
-            let error = NSError.errorWithOwnMessage(
-                message: "Merchant ID or Outlet ID not found".localized(),
-                domain: "RC"
-            )
-            DispatchQueue.main.async {
-                completion(nil, error)
-            }
+
+    // MARK: - Create / Update / Delete
+
+    func createBankAccount(outletId: Int?, withValues values: [String: Any], completion: @escaping (BankAccount?, NSError?) -> Void) {
+        guard let path = basePath(outletId: outletId) else {
+            DispatchQueue.main.async { completion(nil, self.missingScopeError()) }
             return
         }
-        
-        let path = APIEndpoint.Path.bankAccounts(merchantId: merchantId, outletId: outletId)
-        
-        performPOST(
-            path: path,
-            parameters: values,
-            responseType: APIBankAccountResponse.self,
-            context: "BankAccountService.createBankAccount"
-        ) { apiResponse, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
-                return
-            }
-            
-            guard let apiResponse = apiResponse else {
-                let error = NSError.errorWithOwnMessage(message: "No response received", domain: "RC")
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
-                return
-            }
-            
-            if apiResponse.success, let bankAccount = apiResponse.data {
-                print("✅ Bank account created successfully")
-                DispatchQueue.main.async {
-                    completion(bankAccount, nil)
-                }
-            } else {
-                let nsError = self.createErrorFromResponse(
-                    success: apiResponse.success,
-                    code: apiResponse.code,
-                    message: apiResponse.message,
-                    error: apiResponse.error,
-                    httpStatusCode: nil,
-                    defaultMessage: "Failed to create bank account"
-                )
-                print("❌ Bank account creation failed: \(nsError.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(nil, nsError)
-                }
-            }
+        performPOST(path: path, parameters: values, responseType: APIBankAccountResponse.self,
+                    context: "BankAccountService.createBankAccount") { response, error in
+            self.finishWrite(response: response, error: error, defaultMessage: "Failed to create bank account", completion: completion)
         }
     }
-    
-    // MARK: - Update Bank Account
-    func updateBankAccount(bankAccountId: Int, withValues values: [String: Any], completion: @escaping (BankAccount?, NSError?) -> Void) {
-        // Get merchantId and outletId from current user
-        guard let user = User.account(),
-              let merchantId = user.merchantId,
-              let outletId = user.outletId else {
-            let error = NSError.errorWithOwnMessage(
-                message: "Merchant ID or Outlet ID not found".localized(),
-                domain: "RC"
-            )
-            DispatchQueue.main.async {
-                completion(nil, error)
-            }
+
+    func updateBankAccount(outletId: Int?, bankAccountId: Int, withValues values: [String: Any], completion: @escaping (BankAccount?, NSError?) -> Void) {
+        guard let path = basePath(outletId: outletId) else {
+            DispatchQueue.main.async { completion(nil, self.missingScopeError()) }
             return
         }
-        
-        let path = "\(APIEndpoint.Path.bankAccounts(merchantId: merchantId, outletId: outletId))/\(bankAccountId)"
-        
-        performPUT(
-            path: path,
-            parameters: values,
-            responseType: APIBankAccountResponse.self,
-            context: "BankAccountService.updateBankAccount"
-        ) { apiResponse, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
-                return
-            }
-            
-            guard let apiResponse = apiResponse else {
-                let error = NSError.errorWithOwnMessage(message: "No response received", domain: "RC")
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
-                return
-            }
-            
-            if apiResponse.success, let bankAccount = apiResponse.data {
-                print("✅ Bank account updated successfully")
-                DispatchQueue.main.async {
-                    completion(bankAccount, nil)
-                }
-            } else {
-                let nsError = self.createErrorFromResponse(
-                    success: apiResponse.success,
-                    code: apiResponse.code,
-                    message: apiResponse.message,
-                    error: apiResponse.error,
-                    httpStatusCode: nil,
-                    defaultMessage: "Failed to update bank account"
-                )
-                print("❌ Bank account update failed: \(nsError.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(nil, nsError)
-                }
-            }
+        performPUT(path: "\(path)/\(bankAccountId)", parameters: values, responseType: APIBankAccountResponse.self,
+                   context: "BankAccountService.updateBankAccount") { response, error in
+            self.finishWrite(response: response, error: error, defaultMessage: "Failed to update bank account", completion: completion)
         }
     }
-    
-    // MARK: - Delete Bank Account
-    func deleteBankAccount(bankAccountId: Int, completion: @escaping (NSError?) -> Void) {
-        // Get merchantId and outletId from current user
-        guard let user = User.account(),
-              let merchantId = user.merchantId,
-              let outletId = user.outletId else {
-            let error = NSError.errorWithOwnMessage(
-                message: "Merchant ID or Outlet ID not found".localized(),
-                domain: "RC"
-            )
-            DispatchQueue.main.async {
-                completion(error)
-            }
+
+    func deleteBankAccount(outletId: Int?, bankAccountId: Int, completion: @escaping (NSError?) -> Void) {
+        guard let path = basePath(outletId: outletId) else {
+            DispatchQueue.main.async { completion(self.missingScopeError()) }
             return
         }
-        
-        let path = "\(APIEndpoint.Path.bankAccounts(merchantId: merchantId, outletId: outletId))/\(bankAccountId)"
-        
-        performDELETE(
-            path: path,
-            responseType: APIEmptyResponse.self,
-            context: "BankAccountService.deleteBankAccount"
-        ) { apiResponse, error in
+        // The API answers the soft-deleted account; only `success` matters here
+        performDELETE(path: "\(path)/\(bankAccountId)", responseType: APIEmptyResponse.self,
+                      context: "BankAccountService.deleteBankAccount") { response, error in
+            self.clearPrintCache()
+            let result: NSError?
             if let error = error {
-                DispatchQueue.main.async {
-                    completion(error)
-                }
-                return
-            }
-            
-            guard let apiResponse = apiResponse else {
-                let error = NSError.errorWithOwnMessage(message: "No response received", domain: "RC")
-                DispatchQueue.main.async {
-                    completion(error)
-                }
-                return
-            }
-            
-            if apiResponse.success {
-                print("✅ Bank account deleted successfully")
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
+                result = error
+            } else if let response = response, response.success {
+                result = nil
             } else {
-                let nsError = self.createErrorFromResponse(
-                    success: apiResponse.success,
-                    code: apiResponse.code,
-                    message: apiResponse.message,
-                    error: apiResponse.error,
-                    httpStatusCode: nil,
-                    defaultMessage: "Failed to delete bank account"
-                )
-                print("❌ Bank account deletion failed: \(nsError.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(nsError)
-                }
+                result = self.responseError(code: response?.code, message: response?.message, error: response?.error,
+                                            defaultMessage: "Failed to delete bank account")
             }
+            DispatchQueue.main.async { completion(result) }
+        }
+    }
+
+    private func finishWrite(response: APIBankAccountResponse?, error: NSError?, defaultMessage: String,
+                             completion: @escaping (BankAccount?, NSError?) -> Void) {
+        clearPrintCache()
+        let result: (BankAccount?, NSError?)
+        if let error = error {
+            result = (nil, error)
+        } else if let response = response, response.success, let account = response.data {
+            result = (account, nil)
+        } else {
+            result = (nil, responseError(code: response?.code, message: response?.message, error: response?.error,
+                                         defaultMessage: defaultMessage))
+        }
+        DispatchQueue.main.async { completion(result.0, result.1) }
+    }
+
+    // MARK: - Bill (#622)
+
+    func clearPrintCache() {
+        DispatchQueue.main.async { self.printAccountCache.removeAll() }
+    }
+
+    /// The outlet's account to print on a bill (default, else first). Nil when there is none or the load fails;
+    /// a failure is not cached so the next print tries again. Always answers on the main queue.
+    func printAccount(outletId: Int, completion: @escaping (BankAccount?) -> Void) {
+        if let cached = printAccountCache[outletId] {
+            completion(cached)
+            return
+        }
+        getBankAccounts(outletId: outletId) { [weak self] accounts, error in
+            guard let accounts = accounts, error == nil else {
+                completion(nil)
+                return
+            }
+            let account = BillBankQR.pick(accounts)
+            self?.printAccountCache[outletId] = .some(account)
+            completion(account)
         }
     }
 }
-

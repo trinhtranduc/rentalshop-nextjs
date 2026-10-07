@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder, ordersQuerySchema } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, ordersQuerySchema, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -65,7 +65,8 @@ export async function GET(
         merchantId: merchantPublicId,
         page: page || 1,
         limit: limit || 50,
-        sortBy: sortBy || 'createdAt',
+        // nearestTask (#389) is only planned by GET /api/orders; this list keeps a column sort
+        sortBy: sortBy && sortBy !== 'nearestTask' ? sortBy : 'createdAt',
         sortOrder: sortOrder || 'desc'
       };
 
@@ -75,8 +76,9 @@ export async function GET(
       if (status) searchFilters.status = status;
       if (customerId) searchFilters.customerId = customerId;
       if (productId) searchFilters.productId = productId;
-      if (startDate) searchFilters.startDate = new Date(startDate);
-      if (endDate) searchFilters.endDate = new Date(endDate);
+      // Vietnam civil days (#594)
+      if (startDate) searchFilters.startDate = normalizeStartDate(startDate) ?? undefined;
+      if (endDate) searchFilters.endDate = normalizeEndDate(endDate) ?? undefined;
 
       // Role-based outlet filtering:
       // - ADMIN role: Can see orders from all outlets

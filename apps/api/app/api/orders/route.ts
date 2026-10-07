@@ -19,11 +19,13 @@ import {
   generateFileName,
   splitKeyIntoParts,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls
+  mapStagingUrlsToProductionUrls,
+  getUtcRangeForDateKeys,
+  toDateKeyInTimeZone
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
-import { compressImageTo1MB } from '../../../lib/image-compression';
+import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
 import type { Product } from '@rentalshop/types';
 import { API } from '@rentalshop/constants';
@@ -33,7 +35,19 @@ import {
   handleLoyaltyOnOrderCreate,
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
-import { civilDayRange } from '../../../lib/outlet-operations-day';
+import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
+import { resolveOrderDeposits } from '../../../lib/order-deposits';
+import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
+import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
+import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
+import {
+  findEditScheduleConflicts,
+  loadScheduleConflicts,
+  scheduleConflictBody,
+  SCHEDULE_CONFLICT_STATUS,
+  type EditableOrder,
+  type ScheduleDbClient
+} from '../../../lib/schedule-conflict-check';
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
   return {
@@ -51,6 +65,11 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
 /**
  * GET /api/orders
  * Get orders with filtering, pagination
+ *
+ * #389 (additive): rows carry `amountDue` / `refundDue` (computeOrderBalance); `sortBy=nearestTask` lists late
+ * tasks, then the nearest planned pickup/return, then closed orders; `dateField=pickupPlanAt|returnPlanAt` filters
+ * planned dates by civil days (startDate/endDate). Indexed: (status, outletId), (pickupPlanAt, returnPlanAt),
+ * Payment (orderId, status).
  * 
  * Authorization: All roles with 'orders.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
@@ -110,24 +129,27 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
       sortBy, sortOrder
     });
     
-    // Implement role-based filtering
-    const dayKey = /^\d{4}-\d{2}-\d{2}$/;
-    const civilRange =
-      startDate && dayKey.test(String(startDate)) && (!endDate || dayKey.test(String(endDate)))
-        ? civilDayRange(String(startDate), String(endDate || startDate))
-        : null;
+    // Date filter = civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` (#350, #355).
+    // A YYYY-MM-DD key is that day; an ISO instant is the civil day that contains it. A start without an
+    // end is open-ended (iOS loads "everything since 2000" that way), and the reverse.
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: 400 });
+    }
+    const startKey = startDate ? toDateKeyInTimeZone(String(startDate), timeZone) : null;
+    const endKey = endDate ? toDateKeyInTimeZone(String(endDate), timeZone) : null;
     let searchFilters: any = {
       customerId,
       productId,
       orderType,
       status,
-      // YYYY-MM-DD means Vietnam civil days ("today" used to start at 07:00 Vietnam time)
-      ...(civilRange
-        ? { startDate: civilRange.start, endDate: civilRange.end, exactDateRange: true }
-        : {
-            startDate: startDate ? new Date(startDate) : undefined,
-            endDate: endDate ? new Date(endDate) : undefined,
-          }),
+      ...(startKey || endKey
+        ? {
+            startDate: startKey ? getUtcRangeForDateKeys({ from: startKey }, timeZone).start : undefined,
+            endDate: endKey ? getUtcRangeForDateKeys({ from: endKey }, timeZone).end : undefined,
+            exactDateRange: true,
+          }
+        : {}),
       dateField,
       q: q || search, // Pass 'q' parameter (database function uses 'q')
       page: page || 1,
@@ -216,8 +238,13 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
     console.log('📊 RESULT DEBUG: page=', result.page, ', total=', result.total, ', limit=', result.limit);
 
+    // #389: what the counter collects / hands back per row, from one grouped payment query for this page
+    const pageOrders = result.data || [];
+    const paymentSums = await loadCompletedPaymentSums(prisma, pageOrders.map((order: any) => order.id));
+    const ordersWithBalance = attachOrderBalances(pageOrders as any[], paymentSums);
+
     // Normalize date fields in order list to UTC ISO strings using toISOString()
-    const normalizedOrders = (result.data || []).map(order => ({
+    const normalizedOrders = ordersWithBalance.map(order => ({
       ...order,
       createdAt: order.createdAt?.toISOString() || null,
       updatedAt: order.updatedAt?.toISOString() || null,
@@ -461,6 +488,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process notesImages
       const notesImageFiles = formData.getAll('notesImages') as File[];
+      if (exceedsNoteImageLimit(notesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (notesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(notesImageFiles, userMerchantId || 0);
@@ -481,6 +511,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process pickupNotesImages
       const pickupNotesImageFiles = formData.getAll('pickupNotesImages') as File[];
+      if (exceedsNoteImageLimit(pickupNotesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (pickupNotesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(pickupNotesImageFiles, userMerchantId || 0);
@@ -501,6 +534,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process returnNotesImages
       const returnNotesImageFiles = formData.getAll('returnNotesImages') as File[];
+      if (exceedsNoteImageLimit(returnNotesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (returnNotesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(returnNotesImageFiles, userMerchantId || 0);
@@ -521,6 +557,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       
       // Upload and process damageNotesImages
       const damageNotesImageFiles = formData.getAll('damageNotesImages') as File[];
+      if (exceedsNoteImageLimit(damageNotesImageFiles.length)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
       if (damageNotesImageFiles.length > 0) {
         try {
           const uploadResult = await uploadOrderNotesImages(damageNotesImageFiles, userMerchantId || 0);
@@ -543,6 +582,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     } else {
       // Parse JSON request body (backward compatibility)
       body = await request.json();
+      if (bodyExceedsNoteImageLimit(body)) {
+        return NextResponse.json(ResponseBuilder.error('IMAGE_VALIDATION_FAILED'), { status: 400 });
+      }
     }
     
     // ✅ Auto-fill outletId from userScope if not provided
@@ -550,7 +592,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
       body.outletId = userScope.outletId;
     }
-    
+
+    // A MERCHANT login has no outlet; iOS and Android send no outletId (#398).
+    // Use the merchant's default outlet, else its only active outlet.
+    if (!body.outletId && user.role === USER_ROLE.MERCHANT) {
+      const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+      if (!defaultOutlet) {
+        return NextResponse.json(
+          ResponseBuilder.error('OUTLET_REQUIRED'),
+          { status: 400 }
+        );
+      }
+      body.outletId = defaultOutlet.id;
+    }
+
     const parsed = orderCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -802,9 +857,12 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           };
     }) || []);
 
-    // Use depositAmount from request (frontend calculates it from items)
-    // Backend trusts frontend value - no recalculation needed
-    const finalDepositAmount = parsed.data.depositAmount || 0;
+    // Use depositAmount from request (frontend calculates it from items); a SALE holds no deposit (#361)
+    const deposits = resolveOrderDeposits(
+      parsed.data.orderType,
+      parsed.data.depositAmount,
+      parsed.data.securityDeposit
+    );
 
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
@@ -815,8 +873,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       orderType: parsed.data.orderType,
       status: initialStatus,
       totalAmount: parsed.data.totalAmount,
-      depositAmount: finalDepositAmount, // ✅ Use calculated deposit or provided value
-      securityDeposit: parsed.data.securityDeposit || 0,
+      depositAmount: deposits.depositAmount,
+      securityDeposit: deposits.securityDeposit,
       damageFee: parsed.data.damageFee || 0,
       lateFee: parsed.data.lateFee || 0,
       discountType: parsed.data.discountType,
@@ -844,9 +902,59 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     };
 
     console.log('🔍 Creating order with data:', orderData);
-    
-    // Use simplified database API
-    const order = await db.orders.create(orderData);
+
+    // #341: one Save / Confirm = one order. A second in-flight or retried create (same optional
+    // Idempotency-Key, or for installed apps an identical order within 60 s) returns the existing
+    // order instead of inserting; `isReplay` then skips the create side effects below.
+    const createGuard = {
+      outletId: parsed.data.outletId,
+      customerId: parsed.data.customerId ?? null,
+      createdById: user.id,
+      orderType: parsed.data.orderType,
+      totalAmount: parsed.data.totalAmount,
+      pickupPlanAt: orderData.pickupPlanAt,
+      returnPlanAt: orderData.returnPlanAt,
+      items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
+        productId: item.productId,
+        quantity: item.quantity
+      })),
+      idempotencyKey: request.headers.get('idempotency-key')
+    };
+
+    // #518: a shop with "Cho tạo đơn khi trùng lịch" OFF refuses a rental that would exceed outlet stock on
+    // some VN civil day. Default ON (or missing column) runs no extra query. The check runs inside the create
+    // transaction after the #341 replay lookup, so a retried create still returns its order.
+    const checkSchedule =
+      parsed.data.orderType === ORDER_TYPE.RENT &&
+      (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders === false &&
+      Boolean(orderData.pickupPlanAt && orderData.returnPlanAt);
+    const createResult = checkSchedule
+      ? await db.orders.createOnce(createGuard, orderData, {
+          beforeInsert: async (tx: unknown) => {
+            const conflicts = await loadScheduleConflicts(tx as ScheduleDbClient, {
+              outletId: parsed.data.outletId,
+              pickupPlanAt: orderData.pickupPlanAt,
+              returnPlanAt: orderData.returnPlanAt,
+              items: orderItemsData.map((item: { productId: number; quantity: number; productName?: string | null }) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                productName: item.productName ?? null
+              }))
+            });
+            return conflicts.length > 0 ? conflicts : null;
+          }
+        })
+      : await db.orders.createOnce(createGuard, orderData);
+    if (createResult.blocked) {
+      return NextResponse.json(
+        scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), createResult.blocked as ScheduleConflict[]),
+        { status: SCHEDULE_CONFLICT_STATUS }
+      );
+    }
+    const { order, replay: isReplay } = createResult;
+    if (isReplay) {
+      console.warn('⚠️ Duplicate order create, returning existing order:', order.orderNumber);
+    }
 
     let loyaltyOrder = order;
     // Resolve the loyalty feature flag AT MOST ONCE per request (INV-7), and only when
@@ -856,7 +964,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const wantsSaleEarn = Boolean(
       parsed.data.customerId && order.orderType === ORDER_TYPE.SALE
     );
-    if (wantsRedeem || wantsSaleEarn) {
+    if (!isReplay && (wantsRedeem || wantsSaleEarn)) {
       const hasLoyalty = await merchantHasLoyaltyFeature(outlet.merchantId);
       if (hasLoyalty && wantsRedeem) {
         // Redeem is FAIL-CLOSED (INV-6): a redeem failure must not leave a mispriced order.
@@ -887,19 +995,19 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
-    const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logCreate({
+    if (!isReplay) await safeAudit('create', () => createAuditHelper(prisma).logCreate({
       entityType: 'Order',
       entityId: String(loyaltyOrder.id),
       entityName: loyaltyOrder.orderNumber || String(loyaltyOrder.id),
-      newValues: { orderNumber: loyaltyOrder.orderNumber, orderType: loyaltyOrder.orderType, status: loyaltyOrder.status, outletId: loyaltyOrder.outletId, customerId: loyaltyOrder.customerId },
+      // #519: full snapshot (dates, totals, deposits, items) so the change history can diff later rows
+      newValues: { ...buildOrderAuditSnapshot(loyaltyOrder), outletId: loyaltyOrder.outletId },
       description: `Order created: ${loyaltyOrder.orderNumber || loyaltyOrder.id}`,
       context: buildAuditContext(request, user, userScope)
-    }).catch((err) => console.error('Audit log create failed:', err));
+    }));
     console.log('✅ Order created successfully:', loyaltyOrder);
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
-    if (loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {
+    if (!isReplay && loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {
       try {
         // Import the function from product module (same pattern as updateOrder in order.ts)
         // Use dynamic import - order.ts uses './product' from same package
@@ -1027,7 +1135,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     };
 
     // Push to outlet users (fire-and-forget — do not block response)
-    if (loyaltyOrder.outletId) {
+    if (!isReplay && loyaltyOrder.outletId) {
       const { notifyOutletOrderEvent } = await import('../../../lib/push-notifications');
       notifyOutletOrderEvent(loyaltyOrder.outletId, {
         type: 'ORDER_CREATED',
@@ -1209,20 +1317,38 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       // Add other simple fields as needed
     };
 
+    // #518: shop setting "Cho tạo đơn khi trùng lịch" OFF → refuse new dates / outlet / reactivation that
+    // over-book. Answered here: this route's catch would turn any thrown error into a 500.
+    const scheduleConflicts = await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
+      existingOrder: existingOrder as unknown as EditableOrder,
+      next: {
+        status: updateData.status,
+        outletId: updateData.outletId,
+        pickupPlanAt: updateData.pickupPlanAt,
+        returnPlanAt: updateData.returnPlanAt
+      },
+      resolveMerchantId: async (outletId: number) => (await db.outlets.findById(outletId))?.merchantId
+    });
+    if (scheduleConflicts.length > 0) {
+      return NextResponse.json(
+        scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), scheduleConflicts),
+        { status: SCHEDULE_CONFLICT_STATUS }
+      );
+    }
+
     console.log('🔍 Updating order with data:', { id, ...updateData });
     
     // Use simplified database API with basic update
     const updatedOrder = await db.orders.update(id, updateData);
-    const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logUpdate({
+    await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
       entityType: 'Order',
       entityId: String(id),
       entityName: existingOrder.orderNumber || String(id),
-      oldValues: existingOrder as Record<string, any>,
-      newValues: updatedOrder as Record<string, any>,
+      oldValues: buildOrderAuditSnapshot(existingOrder),
+      newValues: buildOrderAuditSnapshot(updatedOrder),
       description: `Order updated: ${existingOrder.orderNumber || id}`,
       context: buildAuditContext(request, user, userScope)
-    }).catch((err) => console.error('Audit log update failed:', err));
+    }));
     console.log('✅ Order updated successfully:', updatedOrder);
 
     // Push when status changed via PUT /api/orders

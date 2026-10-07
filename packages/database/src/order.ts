@@ -7,9 +7,22 @@ import type {
   OrderSearchResponse
 } from '@rentalshop/types';
 import { applyOrderDateRange } from './order-date-range';
+import { findNearestTaskPageIds } from './order-nearest-task';
+import { createOrderOnce, type CreateOrderOnceOptions, type OrderCreateGuard } from './order-create-guard';
 import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
+
+/** Planned dates can be NULL; PostgreSQL would list those first on DESC (#428). */
+const NULLABLE_ORDER_SORT_KEYS = new Set(['pickupPlanAt', 'returnPlanAt']);
+
+/** Order-list orderBy: nullable planned dates sort with NULLs last in both directions (#428). */
+export function orderListOrderBy(sortBy: string, sortOrder: 'asc' | 'desc'): Prisma.OrderOrderByWithRelationInput {
+  if (NULLABLE_ORDER_SORT_KEYS.has(sortBy)) {
+    return { [sortBy]: { sort: sortOrder, nulls: 'last' } } as Prisma.OrderOrderByWithRelationInput;
+  }
+  return { [sortBy]: sortOrder } as Prisma.OrderOrderByWithRelationInput;
+}
 
 /**
  * Build search conditions for orders with contains matching across:
@@ -20,7 +33,7 @@ import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, forma
  * Customer-name matching is diacritics-insensitive via PostgreSQL unaccent(),
  * so "hong ngoc" matches both "Hồng Ngọc" and "Hong Ngoc".
  */
-async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
+export async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
   const normalizedTerm = removeVietnameseDiacritics(searchTerm).toLowerCase();
   const namePattern = `%${normalizedTerm}%`;
@@ -74,6 +87,30 @@ async function buildOrderSearchConditions(searchInput: string, merchantId?: numb
   if (matchingCustomerIds.length > 0) {
     conditions.push({ customerId: { in: matchingCustomerIds } });
   }
+
+  // Step 3 (#362): orders by the name of an item — the merchant's products (accent-insensitive) and the
+  // name snapshot kept on each order item
+  try {
+    const productMerchantFilter = merchantId != null
+      ? Prisma.sql`AND "merchantId" = ${merchantId}`
+      : Prisma.empty;
+    const productResults: Array<{ id: number }> = await prisma.$queryRaw`
+      SELECT id FROM "Product"
+      WHERE unaccent(lower(COALESCE("name", ''))) LIKE ${namePattern}
+      ${productMerchantFilter}
+      LIMIT 2000
+    `;
+    const matchingProductIds = productResults.map((result) => result.id);
+    if (matchingProductIds.length > 0) {
+      conditions.push({ orderItems: { some: { productId: { in: matchingProductIds } } } });
+    }
+  } catch {
+    // unaccent() unavailable — the snapshot match below still works
+  }
+  conditions.push(
+    { orderItems: { some: { productName: { contains: searchTerm, mode: 'insensitive' } } } },
+    { orderItems: { some: { product: { name: { contains: searchTerm, mode: 'insensitive' } } } } }
+  );
 
   return conditions;
 }
@@ -921,6 +958,34 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
   };
 }
 
+/** Relations returned by order create (POST /api/orders flattens these). */
+const ORDER_CREATE_INCLUDE = {
+  customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
+  outlet: { select: { id: true, name: true } },
+  createdBy: { select: { id: true, firstName: true, lastName: true } },
+  orderItems: {
+    select: {
+      id: true,
+      quantity: true,
+      unitPrice: true,
+      totalPrice: true,
+      deposit: true,
+      productId: true,
+      notes: true,
+      rentalDays: true,
+      pricingType: true,
+      pricingOptionId: true,
+      productName: true,
+      productBarcode: true,
+      productImages: true,
+      product: { select: { id: true, name: true, barcode: true, images: true } }
+    }
+  },
+  payments: true
+} as const;
+
+type CreatedOrder = Prisma.OrderGetPayload<{ include: typeof ORDER_CREATE_INCLUDE }>;
+
 export const simplifiedOrders = {
   /**
    * Find order by ID (simplified API) - OPTIMIZED for performance
@@ -972,6 +1037,7 @@ export const simplifiedOrders = {
             name: true,
             merchantId: true,
             printNote: true, // RENT receipt footer (#347)
+            printBankQr: true, // bank block + VietQR on the bill (#628)
             merchant: { select: { id: true, name: true } }
           } 
         },
@@ -1001,33 +1067,20 @@ export const simplifiedOrders = {
    * Create new order (simplified API)
    */
   create: async (data: any) => {
-    return await prisma.order.create({
-      data,
-      include: {
-        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
-        outlet: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
-        orderItems: {
-          select: {
-            id: true,
-            quantity: true,
-            unitPrice: true,
-            totalPrice: true,
-            deposit: true,
-            productId: true,
-            notes: true,
-            rentalDays: true,
-            pricingType: true,
-            pricingOptionId: true,
-            productName: true,
-            productBarcode: true,
-            productImages: true,
-            product: { select: { id: true, name: true, barcode: true, images: true } }
-          }
-        },
-        payments: true
-      }
-    });
+    return await prisma.order.create({ data, include: ORDER_CREATE_INCLUDE });
+  },
+
+  /**
+   * Create an order unless this create already made one (#341): a second in-flight or retried
+   * POST /api/orders returns the existing order with `replay: true`. See order-create-guard.ts.
+   */
+  createOnce: async (
+    guard: OrderCreateGuard,
+    data: any,
+    options?: CreateOrderOnceOptions
+  ): Promise<{ order: CreatedOrder; replay: boolean; blocked?: unknown }> => {
+    // #518: `blocked` is set only when options.beforeInsert refused; `order` is then null
+    return await createOrderOnce(guard, data, ORDER_CREATE_INCLUDE, undefined, options);
   },
 
   /**
@@ -1723,118 +1776,136 @@ export const simplifiedOrders = {
       where.outlet = outletFilter.outlet;
     }
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
+    const listSelect: Prisma.OrderSelect = {
+      id: true,
+      orderNumber: true,
+      orderType: true,
+      status: true,
+      totalAmount: true,
+      depositAmount: true,
+      securityDeposit: true,
+      damageFee: true,
+      lateFee: true,
+      discountType: true,
+      discountValue: true,
+      discountAmount: true,
+      pickupPlanAt: true,
+      returnPlanAt: true,
+      pickedUpAt: true,
+      returnedAt: true,
+      rentalDuration: true,
+      isReadyToDeliver: true,
+      collateralType: true,
+      collateralDetails: true,
+      notes: true,
+      notesImages: true,
+      pickupNotes: true,
+      pickupNotesImages: true,
+      returnNotes: true,
+      returnNotesImages: true,
+      damageNotes: true,
+      damageNotesImages: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true, // Include deletedAt in response
+      outletId: true,
+      customerId: true,
+      createdById: true,
+      // Customer data
+      customer: {
         select: {
           id: true,
-          orderNumber: true,
-          orderType: true,
-          status: true,
-          totalAmount: true,
-          depositAmount: true,
-          securityDeposit: true,
-          damageFee: true,
-          lateFee: true,
-          discountType: true,
-          discountValue: true,
-          discountAmount: true,
-          pickupPlanAt: true,
-          returnPlanAt: true,
-          pickedUpAt: true,
-          returnedAt: true,
-          rentalDuration: true,
-          isReadyToDeliver: true,
-          collateralType: true,
-          collateralDetails: true,
-          notes: true,
-          notesImages: true,
-          pickupNotes: true,
-          pickupNotesImages: true,
-          returnNotes: true,
-          returnNotesImages: true,
-          damageNotes: true,
-          damageNotesImages: true,
-          createdAt: true,
-          updatedAt: true,
-          deletedAt: true, // Include deletedAt in response
-          outletId: true,
-          customerId: true,
-          createdById: true,
-          // Customer data
-          customer: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true
+        }
+      },
+      // Outlet data
+      outlet: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          merchant: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
-              phone: true,
-              email: true,
-              address: true,
-              city: true,
-              state: true,
-              zipCode: true,
-              country: true
+              name: true
             }
-          },
-          // Outlet data
-          outlet: {
+          }
+        }
+      },
+      // CreatedBy data
+      createdBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      // Include products for list view
+      orderItems: {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          notes: true,
+          productId: true,
+          rentalDays: true,
+          pricingType: true,
+          pricingOptionId: true,
+          product: {
             select: {
               id: true,
               name: true,
-              address: true,
-              phone: true,
-              city: true,
-              state: true,
-              zipCode: true,
-              country: true,
-              merchant: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          },
-          // CreatedBy data
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true
-            }
-          },
-          // Include products for list view
-          orderItems: {
-            select: {
-              id: true,
-              quantity: true,
-              unitPrice: true,
-              totalPrice: true,
-              notes: true,
-              productId: true,
-              rentalDays: true,
-              pricingType: true,
-              pricingOptionId: true,
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  barcode: true,
-                  images: true,
-                  rentPrice: true,
-                  deposit: true
-                }
-              }
+              barcode: true,
+              images: true,
+              rentPrice: true,
+              deposit: true
             }
           }
-        },
-        orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit
-      }),
-      prisma.order.count({ where })
-    ]);
+        }
+      }
+    };
+
+    let orders: any[];
+    let total: number;
+    if (sortBy === 'nearestTask') {
+      // #389: late tasks first, then the nearest planned pickup / return, then closed orders (see ./order-nearest-task)
+      const [pageIds, count] = await Promise.all([
+        findNearestTaskPageIds(prisma, where, page, limit),
+        prisma.order.count({ where }),
+      ]);
+      const rows = pageIds.length > 0
+        ? await prisma.order.findMany({ where: { id: { in: pageIds } }, select: listSelect })
+        : [];
+      const rowById = new Map(rows.map((row: any) => [row.id, row]));
+      orders = pageIds.map((id) => rowById.get(id)).filter(Boolean);
+      total = count;
+    } else {
+      [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          select: listSelect,
+          orderBy: orderListOrderBy(sortBy, sortOrder),
+          skip: (page - 1) * limit,
+          take: limit
+        }),
+        prisma.order.count({ where })
+      ]);
+    }
 
     // Get summary counts for order items and payments (separate queries for performance)
     const orderIds = orders.map((o: { id: number }): number => o.id);
@@ -2028,6 +2099,7 @@ export const simplifiedOrders = {
             country: true,
             isActive: true,
             printNote: true, // RENT receipt footer (#347)
+            printBankQr: true, // bank block + VietQR on the bill (#628)
             merchant: {
               select: {
                 id: true,
@@ -2518,13 +2590,15 @@ export const simplifiedOrders = {
     outletId?: number;
     startDate?: Date;
     endDate?: Date;
+    /** startDate/endDate are exact bounds already (civil days computed by the route) */
+    exactDateRange?: boolean;
   }) => {
-    const { merchantId, outletId, startDate, endDate } = filters;
+    const { merchantId, outletId, startDate, endDate, exactDateRange } = filters;
 
     const where: any = {
       deletedAt: null // Exclude soft-deleted orders
     };
-    
+
     if (merchantId) {
       where.outlet = { merchantId };
     }
@@ -2532,12 +2606,15 @@ export const simplifiedOrders = {
       where.outletId = outletId;
     }
     if (startDate || endDate) {
+      // Vietnam civil days (#594); `exactDateRange` keeps a route's own bounds (other `timeZone`)
       where.createdAt = {};
-      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
-      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      const normalizedStart = startDate ? (exactDateRange ? startDate : normalizeStartDate(startDate)) : null;
+      const normalizedEnd = endDate ? (exactDateRange ? endDate : normalizeEndDate(endDate)) : null;
       if (normalizedStart) where.createdAt.gte = normalizedStart;
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
+    // Money excludes CANCELLED orders (revenue rule); counts and breakdowns keep every status
+    const revenueWhere = { ...where, status: { not: ORDER_STATUS.CANCELLED } };
 
     const [
       totalOrders,
@@ -2551,22 +2628,23 @@ export const simplifiedOrders = {
       
       // Total revenue
       prisma.order.aggregate({
-        where,
+        where: revenueWhere,
         _sum: { totalAmount: true }
       }),
-      
-      // Status breakdown
+
+      // Status breakdown. `_count._all`: `_count: { id }` with the merchant (outlet relation) filter
+      // made Postgres fail with `column reference "id" is ambiguous`, so the whole call failed for shops.
       prisma.order.groupBy({
         by: ['status'],
         where,
-        _count: { id: true }
+        _count: { _all: true }
       }),
-      
+
       // Type breakdown
       prisma.order.groupBy({
         by: ['orderType'],
         where,
-        _count: { id: true }
+        _count: { _all: true }
       }),
       
       // Recent orders (last 10)
@@ -2596,12 +2674,12 @@ export const simplifiedOrders = {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
-      statusBreakdown: statusBreakdown.reduce((acc: Record<string, number>, item: { status: string; _count: { id: number } }): Record<string, number> => {
-        acc[item.status] = item._count.id;
+      statusBreakdown: statusBreakdown.reduce((acc: Record<string, number>, item: { status: string; _count: { _all: number } }): Record<string, number> => {
+        acc[item.status] = item._count._all;
         return acc;
       }, {} as Record<string, number>),
-      typeBreakdown: typeBreakdown.reduce((acc: Record<string, number>, item: { orderType: string; _count: { id: number } }): Record<string, number> => {
-        acc[item.orderType] = item._count.id;
+      typeBreakdown: typeBreakdown.reduce((acc: Record<string, number>, item: { orderType: string; _count: { _all: number } }): Record<string, number> => {
+        acc[item.orderType] = item._count._all;
         return acc;
       }, {} as Record<string, number>),
       recentOrders

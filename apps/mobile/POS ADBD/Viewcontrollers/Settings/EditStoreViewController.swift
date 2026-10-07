@@ -1,5 +1,15 @@
+//
+//  EditStoreViewController.swift
+//  POS ADBD
+//
+//  "Thông tin cửa hàng" (#484, board CH-sua): the v2 form of "Sửa khách hàng" (label above the field, no icons).
+//  Name (required) and phone, then ĐỊA CHỈ (street; city | state; country | postal code), then KHÁC (description).
+//  Saves through `PUT /api/outlets/{id}` with the same fields as before.
+//
+
 import UIKit
 import SnapKit
+import IQKeyboardManagerSwift
 
 protocol EditStoreViewControllerDelegate: AnyObject {
     func didUpdateStore()
@@ -10,336 +20,341 @@ class EditStoreViewController: BaseViewControler {
     weak var delegate: EditStoreViewControllerDelegate?
     private var outlet: Outlet?
     private var merchant: Merchant?
-    
+
     // MARK: - UI Components
-    private lazy var saveButton: RCPrimaryButton = {
-        let button = RCPrimaryButton(
-            title: "Update Store".localized(),
-            backgroundColor: APP_TONE_COLOR
-        )
-        button.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var scrollView: UIScrollView = {
-        let sv = UIScrollView()
-        sv.showsVerticalScrollIndicator = false
-        return sv
-    }()
-    
-    private lazy var containerView: UIView = {
-        let view = UIView()
-        return view
-    }()
-    
-    private lazy var storeNameField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Store Name *".localized(),
-            placeholder: "Enter store name".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "storefront.fill"))
-        field.textField.returnKeyType = .next
-        field.setTitleColor(APP_TEXT_COLOR)
-        // Enable auto-capitalization for store name
-        field.textField.autocapitalizationType = .words
-        field.textField.autocorrectionType = .no
-        return field
-    }()
-    
-    private lazy var addressField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Address".localized(),
-            placeholder: "Enter street address".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "mappin.circle.fill"))
-        field.textField.returnKeyType = .next
-        field.setTitleColor(APP_TEXT_COLOR)
-        return field
-    }()
-    
-    private lazy var cityField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "City".localized(),
-            placeholder: "Enter city".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "building.2.fill"))
-        field.textField.returnKeyType = .next
-        field.setTitleColor(APP_TEXT_COLOR)
-        return field
-    }()
-    
-    private lazy var stateField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "State/Province".localized(),
-            placeholder: "Enter state or province".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "map.fill"))
-        field.textField.returnKeyType = .next
-        field.setTitleColor(APP_TEXT_COLOR)
-        return field
-    }()
-    
-    private lazy var countryField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Country".localized(),
-            placeholder: "Select country".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "globe"))
-        field.setTitleColor(APP_TEXT_COLOR)
-        
-        // Disable text field to prevent editing
-        field.textField.isEnabled = false
-        
-        // Add right arrow icon to indicate it's tappable
-        field.textField.setRightIcon(UIImage(systemName: "chevron.right"))
-        
-        return field
-    }()
-    
-    private lazy var zipCodeField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Postal Code".localized(),
-            placeholder: "Enter postal code".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "number"))
-        field.textField.returnKeyType = .next
-        field.setTitleColor(APP_TEXT_COLOR)
-        field.textField.keyboardType = .numberPad
-        return field
-    }()
-    
-    private lazy var phoneField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Phone Number".localized(),
-            placeholder: "Enter phone number".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "phone.fill"))
-        field.textField.returnKeyType = .next
-        field.setTitleColor(APP_TEXT_COLOR)
-        field.textField.keyboardType = .phonePad
-        return field
-    }()
-    
-    private lazy var descriptionField: LabeledTextField = {
-        let field = LabeledTextField(
-            title: "Description".localized(),
-            placeholder: "Enter store description".localized()
-        )
-        field.textField.setLeftIcon(UIImage(systemName: "text.alignleft"))
-        field.textField.returnKeyType = .done
-        field.setTitleColor(APP_TEXT_COLOR)
-        return field
-    }()
-    
+    private let storeNameField = UITextField()
+    private let phoneField = UITextField()
+    private let addressField = UITextField()
+    private let cityField = UITextField()
+    private let stateField = UITextField()
+    private let countryButton = UIButton(type: .custom)
+    private let countryValue = V2.label(size: DS.TextSize.input)
+    private let zipCodeField = UITextField()
+    private let descriptionView = UITextView()
+    private let descriptionPlaceholder = V2.label("store.v2.descriptionPlaceholder".localized(), size: DS.TextSize.input,
+                                                  color: UIColor(hexString: "94A3B8"), lines: 0)
+    private let nameError = V2.label(size: DS.TextSize.secondary, color: V2.danger, lines: 0)
+    private let saveButton = V2.primaryButton("Save".localized())
+    private let cancelButton = V2.secondaryButton("customers.v2.cancel".localized())
+    private let formScroll = CustomerFormScrollView()
+    private var keyboardManagerWasEnabled = true
+
+    /// Country as the picker returns it (the button shows a placeholder while empty)
+    private var country: String = "" {
+        didSet { renderCountry() }
+    }
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupData()
     }
-    
-    override func setupUI() {
-        view.backgroundColor = .backgroundPrimary
-        
-        // Setup navigation bar
-        let navBar = setupCustomNavigationBar(
-            title: "Edit Store".localized(),
-            statusBarBackgroundColor: .white,
-            titleCentered: true,
-            hideBackButton: false,
-            backAction: .custom { [weak self] in
-                self?.dismiss(animated: true)
-            }
-        )
-        navBar.setDismissButton() // Use X button for dismiss
-        
-        guard let customNavBar = customNavBar else { return }
-        
-        // Setup scroll view and save button
-        view.addSubview(scrollView)
-        view.addSubview(saveButton)
-        scrollView.addSubview(containerView)
-        
-        // Create card container for all fields
-        let fieldsCardContainer = UIView()
-        fieldsCardContainer.backgroundColor = .white
-        fieldsCardContainer.layer.cornerRadius = 10
-        fieldsCardContainer.layer.borderWidth = 0.5
-        fieldsCardContainer.layer.borderColor = UIColor.separator.withAlphaComponent(0.25).cgColor
-        
-        // Create inner stack for fields with separators
-        let fieldsStack = UIStackView()
-        fieldsStack.axis = .vertical
-        fieldsStack.spacing = 0
-        fieldsStack.distribution = .fill
-        
-        let allFields = [storeNameField, addressField, cityField, stateField, countryField, zipCodeField, phoneField, descriptionField]
-        
-        // Add each field with wrapper view for padding - title and value on same row
-        for (index, field) in allFields.enumerated() {
-            let fieldWrapper = UIView()
-            
-            // Create horizontal stack for title and value
-            let rowStack = UIStackView()
-            rowStack.axis = .horizontal
-            rowStack.spacing = 12
-            rowStack.alignment = .center
-            rowStack.distribution = .fill
-            
-            // Title label
-            let titleLabel = UILabel()
-            titleLabel.text = field.titleLabel.text
-            titleLabel.font = Utils.regularFont(size: 16) // Match AccountViewController
-            titleLabel.textColor = .label
-            titleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            
-            // Use existing textField with disabled padding for clean right alignment
-            let valueTextField = field.textField
-            valueTextField.font = Utils.regularFont(size: 16) // Match AccountViewController
-            valueTextField.textAlignment = .right
-            valueTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
-            
-            // Remove border, icon, and padding for clean right alignment
-            valueTextField.layer.borderWidth = 0
-            valueTextField.layer.borderColor = UIColor.clear.cgColor
-            valueTextField.backgroundColor = .clear
-            valueTextField.leftView = nil
-            valueTextField.leftViewMode = .never
-            valueTextField.rightView = nil
-            valueTextField.rightViewMode = .never
-            
-            // Special handling for countryField - add chevron and make whole row tappable
-            if field == countryField {
-                // Add chevron icon
-                let chevronIcon = UIImageView(image: UIImage(systemName: "chevron.right"))
-                chevronIcon.tintColor = .systemGray3
-                chevronIcon.contentMode = .scaleAspectFit
-                chevronIcon.setContentHuggingPriority(.required, for: .horizontal)
-                
-                rowStack.addArrangedSubview(titleLabel)
-                rowStack.addArrangedSubview(valueTextField)
-                rowStack.addArrangedSubview(chevronIcon)
-                
-                // Make the whole wrapper tappable
-                let tapGesture = UITapGestureRecognizer(target: self, action: #selector(countryFieldTapped))
-                fieldWrapper.addGestureRecognizer(tapGesture)
-                fieldWrapper.isUserInteractionEnabled = true
-            } else {
-                rowStack.addArrangedSubview(titleLabel)
-                rowStack.addArrangedSubview(valueTextField)
-            }
-            
-            fieldWrapper.addSubview(rowStack)
-            rowStack.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16))
-                make.height.greaterThanOrEqualTo(44)
-            }
-            
-            fieldsStack.addArrangedSubview(fieldWrapper)
-            
-            // Add separator after each field except the last one
-            if index < allFields.count - 1 {
-                let separator = UIView()
-                separator.backgroundColor = UIColor.separator.withAlphaComponent(0.25)
-                fieldsStack.addArrangedSubview(separator)
-                separator.snp.makeConstraints { make in
-                    make.height.equalTo(0.5)
-                }
-            }
-        }
-        
-        fieldsCardContainer.addSubview(fieldsStack)
-        fieldsStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        
-        containerView.addSubview(fieldsCardContainer)
-        
-        // Save button constraints
-        saveButton.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            make.height.equalTo(50)
-        }
-        
-        // ScrollView constraints
-        scrollView.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(saveButton.snp.top).offset(-16)
-        }
-        
-        // ContainerView constraints - CRITICAL for scrollView content size
-        containerView.snp.makeConstraints { make in
-            make.top.leading.trailing.bottom.equalToSuperview()
-            make.width.equalToSuperview() // This ensures horizontal scrolling is disabled
-        }
-        
-        // Fields card container constraints
-        fieldsCardContainer.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
-            make.leading.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-12)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-        
-        // Setup text field delegates
-        setupTextFieldDelegates()
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
     }
-    
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
+    }
+
+    override func setupUI() {
+        view.backgroundColor = .white
+        let back = CustomersV2UI.iconButton("chevron.left", label: "Back".localized(), size: DS.Icon.lg)
+        back.addTarget(self, action: #selector(close), for: .touchUpInside)
+        let title = V2.label("Store Information".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let header = UIStackView(arrangedSubviews: [back, title])
+        header.alignment = .center
+        header.spacing = 4
+        let headerLine = V2.divider()
+        headerLine.backgroundColor = DS.Color.border
+
+        storeNameField.autocapitalizationType = .words
+        storeNameField.autocorrectionType = .no
+        storeNameField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
+        phoneField.keyboardType = .phonePad
+        zipCodeField.keyboardType = .numberPad
+        zipCodeField.placeholder = "700000"
+        KeyboardDoneBar.attach([phoneField, zipCodeField])
+        [storeNameField, phoneField, addressField, cityField, stateField, zipCodeField].forEach { $0.delegate = self }
+        nameError.isHidden = true
+
+        let nameBox = UIStackView(arrangedSubviews: [field(requiredTitle("store.v2.name".localized()), storeNameField,
+                                                           accessibility: "store.v2.name".localized()), nameError])
+        nameBox.axis = .vertical
+        nameBox.spacing = 6
+
+        let cityState = pair(field(plainTitle("store.v2.city".localized()), cityField),
+                             field(plainTitle("store.v2.state".localized()), stateField))
+        let countryZip = pair(countryBlock(), field(plainTitle("Postal Code".localized()), zipCodeField))
+
+        let form = UIStackView(arrangedSubviews: [
+            nameBox,
+            field(plainTitle("Phone Number".localized()), phoneField),
+            sectionTitle("Address".localized(), optional: false),
+            field(plainTitle("store.v2.street".localized()), addressField),
+            cityState,
+            countryZip,
+            sectionTitle("store.v2.other".localized(), optional: true),
+            descriptionBlock(),
+        ])
+        form.axis = .vertical
+        form.spacing = 14
+        // Section titles sit a little lower (board: padding-top 6)
+        form.setCustomSpacing(20, after: form.arrangedSubviews[1])
+        form.setCustomSpacing(20, after: form.arrangedSubviews[5])
+
+        let scroll = formScroll
+        scroll.keyboardDismissMode = .interactive
+        scroll.addSubview(form)
+
+        let bottom = UIView()
+        bottom.backgroundColor = .white
+        let bottomLine = V2.divider()
+        bottomLine.backgroundColor = DS.Color.border
+        cancelButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+        saveButton.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
+        let buttons = UIStackView(arrangedSubviews: [cancelButton, saveButton])
+        buttons.spacing = 12
+        cancelButton.setContentHuggingPriority(.required, for: .horizontal)
+        cancelButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+        [bottomLine, buttons].forEach(bottom.addSubview)
+
+        [header, headerLine, scroll, bottom].forEach(view.addSubview)
+        header.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(8)
+        }
+        headerLine.snp.makeConstraints { make in
+            make.top.equalTo(header.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+        }
+        bottom.snp.makeConstraints { make in make.leading.trailing.equalToSuperview() }
+        bottomLine.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
+        buttons.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-12)
+        }
+        bottom.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor).isActive = true
+        scroll.snp.makeConstraints { make in
+            make.top.equalTo(headerLine.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bottom.snp.top)
+        }
+        form.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-16)
+            make.width.equalToSuperview().offset(-2 * DS.Spacing.lg)
+        }
+    }
+
+    // MARK: - Form pieces
+
+    private func plainTitle(_ text: String) -> NSAttributedString {
+        NSAttributedString(string: text, attributes: [
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
+            NSAttributedString.Key.foregroundColor: DS.Color.text,
+        ])
+    }
+
+    /// "Tên cửa hàng *" with a red star
+    private func requiredTitle(_ text: String) -> NSAttributedString {
+        let title = NSMutableAttributedString(attributedString: plainTitle(text + " "))
+        title.append(NSAttributedString(string: "*", attributes: [
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
+            NSAttributedString.Key.foregroundColor: V2.danger,
+        ]))
+        return title
+    }
+
+    private func styleBox(_ view: UIView) {
+        view.layer.borderWidth = 1
+        view.layer.borderColor = V2.border.cgColor
+        view.layer.cornerRadius = 12
+        view.backgroundColor = .white
+    }
+
+    private func field(_ title: NSAttributedString, _ input: UITextField, accessibility: String? = nil) -> UIView {
+        let label = UILabel()
+        label.attributedText = title
+        label.numberOfLines = 0
+        input.font = Utils.regularFont(size: DS.TextSize.input)
+        input.textColor = DS.Color.text
+        styleBox(input)
+        input.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+        input.leftViewMode = .always
+        input.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 1))
+        input.rightViewMode = .always
+        input.returnKeyType = .next
+        input.accessibilityLabel = accessibility ?? title.string
+        input.snp.makeConstraints { make in make.height.equalTo(52) }
+        let stack = UIStackView(arrangedSubviews: [label, input])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return stack
+    }
+
+    private func pair(_ left: UIView, _ right: UIView) -> UIView {
+        let row = UIStackView(arrangedSubviews: [left, right])
+        row.distribution = .fillEqually
+        row.alignment = .top
+        row.spacing = 12
+        return row
+    }
+
+    /// "ĐỊA CHỈ", "KHÁC (không bắt buộc)"
+    private func sectionTitle(_ text: String, optional: Bool) -> UIView {
+        let label = UILabel()
+        let title = NSMutableAttributedString(string: text.uppercased(), attributes: [
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+            NSAttributedString.Key.kern: 0.5,
+        ])
+        if optional {
+            title.append(NSAttributedString(string: " " + "customers.v2.optional".localized(), attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+            ]))
+        }
+        label.attributedText = title
+        label.accessibilityTraits = UIAccessibilityTraitHeader
+        return label
+    }
+
+    /// "Quốc gia": a row that opens the country picker
+    private func countryBlock() -> UIView {
+        let label = UILabel()
+        label.attributedText = plainTitle("Country".localized())
+        styleBox(countryButton)
+        countryValue.isUserInteractionEnabled = false
+        countryValue.lineBreakMode = .byTruncatingTail
+        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm, weight: .semibold))
+        chevron.tintColor = UIColor(hexString: "94A3B8")
+        chevron.isUserInteractionEnabled = false
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let inner = UIStackView(arrangedSubviews: [countryValue, chevron])
+        inner.alignment = .center
+        inner.spacing = 6
+        inner.isUserInteractionEnabled = false
+        countryButton.addSubview(inner)
+        inner.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.trailing.equalToSuperview().offset(-12)
+            make.centerY.equalToSuperview()
+        }
+        countryButton.snp.makeConstraints { make in make.height.equalTo(52) }
+        countryButton.addTarget(self, action: #selector(countryFieldTapped), for: .touchUpInside)
+        countryButton.accessibilityTraits = UIAccessibilityTraitButton
+        let stack = UIStackView(arrangedSubviews: [label, countryButton])
+        stack.axis = .vertical
+        stack.spacing = 6
+        renderCountry()
+        return stack
+    }
+
+    private func renderCountry() {
+        let value = country.trimmingCharacters(in: .whitespacesAndNewlines)
+        countryValue.text = value.isEmpty ? "Select country".localized() : value
+        countryValue.textColor = value.isEmpty ? UIColor(hexString: "94A3B8") : DS.Color.text
+        countryButton.accessibilityLabel = "\("Country".localized()), \(countryValue.text ?? "")"
+    }
+
+    /// "Mô tả": three lines, grows with the text
+    private func descriptionBlock() -> UIView {
+        let label = UILabel()
+        label.attributedText = plainTitle("Description".localized())
+        descriptionView.font = Utils.regularFont(size: DS.TextSize.input)
+        descriptionView.textColor = DS.Color.text
+        descriptionView.isScrollEnabled = false
+        descriptionView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        descriptionView.accessibilityLabel = "Description".localized()
+        descriptionView.delegate = self
+        styleBox(descriptionView)
+        descriptionView.addSubview(descriptionPlaceholder)
+        descriptionPlaceholder.isUserInteractionEnabled = false
+        descriptionPlaceholder.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(15)
+            make.width.equalToSuperview().offset(-30)
+        }
+        descriptionView.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(96) }
+        let stack = UIStackView(arrangedSubviews: [label, descriptionView])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return stack
+    }
+
+    private func updateDescriptionPlaceholder() {
+        descriptionPlaceholder.isHidden = !(descriptionView.text ?? "").isEmpty
+    }
+
+    // MARK: - Data
+
     override func setupData() {
         guard let user = User.account() else { return }
-        
+
         outlet = user.outlet
         merchant = user.merchant
-        
+
         // Prefer outlet data, fallback to merchant data
-        let storeName = outlet?.name ?? merchant?.name ?? ""
-        let address = outlet?.address ?? merchant?.address ?? ""
-        let city = outlet?.city ?? merchant?.city ?? ""
-        let state = outlet?.state ?? merchant?.state ?? ""
-        let country = outlet?.country ?? merchant?.country ?? ""
-        let zipCode = outlet?.zipCode ?? merchant?.zipCode ?? ""
-        let phone = outlet?.phone ?? merchant?.phone ?? ""
-        let description = outlet?.description ?? ""
-        
-        storeNameField.textField.text = storeName
-        addressField.textField.text = address
-        cityField.textField.text = city
-        stateField.textField.text = state
-        countryField.textField.text = country
-        zipCodeField.textField.text = zipCode
-        phoneField.textField.text = phone
-        descriptionField.textField.text = description
+        storeNameField.text = outlet?.name ?? merchant?.name ?? ""
+        addressField.text = outlet?.address ?? merchant?.address ?? ""
+        cityField.text = outlet?.city ?? merchant?.city ?? ""
+        stateField.text = outlet?.state ?? merchant?.state ?? ""
+        country = outlet?.country ?? merchant?.country ?? ""
+        zipCodeField.text = outlet?.zipCode ?? merchant?.zipCode ?? ""
+        phoneField.text = outlet?.phone ?? merchant?.phone ?? ""
+        descriptionView.text = outlet?.description ?? ""
+        updateDescriptionPlaceholder()
     }
-    
-    private func setupTextFieldDelegates() {
-        storeNameField.textField.delegate = self
-        addressField.textField.delegate = self
-        cityField.textField.delegate = self
-        stateField.textField.delegate = self
-        countryField.textField.delegate = self // Add delegate to intercept tap
-        zipCodeField.textField.delegate = self
-        phoneField.textField.delegate = self
-        descriptionField.textField.delegate = self
+
+    // MARK: - Actions
+
+    @objc private func close() {
+        view.endEditing(true)
+        if let nav = navigationController, nav.viewControllers.first !== self {
+            nav.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
-    
+
+    @objc private func nameChanged() {
+        showNameError(nil)
+    }
+
+    private func showNameError(_ text: String?) {
+        nameError.text = text
+        nameError.isHidden = text == nil
+        storeNameField.layer.borderColor = (text == nil ? V2.border : V2.danger).cgColor
+    }
+
     @objc private func countryFieldTapped() {
+        view.endEditing(true)
         let pickerVC = CountryPickerViewController()
         pickerVC.delegate = self
-        pickerVC.selectedCountry = countryField.textField.text
+        pickerVC.selectedCountry = country
         navigationController?.pushViewController(pickerVC, animated: true)
     }
-    
-    // MARK: - Actions
+
     @objc private func saveButtonTapped() {
         // Validate required fields
-        guard let storeName = storeNameField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+        guard let storeName = storeNameField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !storeName.isEmpty else {
-            storeNameField.errorMessage = "Store name is required".localized()
+            showNameError("Store name is required".localized())
+            storeNameField.becomeFirstResponder()
             return
         }
-        
+
         // Get outlet ID
         guard let user = User.account(),
               let outletId = user.outlet?.id ?? user.outletId else {
@@ -352,63 +367,46 @@ class EditStoreViewController: BaseViewControler {
             )
             return
         }
-        
+
         // Prepare update data
         var updateData: [String: Any] = [
             "name": storeName
         ]
-        
-        if let address = addressField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !address.isEmpty {
-            updateData["address"] = address
+
+        func trimmed(_ text: String?) -> String? {
+            guard let value = text?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+            return value
         }
-        
-        if let city = cityField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !city.isEmpty {
-            updateData["city"] = city
-        }
-        
-        if let state = stateField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !state.isEmpty {
-            updateData["state"] = state
-        }
-        
-        if let country = countryField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !country.isEmpty {
-            updateData["country"] = country
-        }
-        
-        if let zipCode = zipCodeField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !zipCode.isEmpty {
-            updateData["zipCode"] = zipCode
-        }
-        
-        if let phone = phoneField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
-            updateData["phone"] = phone
-        }
-        
-        if let description = descriptionField.textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !description.isEmpty {
-            updateData["description"] = description
-        }
-        
-        // Show progress
+        if let address = trimmed(addressField.text) { updateData["address"] = address }
+        if let city = trimmed(cityField.text) { updateData["city"] = city }
+        if let state = trimmed(stateField.text) { updateData["state"] = state }
+        if let countryName = trimmed(self.country) { updateData["country"] = countryName }
+        if let zipCode = trimmed(zipCodeField.text) { updateData["zipCode"] = zipCode }
+        if let phone = trimmed(phoneField.text) { updateData["phone"] = phone }
+        if let description = trimmed(descriptionView.text) { updateData["description"] = description }
+
+        view.endEditing(true)
+        saveButton.isEnabled = false
         showProgressText(text: "Updating store...".localized())
-        
+
         // Call API to update outlet
         OutletService.shared.updateOutlet(outletId: outletId, withValues: updateData) { [weak self] (outlet: Outlet?, error: NSError?) in
             DispatchQueue.main.async {
                 self?.hideProgress()
-                
+                self?.saveButton.isEnabled = true
+
                 if let error = error {
                     UIAlertController.errorAlert(parent: self, error: error)
                 } else if let outlet = outlet {
                     // Update local user data
                     if let user = User.account() {
-                        // Update outlet in user object
-                        // Note: Outlet is a struct, so we need to create a new instance
-                        // In production, you might want to reload user profile from API
                         user.outlet = outlet
                         User.save(user: user)
                     }
-                    
+
                     // Notify delegate
                     self?.delegate?.didUpdateStore()
-                    
+
                     // Dismiss
                     self?.dismiss(animated: true)
                 }
@@ -419,40 +417,45 @@ class EditStoreViewController: BaseViewControler {
 
 // MARK: - UITextFieldDelegate
 extension EditStoreViewController: UITextFieldDelegate {
-    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        DispatchQueue.main.async { self.formScroll.revealFocusedField() }
+    }
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        // Move to next field
-        if textField == storeNameField.textField {
-            addressField.textField.becomeFirstResponder()
-        } else if textField == addressField.textField {
-            cityField.textField.becomeFirstResponder()
-        } else if textField == cityField.textField {
-            stateField.textField.becomeFirstResponder()
-        } else if textField == stateField.textField {
-            countryFieldTapped() // Open country picker instead of next field
-        } else if textField == zipCodeField.textField {
-            phoneField.textField.becomeFirstResponder()
-        } else if textField == phoneField.textField {
-            descriptionField.textField.becomeFirstResponder()
+        // Name → phone → street → city → state → country picker; postal code → description
+        if textField === storeNameField {
+            phoneField.becomeFirstResponder()
+        } else if textField === phoneField {
+            addressField.becomeFirstResponder()
+        } else if textField === addressField {
+            cityField.becomeFirstResponder()
+        } else if textField === cityField {
+            stateField.becomeFirstResponder()
+        } else if textField === stateField {
+            countryFieldTapped()
+        } else if textField === zipCodeField {
+            descriptionView.becomeFirstResponder()
         } else {
             textField.resignFirstResponder()
         }
         return true
     }
-    
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        // Clear error when user starts editing
-        if let field = [storeNameField, addressField, cityField, stateField, zipCodeField, phoneField, descriptionField]
-            .first(where: { $0.textField == textField }) {
-            field.errorMessage = nil
-        }
+}
+
+// MARK: - UITextViewDelegate
+extension EditStoreViewController: UITextViewDelegate {
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        DispatchQueue.main.async { self.formScroll.revealFocusedField() }
+    }
+
+    func textViewDidChange(_ textView: UITextView) {
+        updateDescriptionPlaceholder()
     }
 }
 
 // MARK: - CountryPickerViewControllerDelegate
 extension EditStoreViewController: CountryPickerViewControllerDelegate {
     func didSelectCountry(country: String, sender: CountryPickerViewController) {
-        countryField.textField.text = country
+        self.country = country
     }
 }
-

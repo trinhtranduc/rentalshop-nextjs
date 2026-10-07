@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.anyrent.pos.ui.common.OrderStatusStyle
 import com.anyrent.pos.R
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiParity
@@ -34,6 +35,7 @@ import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.nextOrderStatuses
 import com.anyrent.pos.ui.payment.PaymentQrDialog
 import com.anyrent.pos.ui.payment.PaymentViewModel
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,8 +70,8 @@ fun OrderActionPanel(
     var message by remember { mutableStateOf<String?>(null) }
     var showPayment by remember { mutableStateOf(false) }
     var pendingStatus by remember { mutableStateOf<String?>(null) }
-    var editPickup by remember { mutableStateOf(detail.summary.pickupPlanAt?.take(10).orEmpty()) }
-    var editReturn by remember { mutableStateOf(detail.summary.returnPlanAt?.take(10).orEmpty()) }
+    var editPickup by remember { mutableStateOf(OrderPlanDays.dayOf(detail.summary.pickupPlanAt)?.toString().orEmpty()) }
+    var editReturn by remember { mutableStateOf(OrderPlanDays.dayOf(detail.summary.returnPlanAt)?.toString().orEmpty()) }
     var ready by remember(detail) { mutableStateOf(detail.summary.isReadyToDeliver) }
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
     val app = context.applicationContext as AnyRentApp
@@ -112,7 +114,7 @@ fun OrderActionPanel(
                             }
                         }
                     },
-                    label = { Text(next) },
+                    label = { Text(OrderStatusStyle.labelRes(next)?.let { stringResource(it) } ?: next) },
                 )
             }
         }
@@ -162,8 +164,8 @@ fun OrderActionPanel(
                             id = detail.summary.id,
                             notes = detail.summary.notes,
                             depositAmount = null,
-                            pickupPlanAt = editPickup.takeIf { it.length >= 10 }?.let { "${it}T00:00:00Z" },
-                            returnPlanAt = editReturn.takeIf { it.length >= 10 }?.let { "${it}T23:59:00Z" },
+                            pickupPlanAt = OrderPlanDays.dayOf(editPickup.take(10))?.let { OrderPlanDays.pickupInstant(it) },
+                            returnPlanAt = OrderPlanDays.dayOf(editReturn.take(10))?.let { OrderPlanDays.returnInstant(it) },
                         )
                     }
                     onReload()

@@ -3,8 +3,9 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, calculatePeriodRevenueBatch, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, listCivilDays, listCivilMonths } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/income - Get income analytics
@@ -33,42 +34,15 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       );
     }
 
-    // Parse and normalize dates to UTC to match database timezone
-    // CRITICAL: Database stores dates in UTC, so we must normalize to UTC
-    // If date string is YYYY-MM-DD format, parse directly as UTC
-    // If date string includes time, parse and extract UTC components
-    let start: Date;
-    let end: Date;
-    
-    // Check if date string is YYYY-MM-DD format (date only, no time)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      // Parse directly as UTC date components
-      const [year, month, day] = startDate.split('-').map(Number);
-      start = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-    } else {
-      // Parse as datetime string and extract UTC components
-      const startDateObj = new Date(startDate);
-      start = new Date(Date.UTC(
-        startDateObj.getUTCFullYear(),
-        startDateObj.getUTCMonth(),
-        startDateObj.getUTCDate(),
-        0, 0, 0, 0
-      ));
+    // Days and months are civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` (#355).
+    // October in Vietnam is 2026-09-30T17:00Z .. 2026-10-31T16:59:59.999Z, not the UTC month.
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
     }
-    
-    if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-      // Parse directly as UTC date components
-      const [year, month, day] = endDate.split('-').map(Number);
-      end = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
-    } else {
-      // Parse as datetime string and extract UTC components
-      const endDateObj = new Date(endDate);
-      end = new Date(Date.UTC(
-        endDateObj.getUTCFullYear(),
-        endDateObj.getUTCMonth(),
-        endDateObj.getUTCDate(),
-        23, 59, 59, 999
-      ));
+    const range = readCivilRange(startDate, endDate, timeZone);
+    if (!range) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
     }
 
     // Parse outletIds if provided (for MERCHANT comparison mode)
@@ -132,7 +106,15 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     const outletsToProcess = await getOutletsToProcess();
 
     // Helper function to process income data for a specific outlet
-    const processOutletIncome = async (outlet: { id: string | number; publicId: number; name: string } | null, startOfPeriod: Date, endOfPeriod: Date, periodLabel: string, year: number, groupByType: 'month' | 'day') => {
+    const processOutletIncome = async (
+      outlet: { id: string | number; publicId: number; name: string } | null,
+      startOfPeriod: Date,
+      endOfPeriod: Date,
+      periodLabel: string,
+      civil: { year: number; month: number; day: number },
+      groupByType: 'month' | 'day'
+    ) => {
+      const year = civil.year;
       // Build where clause for orders
       const orderWhereClause: any = {
         createdAt: {
@@ -251,6 +233,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         depositAmount: order.depositAmount || 0,
         securityDeposit: order.securityDeposit || 0,
         damageFee: order.damageFee || 0,
+        lateFee: order.lateFee || 0,
         createdAt: order.createdAt,
         pickedUpAt: order.pickedUpAt,
         returnedAt: order.returnedAt,
@@ -375,10 +358,12 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           }
         });
 
-      // Normalize startOfPeriod to midnight UTC for consistent ISO formatting (use utility)
-      const dateKey = getUTCDateKey(startOfPeriod); // YYYY/MM/DD format
-      const dateISO = normalizeDateToISO(startOfPeriod); // Full ISO string at midnight UTC
-      const normalizedStartOfPeriod = new Date(dateISO);
+      // Labels of the civil day / month, in the formats this endpoint has always returned:
+      // date = YYYY/MM/DD, dateISO = that calendar date at 00:00:00.000Z
+      const mm = String(civil.month).padStart(2, '0');
+      const dd = String(civil.day).padStart(2, '0');
+      const dateKey = `${civil.year}/${mm}/${dd}`;
+      const dateISO = `${civil.year}-${mm}-${dd}T00:00:00.000Z`;
 
       // Push data with outlet info if outlet comparison is enabled
       const dataPoint: any = {
@@ -388,8 +373,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         date: groupByType === 'day' ? dateKey : undefined, // YYYY/MM/DD for day only
         dateISO: dateISO, // Full ISO string at midnight UTC for locale formatting
         year: year,
-        monthNumber: groupByType === 'month' ? normalizedStartOfPeriod.getUTCMonth() + 1 : undefined, // 1-12
-        dayNumber: groupByType === 'day' ? normalizedStartOfPeriod.getUTCDate() : undefined, // 1-31
+        monthNumber: groupByType === 'month' ? civil.month : undefined, // 1-12
+        dayNumber: groupByType === 'day' ? civil.day : undefined, // 1-31
         realIncome: realIncome,
         futureIncome: futureIncome,
         orderCount: orderCount,
@@ -407,83 +392,47 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       incomeData.push(dataPoint);
     };
     
-    if (groupBy === 'month') {
-      // Generate monthly data
-      // Use UTC components to avoid timezone issues
-      const startYear = start.getUTCFullYear();
-      const startMonth = start.getUTCMonth();
-      const endYear = end.getUTCFullYear();
-      const endMonth = end.getUTCMonth();
-      
-      // Create UTC dates for iteration
-      let current = new Date(Date.UTC(startYear, startMonth, 1, 0, 0, 0, 0));
-      const endMonthDate = new Date(Date.UTC(endYear, endMonth, 1, 0, 0, 0, 0));
-      
-      while (current <= endMonthDate) {
-        const year = current.getUTCFullYear();
-        const month = current.getUTCMonth();
-        
-        // Format as mm/yy (e.g., "11/25")
-        const monthStr = String(month + 1).padStart(2, '0');
-        const yearStr = String(year).slice(-2); // Last 2 digits of year
-        const periodLabel = `${monthStr}/${yearStr}`;
-        
-        // Calculate start and end of month in UTC to match database timezone
-        // CRITICAL: Database stores dates in UTC, so we must normalize to UTC
-        // Create UTC dates directly to avoid timezone issues
-        const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-        const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
-
-        // Process each outlet separately if outletIds provided, otherwise process aggregated
-        if (selectedOutletIds && outletsToProcess.length > 0) {
-          // Process each outlet separately for comparison
-          for (const outlet of outletsToProcess) {
-            await processOutletIncome(outlet, startOfMonth, endOfMonth, periodLabel, year, 'month');
-          }
-        } else {
-          // Default behavior: aggregate all outlets (or single outlet for outlet users)
-          await processOutletIncome(null, startOfMonth, endOfMonth, periodLabel, year, 'month');
+    const processPeriod = async (
+      startOfPeriod: Date,
+      endOfPeriod: Date,
+      periodLabel: string,
+      civil: { year: number; month: number; day: number },
+      groupByType: 'month' | 'day'
+    ) => {
+      if (selectedOutletIds && outletsToProcess.length > 0) {
+        // Process each outlet separately for comparison
+        for (const outlet of outletsToProcess) {
+          await processOutletIncome(outlet, startOfPeriod, endOfPeriod, periodLabel, civil, groupByType);
         }
+      } else {
+        // Default behavior: aggregate all outlets (or single outlet for outlet users)
+        await processOutletIncome(null, startOfPeriod, endOfPeriod, periodLabel, civil, groupByType);
+      }
+    };
 
-        // Move to next month (in UTC)
-        current = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
+    if (groupBy === 'month') {
+      // One point per civil month, labelled mm/yy (e.g. "11/25")
+      for (const civilMonth of listCivilMonths(range.startKey, range.endKey, timeZone)) {
+        const periodLabel = `${String(civilMonth.month).padStart(2, '0')}/${String(civilMonth.year).slice(-2)}`;
+        await processPeriod(
+          civilMonth.start,
+          civilMonth.end,
+          periodLabel,
+          { year: civilMonth.year, month: civilMonth.month, day: 1 },
+          'month'
+        );
       }
     } else if (groupBy === 'day') {
-      // Generate daily data
-      // Use UTC components to avoid timezone issues
-      let current = new Date(start);
-      const endDay = new Date(end);
-      
-      while (current <= endDay) {
-        const year = current.getUTCFullYear();
-        const month = current.getUTCMonth();
-        const day = current.getUTCDate();
-        
-        // Format as dd/mm/yy (e.g., "21/11/25")
-        const dayStr = String(day).padStart(2, '0');
-        const monthStr = String(month + 1).padStart(2, '0');
-        const yearStr = String(year).slice(-2); // Last 2 digits of year
-        const periodLabel = `${dayStr}/${monthStr}/${yearStr}`;
-        
-        // Calculate start and end of day in UTC to match database timezone
-        // CRITICAL: Database stores dates in UTC, so we must normalize to UTC
-        // Create UTC dates directly to avoid timezone issues
-        const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-        const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
-
-        // Process each outlet separately if outletIds provided, otherwise process aggregated
-        if (selectedOutletIds && outletsToProcess.length > 0) {
-          // Process each outlet separately for comparison
-          for (const outlet of outletsToProcess) {
-            await processOutletIncome(outlet, startOfDay, endOfDay, periodLabel, year, 'day');
-          }
-        } else {
-          // Default behavior: aggregate all outlets (or single outlet for outlet users)
-          await processOutletIncome(null, startOfDay, endOfDay, periodLabel, year, 'day');
-        }
-
-        // Move to next day (in UTC)
-        current = new Date(Date.UTC(year, month, day + 1, 0, 0, 0, 0));
+      // One point per civil day, labelled dd/mm/yy (e.g. "21/11/25")
+      for (const civilDay of listCivilDays(range.startKey, range.endKey, timeZone)) {
+        const [y, m, d] = civilDay.dateKey.split('-');
+        await processPeriod(
+          civilDay.start,
+          civilDay.end,
+          `${d}/${m}/${y.slice(-2)}`,
+          { year: Number(y), month: Number(m), day: Number(d) },
+          'day'
+        );
       }
     }
 

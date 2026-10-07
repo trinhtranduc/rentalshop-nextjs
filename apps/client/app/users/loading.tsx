@@ -1,20 +1,28 @@
-import { PageWrapper, PageHeader, PageTitle, UsersLoading } from '@rentalshop/ui';
-
 /**
- * Next.js App Router Loading UI for Users
- * Shows instantly during navigation to /users
+ * Instant skeleton for /users (#528), in the shell tokens so it follows light / dark.
  */
 export default function Loading() {
+  const bar = 'block animate-pulse rounded-lg bg-ar-subtle';
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
-      <PageHeader className="flex-shrink-0">
-        <PageTitle>Users</PageTitle>
-        <p className="text-sm text-gray-600">Manage users in the system</p>
-      </PageHeader>
-      <div className="flex-1 min-h-0 overflow-auto">
-        <UsersLoading />
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 sm:px-8" aria-busy="true">
+      <div className="flex items-center justify-between gap-3">
+        <span className={`${bar} h-8 w-40`} />
+        <span className={`${bar} h-10 w-40`} />
       </div>
-    </PageWrapper>
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-3 rounded-2xl border border-ar-line-soft bg-ar-surface p-4 shadow-ar">
+          <span className={`${bar} h-9 w-full`} />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <span key={i} className={`${bar} h-11 w-full`} />
+          ))}
+        </div>
+        <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-3 rounded-2xl border border-ar-line-soft bg-ar-surface p-5 shadow-ar">
+          <span className={`${bar} h-6 w-48`} />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span key={i} className={`${bar} h-12 w-full`} />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
-

@@ -95,8 +95,9 @@ class Cart {
         // Check if product already exists in cart
         let productId = product.product_id != 0 ? product.product_id : (product.id ?? 0)
         if let index = items.firstIndex(where: { $0.productId == productId }) {
-            // Update existing item quantity
+            // Update existing item quantity; a stale line takes the product's prices (#473)
             items[index].quantity += quantity
+            items[index].refreshPricing(from: product)
         } else {
             // Add new item
             let item = CartItem(from: product, quantity: quantity, price: price)
@@ -105,13 +106,14 @@ class Cart {
         // Auto-update deposit from items (only if not manually overridden)
         updateDepositFromItems()
     }
-    
+
     /// Add CartItem directly to cart
     func addItem(_ cartItem: CartItem) {
         // Check if product already exists in cart
         if let index = items.firstIndex(where: { $0.productId == cartItem.productId }) {
-            // Update existing item quantity
+            // Update existing item quantity; a stale line takes the added line's prices (#473)
             items[index].quantity += cartItem.quantity
+            items[index].adoptPricingOptions(cartItem.pricingOptions)
         } else {
             // Add new item
             items.append(cartItem)
@@ -120,6 +122,14 @@ class Cart {
         updateDepositFromItems()
     }
     
+    /// Give the lines of this product its current prices (#473, see `CartItem.adoptPricingOptions`)
+    func refreshPricing(from product: Product) {
+        let productId = product.product_id != 0 ? product.product_id : (product.id ?? 0)
+        for index in items.indices where items[index].productId == productId {
+            items[index].refreshPricing(from: product)
+        }
+    }
+
     /// Remove item at specific index
     func removeItem(at index: Int) {
         guard index >= 0 && index < items.count else { return }
@@ -793,8 +803,8 @@ class Cart {
                     ? (item.isDailyPricing ? item.rentalDays : calculateRentalDays())
                     : nil,
                 imageUrl: item.imageUrl,
-                pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
-                pricingOptionId: item.selectedPricingOptionId
+                pricingType: orderType == .rent ? item.requestPricingType : nil,
+                pricingOptionId: item.requestPricingOptionId
             )
         }
         
@@ -876,8 +886,8 @@ class Cart {
                 deposit: item.deposit,
                 notes: finalNote,
                 rentDays: orderType == .rent && item.isDailyPricing ? item.rentalDays : nil,
-                pricingType: orderType == .rent ? (item.pricingType ?? "FIXED") : nil,
-                pricingOptionId: item.selectedPricingOptionId
+                pricingType: orderType == .rent ? item.requestPricingType : nil,
+                pricingOptionId: item.requestPricingOptionId
             )
         }
         
@@ -950,12 +960,8 @@ class Cart {
             return nil
         }
         
-        let calendar = Calendar.current
-        let startDay = calendar.startOfDay(for: pickup)
-        let endDay = calendar.startOfDay(for: returnDate)
-        let components = calendar.dateComponents([.day], from: startDay, to: endDay)
-        // +1 because rental is inclusive (e.g. pickup Monday, return Tuesday = 2 days)
-        return max(1, (components.day ?? 0) + 1)
+        // Shop days, inclusive (pickup Monday, return Tuesday = 2 days), whatever the phone zone (#596)
+        return CartV2Logic.rentalDays(pickup: pickup, return: returnDate)
     }
     
     /// Get current user ID from user session

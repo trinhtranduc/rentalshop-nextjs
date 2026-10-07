@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.availability.AvailabilityOrder
 import androidx.compose.ui.draw.alpha
@@ -59,6 +60,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.theme.BrandPrimary
+import com.anyrent.pos.ui.common.formatDisplayDate
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.common.StatusBadge
 import androidx.compose.ui.Alignment
@@ -292,8 +294,8 @@ fun AvailabilityScreen(
                                 occupancyLoaded = state.occupancyLoaded,
                                 occupancyMonth = state.occupancyMonth,
                                 stock = state.result?.totalStock ?: state.selectedProduct?.stock ?: 0,
-                                minDate = LocalDate.now(),
-                                maxDate = LocalDate.now().plusYears(1),
+                                minDate = ShopTime.today(),
+                                maxDate = ShopTime.today().plusYears(1),
                                 onMonthChange = { visibleMonth = it },
                                 onSelect = { day ->
                                     val sameDay = day == state.selectedDate
@@ -568,6 +570,7 @@ private fun AvailabilityDateCell(
 
 private val AvailableGreen = Color(0xFF16A34A)
 private val AvailableGreenAccent = Color(0xFF22C55E)
+private val EmptyGreenFill = Color(0xFFEDF9F2)
 private val EmptyGreenText = Color(0xFF178C57)
 private val LowYellowFill = Color(0xFFFFFAEB)
 private val LowYellowText = Color(0xFFB87A0D)
@@ -697,7 +700,7 @@ private fun OccupancyMonthCalendar(
                             dayNumber = dayNumber,
                             selected = date == selected,
                             enabled = !date.isBefore(minDate) && !date.isAfter(maxDate),
-                            isToday = date == LocalDate.now(),
+                            isToday = date == ShopTime.today(),
                             remaining = if (occupancyReady && !date.isBefore(minDate) && !date.isAfter(maxDate)) {
                                 availableByDate[date] ?: 0
                             } else {

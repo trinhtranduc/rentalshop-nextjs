@@ -371,22 +371,9 @@ extension String {
     /// Localize order status string (from API response)
     /// Converts status strings like "RESERVED", "PICKUPED", "RETURNED", etc. to localized strings
     func localizedStatus() -> String {
-        switch self.uppercased() {
-        case "DRAFT":
-            return "Draft".localized().uppercased()
-        case "RESERVED":
-            return "Reserved".localized().uppercased()
-        case "PICKUPED", "PICKUP", "PICKED_UP":
-            return "Picked Up".localized().uppercased()
-        case "RETURNED":
-            return "Returned".localized().uppercased()
-        case "COMPLETED":
-            return "Completed".localized().uppercased()
-        case "CANCELLED":
-            return "Cancelled".localized().uppercased()
-        default:
-            return self.uppercased()
-        }
+        // One mapping with OrderStatus (#370); a status this build does not know keeps its raw text
+        guard let status = OrderStatus.from(apiString: self), status != .unknown else { return self.uppercased() }
+        return status.inString()
     }
 
 }
@@ -966,7 +953,45 @@ extension Date {
     
     
     /// Shop civil-day timezone (VN) — must match API `getLocalDateKey` / Order Check calendar.
-    static let shopTimeZone = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+    /// The ONE shop-zone accessor (#578/#596): every business day (cart, extension, filters, today, late days, labels,
+    /// the `timeZone` sent to the API) reads it. #567 phase 4 returns the shop's own zone here.
+    static var shopTimeZone: TimeZone { vietnamTimeZone }
+    private static let vietnamTimeZone = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+
+    /// Gregorian calendar in `shopTimeZone`, for shop civil-day math
+    static var shopCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = shopTimeZone
+        return calendar
+    }
+
+    /// First second of this instant's shop day (a cart pickup)
+    func startOfShopDay() -> Date {
+        Date.shopCalendar.startOfDay(for: self)
+    }
+
+    /// Last second of this instant's shop day (a cart return), same shape as `endOfDay()`
+    func endOfShopDay() -> Date {
+        let calendar = Date.shopCalendar
+        return calendar.date(byAdding: DateComponents(day: 1, second: -1), to: calendar.startOfDay(for: self)) ?? self
+    }
+
+    /// FSCalendar works in the phone's zone: a tapped day arrives as that day's midnight in the phone's zone.
+    /// Returns the start of the same `yyyy-MM-dd` in the shop zone (identity on a phone set to the shop zone).
+    func shopDayFromDevicePick() -> Date {
+        var device = Calendar(identifier: .gregorian)
+        device.timeZone = .current
+        let parts = device.dateComponents([.year, .month, .day], from: self)
+        return Date.shopCalendar.date(from: parts) ?? startOfShopDay()
+    }
+
+    /// The other way: midnight, in the phone's zone, of this instant's shop day — to select it in FSCalendar
+    func devicePickFromShopDay() -> Date {
+        var device = Calendar(identifier: .gregorian)
+        device.timeZone = .current
+        let parts = Date.shopCalendar.dateComponents([.year, .month, .day], from: self)
+        return device.date(from: parts) ?? self
+    }
 
     func dateInString() -> String?{
         
@@ -1013,8 +1038,11 @@ extension Date {
         return formatter.string(from: self)
         
     }
+    /// `yyyy-MM-dd` in the PHONE's zone, on purpose (#596): its callers pass days tapped in device-zone pickers
+    /// (FSCalendar, export/legacy screens), whose device key is the day the user tapped. For an instant or `Date()`
+    /// use `shopDateKeyString()` / `DayFormatter.key`.
     func dateServerInString() -> String?{
-        
+
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")

@@ -210,5 +210,121 @@
       "handedOver": "Handed over",
       "takenBack": "Taken back"
     }
+  },
+  "home": {
+    "title": "Overview",
+    "comparedToPrevious": "vs. previous period",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "periods": {
+      "label": "Period",
+      "today": "Today",
+      "7d": "Last 7 days",
+      "month": "This month",
+      "custom": "Custom…"
+    },
+    "custom": {
+      "from": "From",
+      "to": "To",
+      "apply": "Show",
+      "quick": {
+        "next7": "Next 7 days",
+        "next30": "Next 30 days",
+        "nextMonth": "Next month"
+      }
+    },
+    "kpi": {
+      "orderValue": "New order value",
+      "collected": "Collected",
+      "outstanding": "Still to collect",
+      "collateral": "Collateral",
+      "new": "New"
+    },
+    "chart": {
+      "label": "Chart",
+      "collectedTitle": "Collected per day",
+      "ordersTitle": "New orders per day",
+      "collected": "Collected",
+      "orders": "New orders",
+      "empty": "No data in this period.",
+      "forecast": "Expected",
+      "today": "Today",
+      "tip": "{day}: {value}",
+      "tipForecast": "{day}: {value} · {forecast} more expected",
+      "total": "Total"
+    },
+    "today": {
+      "title": "Today",
+      "pickups": "To hand over",
+      "returns": "To take back",
+      "overdue": "Overdue returns",
+      "noShows": "Past pickup",
+      "pickupsDone": "Handed over {done}/{total}",
+      "returnsDone": "Taken back {done}/{total}",
+      "tomorrow": "Tomorrow · {day}",
+      "tomorrowCounts": "Hand over {pickups} · Return {returns}"
+    },
+    "money": {
+      "deposits": "Deposits at order",
+      "pickupAndSale": "Paid at pickup, sales",
+      "fees": "Damage and late fees",
+      "refunds": "Refunds on cancelled",
+      "collectedTotal": "Collected",
+      "atPickup": "Due when the customer picks up",
+      "overduePickup": "Past pickup date, unpaid",
+      "orders": "{count} orders"
+    },
+    "orders": {
+      "title": "Orders to handle today",
+      "viewAll": "View all",
+      "pickupTag": "Hand over",
+      "returnTag": "Take back",
+      "late": "{days} days late",
+      "collect": "{amount}",
+      "refund": "refund {amount}",
+      "fee": "+ fees {amount}",
+      "empty": "Nothing to hand over or take back today.",
+      "more": "+{count} more"
+    },
+    "top": {
+      "title": "Most rented",
+      "subtitle": "by order value",
+      "rentals": "{count} rentals",
+      "empty": "Nothing rented in this period.",
+      "tooltip": "{name}: {amount} · {rentals}"
+    },
+    "topCustomers": {
+      "title": "Top customers",
+      "subtitle": "by money collected",
+      "orders": "{count} orders",
+      "empty": "No customer has ordered in this range.",
+      "tooltip": "{name}: {amount} · {rentals}"
+    },
+    "loadFailed": "Couldn't load the numbers.",
+    "retry": "Try again",
+    "tiles": {
+      "label": "Key numbers",
+      "up": "▲ {value}%",
+      "down": "▼ {value}%",
+      "overdue": "{count} past pickup",
+      "waiting": "{count} awaiting pickup",
+      "held": "holding {count} orders",
+      "open": "{label}: {value}. Show details",
+      "trend": "Collected per day",
+      "forecast": "{amount} more expected today",
+      "forecastTip": "Collected {collected} · {forecast} more expected today",
+      "forecastUntil": "{amount} more expected until {day}",
+      "forecastTipUntil": "Collected {collected} · {forecast} more expected until {day}"
+    },
+    "detail": {
+      "close": "Close",
+      "newOrders": "New orders",
+      "viewOrders": "See these orders →",
+      "empty": "No data yet.",
+      "received": "Received",
+      "returned": "Returned to customers",
+      "toCollect": "To receive at pickup",
+      "toReturn": "Held, to return",
+      "hatchNote": "Hatched bars: upcoming, not in the numbers above."
+    }
   }
 }

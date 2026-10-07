@@ -1,9 +1,15 @@
 package com.anyrent.pos.data
 
+import com.anyrent.pos.AnyRentApp
+import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.ExtensionUpdate
+import com.anyrent.pos.domain.orders.NotesStep
+import com.anyrent.pos.domain.orders.OrderDetailLogic
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.Request
@@ -71,12 +77,23 @@ object ApiParity {
         name: String,
         address: String?,
         phone: String?,
+        // #484: the other outlet fields of the store form (same rule as iOS EditStoreViewController: blank is not sent)
+        city: String? = null,
+        state: String? = null,
+        country: String? = null,
+        zipCode: String? = null,
+        description: String? = null,
     ): Result<Unit> = runCatching {
         val body = JSONObject()
             .put("name", name)
             .apply {
                 if (!address.isNullOrBlank()) put("address", address)
                 if (!phone.isNullOrBlank()) put("phone", phone)
+                if (!city.isNullOrBlank()) put("city", city)
+                if (!state.isNullOrBlank()) put("state", state)
+                if (!country.isNullOrBlank()) put("country", country)
+                if (!zipCode.isNullOrBlank()) put("zipCode", zipCode)
+                if (!description.isNullOrBlank()) put("description", description)
             }
             .toString()
             .toRequestBody(jsonMedia)
@@ -90,6 +107,11 @@ object ApiParity {
         val name: String,
         val address: String?,
         val phone: String?,
+        val city: String? = null,
+        val state: String? = null,
+        val country: String? = null,
+        val zipCode: String? = null,
+        val description: String? = null,
     )
 
     fun getOutlet(outletId: Int): Result<OutletInfo> = runCatching {
@@ -105,8 +127,17 @@ object ApiParity {
             name = match.optString("name"),
             address = match.optString("address").takeIf { it.isNotBlank() },
             phone = match.optString("phone").takeIf { it.isNotBlank() },
+            city = match.optText("city"),
+            state = match.optText("state"),
+            country = match.optText("country"),
+            zipCode = match.optText("zipCode"),
+            description = match.optText("description"),
         )
     }
+
+    /** A string field, null when missing, JSON null or blank */
+    private fun JSONObject.optText(key: String): String? =
+        if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
 
     fun createUser(
         firstName: String,
@@ -181,7 +212,7 @@ object ApiParity {
     }
 
     fun setReadyToDeliver(id: Int, ready: Boolean): Result<Unit> = runCatching {
-        val body = JSONObject().put("isReadyToDeliver", ready).toString().toRequestBody(jsonMedia)
+        val body = OrderDetailLogic.readyToDeliverBody(ready).toString().toRequestBody(jsonMedia)
         ApiClient.get().authedPut("/api/orders/$id", body)
         Unit
     }
@@ -210,31 +241,69 @@ object ApiParity {
         )
     }
 
+    /** Gia hạn (#425): PUT /api/orders/:id with the new return day, day count and, with extra rent, the new total */
+    fun extendOrder(id: Int, update: ExtensionUpdate): Result<Unit> = runCatching {
+        ApiClient.get().authedPut("/api/orders/$id", update.toJson().toString().toRequestBody(jsonMedia))
+        Unit
+    }
+
+    /**
+     * PUT /api/orders/:id with settings and/or notes (docs/API_ORDER_NOTES_IMAGES.md).
+     * [keptNoteImageUrls] is the list left after the user removed photos (null = photos untouched);
+     * when it differs from [existingNoteImageUrls] a JSON request sets it first, then new
+     * [noteImages] go as multipart (the API appends uploads to the stored list).
+     */
     fun updateOrderDetails(
         id: Int,
         collateralDetails: String? = null,
         securityDeposit: Double? = null,
         notes: String? = null,
         noteImages: List<ByteArray> = emptyList(),
-        @Suppress("UNUSED_PARAMETER")
         existingNoteImageUrls: List<String> = emptyList(),
+        keptNoteImageUrls: List<String>? = null,
+        maxNoteImages: Int = Int.MAX_VALUE,
     ): Result<Unit> = runCatching {
-        val data = JSONObject().apply {
+        val steps = OrderDetailLogic.notesPlan(
+            notes = notes,
+            original = existingNoteImageUrls,
+            kept = keptNoteImageUrls ?: existingNoteImageUrls,
+            newFileCount = noteImages.size,
+            max = maxNoteImages,
+        ) ?: throw AppError.Validation("Too many note photos")
+
+        fun fields(stepNotes: String?) = JSONObject().apply {
             collateralDetails?.let { put("collateralDetails", it) }
             securityDeposit?.let { put("securityDeposit", it) }
-            notes?.let { put("notes", it) }
+            stepNotes?.let { put("notes", it) }
         }
 
-        // iOS OrderService: text-only → JSON; add photos → multipart PUT
-        // (field "data" + "notesImages"). Never /api/upload/image.
-        if (noteImages.isEmpty()) {
-            ApiClient.get().authedPut(
-                "/api/orders/$id",
-                data.toString().toRequestBody(jsonMedia),
-            )
-            return@runCatching
+        steps.forEachIndexed { index, step ->
+            when (step) {
+                is NotesStep.Json -> {
+                    val data = fields(step.notes).apply {
+                        step.imageUrls?.let { put("notesImages", JSONArray(it)) }
+                    }
+                    ApiClient.get().authedPut("/api/orders/$id", data.toString().toRequestBody(jsonMedia))
+                }
+                is NotesStep.Upload -> {
+                    // Other fields only travel with the first request
+                    val data = if (index == 0) fields(step.notes) else JSONObject()
+                    uploadNoteImages(id, data, noteImages)
+                }
+            }
         }
+        Unit
+    }
 
+    /** Late and damage fees set at return (existing order fields) */
+    fun updateOrderFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit> = runCatching {
+        val data = JSONObject().put("lateFee", lateFee).put("damageFee", damageFee)
+        ApiClient.get().authedPut("/api/orders/$id", data.toString().toRequestBody(jsonMedia))
+        Unit
+    }
+
+    // iOS OrderService: add photos → multipart PUT (field "data" + "notesImages"). Never /api/upload/image.
+    private fun uploadNoteImages(id: Int, data: JSONObject, noteImages: List<ByteArray>) {
         val tempFiles = noteImages.mapIndexed { index, bytes ->
             requireJpeg(bytes)
             File.createTempFile("notes_image_$index", ".jpg").also { it.writeBytes(bytes) }
@@ -258,7 +327,6 @@ object ApiParity {
         } finally {
             tempFiles.forEach { runCatching { it.delete() } }
         }
-        Unit
     }
 
     private fun requireJpeg(bytes: ByteArray) {
@@ -275,7 +343,7 @@ object ApiParity {
             json.optJSONObject("data")?.toString() ?: json.toString()
         }
 
-    data class Category(val id: Int, val name: String)
+    data class Category(val id: Int, val name: String, val isDefault: Boolean = false)
 
     data class AvailabilityConflict(
         val orderId: Int?,
@@ -291,8 +359,33 @@ object ApiParity {
         val arr = data.optJSONArray("categories") ?: JSONArray()
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
-            Category(id = o.optInt("id"), name = o.optString("name"))
+            Category(id = o.optInt("id"), name = o.optString("name"), isDefault = o.optBoolean("isDefault"))
         }
+    }
+
+    /** #632: `POST /api/categories` (MERCHANT, OUTLET_ADMIN) */
+    fun createCategory(name: String): Result<Category> = runCatching {
+        val body = JSONObject().put("name", name).toString().toRequestBody(jsonMedia)
+        val o = ApiClient.get().authedPost("/api/categories", body).optJSONObject("data") ?: JSONObject()
+        Category(id = o.optInt("id"), name = o.optString("name", name), isDefault = o.optBoolean("isDefault"))
+    }
+
+    /** #632: `PUT /api/categories/{id}` (MERCHANT only) */
+    fun renameCategory(id: Int, name: String): Result<Unit> = runCatching {
+        val body = JSONObject().put("name", name).toString().toRequestBody(jsonMedia)
+        ApiClient.get().authedPut("/api/categories/$id", body)
+        Unit
+    }
+
+    /** #632: `DELETE /api/categories/{id}` (MERCHANT only); 409 BUSINESS_RULE_VIOLATION = it still has products */
+    fun deleteCategory(id: Int): Result<Unit> = runCatching {
+        try {
+            ApiClient.get().authedDelete("/api/categories/$id")
+        } catch (e: AppError) {
+            if (e.code != "BUSINESS_RULE_VIOLATION") throw e
+            throw AppError.InvalidResponse(AnyRentApp.instance?.getString(R.string.v2_category_has_products) ?: e.message, code = e.code)
+        }
+        Unit
     }
 
     fun updateProductFull(

@@ -63,6 +63,7 @@ class BaseService {
         parameters: [String: Any]? = nil,
         responseType: T.Type,
         context: String = "API Request",
+        cachePolicy: URLRequest.CachePolicy? = nil,
         completion: @escaping (T?, NSError?) -> Void
     ) {
         let fullURL = path.hasPrefix("http") ? path : APIEndpoint.currentBaseURL + path
@@ -77,7 +78,8 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .get, parameters: requestParams, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: requestParams, headers: BaseService.jsonHeader,
+                   requestModifier: { request in if let cachePolicy { request.cachePolicy = cachePolicy } })
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -119,7 +121,7 @@ class BaseService {
         }
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -161,7 +163,7 @@ class BaseService {
         }
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .put, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .put, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -188,7 +190,7 @@ class BaseService {
             for (key, value) in BaseService.jsonHeader.dictionary {
                 request.setValue(value, forHTTPHeaderField: key)
             }
-            AF.request(request).responseData { response in
+            AuthSession.shared.request(request).responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
         } catch {
@@ -233,7 +235,7 @@ class BaseService {
         }
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .patch, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .patch, parameters: parameters, encoding: JSONEncoding.default, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -258,7 +260,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .delete, parameters: parameters, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .delete, parameters: parameters, headers: BaseService.jsonHeader)
             .responseData { response in
                 self.handleResponse(response: response, responseType: responseType, context: context, completion: completion)
             }
@@ -299,6 +301,13 @@ class BaseService {
                 print("✅ \(context) Success: Response parsed successfully")
                 completion(decodedResponse, nil)
             } catch {
+                // An error body whose `data` has another shape than T (e.g. 409 ORDER_SCHEDULE_CONFLICT carries
+                // `data.conflicts`, #518): show the API's error, not a parsing error
+                if let apiError = decodeErrorResponse(from: data), !apiError.success {
+                    print("❌ \(context) API Error: \(apiError.code ?? "-")")
+                    completion(nil, apiError.toNSError(httpStatusCode: response.response?.statusCode))
+                    return
+                }
                 print("❌ \(context) JSON Parsing Error:")
                 print("   Error: \(error)")
                 print("   Error Type: \(type(of: error))")
@@ -344,7 +353,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.request(fullURL, method: .get, parameters: parameters, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: parameters, headers: BaseService.jsonHeader)
             .responseData { [weak self] response in
                 guard let self = self else { return }
                 
@@ -427,7 +436,7 @@ class BaseService {
         print("   Timestamp: \(Date())")
         print("   " + String(repeating: "-", count: 50))
         
-        AF.upload(multipartFormData: { multipart in
+        AuthSession.shared.upload(multipartFormData: { multipart in
             // Handle parameters
             for (key, value) in parameters {
                 let data: Data?

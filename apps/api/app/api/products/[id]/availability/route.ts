@@ -101,8 +101,18 @@ export async function GET(
       if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = outletId ? parseInt(outletId) : (userOutletId || 0);
+      } else if (user.role === USER_ROLE.MERCHANT && !outletId) {
+        // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one
+        const defaultOutlet = await db.outlets.findDefaultForMerchant(userMerchantId);
+        if (!defaultOutlet) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_REQUIRED'),
+            { status: 400 }
+          );
+        }
+        finalOutletId = defaultOutlet.id;
       } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.ADMIN) {
-        // Merchants/Admins: outletId is required in query
+        // Merchants sending an outletId, and admins (who must send one)
         if (!outletId) {
           return NextResponse.json(
             ResponseBuilder.error('OUTLET_REQUIRED'),
@@ -277,6 +287,7 @@ export async function GET(
         outletId: finalOutletId,
         rentalStart: rentalStart.toISOString(),
         rentalEnd: rentalEnd.toISOString(),
+        days: `${resolvedWindow.fromYmd}..${resolvedWindow.toYmd}`,
         productId,
         queryVersion: 'v2-simplified-overlap'
       });
@@ -292,10 +303,10 @@ export async function GET(
           deletedAt: null,
           // Exclude a specific order from conflict check (used when editing an existing order)
           ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
-          // Overlap (inclusive civil days): orderPickup < rentalEnd AND orderReturn >= rentalStart
+          // Overlap (inclusive VN civil days of the window, #590): orderPickup < day-bounds end AND orderReturn >= start
           // Same-day rentals store pickup==return at VN midnight — `gt` would miss them.
-          pickupPlanAt: { lt: rentalEnd },
-          returnPlanAt: { gte: rentalStart },
+          pickupPlanAt: { lt: resolvedWindow.bounds.end },
+          returnPlanAt: { gte: resolvedWindow.bounds.start },
           orderItems: {
             some: {
               productId: productId,

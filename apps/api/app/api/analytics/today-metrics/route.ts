@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { overdueReturnWhere, shopToday } from '../../../../lib/report-days';
 
 /**
  * GET /api/analytics/today-metrics - Get today's operational metrics
@@ -15,15 +16,15 @@ import { API } from '@rentalshop/constants';
  */
 export const GET = withPermissions(['analytics.view.dashboard'])(async (request, { user, userScope }) => {
   try {
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    // Vietnam today (#594): the server's own midnight is the UTC one on Railway
+    const now = new Date();
+    const today = shopToday(now);
 
     // Apply role-based filtering (consistent with other APIs)
     let orderWhereClause: any = {
       createdAt: {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: today.start,
+        lte: today.end
       }
     };
 
@@ -90,6 +91,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         depositAmount: order.depositAmount || 0,
         securityDeposit: order.securityDeposit || 0,
         damageFee: order.damageFee || 0,
+        lateFee: order.lateFee || 0,
         createdAt: order.createdAt,
         pickedUpAt: order.pickedUpAt,
         returnedAt: order.returnedAt,
@@ -108,18 +110,9 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       }
     });
 
-    // Get overdue rentals (status PICKUPED but returnPlanAt has passed)
-    // Overdue = returnPlanAt < now (current time)
-    // Note: Overdue orders can be created at any time, not just today
-    // So we don't include createdAt filter from orderWhereClause
-    const now = new Date();
-    const overdueWhereClause: any = {
-      status: ORDER_STATUS.PICKUPED,
-      returnPlanAt: {
-        not: null,
-        lt: now // Compare with current time, not start of today
-      }
-    };
+    // Overdue rentals: one rule everywhere (#594) — PICKUPED and returnPlanAt before the start of
+    // Vietnam today (a return planned for today is due, not late). Any creation date.
+    const overdueWhereClause: any = overdueReturnWhere(now);
     
     // Apply role-based filtering (merchant/outlet scope) but NOT date filter
     if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {

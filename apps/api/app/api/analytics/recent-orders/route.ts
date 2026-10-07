@@ -4,6 +4,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, ORDER_STATUS} from '@rentalshop/constants';
+import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 
 /**
  * GET /api/analytics/recent-orders - Get recent orders analytics
@@ -22,19 +23,13 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Set default date range if not provided (last 30 days)
-    let dateStart: Date;
-    let dateEnd: Date;
-    
-    if (startDate && endDate) {
-      dateStart = new Date(startDate);
-      dateEnd = new Date(endDate);
-    } else {
-      // Default to last 30 days
-      dateEnd = new Date();
-      dateStart = new Date();
-      dateStart.setDate(dateStart.getDate() - 30);
+    // Vietnam civil days (#594): the requested days (whole end day; `new Date(key)` stopped at its 07:00 VN),
+    // else the last 30 Vietnam days up to the end of today
+    const requested = startDate && endDate ? readReportRange(startDate, endDate) : null;
+    if (startDate && endDate && !requested) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
     }
+    const { start: dateStart, end: dateEnd } = requested ?? lastShopDays(30);
 
     // Build where clause with date filtering
     const whereClause: any = {
@@ -79,32 +74,30 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     }
 
     // Get recent orders with date filtering
+    // db.orders.search ignores `include`; ask for product names explicitly (#349). Without them every
+    // non-empty range failed on `order.orderItems.map` (it only "worked" while the range was empty).
     const recentOrders = await db.orders.search({
       where: whereClause,
-      include: {
-        customer: true,
-        orderItems: { include: { product: true } },
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 20
+      includeItemNames: true,
+      limit: 20
     });
 
     // Format the data for display
-    const formattedOrders = recentOrders.data.map((order: any) => {
-      const customerName = order.customer 
+    const formattedOrders = (recentOrders.data || []).map((order: any) => {
+      const customerName = order.customer
         ? `${order.customer.firstName} ${order.customer.lastName}`
         : 'Walk-in Customer';
-      
+
       const customerPhone = order.customer?.phone || 'N/A';
-      
-      const productNames = order.orderItems
-        .map((item: any) => item.product.name)
+
+      const orderItems = order.orderItems || [];
+      const productNames = orderItems
+        .map((item: any) => item.product?.name)
+        .filter(Boolean)
         .join(', ');
-      
-      const productImage = order.orderItems[0]?.product.images 
-        ? JSON.parse(order.orderItems[0].product.images as any)[0] 
+
+      const productImage = orderItems[0]?.product?.images
+        ? JSON.parse(orderItems[0].product.images as any)[0]
         : null;
 
       return {

@@ -18,6 +18,8 @@ import {
   Badge
 } from '../../../ui';
 import { Calendar, AlertCircle } from 'lucide-react';
+import { getShopTodayKey } from '@rentalshop/utils';
+import { orderPresetKeys, rangeForKeys, type OrderPresetId } from './order-date-presets';
 
 export interface DateRangeOption {
   id: string;
@@ -30,6 +32,7 @@ interface OrderDateRangeFilterProps {
   activeRange?: string;
   totalOrders: number;
   filteredCount?: number;
+  /** `start`/`end` are the Vietnam day bounds of the chosen days (00:00 … 23:59:59.999 VN), whatever the browser zone. */
   onRangeChange: (rangeId: string, start: Date, end: Date) => void;
   showWarning?: boolean;
 }
@@ -53,22 +56,9 @@ export function OrderDateRangeFilter({
   // DATE RANGE CALCULATIONS - Simplified to 3 main options
   // ============================================================================
 
-  const getLastNDays = (days: number) => {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-    start.setHours(0, 0, 0, 0);
-    return { start, end };
-  };
-
-  const getAllTime = () => {
-    const start = new Date(2020, 0, 1); // System start date
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  };
+  // Vietnam days from the Vietnam today, whatever the browser zone (#578 ADM-4)
+  const presetRange = (id: OrderPresetId) => rangeForKeys(orderPresetKeys(id));
+  const todayKey = getShopTodayKey();
 
   // ============================================================================
   // DATE RANGE OPTIONS - Simplified (3 main + others)
@@ -78,31 +68,31 @@ export function OrderDateRangeFilter({
     {
       id: 'month',
       label: 'Last 30 days',
-      getRange: () => getLastNDays(30),
+      getRange: () => presetRange('month'),
       description: 'Default - Most relevant orders'
     },
     {
       id: '90days',
       label: 'Last 90 days',
-      getRange: () => getLastNDays(90),
+      getRange: () => presetRange('90days'),
       description: 'Quarterly view'
     },
     {
       id: 'year',
       label: 'Last 12 months',
-      getRange: () => getLastNDays(365),
+      getRange: () => presetRange('year'),
       description: 'Annual view'
     },
     {
       id: 'all',
       label: 'All time',
-      getRange: getAllTime,
+      getRange: () => presetRange('all'),
       description: 'May be slow with large datasets'
     },
     {
       id: 'custom',
       label: 'Custom range...',
-      getRange: () => ({ start: new Date(), end: new Date() }),
+      getRange: () => presetRange('today'),
       description: 'Select custom date range'
     }
   ];
@@ -127,10 +117,8 @@ export function OrderDateRangeFilter({
   const handleCustomApply = () => {
     if (!customStart || !customEnd) return;
     
-    const start = new Date(customStart);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(customEnd);
-    end.setHours(23, 59, 59, 999);
+    // The typed keys are the days; `new Date(key)` is UTC midnight and moved the range in non-UTC browsers.
+    const { start, end } = rangeForKeys({ from: customStart, to: customEnd });
     
     onRangeChange('custom', start, end);
     setShowCustomDialog(false);
@@ -211,7 +199,7 @@ export function OrderDateRangeFilter({
                 type="date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
-                max={customEnd || new Date().toISOString().split('T')[0]}
+                max={customEnd || todayKey}
               />
             </div>
             
@@ -223,7 +211,7 @@ export function OrderDateRangeFilter({
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
                 min={customStart}
-                max={new Date().toISOString().split('T')[0]}
+                max={todayKey}
               />
             </div>
 

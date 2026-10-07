@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { ROLE_PERMISSIONS } from '@rentalshop/auth';
-import { generateToken, generateMobileToken, getUserPermissions } from '@rentalshop/auth/server';
+import { generateToken, generateMobileToken, generateRefreshableToken, getUserPermissions } from '@rentalshop/auth/server';
 import { ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { detectPlatform } from './platform-detector';
+import { merchantTimeZoneField } from './shop-timezone';
 
 type LoginUserRow = NonNullable<Awaited<ReturnType<typeof db.users.findByEmail>>>;
+
+export interface LoginResponseOptions {
+  /**
+   * Issue a refresh token bound to the new session and a 1-hour access token (#344).
+   * Used by /api/mobile/auth/login; the session is always a sliding mobile session.
+   */
+  issueRefreshToken?: { deviceId?: string };
+}
 
 /**
  * Shared login success path: email verification check, merchant/outlet payload, session, JWT.
@@ -15,7 +24,8 @@ type LoginUserRow = NonNullable<Awaited<ReturnType<typeof db.users.findByEmail>>
 export async function buildAuthLoginSuccessResponse(
   request: NextRequest,
   user: LoginUserRow,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  options: LoginResponseOptions = {}
 ): Promise<NextResponse> {
   const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
   const isMerchantUser = user.role === USER_ROLE.MERCHANT;
@@ -83,6 +93,10 @@ export async function buildAuthLoginSuccessResponse(
         currency: (merchant as any).currency || 'USD',
         // Older merchants have no key; give them one so the product link and referral code exist
         tenantKey: (merchant as any).tenantKey || (await db.merchants.ensureTenantKey(merchant.id)) || undefined,
+        // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
+        allowOverlappingOrders: (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
+        ...merchantTimeZoneField(merchant),
         subscription: subscriptionData,
       };
     }
@@ -100,6 +114,7 @@ export async function buildAuthLoginSuccessResponse(
         address: outlet.address || undefined,
         phone: outlet.phone || undefined,
         merchantId: outlet.merchantId,
+        printBankQr: outlet.printBankQr ?? false, // #628 bill bank QR switch
         defaultBankAccount: defaultBankAccount || undefined,
         merchant: (outlet as any).merchant
           ? {
@@ -121,7 +136,8 @@ export async function buildAuthLoginSuccessResponse(
 
   // Detect platform for session and token expiry
   const platformInfo = detectPlatform(request);
-  const isMobile = platformInfo.platform === 'mobile';
+  const issueRefreshToken = options.issueRefreshToken !== undefined;
+  const isMobile = issueRefreshToken || platformInfo.platform === 'mobile';
   // Mobile sessions slide: 30 days idle, 90 days absolute (= mobile JWT lifetime).
   // Web sessions keep a fixed 7 days.
   const session = isMobile
@@ -166,6 +182,11 @@ export async function buildAuthLoginSuccessResponse(
       permissionsChangedAt,
     } as any;
 
+    // Clients holding a refresh token get a 1-hour token and refresh it (#344)
+    if (issueRefreshToken) {
+      return generateRefreshableToken(tokenPayload);
+    }
+
     // Mobile gets a 90-day token (store builds cannot refresh); the session check still applies
     if (isMobile) {
       console.log('📱 LOGIN: Mobile platform detected, issuing 90-day token');
@@ -175,6 +196,16 @@ export async function buildAuthLoginSuccessResponse(
     // Web gets standard 7-day token (has proactive refresh logic)
     return generateToken(tokenPayload);
   })();
+
+  // Created after createUserSession, which revokes every older refresh token of the user
+  const refreshToken = issueRefreshToken
+    ? await db.refreshTokens.create(user.id, {
+        deviceId: options.issueRefreshToken?.deviceId,
+        userAgent,
+        ipAddress,
+        sessionId: session.sessionId,
+      })
+    : undefined;
 
   const getBaseUrl = () =>
     process.env.CLIENT_URL || process.env.NEXT_PUBLIC_CLIENT_URL || 'https://dev.anyrent.shop';
@@ -208,6 +239,7 @@ export async function buildAuthLoginSuccessResponse(
         affiliateLink,
       },
       token,
+      ...(refreshToken ? { refreshToken, expiresIn: '1h', refreshExpiresIn: '30d' } : {}),
     },
   };
 

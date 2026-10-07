@@ -1,7 +1,17 @@
 import type { PrismaClient } from '@prisma/client';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { getOrderRevenueEvents } from '../core/revenue-calculator';
-import { getUTCDateKey, normalizeDateToISO } from '../core/date';
+import {
+  addToCollateralFlow,
+  addToCollectedBreakdown,
+  emptyCollateralFlow,
+  emptyCollectedBreakdown,
+  getOrderRevenueEvents,
+  withoutCollateral,
+  type CollateralFlow,
+  type CollectedBreakdown
+} from '../core/revenue-calculator';
+import { SHOP_TIMEZONE } from '../core/date';
+import { addDaysToDateKey, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '../core/date-range';
 
 export interface IncomePeriodOrderCounts {
   new: number;
@@ -20,12 +30,20 @@ export interface IncomePeriodSummary {
   totalCollateralPlan: number;
   totalRevenuePlan: number;
   totalDepositRefund: number;
+  /** Money collected without collateral (#484): deposits, rent/sale balances, fees, minus cancellation refunds */
+  totalCollected: number;
+  /** Where `totalCollected` came from (#492) */
+  collectedBreakdown: CollectedBreakdown;
+  /** Collateral received and handed back in the period (#494); `totalRevenue - totalCollected` = received - returned */
+  collateralFlow: CollateralFlow;
 }
 
 export interface IncomePeriodDayRow {
   date: string;
   dateISO: string;
   totalRevenue: number;
+  /** `totalRevenue` without collateral (#484) */
+  collected: number;
   depositRefund: number;
   totalCollateral: number;
   totalCollateralPlan: number;
@@ -41,6 +59,8 @@ export interface ComputeIncomePeriodSummaryParams {
   /** Role-scoped outlet filter, e.g. `{}`, `{ outletId: 1 }`, `{ outletId: { in: [1,2] } }` */
   outletFilter: Record<string, unknown>;
   includeDailyPeriods?: boolean;
+  /** IANA zone whose civil days `startDate`/`endDate` name (default Vietnam, #355) */
+  timeZone?: string;
 }
 
 export interface ComputeIncomePeriodSummaryResult {
@@ -48,20 +68,20 @@ export interface ComputeIncomePeriodSummaryResult {
   periods?: IncomePeriodDayRow[];
 }
 
-function parsePeriodBounds(startDate: string, endDate: string) {
-  const startOfDayUTC = new Date(startDate + 'T00:00:00.000Z');
-  const endOfDayUTC = new Date(endDate + 'T23:59:59.999Z');
-  const previousDayStartUTC = new Date(startOfDayUTC);
-  previousDayStartUTC.setUTCDate(previousDayStartUTC.getUTCDate() - 1);
-  const nextDayEndUTC = new Date(endOfDayUTC);
-  nextDayEndUTC.setUTCDate(nextDayEndUTC.getUTCDate() + 1);
-
-  return {
-    queryStart: previousDayStartUTC,
-    queryEnd: nextDayEndUTC,
-    filterStart: startOfDayUTC,
-    filterEnd: endOfDayUTC
-  };
+/**
+ * `startDate`..`endDate` are civil days of `timeZone` (#355). Events are filtered by those exact bounds;
+ * the SQL window is one day wider on each side (same margin as before).
+ */
+function parsePeriodBounds(startDate: string, endDate: string, timeZone: string) {
+  const startKey = toDateKeyInTimeZone(startDate, timeZone);
+  const endKey = toDateKeyInTimeZone(endDate, timeZone);
+  if (!startKey || !endKey) throw new Error(`Invalid period: ${startDate}..${endDate}`);
+  const { start: filterStart, end: filterEnd } = getUtcRangeForDateKeys({ from: startKey, to: endKey }, timeZone);
+  const { start: queryStart, end: queryEnd } = getUtcRangeForDateKeys(
+    { from: addDaysToDateKey(startKey, -1), to: addDaysToDateKey(endKey, 1) },
+    timeZone
+  );
+  return { queryStart, queryEnd, filterStart, filterEnd };
 }
 
 function withOutletScope(
@@ -82,8 +102,10 @@ export async function computeIncomePeriodSummary(
   prisma: PrismaClient,
   params: ComputeIncomePeriodSummaryParams
 ): Promise<ComputeIncomePeriodSummaryResult> {
-  const { startDate, endDate, outletFilter, includeDailyPeriods = true } = params;
-  const { queryStart, queryEnd, filterStart, filterEnd } = parsePeriodBounds(startDate, endDate);
+  const { startDate, endDate, outletFilter, includeDailyPeriods = true, timeZone = SHOP_TIMEZONE } = params;
+  const { queryStart, queryEnd, filterStart, filterEnd } = parsePeriodBounds(startDate, endDate, timeZone);
+  /** Civil-day bucket key (`YYYY/MM/DD`) of an instant */
+  const dayKeyOf = (date: Date) => civilDayBucket(date, timeZone).date;
 
   const ordersWhereClause = withOutletScope(
     {
@@ -116,6 +138,7 @@ export async function computeIncomePeriodSummary(
       depositAmount: true,
       securityDeposit: true,
       damageFee: true,
+      lateFee: true,
       pickedUpAt: true,
       returnedAt: true,
       createdAt: true,
@@ -131,16 +154,18 @@ export async function computeIncomePeriodSummary(
   const pickupOrdersCounted = new Set<string>();
   const returnOrdersCounted = new Set<string>();
   const cancelledOrdersCounted = new Set<string>();
+  const collectedBreakdown = emptyCollectedBreakdown();
+  const collateralFlow = emptyCollateralFlow();
 
   const ensureDay = (date: Date): DailyBucket => {
-    const dateKey = getUTCDateKey(date);
+    const { date: dateKey, dateISO } = civilDayBucket(date, timeZone);
     if (!dailyDataMap.has(dateKey)) {
-      const dateISO = normalizeDateToISO(date);
       dailyDataMap.set(dateKey, {
         date: dateKey,
         dateISO,
         dateObj: new Date(dateISO),
         totalRevenue: 0,
+        collected: 0,
         depositRefund: 0,
         totalCollateral: 0,
         totalCollateralPlan: 0,
@@ -161,6 +186,7 @@ export async function computeIncomePeriodSummary(
       depositAmount: order.depositAmount || 0,
       securityDeposit: order.securityDeposit || 0,
       damageFee: order.damageFee || 0,
+      lateFee: order.lateFee || 0,
       createdAt: order.createdAt,
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,
@@ -169,16 +195,22 @@ export async function computeIncomePeriodSummary(
       updatedAt: order.updatedAt
     };
 
-    const revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd);
+    const inPeriod = (event: { date: Date }) => event.date >= filterStart && event.date <= filterEnd;
+    const revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd).filter(inPeriod);
     for (const event of revenueEvents) {
-      if (event.date < filterStart || event.date > filterEnd) continue;
       ensureDay(event.date).totalRevenue += event.revenue;
     }
+    const plainEvents = getOrderRevenueEvents(withoutCollateral(orderData), filterStart, filterEnd).filter(inPeriod);
+    for (const event of plainEvents) {
+      ensureDay(event.date).collected += event.revenue;
+      addToCollectedBreakdown(collectedBreakdown, orderData, event);
+    }
+    addToCollateralFlow(collateralFlow, revenueEvents, plainEvents);
 
     if (order.createdAt) {
       const createdDate = new Date(order.createdAt);
       if (createdDate >= filterStart && createdDate <= filterEnd) {
-        const dateKey = getUTCDateKey(createdDate);
+        const dateKey = dayKeyOf(createdDate);
         const orderKey = `${order.orderNumber}-${dateKey}`;
         if (!newOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
           const wasCancelledAtCreation =
@@ -198,7 +230,7 @@ export async function computeIncomePeriodSummary(
         if (order.status === ORDER_STATUS.RESERVED && order.createdAt) {
           const createdDate = new Date(order.createdAt);
           if (createdDate >= filterStart && createdDate <= filterEnd) {
-            const dateKey = getUTCDateKey(createdDate);
+            const dateKey = dayKeyOf(createdDate);
             if (dailyDataMap.has(dateKey)) {
               dailyDataMap.get(dateKey)!.depositRefund += securityDeposit;
             }
@@ -207,7 +239,7 @@ export async function computeIncomePeriodSummary(
         if (order.status === ORDER_STATUS.PICKUPED && order.pickedUpAt) {
           const pickedUpDate = new Date(order.pickedUpAt);
           if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
-            const dateKey = getUTCDateKey(pickedUpDate);
+            const dateKey = dayKeyOf(pickedUpDate);
             if (dailyDataMap.has(dateKey)) {
               dailyDataMap.get(dateKey)!.depositRefund += securityDeposit;
             }
@@ -224,7 +256,7 @@ export async function computeIncomePeriodSummary(
     ) {
       const pickedUpDate = new Date(order.pickedUpAt);
       if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
-        const dateKey = getUTCDateKey(pickedUpDate);
+        const dateKey = dayKeyOf(pickedUpDate);
         if (dailyDataMap.has(dateKey)) {
           dailyDataMap.get(dateKey)!.totalCollateral += order.securityDeposit || 0;
         }
@@ -234,7 +266,7 @@ export async function computeIncomePeriodSummary(
     if (order.pickedUpAt) {
       const pickedUpDate = new Date(order.pickedUpAt);
       if (pickedUpDate >= filterStart && pickedUpDate <= filterEnd) {
-        const dateKey = getUTCDateKey(pickedUpDate);
+        const dateKey = dayKeyOf(pickedUpDate);
         const orderKey = `pickup-${order.id}-${dateKey}`;
         if (!pickupOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
           dailyDataMap.get(dateKey)!.pickupOrderCount += 1;
@@ -246,7 +278,7 @@ export async function computeIncomePeriodSummary(
     if (order.returnedAt) {
       const returnedDate = new Date(order.returnedAt);
       if (returnedDate >= filterStart && returnedDate <= filterEnd) {
-        const dateKey = getUTCDateKey(returnedDate);
+        const dateKey = dayKeyOf(returnedDate);
         const orderKey = `return-${order.id}-${dateKey}`;
         if (!returnOrdersCounted.has(orderKey) && dailyDataMap.has(dateKey)) {
           dailyDataMap.get(dateKey)!.returnOrderCount += 1;
@@ -258,7 +290,7 @@ export async function computeIncomePeriodSummary(
     if (order.status === ORDER_STATUS.CANCELLED && order.updatedAt) {
       const updatedDate = new Date(order.updatedAt);
       if (updatedDate >= filterStart && updatedDate <= filterEnd) {
-        const dateKey = getUTCDateKey(updatedDate);
+        const dateKey = dayKeyOf(updatedDate);
         const orderKey = `cancelled-${order.id}-${dateKey}`;
         if (!cancelledOrdersCounted.has(orderKey)) {
           ensureDay(updatedDate).cancelledOrderCount += 1;
@@ -286,7 +318,7 @@ export async function computeIncomePeriodSummary(
   for (const d of dailyDataMap.values()) d.totalCollateral = 0;
   for (const order of collateralOrders) {
     if (order.pickedUpAt) {
-      const dateKey = getUTCDateKey(new Date(order.pickedUpAt));
+      const dateKey = dayKeyOf(new Date(order.pickedUpAt));
       if (dailyDataMap.has(dateKey)) {
         dailyDataMap.get(dateKey)!.totalCollateral += order.securityDeposit || 0;
       }
@@ -362,6 +394,7 @@ export async function computeIncomePeriodSummary(
     .map(({ dateObj, ...rest }) => rest);
 
   const totalRevenue = dailyDataArray.reduce((sum, day) => sum + day.totalRevenue, 0);
+  const totalCollected = dailyDataArray.reduce((sum, day) => sum + day.collected, 0);
   const totalDepositRefund = dailyDataArray.reduce((sum, day) => sum + day.depositRefund, 0);
   const totalCollateral = dailyDataArray.reduce((sum, day) => sum + (day.totalCollateral || 0), 0);
   const totalCollateralPlan = dailyDataArray.reduce((sum, day) => sum + (day.totalCollateralPlan || 0), 0);
@@ -380,7 +413,10 @@ export async function computeIncomePeriodSummary(
     totalCollateralPlanExpectedToRefund: totalCollateralPlan,
     totalCollateralPlan,
     totalRevenuePlan,
-    totalDepositRefund
+    totalDepositRefund,
+    totalCollected,
+    collectedBreakdown,
+    collateralFlow
   };
 
   return {

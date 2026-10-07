@@ -397,9 +397,10 @@ private struct TimeChartModel {
     var bars: [Bar]
 
     init(cart: Cart) {
-        let calendar = Calendar.current
+        let calendar = Calendar.current // clock of the sale card: phone zone
         let now = Date()
         if cart.orderType == .rent {
+            let calendar = Date.shopCalendar // rental days are shop days, like the cart (#596)
             let pickup = calendar.startOfDay(for: cart.pickupPlanAt ?? now)
             let returned = calendar.startOfDay(for: cart.returnPlanAt ?? calendar.date(byAdding: .day, value: 1, to: pickup)!)
             let days = max(1, (calendar.dateComponents([.day], from: pickup, to: returned).day ?? 0) + 1)
@@ -464,6 +465,7 @@ private struct TimeChartModel {
     private static func shortDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = .current
+        formatter.timeZone = Date.shopTimeZone
         formatter.dateFormat = Locale.current.languageCode?.hasPrefix("vi") == true ? "dd/MM" : "d MMM"
         return formatter.string(from: date)
     }

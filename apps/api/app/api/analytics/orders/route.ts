@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder, normalizeDateToISO, getUTCDateKey, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import { readAnalyticsTimeZone } from '../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/orders - Get order analytics
@@ -20,6 +21,17 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const outletIdsParam = searchParams.get('outletIds'); // Comma-separated outlet IDs for comparison
+
+    // Days and months are civil days of the shop (Asia/Ho_Chi_Minh) or of a valid `timeZone` (#355)
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
+    }
+    const startKey = startDate ? toDateKeyInTimeZone(startDate, timeZone) : null;
+    const endKey = endDate ? toDateKeyInTimeZone(endDate, timeZone) : null;
+    if ((startDate && !startKey) || (endDate && !endKey)) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
+    }
 
     // Parse outletIds if provided (for MERCHANT comparison mode)
     let selectedOutletIds: number[] | null = null;
@@ -108,10 +120,8 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     // Add date filtering if provided
     if (startDate || endDate) {
       orderWhereClause.createdAt = {};
-      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
-      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
-      if (normalizedStart) orderWhereClause.createdAt.gte = normalizedStart;
-      if (normalizedEnd) orderWhereClause.createdAt.lte = normalizedEnd;
+      if (startKey) orderWhereClause.createdAt.gte = getUtcRangeForDateKeys({ from: startKey }, timeZone).start;
+      if (endKey) orderWhereClause.createdAt.lte = getUtcRangeForDateKeys({ from: endKey }, timeZone).end;
     }
 
       // Get orders based on outlet scope
@@ -125,18 +135,9 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
     const now = new Date();
     
     orders.data?.forEach(order => {
-      const date = new Date(order.createdAt);
-      let key: string;
-      
-      if (groupBy === 'day') {
-        // Use utility to get YYYY/MM/DD format
-        key = getUTCDateKey(date);
-      } else {
-        // YYYY/MM format for monthly grouping
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        key = `${year}/${month}`;
-      }
+      // Civil day of the order: YYYY/MM/DD, or YYYY/MM for monthly grouping
+      const dayKey = civilDayBucket(order.createdAt, timeZone).date;
+      const key = groupBy === 'day' ? dayKey : dayKey.slice(0, 7);
       
       if (!groupedOrders[key]) {
         groupedOrders[key] = { count: 0, totalCollateral: 0, totalCollateralPlan: 0 };
@@ -167,10 +168,11 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       return Object.entries(groupedOrders).map(([period, data]) => {
         // Parse period string to create ISO date (use utility)
         // period is now YYYY/MM/DD or YYYY/MM format
-        const periodDate = groupBy === 'day' 
-          ? period.replace(/\//g, '-') // Convert YYYY/MM/DD to YYYY-MM-DD for Date parsing
-          : period.replace(/\//g, '-') + '-01'; // Convert YYYY/MM to YYYY-MM-01
-        const dateISO = normalizeDateToISO(periodDate);
+        const periodDate = groupBy === 'day'
+          ? period.replace(/\//g, '-') // YYYY/MM/DD → YYYY-MM-DD
+          : period.replace(/\//g, '-') + '-01'; // YYYY/MM → YYYY-MM-01
+        // The civil date at 00:00:00.000Z (same format as before)
+        const dateISO = `${periodDate}T00:00:00.000Z`;
         
         return {
           period, // Keep YYYY/MM/DD or YYYY/MM format for backward compatibility

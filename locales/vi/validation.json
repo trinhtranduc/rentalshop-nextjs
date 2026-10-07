@@ -182,6 +182,9 @@
     },
     "businessTypePricingType": {
       "required": "Loại hình kinh doanh và loại định giá là bắt buộc cho đăng ký doanh nghiệp"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "Mặc định tính theo ngày cần có giá thuê theo ngày."
     }
   }
 }

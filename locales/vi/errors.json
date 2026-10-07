@@ -42,6 +42,7 @@
   "ORDER_ALREADY_EXISTS": "Đơn hàng đã tồn tại",
   "PRODUCT_OUT_OF_STOCK": "Sản phẩm đã hết hàng",
   "INVALID_ORDER_STATUS": "Trạng thái đơn hàng không hợp lệ",
+  "ORDER_SCHEDULE_CONFLICT": "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.",
   "PAYMENT_FAILED": "Thanh toán thất bại",
   "INVALID_PAYMENT_METHOD": "Phương thức thanh toán không hợp lệ",
   
@@ -112,6 +113,11 @@
   "MERCHANT_ACCESS_REQUIRED": "Yêu cầu quyền truy cập doanh nghiệp",
   "DELETE_USER_OUT_OF_SCOPE": "Không thể xóa người dùng ngoài phạm vi của bạn",
   "UPDATE_USER_OUT_OF_SCOPE": "Không thể cập nhật người dùng ngoài phạm vi của bạn",
+  "MERCHANT_TRANSFER_ADMIN_ONLY": "Chỉ quản trị viên hệ thống mới có thể chuyển tài khoản sang doanh nghiệp khác",
+  "MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED": "Không thể chuyển tài khoản chủ doanh nghiệp sang doanh nghiệp khác",
+  "OUTLET_ASSIGNMENT_REQUIRED": "Vui lòng chọn cửa hàng thuộc doanh nghiệp đã chọn",
+  "OUTLET_MERCHANT_MISMATCH": "Cửa hàng đã chọn không thuộc doanh nghiệp đã chọn",
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "Vui lòng chỉ định một chủ doanh nghiệp khác đang hoạt động trước khi thay đổi tài khoản này",
   "DELETE_OWN_ACCOUNT_ONLY": "Bạn chỉ có thể xóa tài khoản của chính mình",
   "ACCESS_TOKEN_REQUIRED": "Yêu cầu token truy cập",
   "TOKEN_REQUIRED": "Token là bắt buộc",
@@ -120,7 +126,7 @@
   "EMAIL_VERIFIED_SUCCESS": "Xác thực email thành công",
   "VERIFICATION_EMAIL_SENT": "Email xác thực đã được gửi",
   "EMAIL_SEND_FAILED": "Không thể gửi email",
-  "RATE_LIMIT_EXCEEDED": "Vượt quá giới hạn. Vui lòng thử lại sau",
+  "RATE_LIMIT_EXCEEDED": "Bạn thao tác quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.",
   
   "_comment_validation": "Lỗi xác thực",
   "INVALID_QUERY": "Tham số truy vấn không hợp lệ",
@@ -166,11 +172,12 @@
   "MISSING_PRODUCT_DATA": "Thiếu dữ liệu sản phẩm",
   "MISSING_STAGING_KEYS": "Thiếu staging keys",
   "NO_VALID_FIELDS": "Không có trường hợp lệ để cập nhật",
-  "OUTLET_REQUIRED": "ID cửa hàng là bắt buộc",
+  "OUTLET_REQUIRED": "Vui lòng chọn cửa hàng, hoặc đặt một cửa hàng mặc định.",
   "MULTIPLE_ENTITIES_FOUND": "Nhiều thực thể được tìm thấy với cùng định danh",
   "INVALID_ACTION": "Hành động không hợp lệ",
   "INVALID_REQUEST": "Định dạng yêu cầu không hợp lệ",
   "INVALID_TENANT_KEY": "Tenant key không hợp lệ",
+  "INVALID_TIMEZONE": "Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).",
   "TENANT_KEY_ALREADY_EXISTS": "Mã URL cửa hàng này đã được sử dụng. Vui lòng chọn mã khác.",
   "MISSING_ENDPOINT_OR_TOKEN": "Thiếu endpoint hoặc token trong yêu cầu",
   "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Phương thức thanh toán và mã giao dịch là bắt buộc",
@@ -374,5 +381,6 @@
   "TEST_API_WORKING": "API kiểm thử đang hoạt động",
   "TEST_POST_WORKING": "POST kiểm thử đang hoạt động",
   "API_KEYS_WORKING": "Endpoint API Keys đang hoạt động!",
-  "AWS_S3_TEST_FAILED": "Kiểm thử AWS S3 thất bại"
+  "AWS_S3_TEST_FAILED": "Kiểm thử AWS S3 thất bại",
+  "PRODUCT_HAS_OPEN_ORDERS": "Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá."
 }

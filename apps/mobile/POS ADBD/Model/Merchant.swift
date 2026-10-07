@@ -37,5 +37,7 @@ struct Merchant: Codable {
     let createdAt: Date?
     let updatedAt: Date?
     let pricingConfig: String?
+    /// #518 "Cho tạo đơn khi trùng lịch". Missing (older API or cached login) means ON, as before.
+    var allowOverlappingOrders: Bool? = nil
 }
 

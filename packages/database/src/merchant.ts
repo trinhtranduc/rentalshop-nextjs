@@ -42,6 +42,8 @@ export interface MerchantCreateData {
   website?: string;
   description?: string;
   currency?: string; // Currency code (USD, VND), defaults to USD
+  /** #567 shop time zone (IANA id); the column defaults to Asia/Ho_Chi_Minh. Validate before passing. */
+  timezone?: string;
   pricingConfig?: string;
   planId?: number;
   referredByMerchantId?: number; // ID of merchant who referred this merchant
@@ -49,6 +51,8 @@ export interface MerchantCreateData {
 }
 
 export interface MerchantUpdateData extends Partial<MerchantCreateData> {
+  /** #518 "Cho tạo đơn khi trùng lịch" */
+  allowOverlappingOrders?: boolean;
   totalRevenue?: number;
   lastActiveAt?: Date;
   isActive?: boolean;
@@ -83,6 +87,8 @@ export async function findById(id: number) {
       taxId: true,
       currency: true,
       tenantKey: true, // Include tenantKey for public product links
+      allowOverlappingOrders: true, // #518 shop setting (POST /api/orders, login payload)
+      timezone: true, // #567 shop time zone (login payload, GET /api/merchants/[id])
       isActive: true,
       createdAt: true,
       updatedAt: true,

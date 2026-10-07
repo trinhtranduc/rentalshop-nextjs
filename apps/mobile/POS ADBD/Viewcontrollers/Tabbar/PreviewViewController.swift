@@ -1093,36 +1093,27 @@ class PreviewViewController: BaseViewControler {
         present(navController, animated: true)
     }
     
+    /// #640: the new share image. An order is shared from its detail (payments, so the amount due is the detail
+    /// screen's); when the detail cannot load, from the order this screen has. The cart is shared as a draft.
     @objc private func shareReceiptTapped() {
-        // Show progress
-        showProgressText(text: "Generating image...".localized())
-        
-        // Generate JPG on background queue
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            
-            // Convert viewModel to Order structure
-            let orderForPDF = self.createOrderForPDF(from: self.viewModel)
-            
-            if let jpgURL = self.generateJPGReceipt(for: orderForPDF, viewModel: self.viewModel) {
+        if let orderViewModel = viewModel as? OrderViewModel {
+            let order = orderViewModel.currentOrder
+            showProgressText(text: "Generating image...".localized())
+            OrderService.shared.loadOrderDetail(orderId: order.id) { [weak self] detail, _ in
                 DispatchQueue.main.async {
+                    guard let self else { return }
                     self.hideProgress()
-                    self.shareImage(url: jpgURL) // Share JPG image (not PDF)
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.hideProgress()
-                    UIAlertController.alert(
-                        parent: self,
-                        title: "Error".localized(),
-                        message: "Failed to generate image".localized()
-                    )
+                    let source = detail.map { OrderShareSource(detail: $0) }
+                        ?? OrderShareSource(order: order, shop: ShareShop.current())
+                    OrderSharePresenter.share(source, from: self, sourceView: self.shareButton)
                 }
             }
+        } else if viewModel is CartViewModel {
+            OrderSharePresenter.share(OrderShareSource(cart: CartStore.shared.cart, shop: ShareShop.current()),
+                                      from: self, sourceView: shareButton)
         }
     }
-    
-    
+
     // MARK: - PDF Data Structures
     private struct OrderForPDF {
         let orderNumber: String
@@ -1914,6 +1905,8 @@ class PreviewViewController: BaseViewControler {
     }
     
     @objc private func saveOrder() {
+        // #341: no second payment dialog / create while one is in flight
+        guard !isCreateInFlight else { return }
         HapticFeedback.medium()
         
         // For existing orders (OrderViewModel), show payment dialog for rent orders
@@ -1954,15 +1947,37 @@ class PreviewViewController: BaseViewControler {
         present(paymentController, animated: true)
     }
     
+    /// Phone photos at JPEG 0.8 are often several MB. The API stores note images at 200KB,
+    /// so shrink to ~180KB here and let the server compress again as a backstop.
+    private func compressedNoteJPEG(_ image: UIImage) -> Data? {
+        image.compressToTargetSize(targetSizeKB: 180, maxDimension: 1920)
+            ?? UIImageJPEGRepresentation(image, 0.6)
+    }
+
+    /// #341: true from the first confirm until the request fails (staff may retry) or succeeds (screen closes).
+    /// Keeps one Save / Confirm from sending the create twice.
+    private var isCreateInFlight = false
+
+    private func setCreateInFlight(_ inFlight: Bool) {
+        isCreateInFlight = inFlight
+        saveButton.isEnabled = !inFlight
+    }
+
     private func proceedWithSave() {
-        let noteImageData = noteImages.compactMap { image in
-            UIImageJPEGRepresentation(image, 0.8)
-        }
+        guard !isCreateInFlight else { return }
+        setCreateInFlight(true)
+
+        let noteImageData = noteImages.compactMap { compressedNoteJPEG($0) }
 
         if let cartViewModel = viewModel as? CartViewModel, !noteImageData.isEmpty {
-            OrderService.shared.createOrder(from: CartStore.shared.cart, notesImages: noteImageData) { [weak self] order, error in
+            OrderService.shared.createOrder(
+                from: CartStore.shared.cart,
+                notesImages: noteImageData,
+                idempotencyKey: cartViewModel.createIdempotencyKey
+            ) { [weak self] order, error in
                 DispatchQueue.main.async {
                     if let error = error {
+                        self?.setCreateInFlight(false)
                         UIAlertController.errorAlert(parent: self, error: error)
                         return
                     }
@@ -1974,14 +1989,17 @@ class PreviewViewController: BaseViewControler {
         }
 
         viewModel.saveOrder { [weak self] result in
-            switch result {
-            case .success:
-                // For CartViewModel, we need to get the created order
-                // Since CartViewModel.saveOrder doesn't return order directly,
-                // we'll complete with nil and SaleViewController will handle reload
-                self?.completeOrder()
-            case .failure(let error):
-                UIAlertController.errorAlert(parent: self, error: error)
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    // For CartViewModel, we need to get the created order
+                    // Since CartViewModel.saveOrder doesn't return order directly,
+                    // we'll complete with nil and SaleViewController will handle reload
+                    self?.completeOrder()
+                case .failure(let error):
+                    self?.setCreateInFlight(false)
+                    UIAlertController.errorAlert(parent: self, error: error)
+                }
             }
         }
     }
@@ -2979,7 +2997,7 @@ extension PreviewViewController: NoteViewControllerDelegate {
             let keptURLs = imageURLs.compactMap { $0 }
             let newImageData = images.enumerated().compactMap { index, img -> Data? in
                 guard index < imageURLs.count, imageURLs[index] == nil else { return nil }
-                return UIImageJPEGRepresentation(img, 0.8)
+                return compressedNoteJPEG(img)
             }
             // When editing: send kept URLs (JSON) and/or new files (FormData) per API_ORDER_NOTES_IMAGES.md
             let keptNoteImageURLs: [String]? = keptURLs

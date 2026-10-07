@@ -12,6 +12,9 @@ import Foundation
 
 enum OrderStatus: String, Codable, CaseIterable {
     case draft, reserved, pickuped, returned, completed, cancelled
+    /// A status this build does not know (added on the server later). Decoding never fails on it, so one
+    /// unknown order cannot empty a whole list (#370). Read-only: never sent back to the API.
+    case unknown
     
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -32,12 +35,7 @@ enum OrderStatus: String, Codable, CaseIterable {
         case "CANCELLED":
             self = .cancelled
         default:
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(
-                    codingPath: decoder.codingPath,
-                    debugDescription: "Cannot initialize OrderStatus from invalid String value \(rawValue)"
-                )
-            )
+            self = .unknown
         }
     }
     
@@ -55,6 +53,8 @@ enum OrderStatus: String, Codable, CaseIterable {
             return "Completed".localized().uppercased()
         case .cancelled:
             return "Cancelled".localized().uppercased()
+        case .unknown:
+            return "Unknown".localized().uppercased()
         }
     }
     
@@ -73,6 +73,8 @@ enum OrderStatus: String, Codable, CaseIterable {
             return "Completed".localized()
         case .cancelled:
             return "Cancelled".localized()
+        case .unknown:
+            return "Unknown".localized()
         }
     }
 
@@ -87,7 +89,8 @@ enum OrderStatus: String, Codable, CaseIterable {
         case "RETURNED":                       return .returned
         case "COMPLETED":                      return .completed
         case "CANCELLED":                      return .cancelled
-        default:                               return nil
+        case "":                               return nil
+        default:                               return .unknown
         }
     }
 }
@@ -208,6 +211,10 @@ struct Order: Codable {
     let loyaltyPointsRedeemed: Int
     let loyaltyDiscount: Double
     let loyaltyPointsEarned: Int
+    /// Still to collect / to give back from the list API (`computeOrderBalance`, #389). Nil on an older API and on
+    /// payloads without them. Not the computed `amountDue` of the old screens.
+    let listAmountDue: Double?
+    let listRefundDue: Double?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -269,6 +276,8 @@ struct Order: Codable {
         case loyaltyPointsRedeemed
         case loyaltyDiscount
         case loyaltyPointsEarned
+        case listAmountDue = "amountDue"
+        case listRefundDue = "refundDue"
     }
 
     /// Nested objects from list/search payloads — separate from CodingKeys so
@@ -428,6 +437,8 @@ struct Order: Codable {
         loyaltyPointsRedeemed = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsRedeemed) ?? 0
         loyaltyDiscount = try container.decodeIfPresent(Double.self, forKey: .loyaltyDiscount) ?? 0
         loyaltyPointsEarned = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsEarned) ?? 0
+        listAmountDue = (try? container.decodeIfPresent(Double.self, forKey: .listAmountDue)) ?? nil
+        listRefundDue = (try? container.decodeIfPresent(Double.self, forKey: .listRefundDue)) ?? nil
     }
     
     var amountDue: Double {
@@ -518,7 +529,9 @@ struct Order: Codable {
         totalPaid: Double,
         loyaltyPointsRedeemed: Int = 0,
         loyaltyDiscount: Double = 0,
-        loyaltyPointsEarned: Int = 0
+        loyaltyPointsEarned: Int = 0,
+        listAmountDue: Double? = nil,
+        listRefundDue: Double? = nil
     ) {
         self.id = id
         self.orderNumber = orderNumber
@@ -569,6 +582,8 @@ struct Order: Codable {
         self.loyaltyPointsRedeemed = loyaltyPointsRedeemed
         self.loyaltyDiscount = loyaltyDiscount
         self.loyaltyPointsEarned = loyaltyPointsEarned
+        self.listAmountDue = listAmountDue
+        self.listRefundDue = listRefundDue
     }
 }
 
@@ -992,8 +1007,10 @@ struct UpdateOrderRequest: Codable {
     let orderItems: [UpdateOrderItem]?
     /// URLs of note images (for "delete only" or "set list" via JSON; see API_ORDER_NOTES_IMAGES.md)
     let notesImages: [String]?
+    /// Late fee set at return (existing order field)
+    let lateFee: Double?
 
-    init(orderType: String? = nil, status: String? = nil, totalAmount: Double? = nil, depositAmount: Double? = nil, securityDeposit: Double? = nil, customerId: Int? = nil, customerName: String? = nil, customerPhone: String? = nil, customerEmail: String? = nil, outletId: Int? = nil, pickupPlanAt: String? = nil, returnPlanAt: String? = nil, pickedUpAt: String? = nil, returnedAt: String? = nil, rentalDuration: Int? = nil, isReadyToDeliver: Bool? = nil, collateralType: String? = nil, collateralDetails: String? = nil, notes: String? = nil, pickupNotes: String? = nil, returnNotes: String? = nil, damageNotes: String? = nil, damageFee: Double? = nil, discountType: String? = nil, discountValue: Double? = nil, discountAmount: Double? = nil, orderItems: [UpdateOrderItem]? = nil, notesImages: [String]? = nil) {
+    init(orderType: String? = nil, status: String? = nil, totalAmount: Double? = nil, depositAmount: Double? = nil, securityDeposit: Double? = nil, customerId: Int? = nil, customerName: String? = nil, customerPhone: String? = nil, customerEmail: String? = nil, outletId: Int? = nil, pickupPlanAt: String? = nil, returnPlanAt: String? = nil, pickedUpAt: String? = nil, returnedAt: String? = nil, rentalDuration: Int? = nil, isReadyToDeliver: Bool? = nil, collateralType: String? = nil, collateralDetails: String? = nil, notes: String? = nil, pickupNotes: String? = nil, returnNotes: String? = nil, damageNotes: String? = nil, damageFee: Double? = nil, discountType: String? = nil, discountValue: Double? = nil, discountAmount: Double? = nil, orderItems: [UpdateOrderItem]? = nil, notesImages: [String]? = nil, lateFee: Double? = nil) {
         self.orderType = orderType
         self.status = status
         self.totalAmount = totalAmount
@@ -1022,6 +1039,7 @@ struct UpdateOrderRequest: Codable {
         self.discountAmount = discountAmount
         self.orderItems = orderItems
         self.notesImages = notesImages
+        self.lateFee = lateFee
     }
 
     // Custom encoding to only include non-nil values
@@ -1056,6 +1074,7 @@ struct UpdateOrderRequest: Codable {
         if let discountAmount = discountAmount { try container.encode(discountAmount, forKey: .discountAmount) }
         if let orderItems = orderItems { try container.encode(orderItems, forKey: .orderItems) }
         if let notesImages = notesImages { try container.encode(notesImages, forKey: .notesImages) }
+        if let lateFee = lateFee { try container.encode(lateFee, forKey: .lateFee) }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -1065,7 +1084,7 @@ struct UpdateOrderRequest: Codable {
         case rentalDuration, isReadyToDeliver, collateralType, collateralDetails
         case notes, pickupNotes, returnNotes, damageNotes, damageFee
         case discountType, discountValue, discountAmount
-        case orderItems, notesImages
+        case orderItems, notesImages, lateFee
     }
 }
 
@@ -1332,7 +1351,8 @@ extension UpdateOrderRequest {
 // MARK: - Print Data Extension
 
 extension Order {
-    func toPrintData() -> Data {
+    /// `bankAccount` (#622): printed as a transfer block with a VietQR before the thank-you line. Nil → same bytes as before.
+    func toPrintData(bankAccount: BankAccount? = nil) -> Data {
         var data = Data()
         
         // Initialize printer
@@ -1463,6 +1483,11 @@ extension Order {
             data.append("\n\n\n\n".data(using: .utf8)!)
         }
         
+        // #622: bank transfer block, only when the printer switch is on and the outlet has an account
+        if let bankAccount = bankAccount {
+            data.append(BillBankQR.printData(for: bankAccount))
+        }
+
         // Thank you message
         data.append("\n".data(using: .utf8)!)
         data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.center.rawValue))

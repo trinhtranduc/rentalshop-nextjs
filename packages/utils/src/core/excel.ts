@@ -3,6 +3,36 @@
 // ============================================================================
 
 import * as XLSX from 'xlsx';
+import { formatDateKeyInTimeZone, normalizeStartDate } from './date-range';
+
+/** Exports print and name days in the shop zone (#594). Same value as `SHOP_TIMEZONE`. */
+const EXPORT_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+/** Zero-padded wall-clock fields of an instant in `timeZone`. */
+function wallClockParts(instant: Date, timeZone: string) {
+  const values: Record<string, string> = {};
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  for (const part of formatter.formatToParts(instant)) {
+    if (part.type !== 'literal') values[part.type] = part.value;
+  }
+  return {
+    year: values.year,
+    month: values.month,
+    day: values.day,
+    hour: values.hour,
+    minute: values.minute,
+    second: values.second,
+  };
+}
 
 /**
  * Excel cell style options
@@ -100,21 +130,24 @@ export function createExcelWorkbook(
  */
 export function formatDateForExcel(
   date: Date | string | null | undefined,
-  format: 'date' | 'datetime' | 'datetime-short' = 'date'
+  format: 'date' | 'datetime' | 'datetime-short' = 'date',
+  timeZone: string = EXPORT_TIME_ZONE
 ): string {
   if (!date) return '';
-  
+
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '';
-    
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const year = dateObj.getFullYear();
+
+    // Wall-clock time of the shop zone, not of the server (Railway runs in UTC) (#594)
+    const parts = wallClockParts(dateObj, timeZone);
+    const day = parts.day;
+    const month = parts.month;
+    const year = parts.year;
     const shortYear = String(year).slice(-2);
-    const hours = String(dateObj.getHours()).padStart(2, '0');
-    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+    const hours = parts.hour;
+    const minutes = parts.minute;
+    const seconds = parts.second;
 
     // Format: dd/MM/yy HH:mm:ss (order export spreadsheet parity)
     if (format === 'datetime-short') {
@@ -158,12 +191,15 @@ export function generateExcelFilename(
   startDate?: string | Date,
   endDate?: string | Date
 ): string {
-  const today = new Date().toISOString().split('T')[0];
-  
+  // Vietnam days (#594): range bounds are Vietnam day instants (start = 17:00Z the day before)
+  const today = formatDateKeyInTimeZone(new Date(), EXPORT_TIME_ZONE);
+  const dayKey = (value: string | Date): string => {
+    const start = normalizeStartDate(value);
+    return start ? formatDateKeyInTimeZone(start, EXPORT_TIME_ZONE) : String(value).slice(0, 10);
+  };
+
   if (startDate && endDate) {
-    const start = typeof startDate === 'string' ? startDate.split('T')[0] : startDate.toISOString().split('T')[0];
-    const end = typeof endDate === 'string' ? endDate.split('T')[0] : endDate.toISOString().split('T')[0];
-    return `${resource}-export-${start}-${end}.xlsx`;
+    return `${resource}-export-${dayKey(startDate)}-${dayKey(endDate)}.xlsx`;
   }
   
   return `${resource}-export-${today}.xlsx`;

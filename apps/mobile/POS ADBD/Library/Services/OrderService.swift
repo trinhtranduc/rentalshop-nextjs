@@ -21,15 +21,36 @@ protocol OrderServiceProtocol {
 }
 
 class OrderService: BaseService, OrderServiceProtocol {
+    /// One multipart file part of a note photo
+    struct NotesImagePart: Equatable {
+        let name: String
+        let fileName: String
+        let mimeType: String
+        let data: Data
+    }
+
+    /// File parts of `notesImages` next to the `data` JSON (create and update); none without photos (#480)
+    static func notesImageParts(_ images: [Data]) -> [NotesImagePart] {
+        images.enumerated().map { index, data in
+            NotesImagePart(name: "notesImages", fileName: "notes_image_\(index).jpg", mimeType: "image/jpeg", data: data)
+        }
+    }
+
     private func uploadOrderRequest<Request: Encodable>(
         path: String,
         request: Request,
         notesImages: [Data],
         method: HTTPMethod,
         context: String,
+        idempotencyKey: String? = nil,
         completion: @escaping (Order?, NSError?) -> Void
     ) {
         let fullURL = APIEndpoint.currentBaseURL + path
+        var headers = BaseService.formHeader
+        if let idempotencyKey {
+            // #341: a retried or doubled create with this key returns the first order
+            headers.add(name: "Idempotency-Key", value: idempotencyKey)
+        }
 
         do {
             let requestData = try JSONEncoder.shared.encode(request)
@@ -40,22 +61,17 @@ class OrderService: BaseService, OrderServiceProtocol {
             }
             print("📤 \(context) Notes Images Count: \(notesImages.count)")
 
-            AF.upload(
+            AuthSession.shared.upload(
                 multipartFormData: { multipartFormData in
                     multipartFormData.append(requestData, withName: "data")
 
-                    for (index, imageData) in notesImages.enumerated() {
-                        multipartFormData.append(
-                            imageData,
-                            withName: "notesImages",
-                            fileName: "notes_image_\(index).jpg",
-                            mimeType: "image/jpeg"
-                        )
+                    for part in OrderService.notesImageParts(notesImages) {
+                        multipartFormData.append(part.data, withName: part.name, fileName: part.fileName, mimeType: part.mimeType)
                     }
                 },
                 to: fullURL,
                 method: method,
-                headers: BaseService.formHeader
+                headers: headers
             )
             .responseData { response in
                 print("📥 \(context) Multipart Response:")
@@ -84,6 +100,11 @@ class OrderService: BaseService, OrderServiceProtocol {
                             completion(nil, nsError)
                         }
                     } catch {
+                        // 409 ORDER_SCHEDULE_CONFLICT (#518) sends `data.conflicts`, not an order: keep its message
+                        if let apiError = self.decodeErrorResponse(from: data), !apiError.success {
+                            completion(nil, apiError.toNSError(httpStatusCode: response.response?.statusCode))
+                            return
+                        }
                         print("❌ \(context) JSON Decoding error: \(error)")
                         completion(nil, error as NSError)
                     }
@@ -397,8 +418,8 @@ class OrderService: BaseService, OrderServiceProtocol {
     func loadOverviewOrder(from: Date?, to: Date?, completion: @escaping ([Order]?, NSError?) -> Void) {
         let path = APIEndpoint.Path.orders
         var params: [String: Any] = [:]
-        params["startDate"] = from?.dateServerInString() ?? Date().dateServerInString()
-        params["endDate"] = to?.dateServerInString() ?? Date().dateServerInString()
+        params["startDate"] = from?.dateServerInString() ?? Date().shopDateKeyString() // shop today (#596)
+        params["endDate"] = to?.dateServerInString() ?? Date().shopDateKeyString()
         
         performGET(
             path: path,
@@ -431,8 +452,9 @@ class OrderService: BaseService, OrderServiceProtocol {
     
     // MARK: - Create Order from Cart (New API)
     
-    /// Create order from Cart model
-    func createOrder(from cart: Cart, completion: @escaping (Order?, NSError?) -> Void) {
+    /// Create order from Cart model.
+    /// `idempotencyKey`: one value per checkout, reused on retry, so the API never creates the order twice (#341).
+    func createOrder(from cart: Cart, idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
         let request = cart.toCreateOrderRequest()
         let validation = request.validate()
         if !validation.isValid {
@@ -452,11 +474,12 @@ class OrderService: BaseService, OrderServiceProtocol {
             notesImages: [],
             method: .post,
             context: "OrderService.createOrder",
+            idempotencyKey: idempotencyKey,
             completion: completion
         )
     }
 
-    func createOrder(from cart: Cart, notesImages: [Data], completion: @escaping (Order?, NSError?) -> Void) {
+    func createOrder(from cart: Cart, notesImages: [Data], idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
         let request = cart.toCreateOrderRequest()
         let validation = request.validate()
         if !validation.isValid {
@@ -472,6 +495,7 @@ class OrderService: BaseService, OrderServiceProtocol {
             notesImages: notesImages,
             method: .post,
             context: "OrderService.createOrderWithNotesImages",
+            idempotencyKey: idempotencyKey,
             completion: completion
         )
     }

@@ -76,6 +76,8 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -162,6 +164,8 @@ fun AppSearchField(
      */
     onSearch: (() -> Unit)? = null,
     onClear: (() -> Unit)? = null,
+    /** Redesigned screens pass `DS.Icon.Sm` (board size, #396); others keep 20dp */
+    leadingIconSize: Dp = 20.dp,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     OutlinedTextField(
@@ -180,7 +184,7 @@ fun AppSearchField(
             Icon(
                 Icons.Default.Search,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(leadingIconSize),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
@@ -420,14 +424,15 @@ fun AppCloseIconButton(
 }
 
 @Composable
-fun StatusBadge(status: String, modifier: Modifier = Modifier) {
-    val background = when (status.uppercase()) {
-        "RESERVED" -> Color(0xFFE83F48)
-        "PICKUPED" -> Color(0xFFE88A19)
-        "RETURNED", "COMPLETED" -> Color(0xFF23844A)
-        "CANCELLED" -> Color(0xFF8E2930)
-        else -> MaterialTheme.colorScheme.secondary
-    }
+fun StatusBadge(
+    status: String,
+    modifier: Modifier = Modifier,
+    // New screens pass the pill size of the type ramp (DS.TextSize.Pill, #424); old screens keep 10sp
+    fontSize: TextUnit = 10.sp,
+) {
+    val background = OrderStatusStyle.badgeColor(status)
+    // Translated label, never the raw API value (#370)
+    val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
     // Match iOS OrderStatusBadgeMetrics: ~10sp bold, 9×5 insets, 12pt corner, min ~26dp.
     Box(
         modifier = modifier
@@ -437,11 +442,11 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            status,
+            label,
             color = Color.White,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
+                fontSize = fontSize,
+                lineHeight = if (fontSize == 10.sp) 12.sp else fontSize * 1.34f,
                 fontWeight = FontWeight.Bold,
             ),
             maxLines = 1,
@@ -735,16 +740,19 @@ fun AppOverflowIconButton(
     onClick: () -> Unit,
     contentDescription: String,
     modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Filled.MoreVert,
+    iconSize: Dp = 24.dp,
+    iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     IconButton(
         onClick = onClick,
         modifier = modifier,
     ) {
         Icon(
-            imageVector = Icons.Filled.MoreVert,
+            imageVector = icon,
             contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp),
+            tint = iconTint,
+            modifier = Modifier.size(iconSize),
         )
     }
 }
@@ -848,6 +856,10 @@ fun AppOverflowMenuAnchor(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    /** Redesigned screens pass an outlined glyph at a board size (#396); defaults are the current look */
+    icon: ImageVector = Icons.Filled.MoreVert,
+    iconSize: Dp = 24.dp,
+    iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     // requiredSize: Row + weight(1f) siblings can otherwise shrink this Box to 0
     // in LazyColumn cards (customer list looked like it had no ⋮ at all).
@@ -859,6 +871,9 @@ fun AppOverflowMenuAnchor(
             onClick = { onExpandedChange(true) },
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
+            icon = icon,
+            iconSize = iconSize,
+            iconTint = iconTint,
         )
         AppOverflowMenu(
             expanded = expanded,

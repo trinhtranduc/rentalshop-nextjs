@@ -62,10 +62,12 @@ interface AvailabilityRepository {
         quantity: Int = 1,
     ): ProductAvailability
 
+    /** [excludeOrderId]: the order being edited, so its own lines do not count against it (#634, iOS `excludeOrderId`) */
     suspend fun checkBatchAvailability(
         requests: List<AvailabilityRequest>,
         startDate: LocalDate,
         endDate: LocalDate,
+        excludeOrderId: Int? = null,
     ): Map<Int, ProductAvailability>
 
     suspend fun occupancyCalendar(

@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName, parseProductImages } from '@rentalshop/utils';
 import { z } from 'zod';
+import { getAvailabilityCivilRangeBounds, orderOverlapsAvailabilityBounds } from '../../../../lib/availability';
 
 // Validation schema for product availability query
 // Support both single date (backward compatibility) and rental period (pickupDate/returnDate)
@@ -63,24 +64,25 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
 
       const { productId, date, pickupDate, returnDate, outletId: queryOutletId } = parsed.data;
       
-      // Determine date range: either single date or rental period
-      let startDate: Date;
-      let endDate: Date;
+      // Determine the VN civil days asked for: either single date or rental period (#590, API-1).
+      // The keys are Vietnam days (iOS builds them in the phone zone), not UTC days.
+      let fromYmd: string;
+      let toYmd: string;
       let dateString: string;
-      
+
       if (date) {
         // Single date mode (backward compatibility)
         dateString = date;
-        startDate = new Date(date + 'T00:00:00.000Z');
-        endDate = new Date(date + 'T23:59:59.999Z');
+        fromYmd = date;
+        toYmd = date;
       } else if (pickupDate && returnDate) {
         // Rental period mode
         dateString = `${pickupDate} to ${returnDate}`;
-        startDate = new Date(pickupDate + 'T00:00:00.000Z');
-        endDate = new Date(returnDate + 'T23:59:59.999Z');
-        
+        fromYmd = pickupDate;
+        toYmd = returnDate;
+
         // Validate rental period: return date must be >= pickup date
-        if (startDate > endDate) {
+        if (fromYmd > toYmd) {
           return NextResponse.json(
             ResponseBuilder.error('INVALID_RENTAL_DATES'),
             { status: 400 }
@@ -92,18 +94,22 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           { status: 400 }
         );
       }
-      
-      // Validate dates are not in the past (normalize to UTC for comparison)
-      // Get today's date in UTC (YYYY-MM-DD format)
+
+      // [first day 00:00 VN, day after the last 00:00 VN)
+      const dayBounds = getAvailabilityCivilRangeBounds(fromYmd, toYmd);
+      if (!dayBounds) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_DATE'),
+          { status: 400 }
+        );
+      }
+
+      // Reject days in the past. Kept as lenient as before: the cut-off is the UTC date of now, which is never
+      // after the Vietnam date, so every day an installed app could offer as "today" stays accepted.
       const now = new Date();
-      const todayUTCString = now.toISOString().split('T')[0]; // e.g., "2026-02-27"
-      const todayUTC = new Date(todayUTCString + 'T00:00:00.000Z');
-      
-      // Normalize startDate to UTC midnight for comparison
-      const startDateUTC = new Date(startDate);
-      startDateUTC.setUTCHours(0, 0, 0, 0);
-      
-      if (startDateUTC < todayUTC) {
+      const cutoffYmd = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+
+      if (fromYmd < cutoffYmd) {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_DATE'),
           { status: 400 }
@@ -117,14 +123,20 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || userScope.outletId;
       } else if (user.role === USER_ROLE.MERCHANT) {
-        // Merchants: outletId is required
+        // A merchant login has no outlet (#398): without outletId use the merchant's default outlet,
+        // else its only active one
         if (!queryOutletId) {
-          return NextResponse.json(
-            ResponseBuilder.error('OUTLET_REQUIRED'),
-            { status: 400 }
-          );
+          const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+          if (!defaultOutlet) {
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_REQUIRED'),
+              { status: 400 }
+            );
+          }
+          finalOutletId = defaultOutlet.id;
+        } else {
+          finalOutletId = queryOutletId;
         }
-        finalOutletId = queryOutletId;
       } else if (user.role === USER_ROLE.ADMIN) {
         // Admins: outletId is required
         if (!queryOutletId) {
@@ -159,13 +171,6 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           { status: 404 }
         );
       }
-
-      // Normalize date range to UTC for comparison
-      const startOfPeriod = new Date(startDate);
-      startOfPeriod.setUTCHours(0, 0, 0, 0);
-      
-      const endOfPeriod = new Date(endDate);
-      endOfPeriod.setUTCHours(23, 59, 59, 999);
 
       // Get orders that have this product and overlap with the target date
       // CRITICAL FIX: Ensure we only get orders from the specific outlet
@@ -255,8 +260,8 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       }
 
       // Helper function: Check if order overlaps with requested rental period
-      // Uses standard interval overlap: orderPickup < periodEnd AND orderReturn > periodStart
-      // This matches the logic in /api/products/[id]/availability (New API)
+      // Inclusive VN civil days (#590): the order's pickup day ≤ last day AND its return day ≥ first day.
+      // This matches /api/products/[id]/availability and the calendar.
       const isOrderActiveInPeriod = (order: any) => {
         const status = order.status;
         
@@ -281,26 +286,8 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
           return false;
         }
         
-        // Standard interval overlap condition (same as New API):
-        // Two intervals [A, B] and [C, D] overlap if A < D AND B > C
-        // Here: orderPickup < endOfPeriod AND orderReturn > startOfPeriod
-        
-        // Normalize orderReturn to end of day for comparison (if exists)
-        const orderReturnEnd = orderReturn ? new Date(orderReturn) : null;
-        if (orderReturnEnd) {
-          orderReturnEnd.setUTCHours(23, 59, 59, 999);
-        }
-        
-        if (!orderReturnEnd) {
-          // No return date: consider active if pickup is within or before the period
-          // (order is still out, hasn't been returned)
-          return orderPickup <= endOfPeriod;
-        }
-        
-        // Standard overlap: orderPickup < endOfPeriod AND orderReturnEnd > startOfPeriod
-        const hasOverlap = orderPickup < endOfPeriod && orderReturnEnd > startOfPeriod;
-        
-        return hasOverlap;
+        // No return date: active when picked up on or before the last day (order is still out)
+        return orderOverlapsAvailabilityBounds({ pickupPlanAt: orderPickup, returnPlanAt: orderReturn }, dayBounds);
       };
       
       const activeOrders = allOrders.filter(isOrderActiveInPeriod);

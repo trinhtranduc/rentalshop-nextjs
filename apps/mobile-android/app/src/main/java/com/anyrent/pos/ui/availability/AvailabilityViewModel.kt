@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.availability
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.AvailabilityProduct
 import com.anyrent.pos.domain.availability.AvailabilityRepository
 import com.anyrent.pos.domain.availability.ProductAvailability
@@ -20,7 +21,7 @@ data class AvailabilityUiState(
     val query: String = "",
     val products: List<AvailabilityProduct> = emptyList(),
     val selectedProduct: AvailabilityProduct? = null,
-    val selectedDate: LocalDate = LocalDate.now(),
+    val selectedDate: LocalDate = ShopTime.today(),
     val quantity: Int = 1,
     val result: ProductAvailability? = null,
     val availableByDate: Map<LocalDate, Int> = emptyMap(),

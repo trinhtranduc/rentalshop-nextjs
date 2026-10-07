@@ -17,6 +17,15 @@ What changed and why. One to three sentences.
 - [ ] UI flow exercised, if a screen changed
 - [ ] iOS and Android updated, if the API contract changed
 
+## API compatibility
+
+Required when the diff touches `apps/api`, `packages/{database,utils,constants,auth,validation}/src`,
+`prisma/`, or an API env var (skill `api-compat-review`), plus a row in `.agent/api-changes/LOG.md`.
+Otherwise write "No API change".
+
+| Route / area | Change | Old iOS | Old Android | Web | Risk |
+|---|---|---|---|---|---|
+
 ## Risk
 
 Auth, payments, migrations, production data, mobile clients already installed.

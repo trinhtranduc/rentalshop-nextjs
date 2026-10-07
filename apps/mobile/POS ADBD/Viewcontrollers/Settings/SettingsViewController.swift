@@ -137,10 +137,10 @@ class SettingsViewController: BaseViewControler {
                 // This is just for consistency, export will be hidden regardless
             }
             
-            // Bank accounts management hidden as per requirement
-            // if PermissionManager.shared.canManageBankAccounts() {
-            //     items.append(.bankAccounts)
-            // }
+            // #622: bank accounts for MERCHANT / OUTLET_ADMIN (printed on bills when the printer switch is on)
+            if SettingsV2Logic.canManageBankAccounts(role: User.account()?.role) {
+                items.append(.bankAccounts)
+            }
             
             return items
         case .about:

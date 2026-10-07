@@ -37,7 +37,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["period"] = period
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Dashboard Analytics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -108,7 +108,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["outletId"] = outletId
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Orders Analytics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -169,7 +169,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["endDate"] = endDate.dateServerInString()
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Daily Income Analytics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -224,7 +224,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
         var params: [String: Any] = [:]
         if let startDate = startDate { params["startDate"] = startDate.dateServerInString() }
         if let endDate = endDate { params["endDate"] = endDate.dateServerInString() }
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 switch response.result {
                 case .success(let data):
@@ -262,7 +262,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
         if let plan = plan { params["plan"] = plan }
         if let limit = limit { params["limit"] = limit }
         if let offset = offset { params["offset"] = offset }
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 switch response.result {
                 case .success(let data):
@@ -312,7 +312,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["outletIds"] = outletIds.map { String($0) }.joined(separator: ",")
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Income Analytics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -376,7 +376,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["endDate"] = endDate.dateServerInString()
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Top Customers Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -441,7 +441,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["endDate"] = endDate.dateServerInString()
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Top Products Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -503,7 +503,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["endDate"] = endDate.dateServerInString()
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Order Statistics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -556,7 +556,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
         let path = APIEndpoint.Path.todayMetrics
         let fullURL = APIEndpoint.currentBaseURL + path
         
-        AF.request(fullURL, method: .get, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Today Metrics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -617,7 +617,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["endDate"] = endDate.dateServerInString()
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Growth Metrics Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -681,7 +681,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["limit"] = limit
         }
 
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Analytics Overview Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -752,7 +752,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["limit"] = limit
         }
 
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 switch response.result {
                 case .success(let data):
@@ -793,7 +793,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["endDate"] = endDate.dateServerInString()
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Recent Orders Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -851,7 +851,7 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
             params["limit"] = limit
         }
         
-        AF.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
+        AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 print("📡 Recent Activities Response:")
                 print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -896,6 +896,46 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
                         AnalyticsService.shared.trackError(error: nsError, userId: userId, context: "recent_activities")
                     }
                     completion(nil, nsError)
+                }
+            }
+    }
+}
+
+// MARK: - Outlet Operations (#371)
+extension AnalyticsAPIService {
+    /// GET /api/analytics/outlet-operations for the shop day (#596). A user without the dashboard permission gets an
+    /// error with code 403, so the caller can hide "Việc cần làm".
+    func loadOutletOperations(timeZone: String = Date.shopTimeZone.identifier,
+                              completion: @escaping (TodayWork?, NSError?) -> Void) -> DataRequest {
+        let fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.outletOperations
+        return AuthSession.shared.request(fullURL, method: .get, parameters: ["timeZone": timeZone], headers: BaseService.jsonHeader)
+            .responseData { response in
+                let statusCode = response.response?.statusCode
+                switch response.result {
+                case .success(let data):
+                    do {
+                        let apiResponse = try JSONDecoder.shared.decode(TodayWorkResponse.self, from: data)
+                        if apiResponse.success, let work = apiResponse.data {
+                            completion(work, nil)
+                        } else {
+                            completion(nil, self.createErrorFromResponse(
+                                success: apiResponse.success,
+                                code: apiResponse.code,
+                                message: apiResponse.message,
+                                error: apiResponse.error,
+                                httpStatusCode: statusCode,
+                                defaultMessage: "Failed to load today's work"
+                            ))
+                        }
+                    } catch {
+                        if let statusCode, statusCode >= 400 {
+                            completion(nil, NSError(domain: "RC", code: statusCode))
+                        } else {
+                            completion(nil, error as NSError)
+                        }
+                    }
+                case .failure(let error):
+                    completion(nil, error as NSError)
                 }
             }
     }

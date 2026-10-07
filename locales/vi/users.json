@@ -193,5 +193,273 @@
     "OUTLET_ADMIN": "Quản lý một cửa hàng: đơn hàng, sản phẩm, khách hàng và nhân viên của cửa hàng đó.",
     "OUTLET_STAFF": "Tạo và xử lý đơn hàng. Không sửa được giá sản phẩm.",
     "loginNote": "Người dùng mới đăng nhập bằng email và mật khẩu này, sau đó có thể tự đổi mật khẩu."
+  },
+  "web": {
+    "title": "Nhân viên",
+    "add": "Thêm nhân viên",
+    "searchPlaceholder": "Tìm tên, SĐT, email",
+    "searchLabel": "Tìm nhân viên",
+    "allOutlets": "Tất cả chi nhánh",
+    "outletFilter": "Lọc theo chi nhánh",
+    "allOutletsValue": "Tất cả",
+    "filters": {
+      "role": "Vai trò:",
+      "status": "Trạng thái:",
+      "all": "Tất cả",
+      "active": "Đang hoạt động",
+      "inactive": "Đã khoá"
+    },
+    "cols": {
+      "staff": "Nhân viên",
+      "role": "Vai trò",
+      "outlet": "Chi nhánh",
+      "lastLogin": "Đăng nhập gần nhất",
+      "actions": "Thao tác"
+    },
+    "roles": {
+      "owner": "Chủ cửa hàng",
+      "admin": "Quản lý chi nhánh",
+      "staff": "Nhân viên",
+      "other": "Khác"
+    },
+    "lastSeen": {
+      "current": "Đang dùng",
+      "never": "—",
+      "today": "{time} hôm nay",
+      "yesterday": "{time} hôm qua",
+      "locked": "Đã khoá"
+    },
+    "edit": "Sửa",
+    "more": "Thêm thao tác cho {name}",
+    "activate": "Mở khoá tài khoản",
+    "deactivate": "Khoá tài khoản",
+    "delete": "Xoá nhân viên",
+    "confirm": {
+      "activateTitle": "Mở khoá tài khoản?",
+      "activateBody": "{name} sẽ đăng nhập lại được.",
+      "deactivateTitle": "Khoá tài khoản?",
+      "deactivateBody": "{name} sẽ không đăng nhập được cho tới khi mở khoá.",
+      "deleteTitle": "Xoá nhân viên?",
+      "deleteBody": "Xoá {name} khỏi cửa hàng. Không hoàn tác được.",
+      "cancel": "Huỷ",
+      "close": "Đóng"
+    },
+    "rolesCard": {
+      "title": "Vai trò làm được gì",
+      "owner": "Mọi chi nhánh, tiền, báo cáo, nhân viên, gói dịch vụ.",
+      "admin": "Một chi nhánh: đơn, sản phẩm, giá, khách, tiền trong ngày, nhân viên của chi nhánh.",
+      "staff": "Tạo đơn, giao đồ, nhận trả, thêm khách. Không sửa giá sản phẩm, không xem báo cáo tiền.",
+      "rolePermissions": "Xem quyền từng vai trò",
+      "permissions": "Phân quyền thêm cho nhân viên"
+    },
+    "permissions": {
+      "title": "Phân quyền thêm cho nhân viên",
+      "hint": "Bật thêm quyền cho từng nhân viên, ngoài quyền mặc định của vai trò.",
+      "noAccess": "Tài khoản nhân viên không phân quyền được.",
+      "pickTitle": "Chọn nhân viên",
+      "picked": "đã chọn {count}",
+      "pickAll": "Chọn tất cả",
+      "pickNone": "Bỏ chọn",
+      "noStaff": "Chưa có nhân viên nào (vai trò Nhân viên)",
+      "switchTitle": "Quyền thêm",
+      "pickFirst": "Chọn ít nhất một nhân viên ở bên trái.",
+      "forOne": "Đang sửa quyền của {name}.",
+      "forMany": "Đang sửa {count} nhân viên: bắt đầu từ tắt hết, Lưu sẽ áp dụng cho cả {count} người.",
+      "allOn": "Bật hết",
+      "allOff": "Tắt hết",
+      "cancel": "Bỏ chọn",
+      "save": "Lưu quyền",
+      "saving": "Đang lưu…",
+      "savedTitle": "Đã lưu",
+      "saved": "Đã lưu quyền cho {count} nhân viên",
+      "errorTitle": "Lỗi",
+      "saveFailed": "Không lưu được quyền. Thử lại.",
+      "readFailed": "Không đọc được quyền đã lưu của nhân viên này. Lưu sẽ ghi lại mọi quyền thêm đúng như các công tắc bên dưới.",
+      "groups": {
+        "outlet": "Chi nhánh",
+        "orders": "Đơn hàng",
+        "products": "Sản phẩm",
+        "customers": "Khách hàng",
+        "users": "Nhân viên",
+        "dashboard": "Tổng quan"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "Xem chi nhánh",
+        "desc": "Xem thông tin chi nhánh"
+      },
+      "outlet_manage": {
+        "label": "Quản lý chi nhánh",
+        "desc": "Sửa thông tin và cài đặt chi nhánh"
+      },
+      "users_view": {
+        "label": "Xem nhân viên",
+        "desc": "Xem danh sách và thông tin nhân viên"
+      },
+      "users_manage": {
+        "label": "Quản lý nhân viên",
+        "desc": "Thêm, sửa, khoá và xoá nhân viên"
+      },
+      "products_view": {
+        "label": "Xem sản phẩm",
+        "desc": "Xem danh sách và chi tiết sản phẩm"
+      },
+      "products_create": {
+        "label": "Thêm sản phẩm",
+        "desc": "Thêm sản phẩm mới"
+      },
+      "products_update": {
+        "label": "Sửa sản phẩm",
+        "desc": "Sửa sản phẩm đã có, kể cả giá"
+      },
+      "products_manage": {
+        "label": "Quản lý sản phẩm",
+        "desc": "Toàn quyền: xoá, nhập Excel, giá vốn"
+      },
+      "products_export": {
+        "label": "Xuất sản phẩm",
+        "desc": "Tải danh sách sản phẩm ra Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Tạo đơn",
+        "desc": "Tạo đơn thuê và đơn bán"
+      },
+      "orders_view": {
+        "label": "Xem đơn",
+        "desc": "Xem danh sách và chi tiết đơn"
+      },
+      "orders_update": {
+        "label": "Sửa đơn",
+        "desc": "Sửa đơn, giao đồ, nhận trả"
+      },
+      "orders_delete": {
+        "label": "Xoá đơn",
+        "desc": "Xoá đơn hàng"
+      },
+      "orders_export": {
+        "label": "Xuất đơn hàng",
+        "desc": "Tải danh sách đơn ra Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Quản lý đơn",
+        "desc": "Toàn quyền với đơn hàng"
+      },
+      "customers_view": {
+        "label": "Xem khách hàng",
+        "desc": "Xem danh sách và thông tin khách"
+      },
+      "customers_manage": {
+        "label": "Quản lý khách hàng",
+        "desc": "Thêm, sửa và xoá khách"
+      },
+      "customers_export": {
+        "label": "Xuất khách hàng",
+        "desc": "Tải danh sách khách ra Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "Xem tổng quan",
+        "desc": "Xem trang Tổng quan và số liệu"
+      }
+    },
+    "rolePermissions": {
+      "title": "Quyền theo vai trò",
+      "hint": "Quyền mặc định của mỗi vai trò. Chỉ để xem.",
+      "roleLabel": "Vai trò",
+      "count": "{count} quyền",
+      "granted": "Có quyền",
+      "notGranted": "Không có quyền",
+      "note": "Đây là quyền mặc định của vai trò. Muốn bật thêm cho từng người, dùng Phân quyền thêm cho nhân viên."
+    },
+    "empty": "Chưa có nhân viên nào",
+    "emptySearch": "Không có nhân viên khớp bộ lọc",
+    "loadFailed": "Không tải được danh sách nhân viên.",
+    "retry": "Thử lại",
+    "noAccess": "Tài khoản nhân viên không xem được danh sách nhân viên.",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "footer": {
+      "show": "Hiển thị",
+      "perPage": "dòng mỗi trang",
+      "perPageLabel": "Số dòng mỗi trang",
+      "pages": "Phân trang",
+      "range": "{from}–{to} trong {total} nhân viên",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "form": {
+      "addTitle": "Thêm nhân viên",
+      "infoTitle": "Thông tin",
+      "name": "Họ và tên",
+      "namePlaceholder": "Ví dụ: Trần Thị Lan",
+      "phone": "Số điện thoại",
+      "optional": "Không bắt buộc",
+      "email": "Email đăng nhập",
+      "emailPlaceholder": "ten@vidu.com",
+      "emailHint": "Nhân viên đăng nhập bằng email này.",
+      "required": "bắt buộc",
+      "roleTitle": "Vai trò và chi nhánh",
+      "role": "Vai trò",
+      "outlet": "Chi nhánh",
+      "outletFixed": "Nhân viên mới thuộc chi nhánh của bạn.",
+      "outletsLoading": "Đang tải chi nhánh…",
+      "noOutlets": "Chưa có chi nhánh nào",
+      "passwordTitle": "Mật khẩu đăng nhập",
+      "password": "Mật khẩu",
+      "confirmPassword": "Nhập lại mật khẩu",
+      "passwordHint": "Ít nhất 6 ký tự.",
+      "loginNote": "Nhân viên đăng nhập bằng email và mật khẩu này, sau đó tự đổi mật khẩu được.",
+      "show": "Hiện",
+      "hide": "Ẩn",
+      "showPassword": "Hiện mật khẩu",
+      "hidePassword": "Ẩn mật khẩu",
+      "cancel": "Huỷ",
+      "create": "Thêm nhân viên",
+      "creating": "Đang thêm…",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "errors": {
+        "nameShort": "Tên phải có ít nhất 2 ký tự.",
+        "emailRequired": "Nhập email đăng nhập.",
+        "emailInvalid": "Email không đúng định dạng.",
+        "phoneShort": "Số điện thoại cần ít nhất 8 chữ số.",
+        "phoneLong": "Số điện thoại tối đa 15 chữ số.",
+        "phoneChars": "Số điện thoại chỉ gồm số, dấu cách, + - ( ).",
+        "roleRequired": "Chọn vai trò.",
+        "outletRequired": "Chọn chi nhánh.",
+        "passwordRequired": "Nhập mật khẩu.",
+        "passwordShort": "Mật khẩu cần ít nhất 6 ký tự.",
+        "confirmRequired": "Nhập lại mật khẩu.",
+        "passwordMismatch": "Hai mật khẩu không khớp.",
+        "newRequired": "Nhập mật khẩu mới."
+      }
+    },
+    "detail": {
+      "info": "Thông tin",
+      "merchant": "Cửa hàng",
+      "account": "Tài khoản",
+      "statusActive": "Đang hoạt động",
+      "statusLocked": "Đã khoá",
+      "activeHint": "Khoá tài khoản để nhân viên không đăng nhập được nữa.",
+      "lockedHint": "Tài khoản đang khoá. Mở khoá để nhân viên đăng nhập lại.",
+      "emailStatus": "Email",
+      "verified": "Đã xác thực",
+      "notVerified": "Chưa xác thực",
+      "createdAt": "Ngày tạo",
+      "deleteHint": "Xoá vĩnh viễn tài khoản này. Không hoàn tác được.",
+      "changePassword": "Đổi mật khẩu",
+      "editTitle": "Sửa nhân viên",
+      "emailFixed": "Email đăng nhập không đổi được.",
+      "roleFixed": "Không đổi vai trò ở đây.",
+      "notFound": "Không tìm thấy nhân viên này.",
+      "backToList": "Về danh sách nhân viên"
+    },
+    "password": {
+      "title": "Đổi mật khẩu",
+      "hint": "Đặt mật khẩu mới cho {name}. Mật khẩu cũ không dùng được nữa.",
+      "new": "Mật khẩu mới",
+      "confirm": "Nhập lại mật khẩu mới",
+      "submit": "Đổi mật khẩu",
+      "changing": "Đang đổi…"
+    }
   }
 }

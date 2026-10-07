@@ -5,6 +5,7 @@ import { productsQuerySchema, productCreateSchema, handleApiError, ResponseBuild
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { deleteFromS3, commitStagingFiles, generateAccessUrl, uploadToS3, getBucketName } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../lib/image-compression';
+import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
 import { z } from 'zod';
@@ -150,10 +151,19 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     // Check if user has permission to view costPrice
     const canViewCostPrice = await hasPermission(user, 'products.manage');
 
+    // A merchant login has no outlet (#432). On iOS/Android it works in its default outlet (#398), so
+    // count today's free units there, as the availability routes do. Products are not filtered by it.
+    // The web list keeps its all-outlets view; no default and several outlets also keeps it.
+    let merchantDefaultOutletId: number | undefined;
+    if (user.role === USER_ROLE.MERCHANT && !queryOutletId && isMobilePlatform) {
+      const defaultOutlet = await db.outlets.findDefaultForMerchant(userScope.merchantId);
+      merchantDefaultOutletId = defaultOutlet?.id;
+    }
+
     const availabilityOutletId = resolveProductListAvailabilityOutletId({
       role: user.role,
       userOutletId: userScope.outletId,
-      queryOutletId,
+      queryOutletId: queryOutletId || merchantDefaultOutletId,
       filterOutletId,
     });
 
@@ -659,15 +669,15 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       }
     });
 
-    const auditHelper = createAuditHelper(prisma);
-    await auditHelper.logCreate({
+    await safeAudit('create', () => createAuditHelper(prisma).logCreate({
       entityType: 'Product',
       entityId: String(product.id),
       entityName: product.name,
-      newValues: { name: product.name, rentPrice: product.rentPrice, salePrice: product.salePrice, merchantId: merchant.id },
+      // #519: prices, pricing options, per-outlet stock, images, category (never costPrice)
+      newValues: buildProductAuditSnapshot(product),
       description: `Product created: ${product.name}`,
       context: buildAuditContext(request, user, userScope)
-    }).catch((err) => console.error('Audit log create failed:', err));
+    }));
 
     // Sync totalStock
     try {

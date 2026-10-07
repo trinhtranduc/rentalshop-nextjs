@@ -8,6 +8,7 @@ import {
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
+import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/overview
@@ -32,6 +33,12 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       );
     }
 
+    // Civil days of the shop (or a valid `timeZone`), same as /api/analytics/period (#355)
+    const timeZone = readAnalyticsTimeZone(searchParams);
+    if (!timeZone) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
+    }
+
     const outletFilter = await resolveAnalyticsOutletFilter(db, user, userScope);
 
     if (outletFilter === null) {
@@ -54,19 +61,24 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       groupBy: 'month',
       limit,
       outletFilter,
-      userRole: user.role
+      userRole: user.role,
+      timeZone
     });
 
     let statistics = { totalOrders: 0, totalRevenue: 0, statusBreakdown: {} as Record<string, number> };
     try {
+      // Same civil days as the rest of this response (#594); `new Date(key)` gave UTC days
+      const range = readCivilRange(startDate, endDate, timeZone);
+      if (!range) throw new Error('INVALID_DATE_FORMAT');
       const stats = await db.orders.getStatistics({
         merchantId: userScope.merchantId,
         outletId:
           user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF
             ? userScope.outletId
             : undefined,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate)
+        startDate: range.start,
+        endDate: range.end,
+        exactDateRange: true
       });
       statistics = {
         totalOrders: stats.totalOrders,

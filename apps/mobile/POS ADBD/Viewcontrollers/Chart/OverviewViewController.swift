@@ -1379,18 +1379,14 @@ extension OverviewViewController: UITableViewDelegate, UITableViewDataSource {
                     }
                     guard let detail = orderDetail else { return }
                     let order = Order.from(detail: detail)
-                    let preview = PreviewViewController(order: order)
-                    preview.hidesBottomBarWhenPushed = true
-                    preview.delegate = self
+                    let preview = OrderDetailRouter.detailController(for: order, delegate: self)
                     self?.navigationController?.pushViewController(preview, animated: true)
                 }
             }
         } else {
             guard indexPath.row < orders.count else { return }
             let order = orders[indexPath.row]
-            let preview = PreviewViewController(order: order)
-            preview.hidesBottomBarWhenPushed = true
-            preview.delegate = self
+            let preview = OrderDetailRouter.detailController(for: order, delegate: self)
             navigationController?.pushViewController(preview, animated: true)
         }
     }

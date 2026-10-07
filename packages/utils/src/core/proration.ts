@@ -2,6 +2,8 @@
 // SIMPLE PRORATION CALCULATION
 // ============================================================================
 
+import { civilDaysBetween } from './billing-dates';
+
 export interface ProrationCalculation {
   isUpgrade: boolean;
   isDowngrade: boolean;
@@ -31,11 +33,11 @@ export function calculateProration(
   const currentPrice = currentSubscription.amount;
   const priceDifference = newPlanPrice - currentPrice;
   
-  // Calculate days
+  // Calculate days on Vietnam civil days (#588): stable for the whole day, matches the end day shown.
   const periodStart = new Date(currentSubscription.currentPeriodStart);
   const periodEnd = new Date(currentSubscription.currentPeriodEnd);
-  const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
-  const daysRemaining = Math.ceil((periodEnd.getTime() - changeDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysInPeriod = Math.max(1, civilDaysBetween(periodStart, periodEnd));
+  const daysRemaining = civilDaysBetween(changeDate, periodEnd);
   
   // Determine if upgrade or downgrade
   const isUpgrade = priceDifference > 0;

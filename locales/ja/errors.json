@@ -9,6 +9,16 @@
   "TOKEN_INVALIDATED_PASSWORD_CHANGED": "パスワードが変更されました。再度ログインしてください。",
   "TOKEN_INVALIDATED_PERMISSIONS_CHANGED": "権限が変更されました。再度ログインしてください。",
   "MERCHANT_DUPLICATE": "このメールアドレスまたは電話番号の事業者が既に存在します。別のメールアドレスまたは電話番号を使用してください。",
-  "STOCK_BELOW_RENTED": "在庫数は現在レンタル中の数量より少なくできません。"
+  "INVALID_ORDER_STATUS": "この注文ではこのステータス変更はできません。",
+  "ORDER_SCHEDULE_CONFLICT": "この店舗では予約の重複が許可されていません。日付を変更するか、数量を減らすか、予約で埋まっている商品を外してください。",
+  "INVALID_TIMEZONE": "タイムゾーンが無効です。一覧からタイムゾーンを選んでください（例: Asia/Ho_Chi_Minh）。",
+  "STOCK_BELOW_RENTED": "在庫数は現在レンタル中の数量より少なくできません。",
+  "OUTLET_REQUIRED": "店舗を選択するか、既定の店舗を設定してください。",
+  "PRODUCT_HAS_OPEN_ORDERS": "この商品は予約中またはレンタル中の注文に含まれています。削除する前に、それらの注文を完了またはキャンセルしてください。",
+  "RATE_LIMIT_EXCEEDED": "リクエストが多すぎます。数分待ってからもう一度お試しください。",
+  "MERCHANT_TRANSFER_ADMIN_ONLY": "アカウントを別の事業者へ移動できるのはシステム管理者のみです",
+  "MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED": "事業者オーナーのアカウントは別の事業者へ移動できません",
+  "OUTLET_ASSIGNMENT_REQUIRED": "選択した事業者に属する店舗を選んでください",
+  "OUTLET_MERCHANT_MISMATCH": "選択した店舗は選択した事業者に属していません",
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "このアカウントを変更する前に、別の有効な事業者オーナーを割り当ててください"
 }
-

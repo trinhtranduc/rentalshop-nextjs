@@ -85,6 +85,55 @@
     "october": "Tháng 10",
     "november": "Tháng 11",
     "december": "Tháng 12"
+  },
+  "web": {
+    "title": "Lịch giao trả",
+    "monthNames": "Tháng 1,Tháng 2,Tháng 3,Tháng 4,Tháng 5,Tháng 6,Tháng 7,Tháng 8,Tháng 9,Tháng 10,Tháng 11,Tháng 12",
+    "monthTitle": "{month}, {year}",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "prevMonth": "Tháng trước",
+    "nextMonth": "Tháng sau",
+    "today": "Hôm nay",
+    "monthLabel": "Lịch tháng",
+    "dayPanel": "Việc trong ngày",
+    "legend": {
+      "pickups": "Giao",
+      "returns": "Trả",
+      "late": "Trễ hạn trả"
+    },
+    "cell": {
+      "pickups": "Giao {count}",
+      "returns": "Trả {count}",
+      "late": "Trễ {count}"
+    },
+    "aria": {
+      "pickups": "giao",
+      "returns": "trả",
+      "late": "trễ"
+    },
+    "dayTitleToday": "{day} · hôm nay",
+    "sections": {
+      "pickups": "Cần giao · {count}",
+      "returns": "Cần nhận trả · {count}"
+    },
+    "sub": {
+      "returnOn": "trả {day}",
+      "sameDay": "giao và trả trong ngày",
+      "pickedOn": "giao {day}",
+      "late": "hạn trả {day} · trễ {days} ngày",
+      "notPrepared": "chưa soạn đồ"
+    },
+    "money": {
+      "collect": "còn thu {amount}",
+      "refund": "hoàn cọc {amount}",
+      "fee": "thu thêm {amount}"
+    },
+    "emptyPickups": "Không có đơn cần giao.",
+    "emptyReturns": "Không có đơn cần nhận trả.",
+    "walkIn": "Khách lẻ",
+    "loadFailed": "Không tải được số đơn của tháng.",
+    "dayFailed": "Không tải được đơn của ngày này.",
+    "retry": "Thử lại",
+    "more": "Xem thêm"
   }
 }
-

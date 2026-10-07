@@ -8,15 +8,11 @@ import { API, USER_ROLE } from '@rentalshop/constants';
  * PUT /api/settings/outlet
  * Update current user's outlet information
  * 
- * Authorization: Roles with 'outlet.manage' or 'outlet.view' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN (via outlet.manage)
- * - OUTLET_STAFF has 'outlet.view' only, but endpoint allows them to update
+ * Authorization: 'outlet.manage' only (ADMIN, MERCHANT, OUTLET_ADMIN).
+ * - OUTLET_STAFF has 'outlet.view' and gets 403 (#636); the web form and both apps already show it read-only.
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
- * 
- * Note: OUTLET_STAFF currently has 'outlet.view' but this endpoint allows updates.
- * Consider adding 'outlet.manage' to OUTLET_STAFF if they should update outlet info.
  */
-export const PUT = withPermissions(['outlet.manage', 'outlet.view'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withPermissions(['outlet.manage'])(async (request: NextRequest, { user, userScope }) => {
   try {
     console.log('🔍 DEBUG: Settings outlet PUT API called');
     

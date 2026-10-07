@@ -8,16 +8,24 @@ import com.anyrent.pos.data.model.InboxNotification
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.data.model.optionalAmount
 import com.anyrent.pos.data.model.PaymentEntry
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.data.model.ProductOutletStock
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.RankingItem
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.data.model.SubscriptionStatus
 import com.anyrent.pos.data.model.TodayMetrics
 import com.anyrent.pos.data.model.UserProfile
+import com.anyrent.pos.data.repository.appConfigFromJson
+import com.anyrent.pos.domain.appconfig.AppConfig
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.history.ChangeHistory
+import com.anyrent.pos.domain.orders.HandOverFields
+import com.anyrent.pos.domain.settings.OverlapSetting
+import com.anyrent.pos.domain.products.PricingTypes
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -37,10 +45,27 @@ import java.util.concurrent.TimeUnit
 class ApiClient(
     private val baseUrl: String = BuildConfig.API_BASE_URL.trimEnd('/'),
     private val tokenProvider: () -> String? = { SessionStore.accessToken },
-    private val onUnauthorized: () -> Unit = { SessionStore.expireAuth() },
+    /** Called with the server's 401 code when the session is gone (not on a wrong password). */
+    private val onUnauthorized: (code: String?) -> Unit = { code -> SessionStore.expireAuth(code) },
     private val client: OkHttpClient = defaultHttpClient(),
+    /** Sent as `X-App-Version` so the API can tell app versions apart (minimum version, request logs) */
+    private val appVersion: String = BuildConfig.VERSION_NAME,
+    private val refreshTokenProvider: () -> String? = { SessionStore.refreshToken },
+    private val onTokensRefreshed: (accessToken: String, refreshToken: String) -> Unit = { access, refresh ->
+        SessionStore.accessToken = access
+        SessionStore.refreshToken = refresh
+    },
+    private val deviceIdProvider: () -> String = { SessionStore.deviceId },
 ) {
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
+
+    /** One refresh at a time; concurrent 401s wait and reuse the result. */
+    private val refreshLock = Any()
+
+    private sealed interface RefreshOutcome {
+        data class Refreshed(val accessToken: String) : RefreshOutcome
+        data class Rejected(val code: String?, val message: String) : RefreshOutcome
+    }
     data class PageResult<T>(
         val items: List<T>,
         val hasMore: Boolean,
@@ -53,19 +78,21 @@ class ApiClient(
     // -------------------------------------------------------------------------
 
     fun login(email: String, password: String): Result<UserProfile> = runCatching {
-        // Match iOS AuthenticationService: POST /api/auth/login
+        // Match iOS AuthenticationService: POST /api/mobile/auth/login (1-hour token + refresh token, #344)
         val body = JSONObject()
             .put("email", email.trim())
             .put("password", password)
+            .put("deviceId", deviceIdProvider())
             .toString()
             .toRequestBody(jsonMedia)
 
-        val json = execute(post("/api/auth/login", body, authed = false))
+        val json = execute(post("/api/mobile/auth/login", body, authed = false))
         requireSuccess(json)
         val data = json.getJSONObject("data")
         val token = data.optString("token").ifBlank { data.optString("accessToken") }
         require(token.isNotBlank()) { "Missing access token" }
         SessionStore.accessToken = token
+        SessionStore.refreshToken = data.optString("refreshToken").takeIf { it.isNotBlank() }
 
         val user = data.optJSONObject("user") ?: JSONObject()
         val profile = parseUserProfile(user)
@@ -83,10 +110,43 @@ class ApiClient(
         SessionStore.merchantAddress = profile.merchantAddress
         SessionStore.outletPhone = profile.outletPhone
         SessionStore.outletAddress = profile.outletAddress
+        SessionStore.allowOverlappingOrders = profile.allowOverlappingOrders
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
     }
+
+    /**
+     * #518: re-reads the shop setting "Cho tạo đơn khi trùng lịch" from GET /api/users/profile and caches it
+     * (the owner may have changed it on the web). An answer without a merchant keeps the cached value.
+     */
+    fun refreshAllowOverlappingOrders(): Result<Boolean> = runCatching {
+        val json = execute(get("$baseUrl/api/users/profile"))
+        val value = OverlapSetting.fromResponse(json) ?: SessionStore.allowOverlappingOrders
+        SessionStore.allowOverlappingOrders = value
+        value
+    }
+
+    /** #518: PUT /api/settings/merchant with only the setting (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
+    fun setAllowOverlappingOrders(allow: Boolean): Result<Boolean> = runCatching {
+        val body = OverlapSetting.body(allow).toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/settings/merchant", body))
+        val value = OverlapSetting.fromResponse(json) ?: allow
+        SessionStore.allowOverlappingOrders = value
+        value
+    }
+
+    /** #519: GET /api/orders/{id}/changes, newest first */
+    fun orderChanges(orderId: Int, limit: Int = ChangeHistory.PAGE_SIZE, offset: Int = 0): Result<ChangeHistory.Page> =
+        runCatching {
+            ChangeHistory.parsePage(execute(get("$baseUrl/api/orders/$orderId/changes?limit=$limit&offset=$offset")))
+        }
+
+    /** #519: GET /api/products/{id}/changes, newest first */
+    fun productChanges(productId: Int, limit: Int = ChangeHistory.PAGE_SIZE, offset: Int = 0): Result<ChangeHistory.Page> =
+        runCatching {
+            ChangeHistory.parsePage(execute(get("$baseUrl/api/products/$productId/changes?limit=$limit&offset=$offset")))
+        }
 
     fun forgotPassword(email: String): Result<String> = runCatching {
         val body = JSONObject().put("email", email.trim()).toString().toRequestBody(jsonMedia)
@@ -96,8 +156,15 @@ class ApiClient(
     }
 
     fun logout(): Result<Unit> = runCatching {
-        val body = JSONObject().put("deviceId", SessionStore.deviceId).toString().toRequestBody(jsonMedia)
-        runCatching { execute(post("/api/auth/logout", body, authed = true)) }
+        val refreshToken = refreshTokenProvider()
+        if (!refreshToken.isNullOrBlank()) {
+            // Revokes the refresh token and ends its session; works even after the access token expired
+            val body = JSONObject().put("refreshToken", refreshToken).toString().toRequestBody(jsonMedia)
+            runCatching { execute(post("/api/mobile/auth/logout", body, authed = false)) }
+        } else {
+            val body = JSONObject().put("deviceId", deviceIdProvider()).toString().toRequestBody(jsonMedia)
+            runCatching { execute(post("/api/auth/logout", body, authed = true)) }
+        }
         Unit
     }
 
@@ -139,10 +206,12 @@ class ApiClient(
     // Notifications
     // -------------------------------------------------------------------------
 
-    fun getNotifications(page: Int, limit: Int = 20): Result<PageResult<InboxNotification>> = runCatching {
+    /** [isRead] false = unread only (existing API filter, used by the new inbox chip, #477); null = all */
+    fun getNotifications(page: Int, limit: Int = 20, isRead: Boolean? = null): Result<PageResult<InboxNotification>> = runCatching {
         val url = "$baseUrl/api/notifications".toHttpUrl().newBuilder()
             .addQueryParameter("page", page.toString())
             .addQueryParameter("limit", limit.toString())
+            .apply { if (isRead != null) addQueryParameter("isRead", isRead.toString()) }
             .build()
         val json = execute(get(url.toString()))
         requireSuccess(json)
@@ -297,7 +366,7 @@ class ApiClient(
         )
     }
 
-    private fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
+    internal fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject()
         val array = data.optJSONArray("orders") ?: JSONArray()
@@ -324,8 +393,17 @@ class ApiClient(
         getOrder(match.id).getOrThrow()
     }
 
-    fun updateOrderStatus(id: Int, status: String): Result<OrderSummary> = runCatching {
-        val body = JSONObject().put("status", status).toString().toRequestBody(jsonMedia)
+    /** PUT the status; a hand-over also carries the papers / security deposit from the sheet (#427) */
+    fun updateOrderStatus(
+        id: Int,
+        status: String,
+        fields: HandOverFields = HandOverFields(),
+    ): Result<OrderSummary> = runCatching {
+        val body = JSONObject().put("status", status).apply {
+            fields.collateralType?.let { put("collateralType", it) }
+            fields.collateralDetails?.let { put("collateralDetails", it) }
+            fields.securityDeposit?.let { put("securityDeposit", it) }
+        }.toString().toRequestBody(jsonMedia)
         val json = execute(put("$baseUrl/api/orders/$id", body))
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject().put("id", id).put("status", status)
@@ -355,10 +433,14 @@ class ApiClient(
         depositsByProduct: Map<Int, Double> = emptyMap(),
         pricingTypesByProduct: Map<Int, String> = emptyMap(),
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
+        /** #341: one value per checkout, reused on retry, so the API never creates the order twice. */
+        idempotencyKey: String? = null,
+        /** #480: cart note photos (JPEG ~180KB); empty = the same JSON request as before */
+        noteImages: List<ByteArray> = emptyList(),
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
-            val pricingType = pricingTypesByProduct[productId] ?: "FIXED"
+            val pricingType = PricingTypes.normalize(pricingTypesByProduct[productId])
             val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -400,8 +482,16 @@ class ApiClient(
                 }
             }
             .toString()
-            .toRequestBody(jsonMedia)
-        val json = execute(post("/api/orders", body))
+            .let { createOrderBody(it, noteImages) }
+        val request = post("/api/orders", body).let { base ->
+            // Multipart (note photos) carries its own boundary in the content type
+            if (body is MultipartBody) base.newBuilder().header("Content-Type", body.contentType().toString()).build()
+            else base
+        }.let { base ->
+            if (idempotencyKey.isNullOrBlank()) base
+            else base.newBuilder().header("Idempotency-Key", idempotencyKey).build()
+        }
+        val json = execute(request)
         requireSuccess(json)
         parseOrderSummary(json.optJSONObject("data") ?: JSONObject())
     }
@@ -431,7 +521,7 @@ class ApiClient(
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
-            val pricingType = pricingTypesByProduct[productId] ?: "FIXED"
+            val pricingType = PricingTypes.normalize(pricingTypesByProduct[productId])
             val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -535,9 +625,32 @@ class ApiClient(
             .get()
             .applyAuth(true)
             .build()
+        return fetchBytes(request, allowRefresh = true)
+    }
+
+    private fun fetchBytes(request: Request, allowRefresh: Boolean): ByteArray {
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 val body = response.body?.string().orEmpty()
+                val sentAuthorization = request.header("Authorization")
+                // Same refresh-and-retry as execute() so a download after the 1-hour token still works (#344)
+                if (response.code == 401 && allowRefresh && sentAuthorization != null &&
+                    runCatching { JSONObject(body).errorCode() }.getOrNull() == CODE_TOKEN_EXPIRED
+                ) {
+                    when (val outcome = refreshAccessToken(sentAuthorization)) {
+                        is RefreshOutcome.Refreshed -> return fetchBytes(
+                            request.newBuilder().header("Authorization", "Bearer ${outcome.accessToken}").build(),
+                            allowRefresh = false,
+                        )
+                        is RefreshOutcome.Rejected -> {
+                            onUnauthorized(outcome.code)
+                            throw AppError.Unauthorized(
+                                outcome.message.ifBlank { "Your session has expired" },
+                                outcome.code,
+                            )
+                        }
+                    }
+                }
                 val apiMessage = runCatching {
                     JSONObject(body).optString("message")
                         .ifBlank { JSONObject(body).optString("error") }
@@ -884,6 +997,13 @@ class ApiClient(
         )
     }
 
+    /** Public `GET /api/mobile/app-config`: minimum app version and which new screens are on (#370) */
+    fun appConfig(): Result<AppConfig> = runCatching {
+        val json = execute(get("$baseUrl/api/mobile/app-config", authed = false))
+        requireSuccess(json)
+        appConfigFromJson(json.optJSONObject("data") ?: JSONObject())
+    }
+
     fun healthCheck(): Result<Boolean> = runCatching {
         val json = execute(get("$baseUrl/api/health", authed = false))
         json.optBoolean("success", true) || json.has("status")
@@ -893,7 +1013,7 @@ class ApiClient(
     // HTTP helpers + parsers
     // -------------------------------------------------------------------------
 
-    private fun execute(request: Request): JSONObject {
+    private fun execute(request: Request, allowRefresh: Boolean = true): JSONObject {
         try {
             client.newCall(request).execute().use { response ->
                 val raw = response.body?.string().orEmpty()
@@ -907,10 +1027,32 @@ class ApiClient(
                     )
                 }
                 if (response.code == 401) {
-                    onUnauthorized()
+                    val code = json.errorCode()
+                    val sentAuthorization = request.header("Authorization")
+                    // A 401 without a token (e.g. wrong password on login) is not a lost session.
+                    if (sentAuthorization != null) {
+                        if (allowRefresh && code == CODE_TOKEN_EXPIRED) {
+                            when (val outcome = refreshAccessToken(sentAuthorization)) {
+                                is RefreshOutcome.Refreshed -> return execute(
+                                    request.newBuilder()
+                                        .header("Authorization", "Bearer ${outcome.accessToken}")
+                                        .build(),
+                                    allowRefresh = false,
+                                )
+                                is RefreshOutcome.Rejected -> {
+                                    onUnauthorized(outcome.code ?: code)
+                                    throw AppError.Unauthorized(
+                                        outcome.message.ifBlank { "Your session has expired" },
+                                        outcome.code ?: code,
+                                    )
+                                }
+                            }
+                        }
+                        onUnauthorized(code)
+                    }
                     throw AppError.Unauthorized(
                         json.errorMessage().ifBlank { "Your session has expired" },
-                        json.errorCode(),
+                        code,
                     )
                 }
                 if (!response.isSuccessful) {
@@ -929,6 +1071,46 @@ class ApiClient(
             }
         } catch (error: AppError) {
             throw error
+        } catch (error: IOException) {
+            logApi("Network ${request.method} ${request.url}: ${error.message}")
+            throw AppError.Network(error.message ?: "Network request failed", error)
+        }
+    }
+
+    /**
+     * Exchanges the refresh token for a new pair. If another request already refreshed while this
+     * one waited, reuses that token instead of spending the (rotated) refresh token again.
+     * Network errors propagate as [AppError.Network] so a bad connection never signs the user out.
+     */
+    private fun refreshAccessToken(staleAuthorization: String): RefreshOutcome = synchronized(refreshLock) {
+        val current = tokenProvider()
+        if (!current.isNullOrBlank() && "Bearer $current" != staleAuthorization) {
+            return RefreshOutcome.Refreshed(current)
+        }
+        val refreshToken = refreshTokenProvider()
+        if (refreshToken.isNullOrBlank()) {
+            return RefreshOutcome.Rejected(null, "")
+        }
+        val body = JSONObject()
+            .put("refreshToken", refreshToken)
+            .put("deviceId", deviceIdProvider())
+            .toString()
+            .toRequestBody(jsonMedia)
+        val request = post("/api/mobile/auth/refresh", body, authed = false)
+        try {
+            client.newCall(request).execute().use { response ->
+                val json = runCatching { JSONObject(response.body?.string().orEmpty().ifBlank { "{}" }) }
+                    .getOrElse { JSONObject() }
+                val data = json.optJSONObject("data")
+                val accessToken = data?.optString("token").orEmpty()
+                val newRefreshToken = data?.optString("refreshToken").orEmpty()
+                if (response.isSuccessful && accessToken.isNotBlank() && newRefreshToken.isNotBlank()) {
+                    onTokensRefreshed(accessToken, newRefreshToken)
+                    return RefreshOutcome.Refreshed(accessToken)
+                }
+                logApi("Token refresh rejected ${response.code}: ${json.errorCode()}")
+                return RefreshOutcome.Rejected(json.errorCode(), json.errorMessage())
+            }
         } catch (error: IOException) {
             logApi("Network ${request.method} ${request.url}: ${error.message}")
             throw AppError.Network(error.message ?: "Network request failed", error)
@@ -1007,6 +1189,10 @@ class ApiClient(
             .build()
 
     private fun Request.Builder.applyAuth(authed: Boolean): Request.Builder {
+        // Same platform headers as iOS BaseService, on every call (also unauthenticated ones)
+        header("X-Client-Platform", "mobile")
+        header("X-Device-Type", "android")
+        header("X-App-Version", appVersion)
         if (authed) {
             val token = tokenProvider()
             if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
@@ -1034,6 +1220,7 @@ class ApiClient(
             merchantAddress = merchant?.optString("address")?.takeIf { it.isNotBlank() },
             outletPhone = outlet?.optString("phone")?.takeIf { it.isNotBlank() },
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
+            allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
         )
     }
 
@@ -1049,10 +1236,11 @@ class ApiClient(
             isRead = item.optBoolean("isRead", false),
             createdAt = item.optString("createdAt").takeIf { it.isNotBlank() },
             orderId = orderId,
+            status = payload?.optString("status")?.takeIf { it.isNotBlank() && it != "null" },
         )
     }
 
-    private fun parseProduct(o: JSONObject): Product = Product(
+    internal fun parseProduct(o: JSONObject): Product = Product(
         id = o.optInt("id"),
         name = o.optString("name"),
         barcode = o.optString("barcode").takeIf { it.isNotBlank() },
@@ -1066,13 +1254,13 @@ class ApiClient(
             ?: o.optString("categoryName").takeIf { it.isNotBlank() },
         imageUrl = firstProductImageUrl(o),
         deposit = o.optDouble("deposit", 0.0),
-        pricingType = o.optString("pricingType", "FIXED").uppercase(),
+        pricingType = PricingTypes.normalize(o.optString("pricingType")),
         pricingOptions = o.optJSONArray("pricingOptions")?.let { options ->
             (0 until options.length()).mapNotNull { index ->
                 options.optJSONObject(index)?.let { option ->
                     PricingOption(
                         id = option.optInt("id").takeIf { option.has("id") },
-                        type = option.optString("type", "FIXED").uppercase(),
+                        type = PricingTypes.normalizeOption(option.optString("type")),
                         price = option.optDouble("price"),
                         isDefault = option.optBoolean("isDefault"),
                     )
@@ -1081,7 +1269,34 @@ class ApiClient(
         } ?: emptyList(),
         note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
         embeddingGeneratedAt = o.optString("embeddingGeneratedAt").takeIf { it.isNotBlank() && it != "null" },
+        images = productImageUrls(o),
+        outletStock = o.optJSONArray("outletStock")?.let { rows ->
+            (0 until rows.length()).mapNotNull { index ->
+                val row = rows.optJSONObject(index) ?: return@mapNotNull null
+                val outletId = row.optJSONObject("outlet")?.positiveInt("id") ?: row.positiveInt("outletId")
+                    ?: return@mapNotNull null
+                val stock = row.optInt("stock")
+                val renting = row.optInt("renting")
+                ProductOutletStock(outletId, stock, renting, row.optInt("available", (stock - renting).coerceAtLeast(0)))
+            }
+        } ?: emptyList(),
+        effectiveAvailableToday = if (o.has("effectiveAvailableToday") && !o.isNull("effectiveAvailableToday")) {
+            o.optInt("effectiveAvailableToday")
+        } else {
+            null
+        },
     )
+
+    /** Every photo URL of a product (string array), cover first */
+    private fun productImageUrls(o: JSONObject): List<String> {
+        val images = o.optJSONArray("images")
+            ?: o.nullableString("images")?.let { raw -> runCatching { JSONArray(raw) }.getOrNull() }
+            ?: return listOfNotNull(firstProductImageUrl(o))
+        return (0 until images.length()).mapNotNull { i ->
+            images.optString(i).takeIf { it.isNotBlank() && it != "null" && !it.startsWith("{") }
+                ?: images.optJSONObject(i)?.nullableString("url")
+        }
+    }
 
     private fun parseCustomer(o: JSONObject): Customer = Customer(
         id = o.optInt("id"),
@@ -1117,6 +1332,8 @@ class ApiClient(
                 ?: customer?.nullableString("phone"),
             pickupPlanAt = o.nullableString("pickupPlanAt"),
             returnPlanAt = o.nullableString("returnPlanAt"),
+            pickedUpAt = o.nullableString("pickedUpAt"),
+            returnedAt = o.nullableString("returnedAt"),
             createdAt = o.nullableString("createdAt"),
             notes = o.nullableString("notes"),
             isReadyToDeliver = o.optBoolean("isReadyToDeliver", false),
@@ -1135,8 +1352,47 @@ class ApiClient(
                     ?: createdBy?.nullableString("name")
                     ?: createdBy?.nullableString("email")
             },
+            updatedAt = o.nullableString("updatedAt"),
+            itemsSummary = orderItemsSummary(o.optJSONArray("orderItems")),
+            productQuantities = orderItemQuantities(o.optJSONArray("orderItems")),
+            productTotals = orderItemTotals(o.optJSONArray("orderItems")),
+            amountDue = optionalAmount(o, "amountDue"),
+            refundDue = optionalAmount(o, "refundDue"),
         )
     }
+
+    /** product id → line totals, from the list's `orderItems` (#482) */
+    internal fun orderItemTotals(items: JSONArray?): Map<Int, Double> {
+        val result = mutableMapOf<Int, Double>()
+        for (index in 0 until (items?.length() ?: 0)) {
+            val item = items?.optJSONObject(index) ?: continue
+            val id = item.optInt("productId").takeIf { it > 0 } ?: item.optJSONObject("product")?.optInt("id")?.takeIf { it > 0 } ?: continue
+            val total = item.optDouble("totalPrice").takeIf { !it.isNaN() } ?: 0.0
+            result[id] = (result[id] ?: 0.0) + total
+        }
+        return result
+    }
+
+    /** product id → units, from the list's `orderItems` (#388) */
+    internal fun orderItemQuantities(items: JSONArray?): Map<Int, Int> {
+        val result = mutableMapOf<Int, Int>()
+        for (index in 0 until (items?.length() ?: 0)) {
+            val item = items?.optJSONObject(index) ?: continue
+            val id = item.optInt("productId").takeIf { it > 0 } ?: item.optJSONObject("product")?.optInt("id")?.takeIf { it > 0 } ?: continue
+            result[id] = (result[id] ?: 0) + item.optInt("quantity", 1)
+        }
+        return result
+    }
+
+    /** "Áo dài trắng ×2, Cà vạt lụa" from the list's `orderItems` (#401) */
+    private fun orderItemsSummary(items: JSONArray?): String =
+        (0 until (items?.length() ?: 0)).mapNotNull { index ->
+            val item = items?.optJSONObject(index) ?: return@mapNotNull null
+            val name = item.nullableString("productName") ?: item.optJSONObject("product")?.nullableString("name")
+            if (name.isNullOrBlank()) return@mapNotNull null
+            val quantity = item.optInt("quantity", 1)
+            if (quantity > 1) "$name ×$quantity" else name
+        }.joinToString(", ")
 
     private fun parseOrderDetail(o: JSONObject): OrderDetail {
         // Some payloads nest the order under `data` again; unwrap if needed.
@@ -1191,6 +1447,7 @@ class ApiClient(
             discountAmount = root.safeDouble("discountAmount"),
             outletName = root.nullableString("outletName")
                 ?: root.optJSONObject("outlet")?.nullableString("name"),
+            outletId = root.positiveInt("outletId") ?: root.optJSONObject("outlet")?.positiveInt("id"),
         )
     }
 
@@ -1346,6 +1603,24 @@ class ApiClient(
         }
 
     companion object {
+        private val createJsonMedia = "application/json; charset=utf-8".toMediaType()
+        private val createImageMedia = "image/jpeg".toMediaType()
+
+        /**
+         * Body of `POST /api/orders` (#480): the JSON alone without note photos; with photos the multipart form the
+         * iOS create sends — field `data` (the same JSON) plus one `notesImages` file part per photo.
+         */
+        fun createOrderBody(json: String, noteImages: List<ByteArray>): okhttp3.RequestBody {
+            if (noteImages.isEmpty()) return json.toRequestBody(createJsonMedia)
+            val multipart = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("data", json)
+            noteImages.forEachIndexed { index, bytes ->
+                multipart.addFormDataPart("notesImages", "notes_image_$index.jpg", bytes.toRequestBody(createImageMedia))
+            }
+            return multipart.build()
+        }
+
+        private const val CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
+
         private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)

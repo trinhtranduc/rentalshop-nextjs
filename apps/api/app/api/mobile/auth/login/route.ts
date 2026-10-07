@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser } from '@rentalshop/auth/server';
-import { loginSchema, handleApiError } from '@rentalshop/utils';
-import { db } from '@rentalshop/database';
-import { API } from '@rentalshop/constants';
+import { z } from 'zod';
+import { handleApiError } from '@rentalshop/utils';
+import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
+import { buildAuthLoginSuccessResponse } from '../../../../../lib/build-auth-login-response';
+import { authenticatePasswordLogin } from '../../../../../lib/password-login';
+
+export async function OPTIONS(request: NextRequest) {
+  const corsHeaders = buildSimpleCorsHeaders(request);
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
+const deviceSchema = z.object({ deviceId: z.string().max(255).optional() }).passthrough();
 
 /**
  * @swagger
  * /api/mobile/auth/login:
  *   post:
  *     summary: Mobile user login
- *     description: Authenticate mobile user with email and password. Returns access token (7d) and refresh token (30d).
+ *     description: Authenticate mobile user with email and password. Same checks and session as /api/auth/login (a newer login signs out older devices). Returns a 1-hour access token and a refresh token (30d, rotated) bound to the session.
  *     tags: [Mobile, Authentication]
  *     requestBody:
  *       required: true
@@ -80,48 +91,25 @@ import { API } from '@rentalshop/constants';
  *         description: Internal server error
  */
 export async function POST(request: NextRequest) {
+  const corsHeaders = buildSimpleCorsHeaders(request);
+
   try {
     const body = await request.json();
-    
-    // Validate input
-    const validatedData = loginSchema.parse(body);
-    
-    // Login user (validates credentials, checks subscription, generates access token)
-    const result = await loginUser({
-      email: validatedData.email,
-      password: validatedData.password,
-    });
-    
-    // Generate a proper refresh token (stored in DB, hashed)
-    const deviceId = body.deviceId || null;
-    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
-    const userAgent = request.headers.get('user-agent') || undefined;
 
-    const refreshToken = await db.refreshTokens.create(result.user.id, {
-      deviceId,
-      userAgent,
-      ipAddress,
+    const login = await authenticatePasswordLogin(request, body, corsHeaders);
+    if ('response' in login) {
+      return login.response;
+    }
+
+    const { deviceId } = deviceSchema.parse(body);
+
+    // Same response as /api/auth/login plus refreshToken, expiresIn, refreshExpiresIn (#344)
+    return await buildAuthLoginSuccessResponse(request, login.user, corsHeaders, {
+      issueRefreshToken: { deviceId },
     });
-    
-    return NextResponse.json({
-      success: true,
-      code: 'MOBILE_LOGIN_SUCCESS',
-      message: 'Mobile login successful',
-      data: {
-        ...result,
-        refreshToken,
-        expiresIn: '7d',
-        refreshExpiresIn: '30d',
-        deviceId: deviceId || 'unknown-device',
-        pushToken: body.pushToken || null,
-      },
-    });
-    
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Mobile login error:', error);
-    
-    // Use unified error handling system
     const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
+    return NextResponse.json(response, { status: statusCode, headers: corsHeaders });
   }
 }

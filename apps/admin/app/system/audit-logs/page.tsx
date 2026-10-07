@@ -174,12 +174,14 @@ function ActionBadge({ action }: { action: string }) {
 
 // Compact table row for audit log
 function AuditLogRow({ log, onViewDetails }: { log: AuditLog; onViewDetails: (log: AuditLog) => void }) {
+  // Log timestamps stay in the viewer's own time zone and name it (e.g. "GMT+7", "PDT") — #578 ADM-9
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZoneName: 'short'
     });
   };
 

@@ -11,6 +11,9 @@ import UIKit
 import SnapKit
 
 class UserManagementViewController: BaseViewControler {
+    /// #459: new style, set by Settings v2 before the page is shown
+    var v2 = false
+    private let v2SearchField = UITextField()
     
     // MARK: - UI Components
     private lazy var userTableView: UITableView = {
@@ -90,6 +93,10 @@ class UserManagementViewController: BaseViewControler {
     // MARK: - Setup
     override func setupUI() {
         super.setupUI()
+        if v2 {
+            setupV2UI()
+            return
+        }
        
         view.backgroundColor = .backgroundPrimary
         
@@ -137,6 +144,54 @@ class UserManagementViewController: BaseViewControler {
         }
     }
     
+    /// v2: ‹ header (+ when the role can manage users), grey search box, flat rows; same list, search and menu
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        var trailing: [UIView] = []
+        // Only show add button if user has canManageUsers permission (as before)
+        if PermissionManager.shared.canManageUsers() {
+            let add = CustomersV2UI.iconButton("plus", label: "Add User".localized(), size: DS.Icon.sm)
+            add.addTarget(self, action: #selector(addNewUser), for: .touchUpInside)
+            trailing.append(add)
+        }
+        let line = SettingsDetailV2.installHeader(on: view, title: "settings.v2.users".localized(), back: back, trailing: trailing)
+
+        v2SearchField.autocapitalizationType = .none
+        v2SearchField.spellCheckingType = .no
+        v2SearchField.delegate = self
+        v2SearchField.addTarget(self, action: #selector(v2SearchChanged), for: .editingChanged)
+        let search = CustomersV2UI.searchBox(v2SearchField, placeholder: "Search users...".localized())
+        v2SearchField.accessibilityLabel = "Search users...".localized()
+        view.addSubview(search)
+        search.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+
+        userTableView.backgroundColor = .white
+        userTableView.sectionHeaderTopPadding = 0
+        userTableView.keyboardDismissMode = .onDrag
+        userTableView.estimatedRowHeight = 76
+        userTableView.register(UserV2Cell.self, forCellReuseIdentifier: UserV2Cell.reuseId)
+        view.addSubview(userTableView)
+        configPullToRefresh(tableview: userTableView)
+        userTableView.snp.makeConstraints { make in
+            make.top.equalTo(search.snp.bottom).offset(8)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
+    /// Same handling as the old search bar
+    @objc private func v2SearchChanged() {
+        searchBar(searchBar, textDidChange: v2SearchField.text ?? "")
+    }
+
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         let navBar = setupCustomNavigationBar(
@@ -207,11 +262,12 @@ class UserManagementViewController: BaseViewControler {
     // MARK: - Actions
     @objc private func addNewUser() {
         let formVC = UserFormViewController()
+        formVC.v2 = v2
         formVC.delegate = self
         presentWithHiddenNavigationBar(formVC, fullScreen: true)
     }
     
-    private func createUserMenu(for user: User, cell: UserCell) -> UIMenu {
+    private func createUserMenu(for user: User, cell: UITableViewCell) -> UIMenu {
         var actions: [UIAction] = []
         
         // Edit action
@@ -256,6 +312,7 @@ class UserManagementViewController: BaseViewControler {
     
     private func editUser(_ user: User) {
         let formVC = UserFormViewController()
+        formVC.v2 = v2
         formVC.user = user
         formVC.delegate = self
         presentWithHiddenNavigationBar(formVC, fullScreen: true)
@@ -389,6 +446,12 @@ extension UserManagementViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if v2 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: UserV2Cell.reuseId, for: indexPath) as! UserV2Cell
+            let user = filteredUsers[indexPath.row]
+            cell.bind(user: user, menu: createUserMenu(for: user, cell: cell))
+            return cell
+        }
         let cell = tableView.dequeueReusableCell(
             withIdentifier: String(describing: UserCell.self),
             for: indexPath
@@ -461,3 +524,11 @@ extension UserManagementViewController: UserFormViewControllerDelegate {
     }
 }
 
+// MARK: - UITextFieldDelegate (v2 search box)
+extension UserManagementViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        searchBarSearchButtonClicked(searchBar)
+        textField.resignFirstResponder()
+        return true
+    }
+}

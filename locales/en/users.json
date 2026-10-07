@@ -190,5 +190,273 @@
     "OUTLET_ADMIN": "Runs one outlet: orders, products, customers and the staff of that outlet.",
     "OUTLET_STAFF": "Creates and handles orders. Cannot change product prices.",
     "loginNote": "The new user signs in with this email and password, and can change the password later."
+  },
+  "web": {
+    "title": "Staff",
+    "add": "Add staff",
+    "searchPlaceholder": "Search name, phone, email",
+    "searchLabel": "Search staff",
+    "allOutlets": "All outlets",
+    "outletFilter": "Filter by outlet",
+    "allOutletsValue": "All",
+    "filters": {
+      "role": "Role:",
+      "status": "Status:",
+      "all": "All",
+      "active": "Active",
+      "inactive": "Locked"
+    },
+    "cols": {
+      "staff": "Staff",
+      "role": "Role",
+      "outlet": "Outlet",
+      "lastLogin": "Last sign-in",
+      "actions": "Actions"
+    },
+    "roles": {
+      "owner": "Shop owner",
+      "admin": "Outlet manager",
+      "staff": "Staff",
+      "other": "Other"
+    },
+    "lastSeen": {
+      "current": "Using now",
+      "never": "—",
+      "today": "{time} today",
+      "yesterday": "{time} yesterday",
+      "locked": "Locked"
+    },
+    "edit": "Edit",
+    "more": "More actions for {name}",
+    "activate": "Unlock account",
+    "deactivate": "Lock account",
+    "delete": "Delete staff",
+    "confirm": {
+      "activateTitle": "Unlock account?",
+      "activateBody": "{name} will be able to sign in again.",
+      "deactivateTitle": "Lock account?",
+      "deactivateBody": "{name} cannot sign in until the account is unlocked.",
+      "deleteTitle": "Delete staff?",
+      "deleteBody": "Remove {name} from the shop. This cannot be undone.",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "rolesCard": {
+      "title": "What each role can do",
+      "owner": "Every outlet, money, reports, staff, subscription.",
+      "admin": "One outlet: orders, products, prices, customers, the day's money, that outlet's staff.",
+      "staff": "Create orders, hand over, take returns, add customers. Cannot change product prices or see money reports.",
+      "rolePermissions": "See permissions per role",
+      "permissions": "Grant extra permissions"
+    },
+    "permissions": {
+      "title": "Extra staff permissions",
+      "hint": "Turn on extra permissions per staff member, on top of their role defaults.",
+      "noAccess": "Staff accounts cannot manage permissions.",
+      "pickTitle": "Pick staff",
+      "picked": "{count} picked",
+      "pickAll": "Pick all",
+      "pickNone": "Clear",
+      "noStaff": "No staff yet (Staff role)",
+      "switchTitle": "Extra permissions",
+      "pickFirst": "Pick at least one staff member on the left.",
+      "forOne": "Editing permissions of {name}.",
+      "forMany": "Editing {count} staff: starts from all off, Save applies to all {count}.",
+      "allOn": "Turn all on",
+      "allOff": "Turn all off",
+      "cancel": "Clear",
+      "save": "Save permissions",
+      "saving": "Saving…",
+      "savedTitle": "Saved",
+      "saved": "Permissions saved for {count} staff",
+      "errorTitle": "Error",
+      "saveFailed": "Could not save permissions. Try again.",
+      "readFailed": "Could not read this staff member’s saved permissions. Save writes every extra permission exactly as switched below.",
+      "groups": {
+        "outlet": "Outlet",
+        "orders": "Orders",
+        "products": "Products",
+        "customers": "Customers",
+        "users": "Staff",
+        "dashboard": "Overview"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "View outlet",
+        "desc": "See outlet information"
+      },
+      "outlet_manage": {
+        "label": "Manage outlet",
+        "desc": "Edit outlet information and settings"
+      },
+      "users_view": {
+        "label": "View staff",
+        "desc": "See the staff list and details"
+      },
+      "users_manage": {
+        "label": "Manage staff",
+        "desc": "Add, edit, lock and delete staff"
+      },
+      "products_view": {
+        "label": "View products",
+        "desc": "See the product list and details"
+      },
+      "products_create": {
+        "label": "Add products",
+        "desc": "Add new products"
+      },
+      "products_update": {
+        "label": "Edit products",
+        "desc": "Edit existing products, prices included"
+      },
+      "products_manage": {
+        "label": "Manage products",
+        "desc": "Full access: delete, Excel import, cost price"
+      },
+      "products_export": {
+        "label": "Export products",
+        "desc": "Download products as Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Create orders",
+        "desc": "Create rental and sale orders"
+      },
+      "orders_view": {
+        "label": "View orders",
+        "desc": "See the order list and details"
+      },
+      "orders_update": {
+        "label": "Edit orders",
+        "desc": "Edit orders, hand over, take returns"
+      },
+      "orders_delete": {
+        "label": "Delete orders",
+        "desc": "Delete orders"
+      },
+      "orders_export": {
+        "label": "Export orders",
+        "desc": "Download orders as Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Manage orders",
+        "desc": "Full access to orders"
+      },
+      "customers_view": {
+        "label": "View customers",
+        "desc": "See the customer list and details"
+      },
+      "customers_manage": {
+        "label": "Manage customers",
+        "desc": "Add, edit and delete customers"
+      },
+      "customers_export": {
+        "label": "Export customers",
+        "desc": "Download customers as Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "View overview",
+        "desc": "See the Overview page and figures"
+      }
+    },
+    "rolePermissions": {
+      "title": "Permissions by role",
+      "hint": "Default permissions of each role. Read only.",
+      "roleLabel": "Role",
+      "count": "{count} permissions",
+      "granted": "Granted",
+      "notGranted": "Not granted",
+      "note": "These are the role defaults. To turn on more for one person, use Extra staff permissions."
+    },
+    "empty": "No staff yet",
+    "emptySearch": "No staff match these filters",
+    "loadFailed": "Couldn't load staff.",
+    "retry": "Try again",
+    "noAccess": "Staff accounts cannot see the staff list.",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "footer": {
+      "show": "Show",
+      "perPage": "rows per page",
+      "perPageLabel": "Rows per page",
+      "pages": "Pages",
+      "range": "{from}–{to} of {total} staff",
+      "prev": "Previous page",
+      "next": "Next page"
+    },
+    "form": {
+      "addTitle": "Add staff",
+      "infoTitle": "Details",
+      "name": "Full name",
+      "namePlaceholder": "e.g. Lan Tran",
+      "phone": "Phone",
+      "optional": "Optional",
+      "email": "Sign-in email",
+      "emailPlaceholder": "name@example.com",
+      "emailHint": "Staff sign in with this email.",
+      "required": "required",
+      "roleTitle": "Role and outlet",
+      "role": "Role",
+      "outlet": "Outlet",
+      "outletFixed": "New staff belong to your outlet.",
+      "outletsLoading": "Loading outlets…",
+      "noOutlets": "No outlets yet",
+      "passwordTitle": "Sign-in password",
+      "password": "Password",
+      "confirmPassword": "Repeat password",
+      "passwordHint": "At least 6 characters.",
+      "loginNote": "Staff sign in with this email and password, then can change the password themselves.",
+      "show": "Show",
+      "hide": "Hide",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "cancel": "Cancel",
+      "create": "Add staff",
+      "creating": "Adding…",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "nameShort": "Name must be at least 2 characters.",
+        "emailRequired": "Enter the sign-in email.",
+        "emailInvalid": "Email is not valid.",
+        "phoneShort": "Phone needs at least 8 digits.",
+        "phoneLong": "Phone can have at most 15 digits.",
+        "phoneChars": "Phone may only contain digits, spaces, + - ( ).",
+        "roleRequired": "Pick a role.",
+        "outletRequired": "Pick an outlet.",
+        "passwordRequired": "Enter a password.",
+        "passwordShort": "Password needs at least 6 characters.",
+        "confirmRequired": "Repeat the password.",
+        "passwordMismatch": "The two passwords do not match.",
+        "newRequired": "Enter the new password."
+      }
+    },
+    "detail": {
+      "info": "Details",
+      "merchant": "Shop",
+      "account": "Account",
+      "statusActive": "Active",
+      "statusLocked": "Locked",
+      "activeHint": "Lock the account to stop this person from signing in.",
+      "lockedHint": "The account is locked. Unlock it to let them sign in again.",
+      "emailStatus": "Email",
+      "verified": "Verified",
+      "notVerified": "Not verified",
+      "createdAt": "Created",
+      "deleteHint": "Delete this account for good. Cannot be undone.",
+      "changePassword": "Change password",
+      "editTitle": "Edit staff",
+      "emailFixed": "The sign-in email cannot be changed.",
+      "roleFixed": "The role is not changed here.",
+      "notFound": "This staff member was not found.",
+      "backToList": "Back to staff"
+    },
+    "password": {
+      "title": "Change password",
+      "hint": "Set a new password for {name}. The old one stops working.",
+      "new": "New password",
+      "confirm": "Repeat new password",
+      "submit": "Change password",
+      "changing": "Changing…"
+    }
   }
 }

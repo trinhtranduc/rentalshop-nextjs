@@ -1,14 +1,13 @@
 'use client';
 
 /**
- * Gắn vào tab Settings → subscription: giữ UI @rentalshop/ui (SubscriptionSection),
- * chỉ bổ sung dialog chọn gói / thanh toán (Lemon) và form gia hạn (chuyển khoản).
+ * Cài đặt → Gói dịch vụ: the tab (`SubscriptionTab`, #557) plus the choose-plan (Lemon) and
+ * bank-transfer renew dialogs, which stay off behind `SUBSCRIPTION_UPGRADE_EXTEND_ENABLED`.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
-  SubscriptionSection,
   useToast,
   Button,
   Dialog,
@@ -26,23 +25,35 @@ import {
   SelectValue,
   Textarea,
 } from '@rentalshop/ui';
-import type { SubscriptionPanelRenderProps } from '@rentalshop/ui';
 import { subscriptionsApi } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { ChoosePlanDialog } from './ChoosePlanDialog';
+import { settingsHref } from '../settings/settings-model';
+import { SubscriptionTab, type SubscriptionLoad } from '../settings/SubscriptionTab';
+import type { SubscriptionStatus } from '../settings/subscription-model';
 
+/** Lemon Squeezy return: the /settings route reopens the Cài đặt dialog on this tab (#539). */
 const SETTINGS_SUB_TAB = '/settings?tab=subscription';
 
 /** Tạm tắt nút nâng cấp / gia hạn và dialog liên quan. Bật lại → đặt `true`. */
 const SUBSCRIPTION_UPGRADE_EXTEND_ENABLED = false;
 
+interface SettingsSubscriptionMerchantActionsProps {
+  /** Flat `GET /api/subscriptions/status` payload. */
+  status: (SubscriptionStatus & { planId?: number | null }) | null;
+  load: SubscriptionLoad;
+  onSubscriptionRefresh: () => Promise<void> | void;
+  currentUserRole?: string;
+}
+
 export function SettingsSubscriptionMerchantActions({
-  subscriptionData,
-  subscriptionLoading,
+  status,
+  load,
   onSubscriptionRefresh,
   currentUserRole,
-}: SubscriptionPanelRenderProps) {
+}: SettingsSubscriptionMerchantActionsProps) {
   const router = useRouter();
+  const pathname = usePathname() || '/dashboard';
   const searchParams = useSearchParams();
   const t = useTranslations('subscription');
   const { toastSuccess, toastError, toastInfo } = useToast();
@@ -62,10 +73,10 @@ export function SettingsSubscriptionMerchantActions({
   const refreshRef = useRef(onSubscriptionRefresh);
   refreshRef.current = onSubscriptionRefresh;
 
-  const hasSub = Boolean(subscriptionData?.hasSubscription);
-  const subId = subscriptionData?.subscription?.id as number | undefined;
-  const currentPlanId = subscriptionData?.subscription?.plan?.id ?? null;
-  const billingInterval = subscriptionData?.subscription?.interval ?? null;
+  const subId = status?.subscriptionId ?? undefined;
+  const hasSub = Boolean(subId);
+  const currentPlanId = status?.planId ?? null;
+  const billingInterval = status?.billingInterval ?? null;
   const isMerchant = currentUserRole === USER_ROLE.MERCHANT;
 
   // Trả về từ Lemon Squeezy (chỉ khi bật upgrade/extend)
@@ -80,8 +91,9 @@ export function SettingsSubscriptionMerchantActions({
         toastInfo(t('page.checkoutCancelTitle'), t('page.checkoutCancelBody'));
       }
     }
-    router.replace('/settings?tab=subscription', { scroll: false });
-  }, [searchParams, router, toastSuccess, toastInfo, t]);
+    // Same page, dialog still on Gói dịch vụ, `checkout` cleared.
+    router.replace(settingsHref(pathname, searchParams.toString(), 'subscription'), { scroll: false });
+  }, [searchParams, pathname, router, toastSuccess, toastInfo, t]);
 
   // Deep link: ?action=plans | ?action=renew
   useEffect(() => {
@@ -95,27 +107,20 @@ export function SettingsSubscriptionMerchantActions({
       }
     }
     if (action === 'plans' || action === 'renew') {
-      router.replace('/settings?tab=subscription', { scroll: false });
+      router.replace(settingsHref(pathname, searchParams.toString(), 'subscription'), { scroll: false });
     }
-  }, [searchParams, hasSub, router]);
+  }, [searchParams, pathname, hasSub, router]);
 
   const showUpgradeExtendUi = SUBSCRIPTION_UPGRADE_EXTEND_ENABLED && isMerchant;
 
   return (
     <>
-      <SubscriptionSection
-        subscriptionData={subscriptionData}
-        subscriptionLoading={subscriptionLoading}
-        currentUserRole={currentUserRole}
-        onUpgradeClick={
-          showUpgradeExtendUi && hasSub ? () => setShowChoosePlanDialog(true) : undefined
-        }
-        onExtendClick={
-          showUpgradeExtendUi && hasSub ? () => setShowRenewModal(true) : undefined
-        }
-        onChoosePlanClick={
-          showUpgradeExtendUi && !hasSub ? () => setShowChoosePlanDialog(true) : undefined
-        }
+      <SubscriptionTab
+        status={status}
+        load={load}
+        onRetry={() => void onSubscriptionRefresh()}
+        onUpgrade={showUpgradeExtendUi ? () => setShowChoosePlanDialog(true) : undefined}
+        onExtend={showUpgradeExtendUi && hasSub ? () => setShowRenewModal(true) : undefined}
       />
 
       {SUBSCRIPTION_UPGRADE_EXTEND_ENABLED ? (

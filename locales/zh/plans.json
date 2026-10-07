@@ -148,6 +148,51 @@
     "unlimitedUsers": "无限制用户",
     "unlimitedProducts": "无限制产品",
     "unlimitedCustomers": "无限制客户"
+  },
+  "web": {
+    "title": "套餐",
+    "subtitle": "选择适合您店铺的套餐。",
+    "currentLine": "您的店铺正在使用 {plan} 套餐。",
+    "trialNote": "试用期即将结束。",
+    "current": "使用中",
+    "popular": "热门",
+    "perMonth": "/月",
+    "free": "免费",
+    "features": "功能",
+    "limitsTitle": "限额",
+    "unlimited": "不限",
+    "choose": "选择套餐",
+    "chosen": "已选择",
+    "currentButton": "当前套餐",
+    "selectedTitle": "已选套餐：{plan}",
+    "cycleLabel": "计费周期",
+    "discount": "优惠 {percent}%",
+    "pay": "付款",
+    "confirmTitle": "确认付款",
+    "confirmHint": "付款前请检查套餐和计费周期。",
+    "plan": "套餐",
+    "total": "预计合计",
+    "method": "付款方式",
+    "methodLemon": "银行卡 / PayPal（Lemon Squeezy）",
+    "terms": "付款即表示您同意 AnyRent 的服务条款和计费政策。",
+    "cancel": "取消",
+    "redirecting": "正在打开付款页面…",
+    "empty": "暂无套餐。",
+    "loadFailed": "无法加载套餐。",
+    "retry": "重试",
+    "close": "关闭",
+    "estimateNote": "最终金额以付款页面为准。",
+    "cycle": {
+      "monthly": "每月",
+      "quarterly": "每季度",
+      "yearly": "每年"
+    },
+    "limit": {
+      "outlets": "分店",
+      "users": "员工",
+      "products": "商品",
+      "customers": "客户",
+      "orders": "订单"
+    }
   }
 }
-

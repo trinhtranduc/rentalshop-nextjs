@@ -109,7 +109,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
   
-  // Data for dropdowns (create mode only)
+  // Data for organization assignment dropdowns
   const [merchants, setMerchants] = useState<any[]>([]);
   const [outlets, setOutlets] = useState<any[]>([]);
   const [loadingMerchants, setLoadingMerchants] = useState(false);
@@ -119,7 +119,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   // Use external isSubmitting if provided, otherwise use internal state
   const isSubmitting = externalIsSubmitting !== undefined ? externalIsSubmitting : internalIsSubmitting;
 
-  // Role-based access control (create mode only)
+  // Role-based access control
   const canSelectMerchant = currentUser?.role === 'ADMIN';
   const canSelectOutlet = currentUser?.role === 'ADMIN' || currentUser?.role === 'MERCHANT';
   const isArticleRole = formData.role === 'ARTICLE';
@@ -240,9 +240,10 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   }, [currentUser, canSelectMerchant, canSelectOutlet, isEditMode]);
 
-  // Load merchants data (create mode only)
+  // Load merchants for system admins in create and edit modes, so an admin can move
+  // an account to another merchant and the selected merchant shows its name.
   useEffect(() => {
-    if (!isEditMode && canSelectMerchant) {
+    if (canSelectMerchant) {
       setLoadingMerchants(true);
       merchantsApi.getMerchants()
         .then((response: any) => {
@@ -313,9 +314,10 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   }, [formData.merchantId, merchants, isEditMode, currentUser?.role]);
 
-  // Load outlets data (create mode only)
+  // Load outlets of the selected merchant, in edit mode too, so an admin never keeps
+  // an outlet of the previous merchant.
   useEffect(() => {
-    if (!isEditMode && canSelectOutlet) {
+    if (canSelectOutlet) {
       setLoadingOutlets(true);
       const merchantId = canSelectMerchant ? formData.merchantId : (currentUser?.merchantId || currentUser?.merchant?.id);
       
@@ -357,37 +359,15 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   }, [canSelectOutlet, canSelectMerchant, formData.merchantId, currentUser?.merchantId, currentUser?.outletId, isEditMode]);
 
-  // Reset outlet when merchant changes and reload outlets (create mode only)
-  useEffect(() => {
-    if (!isEditMode && canSelectMerchant && (formData as UserCreateFormData).merchantId) {
-      console.log('🔍 UserForm: Merchant changed, resetting outlet and reloading outlets');
-      setFormData((prev: UserFormData) => ({ ...prev, outletId: '' }));
-      
-      // Reload outlets for the new merchant
-      setLoadingOutlets(true);
-      outletsApi.getOutletsByMerchant(Number((formData as UserCreateFormData).merchantId))
-        .then((response: any) => {
-          console.log('🔍 UserForm: Reloading outlets for new merchant:', response);
-          if (response.success && response.data) {
-            const outletsData = response.data.outlets || response.data || [];
-            setOutlets(outletsData);
-          } else {
-            setOutlets([]);
-          }
-        })
-        .catch((error: any) => {
-          console.error('🔍 UserForm: Error reloading outlets:', error);
-          setOutlets([]);
-        })
-        .finally(() => {
-          setLoadingOutlets(false);
-        });
-    }
-  }, [(formData as UserCreateFormData).merchantId, canSelectMerchant, isEditMode]);
-
   const handleInputChange = (field: string, value: string | boolean) => {
     console.log('🔍 UserForm: Input changed:', { field, value });
-    setFormData((prev: UserFormData) => ({ ...prev, [field]: value }));
+    setFormData((prev: UserFormData) => {
+      if (field === 'merchantId' && prev.merchantId !== value) {
+        // An outlet belongs to one merchant: clear it before the new merchant's outlets load
+        return { ...prev, merchantId: value as string, outletId: '' };
+      }
+      return { ...prev, [field]: value };
+    });
     
     // Clear field-specific error when user starts typing
     if (errors[field]) {

@@ -1,757 +1,538 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { 
-  PageWrapper,
-  PageHeader,
-  PageTitle,
-  Products,
-  ProductsLoading,
-  useToast,
-  ProductAddDialog,
-  ImportProductDialog,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  ProductDetail,
-  ProductEdit,
-  ConfirmationDialog,
-  Button,
-  LoadingIndicator,
-  ExportDialog,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@rentalshop/ui';
-import { Plus, Download, MoreVertical, Upload, Trash2, Sparkles } from 'lucide-react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useAuth, useProductsData, useCanExportData, useProductTranslations, useCommonTranslations, useOutletsData, useCategoriesData } from '@rentalshop/hooks';
-import { usePermissions } from '@rentalshop/hooks';
-import { productsApi } from '@rentalshop/utils';
-import type { ProductFilters, Product, ProductWithDetails, ProductUpdateInput, Category, Outlet } from '@rentalshop/types';
+/**
+ * Sản phẩm (#526). Reads GET /api/products (one page) and GET /api/categories (chips with counts).
+ * Row mapping and selection live in ./list/list-model (unit-tested). Every filter is kept in the URL.
+ * Add / edit / detail are their own pages (/products/add, /products/[id]/edit, /products/[id]).
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { ImageSearchDialog, useFormatCurrency, useToast } from '@rentalshop/ui';
+import { useAuth, useCanExportData, useOutletsData, usePermissions } from '@rentalshop/hooks';
+import { categoriesApi, formatDateKeyInTimeZone, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import type { Product, ProductFilters } from '@rentalshop/types';
+import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { FilterMenu, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
+import { Modal } from '../orders/create/parts';
+import { ProductsTable, SelectionBar } from './list/parts';
+import { BARCODE_ICON } from './labels/LabelSheet';
+import {
+  EMPTY_SELECTION,
+  SORT_KEYS,
+  buildRow,
+  filterKey,
+  pageCheckState,
+  parseListQuery,
+  scopedOutletFor,
+  selectedCount,
+  toApiFilters,
+  toggleOne,
+  togglePage,
+  type ProductLike,
+  type ProductRow,
+  type Selection,
+  type SortKey,
+} from './list/list-model';
+
+/** Board icon paths that the shell icon set does not have. */
+const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
+const CAMERA_ICON = 'M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z';
+
+/** Most ids the export / delete of "all matching" collects (API page cap). */
+const MAX_COLLECT = 3000;
+
+interface ListState {
+  products: ProductLike[];
+  total: number;
+  totalPages: number;
+  loading: boolean;
+  failed: boolean;
+}
+
+type ProductsData = { products?: ProductLike[]; total?: number; totalPages?: number };
+
+function useProductsPage(filters: ProductFilters, nonce: number): ListState {
+  const [state, setState] = useState<ListState>({ products: [], total: 0, totalPages: 1, loading: true, failed: false });
+  const key = JSON.stringify(filters);
+  useEffect(() => {
+    let cancelled = false;
+    setState((s) => ({ ...s, loading: true, failed: false }));
+    productsApi
+      .searchProducts(JSON.parse(key) as ProductFilters)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.success && res.data) {
+          const data = res.data as unknown as ProductsData;
+          setState({ products: data.products || [], total: data.total || 0, totalPages: Math.max(1, data.totalPages || 1), loading: false, failed: false });
+        } else setState((s) => ({ ...s, loading: false, failed: true }));
+      })
+      .catch(() => {
+        if (!cancelled) setState((s) => ({ ...s, loading: false, failed: true }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, nonce]);
+  return state;
+}
+
+/** Categories with their product counts (search mode of GET /api/categories returns `_count`). */
+function useCategoryChips(nonce: number) {
+  const [state, setState] = useState<{ list: Array<{ id: number; name: string; count: number | null }>; total: number | null }>({ list: [], total: null });
+  useEffect(() => {
+    let cancelled = false;
+    categoriesApi
+      .getCategoriesPaginated(1, 100)
+      .then((res) => {
+        if (cancelled || !res.success || !res.data) return;
+        const data = res.data as unknown as { categories?: Array<{ id: number; name: string; _count?: { products?: number } }>; total?: number };
+        const list = (data.categories || []).map((c) => ({ id: c.id, name: c.name, count: typeof c._count?.products === 'number' ? c._count.products : null }));
+        setState({ list, total: typeof data.total === 'number' ? data.total : list.length });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [nonce]);
+  return state;
+}
 
 /**
- * ✅ MODERN NEXT.JS 13+ PRODUCTS PAGE - URL STATE PATTERN
- * 
- * Architecture:
- * ✅ URL params as single source of truth
- * ✅ Clean data fetching with useProductsData hook
- * ✅ No duplicate state management
- * ✅ Smooth transitions with useTransition
- * ✅ Shareable URLs (bookmarkable filters)
- * ✅ Browser back/forward support
- * ✅ Auto-refresh on URL change (no manual refresh needed)
- * 
- * Data Flow:
- * 1. User interacts (search, filter, pagination)
- * 2. updateURL() → URL params change
- * 3. Next.js detects URL change → searchParams update
- * 4. filters object recalculates (memoized)
- * 5. useProductsData detects filter change → fetch data
- * 6. UI updates with new data
- * 
- * Benefits:
- * - Single API call per action
- * - Minimal re-renders
- * - No manual refresh needed
- * - Clean and maintainable
+ * Products in the shop (no filters), for the "Tất cả sản phẩm · N" tab: the list total when the list is
+ * unfiltered, else one `limit=1` request (refreshed after deletes).
  */
+function useCatalogTotal(filtered: boolean, unfilteredTotal: number | null, nonce: number): number | null {
+  const [total, setTotal] = useState<number | null>(null);
+  useEffect(() => {
+    if (unfilteredTotal !== null) setTotal(unfilteredTotal);
+  }, [unfilteredTotal]);
+  useEffect(() => {
+    if (!filtered) return;
+    let cancelled = false;
+    productsApi
+      .searchProducts({ page: 1, limit: 1 } as ProductFilters)
+      .then((res) => {
+        if (!cancelled && res.success && res.data) setTotal((res.data as unknown as ProductsData).total ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [filtered, nonce]);
+  return total;
+}
+
+function saveBlob(blob: Blob, name: string) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export default function ProductsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const t = useTranslations('products.web') as unknown as T;
+  const money = useFormatCurrency();
   const { toastSuccess, toastError } = useToast();
-  const t = useProductTranslations();
-  const tc = useCommonTranslations();
+  const { user } = useAuth();
   const canExport = useCanExportData();
-  // ✅ Use permissions hook to check if user can manage products
   const { canManageProducts, canCreateProducts, canUpdateProducts } = usePermissions();
-  
-  // Dialog states
-  const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
-  const [imageSearchResults, setImageSearchResults] = useState<Product[] | null>(null);
-  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSyncingEmbeddings, setIsSyncingEmbeddings] = useState(false);
-  /** Soft-patch products after edit so list scroll/page stay put */
-  const [productOverrides, setProductOverrides] = useState<Record<number, ProductWithDetails>>({});
-  
-  // ============================================================================
-  // FETCH CATEGORIES & OUTLETS - Using Official Hooks
-  // ============================================================================
-  const { categories } = useCategoriesData();
-  const { outlets, loading: outletsLoading, error: outletsError } = useOutletsData();
-  
-  // Check if outlets are ready (loaded, have data, and at least one outlet exists)
-  // Must check: 1) not loading, 2) no error, 3) outlets array has items
-  const outletsReady = !outletsLoading && !outletsError && outlets.length > 0;
-  
-  // Handle opening add dialog - only open when outlets are loaded and available
-  const handleOpenAddDialog = useCallback(() => {
-    if (outletsReady) {
-      setShowAddDialog(true);
-    } else if (outletsLoading) {
-      // Still loading - could show a loading indicator or wait
-      console.log('⏳ Outlets are still loading, please wait...');
-    } else if (outletsError) {
-      // Error loading outlets - could show error message
-      console.error('❌ Error loading outlets:', outletsError);
-    } else if (outlets.length === 0) {
-      // No outlets available - this should be handled by ProductAddForm warning
-      console.warn('⚠️ No outlets available');
-      // Still allow opening dialog - ProductAddForm will show warning
-      setShowAddDialog(true);
-    }
-  }, [outletsReady, outletsLoading, outletsError, outlets.length]);
+  const { outlets } = useOutletsData();
 
-  // ============================================================================
-  // URL PARAMS - Single Source of Truth
-  // ============================================================================
-  
-  const search = searchParams.get('q') || '';
-  const categoryId = searchParams.get('category') ? parseInt(searchParams.get('category')!) : undefined;
-  const outletId = searchParams.get('outlet') ? parseInt(searchParams.get('outlet')!) : undefined;
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '25');
-  const sortBy = searchParams.get('sortBy') || 'name';
-  const sortOrder = (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc';
+  const query = useMemo(() => parseListQuery((k) => searchParams.get(k)), [searchParams]);
+  const fkey = filterKey(query);
 
-  // ============================================================================
-  // DATA FETCHING - Clean & Simple
-  // ============================================================================
-  
-  // ✅ SIMPLE: Memoize filters - useDedupedApi handles deduplication
-  const filters: ProductFilters = useMemo(() => ({
-    q: search || undefined,
-    search: search || undefined,
-    categoryId,
-    outletId,
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  }), [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
+  const update = useCallback(
+    (patch: Record<string, string | number | null | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === undefined || v === '') params.delete(k);
+        else params.set(k, String(v));
+      }
+      if (!('page' in patch)) params.delete('page');
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
-  const { data, loading, error, refetch } = useProductsData({ filters });
+  // Data
+  const [nonce, setNonce] = useState(0);
+  const reload = useCallback(() => setNonce((n) => n + 1), []);
+  const apiFilters = useMemo(() => toApiFilters(query) as unknown as ProductFilters, [query]);
+  const list = useProductsPage(apiFilters, nonce);
+  const categories = useCategoryChips(nonce);
+  const unfiltered = !query.q && !query.categoryId;
+  const catalogTotal = useCatalogTotal(!unfiltered, unfiltered && !list.loading && !list.failed ? list.total : null, nonce);
 
-  // Drop soft patches when list query changes
+  // Photo search results replace the list until cleared
+  const [imageOpen, setImageOpen] = useState(false);
+  const [imageResults, setImageResults] = useState<ProductLike[] | null>(null);
+
+  const typedUser = user as unknown as { role?: string; outletId?: number; outlet?: { id?: number } } | null;
+  const scopedOutlet = scopedOutletFor(query.outletId, typedUser ? { role: typedUser.role, outletId: typedUser.outletId ?? typedUser.outlet?.id } : null);
+  const source = imageResults ?? list.products;
+  const rows: ProductRow[] = useMemo(() => source.map((p) => buildRow(p, scopedOutlet)), [source, scopedOutlet]);
+  const total = imageResults ? imageResults.length : list.total;
+
+  // A page past the end goes back to the last one
   useEffect(() => {
-    setProductOverrides({});
-  }, [search, categoryId, outletId, page, limit, sortBy, sortOrder]);
+    if (!imageResults && !list.loading && !list.failed && query.page > list.totalPages) update({ page: list.totalPages > 1 ? list.totalPages : null });
+  }, [imageResults, list.loading, list.failed, list.totalPages, query.page, update]);
 
-  // ============================================================================
-  // URL UPDATE HELPER - Update URL = Update Everything
-  // ============================================================================
-  
-  const updateURL = useCallback((updates: Record<string, string | number | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      // Special handling for page: always set it, even if it's 1
-      if (key === 'page') {
-        const pageNum = typeof value === 'number' ? value : parseInt(String(value || '0'));
-        if (pageNum > 0) {
-          params.set(key, pageNum.toString());
-        } else {
-          params.delete(key);
-        }
-      } else if (value && value !== '' && value !== 'all') {
-        params.set(key, value.toString());
-      } else {
-        params.delete(key);
-      }
-    });
-    
-    const newURL = `${pathname}?${params.toString()}`;
-    router.push(newURL, { scroll: false });
-  }, [pathname, router, searchParams]);
-
-
-  // ============================================================================
-  // FILTER HANDLERS - Simple URL Updates
-  // ============================================================================
-  
-  const handleSearchChange = useCallback((searchValue: string) => {
-    updateURL({ q: searchValue, page: 1 }); // Reset to page 1
-  }, [updateURL]);
-
-  const handleFiltersChange = useCallback((newFilters: Partial<ProductFilters>) => {
-    const updates: Record<string, string | number | undefined> = { page: 1 }; // Reset page
-    
-    if ('categoryId' in newFilters) {
-      updates.category = newFilters.categoryId as any;
+  // Search box: typed text goes to the URL after a short pause
+  // (the box follows the URL only when the URL changed from elsewhere, so typing is never overwritten)
+  const [draft, setDraft] = useState(query.q);
+  const pushedQ = useRef(query.q);
+  useEffect(() => {
+    if (query.q !== pushedQ.current) {
+      pushedQ.current = query.q;
+      setDraft(query.q);
     }
-    if ('outletId' in newFilters) {
-      updates.outlet = newFilters.outletId as any;
-    }
-    
-    updateURL(updates);
-  }, [updateURL]);
+  }, [query.q]);
+  const pushQ = useCallback(
+    (value: string) => {
+      pushedQ.current = value;
+      update({ q: value || null });
+    },
+    [update],
+  );
+  useEffect(() => {
+    if (draft.trim() === pushedQ.current) return;
+    const id = window.setTimeout(() => pushQ(draft.trim()), 350);
+    return () => window.clearTimeout(id);
+  }, [draft, pushQ]);
 
-  const handleClearFilters = useCallback(() => {
-    // Clear all params except page
-    setImageSearchResults(null); // Clear image search results
-    router.push(pathname, { scroll: false });
-  }, [pathname, router]);
+  // Selection (cleared when the filters change)
+  const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
+  useEffect(() => setSelection(EMPTY_SELECTION), [fkey, imageResults]);
+  const pageIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const selCount = selectedCount(selection, total);
+  const selectable = canExport || canManageProducts;
 
-  const handlePageChange = useCallback((newPage: number) => {
-    updateURL({ page: newPage });
-  }, [updateURL]);
+  /** Ids for "all matching" (export / delete without picking rows). */
+  const collectIds = useCallback(async (): Promise<number[]> => {
+    if (imageResults) return imageResults.map((p) => p.id);
+    const res = await productsApi.searchProducts({ ...apiFilters, page: 1, limit: MAX_COLLECT } as ProductFilters);
+    if (!res.success || !res.data) throw new Error('collect');
+    return ((res.data as unknown as ProductsData).products || []).map((p) => p.id);
+  }, [apiFilters, imageResults]);
 
-  const handleSort = useCallback((column: string) => {
-    // Toggle sort order if clicking same column, otherwise default to asc
-    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-    updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
-  }, [sortBy, sortOrder, updateURL]);
-
-  const handleLimitChange = useCallback((newLimit: number) => {
-    updateURL({ limit: newLimit, page: 1 }); // Reset to page 1 when changing limit
-  }, [updateURL]);
-
-  // Handle image search results
-  const handleImageSearchResult = useCallback((products: Product[]) => {
-    setImageSearchResults(products);
-    // Clear text search when using image search
-    updateURL({ q: undefined, page: 1 });
-  }, [updateURL]);
-
-  const handleSyncEmbeddings = useCallback(async () => {
-    if (isSyncingEmbeddings) return;
-    setIsSyncingEmbeddings(true);
+  const [exporting, setExporting] = useState(false);
+  const exportExcel = async (useSelection: boolean) => {
+    setExporting(true);
     try {
-      const response = await productsApi.syncEmbeddings();
-      if (response.success && response.data) {
-        const queued = response.data.queued;
-        if (queued === 0) {
-          toastSuccess(
-            'Image search',
-            'All products with photos are already indexed. Change photos on edit to re-index one product.'
-          );
-        } else {
-          toastSuccess(
-            'Image search sync started',
-            `${queued} product(s) queued. Search works after embeddings finish (a few minutes).`
-          );
-        }
-      } else {
-        toastError(
-          'Could not sync image search',
-          response.message || 'Try again in a moment.'
-        );
+      const productIds = useSelection && !selection.all ? selection.ids : await collectIds();
+      if (productIds.length === 0) return;
+      // Ids travel in the query string: one file per 600 so the URL stays well under server header limits
+      const day = formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE);
+      const parts: number[][] = [];
+      for (let i = 0; i < productIds.length; i += 600) parts.push(productIds.slice(i, i + 600));
+      for (let i = 0; i < parts.length; i++) {
+        const blob = await productsApi.exportProducts({ format: 'excel', productIds: parts[i] });
+        saveBlob(blob, parts.length > 1 ? `san-pham-${day}-${i + 1}.xlsx` : `san-pham-${day}.xlsx`);
       }
-    } catch (error) {
-      toastError(
-        'Could not sync image search',
-        error instanceof Error ? error.message : 'Try again in a moment.'
-      );
+      toastSuccess(t('exportDone'));
+    } catch {
+      toastError(t('exportFailed'));
     } finally {
-      setIsSyncingEmbeddings(false);
+      setExporting(false);
     }
-  }, [isSyncingEmbeddings, toastSuccess, toastError]);
+  };
 
-  // ============================================================================
-  // PRODUCT ACTION HANDLERS
-  // ============================================================================
-  
-  const handleProductAction = useCallback(async (action: string, productId: number) => {
-    const product = data?.products.find(p => p.id === productId);
-    
-    switch (action) {
-      case 'view':
-        // Fetch full product details before showing dialog
-        try {
-          const response = await productsApi.getProduct(productId);
-          if (response.success && response.data) {
-            setSelectedProduct(response.data as ProductWithDetails);
-            setShowDetailDialog(true);
-          }
-          // Error automatically handled by useGlobalErrorHandler
-        } catch (error) {
-          // Error automatically handled by useGlobalErrorHandler
-        }
-        break;
-        
-      case 'edit':
-        // Staff (no products.update / manage) must not open edit.
-        if (!canUpdateProducts) break;
-        // Fetch full product details before showing edit dialog
-        try {
-          const response = await productsApi.getProduct(productId);
-          if (response.success && response.data) {
-            setSelectedProduct(response.data as ProductWithDetails);
-            setShowEditDialog(true);
-          }
-          // Error automatically handled by useGlobalErrorHandler
-        } catch (error) {
-          // Error automatically handled by useGlobalErrorHandler
-        }
-        break;
-        
-      case 'view-orders':
-        // Navigate to product orders page
-        router.push(`/products/${productId}/orders`);
-        break;
-        
-      case 'toggle-status':
-        if (product) {
-          try {
-            const response = await productsApi.updateProduct(productId, {
-              id: productId,
-              isActive: !product.isActive
-            });
-            if (response.success) {
-              toastSuccess(
-                t('messages.updateSuccess'), 
-                t('messages.updateSuccess')
-              );
-              refetch();
-            }
-            // Error automatically handled by useGlobalErrorHandler
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
-          }
-        }
-        break;
-        
-      case 'delete':
-        // Show delete confirmation dialog
-        if (product) {
-          setProductToDelete(product as ProductWithDetails);
-          setShowDeleteConfirm(true);
-        }
-        break;
-        
-      default:
-        break;
-    }
-  }, [data?.products, router, toastSuccess, refetch, t, canUpdateProducts]);
-  
-  // Handle product update from edit dialog
-  const handleProductUpdate = useCallback(async (productData: ProductUpdateInput, files?: File[]) => {
-    if (!selectedProduct) return;
-    
+  // Delete: one row from its menu, or the selection
+  const [confirm, setConfirm] = useState<{ kind: 'one'; row: ProductRow } | { kind: 'many' } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const runDelete = async () => {
+    if (!confirm) return;
+    setDeleting(true);
     try {
-      // Always use FormData for consistency (files parameter is optional)
-      const response = await productsApi.updateProduct(selectedProduct.id, productData, files);
-      if (response.success) {
-        toastSuccess(t('messages.updateSuccess'), t('messages.updateSuccess'));
-        const updated = (response.data as ProductWithDetails | undefined) ?? {
-          ...selectedProduct,
-          ...productData,
-        } as ProductWithDetails;
-        setProductOverrides((prev) => ({ ...prev, [selectedProduct.id]: updated }));
-        setShowEditDialog(false);
-        setSelectedProduct(null);
-        // Avoid full-list refetch — keeps scroll/page position
+      if (confirm.kind === 'one') {
+        const res = await productsApi.deleteProduct(confirm.row.id);
+        if (!res.success) throw new Error('delete');
+        toastSuccess(t('delete.done', { count: 1 }));
+      } else {
+        const ids = selection.all ? await collectIds() : selection.ids;
+        const res = await productsApi.batchDeleteProducts(ids);
+        if (!res.success || !res.data) throw new Error('delete');
+        const { deleted, failed } = res.data;
+        if (deleted === 0) throw new Error('delete');
+        if (failed > 0) toastError(t('delete.partial', { deleted, failed }));
+        else toastSuccess(t('delete.done', { count: deleted }));
+        setSelection(EMPTY_SELECTION);
       }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
-      throw error;
-    }
-  }, [selectedProduct, toastSuccess, t]);
-  
-  // Handle delete confirmation
-  const handleConfirmDelete = useCallback(async () => {
-    if (!productToDelete) return;
-    
-    try {
-      const response = await productsApi.deleteProduct(productToDelete.id);
-      if (response.success) {
-        toastSuccess(t('messages.deleteSuccess'), t('messages.deleteSuccess'));
-        setShowDeleteConfirm(false);
-        setProductToDelete(null);
-        refetch();
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
-    }
-  }, [productToDelete, toastSuccess, refetch, t]);
-
-  // Handle batch delete
-  const handleBatchDelete = useCallback(async () => {
-    if (selectedProductIds.length === 0) return;
-    
-    setIsDeleting(true);
-    try {
-      const response = await productsApi.batchDeleteProducts(selectedProductIds);
-      if (response.success && response.data) {
-        const { deleted, failed } = response.data;
-        if (deleted > 0) {
-          toastSuccess(
-            t('messages.deleteSuccess'), 
-            failed > 0 
-              ? `${deleted} sản phẩm đã được xóa, ${failed} sản phẩm thất bại`
-              : `${deleted} sản phẩm đã được xóa thành công`
-          );
-          setSelectedProductIds([]);
-          refetch();
-        }
-        if (failed > 0 && deleted === 0) {
-          toastSuccess(t('messages.deleteSuccess'), `${failed} sản phẩm xóa thất bại`);
-        }
-        setShowBatchDeleteConfirm(false);
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error) {
-      // Error automatically handled by useGlobalErrorHandler
+      setConfirm(null);
+      if (imageResults) setImageResults(null);
+      reload();
+    } catch {
+      toastError(t('delete.failed'));
     } finally {
-      setIsDeleting(false);
+      setDeleting(false);
     }
-  }, [selectedProductIds, toastSuccess, refetch, t]);
+  };
 
-  // Handle product creation from add dialog
-  const handleProductCreated = useCallback(async (productData: any, files?: File[]) => {
+  // Image search index sync (was the "Sync image search" menu item)
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [moreOpen]);
+  const [syncing, setSyncing] = useState(false);
+  const syncImages = async () => {
+    setMoreOpen(false);
+    setSyncing(true);
     try {
-      // Always use createProduct - it now always uses multipart form data (unified format)
-      const response = await productsApi.createProduct(productData, files);
-      
-      if (response.success) {
-        toastSuccess(t('messages.createSuccess'), t('messages.createSuccess'));
-        setShowAddDialog(false);
-        refetch();
-      }
-      // Error automatically handled by useGlobalErrorHandler
-    } catch (error: any) {
-      // Error automatically handled by useGlobalErrorHandler
-      throw error; // Re-throw to let dialog handle it
+      const res = await productsApi.syncEmbeddings();
+      if (!res.success || !res.data) throw new Error('sync');
+      const queued = res.data.queued;
+      toastSuccess(queued === 0 ? t('sync.indexed') : t('sync.queued', { count: queued }));
+    } catch {
+      toastError(t('sync.failed'));
+    } finally {
+      setSyncing(false);
     }
-  }, [toastSuccess, refetch, t]);
+  };
 
-  // ============================================================================
-  // TRANSFORM DATA FOR UI
-  // ============================================================================
-  
-  // Filter products based on image search results if available
-  const productData = useMemo(() => {
-    // If we have image search results, use those instead of regular data
-    if (imageSearchResults && imageSearchResults.length > 0) {
-      return {
-        items: imageSearchResults,
-        products: imageSearchResults,
-        total: imageSearchResults.length,
-        page: 1,
-        totalPages: 1,
-        limit: imageSearchResults.length,
-        hasMore: false
-      };
-    }
+  // In tem: the picked rows come along (not "all matching", which can be thousands)
+  const labelsHref = !selection.all && selection.ids.length > 0 ? `/products/labels?ids=${selection.ids.slice(0, 100).join(',')}` : '/products/labels';
 
-    if (!data) {
-      return {
-        items: [],
-        products: [],
-        total: 0,
-        page: 1,
-        totalPages: 1,
-        limit: 25,
-        hasMore: false
-      };
-    }
-
-    return {
-      items: data.products, // Required by BaseSearchResult
-      products: data.products, // Alias for backward compatibility
-      total: data.total,
-      page: data.currentPage,
-      totalPages: data.totalPages,
-      limit: data.limit,
-      hasMore: data.hasMore
-    };
-  }, [data, imageSearchResults]);
-
-  const displayProductsData = useMemo(() => {
-    if (!Object.keys(productOverrides).length) return productData;
-    const apply = (list: Product[] | ProductWithDetails[]) =>
-      list.map((p) => productOverrides[p.id] ?? p);
-    return {
-      ...productData,
-      items: apply(productData.items as ProductWithDetails[]),
-      products: apply(productData.products as ProductWithDetails[]),
-    };
-  }, [productData, productOverrides]);
-
-  // ============================================================================
-  // RENDER - Page renders immediately, show loading indicator
-  // ============================================================================
+  const role = typedUser?.role;
+  const showOutletFilter = (role === 'MERCHANT' || role === 'ADMIN') && outlets.length > 1;
+  const chip = (active: boolean) =>
+    `h-9 shrink-0 whitespace-nowrap rounded-full px-3 text-sm ${active ? 'bg-ar-ink font-semibold text-ar-page' : 'border border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'}`;
 
   return (
-    <PageWrapper spacing="none" maxWidth="full" className="h-screen flex flex-col px-2 sm:px-4 pt-4 pb-0 overflow-hidden">
-      <PageHeader className="flex-shrink-0">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-          <div>
-            {/* The subtitle used to repeat the title */}
-            <PageTitle>{t('title')}</PageTitle>
-          </div>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            {/* Batch Delete button - only show when items are selected and user can manage products */}
-            {canManageProducts && selectedProductIds.length > 0 && (
-              <Button
-                onClick={() => setShowBatchDeleteConfirm(true)}
-                variant="destructive"
-                size="sm"
-                disabled={isDeleting}
+    <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
+        <div className="flex flex-wrap gap-2">
+          <Link href={labelsHref} className={outlineBtn}>
+            <ShellIcon d={BARCODE_ICON} size={18} />
+            {t('labels.open')}
+          </Link>
+          {canExport && (
+            <button type="button" onClick={() => exportExcel(false)} disabled={exporting || total === 0} className={outlineBtn}>
+              <ShellIcon d={ICONS.download} size={18} />
+              {exporting ? t('exporting') : t('export')}
+            </button>
+          )}
+          {canManageProducts && (
+            <Link href="/products/import" className={outlineBtn}>
+              <ShellIcon d={UPLOAD_ICON} size={18} />
+              {t('importExcel')}
+            </Link>
+          )}
+          {canCreateProducts && (
+            <Link href="/products/add" className={primaryBtn}>
+              <ShellIcon d={ICONS.plus} size={18} />
+              {t('add')}
+            </Link>
+          )}
+          {canManageProducts && (
+            <div ref={moreRef} className="relative">
+              <button
+                type="button"
+                aria-label={t('more.label')}
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((o) => !o)}
+                className={`${outlineBtn} w-10 px-0`}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {isDeleting ? tc('labels.deleting') || 'Đang xóa...' : `${tc('actions.delete') || 'Xóa'} (${selectedProductIds.length})`}
-              </Button>
-            )}
-            {/* Export button - only show when items are selected */}
-            {canExport && selectedProductIds.length > 0 && (
-              <Button
-                onClick={() => setShowExportDialog(true)}
-                variant="default"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {tc('buttons.export')}
-                {` (${selectedProductIds.length})`}
-              </Button>
-            )}
-            {canCreateProducts && (
-              <Button 
-                onClick={handleOpenAddDialog}
-                variant="default"
-                size="sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {t('createProduct')}
-              </Button>
-            )}
-            {/* More actions menu (3 dots) - only show if user can manage products */}
-            {canManageProducts && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setShowImportDialog(true)}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {t('importLabel') || 'Import Products'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleSyncEmbeddings}
-                    disabled={isSyncingEmbeddings}
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isSyncingEmbeddings ? 'Syncing image search...' : 'Sync image search'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-      </PageHeader>
-
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        {/* Center Loading Indicator - Shows when waiting for API */}
-        {loading && !data ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-            <LoadingIndicator 
-              variant="circular" 
-              size="lg"
-              message={tc('labels.loading') || 'Loading products...'}
-            />
-          </div>
-        ) : (
-          /* Products Content - Only render when data is loaded */
-          <Products
-            data={displayProductsData}
-            currentUser={user ?? undefined}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearchChange={handleSearchChange}
-            onClearFilters={handleClearFilters}
-            onProductAction={handleProductAction}
-            onPageChange={handlePageChange}
-            onSort={handleSort}
-            onSelectionChange={setSelectedProductIds}
-            onLimitChange={handleLimitChange}
-            onImageSearchResult={handleImageSearchResult}
-          />
-        )}
-      </div>
-
-      {/* Product Detail Dialog */}
-      {selectedProduct && (
-        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-            <DialogHeader className="px-6 py-4 border-b">
-              <DialogTitle className="text-lg font-semibold">
-                {t('productDetails')}
-              </DialogTitle>
-              <DialogDescription className="mt-1">
-                {t('productDetails') || "View product information and details"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="px-6 py-4 overflow-y-auto">
-            <ProductDetail
-              product={selectedProduct}
-              onEdit={
-                canUpdateProducts
-                  ? () => {
-                      setShowDetailDialog(false);
-                      setShowEditDialog(true);
-                    }
-                  : undefined
-              }
-              showActions={true}
-              isMerchantAccount={true}
-            />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Add Product Dialog - Render when dialog is open and outlets are loaded (or empty) */}
-      {/* Allow dialog to render even with empty outlets - ProductAddForm will show warning */}
-      {showAddDialog && !outletsLoading && (
-        <ProductAddDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          categories={categories}
-          outlets={outlets}
-          merchantId={String(user?.merchantId || user?.merchant?.id || 0)}
-          onProductCreated={handleProductCreated}
-          onError={(error) => {
-            // Error automatically handled by useGlobalErrorHandler
-          }}
-          useMultipartUpload={true}
-        />
-      )}
-
-      {/* Edit Product Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="text-lg font-semibold">
-              {t('editProduct')}: {selectedProduct?.name}
-            </DialogTitle>
-            <DialogDescription className="mt-1">
-              {t('editProduct') || "Update product information and settings"}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedProduct && (
-            <div className="px-6 py-4 overflow-y-auto">
-            <ProductEdit
-              product={selectedProduct}
-              categories={categories}
-              outlets={outlets}
-              merchantId={user?.merchantId || user?.merchant?.id || 0}
-              onSave={async (productData) => {
-                const updateData: any = {
-                  id: selectedProduct.id,
-                  ...productData,
-                  // Convert images array to string format for API
-                  images: Array.isArray(productData.images) 
-                    ? productData.images.join(',') 
-                    : productData.images || '',
-                  // Ensure outletStock is included for inventory update
-                  outletStock: productData.outletStock || []
-                };
-                await handleProductUpdate(updateData);
-              }}
-              onCancel={() => {
-                setShowEditDialog(false);
-                setSelectedProduct(null);
-              }}
-            />
+                <ShellIcon d={ICONS.more} size={18} />
+              </button>
+              {moreOpen && (
+                <div role="menu" className="absolute right-0 z-30 mt-1 min-w-[220px] rounded-xl border border-ar-line-soft bg-ar-surface p-1 shadow-ar">
+                  <button type="button" role="menuitem" disabled={syncing} onClick={syncImages} className="flex h-9 w-full items-center rounded-lg px-3 text-left text-sm text-ar-ink hover:bg-ar-subtle disabled:opacity-50">
+                    {syncing ? t('more.syncing') : t('more.syncImages')}
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
 
-      {/* Delete Product Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        type="danger"
-        title={t('actions.delete')}
-        description={t('messages.confirmDelete')}
-        confirmText={t('actions.delete')}
-        cancelText={tc('buttons.cancel')}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setProductToDelete(null);
-        }}
-      />
+      <div role="tablist" aria-label={t('tabs.label')} className="flex gap-6 overflow-x-auto border-b border-ar-line">
+        <span role="tab" aria-selected="true" className="-mb-px flex h-11 shrink-0 items-center border-b-2 border-ar-primary text-[15px] font-bold text-ar-ink">
+          {t('tabs.all')}
+          {catalogTotal !== null && <span className="font-normal tabular-nums text-ar-muted">&nbsp;· {catalogTotal}</span>}
+        </span>
+        <Link
+          role="tab"
+          aria-selected="false"
+          href="/categories"
+          className="-mb-px flex h-11 shrink-0 items-center border-b-2 border-transparent text-[15px] font-medium text-ar-ink-2 no-underline hover:text-ar-ink"
+        >
+          {t('tabs.categories')}
+          {categories.total !== null && <span className="tabular-nums">&nbsp;· {categories.total}</span>}
+        </Link>
+      </div>
 
-      {/* Batch Delete Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showBatchDeleteConfirm}
-        onOpenChange={setShowBatchDeleteConfirm}
-        type="danger"
-        title={tc('actions.delete') || 'Xóa sản phẩm'}
-        description={`Bạn có chắc chắn muốn xóa ${selectedProductIds.length} sản phẩm đã chọn? Hành động này không thể hoàn tác.`}
-        confirmText={tc('actions.delete') || 'Xóa'}
-        cancelText={tc('buttons.cancel')}
-        onConfirm={handleBatchDelete}
-        onCancel={() => {
-          setShowBatchDeleteConfirm(false);
-        }}
-      />
+      <section className={`${cardClass} overflow-hidden`}>
+        {selectable && selCount > 0 && (
+          <SelectionBar
+            count={selCount}
+            total={total}
+            all={selection.all}
+            onSelectAll={() => setSelection({ ids: pageIds, all: true })}
+            onClear={() => setSelection(EMPTY_SELECTION)}
+            canExport={canExport}
+            exporting={exporting}
+            onExport={() => exportExcel(true)}
+            canDelete={canManageProducts}
+            onDelete={() => setConfirm({ kind: 'many' })}
+            t={t}
+          />
+        )}
 
-      {/* Import Dialog */}
-      <ImportProductDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        onImportSuccess={() => {
-          // Refresh product list after import
-          router.refresh();
-        }}
-      />
+        <div className="flex flex-wrap items-center gap-2 border-b border-ar-subtle px-4 py-3.5">
+          <label className="flex h-9 min-w-0 flex-[1_1_220px] items-center gap-2 rounded-[10px] border border-ar-line px-2.5 text-ar-muted sm:max-w-[300px]">
+            <ShellIcon d={ICONS.search} size={16} />
+            <input
+              type="search"
+              aria-label={t('search.label')}
+              placeholder={t('search.placeholder')}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') pushQ(draft.trim());
+              }}
+              className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ar-ink outline-none placeholder:text-ar-faint"
+            />
+          </label>
+          <button type="button" onClick={() => setImageOpen(true)} className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-ar-line bg-ar-surface px-3 text-sm text-ar-ink hover:bg-ar-subtle">
+            <ShellIcon d={CAMERA_ICON} size={16} />
+            {t('imageSearch.open')}
+          </button>
+          <div role="group" aria-label={t('category.label')} className="flex min-w-0 max-w-full flex-1 gap-2 overflow-x-auto pr-6 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]">
+            <button type="button" aria-pressed={!query.categoryId} onClick={() => update({ category: null })} className={chip(!query.categoryId)}>
+              {t('category.all')}
+            </button>
+            {categories.list.map((c) => {
+              const active = query.categoryId === c.id;
+              return (
+                <button key={c.id} type="button" aria-pressed={active} onClick={() => update({ category: active ? null : c.id })} className={chip(active)}>
+                  {c.name}
+                  {c.count !== null && <span className={`ml-1 tabular-nums ${active ? 'opacity-80' : 'text-ar-muted'}`}>{c.count}</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {showOutletFilter && (
+              <FilterMenu<string>
+                label={t('outlet.label')}
+                value={query.outletId ? String(query.outletId) : 'all'}
+                options={[{ value: 'all', label: t('outlet.all') }, ...(outlets as Array<{ id: number; name: string }>).map((o) => ({ value: String(o.id), label: o.name }))]}
+                onChange={(v) => update({ outlet: v === 'all' ? null : v })}
+              />
+            )}
+            <FilterMenu<SortKey>
+              label={t('sort.label')}
+              value={query.sort}
+              options={SORT_KEYS.map((v) => ({ value: v, label: t(`sort.${v}`) }))}
+              onChange={(v) => update({ sort: v === 'name' ? null : v })}
+            />
+          </div>
+        </div>
 
-      {/* Export Dialog */}
-      <ExportDialog
-        open={showExportDialog}
-        onOpenChange={setShowExportDialog}
-        resourceName="Products"
-        isLoading={isExporting}
-        selectedCount={selectedProductIds.length}
-        onExport={async (params) => {
-          try {
-            setIsExporting(true);
-            const blob = await productsApi.exportProducts(params);
-            
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `products-export-${new Date().toISOString().split('T')[0]}.${params.format === 'csv' ? 'csv' : 'xlsx'}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            toastSuccess(tc('labels.success'), 'Export completed successfully');
-            setShowExportDialog(false);
-            setSelectedProductIds([]); // Clear selection after export
-          } catch (error) {
-            // Error automatically handled by useGlobalErrorHandler
-          } finally {
-            setIsExporting(false);
-          }
-        }}
-      />
-    </PageWrapper>
+        {imageResults && (
+          <div className="flex border-b border-ar-subtle px-4 py-2.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-ar-primary-soft py-1 pl-3 pr-1 text-sm font-semibold text-ar-primary-ink">
+              {t('imageSearch.result', { count: imageResults.length })}
+              <button
+                type="button"
+                aria-label={t('imageSearch.clear')}
+                onClick={() => setImageResults(null)}
+                className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ar-surface"
+              >
+                <ShellIcon d={ICONS.close} size={14} />
+              </button>
+            </span>
+          </div>
+        )}
+
+        <ProductsTable
+          rows={rows}
+          loading={!imageResults && list.loading}
+          failed={!imageResults && list.failed}
+          onRetry={reload}
+          emptyText={unfiltered && !imageResults ? t('empty') : t('emptyFiltered')}
+          selectable={selectable}
+          selection={selection}
+          pageState={pageCheckState(selection, pageIds)}
+          onToggleRow={(id) => setSelection((s) => toggleOne(s, id, pageIds))}
+          onTogglePage={() => setSelection((s) => togglePage(s, pageIds))}
+          canEdit={canUpdateProducts}
+          canDelete={canManageProducts}
+          onDelete={(row) => setConfirm({ kind: 'one', row })}
+          t={t}
+          money={money}
+          skeletonRows={Math.min(query.limit, 10)}
+        />
+
+        {!imageResults && list.total > 0 && (
+          <TableFooter
+            page={Math.min(query.page, list.totalPages)}
+            limit={query.limit}
+            total={list.total}
+            totalPages={list.totalPages}
+            onPage={(p) => update({ page: p > 1 ? p : null })}
+            onLimit={(n) => update({ limit: n === 10 ? null : n })}
+            t={t}
+          />
+        )}
+      </section>
+
+      <Modal
+        open={!!confirm}
+        title={t('delete.title')}
+        onClose={() => !deleting && setConfirm(null)}
+        closeLabel={t('close')}
+        footer={
+          <>
+            <button type="button" onClick={() => setConfirm(null)} disabled={deleting} className={outlineBtn}>
+              {t('delete.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={runDelete}
+              disabled={deleting}
+              className="inline-flex h-10 items-center rounded-[10px] bg-ar-danger px-4 text-[15px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
+            >
+              {deleting ? t('delete.deleting') : t('delete.confirm')}
+            </button>
+          </>
+        }
+      >
+        <p className="m-0 text-[15px] text-ar-ink">
+          {confirm?.kind === 'one' ? t('delete.one', { name: confirm.row.name }) : t('delete.many', { count: selCount })}
+        </p>
+      </Modal>
+
+      {imageOpen && (
+        <ImageSearchDialog
+          open={imageOpen}
+          onOpenChange={setImageOpen}
+          categoryId={query.categoryId}
+          onSearchResult={(products: Product[]) => setImageResults(products as unknown as ProductLike[])}
+          onViewProduct={(p: Product) => router.push(`/products/${p.id}`)}
+          onEditProduct={canUpdateProducts ? (p: Product) => router.push(`/products/${p.id}/edit`) : undefined}
+        />
+      )}
+    </div>
   );
-} 
+}

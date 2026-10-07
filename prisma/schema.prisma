@@ -165,6 +165,12 @@ model Merchant {
   pricingType          PricingType          @default(FIXED)
   currency             String               @default("USD")
   avatar               String?
+  /// #518 "Cho tạo đơn khi trùng lịch". true (default) = today's behaviour, no availability check on save.
+  /// false = the API rejects RENT orders that would exceed outlet stock on some VN civil day.
+  allowOverlappingOrders Boolean            @default(true)
+  /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
+  /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
+  timezone             String               @default("Asia/Ho_Chi_Minh")
   /// ID of merchant who referred this merchant (for referral tracking)
   referredByMerchantId Int?
   categories           Category[]
@@ -198,6 +204,8 @@ model Outlet {
   description  String?
   /// Printed at the bottom of RENT receipts, e.g. "Vui lòng mang theo CMND khi lấy đồ" (#347)
   printNote    String?
+  /// Print the default bank account + VietQR on bills of this outlet (#628). Synced web ↔ mobile.
+  printBankQr  Boolean       @default(false)
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())
@@ -241,7 +249,7 @@ model Product {
   id                   Int                    @id @default(autoincrement())
   name                 String
   description          String?
-  barcode              String?                @unique
+  barcode              String? // unique per shop (@@unique below), not system-wide (#629)
   totalStock           Int                    @default(0)
   rentPrice            Float
   salePrice            Float?
@@ -256,6 +264,7 @@ model Product {
   costPrice            Float?
   pricingType          PricingType?
   durationConfig       String?
+  deletedAt            DateTime? // Soft delete (#389); hidden from lists, kept for orders
   orderItems           OrderItem[]
   outletStock          OutletStock[]
   embeddingJobs        EmbeddingJob[]
@@ -263,6 +272,7 @@ model Product {
   category             Category               @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   merchant             Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
+  @@unique([merchantId, barcode])
   @@index([merchantId])
   @@index([categoryId])
   @@index([barcode])
@@ -418,6 +428,20 @@ model Order {
   @@index([totalAmount])
   @@index([status, orderType, createdAt])
   @@index([deletedAt])
+}
+
+/// #341: Idempotency-Key sent by a client with POST /api/orders, scoped to the calling user.
+/// A retry or a second in-flight create with the same key returns `orderId` instead of a new order.
+/// No foreign keys on purpose: the Order table is unchanged and a stale row is ignored.
+model OrderCreateKey {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  key       String
+  orderId   Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([createdAt])
 }
 
 model OrderItem {

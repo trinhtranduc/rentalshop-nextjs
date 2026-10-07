@@ -46,6 +46,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   'MERCHANT_ACCESS_REQUIRED': 'Merchant access required',
   'DELETE_USER_OUT_OF_SCOPE': 'Cannot delete user outside your scope',
   'UPDATE_USER_OUT_OF_SCOPE': 'Cannot update user outside your scope',
+  'MERCHANT_TRANSFER_ADMIN_ONLY': 'Only a system administrator can move an account to another merchant',
+  'MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED': 'A merchant owner account cannot be moved to another merchant',
+  'OUTLET_ASSIGNMENT_REQUIRED': 'Choose an outlet that belongs to the selected merchant',
+  'OUTLET_MERCHANT_MISMATCH': 'The selected outlet does not belong to the selected merchant',
+  'CANNOT_TRANSFER_LAST_MERCHANT_OWNER': 'Assign another active merchant owner before changing this account',
   'DELETE_OWN_ACCOUNT_ONLY': 'You can only delete your own account',
   
   // Validation Errors
@@ -62,6 +67,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'PRODUCT_ID_REQUIRED': 'Product ID is required',
   'MERCHANT_ID_REQUIRED': 'Merchant ID is required',
   'OUTLET_ID_REQUIRED': 'Outlet ID is required',
+  'OUTLET_REQUIRED': 'Choose an outlet, or set a default outlet for your shop.',
   'PLAN_ID_REQUIRED': 'Plan ID is required',
   'INVALID_AMOUNT': 'Amount must be greater than 0',
   'INVALID_CUSTOMER_ID_FORMAT': 'Invalid customer ID format',
@@ -84,14 +90,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   'SUBSCRIPTION_CANNOT_RESUME': 'Cannot resume subscription. Only cancelled or paused subscriptions can be resumed.',
   'INVALID_TENANT_KEY': 'Invalid tenant key format. Only alphanumeric characters and hyphens are allowed.',
   'TENANT_KEY_ALREADY_EXISTS': 'This tenant key is already taken. Please choose a different one.',
+  'INVALID_TIMEZONE': 'Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).',
   
   // Not Found Errors
   'USER_NOT_FOUND': 'User not found',
   'MERCHANT_NOT_FOUND': 'Merchant not found',
   'OUTLET_NOT_FOUND': 'Outlet not found',
   'PRODUCT_NOT_FOUND': 'Product not found',
+  'PRODUCT_HAS_OPEN_ORDERS': 'This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.',
   'PRODUCT_HAS_NO_IMAGES': 'Add at least one product photo before syncing image search',
   'ORDER_NOT_FOUND': 'Order not found',
+  'INVALID_ORDER_STATUS': 'This status change is not allowed for this order.',
+  'ORDER_SCHEDULE_CONFLICT': 'This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.',
   'CUSTOMER_NOT_FOUND': 'Customer not found',
   'CATEGORY_NOT_FOUND': 'Category not found',
   'PLAN_NOT_FOUND': 'Plan not found',
@@ -143,6 +153,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'EMAIL_ALREADY_VERIFIED': 'Email has already been verified',
   'EMAIL_SEND_FAILED': 'Failed to send email',
   'TOKEN_REQUIRED': 'Token is required',
+  'RATE_LIMIT_EXCEEDED': 'Too many requests. Please wait a few minutes and try again.',
   
   // System Errors
   'INTERNAL_SERVER_ERROR': 'Internal server error',
@@ -261,6 +272,7 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'TOP_OUTLETS_SUCCESS': 'Top shops retrieved successfully',
   'TOP_PRODUCTS_SUCCESS': 'Top products retrieved successfully',
   'OUTLET_FOUND': 'Outlet retrieved successfully',
+  'APP_CONFIG_SUCCESS': 'App config retrieved successfully',
 };
 
 /**
@@ -484,6 +496,7 @@ export function getErrorStatusCode(error: any, defaultCode: number = 500): numbe
   if (code?.includes('_EXISTS')) return 409;
   if (code?.includes('_DUPLICATE')) return 409;
   if (code === 'DUPLICATE_ENTRY') return 409;
+  if (code === 'ORDER_SCHEDULE_CONFLICT') return 409;
   
   // Business rule violations (422)
   if (code === 'BUSINESS_RULE_VIOLATION') return 422;

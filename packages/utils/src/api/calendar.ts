@@ -35,6 +35,10 @@ export interface CalendarOrderSummary {
   isReadyToDeliver?: boolean; // Whether the order is ready to deliver
   isOverdue?: boolean;
   duration?: number;
+  /** What the counter collects / hands back now, and the stored late fee (#389) */
+  amountDue?: number;
+  refundDue?: number;
+  lateFee?: number;
   // Product summary for calendar display
   productName?: string;
   productCount?: number;
@@ -162,74 +166,6 @@ export const calendarApi = {
       meta: defaultMeta,
       message: result.message || 'Failed to load calendar data'
     };
-  },
-
-  /**
-   * Get calendar orders for current month
-   */
-  async getCurrentMonthOrders(outletId?: number): Promise<CalendarApiResponse> {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
-    return this.getCalendarOrders({
-      startDate: startOfMonth.toISOString().split('T')[0],
-      endDate: endOfMonth.toISOString().split('T')[0],
-      outletId,
-      limit: 4
-    });
-  },
-
-  /**
-   * Get calendar orders for next month
-   */
-  async getNextMonthOrders(outletId?: number): Promise<CalendarApiResponse> {
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const startOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
-    const endOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
-    
-    return this.getCalendarOrders({
-      startDate: startOfNextMonth.toISOString().split('T')[0],
-      endDate: endOfNextMonth.toISOString().split('T')[0],
-      outletId,
-      limit: 4
-    });
-  },
-
-  /**
-   * Get calendar orders for previous month
-   */
-  async getPreviousMonthOrders(outletId?: number): Promise<CalendarApiResponse> {
-    const now = new Date();
-    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const startOfPrevMonth = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
-    const endOfPrevMonth = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0);
-    
-    return this.getCalendarOrders({
-      startDate: startOfPrevMonth.toISOString().split('T')[0],
-      endDate: endOfPrevMonth.toISOString().split('T')[0],
-      outletId,
-      limit: 4
-    });
-  },
-
-  /**
-   * Get calendar orders for a specific month
-   * @param year - Year (e.g., 2025)
-   * @param month - Month (1-12)
-   * @param outletId - Optional outlet filter
-   */
-  async getMonthOrders(year: number, month: number, outletId?: number): Promise<CalendarApiResponse> {
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0);
-    
-    return this.getCalendarOrders({
-      startDate: startOfMonth.toISOString().split('T')[0],
-      endDate: endOfMonth.toISOString().split('T')[0],
-      outletId,
-      limit: 4
-    });
   },
 
   /**

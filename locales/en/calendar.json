@@ -85,6 +85,55 @@
     "october": "October",
     "november": "November",
     "december": "December"
+  },
+  "web": {
+    "title": "Pickup & return calendar",
+    "monthNames": "January,February,March,April,May,June,July,August,September,October,November,December",
+    "monthTitle": "{month} {year}",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today",
+    "monthLabel": "Month calendar",
+    "dayPanel": "Work for the day",
+    "legend": {
+      "pickups": "Pickup",
+      "returns": "Return",
+      "late": "Late return"
+    },
+    "cell": {
+      "pickups": "Pickup {count}",
+      "returns": "Return {count}",
+      "late": "Late {count}"
+    },
+    "aria": {
+      "pickups": "pickups",
+      "returns": "returns",
+      "late": "late"
+    },
+    "dayTitleToday": "{day} · today",
+    "sections": {
+      "pickups": "To hand over · {count}",
+      "returns": "To take back · {count}"
+    },
+    "sub": {
+      "returnOn": "returns {day}",
+      "sameDay": "out and back the same day",
+      "pickedOn": "picked up {day}",
+      "late": "due {day} · {days} days late",
+      "notPrepared": "not prepared"
+    },
+    "money": {
+      "collect": "{amount} to collect",
+      "refund": "refund {amount}",
+      "fee": "collect {amount} more"
+    },
+    "emptyPickups": "Nothing to hand over.",
+    "emptyReturns": "Nothing to take back.",
+    "walkIn": "Walk-in customer",
+    "loadFailed": "Could not load this month.",
+    "dayFailed": "Could not load the orders of this day.",
+    "retry": "Retry",
+    "more": "Show more"
   }
 }
-

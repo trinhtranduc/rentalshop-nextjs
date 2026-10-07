@@ -14,6 +14,12 @@ class BankAccountFormViewController: BaseViewControler {
     // MARK: - Properties
     weak var delegate: BankAccountFormDelegate?
     var bankAccount: BankAccount?
+    /// #622: outlet the account belongs to (a MERCHANT login has none of its own)
+    var outletId: Int?
+    /// New style (#459 look), set by the v2 list
+    var v2 = false
+    /// v2: read-only field that opens the bank picker
+    private let v2BankField = UITextField()
     
     // MARK: - UI Components
     private lazy var saveButton: UIButton = {
@@ -106,7 +112,9 @@ class BankAccountFormViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        setupNavigationBar()
+        if !v2 {
+            setupNavigationBar()
+        }
         setupUI()
         setupData()
         
@@ -122,6 +130,10 @@ class BankAccountFormViewController: BaseViewControler {
     
     // MARK: - Setup
     override func setupUI() {
+        if v2 {
+            setupV2UI()
+            return
+        }
         view.backgroundColor = .backgroundPrimary
         
         view.addSubview(scrollView)
@@ -327,6 +339,65 @@ class BankAccountFormViewController: BaseViewControler {
         }
     }
     
+    /// v2: ‹ header, labelled fields (bank opens the picker), default switch, primary button at the bottom
+    private func setupV2UI() {
+        view.backgroundColor = .white
+        let back = SettingsDetailV2.backButton()
+        back.addTarget(self, action: #selector(v2Close), for: .touchUpInside)
+        let title = bankAccount == nil ? "Add Bank Account".localized() : "Edit Bank Account".localized()
+        let line = SettingsDetailV2.installHeader(on: view, title: title, back: back)
+
+        let save = V2.primaryButton(bankAccount == nil ? "Add".localized() : "Update".localized())
+        save.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
+        let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [save])
+        // The button stays above the keyboard while typing
+        bar.snp.remakeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+        }
+
+        v2BankField.placeholder = "Select Bank".localized()
+        v2BankField.isUserInteractionEnabled = false
+        let bankRow = SettingsDetailV2.field("Bank Name".localized() + " *", v2BankField, chevron: true)
+        bankRow.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(bankNameButtonTapped)))
+        bankRow.accessibilityTraits = UIAccessibilityTraitButton
+
+        let defaultTitle = V2.label("Set as Default".localized(), size: DS.TextSize.body, weight: .bold)
+        let defaultRow = UIStackView(arrangedSubviews: [defaultTitle, isDefaultSwitch])
+        defaultRow.alignment = .center
+        defaultRow.spacing = 12
+        isDefaultSwitch.setContentHuggingPriority(.required, for: .horizontal)
+
+        let form = UIStackView(arrangedSubviews: [
+            bankRow,
+            SettingsDetailV2.field("Account Number".localized() + " *", accountNumberField.textField),
+            SettingsDetailV2.field("Account Holder Name".localized() + " *", accountHolderNameField.textField),
+            SettingsDetailV2.field("Branch".localized(), branchField.textField),
+            defaultRow,
+        ])
+        form.axis = .vertical
+        form.spacing = 16
+        accountHolderNameField.textField.autocapitalizationType = .allCharacters
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(form)
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(line.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bar.snp.top)
+        }
+        form.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalToSuperview().offset(-16)
+            make.width.equalToSuperview().offset(-2 * DS.Spacing.lg)
+        }
+    }
+
+    @objc private func v2Close() {
+        dismiss(animated: true)
+    }
+
     // MARK: - Custom Navigation Bar Setup
     private func setupNavigationBar() {
         let title = bankAccount == nil ? "Add Bank Account".localized() : "Edit Bank Account".localized()
@@ -351,6 +422,7 @@ class BankAccountFormViewController: BaseViewControler {
             selectedBankName = bankAccount.bankName
             selectedBankCode = bankAccount.bankCode
             bankNameButton.setTitle(bankAccount.bankName, for: .normal)
+            v2BankField.text = bankAccount.bankName
             bankCodeField.textField.text = bankAccount.bankCode
             accountNumberField.textField.text = bankAccount.accountNumber
             accountHolderNameField.textField.text = bankAccount.accountHolderName
@@ -445,7 +517,7 @@ class BankAccountFormViewController: BaseViewControler {
         view.endEditing(true)
         showProgressText(text: "Loading...".localized())
         
-        BankAccountService.shared.createBankAccount(withValues: params) { [weak self] bankAccount, error in
+        BankAccountService.shared.createBankAccount(outletId: outletId, withValues: params) { [weak self] bankAccount, error in
             guard let self = self else { return }
             self.hideProgress()
             
@@ -462,7 +534,7 @@ class BankAccountFormViewController: BaseViewControler {
         view.endEditing(true)
         showProgressText(text: "Updating...".localized())
         
-        BankAccountService.shared.updateBankAccount(bankAccountId: bankAccountId, withValues: params) { [weak self] bankAccount, error in
+        BankAccountService.shared.updateBankAccount(outletId: outletId, bankAccountId: bankAccountId, withValues: params) { [weak self] bankAccount, error in
             guard let self = self else { return }
             self.hideProgress()
             
@@ -482,6 +554,7 @@ extension BankAccountFormViewController: BankPickerViewControllerDelegate {
         selectedBankName = bankName
         selectedBankCode = bankCode
         bankNameButton.setTitle(bankName, for: .normal)
+        v2BankField.text = bankName
         bankCodeField.textField.text = bankCode
     }
 }

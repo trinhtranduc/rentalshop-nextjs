@@ -10,6 +10,27 @@ function addDays(date: Date, days: number): Date {
   return result;
 }
 
+/** Shop zone for the reset day (#588). Same value as `SHOP_TIMEZONE` in `@rentalshop/utils`. */
+const LOYALTY_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+const resetDayFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: LOYALTY_TIME_ZONE,
+  month: 'numeric',
+  day: 'numeric',
+});
+
+/** Month (1-12) and day of `instant` on the Vietnam calendar, whatever the server zone. */
+function vietnamMonthDay(instant: Date): { month: number; day: number } {
+  let month = 0;
+  let day = 0;
+  for (const part of resetDayFormatter.formatToParts(instant)) {
+    if (part.type === 'month') month = Number(part.value);
+    if (part.type === 'day') day = Number(part.value);
+  }
+  return { month, day };
+}
+
+/** True on the Vietnam civil day of the program's yearly reset (the cron runs at 00:05 VN = 17:05Z). */
 export function isYearlyResetDate(
   program: LoyaltyProgramLike,
   now: Date = new Date()
@@ -17,10 +38,8 @@ export function isYearlyResetDate(
   if (program.pointsExpiryMode !== 'yearly_reset') return false;
   if (!program.yearlyResetMonth || !program.yearlyResetDay) return false;
 
-  return (
-    now.getMonth() + 1 === program.yearlyResetMonth &&
-    now.getDate() === program.yearlyResetDay
-  );
+  const { month, day } = vietnamMonthDay(now);
+  return month === program.yearlyResetMonth && day === program.yearlyResetDay;
 }
 
 async function expireLot(

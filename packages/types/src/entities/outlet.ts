@@ -28,6 +28,7 @@ export interface Outlet extends BaseEntityWithMerchant, Address, ContactInfo {
   name: string;
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   isActive: boolean;
   isDefault?: boolean; // Indicates if this is the default outlet for the merchant
   avatar?: string; // Avatar image URL
@@ -54,6 +55,7 @@ export interface OutletCreateInput extends BaseFormInput {
   country?: string;
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   merchantId: number;
   avatar?: string; // Avatar image URL
 }
@@ -72,6 +74,7 @@ export interface OutletUpdateInput extends BaseUpdateInput {
   country?: string;
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   isActive?: boolean;
   isDefault?: boolean;
   avatar?: string; // Avatar image URL
@@ -110,6 +113,7 @@ export interface OutletSearchResult {
   country?: string;  // Outlet country
   description?: string;
   printNote?: string | null; // Printed at the bottom of RENT receipts (#347)
+  printBankQr?: boolean; // Bank block + VietQR on bills (#628)
   isActive: boolean;
   isDefault?: boolean;  // Indicates if this is the default outlet for the merchant
   createdAt: Date | string;

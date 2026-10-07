@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */; };
+		A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000003 /* OrderShareImageTests.swift */; };
+		5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */; };
+		1443F833E4528F38190DA006 /* ChangeHistoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */; };
+		71778FFE5E5E12F097C24D21 /* ChangeHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */; };
+		9C6BC26D8481C7603F0EC26E /* ScheduleConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */; };
+		00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */; };
+		00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C68665233AF9D666CE7E723C /* Phase8Tests.swift */; };
+		596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */; };
+		021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */; };
+		039E4564507EC2529E6A9529 /* Phase7GapsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1128874207B931039540DAB /* Phase7GapsTests.swift */; };
+		522155F33DE03599AFDCA6B1 /* ProductCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A288BC7B1179860A2FFADF5F /* ProductCalendarTests.swift */; };
+		A430B0000000000000000001 /* Issue430Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A430F0000000000000000001 /* Issue430Tests.swift */; };
+		A344B0000000000000000001 /* AuthSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A344F0000000000000000001 /* AuthSessionTests.swift */; };
 		040085082F00DDC500DF5C81 /* RatingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040085072F00DDC500DF5C81 /* RatingManager.swift */; };
 		040330DD2EA747F7003BC33E /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040330DC2EA747F7003BC33E /* Category.swift */; };
 		040330DF2EA74857003BC33E /* CategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040330DE2EA74857003BC33E /* CategoryService.swift */; };
@@ -38,11 +52,14 @@
 		04276C012EE451B7005EAC05 /* BankAccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C002EE451B7005EAC05 /* BankAccountViewController.swift */; };
 		04276C022EE451B7005EAC05 /* BankAccountFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276BFF2EE451B7005EAC05 /* BankAccountFormViewController.swift */; };
 		04276C042EE451E0005EAC05 /* BankAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C032EE451E0005EAC05 /* BankAccount.swift */; };
+		A640B0000000000000000001 /* OrderShareImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000001 /* OrderShareImage.swift */; };
 		04276C072EE45331005EAC05 /* QRCodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C062EE45331005EAC05 /* QRCodeService.swift */; };
 		04276C082EE45331005EAC05 /* BankAccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C052EE45331005EAC05 /* BankAccountService.swift */; };
 		04276C0A2EE4537F005EAC05 /* PaymentQRCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */; };
 		04276C0C2EE453AE005EAC05 /* QRCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */; };
 		04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */; };
+		A622B0000000000000000001 /* VietQR.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000001 /* VietQR.swift */; };
+		A640B0000000000000000002 /* OrderShareRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000002 /* OrderShareRenderer.swift */; };
 		04276C102EE4582E005EAC05 /* BankPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */; };
 		04276C122EE49017005EAC05 /* ProductAvailabilityCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */; };
 		043F06372D85473C0047DC11 /* HapticButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043F06362D85473C0047DC11 /* HapticButton.swift */; };
@@ -55,6 +72,7 @@
 		047C0A602D9E43E200EF2C50 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 047C0A5F2D9E43E200EF2C50 /* SnapKit */; };
 		048838D42D7727AF00069256 /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838CE2D7727AF00069256 /* AuthenticationService.swift */; };
 		048838D52D7727AF00069256 /* BaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838CF2D7727AF00069256 /* BaseService.swift */; };
+		3440A0012F1E010100000002 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3440A0012F1E010100000001 /* AuthSession.swift */; };
 		048838D62D7727AF00069256 /* OrderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D12D7727AF00069256 /* OrderService.swift */; };
 		048838D72D7727AF00069256 /* ProductService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D22D7727AF00069256 /* ProductService.swift */; };
 		048838D82D7727AF00069256 /* CustomerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048838D02D7727AF00069256 /* CustomerService.swift */; };
@@ -125,6 +143,7 @@
 		04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0001 /* InboxNotification.swift */; };
 		04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0002 /* NotificationService.swift */; };
 		04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0003 /* NotificationCell.swift */; };
+		A4770477B0000000000000A2 /* NotificationV2Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A2 /* NotificationV2Cell.swift */; };
 		04F1B0022F1C0101000A0004 /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */; };
 		04F301012F40000100A001 /* OverviewTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301002F40000100A001 /* OverviewTypes.swift */; };
 		04F301032F40000100A002 /* OverviewUIBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F301022F40000100A002 /* OverviewUIBuilder.swift */; };
@@ -155,6 +174,48 @@
 		04FBE0CF2EDE8DF90057EDF8 /* RCPrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0CD2EDE8DF90057EDF8 /* RCPrimaryButton.swift */; };
 		04FBE0D02EDE8DF90057EDF8 /* RCSimpleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0CE2EDE8DF90057EDF8 /* RCSimpleTextField.swift */; };
 		04FBE0D22EDED09E0057EDF8 /* RCCustomNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */; };
+		0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */; };
+		A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */; };
+		A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A1 /* CartNotePhotosTests.swift */; };
+		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
+		17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */; };
+		17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A0C2121B33928148F209CE /* TabsV2APIService.swift */; };
+		219F5B5BC02CC3E14401DD74 /* ProductsV2Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */; };
+		372335F213185EFD8AC37259 /* OverviewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64454969BCB62EEB55223203 /* OverviewV2.swift */; };
+		A616B0000000000000000001 /* OverviewDashLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000001 /* OverviewDashLogic.swift */; };
+		3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */; };
+		3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */; };
+		A622B0000000000000000002 /* BankQRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000002 /* BankQRTests.swift */; };
+		A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000003 /* OverviewDashLogicTests.swift */; };
+		3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */; };
+		4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */; };
+		4C1E7AD24480CC24122D7DF9 /* AppConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628848789A17EEF1ECD704C3 /* AppConfigService.swift */; };
+		506BFF4372513384679B2314 /* NewCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */; };
+		5150715066E3694042E01913 /* HandOverCollateralTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */; };
+		5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */; };
+		523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */; };
+		595B59EBE56AE7BE95B3F06E /* ProductCalendarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */; };
+		55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DFF664402F310DBDA0C7DD /* AuthForms.swift */; };
+		57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */; };
+		A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A632F0000000000000000001 /* CategoryManageViewController.swift */; };
+		607E5D13DAD404F7F526AA2C /* CustomersV2ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */; };
+		61800AE4201230EA1EED530E /* TodayWork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07CC0B0BF772BE52542D13E /* TodayWork.swift */; };
+		66D5C9154CEE12049C3B85DD /* OnboardingV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC45E729C448084B4969B27 /* OnboardingV2ViewController.swift */; };
+		6DF35D462195744CA6E88339 /* CalendarV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16733093F5AD2CBACB593E6B /* CalendarV2.swift */; };
+		6E5F77822E6F01D26CD3E7DC /* OrdersHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */; };
+		6F7DAC80E945C7A8AF3FD213 /* SettingsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44906268638CD53C3E41AD39 /* SettingsV2.swift */; };
+		7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */; };
+		75C21D317F5521D9A9958865 /* CustomersV2ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */; };
+		763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */; };
+		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
+		80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */; };
+		A633B0000000000000000001 /* OverviewTopAllViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A633F0000000000000000001 /* OverviewTopAllViewController.swift */; };
+		A616B0000000000000000002 /* OverviewDashViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000002 /* OverviewDashViews.swift */; };
+		B484B0000000000000000001 /* RentedOutOrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B484F0000000000000000001 /* RentedOutOrdersViewController.swift */; };
+		81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32451210261D4A00E83FEBAA /* OrderStatusTests.swift */; };
+		818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */; };
+		83BD6AF23E08F2BB98957B98 /* OrderExtendSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */; };
+		85ABA05A8130F520F4EEDAC2 /* CustomersV2Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CCD2C1B543D4537FE68B48 /* CustomersV2Views.swift */; };
 		881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881802AF21BE5AEF00D1E366 /* UnixTime.swift */; };
 		8841914221CA5C9E00C442C3 /* NavigationTabbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8841914121CA5C9E00C442C3 /* NavigationTabbarController.swift */; };
 		88420B0A21C500CC0078CD7C /* OrderCheckViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88420B0921C500CC0078CD7C /* OrderCheckViewController.swift */; };
@@ -204,6 +265,16 @@
 		88FF33762F2DAE5B00FD0A26 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 88FF33752F2DAE5B00FD0A26 /* AVFoundation.framework */; };
 		88FF33782F2DAE6600FD0A26 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 88FF33772F2DAE6600FD0A26 /* CoreMedia.framework */; };
 		88FFF5CE2F2DA33B00FD0A26 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FFF5CD2F2DA33B00FD0A26 /* ToastView.swift */; };
+		89DD03B3852E10B9B3B1EF17 /* Pods_POS_ADBDTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */; };
+		8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */; };
+		8BC77D064D622C3C87D1C5D9 /* CustomerDetailV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */; };
+		91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */; };
+		9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */; };
+		941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */; };
+		9893270E20A560EFFD72653E /* ProductDetailV2Logic.swift in Sources */ = {isa = PBXBuildFile; fileRef = F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */; };
+		EED9B2DE2A382145A9AC11F1 /* ProductCalendarLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A005FCE2694ADE8CD58016 /* ProductCalendarLogic.swift */; };
+		9B1605DA8A6665412EED39EB /* OrderDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */; };
+		9D1B768177A1200AC6AE8A9D /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */; };
 		A4B110012F1E0101000001 /* DraftOrderAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000011 /* DraftOrderAttributes.swift */; };
 		A4B110012F1E0101000004 /* DraftOrderLiveActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000014 /* DraftOrderLiveActivityBridge.swift */; };
 		A4B110012F1E0101000005 /* AnyRentLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000015 /* AnyRentLiveActivityBundle.swift */; };
@@ -216,6 +287,15 @@
 		A4B110012F1E010100000F /* DraftOrderLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000012 /* DraftOrderLiveActivityView.swift */; };
 		A4B110012F1E0101000010 /* DraftOrderLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B110012F1E0101000013 /* DraftOrderLiveActivityWidget.swift */; };
 		A4B110012F1E010100001F /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4B110012F1E010100001B /* ActivityKit.framework */; };
+		AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */; };
+		ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */; };
+		A4770477B0000000000000A1 /* NotificationsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A1 /* NotificationsLogic.swift */; };
+		B298B580A0C9BA1614A0649B /* RentalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730E16169321964B8996F08C /* RentalExtension.swift */; };
+		B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */; };
+		C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */; };
+		C2E7493E136407C5EA7E6D96 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */; };
+		C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */; };
+		A47201AA0000000000000001 /* ImageViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A47201AA0000000000000002 /* ImageViewerViewController.swift */; };
 		C914E01023A48955008B3EDF /* PreviewHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914E00F23A48955008B3EDF /* PreviewHeaderCell.swift */; };
 		C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914E01423A49075008B3EDF /* UIScrollView+Additions.swift */; };
 		C914E01923A4907A008B3EDF /* UIView+Additions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C914E01523A49077008B3EDF /* UIView+Additions.swift */; };
@@ -233,11 +313,31 @@
 		C9D2ABAF24B0D4570028EAAC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88E4147921A99B3B00BAF4A1 /* AppDelegate.swift */; };
 		C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D2ABB424B0D53C0028EAAC /* Localizable.strings */; };
 		C9EFF5B1237BF75E00A6CB57 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EFF5B0237BF75E00A6CB57 /* Customer.swift */; };
+		CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E19ED151DD6F782E5777FB /* OrdersViewController.swift */; };
+		CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */; };
+		D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */; };
+		D471767BB75A2DAE01AA6CEC /* FormattersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8174E6BA337B4B259DD6569 /* FormattersTests.swift */; };
+		DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 286EED8E25240975FDF5D455 /* IconTokensTests.swift */; };
+		A424B0010000000000000001 /* TypeScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A424B0010000000000000002 /* TypeScaleTests.swift */; };
+		DED3B23637CAEA6ED6DC027C /* SettingsV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */; };
+		A4590459D0000000000000A1 /* SettingsDetailV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4590459D0000000000000B2 /* SettingsDetailV2.swift */; };
+		E4524B2B978D3134644DADCB /* OrderRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C466A2A395154AD70553624A /* OrderRowCell.swift */; };
+		E6844B2830F8361BAA9CEFC4 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */; };
 		EC0A10022F1B00010000001 /* AvailabilityCheckViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */; };
+		EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42DC389596269843419D1B18 /* OrdersHomeTests.swift */; };
+		F05A9EEA160D9C22272C8D9E /* OrdersFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */; };
+		F4268E5625300006E2E8BF03 /* CustomersV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */; };
 		F53E36E4295E06D35B9F35C4 /* Pods_POS_ADBD.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		9BF6D791959999BA9052AF26 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 88E4146E21A99B3B00BAF4A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 88E4147521A99B3B00BAF4A1;
+			remoteInfo = "POS ADBD";
+		};
 		A4B110012F1E0101000020 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 88E4146E21A99B3B00BAF4A1 /* Project object */;
@@ -286,6 +386,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryTests.swift; sourceTree = "<group>"; };
+		A640F0000000000000000003 /* OrderShareImageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareImageTests.swift; sourceTree = "<group>"; };
+		D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflictTests.swift; sourceTree = "<group>"; };
+		76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryViewController.swift; sourceTree = "<group>"; };
+		E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistory.swift; sourceTree = "<group>"; };
+		EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflict.swift; sourceTree = "<group>"; };
 		003B93F62DB6A075AF2FB1A1 /* Pods-POS ADBD.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBD.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBD/Pods-POS ADBD.debug.xcconfig"; sourceTree = "<group>"; };
 		040085072F00DDC500DF5C81 /* RatingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingManager.swift; sourceTree = "<group>"; };
 		040330DC2EA747F7003BC33E /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
@@ -317,11 +423,14 @@
 		04276BFF2EE451B7005EAC05 /* BankAccountFormViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccountFormViewController.swift; sourceTree = "<group>"; };
 		04276C002EE451B7005EAC05 /* BankAccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccountViewController.swift; sourceTree = "<group>"; };
 		04276C032EE451E0005EAC05 /* BankAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccount.swift; sourceTree = "<group>"; };
+		A640F0000000000000000001 /* OrderShareImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareImage.swift; sourceTree = "<group>"; };
 		04276C052EE45331005EAC05 /* BankAccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankAccountService.swift; sourceTree = "<group>"; };
 		04276C062EE45331005EAC05 /* QRCodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeService.swift; sourceTree = "<group>"; };
 		04276C092EE4537F005EAC05 /* PaymentQRCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentQRCodeViewController.swift; sourceTree = "<group>"; };
 		04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeGenerator.swift; sourceTree = "<group>"; };
 		04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietnamBankCodes.swift; sourceTree = "<group>"; };
+		A622F0000000000000000001 /* VietQR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VietQR.swift; sourceTree = "<group>"; };
+		A640F0000000000000000002 /* OrderShareRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareRenderer.swift; sourceTree = "<group>"; };
 		04276C0F2EE4582E005EAC05 /* BankPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankPickerViewController.swift; sourceTree = "<group>"; };
 		04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductAvailabilityCache.swift; sourceTree = "<group>"; };
 		043F06362D85473C0047DC11 /* HapticButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticButton.swift; sourceTree = "<group>"; };
@@ -333,6 +442,7 @@
 		0465CA4F2EE3478600629F03 /* anyrent.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = anyrent.icon; sourceTree = "<group>"; };
 		048838CE2D7727AF00069256 /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		048838CF2D7727AF00069256 /* BaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseService.swift; sourceTree = "<group>"; };
+		3440A0012F1E010100000001 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		048838D02D7727AF00069256 /* CustomerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerService.swift; sourceTree = "<group>"; };
 		048838D12D7727AF00069256 /* OrderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderService.swift; sourceTree = "<group>"; };
 		048838D22D7727AF00069256 /* ProductService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductService.swift; sourceTree = "<group>"; };
@@ -380,6 +490,7 @@
 		048839B02D79F11900069257 /* LoyaltyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyService.swift; sourceTree = "<group>"; };
 		048F67962ED1EDC40053985A /* CheckEmailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckEmailViewController.swift; sourceTree = "<group>"; };
 		048F67982ED1EE2A0053985A /* ErrorCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorCodes.swift; sourceTree = "<group>"; };
+		049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnyRentE2ETests.swift; sourceTree = "<group>"; };
 		04A1B0002F7A000100000001 /* PurchasesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesManager.swift; sourceTree = "<group>"; };
 		04A1B0102F7A000100000010 /* SubscriptionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionViewController.swift; sourceTree = "<group>"; };
 		04A1B0102F7A000100000012 /* SubscriptionAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAPIService.swift; sourceTree = "<group>"; };
@@ -402,6 +513,7 @@
 		04F1B0012F1C0101000A0001 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0003 /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
+		A4770477F0000000000000A2 /* NotificationV2Cell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationV2Cell.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0004 /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewController.swift; sourceTree = "<group>"; };
 		04F301002F40000100A001 /* OverviewTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewTypes.swift; sourceTree = "<group>"; };
 		04F301022F40000100A002 /* OverviewUIBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewUIBuilder.swift; sourceTree = "<group>"; };
@@ -432,8 +544,51 @@
 		04FBE0CD2EDE8DF90057EDF8 /* RCPrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCPrimaryButton.swift; sourceTree = "<group>"; };
 		04FBE0CE2EDE8DF90057EDF8 /* RCSimpleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCSimpleTextField.swift; sourceTree = "<group>"; };
 		04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCCustomNavigationBar.swift; sourceTree = "<group>"; };
+		072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.debug.xcconfig"; sourceTree = "<group>"; };
+		08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarOverviewSettingsV2Tests.swift; sourceTree = "<group>"; };
+		A622F0000000000000000002 /* BankQRTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BankQRTests.swift; sourceTree = "<group>"; };
+		A616F0000000000000000003 /* OverviewDashLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashLogicTests.swift; sourceTree = "<group>"; };
+		09DFF664402F310DBDA0C7DD /* AuthForms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthForms.swift; sourceTree = "<group>"; };
+		0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBD.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		15E19ED151DD6F782E5777FB /* OrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersViewController.swift; sourceTree = "<group>"; };
+		16733093F5AD2CBACB593E6B /* CalendarV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2.swift; sourceTree = "<group>"; };
+		1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ViewModel.swift; sourceTree = "<group>"; };
+		1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RegisterStoreV2ViewController.swift; sourceTree = "<group>"; };
+		286EED8E25240975FDF5D455 /* IconTokensTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IconTokensTests.swift; sourceTree = "<group>"; };
+		A424B0010000000000000002 /* TypeScaleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TypeScaleTests.swift; sourceTree = "<group>"; };
+		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
+		32451210261D4A00E83FEBAA /* OrderStatusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderStatusTests.swift; sourceTree = "<group>"; };
+		371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2ViewController.swift; sourceTree = "<group>"; };
+		A633F0000000000000000001 /* OverviewTopAllViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewTopAllViewController.swift; sourceTree = "<group>"; };
+		A616F0000000000000000002 /* OverviewDashViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashViews.swift; sourceTree = "<group>"; };
+		B484F0000000000000000001 /* RentedOutOrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RentedOutOrdersViewController.swift; sourceTree = "<group>"; };
+		40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthFormsTests.swift; sourceTree = "<group>"; };
+		42DC389596269843419D1B18 /* OrdersHomeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeTests.swift; sourceTree = "<group>"; };
+		44906268638CD53C3E41AD39 /* SettingsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2.swift; sourceTree = "<group>"; };
+		49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailViewController.swift; sourceTree = "<group>"; };
 		4AA0DF8499A488FAC04D5D59 /* Pods-POS ADBD.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBD.release.xcconfig"; path = "Target Support Files/Pods-POS ADBD/Pods-POS ADBD.release.xcconfig"; sourceTree = "<group>"; };
+		4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HandOverCollateralTests.swift; sourceTree = "<group>"; };
+		523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
+		57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomerDetailV2ViewController.swift; sourceTree = "<group>"; };
+		5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBDTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogicTests.swift; sourceTree = "<group>"; };
+		A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNotesV2Tests.swift; sourceTree = "<group>"; };
+		A4800480F0000000000000A1 /* CartNotePhotosTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartNotePhotosTests.swift; sourceTree = "<group>"; };
+		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
+		64454969BCB62EEB55223203 /* OverviewV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2.swift; sourceTree = "<group>"; };
+		A616F0000000000000000001 /* OverviewDashLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashLogic.swift; sourceTree = "<group>"; };
+		652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Views.swift; sourceTree = "<group>"; };
+		665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductDetailViewController.swift; sourceTree = "<group>"; };
+		2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductCalendarViewController.swift; sourceTree = "<group>"; };
+		68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2ViewController.swift; sourceTree = "<group>"; };
+		730E16169321964B8996F08C /* RentalExtension.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RentalExtension.swift; sourceTree = "<group>"; };
+		7AC45E729C448084B4969B27 /* OnboardingV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2ViewController.swift; sourceTree = "<group>"; };
+		7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2Tests.swift; sourceTree = "<group>"; };
+		81CCD2C1B543D4537FE68B48 /* CustomersV2Views.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2Views.swift; sourceTree = "<group>"; };
+		8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersFilterSheet.swift; sourceTree = "<group>"; };
+		85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2.swift; sourceTree = "<group>"; };
+		86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderExtendSheetViewController.swift; sourceTree = "<group>"; };
 		881802AF21BE5AEF00D1E366 /* UnixTime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnixTime.swift; sourceTree = "<group>"; };
 		8841914121CA5C9E00C442C3 /* NavigationTabbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTabbarController.swift; sourceTree = "<group>"; };
 		88420B0921C500CC0078CD7C /* OrderCheckViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCheckViewController.swift; sourceTree = "<group>"; };
@@ -481,6 +636,13 @@
 		88FF33772F2DAE6600FD0A26 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		88FF337F2F2DB19600FD0A26 /* POSADBD-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "POSADBD-Bridging-Header.h"; sourceTree = "<group>"; };
 		88FFF5CD2F2DA33B00FD0A26 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
+		8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginV2ViewController.swift; sourceTree = "<group>"; };
+		8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		928C3E8D4BF3A29D647F9A0B /* Pods-POS ADBDTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.release.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.release.xcconfig"; sourceTree = "<group>"; };
+		97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogic.swift; sourceTree = "<group>"; };
+		A4770477F0000000000000A1 /* NotificationsLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsLogic.swift; sourceTree = "<group>"; };
+		9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditCustomerViewController.swift; sourceTree = "<group>"; };
+		9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Tests.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000011 /* DraftOrderAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderAttributes.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000012 /* DraftOrderLiveActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityView.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000013 /* DraftOrderLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -492,6 +654,26 @@
 		A4B110012F1E0101000019 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		A4B110012F1E010100001A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		A4B110012F1E010100001B /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
+		A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartV2ViewController.swift; sourceTree = "<group>"; };
+		A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailRouter.swift; sourceTree = "<group>"; };
+		AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthV2Components.swift; sourceTree = "<group>"; };
+		B07CC0B0BF772BE52542D13E /* TodayWork.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayWork.swift; sourceTree = "<group>"; };
+		B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateRequiredViewController.swift; sourceTree = "<group>"; };
+		B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsHomeViewController.swift; sourceTree = "<group>"; };
+		A47201AA0000000000000002 /* ImageViewerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImageViewerViewController.swift; sourceTree = "<group>"; };
+		B854361D12543F58020DE847 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2.swift; sourceTree = "<group>"; };
+		C1128874207B931039540DAB /* Phase7GapsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase7GapsTests.swift; sourceTree = "<group>"; };
+		A288BC7B1179860A2FFADF5F /* ProductCalendarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductCalendarTests.swift; sourceTree = "<group>"; };
+		A430F0000000000000000001 /* Issue430Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Issue430Tests.swift; sourceTree = "<group>"; };
+		A344F0000000000000000001 /* AuthSessionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthSessionTests.swift; sourceTree = "<group>"; };
+		C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsHomeViewModel.swift; sourceTree = "<group>"; };
+		C37BDFE8E8A481649F08A708 /* POS ADBDTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "POS ADBDTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C466A2A395154AD70553624A /* OrderRowCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderRowCell.swift; sourceTree = "<group>"; };
+		C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductFormViewController.swift; sourceTree = "<group>"; };
+		A632F0000000000000000001 /* CategoryManageViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryManageViewController.swift; sourceTree = "<group>"; };
+		C68665233AF9D666CE7E723C /* Phase8Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase8Tests.swift; sourceTree = "<group>"; };
+		596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShopTimeZoneTests.swift; sourceTree = "<group>"; };
 		C914E00F23A48955008B3EDF /* PreviewHeaderCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewHeaderCell.swift; sourceTree = "<group>"; };
 		C914E01423A49075008B3EDF /* UIScrollView+Additions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIScrollView+Additions.swift"; sourceTree = "<group>"; };
 		C914E01523A49077008B3EDF /* UIView+Additions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+Additions.swift"; sourceTree = "<group>"; };
@@ -514,10 +696,33 @@
 		C9D2ABB524B0D5410028EAAC /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		C9ECAD4624AC813C0090FAC4 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		C9EFF5B0237BF75E00A6CB57 /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
+		D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmailSentV2ViewController.swift; sourceTree = "<group>"; };
+		D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthV2Style.swift; sourceTree = "<group>"; };
+		D4A0C2121B33928148F209CE /* TabsV2APIService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TabsV2APIService.swift; sourceTree = "<group>"; };
+		D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewCustomerViewController.swift; sourceTree = "<group>"; };
+		D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderHandOverSheetViewController.swift; sourceTree = "<group>"; };
+		D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderNotesEditorViewController.swift; sourceTree = "<group>"; };
+		DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2ViewController.swift; sourceTree = "<group>"; };
+		A4590459D0000000000000B2 /* SettingsDetailV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsDetailV2.swift; sourceTree = "<group>"; };
 		EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityCheckViews.swift; sourceTree = "<group>"; };
+		EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeViewModel.swift; sourceTree = "<group>"; };
+		EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ForgotPasswordV2ViewController.swift; sourceTree = "<group>"; };
+		F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductDetailV2Logic.swift; sourceTree = "<group>"; };
+		51A005FCE2694ADE8CD58016 /* ProductCalendarLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductCalendarLogic.swift; sourceTree = "<group>"; };
+		F8174E6BA337B4B259DD6569 /* FormattersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FormattersTests.swift; sourceTree = "<group>"; };
+		FDAA71945D1F2C820062603E /* DesignTokens.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		704BCE656C92B9360C4AFE98 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */,
+				89DD03B3852E10B9B3B1EF17 /* Pods_POS_ADBDTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		88E4147321A99B3B00BAF4A1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -578,6 +783,11 @@
 				040330F92EA94734003BC33E /* OrderViewModel.swift */,
 				040330FA2EA94734003BC33E /* PreviewAction.swift */,
 				040330FC2EA94734003BC33E /* PreviewViewModelProtocol.swift */,
+				C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */,
+				EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */,
+				97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */,
+				A4770477F0000000000000A1 /* NotificationsLogic.swift */,
+				1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -620,12 +830,15 @@
 				048838D92D77282100069256 /* APIEndpoint.swift */,
 				048838CE2D7727AF00069256 /* AuthenticationService.swift */,
 				048838CF2D7727AF00069256 /* BaseService.swift */,
+				3440A0012F1E010100000001 /* AuthSession.swift */,
 				048838D02D7727AF00069256 /* CustomerService.swift */,
 				048838D12D7727AF00069256 /* OrderService.swift */,
 				048839B02D79F11900069257 /* LoyaltyService.swift */,
 				048838D22D7727AF00069256 /* ProductService.swift */,
 				04F1B0012F1C0101000A0002 /* NotificationService.swift */,
 				04A1B0102F7A000100000012 /* SubscriptionAPIService.swift */,
+				628848789A17EEF1ECD704C3 /* AppConfigService.swift */,
+				D4A0C2121B33928148F209CE /* TabsV2APIService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -645,6 +858,7 @@
 				048F67962ED1EDC40053985A /* CheckEmailViewController.swift */,
 				048838E82D78006200069256 /* RegisterAccountViewController.swift */,
 				048838E92D78006200069256 /* RegisterStoreViewController.swift */,
+				9645DFD9EEF72A06B76FEA72 /* v2 */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -685,6 +899,8 @@
 				048838F82D7832AD00069256 /* PrinterConfigurationViewController.swift */,
 				048838F92D7832AD00069256 /* SettingsViewController.swift */,
 				04A1B0102F7A000100000010 /* SubscriptionViewController.swift */,
+				DE7920292D50A84104E21B39 /* SettingsV2ViewController.swift */,
+				A4590459D0000000000000B2 /* SettingsDetailV2.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -726,6 +942,7 @@
 			isa = PBXGroup;
 			children = (
 				04E55FB12E220F77003F00D0 /* WebViewController.swift */,
+				B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -742,6 +959,7 @@
 			isa = PBXGroup;
 			children = (
 				04F7A0012F70000100A0B1 /* OnboardingViewController.swift */,
+				7AC45E729C448084B4969B27 /* OnboardingV2ViewController.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -760,8 +978,78 @@
 			children = (
 				003B93F62DB6A075AF2FB1A1 /* Pods-POS ADBD.debug.xcconfig */,
 				4AA0DF8499A488FAC04D5D59 /* Pods-POS ADBD.release.xcconfig */,
+				928C3E8D4BF3A29D647F9A0B /* Pods-POS ADBDTests.release.xcconfig */,
+				072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		42AE4C834EDE1FFD7E9AEB77 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				B854361D12543F58020DE847 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		5A275EEE1EF93C18AFC5F00F /* v2 */ = {
+			isa = PBXGroup;
+			children = (
+				652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */,
+				B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */,
+				A47201AA0000000000000002 /* ImageViewerViewController.swift */,
+				665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */,
+				2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */,
+				C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */,
+				A632F0000000000000000001 /* CategoryManageViewController.swift */,
+				A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */,
+			);
+			name = v2;
+			path = v2;
+			sourceTree = "<group>";
+		};
+		5E2723C1CA77A66B028E2CC2 /* POS ADBDTests */ = {
+			isa = PBXGroup;
+			children = (
+				0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */,
+				F8174E6BA337B4B259DD6569 /* FormattersTests.swift */,
+				32451210261D4A00E83FEBAA /* OrderStatusTests.swift */,
+				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
+				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
+				A640F0000000000000000003 /* OrderShareImageTests.swift */,
+				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
+				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
+				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
+				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
+				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
+				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
+				A622F0000000000000000002 /* BankQRTests.swift */,
+				A616F0000000000000000003 /* OverviewDashLogicTests.swift */,
+				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
+				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
+				286EED8E25240975FDF5D455 /* IconTokensTests.swift */,
+				A424B0010000000000000002 /* TypeScaleTests.swift */,
+				C1128874207B931039540DAB /* Phase7GapsTests.swift */,
+				A288BC7B1179860A2FFADF5F /* ProductCalendarTests.swift */,
+				A430F0000000000000000001 /* Issue430Tests.swift */,
+				A344F0000000000000000001 /* AuthSessionTests.swift */,
+				C68665233AF9D666CE7E723C /* Phase8Tests.swift */,
+				596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */,
+				4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */,
+			);
+			name = "POS ADBDTests";
+			path = "POS ADBDTests";
+			sourceTree = "<group>";
+		};
+		7774545E329D2F692CB2C4CB /* Orders */ = {
+			isa = PBXGroup;
+			children = (
+				15E19ED151DD6F782E5777FB /* OrdersViewController.swift */,
+				C466A2A395154AD70553624A /* OrderRowCell.swift */,
+				8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */,
+			);
+			name = Orders;
+			path = Orders;
 			sourceTree = "<group>";
 		};
 		88067DF430348A3500668ABE /* Recovered References */ = {
@@ -778,6 +1066,7 @@
 			isa = PBXGroup;
 			children = (
 				04276C032EE451E0005EAC05 /* BankAccount.swift */,
+				A640F0000000000000000001 /* OrderShareImage.swift */,
 				040331082EAC8C4A003BC33E /* ProductRequest.swift */,
 				040331032EA9D0FE003BC33E /* Order.swift */,
 				040330F02EA8C8AB003BC33E /* Cart.swift */,
@@ -797,6 +1086,20 @@
 				C9EFF5B0237BF75E00A6CB57 /* Customer.swift */,
 				04F1B0012F1C0101000A0001 /* InboxNotification.swift */,
 				C9B0410523AC919A00DED0B3 /* DateFormatTransform.swift */,
+				8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */,
+				85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */,
+				B07CC0B0BF772BE52542D13E /* TodayWork.swift */,
+				16733093F5AD2CBACB593E6B /* CalendarV2.swift */,
+				64454969BCB62EEB55223203 /* OverviewV2.swift */,
+				A616F0000000000000000001 /* OverviewDashLogic.swift */,
+				44906268638CD53C3E41AD39 /* SettingsV2.swift */,
+				B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */,
+				09DFF664402F310DBDA0C7DD /* AuthForms.swift */,
+				F56660F5015C000CF1BF7182 /* ProductDetailV2Logic.swift */,
+				51A005FCE2694ADE8CD58016 /* ProductCalendarLogic.swift */,
+				730E16169321964B8996F08C /* RentalExtension.swift */,
+				E9335F3A4EED87643BFC75F1 /* ChangeHistory.swift */,
+				EBC70BA528BA721EC0B65D45 /* ScheduleConflict.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -805,6 +1108,7 @@
 			isa = PBXGroup;
 			children = (
 				886B188221AE39620029CFB1 /* CalendarViewController.swift */,
+				68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -828,6 +1132,10 @@
 				04F3010A2F40000100A006 /* OverviewInsightsPanelView.swift */,
 				04F3010C2F40000100A007 /* OverviewRankingOrdersViewController.swift */,
 				886B188021AE39560029CFB1 /* OverviewViewController.swift */,
+				371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */,
+				A633F0000000000000000001 /* OverviewTopAllViewController.swift */,
+				A616F0000000000000000002 /* OverviewDashViews.swift */,
+				B484F0000000000000000001 /* RentedOutOrdersViewController.swift */,
 			);
 			path = Chart;
 			sourceTree = "<group>";
@@ -918,6 +1226,7 @@
 				40C1D69BF73523DFF0EE06B1 /* Pods */,
 				D86D26F418A3C484AE99F2DC /* Frameworks */,
 				88067DF430348A3500668ABE /* Recovered References */,
+				5E2723C1CA77A66B028E2CC2 /* POS ADBDTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -928,6 +1237,7 @@
 				A4B110012F1E0101000017 /* libDraftOrderActivity.a */,
 				A4B110012F1E0101000018 /* AnyRentLiveActivity.appex */,
 				C9B32979240D728B00FEB650 /* POS ADBDUITests.xctest */,
+				C37BDFE8E8A481649F08A708 /* POS ADBDTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -983,6 +1293,8 @@
 				88A07DD521AA8F8E00023F69 /* Tabbar */,
 				88E414A221A99FF200BAF4A1 /* Products */,
 				88E414A121A99FEC00BAF4A1 /* Sale */,
+				7774545E329D2F692CB2C4CB /* Orders */,
+				E8D95C6DA2884CFE522EEA21 /* OrderDetail */,
 			);
 			path = Viewcontrollers;
 			sourceTree = "<group>";
@@ -992,6 +1304,7 @@
 			children = (
 				04A82A7C2EE94E3B00E55F9C /* UserCell.swift */,
 				04F1B0012F1C0101000A0003 /* NotificationCell.swift */,
+				A4770477F0000000000000A2 /* NotificationV2Cell.swift */,
 				04FBE0C52EDBE34C0057EDF8 /* PreviewTwoColumnCells.swift */,
 				04FBE0C32EDBDF0A0057EDF8 /* PreviewCompactCells.swift */,
 				04FBE0C12EDB50F40057EDF8 /* PreviewGroupedCells.swift */,
@@ -1023,6 +1336,8 @@
 			children = (
 				04276C112EE49017005EAC05 /* ProductAvailabilityCache.swift */,
 				04276C0D2EE45807005EAC05 /* VietnamBankCodes.swift */,
+				A622F0000000000000000001 /* VietQR.swift */,
+				A640F0000000000000000002 /* OrderShareRenderer.swift */,
 				04276C0B2EE453AE005EAC05 /* QRCodeGenerator.swift */,
 				0403310A2EACEC7E003BC33E /* LoadingState.swift */,
 				040330ED2EA8913D003BC33E /* JSONHelper.swift */,
@@ -1037,6 +1352,8 @@
 				88E4149B21A99E9900BAF4A1 /* RCExtentions.swift */,
 				88E4149921A99E9100BAF4A1 /* Utils.swift */,
 				889A0E3821C00A52008013FD /* AppShared.swift */,
+				523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */,
+				FDAA71945D1F2C820062603E /* DesignTokens.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1064,6 +1381,7 @@
 			children = (
 				048839182D79C20E00069256 /* NewProductViewController.swift */,
 				04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */,
+				5A275EEE1EF93C18AFC5F00F /* v2 */,
 			);
 			path = Products;
 			sourceTree = "<group>";
@@ -1075,6 +1393,20 @@
 				88F3D8B921B0415D007CC30A /* CalendarProductCell.swift */,
 			);
 			path = Calendar;
+			sourceTree = "<group>";
+		};
+		9645DFD9EEF72A06B76FEA72 /* v2 */ = {
+			isa = PBXGroup;
+			children = (
+				AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */,
+				8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */,
+				1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */,
+				EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */,
+				D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */,
+				D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */,
+			);
+			name = v2;
+			path = v2;
 			sourceTree = "<group>";
 		};
 		A4B110012F1E0101000040 /* DraftOrderActivity */ = {
@@ -1112,6 +1444,7 @@
 			isa = PBXGroup;
 			children = (
 				C92A1E4623936D5300C2CC16 /* CustomerViewController.swift */,
+				D527324A29A6BC43366DCDA7 /* v2 */,
 			);
 			path = Customer;
 			sourceTree = "<group>";
@@ -1129,6 +1462,7 @@
 			children = (
 				C9B3296D240D6FDE00FEB650 /* POS_ADBDUITests.swift */,
 				C9B3296F240D6FDE00FEB650 /* Info.plist */,
+				049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */,
 			);
 			path = "POS ADBDUITests";
 			sourceTree = "<group>";
@@ -1142,6 +1476,19 @@
 			path = "POS ADBDUITests";
 			sourceTree = "<group>";
 		};
+		D527324A29A6BC43366DCDA7 /* v2 */ = {
+			isa = PBXGroup;
+			children = (
+				81CCD2C1B543D4537FE68B48 /* CustomersV2Views.swift */,
+				2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */,
+				D4ACCB731A13087638941BC2 /* NewCustomerViewController.swift */,
+				57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */,
+				9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */,
+			);
+			name = v2;
+			path = v2;
+			sourceTree = "<group>";
+		};
 		D86D26F418A3C484AE99F2DC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -1149,13 +1496,48 @@
 				88FF33752F2DAE5B00FD0A26 /* AVFoundation.framework */,
 				88FF33732F2DAE5300FD0A26 /* Accelerate.framework */,
 				0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */,
+				42AE4C834EDE1FFD7E9AEB77 /* iOS */,
+				5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E8D95C6DA2884CFE522EEA21 /* OrderDetail */ = {
+			isa = PBXGroup;
+			children = (
+				A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */,
+				49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */,
+				76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */,
+				D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */,
+				D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */,
+				86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */,
+			);
+			name = OrderDetail;
+			path = OrderDetail;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		166202CF0C827D08CD5A4371 /* POS ADBDTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 62551F275C005DF5FD5D0904 /* Build configuration list for PBXNativeTarget "POS ADBDTests" */;
+			buildPhases = (
+				5621070B8FC26BECD6421D04 /* [CP] Check Pods Manifest.lock */,
+				73AA3109B2F36B68457FD3F7 /* Sources */,
+				704BCE656C92B9360C4AFE98 /* Frameworks */,
+				570B4732BBA8E11DE6135434 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E84883B63FF4BC70DCEFD785 /* PBXTargetDependency */,
+			);
+			name = "POS ADBDTests";
+			productName = "POS ADBDTests";
+			productReference = C37BDFE8E8A481649F08A708 /* POS ADBDTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		88E4147521A99B3B00BAF4A1 /* POS ADBD */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 88E4148821A99B3E00BAF4A1 /* Build configuration list for PBXNativeTarget "POS ADBD" */;
@@ -1253,6 +1635,10 @@
 				LastUpgradeCheck = 1330;
 				ORGANIZATIONNAME = "Trinh Tran";
 				TargetAttributes = {
+					166202CF0C827D08CD5A4371 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 88E4147521A99B3B00BAF4A1;
+					};
 					88E4147521A99B3B00BAF4A1 = {
 						CreatedOnToolsVersion = 9.4.1;
 					};
@@ -1296,11 +1682,19 @@
 				A4B110012F1E0101000030 /* DraftOrderActivity */,
 				A4B110012F1E0101000031 /* AnyRentLiveActivity */,
 				C9B32978240D728B00FEB650 /* POS ADBDUITests */,
+				166202CF0C827D08CD5A4371 /* POS ADBDTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		570B4732BBA8E11DE6135434 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		88E4147421A99B3B00BAF4A1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1349,6 +1743,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		5621070B8FC26BECD6421D04 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-POS ADBDTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		715D797CD7AC5DDD1BFDA812 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1357,13 +1773,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-POS ADBD/Pods-POS ADBD-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-POS ADBD/Pods-POS ADBD-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1412,6 +1824,38 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		73AA3109B2F36B68457FD3F7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E6844B2830F8361BAA9CEFC4 /* AppConfigTests.swift in Sources */,
+				D471767BB75A2DAE01AA6CEC /* FormattersTests.swift in Sources */,
+				81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */,
+				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
+				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
+				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
+				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
+				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
+				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
+				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
+				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
+				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
+				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
+				A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */,
+				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
+				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
+				DA0BF456D4BB3DD91815DA41 /* IconTokensTests.swift in Sources */,
+				A424B0010000000000000001 /* TypeScaleTests.swift in Sources */,
+				039E4564507EC2529E6A9529 /* Phase7GapsTests.swift in Sources */,
+				522155F33DE03599AFDCA6B1 /* ProductCalendarTests.swift in Sources */,
+				A430B0000000000000000001 /* Issue430Tests.swift in Sources */,
+				A344B0000000000000000001 /* AuthSessionTests.swift in Sources */,
+				00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */,
+				596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */,
+				5150715066E3694042E01913 /* HandOverCollateralTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		88E4147221A99B3B00BAF4A1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1439,6 +1883,7 @@
 				04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */,
 				04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */,
 				04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */,
+				A4770477B0000000000000A2 /* NotificationV2Cell.swift in Sources */,
 				04F1B0022F1C0101000A0004 /* NotificationsViewController.swift in Sources */,
 				881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */,
 				88E4149A21A99E9100BAF4A1 /* Utils.swift in Sources */,
@@ -1465,6 +1910,8 @@
 				04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */,
 				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
+				A622B0000000000000000001 /* VietQR.swift in Sources */,
+				A640B0000000000000000002 /* OrderShareRenderer.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,
 				88E4149E21A99E9D00BAF4A1 /* RCError.swift in Sources */,
@@ -1518,6 +1965,7 @@
 				043F063D2D8548760047DC11 /* HapticBarButtonItem.swift in Sources */,
 				048838D42D7727AF00069256 /* AuthenticationService.swift in Sources */,
 				048838D52D7727AF00069256 /* BaseService.swift in Sources */,
+				3440A0012F1E010100000002 /* AuthSession.swift in Sources */,
 				048838D62D7727AF00069256 /* OrderService.swift in Sources */,
 				048839B12D79F11900069257 /* LoyaltyService.swift in Sources */,
 				040330E92EA88EF5003BC33E /* Plan.swift in Sources */,
@@ -1542,6 +1990,7 @@
 				04276C0A2EE4537F005EAC05 /* PaymentQRCodeViewController.swift in Sources */,
 				88A07DCF21AA8CF600023F69 /* FirebaseExtension.swift in Sources */,
 				04276C042EE451E0005EAC05 /* BankAccount.swift in Sources */,
+				A640B0000000000000000001 /* OrderShareImage.swift in Sources */,
 				04E55FB32E220F77003F00D0 /* WebViewController.swift in Sources */,
 				040331092EAC8C4B003BC33E /* ProductRequest.swift in Sources */,
 				040330F42EA8C8AB003BC33E /* CartItem.swift in Sources */,
@@ -1593,6 +2042,66 @@
 				040331002EA94734003BC33E /* PreviewAction.swift in Sources */,
 				04FBE0C02EDB4DA30057EDF8 /* PreviewCardCells.swift in Sources */,
 				040331022EA94734003BC33E /* CartViewModel.swift in Sources */,
+				C2E7493E136407C5EA7E6D96 /* AppConfig.swift in Sources */,
+				4C1E7AD24480CC24122D7DF9 /* AppConfigService.swift in Sources */,
+				9D1B768177A1200AC6AE8A9D /* FeatureFlags.swift in Sources */,
+				16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */,
+				D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */,
+				763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */,
+				9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */,
+				219F5B5BC02CC3E14401DD74 /* ProductsV2Views.swift in Sources */,
+				C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */,
+				A47201AA0000000000000001 /* ImageViewerViewController.swift in Sources */,
+				523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */,
+				595B59EBE56AE7BE95B3F06E /* ProductCalendarViewController.swift in Sources */,
+				57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */,
+				A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */,
+				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,
+				61800AE4201230EA1EED530E /* TodayWork.swift in Sources */,
+				6E5F77822E6F01D26CD3E7DC /* OrdersHomeViewModel.swift in Sources */,
+				CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */,
+				E4524B2B978D3134644DADCB /* OrderRowCell.swift in Sources */,
+				F05A9EEA160D9C22272C8D9E /* OrdersFilterSheet.swift in Sources */,
+				C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */,
+				9B1605DA8A6665412EED39EB /* OrderDetailViewController.swift in Sources */,
+				1443F833E4528F38190DA006 /* ChangeHistoryViewController.swift in Sources */,
+				AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */,
+				8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */,
+				ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */,
+				A4770477B0000000000000A1 /* NotificationsLogic.swift in Sources */,
+				6DF35D462195744CA6E88339 /* CalendarV2.swift in Sources */,
+				372335F213185EFD8AC37259 /* OverviewV2.swift in Sources */,
+				A616B0000000000000000001 /* OverviewDashLogic.swift in Sources */,
+				6F7DAC80E945C7A8AF3FD213 /* SettingsV2.swift in Sources */,
+				17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */,
+				3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */,
+				80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */,
+				A633B0000000000000000001 /* OverviewTopAllViewController.swift in Sources */,
+				A616B0000000000000000002 /* OverviewDashViews.swift in Sources */,
+				B484B0000000000000000001 /* RentedOutOrdersViewController.swift in Sources */,
+				DED3B23637CAEA6ED6DC027C /* SettingsV2ViewController.swift in Sources */,
+				A4590459D0000000000000A1 /* SettingsDetailV2.swift in Sources */,
+				F4268E5625300006E2E8BF03 /* CustomersV2.swift in Sources */,
+				75C21D317F5521D9A9958865 /* CustomersV2ViewModel.swift in Sources */,
+				85ABA05A8130F520F4EEDAC2 /* CustomersV2Views.swift in Sources */,
+				607E5D13DAD404F7F526AA2C /* CustomersV2ListViewController.swift in Sources */,
+				506BFF4372513384679B2314 /* NewCustomerViewController.swift in Sources */,
+				8BC77D064D622C3C87D1C5D9 /* CustomerDetailV2ViewController.swift in Sources */,
+				66D5C9154CEE12049C3B85DD /* OnboardingV2ViewController.swift in Sources */,
+				5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */,
+				55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */,
+				00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */,
+				941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */,
+				B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */,
+				CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */,
+				3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */,
+				91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */,
+				9893270E20A560EFFD72653E /* ProductDetailV2Logic.swift in Sources */,
+				EED9B2DE2A382145A9AC11F1 /* ProductCalendarLogic.swift in Sources */,
+				B298B580A0C9BA1614A0649B /* RentalExtension.swift in Sources */,
+				71778FFE5E5E12F097C24D21 /* ChangeHistory.swift in Sources */,
+				9C6BC26D8481C7603F0EC26E /* ScheduleConflict.swift in Sources */,
+				83BD6AF23E08F2BB98957B98 /* OrderExtendSheetViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1621,6 +2130,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C9B3297C240D728B00FEB650 /* POS_ADBDUITests.swift in Sources */,
+				021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1641,6 +2151,12 @@
 			isa = PBXTargetDependency;
 			target = 88E4147521A99B3B00BAF4A1 /* POS ADBD */;
 			targetProxy = C9B3297E240D728B00FEB650 /* PBXContainerItemProxy */;
+		};
+		E84883B63FF4BC70DCEFD785 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "POS ADBD";
+			target = 88E4147521A99B3B00BAF4A1 /* POS ADBD */;
+			targetProxy = 9BF6D791959999BA9052AF26 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1954,6 +2470,24 @@
 			};
 			name = Release;
 		};
+		9E202C709610E0D41E5B0B3A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 928C3E8D4BF3A29D647F9A0B /* Pods-POS ADBDTests.release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anyrent.POS-ADBDTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/POS ADBD.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/POS ADBD";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		A4B110012F1E0101000050 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2095,9 +2629,35 @@
 			};
 			name = Release;
 		};
+		D9465AE0ABA60AF135D12C1A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anyrent.POS-ADBDTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/POS ADBD.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/POS ADBD";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		62551F275C005DF5FD5D0904 /* Build configuration list for PBXNativeTarget "POS ADBDTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9E202C709610E0D41E5B0B3A /* Release */,
+				D9465AE0ABA60AF135D12C1A /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		88E4147121A99B3B00BAF4A1 /* Build configuration list for PBXProject "POS ADBD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

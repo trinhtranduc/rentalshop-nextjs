@@ -58,6 +58,9 @@ enum APIEndpoint {
     }
 
     enum Path {
+        // Mobile app config: minimum version and new-screen flags (#370)
+        static let appConfig = "/api/mobile/app-config"
+
         // Authentication - Updated according to API documentation
         static let login = "/api/auth/login"
         static let logout = "/api/auth/logout"
@@ -85,6 +88,9 @@ enum APIEndpoint {
         static let ordersStatistics = "/api/orders/statistics"
         static let exportOrders = "/api/orders/export"
         static let orderQRCode = "/api/orders" // Will append /{orderId}/qr-code
+        /// GET readable change history (#519): limit (≤100), offset
+        static func orderChanges(orderId: Int) -> String { "/api/orders/\(orderId)/changes" }
+        static func productChanges(productId: Int) -> String { "/api/products/\(productId)/changes" }
         
         // Customers - Updated according to API documentation
         static let customers = "/api/customers"
@@ -99,6 +105,8 @@ enum APIEndpoint {
         // Merchants
         static let merchants = "/api/merchants"
         static let registerMerchant = "/api/merchants/register"
+        /// PUT the signed-in user's shop settings; `{ allowOverlappingOrders }` alone for the #518 switch
+        static let merchantSettings = "/api/settings/merchant"
 
         // Subscriptions
         static let subscriptionsStatus = "/api/subscriptions/status"
@@ -124,6 +132,8 @@ enum APIEndpoint {
         static let topProducts = "/api/analytics/top-products"
         static let recentActivities = "/api/analytics/recent-activities"
         static let todayMetrics = "/api/analytics/today-metrics"
+        /// GET today's work of the outlet team (#350, #371). Params: timeZone (IANA)
+        static let outletOperations = "/api/analytics/outlet-operations"
         static let growthMetrics = "/api/analytics/growth-metrics"
         static let recentOrders = "/api/analytics/recent-orders"
         /// GET aggregated yearly overview (income + growth + statistics + top products/customers)
@@ -140,6 +150,8 @@ enum APIEndpoint {
         
         // Mobile APIs
         static let mobileLogin = "/api/mobile/auth/login"
+        static let mobileRefresh = "/api/mobile/auth/refresh"
+        static let mobileLogout = "/api/mobile/auth/logout"
         static let registerDevice = "/api/mobile/notifications/register-device"
         static let syncCheck = "/api/mobile/sync/check"
 

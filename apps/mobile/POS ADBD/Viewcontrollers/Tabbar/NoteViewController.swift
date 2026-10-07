@@ -22,7 +22,7 @@ class NoteViewController: BaseViewControler, UIImagePickerControllerDelegate, UI
     // MARK: - Properties
     weak var delegate: NoteViewControllerDelegate?
     private let placeholderText = "Enter your note here...".localized()
-    private let maxAttachmentCount = 3
+    private let maxAttachmentCount = 5
     private var selectedImages: [UIImage] = []
     /// URL for each selected image; nil = newly added (no server URL). Count matches selectedImages.
     private var selectedImageURLs: [String?] = []
@@ -454,7 +454,8 @@ extension NoteViewController: UITextViewDelegate {
     }
 }
 
-private final class NoteImagePreviewViewController: UIViewController {
+/// Full-screen note photo; also used by the new note editor (#477)
+final class NoteImagePreviewViewController: UIViewController {
     private let image: UIImage
 
     init(image: UIImage) {

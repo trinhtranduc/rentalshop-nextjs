@@ -186,5 +186,52 @@
   },
   "actions": {
     "selectAll": "すべて選択"
+  },
+  "shell": {
+    "nav": {
+      "overview": "概要",
+      "orders": "注文",
+      "calendar": "受け渡しカレンダー",
+      "availability": "在庫確認",
+      "products": "商品",
+      "customers": "顧客",
+      "staff": "スタッフ",
+      "outlets": "店舗",
+      "categories": "カテゴリ",
+      "loyalty": "ロイヤルティ",
+      "settings": "ストア設定"
+    },
+    "manage": "管理",
+    "createOrder": "注文を作成",
+    "allOutlets": "全店舗",
+    "mainMenu": "メインメニュー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
+    "search": "検索",
+    "searchPlaceholder": "名前、電話番号、注文番号、商品名で検索",
+    "themeToDark": "ダークテーマに切り替え",
+    "themeToLight": "ライトテーマに切り替え",
+    "logout": "ログアウト",
+    "notifications": {
+      "title": "通知",
+      "bellLabel": "通知、未読 {count} 件",
+      "all": "すべて",
+      "unread": "未読",
+      "markAllRead": "すべて既読",
+      "today": "今日",
+      "yesterday": "昨日",
+      "empty": "通知はまだありません",
+      "emptyUnread": "未読の通知はありません",
+      "loadError": "通知を読み込めませんでした。後でもう一度お試しください。",
+      "weekdays": "日,月,火,水,木,金,土",
+      "seeAll": "すべての通知を見る",
+      "moreActions": "その他の操作",
+      "deleteRead": "既読の通知を削除",
+      "markRead": "既読にする",
+      "markUnread": "未読にする",
+      "retry": "再試行",
+      "loadMore": "さらに表示",
+      "unreadCount": "未読 {count} 件"
+    }
   }
 }

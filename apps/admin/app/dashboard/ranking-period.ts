@@ -1,12 +1,7 @@
+import { vnEndOfMonthKey, vnTodayKey } from './vn-day';
+
 export type AdminDashboardPeriod = 'today' | 'month' | 'year';
 export type RankingSortBy = 'revenue' | 'quantity';
-
-function toDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 export function parseAdminPeriod(value: string | null | undefined): AdminDashboardPeriod {
   if (value === 'today' || value === 'year') return value;
@@ -18,40 +13,26 @@ export function parseRankingSortBy(value: string | null | undefined): RankingSor
 }
 
 /**
- * Local calendar dates as YYYY-MM-DD.
- * Why not toISOString(): Vietnam is UTC+7, so midnight local becomes the previous UTC day
- * and ranking APIs would miss today's / this month's orders.
+ * Vietnam civil days as YYYY-MM-DD, whatever the browser zone (#578 ADM-1).
+ * The browser's local day is yesterday in a UTC or Los Angeles browser between 00:00 and 07:00 Vietnam time,
+ * and `toISOString()` gives the UTC day; the ranking APIs read these keys as Vietnam days.
  */
 export function getAdminDashboardDateRange(period: AdminDashboardPeriod): {
   startDate: string;
   endDate: string;
   period: AdminDashboardPeriod;
 } {
-  const today = new Date();
-  let startDate: Date;
-  let endDate: Date;
+  const today = vnTodayKey();
 
   switch (period) {
     case 'today':
-      startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      break;
+      return { startDate: today, endDate: today, period };
     case 'year':
-      startDate = new Date(today.getFullYear(), 0, 1);
-      endDate = new Date(today.getFullYear(), 11, 31);
-      break;
+      return { startDate: `${today.slice(0, 4)}-01-01`, endDate: `${today.slice(0, 4)}-12-31`, period };
     case 'month':
     default:
-      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      break;
+      return { startDate: `${today.slice(0, 7)}-01`, endDate: vnEndOfMonthKey(today), period };
   }
-
-  return {
-    startDate: toDateKey(startDate),
-    endDate: toDateKey(endDate),
-    period
-  };
 }
 
 export function unwrapRankingPage<T>(data: unknown): {

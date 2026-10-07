@@ -9,6 +9,14 @@ import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Inpu
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { isValidEmail } from "@rentalshop/utils";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
+import {
+  ShopAuthHeading,
+  ShopAuthPage,
+  shopFieldClass,
+  shopIconClass,
+  shopLabelClass,
+  shopPrimaryButtonClass,
+} from "./auth-shop";
 
 // Types for the login form
 interface LoginFormData {
@@ -25,6 +33,8 @@ interface LoginFormProps {
   onInputChange?: () => void;
   googleOAuthClientId?: string;
   onGoogleLogin?: (idToken: string) => Promise<void>;
+  /** `shop` is the shop web 4A look (#510). Default `classic` keeps apps/admin unchanged. */
+  appearance?: 'classic' | 'shop';
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
@@ -36,6 +46,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onInputChange,
   googleOAuthClientId,
   onGoogleLogin,
+  appearance = 'classic',
 }) => {
   const [viewPass, setViewPass] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
@@ -381,15 +392,162 @@ const LoginForm: React.FC<LoginFormProps> = ({
     </div>
   );
 
+  const googleButton = googleClientIdTrimmed && !isAdmin && onGoogleLogin ? (
+    <div className="space-y-3">
+      <div className="flex w-full justify-center [&>div]:w-full [&_iframe]:!w-full">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            const cred = credentialResponse.credential;
+            if (!cred) return;
+            try {
+              setGoogleBusy(true);
+              await onGoogleLogin(cred);
+            } finally {
+              setGoogleBusy(false);
+            }
+          }}
+          onError={() => {
+            setGoogleBusy(false);
+          }}
+          useOneTap={false}
+          text="continue_with"
+          shape="rectangular"
+          width="384"
+        />
+      </div>
+      <p className="text-center text-sm text-slate-500">{t('login.orUsePassword')}</p>
+    </div>
+  ) : null;
+
+  const emailError = validation.touched.email ? validation.errors.email : undefined;
+  const passwordError = validation.touched.password ? validation.errors.password : undefined;
+
+  const shopShell = (
+    <ShopAuthPage termsLabel={t('termsOfService')} privacyLabel={t('privacyPolicy')} onNavigate={onNavigate}>
+      <ShopAuthHeading title={t('login.welcome')} subtitle={t('login.shopSubtitle')} />
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        {error && (
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-[15px] text-red-700">
+            {error}
+          </div>
+        )}
+
+        {googleButton}
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="login-email" className={shopLabelClass}>
+            {t('login.email')}
+          </label>
+          <div className="relative">
+            <Mail aria-hidden="true" className={shopIconClass} />
+            <input
+              id="login-email"
+              type="email"
+              name="email"
+              autoComplete="email"
+              placeholder={t('register.enterYourEmail')}
+              className={shopFieldClass(!!emailError)}
+              aria-invalid={emailError ? true : undefined}
+              aria-describedby={emailError ? 'login-email-error' : undefined}
+              onChange={(e) => {
+                validation.handleChange(e);
+                onInputChange?.();
+              }}
+              onBlur={validation.handleBlur}
+              value={validation.values.email || ""}
+            />
+          </div>
+          {emailError && (
+            <p id="login-email-error" className="m-0 text-sm text-red-600">
+              {emailError}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="login-password" className={shopLabelClass}>
+            {t('login.password')}
+          </label>
+          <div className="relative">
+            <Lock aria-hidden="true" className={shopIconClass} />
+            <input
+              id="login-password"
+              type={viewPass ? "text" : "password"}
+              name="password"
+              autoComplete="current-password"
+              className={`${shopFieldClass(!!passwordError)} pr-12`}
+              aria-invalid={passwordError ? true : undefined}
+              aria-describedby={passwordError ? 'login-password-error' : undefined}
+              onChange={(e) => {
+                validation.handleChange(e);
+                onInputChange?.();
+              }}
+              onBlur={validation.handleBlur}
+              value={validation.values.password || ""}
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              aria-label={t('login.password')}
+              aria-pressed={viewPass}
+              className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800"
+            >
+              {viewPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          {passwordError && (
+            <p id="login-password-error" className="m-0 text-sm text-red-600">
+              {passwordError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => onNavigate?.("/forget-password")}
+            className="self-end py-1 text-[15px] font-semibold text-blue-700 hover:text-blue-800"
+          >
+            {t('login.forgotPassword')}
+          </button>
+        </div>
+
+        <button type="submit" className={shopPrimaryButtonClass} disabled={loading || googleBusy}>
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              {t('login.loginButton')}
+            </span>
+          ) : (
+            t('login.loginButton')
+          )}
+        </button>
+      </form>
+
+      {!isAdmin && (
+        <p className="m-0 text-center text-[15px] text-slate-600">
+          {t('login.noShop')}{" "}
+          <button
+            type="button"
+            onClick={() => onNavigate?.("/register")}
+            className="font-bold text-blue-700 hover:text-blue-800"
+          >
+            {t('login.createShop')}
+          </button>
+        </p>
+      )}
+    </ShopAuthPage>
+  );
+
+  const content = appearance === 'shop' ? shopShell : shell;
+
   if (googleClientIdTrimmed && !isAdmin) {
     return (
       <GoogleOAuthProvider clientId={googleClientIdTrimmed}>
-        {shell}
+        {content}
       </GoogleOAuthProvider>
     );
   }
 
-  return shell;
+  return content;
 };
 
 export default LoginForm; 

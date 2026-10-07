@@ -9,6 +9,16 @@
   "TOKEN_INVALIDATED_PASSWORD_CHANGED": "密码已更改，请重新登录。",
   "TOKEN_INVALIDATED_PERMISSIONS_CHANGED": "权限已更改，请重新登录。",
   "MERCHANT_DUPLICATE": "使用此电子邮件或电话号码的商户已存在。请使用不同的电子邮件或电话号码。",
-  "STOCK_BELOW_RENTED": "库存不能少于当前正在出租的数量。"
+  "INVALID_ORDER_STATUS": "此订单不能更改为该状态。",
+  "ORDER_SCHEDULE_CONFLICT": "本店不允许档期重叠的订单。请更改日期、减少数量或移除已被订满的商品。",
+  "INVALID_TIMEZONE": "时区无效。请从列表中选择时区（例如 Asia/Ho_Chi_Minh）。",
+  "STOCK_BELOW_RENTED": "库存不能少于当前正在出租的数量。",
+  "OUTLET_REQUIRED": "请选择门店，或为您的店铺设置默认门店。",
+  "PRODUCT_HAS_OPEN_ORDERS": "该商品在已预订或租赁中的订单里。删除前请先完成或取消这些订单。",
+  "RATE_LIMIT_EXCEEDED": "请求过于频繁。请等待几分钟后再试。",
+  "MERCHANT_TRANSFER_ADMIN_ONLY": "只有系统管理员可以将账户转移到其他商户",
+  "MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED": "商户所有者账户不能转移到其他商户",
+  "OUTLET_ASSIGNMENT_REQUIRED": "请选择属于所选商户的门店",
+  "OUTLET_MERCHANT_MISMATCH": "所选门店不属于所选商户",
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "请先指定另一位有效的商户所有者，再更改此账户"
 }
-

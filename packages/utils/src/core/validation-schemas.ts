@@ -307,8 +307,9 @@ export const ordersQuerySchema = z.object({
   orderType: orderTypeEnum.optional(),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
   endDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
-  // Snapshot drill-down: new = createdAt, pickup = pickedUpAt, return = returnedAt, cancelled = updatedAt
-  dateField: z.enum(['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt']).optional(),
+  // Snapshot drill-down: new = createdAt, pickup = pickedUpAt, return = returnedAt, cancelled = updatedAt.
+  // Planned ranges (#389): pickupPlanAt / returnPlanAt, startDate/endDate as Vietnam day keys.
+  dateField: z.enum(['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt']).optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   merchantId: z.coerce.number().int().positive().optional(),
@@ -316,7 +317,8 @@ export const ordersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   limit: z.coerce.number().int().min(1).max(3000).default(50),
   offset: z.coerce.number().int().min(0).default(0),
-  sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount', 'pickupPlanAt', 'returnPlanAt']).default('createdAt'),
+  // nearestTask (#389): late tasks first, then the nearest planned pickup/return, closed orders last; ignores sortOrder
+  sortBy: z.enum(['createdAt', 'orderNumber', 'status', 'totalAmount', 'pickupPlanAt', 'returnPlanAt', 'nearestTask']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -536,6 +538,8 @@ export const outletCreateSchema = z.object({
   phone: z.string().optional(),
   description: z.string().optional(),
   printNote: outletPrintNoteSchema,
+  // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
+  printBankQr: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
   // merchantId is optional - will be set from userScope or request body for ADMIN
   merchantId: z.coerce.number().int().positive().optional(),
@@ -552,6 +556,8 @@ export const outletUpdateSchema = z.object({
   country: z.string().optional(),
   description: z.string().optional(),
   printNote: outletPrintNoteSchema,
+  // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
+  printBankQr: z.boolean().optional(),
   isActive: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });

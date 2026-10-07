@@ -9,6 +9,7 @@ import com.anyrent.pos.domain.availability.AvailabilityRequest
 import com.anyrent.pos.domain.availability.AvailabilityRepository
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,6 +22,7 @@ import java.time.LocalDate
 class DefaultAvailabilityRepository(
     private val api: ApiClient = ApiClient.get(),
     private val outletIdProvider: () -> Int? = { SessionStore.outletId },
+    private val roleProvider: () -> String? = { SessionStore.role },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AvailabilityRepository {
     override suspend fun searchProducts(query: String): List<AvailabilityProduct> =
@@ -66,15 +68,15 @@ class DefaultAvailabilityRepository(
         if (quantity < 1) {
             throw AppError.Validation("Quantity must be at least 1")
         }
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         runCatching {
             val path = buildString {
                 append("/api/products/$productId/availability")
-                append("?startDate=${startDate}T00:00:00Z")
-                append("&endDate=${endDate}T23:59:59Z")
+                // Same window the cart sends as pickupPlanAt / returnPlanAt (#413)
+                append("?startDate=${OrderPlanDays.pickupInstant(startDate)}")
+                append("&endDate=${OrderPlanDays.returnInstant(endDate)}")
                 append("&quantity=$quantity")
-                append("&outletId=$outletId")
+                outletId?.let { append("&outletId=$it") }
                 append("&includeAllOrders=true")
             }
             val json = api.authedGet(path)
@@ -86,12 +88,12 @@ class DefaultAvailabilityRepository(
         requests: List<AvailabilityRequest>,
         startDate: LocalDate,
         endDate: LocalDate,
+        excludeOrderId: Int?,
     ): Map<Int, ProductAvailability> = withContext(ioDispatcher) {
         validateBatch(requests, startDate, endDate)
         if (requests.isEmpty()) return@withContext emptyMap()
 
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         val normalized = requests
             .groupBy { it.productId }
             .mapValues { (_, values) -> values.sumOf { it.quantity } }
@@ -104,9 +106,11 @@ class DefaultAvailabilityRepository(
                     JSONObject().put("productId", it.productId).put("quantity", it.quantity)
                 }),
             )
-            .put("startDate", "${startDate}T00:00:00Z")
-            .put("endDate", "${endDate}T23:59:59Z")
-            .put("outletId", outletId)
+            // Same window the cart sends as pickupPlanAt / returnPlanAt (#413), as iOS does
+            .put("startDate", OrderPlanDays.pickupInstant(startDate))
+            .put("endDate", OrderPlanDays.returnInstant(endDate))
+            .apply { outletId?.let { put("outletId", it) } }
+            .apply { excludeOrderId?.let { put("excludeOrderId", it) } }
             .toString()
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
@@ -143,6 +147,18 @@ class DefaultAvailabilityRepository(
         }
     }
 
+    /**
+     * Outlet sent with an availability request (#411):
+     * - the session outlet when there is one (any role);
+     * - none for a MERCHANT without one: the API picks the merchant's default outlet (#398);
+     * - otherwise refuse here: ADMIN must name an outlet, and an outlet user without one is a broken session.
+     */
+    private fun outletParam(): Int? {
+        outletIdProvider()?.let { return it }
+        if (roleProvider() == "MERCHANT") return null
+        throw AppError.Validation("An outlet is required to check availability")
+    }
+
     private fun validateBatch(
         requests: List<AvailabilityRequest>,
         startDate: LocalDate,
@@ -163,6 +179,18 @@ class DefaultAvailabilityRepository(
         data: JSONObject,
         request: AvailabilityRequest,
     ): ProductAvailability {
+        // Current API: data.results[] (iOS BatchAvailabilityData.results). An entry with `error`
+        // (product or outlet stock not found) is a real failure: the caller checks it singly.
+        data.optJSONArray("results")?.let { results ->
+            val entry = (0 until results.length())
+                .mapNotNull(results::optJSONObject)
+                .firstOrNull { it.optInt("productId") == request.productId }
+            if (entry != null && !entry.has("error")) return parseAvailability(entry)
+            throw AppError.InvalidResponse(
+                entry?.optString("error")?.takeIf { it.isNotBlank() }
+                    ?: "Availability response is missing product ${request.productId}",
+            )
+        }
         val key = request.productId.toString()
         val directConflicts = data.optJSONArray(key)
         val item = data.optJSONObject(key)
@@ -221,12 +249,15 @@ class DefaultAvailabilityRepository(
                         ?: item.optInt("id").takeIf { it > 0 },
                     orderNumber = item.optString("orderNumber").takeIf { it.isNotBlank() },
                     quantity = item.optInt("quantity", 1),
+                    // batch-availability names them pickupDate / returnDate (#518 cart warning reads the days)
                     pickupAt = item.optString("pickupPlanAt")
                         .ifBlank { item.optString("startDate") }
-                        .takeIf { it.isNotBlank() },
+                        .ifBlank { item.optString("pickupDate") }
+                        .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
                     returnAt = item.optString("returnPlanAt")
                         .ifBlank { item.optString("endDate") }
-                        .takeIf { it.isNotBlank() },
+                        .ifBlank { item.optString("returnDate") }
+                        .takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) },
                     status = item.optString("status").takeIf { it.isNotBlank() },
                     message = item.optString("message").ifBlank {
                         item.optString("orderNumber").ifBlank { "Availability conflict" }
@@ -266,10 +297,10 @@ class DefaultAvailabilityRepository(
         from: LocalDate,
         to: LocalDate,
     ): Map<LocalDate, Int> = withContext(ioDispatcher) {
-        val outletId = outletIdProvider()
-            ?: throw AppError.Validation("An outlet is required to check availability")
+        val outletId = outletParam()
         runCatching {
-            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to&outletId=$outletId"
+            val path = "/api/products/$productId/availability-calendar?from=$from&to=$to" +
+                (outletId?.let { "&outletId=$it" } ?: "")
             val json = api.authedGet(path)
             val data = json.optJSONObject("data") ?: json
             val days = data.optJSONArray("days") ?: JSONArray()

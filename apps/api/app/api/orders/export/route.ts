@@ -9,6 +9,8 @@ import {
   formatDateForExcel,
   formatFullName,
   generateExcelFilename,
+  formatDateKeyInTimeZone,
+  SHOP_TIMEZONE,
   type ExcelColumn,
 } from '@rentalshop/utils';
 import { API, ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constants';
@@ -105,7 +107,8 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
 
     const { startDate, endDate } = dateRangeResult;
 
-    const where: any = {};
+    // Same rows as the order list for the same filter (#594): soft-deleted orders are not listed
+    const where: any = { deletedAt: null };
 
     if (userScope.merchantId) {
       where.outlet = { merchantId: userScope.merchantId };
@@ -114,15 +117,27 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       where.outletId = userScope.outletId;
     }
 
-    if (status) where.status = status;
-    if (orderType) where.orderType = orderType;
+    // Optional selection (#526): `orderIds` repeated, as the products / customers exports take
+    // `productIds` / `customerIds`. A selection skips the status, type and date filters; scope still applies.
+    const orderIds = searchParams
+      .getAll('orderIds')
+      .map((id) => parseInt(id, 10))
+      .filter((id) => !Number.isNaN(id) && id > 0)
+      .slice(0, 10000);
 
-    if (dateField === 'createdAt') {
-      where.createdAt = { gte: startDate, lte: endDate };
-    } else if (dateField === 'pickupPlanAt') {
-      where.pickupPlanAt = { gte: startDate, lte: endDate };
-    } else if (dateField === 'returnPlanAt') {
-      where.returnPlanAt = { gte: startDate, lte: endDate };
+    if (orderIds.length > 0) {
+      where.id = { in: orderIds };
+    } else {
+      if (status) where.status = status;
+      if (orderType) where.orderType = orderType;
+
+      if (dateField === 'createdAt') {
+        where.createdAt = { gte: startDate, lte: endDate };
+      } else if (dateField === 'pickupPlanAt') {
+        where.pickupPlanAt = { gte: startDate, lte: endDate };
+      } else if (dateField === 'returnPlanAt') {
+        where.returnPlanAt = { gte: startDate, lte: endDate };
+      }
     }
 
     const orders = await prisma.order.findMany({
@@ -242,7 +257,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       status: API.STATUS.OK,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="orders-export-${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Disposition': `attachment; filename="orders-export-${formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE)}.csv"`,
         'Cache-Control': 'no-cache',
       },
     });

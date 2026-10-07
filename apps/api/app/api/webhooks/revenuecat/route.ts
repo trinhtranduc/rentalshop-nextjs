@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
+import { addMonthsInTimeZone } from '@rentalshop/utils';
 
 /**
  * POST /api/webhooks/revenuecat
@@ -475,8 +476,7 @@ async function handleBillingIssue(merchantId: number, event: RevenueCatEvent) {
   console.log(`[RevenueCat Webhook] ⚠️ Billing issue for merchant ${merchantId}`);
 }
 
+/** Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588). */
 function addMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
-  return result;
+  return addMonthsInTimeZone(date, months);
 }

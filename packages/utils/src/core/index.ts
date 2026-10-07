@@ -165,15 +165,22 @@ export * from './currency';
 export * from './payment-gateways';
 export * from './billing-interval';
 export * from './subscription-billing-calculations';
+// Billing day counts and month addition on Vietnam civil days (#588)
+export * from './billing-dates';
 
 // Order utilities
 // MOVED to server.ts - imports @rentalshop/database (server-only)
 // Use: import { ... } from '@rentalshop/utils/server'
 // export * from './order-number-manager';
 
+// Shop time zone (#567): DEFAULT_SHOP_TIMEZONE, isValidTimeZone, resolveShopTimeZone
+export * from './timezone';
+
 // Date utilities
 export * from './date';
 export * from './date-range';
+// Browser-safe Vietnam-day helpers: today, month math, pickers, datetime-local, formatInShopZone (#578 batch C)
+export * from './shop-day';
 
 // Excel utilities
 export * from './excel';
@@ -208,3 +215,7 @@ export * from './revenue-calculator';
 
 // Rental days: pickup and return day both included (#351)
 export { countRentalDays } from './rental-days';
+
+// Web order form line pricing (#444)
+export * from './order-line-pricing';
+export * from './product-pricing-options';

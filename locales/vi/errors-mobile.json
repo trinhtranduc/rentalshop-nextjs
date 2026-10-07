@@ -41,6 +41,7 @@
   "MERCHANT_ACCESS_REQUIRED": "Yêu cầu quyền truy cập doanh nghiệp",
   "DELETE_USER_OUT_OF_SCOPE": "Không thể xóa người dùng ngoài phạm vi của bạn",
   "UPDATE_USER_OUT_OF_SCOPE": "Không thể cập nhật người dùng ngoài phạm vi của bạn",
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "Vui lòng chỉ định một chủ doanh nghiệp khác đang hoạt động trước khi thay đổi tài khoản này",
   "DELETE_OWN_ACCOUNT_ONLY": "Bạn chỉ có thể xóa tài khoản của chính mình",
   "ACCESS_TOKEN_REQUIRED": "Yêu cầu token truy cập",
   "TOKEN_REQUIRED": "Token là bắt buộc",
@@ -49,7 +50,7 @@
   "EMAIL_VERIFIED_SUCCESS": "Xác thực email thành công",
   "VERIFICATION_EMAIL_SENT": "Email xác thực đã được gửi",
   "EMAIL_SEND_FAILED": "Không thể gửi email",
-  "RATE_LIMIT_EXCEEDED": "Vượt quá giới hạn. Vui lòng thử lại sau",
+  "RATE_LIMIT_EXCEEDED": "Bạn thao tác quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.",
   "INSUFFICIENT_PERMISSIONS": "Không đủ quyền",
   
   "_section_validation": "=== XÁC THỰC DỮ LIỆU ===",
@@ -99,11 +100,12 @@
   "MISSING_PRODUCT_DATA": "Thiếu dữ liệu sản phẩm",
   "MISSING_STAGING_KEYS": "Thiếu staging keys",
   "NO_VALID_FIELDS": "Không có trường hợp lệ để cập nhật",
-  "OUTLET_REQUIRED": "ID cửa hàng là bắt buộc",
+  "OUTLET_REQUIRED": "Vui lòng chọn cửa hàng, hoặc đặt một cửa hàng mặc định.",
   "MULTIPLE_ENTITIES_FOUND": "Nhiều thực thể được tìm thấy với cùng định danh",
   "INVALID_ACTION": "Hành động không hợp lệ",
   "INVALID_REQUEST": "Định dạng yêu cầu không hợp lệ",
   "INVALID_TENANT_KEY": "Tenant key không hợp lệ",
+  "INVALID_TIMEZONE": "Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).",
   "MISSING_ENDPOINT_OR_TOKEN": "Thiếu endpoint hoặc token trong yêu cầu",
   "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Phương thức thanh toán và mã giao dịch là bắt buộc",
   "INVALID_DATE_RANGE": "Khoảng ngày không hợp lệ",
@@ -147,6 +149,7 @@
   "ORDER_ALREADY_EXISTS": "Đơn hàng đã tồn tại",
   "PRODUCT_OUT_OF_STOCK": "Sản phẩm đã hết hàng",
   "INVALID_ORDER_STATUS": "Trạng thái đơn hàng không hợp lệ",
+  "ORDER_SCHEDULE_CONFLICT": "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.",
   "PAYMENT_FAILED": "Thanh toán thất bại",
   "INVALID_PAYMENT_METHOD": "Phương thức thanh toán không hợp lệ",
   "CANNOT_DELETE_DEFAULT_OUTLET": "Không thể xóa cửa hàng mặc định. Đây là cửa hàng chính được tạo khi đăng ký và phải luôn hoạt động.",
@@ -381,5 +384,6 @@
   "DEPOSIT_AUTO_CALCULATED": "Tiền cọc được tính tự động từ sản phẩm",
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "Không thể chỉnh sửa tiền cọc sau khi đơn hàng đã được tạo",
   "DEPOSIT_EDIT_SUCCESS": "Chỉnh sửa tiền cọc thành công",
-  "DEPOSIT_EDIT_FAILED": "Chỉnh sửa tiền cọc thất bại"
+  "DEPOSIT_EDIT_FAILED": "Chỉnh sửa tiền cọc thất bại",
+  "PRODUCT_HAS_OPEN_ORDERS": "Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá."
 }

@@ -186,5 +186,52 @@
   },
   "actions": {
     "selectAll": "全选"
+  },
+  "shell": {
+    "nav": {
+      "overview": "概览",
+      "orders": "订单",
+      "calendar": "取还日历",
+      "availability": "库存查询",
+      "products": "商品",
+      "customers": "客户",
+      "staff": "员工",
+      "outlets": "门店",
+      "categories": "分类",
+      "loyalty": "会员",
+      "settings": "店铺设置"
+    },
+    "manage": "管理",
+    "createOrder": "新建订单",
+    "allOutlets": "全部门店",
+    "mainMenu": "主菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "search": "搜索",
+    "searchPlaceholder": "搜索姓名、电话、订单号、商品",
+    "themeToDark": "切换到深色主题",
+    "themeToLight": "切换到浅色主题",
+    "logout": "退出登录",
+    "notifications": {
+      "title": "通知",
+      "bellLabel": "通知，{count} 条未读",
+      "all": "全部",
+      "unread": "未读",
+      "markAllRead": "全部已读",
+      "today": "今天",
+      "yesterday": "昨天",
+      "empty": "暂无通知",
+      "emptyUnread": "没有未读通知",
+      "loadError": "无法加载通知，请稍后重试。",
+      "weekdays": "周日,周一,周二,周三,周四,周五,周六",
+      "seeAll": "查看全部通知",
+      "moreActions": "更多操作",
+      "deleteRead": "删除已读通知",
+      "markRead": "标为已读",
+      "markUnread": "标为未读",
+      "retry": "重试",
+      "loadMore": "加载更多",
+      "unreadCount": "{count} 条未读"
+    }
   }
 }

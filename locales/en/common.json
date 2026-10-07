@@ -214,6 +214,68 @@
       "showing": "Showing first {maxRows} of {total} rows",
       "validStatus": "Valid"
     }
+  },
+  "shell": {
+    "nav": {
+      "overview": "Overview",
+      "orders": "Orders",
+      "calendar": "Pickup & return calendar",
+      "availability": "Check availability",
+      "products": "Products",
+      "customers": "Customers",
+      "staff": "Staff",
+      "outlets": "Outlets",
+      "categories": "Categories",
+      "loyalty": "Loyalty",
+      "settings": "Store settings"
+    },
+    "manage": "Manage",
+    "createOrder": "New order",
+    "allOutlets": "All outlets",
+    "mainMenu": "Main menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "search": "Search",
+    "searchPlaceholder": "Search name, phone, order no., item",
+    "themeToDark": "Switch to dark theme",
+    "themeToLight": "Switch to light theme",
+    "logout": "Log out",
+    "notifications": {
+      "title": "Notifications",
+      "bellLabel": "Notifications, {count} unread",
+      "all": "All",
+      "unread": "Unread",
+      "markAllRead": "Mark all read",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "empty": "No notifications yet",
+      "emptyUnread": "No unread notifications",
+      "loadError": "Couldn't load notifications. Try again later.",
+      "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+      "seeAll": "See all notifications",
+      "moreActions": "More actions",
+      "deleteRead": "Delete read notifications",
+      "markRead": "Mark read",
+      "markUnread": "Mark unread",
+      "retry": "Try again",
+      "loadMore": "Load more",
+      "unreadCount": "{count} unread"
+    }
+  },
+  "dateRange": {
+    "title": "Pick a date range",
+    "placeholder": "Pick dates",
+    "weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "month": "{month}/{year}",
+    "prev": "Previous month",
+    "next": "Next month",
+    "pickStart": "Tap the first day, then the last",
+    "pickEnd": "Tap the last day (tap the first day again for one day)",
+    "summary": "{from} → {to} · {days, plural, one {# day} other {# days}}",
+    "single": "{from} · 1 day",
+    "tooLong": "Up to {days} days.",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }
-

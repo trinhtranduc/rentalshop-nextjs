@@ -148,6 +148,51 @@
     "unlimitedUsers": "無制限ユーザー",
     "unlimitedProducts": "無制限製品",
     "unlimitedCustomers": "無制限顧客"
+  },
+  "web": {
+    "title": "プラン",
+    "subtitle": "お店に合ったプランを選んでください。",
+    "currentLine": "現在のプランは {plan} です。",
+    "trialNote": "お試し期間はまもなく終了します。",
+    "current": "利用中",
+    "popular": "人気",
+    "perMonth": "/月",
+    "free": "無料",
+    "features": "機能",
+    "limitsTitle": "上限",
+    "unlimited": "無制限",
+    "choose": "このプランを選ぶ",
+    "chosen": "選択中",
+    "currentButton": "利用中のプラン",
+    "selectedTitle": "選択したプラン：{plan}",
+    "cycleLabel": "請求サイクル",
+    "discount": "{percent}%オフ",
+    "pay": "支払う",
+    "confirmTitle": "支払いの確認",
+    "confirmHint": "支払う前にプランと請求サイクルを確認してください。",
+    "plan": "プラン",
+    "total": "概算合計",
+    "method": "支払い方法",
+    "methodLemon": "カード / PayPal（Lemon Squeezy）",
+    "terms": "支払うことで、AnyRent の利用規約と請求ポリシーに同意したことになります。",
+    "cancel": "キャンセル",
+    "redirecting": "支払いページを開いています…",
+    "empty": "プランはまだありません。",
+    "loadFailed": "プランを読み込めませんでした。",
+    "retry": "再試行",
+    "close": "閉じる",
+    "estimateNote": "最終金額は支払いページに表示されます。",
+    "cycle": {
+      "monthly": "毎月",
+      "quarterly": "四半期ごと",
+      "yearly": "毎年"
+    },
+    "limit": {
+      "outlets": "店舗",
+      "users": "スタッフ",
+      "products": "商品",
+      "customers": "顧客",
+      "orders": "注文"
+    }
   }
 }
-

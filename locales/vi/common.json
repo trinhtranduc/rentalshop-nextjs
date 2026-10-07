@@ -214,6 +214,68 @@
       "showing": "Hiển thị {maxRows} dòng đầu tiên trong tổng số {total} dòng",
       "validStatus": "Hợp lệ"
     }
+  },
+  "shell": {
+    "nav": {
+      "overview": "Tổng quan",
+      "orders": "Đơn hàng",
+      "calendar": "Lịch giao trả",
+      "availability": "Kiểm tra còn hàng",
+      "products": "Sản phẩm",
+      "customers": "Khách hàng",
+      "staff": "Nhân viên",
+      "outlets": "Chi nhánh",
+      "categories": "Danh mục",
+      "loyalty": "Khách thân thiết",
+      "settings": "Cài đặt cửa hàng"
+    },
+    "manage": "Quản lý",
+    "createOrder": "Tạo đơn",
+    "allOutlets": "Tất cả chi nhánh",
+    "mainMenu": "Menu chính",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tìm tên, SĐT, mã đơn, tên đồ",
+    "themeToDark": "Chuyển sang giao diện tối",
+    "themeToLight": "Chuyển sang giao diện sáng",
+    "logout": "Đăng xuất",
+    "notifications": {
+      "title": "Thông báo",
+      "bellLabel": "Thông báo, {count} chưa đọc",
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "markAllRead": "Đã đọc hết",
+      "today": "Hôm nay",
+      "yesterday": "Hôm qua",
+      "empty": "Chưa có thông báo nào",
+      "emptyUnread": "Không có thông báo chưa đọc",
+      "loadError": "Không tải được thông báo. Thử lại sau.",
+      "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+      "seeAll": "Xem tất cả thông báo",
+      "moreActions": "Thêm thao tác",
+      "deleteRead": "Xoá thông báo đã đọc",
+      "markRead": "Đánh dấu đã đọc",
+      "markUnread": "Đánh dấu chưa đọc",
+      "retry": "Thử lại",
+      "loadMore": "Xem thêm",
+      "unreadCount": "{count} chưa đọc"
+    }
+  },
+  "dateRange": {
+    "title": "Chọn khoảng ngày",
+    "placeholder": "Chọn ngày",
+    "weekdays": "CN,T2,T3,T4,T5,T6,T7",
+    "month": "Tháng {month}, {year}",
+    "prev": "Tháng trước",
+    "next": "Tháng sau",
+    "pickStart": "Bấm ngày đầu, rồi ngày cuối",
+    "pickEnd": "Bấm ngày cuối (bấm lại ngày đầu nếu chỉ một ngày)",
+    "summary": "{from} → {to} · {days} ngày",
+    "single": "{from} · 1 ngày",
+    "tooLong": "Tối đa {days} ngày.",
+    "apply": "Áp dụng",
+    "cancel": "Huỷ",
+    "close": "Đóng"
   }
 }
-

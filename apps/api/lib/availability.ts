@@ -3,9 +3,12 @@ export {
   AVAILABILITY_CALENDAR_TIMEZONE,
   calendarDayAvailability,
   getAvailabilityCivilDayBounds,
+  getAvailabilityCivilRangeBounds,
   occupiedDateKeysForRange,
+  orderOverlapsAvailabilityBounds,
   resolveAvailabilityQueryWindow,
 } from './availability-calendar-days';
+export type { AvailabilityQueryWindow } from './availability-calendar-days';
 
 export type AvailabilityOrderDisplayInput = {
   id: number;

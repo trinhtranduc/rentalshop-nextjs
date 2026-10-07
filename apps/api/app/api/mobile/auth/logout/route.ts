@@ -14,8 +14,9 @@ export async function OPTIONS(request: NextRequest) {
 /**
  * POST /api/mobile/auth/logout
  * 
- * Revoke refresh token on logout.
- * This ensures the refresh token cannot be used after user logs out.
+ * Revoke the refresh token and end the session it belongs to.
+ * Public route (no JWT): the refresh token is the credential, so only its own session ends.
+ * A client-supplied x-user-id header is ignored; it used to sign out every session of any user (#344).
  * 
  * Request body:
  * {
@@ -25,19 +26,14 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const corsHeaders = buildSimpleCorsHeaders(request);
   try {
-    const body = await request.json();
-    const { refreshToken } = body;
+    const body = await request.json().catch(() => ({}));
+    const refreshToken = typeof body?.refreshToken === 'string' ? body.refreshToken : null;
 
     if (refreshToken) {
+      const sessionId = await db.refreshTokens.findSessionId(refreshToken);
       await db.refreshTokens.revoke(refreshToken);
-    }
-
-    // Also invalidate session if user has an active one
-    const userId = request.headers.get('x-user-id');
-    if (userId) {
-      const userIdNum = parseInt(userId, 10);
-      if (!isNaN(userIdNum)) {
-        await db.sessions.invalidateAllUserSessions(userIdNum);
+      if (sessionId) {
+        await db.sessions.invalidateSession(sessionId);
       }
     }
 
@@ -46,7 +42,7 @@ export async function POST(request: NextRequest) {
       { headers: corsHeaders }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Mobile logout error:', error);
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode, headers: corsHeaders });

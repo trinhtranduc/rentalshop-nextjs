@@ -299,7 +299,10 @@ export interface TopProduct {
   name: string;
   rentPrice: number;
   category: string;
+  /** Order lines of RENT orders (CANCELLED excluded) */
   rentalCount: number;
+  /** Order lines of SALE orders (CANCELLED excluded), #429 */
+  saleCount?: number;
   quantity?: number;
   totalRevenue: number;
   image?: string | null;

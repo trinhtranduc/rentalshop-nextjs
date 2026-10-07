@@ -62,6 +62,16 @@ export async function GET(
         let finalOutletId = 0;
         if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
           finalOutletId = queryOutletId || userOutletId || 0;
+        } else if (user.role === USER_ROLE.MERCHANT && !queryOutletId) {
+          // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one
+          const defaultOutlet = await db.outlets.findDefaultForMerchant(userMerchantId);
+          if (!defaultOutlet) {
+            return NextResponse.json(
+              ResponseBuilder.error('OUTLET_REQUIRED'),
+              { status: 400 }
+            );
+          }
+          finalOutletId = defaultOutlet.id;
         } else if (user.role === USER_ROLE.MERCHANT || user.role === USER_ROLE.ADMIN) {
           if (!queryOutletId) {
             return NextResponse.json(
