@@ -225,7 +225,7 @@ light theme, 1440 × 900. A fresh product (FIXED, stock 3) and customer per run;
 | calendar day | day panel P "Cần giao" lists `#n` with "trả R" (same day: "giao và trả trong ngày"); P ± 1 do not |
 | availability | `/availability` (product picked in the search box), per-day "còn": stock − 1 on P..R, stock on P − 1 and R + 1 |
 | availability deep link (first case of each zone, 5 loads) | `/availability?productId=` (product page button) opens the product on every load (#579, fixed in #589) |
-| dashboard (WEB-RT-01, 03) | "Việc hôm nay" label = today (VN); P = today: "Cần giao hôm nay" +1 and lists `#n`; P = tomorrow: "Ngày mai · <label>" Giao +1, today +0 |
+| dashboard (WEB-RT-01, 03) | "Hôm nay" card label = today (VN); P = today: "Cần giao" total (done/total) +1 and lists `#n`; P = tomorrow: "Ngày mai · <label>" Giao +1, today +0 |
 | today rolls over (WEB-RT-05) | dashboard subtitle "T2 05/10" at 23:30 VN; after 1 h + focus "T3 06/10" and `GET /api/analytics/period?startDate=2026-10-06` (#589, WEB-2) |
 | after hand-over | PICKUPED via API: calendar Δ "trả" +1 on R only; R panel "Cần nhận trả" lists it, R + 1 does not |
 

@@ -190,12 +190,15 @@ async function dayPanel(page, key) {
   return { pickups: all.slice(0, cut), returns: all.slice(cut) };
 }
 
-/** Dashboard "Việc hôm nay": today label, hand-overs today, tomorrow counts, the to-do list text. */
+/**
+ * Dashboard "Hôm nay" card (#604): today label, hand-overs today (the card shows done/total; the total is the
+ * day's hand-overs, so a new order for today adds 1), tomorrow counts, the to-do list text.
+ */
 async function todayWork(page) {
   await go(page, '/dashboard');
-  const t = (await waitText(page, /Việc hôm nay[\s\S]*/))[0];
-  const today = (t.match(/Việc hôm nay\s*\n\s*((?:CN|T\d) \d\d\/\d\d)/) || [])[1] || null;
-  const pickupsToday = Number((t.match(/Cần giao hôm nay\s*\n\s*(\d+)/) || [])[1] ?? NaN);
+  const t = (await waitText(page, /Hôm nay\s*\n\s*(?:CN|T\d) \d\d\/\d\d[\s\S]*/))[0];
+  const today = (t.match(/Hôm nay\s*\n\s*((?:CN|T\d) \d\d\/\d\d)/) || [])[1] || null;
+  const pickupsToday = Number((t.match(/Cần giao\s*\n\s*\d+\/(\d+)/) || [])[1] ?? NaN);
   const tm = t.match(/Ngày mai · ((?:CN|T\d) \d\d\/\d\d)\s*\n\s*Giao (\d+) · Trả (\d+)/);
   return { today, pickupsToday, tomorrow: tm ? { day: tm[1], pickups: Number(tm[2]), returns: Number(tm[3]) } : null, text: t };
 }

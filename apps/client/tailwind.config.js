@@ -50,6 +50,12 @@ module.exports = {
           'late-bg': ar('late-bg'),
           unprepared: ar('unprepared'),
           'unprepared-bg': ar('unprepared-bg'),
+          'chart-blue': ar('chart-blue'),
+          'chart-blue-soft': ar('chart-blue-soft'),
+          'chart-amber': ar('chart-amber'),
+          'chart-green': ar('chart-green'),
+          'chart-violet': ar('chart-violet'),
+          'chart-red': ar('chart-red'),
         },
       },
       boxShadow: {

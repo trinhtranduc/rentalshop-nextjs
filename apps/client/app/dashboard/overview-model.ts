@@ -119,6 +119,8 @@ export interface SeriesPointLike {
   collected?: Num;
   orderCount?: Num;
   newOrderCount?: Num;
+  /** Expected collections still to come that day (#604 follow-up). Absent until the API sends it. */
+  forecast?: Num;
 }
 
 export interface TopProductLike {
@@ -219,9 +221,15 @@ export interface ChartBar {
   /** Day key for day buckets, `MM/YY` for month buckets */
   label: string;
   value: number;
-  /** 0–1 of the tallest bar */
+  /** Expected still to come (collected mode only; 0 when the API sends none) */
+  forecast: number;
+  /** 0–1 of the tallest bar (value + forecast) */
   ratio: number;
+  /** 0–1 of the tallest bar, forecast part only */
+  forecastRatio: number;
   current: boolean;
+  /** This bar is the shop's today (the "Hôm nay" marker) */
+  isToday: boolean;
 }
 
 /** `YYYY/MM/DD` (income series) or `YYYY-MM-DDT…Z` (dateISO) → `YYYY-MM-DD`. */
@@ -246,7 +254,8 @@ export function chartBars(
   const values = points.map((p) =>
     mode === 'collected' ? num(p.collected) ?? num(p.realIncome) ?? 0 : num(p.newOrderCount) ?? num(p.orderCount) ?? 0,
   );
-  const max = Math.max(0, ...values);
+  const forecasts = points.map((p) => (mode === 'collected' ? Math.max(0, num(p.forecast) ?? 0) : 0));
+  const max = Math.max(0, ...values.map((v, i) => v + forecasts[i]));
   const days = points.map(seriesDayKey);
   const currentIndex = currentKey && days.includes(currentKey) ? days.indexOf(currentKey) : points.length - 1;
   const short = points.length > 14;
@@ -256,10 +265,29 @@ export function chartBars(
       key: day ?? p.month ?? String(i),
       label: day ? (short ? `${day.slice(8, 10)}/${day.slice(5, 7)}` : formatDayLabel(day, weekdays)) : p.month ?? '',
       value: values[i],
-      ratio: max > 0 ? values[i] / max : 0,
+      forecast: forecasts[i],
+      ratio: max > 0 ? (values[i] + forecasts[i]) / max : 0,
+      forecastRatio: max > 0 ? forecasts[i] / max : 0,
       current: i === currentIndex,
+      isToday: !!currentKey && day === currentKey,
     };
   });
+}
+
+/**
+ * The Thực thu tile's collected/forecast bar: shown only when the series carries a forecast for today.
+ * `pct` is the collected share of collected + forecast.
+ */
+export function forecastBar(
+  collected: number | null,
+  series: SeriesPointLike[] | null | undefined,
+  todayKey: string,
+): { collected: number; forecast: number; pct: number } | null {
+  const point = (series ?? []).find((p) => seriesDayKey(p) === todayKey);
+  const forecast = Math.max(0, num(point?.forecast) ?? 0);
+  if (collected == null || forecast <= 0) return null;
+  const done = Math.max(0, collected);
+  return { collected, forecast, pct: (done / (done + forecast)) * 100 };
 }
 
 // ----------------------------------------------------------------------------
@@ -379,4 +407,211 @@ export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => st
 export function progressPercent(done: number, total: number): number {
   if (total <= 0) return 0;
   return Math.round((Math.min(done, total) / total) * 100);
+}
+
+// ----------------------------------------------------------------------------
+// Tiles, sparklines and detail drawers (#604)
+// ----------------------------------------------------------------------------
+
+export type DetailKind = 'orderValue' | 'collected' | 'outstanding' | 'collateral';
+export const DETAIL_KINDS: DetailKind[] = ['orderValue', 'collected', 'outstanding', 'collateral'];
+
+/** `?detail=` → drawer kind; anything else means no drawer. */
+export function parseDetail(value: string | null | undefined): DetailKind | null {
+  return value && (DETAIL_KINDS as string[]).includes(value) ? (value as DetailKind) : null;
+}
+
+export type ChipTone = 'up' | 'down' | 'warn' | 'info';
+
+/** A status chip as an i18n key (`home.tiles.*` or `home.kpi.new`) plus its values. */
+export interface TileChip {
+  tone: ChipTone;
+  key: string;
+  values?: Record<string, number>;
+}
+
+export interface Tile {
+  kind: DetailKind;
+  value: number | null;
+  /** Show a leading `+` for a positive value (net collateral). */
+  signed: boolean;
+  chip: TileChip | null;
+}
+
+export function growthChip(growth: Growth): TileChip | null {
+  if (growth.kind === 'none') return null;
+  if (growth.kind === 'new') return { tone: 'up', key: 'home.kpi.new' };
+  return { tone: growth.up ? 'up' : 'down', key: growth.up ? 'home.tiles.up' : 'home.tiles.down', values: { value: growth.value } };
+}
+
+export interface CashLike {
+  depositsHeld?: { securityDeposit?: number; orders?: number } | null;
+  collateralToCollect?: { securityDeposit: number; orders: number } | null;
+  collateralToReturn?: { securityDeposit: number; orders: number } | null;
+}
+
+/**
+ * The four tiles, in display order. Thế chân is the period's net: received − returned.
+ * Chips only say what the data supports: growth %, overdue/waiting pickups, orders whose collateral is held now.
+ */
+export function buildTiles(report: PeriodReportLike | null | undefined, cash?: CashLike | null): Tile[] {
+  const kpis = buildKpis(report);
+  const parts = buildMoney(report);
+  const out = parts.outstanding;
+  let outstandingChip: TileChip | null = null;
+  if (out && out.overduePickup.orders > 0) {
+    outstandingChip = { tone: 'warn', key: 'home.tiles.overdue', values: { count: out.overduePickup.orders } };
+  } else if (out && out.atPickup.orders > 0) {
+    outstandingChip = { tone: 'info', key: 'home.tiles.waiting', values: { count: out.atPickup.orders } };
+  }
+  const held = cash?.depositsHeld?.orders;
+  return [
+    { kind: 'orderValue', value: kpis.orderValue, signed: false, chip: growthChip(kpis.orderValueGrowth) },
+    { kind: 'collected', value: kpis.collected, signed: false, chip: growthChip(kpis.collectedGrowth) },
+    { kind: 'outstanding', value: kpis.outstanding, signed: false, chip: outstandingChip },
+    {
+      kind: 'collateral',
+      value: parts.collateral ? parts.collateral.received - parts.collateral.returned : null,
+      signed: true,
+      chip: typeof held === 'number' && held > 0 ? { tone: 'info', key: 'home.tiles.held', values: { count: held } } : null,
+    },
+  ];
+}
+
+/**
+ * SVG polyline points for a sparkline in a `width`×`height` box (2 px inset).
+ * Null under two points: one value is not a trend. A flat series draws a flat line in the middle.
+ */
+export function sparkPoints(values: number[], width = 96, height = 28): string | null {
+  const vals = values.filter((v) => Number.isFinite(v));
+  if (vals.length < 2) return null;
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const inset = 2;
+  const span = height - inset * 2;
+  return vals
+    .map((v, i) => {
+      const x = (i * width) / (vals.length - 1);
+      const y = max === min ? height / 2 : inset + span - ((v - min) / (max - min)) * span;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
+export type WaterfallKey = 'deposits' | 'pickupAndSale' | 'fees' | 'refunds' | 'total';
+
+export interface WaterfallRow {
+  key: WaterfallKey;
+  /** Signed contribution; the total row carries the total. */
+  amount: number;
+  /** Bar position, 0–100 of the track. */
+  left: number;
+  width: number;
+  negative: boolean;
+  total: boolean;
+}
+
+/** Thực thu as a waterfall: three additions, minus refunds, = total. Handles a negative total. */
+export function waterfallRows(collected: MoneyBreakdown['collected']): WaterfallRow[] {
+  if (!collected) return [];
+  const steps: Array<{ key: WaterfallKey; amount: number }> = [
+    { key: 'deposits', amount: collected.deposits },
+    { key: 'pickupAndSale', amount: collected.pickupAndSale },
+    { key: 'fees', amount: collected.fees },
+    { key: 'refunds', amount: -collected.refunds },
+  ];
+  const spans: Array<{ key: WaterfallKey; amount: number; from: number; to: number; total: boolean }> = [];
+  let run = 0;
+  for (const s of steps) {
+    spans.push({ ...s, from: run, to: run + s.amount, total: false });
+    run += s.amount;
+  }
+  spans.push({ key: 'total', amount: collected.total, from: 0, to: collected.total, total: true });
+  const lo = Math.min(0, ...spans.map((s) => Math.min(s.from, s.to)));
+  const hi = Math.max(0, ...spans.map((s) => Math.max(s.from, s.to)));
+  const range = hi - lo || 1;
+  return spans.map((s) => ({
+    key: s.key,
+    amount: s.amount,
+    left: ((Math.min(s.from, s.to) - lo) / range) * 100,
+    width: (Math.abs(s.to - s.from) / range) * 100,
+    negative: s.amount < 0,
+    total: s.total,
+  }));
+}
+
+export interface SplitPart {
+  amount: number;
+  orders: number;
+  /** Share of the bar, 0–100 */
+  pct: number;
+}
+
+/** Còn phải thu as one stacked bar: waiting for pickup vs overdue pickup. */
+export function outstandingSplit(outstanding: MoneyBreakdown['outstanding']): { atPickup: SplitPart; overdue: SplitPart } | null {
+  if (!outstanding) return null;
+  const a = Math.max(0, outstanding.atPickup.amount);
+  const o = Math.max(0, outstanding.overduePickup.amount);
+  const sum = a + o;
+  return {
+    atPickup: { ...outstanding.atPickup, pct: sum > 0 ? (a / sum) * 100 : 0 },
+    overdue: { ...outstanding.overduePickup, pct: sum > 0 ? (o / sum) * 100 : 0 },
+  };
+}
+
+export type CollateralKey = 'received' | 'returned' | 'toCollect' | 'toReturn';
+
+export interface CollateralRow {
+  key: CollateralKey;
+  amount: number;
+  orders: number | null;
+  /** Hatched: not in the period's numbers yet */
+  upcoming: boolean;
+  /** 0–100 of the largest row */
+  width: number;
+}
+
+/** Thế chân: received / returned in the period, then the upcoming ones from today's cash (when known). */
+export function collateralRows(collateral: MoneyBreakdown['collateral'], cash?: CashLike | null): CollateralRow[] {
+  const rows: Array<Omit<CollateralRow, 'width'>> = [];
+  if (collateral) {
+    rows.push({ key: 'received', amount: collateral.received, orders: null, upcoming: false });
+    rows.push({ key: 'returned', amount: collateral.returned, orders: null, upcoming: false });
+  }
+  if (cash?.collateralToCollect) {
+    rows.push({ key: 'toCollect', amount: cash.collateralToCollect.securityDeposit, orders: cash.collateralToCollect.orders, upcoming: true });
+  }
+  if (cash?.collateralToReturn) {
+    rows.push({ key: 'toReturn', amount: cash.collateralToReturn.securityDeposit, orders: cash.collateralToReturn.orders, upcoming: true });
+  }
+  const max = Math.max(0, ...rows.map((r) => Math.abs(r.amount)));
+  return rows.map((r) => ({ ...r, width: max > 0 ? (Math.abs(r.amount) / max) * 100 : 0 }));
+}
+
+/** "Nguyễn Thị Lan" → "NL"; one word → its first letter; empty → "#". */
+export function initials(name: string | null | undefined): string {
+  const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '#';
+  const first = Array.from(words[0])[0] ?? '';
+  const last = words.length > 1 ? Array.from(words[words.length - 1])[0] ?? '' : '';
+  return (first + last).toUpperCase();
+}
+
+export interface TopBar {
+  id: number | string;
+  name: string;
+  rentals: number;
+  value: number;
+  /** 0–100 of the highest value in the list */
+  width: number;
+}
+
+/** Top products as bars, in the API's order (by order value), at most `limit`. */
+export function topBars(products: TopProductLike[] | null | undefined, limit = 5): TopBar[] {
+  const list = (products ?? []).slice(0, limit);
+  const max = Math.max(0, ...list.map((p) => num(p.totalRevenue) ?? 0));
+  return list.map((p) => {
+    const value = num(p.totalRevenue) ?? 0;
+    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+  });
 }
