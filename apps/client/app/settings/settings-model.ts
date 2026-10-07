@@ -12,8 +12,7 @@ export type SettingsTab =
   | 'profile'
   | 'account'
   | 'language'
-  | 'appearance'
-  | 'printer';
+  | 'appearance';
 
 export interface SettingsTabDef {
   id: SettingsTab;
@@ -26,14 +25,13 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'merchant', group: 'shop', roles: ['MERCHANT'] },
   { id: 'outlet', group: 'shop', roles: ['OUTLET_ADMIN', 'OUTLET_STAFF'] },
   { id: 'bank-accounts', group: 'shop', roles: ['OUTLET_ADMIN'] },
-  { id: 'receipt', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
+  /** Phiếu in (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
+  { id: 'receipt', group: 'shop' },
   { id: 'subscription', group: 'shop', roles: ['MERCHANT'] },
   { id: 'profile', group: 'me' },
   { id: 'account', group: 'me' },
   { id: 'language', group: 'me' },
   { id: 'appearance', group: 'me' },
-  /** Máy in (#623): bill and label paper sizes of this computer. */
-  { id: 'printer', group: 'me' },
 ];
 
 /** `themeSwitch: false` (the NEXT_PUBLIC_ENABLE_THEME_SWITCH kill switch) hides Giao diện. */
@@ -56,10 +54,12 @@ export type TabResolution = { tab: SettingsTab; redirect?: string };
 
 /**
  * `?tab=` → the tab to show. `loyalty` moved to /loyalty; a tab the role may not open (e.g.
- * staff on `receipt`, anyone but the owner on `subscription`) falls back to the default.
+ * anyone but the owner on `subscription`) falls back to the default.
  */
 export function resolveTab(requested: string | null | undefined, role?: string | null): TabResolution {
   if (requested === 'loyalty') return { tab: defaultTab(role), redirect: '/loyalty' };
+  // Máy in (#623) was merged into Phiếu in (#626); old links still land there
+  if (requested === 'printer') requested = 'receipt';
   const allowed = tabsForRole(role);
   const hit = allowed.find((t) => t.id === requested);
   return { tab: hit ? hit.id : defaultTab(role) };

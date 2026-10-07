@@ -729,7 +729,14 @@
       "width": "Width (mm)",
       "height": "Height (mm)",
       "range": "Width 20–110 mm, height 10–100 mm.",
-      "page": "Printed page {w} × {h} mm"
+      "page": "Printed page {w} × {h} mm",
+      "billSection": "Bill",
+      "labelSection": "Labels",
+      "preview": "Preview",
+      "previewOutlet": "Outlet to preview",
+      "testPrint": "Test print",
+      "sample": "A sample order for the preview, not a real one.",
+      "labelTip": "When printing: pick the label printer, paper = label size, scale 100%, margins None."
     }
   }
 }

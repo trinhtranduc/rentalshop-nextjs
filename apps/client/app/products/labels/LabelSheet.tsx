@@ -16,13 +16,17 @@ import { labelPageCss, type LabelLayout } from '../../../lib/print-settings';
 /** Barcode icon for the In tem buttons (shell icon format). */
 export const BARCODE_ICON = 'M3 5v14M7 5v14M10 5v14M14 5v14M17 5v14M21 5v14';
 
-export const LABEL_CSS = `
+/** Label look on screen and paper; no print rules, so a preview can sit on any page (#626). */
+export const LABEL_SCREEN_CSS = `
 .lb-page{display:flex;box-sizing:border-box;overflow:hidden;background:#fff;color:#000}
 .lb-label{display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;padding:1.2mm 2mm;background:#fff;color:#000;
   font-family:var(--font-be-vietnam),Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .lb-name{flex:none;font-weight:600;line-height:1.15;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
 .lb-bars{flex:1 1 auto;min-height:0;display:block;width:100%;margin-top:.8mm}
 .lb-code{flex:none;text-align:center;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+`;
+
+export const LABEL_CSS = LABEL_SCREEN_CSS + `
 .ar-labels-print{display:none}
 @media print {
   html, body { background: #fff !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
