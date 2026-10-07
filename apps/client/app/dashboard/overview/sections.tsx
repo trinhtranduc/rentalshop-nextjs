@@ -256,7 +256,12 @@ export function CollectedChart({
                 <div aria-hidden="true" className="pointer-events-none absolute inset-x-1 bottom-0 top-0 grid gap-2 sm:gap-3.5" style={cols}>
                   <span className="relative" style={{ gridColumnStart: todayIndex + 1 }}>
                     <span className="absolute bottom-0 left-1/2 top-4 border-l-[1.5px] border-dashed border-ar-faint" />
-                    <span className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap bg-ar-surface px-1.5 text-[11px] font-semibold leading-4 text-ar-ink-2">
+                    <span
+                      className={`absolute top-0 whitespace-nowrap bg-ar-surface px-1.5 text-[11px] font-semibold leading-4 text-ar-ink-2 ${
+                        // keep the label inside the chart when today is the first or last bar
+                        todayIndex === 0 ? 'left-0' : todayIndex === bars.length - 1 ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                      }`}
+                    >
                       {t('home.chart.today')}
                     </span>
                   </span>
