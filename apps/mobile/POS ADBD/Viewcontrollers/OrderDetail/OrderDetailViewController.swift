@@ -659,6 +659,8 @@ final class OrderDetailViewController: BaseViewControler {
             return "order.sheet.cancel.subtitle".localized()
         case .delete:
             return "order.sheet.delete.subtitle".localized()
+        case .share:
+            return "order.sheet.share.subtitle".localized()
         case .edit, .extend:
             return nil
         }
@@ -668,6 +670,7 @@ final class OrderDetailViewController: BaseViewControler {
     private func perform(_ action: OrderSheetAction) {
         switch action {
         case .print: printTapped()
+        case .share: shareTapped()
         case .notes: editNotesTapped()
         case .edit: editOrderTapped()
         case .extend: extendTapped()
@@ -694,6 +697,29 @@ final class OrderDetailViewController: BaseViewControler {
                 if case .failure(let error) = result {
                     UIAlertController.errorAlert(parent: self, error: error)
                 }
+            }
+        }
+    }
+
+    /// #639: the receipt JPG of the old preview screen (same renderer), then the share sheet (Lưu ảnh, Zalo, …)
+    private func shareTapped() {
+        guard let viewModel = orderViewModel else { return }
+        let renderer = PreviewViewController(viewModel: viewModel)
+        showProgressText(text: "Generating image...".localized())
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let url = renderer.shareReceiptImageURL()
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                guard let url, let data = try? Data(contentsOf: url), let image = UIImage(data: data) else {
+                    UIAlertController.alert(parent: self, title: "Error".localized(), message: "Failed to generate image".localized())
+                    return
+                }
+                // A UIImage (not the file URL) offers "Lưu ảnh" and avoids saving twice, as the old screen does
+                let share = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+                share.popoverPresentationController?.sourceView = self.view
+                share.popoverPresentationController?.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                self.present(share, animated: true)
             }
         }
     }
@@ -1093,6 +1119,7 @@ final class OrderActionSheet: V2FittingSheet {
     static func title(of action: OrderSheetAction) -> String {
         switch action {
         case .print: return "order.sheet.print".localized()
+        case .share: return "order.sheet.share".localized()
         case .notes: return "order.sheet.notes".localized()
         case .edit: return "Edit order".localized()
         case .extend: return "order.extend".localized()
@@ -1105,6 +1132,7 @@ final class OrderActionSheet: V2FittingSheet {
     private static func symbol(of action: OrderSheetAction) -> String {
         switch action {
         case .print: return "printer"
+        case .share: return "square.and.arrow.up"
         case .notes: return "note.text"
         case .edit: return "square.and.pencil"
         case .extend: return "calendar.badge.plus"

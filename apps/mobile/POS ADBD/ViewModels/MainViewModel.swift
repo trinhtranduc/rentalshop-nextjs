@@ -26,7 +26,7 @@ class MainViewModel {
     private let loadingState = LoadingState()
     
     // Search
-    private lazy var searchDebouncer = DebounceManager(delay: 0.7)
+    private lazy var searchDebouncer = DebounceManager(delay: 0.3) // #639: same wait as the new screens, web and Android
     
     // MARK: - Initialization
     init() {

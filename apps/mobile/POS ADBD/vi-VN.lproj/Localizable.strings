@@ -2270,3 +2270,5 @@
 "settings.v2.categories" = "Danh mục";
 "products.category.search" = "Tìm danh mục";
 "products.category.actions" = "Đổi tên hoặc xoá";
+"order.sheet.share" = "Chia sẻ đơn";
+"order.sheet.share.subtitle" = "Ảnh hoá đơn để lưu hoặc gửi";

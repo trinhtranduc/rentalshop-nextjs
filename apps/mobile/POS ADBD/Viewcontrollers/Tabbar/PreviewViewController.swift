@@ -1157,6 +1157,12 @@ class PreviewViewController: BaseViewControler {
     }
     
     // MARK: - Helper: Convert ViewModel to Order for PDF
+    /// #639: the share JPG for an order shown elsewhere (order detail ⋯ → Chia sẻ đơn). Same renderer and style as
+    /// `shareReceiptTapped`. Create the controller on the main thread (never shown); call this off the main thread.
+    func shareReceiptImageURL() -> URL? {
+        generateJPGReceipt(for: createOrderForPDF(from: viewModel), viewModel: viewModel)
+    }
+
     private func createOrderForPDF(from viewModel: PreviewViewModelProtocol) -> OrderForPDF {
         if let orderViewModel = viewModel as? OrderViewModel {
             let order = orderViewModel.currentOrder

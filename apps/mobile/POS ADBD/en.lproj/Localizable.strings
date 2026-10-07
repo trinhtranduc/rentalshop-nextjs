@@ -2272,3 +2272,5 @@
 "settings.v2.categories" = "Categories";
 "products.category.search" = "Search categories";
 "products.category.actions" = "Rename or delete";
+"order.sheet.share" = "Share order";
+"order.sheet.share.subtitle" = "Receipt image to save or send";

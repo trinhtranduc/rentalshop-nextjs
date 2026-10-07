@@ -109,7 +109,7 @@ class SaleViewController : BaseViewControler{
 
     // Search state properties
     private var currentSearchText: String = ""
-    private lazy var searchDebouncer = DebounceManager(delay: 0.7)
+    private lazy var searchDebouncer = DebounceManager(delay: 0.3) // #639: same wait as the new screens, web and Android
     private var isSearching = false {
         didSet{
             if isSearching == false{
