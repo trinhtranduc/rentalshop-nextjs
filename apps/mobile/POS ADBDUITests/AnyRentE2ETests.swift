@@ -1166,6 +1166,70 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #622: Settings → Tài khoản ngân hàng (list, add form, bank picker) and the printer switch "In QR chuyển khoản"
+    func test7kBankAccounts() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
+        if e2e.role == "staff" {
+            e2e.shot("7k-staff-settings")
+            e2e.soft(!row.exists, "OUTLET_STAFF does not see Tài khoản ngân hàng")
+            return
+        }
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in the Store group")
+        e2e.shot("7k-settings-bank-row")
+        row.tap()
+        sleep(3)
+        e2e.shot("7k-bank-list")
+
+        // Add Vietcombank 0123456789 NGUYEN VAN A as default, unless an earlier run did
+        let account = "0123456789 · NGUYEN VAN A"
+        if !app.staticTexts[account].exists {
+            e2e.button(["Add Bank Account", "Thêm tài khoản ngân hàng"]).tap()
+            sleep(2)
+            e2e.shot("7k-bank-form-empty")
+            app.textFields.matching(NSPredicate(format: "label BEGINSWITH 'Bank Name' OR label BEGINSWITH 'Tên ngân hàng'")).firstMatch.tap()
+            let search = app.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 5), "Bank picker")
+            search.tap()
+            search.typeText("Vietcombank")
+            sleep(1)
+            e2e.shot("7k-bank-picker")
+            app.cells.staticTexts["Vietcombank"].firstMatch.tap()
+            sleep(1)
+            let number = app.textFields.matching(NSPredicate(format: "label BEGINSWITH 'Account Number' OR label BEGINSWITH 'Số tài khoản'")).firstMatch
+            number.tap()
+            number.typeText("0123456789")
+            let holder = app.textFields.matching(NSPredicate(format: "label BEGINSWITH 'Account Holder' OR label BEGINSWITH 'Tên chủ tài khoản'")).firstMatch
+            holder.tap()
+            holder.typeText("NGUYEN VAN A")
+            app.switches.firstMatch.tap()
+            e2e.shot("7k-bank-form-filled")
+            e2e.button(["Add", "Thêm"]).tap()
+            XCTAssertTrue(app.staticTexts[account].waitForExistence(timeout: 10), "The new account is listed (\(e2e.lastAlert ?? "no alert"))")
+        }
+        e2e.shot("7k-bank-list-filled")
+        app.staticTexts[account].tap()
+        sleep(2)
+        e2e.shot("7k-bank-form-edit")
+        e2e.goBackOnce()
+        sleep(1)
+        e2e.goBackOnce()
+
+        // Printer page: the switch sits under the printer note, off by default; turned on for the shot, then back
+        let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
+        XCTAssertTrue(printer.waitForExistence(timeout: 5), "Printer row")
+        printer.tap()
+        let toggle = app.switches["printer.bankQr.switch"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "In QR chuyển khoản trên bill switch")
+        let wasOn = (toggle.value as? String) == "1"
+        if !wasOn { toggle.tap() }
+        e2e.shot("7k-printer-bank-qr-on")
+        if !wasOn { toggle.tap() }
+        e2e.goBackOnce()
+    }
+
     func test9SettingsLogout() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
