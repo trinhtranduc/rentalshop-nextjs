@@ -234,7 +234,8 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const [discountValue, setDiscountValue] = useState(draft?.discountValue ?? 0);
   const [discountOpen, setDiscountOpen] = useState(!!draft?.discountValue);
   const [depositAmount, setDepositAmount] = useState<number | null>(draft?.depositAmount ?? null);
-  const [securityDeposit, setSecurityDeposit] = useState(draft?.securityDeposit ?? 0);
+  // Kept as the order already has it (edit); never typed here (#614).
+  const [securityDeposit] = useState(draft?.securityDeposit ?? 0);
   const [notes, setNotes] = useState(draft?.notes ?? '');
   const [notesOpen, setNotesOpen] = useState(!!draft?.notes);
   const [photos, setPhotos] = useState<File[]>([]);
@@ -891,16 +892,11 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
 
           {orderType === 'RENT' && (
             <>
-              <div className="grid grid-cols-2 gap-2.5">
-                <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
-                  {t('editor.money.deposit')}
-                  <MoneyInput value={totals.depositAmount} onChange={setDepositAmount} label={t('editor.money.deposit')} />
-                </label>
-                <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
-                  {t('editor.money.security')}
-                  <MoneyInput value={securityDeposit} onChange={setSecurityDeposit} label={t('editor.money.security')} />
-                </label>
-              </div>
+              {/* Thế chân is taken at hand-over (Giao đồ / Thế chấp & phí), not here (#614); an edited order keeps its stored value. */}
+              <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
+                {t('editor.money.deposit')}
+                <MoneyInput value={totals.depositAmount} onChange={setDepositAmount} label={t('editor.money.deposit')} />
+              </label>
               <div className="flex flex-col gap-0.5">
                 <div className="flex justify-between text-[15px] text-ar-unprepared">
                   <span>{t('editor.money.dueAtPickup')}</span>
