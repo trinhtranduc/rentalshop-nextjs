@@ -173,7 +173,8 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
       country: parsed.data.country,
       phone: parsed.data.phone,
       description: parsed.data.description,
-      printNote: parsed.data.printNote
+      printNote: parsed.data.printNote,
+      printBankQr: parsed.data.printBankQr
       // Note: status field is validated but not stored (database uses isActive instead)
     };
 

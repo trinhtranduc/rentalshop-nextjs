@@ -90,6 +90,7 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         description: userProfile.outlet.description,
         isActive: userProfile.outlet.isActive,
         isDefault: userProfile.outlet.isDefault,
+        printBankQr: userProfile.outlet.printBankQr ?? false, // #628
         createdAt: userProfile.outlet.createdAt?.toISOString() || null,
         merchant: userProfile.outlet.merchant ? {
           id: userProfile.outlet.merchant.id,

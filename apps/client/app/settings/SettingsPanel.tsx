@@ -329,7 +329,13 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
           </LegacyPanel>
         );
       case 'receipt':
-        return <ReceiptSection t={t} canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'} />;
+        return (
+          <ReceiptSection
+            t={t}
+            canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
+            bankLink={role === 'OUTLET_ADMIN' ? { kind: 'tab', open: () => onTab('bank-accounts') } : role === 'MERCHANT' ? { kind: 'page' } : null}
+          />
+        );
       case 'subscription':
         return (
           <SettingsSubscriptionMerchantActions

@@ -15,6 +15,7 @@ import { LABEL_SCREEN_CSS, LabelPage, LabelPrintRoot } from '../products/labels/
 import { useShopToday } from '../hooks/useShopToday';
 import type { LabelLayout } from '../../lib/print-settings';
 import { sampleLabels, sampleReceiptOrder } from './print-preview-model';
+import type { BillBankBlock } from '../orders/receipt/bank-qr-model';
 
 type Tr = (key: string, values?: Record<string, string | number>) => string;
 
@@ -23,8 +24,11 @@ function useSampleOrder() {
   return useMemo(() => sampleReceiptOrder(todayKey), [todayKey]);
 }
 
-/** The sample rental bill at the chosen paper width, with this outlet's header and the note being typed. */
-export function BillPreview({ outlet, width }: { outlet: ReceiptOutletInput; width: 80 | 58 }) {
+/**
+ * The sample rental bill at the chosen paper width, with this outlet's header, the note being typed and, when the
+ * outlet's QR chuyển khoản is on, its default bank account + VietQR (#628).
+ */
+export function BillPreview({ outlet, width, bank = null }: { outlet: ReceiptOutletInput; width: 80 | 58; bank?: BillBankBlock | null }) {
   const t = useTranslations('orders.web.receipt') as unknown as Tr;
   const to = useOrderTranslations();
   const order = useSampleOrder();
@@ -41,14 +45,14 @@ export function BillPreview({ outlet, width }: { outlet: ReceiptOutletInput; wid
     <div className="max-h-[560px] overflow-y-auto rounded-xl bg-ar-subtle px-3 py-5">
       <style>{SLIP_CSS + (width === 58 ? SLIP_58_CSS : '')}</style>
       <div className="mx-auto w-fit max-w-full rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.10)]">
-        <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={width} />
+        <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={width} bank={bank} />
       </div>
     </div>
   );
 }
 
 /** "In thử" for the bill: the order Hoá đơn dialog with the sample order, so the print path is the real one. */
-export function BillTestPrint({ outlet, open, onClose }: { outlet: ReceiptOutletInput; open: boolean; onClose: () => void }) {
+export function BillTestPrint({ outlet, open, onClose }: { outlet: ReceiptOutletInput & { id?: number | null }; open: boolean; onClose: () => void }) {
   const order = useSampleOrder();
   return <ReceiptPreviewModal isOpen={open} onClose={onClose} order={order} outlet={outlet} />;
 }

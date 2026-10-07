@@ -736,7 +736,12 @@
       "previewOutlet": "Outlet to preview",
       "testPrint": "Test print",
       "sample": "A sample order for the preview, not a real one.",
-      "labelTip": "When printing: pick the label printer, paper = label size, scale 100%, margins None."
+      "labelTip": "When printing: pick the label printer, paper = label size, scale 100%, margins None.",
+      "bankQr": "Show bank transfer QR on bills",
+      "bankQrHint": "Prints the outlet's default bank account and its VietQR (no amount) above the thank-you line. Saved for the outlet, so the apps use it too.",
+      "bankQrNoAccount": "This outlet has no bank account yet.",
+      "bankQrAddAccount": "Add a bank account",
+      "bankQrReadOnly": "Only the owner or the outlet manager can change this."
     }
   }
 }

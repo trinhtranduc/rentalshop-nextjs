@@ -538,6 +538,8 @@ export const outletCreateSchema = z.object({
   phone: z.string().optional(),
   description: z.string().optional(),
   printNote: outletPrintNoteSchema,
+  // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
+  printBankQr: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).default('ACTIVE'),
   // merchantId is optional - will be set from userScope or request body for ADMIN
   merchantId: z.coerce.number().int().positive().optional(),
@@ -554,6 +556,8 @@ export const outletUpdateSchema = z.object({
   country: z.string().optional(),
   description: z.string().optional(),
   printNote: outletPrintNoteSchema,
+  // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
+  printBankQr: z.boolean().optional(),
   isActive: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });
