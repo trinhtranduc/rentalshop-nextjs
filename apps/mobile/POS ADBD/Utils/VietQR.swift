@@ -56,6 +56,33 @@ enum VietQR {
         return body + crc16(body)
     }
 
+    /// #640 share image: the bill's VietQR of `account` plus the amount (54, when > 0) and the transfer content
+    /// (62/08, ASCII), as the web `generateVietQRString(info, amount, description)`; dynamic (01 = 12) when either
+    /// is set. Nil under the same rules as `payload(for:)`. Same output as the Android `VietQr.payload(account, …)`.
+    static func payload(for account: BankAccount, amount: Double, content: String?) -> String? {
+        guard payload(for: account) != nil, let bin = bin(bankName: account.bankName, bankCode: account.bankCode) else { return nil }
+        let number = account.accountNumber.trimmingCharacters(in: .whitespaces)
+        let rounded = Int64(amount.rounded())
+        let text = content.map(ascii).flatMap { $0.isEmpty ? nil : $0 }
+        guard rounded > 0 || text != nil else { return payload(bin: bin, accountNumber: number) }
+        let beneficiary = tlv("00", bin) + tlv("01", number)
+        let merchant = tlv("00", "A000000727") + tlv("01", beneficiary) + tlv("02", "QRIBFTTA")
+        var body = tlv("00", "01") + tlv("01", "12") + tlv("38", merchant) + tlv("53", "704")
+        if rounded > 0 { body += tlv("54", String(rounded)) }
+        body += tlv("58", "VN")
+        if let text { body += tlv("62", tlv("08", text)) }
+        body += "6304"
+        return body + crc16(body)
+    }
+
+    /// Accents removed (đ → d), ASCII only, as the web `convertToASCII`
+    static func ascii(_ text: String) -> String {
+        let plain = text.replacingOccurrences(of: "đ", with: "d").replacingOccurrences(of: "Đ", with: "D")
+            .folding(options: .diacriticInsensitive, locale: Locale(identifier: "en_US_POSIX"))
+        return String(plain.unicodeScalars.filter { $0.value >= 32 && $0.value <= 126 }.map(Character.init))
+            .trimmingCharacters(in: .whitespaces)
+    }
+
     static func tlv(_ tag: String, _ value: String) -> String {
         tag + String(format: "%02d", value.utf8.count) + value
     }

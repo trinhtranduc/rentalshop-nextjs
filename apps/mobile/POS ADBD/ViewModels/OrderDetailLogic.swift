@@ -26,7 +26,7 @@ struct OrderDetailActions: Equatable {
 
 /// A row of the ⋯ sheet (#519, board CT-thao-tac)
 enum OrderSheetAction: Equatable {
-    case print, notes, edit, extend, history
+    case print, share, notes, edit, extend, history
     case cancel, delete
 
     var isDestructive: Bool { self == .cancel || self == .delete }
@@ -127,11 +127,11 @@ enum OrderDetailLogic {
         }
     }
 
-    /// Only what has no button on the screen: Print (unless the bottom bar has it), Notes, Edit / Extend when allowed
-    /// and not on screen, History; then Cancel / Delete when allowed and not on screen
+    /// Only what has no button on the screen: Print (unless the bottom bar has it), Share (#639, always), Notes,
+    /// Edit / Extend when allowed and not on screen, History; then Cancel / Delete when allowed and not on screen
     static func sheetActions(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool) -> OrderSheetActions {
         let onScreen = bottomButtons(actions, orderType: orderType, canExtend: canExtend)
-        var candidates: [OrderSheetAction] = [.print, .notes]
+        var candidates: [OrderSheetAction] = [.print, .share, .notes]
         if actions.canEdit { candidates.append(.edit) }
         if canExtend { candidates.append(.extend) }
         candidates.append(.history)

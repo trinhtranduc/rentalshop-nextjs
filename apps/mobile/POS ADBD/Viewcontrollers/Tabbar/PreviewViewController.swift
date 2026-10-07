@@ -1093,36 +1093,27 @@ class PreviewViewController: BaseViewControler {
         present(navController, animated: true)
     }
     
+    /// #640: the new share image. An order is shared from its detail (payments, so the amount due is the detail
+    /// screen's); when the detail cannot load, from the order this screen has. The cart is shared as a draft.
     @objc private func shareReceiptTapped() {
-        // Show progress
-        showProgressText(text: "Generating image...".localized())
-        
-        // Generate JPG on background queue
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            
-            // Convert viewModel to Order structure
-            let orderForPDF = self.createOrderForPDF(from: self.viewModel)
-            
-            if let jpgURL = self.generateJPGReceipt(for: orderForPDF, viewModel: self.viewModel) {
+        if let orderViewModel = viewModel as? OrderViewModel {
+            let order = orderViewModel.currentOrder
+            showProgressText(text: "Generating image...".localized())
+            OrderService.shared.loadOrderDetail(orderId: order.id) { [weak self] detail, _ in
                 DispatchQueue.main.async {
+                    guard let self else { return }
                     self.hideProgress()
-                    self.shareImage(url: jpgURL) // Share JPG image (not PDF)
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.hideProgress()
-                    UIAlertController.alert(
-                        parent: self,
-                        title: "Error".localized(),
-                        message: "Failed to generate image".localized()
-                    )
+                    let source = detail.map { OrderShareSource(detail: $0) }
+                        ?? OrderShareSource(order: order, shop: ShareShop.current())
+                    OrderSharePresenter.share(source, from: self, sourceView: self.shareButton)
                 }
             }
+        } else if viewModel is CartViewModel {
+            OrderSharePresenter.share(OrderShareSource(cart: CartStore.shared.cart, shop: ShareShop.current()),
+                                      from: self, sourceView: shareButton)
         }
     }
-    
-    
+
     // MARK: - PDF Data Structures
     private struct OrderForPDF {
         let orderNumber: String
