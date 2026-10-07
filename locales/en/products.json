@@ -627,6 +627,36 @@
       "renting": "Rented out",
       "empty": "No orders with this product yet.",
       "emptyStatus": "No orders with this status."
+    },
+    "labels": {
+      "open": "Print labels",
+      "back": "Products",
+      "title": "Print barcode labels",
+      "size": "Label size: {size}",
+      "print": "Print {count} labels",
+      "printNone": "Print labels",
+      "search": "Search product name or code",
+      "selectPage": "Select all on this page",
+      "noCode": "No barcode",
+      "loadFailed": "Couldn't load products.",
+      "retry": "Try again",
+      "empty": "No matching products.",
+      "page": "Page {page}/{total}",
+      "prev": "Previous page",
+      "next": "Next page",
+      "picked": "Selected · {count}",
+      "clear": "Clear all",
+      "pickHint": "Tick products in the list on the left.",
+      "copiesFor": "Labels for {name}",
+      "remove": "Remove {name}",
+      "skipped": "{count} products have no barcode — not printed",
+      "invalidCode": "code has characters that cannot be printed",
+      "edit": "Edit",
+      "preview": "Preview",
+      "labelCount": "{count} labels",
+      "previewEmpty": "Select products to preview the labels.",
+      "previewMore": "+{count} more labels",
+      "printHint": "In the print dialog: pick the label printer, paper size = label size, scale 100%, margins None."
     }
   }
 }

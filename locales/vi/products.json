@@ -627,6 +627,36 @@
       "renting": "Đang thuê",
       "empty": "Chưa có đơn nào có sản phẩm này.",
       "emptyStatus": "Không có đơn ở trạng thái này."
+    },
+    "labels": {
+      "open": "In tem",
+      "back": "Sản phẩm",
+      "title": "In tem mã vạch",
+      "size": "Khổ tem: {size}",
+      "print": "In {count} tem",
+      "printNone": "In tem",
+      "search": "Tìm tên hoặc mã sản phẩm",
+      "selectPage": "Chọn tất cả trên trang",
+      "noCode": "Chưa có mã",
+      "loadFailed": "Không tải được sản phẩm.",
+      "retry": "Thử lại",
+      "empty": "Không có sản phẩm phù hợp.",
+      "page": "Trang {page}/{total}",
+      "prev": "Trang trước",
+      "next": "Trang sau",
+      "picked": "Đã chọn · {count}",
+      "clear": "Bỏ chọn tất cả",
+      "pickHint": "Tích chọn sản phẩm ở danh sách bên trái.",
+      "copiesFor": "Số tem cho {name}",
+      "remove": "Bỏ {name}",
+      "skipped": "{count} sản phẩm chưa có mã barcode — không in",
+      "invalidCode": "mã có ký tự không in được",
+      "edit": "Sửa",
+      "preview": "Xem trước",
+      "labelCount": "{count} tem",
+      "previewEmpty": "Chọn sản phẩm để xem trước tem.",
+      "previewMore": "+{count} tem nữa",
+      "printHint": "Khi in: chọn máy in nhãn, khổ giấy đúng khổ tem, tỉ lệ 100%, lề Không."
     }
   }
 }
