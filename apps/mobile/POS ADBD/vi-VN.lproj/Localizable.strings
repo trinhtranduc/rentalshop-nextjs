@@ -2271,6 +2271,25 @@
 "products.category.search" = "Tìm danh mục";
 "products.category.actions" = "Đổi tên hoặc xoá";
 
+/* #643 Đầu trang chi tiết đơn */
+"order.header.title.rent" = "Đơn thuê #%@";
+"order.header.title.sale" = "Đơn bán #%@";
+"order.header.walkIn" = "Khách lẻ";
+"order.header.call" = "Gọi khách";
+"order.header.step.booked" = "Đặt";
+"order.header.step.handOver" = "Giao";
+"order.header.step.handedOver" = "Đã giao";
+"order.header.step.return" = "Trả";
+"order.header.step.returned" = "Đã trả";
+"order.header.returnIn" = "trả sau %d ngày";
+"order.header.returnIn.one" = "trả sau %d ngày";
+"order.header.returnToday" = "trả hôm nay";
+"order.header.returned" = "đã trả";
+"order.header.handOverIn" = "giao sau %d ngày";
+"order.header.handOverIn.one" = "giao sau %d ngày";
+"order.header.handOverToday" = "giao hôm nay";
+"order.header.pickupOverdue" = "quá ngày lấy %d ngày";
+"order.header.pickupOverdue.one" = "quá ngày lấy %d ngày";
 /* #642 Lịch trống của sản phẩm */
 "products.calendar.month" = "Tháng %1$d, %2$d";
 "products.calendar.total" = "Tổng %d cái";

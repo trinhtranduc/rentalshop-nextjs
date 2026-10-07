@@ -2273,6 +2273,25 @@
 "products.category.search" = "Search categories";
 "products.category.actions" = "Rename or delete";
 
+/* #643 Order detail header */
+"order.header.title.rent" = "Rental #%@";
+"order.header.title.sale" = "Sale #%@";
+"order.header.walkIn" = "Walk-in customer";
+"order.header.call" = "Call customer";
+"order.header.step.booked" = "Booked";
+"order.header.step.handOver" = "Hand over";
+"order.header.step.handedOver" = "Handed over";
+"order.header.step.return" = "Return";
+"order.header.step.returned" = "Returned";
+"order.header.returnIn" = "due in %d days";
+"order.header.returnIn.one" = "due in %d day";
+"order.header.returnToday" = "due today";
+"order.header.returned" = "returned";
+"order.header.handOverIn" = "hand over in %d days";
+"order.header.handOverIn.one" = "hand over in %d day";
+"order.header.handOverToday" = "hand over today";
+"order.header.pickupOverdue" = "pickup %d days overdue";
+"order.header.pickupOverdue.one" = "pickup %d day overdue";
 /* #642 Product free calendar */
 "products.calendar.month" = "%1$d/%2$d";
 "products.calendar.total" = "%d in total";

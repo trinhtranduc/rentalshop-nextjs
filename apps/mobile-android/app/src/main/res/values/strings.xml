@@ -700,6 +700,35 @@
         <item quantity="other">Hand-over %1$d days late</item>
     </plurals>
     <string name="detail_due_on">Due %1$s</string>
+    <!-- #643 calmer order detail header -->
+    <string name="detail_title_rent">Rental #%1$s</string>
+    <string name="detail_title_sale">Sale #%1$s</string>
+    <string name="detail_walk_in">Walk-in customer</string>
+    <string name="detail_call_customer">Call customer</string>
+    <string name="detail_step_booked">Booked</string>
+    <string name="detail_step_hand_over">Hand over</string>
+    <string name="detail_step_handed_over">Handed over</string>
+    <string name="detail_step_return">Return</string>
+    <string name="detail_step_returned">Returned</string>
+    <plurals name="detail_note_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="detail_note_return_in">
+        <item quantity="one">return in %1$d day</item>
+        <item quantity="other">return in %1$d days</item>
+    </plurals>
+    <string name="detail_note_return_today">return today</string>
+    <plurals name="detail_note_hand_over_in">
+        <item quantity="one">hand over in %1$d day</item>
+        <item quantity="other">hand over in %1$d days</item>
+    </plurals>
+    <string name="detail_note_hand_over_today">hand over today</string>
+    <plurals name="detail_note_past_pickup">
+        <item quantity="one">%1$d day past pickup</item>
+        <item quantity="other">%1$d days past pickup</item>
+    </plurals>
+    <string name="detail_note_returned">returned</string>
     <string name="detail_schedule">Rental</string>
     <string name="detail_ready_to_deliver_subtitle">All items packed for this order</string>
     <string name="detail_sale_day">Sale day</string>
