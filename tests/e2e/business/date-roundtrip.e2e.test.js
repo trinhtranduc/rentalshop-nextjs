@@ -72,16 +72,14 @@ const CHECK = {
   handOver: 'after hand-over: return lists and month counts use R'
 };
 const KNOWN = {
-  // #575: batch availability reads the resolved civil-day window with an inclusive end: the day before P is busy
-  [`*:*:${CHECK.oldIos}`]: '#575',
-  // #576: `T00:00:00Z…T23:59:59Z` (no ms) is not recognised as a UTC-day window
-  [`web:*:${CHECK.oldAndroid}`]: '#576',
-  [`ios:*:${CHECK.oldAndroid}`]: '#576',
-  [`android:*:${CHECK.oldAndroid}`]: '#576',
+  // #575 and #576 (old iOS / old Android UTC-day windows) are fixed by #590: those checks are normal tests now.
   // #577: the pre-#413 Android return `R T23:59:00Z` is R+1 in Vietnam and is stored as is
   [`oldAndroid:*:${CHECK.detail}`]: '#577',
   [`oldAndroid:*:${CHECK.list}`]: '#577',
   [`oldAndroid:*:${CHECK.held}`]: '#577',
+  // the stored return is R+1 in Vietnam, so every availability window now (correctly) sees R+1 held
+  [`oldAndroid:*:${CHECK.oldIos}`]: '#577',
+  [`oldAndroid:*:${CHECK.oldAndroid}`]: '#577',
   [`oldAndroid:*:${CHECK.edit}`]: '#577',
   [`oldAndroid:*:${CHECK.handOver}`]: '#577'
 };
