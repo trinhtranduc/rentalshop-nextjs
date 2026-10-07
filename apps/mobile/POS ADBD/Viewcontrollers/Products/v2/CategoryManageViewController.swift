@@ -59,7 +59,8 @@ final class CategoryManageViewController: BaseViewControler {
         table.dataSource = self
         table.delegate = self
         table.backgroundColor = .white
-        table.rowHeight = 56
+        table.rowHeight = UITableViewAutomaticDimension
+        table.estimatedRowHeight = 56
         table.keyboardDismissMode = .onDrag
         table.register(UITableViewCell.self, forCellReuseIdentifier: "CategoryCell")
         view.addSubview(table)
@@ -288,7 +289,7 @@ extension CategoryManageViewController: UITableViewDataSource, UITableViewDelega
             }
             more.tintColor = DS.Color.textMuted
             more.tag = index
-            more.accessibilityLabel = "products.category.rename".localized()
+            more.accessibilityLabel = "products.category.actions".localized()
             more.addTarget(self, action: #selector(moreTapped(_:)), for: .touchUpInside)
         } else if checked {
             cell.accessoryType = .checkmark

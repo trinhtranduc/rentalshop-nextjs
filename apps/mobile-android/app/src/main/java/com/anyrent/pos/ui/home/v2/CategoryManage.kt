@@ -202,7 +202,7 @@ fun CategoryManageScreen(
                         }
                         if (canManage) {
                             IconButton(onClick = { error = null; selected = category }) {
-                                Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.v2_category_rename), tint = DS.Colors.TextMuted)
+                                Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.v2_category_actions), tint = DS.Colors.TextMuted)
                             }
                         } else {
                             Spacer(Modifier.width(12.dp))

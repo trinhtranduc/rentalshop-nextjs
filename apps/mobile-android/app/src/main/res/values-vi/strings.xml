@@ -1329,4 +1329,5 @@
     <string name="v2_category_has_products">Danh mục còn sản phẩm. Chuyển sản phẩm sang danh mục khác trước khi xoá.</string>
     <string name="settings_v2_categories">Danh mục</string>
     <string name="v2_category_search">Tìm danh mục</string>
+    <string name="v2_category_actions">Đổi tên hoặc xoá</string>
 </resources>
