@@ -9,6 +9,7 @@ import {
   chartBars,
   collateralRows,
   forecastBar,
+  futureQuickRanges,
   growthChip,
   initials,
   outstandingSplit,
@@ -203,11 +204,24 @@ describe('forecast (optional, fed by a later API change)', () => {
     expect(chartBars(series, 'collected', VI, '2026-12-01').some((b) => b.isToday)).toBe(false);
   });
 
-  it('shows the tile bar only with a forecast for today', () => {
-    expect(forecastBar(300, series, '2026-10-07')).toEqual({ collected: 300, forecast: 100, pct: 75 });
-    expect(forecastBar(300, series, '2026-10-06')).toBeNull();
+  it('sums the forecast of every day in the range from today on (#612)', () => {
+    expect(forecastBar(300, series, '2026-10-07')).toEqual({ collected: 300, forecast: 300, pct: 50, until: '2026-10-08' });
+    // a range that ends today: only today
+    expect(forecastBar(300, series.slice(0, 2), '2026-10-07')).toEqual({ collected: 300, forecast: 100, pct: 75, until: '2026-10-07' });
+    // past days never count, even if the API sent something for them
+    expect(forecastBar(300, series, '2026-10-08')).toEqual({ collected: 300, forecast: 200, pct: 60, until: '2026-10-08' });
     expect(forecastBar(null, series, '2026-10-07')).toBeNull();
     expect(forecastBar(300, [{ date: '2026/10/07', collected: 300 }], '2026-10-07')).toBeNull();
+  });
+
+  it('offers future quick ranges for the custom picker (#612)', () => {
+    expect(futureQuickRanges('2026-10-07')).toEqual([
+      { key: 'next7', from: '2026-10-07', to: '2026-10-13' },
+      { key: 'next30', from: '2026-10-07', to: '2026-11-05' },
+      { key: 'nextMonth', from: '2026-11-01', to: '2026-11-30' },
+    ]);
+    expect(futureQuickRanges('2026-12-31')[2]).toEqual({ key: 'nextMonth', from: '2027-01-01', to: '2027-01-31' });
+    expect(futureQuickRanges('2028-01-31')[2]).toEqual({ key: 'nextMonth', from: '2028-02-01', to: '2028-02-29' });
   });
 
   it('reads the API field series[].expectedCollected (#605) as the forecast', () => {
