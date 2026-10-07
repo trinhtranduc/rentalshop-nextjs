@@ -29,7 +29,7 @@ class BankAccountViewController: BaseViewControler {
 
     // MARK: - UI Components
     private lazy var bankAccountsTableView: UITableView = {
-        let table = UITableView(frame: .zero, style: .insetGrouped)
+        let table = UITableView(frame: .zero, style: v2 ? .plain : .insetGrouped)
         table.delegate = self
         table.dataSource = self
         table.backgroundColor = .backgroundPrimary

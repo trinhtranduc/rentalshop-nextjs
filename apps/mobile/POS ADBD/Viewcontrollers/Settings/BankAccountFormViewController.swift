@@ -350,6 +350,11 @@ class BankAccountFormViewController: BaseViewControler {
         let save = V2.primaryButton(bankAccount == nil ? "Add".localized() : "Update".localized())
         save.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
         let bar = SettingsDetailV2.installBottomBar(on: view, buttons: [save])
+        // The button stays above the keyboard while typing
+        bar.snp.remakeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+        }
 
         v2BankField.placeholder = "Select Bank".localized()
         v2BankField.isUserInteractionEnabled = false
