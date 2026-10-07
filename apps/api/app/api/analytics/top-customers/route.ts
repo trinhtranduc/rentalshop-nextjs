@@ -5,6 +5,7 @@ import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers
@@ -23,24 +24,13 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Set default date range if not provided (last 30 days)
-    let dateStart: Date;
-    let dateEnd: Date;
-    
-    if (startDate && endDate) {
-      // Parse dates and set to start/end of day for accurate range matching
-      dateStart = new Date(startDate);
-      dateStart.setHours(0, 0, 0, 0);
-      dateEnd = new Date(endDate);
-      dateEnd.setHours(23, 59, 59, 999);
-    } else {
-      // Default to last 30 days
-      dateEnd = new Date();
-      dateEnd.setHours(23, 59, 59, 999);
-      dateStart = new Date();
-      dateStart.setDate(dateStart.getDate() - 30);
-      dateStart.setHours(0, 0, 0, 0);
+    // Vietnam civil days (#594): the requested days, else the last 30 Vietnam days up to the end of today.
+    // `setHours` used the server zone (UTC on Railway) and moved orders made before 7 am VN a day back.
+    const requested = startDate && endDate ? readReportRange(startDate, endDate) : null;
+    if (startDate && endDate && !requested) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
     }
+    const { start: dateStart, end: dateEnd } = requested ?? lastShopDays(30);
 
     console.log('📊 Top Customers - Date Range:', {
       startDate: dateStart.toISOString(),

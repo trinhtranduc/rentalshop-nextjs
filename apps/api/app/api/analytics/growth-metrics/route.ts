@@ -4,6 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { percentChange } from '@rentalshop/utils/server';
 import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { monthKeysOf, previousPeriodKeys, readReportRange, reportRangeOfKeys, shopToday } from '../../../../lib/report-days';
 
 /**
  * GET /api/analytics/growth-metrics - Get growth metrics
@@ -20,39 +21,20 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
     
-    // Use provided dates or default to current month
-    const now = new Date();
-    let currentMonth: Date;
-    let lastMonth: Date;
-    let lastMonthEnd: Date;
-    
-    if (startDateParam && endDateParam) {
-      // Use provided date range
-      const start = new Date(startDateParam);
-      const end = new Date(endDateParam);
-      
-      // Current period = provided date range
-      currentMonth = new Date(start.getFullYear(), start.getMonth(), 1);
-      
-      // Calculate previous period for comparison
-      if (start.getMonth() === end.getMonth()) {
-        // Same month - compare with last month
-        lastMonth = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-        lastMonthEnd = new Date(start.getFullYear(), start.getMonth(), 0, 23, 59, 59);
-      } else {
-        // Year view - compare with last year same period
-        lastMonth = new Date(start.getFullYear() - 1, start.getMonth(), 1);
-        lastMonthEnd = new Date(end.getFullYear() - 1, end.getMonth() + 1, 0, 23, 59, 59);
-      }
-    } else {
-      // Default to current month vs last month
-      currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    // Vietnam civil days (#594). Current period = the requested days (default: this Vietnam month up to the
+    // end of today). Previous period = the whole previous month for a range inside one month, else the same
+    // months one year earlier. The server's own zone and UTC month edges are never used.
+    const todayKey = shopToday().dateKey;
+    const requested = startDateParam && endDateParam ? readReportRange(startDateParam, endDateParam) : null;
+    if (startDateParam && endDateParam && !requested) {
+      return NextResponse.json(ResponseBuilder.error('INVALID_DATE_FORMAT'), { status: API.STATUS.BAD_REQUEST });
     }
-    
-    // Determine the actual end date for current period
-    const currentEnd = endDateParam ? new Date(endDateParam + 'T23:59:59') : now;
+    const current = requested ?? reportRangeOfKeys(monthKeysOf(todayKey).from, todayKey);
+    const previousKeys = previousPeriodKeys(current.startKey, current.endKey);
+    const previous = reportRangeOfKeys(previousKeys.from, previousKeys.to);
+    const lastMonth = previous.start;
+    const lastMonthEnd = previous.end;
+    const currentEnd = current.end;
 
     // Apply role-based filtering (consistent with other APIs)
     let orderWhereClause: any = {};
@@ -92,8 +74,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       );
     }
 
-    // Actual start of the current period (respect provided startDate, else first of month)
-    const currentStart = startDateParam ? new Date(startDateParam) : currentMonth;
+    // Start of the current period (requested start day, else the first of this Vietnam month)
+    const currentStart = current.start;
 
     // ------------------------------------------------------------------
     // ORDER COUNT (by createdAt) — keep the existing definition/semantics.

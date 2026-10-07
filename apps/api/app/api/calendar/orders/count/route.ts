@@ -175,19 +175,12 @@ function fillDateRange(
  * @returns Object with from (YYYY-MM-DD) and to (YYYY-MM-DD)
  */
 function getMonthDateRange(month: number, year?: number): { from: string; to: string } {
-  const now = new Date();
-  const targetYear = year || now.getFullYear();
-  const targetMonth = month - 1; // JavaScript months are 0-indexed
-  
-  // First day of month
-  const firstDay = new Date(targetYear, targetMonth, 1);
-  const from = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
-  
-  // Last day of month
-  const lastDay = new Date(targetYear, targetMonth + 1, 0);
-  const to = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
-  
-  return { from, to };
+  // Default year = the Vietnam year of today (#594), not the server's (1 Jan 00:00–06:59 VN is still the old
+  // year in UTC). Pure calendar arithmetic on UTC dates, so no zone can shift the keys.
+  const targetYear = year || Number(getOperationsDay().dateKey.slice(0, 4));
+  const mm = String(month).padStart(2, '0');
+  const lastDay = new Date(Date.UTC(targetYear, month, 0)).getUTCDate();
+  return { from: `${targetYear}-${mm}-01`, to: `${targetYear}-${mm}-${String(lastDay).padStart(2, '0')}` };
 }
 
 // ============================================================================

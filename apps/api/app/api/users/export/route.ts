@@ -8,6 +8,8 @@ import {
   createExcelWorkbook,
   formatDateForExcel,
   generateExcelFilename,
+  formatDateKeyInTimeZone,
+  SHOP_TIMEZONE,
   type ExcelColumn
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -166,7 +168,7 @@ export const GET = withPermissions(['users.view'])(async (request, { userScope }
       status: API.STATUS.OK,
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="users-export-${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Disposition': `attachment; filename="users-export-${formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE)}.csv"`,
         'Cache-Control': 'no-cache',
       },
     });

@@ -8,7 +8,7 @@ import {
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
-import { readAnalyticsTimeZone } from '../../../../lib/analytics-days';
+import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
 /**
  * GET /api/analytics/overview
@@ -67,14 +67,18 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
     let statistics = { totalOrders: 0, totalRevenue: 0, statusBreakdown: {} as Record<string, number> };
     try {
+      // Same civil days as the rest of this response (#594); `new Date(key)` gave UTC days
+      const range = readCivilRange(startDate, endDate, timeZone);
+      if (!range) throw new Error('INVALID_DATE_FORMAT');
       const stats = await db.orders.getStatistics({
         merchantId: userScope.merchantId,
         outletId:
           user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF
             ? userScope.outletId
             : undefined,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate)
+        startDate: range.start,
+        endDate: range.end,
+        exactDateRange: true
       });
       statistics = {
         totalOrders: stats.totalOrders,

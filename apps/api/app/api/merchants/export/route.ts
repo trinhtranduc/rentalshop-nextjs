@@ -8,6 +8,8 @@ import {
   createExcelWorkbook,
   formatDateForExcel,
   generateExcelFilename,
+  formatDateKeyInTimeZone,
+  SHOP_TIMEZONE,
   type ExcelColumn
 } from '@rentalshop/utils';
 import { API, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
@@ -162,7 +164,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request) => {
       status: API.STATUS.OK,
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="merchants-export-${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Disposition': `attachment; filename="merchants-export-${formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE)}.csv"`,
         'Cache-Control': 'no-cache',
       },
     });

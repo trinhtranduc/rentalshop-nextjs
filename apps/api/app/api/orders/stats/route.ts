@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
+import { overdueReturnWhere } from '../../../../lib/report-days';
 
 /**
  * GET /api/orders/stats - Get order statistics
@@ -51,21 +52,12 @@ export const GET = withPermissions(['orders.view', 'analytics.view'])(async (req
     });
     const completedOrders = completedOrdersResult.total;
 
-    // Get overdue rentals (return date passed but status still PICKUPED)
-    // ✅ Fix: Ensure returnPlanAt is not null and compare with start of today
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    // ✅ Build where clause with returnPlanAt filter
-    const overdueWhere: any = {
+    // Overdue rentals: one rule everywhere (#594) — PICKUPED and returnPlanAt before the start of Vietnam
+    // today (was the server's midnight = 00:00Z). Scope goes as filters, not inside `where`: a `merchantId`
+    // key in `where` is not an Order column and made Prisma reject the whole request.
+    const overdueResult = await db.orders.search({
       ...filters,
-      status: ORDER_STATUS.PICKUPED,
-      returnPlanAt: {
-        not: null,
-        lt: startOfToday
-      }
-    };
-    const overdueResult = await db.orders.search({ 
-      where: overdueWhere,
+      where: overdueReturnWhere(),
       limit: 100 // Get actual overdue orders
     });
     const overdueRentals = overdueResult.data;

@@ -271,8 +271,8 @@ export const GET = withReadOnlyAuth(async (
             averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
           },
           dateRange: {
-            start: startDate.toISOString().split('T')[0],
-            end: endDate.toISOString().split('T')[0]
+            start: startDateStr,
+            end: endDateStr
           }
         },
         code: 'CALENDAR_DATA_SUCCESS',
@@ -305,8 +305,8 @@ export const GET = withReadOnlyAuth(async (
           averageOrderValue: 0
         },
         dateRange: {
-          start: startDate.toISOString().split('T')[0],
-          end: endDate.toISOString().split('T')[0]
+          start: startDateStr,
+          end: endDateStr
         }
       },
       code: 'NO_CALENDAR_DATA',

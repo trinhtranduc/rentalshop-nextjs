@@ -2588,13 +2588,15 @@ export const simplifiedOrders = {
     outletId?: number;
     startDate?: Date;
     endDate?: Date;
+    /** startDate/endDate are exact bounds already (civil days computed by the route) */
+    exactDateRange?: boolean;
   }) => {
-    const { merchantId, outletId, startDate, endDate } = filters;
+    const { merchantId, outletId, startDate, endDate, exactDateRange } = filters;
 
     const where: any = {
       deletedAt: null // Exclude soft-deleted orders
     };
-    
+
     if (merchantId) {
       where.outlet = { merchantId };
     }
@@ -2602,12 +2604,15 @@ export const simplifiedOrders = {
       where.outletId = outletId;
     }
     if (startDate || endDate) {
+      // Vietnam civil days (#594); `exactDateRange` keeps a route's own bounds (other `timeZone`)
       where.createdAt = {};
-      const normalizedStart = startDate ? normalizeStartDate(startDate) : null;
-      const normalizedEnd = endDate ? normalizeEndDate(endDate) : null;
+      const normalizedStart = startDate ? (exactDateRange ? startDate : normalizeStartDate(startDate)) : null;
+      const normalizedEnd = endDate ? (exactDateRange ? endDate : normalizeEndDate(endDate)) : null;
       if (normalizedStart) where.createdAt.gte = normalizedStart;
       if (normalizedEnd) where.createdAt.lte = normalizedEnd;
     }
+    // Money excludes CANCELLED orders (revenue rule); counts and breakdowns keep every status
+    const revenueWhere = { ...where, status: { not: ORDER_STATUS.CANCELLED } };
 
     const [
       totalOrders,
@@ -2621,22 +2626,23 @@ export const simplifiedOrders = {
       
       // Total revenue
       prisma.order.aggregate({
-        where,
+        where: revenueWhere,
         _sum: { totalAmount: true }
       }),
-      
-      // Status breakdown
+
+      // Status breakdown. `_count._all`: `_count: { id }` with the merchant (outlet relation) filter
+      // made Postgres fail with `column reference "id" is ambiguous`, so the whole call failed for shops.
       prisma.order.groupBy({
         by: ['status'],
         where,
-        _count: { id: true }
+        _count: { _all: true }
       }),
-      
+
       // Type breakdown
       prisma.order.groupBy({
         by: ['orderType'],
         where,
-        _count: { id: true }
+        _count: { _all: true }
       }),
       
       // Recent orders (last 10)
@@ -2666,12 +2672,12 @@ export const simplifiedOrders = {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
-      statusBreakdown: statusBreakdown.reduce((acc: Record<string, number>, item: { status: string; _count: { id: number } }): Record<string, number> => {
-        acc[item.status] = item._count.id;
+      statusBreakdown: statusBreakdown.reduce((acc: Record<string, number>, item: { status: string; _count: { _all: number } }): Record<string, number> => {
+        acc[item.status] = item._count._all;
         return acc;
       }, {} as Record<string, number>),
-      typeBreakdown: typeBreakdown.reduce((acc: Record<string, number>, item: { orderType: string; _count: { id: number } }): Record<string, number> => {
-        acc[item.orderType] = item._count.id;
+      typeBreakdown: typeBreakdown.reduce((acc: Record<string, number>, item: { orderType: string; _count: { _all: number } }): Record<string, number> => {
+        acc[item.orderType] = item._count._all;
         return acc;
       }, {} as Record<string, number>),
       recentOrders

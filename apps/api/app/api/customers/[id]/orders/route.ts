@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
 import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
 import {
   fetchCustomerLoyaltySnapshot,
@@ -83,6 +83,9 @@ export async function GET(
       const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
       const startDate = searchParams.get('startDate') || undefined;
       const endDate = searchParams.get('endDate') || undefined;
+      // Vietnam civil days (#594), the same bounds for the list and the money total below
+      const rangeStart = startDate ? normalizeStartDate(startDate) : null;
+      const rangeEnd = endDate ? normalizeEndDate(endDate) : null;
 
       // Build search filters with role-based access control
       const searchFilters: any = {
@@ -91,8 +94,8 @@ export async function GET(
         limit,
         sortBy,
         sortOrder,
-        ...(startDate ? { startDate } : {}),
-        ...(endDate ? { endDate } : {}),
+        ...(rangeStart ? { startDate: rangeStart } : {}),
+        ...(rangeEnd ? { endDate: rangeEnd } : {}),
       };
 
       // Role-based merchant filtering:
@@ -144,10 +147,10 @@ export async function GET(
       } else if (searchFilters.merchantId) {
         aggregateWhere.outlet = { merchantId: searchFilters.merchantId };
       }
-      if (startDate || endDate) {
+      if (rangeStart || rangeEnd) {
         aggregateWhere.createdAt = {};
-        if (startDate) aggregateWhere.createdAt.gte = new Date(startDate);
-        if (endDate) aggregateWhere.createdAt.lte = new Date(endDate);
+        if (rangeStart) aggregateWhere.createdAt.gte = rangeStart;
+        if (rangeEnd) aggregateWhere.createdAt.lte = rangeEnd;
       }
 
       // Get orders + loyalty + money total for this customer
