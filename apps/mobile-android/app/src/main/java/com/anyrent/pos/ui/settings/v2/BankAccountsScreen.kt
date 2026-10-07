@@ -252,47 +252,50 @@ private fun BankAccountFormPage(outletId: Int, editing: OutletBankAccount?, onCl
         }
     }
 
-    SettingsDetailPage(
-        title = stringResource(if (editing == null) R.string.bank_account_add else R.string.bank_account_edit),
-        onBack = onClose,
-        bottomBar = {
-            SettingsDetailPrimaryButton(text = stringResource(R.string.save), onClick = ::save, loading = busy)
-            if (editing != null) SettingsDetailSecondaryButton(text = stringResource(R.string.delete), onClick = { confirmDelete = true }, enabled = !busy)
-        },
-    ) {
-        Column(
-            Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+    // The page shrinks above the keyboard so Lưu stays visible while typing (as the iOS form)
+    Box(Modifier.fillMaxSize().imePadding()) {
+        SettingsDetailPage(
+            title = stringResource(if (editing == null) R.string.bank_account_add else R.string.bank_account_edit),
+            onBack = onClose,
+            bottomBar = {
+                SettingsDetailPrimaryButton(text = stringResource(R.string.save), onClick = ::save, loading = busy)
+                if (editing != null) SettingsDetailSecondaryButton(text = stringResource(R.string.delete), onClick = { confirmDelete = true }, enabled = !busy)
+            },
         ) {
-            val bankLabel = stringResource(R.string.bank_account_bank)
-            Box(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                val bankLabel = stringResource(R.string.bank_account_bank)
+                Box(Modifier.fillMaxWidth()) {
+                    SettingsDetailField(
+                        label = bankLabel,
+                        value = bankName.ifBlank { stringResource(R.string.bank_account_select_bank) },
+                        onValueChange = {},
+                        enabled = false,
+                    )
+                    // The disabled field does not take taps; this layer opens the picker
+                    Box(Modifier.matchParentSize().clickable { picking = true }.semantics { contentDescription = bankLabel })
+                }
                 SettingsDetailField(
-                    label = bankLabel,
-                    value = bankName.ifBlank { stringResource(R.string.bank_account_select_bank) },
-                    onValueChange = {},
-                    enabled = false,
+                    label = stringResource(R.string.bank_account_number), value = number, onValueChange = { number = it.filter(Char::isDigit) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
-                // The disabled field does not take taps; this layer opens the picker
-                Box(Modifier.matchParentSize().clickable { picking = true }.semantics { contentDescription = bankLabel })
-            }
-            SettingsDetailField(
-                label = stringResource(R.string.bank_account_number), value = number, onValueChange = { number = it.filter(Char::isDigit) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-            SettingsDetailField(
-                label = stringResource(R.string.bank_account_holder), value = holder, onValueChange = { holder = it },
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-            )
-            SettingsDetailField(label = stringResource(R.string.bank_account_branch), value = branch, onValueChange = { branch = it })
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    stringResource(R.string.bank_account_set_default), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold,
-                    color = DS.Colors.Text, modifier = Modifier.weight(1f),
+                SettingsDetailField(
+                    label = stringResource(R.string.bank_account_holder), value = holder, onValueChange = { holder = it },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                 )
-                Switch(
-                    checked = isDefault, onCheckedChange = { isDefault = it },
-                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF34C759), checkedBorderColor = Color(0xFF34C759)),
-                )
+                SettingsDetailField(label = stringResource(R.string.bank_account_branch), value = branch, onValueChange = { branch = it })
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        stringResource(R.string.bank_account_set_default), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold,
+                        color = DS.Colors.Text, modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = isDefault, onCheckedChange = { isDefault = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF34C759), checkedBorderColor = Color(0xFF34C759)),
+                    )
+                }
             }
         }
     }
