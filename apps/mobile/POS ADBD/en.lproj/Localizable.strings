@@ -2238,3 +2238,8 @@
 "overview.dash.today.overdue" = "Overdue returns";
 "overview.dash.today.noShows" = "Past pickup";
 "overview.dash.today.tomorrow" = "Tomorrow · Hand over %d · Return %d";
+"overview.dash.top.products" = "Top products";
+"overview.dash.top.customers" = "Top customers";
+"overview.dash.top.empty" = "Nothing in this period yet.";
+"overview.dash.top.rentals" = "%d rentals";
+"overview.dash.top.rentals.one" = "%d rental";

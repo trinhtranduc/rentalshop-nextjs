@@ -272,6 +272,43 @@ struct OverviewReport: Decodable, Equatable {
         }
     }
 
+    /// #620: one of `topCustomers` (top spenders of the period). `totalSpent` is null for OUTLET_STAFF: counts as 0
+    struct TopCustomer: Decodable, Equatable {
+        /// Public numeric id
+        let id: Int?
+        let name: String
+        let phone: String?
+        let orderCount: Int
+        let rentalCount: Int
+        let saleCount: Int
+        let totalSpent: Double?
+
+        enum CodingKeys: String, CodingKey { case id, name, phone, orderCount, rentalCount, saleCount, totalSpent }
+
+        init(id: Int?, name: String, phone: String? = nil, orderCount: Int, rentalCount: Int = 0, saleCount: Int = 0,
+             totalSpent: Double?) {
+            self.id = id
+            self.name = name
+            self.phone = phone
+            self.orderCount = orderCount
+            self.rentalCount = rentalCount
+            self.saleCount = saleCount
+            self.totalSpent = totalSpent
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let count: (CodingKeys) -> Int = { key in ((try? c.decodeIfPresent(Int.self, forKey: key)) ?? nil) ?? 0 }
+            id = (try? c.decodeIfPresent(Int.self, forKey: .id)) ?? nil
+            name = ((try? c.decodeIfPresent(String.self, forKey: .name)) ?? nil) ?? ""
+            phone = (try? c.decodeIfPresent(String.self, forKey: .phone)) ?? nil
+            orderCount = count(.orderCount)
+            rentalCount = count(.rentalCount)
+            saleCount = count(.saleCount)
+            totalSpent = (try? c.decodeIfPresent(Double.self, forKey: .totalSpent)) ?? nil
+        }
+    }
+
     /// Parts of `revenue.collected` (#492): deposits + pickupAndSale + fees − refunds = collected
     struct CollectedBreakdown: Decodable, Equatable {
         /// Deposits paid when booking
@@ -392,8 +429,10 @@ struct OverviewReport: Decodable, Equatable {
     let newOrders: Int?
     let series: [Point]
     let topProducts: [TopProduct]
+    /// #620: top customers of the period; empty when the API leaves them out or sends something else
+    let topCustomers: [TopCustomer]
 
-    private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts }
+    private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts, topCustomers }
     private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding,
                                                          collectedBreakdown, collateralFlow, outstandingBreakdown, orderValueByType }
     private enum GrowthKeys: String, CodingKey { case collected, revenue, orderValue }
@@ -405,7 +444,8 @@ struct OverviewReport: Decodable, Equatable {
          totalOrderValue: Double? = nil, outstanding: Double? = nil,
          collectedBreakdown: CollectedBreakdown? = nil, orderValueGrowth: Double? = nil,
          collateralFlow: CollateralFlow? = nil, outstandingBreakdown: OutstandingBreakdown? = nil,
-         orderValueByType: OrderValueByType? = nil) {
+         orderValueByType: OrderValueByType? = nil, topCustomers: [TopCustomer] = []) {
+        self.topCustomers = topCustomers
         self.orderValueByType = orderValueByType
         self.orderValueGrowth = orderValueGrowth
         self.collateralFlow = collateralFlow
@@ -461,6 +501,7 @@ struct OverviewReport: Decodable, Equatable {
         }
         series = ((try? c.decodeIfPresent([Point].self, forKey: .series)) ?? nil) ?? []
         topProducts = ((try? c.decodeIfPresent([TopProduct].self, forKey: .topProducts)) ?? nil) ?? []
+        topCustomers = ((try? c.decodeIfPresent([TopCustomer].self, forKey: .topCustomers)) ?? nil) ?? []
     }
 }
 

@@ -311,4 +311,52 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertEqual(now.today.map { OverviewDashLogic.doneOfTotal($0.pickups) }, "2/3")
         XCTAssertNil(try decode(OverviewNow.self, #"{"overdueReturns":{"count":0},"tomorrow":null}"#).tomorrow)
     }
+
+    // MARK: - Top lists and the Hôm nay card (#620)
+
+    func testTopProductRowsKeepFiveAndScaleToTheFirst() {
+        let products = (1...7).map { n in
+            OverviewReport.TopProduct(id: n, name: "P\(n)", rentalCount: n, totalRevenue: Double(8 - n) * 1_000_000, image: nil)
+        }
+        let rows = OverviewDashLogic.topProductRows(products)
+        XCTAssertEqual(rows.count, 5)
+        XCTAssertEqual(rows.map(\.name), ["P1", "P2", "P3", "P4", "P5"])
+        XCTAssertEqual(rows.map(\.count), [1, 2, 3, 4, 5])
+        XCTAssertEqual(rows.map(\.ratio), [1, 6.0 / 7, 5.0 / 7, 4.0 / 7, 3.0 / 7])
+        XCTAssertEqual(rows.first?.id, 1)
+        XCTAssertTrue(OverviewDashLogic.topProductRows([]).isEmpty)
+    }
+
+    func testTopCustomerRowsCountAHiddenTotalAsZero() {
+        let customers = [
+            OverviewReport.TopCustomer(id: 11, name: "An", orderCount: 3, totalSpent: 4_000_000),
+            OverviewReport.TopCustomer(id: 12, name: "Bình", orderCount: 2, totalSpent: nil),
+            OverviewReport.TopCustomer(id: nil, name: "Chi", orderCount: 1, totalSpent: 1_000_000),
+        ]
+        let rows = OverviewDashLogic.topCustomerRows(customers)
+        XCTAssertEqual(rows.map(\.amount), [4_000_000, 0, 1_000_000])
+        XCTAssertEqual(rows.map(\.ratio), [1, 0, 0.25])
+        XCTAssertEqual(rows.map(\.count), [3, 2, 1])
+        XCTAssertNil(rows[2].id)
+
+        // OUTLET_STAFF: every total hidden, no bar at all
+        let hidden = OverviewDashLogic.topCustomerRows([OverviewReport.TopCustomer(id: 1, name: "A", orderCount: 1, totalSpent: nil)])
+        XCTAssertEqual(hidden.map(\.ratio), [0])
+    }
+
+    func testDecodesTopCustomersAndToleratesAMissingOrBadList() throws {
+        let report = try decode(OverviewReport.self, """
+        {"revenue":{"collected":1},"topCustomers":[
+          {"id":42,"name":"Lan","phone":"0901","orderCount":4,"rentalCount":3,"saleCount":1,"totalSpent":2500000},
+          {"id":43,"name":"Minh","orderCount":1,"totalSpent":null}]}
+        """)
+        XCTAssertEqual(report.topCustomers, [
+            OverviewReport.TopCustomer(id: 42, name: "Lan", phone: "0901", orderCount: 4, rentalCount: 3, saleCount: 1,
+                                       totalSpent: 2_500_000),
+            OverviewReport.TopCustomer(id: 43, name: "Minh", orderCount: 1, totalSpent: nil),
+        ])
+        XCTAssertTrue(try decode(OverviewReport.self, #"{"revenue":{"collected":1}}"#).topCustomers.isEmpty)
+        XCTAssertTrue(try decode(OverviewReport.self, #"{"revenue":{"collected":1},"topCustomers":"x"}"#).topCustomers.isEmpty)
+        XCTAssertTrue(try decode(OverviewReport.self, #"{"revenue":{"collected":1},"topCustomers":null}"#).topCustomers.isEmpty)
+    }
 }

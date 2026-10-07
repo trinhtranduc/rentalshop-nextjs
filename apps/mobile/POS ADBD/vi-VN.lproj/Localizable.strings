@@ -2236,3 +2236,8 @@
 "overview.dash.today.overdue" = "Trễ hạn trả";
 "overview.dash.today.noShows" = "Quá ngày lấy";
 "overview.dash.today.tomorrow" = "Ngày mai · Giao %d · Trả %d";
+"overview.dash.top.products" = "Top sản phẩm";
+"overview.dash.top.customers" = "Top khách hàng";
+"overview.dash.top.empty" = "Chưa có trong khoảng này.";
+"overview.dash.top.rentals" = "%d lượt thuê";
+"overview.dash.top.rentals.one" = "%d lượt thuê";

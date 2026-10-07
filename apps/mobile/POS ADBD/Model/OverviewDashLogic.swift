@@ -115,6 +115,18 @@ struct OverviewSplitPart: Equatable {
     let share: Double
 }
 
+/// #620: one row of Top sản phẩm / Top khách hàng
+struct OverviewTopRow: Equatable {
+    /// Public numeric id (product or customer); nil: the row does not open anything
+    let id: Int?
+    let name: String
+    let amount: Double
+    /// Rentals of a product, orders of a customer
+    let count: Int
+    /// Bar width against the first (largest) row, 0…1
+    let ratio: Double
+}
+
 enum OverviewDashLogic {
     // MARK: Periods
 
@@ -326,4 +338,27 @@ enum OverviewDashLogic {
 
     /// "2/3": done of planned
     static func doneOfTotal(_ task: OverviewNow.TodayTask) -> String { "\(task.done)/\(task.total)" }
+
+    // MARK: Top lists (#620)
+
+    static let topLimit = 5
+
+    /// Top sản phẩm: the API's order (largest revenue first), five at most
+    static func topProductRows(_ products: [OverviewReport.TopProduct]) -> [OverviewTopRow] {
+        topRows(products.map { ($0.id, $0.name, $0.totalRevenue, $0.rentalCount) })
+    }
+
+    /// Top khách hàng: the API's order, five at most; a hidden `totalSpent` (null) counts as 0
+    static func topCustomerRows(_ customers: [OverviewReport.TopCustomer]) -> [OverviewTopRow] {
+        topRows(customers.map { ($0.id, $0.name, $0.totalSpent ?? 0, $0.orderCount) })
+    }
+
+    private static func topRows(_ items: [(id: Int?, name: String, amount: Double, count: Int)]) -> [OverviewTopRow] {
+        let kept = items.prefix(topLimit)
+        let top = kept.map { max(0, $0.amount) }.max() ?? 0
+        return kept.map { item in
+            OverviewTopRow(id: item.id, name: item.name, amount: item.amount, count: item.count,
+                           ratio: top > 0 ? max(0, item.amount) / top : 0)
+        }
+    }
 }

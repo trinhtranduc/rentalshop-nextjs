@@ -200,6 +200,10 @@ final class OverviewV2ViewController: BaseViewControler {
         if showsOperations {
             contentStack.addArrangedSubview(todayCard())
         }
+        if showsRevenue, reportFailed == nil {
+            contentStack.addArrangedSubview(topCard(products: true))
+            contentStack.addArrangedSubview(topCard(products: false))
+        }
         if !showsRevenue && !showsOperations {
             let label = OVFont.label("overview.v2.noAccess".localized(), DS.TextSize.body, color: OVColor.muted, lines: 0)
             label.textAlignment = .center
@@ -358,6 +362,60 @@ final class OverviewV2ViewController: BaseViewControler {
         row.alignment = .center
         row.isAccessibilityElement = false
         return row
+    }
+
+    // MARK: Top sản phẩm / Top khách hàng (#620)
+
+    private func topCard(products: Bool) -> UIView {
+        let title = OVFont.label((products ? "overview.dash.top.products" : "overview.dash.top.customers").localized(),
+                                 DS.TextSize.body, .semibold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        guard let report, !loading else {
+            let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+            spinner.startAnimating()
+            return card([title, spinner])
+        }
+        let rows = products ? OverviewDashLogic.topProductRows(report.topProducts)
+                            : OverviewDashLogic.topCustomerRows(report.topCustomers)
+        guard !rows.isEmpty else {
+            return card([title, OVFont.label("overview.dash.top.empty".localized(), DS.TextSize.secondary, color: OVColor.muted, lines: 0)])
+        }
+        let views: [UIView] = rows.map { row in
+            let subtitle = products ? PluralText.format("overview.dash.top.rentals", count: row.count, row.count)
+                                    : PluralText.format("overview.dash.orders", count: row.count, row.count)
+            let view = OverviewTopRowView(row: row, amountText: OverviewDashLogic.compact(row.amount, vietnamese: vietnamese),
+                                          subtitle: subtitle, color: products ? OVColor.blue : OVColor.violet)
+            if row.id != nil {
+                view.accessibilityTraits = UIAccessibilityTraitButton
+                view.addTarget(self, action: products ? #selector(topProductTapped(_:)) : #selector(topCustomerTapped(_:)),
+                               for: .touchUpInside)
+            } else {
+                view.isUserInteractionEnabled = false
+            }
+            return view
+        }
+        return card([title] + views, spacing: 4)
+    }
+
+    @objc private func topProductTapped(_ sender: OverviewTopRowView) {
+        guard let id = sender.row.id else { return }
+        openRanking(.product(id: id, name: sender.row.name))
+    }
+
+    @objc private func topCustomerTapped(_ sender: OverviewTopRowView) {
+        guard let id = sender.row.id else { return }
+        openRanking(.customer(id: id, name: sender.row.name))
+    }
+
+    /// The product's / customer's orders in the period; its header opens the product or customer detail
+    private func openRanking(_ filter: OverviewRankingOrdersFilter) {
+        let controller = OverviewRankingOrdersViewController(
+            filter: filter,
+            startDate: OverviewLogic.date(of: range.start),
+            endDate: OverviewLogic.date(of: range.end),
+            periodSubtitle: OverviewLogic.longRange(range))
+        controller.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     // MARK: Hôm nay

@@ -643,6 +643,55 @@ final class OverviewCounterView: UIControl {
     }
 }
 
+// MARK: - Top sản phẩm / Top khách hàng row (#620)
+
+/// Name and amount, then a thin bar (against the top row) and "N lượt thuê" / "N đơn"
+final class OverviewTopRowView: UIControl {
+    let row: OverviewTopRow
+
+    init(row: OverviewTopRow, amountText: String, subtitle: String, color: UIColor) {
+        self.row = row
+        super.init(frame: .zero)
+        let name = OVFont.label(row.name.isEmpty ? "—" : row.name, DS.TextSize.secondary, .medium)
+        name.lineBreakMode = .byTruncatingTail
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let amount = OVFont.label(amountText, DS.TextSize.secondary, .bold, digits: true)
+        amount.textAlignment = .right
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let top = UIStackView(arrangedSubviews: [name, amount])
+        top.spacing = 8
+        top.alignment = .firstBaseline
+
+        let bar = OverviewTrackBar()
+        bar.color = color
+        bar.width = row.ratio
+        bar.snp.makeConstraints { make in make.height.equalTo(4) }
+        let note = OVFont.label(subtitle, DS.TextSize.pill, color: OVColor.muted)
+        note.setContentHuggingPriority(.required, for: .horizontal)
+        note.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let bottom = UIStackView(arrangedSubviews: [bar, note])
+        bottom.spacing = 8
+        bottom.alignment = .center
+
+        let column = UIStackView(arrangedSubviews: [top, bottom])
+        column.axis = .vertical
+        column.spacing = 5
+        column.isUserInteractionEnabled = false
+        addSubview(column)
+        column.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)) }
+        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        isAccessibilityElement = true
+        accessibilityLabel = [row.name, amountText, subtitle].joined(separator: ", ")
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.6 : 1 }
+    }
+}
+
 // MARK: - Detail sheet
 
 /// What a tile's sheet shows; built by the overview from the report and the "now" figures
