@@ -19,6 +19,9 @@ const ADDED_FIELDS = [
   // GET /api/analytics/period and /overview
   /^period\w+\.revenue\.(collectedBreakdown|collateralFlow|outstandingBreakdown)(\.|$)/,
   /^period\w+\.growth\.orderValue(\.|$)/,
+  // #605: expected collections and new order value per series point, rent/sale split of the order value
+  /^period\w+\.series\.\[\]\.(expectedCollected|newOrderValue)$/,
+  /^period\w+\.revenue\.orderValueByType(\.|$)/,
   // GET /api/analytics/outlet-operations (managers only)
   /^operations\w+\.cash\.(collateralToCollect|collateralToReturn)(\.|$)/,
 ];
@@ -80,6 +83,10 @@ describe('every field an installed app reads is unchanged', () => {
     expect(now.periodWeekByDay.growth.orderValue).toBeDefined();
     expect(now.operationsManager.cash.collateralToCollect).toBeDefined();
     expect(now.operationsManager.cash.collateralToReturn).toBeDefined();
+    expect(now.periodWeekByDay.series[0].expectedCollected).toBeDefined();
+    expect(now.periodWeekByDay.series[0].newOrderValue).toBeDefined();
+    expect(now.periodYearByMonth.series[0].expectedCollected).toBeDefined();
+    expect(now.periodWeekByDay.revenue.orderValueByType).toBeDefined();
   });
 
   it('staff still get no cash block at all', () => {
@@ -113,6 +120,23 @@ describe('new fields add up with the old totals', () => {
       if (!r.revenue) continue;
       const { atPickup, overduePickup } = r.revenue.outstandingBreakdown;
       expect([name, atPickup.amount + overduePickup.amount]).toEqual([name, r.revenue.outstanding]);
+    }
+  });
+
+  it('newOrderValue sums to the old totalOrderValue, and so does orderValueByType (#605)', () => {
+    for (const [name, r] of Object.entries(now)) {
+      if (!r.revenue || !r.series?.length) continue;
+      const sum = r.series.reduce((s: number, p: any) => s + p.newOrderValue, 0);
+      expect([name, sum]).toEqual([name, r.revenue.totalOrderValue]);
+      const { rent, sale } = r.revenue.orderValueByType;
+      expect([name, rent.amount + sale.amount]).toEqual([name, r.revenue.totalOrderValue]);
+    }
+  });
+
+  it('futureIncome of daily points is still 0 (old Android adds it to the revenue bar) (#605)', () => {
+    for (const [name, r] of Object.entries(now)) {
+      if (r.groupBy !== 'day') continue;
+      expect([name, r.series.filter((p: any) => p.futureIncome !== 0).length]).toEqual([name, 0]);
     }
   });
 
@@ -156,6 +180,37 @@ describe('new fields, worked by hand (outlet 1, week 1–7 Oct, now = 6 Oct 12:0
   it('order value growth against the previous 7 days', () => {
     // previous week (24–30 Sep): #3 400k, #11 80k, #14 350k, #17 400k
     expect(now.periodWeekByDay.growth.orderValue).toEqual({ current: 1870000, previous: 1230000, growth: 52.03 });
+  });
+
+  it('expected collections per day: reserved rent orders from today on, no collateral (#605)', () => {
+    const byDay = Object.fromEntries(now.periodWeekByDay.series.map((p: any) => [p.date, p.expectedCollected]));
+    // today: #6 250k − 50k (collateral 700k not counted); 7 Oct: #9 200k + #17 250k (pickup 23:59:59 Vietnam)
+    // past days 0: no-show #7 (4 Oct) is not expected money; #12 cancelled
+    expect(byDay).toEqual({
+      '2026/10/01': 0, '2026/10/02': 0, '2026/10/03': 0, '2026/10/04': 0, '2026/10/05': 0,
+      '2026/10/06': 200000, '2026/10/07': 450000,
+    });
+    expect(now.periodTodayOnly.series[0].expectedCollected).toBe(200000);
+    // year by month: October = #6 + #8 (8 Oct, 200k) + #9 + #17; every other month 0
+    const byMonth = now.periodYearByMonth.series.filter((p: any) => p.expectedCollected !== 0);
+    expect(byMonth.map((p: any) => [p.monthNumber, p.expectedCollected])).toEqual([[10, 850000]]);
+  });
+
+  it('new order value per day and the rent / sale split (#605)', () => {
+    const byDay = Object.fromEntries(now.periodWeekByDay.series.map((p: any) => [p.date, p.newOrderValue]));
+    // 1 Oct: #1 (00:00 Vietnam) 300k + #2 200k; 2 Oct: #6 250k + sale #10 120k; 3 Oct #7; 4 Oct #4 + #9;
+    // 5 Oct #5; 6 Oct #8 (00:00 Vietnam); cancelled #12, #13 out
+    expect(byDay).toEqual({
+      '2026/10/01': 500000, '2026/10/02': 370000, '2026/10/03': 150000, '2026/10/04': 370000,
+      '2026/10/05': 180000, '2026/10/06': 300000, '2026/10/07': 0,
+    });
+    expect(now.periodWeekByDay.revenue.orderValueByType).toEqual({
+      rent: { amount: 1750000, orders: 8 },
+      sale: { amount: 120000, orders: 1 },
+    });
+    // September (previous orders #3, #11, #14, #17) and October by month
+    const months = Object.fromEntries(now.periodYearByMonth.series.map((p: any) => [p.monthNumber, p.newOrderValue]));
+    expect([months[9], months[10]]).toEqual([1230000, 1870000]);
   });
 
   it('a one-day period uses Vietnam days: #8 created at 00:00 on 6 Oct is today, #5 is yesterday', () => {

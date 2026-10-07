@@ -133,6 +133,7 @@ Run: `scripts/e2e/business-e2e.sh` (seed, API, both time zones) or `E2E_API_URL=
 | BF-OVR-06 | Tăng trưởng so với kỳ trước | yesterday vs today: growth.collected.previous = yesterday's collected, growth = percentChange; same for orderValue |
 | BF-OVR-07 | Thu theo ngày = biểu đồ | pickup day Δ collected 130.000, return day 15.000, collateral 100.000 in/out; income/daily = series per day |
 | BF-OVR-08 | Thế chân đang giữ / sẽ nhận | cash.collateralToCollect +250.000 (1), depositsHeld +400.000 (1); back after return/cancel |
+| BF-OVR-09 | Dự kiến thu theo ngày giao, giá trị đơn mới (#605) | future RESERVED 140.000, D 50.000, S 300.000 → pickup day Δ expectedCollected 90.000 (no collateral), futureIncome 0; today Δ Σ newOrderValue 140.000 = totalOrderValue identity; orderValueByType.rent +140.000 (1), rent + sale = totalOrderValue; after cancel both back |
 
 ## BF-DAY — Ngày giờ Việt Nam (`vn-days.e2e.test.js`, run under TZ=UTC and TZ=Asia/Ho_Chi_Minh)
 

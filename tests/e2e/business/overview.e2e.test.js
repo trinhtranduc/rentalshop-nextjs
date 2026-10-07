@@ -231,4 +231,34 @@ describeE2E('BF-OVR Overview agrees with itself and with the orders', () => {
     expect(end.depositsHeld.securityDeposit).toBe(before.depositsHeld.securityDeposit);
     expect(end.collateralToCollect.securityDeposit).toBe(before.collateralToCollect.securityDeposit);
   });
+  test('BF-OVR-09 expected collections on the pickup day, new order value and rent/sale split (#605)', async () => {
+    const w = futureWindow(2);
+    const sumOf = (report, field) => report.series.reduce((sum, x) => sum + (x[field] || 0), 0);
+    const pickupDay = async () => (await s.period(w.from)).series[0];
+    const todayReport = async () => s.period(today);
+    const beforeDay = await pickupDay();
+    const beforeToday = await todayReport();
+
+    const p = await s.createProduct({ kind: 'DAILY', price: 70000, stock: 2 });
+    // 2 days x 70k = 140k, deposit 50k, collateral 300k (collateral is not expected money)
+    const o = await s.createOrder(
+      rentBody({ customer: await s.createCustomer(), lines: [{ product: p }], from: w.from, to: w.to, depositAmount: 50000, securityDeposit: 300000 }).body
+    );
+
+    const day = await pickupDay();
+    expect(day.expectedCollected - beforeDay.expectedCollected).toBe(140000 - 50000);
+    expect(day.futureIncome).toBe(0);
+    const t = await todayReport();
+    expect(sumOf(t, 'newOrderValue') - sumOf(beforeToday, 'newOrderValue')).toBe(140000);
+    expect(sumOf(t, 'newOrderValue')).toBe(t.revenue.totalOrderValue);
+    const byType = t.revenue.orderValueByType;
+    expect(byType.rent.amount + byType.sale.amount).toBe(t.revenue.totalOrderValue);
+    expect(byType.rent.amount - beforeToday.revenue.orderValueByType.rent.amount).toBe(140000);
+    expect(byType.rent.orders - beforeToday.revenue.orderValueByType.rent.orders).toBe(1);
+
+    // cancelled: no longer expected, no longer order value
+    await s.setStatus(o.id, 'CANCELLED');
+    expect((await pickupDay()).expectedCollected).toBe(beforeDay.expectedCollected);
+    expect((await todayReport()).revenue.orderValueByType.rent.amount).toBe(beforeToday.revenue.orderValueByType.rent.amount);
+  });
 });
