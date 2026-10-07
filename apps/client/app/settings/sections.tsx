@@ -18,6 +18,8 @@ import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './set
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 import { usePrintSettings } from '../components/usePrintSettings';
 import { BillPreview, BillTestPrint, LabelPreview, useLabelTestPrint } from './PrintPreviews';
+import { Switch } from '../users/permissions/parts';
+import { useBillBank } from '../orders/receipt/useBillBank';
 import { BILL_WIDTHS, LABEL_H, LABEL_PRESETS, LABEL_W, clampMm, labelLayout, labelSizeText, type LabelChoice } from '../../lib/print-settings';
 
 const labelClass = 'flex flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
@@ -225,7 +227,7 @@ export function ShopInfoSection({
 // Chi nhánh (merchant)
 // ----------------------------------------------------------------------------
 
-type OutletRow = { id: number; name: string; phone?: string | null; isDefault?: boolean; address?: string | null; city?: string | null; state?: string | null; printNote?: string | null };
+type OutletRow = { id: number; name: string; phone?: string | null; isDefault?: boolean; address?: string | null; city?: string | null; state?: string | null; printNote?: string | null; printBankQr?: boolean };
 
 function useOutlets() {
   const [state, setState] = useState<{ rows: OutletRow[]; loading: boolean; failed: boolean }>({ rows: [], loading: true, failed: false });
@@ -375,7 +377,10 @@ type NoteRow = { id: number; name: string; saved: string; draft: string; saving:
  * real-size label preview, and "In thử" for both. Paper sizes are this computer's; the note is the outlet's
  * (saved through the API, owner / outlet admin only).
  */
-export function ReceiptSection({ t, canEditNote }: { t: T; canEditNote: boolean }) {
+/** Where "add a bank account" goes from the Phiếu in hint (#628): Cài đặt tab for an outlet admin, the outlet page for an owner. */
+export type BankLink = { kind: 'tab'; open: () => void } | { kind: 'page' } | null;
+
+export function ReceiptSection({ t, canEditNote, bankLink = null }: { t: T; canEditNote: boolean; bankLink?: BankLink }) {
   const to = useTranslations('outlets');
   const ts = useTranslations('settings');
   const { toastSuccess, toastError } = useToast();
@@ -398,6 +403,29 @@ export function ReceiptSection({ t, canEditNote }: { t: T; canEditNote: boolean 
       toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : to('fields.printNote'));
     }
   };
+
+  // QR chuyển khoản trên hoá đơn (#628): per outlet, saved at once, rolled back when the save fails
+  const [qrOn, setQrOn] = useState<Record<number, boolean>>({});
+  const [qrSaving, setQrSaving] = useState<Record<number, boolean>>({});
+  useEffect(() => {
+    setQrOn(Object.fromEntries(rows.map((o) => [o.id, o.printBankQr === true])));
+  }, [rows]);
+  const toggleQr = async (row: OutletRow, next: boolean) => {
+    setQrOn((m) => ({ ...m, [row.id]: next }));
+    setQrSaving((m) => ({ ...m, [row.id]: true }));
+    try {
+      const res = await outletsApi.updateOutlet(row.id, { printBankQr: next } as Parameters<typeof outletsApi.updateOutlet>[1]);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), `${t('printer.bankQr')} — ${row.name}`);
+    } catch (error) {
+      setQrOn((m) => ({ ...m, [row.id]: !next }));
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('printer.bankQr'));
+    } finally {
+      setQrSaving((m) => ({ ...m, [row.id]: false }));
+    }
+  };
+  const qrTitleId = useId();
+  const qrHintId = useId();
 
   const [settings, saveSettings] = usePrintSettings();
     const layout = labelLayout(settings);
@@ -434,9 +462,12 @@ export function ReceiptSection({ t, canEditNote }: { t: T; canEditNote: boolean 
       phone: previewRow?.phone || '',
       address: addressLine(previewRow),
       printNote: previewNote?.draft ?? previewRow?.printNote ?? '',
+      id: previewRow?.id,
+      printBankQr: previewRow ? qrOn[previewRow.id] === true : false,
     }),
-    [previewRow, previewNote?.draft],
+    [previewRow, previewNote?.draft, qrOn],
   );
+  const previewBank = useBillBank(previewRow?.id, previewOutlet.printBankQr);
   const [billTest, setBillTest] = useState(false);
   const labelTest = useLabelTestPrint(layout);
 
@@ -520,6 +551,32 @@ export function ReceiptSection({ t, canEditNote }: { t: T; canEditNote: boolean 
           </div>
         )}
 
+        {rows.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-ar-subtle pt-4" data-bank-qr-setting>
+            <span id={qrTitleId} className="text-[15px] font-semibold text-ar-ink">
+              {t('printer.bankQr')}
+            </span>
+            <p id={qrHintId} className="-mt-2 mb-0 text-sm text-ar-muted">
+              {t('printer.bankQrHint')}
+              {!canEditNote && ` ${t('printer.bankQrReadOnly')}`}
+            </p>
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {rows.map((r) => (
+                <li key={r.id} className="flex min-h-[44px] items-center justify-between gap-3">
+                  <span className="text-[15px] text-ar-ink">{rows.length > 1 ? r.name : t('printer.bankQr')}</span>
+                  <Switch
+                    checked={qrOn[r.id] === true}
+                    onChange={(next) => toggleQr(r, next)}
+                    disabled={!canEditNote || qrSaving[r.id]}
+                    labelledBy={rows.length > 1 ? undefined : qrTitleId}
+                    describedBy={qrHintId}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="flex flex-col gap-2 border-t border-ar-subtle pt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-[15px] font-semibold text-ar-ink">{t('printer.preview')}</span>
@@ -538,7 +595,21 @@ export function ReceiptSection({ t, canEditNote }: { t: T; canEditNote: boolean 
               </select>
             )}
           </div>
-          <BillPreview outlet={previewOutlet} width={settings.billWidth} />
+          {previewBank.kind === 'noAccount' && (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ar-line bg-ar-surface-muted px-3.5 py-2.5 text-sm text-ar-ink-2">
+              <span>{t('printer.bankQrNoAccount')}</span>
+              {bankLink?.kind === 'tab' ? (
+                <button type="button" onClick={bankLink.open} className={smallBtn}>
+                  {t('printer.bankQrAddAccount')}
+                </button>
+              ) : bankLink?.kind === 'page' && previewRow ? (
+                <Link href={`/outlets/${previewRow.id}/bank-accounts`} className={smallBtn}>
+                  {t('printer.bankQrAddAccount')}
+                </Link>
+              ) : null}
+            </div>
+          )}
+          <BillPreview outlet={previewOutlet} width={settings.billWidth} bank={previewBank.kind === 'show' ? previewBank.block : null} />
           <p className="m-0 text-xs text-ar-muted">{t('printer.sample')}</p>
         </div>
       </SectionCard>

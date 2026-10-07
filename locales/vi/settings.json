@@ -736,7 +736,12 @@
       "previewOutlet": "Chi nhánh xem trước",
       "testPrint": "In thử",
       "sample": "Đơn mẫu để xem trước, không phải đơn thật.",
-      "labelTip": "Khi in: chọn máy in nhãn, khổ giấy đúng khổ tem, tỉ lệ 100%, lề Không."
+      "labelTip": "Khi in: chọn máy in nhãn, khổ giấy đúng khổ tem, tỉ lệ 100%, lề Không.",
+      "bankQr": "Hiện QR chuyển khoản trên hoá đơn",
+      "bankQrHint": "In tài khoản ngân hàng mặc định của chi nhánh và mã VietQR (không kèm số tiền) phía trên lời cảm ơn. Lưu theo chi nhánh, app cũng dùng cài đặt này.",
+      "bankQrNoAccount": "Chi nhánh chưa có tài khoản ngân hàng",
+      "bankQrAddAccount": "Thêm tài khoản ngân hàng",
+      "bankQrReadOnly": "Chỉ chủ cửa hàng hoặc quản lý chi nhánh được đổi cài đặt này."
     }
   }
 }

@@ -20,6 +20,7 @@ import { outlineBtn, primaryBtn } from '../list/parts';
 import { buildReceipt, type ReceiptOrderInput, type ReceiptOutletInput } from './receipt-model';
 import { ReceiptSlip, SLIP_58_CSS, SLIP_CSS } from './ReceiptSlip';
 import { usePrintSettings } from '../../components/usePrintSettings';
+import { useBillBank } from './useBillBank';
 
 type Tr = (key: string, values?: Record<string, string | number>) => string;
 
@@ -53,11 +54,18 @@ export interface ReceiptPreviewModalProps {
   merchant?: { name?: string | null; phone?: string | null; address?: string | null } | null;
 }
 
-/** The order has no outlet phone/address (create response): load the caller's outlets once to find them. */
+const flag = (...values: Array<boolean | null | undefined>) => values.find((v) => typeof v === 'boolean');
+
+/**
+ * The order has no outlet phone/address (create response) or no `printBankQr` (#628, e.g. a login saved before
+ * it existed): load the caller's outlets once to find them.
+ */
 function useOutletDetails(open: boolean, order: OrderInput | null, outlet: ReceiptPreviewModalProps['outlet']) {
   const [details, setDetails] = useState<ReceiptOutletInput | null>(null);
   const outletId = order?.outlet?.id ?? order?.outletId ?? outlet?.id ?? null;
-  const known = !!(order?.outlet?.phone || order?.outlet?.address || outlet?.phone || outlet?.address);
+  const known =
+    !!(order?.outlet?.phone || order?.outlet?.address || outlet?.phone || outlet?.address) &&
+    flag(order?.outlet?.printBankQr, outlet?.printBankQr) !== undefined;
   useEffect(() => {
     if (!open || known || outletId == null) return;
     let live = true;
@@ -68,7 +76,7 @@ function useOutletDetails(open: boolean, order: OrderInput | null, outlet: Recei
         const data = res.data as unknown;
         const list = (Array.isArray(data) ? data : ((data as { outlets?: unknown[] } | null)?.outlets ?? [])) as Array<ReceiptOutletInput & { id?: number }>;
         const found = list.find((o) => o.id === outletId);
-        if (found) setDetails({ name: found.name, phone: found.phone, address: found.address, printNote: found.printNote });
+        if (found) setDetails({ name: found.name, phone: found.phone, address: found.address, printNote: found.printNote, printBankQr: found.printBankQr });
       })
       .catch(() => undefined);
     return () => {
@@ -90,6 +98,11 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
   const [{ billWidth }] = usePrintSettings();
 
   const outletDetails = useOutletDetails(isOpen, order, outlet);
+  // Bank block + VietQR (#628): the order outlet's switch, then its default account
+  const bankOutletId = order?.outlet?.id ?? order?.outletId ?? outlet?.id ?? null;
+  const bankOn = flag(order?.outlet?.printBankQr, outlet?.printBankQr, outletDetails?.printBankQr);
+  const bank = useBillBank(isOpen ? bankOutletId : null, bankOn);
+  const bankBlock = bank.kind === 'show' ? bank.block : null;
   // "{n} ngày" stays a template: the model fills in each line's days
   const words = useMemo(
     () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }) }),
@@ -124,7 +137,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
     ro?.observe(el);
     return () => ro?.disconnect();
-  }, [isOpen, model, mounted, billWidth]);
+  }, [isOpen, model, mounted, billWidth, bankBlock]);
 
   if (!isOpen || !model || !mounted) return null;
 
@@ -158,7 +171,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
         </div>
         <div className="rc-body min-h-0 flex-1 overflow-y-auto bg-ar-subtle px-4 py-6">
           <div ref={paperRef} className="rc-paper mx-auto w-fit max-w-full rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.10)]">
-            <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={billWidth} />
+            <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={billWidth} bank={bankBlock} />
           </div>
         </div>
         <div className="rc-chrome flex items-center gap-2 border-t border-ar-line-soft px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

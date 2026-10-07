@@ -60,6 +60,7 @@ type OutletLite = {
   name: string;
   isDefault?: boolean;
   printNote?: string | null;
+  printBankQr?: boolean | null;
 };
 type ReceiptProps = React.ComponentProps<typeof ReceiptPreviewModal>;
 type CreateInput = Parameters<typeof ordersApi.createOrder>[0];
@@ -274,6 +275,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           name: o.name,
           isDefault: o.isDefault,
           printNote: o.printNote ?? null,
+          printBankQr: o.printBankQr,
         }));
         setOutlets(list);
         setOutletId((cur) => pickOutlet(cur, user?.outletId ?? null, list));

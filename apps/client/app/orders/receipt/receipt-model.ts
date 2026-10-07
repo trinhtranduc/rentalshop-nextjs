@@ -13,6 +13,8 @@ export interface ReceiptOutletInput {
   phone?: string | null;
   address?: string | null;
   printNote?: string | null;
+  /** Print the default bank account + VietQR on this outlet's bills (#628). */
+  printBankQr?: boolean | null;
 }
 
 export interface ReceiptItemInput {

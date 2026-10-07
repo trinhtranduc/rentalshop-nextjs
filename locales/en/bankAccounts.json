@@ -58,7 +58,8 @@
     "loadError": "Failed to load bank accounts",
     "deleteConfirm": "Are you sure you want to delete the bank account \"{name}\"?",
     "deleteConfirmTitle": "Delete Bank Account",
-    "noOutlet": "You are not assigned to any outlet. Please contact your administrator."
+    "noOutlet": "You are not assigned to any outlet. Please contact your administrator.",
+    "noPermission": "You do not have permission to view bank accounts."
   }
 }
 
