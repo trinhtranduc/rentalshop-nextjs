@@ -12,6 +12,9 @@
 //  collateral); with `outstandingBreakdown` the Còn phải thu tile opens its own sheet.
 //  #496: "VIỆC HÔM NAY · <today>" above ĐƠN (hand-overs / returns of today, open the Orders tab), the red row
 //  "Quá ngày lấy, khách chưa đến" and both Còn phải thu sheet rows open "Chưa lấy đồ".
+//  #616: redrawn after the canvas phone boards (web #608 #611 #612 #613): period chips, four KPI tiles that open a
+//  detail sheet, "Thực thu theo ngày" with the hatched forecast, and the "Hôm nay" counters. The sheets and rows
+//  below (#484–#496) stay for their tests; the screen no longer uses them.
 //
 
 import UIKit
@@ -20,27 +23,40 @@ import Kingfisher
 import Alamofire
 
 final class OverviewV2ViewController: BaseViewControler {
-    private var period: OverviewPeriod = .preset(.last7)
+    private var chip: OverviewChip = .today
+    private var customRange: DayKeyRange?
     private var report: OverviewReport?
+    private var chartReport: OverviewReport?
     private var now: OverviewNow?
     private var reportFailed: String?
-    private var chartMode: OverviewChartMode = .money
+    private var loading = false
     private var generation = 0
     private var requests: [DataRequest] = []
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
-    private let periodButton = UIButton(type: .system)
+    private let dateLabel = OVFont.label(nil, DS.TextSize.secondary, color: OVColor.muted)
+    private let chipsRow = UIStackView()
+    private var chipButtons: [OverviewChipButton] = []
     private let refresh = UIRefreshControl()
 
     private var permissions: [String] { User.current()?.permissions ?? User.account()?.permissions ?? [] }
     private var showsRevenue: Bool { OverviewLogic.showsRevenue(permissions: permissions) }
     private var showsOperations: Bool { OverviewLogic.showsOperations(permissions: permissions) }
     private var todayKey: String { DayFormatter.key(Date()) }
-    private var range: DayKeyRange { OverviewLogic.range(of: period, todayKey: todayKey) }
+    private var range: DayKeyRange { OverviewDashLogic.range(of: chip, todayKey: todayKey, custom: customRange) }
+    private var chartRange: DayKeyRange { OverviewDashLogic.chartRange(of: chip, range: range) }
+    private var vietnamese: Bool { OrdersHomeLogic.appLocale.languageCode == "vi" }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        #if DEBUG
+        // Review only: the app is Light-only (Info.plist); `-OverviewForceDark YES` shows this screen dark
+        if UserDefaults.standard.bool(forKey: "OverviewForceDark") {
+            navigationController?.overrideUserInterfaceStyle = .dark
+            overrideUserInterfaceStyle = .dark
+        }
+        #endif
         setupUI()
         load()
     }
@@ -51,45 +67,56 @@ final class OverviewV2ViewController: BaseViewControler {
     }
 
     override func setupUI() {
-        view.backgroundColor = DS.Color.surface
-        let title = V2.label("overview.v2.title".localized(), size: DS.TextSize.title, weight: .bold)
+        view.backgroundColor = OVColor.page
+        let title = OVFont.label("overview.v2.title".localized(), DS.TextSize.title, .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        dateLabel.textAlignment = .right
+        dateLabel.adjustsFontSizeToFitWidth = true
+        dateLabel.minimumScaleFactor = 0.8
+        let header = UIStackView(arrangedSubviews: [title, dateLabel])
+        header.alignment = .firstBaseline
+        header.spacing = DS.Spacing.sm
+        title.setContentHuggingPriority(.required, for: .horizontal)
+        title.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        periodButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
-        periodButton.setTitleColor(DS.Color.text, for: .normal)
-        periodButton.setImage(DS.symbol("chevron.down", 16, weight: .semibold), for: .normal)
-        periodButton.tintColor = DS.Color.textMuted
-        periodButton.semanticContentAttribute = .forceRightToLeft
-        periodButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
-        periodButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 18)
-        periodButton.layer.cornerRadius = 20
-        periodButton.layer.borderWidth = 1
-        periodButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        periodButton.addTarget(self, action: #selector(openPeriods), for: .touchUpInside)
-        periodButton.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
-        periodButton.isHidden = !showsRevenue
-
-        let header = UIStackView(arrangedSubviews: [title, UIView(), periodButton])
-        header.alignment = .center
-        view.addSubview(header)
-        header.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        chipsRow.spacing = 6
+        chipsRow.alignment = .center
+        for item in OverviewChip.allCases {
+            let button = OverviewChipButton(title: item.title)
+            button.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
+            chipButtons.append(button)
+            chipsRow.addArrangedSubview(button)
         }
+        let chipsScroll = UIScrollView()
+        chipsScroll.showsHorizontalScrollIndicator = false
+        chipsScroll.clipsToBounds = false
+        chipsScroll.addSubview(chipsRow)
+        chipsRow.snp.makeConstraints { make in
+            make.edges.equalTo(chipsScroll.contentLayoutGuide)
+            make.height.equalTo(chipsScroll.frameLayoutGuide)
+        }
+        chipsScroll.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
+        chipsScroll.isHidden = !showsRevenue
 
         contentStack.axis = .vertical
+        contentStack.spacing = 14
         scrollView.alwaysBounceVertical = true
         scrollView.refreshControl = refresh
         refresh.addTarget(self, action: #selector(pulled), for: .valueChanged)
         view.addSubview(scrollView)
         scrollView.addSubview(contentStack)
         scrollView.snp.makeConstraints { make in
-            make.top.equalTo(header.snp.bottom).offset(DS.Spacing.md)
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.bottom.equalToSuperview()
         }
         contentStack.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView.contentLayoutGuide)
-            make.width.equalTo(scrollView.frameLayoutGuide)
+            make.top.equalTo(scrollView.contentLayoutGuide).offset(DS.Spacing.lg)
+            make.bottom.equalTo(scrollView.contentLayoutGuide).offset(-DS.Spacing.xl)
+            make.leading.trailing.equalTo(scrollView.frameLayoutGuide).inset(DS.Spacing.lg)
         }
+        contentStack.addArrangedSubview(header)
+        contentStack.addArrangedSubview(chipsScroll)
+        contentStack.setCustomSpacing(10, after: chipsScroll)
         render()
     }
 
@@ -103,12 +130,14 @@ final class OverviewV2ViewController: BaseViewControler {
         generation += 1
         let token = generation
         let range = self.range
-        report = nil
+        let chartRange = self.chartRange
+        loading = true
         reportFailed = nil
         render()
 
         let group = DispatchGroup()
         var newReport: OverviewReport?
+        var newChart: OverviewReport?
         var newNow: OverviewNow?
         var failure: NSError?
         if showsRevenue {
@@ -118,6 +147,13 @@ final class OverviewV2ViewController: BaseViewControler {
                 failure = error
                 group.leave()
             })
+            if chartRange != range {
+                group.enter()
+                requests.append(TabsV2APIService.shared.overviewReport(chartRange) { report, _ in
+                    newChart = report
+                    group.leave()
+                })
+            }
         }
         if showsOperations {
             group.enter()
@@ -129,7 +165,9 @@ final class OverviewV2ViewController: BaseViewControler {
         group.notify(queue: .main) { [weak self] in
             guard let self, token == self.generation else { return }
             self.refresh.endRefreshing()
+            self.loading = false
             self.report = newReport
+            self.chartReport = chartRange == range ? newReport : newChart
             if let newNow { self.now = newNow }
             if self.showsRevenue, newReport == nil {
                 self.reportFailed = failure?.localizedDescription ?? ""
@@ -141,273 +179,101 @@ final class OverviewV2ViewController: BaseViewControler {
     // MARK: - Render
 
     private func render() {
-        let title = periodTitle(period)
-        periodButton.setTitle(title, for: .normal)
-        periodButton.accessibilityLabel = String(format: "overview.v2.period.accessibility".localized(), title)
-        contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let range = self.range
+        dateLabel.text = OverviewLogic.longRange(range, locale: OrdersHomeLogic.appLocale)
+        for (index, button) in chipButtons.enumerated() {
+            let item = OverviewChip.allCases[index]
+            button.isOn = item == chip
+            if item == .custom, chip == .custom {
+                button.setTitle(OverviewLogic.shortRange(range))
+            } else {
+                button.setTitle(item.title)
+            }
+        }
+        // Keep the header and the chips (the first two views)
+        contentStack.arrangedSubviews.dropFirst(2).forEach { $0.removeFromSuperview() }
 
         if showsRevenue {
-            contentStack.addArrangedSubview(band())
-            contentStack.addArrangedSubview(revenueSection())
+            contentStack.addArrangedSubview(tilesGrid())
+            contentStack.addArrangedSubview(chartCard())
         }
-
-        // #496: today's hand-overs and returns, whatever the period; hidden without the operations figures
-        if showsOperations, let today = now?.today {
-            let title = String(format: "overview.v2.todayWork".localized(), OrdersHomeLogic.rowDay(Date()))
-            contentStack.addArrangedSubview(V2.sectionHeader(title))
-            let openOrders: () -> Void = { [weak self] in self?.openOrdersTab() }
-            contentStack.addArrangedSubview(statRow(
-                "overview.v2.todayWork.pickups".localized(),
-                sub: String(format: "overview.v2.todayWork.pickupsDone".localized(), today.pickups.done, today.pickups.total),
-                value: "\(today.pickups.remaining)", color: DS.Color.text, opens: nil, action: openOrders))
-            contentStack.addArrangedSubview(statRow(
-                "overview.v2.todayWork.returns".localized(),
-                sub: String(format: "overview.v2.todayWork.returnsDone".localized(), today.returns.done, today.returns.total),
-                value: "\(today.returns.remaining)", color: DS.Color.text, opens: nil, action: openOrders))
-        }
-
-        // #388: each figure opens its list
-        var stats: [(String, String, UIColor, OverviewRankingOrdersFilter?, (() -> Void)?)] = []
-        if showsRevenue, let newOrders = report?.newOrders {
-            let title = "overview.v2.newOrders".localized()
-            stats.append((title, "\(newOrders)", DS.Color.text, .snapshot(.newOrders, title: title), nil))
-        }
-        if let rentedOut = now?.rentedOut {
-            let title = "overview.v2.rentedOut".localized()
-            stats.append((title, "\(rentedOut)", DS.Color.text, .rentedOut(title: title), nil))
-        }
-        if showsOperations, let now {
-            let title = "overview.v2.lateReturns".localized()
-            stats.append((title, "\(now.lateReturns)", now.lateReturns > 0 ? V2.danger : DS.Color.text, .lateReturns(title: title), nil))
-        }
-        // #496: reserved rentals past their pickup day open "Chưa lấy đồ"
-        if showsOperations, let noShows = now?.noShows {
-            let openList: () -> Void = { [weak self] in self?.openNotPickedUp() }
-            stats.append(("overview.v2.noShows".localized(), "\(noShows)", noShows > 0 ? V2.danger : DS.Color.text, nil, openList))
-        }
-        if !stats.isEmpty {
-            contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.orders".localized()))
-            stats.forEach { contentStack.addArrangedSubview(statRow($0.0, value: $0.1, color: $0.2, opens: $0.3, action: $0.4)) }
-        }
-
-        if showsRevenue, let top = report?.topProducts, !top.isEmpty {
-            contentStack.addArrangedSubview(V2.sectionHeader("overview.v2.topRentedByValue".localized()))
-            top.forEach { contentStack.addArrangedSubview(topRow($0)) }
+        if showsOperations {
+            contentStack.addArrangedSubview(todayCard())
         }
         if !showsRevenue && !showsOperations {
-            let label = V2.label("overview.v2.noAccess".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+            let label = OVFont.label("overview.v2.noAccess".localized(), DS.TextSize.body, color: OVColor.muted, lines: 0)
             label.textAlignment = .center
-            contentStack.addArrangedSubview(padded(label, top: 40))
-        }
-        contentStack.addArrangedSubview(UIView.v2Spacer(height: DS.Spacing.xl))
-    }
-
-    private func periodTitle(_ period: OverviewPeriod) -> String {
-        switch period {
-        case .preset(let preset): return preset.title
-        case .custom(let range): return OverviewLogic.shortRange(range)
+            contentStack.addArrangedSubview(label)
         }
     }
 
-    private func band() -> UIView {
-        let view = UIView()
-        view.backgroundColor = DS.Color.background
-        view.snp.makeConstraints { make in make.height.equalTo(8) }
-        return view
-    }
-
-    private func padded(_ content: UIView, top: CGFloat = 14, bottom: CGFloat = 16) -> UIView {
-        let wrapper = UIView()
-        wrapper.addSubview(content)
-        content.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(top)
-            make.bottom.equalToSuperview().offset(-bottom)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-        }
-        return wrapper
-    }
-
-    private func revenueSection() -> UIView {
-        let range = self.range
-        // #492: the hero is the new orders' value; an older API without it keeps Thực thu as the hero
-        let orderValue = report?.totalOrderValue
-        let heroTitle = orderValue != nil ? "overview.v2.newOrderValue".localized() : "overview.v2.collected".localized()
-        let caption = V2.label("\(heroTitle) · \(OverviewLogic.longRange(range))",
-                               size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let amount = V2.label(size: 30, weight: .bold)
-        amount.adjustsFontSizeToFitWidth = true
-        amount.minimumScaleFactor = 0.6
-        let change = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let stack = UIStackView(arrangedSubviews: [caption, amount, change])
-        stack.axis = .vertical
-        stack.spacing = DS.Gap.lineTight
-
-        if let report {
-            let cancelled = "overview.v2.excludesCancelled".localized()
-            if let orderValue {
-                amount.text = MoneyFormatter.format(orderValue)
-                change.attributedText = Self.changeLine(growth: report.orderValueGrowth,
-                                                        versus: "overview.v2.vsPreviousPeriod".localized(), cancelled: cancelled)
-            } else {
-                amount.text = MoneyFormatter.format(report.netRevenue)
-                amount.isUserInteractionEnabled = true
-                amount.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openCollectedDetails)))
-                let previous = OverviewLogic.shortRange(OverviewLogic.previous(range))
-                change.attributedText = Self.changeLine(growth: report.revenueGrowth,
-                                                        versus: String(format: "overview.v2.vsPrevious".localized(), previous),
-                                                        cancelled: cancelled)
-            }
-            stack.setCustomSpacing(DS.Spacing.md, after: change)
-            if orderValue != nil {
-                let tiles = moneyTiles(report)
-                stack.addArrangedSubview(tiles)
-                stack.setCustomSpacing(DS.Spacing.md, after: tiles)
-            }
-            // "Số đơn" needs `series[].newOrderCount`; an older API sends none, so only money is charted
-            let hasOrderCounts = report.series.contains { $0.newOrderCount != nil }
-            if !hasOrderCounts { chartMode = .money }
-            if hasOrderCounts {
-                let toggle = V2Segmented(titles: ["overview.v2.chart.money".localized(), "overview.v2.chart.orders".localized()])
-                toggle.select(chartMode == .money ? 0 : 1)
-                toggle.addTarget(self, action: #selector(chartModeChanged(_:)), for: .valueChanged)
-                let toggleRow = UIStackView(arrangedSubviews: [toggle, UIView()])
-                stack.addArrangedSubview(toggleRow)
-                stack.setCustomSpacing(DS.Spacing.md, after: toggleRow)
-            }
-            let bars = OverviewBarsView()
-            bars.configure(OverviewLogic.bars(report: report, range: range, mode: chartMode), mode: chartMode)
-            stack.addArrangedSubview(bars)
-            bars.snp.makeConstraints { make in make.height.equalTo(110) }
-        } else if let failed = reportFailed {
-            amount.text = "—"
-            change.text = (failed.isEmpty ? "Something went wrong".localized() : failed) + " · " + "Retry".localized()
-            change.textColor = V2.danger
-            change.isUserInteractionEnabled = true
-            change.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pulled)))
-        } else {
-            amount.text = " "
-            let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
-            spinner.startAnimating()
-            stack.addArrangedSubview(spinner)
-            spinner.snp.makeConstraints { make in make.height.equalTo(110) }
-        }
-        return padded(stack, top: 2)
-    }
-
-    /// "▲ 8% so với kỳ trước · không tính đơn huỷ": the change in green / red, the rest muted; no change → only the rest
-    private static func changeLine(growth: Double?, versus: String, cancelled: String) -> NSAttributedString {
-        let font = Utils.regularFont(size: DS.TextSize.secondary)
-        let muted: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: DS.Color.textMuted]
-        guard let growth else { return NSAttributedString(string: cancelled, attributes: muted) }
-        let color = growth > 0.05 ? V2.ok : (growth < -0.05 ? V2.danger : DS.Color.textMuted)
-        let line = NSMutableAttributedString(string: "\(OverviewLogic.changeText(growth)) \(versus)",
-                                             attributes: [.font: font, .foregroundColor: color])
-        line.append(NSAttributedString(string: " · \(cancelled)", attributes: muted))
-        return line
-    }
-
-    /// Thực thu (opens the breakdown) and Còn phải thu (#492), one row under the hero.
-    /// #494: Còn phải thu opens its split when the API sends `outstandingBreakdown`
-    private func moneyTiles(_ report: OverviewReport) -> UIView {
-        let collectedTitle = "overview.v2.collected".localized()
-        let collectedValue = MoneyFormatter.format(report.netRevenue)
-        let collected = moneyTile(collectedTitle, collectedValue, color: DS.Color.text, note: "overview.v2.excludesCollateral".localized())
-        collected.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openCollectedDetails)))
-        collected.accessibilityTraits = UIAccessibilityTraitButton
-        collected.accessibilityLabel = "\(collectedTitle) \(collectedValue), \("overview.v2.seeDetails".localized())"
-        var tiles: [UIView] = [collected]
-        if let outstanding = report.outstanding {
-            let outstandingTitle = "overview.v2.outstanding".localized()
-            let outstandingValue = MoneyFormatter.format(outstanding)
-            let tile = moneyTile(outstandingTitle, outstandingValue,
-                                 color: OverviewCollectedDetailsSheet.outstandingColor, note: "overview.v2.outstandingNote".localized())
-            if report.outstandingBreakdown != nil {
-                tile.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openOutstandingDetails)))
-                tile.accessibilityTraits = UIAccessibilityTraitButton
-                tile.accessibilityLabel = "\(outstandingTitle) \(outstandingValue), \("overview.v2.seeDetails".localized())"
-            }
-            tiles.append(tile)
-        } else {
-            tiles.append(UIView())
-        }
-        let row = UIStackView(arrangedSubviews: tiles)
-        row.distribution = .fillEqually
-        row.alignment = .fill
-        row.spacing = DS.Spacing.sm
-        return row
-    }
-
-    private func moneyTile(_ title: String, _ value: String, color: UIColor, note: String? = nil) -> UIView {
+    private func card(_ views: [UIView], spacing: CGFloat = 10) -> UIView {
         let box = UIView()
-        box.backgroundColor = V2.sectionFill
-        box.layer.cornerRadius = DS.Radius.card
-        let titleLabel = V2.label(title, size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.8
-        let valueLabel = V2.label(value, size: DS.TextSize.name, weight: .bold, color: color)
-        valueLabel.font = UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.name, weight: .bold)
-        valueLabel.adjustsFontSizeToFitWidth = true
-        valueLabel.minimumScaleFactor = 0.6
-        let column = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
-        column.axis = .vertical
-        column.spacing = 2
-        if let note {
-            column.addArrangedSubview(V2.label(note, size: DS.TextSize.pill, color: DS.Color.textMuted, lines: 0))
-        }
-        box.addSubview(column)
-        // Top-aligned: a tile next to a taller one keeps its text at the top
-        column.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(10)
-            make.leading.trailing.equalToSuperview().inset(12)
-            make.bottom.lessThanOrEqualToSuperview().offset(-10)
-            make.bottom.equalToSuperview().offset(-10).priority(.low)
-        }
-        box.isAccessibilityElement = true
-        box.accessibilityLabel = [title, value, note].compactMap { $0 }.joined(separator: ", ")
+        box.backgroundColor = OVColor.surface
+        box.layer.cornerRadius = 14
+        box.layer.borderWidth = 1
+        box.layer.borderColor = OVColor.line.resolvedColor(with: traitCollection).cgColor
+        let stack = UIStackView(arrangedSubviews: views)
+        stack.axis = .vertical
+        stack.spacing = spacing
+        box.addSubview(stack)
+        stack.snp.makeConstraints { make in make.edges.equalToSuperview().inset(14) }
         return box
     }
 
-    @objc private func chartModeChanged(_ sender: V2Segmented) {
-        chartMode = sender.selectedIndex == 1 ? .orders : .money
-        render()
+    private func periodTitle() -> String {
+        chip == .custom ? OverviewLogic.shortRange(range) : chip.title
     }
 
-    @objc private func openCollectedDetails() {
-        guard let report else { return }
-        presentDetails(OverviewCollectedDetailsSheet(report: report, periodTitle: periodTitle(period),
-                                                     collateralHeld: now?.collateralHeld,
-                                                     collateralToReturn: now?.collateralToReturn,
-                                                     collateralToCollect: now?.collateralToCollect))
-    }
+    // MARK: Tiles
 
-    /// #494: where Còn phải thu will come from; #496: its rows open "Chưa lấy đồ"
-    @objc private func openOutstandingDetails() {
-        guard let report, let parts = report.outstandingBreakdown else { return }
-        let sheet = OverviewOutstandingDetailsSheet(breakdown: parts, total: report.outstanding ?? parts.total,
-                                                    periodTitle: periodTitle(period))
-        sheet.onOpenOrders = { [weak self] in self?.openNotPickedUp() }
-        presentDetails(sheet)
-    }
-
-    /// #496 "Chưa lấy đồ": reserved rentals, overdue pickups first
-    private func openNotPickedUp() {
-        let list = RentedOutOrdersViewController(mode: .notPickedUp)
-        list.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(list, animated: true)
-    }
-
-    /// #496: the Orders tab (its "Việc cần làm" lists today's hand-overs and returns)
-    private func openOrdersTab() {
-        guard let tabs = tabBarController ?? (appDelegate.window?.rootViewController as? UITabBarController) else { return }
-        let index = tabs.viewControllers?.firstIndex { controller in
-            let root = (controller as? UINavigationController)?.viewControllers.first ?? controller
-            return root is OrdersViewController || root is SaleViewController
+    private func tilesGrid() -> UIView {
+        if let failed = reportFailed, !loading {
+            let label = OVFont.label((failed.isEmpty ? "Something went wrong".localized() : failed) + " · " + "Retry".localized(),
+                                     DS.TextSize.secondary, color: OVColor.red, lines: 0)
+            label.isUserInteractionEnabled = true
+            label.accessibilityTraits = UIAccessibilityTraitButton
+            label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pulled)))
+            return card([label])
         }
-        guard let index else { return }
-        tabs.selectedIndex = index
+        let tiles = OverviewDashLogic.tiles(report: report, now: now)
+        let forecast = OverviewDashLogic.forecast(collected: report?.netRevenue, series: report?.series ?? [], todayKey: todayKey)
+        let views: [UIView] = tiles.map { tile in
+            var forecastText: String?
+            if tile.kind == .collected, let forecast {
+                let amount = OverviewDashLogic.compact(forecast.forecast, vietnamese: vietnamese)
+                forecastText = forecast.until == todayKey
+                    ? String(format: "overview.dash.forecast.today".localized(), amount)
+                    : String(format: "overview.dash.forecast.until".localized(), amount, OverviewLogic.dayMonth(forecast.until))
+            }
+            let view = OverviewTileView(tile: tile, valueText: OverviewDashLogic.tileText(tile, vietnamese: vietnamese),
+                                        forecast: tile.kind == .collected ? forecast : nil, forecastText: forecastText,
+                                        loading: loading || report == nil)
+            view.addTarget(self, action: #selector(tileTapped(_:)), for: .touchUpInside)
+            return view
+        }
+        let rows = stride(from: 0, to: views.count, by: 2).map { start -> UIView in
+            let row = UIStackView(arrangedSubviews: Array(views[start..<min(start + 2, views.count)]))
+            row.distribution = .fillEqually
+            row.alignment = .fill
+            row.spacing = 10
+            return row
+        }
+        let grid = UIStackView(arrangedSubviews: rows)
+        grid.axis = .vertical
+        grid.spacing = 10
+        return grid
     }
 
-    private func presentDetails(_ sheet: UIViewController) {
+    @objc private func tileTapped(_ sender: OverviewTileView) {
+        guard let report, !loading else { return }
+        let tile = OverviewDashLogic.tiles(report: report, now: now).first { $0.kind == sender.kind }
+        let valueText = tile.map { OverviewDashLogic.tileText($0, vietnamese: vietnamese, compact: false) } ?? "—"
+        let sheet = OverviewDetailSheet(OverviewDetailContent(kind: sender.kind, periodTitle: periodTitle(), valueText: valueText,
+                                                              report: report, now: now))
+        let kind = sender.kind
+        sheet.onOpenOrders = { [weak self] in self?.openOrders(for: kind) }
+        sheet.overrideUserInterfaceStyle = overrideUserInterfaceStyle
         sheet.modalPresentationStyle = .pageSheet
         if let controller = sheet.sheetPresentationController {
             controller.detents = [.medium(), .large()]
@@ -417,160 +283,182 @@ final class OverviewV2ViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
-    /// A figure row; `sub` (#496) is a muted line under the title. `filter` opens its list, else `action` runs
-    private func statRow(_ label: String, sub: String? = nil, value: String, color: UIColor,
-                         opens filter: OverviewRankingOrdersFilter?, action: (() -> Void)? = nil) -> UIView {
-        let title = V2.label(label, size: DS.TextSize.body)
-        let texts = UIStackView(arrangedSubviews: [title])
-        texts.axis = .vertical
-        texts.spacing = 2
-        if let sub {
-            texts.addArrangedSubview(V2.label(sub, size: DS.TextSize.secondary, color: DS.Color.textMuted))
+    /// "Xem các đơn liên quan": orders created in the period, "Chưa lấy đồ", or the rentals out now
+    private func openOrders(for kind: OverviewTileKind) {
+        let controller: UIViewController
+        switch kind {
+        case .orderValue, .collected:
+            let title = "overview.v2.newOrders".localized()
+            controller = OverviewRankingOrdersViewController(
+                filter: .snapshot(.newOrders, title: title),
+                startDate: OverviewLogic.date(of: range.start),
+                endDate: OverviewLogic.date(of: range.end),
+                periodSubtitle: OverviewLogic.longRange(range))
+        case .outstanding:
+            controller = RentedOutOrdersViewController(mode: .notPickedUp)
+        case .collateral:
+            controller = RentedOutOrdersViewController(startsAtLate: false)
         }
-        let number = V2.label(value, size: DS.TextSize.name, weight: .bold, color: color)
-        number.textAlignment = .right
-        let row = UIStackView(arrangedSubviews: [texts, number])
-        row.alignment = .center
-        row.spacing = DS.Spacing.md
-        row.isUserInteractionEnabled = false
-        let wrapper = OverviewLinkRow()
-        if filter != nil || action != nil {
-            row.addArrangedSubview(chevron())
-            wrapper.filter = filter
-            wrapper.action = action
-            wrapper.addTarget(self, action: #selector(linkTapped(_:)), for: .touchUpInside)
-            wrapper.accessibilityTraits = UIAccessibilityTraitButton
-        }
-        wrapper.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-            make.top.bottom.equalToSuperview()
-            make.height.greaterThanOrEqualTo(48)
-        }
-        let line = V2.divider()
-        wrapper.addSubview(line)
-        line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
-        wrapper.isAccessibilityElement = true
-        wrapper.accessibilityLabel = [label + ": " + value, sub].compactMap { $0 }.joined(separator: ", ")
-        return wrapper
+        controller.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(controller, animated: true)
     }
 
-    private func topRow(_ product: OverviewReport.TopProduct) -> UIView {
-        let thumb = UIImageView()
-        thumb.backgroundColor = V2.chipFill
-        thumb.layer.cornerRadius = 10
-        thumb.layer.borderWidth = 1
-        thumb.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        thumb.clipsToBounds = true
-        thumb.tintColor = DS.Color.textMuted
-        thumb.snp.makeConstraints { make in make.width.height.equalTo(44) }
-        if let image = product.image, let url = URL(string: image) {
-            thumb.contentMode = .scaleAspectFill
-            thumb.kf.setImage(with: url, placeholder: UIImage(systemName: "tshirt"))
+    // MARK: Chart
+
+    private func chartCard() -> UIView {
+        let title = OVFont.label("overview.dash.chart.title".localized(), DS.TextSize.body, .semibold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let head = UIStackView(arrangedSubviews: [title, UIView()])
+        head.alignment = .center
+        head.spacing = DS.Spacing.sm
+
+        let chart = OverviewDayChartView()
+        chart.snp.makeConstraints { make in make.height.equalTo(190) }
+        var views: [UIView] = [head]
+        if let source = chartReport, !loading {
+            let bars = OverviewDashLogic.chartBars(report: source, range: chartRange, todayKey: todayKey)
+            if bars.contains(where: { $0.forecast > 0 }) {
+                head.addArrangedSubview(legend(OVColor.blue, hatched: false, "overview.dash.chart.collected".localized()))
+                head.addArrangedSubview(legend(OVColor.blue, hatched: true, "overview.dash.chart.forecast".localized()))
+            }
+            if bars.allSatisfy({ $0.value == 0 && $0.forecast == 0 }) {
+                let empty = OVFont.label("overview.dash.chart.empty".localized(), DS.TextSize.secondary, color: OVColor.muted, lines: 0)
+                empty.textAlignment = .center
+                empty.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(120) }
+                views.append(empty)
+            } else {
+                let locale = OrdersHomeLogic.appLocale
+                chart.configure(bars, label: { bar in
+                    guard bar.isDay, let date = OverviewLogic.date(of: bar.key) else { return bar.key }
+                    return DayFormatter.short(date, locale: locale)
+                }, axis: { bar in bar.isDay ? OverviewLogic.dayMonth(bar.key) : bar.key })
+                views.append(chart)
+            }
+        } else if reportFailed != nil {
+            return card(views + [OVFont.label("—", DS.TextSize.body, color: OVColor.muted)])
         } else {
-            thumb.contentMode = .center
-            thumb.image = UIImage(systemName: "tshirt")
+            let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+            spinner.startAnimating()
+            spinner.snp.makeConstraints { make in make.height.equalTo(190) }
+            views.append(spinner)
         }
-        let name = V2.label(product.name, size: DS.TextSize.body, weight: .medium)
-        let times = V2.label(String(format: "overview.v2.rentals".localized(), product.rentalCount), size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        let texts = UIStackView(arrangedSubviews: [name, times])
-        texts.axis = .vertical
-        texts.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let revenue = V2.label(MoneyFormatter.format(product.totalRevenue), size: DS.TextSize.name, weight: .bold)
-        revenue.textAlignment = .right
-        revenue.setContentHuggingPriority(.required, for: .horizontal)
-        revenue.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let row = UIStackView(arrangedSubviews: [thumb, texts, revenue])
-        row.spacing = DS.Spacing.md
+        return card(views)
+    }
+
+    private func legend(_ color: UIColor, hatched: Bool, _ text: String) -> UIView {
+        let swatch = OverviewTrackBar()
+        swatch.showsTrack = false
+        swatch.color = color
+        swatch.width = 1
+        swatch.hatched = hatched
+        swatch.snp.makeConstraints { make in make.width.height.equalTo(10) }
+        let label = OVFont.label(text, DS.TextSize.pill, color: OVColor.ink2)
+        let row = UIStackView(arrangedSubviews: [swatch, label])
+        row.spacing = 4
         row.alignment = .center
-        row.isUserInteractionEnabled = false
-        let wrapper = OverviewLinkRow()
-        if let id = product.id {
-            wrapper.filter = .product(id: id, name: product.name)
-            wrapper.addTarget(self, action: #selector(linkTapped(_:)), for: .touchUpInside)
-            wrapper.isAccessibilityElement = true
-            wrapper.accessibilityTraits = UIAccessibilityTraitButton
-            wrapper.accessibilityLabel = [product.name, times.text, revenue.text].compactMap { $0 }.joined(separator: ", ")
-        }
-        wrapper.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg))
-        }
-        let line = V2.divider()
-        wrapper.addSubview(line)
-        line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
-        return wrapper
+        row.isAccessibilityElement = false
+        return row
     }
 
-    private func chevron() -> UIView {
-        let image = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
-        image.tintColor = UIColor(hexString: "94A3B8")
-        image.setContentHuggingPriority(.required, for: .horizontal)
-        return image
+    // MARK: Hôm nay
+
+    private func todayCard() -> UIView {
+        let title = OVFont.label("overview.dash.today.title".localized(), DS.TextSize.body, .semibold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        guard let now, let today = now.today else {
+            let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+            if loading { spinner.startAnimating() }
+            return card([title, loading ? spinner : OVFont.label("—", DS.TextSize.body, color: OVColor.muted)])
+        }
+        let pickups = OverviewDashLogic.doneOfTotal(today.pickups)
+        let returns = OverviewDashLogic.doneOfTotal(today.returns)
+        let late = now.lateReturns
+        let noShows = now.noShows ?? 0
+        let pickupTitle = "overview.dash.today.pickups".localized()
+        let returnTitle = "overview.dash.today.returns".localized()
+        let lateTitle = "overview.dash.today.overdue".localized()
+        let noShowTitle = "overview.dash.today.noShows".localized()
+        let counters: [(OverviewCounterView, Selector)] = [
+            (OverviewCounterView(title: pickupTitle, value: pickups, valueColor: OVColor.ink, dot: OVColor.blue,
+                                 accessibility: "\(pickupTitle): " + String(format: "overview.v2.todayWork.pickupsDone".localized(),
+                                                                            today.pickups.done, today.pickups.total)),
+             #selector(openOrdersTab)),
+            (OverviewCounterView(title: returnTitle, value: returns, valueColor: OVColor.ink, dot: OVColor.violet,
+                                 accessibility: "\(returnTitle): " + String(format: "overview.v2.todayWork.returnsDone".localized(),
+                                                                            today.returns.done, today.returns.total)),
+             #selector(openOrdersTab)),
+            (OverviewCounterView(title: lateTitle, value: "\(late)", valueColor: late > 0 ? OVColor.red : OVColor.ink, dot: OVColor.red,
+                                 accessibility: "\(lateTitle): \(late)"), #selector(openLateReturns)),
+            (OverviewCounterView(title: noShowTitle, value: "\(noShows)", valueColor: noShows > 0 ? OVColor.amber : OVColor.ink,
+                                 dot: OVColor.amber, accessibility: "\(noShowTitle): \(noShows)"), #selector(openNotPickedUp)),
+        ]
+        counters.forEach { $0.0.addTarget(self, action: $0.1, for: .touchUpInside) }
+        let rows = [Array(counters[0..<2]), Array(counters[2..<4])].map { pair -> UIView in
+            let row = UIStackView(arrangedSubviews: pair.map(\.0))
+            row.distribution = .fillEqually
+            row.spacing = 8
+            return row
+        }
+        let grid = UIStackView(arrangedSubviews: rows)
+        grid.axis = .vertical
+        grid.spacing = 8
+        var views: [UIView] = [title, grid]
+        if let tomorrow = now.tomorrow {
+            let line = OVFont.label(String(format: "overview.dash.today.tomorrow".localized(), tomorrow.pickups, tomorrow.returns),
+                                    DS.TextSize.pill, color: OVColor.muted, lines: 0)
+            views.append(line)
+        }
+        return card(views)
     }
 
-    /// The same period as the figures for Đơn mới and a top product; "now" for the others
-    @objc private func linkTapped(_ sender: OverviewLinkRow) {
-        if sender.filter == nil, let action = sender.action {
-            action()
-            return
+    /// The Orders tab (its "Việc cần làm" lists today's hand-overs and returns)
+    @objc private func openOrdersTab() {
+        guard let tabs = tabBarController ?? (appDelegate.window?.rootViewController as? UITabBarController) else { return }
+        let index = tabs.viewControllers?.firstIndex { controller in
+            let root = (controller as? UINavigationController)?.viewControllers.first ?? controller
+            return root is OrdersViewController || root is SaleViewController
         }
-        guard let filter = sender.filter else { return }
-        // #484: rented out, late returns and collateral open the grouped rented-out list (late group first)
-        switch filter {
-        case .rentedOut, .lateReturns:
-            var startsAtLate = false
-            if case .lateReturns = filter { startsAtLate = true }
-            let list = RentedOutOrdersViewController(startsAtLate: startsAtLate)
-            list.hidesBottomBarWhenPushed = true
-            navigationController?.pushViewController(list, animated: true)
-            return
-        default:
-            break
-        }
-        let range = self.range
-        let dated: Bool
-        switch filter {
-        case .snapshot, .product: dated = true
-        default: dated = false
-        }
-        let list = OverviewRankingOrdersViewController(
-            filter: filter,
-            startDate: dated ? OverviewLogic.date(of: range.start) : nil,
-            endDate: dated ? OverviewLogic.date(of: range.end) : nil,
-            periodSubtitle: dated ? OverviewLogic.longRange(range) : DayFormatter.short(Date())
-        )
+        guard let index else { return }
+        tabs.selectedIndex = index
+    }
+
+    @objc private func openLateReturns() {
+        let list = RentedOutOrdersViewController(startsAtLate: true)
         list.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(list, animated: true)
     }
 
-    // MARK: - Period sheet
+    /// "Chưa lấy đồ": reserved rentals, overdue pickups first
+    @objc private func openNotPickedUp() {
+        let list = RentedOutOrdersViewController(mode: .notPickedUp)
+        list.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(list, animated: true)
+    }
 
-    @objc private func openPeriods() {
-        let sheet = OverviewPeriodSheet(selected: period, todayKey: todayKey)
-        sheet.onSelect = { [weak self] period in
-            guard let self else { return }
-            self.period = period
-            self.load()
+    // MARK: - Periods
+
+    @objc private func chipTapped(_ sender: OverviewChipButton) {
+        guard let index = chipButtons.firstIndex(of: sender) else { return }
+        let item = OverviewChip.allCases[index]
+        if item == .custom {
+            pickCustomRange()
+            return
         }
-        sheet.onCustom = { [weak self] in self?.pickCustomRange() }
-        sheet.modalPresentationStyle = .pageSheet
-        if let controller = sheet.sheetPresentationController {
-            controller.detents = [.medium(), .large()]
-            controller.prefersGrabberVisible = true
-        }
-        present(sheet, animated: true)
+        guard item != chip else { return }
+        chip = item
+        load()
     }
 
     private func pickCustomRange() {
         let picker = DatePickerViewController.instance()
         picker.delegate = self
         let current = range
-        // FSCalendar draws the phone's days: select the range's shop days there (#596)
+        let maxKey = OverviewDashLogic.customMaxKey(todayKey: todayKey)
+        // FSCalendar draws the phone's days: select the range's shop days there (#596); #612: up to a year ahead
         picker.configureForDateRange(startDate: OverviewLogic.date(of: current.start)?.devicePickFromShopDay(),
                                      endDate: OverviewLogic.date(of: current.end)?.devicePickFromShopDay(),
                                      minimumDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()),
-                                     maximumDate: Date())
+                                     maximumDate: OverviewLogic.date(of: maxKey)?.devicePickFromShopDay())
         present(picker, animated: true)
     }
 }
@@ -579,16 +467,19 @@ extension OverviewV2ViewController: DatePickerViewControllerDelegate {
     func didSelectDate(_ date: Date, sender: DatePickerViewController) {
         // The tapped day (FSCalendar, phone zone) as a shop-day key (#596)
         let key = DayFormatter.key(date.shopDayFromDevicePick())
-        period = .custom(DayKeyRange(start: key, end: key))
+        chip = .custom
+        customRange = DayKeyRange(start: key, end: key)
         load()
     }
 
     func didSelectDateRange(start: Date, end: Date, sender: DatePickerViewController) {
         let keys = [DayFormatter.key(start.shopDayFromDevicePick()), DayFormatter.key(end.shopDayFromDevicePick())].sorted()
-        period = .custom(DayKeyRange(start: keys[0], end: keys[1]))
+        chip = .custom
+        customRange = DayKeyRange(start: keys[0], end: keys[1])
         load()
     }
 }
+
 
 private extension UIView {
     static func v2Spacer(height: CGFloat) -> UIView {
