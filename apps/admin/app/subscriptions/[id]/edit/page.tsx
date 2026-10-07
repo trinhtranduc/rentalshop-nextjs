@@ -120,9 +120,13 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
     planId: subscription.planId,
     planVariantId: subscription.planVariantId,
     status: subscription.status as 'TRIAL' | 'ACTIVE' | 'CANCELLED' | 'SUSPENDED',
-    startDate: new Date(subscription.startDate),
+    // The API returns currentPeriodStart/End (no startDate/endDate/nextBillingDate): pass the stored instants so a
+    // save without edits keeps them, instead of `new Date(undefined)` falling back to "now" (#578 ADM-6).
+    currentPeriodStart: subscription.currentPeriodStart ? new Date(subscription.currentPeriodStart) : undefined,
+    currentPeriodEnd: subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : undefined,
+    startDate: subscription.startDate ? new Date(subscription.startDate) : undefined,
     endDate: subscription.endDate ? new Date(subscription.endDate) : undefined,
-    nextBillingDate: new Date(subscription.nextBillingDate),
+    nextBillingDate: subscription.nextBillingDate ? new Date(subscription.nextBillingDate) : undefined,
     amount: subscription.amount,
     currency: subscription.currency,
     autoRenew: subscription.autoRenew,
