@@ -4,7 +4,7 @@
 //
 //  Redesigned product detail (#373, flag `newProducts`, board SP-chi-tiet): photos, prices per rental / per day /
 //  sale, rented and free units, and the product's orders.
-//  #388: 7-day free strip, order chips Sắp tới / Đang thuê / Đã xong, "Tất cả N", rows without a left bar.
+//  #388: 7-day free strip (#642: 6 days + the "Lịch trống" calendar tile), order chips Sắp tới / Đang thuê / Đã xong, "Tất cả N", rows without a left bar.
 //
 
 import UIKit
@@ -74,12 +74,10 @@ final class ProductDetailViewController: BaseViewControler {
         let line = V2.divider()
         line.backgroundColor = DS.Color.border
         bottom.addSubview(line)
-        let calendarButton = V2.secondaryButton("products.detail.freeCalendar".localized())
-        calendarButton.addTarget(self, action: #selector(openCalendar), for: .touchUpInside)
+        // #642: only "Thêm vào giỏ"; "Lịch trống" is the calendar tile at the end of the day strip
         let addButton = V2.primaryButton("products.detail.addToCart".localized())
         addButton.addTarget(self, action: #selector(addToCart), for: .touchUpInside)
-        let buttons = UIStackView(arrangedSubviews: [calendarButton, addButton])
-        buttons.spacing = 10
+        let buttons = UIStackView(arrangedSubviews: [addButton])
         bottom.addSubview(buttons)
         view.addSubview(bottom)
         bottom.snp.makeConstraints { make in
@@ -91,7 +89,6 @@ final class ProductDetailViewController: BaseViewControler {
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
         }
-        calendarButton.snp.makeConstraints { make in make.width.equalTo(addButton).multipliedBy(0.5) }
 
         view.addSubview(scroll)
         scroll.contentInsetAdjustmentBehavior = .never
@@ -175,8 +172,6 @@ final class ProductDetailViewController: BaseViewControler {
         stripRow.axis = .horizontal
         stripRow.distribution = .fillEqually
         stripRow.spacing = 4
-        stripRow.isHidden = true
-        stripRow.isAccessibilityElement = true
         stripCaption.isHidden = true
         let info = UIStackView(arrangedSubviews: [nameLabel, metaLabel, tiles, stockLabel, stripRow, stripCaption])
         info.axis = .vertical
@@ -333,39 +328,62 @@ final class ProductDetailViewController: BaseViewControler {
         return box
     }
 
-    /// The 7-day strip once the calendar answered; the old stock line otherwise
+    /// #642: 6 day tiles (today first) once the calendar answered, then the calendar tile that opens "Lịch trống".
+    /// Before the answer (or without one) the old stock line shows and the tile keeps its place at the end.
     private func renderStrip() {
         stripRow.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let shown = !strip.isEmpty
-        stripRow.isHidden = !shown
+        let days = Array(strip.prefix(Self.stripDays))
+        let shown = !days.isEmpty
         stripCaption.isHidden = !shown
         stockLabel.isHidden = shown
-        guard shown else { return }
-        for day in strip {
-            let (fill, text): (UIColor, UIColor)
-            switch day.tone {
-            case .none: (fill, text) = (UIColor(hexString: "FEE2E2"), UIColor(hexString: "991B1B"))
-            case .low: (fill, text) = (UIColor(hexString: "FFEDD5"), UIColor(hexString: "9A3412"))
-            case .ok: (fill, text) = (UIColor(hexString: "D1FAE5"), UIColor(hexString: "065F46"))
+        if shown {
+            for day in days {
+                let (fill, text): (UIColor, UIColor)
+                switch day.tone {
+                case .none: (fill, text) = (UIColor(hexString: "FEE2E2"), UIColor(hexString: "991B1B"))
+                case .low: (fill, text) = (UIColor(hexString: "FFEDD5"), UIColor(hexString: "9A3412"))
+                case .ok: (fill, text) = (UIColor(hexString: "D1FAE5"), UIColor(hexString: "065F46"))
+                }
+                let dayLabel = V2.label(day.day, size: DS.TextSize.pill, color: text)
+                let freeLabel = V2.label("\(day.free)", size: DS.TextSize.body, weight: .bold, color: text)
+                [dayLabel, freeLabel].forEach { $0.textAlignment = .center }
+                let cell = UIStackView(arrangedSubviews: [dayLabel, freeLabel])
+                cell.axis = .vertical
+                cell.isLayoutMarginsRelativeArrangement = true
+                cell.layoutMargins = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
+                cell.backgroundColor = fill
+                cell.layer.cornerRadius = 10
+                if day.isToday {
+                    cell.layer.borderWidth = 2
+                    cell.layer.borderColor = DS.Color.text.cgColor
+                }
+                cell.isAccessibilityElement = true
+                cell.accessibilityLabel = "\(day.day): \(day.free)"
+                stripRow.addArrangedSubview(cell)
             }
-            let dayLabel = V2.label(day.day, size: DS.TextSize.pill, color: text)
-            let freeLabel = V2.label("\(day.free)", size: DS.TextSize.body, weight: .bold, color: text)
-            [dayLabel, freeLabel].forEach { $0.textAlignment = .center }
-            let cell = UIStackView(arrangedSubviews: [dayLabel, freeLabel])
-            cell.axis = .vertical
-            cell.isLayoutMarginsRelativeArrangement = true
-            cell.layoutMargins = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
-            cell.backgroundColor = fill
-            cell.layer.cornerRadius = 10
-            if day.isToday {
-                cell.layer.borderWidth = 2
-                cell.layer.borderColor = DS.Color.text.cgColor
-            }
-            stripRow.addArrangedSubview(cell)
+            stripCaption.text = String(format: "products.detail.strip.caption".localized(), stripStock ?? 0)
+        } else {
+            (0..<Self.stripDays).forEach { _ in stripRow.addArrangedSubview(UIView()) }
         }
-        stripRow.accessibilityLabel = "products.detail.strip.accessibility".localized() + ": "
-            + strip.map { "\($0.day): \($0.free)" }.joined(separator: ", ")
-        stripCaption.text = String(format: "products.detail.strip.caption".localized(), stripStock ?? 0)
+        stripRow.addArrangedSubview(calendarTile())
+    }
+
+    private static let stripDays = 6
+
+    /// White tile, 1.5 pt accent border, calendar icon; same size as a day tile
+    private func calendarTile() -> UIView {
+        let tile = UIButton(type: .system)
+        tile.setImage(DS.symbol("calendar", DS.Icon.lg, weight: .medium), for: .normal)
+        tile.tintColor = DS.Color.primary
+        tile.backgroundColor = .white
+        tile.layer.cornerRadius = 10
+        tile.layer.borderWidth = 1.5
+        tile.layer.borderColor = DS.Color.primary.cgColor
+        tile.accessibilityLabel = "products.detail.freeCalendar".localized()
+        tile.accessibilityIdentifier = "product.detail.calendar"
+        tile.addTarget(self, action: #selector(openCalendar), for: .touchUpInside)
+        tile.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        return tile
     }
 
     private func renderChips() {
@@ -578,11 +596,15 @@ final class ProductDetailViewController: BaseViewControler {
         showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
     }
 
+    /// #642: the new "Lịch trống" month screen, with the open orders this screen already loaded
     @objc private func openCalendar() {
-        let controller = OrderCheckViewController()
-        controller.delegate = self
-        controller.loadProduct(product)
-        present(UINavigationController(rootViewController: controller), animated: true)
+        let loaded = chipTotals.isEmpty ? nil : (chipOrders[.upcoming] ?? []) + (chipOrders[.renting] ?? [])
+        let calendar = ProductCalendarViewController(product: product, orders: loaded)
+        calendar.hidesBottomBarWhenPushed = true
+        calendar.onAdded = { [weak self] in
+            self?.showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
+        }
+        navigationController?.pushViewController(calendar, animated: true)
     }
 
     /// #519: read-only change history of this product
@@ -644,14 +666,6 @@ extension ProductDetailViewController: UIScrollViewDelegate {
         guard scrollView === photos, scrollView.bounds.width > 0 else { return }
         let page = Int(round(scrollView.contentOffset.x / scrollView.bounds.width)) + 1
         pageLabel.text = " \(page)/\(photoStack.arrangedSubviews.count) "
-    }
-}
-
-extension ProductDetailViewController: OrderCheckViewControllerDelegate {
-    func didSelectOrder(order: Order, sender: OrderCheckViewController) {
-        sender.dismiss(animated: true) { [weak self] in
-            self?.openOrder(order.id)
-        }
     }
 }
 

@@ -2272,3 +2272,24 @@
 "settings.v2.categories" = "Categories";
 "products.category.search" = "Search categories";
 "products.category.actions" = "Rename or delete";
+
+/* #642 Product free calendar */
+"products.calendar.month" = "%1$d/%2$d";
+"products.calendar.total" = "%d in total";
+"products.calendar.free" = "%d left";
+"products.calendar.out" = "out";
+"products.calendar.legend.full" = "All free";
+"products.calendar.legend.low" = "Few left";
+"products.calendar.legend.out" = "Booked out";
+"products.calendar.legend.selected" = "Selected";
+"products.calendar.dayOrders" = "%d orders holding it";
+"products.calendar.noOrders" = "No order holds it on this day";
+"products.calendar.orderDays" = "Pick up %1$@ · return %2$@";
+"products.calendar.qty" = "%d pcs";
+"products.calendar.days" = "%d days";
+"products.calendar.days.one" = "%d day";
+"products.calendar.minFree" = "at least %d left";
+"products.calendar.pickStart" = "Tap the pickup day, then the return day";
+"products.calendar.pickEnd" = "tap the return day";
+"products.calendar.add" = "Add to cart with these days";
+"products.calendar.overlapNote" = "Booked out on some of these days. The shop allows overlapping orders.";
