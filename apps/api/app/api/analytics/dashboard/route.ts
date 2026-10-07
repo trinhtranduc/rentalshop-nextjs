@@ -5,6 +5,7 @@ import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { shopToday } from '../../../../lib/report-days';
 
 /**
  * GET /api/analytics/dashboard - Get dashboard analytics
@@ -28,12 +29,11 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     
     // Add date filter if period is 'today'
     if (period === 'today') {
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      // Vietnam today (#594), not the server's midnight
+      const today = shopToday();
       orderWhereClause.createdAt = {
-        gte: startOfDay,
-        lte: endOfDay
+        gte: today.start,
+        lte: today.end
       };
     }
     

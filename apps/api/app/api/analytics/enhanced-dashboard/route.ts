@@ -147,9 +147,10 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       where: {
         ...orderWhereClause,
         status: ORDER_STATUS.PICKUPED,
-        // From 00:00 of the first civil day
+        // Picked up inside the civil days of the range (#594: no upper bound counted later days too)
         pickedUpAt: {
-          gte: start
+          gte: start,
+          lte: end
         }
       },
       limit: 1000

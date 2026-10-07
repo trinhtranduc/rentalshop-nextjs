@@ -24,52 +24,63 @@ export const DATE_RANGE_PERIODS: Record<DateRangePeriod, { days: number; label: 
 export const MAX_DATE_RANGE_DAYS = 365;
 
 /**
- * Extra calendar days allowed past UTC "today" for custom end dates.
+ * Extra calendar days allowed past Vietnam "today" for custom end dates.
  *
- * Why: mobile/web send the user's *local* YYYY-MM-DD. On Vercel (UTC), morning
- * in Vietnam (UTC+7) is still the previous UTC day — rejecting end === user-today
- * caused INVALID_DATE_RANGE ("Invalid date range provided") on custom export.
+ * Why: clients send the user's *local* YYYY-MM-DD. A phone or browser ahead of Vietnam (Tokyo, Seoul) can
+ * already be on the next day; rejecting end === user-today caused INVALID_DATE_RANGE on custom export.
  */
 const END_DATE_TZ_GRACE_DAYS = 1;
 
 type CivilDate = { y: number; m: number; d: number };
 
+/** Zone of report / export days (#594). Same value as `SHOP_TIMEZONE` in `./date` (this file has no imports). */
+const REPORT_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+/** `…T23:59:59[.fff]Z`: end of an old UTC-day window (App Store iOS `.999Z`, old Android `Z` / `.000Z`). */
+const UTC_DAY_END_PATTERN = /T23:59:59(?:\.\d{1,3})?(?:Z|[+-]00:?00)$/i;
+/** A time with an explicit zone (`Z` or `±hh:mm`): the value is an instant, not a wall-clock date. */
+const ZONED_TIME_PATTERN = /T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i;
+
 /**
- * Resolve Y/M/D as a civil calendar date (no local setHours skew).
+ * The Vietnam civil day a range bound names (#594, timezone batch B of #578).
  *
- * - `YYYY-MM-DD` / ISO strings: use the written calendar day (prefix match)
- * - `Date` objects: always use **UTC** parts so UTC-normalized values stay stable
- *   on any server timezone (VN local Node vs Vercel UTC)
+ * - `YYYY-MM-DD`, or a date-time without a zone: the written date
+ * - the end of an old UTC-day window (`T23:59:59[.fff]Z`, also as a `Date`): the written (UTC) date, so the
+ *   window old iOS / Android builds send stays on the day the user picked
+ * - any other instant (ISO string with a zone, or a `Date`): the Vietnam day that contains it.
+ *   `new Date('2026-10-02')` (00:00Z = 07:00 VN) is still 2 Oct, and a Vietnam day bound
+ *   (`2026-10-01T17:00:00.000Z`, `2026-10-02T16:59:59.999Z`) maps back to its own day (idempotent).
  */
 function civilDate(date: Date | string): CivilDate | null {
   if (typeof date === 'string') {
-    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(date.trim());
-    if (match) {
+    const trimmed = date.trim();
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
+    if (match && (!ZONED_TIME_PATTERN.test(trimmed) || UTC_DAY_END_PATTERN.test(trimmed))) {
       return { y: Number(match[1]), m: Number(match[2]) - 1, d: Number(match[3]) };
     }
-    const parsed = new Date(date);
+    const parsed = new Date(trimmed);
     if (Number.isNaN(parsed.getTime())) return null;
-    return {
-      y: parsed.getUTCFullYear(),
-      m: parsed.getUTCMonth(),
-      d: parsed.getUTCDate(),
-    };
+    return civilDateOfBound(parsed);
   }
   if (Number.isNaN(date.getTime())) return null;
-  return {
-    y: date.getUTCFullYear(),
-    m: date.getUTCMonth(),
-    d: date.getUTCDate(),
-  };
+  return civilDateOfBound(date);
 }
 
-function utcToday(): CivilDate {
-  const now = new Date();
-  return {
-    y: now.getUTCFullYear(),
-    m: now.getUTCMonth(),
-    d: now.getUTCDate(),
-  };
+/** Civil day of a `Date` bound: an old UTC-day window end keeps its UTC date, anything else its Vietnam day. */
+function civilDateOfBound(instant: Date): CivilDate {
+  if (instant.getUTCHours() === 23 && instant.getUTCMinutes() === 59 && instant.getUTCSeconds() === 59) {
+    return { y: instant.getUTCFullYear(), m: instant.getUTCMonth(), d: instant.getUTCDate() };
+  }
+  return shopCivilDate(instant);
+}
+
+/** Vietnam calendar date of an instant. */
+function shopCivilDate(instant: Date): CivilDate {
+  const parts = getZonedParts(instant, REPORT_TIME_ZONE);
+  return { y: parts.year, m: parts.month - 1, d: parts.day };
+}
+
+function shopToday(): CivilDate {
+  return shopCivilDate(new Date());
 }
 
 function addDays(parts: CivilDate, days: number): CivilDate {
@@ -86,29 +97,31 @@ function civilKey(parts: CivilDate): number {
 }
 
 /**
- * Normalize start date to beginning of UTC day (00:00:00.000Z)
+ * Normalize start date to the start of its Vietnam civil day (00:00 VN = 17:00Z the day before).
+ * See `civilDate` for how keys, instants and old UTC-day windows are read.
  *
  * @example
- * normalizeStartDate('2025-12-06') // 2025-12-06T00:00:00.000Z
+ * normalizeStartDate('2025-12-06') // 2025-12-05T17:00:00.000Z
  */
 export function normalizeStartDate(date: Date | string | null | undefined): Date | null {
   if (!date) return null;
   const parts = civilDate(date);
   if (!parts) return null;
-  return new Date(Date.UTC(parts.y, parts.m, parts.d, 0, 0, 0, 0));
+  return civilDayForKey(formatCivilDate(parts), REPORT_TIME_ZONE).start;
 }
 
 /**
- * Normalize end date to end of UTC day (23:59:59.999Z)
+ * Normalize end date to the end of its Vietnam civil day (23:59:59.999 VN = 16:59:59.999Z).
  *
  * @example
- * normalizeEndDate('2025-12-06') // 2025-12-06T23:59:59.999Z
+ * normalizeEndDate('2025-12-06') // 2025-12-06T16:59:59.999Z
+ * normalizeEndDate('2025-12-06T23:59:59.999Z') // 2025-12-06T16:59:59.999Z (old UTC-day window end)
  */
 export function normalizeEndDate(date: Date | string | null | undefined): Date | null {
   if (!date) return null;
   const parts = civilDate(date);
   if (!parts) return null;
-  return new Date(Date.UTC(parts.y, parts.m, parts.d, 23, 59, 59, 999));
+  return civilDayForKey(formatCivilDate(parts), REPORT_TIME_ZONE).end;
 }
 
 // ============================================================================
@@ -386,16 +399,16 @@ export function getDateRangeFromPeriod(period: DateRangePeriod): { startDate: Da
   }
 
   const config = DATE_RANGE_PERIODS[period];
-  const endDate = normalizeEndDate(new Date())!;
-  const startAnchor = new Date(endDate);
-  startAnchor.setUTCDate(startAnchor.getUTCDate() - config.days);
-  const startDate = normalizeStartDate(startAnchor)!;
+  // Vietnam today and `days` civil days back (#594)
+  const today = formatCivilDate(shopToday());
+  const endDate = normalizeEndDate(today)!;
+  const startDate = normalizeStartDate(addDaysToDateKey(today, -config.days))!;
 
   return { startDate, endDate };
 }
 
 /**
- * Calculate days difference between two dates (civil calendar days, UTC-stable)
+ * Calculate days difference between two dates (Vietnam civil days)
  */
 export function calculateDaysDifference(startDate: Date | string, endDate: Date | string): number {
   const start = normalizeStartDate(startDate);
@@ -414,7 +427,7 @@ export function validateDateRange(
   endDate: Date | string,
   maxDays: number = MAX_DATE_RANGE_DAYS
 ): { valid: boolean; error?: string } {
-  // Always re-normalize so Date objects from parseDateRangeFromQuery stay UTC-stable
+  // Always re-normalize: Date bounds from parseDateRangeFromQuery map back to their own Vietnam day
   const start = normalizeStartDate(startDate);
   const end = normalizeEndDate(endDate);
 
@@ -431,7 +444,7 @@ export function validateDateRange(
   }
 
   const endParts = civilDate(end)!;
-  const maxEndParts = addDays(utcToday(), END_DATE_TZ_GRACE_DAYS);
+  const maxEndParts = addDays(shopToday(), END_DATE_TZ_GRACE_DAYS);
   if (civilKey(endParts) > civilKey(maxEndParts)) {
     return { valid: false, error: 'End date cannot be in the future' };
   }
