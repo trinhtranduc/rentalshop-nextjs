@@ -7,7 +7,7 @@
  * 
  * Strategy:
  * - Cache embeddings (24h TTL)
- * - Cache search results (1h TTL)
+ * - Cache vector hits [{productId, similarity}] (1h TTL); product rows are never cached
  * - Automatic cleanup of expired entries
  */
 
@@ -181,38 +181,56 @@ export function cacheEmbedding(imageHash: string, embedding: number[]): void {
   imageSearchCache.set(`embedding:${imageHash}`, embedding, 24 * 60 * 60 * 1000);
 }
 
+/** One vector-search hit. Only ids and scores are cached — never product rows (#653). */
+export interface ImageSearchHit {
+  productId: number;
+  similarity: number;
+}
+
 /**
- * Get cached search results
+ * Cache key scope for vector hits. Anything that changes which hits the vector store returns belongs here;
+ * per-caller rules (outlet filter, limit, field permissions) are applied after the cache on every request.
  */
-export function getCachedSearchResults(
+export interface ImageSearchHitScope {
+  merchantId?: number;
+  categoryId?: number;
+  minSimilarity: number;
+}
+
+function searchHitsKey(imageHash: string, scope: ImageSearchHitScope): string {
+  return `search-hits:${imageHash}:${scope.merchantId ?? ''}:${scope.categoryId ?? ''}:${scope.minSimilarity}`;
+}
+
+/**
+ * Get cached vector hits (ordered by similarity, best first)
+ */
+export function getCachedSearchHits(
   imageHash: string,
-  filters: any
-): any[] | null {
-  const cacheKey = `search:${imageHash}:${JSON.stringify(filters)}`;
+  scope: ImageSearchHitScope
+): ImageSearchHit[] | null {
   const startTime = Date.now();
-  const result = imageSearchCache.get<any[]>(cacheKey);
+  const result = imageSearchCache.get<ImageSearchHit[]>(searchHitsKey(imageHash, scope));
   const duration = Date.now() - startTime;
-  
+
   if (result) {
     cacheStats.recordHit(duration);
   } else {
     cacheStats.recordMiss(0); // Miss doesn't have duration yet
   }
-  
+
   return result;
 }
 
 /**
- * Cache search results
- * TTL: 1 hour
+ * Cache vector hits
+ * TTL: 1 hour (products themselves are re-read on every request)
  */
-export function cacheSearchResults(
+export function cacheSearchHits(
   imageHash: string,
-  filters: any,
-  results: any[]
+  scope: ImageSearchHitScope,
+  hits: ImageSearchHit[]
 ): void {
-  const cacheKey = `search:${imageHash}:${JSON.stringify(filters)}`;
-  imageSearchCache.set(cacheKey, results, 60 * 60 * 1000);
+  imageSearchCache.set(searchHitsKey(imageHash, scope), hits, 60 * 60 * 1000);
 }
 
 /**

@@ -275,6 +275,7 @@ calls return 403 and the data read back as the merchant is unchanged. BF-SCOPE-0
 | BF-STAFF-23 | Xem gói dịch vụ | `GET /api/subscriptions/status` | 200 |
 | BF-STAFF-24 | Không đổi gói | `PUT /api/merchants/{m}/plan`, `POST /api/subscriptions` | 403; planId unchanged |
 | BF-STAFF-25 | Xem chương trình khách thân thiết | `GET /api/loyalty/program` | 200 |
+| BF-STAFF-26 | Tìm bằng ảnh: không thấy giá vốn, chỉ sản phẩm chi nhánh mình (#653) | `POST /api/products/searchByImage` | 200; no `costPrice`; only products stocked at its outlet, also on a cache hit. Not run here (needs the Python embedding service): covered by unit test `tests/api/image-search-scope.test.ts` |
 
 ## Questions for the owner (current behaviour asserted)
 
