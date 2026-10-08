@@ -195,9 +195,9 @@ fun ProductsHomeScreen(
                         Spacer(Modifier.size(8.dp))
                         Box(Modifier.weight(1f)) {
                             if (draft.isEmpty()) {
-                                Text(stringResource(R.string.v2_search_placeholder), color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body)
+                                Text(stringResource(R.string.v2_home_search_placeholder), color = DS.Colors.TextMuted, fontSize = DS.TextSize.Body, maxLines = 1)
                             }
-                            val searchLabel = stringResource(R.string.v2_search_placeholder)
+                            val searchLabel = stringResource(R.string.v2_home_search_placeholder)
                             BasicTextField(
                                 value = draft,
                                 onValueChange = { draft = it },
@@ -213,8 +213,9 @@ fun ProductsHomeScreen(
                                 Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.close), modifier = Modifier.size(16.dp))
                             }
                         }
-                        FieldIcon(Icons.Outlined.PhotoCamera, stringResource(R.string.image_search)) { showImageSearch = true }
                         FieldIcon(AppIcons.Barcode, stringResource(R.string.camera_scan)) { showScan = true }
+                        // #651: image search is the solid blue camera button at the end (owner chose option B)
+                        ImageSearchButton(stringResource(R.string.v2_home_image_search)) { showImageSearch = true }
                     }
                 }
             }
@@ -318,6 +319,23 @@ private fun FieldIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
             .semantics { contentDescription = label; role = Role.Button },
         contentAlignment = Alignment.Center,
     ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md)) }
+}
+
+/** #651: 38 dp solid accent square with a white camera; the touch area is 48 dp */
+@Composable
+private fun ImageSearchButton(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(48.dp)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = label; role = Role.Button },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(DS.Colors.Primary),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
+    }
 }
 
 /** The + of a product already in the cart: the count on a darker blue (board SP-dong) */

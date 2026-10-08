@@ -1411,4 +1411,6 @@
     <string name="share_thanks">Cảm ơn quý khách đã tin chọn %1$s</string>
     <string name="share_made_with">Tạo bằng AnyRent</string>
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
+    <string name="v2_home_search_placeholder">Tìm tên, mã vạch hoặc chụp ảnh</string>
+    <string name="v2_home_image_search">Tìm bằng hình</string>
 </resources>

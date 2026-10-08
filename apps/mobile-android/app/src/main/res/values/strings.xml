@@ -1435,4 +1435,6 @@
     <string name="share_thanks">Thank you for choosing %1$s</string>
     <string name="share_made_with">Made with AnyRent</string>
     <string name="share_draft_action">Share draft</string>
+    <string name="v2_home_search_placeholder">Search name, barcode or take a photo</string>
+    <string name="v2_home_image_search">Search by photo</string>
 </resources>
