@@ -477,7 +477,7 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.setImage(plusImage, for: .normal)
         addButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         addButton.setTitleColor(.white, for: .normal)
-        addButton.layer.cornerRadius = 12
+        addButton.layer.cornerRadius = DS.touchTarget / 2 // #671: round
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
         addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
         let row = UIStackView(arrangedSubviews: [photo, texts, addButton])
@@ -553,12 +553,12 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
         switch ProductRowLogic.addState(free: free, inCart: inCart) {
         case .add, .out:
-            let available = free > 0
+            // #671: out today still adds (another day can be rented), so the button keeps its colour
             addButton.setImage(plusImage, for: .normal)
             addButton.setTitle(nil, for: .normal)
-            addButton.backgroundColor = available ? DS.Color.primary : V2.sectionFill
-            addButton.tintColor = available ? .white : DS.Color.textMuted
-            addButton.layer.borderWidth = available ? 0 : 1
+            addButton.backgroundColor = DS.Color.primary
+            addButton.tintColor = .white
+            addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
         case .inCart(let count):
             addButton.setImage(nil, for: .normal)

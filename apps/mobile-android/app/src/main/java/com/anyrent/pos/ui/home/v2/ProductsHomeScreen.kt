@@ -2,7 +2,6 @@ package com.anyrent.pos.ui.home.v2
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -420,19 +420,12 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImag
                 }
                 Text(text, maxLines = 2)
             }
-            val out = addState is AddButtonState.Out
+            // #671: round, and blue also when out today (tapping still adds; "Hết hôm nay" says the rest)
             Box(
                 Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        when (addState) {
-                            is AddButtonState.InCart -> InCartFill
-                            AddButtonState.Out -> V2Colors.Section
-                            AddButtonState.Add -> DS.Colors.Primary
-                        },
-                    )
-                    .border(if (out) 1.dp else 0.dp, V2Colors.Line, RoundedCornerShape(12.dp))
+                    .clip(CircleShape)
+                    .background(if (addState is AddButtonState.InCart) InCartFill else DS.Colors.Primary)
                     .clickable(onClick = onAdd)
                     .semantics { contentDescription = addLabel; role = Role.Button },
                 contentAlignment = Alignment.Center,
@@ -440,7 +433,7 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImag
                 if (addState is AddButtonState.InCart) {
                     Text(addState.count.toString(), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = Color.White)
                 } else {
-                    Icon(Icons.Outlined.Add, contentDescription = null, tint = if (out) DS.Colors.TextMuted else Color.White, modifier = Modifier.size(DS.Icon.Sm))
+                    Icon(Icons.Outlined.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
                 }
             }
         }
