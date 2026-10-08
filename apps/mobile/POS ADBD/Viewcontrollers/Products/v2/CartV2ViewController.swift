@@ -22,7 +22,8 @@ final class CartV2ViewController: BaseViewControler {
     /// #676: "Heather Robinson · Đơn thuê" under "Sửa đơn #482913"
     private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     /// #640: share the cart as a draft image (lines, and for a rental both dates)
-    private let shareButton = UIButton(type: .system)
+    /// #677 (board gio-menu): ⋯ with "Chia sẻ báo giá" (#640 draft image) and "Xoá giỏ hàng"; none while editing
+    private let moreButton = UIButton(type: .system)
     /// #677 (board huy-sua, option B): while editing, the bottom bar is "Tổng đơn" over "Huỷ sửa" + "Lưu thay đổi"
     private let editBar = UIStackView()
     private let editTotalAmount = V2.label(size: 18, weight: .bold)
@@ -30,8 +31,8 @@ final class CartV2ViewController: BaseViewControler {
     private let editSaveButton = V2.primaryButton("products.cart.edit.save".localized())
     /// The create bar (amount to collect + "Tạo đơn"), hidden while editing
     private let ctaRow = UIView()
-    /// Keeps the title left of the share button; off while editing (share and switch hidden)
-    private var shareAfterTitle: Constraint?
+    /// Keeps the title left of the switch; off while editing (switch and ⋯ hidden)
+    private var switchAfterTitle: Constraint?
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
     /// Bumped on each availability call; an older answer is dropped
     private var availabilityGeneration = 0
@@ -113,12 +114,12 @@ final class CartV2ViewController: BaseViewControler {
         subtitleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         typeToggle.addTarget(self, action: #selector(typeChanged), for: .valueChanged)
         typeToggle.accessibilityLabel = "products.cart.type".localized()
-        shareButton.setImage(DS.symbol("square.and.arrow.up", DS.Icon.md, weight: .semibold), for: .normal)
-        shareButton.tintColor = DS.Color.text
-        shareButton.accessibilityLabel = "share.draft.action".localized()
-        shareButton.accessibilityIdentifier = "cart.share"
-        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
-        [back, title, shareButton, typeToggle].forEach(header.addSubview)
+        moreButton.setImage(DS.symbol("ellipsis", DS.Icon.md, weight: .semibold), for: .normal)
+        moreButton.tintColor = DS.Color.text
+        moreButton.accessibilityLabel = "products.cart.more".localized()
+        moreButton.accessibilityIdentifier = "cart.more"
+        moreButton.showsMenuAsPrimaryAction = true
+        [back, title, typeToggle, moreButton].forEach(header.addSubview)
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
@@ -134,17 +135,17 @@ final class CartV2ViewController: BaseViewControler {
             make.leading.equalTo(back.snp.trailing).offset(4)
             make.centerY.equalToSuperview()
         }
-        typeToggle.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-        }
-        shareButton.snp.makeConstraints { make in
-            make.trailing.equalTo(typeToggle.snp.leading).offset(-4)
-            shareAfterTitle = make.leading.greaterThanOrEqualTo(title.snp.trailing).offset(4).constraint
+        moreButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-4)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(DS.touchTarget)
         }
-        // #677: while editing, nothing sits right of the title (no switch, no share): it may take the whole row
+        typeToggle.snp.makeConstraints { make in
+            make.trailing.equalTo(moreButton.snp.leading).offset(-2)
+            switchAfterTitle = make.leading.greaterThanOrEqualTo(title.snp.trailing).offset(8).constraint
+            make.centerY.equalToSuperview()
+        }
+        // #677: while editing, nothing sits right of the title (no switch, no ⋯): it may take the whole row
         title.snp.makeConstraints { make in
             make.trailing.lessThanOrEqualToSuperview().offset(-DS.Spacing.lg)
         }
@@ -233,14 +234,10 @@ final class CartV2ViewController: BaseViewControler {
         // #677 (option B): while editing the header is back + "Sửa đơn #n" + subtitle only (no switch, no share);
         // the bottom bar carries "Huỷ sửa" next to "Lưu thay đổi"
         typeToggle.isHidden = cart.isEditMode
-        shareButton.isHidden = cart.isEditMode
-        if cart.isEditMode { shareAfterTitle?.deactivate() } else { shareAfterTitle?.activate() }
+        if cart.isEditMode { switchAfterTitle?.deactivate() } else { switchAfterTitle?.activate() }
         ctaRow.isHidden = cart.isEditMode
         editBar.isHidden = !cart.isEditMode
-        let canShare = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
-                                               pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
-        shareButton.isEnabled = canShare
-        shareButton.alpha = canShare ? 1 : 0.35
+        renderMoreMenu()
 
         content.arrangedSubviews.forEach { $0.removeFromSuperview() }
         content.addArrangedSubview(band())
@@ -625,10 +622,39 @@ final class CartV2ViewController: BaseViewControler {
 
     // MARK: - Actions
 
-    @objc private func shareTapped() {
+    /// #677: the ⋯ menu for this cart state; hidden while editing an order
+    private func renderMoreMenu() {
+        guard let state = CartV2Logic.moreMenu(cart) else {
+            moreButton.isHidden = true
+            return
+        }
+        moreButton.isHidden = false
+        let share = UIAction(title: "products.cart.menu.shareQuote".localized(), image: UIImage(systemName: "square.and.arrow.up"),
+                             attributes: state.shareEnabled ? [] : .disabled) { [weak self] _ in self?.shareTapped() }
+        let clear = UIAction(title: "products.cart.clear.title".localized(), image: UIImage(systemName: "trash"),
+                             attributes: state.clearEnabled ? .destructive : [.destructive, .disabled]) { [weak self] _ in
+            self?.confirmClearCart()
+        }
+        moreButton.menu = UIMenu(children: [share, UIMenu(options: .displayInline, children: [clear])])
+    }
+
+    private func shareTapped() {
         guard DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
                                       pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt) else { return }
-        OrderSharePresenter.share(OrderShareSource(cart: cart, shop: ShareShop.current()), from: self, sourceView: shareButton)
+        OrderSharePresenter.share(OrderShareSource(cart: cart, shop: ShareShop.current()), from: self, sourceView: moreButton)
+    }
+
+    /// "Xoá giỏ hàng": the cart and its saved draft are cleared; this screen stays, empty, as after a create (#677)
+    private func confirmClearCart() {
+        guard presentedViewController == nil, !cart.isEditMode else { return }
+        let alert = UIAlertController(title: "products.cart.clear.title".localized(),
+                                      message: "products.cart.clear.message".localized(), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "products.cart.clear.confirm".localized(), style: .destructive) { _ in
+            CartStore.shared.resetCart()
+            ProductAvailabilityCache.shared.clearAll()
+        })
+        present(alert, animated: true)
     }
 
     @objc private func goBack() {

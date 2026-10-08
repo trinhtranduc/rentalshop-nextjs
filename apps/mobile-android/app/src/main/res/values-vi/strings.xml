@@ -670,6 +670,8 @@
     <string name="v2_edit_confirm_keep_editing">Tiếp tục sửa</string>
     <string name="v2_edit_saved">Đã lưu đơn #%1$s</string>
     <string name="v2_edit_saved_no_number">Đã lưu đơn</string>
+    <string name="v2_cart_more">Thêm</string>
+    <string name="v2_cart_share_quote">Chia sẻ báo giá</string>
     <string name="v2_cart_edit_cancel">Huỷ sửa</string>
     <string name="v2_cart_edit_cancel_title">Huỷ sửa đơn #%1$s?</string>
     <string name="v2_cart_edit_cancel_title_no_number">Huỷ sửa đơn này?</string>

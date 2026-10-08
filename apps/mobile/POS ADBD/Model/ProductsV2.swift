@@ -544,6 +544,20 @@ enum CartV2Logic {
         return isRent ? "products.cart.create" : "products.cart.sellAndCollect"
     }
 
+    /// #677 (board gio-menu): the cart's ⋯ menu. Nil while editing an order (no ⋯; "Huỷ sửa" is in the bottom bar).
+    /// An empty cart disables both items; the quote also needs a rental's dates (`DraftShareRule`).
+    struct MoreMenuState: Equatable {
+        let shareEnabled: Bool
+        let clearEnabled: Bool
+    }
+
+    static func moreMenu(_ cart: Cart) -> MoreMenuState? {
+        guard !cart.isEditMode else { return nil }
+        let share = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
+                                            pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
+        return MoreMenuState(shareEnabled: share, clearEnabled: !cart.items.isEmpty)
+    }
+
     /// #677: the action on the Home cart bar: "Sửa đơn #482913" (or "Sửa đơn") while the cart edits an order, else
     /// "Tạo đơn"
     static func cartBarAction(isEditMode: Bool, number: String?) -> String {

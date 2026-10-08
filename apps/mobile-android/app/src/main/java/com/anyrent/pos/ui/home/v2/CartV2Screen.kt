@@ -1,5 +1,10 @@
 package com.anyrent.pos.ui.home.v2
 
+import com.anyrent.pos.ui.common.AppMenuAction
+import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -169,6 +174,9 @@ fun CartV2Screen(
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
     // #677: the "Huỷ sửa đơn #…?" confirm is open
     var confirmCancelEdit by remember { mutableStateOf(false) }
+    // #677: the ⋯ menu and its "Xoá giỏ hàng" confirm
+    var moreOpen by remember { mutableStateOf(false) }
+    var confirmClearCart by remember { mutableStateOf(false) }
     // #482: product id of the line whose "Cách tính giá" sheet is open
     var pricingLineId by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -356,33 +364,48 @@ fun CartV2Screen(
             }
             // #640: the cart as a draft image ("Đơn nháp"), once it has lines (rent: dates chosen)
             val shareContext = LocalContext.current
-            // #677 option B: no share while editing an order
-            if (editingOrderId == null) IconButton(
-                onClick = {
-                    scope.launch {
-                        runCatching {
-                            com.anyrent.pos.ui.orders.shareOrderImage(
-                                shareContext,
-                                com.anyrent.pos.domain.orders.OrderShareModel.fromDraft(
-                                    lines = lines,
-                                    customer = customer,
-                                    isSale = isSale,
-                                    pickup = pickup.takeIf { datesChosen },
-                                    returnDate = ret.takeIf { datesChosen },
-                                    discountAmount = discountAmount,
-                                    deposit = deposit,
-                                    securityDeposit = CartStore.securityDeposit.value,
-                                    collateralDetails = CartStore.collateralDetails.value,
-                                    shop = com.anyrent.pos.ui.orders.shareShop(),
-                                    vi = shareContext.shareIsVietnamese(),
-                                ),
-                            )
-                        }.onFailure { error = it.message }
-                    }
-                },
-                enabled = lines.isNotEmpty() && (isSale || datesChosen),
-            ) {
-                Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.share_draft_action), modifier = Modifier.size(DS.Icon.Lg))
+            fun shareQuote() {
+                scope.launch {
+                    runCatching {
+                        com.anyrent.pos.ui.orders.shareOrderImage(
+                            shareContext,
+                            com.anyrent.pos.domain.orders.OrderShareModel.fromDraft(
+                                lines = lines,
+                                customer = customer,
+                                isSale = isSale,
+                                pickup = pickup.takeIf { datesChosen },
+                                returnDate = ret.takeIf { datesChosen },
+                                discountAmount = discountAmount,
+                                deposit = deposit,
+                                securityDeposit = CartStore.securityDeposit.value,
+                                collateralDetails = CartStore.collateralDetails.value,
+                                shop = com.anyrent.pos.ui.orders.shareShop(),
+                                vi = shareContext.shareIsVietnamese(),
+                            ),
+                        )
+                    }.onFailure { error = it.message }
+                }
+            }
+            // #677 (board gio-menu): ⋯ with "Chia sẻ báo giá" and "Xoá giỏ hàng"; none while editing an order
+            CartV2Logic.moreMenu(
+                editing = editingOrderId != null, itemCount = lines.size, isSale = isSale, datesReady = datesChosen,
+            )?.let { menu ->
+                AppOverflowMenuAnchor(
+                    contentDescription = stringResource(R.string.v2_cart_more),
+                    actions = listOf(
+                        AppMenuAction(stringResource(R.string.v2_cart_share_quote), Icons.Outlined.Share, ::shareQuote, enabled = menu.shareEnabled),
+                        AppMenuAction(
+                            stringResource(R.string.clear_cart), Icons.Outlined.DeleteOutline, { confirmClearCart = true },
+                            destructive = true, enabled = menu.clearEnabled,
+                        ),
+                    ),
+                    expanded = moreOpen,
+                    onExpandedChange = { moreOpen = it },
+                    modifier = Modifier.testTag("cart.more"),
+                    icon = Icons.Outlined.MoreHoriz,
+                    iconSize = DS.Icon.Lg,
+                    iconTint = DS.Colors.Text,
+                )
             }
             // While editing the type cannot change: header = back + "Sửa đơn #n" + subtitle only (#677)
             if (editingOrderId == null) {
@@ -690,6 +713,20 @@ fun CartV2Screen(
         )
     }
     notePreview?.let { com.anyrent.pos.ui.common.FullScreenImagePreview(model = it, onDismiss = { notePreview = null }) }
+    if (confirmClearCart) {
+        AppAlertConfirm(
+            title = stringResource(R.string.clear_cart),
+            message = stringResource(R.string.clear_cart_confirmation),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            onDismiss = { confirmClearCart = false },
+            onConfirm = {
+                confirmClearCart = false
+                // The cart and its saved draft; the screen stays, empty, as after a create (#677)
+                CartStore.clear()
+            },
+        )
+    }
     if (confirmCancelEdit) {
         val number = EditOrderSheet.number(editOriginal)
         AppAlertConfirm(

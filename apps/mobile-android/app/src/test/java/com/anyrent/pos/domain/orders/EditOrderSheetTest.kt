@@ -194,4 +194,17 @@ class EditOrderSheetTest {
         assertEquals(EditOrderSheet.CartBarAction.Edit("482913"), EditOrderSheet.cartBarAction(editing = true, original = original()))
         assertEquals(EditOrderSheet.CartBarAction.Edit(null), EditOrderSheet.cartBarAction(editing = true, original = null))
     }
+
+    // #677 — the cart's ⋯ menu (board gio-menu)
+
+    @Test
+    fun `the cart more menu is hidden while editing and disabled when empty`() {
+        val logic = com.anyrent.pos.domain.products.CartV2Logic
+        assertNull(logic.moreMenu(editing = true, itemCount = 3, isSale = false, datesReady = true))
+        assertEquals(com.anyrent.pos.domain.products.CartV2Logic.MoreMenu(shareEnabled = false, clearEnabled = false), logic.moreMenu(false, 0, isSale = true, datesReady = true))
+        assertEquals(com.anyrent.pos.domain.products.CartV2Logic.MoreMenu(shareEnabled = true, clearEnabled = true), logic.moreMenu(false, 2, isSale = false, datesReady = true))
+        // A rental without dates cannot be quoted yet, but can be cleared
+        assertEquals(com.anyrent.pos.domain.products.CartV2Logic.MoreMenu(shareEnabled = false, clearEnabled = true), logic.moreMenu(false, 2, isSale = false, datesReady = false))
+        assertEquals(com.anyrent.pos.domain.products.CartV2Logic.MoreMenu(shareEnabled = true, clearEnabled = true), logic.moreMenu(false, 1, isSale = true, datesReady = false))
+    }
 }
