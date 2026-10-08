@@ -16,12 +16,19 @@
 export { 
   getEmbeddingService, 
   FashionImageEmbedding,
-  warmUpModel 
+  warmUpModel,
+  getSearchEmbeddingTimeoutMs,
+  getIndexEmbeddingTimeoutMs
 } from './ml/image-embeddings';
 
 // Vector store service
-export { getVectorStore, ProductVectorStore } from './ml/vector-store';
-export type { ProductEmbeddingMetadata } from './ml/vector-store';
+export {
+  getVectorStore,
+  ProductVectorStore,
+  productImagePointId,
+  groupHitsByProduct
+} from './ml/vector-store';
+export type { ProductEmbeddingMetadata, VectorSearchHit } from './ml/vector-store';
 
 // Background jobs for generating embeddings
 export { 

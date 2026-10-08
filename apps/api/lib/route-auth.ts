@@ -8,6 +8,7 @@
 const ROUTE_MANAGED_AUTH_PATHS = new Set([
   '/api/cron/subscription-expiry-reminders',
   '/api/cron/loyalty-expire',
+  '/api/cron/embedding-jobs',
 ]);
 
 export function usesRouteManagedAuth(pathname: string): boolean {

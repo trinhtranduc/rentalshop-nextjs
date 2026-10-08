@@ -20,5 +20,10 @@
   "MERCHANT_OWNER_TRANSFER_NOT_SUPPORTED": "사업자 소유자 계정은 다른 사업자로 이동할 수 없습니다",
   "OUTLET_ASSIGNMENT_REQUIRED": "선택한 사업자에 속한 매장을 선택하세요",
   "OUTLET_MERCHANT_MISMATCH": "선택한 매장이 선택한 사업자에 속하지 않습니다",
-  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "이 계정을 변경하기 전에 활성 상태인 다른 사업자 소유자를 지정하세요"
+  "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "이 계정을 변경하기 전에 활성 상태인 다른 사업자 소유자를 지정하세요",
+  "SEARCH_FAILED": "지금은 이미지로 검색할 수 없습니다. 잠시 후 다시 시도하거나 텍스트로 검색해 주세요.",
+  "SEARCH_TIMEOUT": "이미지 검색 시간이 너무 오래 걸렸습니다. 몇 분 후 다시 시도해 주세요.",
+  "INVALID_LIMIT": "요청한 결과 수가 올바르지 않습니다",
+  "INVALID_MIN_SIMILARITY": "최소 유사도가 올바르지 않습니다 (0에서 1 사이여야 합니다)",
+  "NO_PRODUCTS_FOUND": "비슷한 상품을 찾지 못했습니다"
 }
