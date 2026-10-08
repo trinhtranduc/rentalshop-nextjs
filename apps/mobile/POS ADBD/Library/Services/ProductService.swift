@@ -602,7 +602,9 @@ class ProductService: BaseService, ProductServiceProtocol {
                     multipartFormData.append(data, withName: "categoryId")
                 }
             }
-        }, to: fullURL, method: .post, headers: BaseService.formHeader)
+        }, to: fullURL, method: .post, headers: BaseService.formHeader,
+           // #654: wait past the server's 20 s SEARCH_TIMEOUT so that code reaches the app
+           requestModifier: { $0.timeoutInterval = ImageSearchQuery.requestTimeout })
         .responseData { response in
             print("📡 Image Search Response:")
             print("   Status Code: \(response.response?.statusCode ?? 0)")
@@ -650,6 +652,9 @@ class ProductService: BaseService, ProductServiceProtocol {
                         }
                         
                         completion(products, total, message, nil)
+                    } else if ImageSearchQuery.isNoMatch(code: apiResponse.code) {
+                        // #654: "nothing matched" is the empty state, not an error
+                        completion([], 0, apiResponse.message, nil)
                     } else {
                         // Use error code model for localized messages
                         let nsError = self.createErrorFromResponse(
@@ -670,6 +675,12 @@ class ProductService: BaseService, ProductServiceProtocol {
                 }
             case .failure(let error):
                 print("❌ Image search request failed: \(error)")
+                if (error.underlyingError as? URLError)?.code == .timedOut {
+                    // #654: the app gave up first; same text as the server's SEARCH_TIMEOUT
+                    completion(nil, nil, nil, APIErrorResponse(success: false, code: APIErrorCode.searchTimeout.rawValue,
+                                                               message: nil, error: nil).toNSError(httpStatusCode: 503))
+                    return
+                }
                 completion(nil, nil, nil, error as NSError)
             }
         }

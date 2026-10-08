@@ -1124,6 +1124,12 @@
 "INVALID_SESSION_ID" = "ID phiên không hợp lệ";
 "INVALID_TENANT_KEY" = "Khóa tenant được cung cấp không hợp lệ";
 "INVALID_TIMEZONE" = "Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).";
+/* #654 image search */
+"INVALID_LIMIT" = "Số lượng kết quả không hợp lệ";
+"INVALID_MIN_SIMILARITY" = "Ngưỡng độ giống không hợp lệ";
+"SEARCH_FAILED" = "Chưa tìm được bằng hình ảnh lúc này. Vui lòng thử lại sau ít phút hoặc tìm bằng chữ.";
+"SEARCH_TIMEOUT" = "Tìm bằng hình ảnh mất quá lâu. Hãy thử ảnh nhỏ hơn hoặc thử lại sau vài phút.";
+"NO_PRODUCTS_FOUND" = "Không tìm thấy sản phẩm tương tự";
 "INVALID_USER_ID" = "ID người dùng không hợp lệ";
 "INVALID_USER_ROLE" = "Vai trò người dùng không hợp lệ";
 "LOGIN_SUCCESS" = "Đăng nhập thành công";

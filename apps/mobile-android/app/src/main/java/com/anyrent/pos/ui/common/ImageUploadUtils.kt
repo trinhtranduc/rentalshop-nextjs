@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
+import com.anyrent.pos.domain.products.ImageSearchQuery
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -136,14 +137,32 @@ fun fileToJpegBytes(
     }
 }
 
-/** iOS image search: 20KB, max 1024px, min quality 0.05. Caller owns [bitmap]. */
-fun bitmapToImageSearchJpeg(bitmap: Bitmap): ByteArray =
-    compressToTargetSize(
-        bitmap = bitmap,
-        targetSizeKB = 20,
-        maxDimension = 1024,
-        minQuality = 0.05f,
-    )
+/** #654 image search query: long side 512 px, JPEG 70 ([ImageSearchQuery], same as iOS). Caller owns [bitmap]. */
+fun bitmapToImageSearchJpeg(bitmap: Bitmap): ByteArray {
+    val (width, height) = ImageSearchQuery.targetSize(bitmap.width, bitmap.height)
+    val scaled = if (width == bitmap.width && height == bitmap.height) {
+        bitmap
+    } else {
+        Bitmap.createScaledBitmap(bitmap, width, height, true)
+    }
+    return try {
+        encodeJpeg(scaled, ImageSearchQuery.JPEG_QUALITY)
+    } finally {
+        if (scaled !== bitmap) scaled.recycle()
+    }
+}
+
+/** #654 image search from the photo library: decode (EXIF applied) then [bitmapToImageSearchJpeg]. */
+fun fileToImageSearchJpeg(file: File): ByteArray {
+    // Decode a little larger than needed; the exact 512 px resize happens in bitmapToImageSearchJpeg
+    val bitmap = decodeBitmapFile(file, maxSide = ImageSearchQuery.MAX_LONG_SIDE * 2)
+        ?: error("Could not decode selected image")
+    return try {
+        bitmapToImageSearchJpeg(bitmap)
+    } finally {
+        bitmap.recycle()
+    }
+}
 
 /** Product path: File already picked — re-encode to ≤100KB JPEG like iOS. */
 fun fileToProductJpegFile(source: File, cacheDir: File): File {

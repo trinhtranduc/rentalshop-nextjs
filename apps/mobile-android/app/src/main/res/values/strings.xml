@@ -1361,6 +1361,11 @@
     <string name="api_error_category_name_exists">A category with this name already exists</string>
     <string name="api_error_category_name_required">Please enter a category name</string>
     <string name="api_error_cannot_delete_default_category">The default category cannot be deleted</string>
+    <!-- #654 image search -->
+    <string name="api_error_invalid_limit">Invalid limit parameter</string>
+    <string name="api_error_invalid_min_similarity">Invalid minimum similarity parameter</string>
+    <string name="api_error_search_failed">We couldn\'t search by image right now. Please try again in a moment, or use text search.</string>
+    <string name="api_error_search_timeout">The image search took too long. Try a smaller photo, or try again in a few minutes.</string>
     <string name="v2_category_add_title">Add category</string>
     <string name="v2_category_rename_title">Rename category</string>
     <string name="v2_category_name_placeholder">Category name</string>

@@ -133,6 +133,7 @@
 		04A82A812EE94EE000E55F9C /* UserFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A82A802EE94EE000E55F9C /* UserFormViewController.swift */; };
 		04A82A832EEAFD7C00E55F9C /* OrderListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A82A822EEAFD7C00E55F9C /* OrderListViewModel.swift */; };
 		04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */; };
+		A654B0000000000000000001 /* ImageSearchQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A654F0000000000000000001 /* ImageSearchQuery.swift */; };
 		04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C8A1112F8E2001000A0011 /* CIImageValidator.swift */; };
 		04D2B8A92D3544DE00C7EECA /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 04D2B8A82D3544DE00C7EECA /* FirebaseAnalytics */; };
 		04E55FB32E220F77003F00D0 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E55FB12E220F77003F00D0 /* WebViewController.swift */; };
@@ -186,6 +187,7 @@
 		3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */; };
 		3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */; };
 		A622B0000000000000000002 /* BankQRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000002 /* BankQRTests.swift */; };
+		A654B0000000000000000002 /* ImageSearchQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A654F0000000000000000002 /* ImageSearchQueryTests.swift */; };
 		A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000003 /* OverviewDashLogicTests.swift */; };
 		3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A53CF843F66EAD432A4034 /* CalendarV2ViewController.swift */; };
 		4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */; };
@@ -504,6 +506,7 @@
 		04A82A802EE94EE000E55F9C /* UserFormViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFormViewController.swift; sourceTree = "<group>"; };
 		04A82A822EEAFD7C00E55F9C /* OrderListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderListViewModel.swift; sourceTree = "<group>"; };
 		04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSearchViewController.swift; sourceTree = "<group>"; };
+		A654F0000000000000000001 /* ImageSearchQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSearchQuery.swift; sourceTree = "<group>"; };
 		04C8A1112F8E2001000A0011 /* CIImageValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageValidator.swift; sourceTree = "<group>"; };
 		04E55FB12E220F77003F00D0 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
@@ -547,6 +550,7 @@
 		072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.debug.xcconfig"; sourceTree = "<group>"; };
 		08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarOverviewSettingsV2Tests.swift; sourceTree = "<group>"; };
 		A622F0000000000000000002 /* BankQRTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BankQRTests.swift; sourceTree = "<group>"; };
+		A654F0000000000000000002 /* ImageSearchQueryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImageSearchQueryTests.swift; sourceTree = "<group>"; };
 		A616F0000000000000000003 /* OverviewDashLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashLogicTests.swift; sourceTree = "<group>"; };
 		09DFF664402F310DBDA0C7DD /* AuthForms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthForms.swift; sourceTree = "<group>"; };
 		0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
@@ -1024,6 +1028,7 @@
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				A622F0000000000000000002 /* BankQRTests.swift */,
+				A654F0000000000000000002 /* ImageSearchQueryTests.swift */,
 				A616F0000000000000000003 /* OverviewDashLogicTests.swift */,
 				7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */,
 				40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */,
@@ -1381,6 +1386,7 @@
 			children = (
 				048839182D79C20E00069256 /* NewProductViewController.swift */,
 				04C8A1012F8E1001000A0001 /* ImageSearchViewController.swift */,
+				A654F0000000000000000001 /* ImageSearchQuery.swift */,
 				5A275EEE1EF93C18AFC5F00F /* v2 */,
 			);
 			path = Products;
@@ -1841,6 +1847,7 @@
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
+				A654B0000000000000000002 /* ImageSearchQueryTests.swift in Sources */,
 				A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */,
 				17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */,
 				7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */,
@@ -1908,6 +1915,7 @@
 				88AED2D8221D2B6300A0C28F /* PreviewBottomCell.swift in Sources */,
 				048839192D79C20E00069256 /* NewProductViewController.swift in Sources */,
 				04C8A1022F8E1001000A0002 /* ImageSearchViewController.swift in Sources */,
+				A654B0000000000000000001 /* ImageSearchQuery.swift in Sources */,
 				04C8A1122F8E2001000A0012 /* CIImageValidator.swift in Sources */,
 				04276C0E2EE45807005EAC05 /* VietnamBankCodes.swift in Sources */,
 				A622B0000000000000000001 /* VietQR.swift in Sources */,

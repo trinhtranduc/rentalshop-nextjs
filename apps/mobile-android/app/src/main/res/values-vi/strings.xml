@@ -1339,6 +1339,11 @@
     <string name="api_error_category_name_exists">Tên danh mục đã tồn tại</string>
     <string name="api_error_category_name_required">Vui lòng nhập tên danh mục</string>
     <string name="api_error_cannot_delete_default_category">Không thể xoá danh mục mặc định</string>
+    <!-- #654 image search -->
+    <string name="api_error_invalid_limit">Số lượng kết quả không hợp lệ</string>
+    <string name="api_error_invalid_min_similarity">Ngưỡng độ giống không hợp lệ</string>
+    <string name="api_error_search_failed">Chưa tìm được bằng hình ảnh lúc này. Vui lòng thử lại sau ít phút hoặc tìm bằng chữ.</string>
+    <string name="api_error_search_timeout">Tìm bằng hình ảnh mất quá lâu. Hãy thử ảnh nhỏ hơn hoặc thử lại sau vài phút.</string>
     <string name="v2_category_add_title">Thêm danh mục</string>
     <string name="v2_category_rename_title">Đổi tên danh mục</string>
     <string name="v2_category_name_placeholder">Tên danh mục</string>

@@ -382,5 +382,10 @@
   "TEST_POST_WORKING": "Test POST working",
   "API_KEYS_WORKING": "API Keys endpoint is working!",
   "AWS_S3_TEST_FAILED": "AWS S3 test failed",
-  "PRODUCT_HAS_OPEN_ORDERS": "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it."
+  "PRODUCT_HAS_OPEN_ORDERS": "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.",
+  "SEARCH_FAILED": "We couldn't search by image right now. Please try again in a moment, or use text search.",
+  "SEARCH_TIMEOUT": "The image search took too long. Please try again in a few minutes.",
+  "INVALID_LIMIT": "Invalid number of results requested",
+  "INVALID_MIN_SIMILARITY": "Invalid minimum similarity (must be between 0 and 1)",
+  "NO_PRODUCTS_FOUND": "No similar products found"
 }

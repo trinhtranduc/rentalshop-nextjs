@@ -25,6 +25,7 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.domain.settings.OverlapSetting
+import com.anyrent.pos.domain.products.ImageSearchQuery
 import com.anyrent.pos.domain.products.PricingTypes
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -755,8 +756,27 @@ class ApiClient(
             .addFormDataPart("limit", limit.toString())
             .addFormDataPart("minSimilarity", minSimilarity.toString())
             .build()
-        val json = authedMultipart("/api/products/searchByImage", multipart)
-        requireSuccess(json)
+        val request = Request.Builder()
+            .url("$baseUrl/api/products/searchByImage")
+            .post(multipart)
+            .applyAuth(true)
+            .header("Accept", "application/json")
+            .build()
+        // #654: wait past the server's 20 s SEARCH_TIMEOUT so that code reaches the app (same as iOS)
+        val searchClient = client.newBuilder()
+            .callTimeout(ImageSearchQuery.REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(ImageSearchQuery.REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(ImageSearchQuery.REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+        val json = try {
+            execute(request, http = searchClient)
+        } catch (error: AppError) {
+            // "Nothing matched" is the empty state, not an error
+            if (ImageSearchQuery.isNoMatch(error.code)) {
+                return@runCatching PageResult(items = emptyList(), hasMore = false, total = 0)
+            }
+            throw error
+        }
         val data = json.optJSONObject("data") ?: JSONObject()
         val array = data.optJSONArray("products") ?: JSONArray()
         PageResult(
@@ -1013,9 +1033,13 @@ class ApiClient(
     // HTTP helpers + parsers
     // -------------------------------------------------------------------------
 
-    private fun execute(request: Request, allowRefresh: Boolean = true): JSONObject {
+    private fun execute(
+        request: Request,
+        allowRefresh: Boolean = true,
+        http: OkHttpClient = client,
+    ): JSONObject {
         try {
-            client.newCall(request).execute().use { response ->
+            http.newCall(request).execute().use { response ->
                 val raw = response.body?.string().orEmpty()
                 val json = try {
                     JSONObject(if (raw.isBlank()) "{}" else raw)
@@ -1038,6 +1062,7 @@ class ApiClient(
                                         .header("Authorization", "Bearer ${outcome.accessToken}")
                                         .build(),
                                     allowRefresh = false,
+                                    http = http,
                                 )
                                 is RefreshOutcome.Rejected -> {
                                     onUnauthorized(outcome.code ?: code)

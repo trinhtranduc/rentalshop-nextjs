@@ -326,6 +326,9 @@ extension SearchResultsViewController: UITableViewDelegate {
 ### 1. **Kích thước hình ảnh**
 - API chỉ chấp nhận hình ảnh có kích thước tối đa 5MB
 - Code đã tự động nén hình ảnh xuống mức phù hợp
+- #654: ảnh truy vấn gửi lên = cạnh dài tối đa 512 px, JPEG quality 0.7 (`ImageSearchQuery.jpegData`; Android dùng cùng số trong `ImageSearchQuery.kt`). Không còn vòng nén ≤ 20 KB / quality 0.05 (làm mất chi tiết ren, hoa văn)
+- Timeout phía app cho request tìm kiếm: 30 s (server trả `SEARCH_TIMEOUT` sau 20 s)
+- `NO_PRODUCTS_FOUND` = danh sách rỗng (empty state), không phải lỗi. `SEARCH_FAILED`, `SEARCH_TIMEOUT`, `INVALID_LIMIT`, `INVALID_MIN_SIMILARITY` có text vi/en trong `Localizable.strings`
 - Format hỗ trợ: JPG, PNG, WEBP
 
 ### 2. **Thông số tìm kiếm**

@@ -112,6 +112,8 @@ fun ProductsHomeScreen(
     onOpenProduct: (Int) -> Unit,
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
+    /** #654: image-search ⋯ "Kiểm tra lịch sản phẩm" (iOS OrderCheckViewController) */
+    onCheckProductAvailability: (Int) -> Unit = {},
     viewModel: ProductsHomeViewModel = viewModel(factory = ProductsHomeViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -301,10 +303,18 @@ fun ProductsHomeScreen(
             onDismissRequest = { showImageSearch = false },
             properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
         ) {
-            ImageSearchScreen(onDismiss = { showImageSearch = false }, onCheckAvailability = { product ->
-                showImageSearch = false
-                onOpenProduct(product.id)
-            })
+            ImageSearchScreen(
+                onDismiss = { showImageSearch = false },
+                // #654: same ⋯ action as iOS (the product's orders / availability), not the detail
+                onCheckAvailability = { product ->
+                    showImageSearch = false
+                    onCheckProductAvailability(product.id)
+                },
+                onOpenProduct = { product ->
+                    showImageSearch = false
+                    onOpenProduct(product.id)
+                },
+            )
         }
     }
 }

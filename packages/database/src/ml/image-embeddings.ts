@@ -34,6 +34,30 @@ function getPythonEmbeddingApiUrl(): string {
 }
 
 /**
+ * Timeout for indexing calls (URL / S3 batch): long, the job runs in the background.
+ * PYTHON_EMBEDDING_TIMEOUT overrides; default 300 s production, 90 s otherwise.
+ */
+export function getIndexEmbeddingTimeoutMs(): number {
+  const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' ||
+                       process.env.QDRANT_COLLECTION_ENV === 'prod' ||
+                       process.env.NODE_ENV === 'production';
+  const configured = Number.parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT || '', 10);
+  if (Number.isFinite(configured) && configured > 0) return configured;
+  return isProduction ? 300000 : 90000;
+}
+
+/**
+ * Timeout for the image-search `/embed` call. Short, so the route answers
+ * SEARCH_TIMEOUT (503) before the apps give up (60–120 s).
+ * PYTHON_EMBEDDING_SEARCH_TIMEOUT_MS overrides; default 20 s.
+ */
+export function getSearchEmbeddingTimeoutMs(): number {
+  const configured = Number.parseInt(process.env.PYTHON_EMBEDDING_SEARCH_TIMEOUT_MS || '', 10);
+  if (Number.isFinite(configured) && configured > 0) return configured;
+  return 20000;
+}
+
+/**
  * OPTIMIZATION: Connection pooling via global fetch with keepAlive
  * Node.js 18+ fetch API automatically uses connection pooling when available
  * For better performance, we can set keepAlive via environment variable or use undici
@@ -89,7 +113,7 @@ export class FashionImageEmbedding {
    * 
    * Note: Python embedding service is the default (USE_PYTHON_EMBEDDING_API defaults to true)
    */
-  private async generateEmbeddingViaPythonApi(imageBuffer: Buffer): Promise<number[]> {
+  private async generateEmbeddingViaPythonApi(imageBuffer: Buffer, timeoutMs: number): Promise<number[]> {
     const baseUrl = getPythonEmbeddingApiUrl();
     const imageSizeKB = (imageBuffer.length / 1024).toFixed(1);
     const imageSizeMB = (imageBuffer.length / 1024 / 1024).toFixed(2);
@@ -114,17 +138,8 @@ export class FashionImageEmbedding {
     // Add timeout to prevent hanging
     // Production may need more time due to larger images, higher load, or network latency
     // Auto-detect production environment and use longer timeout
+    // Caller picks the timeout: search (short) or indexing (long).
     const controller = new AbortController();
-    const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' || 
-                         process.env.QDRANT_COLLECTION_ENV === 'prod' ||
-                         process.env.NODE_ENV === 'production';
-    
-    // Production: 5 minutes (300s) - Python API may be slow under load
-    // Development: 90 seconds
-    const defaultTimeout = isProduction ? 300000 : 90000; // 300s (5min) for production, 90s for dev
-    const timeoutMs = process.env.PYTHON_EMBEDDING_TIMEOUT 
-      ? parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT, 10) 
-      : defaultTimeout;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     
     // Measure network + processing time
@@ -195,16 +210,24 @@ export class FashionImageEmbedding {
    * - May need adjustment for WebAssembly mode (Alpine Linux)
    * 
    * @param imageBuffer - Buffer của hình ảnh
+   * @param options.timeoutMs - defaults to the image-search timeout
+   *   (PYTHON_EMBEDDING_SEARCH_TIMEOUT_MS, 20 s); indexing passes the long one.
    * @returns Embedding vector (512 dimensions, normalized)
    */
-  async generateEmbeddingFromBuffer(imageBuffer: Buffer): Promise<number[]> {
+  async generateEmbeddingFromBuffer(
+    imageBuffer: Buffer,
+    options: { timeoutMs?: number } = {}
+  ): Promise<number[]> {
     try {
       console.log('🔄 generateEmbeddingFromBuffer: Starting...', {
         inputBufferSize: imageBuffer.length
       });
 
       // Python embedding service is the default (shouldUsePythonEmbeddingApi() defaults to true)
-      const embedding = await this.generateEmbeddingViaPythonApi(imageBuffer);
+      const embedding = await this.generateEmbeddingViaPythonApi(
+        imageBuffer,
+        options.timeoutMs ?? getSearchEmbeddingTimeoutMs()
+      );
       console.log('✅ Embedding generated successfully (Python API)');
       return embedding;
     } catch (error) {
@@ -229,7 +252,7 @@ export class FashionImageEmbedding {
       const buffer = Buffer.from(arrayBuffer);
       const sizeKB = (buffer.length / 1024).toFixed(1);
       console.log(`[Embedding] Fetched ${sizeKB}KB, calling Python API`);
-      return this.generateEmbeddingFromBuffer(buffer);
+      return this.generateEmbeddingFromBuffer(buffer, { timeoutMs: getIndexEmbeddingTimeoutMs() });
     } catch (error) {
       console.error('[Embedding] generateEmbedding failed:', (error as Error)?.message);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -289,14 +312,7 @@ export class FashionImageEmbedding {
 
         // Call batch endpoint
         const controller = new AbortController();
-        const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' ||
-                             process.env.QDRANT_COLLECTION_ENV === 'prod' ||
-                             process.env.NODE_ENV === 'production';
-        
-        const defaultTimeout = isProduction ? 300000 : 90000; // 5min for production, 90s for dev
-        const timeoutMs = process.env.PYTHON_EMBEDDING_TIMEOUT
-          ? parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT, 10)
-          : defaultTimeout;
+        const timeoutMs = getIndexEmbeddingTimeoutMs();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
@@ -405,9 +421,7 @@ export class FashionImageEmbedding {
       formData.append('aws_access_key_id', awsAccessKeyId);
       formData.append('aws_secret_access_key', awsSecretAccessKey);
       
-      console.log(`🔑 Sending AWS credentials to Python API (REQUIRED - no fallback):`);
-      console.log(`   Access Key: ${awsAccessKeyId.substring(0, 8)}...`);
-      console.log(`   Secret Key: ${awsSecretAccessKey.substring(0, 8)}...`);
+      // Never log any part of the credentials.
       console.log(`   Bucket: ${bucketName}, Region: ${region}`);
       console.log(`   S3 Keys: ${s3Keys.length} keys`);
       
@@ -416,14 +430,7 @@ export class FashionImageEmbedding {
 
       // Call S3 batch endpoint
       const controller = new AbortController();
-      const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' ||
-                           process.env.QDRANT_COLLECTION_ENV === 'prod' ||
-                           process.env.NODE_ENV === 'production';
-      
-      const defaultTimeout = isProduction ? 300000 : 90000; // 5min for production, 90s for dev
-      const timeoutMs = process.env.PYTHON_EMBEDDING_TIMEOUT
-        ? parseInt(process.env.PYTHON_EMBEDDING_TIMEOUT, 10)
-        : defaultTimeout;
+      const timeoutMs = getIndexEmbeddingTimeoutMs();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       try {

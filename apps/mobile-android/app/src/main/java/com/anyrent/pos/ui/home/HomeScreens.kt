@@ -113,6 +113,8 @@ fun HomeScreen(
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
     onCheckProductAvailability: (Int) -> Unit = {},
+    /** #654: an image-search result row opens the product detail */
+    onOpenProduct: (Int) -> Unit = {},
 ) {
     var draftQuery by remember { mutableStateOf("") }
     var appliedQuery by remember { mutableStateOf("") }
@@ -437,6 +439,12 @@ fun HomeScreen(
                     },
                     onCheckAvailability = { product ->
                         imageSearchAvailabilityProduct = product
+                    },
+                    onOpenProduct = { product ->
+                        showImageSearch = false
+                        imageSearchAvailabilityProduct = null
+                        imageSearchOrderId = null
+                        onOpenProduct(product.id)
                     },
                 )
             }

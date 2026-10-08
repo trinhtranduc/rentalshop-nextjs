@@ -308,6 +308,12 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case invalidSessionId = "INVALID_SESSION_ID"
     case invalidTenantKey = "INVALID_TENANT_KEY"
     case invalidTimezone = "INVALID_TIMEZONE"
+    // #654: image search (POST /api/products/searchByImage)
+    case invalidLimit = "INVALID_LIMIT"
+    case invalidMinSimilarity = "INVALID_MIN_SIMILARITY"
+    case searchFailed = "SEARCH_FAILED"
+    case searchTimeout = "SEARCH_TIMEOUT"
+    case noProductsFound = "NO_PRODUCTS_FOUND"
     case invalidUserId = "INVALID_USER_ID"
     case invalidUserRole = "INVALID_USER_ROLE"
 
@@ -833,6 +839,11 @@ struct APIErrorMessages {
         .invalidSessionId: "Invalid session ID",
         .invalidTenantKey: "Invalid tenant key provided",
         .invalidTimezone: "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).",
+        .invalidLimit: "Invalid limit parameter",
+        .invalidMinSimilarity: "Invalid minimum similarity parameter",
+        .searchFailed: "We couldn't search by image right now. Please try again in a moment, or use text search.",
+        .searchTimeout: "The image search took too long. Try a smaller photo, or try again in a few minutes.",
+        .noProductsFound: "No similar products found",
         .invalidUserId: "Invalid user ID",
         .invalidUserRole: "Invalid user role",
         .loginSuccess: "Login successful",
@@ -1190,6 +1201,11 @@ struct APIErrorStatusCodes {
         .invalidSessionId: 400,
         .invalidTenantKey: 400,
         .invalidTimezone: 400,
+        .invalidLimit: 400,
+        .invalidMinSimilarity: 400,
+        .searchFailed: 503,
+        .searchTimeout: 503,
+        .noProductsFound: 200,
         .invalidUserId: 400,
         .invalidUserRole: 400,
         .loginSuccess: 200,

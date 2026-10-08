@@ -56,6 +56,12 @@ object ApiErrorMessages {
         "CATEGORY_NAME_EXISTS" -> R.string.api_error_category_name_exists
         "CATEGORY_NAME_REQUIRED" -> R.string.api_error_category_name_required
         "CANNOT_DELETE_DEFAULT_CATEGORY" -> R.string.api_error_cannot_delete_default_category
+        // #654: image search (NO_PRODUCTS_FOUND is the empty state, not an error: see ImageSearchQuery)
+        "SEARCH_FAILED" -> R.string.api_error_search_failed
+        "SEARCH_TIMEOUT" -> R.string.api_error_search_timeout
+        "INVALID_LIMIT" -> R.string.api_error_invalid_limit
+        "INVALID_MIN_SIMILARITY" -> R.string.api_error_invalid_min_similarity
+        "NO_PRODUCTS_FOUND" -> R.string.image_search_empty
         else -> 0
     }
 
