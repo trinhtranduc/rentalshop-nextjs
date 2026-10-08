@@ -13,12 +13,6 @@ object EntityOrdersLogic {
     fun rentals(orders: List<OrderSummary>): Int =
         orders.count { it.orderType.equals("RENT", ignoreCase = true) && !cancelled(it) }
 
-    /** The product's line totals in the loaded non-cancelled orders; the order total when a row has no items */
-    fun productRevenue(orders: List<OrderSummary>, productId: Int): Double =
-        orders.filterNot(::cancelled).sumOf { order ->
-            if (order.productTotals.isEmpty()) order.totalAmount else order.productTotals[productId] ?: 0.0
-        }
-
     /** Money of the loaded non-cancelled orders (customer "Đã chi" when the API sent no summary) */
     fun spent(orders: List<OrderSummary>): Double = orders.filterNot(::cancelled).sumOf { it.totalAmount }
 
@@ -36,22 +30,9 @@ object EntityOrdersLogic {
         return if (tenth == 0) millionWhole.format(whole) else million.format(whole, tenth)
     }
 
-    /** Values of Số đơn (all matching orders), Lượt thuê and Doanh thu (loaded pages: "+" while more pages exist) */
-    fun productValues(
-        orders: List<OrderSummary>,
-        productId: Int,
-        total: Int,
-        hasMore: Boolean,
-        hidesMoney: Boolean,
-        money: (Double) -> String,
-    ): List<String> {
-        val more = if (hasMore) "+" else ""
-        return listOf(
-            total.toString(),
-            rentals(orders).toString() + more,
-            if (hidesMoney) "—" else money(productRevenue(orders, productId)) + more,
-        )
-    }
+    /** #658: Số đơn and Lượt thuê only (no money tile); "+" on Lượt thuê while more pages exist */
+    fun productValues(orders: List<OrderSummary>, total: Int, hasMore: Boolean): List<String> =
+        listOf(total.toString(), rentals(orders).toString() + if (hasMore) "+" else "")
 
     /** Values of Số đơn and Đã chi (API summary), Đang thuê (orders out now); "—" while unknown */
     fun customerValues(total: Int, spent: Double?, renting: Int?, hidesMoney: Boolean, money: (Double) -> String): List<String> =

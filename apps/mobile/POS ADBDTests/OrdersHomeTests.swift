@@ -220,14 +220,13 @@ final class OrdersHomeTests: XCTestCase {
             try productOrder(id: 5, status: "COMPLETED", type: "SALE", total: 900_000, lines: [(4, 900_000)]),
         ]
         XCTAssertEqual(EntityOrdersLogic.rentals(orders), 3, "cancelled and sale orders are not rentals")
-        XCTAssertEqual(EntityOrdersLogic.productRevenue(orders, productId: 4), 2_100_000, "only this product's lines, cancelled left out")
-        let tiles = EntityOrdersLogic.productTiles(orders: orders, productId: 4, total: 6, hasMore: false, hidesMoney: false)
-        XCTAssertEqual(tiles.map(\.title), ["orders.entity.tile.orders".localized(), "orders.entity.tile.rentals".localized(),
-                                           "orders.entity.tile.revenue".localized()])
-        XCTAssertEqual(tiles.map(\.value), ["6", "3", String(format: "orders.entity.million".localized(), 2, 1)])
+        // #658: Số đơn and Lượt thuê only (no money tile)
+        let tiles = EntityOrdersLogic.productTiles(orders: orders, total: 6, hasMore: false)
+        XCTAssertEqual(tiles.map(\.title), ["orders.entity.tile.orders".localized(), "orders.entity.tile.rentals".localized()])
+        XCTAssertEqual(tiles.map(\.value), ["6", "3"])
         // More pages to load: the loaded figures read "N+"
-        let partial = EntityOrdersLogic.productTiles(orders: orders, productId: 4, total: 40, hasMore: true, hidesMoney: true)
-        XCTAssertEqual(partial.map(\.value), ["40", "3+", "—"])
+        let partial = EntityOrdersLogic.productTiles(orders: orders, total: 40, hasMore: true)
+        XCTAssertEqual(partial.map(\.value), ["40", "3+"])
     }
 
     func testCustomerTilesAndCompactMoney() throws {
