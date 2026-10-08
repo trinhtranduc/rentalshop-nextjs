@@ -25,6 +25,16 @@ Visitors and shop owners on `apps/client` web: /login, /register (+ steps), /for
 
 ## Open questions
 
+- Google sign-in stays on /register? (kept; only /login drops it)
+
+## Decision log (cont.)
+
+- 2026-10-08 — Chosen design: canvas A2 "Bản chọn: A nền sáng, 4 tính năng chính" (owner)
+- 2026-10-08 — No step tabs under the slides; remove Google login from /login (owner)
+- 2026-10-08 — Each step shows web and iPhone captures from a seeded local shop (owner)
+
+## Open questions (old)
+
 - None.
 
 ## Decision log

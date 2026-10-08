@@ -1,13 +1,14 @@
 'use client'
 
 import React from "react";
+import { Camera, Sparkles, AlertTriangle } from "lucide-react";
 import { useAuthTranslations } from "@rentalshop/hooks";
 import { LanguageSwitcher } from "../layout/LanguageSwitcher";
 
 /**
  * Shop web auth look (style 4A, #510): white page, dotted grid fading down,
  * 72px brand mark. Used only when a form gets `appearance="shop"`, so apps/admin
- * keeps the classic look. From lg up the page splits (#679): product intro left, form right.
+ * keeps the classic look. From lg up the page splits (#679): product steps left, form right.
  */
 
 const shopFieldBase =
@@ -37,42 +38,112 @@ interface ShopAuthPageProps {
 
 const SHOWCASE_STEP_MS = 5000;
 
-/**
- * One step per feature. `cover` crops photos to the frame; the mockups are shown whole on `bg`,
- * their own background colour, so the frame has no visible inner box.
- */
+/** One step per feature: the web screen behind, the phone screen in front (real captures, #679). */
 const showcaseSteps = [
-  { key: "intro", src: "/anyrent-landing-hero-soft.png", cover: true, bg: "#ffffff" },
-  { key: "calendar", src: "/anyrent-landing-feature-calendar.png", cover: true, bg: "#ffffff" },
-  { key: "orders", src: "/anyrent-landing-feature-orders.png", cover: true, bg: "#ffffff" },
-  { key: "conflict", src: "/anyrent-landing-duplicate-alert.png", cover: false, bg: "#d8ebfd" },
-  { key: "imageSearch", src: "/anyrent-ai-phone-results.png", cover: false, bg: "#d0e3f8" },
+  { key: "conflict", web: "/auth-showcase/web-products.jpg", phone: "/auth-showcase/phone-conflict.jpg" },
+  { key: "imageSearch", web: "/auth-showcase/web-image-search.jpg", phone: "/auth-showcase/phone-products.jpg" },
+  { key: "status", web: "/auth-showcase/web-order.jpg", phone: "/auth-showcase/phone-order.jpg" },
+  { key: "calendar", web: "/auth-showcase/web-calendar.jpg", phone: "/auth-showcase/phone-calendar.jpg" },
 ] as const;
 
+type ShowcaseKey = (typeof showcaseSteps)[number]["key"];
+
 const showcaseCss = `
-@keyframes ar-showcase-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@keyframes ar-showcase-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ar-showcase-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
-  .ar-showcase-in { animation: ar-showcase-in 600ms cubic-bezier(.2,.7,.2,1) both; }
-  .ar-showcase-in-late { animation: ar-showcase-in 600ms 120ms cubic-bezier(.2,.7,.2,1) both; }
-  .ar-showcase-img { transition: opacity 700ms ease, transform 900ms cubic-bezier(.2,.7,.2,1); }
-  .ar-showcase-fill { animation: ar-showcase-fill ${SHOWCASE_STEP_MS}ms linear both; }
-  .ar-showcase:hover .ar-showcase-fill { animation-play-state: paused; }
+  .ar-showcase-in { animation: ar-showcase-in 550ms cubic-bezier(.2,.7,.2,1) both; }
+  .ar-showcase-in-2 { animation: ar-showcase-in 550ms 120ms cubic-bezier(.2,.7,.2,1) both; }
+  .ar-showcase-in-3 { animation: ar-showcase-in 600ms 260ms cubic-bezier(.2,.7,.2,1) both; }
 }
 `;
 
+const cardClass =
+  "ar-showcase-in-3 absolute bottom-[8%] left-[-12px] z-10 flex rounded-2xl bg-white shadow-[0_18px_40px_rgba(15,23,42,0.16)]";
+
+function ShowcaseCard({ step, t }: { step: ShowcaseKey; t: (key: string) => string }) {
+  if (step === "conflict") {
+    return (
+      <div className={`${cardClass} w-[268px] gap-3 p-4`}>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-red-100 text-red-700">
+          <AlertTriangle aria-hidden="true" className="h-5 w-5" />
+        </span>
+        <span className="flex flex-col gap-1">
+          <span className="text-sm font-bold">{t("showcase.card.conflictTitle")}</span>
+          <span className="text-[13px] leading-snug text-slate-600">{t("showcase.card.conflictBody")}</span>
+        </span>
+      </div>
+    );
+  }
+  if (step === "imageSearch") {
+    return (
+      <div className={`${cardClass} w-[236px] flex-col gap-2.5 p-3`}>
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/auth-showcase/query-photo.jpg" alt="" className="h-[150px] w-full rounded-xl object-cover" />
+          <span className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white">
+            <Camera aria-hidden="true" className="h-3.5 w-3.5" />
+            {t("showcase.card.customerPhoto")}
+          </span>
+        </div>
+        <span className="flex items-center gap-2 text-[13px] font-bold text-blue-700">
+          <Sparkles aria-hidden="true" className="h-4 w-4" />
+          {t("showcase.card.aiSearching")}
+        </span>
+      </div>
+    );
+  }
+  if (step === "status") {
+    return (
+      <div className={`${cardClass} w-[276px] flex-col gap-3.5 px-[18px] py-4`}>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold">{t("showcase.card.order")}</span>
+          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">{t("showcase.card.reserved")}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 text-xs">
+          <span className="flex flex-col gap-1.5"><span className="h-1 rounded-sm bg-blue-700" /><b>{t("showcase.card.stepBook")}</b></span>
+          <span className="flex flex-col gap-1.5 text-slate-500"><span className="h-1 rounded-sm bg-slate-300" />{t("showcase.card.stepPickup")}</span>
+          <span className="flex flex-col gap-1.5 text-slate-500"><span className="h-1 rounded-sm bg-slate-300" />{t("showcase.card.stepReturn")}</span>
+        </div>
+        <span className="text-[13px] text-slate-600">
+          {t("showcase.card.collect")} <b className="text-slate-900">4.850.000</b>
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className={`${cardClass} w-[240px] flex-col gap-2.5 px-[18px] py-4`}>
+      <span className="text-[13px] font-bold uppercase text-slate-500">{t("showcase.card.today")}</span>
+      <div className="flex gap-2 text-xs text-slate-700">
+        <span className="flex flex-1 flex-col rounded-[10px] bg-blue-50 px-2.5 py-2"><b className="text-lg text-blue-700">3</b>{t("showcase.card.pickups")}</span>
+        <span className="flex flex-1 flex-col rounded-[10px] bg-violet-50 px-2.5 py-2"><b className="text-lg text-violet-700">3</b>{t("showcase.card.returns")}</span>
+        <span className="flex flex-1 flex-col rounded-[10px] bg-red-50 px-2.5 py-2"><b className="text-lg text-red-700">1</b>{t("showcase.card.late")}</span>
+      </div>
+    </div>
+  );
+}
+
 /**
- * Left half of the split auth page; not shown below lg. Steps advance when the active progress bar
- * finishes filling, so hover pauses them and reduced motion leaves the viewer on the step they chose.
+ * Left part of the split auth page (#679); not shown below lg. Four feature steps change on their own every
+ * few seconds; there are no step controls on purpose. Hover pauses, and reduced motion stays on the first step.
  */
 function ShopAuthShowcase() {
   const t = useAuthTranslations();
   const [step, setStep] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
   const current = showcaseSteps[step];
-  const next = () => setStep((i) => (i + 1) % showcaseSteps.length);
+
+  React.useEffect(() => {
+    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setTimeout(() => setStep((i) => (i + 1) % showcaseSteps.length), SHOWCASE_STEP_MS);
+    return () => window.clearTimeout(id);
+  }, [step, paused]);
 
   return (
-    <aside className="ar-showcase sticky top-0 hidden h-screen flex-col gap-8 overflow-hidden bg-gradient-to-b from-blue-50 to-slate-50 px-12 pb-10 pt-12 xl:px-16 lg:flex">
+    <aside
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      className="sticky top-0 hidden h-screen flex-col gap-7 overflow-hidden bg-[#F1F5FD] px-12 py-11 xl:px-14 lg:flex"
+    >
       <style>{showcaseCss}</style>
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -83,60 +154,41 @@ function ShopAuthShowcase() {
           height={44}
           className="h-11 w-11 rounded-xl shadow-[0_6px_16px_rgba(29,78,216,0.18)]"
         />
-        <span className="text-xl font-extrabold text-blue-900">AnyRent</span>
+        <span className="text-[22px] font-extrabold text-blue-900">AnyRent</span>
       </div>
 
-      <div key={current.key} aria-live="polite" className="flex min-h-[132px] max-w-[520px] flex-col gap-3">
-        <h2 className="ar-showcase-in m-0 text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em] text-slate-900">
+      <div key={current.key} aria-live="polite" className="flex min-h-[176px] max-w-[640px] flex-col gap-3">
+        <span className="ar-showcase-in text-[13px] font-bold uppercase tracking-[0.08em] text-blue-700">
+          {`0${step + 1} · ${t(`showcase.${current.key}.eyebrow`)}`}
+        </span>
+        <h2 className="ar-showcase-in m-0 text-[32px] font-extrabold leading-[1.2] tracking-[-0.02em] text-slate-900 xl:text-[36px]">
           {t(`showcase.${current.key}.title`)}
         </h2>
-        <p className="ar-showcase-in-late m-0 text-[17px] leading-relaxed text-slate-600">
-          {t(`showcase.${current.key}.desc`)}
-        </p>
+        <p className="ar-showcase-in-2 m-0 text-[17px] leading-relaxed text-slate-600">{t(`showcase.${current.key}.desc`)}</p>
       </div>
 
       <div className="flex min-h-0 flex-1 items-start">
-        <div
-          className="relative aspect-[3/2] max-h-full w-full overflow-hidden rounded-2xl shadow-[0_8px_32px_rgba(15,23,42,0.08)] transition-colors duration-700"
-          style={{ backgroundColor: current.bg }}
-        >
-          {showcaseSteps.map((s, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={s.key}
-              src={s.src}
-              alt=""
-              loading="lazy"
-              className={`ar-showcase-img absolute inset-0 h-full w-full ${s.cover ? "object-cover" : "object-contain"} ${
-                i === step ? "scale-100 opacity-100" : "scale-[1.03] opacity-0"
-              }`}
-            />
-          ))}
+        <div key={current.key} className="relative aspect-[8/5] h-full max-w-full">
+          <div className="absolute left-0 top-0 w-[80%] overflow-hidden rounded-[14px] bg-white shadow-[0_30px_60px_rgba(15,23,42,0.16),0_0_0_1px_rgba(15,23,42,0.06)]">
+            <div className="flex h-[30px] items-center gap-[7px] border-b border-slate-200 bg-slate-100 px-3.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={current.web} alt={t("showcase.webAlt")} className="ar-showcase-in block aspect-[8/5] w-full object-cover object-left-top" />
+          </div>
+          <div className="absolute bottom-0 right-0 h-[92%] rounded-[38px] bg-slate-900 p-2 shadow-[0_30px_60px_rgba(15,23,42,0.28)]">
+            <div className="flex h-full aspect-[198/431] flex-col overflow-hidden rounded-[30px] bg-white">
+              <div className="flex h-[6%] shrink-0 items-center justify-center">
+                <span className="h-[60%] w-[32%] rounded-full bg-slate-900" />
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={current.phone} alt={t("showcase.phoneAlt")} className="ar-showcase-in min-h-0 flex-1 object-cover object-top" />
+            </div>
+          </div>
+          <ShowcaseCard step={current.key} t={t} />
         </div>
-      </div>
-
-      <div className="flex gap-2">
-        {showcaseSteps.map((s, i) => (
-          <button
-            key={s.key}
-            type="button"
-            onClick={() => setStep(i)}
-            aria-label={t("showcase.goTo", { n: i + 1 })}
-            aria-current={i === step ? "step" : undefined}
-            className="group flex h-6 flex-1 items-center"
-          >
-            <span className="relative h-1 w-full overflow-hidden rounded-full bg-slate-300/70 group-hover:bg-slate-400/70">
-              {i < step ? <span className="absolute inset-0 bg-blue-700" /> : null}
-              {i === step ? (
-                <span
-                  key={`fill-${step}`}
-                  onAnimationEnd={next}
-                  className="ar-showcase-fill absolute inset-0 origin-left bg-blue-700"
-                />
-              ) : null}
-            </span>
-          </button>
-        ))}
       </div>
     </aside>
   );

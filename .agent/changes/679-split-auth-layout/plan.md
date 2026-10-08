@@ -13,6 +13,9 @@ Issue: #679 · Status: accepted · Spec: ./spec.md
 
 ## Files
 
+- `apps/client/public/auth-showcase/*.jpg` — 4 web + 4 phone captures + 1 query photo (~0.9 MB total, lg only)
+- `apps/client/app/login/page.tsx` — drop the Google button
+
 - `packages/ui/src/components/forms/auth-shop.tsx` — layout + panel
 - `locales/*/auth.json` — strings
 
