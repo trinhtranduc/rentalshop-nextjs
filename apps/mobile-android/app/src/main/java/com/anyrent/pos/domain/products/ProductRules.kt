@@ -333,6 +333,16 @@ object CartV2Logic {
     /** #684: a line's note as shown and sent: trimmed; null when blank (an empty sheet clears it), iOS `noteText` */
     fun noteText(note: String?): String? = note?.trim()?.takeIf { it.isNotEmpty() }
 
+    /** #677: the cart header's ⋯ menu ("Chia sẻ báo giá", "Xoá giỏ hàng") */
+    data class MoreMenu(val shareEnabled: Boolean, val clearEnabled: Boolean)
+
+    /**
+     * #677: null while editing an order (no ⋯; "Huỷ sửa" is in the bottom bar). An empty cart disables both items;
+     * the quote also needs the rental dates ([datesReady]), as the share did (iOS `CartV2Logic.moreMenu`).
+     */
+    fun moreMenu(editing: Boolean, itemCount: Int, isSale: Boolean, datesReady: Boolean): MoreMenu? =
+        if (editing) null else MoreMenu(shareEnabled = itemCount > 0 && (isSale || datesReady), clearEnabled = itemCount > 0)
+
     /** Every problem at once, like the iOS alert; a sale needs no dates (#448) */
     fun problems(itemCount: Int, hasCustomer: Boolean, isSale: Boolean, datesChosen: Boolean): List<CartProblem> =
         buildList {

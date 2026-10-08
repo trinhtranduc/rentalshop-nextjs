@@ -680,6 +680,8 @@
     <string name="v2_edit_confirm_keep_editing">Keep editing</string>
     <string name="v2_edit_saved">Saved order #%1$s</string>
     <string name="v2_edit_saved_no_number">Order saved</string>
+    <string name="v2_cart_more">More</string>
+    <string name="v2_cart_share_quote">Share quote</string>
     <string name="v2_cart_edit_cancel">Cancel edit</string>
     <string name="v2_cart_edit_cancel_title">Cancel editing order #%1$s?</string>
     <string name="v2_cart_edit_cancel_title_no_number">Cancel editing this order?</string>

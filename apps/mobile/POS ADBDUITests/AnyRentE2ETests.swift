@@ -125,6 +125,20 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
         }
         e2e.shot("22-cart-dates")
+        // #677 (board gio-menu): ⋯ in the header opens "Chia sẻ báo giá" and "Xoá giỏ hàng" (no share icon any more)
+        let more = app.buttons["cart.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 3), "cart header has ⋯")
+        XCTAssertFalse(app.buttons["cart.share"].exists, "no standalone share icon")
+        if more.exists {
+            more.tap()
+            let quote = e2e.button(["Chia sẻ báo giá", "Share quote"])
+            XCTAssertTrue(quote.waitForExistence(timeout: 3), "⋯ offers Chia sẻ báo giá")
+            XCTAssertTrue(e2e.button(["Xoá giỏ hàng", "Clear cart"]).exists, "⋯ offers Xoá giỏ hàng")
+            e2e.shot("22b-cart-more-menu")
+            // Close the menu without choosing (tap outside it)
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            sleep(1)
+        }
 
         // New customer with a Vietnamese name: covers "Khách mới" and accent-insensitive search below.
         let customer = e2e.createCustomerInPicker(name: E2E.vietnameseName, phone: E2E.uniquePhone())
@@ -1158,6 +1172,7 @@ final class AnyRentE2ETests: XCTestCase {
         // #677 option B: "Huỷ sửa" sits next to "Lưu thay đổi"; the header has no share button while editing
         XCTAssertTrue(app.buttons["cart.edit.cancel"].exists, "bottom bar has 'Huỷ sửa'")
         XCTAssertFalse(app.buttons["cart.share"].exists, "no share button while editing")
+        XCTAssertFalse(app.buttons["cart.more"].exists, "no ⋯ while editing")
         XCTAssertFalse(e2e.button(["Tạo đơn", "Create order"]).exists, "no 'Tạo đơn' while editing")
         e2e.shot("60e-edit-cart")
 

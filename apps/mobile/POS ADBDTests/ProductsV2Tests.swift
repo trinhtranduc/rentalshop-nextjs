@@ -1051,6 +1051,17 @@ extension ProductsV2Tests {
                        String(format: "products.cart.edit.title".localized(), "482913"))
     }
 
+    /// #677 (board gio-menu) — the cart's ⋯: none while editing, both items off on an empty cart
+    func testCartMoreMenuState() throws {
+        XCTAssertNil(CartV2Logic.moreMenu(try editCart()), "no ⋯ while editing")
+        XCTAssertEqual(CartV2Logic.moreMenu(Cart()), CartV2Logic.MoreMenuState(shareEnabled: false, clearEnabled: false))
+        XCTAssertEqual(CartV2Logic.moreMenu(try rentCart()), CartV2Logic.MoreMenuState(shareEnabled: true, clearEnabled: true))
+        let noDates = try rentCart()
+        noDates.returnPlanAt = nil
+        XCTAssertEqual(CartV2Logic.moreMenu(noDates), CartV2Logic.MoreMenuState(shareEnabled: false, clearEnabled: true),
+                       "a rental without dates cannot be quoted yet, but can be cleared")
+    }
+
     func testCancelEditReturnsTheOrderAndTitle() throws {
         XCTAssertNil(EditOrderSheetLogic.cancelEdit(try rentCart()), "a new order has nothing to cancel")
         XCTAssertEqual(EditOrderSheetLogic.cancelEdit(try editCart()), 42)
