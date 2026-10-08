@@ -1155,6 +1155,9 @@ final class AnyRentE2ETests: XCTestCase {
         }
         let save = e2e.button(["Lưu thay đổi", "Save changes"])
         XCTAssertTrue(save.exists, "bottom button is 'Lưu thay đổi'")
+        // #677 option B: "Huỷ sửa" sits next to "Lưu thay đổi"; the header has no share button while editing
+        XCTAssertTrue(app.buttons["cart.edit.cancel"].exists, "bottom bar has 'Huỷ sửa'")
+        XCTAssertFalse(app.buttons["cart.share"].exists, "no share button while editing")
         XCTAssertFalse(e2e.button(["Tạo đơn", "Create order"]).exists, "no 'Tạo đơn' while editing")
         e2e.shot("60e-edit-cart")
 
