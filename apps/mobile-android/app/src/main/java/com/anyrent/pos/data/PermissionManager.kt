@@ -48,4 +48,7 @@ object PermissionManager {
     /** iOS: delete cancelled orders only for merchant / outlet admin (and system admin). */
     fun canDeleteCancelledOrders(): Boolean =
         role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+
+    /** #670: change history (order / product); not OUTLET_STAFF. Reads the raw role so OPS counts */
+    fun canViewChangeHistory(): Boolean = com.anyrent.pos.domain.history.ChangeHistory.canView(SessionStore.role)
 }

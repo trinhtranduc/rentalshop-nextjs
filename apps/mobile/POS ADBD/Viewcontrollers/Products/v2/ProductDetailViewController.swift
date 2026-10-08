@@ -190,16 +190,18 @@ final class ProductDetailViewController: BaseViewControler {
         band.snp.makeConstraints { make in make.height.equalTo(8) }
         content.addArrangedSubview(band)
 
-        // #519: "Lịch sử thay đổi" of the product (board LS-san-pham)
-        let history = V2ValueRow(title: "history.title".localized())
-        history.titleLabel.font = Utils.mediumFont(size: DS.TextSize.body)
-        history.accessibilityIdentifier = "product.detail.history"
-        history.addTarget(self, action: #selector(openHistory), for: .touchUpInside)
-        content.addArrangedSubview(history)
-        let historyBand = UIView()
-        historyBand.backgroundColor = DS.Color.background
-        historyBand.snp.makeConstraints { make in make.height.equalTo(8) }
-        content.addArrangedSubview(historyBand)
+        // #519: "Lịch sử thay đổi" of the product (board LS-san-pham); #670: not for OUTLET_STAFF
+        if ChangeHistoryLogic.currentUserCanView {
+            let history = V2ValueRow(title: "history.title".localized())
+            history.titleLabel.font = Utils.mediumFont(size: DS.TextSize.body)
+            history.accessibilityIdentifier = "product.detail.history"
+            history.addTarget(self, action: #selector(openHistory), for: .touchUpInside)
+            content.addArrangedSubview(history)
+            let historyBand = UIView()
+            historyBand.backgroundColor = DS.Color.background
+            historyBand.snp.makeConstraints { make in make.height.equalTo(8) }
+            content.addArrangedSubview(historyBand)
+        }
 
         // Orders
         ordersCount.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
@@ -609,6 +611,7 @@ final class ProductDetailViewController: BaseViewControler {
 
     /// #519: read-only change history of this product
     @objc private func openHistory() {
+        guard ChangeHistoryLogic.currentUserCanView else { return }
         let barcode = product.barcode?.trimmingCharacters(in: .whitespaces)
         let history = ChangeHistoryViewController(subject: .product(id: productId, name: product.name ?? "",
                                                                     barcode: (barcode ?? "").isEmpty ? nil : barcode))

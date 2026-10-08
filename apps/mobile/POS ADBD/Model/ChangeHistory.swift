@@ -224,14 +224,22 @@ enum ChangeTone: Equatable {
     case created, note, danger, staff, owner
 }
 
+/// One run of the row footer; the actor name is the only bold (ink) run
+struct ChangeFooterPart: Equatable {
+    let text: String
+    let bold: Bool
+}
+
 struct ChangeRow: Equatable {
     let id: Int
     let title: String
     let lines: [ChangeLine]
     let initials: String
     let tone: ChangeTone
-    /// "15:10 · Nguyễn An (nhân viên)"
-    let footer: String
+    /// "bởi Nguyễn An (nhân viên) · 15:10", or just "15:10" when the actor is unknown
+    let footerParts: [ChangeFooterPart]
+    /// Plain footer text (VoiceOver, tests)
+    var footer: String { footerParts.map(\.text).joined() }
 }
 
 /// One Vietnam civil day of the list, newest first
@@ -458,14 +466,45 @@ enum ChangeHistoryLogic {
 
     // MARK: Actor
 
+    /// #670: change history is for ADMIN, OPS, MERCHANT and OUTLET_ADMIN; OUTLET_STAFF (and an unknown role) gets
+    /// neither the entry points nor the changes request (the API answers 403)
+    static func canView(_ role: String?) -> Bool {
+        ["ADMIN", "OPS", "MERCHANT", "OUTLET_ADMIN"].contains((role ?? "").trimmingCharacters(in: .whitespaces).uppercased())
+    }
+
+    /// The signed-in user may open change history
+    static var currentUserCanView: Bool { canView(User.account()?.roleCode) }
+
     static func isStaff(_ role: String?) -> Bool {
         ["OUTLET_STAFF", "OUTLET_ADMIN"].contains((role ?? "").uppercased())
     }
 
-    static func actorName(_ actor: ChangeActor?) -> String {
+    /// "Nguyễn An (nhân viên)" for staff, the bare name for owners, nil when the actor is unknown
+    static func actorName(_ actor: ChangeActor?) -> String? {
         let name = (actor?.name ?? "").trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return "history.actor.unknown".localized() }
+        guard !name.isEmpty else { return nil }
         return isStaff(actor?.role) ? String(format: "history.actor.staff".localized(), name) : name
+    }
+
+    /// "bởi Nguyễn An (nhân viên)" split so the name alone can be bold; nil when the actor is unknown
+    static func actorParts(_ actor: ChangeActor?) -> [ChangeFooterPart]? {
+        let name = (actor?.name ?? "").trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return nil }
+        let (byHead, byTail) = splitFormat("history.actor.by".localized())
+        var head = byHead, tail = byTail
+        if isStaff(actor?.role) {
+            let (staffHead, staffTail) = splitFormat("history.actor.staff".localized())
+            head += staffHead
+            tail = staffTail + tail
+        }
+        return [ChangeFooterPart(text: head, bold: false), ChangeFooterPart(text: name, bold: true),
+                ChangeFooterPart(text: tail, bold: false)].filter { !$0.text.isEmpty }
+    }
+
+    /// "bởi %@" → ("bởi ", ""); a format without "%@" keeps the whole text before the name
+    static func splitFormat(_ format: String) -> (String, String) {
+        guard let range = format.range(of: "%@") else { return (format, "") }
+        return (String(format[..<range.lowerBound]), String(format[range.upperBound...]))
     }
 
     static func tone(_ entry: ChangeHistoryEntry) -> ChangeTone {
@@ -487,11 +526,13 @@ enum ChangeHistoryLogic {
 
     static func row(_ entry: ChangeHistoryEntry, timeZone: TimeZone = ChangeHistoryLogic.timeZone) -> ChangeRow {
         let name = (entry.actor?.name ?? "").trimmingCharacters(in: .whitespaces)
-        let footer = [entry.date.map { clock($0, timeZone: timeZone) }, actorName(entry.actor)]
-            .compactMap { $0 }
-            .joined(separator: " · ")
+        var footer = actorParts(entry.actor) ?? []
+        if let date = entry.date {
+            let time = clock(date, timeZone: timeZone)
+            footer.append(ChangeFooterPart(text: footer.isEmpty ? time : " · " + time, bold: false))
+        }
         return ChangeRow(id: entry.id, title: title(entry), lines: lines(entry, timeZone: timeZone),
-                         initials: SettingsV2Logic.initials(name), tone: tone(entry), footer: footer)
+                         initials: SettingsV2Logic.initials(name), tone: tone(entry), footerParts: footer)
     }
 
     // MARK: Days

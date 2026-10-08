@@ -2117,6 +2117,7 @@
 "history.summary.today" = "%@ hôm nay";
 "history.actor.unknown" = "Hệ thống";
 "history.actor.staff" = "%@ (nhân viên)";
+"history.actor.by" = "bởi %@";
 "history.spoken.to" = "thành";
 "history.kind.ORDER_CREATED" = "Tạo đơn";
 "history.kind.ORDER_EDITED" = "Sửa đơn";

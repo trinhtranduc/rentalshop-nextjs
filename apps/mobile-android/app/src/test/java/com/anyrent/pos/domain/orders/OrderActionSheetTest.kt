@@ -22,6 +22,16 @@ class OrderActionSheetTest {
         assertEquals(listOf(Action.CANCEL), r.danger)
     }
 
+    @Test fun staffSheetHasNoHistory() {
+        // #670: OUTLET_STAFF cannot read change history
+        for (type in listOf("RENT", "SALE")) for (status in listOf("RESERVED", "PICKUPED", "RETURNED", "COMPLETED", "CANCELLED")) {
+            val r = OrderActionSheet.rows(OrderDetailLogic.actions(type, status, false, false), isSale = type == "SALE", canExtend = false, canViewHistory = false)
+            assertTrue("$type $status", Action.HISTORY !in r.main)
+        }
+        val r = OrderActionSheet.rows(OrderDetailLogic.actions("RENT", "RESERVED", false, false), isSale = false, canExtend = false, canViewHistory = false)
+        assertEquals(listOf(Action.PRINT, Action.NOTES, Action.SHARE), r.main)
+    }
+
     @Test fun reservedRentalWithoutEditRightGetsNoEditAnywhere() {
         val r = rows("RENT", "RESERVED", manage = false)
         assertEquals(listOf(Action.PRINT, Action.NOTES, Action.HISTORY, Action.SHARE), r.main)

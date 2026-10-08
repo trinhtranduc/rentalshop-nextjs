@@ -338,6 +338,14 @@ export const ordersApi = {
   },
 
   /**
+   * #670: the order change timeline (who did what), newest first
+   */
+  async getOrderChanges(orderId: number, limit = 100): Promise<ApiResponse<{ entries: unknown[] }>> {
+    const response = await authenticatedFetch(`${apiUrls.orders.update(orderId)}/changes?limit=${limit}`);
+    return await parseApiResponse<{ entries: unknown[] }>(response);
+  },
+
+  /**
    * Pickup order (change status to PICKUPED)
    */
   async pickupOrder(orderId: number): Promise<ApiResponse<Order>> {

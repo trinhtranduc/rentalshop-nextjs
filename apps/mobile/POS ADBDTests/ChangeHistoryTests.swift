@@ -246,18 +246,21 @@ final class ChangeHistoryTests: XCTestCase {
         let staff = ChangeHistoryLogic.row(entries[0], timeZone: vn)
         XCTAssertEqual(staff.id, 3)
         XCTAssertEqual(staff.title, "history.kind.ORDER_EDITED".localized())
-        XCTAssertEqual(staff.footer, "15:10 · " + String(format: "history.actor.staff".localized(), "Nguyễn An"))
+        let staffName = String(format: "history.actor.staff".localized(), "Nguyễn An")
+        XCTAssertEqual(staff.footer, String(format: "history.actor.by".localized(), staffName) + " · 15:10")
+        XCTAssertEqual(staff.footerParts.filter(\.bold).map(\.text), ["Nguyễn An"])
         XCTAssertEqual(staff.initials, "NA")
         XCTAssertEqual(staff.tone, .staff)
 
         let unknown = ChangeHistoryLogic.row(entries[1], timeZone: vn)
         XCTAssertEqual(unknown.title, "history.kind.OTHER".localized())
-        XCTAssertEqual(unknown.footer, "16:00 · " + "history.actor.unknown".localized())
+        XCTAssertEqual(unknown.footer, "16:00")
+        XCTAssertEqual(unknown.footerParts, [ChangeFooterPart(text: "16:00", bold: false)])
         XCTAssertEqual(unknown.initials, "?")
         XCTAssertEqual(unknown.tone, .owner)
 
         let created = ChangeHistoryLogic.row(entries[2], timeZone: vn)
-        XCTAssertEqual(created.footer, "history.actor.unknown".localized())
+        XCTAssertEqual(created.footer, "")
         XCTAssertEqual(created.tone, .created)
         XCTAssertEqual(created.lines, [])
     }
@@ -266,7 +269,9 @@ final class ChangeHistoryTests: XCTestCase {
         XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "Trần Chủ", role: "MERCHANT")), "Trần Chủ")
         XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "Lan", role: "outlet_admin")),
                        String(format: "history.actor.staff".localized(), "Lan"))
-        XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "  ", role: "MERCHANT")), "history.actor.unknown".localized())
+        XCTAssertNil(ChangeHistoryLogic.actorName(ChangeActor(name: "  ", role: "MERCHANT")))
+        XCTAssertNil(ChangeHistoryLogic.actorName(nil))
+        XCTAssertNil(ChangeHistoryLogic.actorParts(ChangeActor(name: "", role: "OUTLET_STAFF")))
 
         func tone(_ kind: String, _ role: String?) -> ChangeTone {
             ChangeHistoryLogic.tone(ChangeHistoryEntry(id: 1, at: "", kind: kind, actor: ChangeActor(name: "A", role: role)))
@@ -277,6 +282,32 @@ final class ChangeHistoryTests: XCTestCase {
         XCTAssertEqual(tone("PRODUCT_DELETED", "MERCHANT"), .danger)
         XCTAssertEqual(tone("ORDER_EDITED", "OUTLET_STAFF"), .staff)
         XCTAssertEqual(tone("ORDER_EDITED", "MERCHANT"), .owner)
+    }
+
+    func testFooterOwnerStaffAndUnknown() {
+        func row(_ actor: ChangeActor?) -> ChangeRow {
+            ChangeHistoryLogic.row(ChangeHistoryEntry(id: 1, at: "2026-10-06T08:10:00Z", kind: "ORDER_EDITED", actor: actor),
+                                   timeZone: vn)
+        }
+        let (byHead, byTail) = ChangeHistoryLogic.splitFormat("history.actor.by".localized())
+        let (staffHead, staffTail) = ChangeHistoryLogic.splitFormat("history.actor.staff".localized())
+
+        let owner = row(ChangeActor(name: "Trinh Trần", role: "MERCHANT"))
+        XCTAssertEqual(owner.footer, byHead + "Trinh Trần" + byTail + " · 15:10")
+        XCTAssertEqual(owner.footerParts.filter(\.bold).map(\.text), ["Trinh Trần"])
+
+        let staff = row(ChangeActor(name: " Lan Anh ", role: "OUTLET_STAFF"))
+        XCTAssertEqual(staff.footer, byHead + staffHead + "Lan Anh" + staffTail + byTail + " · 15:10")
+        XCTAssertEqual(staff.footerParts.filter(\.bold).map(\.text), ["Lan Anh"])
+
+        let unknown = row(nil)
+        XCTAssertEqual(unknown.footer, "15:10")
+        XCTAssertTrue(unknown.footerParts.allSatisfy { !$0.bold })
+        XCTAssertEqual(row(ChangeActor(name: "", role: "MERCHANT")).footer, "15:10")
+
+        let split = ChangeHistoryLogic.splitFormat("%@ (nhân viên)")
+        XCTAssertEqual(split.0, "")
+        XCTAssertEqual(split.1, " (nhân viên)")
     }
 
     func testClockUsesTheShopZone() {
@@ -376,6 +407,30 @@ final class ChangeHistoryTests: XCTestCase {
 
     func testStaffWithoutOrderRightsGetsNoEditOrCancel() {
         XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: []))
+    }
+
+    func testOnlyOwnersAndOutletAdminsSeeHistory() {
+        for role in ["ADMIN", "OPS", "MERCHANT", "OUTLET_ADMIN", "merchant", " OUTLET_ADMIN "] {
+            XCTAssertTrue(ChangeHistoryLogic.canView(role), role)
+        }
+        for role in ["OUTLET_STAFF", "outlet_staff", "", "ARTICLE", "SOMETHING"] {
+            XCTAssertFalse(ChangeHistoryLogic.canView(role), role)
+        }
+        XCTAssertFalse(ChangeHistoryLogic.canView(nil))
+    }
+
+    func testStaffSheetHasNoHistory() {
+        for type in OrderType.allCases {
+            for status in [OrderStatus.reserved, .pickuped, .returned, .completed, .cancelled] {
+                let actions = OrderDetailLogic.actions(orderType: type, status: status, canManageOrders: false,
+                                                       canDeleteCancelled: false)
+                let listed = OrderDetailLogic.sheetActions(actions, orderType: type, canExtend: false, canViewHistory: false)
+                XCTAssertFalse(listed.main.contains(.history), "\(type) \(status)")
+            }
+        }
+        XCTAssertEqual(OrderDetailLogic.sheetActions(
+            OrderDetailLogic.actions(orderType: .rent, status: .reserved, canManageOrders: false, canDeleteCancelled: false),
+            orderType: .rent, canExtend: false, canViewHistory: false), OrderSheetActions(main: [.print, .share, .notes], destructive: []))
     }
 
     func testSheetNeverRepeatsABottomButton() {

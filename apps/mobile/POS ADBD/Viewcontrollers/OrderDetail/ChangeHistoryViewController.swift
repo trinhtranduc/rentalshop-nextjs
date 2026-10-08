@@ -224,7 +224,7 @@ extension ChangeHistoryViewController: UITableViewDataSource, UITableViewDelegat
 
 // MARK: - Row
 
-/// Initials avatar, kind title, "Label: old (struck) → new" lines and "15:10 · Nguyễn An (nhân viên)"
+/// Initials avatar, kind title, "Label: old (struck) → new" lines and "bởi **Nguyễn An** (nhân viên) · 15:10"
 final class ChangeHistoryCell: UITableViewCell {
     static let reuseId = "ChangeHistoryCell"
     private let avatar = V2.label(size: 13, weight: .bold)
@@ -275,7 +275,7 @@ final class ChangeHistoryCell: UITableViewCell {
             linesStack.addArrangedSubview(label)
         }
         linesStack.isHidden = row.lines.isEmpty
-        footerLabel.text = row.footer
+        footerLabel.attributedText = ChangeHistoryCell.attributed(row.footerParts)
         accessibilityLabel = ([row.title] + row.lines.map(ChangeHistoryCell.spoken) + [row.footer]).joined(separator: ". ")
     }
 
@@ -312,6 +312,21 @@ final class ChangeHistoryCell: UITableViewCell {
             NSAttributedStringKey.font: UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.secondary, weight: .semibold),
             NSAttributedStringKey.foregroundColor: DS.Color.text,
         ]))
+        return text
+    }
+
+    /// "bởi Nguyễn An (nhân viên) · 15:10" in the muted footer style, the name bold in ink
+    static func attributed(_ parts: [ChangeFooterPart]) -> NSAttributedString {
+        let text = NSMutableAttributedString()
+        for part in parts {
+            text.append(NSAttributedString(string: part.text, attributes: part.bold ? [
+                NSAttributedStringKey.font: Utils.boldFont(size: 13),
+                NSAttributedStringKey.foregroundColor: DS.Color.text,
+            ] : [
+                NSAttributedStringKey.font: Utils.regularFont(size: 13),
+                NSAttributedStringKey.foregroundColor: UIColor(hexString: "64748B"),
+            ]))
+        }
         return text
     }
 

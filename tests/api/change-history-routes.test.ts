@@ -83,6 +83,8 @@ import { GET as productHistory } from '../../apps/api/app/api/products/[id]/hist
 import { GET as productChanges } from '../../apps/api/app/api/products/[id]/changes/route';
 
 const merchantCtx = { user: { id: 2, role: 'MERCHANT', merchantId: 2 }, userScope: { merchantId: 2 } };
+const outletAdmin1 = { user: { id: 9, role: 'OUTLET_ADMIN', merchantId: 2, outletId: 1 }, userScope: { merchantId: 2, outletId: 1 } };
+// #670: outlet staff may not read change history at all
 const staffOutlet1 = { user: { id: 9, role: 'OUTLET_STAFF', merchantId: 2, outletId: 1 }, userScope: { merchantId: 2, outletId: 1 } };
 const adminCtx = { user: { id: 1, role: 'ADMIN' }, userScope: {} };
 
@@ -143,8 +145,8 @@ describe('GET /api/orders/:id/history scope (#519)', () => {
     expect(mockPrisma.auditLog.findMany).not.toHaveBeenCalled();
   });
 
-  it('404 for outlet staff on an order of another outlet of the same merchant', async () => {
-    ctx = staffOutlet1;
+  it('404 for an outlet admin on an order of another outlet of the same merchant', async () => {
+    ctx = outletAdmin1;
     const res: any = await orderHistory(req('http://x/api/orders/6/history'), { params: { orderId: '6' } });
     expect(res.status).toBe(404);
   });
@@ -166,10 +168,10 @@ describe('GET /api/orders/:id/history scope (#519)', () => {
     );
   });
 
-  it('ADMIN reads any order; outlet staff read their own outlet', async () => {
+  it('ADMIN reads any order; an outlet admin reads their own outlet', async () => {
     ctx = adminCtx;
     expect(((await orderHistory(req('http://x/api/orders/8/history'), { params: { orderId: '8' } })) as any).status).toBe(200);
-    ctx = staffOutlet1;
+    ctx = outletAdmin1;
     expect(((await orderHistory(req('http://x/api/orders/5/history'), { params: { orderId: '5' } })) as any).status).toBe(200);
   });
 });
@@ -239,7 +241,7 @@ describe('GET /api/orders/:id/changes (#519)', () => {
     expect(((await orderChanges(req('http://x/api/orders/5/changes?limit=500'), { params: { orderId: '5' } })) as any).status).toBe(400);
     expect(((await orderChanges(req('http://x/api/orders/abc/changes'), { params: { orderId: 'abc' } })) as any).status).toBe(400);
     expect(((await orderChanges(req('http://x/api/orders/8/changes'), { params: { orderId: '8' } })) as any).status).toBe(404);
-    ctx = staffOutlet1;
+    ctx = outletAdmin1;
     expect(((await orderChanges(req('http://x/api/orders/6/changes'), { params: { orderId: '6' } })) as any).status).toBe(404);
     expect(((await orderChanges(req('http://x/api/orders/5/changes'), { params: { orderId: '5' } })) as any).status).toBe(200);
   });
@@ -254,8 +256,8 @@ describe('GET /api/products/:id/changes (#519)', () => {
     expect(res.body.data.entries[1].changes).toEqual([{ field: 'stock.Chi nhánh chính', from: 3, to: 4 }]);
   });
 
-  it('outlet staff see rows of their outlet and shop-level rows, never another outlet', async () => {
-    ctx = staffOutlet1;
+  it('an outlet admin sees rows of their outlet and shop-level rows, never another outlet', async () => {
+    ctx = outletAdmin1;
     const res: any = await productChanges(req('http://x/api/products/10/changes'), { params: { id: '10' } });
     expect(res.body.data.total).toBe(2);
     // 11: owner's price edit (no outlet) applies to every outlet; 12 (outlet 3) is hidden
@@ -267,5 +269,27 @@ describe('GET /api/products/:id/changes (#519)', () => {
     const res: any = await productChanges(req('http://x/api/products/20/changes'), { params: { id: '20' } });
     expect(res.status).toBe(404);
     expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+  });
+});
+
+describe('change history is for owners and outlet admins only (#670)', () => {
+  it('403 FORBIDDEN for outlet staff on every history route, without reading audit rows', async () => {
+    ctx = staffOutlet1;
+    const calls: [string, any][] = [
+      ['order history', await orderHistory(req('http://x/api/orders/5/history'), { params: { orderId: '5' } })],
+      ['order changes', await orderChanges(req('http://x/api/orders/5/changes'), { params: { orderId: '5' } })],
+      ['product history', await productHistory(req('http://x/api/products/10/history'), { params: { id: '10' } })],
+      ['product changes', await productChanges(req('http://x/api/products/10/changes'), { params: { id: '10' } })],
+    ];
+    for (const [name, res] of calls) {
+      expect([name, res.status, res.body.code]).toEqual([name, 403, 'FORBIDDEN']);
+    }
+    expect(mockPrisma.auditLog.findMany).not.toHaveBeenCalled();
+  });
+
+  it('owner and outlet admin still read it', async () => {
+    ctx = outletAdmin1;
+    expect(((await orderChanges(req('http://x/api/orders/5/changes'), { params: { orderId: '5' } })) as any).status).toBe(200);
+    expect(((await productChanges(req('http://x/api/products/10/changes'), { params: { id: '10' } })) as any).status).toBe(200);
   });
 });

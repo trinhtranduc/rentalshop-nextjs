@@ -518,12 +518,24 @@ export function buildPaySummary(o: OrderDetailLike): PaySummary {
   return { rows, total: cancelled ? { key: 'noRevenue', amount: null } : null, discount, struck: cancelled };
 }
 
-export type HistoryEvent =
+/** #670: who did a step; `staff` adds "(nhân viên)" */
+export type HistoryActor = { name: string; staff: boolean };
+
+export type HistoryEvent = (
   | { kind: 'created'; at: string; by: string }
   | { kind: 'payment'; at: string; amount: number; refund: boolean }
   | { kind: 'pickedUp'; at: string }
   | { kind: 'returned'; at: string }
-  | { kind: 'cancelled'; at: string };
+  | { kind: 'cancelled'; at: string }
+) & { actor?: HistoryActor };
+
+/** One row of `GET /api/orders/{id}/history` (only what the card needs) */
+export type HistoryEntryLike = {
+  kind: string;
+  at: string;
+  actor?: { name?: string | null; role?: string | null } | null;
+  changes?: { field: string; to?: unknown }[];
+};
 
 /** What happened to the order, newest first, from its own timestamps and completed payments. */
 export function buildHistory(o: OrderDetailLike): HistoryEvent[] {
@@ -549,6 +561,72 @@ export function buildHistory(o: OrderDetailLike): HistoryEvent[] {
     .map((e, i) => ({ e, i }))
     .sort((a, b) => (a.e.at === b.e.at ? b.i - a.i : a.e.at < b.e.at ? 1 : -1))
     .map(({ e }) => e);
+}
+
+const STEP_KIND: Partial<Record<HistoryEvent['kind'], string>> = {
+  created: 'ORDER_CREATED',
+  pickedUp: 'ORDER_PICKED_UP',
+  returned: 'ORDER_RETURNED',
+  cancelled: 'ORDER_CANCELLED',
+};
+const PAYMENT_MATCH_MS = 10 * 60 * 1000;
+
+function actorOf(entry: HistoryEntryLike): HistoryActor | undefined {
+  const name = (entry.actor?.name || '').trim();
+  if (!name) return undefined;
+  const role = String(entry.actor?.role || '').toUpperCase();
+  return { name, staff: role === 'OUTLET_STAFF' || role === 'OUTLET_ADMIN' };
+}
+
+const msOf = (value: string) => {
+  const t = Date.parse(value);
+  return Number.isFinite(t) ? t : NaN;
+};
+
+/**
+ * #670 — put "who did it" on each card row from the order's change history (newest first).
+ * Steps take the latest entry of their kind; a payment takes the closest unused payment entry with the
+ * same amount and direction within 10 minutes. No match leaves the row without a name.
+ */
+export function attachHistoryActors(events: HistoryEvent[], entries: HistoryEntryLike[]): HistoryEvent[] {
+  const used = new Set<number>();
+  return events.map((e) => {
+    let actor: HistoryActor | undefined;
+    if (e.kind === 'payment') {
+      const field = e.refund ? 'paymentRefunded' : 'paymentCollected';
+      const at = msOf(e.at);
+      let best = -1;
+      let bestGap = Infinity;
+      entries.forEach((entry, i) => {
+        if (used.has(i) || String(entry.kind).toUpperCase() !== 'ORDER_PAYMENT') return;
+        const change = (entry.changes || []).find((c) => c.field === field);
+        if (!change || Number(change.to) !== e.amount) return;
+        const gap = Math.abs(msOf(entry.at) - at);
+        if (gap <= PAYMENT_MATCH_MS && gap < bestGap) {
+          best = i;
+          bestGap = gap;
+        }
+      });
+      if (best >= 0) {
+        used.add(best);
+        actor = actorOf(entries[best]);
+      }
+    } else {
+      const kind = STEP_KIND[e.kind];
+      const entry = entries.find((x) => String(x.kind).toUpperCase() === kind);
+      if (entry) actor = actorOf(entry);
+    }
+    if (!actor && e.kind === 'created' && e.by) actor = { name: e.by, staff: false };
+    return actor ? { ...e, actor } : e;
+  });
+}
+
+/** "LA" for "Lan Anh" */
+export function actorInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  const pick = words.length === 1 ? [words[0]] : [words[0], words[words.length - 1]];
+  return pick.map((w) => w.charAt(0).toUpperCase()).join('');
 }
 
 /** "14:32 05/10" in shop time. */
