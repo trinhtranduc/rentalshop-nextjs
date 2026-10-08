@@ -165,12 +165,14 @@ enum OrderDetailLogic {
 
     /// Only what has no button on the screen: Print (unless the bottom bar has it), Share (#639, always), Notes,
     /// Edit / Extend when allowed and not on screen, History; then Cancel / Delete when allowed and not on screen
-    static func sheetActions(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool) -> OrderSheetActions {
+    /// #670: History only when [canViewHistory] (not OUTLET_STAFF)
+    static func sheetActions(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool,
+                             canViewHistory: Bool = true) -> OrderSheetActions {
         let onScreen = bottomButtons(actions, orderType: orderType, canExtend: canExtend)
         var candidates: [OrderSheetAction] = [.print, .share, .notes]
         if actions.canEdit { candidates.append(.edit) }
         if canExtend { candidates.append(.extend) }
-        candidates.append(.history)
+        if canViewHistory { candidates.append(.history) }
         var danger: [OrderSheetAction] = []
         if actions.canCancel { danger.append(.cancel) }
         if actions.canDelete { danger.append(.delete) }

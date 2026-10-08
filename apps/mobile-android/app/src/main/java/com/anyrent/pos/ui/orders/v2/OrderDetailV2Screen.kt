@@ -303,9 +303,12 @@ fun OrderDetailV2Screen(
 
     if (menuOpen && detail != null && actions != null) {
         val isSale = detail.summary.orderType.equals("SALE", ignoreCase = true)
-        val rows = OrderActionSheet.rows(actions, isSale, canExtend)
+        val canViewHistory = remember { PermissionManager.canViewChangeHistory() }
+        val rows = OrderActionSheet.rows(actions, isSale, canExtend, canViewHistory)
         val historyTexts = remember { changeHistoryTexts(context.resources) }
         LaunchedEffect(orderId) {
+            // #670: the API answers 403 to OUTLET_STAFF; no request, no row
+            if (!canViewHistory) return@LaunchedEffect
             withContext(Dispatchers.IO) { ApiClient.get().orderChanges(orderId, limit = 1) }
                 .onSuccess { historyPage = it }
         }
@@ -330,7 +333,7 @@ fun OrderDetailV2Screen(
                 when (action) {
                     OrderActionSheet.Action.PRINT -> print(detail)
                     OrderActionSheet.Action.NOTES -> openNotes(detail)
-                    OrderActionSheet.Action.HISTORY -> onOpenHistory(historySubtitleText)
+                    OrderActionSheet.Action.HISTORY -> if (canViewHistory) onOpenHistory(historySubtitleText)
                     OrderActionSheet.Action.EDIT -> {
                         if (!editing) {
                             editing = true

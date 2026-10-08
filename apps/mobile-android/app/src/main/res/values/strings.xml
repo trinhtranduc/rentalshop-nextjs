@@ -1242,6 +1242,7 @@
     <string name="history_other">Update</string>
     <string name="history_refund">Refund</string>
     <string name="history_staff_name">%1$s (staff)</string>
+    <string name="history_actor_by">by %1$s</string>
     <string name="history_per_day">/day</string>
     <string name="history_per_rental">/rental</string>
     <string name="history_per_hour">/hour</string>

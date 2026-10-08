@@ -4,7 +4,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { canReadOrderHistory, loadChangeTimeline, type HistoryDb } from '../../../../../lib/change-history';
+import { canSeeChangeHistory, canReadOrderHistory, loadChangeTimeline, type HistoryDb } from '../../../../../lib/change-history';
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -27,6 +27,10 @@ export async function GET(
   const { orderId } = await Promise.resolve(params);
 
   return withPermissions(['orders.view'])(async (request, { user, userScope }) => {
+    // #670: outlet staff do not see change history
+    if (!canSeeChangeHistory(user.role)) {
+      return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+    }
     try {
       if (!/^\d+$/.test(orderId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'), { status: 400 });

@@ -893,6 +893,8 @@
       },
       "history": {
         "title": "Lịch sử",
+        "by": "bởi",
+        "staff": "(nhân viên)",
         "created": "{by} tạo đơn",
         "createdNoBy": "Tạo đơn",
         "payment": "Ghi nhận thanh toán {amount}",

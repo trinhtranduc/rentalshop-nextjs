@@ -23,12 +23,13 @@ object OrderActionSheet {
         else -> setOf(Action.PRINT)
     }
 
-    fun rows(actions: DetailActions, isSale: Boolean, canExtend: Boolean): Rows {
+    /** #670: HISTORY only when [canViewHistory] (not OUTLET_STAFF) */
+    fun rows(actions: DetailActions, isSale: Boolean, canExtend: Boolean, canViewHistory: Boolean = true): Rows {
         val shown = onScreen(actions, isSale, canExtend)
         val main = buildList {
             add(Action.PRINT)
             add(Action.NOTES)
-            add(Action.HISTORY)
+            if (canViewHistory) add(Action.HISTORY)
             if (actions.canEdit) add(Action.EDIT)
             if (canExtend) add(Action.EXTEND)
             // Not on the board; kept so sharing the receipt is still one tap away (it was in the old ⋯ menu)

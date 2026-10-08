@@ -2118,6 +2118,7 @@
 "history.summary.today" = "%@ today";
 "history.actor.unknown" = "System";
 "history.actor.staff" = "%@ (staff)";
+"history.actor.by" = "by %@";
 "history.spoken.to" = "to";
 "history.kind.ORDER_CREATED" = "Order created";
 "history.kind.ORDER_EDITED" = "Order edited";
