@@ -32,6 +32,8 @@ final class OverviewV2ViewController: BaseViewControler {
     private var loading = false
     private var generation = 0
     private var requests: [DataRequest] = []
+    /// #674: dirty on the orders-changed signal; reloaded on appear when dirty or 10 minutes old
+    private var freshness = RefreshTracker()
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -58,12 +60,25 @@ final class OverviewV2ViewController: BaseViewControler {
         }
         #endif
         setupUI()
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         load()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        refreshIfNeeded()
+    }
+
+    /// #674: quiet (figures stay, no spinner) and only when an order changed or the figures are 10 minutes old
+    private func refreshIfNeeded() {
+        guard !loading, freshness.shouldReload(now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
+        load(quiet: true)
+    }
+
+    @objc private func ordersChanged() {
+        freshness.markDirty()
+        if isViewLoaded, view.window != nil { refreshIfNeeded() }
     }
 
     override func setupUI() {
@@ -120,20 +135,25 @@ final class OverviewV2ViewController: BaseViewControler {
         render()
     }
 
-    @objc private func pulled() { load() }
+    @objc private func pulled() { load(quiet: true) }
 
     // MARK: - Data
 
-    private func load() {
+    /// `quiet` (#674: appear, pull): the figures on screen stay until the answer replaces them; a failure keeps them
+    private func load(quiet: Bool = false) {
         requests.forEach { $0.cancel() }
         requests = []
         generation += 1
         let token = generation
         let range = self.range
         let chartRange = self.chartRange
-        loading = true
-        reportFailed = nil
-        render()
+        let version = freshness.begin()
+        let keep = quiet && reportFailed == nil && (showsRevenue ? report != nil : now != nil)
+        if !keep {
+            loading = true
+            reportFailed = nil
+            render()
+        }
 
         let group = DispatchGroup()
         var newReport: OverviewReport?
@@ -166,11 +186,19 @@ final class OverviewV2ViewController: BaseViewControler {
             guard let self, token == self.generation else { return }
             self.refresh.endRefreshing()
             self.loading = false
+            if keep, self.showsRevenue, newReport == nil {
+                // Quiet refresh failed: keep the figures, try again on the next appear
+                if let newNow { self.now = newNow }
+                self.render()
+                return
+            }
             self.report = newReport
             self.chartReport = chartRange == range ? newReport : newChart
             if let newNow { self.now = newNow }
             if self.showsRevenue, newReport == nil {
                 self.reportFailed = failure?.localizedDescription ?? ""
+            } else {
+                self.freshness.loaded(version: version, at: Date())
             }
             self.render()
         }

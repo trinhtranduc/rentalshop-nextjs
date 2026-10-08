@@ -527,14 +527,129 @@ enum CartV2Logic {
         previousIsProductsHome ? .pop : .openHomeTab
     }
 
-    /// What "Tạo đơn" opens (#476): a new order is confirmed in a sheet on the cart; an edited order keeps the review screen
+    /// What the cart button opens: a new order is confirmed in a sheet on the cart (#476); an edited order in the
+    /// "Lưu thay đổi" sheet (#676). The old review screen is no longer used from this cart.
     enum CtaRoute: Equatable {
         case confirmSheet
-        case preview
+        case editSheet
     }
 
     static func ctaRoute(isEditMode: Bool) -> CtaRoute {
-        isEditMode ? .preview : .confirmSheet
+        isEditMode ? .editSheet : .confirmSheet
+    }
+
+    /// The cart button: "Lưu thay đổi" for an edited order (#676), else "Tạo đơn" / "Bán & thu tiền"
+    static func ctaTitleKey(isEditMode: Bool, isRent: Bool) -> String {
+        if isEditMode { return "products.cart.edit.save" }
+        return isRent ? "products.cart.create" : "products.cart.sellAndCollect"
+    }
+}
+
+// MARK: - Edit order (#676, board sua-don)
+
+/// "Sửa đơn #482913" + "Heather Robinson · Đơn thuê" on the cart while it edits an order
+struct EditOrderHeader: Equatable {
+    /// Short order number; nil for a draft saved before #676 (title "Sửa đơn")
+    let number: String?
+    /// `Heather Robinson · Đơn thuê`
+    let subtitle: String
+}
+
+/// "Lưu thay đổi đơn #482913?" sheet content
+struct EditOrderConfirm: Equatable {
+    let number: String?
+    let isSale: Bool
+    /// `Heather Robinson · Đơn thuê`
+    let subtitle: String
+    /// `10/10 → 12/10`; nil for a sale
+    let range: String?
+    let days: Int?
+    /// Units in the cart ("2 món")
+    let itemCount: Int
+    let total: Double
+    /// Already collected on the order; nil hides the row
+    let paid: Double?
+    let datesChanged: Bool
+    let itemsChanged: Bool
+
+    var itemsKey: String { isSale ? "products.cart.edit.saleItems" : "products.cart.edit.rentItems" }
+}
+
+enum EditOrderSheetLogic {
+    static func typeKey(isSale: Bool) -> String {
+        isSale ? "products.cart.edit.saleType" : "products.cart.edit.rentType"
+    }
+
+    static func subtitle(_ cart: Cart) -> String {
+        let customer = cart.customer.map(CustomersV2Logic.displayName) ?? "—"
+        return customer + " · " + typeKey(isSale: cart.orderType == .sale).localized()
+    }
+
+    /// Nil while the cart creates a new order
+    static func header(_ cart: Cart) -> EditOrderHeader? {
+        guard cart.isEditMode else { return nil }
+        return EditOrderHeader(number: number(cart), subtitle: subtitle(cart))
+    }
+
+    static func number(_ cart: Cart) -> String? {
+        guard let raw = cart.editOriginal?.orderNumber, !raw.isEmpty else { return nil }
+        return OrdersHomeLogic.shortNumber(raw)
+    }
+
+    static func confirm(_ cart: Cart, timeZone: TimeZone = Date.shopTimeZone) -> EditOrderConfirm {
+        let isSale = cart.orderType == .sale
+        var range: String?
+        var days: Int?
+        if !isSale, let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt {
+            range = CreateOrderSheetLogic.dayMonth(pickup, timeZone: timeZone) + " → " + CreateOrderSheetLogic.dayMonth(ret, timeZone: timeZone)
+            days = CartV2Logic.rentalDays(pickup: pickup, return: ret, timeZone: timeZone)
+        }
+        let original = cart.editOriginal
+        let paid = original?.paid ?? 0
+        return EditOrderConfirm(
+            number: number(cart),
+            isSale: isSale,
+            subtitle: subtitle(cart),
+            range: range,
+            days: days,
+            itemCount: cart.itemCount,
+            total: cart.totalAmount,
+            paid: paid > 0 ? paid : nil,
+            datesChanged: !isSale && datesChanged(cart, original: original, timeZone: timeZone),
+            itemsChanged: itemsChanged(cart, original: original)
+        )
+    }
+
+    /// "Đã đổi" on Ngày thuê: the pickup or return shop day differs from the loaded order (times inside a day do not
+    /// count: the cart moves a picked day to its first / last second). Unknown original = no tag.
+    static func datesChanged(_ cart: Cart, original: CartEditOriginal?, timeZone: TimeZone = Date.shopTimeZone) -> Bool {
+        guard let original else { return false }
+        return dayKey(cart.pickupPlanAt, timeZone) != dayKey(original.pickupPlanAt, timeZone)
+            || dayKey(cart.returnPlanAt, timeZone) != dayKey(original.returnPlanAt, timeZone)
+    }
+
+    /// "Đã đổi" on Đồ thuê / Đồ bán: a line added or removed, or a line's quantity, price or pricing type changed.
+    /// Line order does not count. Unknown original = no tag.
+    static func itemsChanged(_ cart: Cart, original: CartEditOriginal?) -> Bool {
+        guard let original else { return false }
+        return sorted(CartEditOriginal.lines(of: cart)) != sorted(original.lines)
+    }
+
+    private static func sorted(_ lines: [CartEditOriginal.Line]) -> [CartEditOriginal.Line] {
+        lines.sorted { a, b in
+            if a.productId != b.productId { return a.productId < b.productId }
+            if a.quantity != b.quantity { return a.quantity < b.quantity }
+            if a.unitPrice != b.unitPrice { return a.unitPrice < b.unitPrice }
+            return a.pricingType < b.pricingType
+        }
+    }
+
+    private static func dayKey(_ date: Date?, _ timeZone: TimeZone) -> String? {
+        guard let date else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 }
 

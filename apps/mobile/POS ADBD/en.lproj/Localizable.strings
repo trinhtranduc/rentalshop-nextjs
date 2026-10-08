@@ -1310,7 +1310,6 @@
 "Search by Image" = "Search by Image";
 "Searching..." = "Searching...";
 "Search Results" = "Search Results";
-"Results: %d products" = "Results: %d products";
 "No similar products found" = "No similar products found";
 "AI is searching for products..." = "AI is searching for products...";
 "Found products!" = "Found products!";
@@ -1640,6 +1639,22 @@
 "products.cart.created.paidSale" = "Collected %@";
 "products.cart.created.newOrder" = "New order";
 "products.cart.created.viewOrder" = "View order";
+"products.cart.edit.title" = "Edit order #%@";
+"products.cart.edit.rentType" = "Rental order";
+"products.cart.edit.saleType" = "Sale order";
+"products.cart.edit.save" = "Save changes";
+"products.cart.edit.confirmTitle" = "Save changes to order #%@?";
+"products.cart.edit.confirmTitleNoNumber" = "Save changes to this order?";
+"products.cart.edit.dates" = "Rental dates";
+"products.cart.edit.rentItems" = "Rental items";
+"products.cart.edit.saleItems" = "Items sold";
+"products.cart.edit.itemCount" = "%d items";
+"products.cart.edit.itemCount.one" = "%d item";
+"products.cart.edit.paid" = "Collected";
+"products.cart.edit.changed" = "Changed";
+"products.cart.edit.keepEditing" = "Keep editing";
+"products.cart.edit.saved" = "Saved order #%@";
+"products.cart.edit.savedNoNumber" = "Order saved";
 "products.cart.needPrice" = "Enter a price for %@";
 "products.cart.editPrice" = "Edit price for this order";
 // MARK: - Orders tab (#371)
@@ -2358,3 +2373,16 @@
 /* #651 Home search field */
 "products.home.searchPlaceholder" = "Search name, barcode or take a photo";
 "products.home.imageSearch" = "Search by photo";
+
+/* #672 Image search results */
+"imageSearch.results.title" = "%d similar products";
+"imageSearch.results.title.one" = "%d similar product";
+"imageSearch.results.empty.title" = "No similar products";
+"imageSearch.results.subtitle" = "From your photo";
+"imageSearch.action.retake" = "Retake";
+"imageSearch.action.searchByName" = "Search by name";
+"imageSearch.empty.headline" = "Couldn't find this product";
+"imageSearch.empty.message" = "The product may not have a photo in your shop yet, or the photo isn't clear.";
+"imageSearch.empty.tip.whole" = "Capture the whole item in good light";
+"imageSearch.empty.tip.background" = "Plain background, nothing else in the shot";
+"imageSearch.empty.tip.photo" = "The product needs a photo in your list";

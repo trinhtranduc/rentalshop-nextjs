@@ -14,6 +14,8 @@ class Cart {
     
     // MARK: - Properties
     var orderId: Int? // ID of order being edited (nil if creating new order)
+    /// #676: the order as it was loaded for edit (number, dates, lines, paid); nil for a new order
+    var editOriginal: CartEditOriginal?
     private(set) var items: [CartItem] = []
     var customer: Customer?
     var orderType: OrderType = .rent
@@ -240,6 +242,7 @@ class Cart {
     /// Clear all items from cart
     func clear() {
         orderId = nil // Clear order ID if editing an order
+        editOriginal = nil
         items.removeAll()
         customer = nil
         orderType = .rent
@@ -278,6 +281,8 @@ class Cart {
         var manualSecurityDeposit: Double?
         var loyaltyRedeemPoints: Int
         var loyaltyDiscountAmount: Double
+        /// #676; absent in drafts saved before it
+        var editOriginal: CartEditOriginal? = nil
     }
 
     struct DiskCustomer: Codable {
@@ -322,12 +327,14 @@ class Cart {
             isDepositManuallyOverridden: isDepositManuallyOverridden,
             manualSecurityDeposit: manualSecurityDeposit,
             loyaltyRedeemPoints: loyaltyRedeemPoints,
-            loyaltyDiscountAmount: loyaltyDiscountAmount
+            loyaltyDiscountAmount: loyaltyDiscountAmount,
+            editOriginal: editOriginal
         )
     }
 
     func applyDiskSnapshot(_ snapshot: DiskSnapshot) {
         orderId = snapshot.orderId
+        editOriginal = snapshot.orderId == nil ? nil : snapshot.editOriginal
         items = snapshot.items
         if let saved = snapshot.customer {
             var restored = Customer()
@@ -437,6 +444,8 @@ class Cart {
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
             return cartItem
         }
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: orderDetail.orderNumber,
+                                                     paid: orderDetail.payments.reduce(0) { $0 + $1.amount })
         
         return cart
     }
@@ -626,6 +635,7 @@ class Cart {
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
             return cartItem
         }
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: order.orderNumber, paid: order.totalPaid)
         
         return cart
     }
@@ -1184,4 +1194,39 @@ struct CreateOrderItem: Codable {
     let rentDays: Int?
     let pricingType: String?
     let pricingOptionId: Int?
+}
+
+// MARK: - Edit snapshot (#676)
+
+/// The order as it was when loaded into the cart for edit. The edit sheet tags "Đã đổi" on the rows that differ.
+struct CartEditOriginal: Codable, Equatable {
+    struct Line: Codable, Equatable {
+        let productId: Int
+        let quantity: Int
+        /// The price the update request sends (`effectivePrice`)
+        let unitPrice: Double
+        /// FIXED / DAILY / …, upper-case
+        let pricingType: String
+    }
+
+    let orderNumber: String
+    let pickupPlanAt: Date?
+    let returnPlanAt: Date?
+    let lines: [Line]
+    /// Payments already on the order (0 = none / unknown)
+    let paid: Double
+
+    static func lines(of cart: Cart) -> [Line] {
+        cart.items.map { item in
+            Line(productId: item.productId,
+                 quantity: item.quantity,
+                 unitPrice: item.effectivePrice(for: cart.orderType),
+                 pricingType: cart.orderType == .rent ? item.requestPricingType.uppercased() : "")
+        }
+    }
+
+    static func capture(_ cart: Cart, orderNumber: String, paid: Double) -> CartEditOriginal {
+        CartEditOriginal(orderNumber: orderNumber, pickupPlanAt: cart.pickupPlanAt, returnPlanAt: cart.returnPlanAt,
+                         lines: lines(of: cart), paid: paid)
+    }
 }

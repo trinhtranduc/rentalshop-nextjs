@@ -23,6 +23,8 @@ final class SettingsV2ViewController: BaseViewControler {
     private var plan: SettingsPlan?
     /// Totals next to Khách hàng / Người dùng (#388)
     private var counts: [SettingsV2Item: Int] = [:]
+    /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
+    private var lastFetchedAt: Date?
 
     private var user: User? { User.account() }
 
@@ -35,6 +37,8 @@ final class SettingsV2ViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         rebuild()
+        guard RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: lastFetchedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
+        lastFetchedAt = Date()
         loadPlan()
         loadCounts()
         refreshOverlapSetting()
@@ -108,7 +112,7 @@ final class SettingsV2ViewController: BaseViewControler {
     /// The shop's current value, so the switch matches what was saved on another device
     private func refreshOverlapSetting() {
         guard showsOverlapSetting else { return }
-        OverlapSetting.refresh(force: true) { [weak self] _ in
+        OverlapSetting.refresh { [weak self] _ in
             guard let self, self.showsOverlapSetting, !OverlapSetting.saving else { return }
             self.listView.reloadData()
         }

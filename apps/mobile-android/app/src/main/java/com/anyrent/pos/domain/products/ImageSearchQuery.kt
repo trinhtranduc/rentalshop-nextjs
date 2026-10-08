@@ -34,3 +34,21 @@ object ImageSearchQuery {
     /** True when the API code means "nothing matched" rather than a failure. */
     fun isNoMatch(code: String?): Boolean = code.equals(NO_MATCH_CODE, ignoreCase = true)
 }
+
+/**
+ * #672: what the image-search results sheet shows. One list in API order (best first), no similarity
+ * percentage; no matches shows the empty state with tips. Same rules on iOS (`ImageSearchResults`).
+ */
+object ImageSearchResults {
+    enum class Content { LIST, EMPTY }
+
+    /** The header title: "4 sản phẩm giống" (plural) or "Không thấy sản phẩm giống" */
+    sealed interface Title {
+        data class Count(val count: Int) : Title
+        data object NoMatch : Title
+    }
+
+    fun content(count: Int): Content = if (count > 0) Content.LIST else Content.EMPTY
+
+    fun title(count: Int): Title = if (count > 0) Title.Count(count) else Title.NoMatch
+}

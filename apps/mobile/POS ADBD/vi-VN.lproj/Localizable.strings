@@ -1308,7 +1308,6 @@
 "Search by Image" = "Tìm kiếm bằng hình ảnh";
 "Searching..." = "Đang tìm kiếm...";
 "Search Results" = "Kết quả tìm kiếm";
-"Results: %d products" = "Kết quả: %d sản phẩm";
 "No similar products found" = "Không tìm thấy sản phẩm tương tự";
 "AI is searching for products..." = "🤖 AI đang tìm kiếm sản phẩm...";
 "Found products!" = "✅ Tìm thấy sản phẩm!";
@@ -1638,6 +1637,22 @@
 "products.cart.created.paidSale" = "Đã thu %@";
 "products.cart.created.newOrder" = "Tạo đơn mới";
 "products.cart.created.viewOrder" = "Xem đơn";
+"products.cart.edit.title" = "Sửa đơn #%@";
+"products.cart.edit.rentType" = "Đơn thuê";
+"products.cart.edit.saleType" = "Đơn bán";
+"products.cart.edit.save" = "Lưu thay đổi";
+"products.cart.edit.confirmTitle" = "Lưu thay đổi đơn #%@?";
+"products.cart.edit.confirmTitleNoNumber" = "Lưu thay đổi đơn này?";
+"products.cart.edit.dates" = "Ngày thuê";
+"products.cart.edit.rentItems" = "Đồ thuê";
+"products.cart.edit.saleItems" = "Đồ bán";
+"products.cart.edit.itemCount" = "%d món";
+"products.cart.edit.itemCount.one" = "%d món";
+"products.cart.edit.paid" = "Đã thu";
+"products.cart.edit.changed" = "Đã đổi";
+"products.cart.edit.keepEditing" = "Tiếp tục sửa";
+"products.cart.edit.saved" = "Đã lưu đơn #%@";
+"products.cart.edit.savedNoNumber" = "Đã lưu đơn";
 "products.cart.needPrice" = "Nhập giá cho %@";
 "products.cart.editPrice" = "Sửa giá cho đơn này";
 // MARK: - Orders tab (#371)
@@ -2149,14 +2164,14 @@
 "history.field.returnedAt" = "Đã nhận trả";
 "history.field.totalAmount" = "Tổng đơn";
 "history.field.depositAmount" = "Cọc trả trước";
-"history.field.securityDeposit" = "Tiền thế chấp";
+"history.field.securityDeposit" = "Tiền thế chân";
 "history.field.discountType" = "Kiểu giảm giá";
 "history.field.discountValue" = "Mức giảm";
 "history.field.discountAmount" = "Tiền giảm";
 "history.field.damageFee" = "Phí hư hỏng";
 "history.field.lateFee" = "Phí trễ hạn";
-"history.field.collateralType" = "Loại thế chấp";
-"history.field.collateralDetails" = "Thế chấp";
+"history.field.collateralType" = "Loại thế chân";
+"history.field.collateralDetails" = "Thế chân";
 "history.field.pickupNotes" = "Ghi chú giao";
 "history.field.returnNotes" = "Ghi chú trả";
 "history.field.damageNotes" = "Ghi chú hư hỏng";
@@ -2356,3 +2371,16 @@
 /* #651 Home search field */
 "products.home.searchPlaceholder" = "Tìm tên, mã vạch hoặc chụp ảnh";
 "products.home.imageSearch" = "Tìm bằng hình";
+
+/* #672 Image search results */
+"imageSearch.results.title" = "%d sản phẩm giống";
+"imageSearch.results.title.one" = "%d sản phẩm giống";
+"imageSearch.results.empty.title" = "Không thấy sản phẩm giống";
+"imageSearch.results.subtitle" = "Từ ảnh bạn vừa chụp";
+"imageSearch.action.retake" = "Chụp lại";
+"imageSearch.action.searchByName" = "Tìm bằng tên";
+"imageSearch.empty.headline" = "Chưa tìm ra sản phẩm này";
+"imageSearch.empty.message" = "Có thể sản phẩm chưa có ảnh trong cửa hàng, hoặc ảnh chụp chưa rõ.";
+"imageSearch.empty.tip.whole" = "Chụp cả món đồ, đủ sáng";
+"imageSearch.empty.tip.background" = "Nền gọn, không lẫn đồ khác";
+"imageSearch.empty.tip.photo" = "Sản phẩm cần có ảnh trong danh sách";

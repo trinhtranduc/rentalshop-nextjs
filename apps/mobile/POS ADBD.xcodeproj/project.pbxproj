@@ -235,6 +235,7 @@
 		88A07DCF21AA8CF600023F69 /* FirebaseExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A07DCE21AA8CF600023F69 /* FirebaseExtension.swift */; };
 		88A07DD121AA8D3300023F69 /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A07DD021AA8D3300023F69 /* UIViewExtension.swift */; };
 		88A07DD421AA8E2400023F69 /* Define.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A07DD321AA8E2100023F69 /* Define.swift */; };
+		A674B0000000000000000001 /* RefreshPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A674F0000000000000000001 /* RefreshPolicy.swift */; };
 		88A07DD721AA8FC500023F69 /* TabbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A07DD621AA8FC500023F69 /* TabbarViewController.swift */; };
 		88A07DDD21AA8FF100023F69 /* SaleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A07DDC21AA8FF100023F69 /* SaleViewController.swift */; };
 		88A07E1D21AB000900023F69 /* ProductCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A07E1C21AB000900023F69 /* ProductCell.swift */; };
@@ -327,6 +328,7 @@
 		E6844B2830F8361BAA9CEFC4 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */; };
 		EC0A10022F1B00010000001 /* AvailabilityCheckViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0A10012F1B00010000001 /* AvailabilityCheckViews.swift */; };
 		EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42DC389596269843419D1B18 /* OrdersHomeTests.swift */; };
+		A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A674F0000000000000000002 /* RefreshPolicyTests.swift */; };
 		F05A9EEA160D9C22272C8D9E /* OrdersFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */; };
 		F4268E5625300006E2E8BF03 /* CustomersV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */; };
 		F53E36E4295E06D35B9F35C4 /* Pods_POS_ADBD.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */; };
@@ -569,6 +571,7 @@
 		B484F0000000000000000001 /* RentedOutOrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RentedOutOrdersViewController.swift; sourceTree = "<group>"; };
 		40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthFormsTests.swift; sourceTree = "<group>"; };
 		42DC389596269843419D1B18 /* OrdersHomeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersHomeTests.swift; sourceTree = "<group>"; };
+		A674F0000000000000000002 /* RefreshPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RefreshPolicyTests.swift; sourceTree = "<group>"; };
 		44906268638CD53C3E41AD39 /* SettingsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsV2.swift; sourceTree = "<group>"; };
 		49E0AF2F9405C2504BCCEFEE /* OrderDetailViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailViewController.swift; sourceTree = "<group>"; };
 		4AA0DF8499A488FAC04D5D59 /* Pods-POS ADBD.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBD.release.xcconfig"; path = "Target Support Files/Pods-POS ADBD/Pods-POS ADBD.release.xcconfig"; sourceTree = "<group>"; };
@@ -609,6 +612,7 @@
 		88A07DCE21AA8CF600023F69 /* FirebaseExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseExtension.swift; sourceTree = "<group>"; };
 		88A07DD021AA8D3300023F69 /* UIViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtension.swift; sourceTree = "<group>"; };
 		88A07DD321AA8E2100023F69 /* Define.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Define.swift; sourceTree = "<group>"; };
+		A674F0000000000000000001 /* RefreshPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshPolicy.swift; sourceTree = "<group>"; };
 		88A07DD621AA8FC500023F69 /* TabbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabbarViewController.swift; sourceTree = "<group>"; };
 		88A07DDC21AA8FF100023F69 /* SaleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaleViewController.swift; sourceTree = "<group>"; };
 		88A07E1C21AB000900023F69 /* ProductCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductCell.swift; sourceTree = "<group>"; };
@@ -1023,6 +1027,7 @@
 				A640F0000000000000000003 /* OrderShareImageTests.swift */,
 				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
+				A674F0000000000000000002 /* RefreshPolicyTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
@@ -1350,6 +1355,7 @@
 				0403310E2EACEC92003BC33E /* PermissionManager.swift */,
 				881802AF21BE5AEF00D1E366 /* UnixTime.swift */,
 				88A07DD321AA8E2100023F69 /* Define.swift */,
+				A674F0000000000000000001 /* RefreshPolicy.swift */,
 				88A07DD021AA8D3300023F69 /* UIViewExtension.swift */,
 				88A07DCE21AA8CF600023F69 /* FirebaseExtension.swift */,
 				88E4149F21A99EA200BAF4A1 /* UIAlertController+RC.swift */,
@@ -1842,6 +1848,7 @@
 				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
 				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
+				A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
@@ -1921,6 +1928,7 @@
 				A622B0000000000000000001 /* VietQR.swift in Sources */,
 				A640B0000000000000000002 /* OrderShareRenderer.swift in Sources */,
 				88A07DD421AA8E2400023F69 /* Define.swift in Sources */,
+				A674B0000000000000000001 /* RefreshPolicy.swift in Sources */,
 				C914E01823A4907A008B3EDF /* UIScrollView+Additions.swift in Sources */,
 				88E4149E21A99E9D00BAF4A1 /* RCError.swift in Sources */,
 				04FBE0AA2EDB35D70057EDF8 /* SaleDetailCell.swift in Sources */,

@@ -286,9 +286,8 @@ class CartViewModel: PreviewViewModelProtocol {
         let proceed: () -> Void = { [weak self] in
             guard let self else { return }
 
-            if let orderId = self.cart.orderId {
-                let updateRequest = self.cart.toUpdateOrderRequest()
-                OrderService.shared.updateOrder(orderId: orderId, request: updateRequest) { _, error in
+            if self.cart.orderId != nil {
+                CartOrderUpdate.send(self.cart) { _, error in
                     if let error = error {
                         completion(.failure(error))
                         return
@@ -350,5 +349,17 @@ class CartViewModel: PreviewViewModelProtocol {
     
     func canUpdate() -> Bool {
         return false // Cart cannot be updated (it's not an existing order)
+    }
+}
+
+/// #676 — the edit request of the review screen. `CartViewModel.saveOrder` and the new cart's "Lưu thay đổi" sheet
+/// both send it, so an edit saves the same `PUT /api/orders/{id}` body (and runs the same request validation) either way.
+enum CartOrderUpdate {
+    /// False (nothing sent) when the cart is not editing an order
+    @discardableResult
+    static func send(_ cart: Cart, completion: @escaping (Order?, NSError?) -> Void) -> Bool {
+        guard let orderId = cart.orderId else { return false }
+        OrderService.shared.updateOrder(orderId: orderId, request: cart.toUpdateOrderRequest(), completion: completion)
+        return true
     }
 }

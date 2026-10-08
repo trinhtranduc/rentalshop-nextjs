@@ -127,6 +127,7 @@ class PreviewViewController: BaseViewControler {
             // Set flag for refresh when no order object provided
             OrderListViewModel.shared.setNeedsRefresh()
         }
+        OrdersChangeSignal.post() // #674: create or edit through the review screen
     }
     
     // MARK: - UI Components

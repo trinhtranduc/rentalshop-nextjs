@@ -775,6 +775,7 @@ final class OrderDetailViewController: BaseViewControler {
             guard let self else { return }
             self.showToast(message: String(format: "order.extend.done".localized(), DayFormatter.short(day)))
             OrderListViewModel.shared.setNeedsRefresh()
+            OrdersChangeSignal.post()
             self.load()
         }
         present(sheet, animated: true)
@@ -912,6 +913,7 @@ final class OrderDetailViewController: BaseViewControler {
                 switch result {
                 case .success:
                     OrderListViewModel.shared.setNeedsRefresh()
+                    OrdersChangeSignal.post()
                     self.navigationController?.popViewController(animated: true)
                 case .failure(let error):
                     UIAlertController.errorAlert(parent: self, error: error)
@@ -959,6 +961,7 @@ final class OrderDetailViewController: BaseViewControler {
     private func didChangeOrder(_ order: Order) {
         OrderListViewModel.shared.updateOrder(order)
         OrderListViewModel.shared.setNeedsRefresh()
+        OrdersChangeSignal.post() // #674: Orders, Calendar and Overview mark themselves dirty
         load()
     }
 

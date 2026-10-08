@@ -65,7 +65,7 @@ class CreateOrderSheetTest {
     @Test
     fun `only a new order uses the sheet`() {
         assertEquals(CreateOrderSheet.CtaRoute.CONFIRM_SHEET, CreateOrderSheet.ctaRoute(editing = false))
-        assertEquals(CreateOrderSheet.CtaRoute.PREVIEW, CreateOrderSheet.ctaRoute(editing = true))
+        assertEquals(CreateOrderSheet.CtaRoute.EDIT_SHEET, CreateOrderSheet.ctaRoute(editing = true))
     }
 
     @Test

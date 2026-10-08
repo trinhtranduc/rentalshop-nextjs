@@ -483,6 +483,140 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(query.startDate.map(key), "2026-10-04")
     }
 
+    // MARK: #674 — segment cache, dirty flag, quiet refresh
+
+    private final class Clock {
+        var now = Date(timeIntervalSince1970: 1_790_000_000)
+    }
+
+    private func ids(_ model: OrdersHomeViewModel) -> [Int] {
+        model.sections.flatMap(\.rows).map(\.orderId)
+    }
+
+    func testSegmentSwitchShowsTheCachedListWithoutReloading() {
+        let source = FakeSource()
+        let clock = Clock()
+        let model = OrdersHomeViewModel(dataSource: source, now: { clock.now })
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1, 2])
+        model.select(.sale)
+        source.completeOrders(at: 1, ids: [7])
+        clock.now += 60
+
+        model.select(.rent)
+        XCTAssertEqual(ids(model), [1, 2], "the rent list shows at once")
+        XCTAssertEqual(model.state, .loaded)
+        XCTAssertEqual(model.total, 2)
+        XCTAssertEqual(source.orderCalls.count, 2, "fresh and clean: no request")
+    }
+
+    func testDirtySegmentShowsCacheThenRefreshesQuietly() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1, 2])
+        model.select(.sale)
+        source.completeOrders(at: 1, ids: [7])
+
+        model.markDirty()
+        model.select(.rent)
+        XCTAssertEqual(ids(model), [1, 2], "cached rows stay while the refresh runs")
+        XCTAssertEqual(model.state, .loaded, "no spinner")
+        XCTAssertEqual(source.orderCalls.count, 3)
+        XCTAssertEqual(source.orderCalls[2].orderType, .rent)
+        source.completeOrders(at: 2, ids: [3, 1, 2])
+        XCTAssertEqual(ids(model), [3, 1, 2])
+        XCTAssertFalse(model.isDirty)
+    }
+
+    func testAppearReloadsOnlyWhenDirtyOrStale() {
+        let source = FakeSource()
+        let clock = Clock()
+        let model = OrdersHomeViewModel(dataSource: source, now: { clock.now })
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1])
+
+        model.refreshIfNeeded()
+        XCTAssertEqual(source.orderCalls.count, 1, "view and back: no reload")
+
+        clock.now += RefreshPolicy.listTTL - 1
+        model.refreshIfNeeded()
+        XCTAssertEqual(source.orderCalls.count, 1)
+
+        clock.now += 2
+        model.refreshIfNeeded()
+        XCTAssertEqual(source.orderCalls.count, 2, "5 minutes old: reload")
+        XCTAssertEqual(ids(model), [1], "quiet: rows stay")
+        XCTAssertEqual(model.state, .loaded)
+        source.completeOrders(at: 1, ids: [1, 4])
+
+        model.markDirty()
+        model.refreshIfNeeded()
+        XCTAssertEqual(source.orderCalls.count, 3, "orders changed: reload")
+    }
+
+    func testQuietRefreshFailureKeepsTheRows() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1, 2])
+        model.markDirty()
+        model.refreshIfNeeded()
+        source.orderCalls[1].completion(nil, NSError(domain: "RC", code: -1))
+        XCTAssertEqual(ids(model), [1, 2])
+        XCTAssertEqual(model.state, .loaded)
+        XCTAssertTrue(model.isDirty, "still dirty: the next appear tries again")
+    }
+
+    func testChangeDuringALoadLeavesTheListDirty() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        model.markDirty() // an order changed while the request was in flight
+        source.completeOrders(at: 0, ids: [1])
+        XCTAssertTrue(model.isDirty)
+        XCTAssertTrue(model.needsRefresh)
+    }
+
+    func testQuietRefreshKeepsEveryLoadedPage() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: Array(1...20), hasMore: true)
+        model.loadMoreIfNeeded(displayedIndex: 19, total: 20)
+        XCTAssertEqual(source.orderCalls[1].page, 2)
+        source.completeOrders(at: 1, ids: Array(21...30))
+
+        model.markDirty()
+        model.refreshIfNeeded()
+        XCTAssertEqual(source.orderCalls[2].page, 1)
+        XCTAssertEqual(source.orderCalls[2].query.limit, 40, "both pages in one request")
+        XCTAssertEqual(ids(model).count, 30, "rows stay while it runs")
+    }
+
+    func testPullToRefreshKeepsRowsAndRetryShowsSpinner() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1])
+        model.reload(quiet: true)
+        XCTAssertEqual(model.state, .loaded)
+        XCTAssertEqual(ids(model), [1])
+        model.reload()
+        XCTAssertEqual(model.state, .loading)
+        XCTAssertTrue(model.sections.isEmpty)
+    }
+
+    func testFilterChangeStillShowsTheSpinner() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1])
+        model.selectStatus(.reserved)
+        XCTAssertEqual(model.state, .loading)
+        XCTAssertTrue(model.sections.isEmpty)
+    }
+
     func testStatusChipReloadsTheRentList() {
         let source = FakeSource()
         let model = OrdersHomeViewModel(dataSource: source)
@@ -661,11 +795,11 @@ private final class FakeSource: OrdersHomeDataSource {
         orderCalls.append(Call(query: query, completion: completion))
     }
 
-    func completeOrders(at index: Int, ids: [Int]) {
+    func completeOrders(at index: Int, ids: [Int], hasMore: Bool = false) {
         let orders = ids.map { id in
             #"{"id":\#(id),"orderNumber":"ORD-1-\#(id)","orderType":"RENT","status":"RESERVED","createdAt":"2026-10-03T02:00:00.000Z","updatedAt":"2026-10-03T02:00:00.000Z","customerName":"Lan","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B"}"#
         }.joined(separator: ",")
-        let json = #"{"orders":[\#(orders)],"total":\#(ids.count),"page":1,"limit":20,"offset":0,"hasMore":false,"totalPages":1}"#
+        let json = #"{"orders":[\#(orders)],"total":\#(ids.count),"page":1,"limit":20,"offset":0,"hasMore":\#(hasMore),"totalPages":1}"#
         do {
             let data = try JSONDecoder.shared.decode(OrdersData.self, from: Data(json.utf8))
             orderCalls[index].completion(data, nil)

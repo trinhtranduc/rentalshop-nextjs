@@ -75,9 +75,7 @@ import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Customer
-import com.anyrent.pos.domain.availability.RentalCartLine
 import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
-import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.DisplayDateFormatter
@@ -102,6 +100,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import androidx.compose.ui.Modifier
+import com.anyrent.pos.ui.navigation.OrdersChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -190,66 +189,19 @@ fun CartCheckoutScreen(
         loading = true
         error = null
         scope.launch {
-            if (orderType == "RENT") {
-                val availabilityResult = runCatching {
-                    validateRentalCart(
-                        lines = lines.map {
-                            RentalCartLine(
-                                productId = it.product.id,
-                                productName = it.product.name,
-                                quantity = it.quantity,
-                            )
-                        },
-                        pickupDate = pickup,
-                        returnDate = ret,
-                    )
-                }
-                val availabilityError = availabilityResult.exceptionOrNull()
-                if (availabilityError != null) {
-                    loading = false
-                    error = when (availabilityError) {
-                        is AppError.Unauthorized -> sessionExpiredMessage
-                        else -> "$availabilityFailedMessage\n${availabilityError.message.orEmpty()}"
-                    }
-                    return@launch
-                }
-                val blocked = availabilityResult.getOrThrow()
-                if (blocked.isNotEmpty()) {
-                    loading = false
-                    error = "Availability conflicts: " + blocked.joinToString { it.productName }
-                    return@launch
-                }
+            // #676: the same check and edit request as the new cart's "Lưu thay đổi" sheet
+            val availabilityError = CartOrderSubmit.editAvailabilityError(
+                validateRentalCart, sessionExpiredMessage, availabilityFailedMessage,
+            )
+            if (availabilityError != null) {
+                loading = false
+                error = availabilityError
+                return@launch
             }
             val result = withContext(Dispatchers.IO) {
-                val payloadLines = lines.map { Triple(it.product.id, it.quantity, it.unitPrice) }
-                val deposits = lines.associate { it.product.id to it.product.deposit }
-                val pricing = lines.associate { it.product.id to it.pricingType }
-                val daysByProduct = lines.associate { it.product.id to it.rentalDays }
                 val editId = editingOrderId
                 if (editId != null) {
-                    ApiClient.get().updateOrder(
-                        orderId = editId,
-                        orderType = orderType,
-                        customerId = customer?.id,
-                        lines = payloadLines,
-                        totalAmount = CartStore.totalAmount,
-                        depositAmount = deposit,
-                        notes = listOfNotNull(
-                            notes.takeIf { it.isNotBlank() },
-                            collateral.takeIf { it.isNotBlank() }?.let { "Collateral: $it" },
-                        ).joinToString("\n").ifBlank { null },
-                        rentalDays = CartStore.rentalDaysInclusive(),
-                        pickupPlanAt = if (orderType == "RENT") CartStore.isoPickup() else null,
-                        returnPlanAt = if (orderType == "RENT") CartStore.isoReturn() else null,
-                        securityDeposit = security,
-                        discountType = if (discountType == CartStore.DiscountType.AMOUNT) "amount" else "percentage",
-                        discountValue = discount,
-                        discountAmount = CartStore.discountAmount,
-                        collateralDetails = collateral.takeIf { it.isNotBlank() },
-                        depositsByProduct = deposits,
-                        pricingTypesByProduct = pricing,
-                        rentalDaysByProduct = daysByProduct,
-                    )
+                    CartOrderSubmit.update(editId)
                 } else {
                     // Same request as the new cart's confirm sheet (#476)
                     CartOrderSubmit.create(createIdempotencyKey)
@@ -257,14 +209,11 @@ fun CartCheckoutScreen(
             }
             loading = false
             result.onSuccess {
+                OrdersChanged.notifyChanged() // #674: created or edited
                 CartStore.clear()
                 onCreated(it.id)
             }.onFailure {
-                error = it.message
-                    ?.takeUnless { message ->
-                        message.isBlank() || message.equals("Validation error", ignoreCase = true)
-                    }
-                    ?: validationFallbackMessage
+                error = CartOrderSubmit.errorMessage(it, validationFallbackMessage)
             }
         }
     }

@@ -2,7 +2,6 @@ package com.anyrent.pos.ui.home.v2
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -52,6 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -73,7 +76,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
-import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.ProductsV2Api
@@ -94,9 +96,11 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.ImageSearchScreen
+import com.anyrent.pos.ui.inbox.InboxUnread
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -112,8 +116,6 @@ fun ProductsHomeScreen(
     onOpenProduct: (Int) -> Unit,
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
-    /** #654: image-search ⋯ "Kiểm tra lịch sản phẩm" (iOS OrderCheckViewController) */
-    onCheckProductAvailability: (Int) -> Unit = {},
     viewModel: ProductsHomeViewModel = viewModel(factory = ProductsHomeViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -121,10 +123,13 @@ fun ProductsHomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
-    var unread by remember { mutableIntStateOf(0) }
+    val unread by InboxUnread.count.collectAsState()
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
+    var focusSearch by remember { mutableIntStateOf(0) }
+    val searchFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
     var viewer by remember { mutableStateOf<ProductImageViewerRequest?>(null) }
     val listState = rememberLazyListState()
     val notFound = stringResource(R.string.v2_scan_not_found)
@@ -132,8 +137,9 @@ fun ProductsHomeScreen(
 
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
-        unread = withContext(Dispatchers.IO) { ApiClient.get().getUnreadCount().getOrDefault(0) }
     }
+    // #674: the badge follows the inbox and pushes; the server is asked on first show and when 10 minutes old
+    LaunchedEffect(Unit) { InboxUnread.invalidations.collect { InboxUnread.refreshIfNeeded() } }
     val deleted by DeletedProducts.ids.collectAsState()
     LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
     LaunchedEffect(Unit) {
@@ -144,6 +150,13 @@ fun ProductsHomeScreen(
             val info = listState.layoutInfo
             (info.visibleItemsInfo.lastOrNull()?.index ?: -1) >= info.totalItemsCount - 4
         }.distinctUntilChanged().collect { near -> if (near) viewModel.loadMore() }
+    }
+
+    LaunchedEffect(focusSearch) {
+        if (focusSearch == 0) return@LaunchedEffect
+        delay(150) // let the image-search dialog give the window back first
+        searchFocus.requestFocus()
+        keyboard?.show()
     }
 
     fun findByBarcode(code: String) {
@@ -207,7 +220,7 @@ fun ProductsHomeScreen(
                                 textStyle = TextStyle(fontSize = DS.TextSize.Body, color = DS.Colors.Text),
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = { viewModel.setQuery(draft) }),
-                                modifier = Modifier.fillMaxWidth().semantics { contentDescription = searchLabel },
+                                modifier = Modifier.fillMaxWidth().focusRequester(searchFocus).semantics { contentDescription = searchLabel },
                             )
                         }
                         if (draft.isNotEmpty()) {
@@ -305,14 +318,14 @@ fun ProductsHomeScreen(
         ) {
             ImageSearchScreen(
                 onDismiss = { showImageSearch = false },
-                // #654: same ⋯ action as iOS (the product's orders / availability), not the detail
-                onCheckAvailability = { product ->
-                    showImageSearch = false
-                    onCheckProductAvailability(product.id)
-                },
                 onOpenProduct = { product ->
                     showImageSearch = false
                     onOpenProduct(product.id)
+                },
+                // #672: "Tìm bằng tên" lands in this search field with the keyboard up
+                onSearchByName = {
+                    showImageSearch = false
+                    focusSearch++
                 },
             )
         }
@@ -351,8 +364,9 @@ private fun ImageSearchButton(label: String, onClick: () -> Unit) {
 /** The + of a product already in the cart: the count on a darker blue (board SP-dong) */
 private val InCartFill = Color(0xFF1E3A8A)
 
+/** The Products home row; image search results reuse it (#672) */
 @Composable
-private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
+internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
     val subtitle = ProductRowLogic.subtitle(product)
     val free = subtitle.free
     val addState = ProductRowLogic.addState(free, inCart)
@@ -420,19 +434,12 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImag
                 }
                 Text(text, maxLines = 2)
             }
-            val out = addState is AddButtonState.Out
+            // #671: round, and blue also when out today (tapping still adds; "Hết hôm nay" says the rest)
             Box(
                 Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        when (addState) {
-                            is AddButtonState.InCart -> InCartFill
-                            AddButtonState.Out -> V2Colors.Section
-                            AddButtonState.Add -> DS.Colors.Primary
-                        },
-                    )
-                    .border(if (out) 1.dp else 0.dp, V2Colors.Line, RoundedCornerShape(12.dp))
+                    .clip(CircleShape)
+                    .background(if (addState is AddButtonState.InCart) InCartFill else DS.Colors.Primary)
                     .clickable(onClick = onAdd)
                     .semantics { contentDescription = addLabel; role = Role.Button },
                 contentAlignment = Alignment.Center,
@@ -440,7 +447,7 @@ private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImag
                 if (addState is AddButtonState.InCart) {
                     Text(addState.count.toString(), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = Color.White)
                 } else {
-                    Icon(Icons.Outlined.Add, contentDescription = null, tint = if (out) DS.Colors.TextMuted else Color.White, modifier = Modifier.size(DS.Icon.Sm))
+                    Icon(Icons.Outlined.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
                 }
             }
         }

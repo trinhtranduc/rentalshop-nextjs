@@ -14,6 +14,8 @@ import AudioToolbox
 
 final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
+    /// Last time the unread badge came from the server or the inbox signal (#674)
+    private var badgeLoadedAt: Date?
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
@@ -63,7 +65,10 @@ final class ProductsHomeViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
-        refreshNotificationBadge()
+        // #674: the badge follows `.inboxUnreadCountDidChange`; the server is asked on first show and when 10 min old
+        if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: badgeLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
+            refreshNotificationBadge()
+        }
     }
 
     override func startRefresh(_ sender: Any) {
@@ -252,7 +257,9 @@ final class ProductsHomeViewController: BaseViewControler {
     private func refreshNotificationBadge() {
         guard User.account() != nil else { return }
         NotificationService.shared.getUnreadCount { [weak self] count, _ in
-            self?.applyBadge(count ?? 0)
+            guard let self else { return }
+            if count != nil { self.badgeLoadedAt = Date() }
+            self.applyBadge(count ?? 0)
         }
     }
 
@@ -264,7 +271,12 @@ final class ProductsHomeViewController: BaseViewControler {
     // MARK: - Actions
 
     @objc private func inboxCountChanged(_ note: Notification) {
-        if let count = note.userInfo?["count"] as? Int { applyBadge(count) } else { refreshNotificationBadge() }
+        if let count = note.userInfo?["count"] as? Int {
+            badgeLoadedAt = Date()
+            applyBadge(count)
+        } else {
+            refreshNotificationBadge()
+        }
     }
 
     @objc private func cartChanged() {
@@ -301,6 +313,8 @@ final class ProductsHomeViewController: BaseViewControler {
 
     @objc private func imageSearch() {
         let search = ImageSearchViewController()
+        // #672: "Tìm bằng tên" on empty results lands in this search field with the keyboard up
+        search.onSearchByName = { [weak self] in self?.searchField.becomeFirstResponder() }
         let nav = UINavigationController(rootViewController: search)
         nav.modalPresentationStyle = .fullScreen
         present(nav, animated: true)
@@ -477,7 +491,7 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.setImage(plusImage, for: .normal)
         addButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         addButton.setTitleColor(.white, for: .normal)
-        addButton.layer.cornerRadius = 12
+        addButton.layer.cornerRadius = DS.touchTarget / 2 // #671: round
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
         addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
         let row = UIStackView(arrangedSubviews: [photo, texts, addButton])
@@ -553,12 +567,12 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
         switch ProductRowLogic.addState(free: free, inCart: inCart) {
         case .add, .out:
-            let available = free > 0
+            // #671: out today still adds (another day can be rented), so the button keeps its colour
             addButton.setImage(plusImage, for: .normal)
             addButton.setTitle(nil, for: .normal)
-            addButton.backgroundColor = available ? DS.Color.primary : V2.sectionFill
-            addButton.tintColor = available ? .white : DS.Color.textMuted
-            addButton.layer.borderWidth = available ? 0 : 1
+            addButton.backgroundColor = DS.Color.primary
+            addButton.tintColor = .white
+            addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
         case .inCart(let count):
             addButton.setImage(nil, for: .normal)

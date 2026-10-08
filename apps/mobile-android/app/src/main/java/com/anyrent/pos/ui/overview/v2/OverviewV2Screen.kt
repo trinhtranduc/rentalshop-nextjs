@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,8 +93,10 @@ import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.home.v2.V2Segmented
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.ui.theme.DS
 import java.time.LocalDate
+import kotlinx.coroutines.flow.drop
 
 private fun dayLabel(date: LocalDate): String =
     formatDayShort(date)
@@ -135,6 +138,9 @@ fun OverviewV2Screen(
     onOpenOrdersTab: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
+    // #674: back on screen or an order changed: quiet reload only when dirty or 10 minutes old
+    LaunchedEffect(Unit) { viewModel.onShown() }
+    LaunchedEffect(Unit) { OrdersChanged.version.drop(1).collect { viewModel.onShown() } }
     var showSheet by remember { mutableStateOf(false) }
     var showDetails by remember { mutableStateOf(false) }
     var showOutstanding by remember { mutableStateOf(false) }

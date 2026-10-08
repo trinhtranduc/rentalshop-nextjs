@@ -63,4 +63,39 @@ final class ImageSearchQueryTests: XCTestCase {
         XCTAssertEqual(APIErrorResponse(success: false, code: "SEARCH_TIMEOUT", message: "raw", error: nil).localizedMessage,
                        APIErrorCode.searchTimeout.defaultMessage)
     }
+
+    // MARK: #672 results sheet
+
+    func testResultsContentIsListOrEmpty() {
+        XCTAssertEqual(ImageSearchResults.content(count: 0), .empty)
+        XCTAssertEqual(ImageSearchResults.content(count: -1), .empty)
+        XCTAssertEqual(ImageSearchResults.content(count: 1), .list)
+        XCTAssertEqual(ImageSearchResults.content(count: 50), .list)
+    }
+
+    func testResultsTitleKey() {
+        XCTAssertEqual(ImageSearchResults.titleKey(count: 0), "imageSearch.results.empty.title")
+        XCTAssertEqual(ImageSearchResults.titleKey(count: 1), "imageSearch.results.title.one")
+        XCTAssertEqual(ImageSearchResults.titleKey(count: 4), "imageSearch.results.title")
+    }
+
+    func testResultsStringsInEnAndVi() throws {
+        let bundle = Bundle(for: ImageSearchViewController.self)
+        var tables: [String: [String: String]] = [:]
+        for lang in ["en", "vi-VN"] {
+            let path = try XCTUnwrap(bundle.path(forResource: "Localizable", ofType: "strings", inDirectory: nil,
+                                                 forLocalization: lang), lang)
+            let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String], lang)
+            for key in ImageSearchResults.stringKeys {
+                let text = try XCTUnwrap(table[key], "\(lang) \(key)")
+                XCTAssertFalse(text.isEmpty, "\(lang) \(key)")
+            }
+            tables[lang] = table
+        }
+        XCTAssertEqual(String(format: tables["vi-VN"]!["imageSearch.results.title"]!, 4), "4 sản phẩm giống")
+        XCTAssertEqual(String(format: tables["en"]!["imageSearch.results.title"]!, 4), "4 similar products")
+        XCTAssertEqual(String(format: tables["en"]!["imageSearch.results.title.one"]!, 1), "1 similar product")
+        XCTAssertEqual(tables["vi-VN"]!["imageSearch.results.empty.title"], "Không thấy sản phẩm giống")
+        XCTAssertEqual(ImageSearchResults.tipKeys.count, 3)
+    }
 }

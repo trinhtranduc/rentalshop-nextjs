@@ -426,7 +426,7 @@ fun OrderDetailV2Screen(
             onExtended = { day ->
                 extending = false
                 toast(doneTemplate.format(formatDayShort(day)))
-                vm.load()
+                vm.extended()
             },
         )
     }
@@ -454,7 +454,10 @@ fun OrderDetailV2Screen(
                 confirmDelete = false
                 scope.launch {
                     withContext(Dispatchers.IO) { ApiParity.deleteOrder(orderId) }
-                        .onSuccess { onBack() }
+                        .onSuccess {
+                            vm.deleted()
+                            onBack()
+                        }
                         .onFailure { toast(it.message) }
                 }
             },

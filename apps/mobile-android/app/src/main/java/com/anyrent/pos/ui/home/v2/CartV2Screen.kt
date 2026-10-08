@@ -68,6 +68,7 @@ import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
+import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartV2Logic
@@ -88,6 +89,7 @@ import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
 import com.anyrent.pos.ui.common.copyUriToCacheFile
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -97,18 +99,20 @@ import java.time.LocalDate
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
  * State lives in [CartStore]. "Tạo đơn" confirms a new order in a sheet on this screen and sends the review screen's
- * create request ([CartOrderSubmit], #476); an edited order still opens the review screen ([onPreview]).
+ * create request ([CartOrderSubmit], #476); "Lưu thay đổi" saves an edited order from a sheet with the review screen's
+ * update request and checks (#676), then [onOrderSaved].
  */
 @Composable
 fun CartV2Screen(
     onBack: () -> Unit,
-    onPreview: () -> Unit,
     /** "+ Add": the product list on Home (#433), not the screen that opened the cart */
     onAddItems: () -> Unit = onBack,
     /** "Tạo đơn mới" after a create (#476): the product list with an empty cart */
     onNewOrder: () -> Unit = onAddItems,
     /** "Xem đơn" after a create (#476) */
     onOpenOrder: (Int) -> Unit = {},
+    /** #676: an edited order was saved: its id and short number (null for a draft saved before #676) */
+    onOrderSaved: (Int, String?) -> Unit = { id, _ -> onOpenOrder(id) },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -121,6 +125,7 @@ fun CartV2Screen(
     val discountType by CartStore.discountType.collectAsState()
     val deposit by CartStore.depositAmount.collectAsState()
     val editingOrderId by CartStore.editingOrderId.collectAsState()
+    val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
     val app = LocalContext.current.applicationContext as AnyRentApp
 
@@ -269,6 +274,7 @@ fun CartV2Screen(
             submitting = false
             result.onSuccess { order ->
                 submission.succeeded()
+                OrdersChanged.notifyChanged() // #674: Orders, Calendar and Overview refresh on next show
                 CartStore.clear()
                 confirmSheet = null
                 createdSheet = CreateOrderSheet.created(order.orderNumber, confirm) to order.id
@@ -282,15 +288,64 @@ fun CartV2Screen(
         }
     }
 
+    // #676 (board sua-don): "Lưu thay đổi" sheet → the review screen's update request → the order's detail
+    val editSubmission = remember { CreateOrderSubmission() }
+    var editSheet by remember { mutableStateOf<EditOrderSheet.Confirm?>(null) }
+    var saving by remember { mutableStateOf(false) }
+
+    fun saveEditedOrder() {
+        val orderId = editingOrderId ?: return
+        if (!editSubmission.begin()) return
+        saving = true
+        val number = EditOrderSheet.number(editOriginal)
+        scope.launch {
+            // Same check, request and messages as the review screen's save (CartCheckoutScreen)
+            val blocked = CartOrderSubmit.editAvailabilityError(validateRentalCart, sessionExpiredMessage, availabilityFailedMessage)
+            if (blocked != null) {
+                editSubmission.failed()
+                saving = false
+                error = blocked
+                return@launch
+            }
+            val result = withContext(Dispatchers.IO) { CartOrderSubmit.update(orderId) }
+            saving = false
+            result.onSuccess { order ->
+                editSubmission.succeeded()
+                OrdersChanged.notifyChanged() // #674
+                CartStore.clear()
+                editSheet = null
+                onOrderSaved(order.id.takeIf { it > 0 } ?: orderId, number)
+            }.onFailure {
+                // The cart and the sheet stay; the next tap retries
+                editSubmission.failed()
+                error = CartOrderSubmit.errorMessage(it, validationFallbackMessage)
+            }
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().height(60.dp).padding(start = 4.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.v2_cart_back), modifier = Modifier.size(DS.Icon.Lg))
             }
-            Text(
-                stringResource(if (editingOrderId != null) R.string.v2_cart_edit_title else R.string.v2_cart_title),
-                fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
-            )
+            Column(Modifier.weight(1f)) {
+                // #676: "Sửa đơn #482913" over "Heather Robinson · Đơn thuê" while editing an order
+                val number = EditOrderSheet.number(editOriginal)
+                Text(
+                    when {
+                        editingOrderId == null -> stringResource(R.string.v2_cart_title)
+                        number != null -> stringResource(R.string.v2_cart_edit_title_number, number)
+                        else -> stringResource(R.string.v2_cart_edit_title)
+                    },
+                    fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                if (editingOrderId != null) {
+                    Text(
+                        editOrderSubtitle(customer?.displayName.orEmpty(), isSale),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
             // #640: the cart as a draft image ("Đơn nháp"), once it has lines (rent: dates chosen)
             val shareContext = LocalContext.current
             IconButton(
@@ -423,11 +478,23 @@ fun CartV2Screen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+                if (editingOrderId != null) {
+                    // #676 (board sua-don): nothing is collected on save; the bar shows the order total
+                    Text(stringResource(R.string.v2_cart_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                    Text(formatMoneyVnd(total), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+                } else {
+                    Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                    Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+                }
             }
             AppPrimaryButton(
-                stringResource(if (isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
+                stringResource(
+                    when (EditOrderSheet.ctaLabel(editing = editingOrderId != null, isSale = isSale)) {
+                        EditOrderSheet.CtaLabel.SAVE_CHANGES -> R.string.v2_cart_edit_save
+                        EditOrderSheet.CtaLabel.SELL_AND_COLLECT -> R.string.v2_cart_sell_and_collect
+                        EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
+                    },
+                ),
                 modifier = Modifier.weight(1.1f),
                 enabled = !createBlocked,
                 onClick = {
@@ -436,8 +503,18 @@ fun CartV2Screen(
                         CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
                     if (messages.isNotEmpty()) {
                         error = messages.joinToString("\n")
-                    } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.PREVIEW) {
-                        onPreview()
+                    } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.EDIT_SHEET) {
+                        if (editSheet == null) {
+                            editSheet = EditOrderSheet.confirm(
+                                isSale = isSale,
+                                customerName = customer?.displayName.orEmpty(),
+                                pickup = pickup,
+                                returnDate = ret,
+                                lines = lines,
+                                total = total,
+                                original = editOriginal,
+                            )
+                        }
                     } else if (confirmSheet == null && createdSheet == null) {
                         confirmSheet = CreateOrderSheet.confirm(
                             isSale = isSale,
@@ -597,6 +674,14 @@ fun CartV2Screen(
             },
             onDismiss = { confirmSheet = null },
             onConfirm = { submitOrder(confirm) },
+        )
+    }
+    editSheet?.let { confirm ->
+        EditOrderConfirmSheet(
+            confirm = confirm,
+            busy = saving,
+            onDismiss = { editSheet = null },
+            onConfirm = { saveEditedOrder() },
         )
     }
     createdSheet?.let { (created, orderId) ->

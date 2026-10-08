@@ -93,6 +93,10 @@ final class RentedOutOrdersViewController: BaseViewControler {
     private var isLoading = false
     private var didInitialScroll = false
     private var generation = 0
+    /// #674: back from a detail reloads (quietly) only when an order changed or the list is 5 minutes old
+    private var freshness = RefreshTracker()
+    private var loadVersion = 0
+    private var isQuietLoad = false
 
     private let titleLabel = V2.label("overview.v2.rentedOut".localized(), size: 20, weight: .bold)
     private let emptyLabel = V2.label("rentedOut.empty".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
@@ -137,12 +141,24 @@ final class RentedOutOrdersViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         load()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        refreshIfNeeded()
+    }
+
+    private func refreshIfNeeded() {
+        guard !isLoading, freshness.shouldReload(now: Date(), ttl: RefreshPolicy.listTTL) else { return }
+        load(quiet: true)
+    }
+
+    @objc private func ordersChanged() {
+        freshness.markDirty()
+        if isViewLoaded, view.window != nil { refreshIfNeeded() }
     }
 
     override func setupUI() {
@@ -196,9 +212,12 @@ final class RentedOutOrdersViewController: BaseViewControler {
 
     // MARK: - Data
 
-    private func load() {
+    /// The spinner shows only while the list is empty; `quiet` (appear, pull) also hides a failure while rows stay
+    private func load(quiet: Bool = false) {
         generation += 1
         let token = generation
+        loadVersion = freshness.begin()
+        isQuietLoad = quiet && !orders.isEmpty
         isLoading = true
         if orders.isEmpty && !refresh.isRefreshing { spinner.startAnimating() }
         emptyLabel.isHidden = true
@@ -238,9 +257,10 @@ final class RentedOutOrdersViewController: BaseViewControler {
         spinner.stopAnimating()
         refresh.endRefreshing()
         if let error {
-            UIAlertController.errorAlert(parent: self, error: error)
+            if !isQuietLoad { UIAlertController.errorAlert(parent: self, error: error) }
         } else {
             orders = loaded
+            freshness.loaded(version: loadVersion, at: Date())
         }
         render()
     }

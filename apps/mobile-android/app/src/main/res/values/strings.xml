@@ -525,7 +525,6 @@
     <string name="image_search">Search by image</string>
     <string name="image_search_capture">Capture</string>
     <string name="image_quality_percent">Image quality %1$d%%</string>
-    <string name="image_search_results">Results: %1$d products</string>
     <string name="image_search_empty">No similar products found</string>
     <string name="photo_library">Photo library</string>
     <string name="grant_camera_permission">Grant camera permission</string>
@@ -655,6 +654,25 @@
     <string name="v2_create_confirm_items">Items</string>
     <string name="v2_create_confirm_collect_deposit">Collect deposit now</string>
     <string name="v2_create_confirm_collect_sale">Collect now</string>
+    <!-- #676 edit an order from the new cart (board sua-don) -->
+    <string name="v2_cart_edit_title_number">Edit order #%1$s</string>
+    <string name="v2_cart_edit_rent_type">Rental order</string>
+    <string name="v2_cart_edit_sale_type">Sale order</string>
+    <string name="v2_cart_edit_save">Save changes</string>
+    <string name="v2_edit_confirm_title">Save changes to order #%1$s?</string>
+    <string name="v2_edit_confirm_title_no_number">Save changes to this order?</string>
+    <string name="v2_edit_confirm_dates">Rental dates</string>
+    <string name="v2_edit_confirm_rent_items">Rental items</string>
+    <string name="v2_edit_confirm_sale_items">Items sold</string>
+    <plurals name="v2_edit_confirm_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="v2_edit_confirm_paid">Collected</string>
+    <string name="v2_edit_confirm_changed">Changed</string>
+    <string name="v2_edit_confirm_keep_editing">Keep editing</string>
+    <string name="v2_edit_saved">Saved order #%1$s</string>
+    <string name="v2_edit_saved_no_number">Order saved</string>
     <string name="v2_create_done_title">Order #%1$s created</string>
     <string name="v2_create_done_paid_deposit">Deposit collected %1$s</string>
     <string name="v2_create_done_paid_sale">Collected %1$s</string>
@@ -1443,4 +1461,18 @@
     <string name="share_draft_action">Share draft</string>
     <string name="v2_home_search_placeholder">Search name, barcode or take a photo</string>
     <string name="v2_home_image_search">Search by photo</string>
+    <!-- #672 image search results -->
+    <plurals name="image_search_results_title">
+        <item quantity="one">%1$d similar product</item>
+        <item quantity="other">%1$d similar products</item>
+    </plurals>
+    <string name="image_search_results_empty_title">No similar products</string>
+    <string name="image_search_results_subtitle">From your photo</string>
+    <string name="image_search_retake">Retake</string>
+    <string name="image_search_by_name">Search by name</string>
+    <string name="image_search_empty_headline">Couldn\'t find this product</string>
+    <string name="image_search_empty_message">The product may not have a photo in your shop yet, or the photo isn\'t clear.</string>
+    <string name="image_search_tip_whole">Capture the whole item in good light</string>
+    <string name="image_search_tip_background">Plain background, nothing else in the shot</string>
+    <string name="image_search_tip_photo">The product needs a photo in your list</string>
 </resources>

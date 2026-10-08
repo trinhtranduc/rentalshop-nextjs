@@ -524,7 +524,6 @@
     <string name="image_search">Tìm theo hình</string>
     <string name="image_search_capture">Chụp</string>
     <string name="image_quality_percent">Chất lượng ảnh %1$d%%</string>
-    <string name="image_search_results">Kết quả: %1$d sản phẩm</string>
     <string name="image_search_empty">Không tìm thấy sản phẩm tương tự</string>
     <string name="photo_library">Thư viện ảnh</string>
     <string name="grant_camera_permission">Cho phép camera</string>
@@ -652,6 +651,24 @@
     <string name="v2_create_confirm_items">Món</string>
     <string name="v2_create_confirm_collect_deposit">Thu cọc ngay</string>
     <string name="v2_create_confirm_collect_sale">Thu ngay</string>
+    <!-- #676 sửa đơn từ giỏ mới (board sua-don) -->
+    <string name="v2_cart_edit_title_number">Sửa đơn #%1$s</string>
+    <string name="v2_cart_edit_rent_type">Đơn thuê</string>
+    <string name="v2_cart_edit_sale_type">Đơn bán</string>
+    <string name="v2_cart_edit_save">Lưu thay đổi</string>
+    <string name="v2_edit_confirm_title">Lưu thay đổi đơn #%1$s?</string>
+    <string name="v2_edit_confirm_title_no_number">Lưu thay đổi đơn này?</string>
+    <string name="v2_edit_confirm_dates">Ngày thuê</string>
+    <string name="v2_edit_confirm_rent_items">Đồ thuê</string>
+    <string name="v2_edit_confirm_sale_items">Đồ bán</string>
+    <plurals name="v2_edit_confirm_item_count">
+        <item quantity="other">%1$d món</item>
+    </plurals>
+    <string name="v2_edit_confirm_paid">Đã thu</string>
+    <string name="v2_edit_confirm_changed">Đã đổi</string>
+    <string name="v2_edit_confirm_keep_editing">Tiếp tục sửa</string>
+    <string name="v2_edit_saved">Đã lưu đơn #%1$s</string>
+    <string name="v2_edit_saved_no_number">Đã lưu đơn</string>
     <string name="v2_create_done_title">Đã tạo đơn #%1$s</string>
     <string name="v2_create_done_paid_deposit">Đã thu cọc %1$s</string>
     <string name="v2_create_done_paid_sale">Đã thu %1$s</string>
@@ -1266,14 +1283,14 @@
         <item>returnedAt|Đã trả</item>
         <item>totalAmount|Tổng đơn</item>
         <item>depositAmount|Cọc trả trước</item>
-        <item>securityDeposit|Tiền thế chấp</item>
+        <item>securityDeposit|Tiền thế chân</item>
         <item>discountType|Kiểu giảm giá</item>
         <item>discountValue|Mức giảm</item>
         <item>discountAmount|Giảm giá</item>
         <item>damageFee|Phí hư hỏng</item>
         <item>lateFee|Phí trả trễ</item>
-        <item>collateralType|Loại thế chấp</item>
-        <item>collateralDetails|Thế chấp</item>
+        <item>collateralType|Loại thế chân</item>
+        <item>collateralDetails|Thế chân</item>
         <item>pickupNotes|Ghi chú khi giao</item>
         <item>returnNotes|Ghi chú khi trả</item>
         <item>damageNotes|Ghi chú hư hỏng</item>
@@ -1419,4 +1436,17 @@
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
     <string name="v2_home_search_placeholder">Tìm tên, mã vạch hoặc chụp ảnh</string>
     <string name="v2_home_image_search">Tìm bằng hình</string>
+    <!-- #672 image search results -->
+    <plurals name="image_search_results_title">
+        <item quantity="other">%1$d sản phẩm giống</item>
+    </plurals>
+    <string name="image_search_results_empty_title">Không thấy sản phẩm giống</string>
+    <string name="image_search_results_subtitle">Từ ảnh bạn vừa chụp</string>
+    <string name="image_search_retake">Chụp lại</string>
+    <string name="image_search_by_name">Tìm bằng tên</string>
+    <string name="image_search_empty_headline">Chưa tìm ra sản phẩm này</string>
+    <string name="image_search_empty_message">Có thể sản phẩm chưa có ảnh trong cửa hàng, hoặc ảnh chụp chưa rõ.</string>
+    <string name="image_search_tip_whole">Chụp cả món đồ, đủ sáng</string>
+    <string name="image_search_tip_background">Nền gọn, không lẫn đồ khác</string>
+    <string name="image_search_tip_photo">Sản phẩm cần có ảnh trong danh sách</string>
 </resources>

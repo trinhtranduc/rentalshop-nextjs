@@ -441,6 +441,114 @@ final class CreateOrderConfirmSheet: V2FittingSheet {
     }
 }
 
+/// "Lưu thay đổi đơn #482913?" (#676, board sua-don) — rows with a yellow "Đã đổi" tag, Lưu thay đổi / Tiếp tục sửa
+final class EditOrderConfirmSheet: V2FittingSheet {
+    var onConfirm: (() -> Void)?
+    private let confirm: EditOrderConfirm
+    let saveButton = V2.primaryButton("products.cart.edit.save".localized())
+
+    init(confirm: EditOrderConfirm) {
+        self.confirm = confirm
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        let title = confirm.number.map { String(format: "products.cart.edit.confirmTitle".localized(), $0) }
+            ?? "products.cart.edit.confirmTitleNoNumber".localized()
+        let header = UIStackView(arrangedSubviews: [
+            V2.label(title, size: 20, weight: .bold, lines: 0),
+            V2.label(confirm.subtitle, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0),
+        ])
+        header.axis = .vertical
+        header.spacing = 4
+        stack.addArrangedSubview(header)
+
+        let card = UIStackView()
+        card.axis = .vertical
+        card.layer.cornerRadius = 14
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
+        var rows: [UIView] = []
+        if let range = confirm.range, let days = confirm.days {
+            rows.append(row("products.cart.edit.dates".localized(),
+                            range + " · " + PluralText.format("products.cart.days", count: days, days), changed: confirm.datesChanged))
+        }
+        rows.append(row(confirm.itemsKey.localized(), PluralText.format("products.cart.edit.itemCount", count: confirm.itemCount, confirm.itemCount),
+                        changed: confirm.itemsChanged))
+        rows.append(row("products.cart.total".localized(), MoneyFormatter.format(confirm.total), changed: false))
+        if let paid = confirm.paid {
+            rows.append(row("products.cart.edit.paid".localized(), MoneyFormatter.format(paid), changed: false))
+        }
+        for (index, row) in rows.enumerated() {
+            if index > 0 { card.addArrangedSubview(V2.divider()) }
+            card.addArrangedSubview(row)
+        }
+        stack.addArrangedSubview(card)
+
+        saveButton.snp.remakeConstraints { make in make.height.equalTo(52) }
+        saveButton.accessibilityIdentifier = "cart.edit.save"
+        saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        let keepEditing = UIButton(type: .system)
+        keepEditing.setTitle("products.cart.edit.keepEditing".localized(), for: .normal)
+        keepEditing.setTitleColor(DS.Color.text, for: .normal)
+        keepEditing.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        keepEditing.addTarget(self, action: #selector(keepEditingTapped), for: .touchUpInside)
+        keepEditing.snp.makeConstraints { make in make.height.equalTo(48) }
+        stack.setCustomSpacing(18, after: card)
+        stack.addArrangedSubview(saveButton)
+        stack.setCustomSpacing(4, after: saveButton)
+        stack.addArrangedSubview(keepEditing)
+    }
+
+    /// Greyed while the save is on its way; swipe-down is blocked too
+    func setBusy(_ busy: Bool) {
+        saveButton.isEnabled = !busy
+        saveButton.alpha = busy ? 0.6 : 1
+        isModalInPresentation = busy
+    }
+
+    private func row(_ title: String, _ value: String, changed: Bool) -> UIView {
+        let titleLabel = V2.label(title, size: DS.TextSize.body, color: DS.Color.textMuted)
+        titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let valueLabel = V2.label(value, size: DS.TextSize.body, weight: .bold, lines: 0)
+        valueLabel.textAlignment = .right
+        let line = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        line.alignment = .center
+        line.spacing = 10
+        if changed {
+            let tag = V2.label(" " + "products.cart.edit.changed".localized() + " ", size: DS.TextSize.pill, weight: .bold,
+                               color: UIColor(hexString: "92400E"))
+            tag.backgroundColor = UIColor(hexString: "FEF3C7")
+            tag.layer.cornerRadius = 10
+            tag.clipsToBounds = true
+            tag.setContentHuggingPriority(.required, for: .horizontal)
+            tag.setContentCompressionResistancePriority(.required, for: .horizontal)
+            tag.snp.makeConstraints { make in make.height.equalTo(22) }
+            tag.accessibilityIdentifier = "cart.edit.changed"
+            line.addArrangedSubview(tag)
+        }
+        let wrap = UIView()
+        wrap.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 14, bottom: 12, right: 14)) }
+        wrap.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        wrap.isAccessibilityElement = true
+        wrap.accessibilityLabel = [title, value, changed ? "products.cart.edit.changed".localized() : nil].compactMap { $0 }.joined(separator: ", ")
+        return wrap
+    }
+
+    @objc private func keepEditingTapped() {
+        dismiss(animated: true)
+    }
+
+    @objc private func saveTapped() {
+        onConfirm?()
+    }
+}
+
 /// "Đã tạo đơn #0063" — Tạo đơn mới / Xem đơn
 final class OrderCreatedSheet: V2FittingSheet {
     var onNewOrder: (() -> Void)?

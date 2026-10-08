@@ -88,6 +88,8 @@ struct OrdersQuery: Equatable {
     var endDate: Date?
     var dateField: String?
     var page = 1
+    /// Page size; a quiet refresh asks for every loaded page at once (#674)
+    var limit = OrdersHomeViewModel.pageSize
 }
 
 /// Right-hand line under a row total (board Main). A fully paid order has none (#458).
@@ -406,7 +408,7 @@ struct LiveOrdersHomeDataSource: OrdersHomeDataSource {
 
     func loadOrders(_ query: OrdersQuery, completion: @escaping (OrdersData?, NSError?) -> Void) {
         OrderService.shared.loadOrders(productIds: nil, startDate: query.startDate, endDate: query.endDate,
-                                       keyword: query.keyword, page: query.page, limit: OrdersHomeViewModel.pageSize,
+                                       keyword: query.keyword, page: query.page, limit: query.limit,
                                        orderType: query.orderType, sortBy: query.sortBy, sortOrder: "desc",
                                        status: query.status, dateField: query.dateField) { response, error in
             if let data = response?.data {
@@ -423,9 +425,16 @@ struct LiveOrdersHomeDataSource: OrdersHomeDataSource {
 
 final class OrdersHomeViewModel {
     static let pageSize = 20
+    /// A quiet refresh reloads at most this many pages in one request (API `limit` ≤ 100)
+    static let maxQuietPages = 5
 
     enum LoadState: Equatable {
         case idle, loading, loaded, failed(String)
+    }
+
+    /// One list of the tab: a segment, or the search (#674 freshness)
+    enum ListKey: Hashable {
+        case segment(OrdersSegment), search
     }
 
     // Output
@@ -449,6 +458,20 @@ final class OrdersHomeViewModel {
     private var isLoadingMore = false
     private var todayWork: TodayWork?
 
+    /// What each segment showed last (#674): a segment switch shows it at once, then refreshes only when needed
+    private struct Snapshot {
+        let sections: [OrdersSection]
+        let orders: [Order]
+        let page: Int
+        let hasMore: Bool
+        let total: Int?
+        let filter: RentOrdersFilter
+    }
+    private var snapshots: [OrdersSegment: Snapshot] = [:]
+    /// Dirty flag and last load time of every list (#674)
+    private var trackers: [ListKey: RefreshTracker] = Dictionary(
+        uniqueKeysWithValues: (OrdersSegment.allCases.map { ListKey.segment($0) } + [.search]).map { ($0, RefreshTracker()) })
+
     /// Bumped whenever the list changes meaning (segment, filter, search, refresh). A response carrying an older
     /// generation is dropped, so a slow answer never overwrites the current list.
     private var generation = 0
@@ -470,12 +493,62 @@ final class OrdersHomeViewModel {
         self.searchDelay = searchDelay
     }
 
+    // MARK: Freshness (#674)
+
+    var currentKey: ListKey { isSearching ? .search : .segment(segment) }
+
+    /// The current list changed on the server (an order was created or changed) since it was loaded
+    var isDirty: Bool { trackers[currentKey]?.isDirty ?? true }
+
+    /// The current list should be reloaded when the screen shows again: dirty, never loaded, or older than 5 minutes
+    var needsRefresh: Bool {
+        trackers[currentKey]?.shouldReload(now: now(), ttl: RefreshPolicy.listTTL) ?? true
+    }
+
+    /// "Orders changed" signal: every list (all segments and the search) is dirty
+    func markDirty() {
+        for key in trackers.keys { trackers[key]?.markDirty() }
+    }
+
+    /// Screen shows again (back from a detail, tab re-selected): reload quietly, keeping rows and scroll, only
+    /// when the list is dirty or stale. A failed list retries with its spinner.
+    func refreshIfNeeded() {
+        switch state {
+        case .loading, .idle:
+            return
+        case .failed:
+            reload()
+        case .loaded:
+            if needsRefresh { reload(quiet: true) }
+        }
+    }
+
     // MARK: Input
 
     func select(_ newSegment: OrdersSegment) {
         guard newSegment != segment || sections.isEmpty else { return }
         segment = newSegment
-        reload()
+        showSegment()
+    }
+
+    /// The segment's last result at once when there is one, then a quiet refresh if it is dirty or stale;
+    /// otherwise a load with the spinner
+    private func showSegment() {
+        guard !isSearching, let snapshot = snapshots[segment], segment != .rent || snapshot.filter == filter else {
+            reload()
+            return
+        }
+        generation += 1 // drop any answer for the list shown before
+        searchWorkItem?.cancel()
+        sections = snapshot.sections
+        orders = snapshot.orders
+        page = snapshot.page
+        hasMore = snapshot.hasMore
+        isLoadingMore = false
+        total = snapshot.total
+        state = .loaded
+        onChange?()
+        if needsRefresh { reload(quiet: true) }
     }
 
     func applyFilter(_ newFilter: RentOrdersFilter) {
@@ -514,22 +587,29 @@ final class OrdersHomeViewModel {
             searchWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + searchDelay, execute: work)
         } else if wasSearching {
-            reload() // back to the segment
+            showSegment() // back to the segment
         }
     }
 
-    /// Pull to refresh, coming back from a detail, or retry
-    func reload() {
+    /// Retry, filter or search change, first load: rows cleared and the spinner shows.
+    /// `quiet` (pull to refresh, back from a detail, #674): the rows and scroll stay and no spinner shows; the new
+    /// answer replaces them, and a failure keeps them. Quiet only applies while a list is on screen.
+    func reload(quiet: Bool = false) {
+        let keepRows = quiet && state == .loaded
         generation += 1
         let current = generation
-        orders = []
-        page = 1
-        hasMore = false
+        let key = currentKey
+        let version = trackers[key]?.begin() ?? 0
         isLoadingMore = false
-        sections = []
-        total = nil
-        state = .loading
-        onChange?()
+        if !keepRows {
+            orders = []
+            page = 1
+            hasMore = false
+            sections = []
+            total = nil
+            state = .loading
+            onChange?()
+        }
 
         if !isSearching && segment == .today {
             dataSource.loadTodayWork { [weak self] work, error in
@@ -539,20 +619,22 @@ final class OrdersHomeViewModel {
                     self.sections = OrdersHomeLogic.todaySections(from: work)
                     self.todayBadge = OrdersHomeLogic.badgeCount(self.sections)
                     self.state = .loaded
+                    self.markLoaded(key, version: version)
                 } else if error?.code == 403 {
                     // No dashboard permission: the tab works without "Việc cần làm"
                     self.todayAvailable = false
                     self.segment = .rent
                     self.reload()
                     return
-                } else {
+                } else if !keepRows {
                     self.state = .failed(error?.localizedDescription ?? "")
                 }
                 self.onChange?()
             }
             return
         }
-        loadPage(1, generation: current)
+        let pages = keepRows ? min(max(page, 1), Self.maxQuietPages) : 1
+        loadPage(1, generation: current, pages: pages, quiet: keepRows, version: version)
     }
 
     func loadMoreIfNeeded(displayedIndex: Int, total: Int) {
@@ -573,23 +655,43 @@ final class OrdersHomeViewModel {
         return OrdersHomeLogic.rentQuery(filter, page: page, now: now(), timeZone: timeZone())
     }
 
-    private func loadPage(_ pageToLoad: Int, generation current: Int) {
-        dataSource.loadOrders(query(page: pageToLoad)) { [weak self] data, error in
+    /// `pages` > 1 (quiet refresh): page 1 with room for every page already loaded, so the list keeps its length
+    private func loadPage(_ pageToLoad: Int, generation current: Int, pages: Int = 1, quiet: Bool = false, version: Int? = nil) {
+        var request = query(page: pageToLoad)
+        request.limit = Self.pageSize * pages
+        let key = currentKey
+        dataSource.loadOrders(request) { [weak self] data, error in
             guard let self, current == self.generation else { return }
             self.isLoadingMore = false
             if let data {
-                let known = Set(self.orders.map(\.id))
-                self.orders += data.orders.filter { !known.contains($0.id) }
-                self.page = pageToLoad
+                if pageToLoad == 1 {
+                    self.orders = data.orders
+                } else {
+                    let known = Set(self.orders.map(\.id))
+                    self.orders += data.orders.filter { !known.contains($0.id) }
+                }
+                self.page = pageToLoad == 1 ? pages : pageToLoad
                 self.hasMore = data.hasMore
                 self.total = data.total
                 self.sections = self.buildOrderSections()
                 self.state = .loaded
-            } else if pageToLoad == 1 {
+                if let version { self.markLoaded(key, version: version) } else { self.saveSnapshot() }
+            } else if pageToLoad == 1 && !quiet {
                 self.state = .failed(error?.localizedDescription ?? "")
             }
             self.onChange?()
         }
+    }
+
+    private func markLoaded(_ key: ListKey, version: Int) {
+        trackers[key]?.loaded(version: version, at: now())
+        saveSnapshot()
+    }
+
+    private func saveSnapshot() {
+        guard !isSearching, state == .loaded else { return }
+        snapshots[segment] = Snapshot(sections: sections, orders: orders, page: page, hasMore: hasMore, total: total,
+                                      filter: filter)
     }
 
     private func buildOrderSections() -> [OrdersSection] {

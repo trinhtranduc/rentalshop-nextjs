@@ -71,6 +71,66 @@ class ImageSearchQueryTest {
         }
     }
 
+    // #672 results sheet
+
+    @Test
+    fun `results are a list or the empty state`() {
+        assertEquals(ImageSearchResults.Content.EMPTY, ImageSearchResults.content(0))
+        assertEquals(ImageSearchResults.Content.EMPTY, ImageSearchResults.content(-1))
+        assertEquals(ImageSearchResults.Content.LIST, ImageSearchResults.content(1))
+        assertEquals(ImageSearchResults.Content.LIST, ImageSearchResults.content(50))
+    }
+
+    @Test
+    fun `title counts the shown products or says no match`() {
+        assertEquals(ImageSearchResults.Title.NoMatch, ImageSearchResults.title(0))
+        assertEquals(ImageSearchResults.Title.Count(1), ImageSearchResults.title(1))
+        assertEquals(ImageSearchResults.Title.Count(4), ImageSearchResults.title(4))
+    }
+
+    @Test
+    fun `en and vi carry the results sheet strings`() {
+        val keys = listOf(
+            "image_search_results_empty_title",
+            "image_search_results_subtitle",
+            "image_search_retake",
+            "image_search_by_name",
+            "image_search_empty_headline",
+            "image_search_empty_message",
+            "image_search_tip_whole",
+            "image_search_tip_background",
+            "image_search_tip_photo",
+        )
+        val en = strings("values")
+        val vi = strings("values-vi")
+        for (key in keys) {
+            assertTrue(key, en[key].orEmpty().isNotBlank())
+            assertTrue(key, vi[key].orEmpty().isNotBlank())
+        }
+        assertEquals("Không thấy sản phẩm giống", vi["image_search_results_empty_title"])
+        assertEquals("Chụp lại", vi["image_search_retake"])
+        assertEquals("%1\$d sản phẩm giống", plurals("values-vi", "image_search_results_title")["other"])
+        assertEquals("%1\$d similar products", plurals("values", "image_search_results_title")["other"])
+        assertEquals("%1\$d similar product", plurals("values", "image_search_results_title")["one"])
+    }
+
+    private fun plurals(folder: String, name: String): Map<String, String> {
+        val nodes = document(folder).documentElement.getElementsByTagName("plurals")
+        val element = (0 until nodes.length).map { nodes.item(it) as org.w3c.dom.Element }
+            .first { it.getAttribute("name") == name }
+        val items = element.getElementsByTagName("item")
+        return (0 until items.length).associate {
+            val item = items.item(it) as org.w3c.dom.Element
+            item.getAttribute("quantity") to item.textContent
+        }
+    }
+
+    private fun document(folder: String): org.w3c.dom.Document {
+        val file = listOf("src/main/res/$folder/strings.xml", "app/src/main/res/$folder/strings.xml")
+            .map(::File).first { it.exists() }
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+    }
+
     private fun strings(folder: String): Map<String, String> {
         val file = listOf("src/main/res/$folder/strings.xml", "app/src/main/res/$folder/strings.xml")
             .map(::File).first { it.exists() }

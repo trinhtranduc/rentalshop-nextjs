@@ -55,22 +55,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
-import com.anyrent.pos.domain.orders.OrderRowDates
-import com.anyrent.pos.ui.orders.v2.OrderRowDateLines
-import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
-import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.domain.calendar.CalendarCell
 import com.anyrent.pos.domain.calendar.CalendarDayMarks
 import com.anyrent.pos.domain.calendar.CalendarDayRow
 import com.anyrent.pos.domain.calendar.CalendarLogic
 import com.anyrent.pos.domain.calendar.CalendarNote
 import com.anyrent.pos.domain.calendar.CalendarRowKind
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
+import com.anyrent.pos.ui.navigation.OrdersChanged
+import com.anyrent.pos.ui.orders.v2.OrderRowDateLines
+import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
+import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.ui.theme.DS
 import java.time.LocalDate
+import kotlinx.coroutines.flow.drop
 
 private val ReturnRing = Color(0xFF6D28D9)
 private val OtherMonth = Color(0xFF94A3B8)
@@ -84,8 +86,9 @@ fun CalendarV2Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val todayKey = viewModel.todayKey
-    // Again on every show, so a hand-over or return done in the order detail shows up when coming back
+    // On every show, but it reloads only when an order changed or the day is 5 minutes old (#674)
     LaunchedEffect(Unit) { viewModel.onShown() }
+    LaunchedEffect(Unit) { OrdersChanged.version.drop(1).collect { viewModel.onShown() } }
     val grid = CalendarLogic.monthGrid(state.month, todayKey)
 
     PullToRefreshBox(
