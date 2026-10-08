@@ -79,10 +79,12 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.bitmapToImageSearchJpeg
 import com.anyrent.pos.ui.common.copyUriToCacheFile
-import com.anyrent.pos.ui.common.fileToJpegBytes
+import com.anyrent.pos.ui.common.fileToImageSearchJpeg
+import com.anyrent.pos.domain.error.AppError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.InterruptedIOException
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -93,7 +95,10 @@ import kotlin.math.roundToInt
 @Composable
 fun ImageSearchScreen(
     onDismiss: () -> Unit,
+    /** ⋯ "Kiểm tra lịch sản phẩm": the product's orders / availability (iOS OrderCheckViewController) */
     onCheckAvailability: (Product) -> Unit,
+    /** #654: tapping a result row opens the product detail (same as iOS) */
+    onOpenProduct: (Product) -> Unit,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -135,7 +140,7 @@ fun ImageSearchScreen(
                 runCatching {
                     val cache = context.copyUriToCacheFile(uri, "search")
                     try {
-                        fileToJpegBytes(cache, maxSide = 1024, maxBytes = 20 * 1024)
+                        fileToImageSearchJpeg(cache)
                     } finally {
                         cache.delete()
                     }
@@ -149,7 +154,7 @@ fun ImageSearchScreen(
                 resultsTotal = it.total ?: it.items.size
             }.onFailure {
                 analyzing.set(true)
-                error = it.message
+                error = imageSearchErrorMessage(context, it)
             }
         }
     }
@@ -177,7 +182,7 @@ fun ImageSearchScreen(
                 frozenPreview?.recycle()
                 frozenPreview = null
                 analyzing.set(true)
-                error = it.message
+                error = imageSearchErrorMessage(context, it)
             }
         }
     }
@@ -391,7 +396,7 @@ fun ImageSearchScreen(
                     items(products, key = { it.id }) { product ->
                         ProductCard(
                             product = product,
-                            onClick = {},
+                            onClick = { onOpenProduct(product) },
                             onEdit = {},
                             onDelete = {},
                             onCheckAvailability = { onCheckAvailability(product) },
@@ -432,6 +437,16 @@ private fun ProductCenterOverlay(quality: ImageQualityResult?) {
             )
         }
     }
+}
+
+/**
+ * #654: server codes come localized from [com.anyrent.pos.domain.error.ApiErrorMessages]; when the app's own
+ * 30 s timeout fires first, show the same text as the server's SEARCH_TIMEOUT instead of "timeout".
+ */
+private fun imageSearchErrorMessage(context: android.content.Context, error: Throwable): String {
+    val timedOut = error is AppError.Network && error.cause is InterruptedIOException
+    if (timedOut) return context.getString(R.string.api_error_search_timeout)
+    return error.message?.takeIf { it.isNotBlank() } ?: context.getString(R.string.request_failed)
 }
 
 private fun rotateBitmap(source: Bitmap, degrees: Int): Bitmap {

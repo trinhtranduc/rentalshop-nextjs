@@ -272,12 +272,9 @@ class ImageSearchViewController: BaseViewControler {
         present(alert, animated: true)
     }
 
+    /// #654: 512 px long side, JPEG 0.7 (`ImageSearchQuery`; same numbers on Android)
     private func compressImageForSearch(image: UIImage) -> Data? {
-        return image.compressToTargetSize(
-            targetSizeKB: 20,
-            maxDimension: 1024,
-            minQuality: 0.05
-        )
+        return ImageSearchQuery.jpegData(from: image)
     }
 
     private func processAndSearchImage(image: UIImage) {
@@ -327,6 +324,8 @@ class ImageSearchViewController: BaseViewControler {
         }
 
         let navController = UINavigationController(rootViewController: resultsVC)
+        // Swiping the sheet down while a product detail is on top still resumes the camera
+        navController.presentationController?.delegate = resultsVC
         if #available(iOS 15.0, *) {
             if let sheet = navController.sheetPresentationController {
                 sheet.detents = [.medium(), .large()]
@@ -534,6 +533,12 @@ class ImageSearchResultsViewController: BaseViewControler {
         }
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Product detail hides the bar; bring back the title and Close when it pops
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isBeingDismissed {
@@ -545,6 +550,12 @@ class ImageSearchResultsViewController: BaseViewControler {
         guard !didNotifyDismiss else { return }
         didNotifyDismiss = true
         onDismiss?()
+    }
+}
+
+extension ImageSearchResultsViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        notifyDismiss()
     }
 }
 
@@ -573,6 +584,17 @@ extension ImageSearchResultsViewController: UITableViewDataSource {
 extension ImageSearchResultsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        openDetail(products[indexPath.row])
+    }
+
+    /// #654: a result row opens the product detail (same as Android), full height inside the sheet
+    private func openDetail(_ product: Product) {
+        guard let nav = navigationController else { return }
+        if #available(iOS 15.0, *), let sheet = nav.sheetPresentationController {
+            sheet.animateChanges { sheet.selectedDetentIdentifier = .large }
+        }
+        let detail = ProductDetailViewController(product: product)
+        nav.pushViewController(detail, animated: true)
     }
 }
 

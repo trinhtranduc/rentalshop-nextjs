@@ -1126,6 +1126,12 @@
 "INVALID_SESSION_ID" = "Invalid session ID";
 "INVALID_TENANT_KEY" = "Invalid tenant key provided";
 "INVALID_TIMEZONE" = "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).";
+/* #654 image search */
+"INVALID_LIMIT" = "Invalid limit parameter";
+"INVALID_MIN_SIMILARITY" = "Invalid minimum similarity parameter";
+"SEARCH_FAILED" = "We couldn't search by image right now. Please try again in a moment, or use text search.";
+"SEARCH_TIMEOUT" = "The image search took too long. Try a smaller photo, or try again in a few minutes.";
+"NO_PRODUCTS_FOUND" = "No similar products found";
 "INVALID_USER_ID" = "Invalid user ID";
 "INVALID_USER_ROLE" = "Invalid user role";
 "LOGIN_SUCCESS" = "Login successful";
