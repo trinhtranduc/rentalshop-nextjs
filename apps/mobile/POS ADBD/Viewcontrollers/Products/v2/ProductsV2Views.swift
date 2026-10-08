@@ -482,6 +482,9 @@ final class EditOrderConfirmSheet: V2FittingSheet {
         if let paid = confirm.paid {
             rows.append(row("products.cart.edit.paid".localized(), MoneyFormatter.format(paid), changed: false))
         }
+        if let due = confirm.collectAtHandOver {
+            rows.append(row("products.cart.edit.collectAtHandOver".localized(), MoneyFormatter.format(due), changed: false))
+        }
         for (index, row) in rows.enumerated() {
             if index > 0 { card.addArrangedSubview(V2.divider()) }
             card.addArrangedSubview(row)

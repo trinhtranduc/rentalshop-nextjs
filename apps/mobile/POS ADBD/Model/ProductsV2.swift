@@ -218,10 +218,10 @@ enum ProductRowLogic {
         return ProductRowSubtitle(code: valid, free: ProductStock.freeToday(product))
     }
 
-    /// Out today wins over the cart count, so the button stays grey as before
+    /// The cart count wins (#677): a product out today that is already in the cart still shows its count
     static func addState(free: Int, inCart: Int) -> ProductAddState {
-        if free <= 0 { return .out }
-        return inCart > 0 ? .inCart(inCart) : .add
+        if inCart > 0 { return .inCart(inCart) }
+        return free <= 0 ? .out : .add
     }
 }
 
@@ -543,6 +543,13 @@ enum CartV2Logic {
         if isEditMode { return "products.cart.edit.save" }
         return isRent ? "products.cart.create" : "products.cart.sellAndCollect"
     }
+
+    /// #677: the action on the Home cart bar: "Sửa đơn #482913" (or "Sửa đơn") while the cart edits an order, else
+    /// "Tạo đơn"
+    static func cartBarAction(isEditMode: Bool, number: String?) -> String {
+        guard isEditMode else { return "products.cart.create".localized() }
+        return number.map { String(format: "products.cart.edit.title".localized(), $0) } ?? "products.cart.editTitle".localized()
+    }
 }
 
 // MARK: - Edit order (#676, board sua-don)
@@ -567,8 +574,11 @@ struct EditOrderConfirm: Equatable {
     /// Units in the cart ("2 món")
     let itemCount: Int
     let total: Double
-    /// Already collected on the order; nil hides the row
+    /// "Đã thu" (#677): booking deposit + payments made toward the order, never thế chân; nil hides the row
     let paid: Double?
+    /// "Thu khi giao" (#677): what Giao đồ will ask after saving (hand-over formula with the new total); rentals still
+    /// booked only, else nil
+    let collectAtHandOver: Double?
     let datesChanged: Bool
     let itemsChanged: Bool
 
@@ -596,6 +606,17 @@ enum EditOrderSheetLogic {
         return OrdersHomeLogic.shortNumber(raw)
     }
 
+    /// #677 "Huỷ sửa" confirm title: "Huỷ sửa đơn #482913?" (or "Huỷ sửa đơn này?")
+    static func cancelTitle(number: String?) -> String {
+        number.map { String(format: "products.cart.edit.cancelTitle".localized(), $0) }
+            ?? "products.cart.edit.cancelTitleNoNumber".localized()
+    }
+
+    /// #677: "Huỷ sửa" leaves edit mode and empties the cart; the order to show again (nil = not editing)
+    static func cancelEdit(_ cart: Cart) -> Int? {
+        cart.isEditMode ? cart.orderId : nil
+    }
+
     static func confirm(_ cart: Cart, timeZone: TimeZone = Date.shopTimeZone) -> EditOrderConfirm {
         let isSale = cart.orderType == .sale
         var range: String?
@@ -605,7 +626,7 @@ enum EditOrderSheetLogic {
             days = CartV2Logic.rentalDays(pickup: pickup, return: ret, timeZone: timeZone)
         }
         let original = cart.editOriginal
-        let paid = original?.paid ?? 0
+        let paid = collected(cart)
         return EditOrderConfirm(
             number: number(cart),
             isSale: isSale,
@@ -615,9 +636,30 @@ enum EditOrderSheetLogic {
             itemCount: cart.itemCount,
             total: cart.totalAmount,
             paid: paid > 0 ? paid : nil,
+            collectAtHandOver: collectAtHandOver(cart),
             datesChanged: !isSale && datesChanged(cart, original: original, timeZone: timeZone),
             itemsChanged: itemsChanged(cart, original: original)
         )
+    }
+
+    /// #677 "Đã thu": a rental's booking deposit (`depositAmount`) plus the payments the hand-over counts as paid
+    /// before (PICKUP); a sale's SALE payments. Never thế chân. A draft saved before #677 has no payment notes: all
+    /// its payments count, as before.
+    static func collected(_ cart: Cart) -> Double {
+        let isSale = cart.orderType == .sale
+        let deposit = isSale ? 0 : cart.depositAmount
+        guard let original = cart.editOriginal else { return deposit }
+        guard let payments = original.payments else { return deposit + original.paid }
+        return deposit + OrderDetailLogic.paid(payments, purpose: isSale ? "SALE" : "PICKUP")
+    }
+
+    /// #677 "Thu khi giao": `OrderDetailLogic.handOver(...).due` with the cart's new total, deposit and thế chân, so
+    /// it matches Giao đồ after the save. Only for a rental still booked (RESERVED).
+    static func collectAtHandOver(_ cart: Cart) -> Double? {
+        guard cart.orderType == .rent, let original = cart.editOriginal, original.status == .reserved else { return nil }
+        return OrderDetailLogic.handOver(total: cart.totalAmount, deposit: cart.depositAmount,
+                                         securityDeposit: cart.manualSecurityDeposit ?? 0,
+                                         payments: original.payments ?? []).due
     }
 
     /// "Đã đổi" on Ngày thuê: the pickup or return shop day differs from the loaded order (times inside a day do not

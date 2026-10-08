@@ -665,10 +665,15 @@
         <item quantity="other">%1$d món</item>
     </plurals>
     <string name="v2_edit_confirm_paid">Đã thu</string>
+    <string name="v2_edit_confirm_collect_at_hand_over">Thu khi giao</string>
     <string name="v2_edit_confirm_changed">Đã đổi</string>
     <string name="v2_edit_confirm_keep_editing">Tiếp tục sửa</string>
     <string name="v2_edit_saved">Đã lưu đơn #%1$s</string>
     <string name="v2_edit_saved_no_number">Đã lưu đơn</string>
+    <string name="v2_cart_edit_cancel">Huỷ sửa</string>
+    <string name="v2_cart_edit_cancel_title">Huỷ sửa đơn #%1$s?</string>
+    <string name="v2_cart_edit_cancel_title_no_number">Huỷ sửa đơn này?</string>
+    <string name="v2_cart_edit_cancel_message">Các thay đổi chưa lưu sẽ mất.</string>
     <string name="v2_create_done_title">Đã tạo đơn #%1$s</string>
     <string name="v2_create_done_paid_deposit">Đã thu cọc %1$s</string>
     <string name="v2_create_done_paid_sale">Đã thu %1$s</string>

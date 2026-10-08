@@ -22,6 +22,8 @@ class ValidateRentalCartAvailability(
         lines: List<RentalCartLine>,
         pickupDate: LocalDate,
         returnDate: LocalDate,
+        /** The order being edited: its own units do not count against it (#677, iOS `excludeOrderId: cart.orderId`) */
+        excludeOrderId: Int? = null,
     ): List<BlockedRentalProduct> {
         if (lines.isEmpty()) throw AppError.Validation("Cart is empty")
         val grouped = lines
@@ -37,6 +39,7 @@ class ValidateRentalCartAvailability(
             requests = grouped.map { AvailabilityRequest(it.productId, it.quantity) },
             startDate = pickupDate,
             endDate = returnDate,
+            excludeOrderId = excludeOrderId,
         )
         val missing = grouped.filterNot { result.containsKey(it.productId) }
         if (missing.isNotEmpty()) {

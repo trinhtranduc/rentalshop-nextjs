@@ -232,7 +232,7 @@ class ProductRulesTest {
         assertEquals(AddButtonState.Add, ProductRowLogic.addState(free = 3, inCart = 0))
         assertEquals(AddButtonState.InCart(2), ProductRowLogic.addState(free = 3, inCart = 2))
         assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 0))
-        assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 2))
+        assertEquals(AddButtonState.InCart(2), ProductRowLogic.addState(free = 0, inCart = 2)) // #677: in-cart wins
     }
 
     // #632 — categories from the product form (same table as iOS ProductsV2Tests)

@@ -764,8 +764,9 @@ final class OrderDetailViewController: BaseViewControler {
 
     @objc private func editOrderTapped() {
         guard let order = orderViewModel?.currentOrder else { return }
+        let payments = detail == nil ? nil : self.payments
         navigationController?.popViewController(animated: false)
-        OrderEditLauncher.startEditing(order)
+        OrderEditLauncher.startEditing(order, payments: payments)
     }
 
     @objc private func extendTapped() {

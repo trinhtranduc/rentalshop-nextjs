@@ -669,10 +669,15 @@
         <item quantity="other">%1$d items</item>
     </plurals>
     <string name="v2_edit_confirm_paid">Collected</string>
+    <string name="v2_edit_confirm_collect_at_hand_over">Collect at hand-over</string>
     <string name="v2_edit_confirm_changed">Changed</string>
     <string name="v2_edit_confirm_keep_editing">Keep editing</string>
     <string name="v2_edit_saved">Saved order #%1$s</string>
     <string name="v2_edit_saved_no_number">Order saved</string>
+    <string name="v2_cart_edit_cancel">Cancel edit</string>
+    <string name="v2_cart_edit_cancel_title">Cancel editing order #%1$s?</string>
+    <string name="v2_cart_edit_cancel_title_no_number">Cancel editing this order?</string>
+    <string name="v2_cart_edit_cancel_message">Unsaved changes will be lost.</string>
     <string name="v2_create_done_title">Order #%1$s created</string>
     <string name="v2_create_done_paid_deposit">Deposit collected %1$s</string>
     <string name="v2_create_done_paid_sale">Collected %1$s</string>

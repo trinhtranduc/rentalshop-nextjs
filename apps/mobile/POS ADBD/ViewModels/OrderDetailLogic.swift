@@ -39,7 +39,7 @@ struct OrderSheetActions: Equatable {
 }
 
 /// A payment of the order as the money rule needs it
-struct OrderPaymentLine: Equatable {
+struct OrderPaymentLine: Codable, Equatable {
     let amount: Double
     let status: String?
     let notes: String?

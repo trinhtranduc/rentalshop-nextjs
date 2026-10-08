@@ -461,7 +461,13 @@ enum ChangeHistoryLogic {
                 ?? "history.note.cleared".localized()
             out.append(ChangeLine(label: nil, from: nil, to: text))
         }
-        return out
+        // #677: a field that is empty before and after ("Thế chân: —") did not change: no line
+        return out.filter { !isEmptyChange($0) }
+    }
+
+    /// A labelled line whose old and new values are both empty ("—")
+    static func isEmptyChange(_ line: ChangeLine) -> Bool {
+        line.label != nil && line.to == "—" && (line.from ?? "—") == "—"
     }
 
     // MARK: Actor
@@ -475,8 +481,9 @@ enum ChangeHistoryLogic {
     /// The signed-in user may open change history
     static var currentUserCanView: Bool { canView(User.account()?.roleCode) }
 
+    /// #677: only OUTLET_STAFF is "(nhân viên)" (and the staff tone); an OUTLET_ADMIN manages the outlet
     static func isStaff(_ role: String?) -> Bool {
-        ["OUTLET_STAFF", "OUTLET_ADMIN"].contains((role ?? "").uppercased())
+        (role ?? "").trimmingCharacters(in: .whitespaces).uppercased() == "OUTLET_STAFF"
     }
 
     /// "Nguyễn An (nhân viên)" for staff, the bare name for owners, nil when the actor is unknown

@@ -13,14 +13,21 @@ import com.anyrent.pos.domain.error.AppError
  * `PUT /api/orders/{id}` body, used by that screen and by the new cart's "Lưu thay đổi" sheet.
  */
 object CartOrderSubmit {
-    /** Rental lines the API cannot reserve for the cart's dates (thrown errors: the check itself failed) */
-    suspend fun blockedRentalLines(validate: ValidateRentalCartAvailability): List<BlockedRentalProduct> =
+    /**
+     * Rental lines the API cannot reserve for the cart's dates (thrown errors: the check itself failed).
+     * #677: an edited order ([excludeOrderId], default the cart's order) does not count against itself.
+     */
+    suspend fun blockedRentalLines(
+        validate: ValidateRentalCartAvailability,
+        excludeOrderId: Int? = CartStore.editingOrderId.value,
+    ): List<BlockedRentalProduct> =
         validate(
             lines = CartStore.lines.value.map {
                 RentalCartLine(productId = it.product.id, productName = it.product.name, quantity = it.quantity)
             },
             pickupDate = CartStore.pickupDate.value,
             returnDate = CartStore.returnDate.value,
+            excludeOrderId = excludeOrderId,
         )
 
     /** Blocking network call; run it off the main thread. #480: [noteImages] = the cart note photos as JPEG bytes. */
@@ -57,15 +64,19 @@ object CartOrderSubmit {
 
     /**
      * The review screen's rental check before it saves (#676): null when the save may go on, else the message it shows
-     * (session expired, the check failed, or "Availability conflicts: …"). A sale is not checked.
+     * (session expired, the check failed, or "[conflictsLabel]: Camera, Tripod"). A sale is not checked.
+     * #677: [excludeOrderId] is the order being edited, so its own units are not counted (5 → 4 is not refused), and
+     * the conflict text is the localized "Có xung đột lịch", not the English "Availability conflicts".
      */
     suspend fun editAvailabilityError(
         validate: ValidateRentalCartAvailability,
+        excludeOrderId: Int?,
         sessionExpiredMessage: String,
         availabilityFailedMessage: String,
+        conflictsLabel: String,
     ): String? {
         if (CartStore.orderType.value != "RENT") return null
-        val result = runCatching { blockedRentalLines(validate) }
+        val result = runCatching { blockedRentalLines(validate, excludeOrderId) }
         val failure = result.exceptionOrNull()
         if (failure != null) {
             return when (failure) {
@@ -74,7 +85,7 @@ object CartOrderSubmit {
             }
         }
         val blocked = result.getOrThrow()
-        return if (blocked.isNotEmpty()) "Availability conflicts: " + blocked.joinToString { it.productName } else null
+        return if (blocked.isNotEmpty()) "$conflictsLabel: " + blocked.joinToString { it.productName } else null
     }
 
     /** Blocking network call; run it off the main thread. The review screen's edit request (#676). */
