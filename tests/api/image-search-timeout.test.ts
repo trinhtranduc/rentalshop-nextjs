@@ -11,6 +11,8 @@ jest.mock('next/server', () => ({
 jest.mock('@rentalshop/auth/server', () => ({
   withPermissions: () => (handler: any) => (request: any) =>
     handler(request, { user: { id: 1, role: 'MERCHANT' }, userScope: { merchantId: 7 } }),
+  // #653: the route decides costPrice with hasPermission
+  hasPermission: () => true,
 }));
 
 const mockGetVectorStore = jest.fn();
@@ -33,8 +35,9 @@ jest.mock('../../apps/api/lib/image-compression', () => ({
 }));
 jest.mock('../../apps/api/lib/image-search-cache', () => ({
   generateImageHash: async () => 'hash',
-  getCachedSearchResults: () => null,
-  cacheSearchResults: () => undefined,
+  // #653: the cache keeps vector hits only
+  getCachedSearchHits: () => null,
+  cacheSearchHits: () => undefined,
 }));
 
 import { POST } from '../../apps/api/app/api/products/searchByImage/route';
