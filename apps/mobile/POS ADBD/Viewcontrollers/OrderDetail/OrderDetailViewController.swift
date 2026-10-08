@@ -142,6 +142,7 @@ final class OrderDetailViewController: BaseViewControler {
 
     /// One row of the changes endpoint gives the total and the newest instant; a failure leaves the row without a line
     private func loadHistorySummary() {
+        guard ChangeHistoryLogic.currentUserCanView else { return }  // #670: the API answers 403 to OUTLET_STAFF
         TabsV2APIService.shared.orderChanges(orderId: orderId, limit: 1) { [weak self] page, _ in
             DispatchQueue.main.async {
                 guard let self, let page else { return }
@@ -687,7 +688,8 @@ final class OrderDetailViewController: BaseViewControler {
     @objc private func moreTapped() {
         guard let detail, presentedViewController == nil else { return }
         let sheetActions = OrderDetailLogic.sheetActions(actions(for: detail), orderType: detail.orderType,
-                                                         canExtend: canExtend(detail))
+                                                         canExtend: canExtend(detail),
+                                                         canViewHistory: ChangeHistoryLogic.currentUserCanView)
         let rows: (OrderSheetAction) -> OrderActionSheet.Row = { [weak self] action in
             OrderActionSheet.Row(action: action, title: OrderActionSheet.title(of: action),
                                  subtitle: self?.sheetSubtitle(action, detail: detail))
@@ -733,6 +735,7 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     private func openHistory() {
+        guard ChangeHistoryLogic.currentUserCanView else { return }
         guard let detail, let order = orderViewModel?.currentOrder else { return }
         let customer = order.customerName.trimmingCharacters(in: .whitespaces)
         let history = ChangeHistoryViewController(subject: .order(id: orderId, number: detail.orderNumber,

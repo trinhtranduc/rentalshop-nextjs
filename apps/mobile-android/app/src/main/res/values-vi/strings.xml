@@ -1221,6 +1221,7 @@
     <string name="history_other">Cập nhật</string>
     <string name="history_refund">Hoàn tiền</string>
     <string name="history_staff_name">%1$s (nhân viên)</string>
+    <string name="history_actor_by">bởi %1$s</string>
     <string name="history_per_day">/ngày</string>
     <string name="history_per_rental">/lần</string>
     <string name="history_per_hour">/giờ</string>

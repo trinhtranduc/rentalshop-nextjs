@@ -893,6 +893,8 @@
       },
       "history": {
         "title": "History",
+        "by": "by",
+        "staff": "(staff)",
         "created": "{by} created the order",
         "createdNoBy": "Order created",
         "payment": "Payment recorded {amount}",

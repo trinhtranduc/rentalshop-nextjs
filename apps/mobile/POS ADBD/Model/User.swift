@@ -50,6 +50,8 @@ class User: NSObject, Codable {
         set { privateRole = newValue.rawValue }
     }
     private var privateRole = Role.outletStaff.rawValue
+    /// The role exactly as the API sent it ("OPS" included, which [role] folds into outletStaff)
+    var roleCode: String { privateRole }
     var merchantId: Int?
     var outletId: Int?
     var emailVerified: Bool?

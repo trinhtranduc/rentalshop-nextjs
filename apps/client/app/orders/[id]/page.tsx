@@ -21,12 +21,14 @@ import { useShopToday } from '../../hooks/useShopToday';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import {
+  attachHistoryActors,
   buildHistory,
   buildNextStep,
   buildPaySummary,
   buildProgress,
   customerNameOf,
   formatDayLabel,
+  type HistoryEntryLike,
   type OrderDetailLike,
 } from '../orders-model';
 import { StatusTag, cardClass, outlineBtn, primaryBtn, type T } from '../list/parts';
@@ -123,6 +125,26 @@ export default function OrderDetailPage() {
   const [ready, setReady] = useState<boolean | null>(null);
   const [readySaving, setReadySaving] = useState(false);
   useEffect(() => setReady(order ? !!order.isReadyToDeliver : null), [order]);
+
+  // #670: who did each step, from the order's change timeline; the card shows without names until it loads
+  const [changes, setChanges] = useState<HistoryEntryLike[]>([]);
+  // #670: owners and outlet admins only; outlet staff never load or see it
+  const canSeeHistory = ['ADMIN', 'OPS', 'MERCHANT', 'OUTLET_ADMIN'].includes(String(user?.role || '').toUpperCase());
+  const orderId = canSeeHistory ? order?.id : undefined;
+  const orderStamp = order ? `${order.status}|${String(order.updatedAt ?? '')}` : '';
+  useEffect(() => {
+    if (!orderId) return;
+    let alive = true;
+    ordersApi
+      .getOrderChanges(orderId)
+      .then((res) => {
+        if (alive && res.success) setChanges(((res.data?.entries || []) as HistoryEntryLike[]));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [orderId, orderStamp]);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   if (loading && !order) return <DetailSkeleton />;
@@ -157,7 +179,7 @@ export default function OrderDetailPage() {
   const steps = buildProgress(detail, todayKey, getLocalDateKey);
   const next = buildNextStep(detail, todayKey, getLocalDateKey);
   const pay = buildPaySummary(detail);
-  const history = buildHistory(detail);
+  const history = attachHistoryActors(buildHistory(detail), changes);
 
   const canEdit = (isRent && status === 'RESERVED') || (!isRent && status === 'COMPLETED');
   const canCancel = canCancelOrder(order.orderType, status, canManageOrders);
@@ -369,7 +391,7 @@ export default function OrderDetailPage() {
           ) : (
             <NotesCard notes={notes} onEdit={settingsOpen ? editNotes : null} t={t} />
           )}
-          <HistoryCard events={history} toDayKey={getLocalDateKey} t={t} money={money} />
+          {canSeeHistory && <HistoryCard events={history} toDayKey={getLocalDateKey} t={t} money={money} />}
         </div>
 
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">

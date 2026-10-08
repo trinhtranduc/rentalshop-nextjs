@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +72,7 @@ internal fun changeHistoryTexts(res: Resources): ChangeHistory.Texts = ChangeHis
     otherKind = res.getString(R.string.history_other),
     refundKind = res.getString(R.string.history_refund),
     staffName = res.getString(R.string.history_staff_name),
+    actorBy = res.getString(R.string.history_actor_by),
     perDay = res.getString(R.string.history_per_day),
     perRental = res.getString(R.string.history_per_rental),
     perHour = res.getString(R.string.history_per_hour),
@@ -217,6 +219,14 @@ private fun toneColors(tone: ChangeHistory.Tone): Pair<Color, Color> = when (ton
     ChangeHistory.Tone.SLATE -> Color(0xFFF1F5F9) to Color(0xFF334155)
 }
 
+/** "bởi **Lan Anh** (nhân viên) · 18:05": the actor name bold in ink, the rest muted */
+private fun footerText(row: ChangeHistory.Row): AnnotatedString = buildAnnotatedString {
+    append(row.footer)
+    row.footerName?.takeIf { it.last < row.footer.length }?.let { range ->
+        addStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = DS.Colors.Text), range.first, range.last + 1)
+    }
+}
+
 @Composable
 private fun EntryRow(row: ChangeHistory.Row) {
     val (bg, fg) = toneColors(row.tone)
@@ -231,7 +241,7 @@ private fun EntryRow(row: ChangeHistory.Row) {
             Text(row.title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
             row.lines.forEach { line -> ChangeLineText(line) }
             if (row.footer.isNotBlank()) {
-                Text(row.footer, fontSize = 13.sp, color = Color(0xFF64748B))
+                Text(footerText(row), fontSize = 13.sp, color = Color(0xFF64748B))
             }
         }
     }
