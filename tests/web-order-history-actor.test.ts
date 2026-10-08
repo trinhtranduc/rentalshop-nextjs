@@ -35,7 +35,7 @@ describe('order history actors (#670)', () => {
     expect(out.map((e) => e.actor)).toEqual([
       { name: 'Lan Anh', staff: true },
       { name: 'Lan Anh', staff: true },
-      { name: 'Minh Tú', staff: true },
+      { name: 'Minh Tú', staff: false }, // #677: OUTLET_ADMIN is not "(nhân viên)"
       { name: 'Trinh Trần', staff: false },
     ]);
   });
