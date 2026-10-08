@@ -102,6 +102,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import androidx.compose.ui.Modifier
+import com.anyrent.pos.ui.navigation.OrdersChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -257,6 +258,7 @@ fun CartCheckoutScreen(
             }
             loading = false
             result.onSuccess {
+                OrdersChanged.notifyChanged() // #674: created or edited
                 CartStore.clear()
                 onCreated(it.id)
             }.onFailure {

@@ -131,7 +131,10 @@ fun InboxV2Screen(
                 items = if (wanted == 1) data.items else items + data.items
                 hasMore = data.hasMore
                 page = wanted + 1
-                data.unreadCount?.let { unreadCount = it }
+                data.unreadCount?.let {
+                    unreadCount = it
+                    InboxUnread.set(it) // #674: the home badge follows
+                }
             }.onFailure { error = it.message }
         }
     }
@@ -221,6 +224,7 @@ fun InboxV2Screen(
                                             // Optimistic, as on iOS; the server call follows
                                             items = items.map { if (it.id == item.id) it.copy(isRead = true) else it }
                                             if (unreadCount > 0) unreadCount -= 1
+                                            InboxUnread.set(unreadCount)
                                         }
                                         scope.launch {
                                             if (!item.isRead) {

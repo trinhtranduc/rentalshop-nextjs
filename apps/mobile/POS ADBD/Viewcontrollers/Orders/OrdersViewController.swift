@@ -18,7 +18,6 @@ final class OrdersViewController: BaseViewControler {
     private static let statuses: [OrderStatus?] = [nil, .reserved, .pickuped, .returned, .cancelled]
 
     private let viewModel = OrdersHomeViewModel()
-    private var needsReloadOnAppear = false
     private var isPullRefreshing = false
     /// Search mode (board VL-tim): the field has focus or holds a query
     private var isSearchMode = false
@@ -62,16 +61,21 @@ final class OrdersViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         setupUI()
         viewModel.onChange = { [weak self] in self?.render() }
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         viewModel.reload()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
-        if needsReloadOnAppear {
-            needsReloadOnAppear = false
-            viewModel.reload()
-        }
+        // #674: back from a detail or the tab again: a quiet refresh only when an order changed or the list is old
+        viewModel.refreshIfNeeded()
+    }
+
+    /// #674: an order was created or changed somewhere; refresh now when on screen, else on the next appear
+    @objc private func ordersChanged() {
+        viewModel.markDirty()
+        if isViewLoaded, view.window != nil { viewModel.refreshIfNeeded() }
     }
 
     // MARK: - Layout
@@ -304,7 +308,7 @@ final class OrdersViewController: BaseViewControler {
 
     override func startRefresh(_ sender: Any) {
         isPullRefreshing = true
-        viewModel.reload()
+        viewModel.reload(quiet: true) // #674: the rows stay under the pull spinner
     }
 
     // MARK: - Render
@@ -473,8 +477,7 @@ final class OrdersViewController: BaseViewControler {
     /// Same flow as a push notification: load the detail by numeric id, then the current detail screen
     private func openOrder(id: Int) {
         if OrderDetailRouter.usesNewDetail {
-            // The new detail loads the order itself
-            needsReloadOnAppear = true
+            // The new detail loads the order itself; its actions post the orders-changed signal (#674)
             let detail = OrderDetailViewController(orderId: id)
             detail.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(detail, animated: true)
@@ -491,7 +494,6 @@ final class OrdersViewController: BaseViewControler {
                 }
                 guard let detail else { return }
                 let preview = OrderDetailRouter.detailController(for: Order.from(detail: detail), delegate: self)
-                self.needsReloadOnAppear = true
                 self.navigationController?.pushViewController(preview, animated: true)
             }
         }
@@ -608,7 +610,7 @@ extension OrdersViewController: QRCodeReaderViewControllerDelegate {
 
 extension OrdersViewController: PreviewViewControllerDelegate {
     func didCompleteOrder(sender: PreviewViewController, updatedOrder: Order?) {
-        needsReloadOnAppear = true
+        viewModel.markDirty()
     }
 }
 

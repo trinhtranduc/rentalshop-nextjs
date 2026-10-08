@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.anyrent.pos.ui.navigation.OrdersChanged
 
 /**
  * iOS [OrderViewModel.availableActions] cancel rules:
@@ -272,6 +273,7 @@ fun OrderActionPanel(
             onClick = {
                 scope.launch {
                     withContext(Dispatchers.IO) { ApiParity.deleteOrder(detail.summary.id) }
+                        .onSuccess { OrdersChanged.notifyChanged() } // #674
                     onDeleted()
                 }
             },

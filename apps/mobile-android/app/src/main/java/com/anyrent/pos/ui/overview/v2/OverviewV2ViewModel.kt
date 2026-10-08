@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.RefreshPolicy
+import com.anyrent.pos.domain.RefreshTracker
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewNow
 import com.anyrent.pos.domain.overview.OverviewPeriod
 import com.anyrent.pos.domain.overview.OverviewPreset
 import com.anyrent.pos.domain.overview.OverviewReport
+import com.anyrent.pos.ui.navigation.OrdersChanged
+import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,12 +45,17 @@ class OverviewV2ViewModel(
     private val fetch: (String) -> JSONObject = { ApiClient.get().authedGet(it) },
     private val today: () -> LocalDate = { ShopTime.today() },
     role: String? = SessionStore.role,
+    private val clock: () -> Instant = Instant::now,
+    /** App-wide "orders changed" version (#674); replaceable in tests */
+    changes: () -> Long = { OrdersChanged.version.value },
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         OverviewV2State(showsRevenue = OverviewLogic.showsRevenue(role), showsOperations = OverviewLogic.showsOperations(role)),
     )
     val state: StateFlow<OverviewV2State> = _state.asStateFlow()
     private var job: Job? = null
+    /** #674: re-show reloads (quietly) only when an order changed or the figures are 10 minutes old */
+    private val freshness = RefreshTracker(changes)
 
     fun today(): LocalDate = today.invoke()
 
@@ -61,14 +70,24 @@ class OverviewV2ViewModel(
 
     fun refresh() {
         _state.update { it.copy(refreshing = true) }
-        load()
+        load(quiet = true)
     }
 
-    fun load() {
+    /** The tab shows again or an order changed while it shows: quiet reload only when dirty or stale */
+    fun onShown() {
+        if (job?.isActive == true) return
+        if (freshness.shouldReload(clock(), RefreshPolicy.SUMMARY_TTL)) load(quiet = true)
+    }
+
+    /** [quiet] (#674: re-show, pull): the figures on screen stay until the answer replaces them; a failure keeps them */
+    fun load(quiet: Boolean = false) {
         job?.cancel()
         val snapshot = _state.value
         val range = OverviewLogic.range(snapshot.period, today())
-        _state.update { it.copy(loading = true, report = null, reportError = null) }
+        val keep = quiet && snapshot.reportError == null &&
+            (if (snapshot.showsRevenue) snapshot.report != null else snapshot.now != null)
+        if (!keep) _state.update { it.copy(loading = true, report = null, reportError = null) }
+        val version = freshness.begin()
         job = viewModelScope.launch {
             val (report, now) = withContext(Dispatchers.IO) {
                 coroutineScope {
@@ -89,6 +108,11 @@ class OverviewV2ViewModel(
                 }
             }
             if (report?.exceptionOrNull() is CancellationException) return@launch
+            if (keep && report?.isFailure == true) {
+                _state.update { it.copy(now = now ?: it.now, refreshing = false) }
+                return@launch
+            }
+            if (report?.isFailure != true) freshness.loaded(version, clock())
             _state.update {
                 it.copy(
                     report = report?.getOrNull(),

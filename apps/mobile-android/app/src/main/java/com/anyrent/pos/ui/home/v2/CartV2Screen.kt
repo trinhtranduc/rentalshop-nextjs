@@ -88,6 +88,7 @@ import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
 import com.anyrent.pos.ui.common.copyUriToCacheFile
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -269,6 +270,7 @@ fun CartV2Screen(
             submitting = false
             result.onSuccess { order ->
                 submission.succeeded()
+                OrdersChanged.notifyChanged() // #674: Orders, Calendar and Overview refresh on next show
                 CartStore.clear()
                 confirmSheet = null
                 createdSheet = CreateOrderSheet.created(order.orderNumber, confirm) to order.id

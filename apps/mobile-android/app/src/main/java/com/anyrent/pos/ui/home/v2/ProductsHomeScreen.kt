@@ -76,7 +76,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
-import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.ProductsV2Api
@@ -97,6 +96,7 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.ImageSearchScreen
+import com.anyrent.pos.ui.inbox.InboxUnread
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -123,7 +123,7 @@ fun ProductsHomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
-    var unread by remember { mutableIntStateOf(0) }
+    val unread by InboxUnread.count.collectAsState()
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
@@ -137,8 +137,9 @@ fun ProductsHomeScreen(
 
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
-        unread = withContext(Dispatchers.IO) { ApiClient.get().getUnreadCount().getOrDefault(0) }
     }
+    // #674: the badge follows the inbox and pushes; the server is asked on first show and when 10 minutes old
+    LaunchedEffect(Unit) { InboxUnread.invalidations.collect { InboxUnread.refreshIfNeeded() } }
     val deleted by DeletedProducts.ids.collectAsState()
     LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
     LaunchedEffect(Unit) {

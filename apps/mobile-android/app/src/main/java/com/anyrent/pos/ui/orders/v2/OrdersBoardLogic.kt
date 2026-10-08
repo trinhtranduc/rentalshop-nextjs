@@ -49,6 +49,8 @@ data class OrdersQuery(
     val endDate: String? = null,
     val dateField: String? = null,
     val page: Int = 1,
+    /** Page size; a quiet refresh asks for every loaded page at once (#674) */
+    val limit: Int = OrdersHomeViewModel.PAGE_SIZE,
 )
 
 /** Right-hand line under a row total (board Main). A fully paid order has none (#458). */

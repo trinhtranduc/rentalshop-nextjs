@@ -21,11 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,17 +34,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.overview.NotPickedUpLogic
 import com.anyrent.pos.ui.common.AppIcon
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.ui.orders.v2.NotPickedUpOrderRow
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import kotlinx.coroutines.flow.drop
 
 private val OverdueBand = Color(0xFFFEF2F2)
 private val OverdueText = Color(0xFFB91C1C)
@@ -81,18 +81,16 @@ private fun loadNotPickedUp(): Result<List<OrderSummary>> = runCatching {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotPickedUpScreen(onOpenOrder: (Int) -> Unit, onBack: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    var orders by remember { mutableStateOf<List<OrderSummary>?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var refreshing by remember { mutableStateOf(false) }
-
-    suspend fun load() {
-        withContext(Dispatchers.IO) { loadNotPickedUp() }
-            .onSuccess { orders = it; error = null }
-            .onFailure { error = it.message ?: "" }
-    }
-
-    LaunchedEffect(Unit) { load() }
+    // #674: the list lives in a view model, so back from an order it stays; it reloads only when dirty or stale
+    val viewModel: DrillDownOrdersViewModel = viewModel(
+        factory = remember { DrillDownOrdersViewModel.Factory { withContext(Dispatchers.IO) { loadNotPickedUp() } } },
+    )
+    val listState by viewModel.state.collectAsState()
+    val orders = listState.orders
+    val error = listState.error
+    val refreshing = listState.refreshing
+    LaunchedEffect(Unit) { viewModel.onShown() }
+    LaunchedEffect(Unit) { OrdersChanged.version.drop(1).collect { viewModel.onShown() } }
 
     val now = Instant.now()
     val groups = orders?.let { NotPickedUpLogic.groups(it, now) }
@@ -110,13 +108,7 @@ fun NotPickedUpScreen(onOpenOrder: (Int) -> Unit, onBack: () -> Unit) {
         HorizontalDivider(color = DS.Colors.Border)
         PullToRefreshBox(
             isRefreshing = refreshing,
-            onRefresh = {
-                refreshing = true
-                scope.launch {
-                    load()
-                    refreshing = false
-                }
-            },
+            onRefresh = viewModel::refresh,
             modifier = Modifier.fillMaxSize(),
         ) {
             when {

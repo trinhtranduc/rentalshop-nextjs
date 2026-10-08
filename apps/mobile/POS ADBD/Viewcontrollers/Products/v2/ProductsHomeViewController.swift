@@ -14,6 +14,8 @@ import AudioToolbox
 
 final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
+    /// Last time the unread badge came from the server or the inbox signal (#674)
+    private var badgeLoadedAt: Date?
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
@@ -63,7 +65,10 @@ final class ProductsHomeViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
-        refreshNotificationBadge()
+        // #674: the badge follows `.inboxUnreadCountDidChange`; the server is asked on first show and when 10 min old
+        if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: badgeLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
+            refreshNotificationBadge()
+        }
     }
 
     override func startRefresh(_ sender: Any) {
@@ -252,7 +257,9 @@ final class ProductsHomeViewController: BaseViewControler {
     private func refreshNotificationBadge() {
         guard User.account() != nil else { return }
         NotificationService.shared.getUnreadCount { [weak self] count, _ in
-            self?.applyBadge(count ?? 0)
+            guard let self else { return }
+            if count != nil { self.badgeLoadedAt = Date() }
+            self.applyBadge(count ?? 0)
         }
     }
 
@@ -264,7 +271,12 @@ final class ProductsHomeViewController: BaseViewControler {
     // MARK: - Actions
 
     @objc private func inboxCountChanged(_ note: Notification) {
-        if let count = note.userInfo?["count"] as? Int { applyBadge(count) } else { refreshNotificationBadge() }
+        if let count = note.userInfo?["count"] as? Int {
+            badgeLoadedAt = Date()
+            applyBadge(count)
+        } else {
+            refreshNotificationBadge()
+        }
     }
 
     @objc private func cartChanged() {

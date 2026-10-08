@@ -25,7 +25,8 @@ final class CalendarV2ViewController: BaseViewControler {
     private var dayGeneration = 0
     private var monthRequest: DataRequest?
     private var dayRequests: [DataRequest] = []
-    private var needsReloadOnAppear = false
+    /// #674: reload on appear only when an order changed or the data is 5 minutes old
+    private var freshness = RefreshTracker()
 
     private let listView = UITableView(frame: .zero, style: .plain)
     private let headerContainer = UIView()
@@ -54,6 +55,7 @@ final class CalendarV2ViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         loadMonth()
         loadDay()
     }
@@ -61,11 +63,19 @@ final class CalendarV2ViewController: BaseViewControler {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
-        if needsReloadOnAppear {
-            needsReloadOnAppear = false
-            loadMonth()
-            loadDay()
-        }
+        refreshIfNeeded()
+    }
+
+    /// #674: quiet (the day's rows stay, no spinner) and only when dirty or stale
+    private func refreshIfNeeded() {
+        guard dayState != .loading, freshness.shouldReload(now: Date(), ttl: RefreshPolicy.listTTL) else { return }
+        loadMonth()
+        loadDay(quiet: true)
+    }
+
+    @objc private func ordersChanged() {
+        freshness.markDirty()
+        if isViewLoaded, view.window != nil { refreshIfNeeded() }
     }
 
     override func viewDidLayoutSubviews() {
@@ -153,7 +163,7 @@ final class CalendarV2ViewController: BaseViewControler {
 
     override func startRefresh(_ sender: Any) {
         loadMonth()
-        loadDay()
+        loadDay(quiet: true)
     }
 
     private func sizeHeaderToFit() {
@@ -207,14 +217,19 @@ final class CalendarV2ViewController: BaseViewControler {
         }
     }
 
-    private func loadDay() {
+    /// `quiet` (#674, same day only): the rows on screen stay until the answer replaces them; a failure keeps them
+    private func loadDay(quiet: Bool = false) {
         dayRequests.forEach { $0.cancel() }
         dayGeneration += 1
         let generation = dayGeneration
         let dayKey = selectedKey
-        dayState = .loading
-        rows = []
-        listView.reloadData()
+        let version = freshness.begin()
+        let keepRows = quiet && dayState == .loaded
+        if !keepRows {
+            dayState = .loading
+            rows = []
+            listView.reloadData()
+        }
 
         var pickups: [CalendarDayOrder]?
         var returns: [CalendarDayOrder]?
@@ -239,7 +254,8 @@ final class CalendarV2ViewController: BaseViewControler {
             if let pickups, let returns {
                 self.rows = CalendarV2Logic.rows(dayKey: dayKey, todayKey: self.todayKey, pickups: pickups, returns: returns)
                 self.dayState = .loaded
-            } else {
+                self.freshness.loaded(version: version, at: Date())
+            } else if !keepRows {
                 self.dayState = .failed(failure?.localizedDescription ?? "")
             }
             self.listView.reloadData()
@@ -368,7 +384,6 @@ extension CalendarV2ViewController: UITableViewDataSource, UITableViewDelegate {
             return
         }
         guard dayState == .loaded, rows.indices.contains(indexPath.row) else { return }
-        needsReloadOnAppear = true
         OrderDetailRouter.open(orderId: rows[indexPath.row].order.id, from: self)
     }
 }

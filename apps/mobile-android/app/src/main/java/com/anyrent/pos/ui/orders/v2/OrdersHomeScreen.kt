@@ -103,9 +103,11 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.navigation.MainTabRouter
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.Instant
+import kotlinx.coroutines.flow.drop
 
 /** Board colours not in `DS` */
 private object BoardColors {
@@ -149,7 +151,17 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
     LaunchedEffect(Unit) { viewModel.onShown() }
     // After create-order success: MainTabRouter switches to this tab and asks for a reload
     LaunchedEffect(Unit) { MainTabRouter.refreshOrders.collect { viewModel.reload(keepRows = true) } }
-    LaunchedEffect(state.segment, state.isSearching, state.filter) { listState.scrollToItem(0) }
+    // #674: an order changed while this tab is on screen: quiet refresh
+    LaunchedEffect(Unit) { OrdersChanged.version.drop(1).collect { viewModel.refreshIfNeeded() } }
+    // Top of the list when the list changes meaning; not when the screen comes back from a detail (#674)
+    val listKey = "${state.segment}|${state.isSearching}|${state.filter.hashCode()}"
+    var scrolledKey by rememberSaveable { mutableStateOf(listKey) }
+    LaunchedEffect(listKey) {
+        if (listKey != scrolledKey) {
+            scrolledKey = listKey
+            listState.scrollToItem(0)
+        }
+    }
     // Next page when the last rows show
     LaunchedEffect(listState) {
         snapshotFlow {

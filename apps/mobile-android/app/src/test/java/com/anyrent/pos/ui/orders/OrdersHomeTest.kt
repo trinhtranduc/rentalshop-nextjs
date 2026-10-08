@@ -410,4 +410,138 @@ class OrdersHomeTest {
         advanceUntilIdle()
         assertEquals(1, vm.state.value.total)
     }
+
+    // --- #674: segment cache, dirty flag, quiet refresh ---
+
+    private class Clock(var now: Instant = Instant.parse("2026-10-08T03:00:00Z"))
+
+    private fun ids(vm: OrdersHomeViewModel) = vm.state.value.sections.flatMap { it.rows }.map { it.orderId }
+
+    private fun pageOf(ids: List<Int>, hasMore: Boolean = false) =
+        Result.success(PageResult(ids.map { order(it) }, hasMore = hasMore, total = ids.size))
+
+    @Test
+    fun `segment switch shows the cached list without reloading (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        val clock = Clock()
+        var version = 0L
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, now = { clock.now }, changes = { version })
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        orders.calls[0].answer.complete(page(1, 2)); advanceUntilIdle()
+        vm.select(OrdersSegment.SALE); advanceUntilIdle()
+        orders.calls[1].answer.complete(page(7)); advanceUntilIdle()
+        clock.now = clock.now.plusSeconds(60)
+
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        assertEquals(listOf(1, 2), ids(vm))
+        assertFalse(vm.state.value.loading)
+        assertEquals(2, vm.state.value.total)
+        assertEquals("fresh and clean: no request", 2, orders.calls.size)
+    }
+
+    @Test
+    fun `dirty segment shows the cache then refreshes quietly (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        var version = 0L
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, changes = { version })
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        orders.calls[0].answer.complete(page(1, 2)); advanceUntilIdle()
+        vm.select(OrdersSegment.SALE); advanceUntilIdle()
+        orders.calls[1].answer.complete(page(7)); advanceUntilIdle()
+
+        version++ // an order changed
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        assertEquals("cached rows stay while the refresh runs", listOf(1, 2), ids(vm))
+        assertFalse("no spinner", vm.state.value.loading)
+        assertEquals(3, orders.calls.size)
+        assertEquals("RENT", orders.calls[2].orderType)
+        orders.calls[2].answer.complete(page(3, 1, 2)); advanceUntilIdle()
+        assertEquals(listOf(3, 1, 2), ids(vm))
+        assertFalse(vm.isDirty)
+    }
+
+    @Test
+    fun `re-show reloads only when dirty or stale (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        val clock = Clock()
+        var version = 0L
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, now = { clock.now }, changes = { version })
+        vm.select(OrdersSegment.RENT)
+        vm.onShown(); advanceUntilIdle()
+        orders.calls[0].answer.complete(page(1)); advanceUntilIdle()
+
+        vm.onShown(); advanceUntilIdle()
+        assertEquals("view and back: no reload", 1, orders.calls.size)
+
+        clock.now = clock.now.plusSeconds(5 * 60 - 1)
+        vm.onShown(); advanceUntilIdle()
+        assertEquals(1, orders.calls.size)
+
+        clock.now = clock.now.plusSeconds(2)
+        vm.onShown(); advanceUntilIdle()
+        assertEquals("5 minutes old: reload", 2, orders.calls.size)
+        assertEquals("quiet: rows stay", listOf(1), ids(vm))
+        assertFalse(vm.state.value.loading)
+        orders.calls[1].answer.complete(page(1, 4)); advanceUntilIdle()
+
+        version++
+        vm.onShown(); advanceUntilIdle()
+        assertEquals("orders changed: reload", 3, orders.calls.size)
+    }
+
+    @Test
+    fun `quiet refresh failure keeps the rows (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        var version = 0L
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, changes = { version })
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        orders.calls[0].answer.complete(page(1, 2)); advanceUntilIdle()
+        version++
+        vm.refreshIfNeeded(); advanceUntilIdle()
+        orders.calls[1].answer.complete(Result.failure(AppError.Network("offline"))); advanceUntilIdle()
+        assertEquals(listOf(1, 2), ids(vm))
+        assertNull(vm.state.value.error)
+        assertTrue("still dirty: the next show tries again", vm.isDirty)
+    }
+
+    @Test
+    fun `change during a load leaves the list dirty (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        var version = 0L
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, changes = { version })
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        version++ // an order changed while the request was in flight
+        orders.calls[0].answer.complete(page(1)); advanceUntilIdle()
+        assertTrue(vm.isDirty)
+        assertTrue(vm.needsRefresh)
+    }
+
+    @Test
+    fun `quiet refresh keeps every loaded page (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        var version = 0L
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, changes = { version })
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        orders.calls[0].answer.complete(pageOf((1..20).toList(), hasMore = true)); advanceUntilIdle()
+        vm.loadMore(); advanceUntilIdle()
+        assertEquals(2, orders.calls[1].page)
+        orders.calls[1].answer.complete(pageOf((21..30).toList())); advanceUntilIdle()
+
+        version++
+        vm.refreshIfNeeded(); advanceUntilIdle()
+        assertEquals(1, orders.calls[2].page)
+        assertEquals("both pages in one request", 40, orders.calls[2].query.limit)
+        assertEquals("rows stay while it runs", 30, ids(vm).size)
+    }
+
+    @Test
+    fun `filter change still shows the spinner (#674)`() = runTest(dispatcher) {
+        val orders = FakeOrders()
+        val vm = OrdersHomeViewModel(repo(Result.success(TodayWork())), orders, changes = { 0L })
+        vm.select(OrdersSegment.RENT); advanceUntilIdle()
+        orders.calls[0].answer.complete(page(1)); advanceUntilIdle()
+        vm.selectStatus("RESERVED"); advanceUntilIdle()
+        assertTrue(vm.state.value.loading)
+        assertTrue(vm.state.value.sections.isEmpty())
+    }
 }

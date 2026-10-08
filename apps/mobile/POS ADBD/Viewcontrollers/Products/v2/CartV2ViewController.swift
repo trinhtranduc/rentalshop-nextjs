@@ -729,6 +729,7 @@ final class CartV2ViewController: BaseViewControler {
         } else {
             OrderListViewModel.shared.setNeedsRefresh()
         }
+        OrdersChangeSignal.post() // #674
         CartStore.shared.resetCart()
         ProductAvailabilityCache.shared.clearAll()
         HapticFeedback.success()
@@ -814,6 +815,7 @@ extension CartV2ViewController: PreviewViewControllerDelegate {
         } else {
             OrderListViewModel.shared.setNeedsRefresh()
         }
+        OrdersChangeSignal.post() // #674: order edited from the cart
         DispatchQueue.main.async {
             self.navigationController?.popToRootViewController(animated: true)
         }

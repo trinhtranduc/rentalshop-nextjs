@@ -141,6 +141,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.distinctUntilChanged
 import coil.compose.AsyncImage
+import com.anyrent.pos.ui.navigation.OrdersChanged
 
 /**
  * Routes entity-scoped order lists to the correct API so we never accidentally
@@ -1590,6 +1591,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                     withContext(Dispatchers.IO) {
                         ApiParity.deleteOrder(orderId)
                     }.onSuccess {
+                        OrdersChanged.notifyChanged() // #674
                         onBack()
                     }.onFailure { actionMessage = it.message }
                 }

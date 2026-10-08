@@ -100,6 +100,7 @@ import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -782,6 +783,7 @@ fun CartScreen(onBack: () -> Unit, onPickCustomer: () -> Unit, onCreated: (Int) 
                         }
                         loading = false
                         result.onSuccess {
+                            OrdersChanged.notifyChanged() // #674
                             CartStore.clear()
                             onCreated(it.id)
                         }.onFailure { error = it.message }
