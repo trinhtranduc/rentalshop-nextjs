@@ -8,7 +8,7 @@ Issue: #660 · Status: in progress · Spec: ./spec.md
    - `tests/packages/database/sessions-per-platform.test.ts` — in-memory Prisma fake; scenarios 1, 2, 4, 5, 6 and `getSessionStatus` replaced only within the platform.
    - `tests/api/client-platform.test.ts` — `detectClientPlatform` with real UA strings.
    - `tests/api/mobile-login-refresh.test.ts` — login passes `platform` to `createUserSession` (existing expectations updated: the call now carries `{ platform }`).
-2. Migration `prisma/migrations/20261008120000_user_session_platform` (hand-written, checked with `prisma migrate diff`), schema field + index.
+2. Migration `prisma/migrations/20261019090000_user_session_platform` (hand-written, checked with `prisma migrate diff`), schema field + index.
 3. `packages/database/src/sessions.ts` — platform-scoped replace (spec). Refresh tokens are bound to sessions by
    `RefreshToken.sessionId` (= `UserSession.sessionId`, since #343). We revoke every unrevoked token of the user
    except the tokens bound to the kept other-platform sessions, so tokens with a NULL `sessionId` (pre-#343, cannot
