@@ -32,6 +32,8 @@ Visitors and shop owners on `apps/client` web: /login, /register (+ steps), /for
 - 2026-10-08 — Chosen design: canvas A2 "Bản chọn: A nền sáng, 4 tính năng chính" (owner)
 - 2026-10-08 — No step tabs under the slides; remove Google login from /login (owner)
 - 2026-10-08 — Each step shows web and iPhone captures from a seeded local shop (owner)
+- 2026-10-08 — Google sign-up also hidden on /register: a Google-registered shop gets a random password, so sign-up without Google login would lock it out (owner agreed in review)
+- 2026-10-08 — Review fixes: captures lazy-load and the panel only rotates from lg up (phones fetched them every 5 s), no aria-live, language switcher top-right from lg, URL bar and per-step alt text as in the canvas
 
 ## Open questions (old)
 

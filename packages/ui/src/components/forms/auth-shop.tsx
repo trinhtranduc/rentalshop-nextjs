@@ -46,6 +46,9 @@ const showcaseSteps = [
   { key: "calendar", web: "/auth-showcase/web-calendar.jpg", phone: "/auth-showcase/phone-calendar.jpg" },
 ] as const;
 
+/** The panel shows from lg (1024px) up; below that it is display:none and must not rotate or load captures. */
+const SHOWCASE_MEDIA = "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+
 type ShowcaseKey = (typeof showcaseSteps)[number]["key"];
 
 const showcaseCss = `
@@ -79,7 +82,7 @@ function ShowcaseCard({ step, t }: { step: ShowcaseKey; t: (key: string) => stri
       <div className={`${cardClass} w-[236px] flex-col gap-2.5 p-3`}>
         <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/auth-showcase/query-photo.jpg" alt="" className="h-[150px] w-full rounded-xl object-cover" />
+          <img src="/auth-showcase/query-photo.jpg" alt="" loading="lazy" className="h-[150px] w-full rounded-xl object-cover" />
           <span className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white">
             <Camera aria-hidden="true" className="h-3.5 w-3.5" />
             {t("showcase.card.customerPhoto")}
@@ -124,7 +127,8 @@ function ShowcaseCard({ step, t }: { step: ShowcaseKey; t: (key: string) => stri
 
 /**
  * Left part of the split auth page (#679); not shown below lg. Four feature steps change on their own every
- * few seconds; there are no step controls on purpose. Hover pauses, and reduced motion stays on the first step.
+ * few seconds; there are no step controls on purpose. Hover or focus inside pauses, and reduced motion stays on
+ * the first step. Images are lazy so a phone (panel hidden) does not download them.
  */
 function ShopAuthShowcase() {
   const t = useAuthTranslations();
@@ -133,7 +137,7 @@ function ShopAuthShowcase() {
   const current = showcaseSteps[step];
 
   React.useEffect(() => {
-    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (paused || !window.matchMedia(SHOWCASE_MEDIA).matches) return;
     const id = window.setTimeout(() => setStep((i) => (i + 1) % showcaseSteps.length), SHOWCASE_STEP_MS);
     return () => window.clearTimeout(id);
   }, [step, paused]);
@@ -142,6 +146,8 @@ function ShopAuthShowcase() {
     <aside
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
       className="sticky top-0 hidden h-screen flex-col gap-7 overflow-hidden bg-[#F1F5FD] px-12 py-11 xl:px-14 lg:flex"
     >
       <style>{showcaseCss}</style>
@@ -157,7 +163,7 @@ function ShopAuthShowcase() {
         <span className="text-[22px] font-extrabold text-blue-900">AnyRent</span>
       </div>
 
-      <div key={current.key} aria-live="polite" className="flex min-h-[176px] max-w-[640px] flex-col gap-3">
+      <div key={current.key} className="flex min-h-[176px] max-w-[640px] flex-col gap-3">
         <span className="ar-showcase-in text-[13px] font-bold uppercase tracking-[0.08em] text-blue-700">
           {`0${step + 1} · ${t(`showcase.${current.key}.eyebrow`)}`}
         </span>
@@ -174,9 +180,10 @@ function ShopAuthShowcase() {
               <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              <span className="ml-3.5 flex h-[18px] flex-1 items-center rounded-md bg-white px-2.5 text-[11px] text-slate-500">anyrent.shop</span>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={current.web} alt={t("showcase.webAlt")} className="ar-showcase-in block aspect-[8/5] w-full object-cover object-left-top" />
+            <img src={current.web} alt={t(`showcase.${current.key}.webAlt`)} loading="lazy" className="ar-showcase-in block aspect-[8/5] w-full object-cover object-left-top" />
           </div>
           <div className="absolute bottom-0 right-0 h-[92%] rounded-[38px] bg-slate-900 p-2 shadow-[0_30px_60px_rgba(15,23,42,0.28)]">
             <div className="flex h-full aspect-[198/431] flex-col overflow-hidden rounded-[30px] bg-white">
@@ -184,7 +191,7 @@ function ShopAuthShowcase() {
                 <span className="h-[60%] w-[32%] rounded-full bg-slate-900" />
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={current.phone} alt={t("showcase.phoneAlt")} className="ar-showcase-in min-h-0 flex-1 object-cover object-top" />
+              <img src={current.phone} alt={t(`showcase.${current.key}.phoneAlt`)} loading="lazy" className="ar-showcase-in min-h-0 flex-1 object-cover object-top" />
             </div>
           </div>
           <ShowcaseCard step={current.key} t={t} />
@@ -202,6 +209,9 @@ export function ShopAuthPage({ children, termsLabel, privacyLabel, onNavigate }:
     >
       <ShopAuthShowcase />
       <div className="relative flex min-h-screen flex-col items-center overflow-hidden px-4 pb-10">
+        <div className="relative hidden self-end pt-10 lg:block">
+          <LanguageSwitcher variant="compact" />
+        </div>
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
@@ -231,7 +241,9 @@ export function ShopAuthPage({ children, termsLabel, privacyLabel, onNavigate }:
           <button type="button" onClick={() => onNavigate?.("/privacy")} className="whitespace-nowrap hover:text-blue-700">
             {privacyLabel}
           </button>
-          <LanguageSwitcher variant="compact" />
+          <span className="lg:hidden">
+            <LanguageSwitcher variant="compact" />
+          </span>
         </footer>
       </div>
     </div>
