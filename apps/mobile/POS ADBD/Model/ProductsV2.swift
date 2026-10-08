@@ -201,6 +201,15 @@ struct ProductRowSubtitle: Equatable {
     let free: Int
 }
 
+/// The Home row's price line (#681): the default rent option first, the other one muted after it.
+/// `mainMode == nil` means a sale-only product, shown as "bán <price>".
+struct ProductRowPrice: Equatable {
+    let main: Double
+    let mainMode: ProductPricingMode?
+    let second: Double?
+    let secondMode: ProductPricingMode?
+}
+
 enum ProductRowLogic {
     /// The id the cart stores for this product (same rule as `CartItem(from:)`)
     static func cartId(_ product: Product) -> Int {
@@ -216,6 +225,25 @@ enum ProductRowLogic {
         let code = product.barcode?.trimmingCharacters(in: .whitespacesAndNewlines)
         let valid = code.flatMap { $0.isEmpty || $0.lowercased() == "null" ? nil : $0 }
         return ProductRowSubtitle(code: valid, free: ProductStock.freeToday(product))
+    }
+
+    static func price(_ product: Product) -> ProductRowPrice? {
+        let perRental = ProductPricing.perRental(product)
+        let perDay = ProductPricing.perDay(product)
+        switch (perRental, perDay) {
+        case let (rental?, day?):
+            if ProductPricing.defaultMode(product) == .perDay {
+                return ProductRowPrice(main: day, mainMode: .perDay, second: rental, secondMode: .perRental)
+            }
+            return ProductRowPrice(main: rental, mainMode: .perRental, second: day, secondMode: .perDay)
+        case let (rental?, nil):
+            return ProductRowPrice(main: rental, mainMode: .perRental, second: nil, secondMode: nil)
+        case let (nil, day?):
+            return ProductRowPrice(main: day, mainMode: .perDay, second: nil, secondMode: nil)
+        case (nil, nil):
+            guard let sale = ProductPricing.sale(product) else { return nil }
+            return ProductRowPrice(main: sale, mainMode: nil, second: nil, secondMode: nil)
+        }
     }
 
     /// The cart count wins (#677): a product out today that is already in the cart still shows its count

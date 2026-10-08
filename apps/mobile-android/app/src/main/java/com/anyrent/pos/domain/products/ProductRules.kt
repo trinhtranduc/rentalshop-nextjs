@@ -166,6 +166,12 @@ sealed class AddButtonState {
 /** The line under the name: the product code and today's free count (no category) */
 data class ProductRowSubtitle(val code: String?, val free: Int)
 
+/**
+ * The Home row's price line (#681, iOS `ProductRowPrice`): the default rent option first, the other one muted after it.
+ * `mainMode == null` means a sale-only product, shown as "bán <price>".
+ */
+data class ProductRowPrice(val main: Double, val mainMode: PricingMode?, val second: Double? = null, val secondMode: PricingMode? = null)
+
 object ProductRowLogic {
     /** Units of this product already in the cart */
     fun cartCount(productId: Int, lines: List<CartLine>): Int =
@@ -173,6 +179,22 @@ object ProductRowLogic {
 
     fun subtitle(product: Product): ProductRowSubtitle =
         ProductRowSubtitle(code = product.barcodeText, free = ProductStock.freeToday(product))
+
+    fun price(product: Product): ProductRowPrice? {
+        val rental = ProductPricing.perRental(product)
+        val day = ProductPricing.perDay(product)
+        return when {
+            rental != null && day != null ->
+                if (ProductPricing.defaultMode(product) == PricingMode.PER_DAY) {
+                    ProductRowPrice(day, PricingMode.PER_DAY, rental, PricingMode.PER_RENTAL)
+                } else {
+                    ProductRowPrice(rental, PricingMode.PER_RENTAL, day, PricingMode.PER_DAY)
+                }
+            rental != null -> ProductRowPrice(rental, PricingMode.PER_RENTAL)
+            day != null -> ProductRowPrice(day, PricingMode.PER_DAY)
+            else -> ProductPricing.sale(product)?.let { ProductRowPrice(it, null) }
+        }
+    }
 
     /** The cart count wins (#677, iOS `ProductRowLogic.addState`): a product out today that is in the cart shows its count */
     fun addState(free: Int, inCart: Int): AddButtonState = when {

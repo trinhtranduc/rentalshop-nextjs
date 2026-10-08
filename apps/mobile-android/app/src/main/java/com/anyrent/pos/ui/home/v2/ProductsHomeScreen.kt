@@ -88,7 +88,7 @@ import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductImageViewerRequest
 import com.anyrent.pos.domain.products.ProductImages
-import com.anyrent.pos.domain.products.ProductPricing
+import com.anyrent.pos.domain.products.PricingMode
 import com.anyrent.pos.domain.products.ProductRowLogic
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppIcons
@@ -370,18 +370,15 @@ private fun ImageSearchButton(label: String, onClick: () -> Unit) {
     }
 }
 
-/** The + of a product already in the cart: the count on a darker blue (board SP-dong) */
-private val InCartFill = Color(0xFF1E3A8A)
+/** #681: the + stays light until the product is in the cart (iOS `ProductRowV2Cell.addFill`) */
+private val AddFill = Color(0xFFEFF4FF)
 
 /** The Products home row; image search results reuse it (#672) */
 @Composable
 internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
-    val subtitle = ProductRowLogic.subtitle(product)
-    val free = subtitle.free
+    val free = ProductRowLogic.subtitle(product).free
     val addState = ProductRowLogic.addState(free, inCart)
-    val perRental = ProductPricing.perRental(product)
-    val perDay = ProductPricing.perDay(product)
-    val sale = ProductPricing.sale(product)
+    val price = ProductRowLogic.price(product)
     val unitRental = stringResource(R.string.v2_unit_per_rental)
     val unitDay = stringResource(R.string.v2_unit_per_day)
     val saleShort = stringResource(R.string.v2_price_sale_short)
@@ -406,49 +403,46 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
                     .semantics { contentDescription = viewLabel }
                     .clickable(onClickLabel = viewHint, role = Role.Button, onClick = onImage),
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
+            // #681: name, price, stock — one fact per line, 8 dp apart
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
                 Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    subtitle.code?.let { code ->
-                        Text(code, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                    }
-                    Text(
-                        "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
-                        fontSize = DS.TextSize.Secondary,
-                        // #468: regular weight, colour carries the state
-                        fontWeight = FontWeight.Normal,
-                        color = when {
-                            free <= 0 -> V2Colors.Danger
-                            free == 1 -> V2Colors.Warn
-                            else -> V2Colors.Ok
-                        },
-                        maxLines = 1,
-                    )
-                }
+                val unit = { mode: PricingMode -> if (mode == PricingMode.PER_DAY) unitDay else unitRental }
                 val text = buildAnnotatedString {
-                    val main = perRental?.let { it to unitRental } ?: perDay?.let { it to unitDay }
-                    main?.let { (price, unit) ->
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = DS.TextSize.Name, color = DS.Colors.Text)) { append(formatMoneyVnd(price)) }
-                        withStyle(SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)) { append(unit) }
-                    }
-                    val extra = listOfNotNull(
-                        perDay?.takeIf { perRental != null }?.let { formatMoneyVnd(it) + unitDay },
-                        sale?.let { saleShort.format(formatMoneyVnd(it)) },
-                    )
-                    if (extra.isNotEmpty()) {
-                        withStyle(SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)) {
-                            append((if (main != null) " · " else "") + extra.joinToString(" · "))
+                    val muted = SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                    val mode = price?.mainMode
+                    if (price != null && mode != null) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = DS.TextSize.Name, color = DS.Colors.Text)) { append(formatMoneyVnd(price.main)) }
+                        withStyle(muted) { append(unit(mode)) }
+                        val second = price.second
+                        val secondMode = price.secondMode
+                        if (second != null && secondMode != null) {
+                            withStyle(muted) { append(" · " + formatMoneyVnd(second) + unit(secondMode)) }
                         }
+                    } else if (price != null) {
+                        withStyle(muted) { append(saleShort.format(formatMoneyVnd(price.main))) }
                     }
                 }
                 Text(text, maxLines = 2)
+                Text(
+                    "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
+                    fontSize = 13.sp,
+                    // #468: the colour carries the state; #681: 13 semibold
+                    fontWeight = FontWeight.SemiBold,
+                    color = when {
+                        free <= 0 -> V2Colors.Danger
+                        free == 1 -> V2Colors.Warn
+                        else -> V2Colors.Ok
+                    },
+                    maxLines = 1,
+                )
             }
-            // #671: round, and blue also when out today (tapping still adds; "Hết hôm nay" says the rest)
+            // #671: round, and the same when out today (tapping still adds; "Hết hôm nay" says the rest).
+            // #681: light until the product is in the cart, then solid primary with the count
             Box(
                 Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (addState is AddButtonState.InCart) InCartFill else DS.Colors.Primary)
+                    .background(if (addState is AddButtonState.InCart) DS.Colors.Primary else AddFill)
                     .clickable(onClick = onAdd)
                     .semantics { contentDescription = addLabel; role = Role.Button },
                 contentAlignment = Alignment.Center,
@@ -456,7 +450,7 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
                 if (addState is AddButtonState.InCart) {
                     Text(addState.count.toString(), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = Color.White)
                 } else {
-                    Icon(Icons.Outlined.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
+                    Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
                 }
             }
         }
@@ -484,9 +478,10 @@ private fun CartBar(
             .padding(12.dp)
             .fillMaxWidth()
             .height(56.dp)
-            .shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = DS.Colors.Primary, spotColor = DS.Colors.Primary)
+            // #681: slate, so the bar stands apart from the blue + buttons above it
+            .shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = DS.Colors.Text, spotColor = DS.Colors.Text)
             .clip(RoundedCornerShape(16.dp))
-            .background(DS.Colors.Primary)
+            .background(DS.Colors.Text)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp)
             .semantics(mergeDescendants = true) { role = Role.Button },
