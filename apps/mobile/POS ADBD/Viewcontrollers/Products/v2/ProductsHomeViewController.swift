@@ -16,6 +16,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
     /// Last time the unread badge came from the server or the inbox signal (#674)
     private var badgeLoadedAt: Date?
+    /// #677: an order changed (`OrdersChangeSignal`) while the list was off screen
+    private var stockStale = false
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
@@ -38,6 +40,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let cartBar = UIControl()
     private let cartCountLabel = V2.label(size: DS.TextSize.secondary, color: UIColor.white.withAlphaComponent(0.85))
     private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
+    /// "Tạo đơn ›", or "Sửa đơn #482913 ›" while the cart edits an order (#677)
+    private let cartActionLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
     private let notificationButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
 
     private lazy var reader: QRCodeReaderViewController = {
@@ -58,6 +62,7 @@ final class ProductsHomeViewController: BaseViewControler {
         bindViewModel()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         viewModel.reload()
     }
 
@@ -65,10 +70,24 @@ final class ProductsHomeViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
+        // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
+        if stockStale {
+            stockStale = false
+            viewModel.refreshQuietly()
+        }
         // #674: the badge follows `.inboxUnreadCountDidChange`; the server is asked on first show and when 10 min old
         if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: badgeLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
             refreshNotificationBadge()
         }
+    }
+
+    /// #677: "Còn N" / "Hết hôm nay" follow a created or edited order without a pull-to-refresh
+    @objc private func ordersChanged() {
+        guard isViewLoaded, view.window != nil else {
+            stockStale = true
+            return
+        }
+        viewModel.refreshQuietly()
     }
 
     override func startRefresh(_ sender: Any) {
@@ -184,7 +203,8 @@ final class ProductsHomeViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [cartCountLabel, cartTotalLabel])
         texts.axis = .vertical
         texts.isUserInteractionEnabled = false
-        let go = V2.label("products.cart.create".localized() + " ›", size: DS.TextSize.name, weight: .bold, color: .white)
+        let go = cartActionLabel
+        go.setContentCompressionResistancePriority(.required, for: .horizontal)
         cartBar.addSubview(texts)
         cartBar.addSubview(go)
         view.addSubview(cartBar)
@@ -249,7 +269,9 @@ final class ProductsHomeViewController: BaseViewControler {
         cartBar.isHidden = cart.items.isEmpty
         cartCountLabel.text = PluralText.format("products.cart.bar", count: cart.itemCount, cart.itemCount)
         cartTotalLabel.text = MoneyFormatter.format(cart.totalAmount)
-        cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, "products.cart.create".localized()]
+        let action = CartV2Logic.cartBarAction(isEditMode: cart.isEditMode, number: EditOrderSheetLogic.number(cart))
+        cartActionLabel.text = action + " ›"
+        cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, action]
             .compactMap { $0 }.joined(separator: ", ")
         list.contentInset.bottom = cart.items.isEmpty ? 16 : 96
     }

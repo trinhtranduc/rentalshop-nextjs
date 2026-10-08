@@ -2068,7 +2068,8 @@ private final class E2E {
 
     var cartBar: XCUIElement {
         app.descendants(matching: .any).matching(
-            NSPredicate(format: "(label CONTAINS 'Cart ·' OR label CONTAINS 'Giỏ hàng ·') AND (label CONTAINS 'Create order' OR label CONTAINS 'Tạo đơn')")
+            // #677: "Sửa đơn #n" while the cart edits an order
+            NSPredicate(format: "(label CONTAINS 'Cart ·' OR label CONTAINS 'Giỏ hàng ·') AND (label CONTAINS 'Create order' OR label CONTAINS 'Tạo đơn' OR label CONTAINS 'Edit order' OR label CONTAINS 'Sửa đơn')")
         ).firstMatch
     }
 

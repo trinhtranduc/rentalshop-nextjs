@@ -23,6 +23,9 @@ final class CartV2ViewController: BaseViewControler {
     private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     /// #640: share the cart as a draft image (lines, and for a rental both dates)
     private let shareButton = UIButton(type: .system)
+    /// #677: "Huỷ sửa" in place of the Thuê / Bán switch while the cart edits an order (the type cannot change then)
+    private let cancelEditButton = UIButton(type: .system)
+    private var titleStack: UIView?
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
     /// Bumped on each availability call; an older answer is dropped
     private var availabilityGeneration = 0
@@ -109,7 +112,14 @@ final class CartV2ViewController: BaseViewControler {
         shareButton.accessibilityLabel = "share.draft.action".localized()
         shareButton.accessibilityIdentifier = "cart.share"
         shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
-        [back, title, shareButton, typeToggle].forEach(header.addSubview)
+        cancelEditButton.setTitle("products.cart.edit.cancel".localized(), for: .normal)
+        cancelEditButton.setTitleColor(V2.danger, for: .normal)
+        cancelEditButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        cancelEditButton.accessibilityIdentifier = "cart.edit.cancel"
+        cancelEditButton.addTarget(self, action: #selector(cancelEditTapped), for: .touchUpInside)
+        cancelEditButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        cancelEditButton.isHidden = true
+        [back, title, shareButton, typeToggle, cancelEditButton].forEach(header.addSubview)
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
@@ -129,12 +139,13 @@ final class CartV2ViewController: BaseViewControler {
             make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
             make.centerY.equalToSuperview()
         }
-        shareButton.snp.makeConstraints { make in
-            make.trailing.equalTo(typeToggle.snp.leading).offset(-4)
-            make.leading.greaterThanOrEqualTo(title.snp.trailing).offset(4)
+        cancelEditButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(DS.touchTarget)
+            make.height.greaterThanOrEqualTo(DS.touchTarget)
         }
+        titleStack = title
+        pinShareButton(nextTo: typeToggle)
 
         let bottom = UIView()
         bottom.backgroundColor = .white
@@ -193,7 +204,12 @@ final class CartV2ViewController: BaseViewControler {
         renderTitle()
         typeToggle.select(isRent ? 0 : 1)
         typeToggle.isEnabled = !cart.isEditMode
-        typeToggle.alpha = cart.isEditMode ? 0.6 : 1
+        // #677: while editing, "Huỷ sửa" takes the switch's place (the subtitle already says Đơn thuê / Đơn bán)
+        typeToggle.isHidden = cart.isEditMode
+        if cancelEditButton.isHidden == cart.isEditMode {
+            cancelEditButton.isHidden = !cart.isEditMode
+            pinShareButton(nextTo: cart.isEditMode ? cancelEditButton : typeToggle)
+        }
         let canShare = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
                                                pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
         shareButton.isEnabled = canShare
@@ -280,6 +296,17 @@ final class CartV2ViewController: BaseViewControler {
         ctaButton.isEnabled = !blocked
         ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
         ctaButton.alpha = cart.items.isEmpty && !blocked ? 0.5 : 1
+    }
+
+    /// The share button sits just before the switch, or before "Huỷ sửa" while editing (#677)
+    private func pinShareButton(nextTo anchor: UIView) {
+        guard let titleStack else { return }
+        shareButton.snp.remakeConstraints { make in
+            make.trailing.equalTo(anchor.snp.leading).offset(-4)
+            make.leading.greaterThanOrEqualTo(titleStack.snp.trailing).offset(4)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(DS.touchTarget)
+        }
     }
 
     /// "Giỏ hàng", or "Sửa đơn #482913" over "Heather Robinson · Đơn thuê" while editing an order (#676)
@@ -756,10 +783,14 @@ final class CartV2ViewController: BaseViewControler {
             OrderListViewModel.shared.setNeedsRefresh()
         }
         OrdersChangeSignal.post() // #674
-        CartStore.shared.resetCart()
         ProductAvailabilityCache.shared.clearAll()
         HapticFeedback.success()
-        let open: () -> Void = { [weak self] in self?.openSavedOrder(order, orderId: orderId, number: number) }
+        // #677: the cart is emptied once the order's detail has replaced it, so an empty "Tạo đơn" cart never shows
+        let open: () -> Void = { [weak self] in
+            guard let self else { return CartStore.shared.resetCart() }
+            self.openSavedOrder(order, orderId: orderId, number: number)
+            self.resetCartAfterTransition()
+        }
         if let sheet, sheet.presentingViewController != nil {
             sheet.dismiss(animated: true, completion: open)
         } else {
@@ -767,9 +798,17 @@ final class CartV2ViewController: BaseViewControler {
         }
     }
 
-    /// The edited order's detail in place of the (now empty) cart; the detail loads the saved order itself
+    /// The edited order's detail in place of the cart; the detail loads the saved order itself
     private func openSavedOrder(_ order: Order?, orderId: Int, number: String?) {
-        guard let navigationController else { return }
+        guard let detail = replaceWithOrderDetail(order, orderId: orderId) else { return }
+        let message = number.map { String(format: "products.cart.edit.saved".localized(), $0) } ?? "products.cart.edit.savedNoNumber".localized()
+        (detail as? BaseViewControler)?.showToast(message: message, duration: 2.5)
+    }
+
+    /// The order's detail in place of this cart (loaded fresh), or the stack root without the new detail and no order
+    @discardableResult
+    private func replaceWithOrderDetail(_ order: Order?, orderId: Int) -> UIViewController? {
+        guard let navigationController else { return nil }
         let detail: UIViewController
         if OrderDetailRouter.usesNewDetail {
             let controller = OrderDetailViewController(orderId: orderId)
@@ -779,14 +818,44 @@ final class CartV2ViewController: BaseViewControler {
             detail = OrderDetailRouter.detailController(for: order, delegate: nil)
         } else {
             navigationController.popToRootViewController(animated: true)
-            return
+            return nil
         }
         var stack = navigationController.viewControllers
         if stack.last === self { stack.removeLast() }
         stack.append(detail)
         navigationController.setViewControllers(stack, animated: true)
-        let message = number.map { String(format: "products.cart.edit.saved".localized(), $0) } ?? "products.cart.edit.savedNoNumber".localized()
-        (detail as? BaseViewControler)?.showToast(message: message, duration: 2.5)
+        return detail
+    }
+
+    /// #677: empty the cart once the navigation away has finished (this screen no longer draws it)
+    private func resetCartAfterTransition() {
+        if let coordinator = navigationController?.transitionCoordinator {
+            coordinator.animate(alongsideTransition: nil) { _ in CartStore.shared.resetCart() }
+        } else {
+            CartStore.shared.resetCart()
+        }
+    }
+
+    // MARK: - Leave edit mode (#677)
+
+    /// "Huỷ sửa": confirm, then leave edit mode with an empty cart (and draft) and show the order again
+    @objc private func cancelEditTapped() {
+        guard presentedViewController == nil, let orderId = EditOrderSheetLogic.cancelEdit(cart) else { return }
+        let alert = UIAlertController(title: EditOrderSheetLogic.cancelTitle(number: EditOrderSheetLogic.number(cart)),
+                                      message: "products.cart.edit.cancelMessage".localized(), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "products.cart.edit.keepEditing".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "products.cart.edit.cancel".localized(), style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            ProductAvailabilityCache.shared.clearAll()
+            if self.replaceWithOrderDetail(nil, orderId: orderId) == nil, !OrderDetailRouter.usesNewDetail {
+                // The old detail needs the order first: open it from the screen under the cart
+                if let previous = self.navigationController?.topViewController as? BaseViewControler {
+                    OrderDetailRouter.open(orderId: orderId, from: previous)
+                }
+            }
+            self.resetCartAfterTransition()
+        })
+        present(alert, animated: true)
     }
 
     // MARK: - Create order sheets (#476)

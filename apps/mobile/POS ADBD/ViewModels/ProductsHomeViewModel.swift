@@ -75,6 +75,25 @@ final class ProductsHomeViewModel {
         load(page: page + 1)
     }
 
+    /// #677: after an order is created or edited, fetch the loaded rows again and update their stock in place:
+    /// no spinner, same rows in the same order (the scroll stays). Rows the answer does not carry stay as they were.
+    func refreshQuietly() {
+        guard !isLoading, !products.isEmpty else { return }
+        let token = generation
+        let limit = min(max(products.count, Self.pageSize), Self.quietRefreshLimit)
+        dataSource.loadProducts(query: query, page: 1, limit: limit) { [weak self] result, error in
+            DispatchQueue.main.async {
+                guard let self, token == self.generation, error == nil, let incoming = result?.products else { return }
+                let fresh = Dictionary(incoming.map { ($0.id ?? $0.product_id, $0) }, uniquingKeysWith: { first, _ in first })
+                self.products = self.products.map { fresh[$0.id ?? $0.product_id] ?? $0 }
+                self.onChange?()
+            }
+        }
+    }
+
+    /// Largest page the quiet refresh asks for
+    static let quietRefreshLimit = 100
+
     /// Put a saved product back in the list without a reload
     func replace(_ product: Product) {
         let id = product.id ?? product.product_id

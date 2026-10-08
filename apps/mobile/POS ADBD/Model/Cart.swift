@@ -445,7 +445,11 @@ class Cart {
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: orderDetail.orderNumber,
-                                                     paid: orderDetail.payments.reduce(0) { $0 + $1.amount })
+                                                     paid: orderDetail.payments.reduce(0) { $0 + $1.amount },
+                                                     status: orderDetail.status,
+                                                     payments: orderDetail.payments.map {
+                                                         OrderPaymentLine(amount: $0.amount, status: $0.status, notes: $0.notes)
+                                                     })
         
         return cart
     }
@@ -568,7 +572,9 @@ class Cart {
     }
     
     /// Create Cart from Order API model
-    static func fromOrder(_ order: Order) -> Cart {
+    /// #677: [payments] = the order's payments when the caller has them (the order detail), for "Đã thu" and
+    /// "Thu khi giao" on the save sheet
+    static func fromOrder(_ order: Order, payments: [OrderPaymentLine]? = nil) -> Cart {
         let cart = Cart()
         
         // Set order ID to indicate this is an edit operation
@@ -635,7 +641,8 @@ class Cart {
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
             return cartItem
         }
-        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: order.orderNumber, paid: order.totalPaid)
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: order.orderNumber, paid: order.totalPaid,
+                                                     status: order.status, payments: payments)
         
         return cart
     }
@@ -1215,6 +1222,10 @@ struct CartEditOriginal: Codable, Equatable {
     let lines: [Line]
     /// Payments already on the order (0 = none / unknown)
     let paid: Double
+    /// #677: the order's status and payments when it was loaded ("Đã thu", "Thu khi giao"); nil on a draft saved
+    /// before #677 or an edit started without the payments
+    var status: OrderStatus? = nil
+    var payments: [OrderPaymentLine]? = nil
 
     static func lines(of cart: Cart) -> [Line] {
         cart.items.map { item in
@@ -1225,8 +1236,9 @@ struct CartEditOriginal: Codable, Equatable {
         }
     }
 
-    static func capture(_ cart: Cart, orderNumber: String, paid: Double) -> CartEditOriginal {
+    static func capture(_ cart: Cart, orderNumber: String, paid: Double, status: OrderStatus? = nil,
+                        payments: [OrderPaymentLine]? = nil) -> CartEditOriginal {
         CartEditOriginal(orderNumber: orderNumber, pickupPlanAt: cart.pickupPlanAt, returnPlanAt: cart.returnPlanAt,
-                         lines: lines(of: cart), paid: paid)
+                         lines: lines(of: cart), paid: paid, status: status, payments: payments)
     }
 }

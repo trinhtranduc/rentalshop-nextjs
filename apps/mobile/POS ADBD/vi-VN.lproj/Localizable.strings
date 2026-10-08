@@ -1512,6 +1512,7 @@
 
 /* Notifications inbox */
 "Notifications" = "Thông báo";
+"Notification" = "Thông báo"; // #677: image-search alert title
 "notifications.empty" = "Chưa có thông báo";
 "notifications.markAllRead" = "Đánh dấu đã đọc tất cả";
 "notifications.markRead" = "Đánh dấu đã đọc";
@@ -1649,10 +1650,15 @@
 "products.cart.edit.itemCount" = "%d món";
 "products.cart.edit.itemCount.one" = "%d món";
 "products.cart.edit.paid" = "Đã thu";
+"products.cart.edit.collectAtHandOver" = "Thu khi giao";
 "products.cart.edit.changed" = "Đã đổi";
 "products.cart.edit.keepEditing" = "Tiếp tục sửa";
 "products.cart.edit.saved" = "Đã lưu đơn #%@";
 "products.cart.edit.savedNoNumber" = "Đã lưu đơn";
+"products.cart.edit.cancel" = "Huỷ sửa";
+"products.cart.edit.cancelTitle" = "Huỷ sửa đơn #%@?";
+"products.cart.edit.cancelTitleNoNumber" = "Huỷ sửa đơn này?";
+"products.cart.edit.cancelMessage" = "Các thay đổi chưa lưu sẽ mất.";
 "products.cart.needPrice" = "Nhập giá cho %@";
 "products.cart.editPrice" = "Sửa giá cho đơn này";
 // MARK: - Orders tab (#371)

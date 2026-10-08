@@ -1514,6 +1514,7 @@
 
 /* Notifications inbox */
 "Notifications" = "Notifications";
+"Notification" = "Notification"; // #677: image-search alert title
 "notifications.empty" = "No notifications yet";
 "notifications.markAllRead" = "Mark all as read";
 "notifications.markRead" = "Mark read";
@@ -1651,10 +1652,15 @@
 "products.cart.edit.itemCount" = "%d items";
 "products.cart.edit.itemCount.one" = "%d item";
 "products.cart.edit.paid" = "Collected";
+"products.cart.edit.collectAtHandOver" = "Collect at hand-over";
 "products.cart.edit.changed" = "Changed";
 "products.cart.edit.keepEditing" = "Keep editing";
 "products.cart.edit.saved" = "Saved order #%@";
 "products.cart.edit.savedNoNumber" = "Order saved";
+"products.cart.edit.cancel" = "Cancel edit";
+"products.cart.edit.cancelTitle" = "Cancel editing order #%@?";
+"products.cart.edit.cancelTitleNoNumber" = "Cancel editing this order?";
+"products.cart.edit.cancelMessage" = "Unsaved changes will be lost.";
 "products.cart.needPrice" = "Enter a price for %@";
 "products.cart.editPrice" = "Edit price for this order";
 // MARK: - Orders tab (#371)

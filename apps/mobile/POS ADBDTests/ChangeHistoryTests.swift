@@ -267,8 +267,10 @@ final class ChangeHistoryTests: XCTestCase {
 
     func testActorNameAndTone() {
         XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "Trần Chủ", role: "MERCHANT")), "Trần Chủ")
-        XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "Lan", role: "outlet_admin")),
+        XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "Lan", role: "outlet_staff")),
                        String(format: "history.actor.staff".localized(), "Lan"))
+        // #677: an outlet admin is not "(nhân viên)"
+        XCTAssertEqual(ChangeHistoryLogic.actorName(ChangeActor(name: "Lan", role: "OUTLET_ADMIN")), "Lan")
         XCTAssertNil(ChangeHistoryLogic.actorName(ChangeActor(name: "  ", role: "MERCHANT")))
         XCTAssertNil(ChangeHistoryLogic.actorName(nil))
         XCTAssertNil(ChangeHistoryLogic.actorParts(ChangeActor(name: "", role: "OUTLET_STAFF")))
@@ -282,6 +284,19 @@ final class ChangeHistoryTests: XCTestCase {
         XCTAssertEqual(tone("PRODUCT_DELETED", "MERCHANT"), .danger)
         XCTAssertEqual(tone("ORDER_EDITED", "OUTLET_STAFF"), .staff)
         XCTAssertEqual(tone("ORDER_EDITED", "MERCHANT"), .owner)
+        XCTAssertEqual(tone("ORDER_EDITED", "OUTLET_ADMIN"), .owner) // #677
+    }
+
+    /// #677 — "Thế chân: —" (empty before and after) is no change: no line
+    func testEmptyBeforeAndAfterIsHidden() {
+        let entry = ChangeHistoryEntry(id: 1, at: "", kind: "ORDER_EDITED", actor: nil, changes: [
+            ChangeFieldChange(field: "collateralDetails", from: .null, to: .text(" ")),
+            ChangeFieldChange(field: "securityDeposit", from: .null, to: .null),
+            ChangeFieldChange(field: "notes", from: .null, to: .text("Giao sớm")),
+        ])
+        XCTAssertEqual(ChangeHistoryLogic.lines(entry), [
+            ChangeLine(label: ChangeHistoryLogic.label("notes"), from: "—", to: "Giao sớm"),
+        ])
     }
 
     func testFooterOwnerStaffAndUnknown() {
