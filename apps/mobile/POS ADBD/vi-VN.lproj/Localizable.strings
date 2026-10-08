@@ -2148,14 +2148,14 @@
 "history.field.returnedAt" = "Đã nhận trả";
 "history.field.totalAmount" = "Tổng đơn";
 "history.field.depositAmount" = "Cọc trả trước";
-"history.field.securityDeposit" = "Tiền thế chấp";
+"history.field.securityDeposit" = "Tiền thế chân";
 "history.field.discountType" = "Kiểu giảm giá";
 "history.field.discountValue" = "Mức giảm";
 "history.field.discountAmount" = "Tiền giảm";
 "history.field.damageFee" = "Phí hư hỏng";
 "history.field.lateFee" = "Phí trễ hạn";
-"history.field.collateralType" = "Loại thế chấp";
-"history.field.collateralDetails" = "Thế chấp";
+"history.field.collateralType" = "Loại thế chân";
+"history.field.collateralDetails" = "Thế chân";
 "history.field.pickupNotes" = "Ghi chú giao";
 "history.field.returnNotes" = "Ghi chú trả";
 "history.field.damageNotes" = "Ghi chú hư hỏng";

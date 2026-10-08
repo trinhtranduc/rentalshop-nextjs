@@ -1265,14 +1265,14 @@
         <item>returnedAt|Đã trả</item>
         <item>totalAmount|Tổng đơn</item>
         <item>depositAmount|Cọc trả trước</item>
-        <item>securityDeposit|Tiền thế chấp</item>
+        <item>securityDeposit|Tiền thế chân</item>
         <item>discountType|Kiểu giảm giá</item>
         <item>discountValue|Mức giảm</item>
         <item>discountAmount|Giảm giá</item>
         <item>damageFee|Phí hư hỏng</item>
         <item>lateFee|Phí trả trễ</item>
-        <item>collateralType|Loại thế chấp</item>
-        <item>collateralDetails|Thế chấp</item>
+        <item>collateralType|Loại thế chân</item>
+        <item>collateralDetails|Thế chân</item>
         <item>pickupNotes|Ghi chú khi giao</item>
         <item>returnNotes|Ghi chú khi trả</item>
         <item>damageNotes|Ghi chú hư hỏng</item>
