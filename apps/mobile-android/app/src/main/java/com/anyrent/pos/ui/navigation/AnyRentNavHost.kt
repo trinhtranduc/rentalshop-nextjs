@@ -855,9 +855,6 @@ private fun MainTabs(
                         onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
                         onOpenCart = { rootNavController.navigate(Routes.CartV2) },
                         onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
-                        onCheckProductAvailability = { id ->
-                            rootNavController.navigate(Routes.productAvailability(id))
-                        },
                     )
                 } else {
                     HomeScreen(

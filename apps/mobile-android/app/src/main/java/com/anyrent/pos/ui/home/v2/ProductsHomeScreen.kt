@@ -52,6 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -97,6 +100,7 @@ import com.anyrent.pos.ui.home.ImageSearchScreen
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -112,8 +116,6 @@ fun ProductsHomeScreen(
     onOpenProduct: (Int) -> Unit,
     onOpenCart: () -> Unit,
     onOpenInbox: () -> Unit,
-    /** #654: image-search ⋯ "Kiểm tra lịch sản phẩm" (iOS OrderCheckViewController) */
-    onCheckProductAvailability: (Int) -> Unit = {},
     viewModel: ProductsHomeViewModel = viewModel(factory = ProductsHomeViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -125,6 +127,9 @@ fun ProductsHomeScreen(
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
+    var focusSearch by remember { mutableIntStateOf(0) }
+    val searchFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
     var viewer by remember { mutableStateOf<ProductImageViewerRequest?>(null) }
     val listState = rememberLazyListState()
     val notFound = stringResource(R.string.v2_scan_not_found)
@@ -144,6 +149,13 @@ fun ProductsHomeScreen(
             val info = listState.layoutInfo
             (info.visibleItemsInfo.lastOrNull()?.index ?: -1) >= info.totalItemsCount - 4
         }.distinctUntilChanged().collect { near -> if (near) viewModel.loadMore() }
+    }
+
+    LaunchedEffect(focusSearch) {
+        if (focusSearch == 0) return@LaunchedEffect
+        delay(150) // let the image-search dialog give the window back first
+        searchFocus.requestFocus()
+        keyboard?.show()
     }
 
     fun findByBarcode(code: String) {
@@ -207,7 +219,7 @@ fun ProductsHomeScreen(
                                 textStyle = TextStyle(fontSize = DS.TextSize.Body, color = DS.Colors.Text),
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = { viewModel.setQuery(draft) }),
-                                modifier = Modifier.fillMaxWidth().semantics { contentDescription = searchLabel },
+                                modifier = Modifier.fillMaxWidth().focusRequester(searchFocus).semantics { contentDescription = searchLabel },
                             )
                         }
                         if (draft.isNotEmpty()) {
@@ -305,14 +317,14 @@ fun ProductsHomeScreen(
         ) {
             ImageSearchScreen(
                 onDismiss = { showImageSearch = false },
-                // #654: same ⋯ action as iOS (the product's orders / availability), not the detail
-                onCheckAvailability = { product ->
-                    showImageSearch = false
-                    onCheckProductAvailability(product.id)
-                },
                 onOpenProduct = { product ->
                     showImageSearch = false
                     onOpenProduct(product.id)
+                },
+                // #672: "Tìm bằng tên" lands in this search field with the keyboard up
+                onSearchByName = {
+                    showImageSearch = false
+                    focusSearch++
                 },
             )
         }
@@ -351,8 +363,9 @@ private fun ImageSearchButton(label: String, onClick: () -> Unit) {
 /** The + of a product already in the cart: the count on a darker blue (board SP-dong) */
 private val InCartFill = Color(0xFF1E3A8A)
 
+/** The Products home row; image search results reuse it (#672) */
 @Composable
-private fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
+internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
     val subtitle = ProductRowLogic.subtitle(product)
     val free = subtitle.free
     val addState = ProductRowLogic.addState(free, inCart)

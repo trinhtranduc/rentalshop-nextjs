@@ -88,7 +88,6 @@ import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.cache.OfflineCache
 import com.anyrent.pos.data.model.Product
-import com.anyrent.pos.ui.availability.AvailabilityScreen
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.EmptyOrError
@@ -101,7 +100,6 @@ import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.formatMoney
 import com.anyrent.pos.ui.common.formatQuantity
-import com.anyrent.pos.ui.orders.OrderDetailScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -137,10 +135,6 @@ fun HomeScreen(
     var showNewProduct by remember { mutableStateOf(false) }
     var showBarcodeScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
-    // Calendar overlay sits ON TOP of image-search (sibling Dialog). Closing it must not
-    // tear down the camera Dialog or the match-results sheet underneath.
-    var imageSearchAvailabilityProduct by remember { mutableStateOf<Product?>(null) }
-    var imageSearchOrderId by remember { mutableStateOf<Int?>(null) }
     val cartCount = CartStore.lines.collectAsState().value.sumOf { it.quantity }
     val scope = rememberCoroutineScope()
     val productListState = rememberLazyListState()
@@ -419,56 +413,17 @@ fun HomeScreen(
         }
         if (showImageSearch) {
             Dialog(
-                onDismissRequest = {
-                    showImageSearch = false
-                    imageSearchAvailabilityProduct = null
-                    imageSearchOrderId = null
-                },
-                properties = DialogProperties(
-                    usePlatformDefaultWidth = false,
-                    dismissOnBackPress = imageSearchAvailabilityProduct == null &&
-                        imageSearchOrderId == null,
-                    dismissOnClickOutside = false,
-                ),
+                onDismissRequest = { showImageSearch = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
             ) {
+                // #672: the result rows have no ⋯ menu any more; detail has the calendar
                 ImageSearchScreen(
-                    onDismiss = {
-                        showImageSearch = false
-                        imageSearchAvailabilityProduct = null
-                        imageSearchOrderId = null
-                    },
-                    onCheckAvailability = { product ->
-                        imageSearchAvailabilityProduct = product
-                    },
+                    onDismiss = { showImageSearch = false },
                     onOpenProduct = { product ->
                         showImageSearch = false
-                        imageSearchAvailabilityProduct = null
-                        imageSearchOrderId = null
                         onOpenProduct(product.id)
                     },
                 )
-            }
-        }
-        if (showImageSearch) {
-            imageSearchAvailabilityProduct?.let { product ->
-                OverlayFullScreen(onDismiss = { imageSearchAvailabilityProduct = null }) {
-                    AvailabilityScreen(
-                        onBack = { imageSearchAvailabilityProduct = null },
-                        onFindOrder = {},
-                        onScanProduct = {},
-                        onOpenOrder = { imageSearchOrderId = it },
-                        scannedProductId = product.id,
-                        focusedProductMode = true,
-                    )
-                }
-            }
-            imageSearchOrderId?.let { orderId ->
-                OverlayFullScreen(onDismiss = { imageSearchOrderId = null }) {
-                    OrderDetailScreen(
-                        orderId = orderId,
-                        onBack = { imageSearchOrderId = null },
-                    )
-                }
             }
         }
         deleteProduct?.let { product ->
@@ -957,28 +912,6 @@ fun ProductManageScreen(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.save)) }
-        }
-    }
-}
-
-@Composable
-private fun OverlayFullScreen(
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-        ),
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            content()
         }
     }
 }

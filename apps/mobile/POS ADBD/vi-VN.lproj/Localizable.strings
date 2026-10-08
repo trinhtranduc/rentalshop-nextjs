@@ -1308,7 +1308,6 @@
 "Search by Image" = "Tìm kiếm bằng hình ảnh";
 "Searching..." = "Đang tìm kiếm...";
 "Search Results" = "Kết quả tìm kiếm";
-"Results: %d products" = "Kết quả: %d sản phẩm";
 "No similar products found" = "Không tìm thấy sản phẩm tương tự";
 "AI is searching for products..." = "🤖 AI đang tìm kiếm sản phẩm...";
 "Found products!" = "✅ Tìm thấy sản phẩm!";
@@ -2355,3 +2354,16 @@
 /* #651 Home search field */
 "products.home.searchPlaceholder" = "Tìm tên, mã vạch hoặc chụp ảnh";
 "products.home.imageSearch" = "Tìm bằng hình";
+
+/* #672 Image search results */
+"imageSearch.results.title" = "%d sản phẩm giống";
+"imageSearch.results.title.one" = "%d sản phẩm giống";
+"imageSearch.results.empty.title" = "Không thấy sản phẩm giống";
+"imageSearch.results.subtitle" = "Từ ảnh bạn vừa chụp";
+"imageSearch.action.retake" = "Chụp lại";
+"imageSearch.action.searchByName" = "Tìm bằng tên";
+"imageSearch.empty.headline" = "Chưa tìm ra sản phẩm này";
+"imageSearch.empty.message" = "Có thể sản phẩm chưa có ảnh trong cửa hàng, hoặc ảnh chụp chưa rõ.";
+"imageSearch.empty.tip.whole" = "Chụp cả món đồ, đủ sáng";
+"imageSearch.empty.tip.background" = "Nền gọn, không lẫn đồ khác";
+"imageSearch.empty.tip.photo" = "Sản phẩm cần có ảnh trong danh sách";

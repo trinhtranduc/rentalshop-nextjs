@@ -1310,7 +1310,6 @@
 "Search by Image" = "Search by Image";
 "Searching..." = "Searching...";
 "Search Results" = "Search Results";
-"Results: %d products" = "Results: %d products";
 "No similar products found" = "No similar products found";
 "AI is searching for products..." = "AI is searching for products...";
 "Found products!" = "Found products!";
@@ -2357,3 +2356,16 @@
 /* #651 Home search field */
 "products.home.searchPlaceholder" = "Search name, barcode or take a photo";
 "products.home.imageSearch" = "Search by photo";
+
+/* #672 Image search results */
+"imageSearch.results.title" = "%d similar products";
+"imageSearch.results.title.one" = "%d similar product";
+"imageSearch.results.empty.title" = "No similar products";
+"imageSearch.results.subtitle" = "From your photo";
+"imageSearch.action.retake" = "Retake";
+"imageSearch.action.searchByName" = "Search by name";
+"imageSearch.empty.headline" = "Couldn't find this product";
+"imageSearch.empty.message" = "The product may not have a photo in your shop yet, or the photo isn't clear.";
+"imageSearch.empty.tip.whole" = "Capture the whole item in good light";
+"imageSearch.empty.tip.background" = "Plain background, nothing else in the shot";
+"imageSearch.empty.tip.photo" = "The product needs a photo in your list";

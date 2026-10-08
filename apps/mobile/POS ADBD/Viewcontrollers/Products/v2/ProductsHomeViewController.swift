@@ -301,6 +301,8 @@ final class ProductsHomeViewController: BaseViewControler {
 
     @objc private func imageSearch() {
         let search = ImageSearchViewController()
+        // #672: "Tìm bằng tên" on empty results lands in this search field with the keyboard up
+        search.onSearchByName = { [weak self] in self?.searchField.becomeFirstResponder() }
         let nav = UINavigationController(rootViewController: search)
         nav.modalPresentationStyle = .fullScreen
         present(nav, animated: true)

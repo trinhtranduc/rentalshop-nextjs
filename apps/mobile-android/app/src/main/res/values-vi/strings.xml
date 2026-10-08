@@ -524,7 +524,6 @@
     <string name="image_search">Tìm theo hình</string>
     <string name="image_search_capture">Chụp</string>
     <string name="image_quality_percent">Chất lượng ảnh %1$d%%</string>
-    <string name="image_search_results">Kết quả: %1$d sản phẩm</string>
     <string name="image_search_empty">Không tìm thấy sản phẩm tương tự</string>
     <string name="photo_library">Thư viện ảnh</string>
     <string name="grant_camera_permission">Cho phép camera</string>
@@ -1418,4 +1417,17 @@
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
     <string name="v2_home_search_placeholder">Tìm tên, mã vạch hoặc chụp ảnh</string>
     <string name="v2_home_image_search">Tìm bằng hình</string>
+    <!-- #672 image search results -->
+    <plurals name="image_search_results_title">
+        <item quantity="other">%1$d sản phẩm giống</item>
+    </plurals>
+    <string name="image_search_results_empty_title">Không thấy sản phẩm giống</string>
+    <string name="image_search_results_subtitle">Từ ảnh bạn vừa chụp</string>
+    <string name="image_search_retake">Chụp lại</string>
+    <string name="image_search_by_name">Tìm bằng tên</string>
+    <string name="image_search_empty_headline">Chưa tìm ra sản phẩm này</string>
+    <string name="image_search_empty_message">Có thể sản phẩm chưa có ảnh trong cửa hàng, hoặc ảnh chụp chưa rõ.</string>
+    <string name="image_search_tip_whole">Chụp cả món đồ, đủ sáng</string>
+    <string name="image_search_tip_background">Nền gọn, không lẫn đồ khác</string>
+    <string name="image_search_tip_photo">Sản phẩm cần có ảnh trong danh sách</string>
 </resources>

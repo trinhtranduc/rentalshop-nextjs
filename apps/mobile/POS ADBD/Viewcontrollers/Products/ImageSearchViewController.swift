@@ -67,7 +67,10 @@ class ImageSearchViewController: BaseViewControler {
     }()
 
     private var searchResults: [Product] = []
-    private var totalResults: Int = 0
+    /// #672: the photo just searched, shown in the results header
+    private var searchedPhoto: UIImage?
+    /// #672: "Tìm bằng tên" on the empty results; nil just closes image search
+    var onSearchByName: (() -> Void)?
     private let minSimilarity: Float = 0.6
 
     private var captureSession: AVCaptureSession?
@@ -296,7 +299,7 @@ class ImageSearchViewController: BaseViewControler {
             limit: 50,
             minSimilarity: minSimilarity,
             categoryId: nil
-        ) { [weak self] products, total, _, error in
+        ) { [weak self] products, _, _, error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 MBProgressHUD.hide(for: self.view, animated: true)
@@ -308,19 +311,19 @@ class ImageSearchViewController: BaseViewControler {
                 }
 
                 self.searchResults = products ?? []
-                self.totalResults = total ?? products?.count ?? 0
+                self.searchedPhoto = image
                 self.presentResultsSheet()
             }
         }
     }
 
     private func presentResultsSheet() {
-        let resultsVC = ImageSearchResultsViewController(
-            products: searchResults,
-            totalResults: totalResults
-        )
+        let resultsVC = ImageSearchResultsViewController(products: searchResults, photo: searchedPhoto)
         resultsVC.onDismiss = { [weak self] in
             self?.resumeCameraPreview()
+        }
+        resultsVC.onSearchByName = { [weak self] in
+            self?.closeForSearchByName()
         }
 
         let navController = UINavigationController(rootViewController: resultsVC)
@@ -342,7 +345,17 @@ class ImageSearchViewController: BaseViewControler {
     private func resumeCameraPreview() {
         capturedImageView.isHidden = true
         capturedImageView.image = nil
+        searchedPhoto = nil
         startCameraSession()
+    }
+
+    /// #672: "Tìm bằng tên" closes image search, then the caller focuses its name search
+    private func closeForSearchByName() {
+        stopCameraSession()
+        let searchByName = onSearchByName
+        dismiss(animated: true) {
+            searchByName?()
+        }
     }
 
     private func showAlert(message: String) {
@@ -448,36 +461,32 @@ extension ImageSearchViewController: UIImagePickerControllerDelegate, UINavigati
 
 // MARK: - Results sheet
 
-class ImageSearchResultsViewController: BaseViewControler {
+/// #672: header with the photo just taken and "Chụp lại", then the Products home rows (`ProductRowV2Cell`) in
+/// API order; no matches shows tips with "Chụp lại" and "Tìm bằng tên".
+final class ImageSearchResultsViewController: BaseViewControler {
 
     private let products: [Product]
-    private let totalResults: Int
+    private let photo: UIImage?
     var onDismiss: (() -> Void)?
+    /// "Tìm bằng tên": close image search and go to the name search
+    var onSearchByName: (() -> Void)?
     private var didNotifyDismiss = false
 
-    private let productTableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.backgroundColor = .backgroundPrimary
-        tableView.separatorStyle = .none
-        tableView.rowHeight = UITableViewAutomaticDimension
-        tableView.estimatedRowHeight = 100
-        return tableView
+    private lazy var list: UITableView = {
+        let table = UITableView(frame: .zero, style: .plain)
+        table.dataSource = self
+        table.delegate = self
+        table.backgroundColor = .white
+        table.separatorStyle = .none
+        table.rowHeight = UITableViewAutomaticDimension
+        table.estimatedRowHeight = DS.Gap.productRowMinHeight
+        table.register(ProductRowV2Cell.self, forCellReuseIdentifier: ProductRowV2Cell.reuseId)
+        return table
     }()
 
-    private let emptyStateLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16)
-        label.textColor = .systemGray
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.text = "No similar products found".localized()
-        label.isHidden = true
-        return label
-    }()
-
-    init(products: [Product], totalResults: Int) {
+    init(products: [Product], photo: UIImage?) {
         self.products = products
-        self.totalResults = totalResults
+        self.photo = photo
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -487,104 +496,167 @@ class ImageSearchResultsViewController: BaseViewControler {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
-        setupTableView()
-    }
-
-    override func setupUI() {
         view.backgroundColor = .white
-
-        if products.isEmpty {
-            title = "No similar products found".localized()
-        } else {
-            title = String(format: "Results: %d products".localized(), totalResults)
+        let content = ImageSearchResults.content(count: products.count)
+        let header = buildHeader(showRetake: content == .list)
+        view.addSubview(header)
+        header.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
+            make.leading.trailing.equalToSuperview()
         }
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(closeTapped)
-        )
-
-        view.addSubview(productTableView)
-        view.addSubview(emptyStateLabel)
-
-        productTableView.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
+        let body: UIView = content == .list ? list : buildEmptyState()
+        view.addSubview(body)
+        body.snp.makeConstraints { make in
+            make.top.equalTo(header.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
-        emptyStateLabel.snp.makeConstraints { make in
-            make.centerX.equalTo(productTableView)
-            make.centerY.equalTo(productTableView)
-            make.leading.trailing.equalTo(productTableView).inset(32)
+        NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // The sheet draws its own header; product detail manages the bar itself when pushed
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+        list.reloadData()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isBeingDismissed || navigationController?.isBeingDismissed == true {
+            notifyDismiss()
         }
-        emptyStateLabel.isHidden = !products.isEmpty
     }
 
-    private func setupTableView() {
-        productTableView.delegate = self
-        productTableView.dataSource = self
-        productTableView.register(ProductCell.self, forCellReuseIdentifier: String(describing: ProductCell.self))
+    // MARK: Layout
+
+    private func buildHeader(showRetake: Bool) -> UIView {
+        let header = UIView()
+        let thumb = V2.thumbnail(size: 52, radius: 12)
+        thumb.image = photo
+        thumb.isAccessibilityElement = false
+        let title = V2.label(ImageSearchResults.title(count: products.count), size: DS.TextSize.amount, weight: .bold, lines: 2)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let subtitle = V2.label("imageSearch.results.subtitle".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let texts = UIStackView(arrangedSubviews: [title, subtitle])
+        texts.axis = .vertical
+        texts.spacing = 2
+        texts.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        texts.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [thumb, texts])
+        row.alignment = .center
+        row.spacing = 12
+        if showRetake {
+            row.addArrangedSubview(retakeOutlineButton())
+        }
+        header.addSubview(row)
+        let line = V2.divider()
+        line.backgroundColor = DS.Color.border
+        header.addSubview(line)
+        row.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        line.snp.makeConstraints { make in
+            make.top.equalTo(row.snp.bottom).offset(DS.Spacing.lg)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        return header
     }
 
-    @objc private func closeTapped() {
+    /// Outlined "📷 Chụp lại" at the end of the header
+    private func retakeOutlineButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(DS.symbol("camera", DS.Icon.sm), for: .normal)
+        button.setTitle("imageSearch.action.retake".localized(), for: .normal)
+        button.setTitleColor(DS.Color.text, for: .normal)
+        button.tintColor = DS.Color.text
+        button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        button.layer.cornerRadius = 12
+        button.layer.borderWidth = 1
+        button.layer.borderColor = V2.border.cgColor
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 16)
+        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.addTarget(self, action: #selector(retakeTapped), for: .touchUpInside)
+        button.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
+        return button
+    }
+
+    private func buildEmptyState() -> UIView {
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = true
+
+        let iconCircle = UIView()
+        iconCircle.backgroundColor = UIColor(hexString: "EEF2FF")
+        iconCircle.layer.cornerRadius = 32
+        let icon = UIImageView(image: DS.symbol("magnifyingglass", 28, weight: .semibold))
+        icon.tintColor = UIColor(hexString: "3730A3")
+        icon.contentMode = .center
+        iconCircle.addSubview(icon)
+        iconCircle.snp.makeConstraints { make in make.width.height.equalTo(64) }
+        icon.snp.makeConstraints { make in make.center.equalToSuperview() }
+
+        let headline = V2.label("imageSearch.empty.headline".localized(), size: DS.TextSize.amount, weight: .bold, lines: 0)
+        headline.textAlignment = .center
+        let message = V2.label("imageSearch.empty.message".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+        message.textAlignment = .center
+
+        let tips = UIStackView(arrangedSubviews: ImageSearchResults.tipKeys.map { key in
+            V2.label("•  " + key.localized(), size: DS.TextSize.body, lines: 0)
+        })
+        tips.axis = .vertical
+        tips.spacing = 8
+
+        let retake = V2.primaryButton("imageSearch.action.retake".localized())
+        retake.addTarget(self, action: #selector(retakeTapped), for: .touchUpInside)
+        let byName = V2.secondaryButton("imageSearch.action.searchByName".localized())
+        byName.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        byName.addTarget(self, action: #selector(searchByNameTapped), for: .touchUpInside)
+
+        let column = UIStackView(arrangedSubviews: [iconCircle, headline, message, tips, retake, byName])
+        column.axis = .vertical
+        column.alignment = .center
+        column.spacing = 12
+        column.setCustomSpacing(16, after: iconCircle)
+        column.setCustomSpacing(24, after: message)
+        column.setCustomSpacing(28, after: tips)
+        scroll.addSubview(column)
+        column.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(40)
+            make.bottom.equalToSuperview().offset(-24)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(DS.Spacing.xl)
+        }
+        [headline, message, retake, byName].forEach { item in
+            item.snp.makeConstraints { make in make.leading.trailing.equalToSuperview() }
+        }
+        return scroll
+    }
+
+    // MARK: Actions
+
+    @objc private func retakeTapped() {
         dismiss(animated: true) { [weak self] in
             self?.notifyDismiss()
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        // Product detail hides the bar; bring back the title and Close when it pops
-        navigationController?.setNavigationBarHidden(false, animated: animated)
+    @objc private func searchByNameTapped() {
+        let searchByName = onSearchByName
+        dismiss(animated: true) { [weak self] in
+            self?.notifyDismiss()
+            searchByName?()
+        }
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if isBeingDismissed {
-            notifyDismiss()
-        }
+    @objc private func cartChanged() {
+        list.reloadData() // the + buttons show the cart count
     }
 
     private func notifyDismiss() {
         guard !didNotifyDismiss else { return }
         didNotifyDismiss = true
         onDismiss?()
-    }
-}
-
-extension ImageSearchResultsViewController: UIAdaptivePresentationControllerDelegate {
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        notifyDismiss()
-    }
-}
-
-extension ImageSearchResultsViewController: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return products.count
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: String(describing: ProductCell.self),
-            for: indexPath
-        ) as! ProductCell
-        cell.isUserInteractionEnabled = true
-        cell.contentView.isUserInteractionEnabled = true
-        cell.delegate = self
-
-        let product = products[indexPath.row]
-        cell.bind(product: product, searchWords: nil)
-        cell.showCheckIndicator(true)
-        cell.setupMoreButtonMenu(menu: createProductMenu(for: product, cell: cell))
-        return cell
-    }
-}
-
-extension ImageSearchResultsViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        openDetail(products[indexPath.row])
     }
 
     /// #654: a result row opens the product detail (same as Android), full height inside the sheet
@@ -596,40 +668,14 @@ extension ImageSearchResultsViewController: UITableViewDelegate {
         let detail = ProductDetailViewController(product: product)
         nav.pushViewController(detail, animated: true)
     }
-}
 
-extension ImageSearchResultsViewController: ProductCellDelegate {
-    func viewImage(sender: Product) {
-        let controller = ImageProductViewController.instance(imageUrl: sender.image_url ?? "")
-        let nav = UINavigationController(rootViewController: controller)
-        present(nav, animated: true)
-    }
-
-    func more(product: Product, sender: ProductCell) {}
-
-    private func createProductMenu(for product: Product, cell: ProductCell) -> UIMenu {
-        let addToCartAction = UIAction(
-            title: "Add to cart".localized(),
-            image: UIImage(systemName: "cart.badge.plus")
-        ) { [weak self] _ in
-            self?.addProductToCart(product: product)
-        }
-
-        let checkAction = UIAction(
-            title: "product.action.viewOrderHistory".localized(),
-            image: UIImage(systemName: "calendar")
-        ) { [weak self] _ in
-            self?.previewOrders(sender: cell, product: product)
-        }
-
-        return UIMenu(children: [addToCartAction, checkAction])
-    }
-
-    private func addProductToCart(product: Product) {
+    private func addProductToCart(_ product: Product) {
+        defer { list.reloadData() }
         guard let infoVC = findInfoMainViewController() else {
             // Redesigned Home (#373) has no InfoMainViewController; add straight to the cart store
             if FeatureFlags.shared.isOn(.newProducts) {
                 ProductsCartBridge.add(product)
+                HapticFeedback.light()
                 showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
                 return
             }
@@ -646,6 +692,7 @@ extension ImageSearchResultsViewController: ProductCellDelegate {
 
         infoVC.addProduct(product: product, quantity: 1, price: price)
         updateCartBadge()
+        HapticFeedback.light()
         showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
     }
 
@@ -684,42 +731,40 @@ extension ImageSearchResultsViewController: ProductCellDelegate {
         }
         return nil
     }
+}
 
-    func previewOrders(sender: ProductCell, product: Product) {
-        let controller = OrderCheckViewController()
-        controller.delegate = self
-        controller.loadProduct(product)
-        present(UINavigationController(rootViewController: controller), animated: true)
+extension ImageSearchResultsViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        notifyDismiss()
     }
 }
 
-extension ImageSearchResultsViewController: OrderCheckViewControllerDelegate {
-    func didSelectOrder(order: Order, sender: OrderCheckViewController) {
-        showProgressText(text: "Loading...".localized())
-        OrderService.shared.loadOrderDetail(orderId: order.id) { [weak self] orderDetail, error in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.hideProgress()
-                if let error = error {
-                    UIAlertController.errorAlert(parent: self, error: error)
-                    return
-                }
-                guard let detail = orderDetail else {
-                    let err = NSError.errorWithOwnMessage(message: "No order detail received".localized(), domain: "POS")
-                    UIAlertController.errorAlert(parent: self, error: err)
-                    return
-                }
-                let fullOrder = Order.from(detail: detail)
-                guard let nav = self.navigationController else { return }
-                let preview = OrderDetailRouter.detailController(for: fullOrder, delegate: self)
-                nav.pushViewController(preview, animated: true)
+// #672: the same row as Products home (#671 round blue +, adds also when out today)
+extension ImageSearchResultsViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        products.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ProductRowV2Cell.reuseId, for: indexPath) as! ProductRowV2Cell
+        let product = products[indexPath.row]
+        let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
+        cell.bind(product, inCart: inCart)
+        cell.onAdd = { [weak self] in self?.addProductToCart(product) }
+        // #472: the thumbnail opens the photo full screen; without a photo it opens detail like the row
+        cell.onImage = { [weak self] in
+            guard let self else { return }
+            if let request = ProductImages.thumbnailTap(product) {
+                self.present(ImageViewerViewController(request: request), animated: true)
+            } else {
+                self.openDetail(product)
             }
         }
+        return cell
     }
-}
 
-extension ImageSearchResultsViewController: PreviewViewControllerDelegate {
-    func didCompleteOrder(sender: PreviewViewController, updatedOrder: Order?) {
-        navigationController?.popViewController(animated: true)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        openDetail(products[indexPath.row])
     }
 }

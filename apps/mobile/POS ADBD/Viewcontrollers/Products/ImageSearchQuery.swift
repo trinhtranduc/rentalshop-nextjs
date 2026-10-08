@@ -46,3 +46,45 @@ enum ImageSearchQuery {
         code?.uppercased() == noMatchCode
     }
 }
+
+/// #672: what the image-search results sheet shows. One list in API order (best first), no similarity
+/// percentage; no matches shows the empty state with tips. Same rules on Android
+/// (`domain/products/ImageSearchQuery.kt`, `ImageSearchResults`).
+enum ImageSearchResults {
+    enum Content: Equatable {
+        case list
+        case empty
+    }
+
+    static func content(count: Int) -> Content {
+        count > 0 ? .list : .empty
+    }
+
+    /// "4 sản phẩm giống" / "1 similar product" / "Không thấy sản phẩm giống"
+    static func titleKey(count: Int) -> String {
+        switch count {
+        case ...0: return "imageSearch.results.empty.title"
+        case 1: return "imageSearch.results.title.one"
+        default: return "imageSearch.results.title"
+        }
+    }
+
+    static func title(count: Int) -> String {
+        let key = titleKey(count: count)
+        return count > 0 ? String(format: key.localized(), count) : key.localized()
+    }
+
+    /// The three tips of the empty state, in order
+    static let tipKeys = [
+        "imageSearch.empty.tip.whole",
+        "imageSearch.empty.tip.background",
+        "imageSearch.empty.tip.photo",
+    ]
+
+    /// Every key the sheet reads (tests check en and vi have them)
+    static let stringKeys = [
+        "imageSearch.results.title", "imageSearch.results.title.one", "imageSearch.results.empty.title",
+        "imageSearch.results.subtitle", "imageSearch.action.retake", "imageSearch.action.searchByName",
+        "imageSearch.empty.headline", "imageSearch.empty.message",
+    ] + tipKeys
+}
