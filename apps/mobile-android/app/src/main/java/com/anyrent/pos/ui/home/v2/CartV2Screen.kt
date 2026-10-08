@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -345,9 +344,8 @@ fun CartV2Screen(
                         number != null -> stringResource(R.string.v2_cart_edit_title_number, number)
                         else -> stringResource(R.string.v2_cart_edit_title)
                     },
-                    // #677: the edit title keeps its full number on a 360dp phone ("Huỷ sửa" replaces the switch)
-                    fontSize = if (editingOrderId == null) 20.sp else 18.sp,
-                    fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    // #677: while editing nothing sits right of the title, so "Sửa đơn #948372" fits on a 360dp phone
+                    fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (editingOrderId != null) {
                     Text(
@@ -358,7 +356,8 @@ fun CartV2Screen(
             }
             // #640: the cart as a draft image ("Đơn nháp"), once it has lines (rent: dates chosen)
             val shareContext = LocalContext.current
-            IconButton(
+            // #677 option B: no share while editing an order
+            if (editingOrderId == null) IconButton(
                 onClick = {
                     scope.launch {
                         runCatching {
@@ -385,20 +384,8 @@ fun CartV2Screen(
             ) {
                 Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.share_draft_action), modifier = Modifier.size(DS.Icon.Lg))
             }
-            if (editingOrderId != null) {
-                // #677 (iOS `cancelEditButton`): "Huỷ sửa" in place of the Thuê / Bán switch, which cannot change while editing
-                Text(
-                    stringResource(R.string.v2_cart_edit_cancel),
-                    fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = Color(0xFFB91C1C), maxLines = 1,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { confirmCancelEdit = true }
-                        .heightIn(min = 48.dp)
-                        .wrapContentHeight()
-                        .padding(horizontal = 8.dp)
-                        .semantics { role = Role.Button },
-                )
-            } else {
+            // While editing the type cannot change: header = back + "Sửa đơn #n" + subtitle only (#677)
+            if (editingOrderId == null) {
                 V2Segmented(
                     titles = listOf(stringResource(R.string.v2_cart_rent), stringResource(R.string.v2_cart_sale)),
                     selected = if (isSale) 1 else 0,
@@ -496,64 +483,92 @@ fun CartV2Screen(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
             )
         }
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(Modifier.weight(1f)) {
-                if (editingOrderId != null) {
-                    // #676 (board sua-don): nothing is collected on save; the bar shows the order total
-                    Text(stringResource(R.string.v2_cart_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                    Text(formatMoneyVnd(total), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
-                } else {
+        // The cart button: the create / sale confirm sheet, or the "Lưu thay đổi" sheet while editing
+        fun onCta() {
+            val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
+            val messages = problems.map { problemText.getValue(it) } +
+                CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
+            if (messages.isNotEmpty()) {
+                error = messages.joinToString("\n")
+            } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.EDIT_SHEET) {
+                if (editSheet == null) {
+                    editSheet = EditOrderSheet.confirm(
+                        isSale = isSale,
+                        customerName = customer?.displayName.orEmpty(),
+                        pickup = pickup,
+                        returnDate = ret,
+                        lines = lines,
+                        total = total,
+                        original = editOriginal,
+                        deposit = deposit,
+                        securityDeposit = CartStore.securityDeposit.value,
+                    )
+                }
+            } else if (confirmSheet == null && createdSheet == null) {
+                confirmSheet = CreateOrderSheet.confirm(
+                    isSale = isSale,
+                    customerName = customer?.displayName.orEmpty(),
+                    pickup = pickup,
+                    returnDate = ret,
+                    lines = lines.map { it.product.name to it.quantity },
+                    total = total,
+                    deposit = deposit,
+                )
+            }
+        }
+
+        if (editingOrderId != null) {
+            // #677 (board huy-sua, option B): "Tổng đơn" over "Huỷ sửa" (outline, 1 part) + "Lưu thay đổi" (2 parts)
+            Column(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.v2_cart_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
+                    Text(formatMoneyVnd(total), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { confirmCancelEdit = true },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, DS.Colors.Border),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = DS.Colors.Text),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text(stringResource(R.string.v2_cart_edit_cancel), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                    AppPrimaryButton(
+                        stringResource(R.string.v2_cart_edit_save),
+                        modifier = Modifier.weight(2f).height(48.dp),
+                        enabled = !createBlocked,
+                        onClick = ::onCta,
+                    )
+                }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
                     Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                     Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
                 }
+                AppPrimaryButton(
+                    stringResource(
+                        when (EditOrderSheet.ctaLabel(editing = false, isSale = isSale)) {
+                            EditOrderSheet.CtaLabel.SAVE_CHANGES -> R.string.v2_cart_edit_save
+                            EditOrderSheet.CtaLabel.SELL_AND_COLLECT -> R.string.v2_cart_sell_and_collect
+                            EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
+                        },
+                    ),
+                    modifier = Modifier.weight(1.1f),
+                    enabled = !createBlocked,
+                    onClick = ::onCta,
+                )
             }
-            AppPrimaryButton(
-                stringResource(
-                    when (EditOrderSheet.ctaLabel(editing = editingOrderId != null, isSale = isSale)) {
-                        EditOrderSheet.CtaLabel.SAVE_CHANGES -> R.string.v2_cart_edit_save
-                        EditOrderSheet.CtaLabel.SELL_AND_COLLECT -> R.string.v2_cart_sell_and_collect
-                        EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
-                    },
-                ),
-                modifier = Modifier.weight(1.1f),
-                enabled = !createBlocked,
-                onClick = {
-                    val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
-                    val messages = problems.map { problemText.getValue(it) } +
-                        CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
-                    if (messages.isNotEmpty()) {
-                        error = messages.joinToString("\n")
-                    } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.EDIT_SHEET) {
-                        if (editSheet == null) {
-                            editSheet = EditOrderSheet.confirm(
-                                isSale = isSale,
-                                customerName = customer?.displayName.orEmpty(),
-                                pickup = pickup,
-                                returnDate = ret,
-                                lines = lines,
-                                total = total,
-                                original = editOriginal,
-                                deposit = deposit,
-                                securityDeposit = CartStore.securityDeposit.value,
-                            )
-                        }
-                    } else if (confirmSheet == null && createdSheet == null) {
-                        confirmSheet = CreateOrderSheet.confirm(
-                            isSale = isSale,
-                            customerName = customer?.displayName.orEmpty(),
-                            pickup = pickup,
-                            returnDate = ret,
-                            lines = lines.map { it.product.name to it.quantity },
-                            total = total,
-                            deposit = deposit,
-                        )
-                    }
-                },
-            )
         }
     }
 
