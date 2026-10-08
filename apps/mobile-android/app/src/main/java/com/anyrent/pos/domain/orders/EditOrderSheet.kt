@@ -37,6 +37,10 @@ object EditOrderSheet {
         val lines: List<Line>,
         /** Payments already on the order (0 = none / unknown) */
         val paid: Double,
+        /** #677: the order's status when loaded ("Thu khi giao" only while RESERVED); "" = unknown (older draft) */
+        val status: String = "",
+        /** #677: the order's payments when loaded ("Đã thu", "Thu khi giao"); null = unknown (older draft) */
+        val payments: List<BalancePayment>? = null,
     )
 
     data class Confirm(
@@ -50,8 +54,13 @@ object EditOrderSheet {
         /** Units in the cart ("2 món") */
         val itemCount: Int,
         val total: Double,
-        /** Already collected on the order; null hides the row */
+        /** "Đã thu" (#677): booking deposit + payments made toward the order, never thế chân; null hides the row */
         val paid: Double?,
+        /**
+         * "Thu khi giao" (#677): what Giao đồ will ask after saving (hand-over formula with the new total); rentals
+         * still booked only, else null
+         */
+        val collectAtHandOver: Double? = null,
         val datesChanged: Boolean,
         val itemsChanged: Boolean,
     )
@@ -65,6 +74,15 @@ object EditOrderSheet {
         )
     }
 
+    /** #677: the action on the Home cart bar: "Tạo đơn", or "Sửa đơn #482913" / "Sửa đơn" while editing (iOS `cartBarAction`) */
+    sealed class CartBarAction {
+        object Create : CartBarAction()
+        data class Edit(val number: String?) : CartBarAction()
+    }
+
+    fun cartBarAction(editing: Boolean, original: Original?): CartBarAction =
+        if (editing) CartBarAction.Edit(number(original)) else CartBarAction.Create
+
     fun number(original: Original?): String? =
         original?.orderNumber?.takeIf { it.isNotBlank() }?.let(OrdersBoardLogic::shortNumber)
 
@@ -76,9 +94,13 @@ object EditOrderSheet {
         lines: List<CartLine>,
         total: Double,
         original: Original?,
+        /** The cart's deposit (the order's booking deposit after the save) */
+        deposit: Double = 0.0,
+        /** The cart's thế chân money */
+        securityDeposit: Double = 0.0,
     ): Confirm {
         val hasDates = !isSale && pickup != null && returnDate != null
-        val paid = original?.paid ?: 0.0
+        val paid = collected(isSale, deposit, original)
         return Confirm(
             number = number(original),
             isSale = isSale,
@@ -88,9 +110,32 @@ object EditOrderSheet {
             itemCount = lines.sumOf { it.quantity },
             total = total,
             paid = paid.takeIf { it > 0 },
+            collectAtHandOver = collectAtHandOver(isSale, total, deposit, securityDeposit, original),
             datesChanged = !isSale && datesChanged(pickup, returnDate, original),
             itemsChanged = itemsChanged(lines(lines, isSale), original),
         )
+    }
+
+    /**
+     * #677 "Đã thu": a rental's booking deposit plus the payments the hand-over counts as paid before (PICKUP); a sale's
+     * SALE payments. Never thế chân. A draft saved before #677 has no payment notes: all its payments count, as before.
+     * iOS `EditOrderSheetLogic.collected`.
+     */
+    fun collected(isSale: Boolean, deposit: Double, original: Original?): Double {
+        val booking = if (isSale) 0.0 else deposit
+        if (original == null) return booking
+        val payments = original.payments ?: return booking + original.paid
+        val purpose = if (isSale) "SALE" else "PICKUP"
+        return booking + payments.filter { it.status == "COMPLETED" && it.notes == purpose }.sumOf { it.amount }
+    }
+
+    /**
+     * #677 "Thu khi giao": [OrderDetailLogic.handOver] with the cart's new total, deposit and thế chân, so it matches
+     * Giao đồ after the save. Only for a rental still booked (RESERVED). iOS `EditOrderSheetLogic.collectAtHandOver`.
+     */
+    fun collectAtHandOver(isSale: Boolean, total: Double, deposit: Double, securityDeposit: Double, original: Original?): Double? {
+        if (isSale || original == null || !original.status.equals("RESERVED", ignoreCase = true)) return null
+        return OrderDetailLogic.handOver(total, deposit, securityDeposit, original.payments.orEmpty()).collectNow
     }
 
     /** "Đã đổi" on Ngày thuê: the pickup or return shop day differs from the loaded order. Unknown original = no tag. */

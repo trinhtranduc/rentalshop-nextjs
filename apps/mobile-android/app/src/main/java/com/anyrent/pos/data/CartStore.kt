@@ -315,6 +315,16 @@ object CartStore {
         persist()
     }
 
+    /**
+     * #677 "Huỷ sửa": leave edit mode with an empty cart (the saved draft too). Returns the order that was being
+     * edited, to show again; null (and nothing cleared) when the cart was not editing (iOS `EditOrderSheetLogic.cancelEdit`).
+     */
+    fun cancelEdit(persistToDisk: Boolean = true): Int? {
+        val orderId = _editingOrderId.value ?: return null
+        clear(persistToDisk)
+        return orderId
+    }
+
     fun clear(persistToDisk: Boolean = true) {
         dropNoteImages()
         _editingOrderId.value = null
@@ -411,6 +421,8 @@ object CartStore {
             returnDate = if (sale) null else ret,
             lines = EditOrderSheet.lines(mappedLines, sale),
             paid = detail.payments.sumOf { it.amount },
+            status = summary.status,
+            payments = detail.payments.map { com.anyrent.pos.domain.orders.BalancePayment(it.amount, it.status, it.notes) },
         )
         _orderType.value = if (sale) "SALE" else "RENT"
         _pickupDate.value = pickup
@@ -438,12 +450,15 @@ object CartStore {
         _customer.value = customer
         _lines.value = mappedLines
 
-        android.util.Log.i(
-            "AnyRentCart",
-            "Loaded order #${summary.orderNumber} id=${summary.id} " +
-                "lines=${mappedLines.size} customer=${customer?.id} " +
-                "deposit=${summary.depositAmount} security=${detail.securityDeposit}",
-        )
+        // Logging only; no android.util.Log in JVM unit tests (#677)
+        runCatching {
+            android.util.Log.i(
+                "AnyRentCart",
+                "Loaded order #${summary.orderNumber} id=${summary.id} " +
+                    "lines=${mappedLines.size} customer=${customer?.id} " +
+                    "deposit=${summary.depositAmount} security=${detail.securityDeposit}",
+            )
+        }
         persistToDisk()
     }
 
@@ -620,6 +635,14 @@ object CartStore {
             .put("return", original.returnDate?.toString() ?: JSONObject.NULL)
             .put("paid", original.paid)
             .put("lines", lines)
+            .put("status", original.status)
+            .apply {
+                original.payments?.let { payments ->
+                    put("payments", JSONArray().apply {
+                        payments.forEach { put(JSONObject().put("amount", it.amount).put("status", it.status ?: JSONObject.NULL).put("notes", it.notes ?: JSONObject.NULL)) }
+                    })
+                }
+            }
     }
 
     private fun parseEditOriginal(json: JSONObject): EditOrderSheet.Original? = runCatching {
@@ -638,6 +661,17 @@ object CartStore {
                 )
             },
             paid = json.optDouble("paid", 0.0),
+            status = json.optString("status"),
+            payments = json.optJSONArray("payments")?.let { payments ->
+                (0 until payments.length()).mapNotNull { index ->
+                    val payment = payments.optJSONObject(index) ?: return@mapNotNull null
+                    com.anyrent.pos.domain.orders.BalancePayment(
+                        amount = payment.optDouble("amount", 0.0),
+                        status = payment.optString("status").takeIf { !payment.isNull("status") },
+                        notes = payment.optString("notes").takeIf { !payment.isNull("notes") },
+                    )
+                }
+            },
         )
     }.getOrNull()
 

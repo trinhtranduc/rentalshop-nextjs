@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -113,6 +114,8 @@ fun CartV2Screen(
     onOpenOrder: (Int) -> Unit = {},
     /** #676: an edited order was saved: its id and short number (null for a draft saved before #676) */
     onOrderSaved: (Int, String?) -> Unit = { id, _ -> onOpenOrder(id) },
+    /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
+    onEditCancelled: (Int) -> Unit = onOpenOrder,
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -165,6 +168,8 @@ fun CartV2Screen(
         }
     }
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
+    // #677: the "Huỷ sửa đơn #…?" confirm is open
+    var confirmCancelEdit by remember { mutableStateOf(false) }
     // #482: product id of the line whose "Cách tính giá" sheet is open
     var pricingLineId by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -241,6 +246,7 @@ fun CartV2Screen(
     val validateRentalCart = remember { ValidateRentalCartAvailability(app.container.availabilityRepository) }
     val sessionExpiredMessage = stringResource(R.string.session_expired_error)
     val availabilityFailedMessage = stringResource(R.string.availability_check_failed)
+    val conflictsLabel = stringResource(R.string.availability_conflicts)
     val validationFallbackMessage = stringResource(R.string.order_validation_fallback)
 
     // Same checks, request and messages as the review screen's submit (CartCheckoutScreen)
@@ -300,7 +306,9 @@ fun CartV2Screen(
         val number = EditOrderSheet.number(editOriginal)
         scope.launch {
             // Same check, request and messages as the review screen's save (CartCheckoutScreen)
-            val blocked = CartOrderSubmit.editAvailabilityError(validateRentalCart, sessionExpiredMessage, availabilityFailedMessage)
+            val blocked = CartOrderSubmit.editAvailabilityError(
+                validateRentalCart, orderId, sessionExpiredMessage, availabilityFailedMessage, conflictsLabel,
+            )
             if (blocked != null) {
                 editSubmission.failed()
                 saving = false
@@ -337,7 +345,9 @@ fun CartV2Screen(
                         number != null -> stringResource(R.string.v2_cart_edit_title_number, number)
                         else -> stringResource(R.string.v2_cart_edit_title)
                     },
-                    fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    // #677: the edit title keeps its full number on a 360dp phone ("Huỷ sửa" replaces the switch)
+                    fontSize = if (editingOrderId == null) 20.sp else 18.sp,
+                    fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (editingOrderId != null) {
                     Text(
@@ -375,12 +385,26 @@ fun CartV2Screen(
             ) {
                 Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.share_draft_action), modifier = Modifier.size(DS.Icon.Lg))
             }
-            V2Segmented(
-                titles = listOf(stringResource(R.string.v2_cart_rent), stringResource(R.string.v2_cart_sale)),
-                selected = if (isSale) 1 else 0,
-                onSelect = { CartStore.setOrderType(if (it == 1) "SALE" else "RENT") },
-                enabled = editingOrderId == null,
-            )
+            if (editingOrderId != null) {
+                // #677 (iOS `cancelEditButton`): "Huỷ sửa" in place of the Thuê / Bán switch, which cannot change while editing
+                Text(
+                    stringResource(R.string.v2_cart_edit_cancel),
+                    fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = Color(0xFFB91C1C), maxLines = 1,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { confirmCancelEdit = true }
+                        .heightIn(min = 48.dp)
+                        .wrapContentHeight()
+                        .padding(horizontal = 8.dp)
+                        .semantics { role = Role.Button },
+                )
+            } else {
+                V2Segmented(
+                    titles = listOf(stringResource(R.string.v2_cart_rent), stringResource(R.string.v2_cart_sale)),
+                    selected = if (isSale) 1 else 0,
+                    onSelect = { CartStore.setOrderType(if (it == 1) "SALE" else "RENT") },
+                )
+            }
         }
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -513,6 +537,8 @@ fun CartV2Screen(
                                 lines = lines,
                                 total = total,
                                 original = editOriginal,
+                                deposit = deposit,
+                                securityDeposit = CartStore.securityDeposit.value,
                             )
                         }
                     } else if (confirmSheet == null && createdSheet == null) {
@@ -649,6 +675,22 @@ fun CartV2Screen(
         )
     }
     notePreview?.let { com.anyrent.pos.ui.common.FullScreenImagePreview(model = it, onDismiss = { notePreview = null }) }
+    if (confirmCancelEdit) {
+        val number = EditOrderSheet.number(editOriginal)
+        AppAlertConfirm(
+            title = number?.let { stringResource(R.string.v2_cart_edit_cancel_title, it) }
+                ?: stringResource(R.string.v2_cart_edit_cancel_title_no_number),
+            message = stringResource(R.string.v2_cart_edit_cancel_message),
+            confirmLabel = stringResource(R.string.v2_cart_edit_cancel),
+            cancelLabel = stringResource(R.string.v2_edit_confirm_keep_editing),
+            destructive = true,
+            onDismiss = { confirmCancelEdit = false },
+            onConfirm = {
+                confirmCancelEdit = false
+                CartStore.cancelEdit()?.let(onEditCancelled)
+            },
+        )
+    }
     removeLine?.let { line ->
         AppAlertConfirm(
             title = stringResource(R.string.v2_cart_remove_title),

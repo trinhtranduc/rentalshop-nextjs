@@ -75,6 +75,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.anyrent.pos.domain.orders.EditOrderSheet
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.R
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
@@ -120,6 +122,9 @@ fun ProductsHomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val lines by CartStore.lines.collectAsState()
+    val editingOrderId by CartStore.editingOrderId.collectAsState()
+    val editOriginal by CartStore.editOriginal.collectAsState()
+    val cartBarAction = EditOrderSheet.cartBarAction(editingOrderId != null, editOriginal)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
@@ -140,6 +145,9 @@ fun ProductsHomeScreen(
     }
     // #674: the badge follows the inbox and pushes; the server is asked on first show and when 10 minutes old
     LaunchedEffect(Unit) { InboxUnread.invalidations.collect { InboxUnread.refreshIfNeeded() } }
+    // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
+    // The view model keeps the version it reflects, so a change made while this screen was away counts too.
+    LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
     val deleted by DeletedProducts.ids.collectAsState()
     LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
     LaunchedEffect(Unit) {
@@ -282,6 +290,7 @@ fun ProductsHomeScreen(
             CartBar(
                 count = lines.sumOf { it.quantity },
                 total = lines.sumOf { it.lineTotal },
+                action = cartBarAction,
                 onClick = onOpenCart,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
@@ -456,9 +465,20 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
 }
 
 @Composable
-private fun CartBar(count: Int, total: Double, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun CartBar(
+    count: Int,
+    total: Double,
+    action: EditOrderSheet.CartBarAction,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val label = pluralStringResource(R.plurals.v2_cart_bar, count, count)
-    val create = stringResource(R.string.v2_cart_create)
+    // #677: "Sửa đơn #482913" while the cart edits an order
+    val create = when (action) {
+        EditOrderSheet.CartBarAction.Create -> stringResource(R.string.v2_cart_create)
+        is EditOrderSheet.CartBarAction.Edit ->
+            action.number?.let { stringResource(R.string.v2_cart_edit_title_number, it) } ?: stringResource(R.string.v2_cart_edit_title)
+    }
     Row(
         modifier
             .padding(12.dp)
@@ -476,7 +496,7 @@ private fun CartBar(count: Int, total: Double, onClick: () -> Unit, modifier: Mo
             Text(label, fontSize = DS.TextSize.Secondary, color = Color.White.copy(alpha = 0.85f))
             Text(formatMoneyVnd(total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = Color.White)
         }
-        Text(create, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Text(create, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
     }
 }

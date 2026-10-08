@@ -301,7 +301,8 @@ object ChangeHistory {
      */
     fun canView(role: String?): Boolean = role?.trim()?.uppercase() in setOf("ADMIN", "OPS", "MERCHANT", "OUTLET_ADMIN")
 
-    fun isStaff(role: String?): Boolean = role.equals("OUTLET_STAFF", true) || role.equals("OUTLET_ADMIN", true)
+    /** #677: only OUTLET_STAFF is "(nhân viên)"; an OUTLET_ADMIN manages the outlet (iOS `ChangeHistoryLogic.isStaff`) */
+    fun isStaff(role: String?): Boolean = role?.trim().equals("OUTLET_STAFF", true)
 
     fun lines(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): List<Line> {
         val out = mutableListOf<Line>()
@@ -329,8 +330,13 @@ object ChangeHistory {
             )
             if (parts.isNotEmpty()) out += Line(null, null, null, capitalize(parts.joinToString(", ")))
         }
-        return out
+        // #677: a field empty before and after ("Thế chân: —") did not change: no line (iOS `isEmptyChange`)
+        return out.filterNot { isEmptyChange(it, texts) }
     }
+
+    /** A labelled line whose old and new values are both empty ("—") */
+    fun isEmptyChange(line: Line, texts: Texts = Texts()): Boolean =
+        line.label != null && line.text == null && (line.to ?: texts.empty) == texts.empty && (line.from ?: texts.empty) == texts.empty
 
     private fun imagesText(added: Int, removed: Int, texts: Texts): String? {
         val parts = listOfNotNull(

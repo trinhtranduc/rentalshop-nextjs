@@ -161,6 +161,7 @@ fun CartCheckoutScreen(
     val customerRequiredMessage = stringResource(R.string.customer_required_error)
     val sessionExpiredMessage = stringResource(R.string.session_expired_error)
     val availabilityFailedMessage = stringResource(R.string.availability_check_failed)
+    val conflictsLabel = stringResource(R.string.availability_conflicts)
     val validationFallbackMessage = stringResource(R.string.order_validation_fallback)
     val discountSummaryLabel = when {
         discount <= 0 -> stringResource(R.string.discount)
@@ -191,7 +192,7 @@ fun CartCheckoutScreen(
         scope.launch {
             // #676: the same check and edit request as the new cart's "Lưu thay đổi" sheet
             val availabilityError = CartOrderSubmit.editAvailabilityError(
-                validateRentalCart, sessionExpiredMessage, availabilityFailedMessage,
+                validateRentalCart, editingOrderId, sessionExpiredMessage, availabilityFailedMessage, conflictsLabel,
             )
             if (availabilityError != null) {
                 loading = false

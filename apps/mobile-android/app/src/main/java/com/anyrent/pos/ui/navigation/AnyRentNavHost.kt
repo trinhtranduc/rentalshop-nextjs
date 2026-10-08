@@ -535,6 +535,12 @@ fun AnyRentNavHost(
                         popUpTo(Routes.CartV2) { inclusive = true }
                     }
                 },
+                // #677 "Huỷ sửa": the order's detail again (loaded fresh) in place of the now empty cart
+                onEditCancelled = { id ->
+                    rootNavController.navigate(Routes.orderDetail(id)) {
+                        popUpTo(Routes.CartV2) { inclusive = true }
+                    }
+                },
             )
         }
         composable(Routes.CartPreview) {

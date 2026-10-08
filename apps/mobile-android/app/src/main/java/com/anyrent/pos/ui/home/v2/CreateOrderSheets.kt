@@ -208,6 +208,10 @@ fun EditOrderConfirmSheet(
                     )
                     add(Triple(stringResource(R.string.v2_cart_total), formatMoneyVnd(confirm.total), false))
                     confirm.paid?.let { add(Triple(stringResource(R.string.v2_edit_confirm_paid), formatMoneyVnd(it), false)) }
+                    // #677: what Giao đồ will ask after the save (a booked rental only)
+                    confirm.collectAtHandOver?.let {
+                        add(Triple(stringResource(R.string.v2_edit_confirm_collect_at_hand_over), formatMoneyVnd(it), false))
+                    }
                 }
                 rows.forEachIndexed { index, (title, value, changed) ->
                     if (index > 0) HorizontalDivider(color = DS.Colors.Divider)

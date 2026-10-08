@@ -174,10 +174,10 @@ object ProductRowLogic {
     fun subtitle(product: Product): ProductRowSubtitle =
         ProductRowSubtitle(code = product.barcodeText, free = ProductStock.freeToday(product))
 
-    /** Out today wins over the cart count, so the button stays grey as before */
+    /** The cart count wins (#677, iOS `ProductRowLogic.addState`): a product out today that is in the cart shows its count */
     fun addState(free: Int, inCart: Int): AddButtonState = when {
-        free <= 0 -> AddButtonState.Out
         inCart > 0 -> AddButtonState.InCart(inCart)
+        free <= 0 -> AddButtonState.Out
         else -> AddButtonState.Add
     }
 }

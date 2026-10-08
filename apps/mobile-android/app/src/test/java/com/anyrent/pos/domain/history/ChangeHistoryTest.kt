@@ -100,7 +100,7 @@ class ChangeHistoryTest {
         assertEquals("Sửa tồn kho", stock.title)
         assertEquals(listOf(ChangeHistory.Line("Chi nhánh chính", "3", "4")), stock.lines)
         assertEquals("AO", stock.initials)
-        assertEquals("bởi Admin Outlet 1 (nhân viên) · 17:40", stock.footer)
+        assertEquals("bởi Admin Outlet 1 · 17:40", stock.footer) // #677: an outlet admin is not "(nhân viên)"
         assertEquals(listOf(ChangeHistory.Line(null, null, null, "Thêm 1 ảnh, bỏ 1 ảnh")), sections[1].rows[1].lines)
         assertEquals(
             listOf(ChangeHistory.Line("Tên", "Vest đen", "Vest đen slim fit"), ChangeHistory.Line("Tiền cọc", "500.000đ", "400.000đ")),
@@ -185,9 +185,22 @@ class ChangeHistoryTest {
             ChangeHistory.Entry(1, i("2026-10-06T03:04:00Z"), "ORDER_EDITED", ChangeHistory.Actor("Lan", role)),
         )
         assertEquals("bởi Lan (nhân viên) · 10:04", footer("OUTLET_STAFF"))
-        assertEquals("bởi Lan (nhân viên) · 10:04", footer("OUTLET_ADMIN"))
+        assertEquals("bởi Lan · 10:04", footer("OUTLET_ADMIN")) // #677: an outlet admin is not staff
         assertEquals("bởi Lan · 10:04", footer("MERCHANT"))
         assertEquals("bởi Lan · 10:04", footer(null))
+    }
+
+    /** #677 — "Thế chân: —" (empty before and after) is no change: no line */
+    @Test fun emptyBeforeAndAfterIsHidden() {
+        val entry = ChangeHistory.Entry(
+            1, i("2026-10-06T03:04:00Z"), "ORDER_EDITED", null,
+            changes = listOf(
+                ChangeHistory.FieldChange("collateralDetails", null, " "),
+                ChangeHistory.FieldChange("securityDeposit", null, null),
+                ChangeHistory.FieldChange("notes", null, "Giao sớm"),
+            ),
+        )
+        assertEquals(listOf(ChangeHistory.Line(ChangeHistory.fieldLabel("notes"), null, "Giao sớm")), ChangeHistory.lines(entry))
     }
 
     @Test fun onlyOwnersAndOutletAdminsSeeHistory() {
@@ -213,7 +226,7 @@ class ChangeHistoryTest {
         assertEquals("bởi Lan Anh (nhân viên) · 15:10", staff.footer)
         assertEquals("Lan Anh", bold(staff))
 
-        val english = row(ChangeHistory.Actor("Lan Anh", "OUTLET_ADMIN"), ChangeHistory.Texts(staffName = "%1\$s (staff)", actorBy = "by %1\$s"))
+        val english = row(ChangeHistory.Actor("Lan Anh", "OUTLET_STAFF"), ChangeHistory.Texts(staffName = "%1\$s (staff)", actorBy = "by %1\$s"))
         assertEquals("by Lan Anh (staff) · 15:10", english.footer)
         assertEquals("Lan Anh", bold(english))
 
