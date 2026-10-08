@@ -27,13 +27,10 @@ class EntityOrdersLogicTest {
     )
 
     @Test
-    fun `product tiles count rentals and revenue without cancelled`() {
+    fun `product tiles count orders and rentals, no money (#658)`() {
         assertEquals(3, EntityOrdersLogic.rentals(orders))
-        assertEquals(2_100_000.0, EntityOrdersLogic.productRevenue(orders, 4), 0.1)
-        assertEquals(listOf("6", "3", "2,1tr"), EntityOrdersLogic.productValues(orders, 4, 6, hasMore = false, hidesMoney = false, money = money))
-        assertEquals(listOf("40", "3+", "—"), EntityOrdersLogic.productValues(orders, 4, 40, hasMore = true, hidesMoney = true, money = money))
-        // A row without items counts its order total
-        assertEquals(500_000.0, EntityOrdersLogic.productRevenue(listOf(order(6, "RETURNED", total = 500_000.0, lines = emptyMap())), 4), 0.1)
+        assertEquals(listOf("6", "3"), EntityOrdersLogic.productValues(orders, 6, hasMore = false))
+        assertEquals(listOf("40", "3+"), EntityOrdersLogic.productValues(orders, 40, hasMore = true))
     }
 
     @Test
