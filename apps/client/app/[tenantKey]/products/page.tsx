@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { MerchantHeader } from './components/MerchantHeader';
 import { PublicProductGrid } from './components/PublicProductGrid';
+import { PublicShopFooter } from './components/PublicShopFooter';
 import { parseApiResponse } from '@rentalshop/utils';
 import type { Product, Category } from '@rentalshop/types';
 
@@ -138,17 +139,19 @@ export default async function PublicProductsPage({
   const { merchant, products = [], categories = [], outlets = [], pagination } = data;
 
   // Show merchant info even if no products (for better UX)
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Merchant Header */}
-      <MerchantHeader merchant={merchant} outlets={outlets} />
+  const phone = outlets[0]?.phone || merchant.phone || null;
 
-      {/* Products Grid - Will show empty state if no products */}
-      <PublicProductGrid 
+  return (
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <MerchantHeader merchant={merchant} outlets={outlets} />
+      <PublicProductGrid
         products={products as Product[]}
         categories={categories as Category[]}
+        currency={merchant.currency}
+        phone={phone}
         pagination={pagination}
       />
+      <PublicShopFooter />
     </div>
   );
 }

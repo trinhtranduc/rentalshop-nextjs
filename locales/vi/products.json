@@ -658,5 +658,26 @@
       "previewMore": "+{count} tem nữa",
       "printHint": "Khi in: chọn máy in nhãn, khổ giấy đúng khổ tem, tỉ lệ 100%, lề Không."
     }
+  },
+  "public": {
+    "searchPlaceholder": "Tìm sản phẩm…",
+    "all": "Tất cả",
+    "count": "{count} mẫu",
+    "call": "Gọi",
+    "callShop": "Gọi shop",
+    "zalo": "Nhắn Zalo",
+    "askZalo": "Hỏi thuê qua Zalo",
+    "perRent": "/ lần",
+    "perDay": "/ ngày",
+    "orDaily": "hoặc {price} / ngày",
+    "sale": "Bán {price}",
+    "rentFixed": "Thuê theo lần",
+    "rentDaily": "Thuê theo ngày",
+    "deposit": "Đặt cọc",
+    "buy": "Mua luôn",
+    "askNote": "Nhắn shop ngày cần thuê để kiểm tra còn đồ.",
+    "footer": "Đặt thuê qua Zalo hoặc gọi shop · Tạo bằng AnyRent",
+    "close": "Đóng",
+    "noPhoto": "Chưa có ảnh"
   }
 }
