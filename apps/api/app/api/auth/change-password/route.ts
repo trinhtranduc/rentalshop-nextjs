@@ -57,10 +57,15 @@ export const POST = withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
+    // Log out every other session first (#661): keep the one making the change, revoke the rest's
+    // refresh tokens. Done before the update so a failure never leaves a new password with old devices in.
+    const changedAt = new Date();
+    await db.sessions.invalidateUserSessionsExcept(user.id, user.sessionId, changedAt);
+
     // Update password and set passwordChangedAt to invalidate old tokens
     await db.users.update(user.id, {
       password: hashedPassword,
-      passwordChangedAt: new Date() // Invalidate all existing tokens
+      passwordChangedAt: changedAt // Invalidate all existing tokens
     });
 
     console.log('✅ Password changed successfully for user:', user.email);
