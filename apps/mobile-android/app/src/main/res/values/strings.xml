@@ -654,6 +654,25 @@
     <string name="v2_create_confirm_items">Items</string>
     <string name="v2_create_confirm_collect_deposit">Collect deposit now</string>
     <string name="v2_create_confirm_collect_sale">Collect now</string>
+    <!-- #676 edit an order from the new cart (board sua-don) -->
+    <string name="v2_cart_edit_title_number">Edit order #%1$s</string>
+    <string name="v2_cart_edit_rent_type">Rental order</string>
+    <string name="v2_cart_edit_sale_type">Sale order</string>
+    <string name="v2_cart_edit_save">Save changes</string>
+    <string name="v2_edit_confirm_title">Save changes to order #%1$s?</string>
+    <string name="v2_edit_confirm_title_no_number">Save changes to this order?</string>
+    <string name="v2_edit_confirm_dates">Rental dates</string>
+    <string name="v2_edit_confirm_rent_items">Rental items</string>
+    <string name="v2_edit_confirm_sale_items">Items sold</string>
+    <plurals name="v2_edit_confirm_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="v2_edit_confirm_paid">Collected</string>
+    <string name="v2_edit_confirm_changed">Changed</string>
+    <string name="v2_edit_confirm_keep_editing">Keep editing</string>
+    <string name="v2_edit_saved">Saved order #%1$s</string>
+    <string name="v2_edit_saved_no_number">Order saved</string>
     <string name="v2_create_done_title">Order #%1$s created</string>
     <string name="v2_create_done_paid_deposit">Deposit collected %1$s</string>
     <string name="v2_create_done_paid_sale">Collected %1$s</string>

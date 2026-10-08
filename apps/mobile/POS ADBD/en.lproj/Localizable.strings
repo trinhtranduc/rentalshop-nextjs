@@ -1639,6 +1639,22 @@
 "products.cart.created.paidSale" = "Collected %@";
 "products.cart.created.newOrder" = "New order";
 "products.cart.created.viewOrder" = "View order";
+"products.cart.edit.title" = "Edit order #%@";
+"products.cart.edit.rentType" = "Rental order";
+"products.cart.edit.saleType" = "Sale order";
+"products.cart.edit.save" = "Save changes";
+"products.cart.edit.confirmTitle" = "Save changes to order #%@?";
+"products.cart.edit.confirmTitleNoNumber" = "Save changes to this order?";
+"products.cart.edit.dates" = "Rental dates";
+"products.cart.edit.rentItems" = "Rental items";
+"products.cart.edit.saleItems" = "Items sold";
+"products.cart.edit.itemCount" = "%d items";
+"products.cart.edit.itemCount.one" = "%d item";
+"products.cart.edit.paid" = "Collected";
+"products.cart.edit.changed" = "Changed";
+"products.cart.edit.keepEditing" = "Keep editing";
+"products.cart.edit.saved" = "Saved order #%@";
+"products.cart.edit.savedNoNumber" = "Order saved";
 "products.cart.needPrice" = "Enter a price for %@";
 "products.cart.editPrice" = "Edit price for this order";
 // MARK: - Orders tab (#371)

@@ -730,7 +730,7 @@ extension ProductsV2Tests {
 
     func testOnlyANewOrderUsesTheSheet() {
         XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: false), .confirmSheet)
-        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .preview, "editing an order keeps the review screen")
+        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .editSheet, "#676: an edit saves from its own sheet, not the review screen")
     }
 
     func testOneCreateAtATimeAndTheKeyIsReusedOnRetry() {
@@ -788,5 +788,132 @@ extension ProductsV2Tests {
         XCTAssertNil(CategoryRules.validateName(" Áo "))
         XCTAssertNil(CategoryRules.validateName(String(repeating: "đ", count: 50)))
         XCTAssertEqual(CategoryRules.validateName(String(repeating: "đ", count: 51)), .tooLong)
+    }
+}
+
+/// #676 — editing an order: "Lưu thay đổi" on the cart and a sheet that tags the rows changed since the order loaded
+extension ProductsV2Tests {
+    private func editCart(paid: Double = 200_000) throws -> Cart {
+        let cart = try rentCart()
+        cart.orderId = 42
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: "482913", paid: paid)
+        return cart
+    }
+
+    func testEditCartSaysSaveChanges() {
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: true, isRent: true), "products.cart.edit.save")
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: true, isRent: false), "products.cart.edit.save")
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: false, isRent: true), "products.cart.create")
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: false, isRent: false), "products.cart.sellAndCollect")
+    }
+
+    func testEditHeaderNamesTheOrderTheCustomerAndTheType() throws {
+        XCTAssertNil(EditOrderSheetLogic.header(try rentCart()), "a new order keeps the cart title")
+        let header = try XCTUnwrap(EditOrderSheetLogic.header(try editCart()))
+        XCTAssertEqual(header.number, "482913")
+        XCTAssertEqual(header.subtitle, "Trần Văn Minh · " + "products.cart.edit.rentType".localized())
+
+        let legacy = try rentCart()
+        legacy.orderId = 42 // a draft saved before #676 has no snapshot
+        XCTAssertNil(EditOrderSheetLogic.header(legacy)?.number)
+    }
+
+    func testUnchangedEditSheetHasNoTags() throws {
+        let cart = try editCart()
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.number, "482913")
+        XCTAssertFalse(confirm.isSale)
+        XCTAssertEqual(confirm.range, "03/10 → 05/10", "same date format as the create sheet")
+        XCTAssertEqual(confirm.days, 3)
+        XCTAssertEqual(confirm.itemCount, 3)
+        XCTAssertEqual(confirm.total, cart.totalAmount)
+        XCTAssertEqual(confirm.paid, 200_000)
+        XCTAssertEqual(confirm.itemsKey, "products.cart.edit.rentItems")
+        XCTAssertFalse(confirm.datesChanged)
+        XCTAssertFalse(confirm.itemsChanged)
+    }
+
+    func testNewDatesTagTheDatesRowOnly() throws {
+        let cart = try editCart()
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-06T16:59:59Z") // T3 06/10
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertTrue(confirm.datesChanged)
+        XCTAssertFalse(confirm.itemsChanged)
+    }
+
+    func testAnotherTimeOnTheSameShopDayIsNotAChange() throws {
+        let cart = try editCart()
+        cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-03T03:00:00Z") // 10:00 on 03/10 in Vietnam
+        XCTAssertFalse(EditOrderSheetLogic.confirm(cart, timeZone: vn).datesChanged)
+    }
+
+    func testQuantityPriceAndLineChangesTagTheItemsRow() throws {
+        let quantity = try editCart()
+        quantity.updateQuantity(at: 0, quantity: 2)
+        XCTAssertTrue(EditOrderSheetLogic.confirm(quantity, timeZone: vn).itemsChanged)
+        XCTAssertFalse(EditOrderSheetLogic.confirm(quantity, timeZone: vn).datesChanged)
+
+        let price = try editCart()
+        price.updatePrice(at: 1, price: 280_000)
+        XCTAssertTrue(EditOrderSheetLogic.confirm(price, timeZone: vn).itemsChanged)
+
+        let removed = try editCart()
+        removed.removeItem(at: 0)
+        XCTAssertTrue(EditOrderSheetLogic.confirm(removed, timeZone: vn).itemsChanged)
+    }
+
+    func testBackToTheLoadedQuantityClearsTheTag() throws {
+        let cart = try editCart()
+        cart.updateQuantity(at: 0, quantity: 3)
+        cart.updateQuantity(at: 0, quantity: 1)
+        XCTAssertFalse(EditOrderSheetLogic.confirm(cart, timeZone: vn).itemsChanged)
+    }
+
+    func testNothingCollectedHidesThePaidRow() throws {
+        XCTAssertNil(EditOrderSheetLogic.confirm(try editCart(paid: 0), timeZone: vn).paid)
+    }
+
+    func testSaleEditHasNoDatesRow() throws {
+        let cart = try editCart()
+        cart.orderType = .sale
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: "482914", paid: 0)
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertNil(confirm.range)
+        XCTAssertFalse(confirm.datesChanged)
+        XCTAssertEqual(confirm.itemsKey, "products.cart.edit.saleItems")
+        XCTAssertEqual(EditOrderSheetLogic.header(cart)?.subtitle, "Trần Văn Minh · " + "products.cart.edit.saleType".localized())
+    }
+
+    func testEditSnapshotSurvivesTheSavedDraftAndClears() throws {
+        let cart = try editCart()
+        let data = try JSONEncoder().encode(cart.makeDiskSnapshot())
+        let restored = Cart()
+        restored.applyDiskSnapshot(try JSONDecoder().decode(Cart.DiskSnapshot.self, from: data))
+        XCTAssertEqual(restored.editOriginal, cart.editOriginal)
+
+        // A draft saved before #676 still loads, without a snapshot
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        json.removeValue(forKey: "editOriginal")
+        let old = Cart()
+        old.applyDiskSnapshot(try JSONDecoder().decode(Cart.DiskSnapshot.self, from: JSONSerialization.data(withJSONObject: json)))
+        XCTAssertEqual(old.orderId, 42)
+        XCTAssertNil(old.editOriginal)
+
+        cart.clear()
+        XCTAssertNil(cart.editOriginal)
+    }
+
+    func testEditSheetTagsOnlyTheChangedRows() throws {
+        let cart = try editCart()
+        cart.updateQuantity(at: 0, quantity: 2)
+        let sheet = EditOrderConfirmSheet(confirm: EditOrderSheetLogic.confirm(cart, timeZone: vn))
+        sheet.loadViewIfNeeded()
+        sheet.view.frame = CGRect(x: 0, y: 0, width: 390, height: 520)
+        sheet.view.layoutIfNeeded()
+        func tags(in view: UIView) -> Int {
+            (view.accessibilityIdentifier == "cart.edit.changed" ? 1 : 0) + view.subviews.reduce(0) { $0 + tags(in: $1) }
+        }
+        XCTAssertEqual(tags(in: sheet.view), 1, "only Đồ thuê changed")
+        XCTAssertEqual(sheet.saveButton.title(for: .normal), "products.cart.edit.save".localized())
     }
 }

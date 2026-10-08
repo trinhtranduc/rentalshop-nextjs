@@ -4,7 +4,8 @@
 //
 //  Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
 //  State lives in CartStore. "Tạo đơn" confirms a new order in a sheet on this screen and creates it with the
-//  same request the review screen sends (#476); an edited order still opens the review screen.
+//  same request the review screen sends (#476); "Lưu thay đổi" saves an edited order from a sheet with the review
+//  screen's update request (#676).
 //
 
 import UIKit
@@ -17,6 +18,9 @@ final class CartV2ViewController: BaseViewControler {
     private let collectTitle = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let collectAmount = V2.label(size: DS.TextSize.amount, weight: .bold)
     private let ctaButton = V2.primaryButton("products.cart.create".localized())
+    private let titleLabel = V2.label(size: 20, weight: .bold)
+    /// #676: "Heather Robinson · Đơn thuê" under "Sửa đơn #482913"
+    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     /// #640: share the cart as a draft image (lines, and for a rental both dates)
     private let shareButton = UIButton(type: .system)
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
@@ -26,6 +30,8 @@ final class CartV2ViewController: BaseViewControler {
     private var pricingChecked = Set<Int>()
     /// One create at a time, one Idempotency-Key per checkout (#341, #476)
     private let submission = CreateOrderSubmission()
+    /// One save of an edited order at a time (#676)
+    private let editSubmission = CreateOrderSubmission()
     /// #518: lines booked out for the chosen dates, by product (from the batch availability answer)
     private var conflicts: [Int: CartScheduleConflict] = [:]
     private lazy var blockedNotice: UIView = CartOverlapViews.notice("cart.overlap.blocked".localized(), style: .blocked)
@@ -89,7 +95,13 @@ final class CartV2ViewController: BaseViewControler {
         back.tintColor = DS.Color.text
         back.accessibilityLabel = "products.cart.back".localized()
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)
-        let title = V2.label((cart.isEditMode ? "products.cart.editTitle" : "products.cart.title").localized(), size: 20, weight: .bold)
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.8
+        let title = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        title.axis = .vertical
+        title.spacing = 1
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        subtitleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         typeToggle.addTarget(self, action: #selector(typeChanged), for: .valueChanged)
         typeToggle.accessibilityLabel = "products.cart.type".localized()
         shareButton.setImage(DS.symbol("square.and.arrow.up", DS.Icon.md, weight: .semibold), for: .normal)
@@ -178,6 +190,7 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     private func render() {
+        renderTitle()
         typeToggle.select(isRent ? 0 : 1)
         typeToggle.isEnabled = !cart.isEditMode
         typeToggle.alpha = cart.isEditMode ? 0.6 : 1
@@ -252,15 +265,33 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(note)
         content.addArrangedSubview(UIView.spacer(height: 24))
 
-        collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
-        collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
-        ctaButton.setTitle((isRent ? "products.cart.create" : "products.cart.sellAndCollect").localized(), for: .normal)
+        if cart.isEditMode {
+            // #676 (board sua-don): nothing is collected on save; the bar shows the order total
+            collectTitle.text = "products.cart.total".localized()
+            collectAmount.text = MoneyFormatter.format(cart.totalAmount)
+        } else {
+            collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
+            collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
+        }
+        ctaButton.setTitle(CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
         // #518 OFF: "Tạo đơn" is greyed and disabled with the notice; the API refuses the order too
         let blocked = ctaState == .blocked
         blockedNotice.isHidden = !blocked
         ctaButton.isEnabled = !blocked
         ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
         ctaButton.alpha = cart.items.isEmpty && !blocked ? 0.5 : 1
+    }
+
+    /// "Giỏ hàng", or "Sửa đơn #482913" over "Heather Robinson · Đơn thuê" while editing an order (#676)
+    private func renderTitle() {
+        guard let header = EditOrderSheetLogic.header(cart) else {
+            titleLabel.text = "products.cart.title".localized()
+            subtitleLabel.isHidden = true
+            return
+        }
+        titleLabel.text = header.number.map { String(format: "products.cart.edit.title".localized(), $0) } ?? "products.cart.editTitle".localized()
+        subtitleLabel.text = header.subtitle
+        subtitleLabel.isHidden = false
     }
 
     private func band() -> UIView {
@@ -680,14 +711,82 @@ final class CartV2ViewController: BaseViewControler {
             return
         }
         switch CartV2Logic.ctaRoute(isEditMode: cart.isEditMode) {
-        case .preview:
-            let preview = PreviewViewController(cart: cart)
-            preview.hidesBottomBarWhenPushed = true
-            preview.delegate = self
-            navigationController?.pushViewController(preview, animated: true)
+        case .editSheet:
+            presentEditSheet()
         case .confirmSheet:
             presentConfirmSheet()
         }
+    }
+
+    // MARK: - Save an edited order (#676, board sua-don)
+
+    private func presentEditSheet() {
+        let sheet = EditOrderConfirmSheet(confirm: EditOrderSheetLogic.confirm(cart))
+        sheet.onConfirm = { [weak self, weak sheet] in self?.saveEditedOrder(sheet: sheet) }
+        present(sheet, animated: true)
+    }
+
+    /// The review screen's update request (`CartOrderUpdate`, same body as `CartViewModel.saveOrder`). The cart already
+    /// ran the same checks the review screen relied on: `validate()`, missing prices and the overlap block.
+    private func saveEditedOrder(sheet: EditOrderConfirmSheet?) {
+        guard let orderId = cart.orderId, editSubmission.begin() else { return }
+        sheet?.setBusy(true)
+        let number = EditOrderSheetLogic.number(cart)
+        CartOrderUpdate.send(cart) { [weak self] order, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let error {
+                    // The sheet and the cart stay; the next tap retries
+                    self.editSubmission.failed()
+                    sheet?.setBusy(false)
+                    UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    return
+                }
+                self.editSubmission.succeeded()
+                self.orderSaved(order, orderId: orderId, number: number, sheet: sheet)
+            }
+        }
+    }
+
+    /// Same clean-up as the review screen, then the order's detail (loaded fresh) with "Đã lưu đơn #…"
+    private func orderSaved(_ order: Order?, orderId: Int, number: String?, sheet: EditOrderConfirmSheet?) {
+        if let order {
+            OrderListViewModel.shared.updateOrder(order)
+        } else {
+            OrderListViewModel.shared.setNeedsRefresh()
+        }
+        OrdersChangeSignal.post() // #674
+        CartStore.shared.resetCart()
+        ProductAvailabilityCache.shared.clearAll()
+        HapticFeedback.success()
+        let open: () -> Void = { [weak self] in self?.openSavedOrder(order, orderId: orderId, number: number) }
+        if let sheet, sheet.presentingViewController != nil {
+            sheet.dismiss(animated: true, completion: open)
+        } else {
+            open()
+        }
+    }
+
+    /// The edited order's detail in place of the (now empty) cart; the detail loads the saved order itself
+    private func openSavedOrder(_ order: Order?, orderId: Int, number: String?) {
+        guard let navigationController else { return }
+        let detail: UIViewController
+        if OrderDetailRouter.usesNewDetail {
+            let controller = OrderDetailViewController(orderId: orderId)
+            controller.hidesBottomBarWhenPushed = true
+            detail = controller
+        } else if let order {
+            detail = OrderDetailRouter.detailController(for: order, delegate: nil)
+        } else {
+            navigationController.popToRootViewController(animated: true)
+            return
+        }
+        var stack = navigationController.viewControllers
+        if stack.last === self { stack.removeLast() }
+        stack.append(detail)
+        navigationController.setViewControllers(stack, animated: true)
+        let message = number.map { String(format: "products.cart.edit.saved".localized(), $0) } ?? "products.cart.edit.savedNoNumber".localized()
+        (detail as? BaseViewControler)?.showToast(message: message, duration: 2.5)
     }
 
     // MARK: - Create order sheets (#476)
@@ -804,20 +903,6 @@ extension CartV2ViewController: NumberPickerViewControllerDelegate {
             CartStore.shared.setDiscount(value)
         case .normal:
             CartStore.shared.setManualDepositAmount(value)
-        }
-    }
-}
-
-extension CartV2ViewController: PreviewViewControllerDelegate {
-    func didCompleteOrder(sender: PreviewViewController, updatedOrder: Order?) {
-        if let order = updatedOrder {
-            OrderListViewModel.shared.updateOrder(order)
-        } else {
-            OrderListViewModel.shared.setNeedsRefresh()
-        }
-        OrdersChangeSignal.post() // #674: order edited from the cart
-        DispatchQueue.main.async {
-            self.navigationController?.popToRootViewController(animated: true)
         }
     }
 }

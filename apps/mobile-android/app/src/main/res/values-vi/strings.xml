@@ -651,6 +651,24 @@
     <string name="v2_create_confirm_items">Món</string>
     <string name="v2_create_confirm_collect_deposit">Thu cọc ngay</string>
     <string name="v2_create_confirm_collect_sale">Thu ngay</string>
+    <!-- #676 sửa đơn từ giỏ mới (board sua-don) -->
+    <string name="v2_cart_edit_title_number">Sửa đơn #%1$s</string>
+    <string name="v2_cart_edit_rent_type">Đơn thuê</string>
+    <string name="v2_cart_edit_sale_type">Đơn bán</string>
+    <string name="v2_cart_edit_save">Lưu thay đổi</string>
+    <string name="v2_edit_confirm_title">Lưu thay đổi đơn #%1$s?</string>
+    <string name="v2_edit_confirm_title_no_number">Lưu thay đổi đơn này?</string>
+    <string name="v2_edit_confirm_dates">Ngày thuê</string>
+    <string name="v2_edit_confirm_rent_items">Đồ thuê</string>
+    <string name="v2_edit_confirm_sale_items">Đồ bán</string>
+    <plurals name="v2_edit_confirm_item_count">
+        <item quantity="other">%1$d món</item>
+    </plurals>
+    <string name="v2_edit_confirm_paid">Đã thu</string>
+    <string name="v2_edit_confirm_changed">Đã đổi</string>
+    <string name="v2_edit_confirm_keep_editing">Tiếp tục sửa</string>
+    <string name="v2_edit_saved">Đã lưu đơn #%1$s</string>
+    <string name="v2_edit_saved_no_number">Đã lưu đơn</string>
     <string name="v2_create_done_title">Đã tạo đơn #%1$s</string>
     <string name="v2_create_done_paid_deposit">Đã thu cọc %1$s</string>
     <string name="v2_create_done_paid_sale">Đã thu %1$s</string>

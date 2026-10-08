@@ -20,10 +20,12 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.domain.orders.CreateOrderSheet
+import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
@@ -150,6 +153,111 @@ internal fun OverlapNotice(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (title != null) Text(title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = textColor)
             Text(text, fontSize = DS.TextSize.Secondary, color = textColor)
+        }
+    }
+}
+
+/**
+ * "Lưu thay đổi đơn #482913?" (#676, board sua-don); iOS `EditOrderConfirmSheet`. Rows changed since the order was
+ * loaded carry a yellow "Đã đổi" tag; "Lưu thay đổi" saves, "Tiếp tục sửa" closes the sheet.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditOrderConfirmSheet(
+    confirm: EditOrderSheet.Confirm,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = { if (!busy) onDismiss() },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { !busy }),
+        shape = SheetShape,
+        containerColor = DS.Colors.Surface,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    confirm.number?.let { stringResource(R.string.v2_edit_confirm_title, it) }
+                        ?: stringResource(R.string.v2_edit_confirm_title_no_number),
+                    fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                )
+                Text(editOrderSubtitle(confirm.customer, confirm.isSale), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+            }
+            val cardShape = RoundedCornerShape(14.dp)
+            Column(Modifier.fillMaxWidth().clip(cardShape).border(1.dp, Color(0xFFE2E8F0), cardShape)) {
+                val rows = buildList {
+                    if (confirm.range != null && confirm.days != null) {
+                        add(
+                            Triple(
+                                stringResource(R.string.v2_edit_confirm_dates),
+                                confirm.range + " · " + pluralStringResource(R.plurals.v2_cart_days, confirm.days, confirm.days),
+                                confirm.datesChanged,
+                            ),
+                        )
+                    }
+                    add(
+                        Triple(
+                            stringResource(if (confirm.isSale) R.string.v2_edit_confirm_sale_items else R.string.v2_edit_confirm_rent_items),
+                            pluralStringResource(R.plurals.v2_edit_confirm_item_count, confirm.itemCount, confirm.itemCount),
+                            confirm.itemsChanged,
+                        ),
+                    )
+                    add(Triple(stringResource(R.string.v2_cart_total), formatMoneyVnd(confirm.total), false))
+                    confirm.paid?.let { add(Triple(stringResource(R.string.v2_edit_confirm_paid), formatMoneyVnd(it), false)) }
+                }
+                rows.forEachIndexed { index, (title, value, changed) ->
+                    if (index > 0) HorizontalDivider(color = DS.Colors.Divider)
+                    EditRow(title, value, changed)
+                }
+            }
+            AppPrimaryButton(
+                stringResource(R.string.v2_cart_edit_save),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                loading = busy,
+                onClick = onConfirm,
+            )
+            TextButton(
+                onClick = onDismiss,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+            ) {
+                Text(
+                    stringResource(R.string.v2_edit_confirm_keep_editing),
+                    fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
+                )
+            }
+        }
+    }
+}
+
+/** `Heather Robinson · Đơn thuê` under the edit title of the cart and of its sheet (#676) */
+@Composable
+internal fun editOrderSubtitle(customer: String, isSale: Boolean): String =
+    customer.ifBlank { "—" } + " · " + stringResource(if (isSale) R.string.v2_cart_edit_sale_type else R.string.v2_cart_edit_rent_type)
+
+@Composable
+private fun EditRow(title: String, value: String, changed: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(title, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+        Text(
+            value,
+            fontSize = DS.TextSize.Body, color = DS.Colors.Text, fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.End, modifier = Modifier.weight(1f),
+        )
+        if (changed) {
+            Text(
+                stringResource(R.string.v2_edit_confirm_changed),
+                fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF92400E),
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFFEF3C7)).padding(horizontal = 8.dp, vertical = 2.dp),
+            )
         }
     }
 }

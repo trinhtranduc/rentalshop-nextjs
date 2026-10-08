@@ -156,7 +156,6 @@ object Routes {
     // #642 "Lịch trống" month screen opened from the new product detail (the old availability route stays)
     const val ProductCalendar = "product-calendar/{productId}"
     const val CartV2 = "cart-v2"
-    const val CartV2Preview = "cart-v2-preview"
     // #387 redesigned customer detail (flag newCustomers)
     const val CustomerDetailV2 = "customer-v2/{customerId}"
     const val CustomerEditV2 = "customer-v2-edit/{customerId}"
@@ -521,25 +520,20 @@ fun AnyRentNavHost(
                         rootNavController.popBackStack(target, inclusive = false)
                     }
                 },
-                onPreview = { rootNavController.navigate(Routes.CartV2Preview) { launchSingleTop = true } },
                 // #476 "Xem đơn": the new order's detail in place of the (now empty) cart
                 onOpenOrder = { id ->
                     rootNavController.navigate(Routes.orderDetail(id)) {
                         popUpTo(Routes.CartV2) { inclusive = true }
                     }
                 },
-            )
-        }
-        composable(Routes.CartV2Preview) {
-            // Existing preview logic with the iOS review copy and confirm sheet (#448)
-            CartCheckoutScreen(
-                previewMode = true,
-                reviewV2 = true,
-                onBack = { rootNavController.popBackStack() },
-                onPreview = {},
-                onCreated = {
-                    rootNavController.popBackStack(Routes.CartV2, inclusive = true)
-                    MainTabRouter.openOrdersList()
+                // #676: the saved order's detail (loaded fresh) in place of the cart, with "Đã lưu đơn #…"
+                onOrderSaved = { id, number ->
+                    val message = number?.let { context.getString(R.string.v2_edit_saved, it) }
+                        ?: context.getString(R.string.v2_edit_saved_no_number)
+                    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+                    rootNavController.navigate(Routes.orderDetail(id)) {
+                        popUpTo(Routes.CartV2) { inclusive = true }
+                    }
                 },
             )
         }

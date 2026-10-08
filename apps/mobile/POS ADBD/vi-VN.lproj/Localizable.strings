@@ -1637,6 +1637,22 @@
 "products.cart.created.paidSale" = "Đã thu %@";
 "products.cart.created.newOrder" = "Tạo đơn mới";
 "products.cart.created.viewOrder" = "Xem đơn";
+"products.cart.edit.title" = "Sửa đơn #%@";
+"products.cart.edit.rentType" = "Đơn thuê";
+"products.cart.edit.saleType" = "Đơn bán";
+"products.cart.edit.save" = "Lưu thay đổi";
+"products.cart.edit.confirmTitle" = "Lưu thay đổi đơn #%@?";
+"products.cart.edit.confirmTitleNoNumber" = "Lưu thay đổi đơn này?";
+"products.cart.edit.dates" = "Ngày thuê";
+"products.cart.edit.rentItems" = "Đồ thuê";
+"products.cart.edit.saleItems" = "Đồ bán";
+"products.cart.edit.itemCount" = "%d món";
+"products.cart.edit.itemCount.one" = "%d món";
+"products.cart.edit.paid" = "Đã thu";
+"products.cart.edit.changed" = "Đã đổi";
+"products.cart.edit.keepEditing" = "Tiếp tục sửa";
+"products.cart.edit.saved" = "Đã lưu đơn #%@";
+"products.cart.edit.savedNoNumber" = "Đã lưu đơn";
 "products.cart.needPrice" = "Nhập giá cho %@";
 "products.cart.editPrice" = "Sửa giá cho đơn này";
 // MARK: - Orders tab (#371)
