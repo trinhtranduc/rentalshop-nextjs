@@ -2345,3 +2345,7 @@
 "share.thanks" = "Cảm ơn quý khách đã tin chọn %@";
 "share.madeWith" = "Tạo bằng AnyRent";
 "share.draft.action" = "Chia sẻ đơn nháp";
+
+/* #651 Home search field */
+"products.home.searchPlaceholder" = "Tìm tên, mã vạch hoặc chụp ảnh";
+"products.home.imageSearch" = "Tìm bằng hình";

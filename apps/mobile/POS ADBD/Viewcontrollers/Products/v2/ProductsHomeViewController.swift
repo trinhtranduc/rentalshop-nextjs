@@ -100,18 +100,19 @@ final class ProductsHomeViewController: BaseViewControler {
         searchBox.layer.cornerRadius = 12
         let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
         glass.tintColor = DS.Color.textMuted
-        searchField.placeholder = "products.search.placeholder".localized()
+        searchField.placeholder = "products.home.searchPlaceholder".localized()
         searchField.font = Utils.regularFont(size: DS.TextSize.body)
         searchField.clearButtonMode = .whileEditing
         searchField.returnKeyType = .search
         searchField.autocorrectionType = .no
-        searchField.accessibilityLabel = "products.search.placeholder".localized()
+        searchField.accessibilityLabel = "products.home.searchPlaceholder".localized()
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
-        // Board SP-dong: image search and barcode scan are icon buttons at the trailing end inside the field
-        let photoButton = iconButton("camera", size: DS.Icon.md, label: "AI Image Search".localized(), action: #selector(imageSearch))
+        // Board SP-dong: barcode scan is an icon inside the field; #651: image search is the solid blue camera button
+        // at the end so users see it (owner chose option B)
         let scanButton = iconButton("barcode.viewfinder", size: DS.Icon.md, label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
-        let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, photoButton, scanButton])
+        let photoButton = imageSearchButton()
+        let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, scanButton, photoButton])
         fieldRow.alignment = .center
         fieldRow.spacing = 0
         fieldRow.setCustomSpacing(8, after: glass)
@@ -122,7 +123,7 @@ final class ProductsHomeViewController: BaseViewControler {
         searchField.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
         fieldRow.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-2)
+            make.trailing.equalToSuperview().offset(-5)
             make.centerY.equalToSuperview()
         }
         searchBox.snp.makeConstraints { make in make.height.equalTo(48) }
@@ -196,6 +197,19 @@ final class ProductsHomeViewController: BaseViewControler {
             make.centerY.equalToSuperview()
         }
         updateCartBar()
+    }
+
+    /// #651: 38 pt solid accent square with a white camera; the touch area grows to 46 pt
+    private func imageSearchButton() -> UIButton {
+        let button = HitSlopButton(type: .system)
+        button.setImage(DS.symbol("camera.fill", DS.Icon.sm), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = DS.Color.primary
+        button.layer.cornerRadius = 10
+        button.accessibilityLabel = "products.home.imageSearch".localized()
+        button.addTarget(self, action: #selector(imageSearch), for: .touchUpInside)
+        button.snp.makeConstraints { make in make.width.height.equalTo(38) }
+        return button
     }
 
     private func iconButton(_ symbol: String, size: CGFloat, label: String, action: Selector) -> UIButton {
@@ -562,5 +576,12 @@ final class ProductRowV2Cell: UITableViewCell {
 
     @objc private func photoTapped() {
         onImage?()
+    }
+}
+
+/// A button whose touch area reaches 4 pt past its visible bounds (#651: 38 pt button, 46 pt target)
+private final class HitSlopButton: UIButton {
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        bounds.insetBy(dx: -4, dy: -4).contains(point)
     }
 }

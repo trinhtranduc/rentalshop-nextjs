@@ -2347,3 +2347,7 @@
 "share.thanks" = "Thank you for choosing %@";
 "share.madeWith" = "Made with AnyRent";
 "share.draft.action" = "Share draft order";
+
+/* #651 Home search field */
+"products.home.searchPlaceholder" = "Search name, barcode or take a photo";
+"products.home.imageSearch" = "Search by photo";
