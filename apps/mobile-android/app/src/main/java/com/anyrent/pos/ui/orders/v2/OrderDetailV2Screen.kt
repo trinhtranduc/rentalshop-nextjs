@@ -94,7 +94,8 @@ import com.anyrent.pos.ui.common.fileToNotesJpegBytes
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.domain.products.CartV2Logic
-import com.anyrent.pos.ui.home.v2.orderItemPricingText
+import com.anyrent.pos.ui.home.v2.orderItemPricingParts
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -926,42 +927,68 @@ internal fun MoneyRow(label: String, value: String, total: Boolean = false, valu
     }
 }
 
+/**
+ * Board D2 (owner 2026-10-09): the row reads like the cart line — name, "400.000đ / theo ngày × 3 ngày", the item
+ * note in a yellow box, then "SL N" and the line total (iOS `itemRow`)
+ */
 @Composable
 private fun ItemRow(item: OrderItem, orderType: String) {
+    val (amount, unit) = orderItemPricingParts(item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true))
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Thumb(item.imageUrl, 48.dp)
-        Column(Modifier.weight(1f)) {
+        Thumb(item.imageUrl, 56.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                "${item.productName ?: "—"} × ${item.quantity}",
-                fontSize = DS.TextSize.Body,
-                fontWeight = FontWeight.Medium,
+                item.productName ?: "—",
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.SemiBold,
                 color = DS.Colors.Text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
-            // Owner 2026-10-09: same wording as the cart link, so "theo lần" / "theo ngày × N ngày" shows here too
             Text(
-                orderItemPricingText(item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
-                fontSize = DS.TextSize.Secondary,
-                color = DS.Colors.TextMuted,
+                buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(amount) }
+                    append(" / $unit")
+                },
+                fontSize = DS.TextSize.Body,
+                color = Color(0xFF475569),
             )
-            CartV2Logic.noteText(item.note)?.let { note ->
+            CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(stringResource(R.string.v2_item_note_label) + ": ") }
-                        append(note)
-                    },
+                    stringResource(R.string.v2_detail_item_qty, item.quantity),
                     fontSize = DS.TextSize.Secondary,
-                    color = DS.Colors.Text,
-                    modifier = Modifier.padding(top = 2.dp),
+                    color = DS.Colors.TextMuted,
+                    modifier = Modifier.weight(1f),
                 )
+                Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
         }
-        Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
     }
     HorizontalDivider(color = DS.Colors.Divider)
+}
+
+/** Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name */
+@Composable
+private fun ItemNoteBox(note: String) {
+    val ink = Color(0xFF7A4A00)
+    val label = stringResource(R.string.v2_item_note_label)
+    Row(
+        Modifier
+            .padding(top = 2.dp)
+            .fillMaxWidth()
+            .background(Color(0xFFFFF7E6), RoundedCornerShape(10.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .semantics(mergeDescendants = true) { contentDescription = "$label: $note" },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Outlined.Edit, contentDescription = null, tint = ink, modifier = Modifier.padding(top = 2.dp).size(16.dp))
+        Text(note, fontSize = DS.TextSize.Secondary, color = ink)
+    }
 }
 
 @Composable

@@ -454,69 +454,95 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
+    /// Board D2 (owner 2026-10-09): the row reads like the cart line — name, "400.000đ / theo ngày × 3 ngày",
+    /// the item note in a yellow box, then "SL N" and the line total
     private func itemRow(_ item: OrderItem, orderType: OrderType) -> UIView {
         let image = UIImageView()
         image.contentMode = .scaleAspectFill
         image.clipsToBounds = true
-        image.layer.cornerRadius = 10
+        image.layer.cornerRadius = 12
         image.layer.borderWidth = 1
         image.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
         image.backgroundColor = UIColor(hexString: "E2E8F0")
         image.tintColor = DS.Color.textMuted
         image.kf.setImage(with: item.productImages?.first.flatMap { URL(string: $0) }, placeholder: UIImage(systemName: "tshirt"))
-        image.snp.makeConstraints { make in make.size.equalTo(48) }
+        image.snp.makeConstraints { make in make.size.equalTo(56) }
 
-        let title = NSMutableAttributedString(string: item.productName, attributes: [
-            NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.body),
+        let name = UILabel()
+        name.font = Utils.boldFont(size: DS.TextSize.name)
+        name.textColor = DS.Color.text
+        name.numberOfLines = 2
+        name.text = item.productName
+
+        let parts = CartV2Logic.orderItemPricingParts(unitPrice: item.unitPrice, pricingType: item.pricingType,
+                                                      rentalDays: item.rentalDays, orderType: orderType)
+        let pricingText = NSMutableAttributedString(string: parts.amount, attributes: [
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: DS.Color.text,
         ])
-        title.append(NSAttributedString(string: " × \(item.quantity)", attributes: [
-            NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.body),
-            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+        pricingText.append(NSAttributedString(string: " / " + parts.unit, attributes: [
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
+            NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
         ]))
-        let name = UILabel()
-        name.attributedText = title
-        name.numberOfLines = 2
         let calc = UILabel()
-        calc.font = Utils.regularFont(size: DS.TextSize.secondary)
-        calc.textColor = DS.Color.textMuted
-        // Owner 2026-10-09: same wording as the cart link, so "theo lần" / "theo ngày × N ngày" shows here too
-        calc.text = CartV2Logic.orderItemPricing(unitPrice: item.unitPrice, pricingType: item.pricingType,
-                                                 rentalDays: item.rentalDays, orderType: orderType)
+        calc.attributedText = pricingText
         calc.numberOfLines = 0
         calc.accessibilityIdentifier = "orderDetail.item.pricing"
+
         let texts = UIStackView(arrangedSubviews: [name, calc])
-        if let note = CartV2Logic.noteText(item.notes) {
-            let noteLabel = UILabel()
-            noteLabel.numberOfLines = 0
-            let text = NSMutableAttributedString(string: "cart.itemNote.label".localized() + ": ", attributes: [
-                NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary),
-                NSAttributedString.Key.foregroundColor: DS.Color.text,
-            ])
-            text.append(NSAttributedString(string: note, attributes: [
-                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
-                NSAttributedString.Key.foregroundColor: DS.Color.text,
-            ]))
-            noteLabel.attributedText = text
-            noteLabel.accessibilityIdentifier = "orderDetail.item.note"
-            texts.addArrangedSubview(noteLabel)
-        }
         texts.axis = .vertical
-        texts.spacing = DS.Gap.lineTight
+        texts.spacing = 4
+        if let note = CartV2Logic.noteText(item.notes) {
+            texts.addArrangedSubview(noteBox(note))
+        }
+
+        let qty = UILabel()
+        qty.font = Utils.regularFont(size: DS.TextSize.secondary)
+        qty.textColor = DS.Color.textMuted
+        qty.text = "Qty".localized() + " \(item.quantity)"
         let total = UILabel()
         total.font = Utils.boldFont(size: DS.TextSize.name)
         total.textColor = DS.Color.text
         total.text = MoneyFormatter.format(item.totalPrice)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
-        total.setContentHuggingPriority(.required, for: .horizontal)
-        let row = UIStackView(arrangedSubviews: [image, texts, total])
+        let bottom = UIStackView(arrangedSubviews: [qty, UIView(), total])
+        bottom.axis = .horizontal
+        bottom.alignment = .firstBaseline
+        texts.addArrangedSubview(bottom)
+        texts.setCustomSpacing(6, after: texts.arrangedSubviews[texts.arrangedSubviews.count - 2])
+
+        let row = UIStackView(arrangedSubviews: [image, texts])
         row.axis = .horizontal
-        row.alignment = .center
+        row.alignment = .top
         row.spacing = DS.Spacing.md
         row.isLayoutMarginsRelativeArrangement = true
-        row.layoutMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(64) }
+        row.layoutMargins = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
         return padded(row, top: 0, bottom: 0, divider: true)
+    }
+
+    /// Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name
+    private func noteBox(_ note: String) -> UIView {
+        let ink = UIColor(hexString: "7A4A00")
+        let icon = UIImageView(image: DS.symbol("pencil", 14, weight: .semibold))
+        icon.tintColor = ink
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+        let label = UILabel()
+        label.font = Utils.regularFont(size: DS.TextSize.secondary)
+        label.textColor = ink
+        label.numberOfLines = 0
+        label.text = note
+        label.accessibilityLabel = "cart.itemNote.label".localized() + ": " + note
+        label.accessibilityIdentifier = "orderDetail.item.note"
+        let line = UIStackView(arrangedSubviews: [icon, label])
+        line.axis = .horizontal
+        line.alignment = .firstBaseline
+        line.spacing = 8
+        let box = UIView()
+        box.backgroundColor = UIColor(hexString: "FFF7E6")
+        box.layer.cornerRadius = 10
+        box.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)) }
+        return box
     }
 
     private func moneyRows(_ detail: OrderDetail) -> UIView {

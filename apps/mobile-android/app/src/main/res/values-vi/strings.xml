@@ -1220,6 +1220,7 @@
     <string name="v2_cart_overlap_hint">Xem các đơn đang giữ món</string>
     <string name="v2_item_note_add">+ Ghi chú</string>
     <string name="v2_item_note_label">Ghi chú</string>
+    <string name="v2_detail_item_qty">SL %1$d</string>
     <string name="v2_item_note_edit">Sửa</string>
     <string name="v2_item_note_title">Ghi chú món</string>
     <string name="v2_item_note_placeholder">Ví dụ: sửa eo 2cm, giao kèm voan</string>

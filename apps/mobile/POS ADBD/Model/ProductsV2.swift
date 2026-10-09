@@ -518,8 +518,14 @@ enum CartV2Logic {
 
     /// Order detail item line, same wording as the cart link: "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày"
     static func orderItemPricing(unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> String {
+        let parts = orderItemPricingParts(unitPrice: unitPrice, pricingType: pricingType, rentalDays: rentalDays, orderType: orderType)
+        return parts.amount + " / " + parts.unit
+    }
+
+    /// The same line in two parts, for the bold price on order detail (board D2)
+    static func orderItemPricingParts(unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> (amount: String, unit: String) {
         let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
-        return money(unitPrice) + " / " + pricingUnit(type: type, days: rentalDays ?? 1, orderType: orderType)
+        return (money(unitPrice), pricingUnit(type: type, days: rentalDays ?? 1, orderType: orderType))
     }
 
     /// "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise
