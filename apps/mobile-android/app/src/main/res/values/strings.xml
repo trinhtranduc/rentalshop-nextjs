@@ -1241,6 +1241,7 @@
     <string name="v2_cart_overlap_hint">See the orders holding it</string>
     <string name="v2_item_note_add">+ Note</string>
     <string name="v2_item_note_label">Note</string>
+    <string name="v2_detail_item_qty">Qty %1$d</string>
     <string name="v2_item_note_edit">Edit</string>
     <string name="v2_item_note_title">Item note</string>
     <string name="v2_item_note_placeholder">e.g. take in the waist 2cm, add the veil</string>
