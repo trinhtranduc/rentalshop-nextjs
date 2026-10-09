@@ -271,7 +271,8 @@
       "collectedTotal": "Thực thu",
       "atPickup": "Sẽ thu khi khách lấy đồ",
       "overduePickup": "Quá ngày lấy, chưa thu",
-      "orders": "{count} đơn"
+      "orders": "{count} đơn",
+      "collateralNet": "Thế chân nhận − trả"
     },
     "orders": {
       "title": "Đơn cần làm hôm nay",
@@ -327,9 +328,29 @@
       "hatchNote": "Thanh gạch chéo: sắp tới, chưa tính vào số trên.",
       "rule": {
         "orderValue": "Tổng tiền các đơn tạo trong kỳ, theo ngày tạo. Không tính đơn đã huỷ.",
-        "collected": "Tiền thật đã thu trong kỳ: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn.",
+        "collected": "Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.",
         "outstanding": "Phần chưa thu của các đơn tạo trong kỳ: đơn thuê đang đặt là tổng trừ cọc, đơn bán chưa hoàn tất là cả tổng.",
         "collateral": "Thế chân nhận khi giao đồ trừ thế chân trả lại khi nhận đồ, trong kỳ."
+      }
+    },
+    "related": {
+      "title": "Đơn liên quan",
+      "total": "Tổng các dòng",
+      "totalHint": "Bằng số trên thẻ",
+      "empty": "Không có đơn nào trong kỳ.",
+      "failed": "Không tải được danh sách.",
+      "back": "Tổng quan",
+      "order": "Đơn",
+      "customer": "Khách",
+      "item": "Khoản",
+      "amount": "Số tiền",
+      "note": {
+        "created": "Đơn tạo trong kỳ",
+        "cancelled": "Đã huỷ, không tính",
+        "event": "",
+        "owes": "Sẽ thu khi khách lấy đồ",
+        "collateralIn": "Nhận thế chân khi giao",
+        "collateralOut": "Trả thế chân khi nhận đồ"
       }
     }
   }

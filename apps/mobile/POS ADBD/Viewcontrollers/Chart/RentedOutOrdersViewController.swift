@@ -397,3 +397,157 @@ extension RentedOutOrdersViewController: UITableViewDataSource, UITableViewDeleg
         }
     }
 }
+
+// MARK: - #708 Xem các đơn liên quan
+
+/// The orders behind an Overview tile, each with the money it adds to the tile, and their total at the bottom
+/// (it equals the tile). Rows come from GET /api/analytics/income/orders for the tile's buckets.
+final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    private static let pageSize = 200
+    private static let maxPages = 25
+
+    private let kind: OverviewRelatedKind
+    private let titleText: String
+    private let periodText: String
+    private let startDate: Date?
+    private let endDate: Date?
+    private var rows: [OverviewRelatedRow] = []
+    private let table = UITableView(frame: .zero, style: .plain)
+    private let totalLabel = UILabel()
+    private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
+    private let emptyLabel = UILabel()
+
+    init(kind: OverviewRelatedKind, title: String, period: String, startDate: Date?, endDate: Date?) {
+        self.kind = kind
+        self.titleText = title
+        self.periodText = period
+        self.startDate = startDate
+        self.endDate = endDate
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+        let back = CustomersV2UI.iconButton("chevron.left", label: "Back".localized(), size: DS.Icon.lg)
+        back.addTarget(self, action: #selector(close), for: .touchUpInside)
+        let title = V2.label(titleText, size: DS.TextSize.name, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let period = V2.label(periodText, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let titles = UIStackView(arrangedSubviews: [title, period])
+        titles.axis = .vertical
+        let header = UIStackView(arrangedSubviews: [back, titles])
+        header.alignment = .center
+        header.spacing = 4
+
+        totalLabel.font = Utils.boldFont(size: DS.TextSize.body)
+        totalLabel.textColor = DS.Color.text
+        totalLabel.numberOfLines = 0
+        totalLabel.accessibilityIdentifier = "related.total"
+        let footer = UIView()
+        footer.backgroundColor = V2.sectionFill
+        footer.addSubview(totalLabel)
+        totalLabel.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)) }
+
+        table.dataSource = self
+        table.delegate = self
+        table.rowHeight = UITableViewAutomaticDimension
+        table.estimatedRowHeight = 64
+        table.tableFooterView = UIView()
+        emptyLabel.text = "overview.related.empty".localized()
+        emptyLabel.textColor = DS.Color.textMuted
+        emptyLabel.textAlignment = .center
+        emptyLabel.isHidden = true
+
+        [header, table, footer, emptyLabel, spinner].forEach(view.addSubview)
+        header.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(8)
+        }
+        footer.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        table.snp.makeConstraints { make in
+            make.top.equalTo(header.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(footer.snp.top)
+        }
+        emptyLabel.snp.makeConstraints { make in make.center.equalTo(table) }
+        spinner.snp.makeConstraints { make in make.center.equalTo(table) }
+        load()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    @objc private func close() { navigationController?.popViewController(animated: true) }
+
+    private func load() {
+        spinner.startAnimating()
+        var collected: [OverviewRelatedRow] = []
+        let group = DispatchGroup()
+        for bucket in kind.buckets {
+            group.enter()
+            loadBucket(bucket, offset: 0, page: 1) { rows in
+                collected += rows
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) { [weak self] in
+            guard let self else { return }
+            self.spinner.stopAnimating()
+            self.rows = collected
+            self.emptyLabel.isHidden = !collected.isEmpty
+            let total = MoneyFormatter.format(OverviewDashLogic.relatedTotal(collected))
+            self.totalLabel.text = "\("overview.related.total".localized()) · \(collected.count): \(total)"
+            self.table.reloadData()
+        }
+    }
+
+    /// Every page of one bucket (the list total must equal the tile, so nothing is left unloaded)
+    private func loadBucket(_ bucket: String, offset: Int, page: Int, done: @escaping ([OverviewRelatedRow]) -> Void) {
+        AnalyticsAPIService.shared.loadIncomeOrders(startDate: startDate, endDate: endDate, status: bucket, plan: false,
+                                                    limit: Self.pageSize, offset: offset) { [weak self] data, _ in
+            guard let self else { return done([]) }
+            let items = data?.days?.flatMap { $0.orders ?? [] } ?? []
+            let rows = OverviewDashLogic.relatedRows(self.kind, bucket: bucket, items: items)
+            if data?.pagination?.hasMore == true, !items.isEmpty, page < Self.maxPages {
+                self.loadBucket(bucket, offset: offset + Self.pageSize, page: page + 1) { more in done(rows + more) }
+            } else {
+                done(rows)
+            }
+        }
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { rows.count }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "related") ?? UITableViewCell(style: .subtitle, reuseIdentifier: "related")
+        let row = rows[indexPath.row]
+        cell.textLabel?.text = [row.orderNumber, row.customer].filter { !$0.isEmpty }.joined(separator: " · ")
+        cell.textLabel?.font = Utils.mediumFont(size: DS.TextSize.body)
+        cell.detailTextLabel?.text = row.detail
+        cell.detailTextLabel?.textColor = DS.Color.textMuted
+        let amount = UILabel()
+        amount.font = Utils.boldFont(size: DS.TextSize.body)
+        amount.textColor = row.amount < 0 ? V2.danger : DS.Color.text
+        amount.text = (row.amount > 0 && kind != .orderValue && kind != .outstanding ? "+" : "") + MoneyFormatter.format(row.amount)
+        amount.sizeToFit()
+        cell.accessoryView = amount
+        cell.accessibilityLabel = "\(row.orderNumber), \(row.detail), \(amount.text ?? "")"
+        cell.accessibilityIdentifier = "related.row"
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let detail = OrderDetailViewController(orderId: rows[indexPath.row].orderId)
+        detail.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(detail, animated: true)
+    }
+}

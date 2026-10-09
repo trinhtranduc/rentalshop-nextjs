@@ -106,6 +106,8 @@ export interface PeriodReportLike {
     collected?: Num;
     collectedBreakdown?: { deposits?: Num; pickupAndSale?: Num; fees?: Num; refunds?: Num } | null;
     collateralFlow?: { received?: Num; returned?: Num } | null;
+    /** #710: money held from the period, collateral included */
+    cashCollected?: Num;
     orderValueByType?: { rent?: { amount?: Num; orders?: Num } | null; sale?: { amount?: Num; orders?: Num } | null } | null;
   } | null;
   growth?: {
@@ -197,7 +199,8 @@ export function buildKpis(report: PeriodReportLike | null | undefined): Overview
 }
 
 export interface MoneyBreakdown {
-  collected: { deposits: number; pickupAndSale: number; fees: number; refunds: number; total: number } | null;
+  /** #708: `collateral` = received − returned, a step of Thực thu; `total` = cashCollected when the API sends it */
+  collected: { deposits: number; pickupAndSale: number; fees: number; refunds: number; collateral: number | null; total: number } | null;
   outstanding: {
     atPickup: { amount: number; orders: number };
     overduePickup: { amount: number; orders: number };
@@ -219,7 +222,11 @@ export function buildMoney(report: PeriodReportLike | null | undefined): MoneyBr
           pickupAndSale: amt(cb.pickupAndSale),
           fees: amt(cb.fees),
           refunds: amt(cb.refunds),
-          total: num(revenue?.collected) ?? amt(cb.deposits) + amt(cb.pickupAndSale) + amt(cb.fees) - amt(cb.refunds),
+          collateral: num(revenue?.cashCollected) != null && flow ? amt(flow.received) - amt(flow.returned) : null,
+          total:
+            num(revenue?.cashCollected) ??
+            num(revenue?.collected) ??
+            amt(cb.deposits) + amt(cb.pickupAndSale) + amt(cb.fees) - amt(cb.refunds),
         }
       : null,
     outstanding: ob
@@ -518,7 +525,8 @@ export function buildTiles(report: PeriodReportLike | null | undefined, cash?: C
   const held = cash?.depositsHeld?.orders;
   return [
     { kind: 'orderValue', value: kpis.orderValue, signed: false, chip: growthChip(kpis.orderValueGrowth) },
-    { kind: 'collected', value: kpis.collected, signed: false, chip: growthChip(kpis.collectedGrowth) },
+    // #708: Thực thu is the money held, collateral included (cashCollected); older APIs keep collected
+    { kind: 'collected', value: num(report?.revenue?.cashCollected) ?? kpis.collected, signed: false, chip: growthChip(kpis.collectedGrowth) },
     { kind: 'outstanding', value: kpis.outstanding, signed: false, chip: outstandingChip },
     {
       kind: 'collateral',
@@ -549,7 +557,7 @@ export function sparkPoints(values: number[], width = 96, height = 28): string |
     .join(' ');
 }
 
-export type WaterfallKey = 'deposits' | 'pickupAndSale' | 'fees' | 'refunds' | 'total';
+export type WaterfallKey = 'deposits' | 'pickupAndSale' | 'fees' | 'refunds' | 'collateral' | 'total';
 
 export interface WaterfallRow {
   key: WaterfallKey;
@@ -570,6 +578,7 @@ export function waterfallRows(collected: MoneyBreakdown['collected']): Waterfall
     { key: 'pickupAndSale', amount: collected.pickupAndSale },
     { key: 'fees', amount: collected.fees },
     { key: 'refunds', amount: -collected.refunds },
+    ...(collected.collateral != null ? [{ key: 'collateral' as WaterfallKey, amount: collected.collateral }] : []),
   ];
   const spans: Array<{ key: WaterfallKey; amount: number; from: number; to: number; total: boolean }> = [];
   let run = 0;
@@ -690,3 +699,82 @@ export const TOP_ALL_LIMIT = 50;
 export function parseTop(value: string | null | undefined): TopKind | null {
   return value === 'products' || value === 'customers' ? value : null;
 }
+
+// ----------------------------------------------------------------------------
+// #708 Xem các đơn liên quan: the rows behind a tile (GET /api/analytics/income/orders), Σ amount = the tile
+// ----------------------------------------------------------------------------
+
+export type RelatedKind = 'orderValue' | 'collected' | 'outstanding' | 'collateral';
+export const RELATED_KINDS: RelatedKind[] = ['orderValue', 'collected', 'outstanding', 'collateral'];
+
+export function parseRelated(value: string | null | undefined): RelatedKind | null {
+  return RELATED_KINDS.find((k) => k === value) ?? null;
+}
+
+/** income/orders buckets each list loads */
+export function relatedBuckets(kind: RelatedKind): string[] {
+  if (kind === 'collected') return ['all'];
+  if (kind === 'collateral') return ['pickup', 'return'];
+  return ['new'];
+}
+
+export interface IncomeOrderLike {
+  id?: number | null;
+  orderNumber?: string | null;
+  orderType?: string | null;
+  status?: string | null;
+  revenue?: Num;
+  description?: string | null;
+  customerName?: string | null;
+  totalAmount?: Num;
+  depositAmount?: Num;
+  securityDeposit?: Num;
+}
+
+export type RelatedNote = 'created' | 'cancelled' | 'event' | 'owes' | 'collateralIn' | 'collateralOut';
+
+export interface RelatedRow {
+  id: number;
+  orderNumber: string;
+  customer: string;
+  note: RelatedNote;
+  description: string;
+  amount: number;
+}
+
+/** What one income/orders row adds to the tile (same rules as the API, see BF-STAT / BF-OUT) */
+export function relatedRows(kind: RelatedKind, bucket: string, items: IncomeOrderLike[]): RelatedRow[] {
+  const rows: RelatedRow[] = [];
+  for (const it of items) {
+    if (it.id == null) continue;
+    const total = num(it.totalAmount) ?? 0;
+    const cancelled = (it.status || '').toUpperCase() === 'CANCELLED';
+    let amount = 0;
+    let note: RelatedNote = 'event';
+    if (kind === 'orderValue') {
+      amount = cancelled ? 0 : total;
+      note = cancelled ? 'cancelled' : 'created';
+    } else if (kind === 'collected') {
+      amount = num(it.revenue) ?? 0;
+    } else if (kind === 'outstanding') {
+      const type = (it.orderType || '').toUpperCase();
+      const status = (it.status || '').toUpperCase();
+      if (type === 'RENT' && status === 'RESERVED') amount = Math.max(0, total - (num(it.depositAmount) ?? 0));
+      else if (type === 'SALE' && status !== 'COMPLETED' && status !== 'CANCELLED') amount = total;
+      if (amount <= 0) continue;
+      note = 'owes';
+    } else {
+      const deposit = num(it.securityDeposit) ?? 0;
+      if (!deposit) continue;
+      amount = bucket === 'pickup' ? deposit : -deposit;
+      note = bucket === 'pickup' ? 'collateralIn' : 'collateralOut';
+    }
+    rows.push({ id: it.id, orderNumber: it.orderNumber || `#${it.id}`, customer: it.customerName || '', note, description: it.description || '', amount });
+  }
+  return rows;
+}
+
+export function relatedTotal(rows: RelatedRow[]): number {
+  return rows.reduce((sum, r) => sum + r.amount, 0);
+}
+

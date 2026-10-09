@@ -178,6 +178,27 @@ final class OverviewDashLogicTests: XCTestCase {
         }
     }
 
+    // MARK: - Related orders
+
+    /// Còn phải thu lists what the tile counts: rent not picked up owes total − deposit, a sale not completed owes its
+    /// total, nothing else (the old not-picked-up list showed 3 orders under "6 đơn chờ lấy")
+    func testOutstandingRelatedRowsFollowTheTileRule() throws {
+        let json = """
+        [{"id":1,"orderNumber":"100001","orderType":"RENT","status":"RESERVED","totalAmount":500,"depositAmount":200},
+         {"id":2,"orderNumber":"100002","orderType":"RENT","status":"RESERVED","totalAmount":300,"depositAmount":300},
+         {"id":3,"orderNumber":"100003","orderType":"RENT","status":"PICKUPED","totalAmount":900,"depositAmount":0},
+         {"id":4,"orderNumber":"100004","orderType":"SALE","status":"RESERVED","totalAmount":250,"depositAmount":0},
+         {"id":5,"orderNumber":"100005","orderType":"SALE","status":"COMPLETED","totalAmount":400,"depositAmount":0},
+         {"id":6,"orderNumber":"100006","orderType":"RENT","status":"CANCELLED","totalAmount":700,"depositAmount":0}]
+        """
+        let items = try JSONDecoder().decode([DailyIncomeOrder].self, from: Data(json.utf8))
+        let rows = OverviewDashLogic.relatedRows(.outstanding, bucket: "new", items: items)
+        XCTAssertEqual(rows.map(\.orderNumber), ["100001", "100004"])
+        XCTAssertEqual(rows.map(\.amount), [300, 250])
+        XCTAssertEqual(OverviewDashLogic.relatedTotal(rows), 550)
+        XCTAssertEqual(OverviewRelatedKind.outstanding.buckets, ["new"])
+    }
+
     func testGrowthRule() {
         XCTAssertEqual(OverviewDashLogic.growth(nil), .none)
         XCTAssertEqual(OverviewDashLogic.growth(0), .none)

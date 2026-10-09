@@ -2417,3 +2417,15 @@
 "order.detail.navTitle" = "Order %@";
 "order.detail.goods" = "Goods";
 "order.detail.deposit" = "Deposit";
+"overview.related.created" = "Created in the period";
+"overview.related.cancelled" = "Cancelled, not counted";
+"overview.related.collateralIn" = "Collateral received at hand-over";
+"overview.related.collateralOut" = "Collateral returned";
+"overview.related.total" = "Total of the rows";
+"overview.related.empty" = "No orders in this period.";
+"overview.dash.money.collateralNet" = "Collateral in − out";
+"overview.dash.rule.orderValue" = "Total of the orders created in the period, by creation day. Cancelled orders are not counted.";
+"overview.dash.rule.collected" = "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.";
+"overview.dash.rule.outstanding" = "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.";
+"overview.dash.rule.collateral" = "Collateral received at hand-over minus collateral handed back at return, in the period.";
+"overview.related.owes" = "To collect at pickup";

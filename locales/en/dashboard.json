@@ -271,7 +271,8 @@
       "collectedTotal": "Collected",
       "atPickup": "Due when the customer picks up",
       "overduePickup": "Past pickup date, unpaid",
-      "orders": "{count} orders"
+      "orders": "{count} orders",
+      "collateralNet": "Collateral in − out"
     },
     "orders": {
       "title": "Orders to handle today",
@@ -327,9 +328,29 @@
       "hatchNote": "Hatched bars: upcoming, not in the numbers above.",
       "rule": {
         "orderValue": "Total of the orders created in the period, by creation day. Cancelled orders are not counted.",
-        "collected": "Money actually collected in the period: deposits, rent on hand-over, sales, extra fees, minus refunds.",
+        "collected": "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.",
         "outstanding": "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.",
         "collateral": "Collateral received at hand-over minus collateral handed back at return, in the period."
+      }
+    },
+    "related": {
+      "title": "Related orders",
+      "total": "Total of the rows",
+      "totalHint": "Equals the tile",
+      "empty": "No orders in this period.",
+      "failed": "Could not load the list.",
+      "back": "Overview",
+      "order": "Order",
+      "customer": "Customer",
+      "item": "Item",
+      "amount": "Amount",
+      "note": {
+        "created": "Created in the period",
+        "cancelled": "Cancelled, not counted",
+        "event": "",
+        "owes": "To collect at pickup",
+        "collateralIn": "Collateral received at hand-over",
+        "collateralOut": "Collateral returned"
       }
     }
   }

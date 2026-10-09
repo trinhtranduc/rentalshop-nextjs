@@ -565,7 +565,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(4)
         let tiles = ["Giá trị đơn mới", "Thực thu", "Còn phải thu", "Thế chân"]
-        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phí hư hỏng, trễ", "Hoàn đơn huỷ",
+        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phí hư hỏng, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
                         "Thực thu", "Sẽ thu khi khách lấy đồ", "Quá ngày lấy, chưa thu", "Đã nhận", "Đã trả lại khách",
                         "Sẽ nhận khi giao", "Đang giữ, sẽ trả lại"]
         for (index, title) in tiles.enumerated() {
@@ -584,7 +584,23 @@ final class AnyRentE2ETests: XCTestCase {
                 }
             }
             e2e.shot("73-overview-sheet-\(index)")
-            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            // #708: the related orders, with their total at the bottom (it must equal the tile)
+            if link.exists {
+                link.tap()
+                let total = app.staticTexts["related.total"]
+                if total.waitForExistence(timeout: 20) {
+                    let deadline = Date().addingTimeInterval(30)
+                    while total.label.isEmpty && Date() < deadline { sleep(1) }
+                    e2e.note("RELATED \(title) | \(total.label)")
+                } else {
+                    e2e.soft(false, "\(title) related list total")
+                }
+                e2e.shot("74-overview-related-\(index)")
+                e2e.goBackOnce()
+                sleep(2)
+            } else {
+                e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            }
             sleep(1)
         }
     }

@@ -409,6 +409,8 @@ struct OverviewReport: Decodable, Equatable {
 
     /// Money collected in the period without collateral (`revenue.collected`, #484), else `totalActualRevenue`, else `totalRevenue`
     let netRevenue: Double
+    /// #708/#710: money held from the period, collateral included (`revenue.cashCollected`); nil on an older API
+    let cashCollected: Double?
     /// Total of the orders created in the period, cancelled left out (`revenue.totalOrderValue`, #484); nil on an older API
     let totalOrderValue: Double?
     /// Part of those orders not collected yet (`revenue.outstanding`, #484); nil on an older API
@@ -434,7 +436,7 @@ struct OverviewReport: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey { case revenue, growth, operational, series, topProducts, topCustomers }
     private enum RevenueKeys: String, CodingKey { case collected, totalActualRevenue, totalRevenue, totalOrderValue, outstanding,
-                                                         collectedBreakdown, collateralFlow, outstandingBreakdown, orderValueByType }
+                                                         collectedBreakdown, collateralFlow, outstandingBreakdown, orderValueByType, cashCollected }
     private enum GrowthKeys: String, CodingKey { case collected, revenue, orderValue }
     private enum ChangeKeys: String, CodingKey { case growth }
     private enum OperationalKeys: String, CodingKey { case orderCounts }
@@ -444,7 +446,8 @@ struct OverviewReport: Decodable, Equatable {
          totalOrderValue: Double? = nil, outstanding: Double? = nil,
          collectedBreakdown: CollectedBreakdown? = nil, orderValueGrowth: Double? = nil,
          collateralFlow: CollateralFlow? = nil, outstandingBreakdown: OutstandingBreakdown? = nil,
-         orderValueByType: OrderValueByType? = nil, topCustomers: [TopCustomer] = []) {
+         orderValueByType: OrderValueByType? = nil, topCustomers: [TopCustomer] = [], cashCollected: Double? = nil) {
+        self.cashCollected = cashCollected
         self.topCustomers = topCustomers
         self.orderValueByType = orderValueByType
         self.orderValueGrowth = orderValueGrowth
@@ -465,6 +468,7 @@ struct OverviewReport: Decodable, Equatable {
         if let revenue = try? c.nestedContainer(keyedBy: RevenueKeys.self, forKey: .revenue) {
             let amount: (RevenueKeys) -> Double? = { key in (try? revenue.decodeIfPresent(Double.self, forKey: key)) ?? nil }
             netRevenue = amount(.collected) ?? amount(.totalActualRevenue) ?? amount(.totalRevenue) ?? 0
+            cashCollected = amount(.cashCollected)
             totalOrderValue = (try? revenue.decodeIfPresent(Double.self, forKey: .totalOrderValue)) ?? nil
             outstanding = (try? revenue.decodeIfPresent(Double.self, forKey: .outstanding)) ?? nil
             collectedBreakdown = (try? revenue.decodeIfPresent(CollectedBreakdown.self, forKey: .collectedBreakdown)) ?? nil
@@ -473,6 +477,7 @@ struct OverviewReport: Decodable, Equatable {
             orderValueByType = (try? revenue.decodeIfPresent(OrderValueByType.self, forKey: .orderValueByType)) ?? nil
         } else {
             orderValueByType = nil
+            cashCollected = nil
             netRevenue = 0
             totalOrderValue = nil
             outstanding = nil

@@ -316,23 +316,23 @@ final class OverviewV2ViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
-    /// "Xem các đơn liên quan": orders created in the period, "Chưa lấy đồ", or the rentals out now
+    /// "Xem các đơn liên quan" (#708): the rows behind the tile, each with the money it adds, total = the tile.
+    /// Còn phải thu lists the period's orders that still owe money, with the same rule as the tile (the not-picked-up
+    /// list counted differently: 6 on the tile, 3 in the list).
     private func openOrders(for kind: OverviewTileKind) {
+        let start = OverviewLogic.date(of: range.start)
+        let end = OverviewLogic.date(of: range.end)
+        let period = OverviewLogic.longRange(range)
         let controller: UIViewController
         switch kind {
-        case .orderValue, .collected:
-            let title = "overview.v2.newOrders".localized()
-            controller = OverviewRankingOrdersViewController(
-                filter: .snapshot(.newOrders, title: title),
-                startDate: OverviewLogic.date(of: range.start),
-                endDate: OverviewLogic.date(of: range.end),
-                periodSubtitle: OverviewLogic.longRange(range))
-        case .outstanding:
-            // The same orders as the tile: created in the period and still owing money
-            controller = RentedOutOrdersViewController(mode: .notPickedUp,
-                                                       outstandingPeriod: (start: OverviewLogic.date(of: range.start), end: OverviewLogic.date(of: range.end)))
+        case .orderValue:
+            controller = OverviewRelatedOrdersViewController(kind: .orderValue, title: kind.title, period: period, startDate: start, endDate: end)
+        case .collected:
+            controller = OverviewRelatedOrdersViewController(kind: .collected, title: kind.title, period: period, startDate: start, endDate: end)
         case .collateral:
-            controller = RentedOutOrdersViewController(startsAtLate: false)
+            controller = OverviewRelatedOrdersViewController(kind: .collateral, title: kind.title, period: period, startDate: start, endDate: end)
+        case .outstanding:
+            controller = OverviewRelatedOrdersViewController(kind: .outstanding, title: kind.title, period: period, startDate: start, endDate: end)
         }
         controller.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(controller, animated: true)
