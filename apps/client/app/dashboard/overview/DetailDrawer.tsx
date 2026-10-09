@@ -32,6 +32,7 @@ const WATERFALL_LABEL: Record<WaterfallKey, string> = {
   pickupAndSale: 'home.money.pickupAndSale',
   fees: 'home.money.fees',
   refunds: 'home.money.refunds',
+  collateral: 'home.money.collateralNet',
   total: 'home.money.collectedTotal',
 };
 

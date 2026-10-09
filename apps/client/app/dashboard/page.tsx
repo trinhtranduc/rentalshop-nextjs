@@ -174,12 +174,13 @@ export default function DashboardPage() {
     [router, searchParams],
   );
   const periodLabel = period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`);
-  const created = `created=custom&from=${range.startDate}&to=${range.endDate}`;
+  // #708: each tile lists the rows behind its number, with their total (= the tile)
+  const related = (kind: DetailKind) => `/dashboard/related?kind=${kind}&from=${range.startDate}&to=${range.endDate}`;
   const ordersHref: Record<DetailKind, string> = {
-    orderValue: `/orders?${created}`,
-    collected: `/orders?${created}`,
-    outstanding: `/orders?status=RESERVED&${created}`,
-    collateral: '/orders?status=PICKUPED',
+    orderValue: related('orderValue'),
+    collected: related('collected'),
+    outstanding: related('outstanding'),
+    collateral: related('collateral'),
   };
 
   const [customOpen, setCustomOpen] = useState(period === 'custom');
