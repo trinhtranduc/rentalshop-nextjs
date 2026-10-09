@@ -3,7 +3,7 @@
  * Matrix: ROLE_PERMISSIONS['OUTLET_INVENTORY'] = OUTLET_STAFF + products.manage/create/update/export.
  * Products and categories like an outlet admin, everything else like staff (BF-STAFF).
  */
-const { Session, describeE2E, must, request, vnDateKey, uniqueName } = require('../helpers/api');
+const { Session, describeE2E, must, request, vnDateKey, uniqueName, addDays, futureWindow, rentBody } = require('../helpers/api');
 
 describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
   let s;
@@ -108,5 +108,111 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     } else {
       expect({ status: r.status, code: r.body?.code }).toEqual({ status: 400, code: 'ROLE_NOT_AVAILABLE' });
     }
+  });
+
+  // ------------------------------------------------------------------ stock, availability, overlap (#682)
+
+  const book = async (session, product, w, { quantity = 1 } = {}) => {
+    const customer = await session.createCustomer();
+    return session.createOrderRaw({ ...rentBody({ customer, lines: [{ product, quantity }], from: w.from, to: w.to }).body, outletId });
+  };
+  const listRow = async (session, product) => {
+    const data = await must(session.get(`/api/products?search=${encodeURIComponent(product.name)}&limit=20`), 'list products');
+    return listOf(data, 'products', 'items').find((p) => p.id === product.id);
+  };
+
+  test('BF-INV-10 a product it creates has stock = available at its outlet, nothing renting', async () => {
+    const p = await inv.createProduct({ price: 100000, stock: 3, outletId });
+    expect(await s.outletStock(p.id, outletId)).toEqual({ stock: 3, available: 3, renting: 0 });
+    const row = await listRow(inv, p);
+    expect(row.effectiveAvailableToday).toBe(3);
+  });
+
+  test('BF-INV-11 editing stock while a unit is out keeps it rented: available = stock - renting, for both roles', async () => {
+    const p = await s.createProduct({ price: 100000, stock: 2, outletId });
+    const w = { from: today, to: addDays(today, 2) };
+    const order = await must(book(inv, p, w), 'book today');
+    expect((await inv.setStatus(order.id, 'PICKUPED')).status).toBe(200);
+    expect(await s.outletStock(p.id, outletId)).toMatchObject({ stock: 2, renting: 1, available: 1 });
+    const r = await inv.updateProduct(p.id, { totalStock: 4, outletStock: [{ outletId, stock: 4 }] });
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(p.id, outletId)).toEqual({ stock: 4, renting: 1, available: 3 });
+    // Home "còn hôm nay": 4 on the shelf, 1 booked today
+    expect((await listRow(inv, p)).effectiveAvailableToday).toBe(3);
+    expect((await listRow(s, p)).effectiveAvailableToday).toBe(3);
+  });
+
+  test('BF-INV-12 availability (single and cart batch) reads the same for it as for the merchant', async () => {
+    const p = await inv.createProduct({ price: 100000, stock: 2, outletId });
+    const w = futureWindow(3);
+    await must(book(inv, p, w), 'book');
+    for (const q of [1, 2]) {
+      const mine = await inv.availability(p.id, { ...w, quantity: q, outletId });
+      const owner = await s.availability(p.id, { ...w, quantity: q, outletId });
+      expect({ q, ok: mine.isAvailable, free: mine.availabilityByOutlet[0].effectivelyAvailable })
+        .toEqual({ q, ok: owner.isAvailable, free: owner.availabilityByOutlet[0].effectivelyAvailable });
+    }
+    const one = await inv.availability(p.id, { ...w, quantity: 1, outletId });
+    expect([one.isAvailable, one.availabilityByOutlet[0].effectivelyAvailable]).toEqual([true, 1]);
+    const batch = await inv.batchAvailability([{ productId: p.id, quantity: 2 }], { ...w, outletId });
+    expect(batch.results.find((x) => x.productId === p.id).isAvailable).toBe(false);
+  });
+
+  test('BF-INV-13 trùng đơn: with overlaps allowed a second booking passes and both count; with overlaps off it is 409', async () => {
+    const p = await inv.createProduct({ price: 100000, stock: 1, outletId });
+    const w = futureWindow(2);
+    await must(book(inv, p, w), 'first booking');
+    const before = (await must(s.get('/api/users/profile'), 'profile')).merchant.allowOverlappingOrders;
+    try {
+      await must(s.put('/api/settings/merchant', { allowOverlappingOrders: true }), 'overlaps on');
+      const second = await book(inv, p, { from: addDays(w.from, 1), to: addDays(w.to, 1) });
+      expect(second.status).toBe(200);
+      const av = await inv.availability(p.id, { from: addDays(w.from, 1), to: addDays(w.from, 1), outletId });
+      expect([av.isAvailable, av.availabilityByOutlet[0].conflictingQuantity]).toEqual([false, 2]);
+
+      await must(s.put('/api/settings/merchant', { allowOverlappingOrders: false }), 'overlaps off');
+      const third = await book(inv, p, w);
+      expect({ status: third.status, code: third.body?.code }).toEqual({ status: 409, code: 'ORDER_SCHEDULE_CONFLICT' });
+      // the day after the window is free
+      const next = await book(inv, p, { from: addDays(w.to, 2), to: addDays(w.to, 2) });
+      expect(next.status).toBe(200);
+    } finally {
+      await s.put('/api/settings/merchant', { allowOverlappingOrders: before !== false });
+    }
+  });
+
+  test('BF-INV-14 a same-day pickup and return holds that day only', async () => {
+    const p = await inv.createProduct({ price: 100000, stock: 1, outletId });
+    const w = futureWindow(1);
+    await must(book(inv, p, w), 'same-day');
+    expect((await inv.availability(p.id, { ...w, outletId })).isAvailable).toBe(false);
+    expect((await inv.availability(p.id, { from: addDays(w.from, 1), outletId })).isAvailable).toBe(true);
+    expect((await inv.availability(p.id, { from: addDays(w.from, -1), outletId })).isAvailable).toBe(true);
+  });
+
+  test('BF-INV-15 the slot and the stock come back after it hands over and takes back', async () => {
+    const p = await inv.createProduct({ price: 100000, stock: 1, outletId });
+    const w = { from: today, to: addDays(today, 1) };
+    const order = await must(book(inv, p, w), 'book');
+    expect((await inv.setStatus(order.id, 'PICKUPED')).status).toBe(200);
+    expect(await s.outletStock(p.id, outletId)).toMatchObject({ renting: 1, available: 0 });
+    expect((await listRow(inv, p)).effectiveAvailableToday).toBe(0);
+    expect((await inv.setStatus(order.id, 'RETURNED')).status).toBe(200);
+    expect(await s.outletStock(p.id, outletId)).toMatchObject({ renting: 0, available: 1 });
+    expect((await inv.availability(p.id, { ...w, outletId })).isAvailable).toBe(true);
+    expect((await listRow(inv, p)).effectiveAvailableToday).toBe(1);
+  });
+
+  test('BF-INV-16 cannot book at another outlet or set stock of another outlet', async () => {
+    const outlets = listOf(await must(s.get('/api/outlets?limit=50'), 'outlets'), 'outlets', 'items');
+    const other = outlets.find((o) => o.id !== outletId);
+    if (!other) return;
+    const p = await inv.createProduct({ price: 100000, stock: 1, outletId });
+    const customer = await inv.createCustomer();
+    const r = await inv.createOrderRaw({ ...rentBody({ customer, lines: [{ product: p }], ...futureWindow(1) }).body, outletId: other.id });
+    expect(r.status).toBe(403);
+    const u = await inv.updateProduct(p.id, { outletStock: [{ outletId, stock: 1 }, { outletId: other.id, stock: 5 }] });
+    expect(u.status).toBe(403);
+    expect(await s.outletStock(p.id, other.id)).toBeNull();
   });
 });
