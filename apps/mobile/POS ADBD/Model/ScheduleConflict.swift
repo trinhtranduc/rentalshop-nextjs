@@ -159,13 +159,17 @@ enum ScheduleConflictLogic {
         numbers.map { "#" + $0 }.joined(separator: ", ")
     }
 
-    /// Red tag on the cart line: "Hết đồ 03–05/10 · đã thuê ở đơn #482113"
+    /// Red tag on the cart line (#684): "Hết hàng ngày 03/10" or "Hết hàng từ 03/10 → 05/10"; a tap opens Lịch trống
+    /// on [focusDay]. The orders are on that screen, not on the tag
     static func tagText(_ conflict: CartScheduleConflict) -> String {
-        let range = dayRange(conflict.dayKeys)
-        if conflict.orderNumbers.isEmpty {
-            return String(format: "cart.overlap.tag.noOrders".localized(), range)
-        }
-        return String(format: "cart.overlap.tag".localized(), range, orderList(conflict.orderNumbers))
+        guard let first = conflict.dayKeys.first, let last = conflict.dayKeys.last else { return "" }
+        if first == last { return String(format: "cart.overlap.tagOneDay".localized(), dayRange([first])) }
+        return String(format: "cart.overlap.tagRange".localized(), dayRange([first]), dayRange([last]))
+    }
+
+    /// The day Lịch trống opens on from the tag: the first clashing day
+    static func focusDay(_ conflict: CartScheduleConflict) -> String? {
+        conflict.dayKeys.first
     }
 
     /// Line of the orange "Trùng lịch" block: "Vest đen slim fit thiếu 1 bộ ngày 03–05/10 (đã thuê ở #482113)."

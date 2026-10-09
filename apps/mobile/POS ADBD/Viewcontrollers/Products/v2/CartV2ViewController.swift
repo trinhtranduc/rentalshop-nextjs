@@ -64,6 +64,19 @@ final class CartV2ViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
     }
 
+    /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
+    private func openConflictDay(_ conflict: CartScheduleConflict) {
+        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+            DispatchQueue.main.async {
+                guard let self, let product else { return }
+                let calendar = ProductCalendarViewController(product: product, orders: nil,
+                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                calendar.hidesBottomBarWhenPushed = true
+                self.navigationController?.pushViewController(calendar, animated: true)
+            }
+        }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
@@ -438,13 +451,25 @@ final class CartV2ViewController: BaseViewControler {
         column.spacing = 6
         column.alignment = .fill
 
-        // #518 (boards GH-trung-bat / GH-trung-tat): "Hết đồ 03–05/10 · đã thuê ở đơn #482113" when other rentals
-        // hold the item on those days; otherwise the free-units tag as before
-        let overlapText: String? = isRent ? conflicts[item.productId].map(ScheduleConflictLogic.tagText) : nil
+        // #518 / #684: "Trùng đơn ngày 03–05/10" when other rentals hold the item on those days; a tap opens Lịch trống
+        // on the first clashing day (the orders of that day). Otherwise the free-units tag as before
+        if isRent, let conflict = conflicts[item.productId] {
+            let tag = UIButton(type: .system)
+            tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
+            tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
+            tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
+            tag.backgroundColor = UIColor(hexString: "FEE2E2")
+            tag.layer.cornerRadius = 6
+            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
+            tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
+            tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
+            column.addArrangedSubview(UIStackView(arrangedSubviews: [tag, UIView()]))
+        }
         let shortageText: String? = CartV2Logic.shortage(item).map { left in
             String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
         }
-        if let text = overlapText ?? shortageText {
+        if !(isRent && conflicts[item.productId] != nil), let text = shortageText {
             let warn = V2.label(" " + text + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
             warn.numberOfLines = 0
             warn.backgroundColor = UIColor(hexString: "FEE2E2")

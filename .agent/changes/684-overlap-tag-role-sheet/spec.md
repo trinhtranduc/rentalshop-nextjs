@@ -1,6 +1,6 @@
 # Spec — #684
 
-1. Cart line tag (rent, line short on some days): "Trùng đơn ngày <d/MM>" or "Trùng đơn ngày <d–d/MM>" (same range format as before). No order numbers.
+1. Cart line tag (rent, line short on some days): "Hết hàng ngày 03/10" (one day) or "Hết hàng từ 03/10 → 05/10" (first → last short day). No order numbers.
 2. The tag is a button (≥44pt touch target, accessibility "Xem đơn trùng ngày …"). Tap → Lịch trống of that product, month and focus on the first clashing day; its list shows the orders holding the product that day.
 3. The orange "Trùng lịch" block in the confirm sheet is unchanged.
 4. Thêm người dùng: role field shows "Chọn vai trò" (muted) until a role is picked. Edit user shows the user's role.
