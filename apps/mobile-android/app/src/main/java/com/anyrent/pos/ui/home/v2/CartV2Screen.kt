@@ -306,6 +306,7 @@ fun CartV2Screen(
                 CartStore.clear()
                 confirmSheet = null
                 createdSheet = CreateOrderSheet.created(order.orderNumber, confirm) to order.id
+                com.anyrent.pos.print.CreatedOrderAutoPrint.run(app, order.id) // #700
             }.onFailure {
                 // The cart and the sheet stay; the next confirm retries with the same key
                 submission.failed()

@@ -991,4 +991,24 @@ class PrinterManager: NSObject {
 
 // extension PrinterManager: CBPeripheralDelegate {
 //     // Bluetooth disabled
-// } 
+// }
+
+/// #700 (owner): after Tạo đơn, print the new order's bill when a bill printer is saved; never show a printer error
+enum CreatedOrderAutoPrint {
+    /// A printer counts as set up only when an IP was saved in Settings (the 192.168.1.199 fallback was never chosen)
+    static func shouldPrint(savedPrinterIP: String?) -> Bool {
+        !(savedPrinterIP ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    static func run(orderId: Int) {
+        guard shouldPrint(savedPrinterIP: UserDefaults.standard.string(forKey: "IpBillPrinter")) else { return }
+        // The bill needs the full order (customer, outlet, items), as "In hoá đơn" on the detail prints it
+        OrderService.shared.loadOrderDetail(orderId: orderId) { detail, _ in
+            guard let detail else { return }
+            PrinterManager.shared.printOrder(Order.from(detail: detail)) { result in
+                if case .failure(let error) = result { Swift.print("Auto print after create skipped: \(error)") }
+            }
+        }
+    }
+}
+
