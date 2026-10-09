@@ -302,7 +302,8 @@ object ChangeHistory {
     fun canView(role: String?): Boolean = role?.trim()?.uppercase() in setOf("ADMIN", "OPS", "MERCHANT", "OUTLET_ADMIN")
 
     /** #677: only OUTLET_STAFF is "(nhân viên)"; an OUTLET_ADMIN manages the outlet (iOS `ChangeHistoryLogic.isStaff`) */
-    fun isStaff(role: String?): Boolean = role?.trim().equals("OUTLET_STAFF", true)
+    fun isStaff(role: String?): Boolean =
+        role?.trim()?.uppercase() in setOf("OUTLET_STAFF", "OUTLET_INVENTORY") // #682: Nhân viên kho is staff too
 
     fun lines(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): List<Line> {
         val out = mutableListOf<Line>()

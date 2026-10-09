@@ -248,7 +248,7 @@ object OverviewLogic {
     fun showsRevenue(role: String?): Boolean = role in setOf("ADMIN", "MERCHANT", "OUTLET_ADMIN")
 
     /** `GET /api/analytics/outlet-operations` needs `analytics.view.dashboard`: every shop role */
-    fun showsOperations(role: String?): Boolean = role in setOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF")
+    fun showsOperations(role: String?): Boolean = role in setOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY")
 
     fun reportFromJson(data: JSONObject): OverviewReport {
         fun number(o: JSONObject?, key: String): Double? =
