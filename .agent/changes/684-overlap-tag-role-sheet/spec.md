@@ -11,3 +11,8 @@
    The current choice is checked; picking a row closes the sheet and fills the field.
 6. Save with no role → inline error "Chọn vai trò"; nothing is sent.
 7. Strings vi + en on both apps; unit tests for the tag text and the empty-role rule.
+8. Cart line layout (canvas "AnyRent Cart Items", owner 2026-10-09: the card option's content, without the card):
+   flat rows with a divider; 64pt photo; line 1 the name; line 2 a blue link "Theo ngày · 400.000/ngày × 2 ngày ⌄"
+   (15pt; "· Nhập giá" when no price) that opens Cách tính giá; the "Hết hàng …" tag under it when there is one;
+   last row the line total (bold, left, under the text) and the −/+ stepper (right). No separate "450.000/lần × 1"
+   line. Sale lines keep "Còn N" under the link.

@@ -425,7 +425,7 @@ final class CartV2ViewController: BaseViewControler {
 
     private func itemRow(_ item: CartItem, index: Int) -> UIView {
         let row = UIView()
-        let thumb = V2.thumbnail(size: 56, radius: 10)
+        let thumb = V2.thumbnail(size: 64, radius: 12)
         thumb.image = V2.placeholder
         thumb.contentMode = .center
         if let url = item.imageUrl, let link = URL(string: url) {
@@ -438,15 +438,20 @@ final class CartV2ViewController: BaseViewControler {
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .bold)
-        total.textAlignment = .right
+        total.textAlignment = .left
         total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let top = UIStackView(arrangedSubviews: [name, total])
-        top.alignment = .top
-        top.spacing = 8
-        let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary,
-                                 color: CartV2Logic.needsPrice(item, orderType: cart.orderType) ? V2.danger : DS.Color.textMuted, lines: 0)
-        let column = UIStackView(arrangedSubviews: [top, calcLabel])
+        // #684 (owner 2026-10-09): name; the blue pricing link; the "Hết hàng …" tag; last row the total and −/+.
+        // No card, and no separate "450.000/lần × 1" line: its numbers are in the link
+        let stepper = V2Stepper(compact: true)
+        stepper.minimum = 0
+        stepper.value = item.quantity
+        stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
+        stepper.setContentHuggingPriority(.required, for: .horizontal)
+        stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let link = pricingChip(item, index: index)
+        link.titleLabel?.lineBreakMode = .byTruncatingTail
+        let column = UIStackView(arrangedSubviews: [name, UIStackView(arrangedSubviews: [link, UIView()])])
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
@@ -479,22 +484,16 @@ final class CartV2ViewController: BaseViewControler {
             column.addArrangedSubview(wrap)
         }
 
-        // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet. The price is
-        // for this order only, any role, any time (owner 2026-10-05); never the product's price.
-        let chipRow = UIStackView(arrangedSubviews: [pricingChip(item, index: index), UIView()])
-        column.addArrangedSubview(chipRow)
-
-        let stepper = V2Stepper(compact: true)
-        stepper.minimum = 0
-        stepper.value = item.quantity
-        stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
-        var leading: UIView = UIView()
+        // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. A sale line keeps "Còn N"
         if !isRent, let available = item.availabilityStatus?.available {
-            leading = V2.label(String(format: "products.cart.inStock".localized(), available), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            column.addArrangedSubview(V2.label(String(format: "products.cart.inStock".localized(), available),
+                                               size: DS.TextSize.secondary, color: DS.Color.textMuted))
         }
-        let controls = UIStackView(arrangedSubviews: [leading, UIView(), stepper])
-        controls.alignment = .center
-        column.addArrangedSubview(controls)
+        let bottom = UIStackView(arrangedSubviews: [total, UIView(), stepper])
+        bottom.alignment = .center
+        bottom.spacing = 8
+        column.setCustomSpacing(10, after: column.arrangedSubviews.last ?? link)
+        column.addArrangedSubview(bottom)
 
         row.addSubview(thumb)
         row.addSubview(column)
@@ -514,40 +513,31 @@ final class CartV2ViewController: BaseViewControler {
         return row
     }
 
-    /// "Theo ngày · 150.000đ/ngày" with a down chevron; "· Nhập giá" in blue while the line has no price
+    /// #684: blue link "Theo ngày · 400.000đ/ngày × 2 ngày ⌄" (15pt, no border); "· Nhập giá" while the line has no price
     private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
         let chip = CartV2Logic.chip(item, orderType: cart.orderType)
         let button = UIButton(type: .system)
         let title = NSMutableAttributedString(string: chip.label, attributes: [
-            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
-            NSAttributedString.Key.foregroundColor: DS.Color.text,
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
         ])
-        if let price = chip.price {
-            title.append(NSAttributedString(string: " · " + price, attributes: [
-                NSAttributedString.Key.font: UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.secondary, weight: .regular),
-                NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
-            ]))
-        } else {
-            title.append(NSAttributedString(string: " · " + "products.cart.pricing.enterPrice".localized(), attributes: [
-                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
-                NSAttributedString.Key.foregroundColor: DS.Color.primary,
-            ]))
-        }
+        title.append(NSAttributedString(string: " · " + (chip.price ?? "products.cart.pricing.enterPrice".localized()), attributes: [
+            NSAttributedString.Key.font: chip.price == nil ? Utils.boldFont(size: DS.TextSize.body)
+                : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .regular),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
+        ]))
         button.setAttributedTitle(title, for: .normal)
-        button.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
-        button.tintColor = DS.Color.textMuted
+        button.setImage(DS.symbol("chevron.down", 13, weight: .semibold), for: .normal)
+        button.tintColor = DS.Color.primary
         button.semanticContentAttribute = .forceRightToLeft
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 18)
-        button.layer.cornerRadius = 10
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
-        button.backgroundColor = DS.Color.surface
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
+        button.contentHorizontalAlignment = .leading
         button.tag = index
         button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
         button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
         button.addTarget(self, action: #selector(pricingChipTapped(_:)), for: .touchUpInside)
-        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(36) }
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         return button
     }
 
