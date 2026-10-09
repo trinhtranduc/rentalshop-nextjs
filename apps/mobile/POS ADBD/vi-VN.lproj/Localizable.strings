@@ -1005,6 +1005,10 @@
 "Outlet Admin" = "Quản trị cửa hàng";
 "Outlet Staff" = "Nhân viên cửa hàng";
 "Inventory Staff" = "Nhân viên kho";
+"users.role.required" = "Chọn quyền cho người dùng";
+"users.role.help.outletAdmin" = "Một chi nhánh: đơn, sản phẩm, giá, khách, tiền trong ngày, nhân viên của chi nhánh.";
+"users.role.help.outletStaff" = "Tạo đơn, giao đồ, nhận trả, thêm khách. Không sửa giá sản phẩm, không xem báo cáo tiền.";
+"users.role.help.outletInventory" = "Như nhân viên, thêm quản lý sản phẩm và danh mục (thêm, sửa giá, xoá). Không xem báo cáo tiền.";
 "Generating receipt..." = "Đang tạo hóa đơn...";
 "Failed to generate PDF" = "Không thể tạo PDF";
 "RENTAL RECEIPT" = "HÓA ĐƠN CHO THUÊ";
@@ -2102,6 +2106,9 @@
 /* #518 Cho tạo đơn khi trùng lịch */
 "cart.overlap.tag" = "Hết đồ %@ · đã thuê ở đơn %@";
 "cart.overlap.tag.noOrders" = "Hết đồ %@";
+"cart.overlap.tagOneDay" = "Hết %@";
+"cart.overlap.tagRange" = "Hết %@ → %@";
+"cart.overlap.tagHint" = "Xem các đơn đang giữ món ngày %@";
 "cart.overlap.line" = "%@ thiếu %d bộ ngày %@ (đã thuê ở %@).";
 "cart.overlap.line.noOrders" = "%@ thiếu %d bộ ngày %@.";
 "cart.overlap.title" = "Trùng lịch";

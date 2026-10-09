@@ -107,6 +107,13 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: nil), [.outletStaff, .outletAdmin])
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: true, currentRole: nil), [.outletStaff, .outletAdmin, .outletInventory])
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: .outletInventory).last, .outletInventory)
+        // #684: no role until one is picked; every pickable role has a one-line explanation
+        XCTAssertFalse(UserFormRoles.isComplete(nil))
+        XCTAssertTrue(UserFormRoles.isComplete(.outletStaff))
+        for role in UserFormRoles.choices(inventoryRole: true, currentRole: nil) {
+            XCTAssertFalse(UserFormRoles.help(role).isEmpty, "\(role) has a help line")
+            XCTAssertNotEqual(UserFormRoles.help(role), "users.role.help.\(role)", "\(role) help is localized")
+        }
         let on = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"features":{},"inventoryRole":true}"#.utf8))
         XCTAssertTrue(on.inventoryRole)
         let old = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"features":{}}"#.utf8))

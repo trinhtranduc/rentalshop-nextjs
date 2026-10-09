@@ -80,6 +80,18 @@ import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -538,7 +550,10 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
     var email by remember { mutableStateOf(initial?.email.orEmpty()) }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf(initial?.role ?: "OUTLET_STAFF") }
+    // #684: a new user has no role until one is picked in the sheet; editing keeps the user's role
+    var role by remember { mutableStateOf<String?>(initial?.role) }
+    var rolePicker by remember { mutableStateOf(false) }
+    val roleRequired = stringResource(R.string.role_required)
     // #682: Nhân viên kho is offered once the API allows it (cached app config), or when the user already has it
     val roleChoices = remember(initial?.role) {
         UserFormRoles.choices(SessionStoreAppConfigCache.read()?.inventoryRole ?: false, initial?.role)
@@ -547,10 +562,18 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    if (rolePicker) {
+        RolePickerSheet(roles = roleChoices, selected = role, onDismiss = { rolePicker = false }, onPick = { role = it; rolePicker = false; error = null })
+    }
 
     fun saveUser() {
         if (firstName.isBlank() || (initial == null && email.isBlank())) {
             error = "Name and email are required"
+            return
+        }
+        val pickedRole = role
+        if (!UserFormRoles.isComplete(pickedRole)) {
+            error = roleRequired
             return
         }
         if (initial == null && (password.length < 6 || password != confirmPassword)) {
@@ -563,9 +586,9 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 if (initial == null) {
-                    ApiParity.createUser(firstName, lastName, email, password, role, SessionStore.outletId)
+                    ApiParity.createUser(firstName, lastName, email, password, pickedRole!!, SessionStore.outletId)
                 } else {
-                    ApiParity.updateUser(initial.id, firstName, lastName, role, active, SessionStore.outletId)
+                    ApiParity.updateUser(initial.id, firstName, lastName, pickedRole!!, active, SessionStore.outletId)
                 }
             }
             loading = false
@@ -606,17 +629,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
                         visualTransformation = PasswordVisualTransformation(),
                     )
                 }
-                val roles = roleChoices
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.role), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
-                    V2Segmented(
-                        titles = roles.map { roleDisplayValue(it) },
-                        selected = roles.indexOf(role).coerceAtLeast(0),
-                        onSelect = { role = roles[it] },
-                        fill = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                RoleField(role = role, onClick = { rolePicker = true })
                 if (initial != null) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.active), fontSize = DS.TextSize.Body, color = DS.Colors.Text, modifier = Modifier.weight(1f))
@@ -720,19 +733,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
                             stringResource(R.string.role),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         )
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            roleChoices.forEach { roleKey ->
-                                AppFilterChip(
-                                    label = roleDisplayValue(roleKey),
-                                    selected = role == roleKey,
-                                    onClick = { role = roleKey },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
+                        RoleField(role = role, onClick = { rolePicker = true })
                         if (initial != null) {
                             Row(
                                 Modifier.fillMaxWidth(),
@@ -758,4 +759,77 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
             onDismiss = { error = null },
         )
     }
+}
+
+/** #684: the role row of the user form: the picked role, or "Chọn quyền" until one is picked; opens [RolePickerSheet] */
+@Composable
+internal fun RoleField(role: String?, onClick: () -> Unit) {
+    val hint = stringResource(R.string.role_select)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(R.string.role), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                .clickable(onClickLabel = hint, role = Role.Button, onClick = onClick)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                role?.let { roleDisplayValue(it) } ?: hint,
+                fontSize = DS.TextSize.Body,
+                color = if (role == null) DS.Colors.TextMuted else DS.Colors.Text,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = DS.Colors.TextMuted)
+        }
+    }
+}
+
+/** #684 (iOS `RolePickerSheet`): one row per role the caller may give, with what it can do; the picked one is checked */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun RolePickerSheet(roles: List<String>, selected: String?, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = DS.Colors.Surface,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(stringResource(R.string.role_select), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+            roles.forEach { key ->
+                val on = key == selected
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                        .background(if (on) Color(0xFFEFF4FF) else DS.Colors.Surface)
+                        .border(1.dp, if (on) DS.Colors.Primary else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                        .selectable(selected = on, role = Role.RadioButton, onClick = { onPick(key) })
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(roleDisplayValue(key), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                        roleHelp(key)?.let { Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
+                    }
+                    Icon(
+                        if (on) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+                        contentDescription = null,
+                        tint = if (on) DS.Colors.Primary else Color(0xFFCBD5E1),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun roleHelp(role: String): String? = when (role) {
+    "OUTLET_ADMIN" -> stringResource(R.string.role_help_outlet_admin)
+    "OUTLET_STAFF" -> stringResource(R.string.role_help_outlet_staff)
+    "OUTLET_INVENTORY" -> stringResource(R.string.role_help_outlet_inventory)
+    else -> null
 }

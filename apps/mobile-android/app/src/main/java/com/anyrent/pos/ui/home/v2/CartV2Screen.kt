@@ -116,6 +116,8 @@ fun CartV2Screen(
     onOrderSaved: (Int, String?) -> Unit = { id, _ -> onOpenOrder(id) },
     /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
     onEditCancelled: (Int) -> Unit = onOpenOrder,
+    /** #684: the "Hết hàng …" tag → Lịch trống of the product on that day (`yyyy-MM-dd`) */
+    onOpenCalendar: (Int, String) -> Unit = { _, _ -> },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -217,8 +219,8 @@ fun CartV2Screen(
         }
     }
     val overlapTexts = OverlapWarnings.Texts(
-        cartLine = stringResource(R.string.v2_cart_overlap_line),
-        cartLineNoOrder = stringResource(R.string.v2_cart_overlap_line_no_order),
+        cartLineOneDay = stringResource(R.string.v2_cart_overlap_one_day),
+        cartLineRange = stringResource(R.string.v2_cart_overlap_range),
         confirmLine = stringResource(R.string.v2_create_overlap_line),
         confirmLineNoOrder = stringResource(R.string.v2_create_overlap_line_no_order),
     )
@@ -453,6 +455,9 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
+                    onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
+                        { onOpenCalendar(c.productId, c.from.toString()) }
+                    },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
                     onOpenPricing = { pricingLineId = line.product.id },
                 )
@@ -776,49 +781,45 @@ private fun ItemRow(
     line: CartLine,
     isSale: Boolean,
     available: Int?,
-    /** #518 "Hết đồ 03–05/10 · đã thuê ở đơn #482113"; replaces the shortage chip */
+    /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
     overlapText: String? = null,
+    /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
+    onOpenOverlap: (() -> Unit)? = null,
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
 ) {
     val calc = CartV2Logic.calc(line, isSale)
-    val price = formatMoneyVnd(calc.unitPrice)
-    val calcText = when (val kind = calc.kind) {
-        CartLineCalc.Kind.Sale -> stringResource(R.string.v2_calc_sale, price, calc.quantity)
-        CartLineCalc.Kind.PerRental -> stringResource(R.string.v2_calc_per_rental, price, calc.quantity)
-        is CartLineCalc.Kind.PerDay -> pluralStringResource(R.plurals.v2_calc_per_day, kind.days, price, kind.days) +
-            if (calc.quantity > 1) " × ${formatQuantity(calc.quantity)}" else ""
-    }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ProductThumb(line.product.images.firstOrNull() ?: line.product.imageUrl, 56.dp, 10.dp)
+            ProductThumb(line.product.images.firstOrNull() ?: line.product.imageUrl, 64.dp, 12.dp)
+            // #684 (owner 2026-10-09, iOS itemRow): name; the blue pricing link; the "Hết hàng …" tag; last row the
+            // total and −/+. No card, and no separate "450.000/lần × 1" line: its numbers are in the link
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1)
-                }
-                Text(
-                    calcText, fontSize = DS.TextSize.Secondary,
-                    color = if (CartV2Logic.needsPrice(line, isSale)) Color(0xFFB91C1C) else DS.Colors.TextMuted,
-                )
-                val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
-                    stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
-                }
-                shortText?.let { text ->
-                    Text(
-                        text,
-                        fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2)).padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
-                }
-                // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet
-                PricingChip(line, isSale, onOpenPricing)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) {
-                        if (isSale && available != null) {
-                            Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                        }
+                // #684: the "Hết 09/10 → 11/10 ›" tag (or the shortage chip) beside the name, on its right (owner)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
+                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
                     }
+                    shortText?.let { text ->
+                        val hint = stringResource(R.string.v2_cart_overlap_hint)
+                        Text(
+                            if (onOpenOverlap != null) "$text ›" else text,
+                            fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
+                                .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                                .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
+                        )
+                    }
+                }
+                // #482: the link opens the "Cách tính giá" sheet
+                PricingChip(line, isSale, onOpenPricing)
+                if (isSale && available != null) {
+                    Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
                 }
             }
@@ -829,29 +830,32 @@ private fun ItemRow(
 
 /** "Theo ngày · 150.000đ/ngày" (or "· Nhập giá" in blue) with a down chevron (#482, iOS `pricingChip`) */
 @Composable
-private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit) {
+private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val label = if (isSale) stringResource(R.string.v2_pricing_sale) else pricingLabel(line.pricingType)
-    val price = line.unitPrice.takeIf { it > 0 }?.let { pricingPriceText(it, line.pricingType, isSale) }
+    // #684 (Dòng gọn): the chip carries the line's numbers; a daily price over several days shows the days too
+    val days = (CartV2Logic.calc(line, isSale).kind as? CartLineCalc.Kind.PerDay)?.days?.takeIf { it > 1 }
+    val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
+    val price = line.unitPrice.takeIf { it > 0 }?.let { pricingPriceText(it, line.pricingType, isSale) + (daysText?.let { d -> " × $d" } ?: "") }
     val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
+    // #684: a blue link "Theo ngày · 400.000đ/ngày × 2 ngày ⌄" (15sp, no border), iOS pricingChip
     Row(
-        Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp))
-            .background(DS.Colors.Surface)
+        modifier
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClickLabel = changeLabel, onClick = onClick)
-            .heightIn(min = 36.dp)
-            .padding(start = 12.dp, end = 10.dp),
+            .heightIn(min = 32.dp)
+            .padding(end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1)
+        Text(label, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary, maxLines = 1)
         if (price != null) {
-            Text(" · $price", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+            Text(" · $price", fontSize = DS.TextSize.Body, color = DS.Colors.Primary, maxLines = 1,
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         } else {
-            Text(" · " + stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Secondary,
+            Text(" · " + stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Body,
                 fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary, maxLines = 1)
         }
-        Spacer(Modifier.size(8.dp))
-        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.size(4.dp))
+        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
     }
 }
 

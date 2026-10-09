@@ -459,11 +459,16 @@ enum CartV2Logic {
         }
     }
 
-    /// The chip of a line: "Theo ngày" + "150.000đ/ngày" ("Giá bán" on a sale); price nil = "Nhập giá"
+    /// The chip of a line: "Theo ngày" + "150.000đ/ngày × 2 ngày" ("Giá bán" on a sale); price nil = "Nhập giá".
+    /// #684 (Dòng gọn): the chip carries the line's numbers, so a daily price over several days shows the days too
     static func chip(_ item: CartItem, orderType: OrderType) -> (label: String, price: String?) {
         let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
         guard item.price > 0 else { return (label, nil) }
-        return (label, priceText(item.price, type: currentType(item), orderType: orderType))
+        var price = priceText(item.price, type: currentType(item), orderType: orderType)
+        if orderType == .rent, item.isDailyPricing, item.rentalDays > 1 {
+            price += " × " + PluralText.format("products.cart.days", count: item.rentalDays, item.rentalDays)
+        }
+        return (label, price)
     }
 
     /// "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise
