@@ -2,15 +2,14 @@
 
 /**
  * Quyền theo vai trò (#542): read-only default permissions of Quản lý chi nhánh and Nhân viên, from
- * ROLE_PERMISSIONS (as the shared PermissionRoleView did). Extra per-staff permissions: /users/permissions.
+ * ROLE_PERMISSIONS (as the shared PermissionRoleView did). The extra per-staff permissions page is hidden from the menus.
  */
 import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ROLE_PERMISSIONS } from '@rentalshop/auth';
 import { useAuth } from '@rentalshop/hooks';
 import { ShellIcon } from '../../components/shell/Icon';
-import { cardClass, outlineBtn, type T } from '../../orders/list/parts';
+import { cardClass, type T } from '../../orders/list/parts';
 import { VIEWABLE_ROLES, canManagePermissions, permissionLabelKey, roleGrants, type ViewableRole } from '../permissions/permissions-model';
 import { NoAccess, PageHead, pageClass } from '../permissions/parts';
 
@@ -35,11 +34,6 @@ export default function RolePermissionsPage() {
         back={t('title')}
         title={t('rolePermissions.title')}
         hint={t('rolePermissions.hint')}
-        action={
-          <Link href="/users/permissions" className={`${outlineBtn} h-9 text-sm`}>
-            {t('rolesCard.permissions')}
-          </Link>
-        }
       />
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('rolePermissions.roleLabel')}>
@@ -80,8 +74,6 @@ export default function RolePermissionsPage() {
           </section>
         ))}
       </div>
-
-      <p className="m-0 rounded-2xl bg-ar-primary-soft px-5 py-3.5 text-sm text-ar-primary-ink">{t('rolePermissions.note')}</p>
     </div>
   );
 }

@@ -509,9 +509,6 @@ export default function UsersPage() {
             <Link href="/users/role-permissions" className={`${outlineBtn} h-9 text-sm`}>
               {t('rolesCard.rolePermissions')}
             </Link>
-            <Link href="/users/permissions" className={`${outlineBtn} h-9 text-sm`}>
-              {t('rolesCard.permissions')}
-            </Link>
           </div>
         </aside>
       </div>
