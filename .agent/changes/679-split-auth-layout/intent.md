@@ -19,19 +19,21 @@ Visitors and shop owners on `apps/client` web: /login, /register (+ steps), /for
 
 ## Constraints
 
-- Form logic, validation, Google login, and links are untouched.
+- Form validation and links stay unchanged. Web login and registration use email/password only.
 - No horizontal scroll at 375px. Light only, like today.
 - Strings in en, vi, ja, ko, zh.
 
 ## Open questions
 
-- Google sign-in stays on /register? (kept; only /login drops it)
+- None. Google sign-up is also hidden on /register (approved review correction).
 
 ## Decision log (cont.)
 
 - 2026-10-08 — Chosen design: canvas A2 "Bản chọn: A nền sáng, 4 tính năng chính" (owner)
 - 2026-10-08 — No step tabs under the slides; remove Google login from /login (owner)
 - 2026-10-08 — Each step shows web and iPhone captures from a seeded local shop (owner)
+- 2026-10-08 — Google sign-up also hidden on /register: a Google-registered shop gets a random password, so sign-up without Google login would lock it out (owner agreed in review)
+- 2026-10-08 — Review fixes: captures lazy-load and the panel only rotates from lg up (phones fetched them every 5 s), no aria-live, language switcher top-right from lg, URL bar and per-step alt text as in the canvas
 
 ## Open questions (old)
 

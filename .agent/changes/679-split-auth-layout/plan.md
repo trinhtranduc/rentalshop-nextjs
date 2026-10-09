@@ -15,6 +15,7 @@ Issue: #679 · Status: accepted · Spec: ./spec.md
 
 - `apps/client/public/auth-showcase/*.jpg` — 4 web + 4 phone captures + 1 query photo (~0.9 MB total, lg only)
 - `apps/client/app/login/page.tsx` — drop the Google button
+- `apps/client/app/register/page.tsx` — also drop Google sign-up to match login
 
 - `packages/ui/src/components/forms/auth-shop.tsx` — layout + panel
 - `locales/*/auth.json` — strings
@@ -26,3 +27,9 @@ Issue: #679 · Status: accepted · Spec: ./spec.md
 ## Rollback
 
 Revert the PR; one component and locale keys.
+
+## Follow-up PR after #680
+
+1. Include the existing review correction commit `6ee3681ea` that missed the merge.
+2. Verify mobile image requests on /login and /register, desktop capture loading, and absence of Google signup.
+3. Report lint/type-check/test limitations explicitly and open a supplemental PR to dev referencing #679.

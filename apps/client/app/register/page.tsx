@@ -24,7 +24,6 @@ export default function RegisterPage() {
     <ShopAuthPage termsLabel={t('termsOfService')} privacyLabel={t('privacyPolicy')} onNavigate={handleNavigate}>
       <RegisterForm
         appearance="shop"
-        googleOAuthClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}
         initialStep={(searchParams.get('step') === '2' ? 2 : 1) as 1 | 2}
         onNavigate={(path) => {
           // Allow external navigations to pass through
