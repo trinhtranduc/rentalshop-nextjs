@@ -51,7 +51,12 @@ data class OverviewReport(
      * [newOrders]); null on an API without the split (no count shown)
      */
     val orderValueOrders: Int? = null,
+    /** #722 `revenue.cashCollected` (#710): money held from the period, collateral included; null on an older API */
+    val cashCollected: Double? = null,
 ) {
+    /** "Thực thu" as iOS and web show it: money held, collateral included; an older API falls back */
+    val heldCash: Double get() = cashCollected ?: collateralFlow?.totalReceived(netRevenue) ?: netRevenue
+
     /**
      * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
      * [newOrderCount] (#484) is null on an older API.
@@ -300,6 +305,7 @@ object OverviewLogic {
                 )
             },
             totalOrderValue = number(revenue, "totalOrderValue"),
+            cashCollected = number(revenue, "cashCollected"),
             orderValueOrders = revenue?.optJSONObject("orderValueByType")?.let { split ->
                 (split.optJSONObject("rent")?.optInt("orders", 0) ?: 0) + (split.optJSONObject("sale")?.optInt("orders", 0) ?: 0)
             },

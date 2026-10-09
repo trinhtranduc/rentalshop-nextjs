@@ -367,6 +367,21 @@ class ApiClient(
         )
     }
 
+    /** #722: one page of income/orders rows of a bucket, as they are (an order may be on several days), and hasMore */
+    fun incomeRows(
+        startDate: String,
+        endDate: String,
+        status: String,
+        offset: Int,
+        limit: Int = 200,
+    ): Result<Pair<List<com.anyrent.pos.domain.overview.IncomeRow>, Boolean>> = runCatching {
+        val json = authedGet(
+            "/api/analytics/income/orders?startDate=$startDate&endDate=$endDate" +
+                "&status=$status&plan=false&limit=$limit&offset=$offset",
+        )
+        com.anyrent.pos.domain.overview.OverviewRelated.pageFromJson(json.optJSONObject("data") ?: JSONObject())
+    }
+
     internal fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject()

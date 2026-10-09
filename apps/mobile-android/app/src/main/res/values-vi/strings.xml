@@ -1475,6 +1475,15 @@
     <string name="image_search_tip_photo">Sản phẩm cần có ảnh trong danh sách</string>
     <string name="detail_nav_title">Đơn %1$s</string>
     <string name="detail_deposit">Cọc</string>
-    <string name="overview_v2_rule_received">Tiền thật đã thu trong kỳ (cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn) và thế chân. Thế chân được tách riêng.</string>
+    <string name="overview_v2_rule_received">Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.</string>
     <string name="overview_v2_new_orders_count">%1$d đơn mới</string>
+    <string name="overview_v2_related_view">Xem các đơn liên quan →</string>
+    <string name="overview_v2_related_total">Tổng các dòng</string>
+    <string name="overview_v2_related_empty">Không có đơn nào trong kỳ.</string>
+    <string name="overview_v2_related_created">Đơn tạo trong kỳ</string>
+    <string name="overview_v2_related_cancelled">Đã huỷ, không tính</string>
+    <string name="overview_v2_related_owes">Sẽ thu khi khách lấy đồ</string>
+    <string name="overview_v2_related_collateral_in">Nhận thế chân khi giao</string>
+    <string name="overview_v2_related_collateral_out">Trả thế chân khi nhận đồ</string>
+    <string name="overview_v2_collected_includes_collateral">Gồm thế chân</string>
 </resources>
