@@ -441,7 +441,7 @@ internal fun OVBarRow(name: String, note: String?, value: String, strong: Boolea
                 withStyle(SpanStyle(color = if (strong) OV.Ink else OV.Ink2, fontWeight = if (strong) FontWeight.Bold else FontWeight.Normal)) { append(name) }
                 if (note != null) withStyle(SpanStyle(color = OV.Muted)) { append(" · $note") }
             },
-            fontSize = DS.TextSize.Pill, modifier = Modifier.width(112.dp),
+            fontSize = DS.TextSize.Pill, lineHeight = 15.sp, modifier = Modifier.width(112.dp),
         )
         bar(Modifier.weight(1f).height(10.dp))
         Text(
