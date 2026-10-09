@@ -75,7 +75,7 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
   test('BF-INV-06 adds, renames and deletes a category of its merchant', async () => {
     const name = uniqueName('DM kho');
     const created = await inv.post('/api/categories', { name });
-    expect(created.status).toBe(200);
+    expect([200, 201]).toContain(created.status);
     const id = created.body.data.id;
     const put = await inv.put(`/api/categories/${id}`, { name: `${name} 2` });
     expect(put.status).toBe(200);

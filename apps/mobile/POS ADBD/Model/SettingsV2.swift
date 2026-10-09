@@ -49,7 +49,8 @@ enum SettingsV2Logic {
         if permissions.contains("users.manage") { management.append(.users) }
         let exportRights = ["products.export", "products.manage", "orders.export", "orders.manage",
                             "customers.export", "customers.manage", "analytics.export", "analytics.view"]
-        if role != .outletStaff, permissions.contains(where: { exportRights.contains($0) }) {
+        // #682: Nhân viên kho exports products on the web only; the export screen also lists orders and customers
+        if !(role?.isStaffLike ?? false), permissions.contains(where: { exportRights.contains($0) }) {
             management.append(.export)
         }
 

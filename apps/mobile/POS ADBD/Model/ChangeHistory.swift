@@ -481,9 +481,10 @@ enum ChangeHistoryLogic {
     /// The signed-in user may open change history
     static var currentUserCanView: Bool { canView(User.account()?.roleCode) }
 
-    /// #677: only OUTLET_STAFF is "(nhân viên)" (and the staff tone); an OUTLET_ADMIN manages the outlet
+    /// #677: only OUTLET_STAFF is "(nhân viên)" (and the staff tone); an OUTLET_ADMIN manages the outlet.
+    /// #682: Nhân viên kho is staff too
     static func isStaff(_ role: String?) -> Bool {
-        (role ?? "").trimmingCharacters(in: .whitespaces).uppercased() == "OUTLET_STAFF"
+        ["OUTLET_STAFF", "OUTLET_INVENTORY"].contains((role ?? "").trimmingCharacters(in: .whitespaces).uppercased())
     }
 
     /// "Nguyễn An (nhân viên)" for staff, the bare name for owners, nil when the actor is unknown

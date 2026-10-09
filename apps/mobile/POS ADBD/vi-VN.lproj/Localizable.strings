@@ -1004,6 +1004,7 @@
 "Merchant" = "Thương hiệu";
 "Outlet Admin" = "Quản trị cửa hàng";
 "Outlet Staff" = "Nhân viên cửa hàng";
+"Inventory Staff" = "Nhân viên kho";
 "Generating receipt..." = "Đang tạo hóa đơn...";
 "Failed to generate PDF" = "Không thể tạo PDF";
 "RENTAL RECEIPT" = "HÓA ĐƠN CHO THUÊ";
