@@ -480,15 +480,27 @@ final class OrderDetailViewController: BaseViewControler {
         let calc = UILabel()
         calc.font = Utils.regularFont(size: DS.TextSize.secondary)
         calc.textColor = DS.Color.textMuted
-        let price = MoneyFormatter.format(item.unitPrice)
-        if orderType == .sale {
-            calc.text = String(format: "Sale price %@".localized(), price)
-        } else if item.pricingType == "DAILY", let days = item.rentalDays {
-            calc.text = PluralText.format("%@/day × %d days", count: days, price, days)
-        } else {
-            calc.text = "\(price) × \(item.quantity)"
-        }
+        // Owner 2026-10-09: same wording as the cart link, so "theo lần" / "theo ngày × N ngày" shows here too
+        calc.text = CartV2Logic.orderItemPricing(unitPrice: item.unitPrice, pricingType: item.pricingType,
+                                                 rentalDays: item.rentalDays, orderType: orderType)
+        calc.numberOfLines = 0
+        calc.accessibilityIdentifier = "orderDetail.item.pricing"
         let texts = UIStackView(arrangedSubviews: [name, calc])
+        if let note = CartV2Logic.noteText(item.notes) {
+            let noteLabel = UILabel()
+            noteLabel.numberOfLines = 0
+            let text = NSMutableAttributedString(string: "cart.itemNote.label".localized() + ": ", attributes: [
+                NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: DS.Color.text,
+            ])
+            text.append(NSAttributedString(string: note, attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: DS.Color.text,
+            ]))
+            noteLabel.attributedText = text
+            noteLabel.accessibilityIdentifier = "orderDetail.item.note"
+            texts.addArrangedSubview(noteLabel)
+        }
         texts.axis = .vertical
         texts.spacing = DS.Gap.lineTight
         let total = UILabel()

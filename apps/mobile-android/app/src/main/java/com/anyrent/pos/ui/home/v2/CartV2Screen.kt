@@ -942,6 +942,16 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
     }
 }
 
+/** Order detail item line, same wording as the cart link: "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày" (iOS `orderItemPricing`) */
+@Composable
+internal fun orderItemPricingText(unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): String {
+    val type = pricingType?.takeIf { it.isNotBlank() } ?: "FIXED"
+    val label = if (isSale) stringResource(R.string.v2_pricing_sale) else pricingLabel(type)
+    val days = rentalDays.takeIf { !isSale && type.equals("DAILY", ignoreCase = true) && it > 1 }
+    val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
+    return formatMoneyVnd(unitPrice) + " / " + label.lowercase(java.util.Locale("vi")) + (daysText?.let { " × $it" } ?: "")
+}
+
 @Composable
 private fun pricingLabel(type: String): String = when (type.uppercase()) {
     "FIXED" -> stringResource(R.string.v2_price_per_rental)

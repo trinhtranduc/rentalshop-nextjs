@@ -415,15 +415,15 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertTrue(model.hasMore)
     }
 
-    /// #468 — board "Danh sách sản phẩm": the "● Còn N" / "● Hết hôm nay" label is 14pt regular
-    func testStockLabelIsRegularWeight() throws {
+    /// #681 (Home option 1): the "● Còn N hôm nay" / "● Hết hôm nay" line is 13pt semibold (was 14pt regular, #468)
+    func testStockLabelIsSemibold13() throws {
         let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
         cell.bind(try product(#"{"id":1,"name":"Áo dài"}"#), inCart: 0)
         func labels(_ view: UIView) -> [UILabel] {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
         let stock = try XCTUnwrap(labels(cell.contentView).first { $0.text?.hasPrefix("● ") == true })
-        XCTAssertEqual(stock.font, Utils.regularFont(size: DS.TextSize.secondary))
+        XCTAssertEqual(stock.font, V2.label(size: 13, weight: .semibold).font)
     }
 }
 
@@ -693,6 +693,22 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.startPrice(line, type: "FIXED"), 320_000, "the line's own mode shows the line price")
         XCTAssertEqual(CartV2Logic.startPrice(line, type: "DAILY"), 150_000)
         XCTAssertEqual(CartV2Logic.startPrice(line, type: "BLOCK"), 0)
+    }
+
+    /// Owner 2026-10-09: order detail lines read like the cart link
+    func testOrderItemPricingMatchesCartLink() {
+        let vi = Locale(identifier: "vi_VN")
+        let perRental = "products.price.perRental".localized().lowercased(with: vi)
+        let perDay = "products.price.perDay".localized().lowercased(with: vi)
+        let days = PluralText.format("products.cart.days", count: 3, 3)
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 200_000, pricingType: "FIXED", rentalDays: 3, orderType: .rent),
+                       "200.000đ / \(perRental)")
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 200_000, pricingType: nil, rentalDays: nil, orderType: .rent),
+                       "200.000đ / \(perRental)", "old rows without a type are per rental")
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 400_000, pricingType: "DAILY", rentalDays: 3, orderType: .rent),
+                       "400.000đ / \(perDay) × \(days)")
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 900_000, pricingType: nil, rentalDays: nil, orderType: .sale),
+                       "900.000đ / " + "products.cart.pricing.sale".localized().lowercased(with: vi))
     }
 
     func testChipAndPreviewTexts() throws {

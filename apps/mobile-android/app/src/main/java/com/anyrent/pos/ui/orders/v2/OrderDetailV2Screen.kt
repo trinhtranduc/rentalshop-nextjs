@@ -93,7 +93,11 @@ import com.anyrent.pos.ui.common.copyUriToCacheFile
 import com.anyrent.pos.ui.common.fileToNotesJpegBytes
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
-import com.anyrent.pos.ui.common.orderLinePricingText
+import com.anyrent.pos.domain.products.CartV2Logic
+import com.anyrent.pos.ui.home.v2.orderItemPricingText
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.anyrent.pos.ui.navigation.loadOrderIntoCart
 import com.anyrent.pos.ui.orders.shareOrderReceipt
 import com.anyrent.pos.ui.theme.DS
@@ -937,11 +941,23 @@ private fun ItemRow(item: OrderItem, orderType: String) {
                 fontWeight = FontWeight.Medium,
                 color = DS.Colors.Text,
             )
+            // Owner 2026-10-09: same wording as the cart link, so "theo lần" / "theo ngày × N ngày" shows here too
             Text(
-                orderLinePricingText(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, orderType),
+                orderItemPricingText(item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
                 fontSize = DS.TextSize.Secondary,
                 color = DS.Colors.TextMuted,
             )
+            CartV2Logic.noteText(item.note)?.let { note ->
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(stringResource(R.string.v2_item_note_label) + ": ") }
+                        append(note)
+                    },
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.Text,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
         }
         Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
     }
