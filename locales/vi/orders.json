@@ -757,6 +757,17 @@
         "collectDeposit": "Thu cọc ngay",
         "collectSale": "Thu ngay",
         "sell": "Bán & thu tiền"
+      },
+      "lineNote": {
+        "add": "+ Ghi chú",
+        "label": "Ghi chú",
+        "edit": "Sửa",
+        "title": "Ghi chú món",
+        "placeholder": "Ví dụ: sửa eo 2cm, giao kèm voan",
+        "hint": "Chỉ cho món này trong đơn. Ghi chú chung của đơn ở mục Ghi chú bên dưới.",
+        "clear": "Xoá ghi chú",
+        "done": "Xong",
+        "for": "Ghi chú cho {name}"
       }
     },
     "tabs": {

@@ -757,6 +757,17 @@
         "collectDeposit": "Collect deposit now",
         "collectSale": "Collect now",
         "sell": "Sell & collect"
+      },
+      "lineNote": {
+        "add": "+ Note",
+        "label": "Note",
+        "edit": "Edit",
+        "title": "Item note",
+        "placeholder": "e.g. take in the waist 2cm, add the veil",
+        "hint": "For this item in this order only. The order's own note is under Notes below.",
+        "clear": "Delete note",
+        "done": "Done",
+        "for": "Note for {name}"
       }
     },
     "tabs": {

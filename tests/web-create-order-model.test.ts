@@ -32,6 +32,7 @@ import {
   needsPrice,
   selectMode,
   setLinePrice,
+  setLineNote,
   quickDays,
   rentalDays,
   repriceLines,
@@ -217,6 +218,15 @@ describe('submit', () => {
     expect(firstMissing({ ...base, customerId: null })).toBe('customer');
     expect(firstMissing({ ...base, outletId: null })).toBe('outlet');
     expect(firstMissing({ ...base, orderType: 'SALE', pickup: '', ret: '' })).toBeNull();
+  });
+
+  it('#684 a line note is trimmed, sent as orderItems[].notes, and blank clears it', () => {
+    const lines = setLineNote(base.lines, AO_DAI.id, '  Sửa eo 2cm  ');
+    expect(lines[0].notes).toBe('Sửa eo 2cm');
+    expect(lines[1].notes).toBe(base.lines[1].notes);
+    const p = buildPayload({ ...base, lines, mode: 'create' }) as { orderItems: { notes: string }[] };
+    expect(p.orderItems[0].notes).toBe('Sửa eo 2cm');
+    expect(setLineNote(lines, AO_DAI.id, '   ')[0].notes).toBe('');
   });
 
   it('builds the create payload', () => {
