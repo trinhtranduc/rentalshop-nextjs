@@ -76,7 +76,7 @@ Run: `scripts/e2e/business-e2e.sh` (seed, API, both time zones) or `E2E_API_URL=
 |---|---|---|---|
 | BF-CANC-01 | Huỷ đơn đặt có cọc | A, D 200.000, cancel | Δ collected −D, refunds +D, orderValue −A, outstanding = atPickup −(A − D), cancelled +1; not in rankings; slot free (effectivelyAvailable 1); "Đã chi" 0 |
 | BF-CANC-02 | Đơn huỷ vẫn là "đơn mới" của ngày tạo | create + cancel | new +1, series newOrderCount +1, cancelled +1, orderValue 0 (current rule, Q2) |
-| BF-CANC-03 | **Known bug #503** Huỷ sau khi giao cùng ngày | A 300.000, D 100.000, S 400.000; PICKUPED; CANCELLED | Δ collected 0, totalRevenue 0, held 0 (today: collected −300.000) |
+| BF-CANC-03 | Huỷ sau khi giao cùng ngày (#503, fixed) | A 300.000, D 100.000, S 400.000; PICKUPED; CANCELLED | Δ collected 0, totalRevenue 0, held 0 (today: collected −300.000) |
 | BF-CANC-04 | Huỷ sau khi giao trả hàng về kho | qty 2, PICKUPED, CANCELLED | `{2,0,2}` → `{2,2,0}`; available |
 | BF-CANC-05 | Đơn huỷ không mở lại | CANCELLED → RESERVED/PICKUPED/RETURNED | 400 |
 

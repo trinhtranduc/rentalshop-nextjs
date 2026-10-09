@@ -257,7 +257,11 @@ export function getOrderRevenueEvents(
     if (order.status === ORDER_STATUS.CANCELLED && updatedAt && isInRange(updatedAt)) {
       let totalCollected = 0;
 
-      if (pickedUpAt && pickedUpAt < updatedAt) {
+      if (isSameDayCancelled) {
+        // #503: handed over and cancelled the same day: no pickup event was made, so refund only what an event
+        // recorded before: the deposit of a booking made on an earlier day (none when booked that day too)
+        totalCollected = isSameDayPickup ? 0 : depositAmount;
+      } else if (pickedUpAt && pickedUpAt < updatedAt) {
         // Already picked up: calculate total collected
         if (isSameDayPickup) {
           // Pickup same day as created: pickup revenue already included deposit
@@ -350,15 +354,28 @@ export function addToCollateralFlow(
   withCollateral: RevenueEvent[],
   plain: RevenueEvent[]
 ): CollateralFlow {
-  const keyOf = (e: RevenueEvent) => `${e.revenueType}@${new Date(e.date).getTime()}`;
-  const deltas = new Map<string, number>();
-  for (const e of withCollateral) deltas.set(keyOf(e), (deltas.get(keyOf(e)) || 0) + e.revenue);
-  for (const e of plain) deltas.set(keyOf(e), (deltas.get(keyOf(e)) || 0) - e.revenue);
-  for (const delta of deltas.values()) {
+  for (const delta of collateralByEvent(withCollateral, plain).values()) {
     if (delta > 0) flow.received += delta;
     else if (delta < 0) flow.returned -= delta;
   }
   return flow;
+}
+
+/** Key of one revenue event: its type and instant (an order has at most one event of a type at a time) */
+export function revenueEventKey(e: { revenueType: string; date: Date | string }): string {
+  return `${e.revenueType}@${new Date(e.date).getTime()}`;
+}
+
+/**
+ * #721: the collateral part of each event, keyed by `revenueEventKey`: the event's revenue minus the same event
+ * without collateral (see `addToCollateralFlow`). Rows of `income/orders` and `series[].cashCollected` use it, so
+ * their collateral adds up to `collateralFlow` (a same-day pickup + return or pickup + cancel moves none).
+ */
+export function collateralByEvent(withCollateral: RevenueEvent[], plain: RevenueEvent[]): Map<string, number> {
+  const deltas = new Map<string, number>();
+  for (const e of withCollateral) deltas.set(revenueEventKey(e), (deltas.get(revenueEventKey(e)) || 0) + e.revenue);
+  for (const e of plain) deltas.set(revenueEventKey(e), (deltas.get(revenueEventKey(e)) || 0) - e.revenue);
+  return deltas;
 }
 
 /**

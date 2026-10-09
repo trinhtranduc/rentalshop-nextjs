@@ -690,8 +690,11 @@ struct DailyIncomeOrder: Codable {
     let depositAmount: Double?
     let securityDeposit: Double?
     let damageFee: Double?
+    /// #721 (`status=all` rows): the collateral part of `revenue`, + received, − handed back; nil on an older API
+    let collateral: Double?
 
     enum CodingKeys: String, CodingKey {
+        case collateral
         case id
         case orderNumber
         case orderType
@@ -739,6 +742,7 @@ struct DailyIncomeOrder: Codable {
         depositAmount = try container.decodeIfPresent(Double.self, forKey: .depositAmount)
         securityDeposit = try container.decodeIfPresent(Double.self, forKey: .securityDeposit)
         damageFee = try container.decodeIfPresent(Double.self, forKey: .damageFee)
+        collateral = (try? container.decodeIfPresent(Double.self, forKey: .collateral)) ?? nil
         revenueDate = Self.decodeISO8601(try container.decodeIfPresent(String.self, forKey: .revenueDate))
         createdAt = Self.decodeISO8601(try container.decodeIfPresent(String.self, forKey: .createdAt))
         pickupPlanAt = Self.decodeISO8601(try container.decodeIfPresent(String.self, forKey: .pickupPlanAt))

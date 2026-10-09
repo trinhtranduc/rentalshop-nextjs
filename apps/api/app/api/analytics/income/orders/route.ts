@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getOrderRevenueEvents, civilDayBucket } from '@rentalshop/utils';
+import {
+  handleApiError,
+  ResponseBuilder,
+  getOrderRevenueEvents,
+  civilDayBucket,
+  collateralByEvent,
+  revenueEventKey,
+  withoutCollateral
+} from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange, widenCivilRange } from '../../../../../lib/analytics-days';
 
@@ -78,7 +86,7 @@ function wasCancelledAtCreation(order: { status: string; createdAt?: Date | null
  * GET /api/analytics/income/orders
  * List orders in a period. `status`:
  * - new | pickup | return | cancelled → same buckets as Overview snapshot counts
- * - all → revenue events (plus expected pickup/return when plan=true)
+ * - all → revenue events (plus expected pickup/return when plan=true); each event row has `collateral` (#721)
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   try {
@@ -184,6 +192,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       depositAmount: number;
       securityDeposit: number;
       damageFee: number;
+      /** #721 (`all` rows): the collateral part of `revenue`, + received, − handed back; Σ = collateralFlow net */
+      collateral?: number;
     };
 
     const dailyDataMap = new Map<string, {
@@ -205,7 +215,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         eventDate: Date,
         revenue: number,
         revenueType: string,
-        description: string
+        description: string,
+        collateral?: number
       ) => {
         if (eventDate < filterStart || eventDate > filterEnd) return;
         const dateKey = dayOf(eventDate).date;
@@ -222,6 +233,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           existing.revenue += revenue;
           existing.events.push({ revenueType, description, revenueDate: eventDate.toISOString() });
           entry.revenue = existing.revenue;
+          if (collateral !== undefined) entry.collateral = (entry.collateral || 0) + collateral;
           if (existing.events.length > 1) {
             entry.revenueType = 'MULTIPLE';
             entry.description = [...new Set(existing.events.map((e) => e.description))].join(' + ');
@@ -248,7 +260,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
           totalAmount: order.totalAmount || 0,
           depositAmount: order.depositAmount || 0,
           securityDeposit: order.securityDeposit || 0,
-          damageFee: order.damageFee || 0
+          damageFee: order.damageFee || 0,
+          ...(collateral !== undefined ? { collateral } : {})
         });
         ordersInList.set(orderKey, {
           index: dailyData.orders.length - 1,
@@ -286,8 +299,10 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         getOrderRevenueEvents(orderData, filterStart, filterEnd),
         status
       );
+      // #721: each event's collateral, from the same events as revenue.collateralFlow
+      const collateral = collateralByEvent(revenueEvents, getOrderRevenueEvents(withoutCollateral(orderData), filterStart, filterEnd));
       for (const event of revenueEvents) {
-        pushEntry(event.date, event.revenue, event.revenueType, event.description);
+        pushEntry(event.date, event.revenue, event.revenueType, event.description, collateral.get(revenueEventKey(event)) || 0);
       }
     }
 

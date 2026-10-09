@@ -5,7 +5,7 @@ import {
   getOrderRevenueEvents,
   parseProductImages
 } from '@rentalshop/utils';
-import { withoutCollateral } from '../core/revenue-calculator';
+import { collateralByEvent, revenueEventKey, withoutCollateral } from '../core/revenue-calculator';
 import {
   computeIncomePeriodSummary,
   type IncomePeriodDayRow,
@@ -742,28 +742,26 @@ export async function buildAnalyticsPeriodReport(
     );
   };
 
-  // #711: collateral moved on each day of the range: received on the pickup day, handed back on the return day
+  // #711: collateral moved on each day of the range: received on the pickup day, handed back on the return day.
+  // #721: taken from the revenue events (as revenue.collateralFlow), so a same-day pickup + cancel or + return moves
+  // none and the days add up to revenue.cashCollected
   const computeSeriesCollateral = async (): Promise<Map<string, number>> => {
-    const [picked, returned] = await Promise.all([
-      prisma.order.findMany({
-        where: { ...outletFilter, deletedAt: null, orderType: ORDER_TYPE.RENT as any, pickedUpAt: { gte: rangeStart, lte: rangeEnd } } as any,
-        select: { securityDeposit: true, pickedUpAt: true },
-        take: 10000
-      }),
-      prisma.order.findMany({
-        where: { ...outletFilter, deletedAt: null, orderType: ORDER_TYPE.RENT as any, returnedAt: { gte: rangeStart, lte: rangeEnd } } as any,
-        select: { securityDeposit: true, returnedAt: true },
-        take: 10000
-      })
-    ]);
-    return sumByBucket(
-      [
-        ...picked.map((o: any) => ({ at: o.pickedUpAt, amount: o.securityDeposit || 0 })),
-        ...returned.map((o: any) => ({ at: o.returnedAt, amount: -(o.securityDeposit || 0) }))
-      ],
-      groupBy,
-      timeZone
-    );
+    const orders = await prisma.order.findMany({
+      where: { ...buildEventWhere(outletFilter, rangeStart, rangeEnd), orderType: ORDER_TYPE.RENT as any } as any,
+      select: revenueSelect,
+      take: 10000
+    });
+    const rows: Array<{ at: Date; amount: number }> = [];
+    for (const order of orders) {
+      const data = mapRevenueOrder(order);
+      const events = getOrderRevenueEvents(data, rangeStart, rangeEnd);
+      const collateral = collateralByEvent(events, getOrderRevenueEvents(withoutCollateral(data), rangeStart, rangeEnd));
+      for (const event of events) {
+        const amount = collateral.get(revenueEventKey(event)) || 0;
+        if (amount) rows.push({ at: event.date, amount });
+      }
+    }
+    return sumByBucket(rows, groupBy, timeZone);
   };
 
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {

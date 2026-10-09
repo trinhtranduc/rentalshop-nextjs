@@ -206,6 +206,22 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertEqual(OverviewRelatedKind.outstanding.buckets, ["new"])
     }
 
+    /// Thế chân reads each event row's `collateral` (#721): a same-day hand-over then cancel adds nothing
+    func testCollateralRelatedRowsUseTheRowCollateral() throws {
+        let json = """
+        [{"id":1,"orderNumber":"100001","status":"PICKUPED","revenue":500,"collateral":300,"securityDeposit":300},
+         {"id":2,"orderNumber":"100002","status":"CANCELLED","revenue":0,"collateral":0,"securityDeposit":400},
+         {"id":3,"orderNumber":"100003","status":"RETURNED","revenue":-100,"collateral":-100,"securityDeposit":100},
+         {"id":4,"orderNumber":"100004","status":"RESERVED","revenue":50}]
+        """
+        let items = try JSONDecoder().decode([DailyIncomeOrder].self, from: Data(json.utf8))
+        let rows = OverviewDashLogic.relatedRows(.collateral, bucket: "all", items: items)
+        XCTAssertEqual(rows.map(\.orderNumber), ["100001", "100003"])
+        XCTAssertEqual(rows.map(\.amount), [300, -100])
+        XCTAssertEqual(OverviewDashLogic.relatedTotal(rows), 200)
+        XCTAssertEqual(OverviewRelatedKind.collateral.buckets, ["all"])
+    }
+
     func testGrowthRule() {
         XCTAssertEqual(OverviewDashLogic.growth(nil), .none)
         XCTAssertEqual(OverviewDashLogic.growth(0), .none)
