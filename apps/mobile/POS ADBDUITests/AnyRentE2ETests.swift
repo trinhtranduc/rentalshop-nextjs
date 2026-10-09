@@ -534,6 +534,27 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// WEB/MOBILE-STAT (#712 follow-up): the four Overview tiles on the phone. Their labels (value included) are noted
+    /// as `E2E_NOTE: TILE <title> | <label>`; the e2e checker compares them with GET /api/analytics/period.
+    func test7kOverviewTiles() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        sleep(4)
+        let titles = ["Giá trị đơn mới", "Doanh thu", "Thực thu", "Còn phải thu", "Thế chân"]
+        var found = 0
+        for button in app.buttons.allElementsBoundByIndex where button.exists {
+            let label = button.label
+            guard let title = titles.first(where: { label.hasPrefix($0) }) else { continue }
+            found += 1
+            e2e.note("TILE \(title) | \(label)")
+        }
+        e2e.shot("72-overview-tiles")
+        e2e.soft(found >= 4, "four Overview tiles on the phone (found \(found))")
+    }
+
     func test7Overview() throws {
         try e2e.requireFlag("newOverview")
         try e2e.start()
