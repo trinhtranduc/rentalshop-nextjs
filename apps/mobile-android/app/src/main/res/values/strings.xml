@@ -1502,4 +1502,5 @@
     <string name="detail_nav_title">Order %1$s</string>
     <string name="detail_deposit">Deposit</string>
     <string name="overview_v2_rule_received">Money actually collected in the period (deposits, rent on hand-over, sales, extra fees, minus refunds) and the collateral held. Collateral is shown separately.</string>
+    <string name="overview_v2_new_orders_count">%1$d new orders</string>
 </resources>

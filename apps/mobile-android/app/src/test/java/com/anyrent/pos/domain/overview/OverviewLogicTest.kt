@@ -133,6 +133,21 @@ class OverviewLogicTest {
         assertEquals(700.0, partial.collectedBreakdown!!.total, 0.0)
     }
 
+    /** #719: the new-order count is rent + sale of `orderValueByType` (cancelled left out), not `orderCounts.new` */
+    @Test
+    fun orderValueOrders() {
+        val report = OverviewLogic.reportFromJson(
+            JSONObject(
+                """{"operational":{"orderCounts":{"new":15}},
+                "revenue":{"totalOrderValue":3579,"orderValueByType":{"rent":{"amount":1457,"orders":8},"sale":{"amount":2122,"orders":5}}}}""",
+            ),
+        )
+        assertEquals(13, report.orderValueOrders)
+        assertEquals(15, report.newOrders)
+        // An API without the split shows no count
+        assertEquals(null, OverviewLogic.reportFromJson(JSONObject("""{"revenue":{"totalOrderValue":10}}""")).orderValueOrders)
+    }
+
     /** #492: the hero's change comes from `growth.orderValue`; an older API has none */
     @Test
     fun orderValueGrowth() {

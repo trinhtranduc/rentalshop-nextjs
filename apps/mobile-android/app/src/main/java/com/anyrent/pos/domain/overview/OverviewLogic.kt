@@ -46,6 +46,11 @@ data class OverviewReport(
     val collateralFlow: CollateralFlow? = null,
     /** #494 `revenue.outstandingBreakdown`; null on an older API ("Còn phải thu" tile not clickable) */
     val outstandingBreakdown: OutstandingBreakdown? = null,
+    /**
+     * #719: the orders behind [totalOrderValue]: rent + sale of `revenue.orderValueByType` (cancelled left out, unlike
+     * [newOrders]); null on an API without the split (no count shown)
+     */
+    val orderValueOrders: Int? = null,
 ) {
     /**
      * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
@@ -295,6 +300,9 @@ object OverviewLogic {
                 )
             },
             totalOrderValue = number(revenue, "totalOrderValue"),
+            orderValueOrders = revenue?.optJSONObject("orderValueByType")?.let { split ->
+                (split.optJSONObject("rent")?.optInt("orders", 0) ?: 0) + (split.optJSONObject("sale")?.optInt("orders", 0) ?: 0)
+            },
             outstanding = number(revenue, "outstanding"),
             orderValueGrowth = data.optJSONObject("growth")?.optJSONObject("orderValue")?.let { g ->
                 OverviewGrowth(current = number(g, "current"), previous = number(g, "previous"), growth = number(g, "growth"))
