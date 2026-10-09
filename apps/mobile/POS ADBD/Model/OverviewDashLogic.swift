@@ -69,6 +69,8 @@ struct OverviewTile: Equatable {
     /// "+" before a positive value (net collateral)
     let signed: Bool
     let chip: OverviewTileChip?
+    /// #719: a second chip, e.g. "13 đơn mới" on Giá trị đơn mới
+    var count: OverviewTileChip? = nil
 }
 
 /// Thực thu against what is still expected from today to the end of the period (web `forecastBar`, #612)
@@ -211,8 +213,12 @@ enum OverviewDashLogic {
             collateralChip = OverviewTileChip(tone: .info, key: "overview.dash.chip.held", count: held)
         }
         return [
+            // #719: the orders behind the money (rent + sale, cancelled left out); none on an API without orderValueByType
             OverviewTile(kind: .orderValue, value: report?.totalOrderValue, signed: false,
-                         chip: growthChip(report?.orderValueGrowth)),
+                         chip: growthChip(report?.orderValueGrowth),
+                         count: report?.orderValueByType.map {
+                             OverviewTileChip(tone: .info, key: "overview.dash.chip.newOrders", count: $0.rent.orders + $0.sale.orders)
+                         }),
             // #708: Thực thu is the money held, collateral included (cashCollected); older APIs keep collected
             OverviewTile(kind: .collected, value: report?.cashCollected ?? report?.netRevenue, signed: false,
                          chip: growthChip(report?.revenueGrowth)),

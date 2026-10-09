@@ -398,8 +398,14 @@ private fun RevenueSection(
                     Text(formatMoneyVnd(orderValue), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
                     val growth = report.orderValueGrowth?.growth
                     val previous = stringResource(R.string.overview_v2_vs_previous_period)
+                    // #719: how many new orders make up the value (rent + sale, cancelled left out)
+                    val orders = report.orderValueOrders?.let { stringResource(R.string.overview_v2_new_orders_count, it) }
                     Text(
                         buildAnnotatedString {
+                            if (orders != null) {
+                                withStyle(SpanStyle(color = DS.Colors.Text, fontWeight = FontWeight.SemiBold)) { append(orders) }
+                                append(" · ")
+                            }
                             if (growth != null) {
                                 withStyle(SpanStyle(color = growthColor(growth))) { append("${OverviewLogic.changeText(growth)} $previous") }
                                 append(" · ")

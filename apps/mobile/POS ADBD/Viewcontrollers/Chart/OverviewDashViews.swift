@@ -360,10 +360,11 @@ final class OverviewTileView: UIControl {
             column.addArrangedSubview(note)
             column.setCustomSpacing(4, after: bar)
         }
-        if !loading, let chip = tile.chip {
-            let pill = OverviewPillLabel(chip)
-            let row = UIStackView(arrangedSubviews: [pill, UIView()])
+        let pills = loading ? [] : [tile.chip, tile.count].compactMap { $0 }.map { OverviewPillLabel($0) }
+        if !pills.isEmpty {
+            let row = UIStackView(arrangedSubviews: pills + [UIView()])
             row.alignment = .center
+            row.spacing = 6
             column.addArrangedSubview(row)
         }
         addSubview(column)
@@ -375,7 +376,7 @@ final class OverviewTileView: UIControl {
 
         isAccessibilityElement = true
         accessibilityTraits = UIAccessibilityTraitButton
-        accessibilityLabel = [tile.kind.title, loading ? nil : valueText, forecastText, tile.chip?.text]
+        accessibilityLabel = [tile.kind.title, loading ? nil : valueText, forecastText, tile.chip?.text, loading ? nil : tile.count?.text]
             .compactMap { $0 }.joined(separator: ", ")
         accessibilityHint = "overview.dash.openDetail".localized()
     }

@@ -494,6 +494,8 @@ export interface Tile {
   /** Show a leading `+` for a positive value (net collateral). */
   signed: boolean;
   chip: TileChip | null;
+  /** #719: a second chip, e.g. "18 đơn mới" on Giá trị đơn mới */
+  count?: TileChip | null;
 }
 
 export function growthChip(growth: Growth): TileChip | null {
@@ -524,7 +526,17 @@ export function buildTiles(report: PeriodReportLike | null | undefined, cash?: C
   }
   const held = cash?.depositsHeld?.orders;
   return [
-    { kind: 'orderValue', value: kpis.orderValue, signed: false, chip: growthChip(kpis.orderValueGrowth) },
+    {
+      kind: 'orderValue',
+      value: kpis.orderValue,
+      signed: false,
+      chip: growthChip(kpis.orderValueGrowth),
+      // #719: the orders behind the money (rent + sale, cancelled left out); none on an API without orderValueByType
+      count:
+        report?.revenue?.orderValueByType != null && kpis.newOrders != null
+          ? { tone: 'info', key: 'home.tiles.newOrders', values: { count: kpis.newOrders } }
+          : null,
+    },
     // #708: Thực thu is the money held, collateral included (cashCollected); older APIs keep collected
     { kind: 'collected', value: num(report?.revenue?.cashCollected) ?? kpis.collected, signed: false, chip: growthChip(kpis.collectedGrowth) },
     { kind: 'outstanding', value: kpis.outstanding, signed: false, chip: outstandingChip },

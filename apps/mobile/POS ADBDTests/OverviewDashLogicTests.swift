@@ -170,6 +170,13 @@ final class OverviewDashLogicTests: XCTestCase {
             let none = OverviewReport.OutstandingBreakdown(atPickup: .init(amount: 0, orders: 0), overduePickup: .init(amount: 0, orders: 0))
             XCTAssertNil(OverviewDashLogic.tiles(report: report(outstanding: none), now: nil)[2].chip, zone)
 
+            // #719: "N đơn mới" = rent + sale orders behind the money (not newOrders, which counts later-cancelled ones)
+            XCTAssertNil(tiles[0].count, zone)
+            let split = OverviewReport(netRevenue: 0, revenueGrowth: nil, newOrders: 15, series: [], topProducts: [],
+                                       orderValueByType: .init(rent: .init(amount: 1_457_000, orders: 8), sale: .init(amount: 2_122_000, orders: 5)))
+            XCTAssertEqual(OverviewDashLogic.tiles(report: split, now: nil)[0].count,
+                           OverviewTileChip(tone: .info, key: "overview.dash.chip.newOrders", count: 13), zone)
+
             // An older API: no values, no chips, "—"
             let older = OverviewDashLogic.tiles(report: nil, now: nil)
             XCTAssertEqual(older.map(\.value), [nil, nil, nil, nil], zone)

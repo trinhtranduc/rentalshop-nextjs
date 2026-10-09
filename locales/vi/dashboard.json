@@ -309,6 +309,7 @@
       "overdue": "{count} đơn quá ngày",
       "waiting": "{count} đơn chờ lấy",
       "held": "đang giữ {count} đơn",
+      "newOrders": "{count} đơn mới",
       "open": "{label}: {value}. Xem chi tiết",
       "trend": "Thực thu theo ngày",
       "forecast": "dự kiến thêm {amount} hôm nay",

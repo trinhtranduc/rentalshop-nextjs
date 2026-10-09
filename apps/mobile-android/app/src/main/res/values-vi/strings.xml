@@ -1476,4 +1476,5 @@
     <string name="detail_nav_title">Đơn %1$s</string>
     <string name="detail_deposit">Cọc</string>
     <string name="overview_v2_rule_received">Tiền thật đã thu trong kỳ (cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn) và thế chân. Thế chân được tách riêng.</string>
+    <string name="overview_v2_new_orders_count">%1$d đơn mới</string>
 </resources>

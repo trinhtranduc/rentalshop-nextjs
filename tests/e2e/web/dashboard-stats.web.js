@@ -117,6 +117,13 @@ async function main() {
       const shown = parseTileValue(raw);
       const want = expected[label];
       check(label, want !== null && shown === want, `shown=${shown} expected=${want} raw=${JSON.stringify(raw).slice(0, 160)}`);
+      if (label === 'Giá trị đơn mới') {
+        // #719: "N đơn mới" = rent + sale orders behind the money (cancelled left out)
+        const byType = report.revenue?.orderValueByType || {};
+        const wantCount = (byType.rent?.orders ?? 0) + (byType.sale?.orders ?? 0);
+        const m = /(\d+) đơn mới/.exec(raw);
+        check(`${label} › tile new-order count`, !!m && Number(m[1]) === wantCount, `shown=${m && m[1]} rent+sale=${wantCount}`);
+      }
     }
 
     // A tap on each tile opens its drawer: every row must match the API, and the rows must add up to the
