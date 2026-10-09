@@ -16,7 +16,7 @@ const API = process.env.MOBILE_STAT_API_URL || 'http://localhost:3280';
 const EMAIL = process.env.MOBILE_STAT_EMAIL || 'merchant1@example.com';
 const PASSWORD = process.env.MOBILE_STAT_PASSWORD || 'merchant123';
 /** Checks that fail on purpose until the named issue is fixed */
-const KNOWN = { 'Thực thu › tile = API cashCollected': '#708', 'Giá trị đơn mới › Đơn mới count = Cho thuê + Bán orders': '#716' };
+const KNOWN = {};
 
 function vnToday() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -41,13 +41,15 @@ function row(label) {
 async function main() {
   if (!LOG || !fs.existsSync(LOG)) throw new Error('usage: overview-sheets-check.js <xcodebuild.log> [YYYY-MM-DD]');
   const day = process.argv[3] || vnToday();
-  const notes = fs.readFileSync(LOG, 'utf8').split('\n').filter((l) => l.startsWith('E2E_NOTE: TILE ') || l.startsWith('E2E_NOTE: SHEET '));
+  const notes = fs.readFileSync(LOG, 'utf8').split('\n').filter((l) => /^E2E_NOTE: (TILE|SHEET|RELATED) /.test(l));
   const tiles = {};
   const sheets = {};
+  const related = {};
   for (const l of notes) {
-    const m = /^E2E_NOTE: (TILE|SHEET) (.+?) \| (.+)$/.exec(l);
+    const m = /^E2E_NOTE: (TILE|SHEET|RELATED) (.+?) \| (.+)$/.exec(l);
     if (!m) continue;
     if (m[1] === 'TILE') tiles[m[2]] = num(m[3].split(', ')[1]);
+    else if (m[1] === 'RELATED') related[m[2]] = num(m[3].slice(m[3].lastIndexOf(':') + 1));
     else (sheets[m[2]] = sheets[m[2]] || []).push(m[3]);
   }
 
@@ -67,14 +69,13 @@ async function main() {
   const spec = {
     'Giá trị đơn mới': {
       tileApi: r.totalOrderValue,
-      rows: { 'Đơn mới': [r.totalOrderValue, report.operational?.orderCounts?.new], 'Cho thuê': [byType.rent?.amount, byType.rent?.orders], Bán: [byType.sale?.amount, byType.sale?.orders] },
+      rows: { 'Đơn mới': [r.totalOrderValue, (byType.rent?.orders ?? 0) + (byType.sale?.orders ?? 0)], 'Cho thuê': [byType.rent?.amount, byType.rent?.orders], Bán: [byType.sale?.amount, byType.sale?.orders] },
       sum: (v) => (v['Cho thuê'] ?? 0) + (v['Bán'] ?? 0)
     },
     'Thực thu': {
-      tileApi: r.collected,
-      tileCash: r.cashCollected,
-      rows: { 'Cọc khi tạo đơn': [cb.deposits], 'Thu khi giao, bán': [cb.pickupAndSale], 'Phí hư hỏng, trễ': [cb.fees], 'Hoàn đơn huỷ': [-(cb.refunds || 0)], 'Thực thu': [r.collected] },
-      sum: (v) => (v['Cọc khi tạo đơn'] ?? 0) + (v['Thu khi giao, bán'] ?? 0) + (v['Phí hư hỏng, trễ'] ?? 0) + (v['Hoàn đơn huỷ'] ?? 0)
+      tileApi: r.cashCollected,
+      rows: { 'Cọc khi tạo đơn': [cb.deposits], 'Thu khi giao, bán': [cb.pickupAndSale], 'Phí hư hỏng, trễ': [cb.fees], 'Hoàn đơn huỷ': [-(cb.refunds || 0)], 'Thế chân nhận − trả': [(flow.received || 0) - (flow.returned || 0)], 'Thực thu': [r.cashCollected] },
+      sum: (v) => (v['Cọc khi tạo đơn'] ?? 0) + (v['Thu khi giao, bán'] ?? 0) + (v['Phí hư hỏng, trễ'] ?? 0) + (v['Hoàn đơn huỷ'] ?? 0) + (v['Thế chân nhận − trả'] ?? 0)
     },
     'Còn phải thu': {
       tileApi: r.outstanding,
@@ -122,6 +123,11 @@ async function main() {
       const total = labels.find((l) => l.startsWith('Đơn mới,'));
       const split = (byType.rent?.orders ?? 0) + (byType.sale?.orders ?? 0);
       check(`${tile} › Đơn mới count = Cho thuê + Bán orders`, !!total && row(total).count === split, `sheet=${total && row(total).count} rent+sale=${split}`);
+    }
+    // #708: the total of "Xem các đơn liên quan" equals the tile's number by the agreed definition
+    const relatedWant = { 'Giá trị đơn mới': r.totalOrderValue, 'Thực thu': r.cashCollected, 'Thế chân': (flow.received || 0) - (flow.returned || 0) }[tile];
+    if (relatedWant !== undefined) {
+      check(`${tile} › related orders total = tile`, related[tile] === relatedWant, `list=${related[tile]} want=${relatedWant}`);
     }
     if (Object.keys(shown).length) {
       const total = s.sum(shown);

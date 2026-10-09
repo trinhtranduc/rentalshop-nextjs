@@ -6,7 +6,7 @@
  * For one custom period (the last 7 Vietnam days), the page is opened in a real browser and each tile is compared with
  * GET /api/analytics/period:
  *   Giá trị đơn mới  = revenue.totalOrderValue            (orders created in the period, cancelled excluded)
- *   Thực thu         = revenue.cashCollected              (money held, collateral included)   [known bug #708 on web]
+ *   Thực thu         = revenue.cashCollected              (money held, collateral included)
  *   Còn phải thu     = revenue.outstanding
  *   Thế chân         = collateralFlow.received − returned
  *
@@ -30,7 +30,7 @@ const CFG = {
 };
 
 /** Checks that fail on purpose until the named issue is fixed (a pass there is reported as "fixed?") */
-const KNOWN = { 'Thực thu': '#708', 'Giá trị đơn mới › row Đơn mới count': '#716' };
+const KNOWN = {};
 
 function loadPlaywright() {
   for (const p of [env.PLAYWRIGHT_CORE_PATH, 'playwright-core'].filter(Boolean)) {
@@ -138,10 +138,15 @@ async function main() {
       },
       {
         tile: 'Thực thu',
-        rows: { 'Cọc khi tạo đơn': cb.deposits, 'Thu khi giao, bán': cb.pickupAndSale, 'Phí hư hỏng, trễ hạn': cb.fees, 'Hoàn tiền đơn huỷ': -(cb.refunds || 0), 'Thực thu': r.collected },
-        sum: (v) => v['Cọc khi tạo đơn'] + v['Thu khi giao, bán'] + v['Phí hư hỏng, trễ hạn'] + v['Hoàn tiền đơn huỷ'],
-        total: 'Thực thu',
-        headline: r.collected
+        rows: {
+          'Cọc khi tạo đơn': cb.deposits,
+          'Thu khi giao, bán': cb.pickupAndSale,
+          'Phí hư hỏng, trễ hạn': cb.fees,
+          'Hoàn tiền đơn huỷ': -(cb.refunds || 0),
+          'Thế chân nhận − trả': (flow.received || 0) - (flow.returned || 0)
+        },
+        sum: (v) => v['Cọc khi tạo đơn'] + v['Thu khi giao, bán'] + v['Phí hư hỏng, trễ hạn'] + v['Hoàn tiền đơn huỷ'] + v['Thế chân nhận − trả'],
+        headline: r.cashCollected
       },
       {
         tile: 'Còn phải thu',
@@ -195,8 +200,26 @@ async function main() {
         const total = d.sum(shown);
         check(`${d.tile} › rows add up to the headline`, total === headline, `sum=${total} headline=${headline}`);
       }
+      // "Xem các đơn liên quan" opens the orders behind the number: their total equals the tile (#708)
+      const link = dialog.locator('a[href*="/dashboard/related"]').first();
+      if ((await link.count()) === 0) {
+        check(`${d.tile} › related orders link`, false, 'no link to /dashboard/related in the drawer');
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        continue;
+      }
+      await link.click();
+      const totalCell = page.locator('[data-related-total]');
+      const empty = page.getByText(/Không có đơn|No orders/);
+      await Promise.race([totalCell.waitFor({ timeout: 60000 }), empty.waitFor({ timeout: 60000 })]).catch(() => {});
+      const listTotal = (await totalCell.count()) ? parseNum(await totalCell.innerText()) : 0;
+      const rowCount = await page.locator('[data-related-row]').count();
+      check(`${d.tile} › related orders total = tile`, listTotal === tileValue, `list=${listTotal} (${rowCount} rows) tile=${tileValue}`);
+      // back reopens the drawer (?detail= is in the URL): close it and wait for the tiles to load again
+      await page.goBack({ waitUntil: 'networkidle' });
+      await page.locator('[role="dialog"]').first().waitFor({ timeout: 30000 }).catch(() => {});
       await page.keyboard.press('Escape');
-      await page.waitForTimeout(300);
+      await page.waitForFunction(() => !document.querySelector('[role="dialog"]') && !document.querySelector('section[aria-label="Số liệu chính"] button[disabled]'), null, { timeout: 60000 });
     }
     await ctx.close();
   } finally {

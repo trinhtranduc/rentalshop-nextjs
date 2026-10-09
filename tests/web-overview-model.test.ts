@@ -118,7 +118,11 @@ describe('KPIs', () => {
 
   it('breaks money down with refunds subtracted', () => {
     const money = buildMoney(report);
-    expect(money.collected).toEqual({ deposits: 2_100_000, pickupAndSale: 9_650_000, fees: 900_000, refunds: 200_000, total: 12_450_000 });
+    // an API without cashCollected: no collateral step, Thực thu stays `collected`
+    expect(money.collected).toEqual({ deposits: 2_100_000, pickupAndSale: 9_650_000, fees: 900_000, refunds: 200_000, collateral: null, total: 12_450_000 });
+    // #708: with cashCollected, Thực thu = collected + collateral received − returned
+    const held = buildMoney({ revenue: { ...report.revenue, cashCollected: 14_050_000 } });
+    expect(held.collected).toMatchObject({ collateral: 1_600_000, total: 14_050_000 });
     expect(money.outstanding?.total).toBe(3_350_000);
     expect(money.collateral).toEqual({ received: 3_000_000, returned: 1_400_000 });
     expect(buildMoney({ revenue: {} })).toEqual({ collected: null, outstanding: null, collateral: null });
