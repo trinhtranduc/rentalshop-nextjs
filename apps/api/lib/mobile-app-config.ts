@@ -30,7 +30,7 @@ export interface MobileAppConfig {
   ios: MobilePlatformConfig;
   android: MobilePlatformConfig;
   features: Record<MobileFeatureKey, boolean>;
-  /** #682: Nhân viên kho can be assigned (`INVENTORY_ROLE_ENABLED=true`). Not a screen flag, so not in `features` */
+  /** #682: Nhân viên kho can be assigned (on unless `INVENTORY_ROLE_ENABLED=false`). Not a screen flag, so not in `features` */
   inventoryRole: boolean;
 }
 
@@ -82,6 +82,6 @@ export function buildMobileAppConfig(env: Record<string, string | undefined> = p
       storeUrl: url(env.ANDROID_STORE_URL, DEFAULT_ANDROID_STORE_URL),
     },
     features,
-    inventoryRole: env.INVENTORY_ROLE_ENABLED === 'true',
+    inventoryRole: env.INVENTORY_ROLE_ENABLED !== 'false',
   };
 }

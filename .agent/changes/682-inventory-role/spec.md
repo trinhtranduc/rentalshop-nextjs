@@ -39,7 +39,7 @@ Issue: #682 · Status: accepted · Intent: ./intent.md
 9. `canAssignRole`: `ADMIN`, `OPS`, `MERCHANT`, `OUTLET_ADMIN` may assign `OUTLET_INVENTORY` (same as
    `OUTLET_STAFF`); `OUTLET_STAFF` and `OUTLET_INVENTORY` may not assign anything.
    `POST /api/merchants/[id]/users` applies the same rule.
-10. While env `INVENTORY_ROLE_ENABLED` is not `true`, assigning `OUTLET_INVENTORY` (create or update)
+10. (2026-10-09: on by default.) While env `INVENTORY_ROLE_ENABLED` is `false`, assigning `OUTLET_INVENTORY` (create or update)
     → 400 `ROLE_NOT_AVAILABLE`; existing users keep it. `GET /api/mobile/app-config` adds a top-level
     `inventoryRole: boolean` (additive key; `features` stays screen flags only).
 11. A role change to or from `OUTLET_INVENTORY` sets `permissionsChangedAt` and ends sessions (#443).

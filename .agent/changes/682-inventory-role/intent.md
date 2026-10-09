@@ -47,3 +47,4 @@ iOS, Android, `locales/*`, seed and e2e.
 - 2026-10-09 — Product Excel import and export allowed (owner)
 - 2026-10-09 — Revenue hidden, otherwise the same as staff (owner)
 - 2026-10-09 — Name `OUTLET_INVENTORY`, matches the `OUTLET_*` outlet-scoped roles (agent)
+- 2026-10-09 — Role on by default, no flag to set; `INVENTORY_ROLE_ENABLED=false` stays as the kill switch. Accepted: a user given the role on an old Android build cannot update orders until the app updates (owner)

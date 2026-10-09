@@ -18,7 +18,7 @@ export interface UserApiResponse {
 // ============================================================================
 
 export const usersApi = {
-  /** #682: Nhân viên kho can be given yet (app-config `inventoryRole`, env INVENTORY_ROLE_ENABLED on the API) */
+  /** #682: Nhân viên kho can be given (app-config `inventoryRole`; the API turns it off only with INVENTORY_ROLE_ENABLED=false) */
   async inventoryRoleEnabled(): Promise<boolean> {
     try {
       const response = await authenticatedFetch(`${apiUrls.base}/api/mobile/app-config`);

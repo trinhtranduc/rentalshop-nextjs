@@ -99,7 +99,7 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     expect((await inv.get('/api/orders/export?format=csv')).status).toBe(403);
   });
 
-  test('BF-INV-09 the role cannot be given while INVENTORY_ROLE_ENABLED is off', async () => {
+  test('BF-INV-09 the role can be given unless INVENTORY_ROLE_ENABLED=false (app-config says which)', async () => {
     const cfg = await must(s.get('/api/mobile/app-config'), 'app-config');
     const email = `kho-new-${Date.now()}@example.com`;
     const r = await s.post('/api/users', { email, password: 'secret123', firstName: 'Kho', lastName: 'Moi', phone: `09${Date.now() % 100000000}`, role: 'OUTLET_INVENTORY', outletId });
