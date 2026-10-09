@@ -1473,4 +1473,6 @@
     <string name="image_search_tip_whole">Chụp cả món đồ, đủ sáng</string>
     <string name="image_search_tip_background">Nền gọn, không lẫn đồ khác</string>
     <string name="image_search_tip_photo">Sản phẩm cần có ảnh trong danh sách</string>
+    <string name="detail_nav_title">Đơn %1$s</string>
+    <string name="detail_deposit">Cọc</string>
 </resources>
