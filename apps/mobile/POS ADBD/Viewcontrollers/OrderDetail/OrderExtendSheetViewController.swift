@@ -16,7 +16,10 @@ final class OrderExtendSheetViewController: UIViewController {
 
     private let detail: OrderDetail
     private let currentReturn: Date
-    private let picker = UIDatePicker()
+    /// #696: the cart's rental calendar, pickup fixed, so Gia hạn reads like choosing the rental dates
+    private let calendarPicker = DatePickerViewController()
+    /// Start of the chosen new return day, in the shop zone
+    private var newDay: Date
     private let extraLabel = V2.label(size: DS.TextSize.body, weight: .bold)
     private let extraField = UITextField()
     private let newTotalLabel = V2.label(size: DS.TextSize.body, weight: .bold)
@@ -28,6 +31,7 @@ final class OrderExtendSheetViewController: UIViewController {
     init(detail: OrderDetail, currentReturn: Date) {
         self.detail = detail
         self.currentReturn = currentReturn
+        self.newDay = RentalExtension.firstSelectableDay(after: currentReturn)
         super.init(nibName: nil, bundle: nil)
         if let sheet = sheetPresentationController {
             sheet.detents = [.large()]
@@ -48,14 +52,20 @@ final class OrderExtendSheetViewController: UIViewController {
         let current = V2.label(String(format: "order.extend.current".localized(), DayFormatter.short(currentReturn)),
                                size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
 
-        let first = RentalExtension.firstSelectableDay(after: currentReturn)
-        picker.datePickerMode = .date
-        picker.preferredDatePickerStyle = .inline
-        picker.timeZone = Date.shopTimeZone
-        picker.minimumDate = first
-        picker.date = first
-        picker.tintColor = DS.Color.primary
-        picker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
+        // FSCalendar draws the phone's days: pass shop days through devicePickFromShopDay, as the cart does (#596)
+        calendarPicker.isEmbedded = true
+        addChildViewController(calendarPicker)
+        let calendarView: UIView = calendarPicker.view
+        calendarView.snp.makeConstraints { make in make.height.equalTo(330) }
+        calendarPicker.didMove(toParentViewController: self)
+        calendarPicker.configureForExtension(pickup: (detail.pickupPlanAt ?? currentReturn).devicePickFromShopDay(),
+                                             currentReturn: currentReturn.devicePickFromShopDay(),
+                                             newReturn: newDay.devicePickFromShopDay(),
+                                             maximumDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()))
+        calendarPicker.onExtendDayChange = { [weak self] picked in
+            self?.newDay = picked.shopDayFromDevicePick()
+            self?.dateChanged()
+        }
 
         let extraTitle = V2.label("order.extend.extraRent".localized(), size: DS.TextSize.body, weight: .bold)
         extraField.placeholder = "0"
@@ -84,7 +94,7 @@ final class OrderExtendSheetViewController: UIViewController {
             make.trailing.equalToSuperview().inset(DS.Spacing.lg)
         }
 
-        let stack = UIStackView(arrangedSubviews: [title, current, picker, extraLabel, extraTitle, extraBox,
+        let stack = UIStackView(arrangedSubviews: [title, current, calendarView, extraLabel, extraTitle, extraBox,
                                                    newTotalLabel, errorLabel, confirmButton])
         stack.axis = .vertical
         stack.spacing = DS.Spacing.sm
@@ -103,11 +113,11 @@ final class OrderExtendSheetViewController: UIViewController {
     }
 
     private var window: (start: Date, end: Date)? {
-        RentalExtension.window(currentReturn: currentReturn, newDay: picker.date)
+        RentalExtension.window(currentReturn: currentReturn, newDay: newDay)
     }
 
     private func refresh() {
-        let extra = RentalExtension.extraDays(currentReturn: currentReturn, newDay: picker.date)
+        let extra = RentalExtension.extraDays(currentReturn: currentReturn, newDay: newDay)
         extraLabel.text = extra == 1 ? "order.extend.extraDay".localized()
             : String(format: "order.extend.extraDays".localized(), extra)
         extraLabel.isHidden = extra == 0
@@ -115,7 +125,7 @@ final class OrderExtendSheetViewController: UIViewController {
         newTotalLabel.text = newTotal.map { String(format: "order.extend.newTotal".localized(), MoneyFormatter.format($0)) }
         newTotalLabel.isHidden = newTotal == nil
         let title = window == nil ? "order.extend.pick".localized()
-            : String(format: "order.extend.confirm".localized(), DayFormatter.short(picker.date))
+            : String(format: "order.extend.confirm".localized(), DayFormatter.short(newDay))
         confirmButton.setTitle(title, for: .normal)
         confirmButton.isEnabled = window != nil && !busy
         confirmButton.alpha = confirmButton.isEnabled ? 1 : 0.5
@@ -125,7 +135,7 @@ final class OrderExtendSheetViewController: UIViewController {
     private func setBusy(_ value: Bool) {
         busy = value
         isModalInPresentation = value
-        picker.isEnabled = !value
+        calendarPicker.view.isUserInteractionEnabled = !value
         extraField.isEnabled = !value
         refresh()
     }
@@ -136,7 +146,7 @@ final class OrderExtendSheetViewController: UIViewController {
         setBusy(false)
     }
 
-    @objc private func dateChanged() {
+    private func dateChanged() {
         errorLabel.isHidden = true
         refresh()
     }
@@ -149,7 +159,7 @@ final class OrderExtendSheetViewController: UIViewController {
     @objc private func confirmTapped() {
         guard !busy, let window else { return }
         view.endEditing(true)
-        let newDay = picker.date
+        let newDay = self.newDay
         let items = detail.orderItems
         setBusy(true)
         errorLabel.isHidden = true
