@@ -306,3 +306,21 @@ final class OrderDetailLogicTests: XCTestCase {
         }
     }
 }
+
+/// #697 — an order whose creator was deleted (`createdById` SetNull) still opens on iOS
+final class OrderDetailDeletedCreatorTests: XCTestCase {
+    /// GET /api/orders/{id} for a local-seed rental after its creator was deleted (createdById/createdBy null)
+    private let payload = #"""
+{"success":true,"data":{"id":132,"orderNumber":"968112","orderType":"RENT","status":"PICKUPED","totalAmount":700000,"depositAmount":0,"securityDeposit":0,"damageFee":0,"lateFee":0,"discountType":null,"discountValue":0,"discountAmount":0,"pickupPlanAt":"2026-10-07T01:00:00.000Z","returnPlanAt":"2026-10-10T05:00:00.000Z","pickedUpAt":null,"returnedAt":null,"rentalDuration":null,"isReadyToDeliver":false,"collateralType":null,"collateralDetails":null,"notes":"e2e-681","notesImages":null,"pickupNotes":null,"pickupNotesImages":null,"returnNotes":null,"returnNotesImages":null,"damageNotes":null,"damageNotesImages":null,"createdAt":"2026-10-08T22:24:51.027Z","updatedAt":"2026-10-08T22:24:51.027Z","outletId":1,"customerId":11,"createdById":null,"customer":{"id":11,"firstName":"William","lastName":"Hernandez","phone":"+1-555-1010","email":"william.hernandez11@example.com","address":"Address 11 for Rental Shop Demo","city":"Example City","state":"Example State","zipCode":"12345","country":"USA","dateOfBirth":null,"notes":null,"createdAt":"2026-10-08T15:22:24.976Z","updatedAt":"2026-10-08T15:22:24.976Z"},"outlet":{"id":1,"name":"Rental Shop Demo - Main Branch","address":"123 Main Street","phone":"+1-555-0100","city":"New York","state":"NY","zipCode":"10001","country":"United States","isActive":true,"printNote":null,"printBankQr":false,"merchant":{"id":1,"name":"Rental Shop Demo","email":"merchant1@example.com","phone":"+1-555-0100","address":"123 Main Street","city":"New York","state":"NY","zipCode":"10001","country":"United States","businessType":"EQUIPMENT","pricingType":"DAILY","taxId":"12-3456789","currency":"USD"}},"createdBy":null,"orderItems":[{"id":265,"productId":28,"productName":"Product 28 - Art Supplies","productBarcode":"BAR000028","productImages":[],"quantity":7,"unitPrice":100000,"totalPrice":700000,"deposit":0,"notes":null,"rentalDays":null,"pricingType":null,"pricingOptionId":null,"product":{"id":28,"name":"Product 28 - Art Supplies","barcode":"BAR000028","images":[],"rentPrice":53,"deposit":33}}],"payments":[],"itemCount":1,"paymentCount":0,"totalPaid":0,"timeline":[]},"code":"ORDER_RETRIEVED_SUCCESS","message":"Order retrieved successfully"}
+"""#
+
+    func testOrderWithDeletedCreatorDecodes() throws {
+        let response = try JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(payload.utf8))
+        let detail = try XCTUnwrap(response.data)
+        XCTAssertNil(detail.createdById)
+        XCTAssertNil(detail.createdBy)
+        let order = Order.from(detail: detail)
+        XCTAssertEqual(order.createdById, 0, "list model keeps 0 for no creator, as its own decoder does")
+        XCTAssertEqual(order.createdByName, "")
+    }
+}
