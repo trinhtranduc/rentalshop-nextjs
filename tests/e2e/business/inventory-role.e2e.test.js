@@ -215,4 +215,22 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     expect(u.status).toBe(403);
     expect(await s.outletStock(p.id, other.id)).toBeNull();
   });
+
+  test('BF-INV-17 lowering stock below the units out on rent gives the same result for it as for the merchant', async () => {
+    const lower = async (session) => {
+      const p = await s.createProduct({ price: 100000, stock: 2, outletId });
+      const order = await must(book(s, p, { from: today, to: addDays(today, 1) }, { quantity: 2 }), 'book 2');
+      expect((await s.setStatus(order.id, 'PICKUPED')).status).toBe(200);
+      const r = await session.updateProduct(p.id, { totalStock: 1, outletStock: [{ outletId, stock: 1 }] });
+      const after = await s.outletStock(p.id, outletId);
+      const row = await listRow(session, p);
+      return { status: r.status, code: r.body?.code || null, after, today: row?.effectiveAvailableToday };
+    };
+    const mine = await lower(inv);
+    const owner = await lower(s);
+    expect(mine).toEqual(owner);
+    // never a negative free count on Home
+    expect(mine.today).toBeGreaterThanOrEqual(0);
+    expect(mine.after.available).toBeGreaterThanOrEqual(0);
+  });
 });
