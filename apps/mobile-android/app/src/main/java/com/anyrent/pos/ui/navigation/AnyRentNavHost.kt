@@ -154,7 +154,7 @@ object Routes {
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
     // #642 "Lịch trống" month screen opened from the new product detail (the old availability route stays)
-    const val ProductCalendar = "product-calendar/{productId}"
+    const val ProductCalendar = "product-calendar/{productId}?day={day}"
     const val CartV2 = "cart-v2"
     // #387 redesigned customer detail (flag newCustomers)
     const val CustomerDetailV2 = "customer-v2/{customerId}"
@@ -172,7 +172,7 @@ object Routes {
         "overview-top/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
     fun productDetailV2(id: Int) = "product-v2/$id"
-    fun productCalendar(id: Int) = "product-calendar/$id"
+    fun productCalendar(id: Int, day: String? = null) = if (day == null) "product-calendar/$id" else "product-calendar/$id?day=$day"
     fun customerDetailV2(id: Int) = "customer-v2/$id"
     fun customerEditV2(id: Int) = "customer-v2-edit/$id"
     fun changeHistory(target: ChangeHistoryTarget, id: Int, subtitle: String) =
@@ -482,12 +482,16 @@ fun AnyRentNavHost(
         }
         composable(
             Routes.ProductCalendar,
-            arguments = listOf(navArgument("productId") { type = NavType.IntType }),
+            arguments = listOf(
+                navArgument("productId") { type = NavType.IntType },
+                navArgument("day") { type = NavType.StringType; nullable = true; defaultValue = null },
+            ),
         ) { entry ->
             ProductCalendarScreen(
                 productId = entry.arguments?.getInt("productId") ?: 0,
                 onBack = { rootNavController.popBackStack() },
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                initialDay = entry.arguments?.getString("day")?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() },
             )
         }
         composable(
@@ -509,6 +513,7 @@ fun AnyRentNavHost(
         composable(Routes.CartV2) {
             CartV2Screen(
                 onBack = { rootNavController.popBackStack() },
+                onOpenCalendar = { id, day -> rootNavController.navigate(Routes.productCalendar(id, day)) },
                 onAddItems = {
                     // #433: the product list on Home, not the screen that opened the cart (e.g. a customer)
                     val backStack = rootNavController.currentBackStack.value.map { it.destination.route }

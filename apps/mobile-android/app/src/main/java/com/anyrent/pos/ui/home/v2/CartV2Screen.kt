@@ -116,6 +116,8 @@ fun CartV2Screen(
     onOrderSaved: (Int, String?) -> Unit = { id, _ -> onOpenOrder(id) },
     /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
     onEditCancelled: (Int) -> Unit = onOpenOrder,
+    /** #684: the "Hết hàng …" tag → Lịch trống of the product on that day (`yyyy-MM-dd`) */
+    onOpenCalendar: (Int, String) -> Unit = { _, _ -> },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -217,8 +219,8 @@ fun CartV2Screen(
         }
     }
     val overlapTexts = OverlapWarnings.Texts(
-        cartLine = stringResource(R.string.v2_cart_overlap_line),
-        cartLineNoOrder = stringResource(R.string.v2_cart_overlap_line_no_order),
+        cartLineOneDay = stringResource(R.string.v2_cart_overlap_one_day),
+        cartLineRange = stringResource(R.string.v2_cart_overlap_range),
         confirmLine = stringResource(R.string.v2_create_overlap_line),
         confirmLineNoOrder = stringResource(R.string.v2_create_overlap_line_no_order),
     )
@@ -453,6 +455,9 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
+                    onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
+                        { onOpenCalendar(c.productId, c.from.toString()) }
+                    },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
                     onOpenPricing = { pricingLineId = line.product.id },
                 )
@@ -776,8 +781,10 @@ private fun ItemRow(
     line: CartLine,
     isSale: Boolean,
     available: Int?,
-    /** #518 "Hết đồ 03–05/10 · đã thuê ở đơn #482113"; replaces the shortage chip */
+    /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
     overlapText: String? = null,
+    /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
+    onOpenOverlap: (() -> Unit)? = null,
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
 ) {
@@ -805,10 +812,13 @@ private fun ItemRow(
                     stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
                 }
                 shortText?.let { text ->
+                    val hint = stringResource(R.string.v2_cart_overlap_hint)
                     Text(
-                        text,
+                        if (onOpenOverlap != null) "$text ›" else text,
                         fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2)).padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
+                            .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                            .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
                     )
                 }
                 // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet

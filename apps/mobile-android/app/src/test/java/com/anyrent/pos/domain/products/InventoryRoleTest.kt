@@ -48,6 +48,10 @@ class InventoryRoleTest {
         assertEquals(listOf("OUTLET_ADMIN", "OUTLET_STAFF"), UserFormRoles.choices(false, null))
         assertEquals(listOf("OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY"), UserFormRoles.choices(true, null))
         assertTrue("OUTLET_INVENTORY" in UserFormRoles.choices(false, "OUTLET_INVENTORY"))
+        // #684: no role until one is picked
+        assertFalse(UserFormRoles.isComplete(null))
+        assertFalse(UserFormRoles.isComplete(""))
+        assertTrue(UserFormRoles.isComplete("OUTLET_STAFF"))
         assertTrue(appConfigFromJson(JSONObject("""{"features":{},"inventoryRole":true}""")).inventoryRole)
         assertFalse(appConfigFromJson(JSONObject("""{"features":{}}""")).inventoryRole)
     }

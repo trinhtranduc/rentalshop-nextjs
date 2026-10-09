@@ -413,6 +413,11 @@
     <string name="role_outlet_admin">Outlet Admin</string>
     <string name="role_outlet_staff">Outlet Staff</string>
     <string name="role_outlet_inventory">Inventory Staff</string>
+    <string name="role_select">Choose a role</string>
+    <string name="role_required">Choose a role for the user</string>
+    <string name="role_help_outlet_admin">One outlet: orders, products, prices, customers, the day\'s money, the outlet\'s staff.</string>
+    <string name="role_help_outlet_staff">Creates orders, hands over, takes back, adds customers. Cannot edit prices or see money reports.</string>
+    <string name="role_help_outlet_inventory">Like staff, plus products and categories (add, edit prices, delete). No money reports.</string>
     <string name="active">Active</string>
     <string name="inactive">Inactive</string>
     <string name="active_badge">Active</string>
@@ -1229,8 +1234,9 @@
     <string name="settings_v2_allow_overlap_failed">Could not save the setting. Please try again.</string>
     <string name="api_error_order_schedule_conflict">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
     <string name="api_error_invalid_timezone">Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).</string>
-    <string name="v2_cart_overlap_line">Booked out %1$s · rented in order %2$s</string>
-    <string name="v2_cart_overlap_line_no_order">Booked out %1$s</string>
+    <string name="v2_cart_overlap_one_day">Booked out on %1$s</string>
+    <string name="v2_cart_overlap_range">Booked out %1$s → %2$s</string>
+    <string name="v2_cart_overlap_hint">See the orders holding it</string>
     <string name="v2_cart_overlap_blocked">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
     <string name="v2_create_overlap_title">Overlapping booking</string>
     <string name="v2_create_overlap_line">%1$s is short %2$d on %3$s (rented in %4$s).</string>
