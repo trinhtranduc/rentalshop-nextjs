@@ -32,6 +32,7 @@ object CreatedOrderAutoPrint {
             // The bill needs the full order (customer, outlet, items), as "In hoá đơn" on the detail prints it
             val detail = ApiClient.get().getOrder(orderId).getOrNull() ?: return@launch
             val result = ThermalPrinter.printOrder(config, detail)
+            // A failed print is logged only: the order flow never shows printer errors (#700)
             if (result is ThermalPrinter.Result.Failure) Log.i("AutoPrint", "skipped: ${result.message}")
         }
     }
