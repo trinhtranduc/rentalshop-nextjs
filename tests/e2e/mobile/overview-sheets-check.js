@@ -43,14 +43,17 @@ async function main() {
   const day = process.argv[3] || vnToday();
   const notes = fs.readFileSync(LOG, 'utf8').split('\n').filter((l) => /^E2E_NOTE: (TILE|SHEET|RELATED) /.test(l));
   const tiles = {};
+  const tileLabels = {};
   const sheets = {};
   const related = {};
   const relatedCount = {};
   for (const l of notes) {
     const m = /^E2E_NOTE: (TILE|SHEET|RELATED) (.+?) \| (.+)$/.exec(l);
     if (!m) continue;
-    if (m[1] === 'TILE') tiles[m[2]] = num(m[3].split(', ')[1]);
-    else if (m[1] === 'RELATED') {
+    if (m[1] === 'TILE') {
+      tiles[m[2]] = num(m[3].split(', ')[1]);
+      tileLabels[m[2]] = m[3];
+    } else if (m[1] === 'RELATED') {
       related[m[2]] = num(m[3].slice(m[3].lastIndexOf(':') + 1));
       const c = /·\s*(\d+):/.exec(m[3]);
       relatedCount[m[2]] = c ? Number(c[1]) : null;
@@ -125,6 +128,10 @@ async function main() {
       if (count != null) check(`${tile} › row ${name} count`, rw.count === count, `sheet=${rw.count} api=${count}`);
     }
     if (tile === 'Giá trị đơn mới') {
+      // #719: the tile's "N đơn mới" chip = rent + sale orders
+      const chip = /(\d+) đơn mới/.exec(tileLabels[tile] || '');
+      const want = (byType.rent?.orders ?? 0) + (byType.sale?.orders ?? 0);
+      check(`${tile} › tile new-order count`, !!chip && Number(chip[1]) === want, `tile=${chip && chip[1]} rent+sale=${want}`);
       const total = labels.find((l) => l.startsWith('Đơn mới,'));
       const split = (byType.rent?.orders ?? 0) + (byType.sale?.orders ?? 0);
       check(`${tile} › Đơn mới count = Cho thuê + Bán orders`, !!total && row(total).count === split, `sheet=${total && row(total).count} rent+sale=${split}`);
