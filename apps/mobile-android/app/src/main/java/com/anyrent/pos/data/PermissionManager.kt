@@ -65,4 +65,7 @@ object UserFormRoles {
     fun choices(inventoryRole: Boolean, currentRole: String?): List<String> =
         if (inventoryRole || currentRole.equals("OUTLET_INVENTORY", true)) listOf("OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY")
         else listOf("OUTLET_ADMIN", "OUTLET_STAFF")
+
+    /** #684: a new user has no role until one is picked; the form cannot be saved without it */
+    fun isComplete(role: String?): Boolean = !role.isNullOrBlank()
 }

@@ -330,6 +330,9 @@ data class CartLineCalc(
 enum class CartProblem { EMPTY, NO_CUSTOMER, NO_PICKUP, NO_RETURN }
 
 object CartV2Logic {
+    /** #684: a line's note as shown and sent: trimmed; null when blank (an empty sheet clears it), iOS `noteText` */
+    fun noteText(note: String?): String? = note?.trim()?.takeIf { it.isNotEmpty() }
+
     /** Every problem at once, like the iOS alert; a sale needs no dates (#448) */
     fun problems(itemCount: Int, hasCustomer: Boolean, isSale: Boolean, datesChosen: Boolean): List<CartProblem> =
         buildList {

@@ -53,14 +53,16 @@ final class ProductCalendarViewController: BaseViewControler {
         static let fullMark = UIColor(hexString: "A7F3D0"), lowMark = UIColor(hexString: "FED7AA"), outMark = UIColor(hexString: "FECACA")
     }
 
-    init(product: Product, orders: [Order]?) {
+    /// `focusDay` (`yyyy-MM-dd`, #684): open on that day and month (the cart's "Trùng đơn ngày …"); today otherwise
+    init(product: Product, orders: [Order]?, focusDay: String? = nil) {
         self.product = product
         productId = product.id ?? product.product_id
         self.orders = orders
-        let today = CalendarV2Logic.parts(of: DayFormatter.key(Date()))!
-        year = today.year
-        month = today.month
-        focusKey = DayFormatter.key(Date())
+        let key = focusDay.flatMap { CalendarV2Logic.parts(of: $0) != nil ? $0 : nil } ?? DayFormatter.key(Date())
+        let parts = CalendarV2Logic.parts(of: key)!
+        year = parts.year
+        month = parts.month
+        focusKey = key
         super.init(nibName: nil, bundle: nil)
     }
 

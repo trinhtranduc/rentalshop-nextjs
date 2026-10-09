@@ -37,6 +37,12 @@ describe('#682 Nhân viên kho — web', () => {
     expect(roleChoices('OUTLET_INVENTORY', { inventoryRole: true })).toEqual([]);
   });
 
+  it('#684 a new staff form starts with no role; saving without one is refused', () => {
+    expect(EMPTY_STAFF_FORM.role).toBe('');
+    const errors = validateStaffForm({ ...EMPTY_STAFF_FORM, name: 'A', email: 'a@b.vn', phone: '0901234567', outletId: 3, password: 'secret12', confirmPassword: 'secret12' }, 'create');
+    expect(errors.role).toBe('roleRequired');
+  });
+
   it('an inventory user opens in the edit form with its role and needs an outlet', () => {
     expect(formFromUser({ role: 'OUTLET_INVENTORY', outletId: 3 } as any).role).toBe('OUTLET_INVENTORY');
     const errors = validateStaffForm({ ...EMPTY_STAFF_FORM, name: 'A', email: 'a@b.vn', phone: '0901234567', role: 'OUTLET_INVENTORY', outletId: null, password: 'secret12', confirmPassword: 'secret12' }, 'create');

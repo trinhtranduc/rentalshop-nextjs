@@ -265,6 +265,13 @@ object CartStore {
         persist()
     }
 
+    /** #684: the line's note from the "Ghi chú món" sheet; blank clears it */
+    fun updateNote(productId: Int, note: String?) {
+        val clean = com.anyrent.pos.domain.products.CartV2Logic.noteText(note)
+        _lines.update { list -> list.map { if (it.product.id == productId) it.copy(note = clean) else it } }
+        persist()
+    }
+
     fun updateRentalDays(productId: Int, days: Int) {
         val safe = days.coerceAtLeast(1)
         _lines.update { list ->
@@ -409,6 +416,7 @@ object CartStore {
                 isSale = sale,
                 pricingType = item.pricingType.ifBlank { "FIXED" },
                 unitPriceOverride = item.unitPrice,
+                note = item.note,
             )
         }
 
@@ -518,6 +526,7 @@ object CartStore {
                 .put("pricingOptions", options)
             linesJson.put(
                 JSONObject()
+                    .put("itemNote", line.note ?: JSONObject.NULL)
                     .put("quantity", line.quantity)
                     .put("rentalDays", line.rentalDays)
                     .put("isSale", line.isSale)
@@ -610,6 +619,7 @@ object CartStore {
                 rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),
                 isSale = line.optBoolean("isSale"),
                 pricingType = PricingTypes.normalizeOption(line.optString("pricingType").ifBlank { product.pricingType }),
+                note = line.optString("itemNote").takeIf { it.isNotBlank() && it != "null" },
                 unitPriceOverride = override,
             )
         }

@@ -1009,6 +1009,10 @@
 "Outlet Admin" = "Outlet Admin";
 "Outlet Staff" = "Outlet Staff";
 "Inventory Staff" = "Inventory Staff";
+"users.role.required" = "Choose a role for the user";
+"users.role.help.outletAdmin" = "One outlet: orders, products, prices, customers, the day's money, the outlet's staff.";
+"users.role.help.outletStaff" = "Creates orders, hands over, takes back, adds customers. Cannot edit prices or see money reports.";
+"users.role.help.outletInventory" = "Like staff, plus products and categories (add, edit prices, delete). No money reports.";
 "Generating receipt..." = "Generating receipt...";
 "Failed to generate PDF" = "Failed to generate PDF";
 "RENTAL RECEIPT" = "RENTAL RECEIPT";
@@ -2104,6 +2108,18 @@
 /* #518 Cho tạo đơn khi trùng lịch */
 "cart.overlap.tag" = "Booked out %@ · rented in order %@";
 "cart.overlap.tag.noOrders" = "Booked out %@";
+"cart.overlap.tagOneDay" = "Out %@";
+"cart.overlap.tagRange" = "Out %@ → %@";
+"cart.overlap.tagHint" = "See the orders holding it on %@";
+"cart.itemNote.add" = "+ Note";
+"cart.itemNote.label" = "Note";
+"cart.itemNote.edit" = "Edit";
+"cart.itemNote.title" = "Item note";
+"cart.itemNote.placeholder" = "e.g. take in the waist 2cm, add the veil";
+"cart.itemNote.hint" = "For this item in this order only. The order's own note is under Notes below the cart.";
+"cart.itemNote.clear" = "Delete note";
+"cart.itemNote.save" = "Save";
+"cart.itemNote.accessibility" = "Note for %@";
 "cart.overlap.line" = "%@ is %d short on %@ (rented in %@).";
 "cart.overlap.line.noOrders" = "%@ is %d short on %@.";
 "cart.overlap.title" = "Schedule overlap";

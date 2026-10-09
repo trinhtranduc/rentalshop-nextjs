@@ -364,4 +364,17 @@ enum UserFormRoles {
     static func choices(inventoryRole: Bool, currentRole: Role?) -> [Role] {
         inventoryRole || currentRole == .outletInventory ? [.outletStaff, .outletAdmin, .outletInventory] : [.outletStaff, .outletAdmin]
     }
+
+    /// #684: a new user has no role until one is picked; the form cannot be saved without it
+    static func isComplete(_ role: Role?) -> Bool { role != nil }
+
+    /// #684: one line on what the role can do (the role sheet)
+    static func help(_ role: Role) -> String {
+        switch role {
+        case .outletAdmin: return "users.role.help.outletAdmin".localized()
+        case .outletStaff: return "users.role.help.outletStaff".localized()
+        case .outletInventory: return "users.role.help.outletInventory".localized()
+        case .admin, .merchant: return ""
+        }
+    }
 }

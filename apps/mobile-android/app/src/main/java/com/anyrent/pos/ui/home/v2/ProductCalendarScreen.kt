@@ -105,16 +105,19 @@ fun ProductCalendarScreen(
     productId: Int,
     onBack: () -> Unit,
     onOpenOrder: (Int) -> Unit,
+    /** #684: open on this day and its month (the cart's "Hết hàng …"); today otherwise */
+    initialDay: LocalDate? = null,
 ) {
     val context = LocalContext.current
     val today = remember { ShopTime.today() }
+    val opening = initialDay ?: today
     var product by remember { mutableStateOf<Product?>(null) }
-    var month by remember { mutableStateOf(YearMonth.from(today)) }
+    var month by remember { mutableStateOf(YearMonth.from(opening)) }
     val available = remember { mutableStateMapOf<String, Int>() }
     val loadedMonths = remember { mutableStateListOf<YearMonth>() }
     var stock by remember { mutableStateOf<Int?>(null) }
     var range by remember { mutableStateOf(ProductCalendarLogic.Range()) }
-    var focusDay by remember { mutableStateOf(today) }
+    var focusDay by remember { mutableStateOf(opening) }
     var openOrders by remember { mutableStateOf<List<OrderSummary>>(emptyList()) }
     val allowOverlap by SessionStore.allowOverlappingOrdersFlow.collectAsState()
     val added = stringResource(R.string.v2_added_to_cart)

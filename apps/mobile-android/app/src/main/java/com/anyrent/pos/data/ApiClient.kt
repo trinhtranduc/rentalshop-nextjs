@@ -434,6 +434,8 @@ class ApiClient(
         depositsByProduct: Map<Int, Double> = emptyMap(),
         pricingTypesByProduct: Map<Int, String> = emptyMap(),
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
+        /** #684: each line's note (`orderItems[].notes`) */
+        notesByProduct: Map<Int, String> = emptyMap(),
         /** #341: one value per checkout, reused on retry, so the API never creates the order twice. */
         idempotencyKey: String? = null,
         /** #480: cart note photos (JPEG ~180KB); empty = the same JSON request as before */
@@ -453,6 +455,7 @@ class ApiClient(
                     .put("totalPrice", lineTotal)
                     .apply {
                         depositsByProduct[productId]?.let { put("deposit", it) }
+                        notesByProduct[productId]?.let { put("notes", it) }
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
                             put("pricingType", pricingType)
@@ -519,6 +522,8 @@ class ApiClient(
         depositsByProduct: Map<Int, Double> = emptyMap(),
         pricingTypesByProduct: Map<Int, String> = emptyMap(),
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
+        /** #684: each line's note (`orderItems[].notes`) */
+        notesByProduct: Map<Int, String> = emptyMap(),
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
@@ -534,6 +539,7 @@ class ApiClient(
                     .put("totalPrice", lineTotal)
                     .apply {
                         depositsByProduct[productId]?.let { put("deposit", it) }
+                        notesByProduct[productId]?.let { put("notes", it) }
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
                             put("pricingType", pricingType)

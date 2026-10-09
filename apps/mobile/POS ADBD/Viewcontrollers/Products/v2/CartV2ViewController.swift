@@ -64,6 +64,19 @@ final class CartV2ViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
     }
 
+    /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
+    private func openConflictDay(_ conflict: CartScheduleConflict) {
+        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+            DispatchQueue.main.async {
+                guard let self, let product else { return }
+                let calendar = ProductCalendarViewController(product: product, orders: nil,
+                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                calendar.hidesBottomBarWhenPushed = true
+                self.navigationController?.pushViewController(calendar, animated: true)
+            }
+        }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
@@ -412,7 +425,7 @@ final class CartV2ViewController: BaseViewControler {
 
     private func itemRow(_ item: CartItem, index: Int) -> UIView {
         let row = UIView()
-        let thumb = V2.thumbnail(size: 56, radius: 10)
+        let thumb = V2.thumbnail(size: 64, radius: 12)
         thumb.image = V2.placeholder
         thumb.contentMode = .center
         if let url = item.imageUrl, let link = URL(string: url) {
@@ -425,51 +438,71 @@ final class CartV2ViewController: BaseViewControler {
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .bold)
-        total.textAlignment = .right
+        total.textAlignment = .left
         total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let top = UIStackView(arrangedSubviews: [name, total])
-        top.alignment = .top
-        top.spacing = 8
-        let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary,
-                                 color: CartV2Logic.needsPrice(item, orderType: cart.orderType) ? V2.danger : DS.Color.textMuted, lines: 0)
-        let column = UIStackView(arrangedSubviews: [top, calcLabel])
+        // #684 (owner 2026-10-09): name; the blue pricing link; the "Hết hàng …" tag; last row the total and −/+.
+        // No card, and no separate "450.000/lần × 1" line: its numbers are in the link
+        let stepper = V2Stepper(compact: true)
+        stepper.minimum = 0
+        stepper.value = item.quantity
+        stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
+        stepper.setContentHuggingPriority(.required, for: .horizontal)
+        stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let link = pricingChip(item, index: index)
+        link.titleLabel?.lineBreakMode = .byTruncatingTail
+        // #518 / #684: "Hết 09/10 → 11/10 ›" beside the name (owner) when other rentals hold the item on those days;
+        // a tap opens Lịch trống on the first clashing day (the orders of that day)
+        let nameRow = UIStackView(arrangedSubviews: [name])
+        nameRow.alignment = .top
+        nameRow.spacing = 8
+        let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
 
-        // #518 (boards GH-trung-bat / GH-trung-tat): "Hết đồ 03–05/10 · đã thuê ở đơn #482113" when other rentals
-        // hold the item on those days; otherwise the free-units tag as before
-        let overlapText: String? = isRent ? conflicts[item.productId].map(ScheduleConflictLogic.tagText) : nil
+        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet
+        column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
+
+        if isRent, let conflict = conflicts[item.productId] {
+            let tag = UIButton(type: .system)
+            tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
+            tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
+            tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
+            tag.backgroundColor = UIColor(hexString: "FEE2E2")
+            tag.layer.cornerRadius = 6
+            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
+            tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
+            tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
+            tag.setContentHuggingPriority(.required, for: .horizontal)
+            tag.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(tag)
+        }
         let shortageText: String? = CartV2Logic.shortage(item).map { left in
             String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
         }
-        if let text = overlapText ?? shortageText {
+        if !(isRent && conflicts[item.productId] != nil), let text = shortageText {
             let warn = V2.label(" " + text + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
             warn.numberOfLines = 0
             warn.backgroundColor = UIColor(hexString: "FEE2E2")
             warn.layer.cornerRadius = 6
             warn.clipsToBounds = true
-            let wrap = UIStackView(arrangedSubviews: [warn, UIView()])
-            column.addArrangedSubview(wrap)
+            warn.setContentHuggingPriority(.required, for: .horizontal)
+            warn.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(warn)
         }
 
-        // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet. The price is
-        // for this order only, any role, any time (owner 2026-10-05); never the product's price.
-        let chipRow = UIStackView(arrangedSubviews: [pricingChip(item, index: index), UIView()])
-        column.addArrangedSubview(chipRow)
-
-        let stepper = V2Stepper(compact: true)
-        stepper.minimum = 0
-        stepper.value = item.quantity
-        stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
-        var leading: UIView = UIView()
+        // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. A sale line keeps "Còn N"
         if !isRent, let available = item.availabilityStatus?.available {
-            leading = V2.label(String(format: "products.cart.inStock".localized(), available), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            column.addArrangedSubview(V2.label(String(format: "products.cart.inStock".localized(), available),
+                                               size: DS.TextSize.secondary, color: DS.Color.textMuted))
         }
-        let controls = UIStackView(arrangedSubviews: [leading, UIView(), stepper])
-        controls.alignment = .center
-        column.addArrangedSubview(controls)
+        let bottom = UIStackView(arrangedSubviews: [total, UIView(), stepper])
+        bottom.alignment = .center
+        bottom.spacing = 8
+        column.setCustomSpacing(10, after: column.arrangedSubviews.last ?? link)
+        column.addArrangedSubview(bottom)
 
         row.addSubview(thumb)
         row.addSubview(column)
@@ -489,40 +522,78 @@ final class CartV2ViewController: BaseViewControler {
         return row
     }
 
-    /// "Theo ngày · 150.000đ/ngày" with a down chevron; "· Nhập giá" in blue while the line has no price
-    private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
-        let chip = CartV2Logic.chip(item, orderType: cart.orderType)
+    /// #684 (canvas N1): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" in a light box (2 lines)
+    private func itemNoteButton(_ item: CartItem, index: Int) -> UIButton {
         let button = UIButton(type: .system)
-        let title = NSMutableAttributedString(string: chip.label, attributes: [
-            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
-            NSAttributedString.Key.foregroundColor: DS.Color.text,
-        ])
-        if let price = chip.price {
-            title.append(NSAttributedString(string: " · " + price, attributes: [
-                NSAttributedString.Key.font: UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.secondary, weight: .regular),
-                NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+        button.contentHorizontalAlignment = .leading
+        button.titleLabel?.numberOfLines = 2
+        if let note = CartV2Logic.noteText(item.note) {
+            let title = NSMutableAttributedString(string: "cart.itemNote.label".localized(), attributes: [
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
+            ])
+            title.append(NSAttributedString(string: " · " + note + " ", attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "334155"),
             ]))
-        } else {
-            title.append(NSAttributedString(string: " · " + "products.cart.pricing.enterPrice".localized(), attributes: [
+            title.append(NSAttributedString(string: "cart.itemNote.edit".localized(), attributes: [
                 NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
                 NSAttributedString.Key.foregroundColor: DS.Color.primary,
             ]))
+            button.setAttributedTitle(title, for: .normal)
+            button.titleLabel?.lineBreakMode = .byTruncatingMiddle
+            button.backgroundColor = UIColor(hexString: "F8FAFC")
+            button.layer.cornerRadius = 10
+            button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+        } else {
+            button.setTitle("cart.itemNote.add".localized(), for: .normal)
+            button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
+            button.setTitleColor(UIColor(hexString: "475569"), for: .normal)
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 8)
         }
+        button.accessibilityLabel = String(format: "cart.itemNote.accessibility".localized(), item.productName ?? "")
+        button.accessibilityValue = CartV2Logic.noteText(item.note)
+        button.addAction(UIAction { [weak self] _ in self?.openItemNote(index: index) }, for: .touchUpInside)
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
+        return button
+    }
+
+    /// #684 (canvas N2): the separate "Ghi chú món" sheet; an empty text clears the note
+    private func openItemNote(index: Int) {
+        guard index < cart.items.count else { return }
+        let item = cart.items[index]
+        let sheet = CartItemNoteSheet(productName: item.productName ?? "", note: item.note)
+        sheet.onSave = { note in CartStore.shared.updateNote(at: index, note: CartV2Logic.noteText(note)) }
+        present(sheet, animated: true)
+    }
+
+    /// #684: blue link, price first — "200.000đ / theo lần ⌄", "400.000đ / theo ngày × 3 ngày ⌄" (15pt, no border);
+    /// "Nhập giá / theo lần" while the line has no price
+    private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
+        let chip = CartV2Logic.chip(item, orderType: cart.orderType)
+        let link = CartV2Logic.link(item, orderType: cart.orderType)
+        let button = UIButton(type: .system)
+        let title = NSMutableAttributedString(string: link.amount ?? "products.cart.pricing.enterPrice".localized(), attributes: [
+            NSAttributedString.Key.font: link.amount == nil ? Utils.boldFont(size: DS.TextSize.body)
+                : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .bold),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
+        ])
+        title.append(NSAttributedString(string: " / " + link.unit, attributes: [
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
+        ]))
         button.setAttributedTitle(title, for: .normal)
-        button.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
-        button.tintColor = DS.Color.textMuted
+        button.setImage(DS.symbol("chevron.down", 13, weight: .semibold), for: .normal)
+        button.tintColor = DS.Color.primary
         button.semanticContentAttribute = .forceRightToLeft
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 18)
-        button.layer.cornerRadius = 10
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
-        button.backgroundColor = DS.Color.surface
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
+        button.contentHorizontalAlignment = .leading
         button.tag = index
         button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
         button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
         button.addTarget(self, action: #selector(pricingChipTapped(_:)), for: .touchUpInside)
-        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(36) }
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         return button
     }
 
@@ -1182,3 +1253,106 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         dismiss(animated: true)
     }
 }
+
+/// #684 (canvas N2): "Ghi chú món" — title + ✕, the product name, a text area, "Xoá ghi chú" / "Lưu"
+final class CartItemNoteSheet: UIViewController {
+    var onSave: ((String?) -> Void)?
+    private let productName: String
+    private let note: String?
+    private let textView = UITextView()
+    private let placeholder = V2.label("cart.itemNote.placeholder".localized(), size: DS.TextSize.input, color: UIColor(hexString: "94A3B8"))
+
+    init(productName: String, note: String?) {
+        self.productName = productName
+        self.note = note
+        super.init(nibName: nil, bundle: nil)
+        if let sheet = sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+        let title = V2.label("cart.itemNote.title".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let close = UIButton(type: .system)
+        close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
+        close.tintColor = UIColor(hexString: "475569")
+        close.backgroundColor = UIColor(hexString: "F1F5F9")
+        close.layer.cornerRadius = 18
+        close.accessibilityLabel = "Close".localized()
+        close.addAction(UIAction { [weak self] _ in self?.dismiss(animated: true) }, for: .touchUpInside)
+        close.snp.makeConstraints { make in make.size.equalTo(36) }
+        let header = UIStackView(arrangedSubviews: [title, close])
+        header.alignment = .center
+        header.spacing = DS.Spacing.md
+        let name = V2.label(productName, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 2)
+
+        textView.text = note
+        textView.font = Utils.regularFont(size: DS.TextSize.input)
+        textView.textColor = DS.Color.text
+        textView.layer.borderWidth = 1
+        textView.layer.borderColor = DS.Color.primary.cgColor
+        textView.layer.cornerRadius = 12
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        textView.accessibilityLabel = "cart.itemNote.title".localized()
+        textView.delegate = self
+        textView.snp.makeConstraints { make in make.height.equalTo(140) }
+        textView.addSubview(placeholder)
+        placeholder.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(15)
+        }
+        placeholder.isHidden = !(note ?? "").isEmpty
+        let hint = V2.label("cart.itemNote.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+
+        let clear = UIButton(type: .system)
+        clear.setTitle("cart.itemNote.clear".localized(), for: .normal)
+        clear.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        clear.setTitleColor(V2.danger, for: .normal)
+        clear.layer.borderWidth = 1
+        clear.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
+        clear.layer.cornerRadius = 14
+        clear.isHidden = (note ?? "").isEmpty
+        clear.addAction(UIAction { [weak self] _ in self?.finish(nil) }, for: .touchUpInside)
+        let save = V2.primaryButton("cart.itemNote.save".localized())
+        save.addAction(UIAction { [weak self] _ in self?.finish(self?.textView.text) }, for: .touchUpInside)
+        let buttons = UIStackView(arrangedSubviews: [clear, save])
+        buttons.spacing = 10
+        buttons.distribution = .fillEqually
+        buttons.snp.makeConstraints { make in make.height.equalTo(50) }
+
+        let stack = UIStackView(arrangedSubviews: [header, name, textView, hint, buttons])
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.setCustomSpacing(16, after: name)
+        stack.setCustomSpacing(22, after: hint)
+        view.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(28)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        textView.becomeFirstResponder()
+    }
+
+    private func finish(_ text: String?) {
+        let onSave = self.onSave
+        dismiss(animated: true) { onSave?(text) }
+    }
+}
+
+extension CartItemNoteSheet: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        placeholder.isHidden = !textView.text.isEmpty
+    }
+}
+

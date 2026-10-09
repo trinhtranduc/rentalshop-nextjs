@@ -24,7 +24,8 @@ export const EMPTY_STAFF_FORM: StaffFormValues = {
   name: '',
   email: '',
   phone: '',
-  role: 'OUTLET_STAFF',
+  // #684: no role until the owner picks one of the role cards (each card says what the role can do)
+  role: '',
   outletId: null,
   password: '',
   confirmPassword: '',

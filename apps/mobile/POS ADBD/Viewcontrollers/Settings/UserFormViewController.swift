@@ -108,7 +108,8 @@ class UserFormViewController: BaseViewControler {
         return field
     }()
     
-    private var selectedRole: Role = .outletStaff
+    /// #684: empty until the owner picks a role in the sheet (create); the user's role when editing
+    private var selectedRole: Role?
     private var selectedOutletId: Int?
     private var availableOutlets: [Outlet] = []
     
@@ -495,8 +496,8 @@ class UserFormViewController: BaseViewControler {
             selectedOutletId = user.outletId
         } else {
             // Create mode
-            selectedRole = .outletStaff
-            roleField.textField.text = Role.outletStaff.displayName
+            selectedRole = nil
+            roleField.textField.text = nil
             
             // Set email placeholder with tenant key format
             if let shopName = currentUser?.merchant?.name ?? currentUser?.storeName, !shopName.isEmpty {
@@ -627,7 +628,7 @@ class UserFormViewController: BaseViewControler {
             params["password"] = password
         }
         
-        params["role"] = selectedRole.rawValue
+        if let selectedRole { params["role"] = selectedRole.rawValue }
         
         // Add outletId if selected (for merchant creating user) or auto-assigned (for outlet admin)
         if let outletId = selectedOutletId {
@@ -652,45 +653,25 @@ class UserFormViewController: BaseViewControler {
     }
     
     @objc private func showRolePicker() {
-        let alert = UIAlertController(
-            title: "Select Role".localized(),
-            message: nil,
-            preferredStyle: .actionSheet
-        )
-        
-        // Only allow outletStaff and outletAdmin roles (not admin or merchant)
+        // Only outlet roles (not admin or merchant); #682 Nhân viên kho behind the API flag.
+        // #684: a sheet that says what each role can do
         let allowedRoles = UserFormRoles.choices(inventoryRole: AppConfigService.shared.cached?.inventoryRole ?? false,
                                                  currentRole: user?.role)
-        
-        for role in allowedRoles {
-            alert.addAction(UIAlertAction(title: role.displayName, style: .default) { [weak self] _ in
-                self?.selectedRole = role
-                self?.roleField.textField.text = role.displayName
-            })
+        let sheet = RolePickerSheet(roles: allowedRoles, selected: selectedRole)
+        sheet.onPick = { [weak self] role in
+            self?.selectedRole = role
+            self?.roleField.textField.text = role.displayName
         }
-        
-        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        anchorV2Popover(alert, to: v2RoleRow)
-        
-        // For iPad - find the role field wrapper in the view hierarchy
-        if !v2, UIDevice.current.userInterfaceIdiom == .pad {
-            if let popover = alert.popoverPresentationController {
-                // Find the role field wrapper view
-                for subview in containerView.subviews {
-                    if let cardContainer = subview.subviews.first(where: { $0.subviews.contains(where: { $0.subviews.contains(where: { ($0 as? UILabel)?.text == "Role *".localized() }) }) }) {
-                        popover.sourceView = cardContainer
-                        popover.sourceRect = cardContainer.bounds
-                        break
-                    }
-                }
-            }
-        }
-        
-        present(alert, animated: true)
+        present(sheet, animated: true)
     }
     
     // MARK: - Validation
     private func validateInputs() -> Bool {
+        // #684: the role starts empty; it must be picked before saving
+        guard UserFormRoles.isComplete(selectedRole) else {
+            UIAlertController.alert(parent: self, title: "Error".localized(), message: "users.role.required".localized())
+            return false
+        }
         guard let userName = userNameField.textField.text, !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             UIAlertController.alert(
                 parent: self,
@@ -798,3 +779,95 @@ extension UserFormViewController: UITextFieldDelegate {
     }
 }
 
+/// #684 (canvas N3): "Chọn quyền" like the order ⋯ action sheet — title + ✕, one row per role the caller may give
+/// (icon box, role name, what the role can do), the current role with a blue icon and ✓
+final class RolePickerSheet: V2FittingSheet {
+    var onPick: ((Role) -> Void)?
+    private let roles: [Role]
+    private let selected: Role?
+
+    init(roles: [Role], selected: Role?) {
+        self.roles = roles
+        self.selected = selected
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private static func symbol(_ role: Role) -> String {
+        switch role {
+        case .outletAdmin: return "building.2"
+        case .outletInventory: return "shippingbox"
+        default: return "person"
+        }
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        stack.spacing = 0
+        let title = V2.label("Select role".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let close = UIButton(type: .system)
+        close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
+        close.tintColor = UIColor(hexString: "475569")
+        close.backgroundColor = UIColor(hexString: "F1F5F9")
+        close.layer.cornerRadius = 18
+        close.accessibilityLabel = "Close".localized()
+        close.addAction(UIAction { [weak self] _ in self?.dismiss(animated: true) }, for: .touchUpInside)
+        close.snp.makeConstraints { make in make.size.equalTo(36) }
+        let header = UIStackView(arrangedSubviews: [title, close])
+        header.alignment = .center
+        header.spacing = DS.Spacing.md
+        stack.addArrangedSubview(header)
+        stack.setCustomSpacing(6, after: header)
+        for role in roles { stack.addArrangedSubview(row(role)) }
+    }
+
+    private func row(_ role: Role) -> UIView {
+        let on = role == selected
+        let control = UIControl()
+        let iconBox = UIView()
+        iconBox.backgroundColor = UIColor(hexString: on ? "EFF4FF" : "F1F5F9")
+        iconBox.layer.cornerRadius = 10
+        iconBox.isUserInteractionEnabled = false
+        let icon = UIImageView(image: DS.symbol(Self.symbol(role), DS.Icon.md))
+        icon.tintColor = on ? DS.Color.primary : DS.Color.text
+        icon.contentMode = .center
+        iconBox.addSubview(icon)
+        icon.snp.makeConstraints { make in make.center.equalToSuperview() }
+        iconBox.snp.makeConstraints { make in make.size.equalTo(36) }
+        let title = V2.label(role.displayName, size: 16, weight: .medium, color: on ? DS.Color.primary : DS.Color.text)
+        let help = V2.label(UserFormRoles.help(role), size: DS.TextSize.secondary, color: UIColor(hexString: "475569"), lines: 0)
+        let texts = UIStackView(arrangedSubviews: [title, help])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let check = UIImageView(image: DS.symbol("checkmark", DS.Icon.md, weight: .bold))
+        check.tintColor = DS.Color.primary
+        check.isHidden = !on
+        check.setContentHuggingPriority(.required, for: .horizontal)
+        let line = UIStackView(arrangedSubviews: [iconBox, texts, check])
+        line.alignment = .center
+        line.spacing = 14
+        line.isUserInteractionEnabled = false
+        control.addSubview(line)
+        line.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(10)
+            make.leading.trailing.equalToSuperview().inset(4)
+        }
+        let divider = V2.divider()
+        divider.backgroundColor = UIColor(hexString: "F1F5F9")
+        divider.isUserInteractionEnabled = false
+        control.addSubview(divider)
+        divider.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        control.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(64) }
+        control.isAccessibilityElement = true
+        control.accessibilityTraits = on ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
+        control.accessibilityLabel = role.displayName
+        control.accessibilityHint = UserFormRoles.help(role)
+        control.addAction(UIAction { [weak self] _ in
+            let onPick = self?.onPick
+            self?.dismiss(animated: true) { onPick?(role) }
+        }, for: .touchUpInside)
+        return control
+    }
+}
