@@ -447,6 +447,18 @@ final class AnyRentE2ETests: XCTestCase {
         let confirm = e2e.element(labelBeginsWith: ["Extend to", "Gia hạn đến"], type: .button)
         XCTAssertTrue(confirm.waitForExistence(timeout: 8), "Extend sheet with Gia hạn đến <day>")
         e2e.shot("59-detail-extend-sheet")
+        // #696: the cart's calendar; a tap on a later day moves the new return day (pickup stays)
+        let before = confirm.label
+        let later = Calendar.current.component(.day, from: Calendar.current.date(byAdding: .day, value: 5, to: Date())!)
+        if let day = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "\(later)")).allElementsBoundByIndex
+            .first(where: { $0.isHittable }) {
+            day.tap()
+            sleep(1)
+            e2e.soft(confirm.label != before, "a later day changes Gia hạn đến (\(before) → \(confirm.label))")
+            e2e.shot("59b-detail-extend-later-day")
+        } else {
+            e2e.soft(false, "day \(later) on the extend calendar")
+        }
         confirm.tap()
         sleep(4)
         e2e.dismissAlerts()
@@ -880,6 +892,21 @@ final class AnyRentE2ETests: XCTestCase {
     }
 
     // MARK: - Screens that landed on dev with #482 #490 #491 #496 #518 #519 (#530)
+
+    /// Board D2 (#693): item rows on order detail — bold price, "/ theo ngày × N ngày", the note in a yellow box
+    func test5eDetailItemRows() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
+        sleep(2)
+        e2e.shot("5e-detail-items")
+        let note = app.staticTexts["orderDetail.item.note"]
+        if !note.exists { app.swipeUp(); sleep(1) }
+        e2e.soft(app.staticTexts["orderDetail.item.note"].exists, "the item note shows on order detail")
+        e2e.shot("5e-detail-items-scrolled")
+    }
 
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: In hoá đơn, Ghi chú, Lịch sử thay đổi,
     /// then Huỷ đơn apart. Actions the screen already shows as buttons are not repeated in it.
