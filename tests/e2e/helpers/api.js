@@ -28,6 +28,11 @@ const ACCOUNTS = {
     // OUTLET_STAFF of the main merchant's default outlet
     email: process.env.BIZ_E2E_STAFF_EMAIL || 'staff.outlet2@example.com',
     password: process.env.BIZ_E2E_STAFF_PASSWORD || 'staff123'
+  },
+  inventory: {
+    // #682 OUTLET_INVENTORY (Nhân viên kho) of the same outlet as `staff`
+    email: process.env.BIZ_E2E_INVENTORY_EMAIL || 'inventory.outlet2@example.com',
+    password: process.env.BIZ_E2E_INVENTORY_PASSWORD || 'inventory123'
   }
 };
 

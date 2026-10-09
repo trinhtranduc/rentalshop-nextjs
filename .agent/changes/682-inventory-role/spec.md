@@ -64,7 +64,8 @@ Issue: #682 · Status: accepted · Intent: ./intent.md
     Android `UserRole.OUTLET_INVENTORY`.
 19. Products: add, edit (prices), delete visible; categories: add, rename, delete visible.
 20. Money hidden and actions blocked exactly as for staff (orders `hidesMoney`, overview, settings rows,
-    change history, bank accounts, user form, export).
+    change history, bank accounts, user form). The mobile Xuất dữ liệu row stays hidden like staff: that screen
+    also offers orders and customers, which the role cannot export; product Excel import/export is on the web.
 21. Merchant / outlet admin can pick "Nhân viên kho" in the add-user form when app-config `inventoryRole` is on.
 
 ### Seed and tests
