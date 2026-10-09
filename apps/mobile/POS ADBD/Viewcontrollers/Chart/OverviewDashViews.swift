@@ -781,12 +781,16 @@ final class OverviewDetailSheet: UIViewController {
     // MARK: Bodies
 
     private func bodyViews() -> [UIView] {
+        // The rule first: where the number comes from, in one sentence (the breakdown follows)
+        let rule = OVFont.label(content.kind.rule.localized(), DS.TextSize.secondary, color: OVColor.ink2, lines: 0)
+        let rest: [UIView]
         switch content.kind {
-        case .collected: return collectedBody()
-        case .outstanding: return outstandingBody()
-        case .collateral: return collateralBody()
-        case .orderValue: return orderValueBody()
+        case .collected: rest = collectedBody()
+        case .outstanding: rest = outstandingBody()
+        case .collateral: rest = collateralBody()
+        case .orderValue: rest = orderValueBody()
         }
+        return [rule] + rest
     }
 
     private func empty() -> [UIView] {

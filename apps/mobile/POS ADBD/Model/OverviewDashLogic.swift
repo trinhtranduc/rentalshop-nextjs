@@ -27,6 +27,16 @@ enum OverviewChip: CaseIterable, Equatable {
 enum OverviewTileKind: CaseIterable, Equatable {
     case orderValue, collected, outstanding, collateral
 
+    /// The rule behind the number, shown first in the tile's detail sheet (key, localized there)
+    var rule: String {
+        switch self {
+        case .orderValue: return "overview.dash.rule.orderValue"
+        case .collected: return "overview.dash.rule.collected"
+        case .outstanding: return "overview.dash.rule.outstanding"
+        case .collateral: return "overview.dash.rule.collateral"
+        }
+    }
+
     var title: String {
         switch self {
         case .orderValue: return "overview.dash.kpi.orderValue".localized()
