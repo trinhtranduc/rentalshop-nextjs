@@ -795,22 +795,26 @@ private fun ItemRow(
             // #684 (owner 2026-10-09, iOS itemRow): name; the blue pricing link; the "Hết hàng …" tag; last row the
             // total and −/+. No card, and no separate "450.000/lần × 1" line: its numbers are in the link
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // #684: the "Hết 09/10 → 11/10 ›" tag (or the shortage chip) beside the name, on its right (owner)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
+                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
+                    }
+                    shortText?.let { text ->
+                        val hint = stringResource(R.string.v2_cart_overlap_hint)
+                        Text(
+                            if (onOpenOverlap != null) "$text ›" else text,
+                            fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
+                                .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                                .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
+                        )
+                    }
+                }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
-                val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
-                    stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
-                }
-                shortText?.let { text ->
-                    val hint = stringResource(R.string.v2_cart_overlap_hint)
-                    Text(
-                        if (onOpenOverlap != null) "$text ›" else text,
-                        fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
-                            .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
-                            .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
-                    )
-                }
                 if (isSale && available != null) {
                     Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }

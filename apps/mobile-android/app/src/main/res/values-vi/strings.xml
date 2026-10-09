@@ -1213,8 +1213,8 @@
     <string name="settings_v2_allow_overlap_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
     <string name="api_error_order_schedule_conflict">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
     <string name="api_error_invalid_timezone">Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).</string>
-    <string name="v2_cart_overlap_one_day">Hết hàng ngày %1$s</string>
-    <string name="v2_cart_overlap_range">Hết hàng từ %1$s → %2$s</string>
+    <string name="v2_cart_overlap_one_day">Hết %1$s</string>
+    <string name="v2_cart_overlap_range">Hết %1$s → %2$s</string>
     <string name="v2_cart_overlap_hint">Xem các đơn đang giữ món</string>
     <string name="v2_cart_overlap_blocked">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
     <string name="v2_create_overlap_title">Trùng lịch</string>

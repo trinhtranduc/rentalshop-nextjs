@@ -451,13 +451,16 @@ final class CartV2ViewController: BaseViewControler {
         stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
         let link = pricingChip(item, index: index)
         link.titleLabel?.lineBreakMode = .byTruncatingTail
-        let column = UIStackView(arrangedSubviews: [name, UIStackView(arrangedSubviews: [link, UIView()])])
+        // #518 / #684: "Hết 09/10 → 11/10 ›" beside the name (owner) when other rentals hold the item on those days;
+        // a tap opens Lịch trống on the first clashing day (the orders of that day)
+        let nameRow = UIStackView(arrangedSubviews: [name])
+        nameRow.alignment = .top
+        nameRow.spacing = 8
+        let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
 
-        // #518 / #684: "Trùng đơn ngày 03–05/10" when other rentals hold the item on those days; a tap opens Lịch trống
-        // on the first clashing day (the orders of that day). Otherwise the free-units tag as before
         if isRent, let conflict = conflicts[item.productId] {
             let tag = UIButton(type: .system)
             tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
@@ -468,8 +471,10 @@ final class CartV2ViewController: BaseViewControler {
             tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
-            tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
-            column.addArrangedSubview(UIStackView(arrangedSubviews: [tag, UIView()]))
+            tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
+            tag.setContentHuggingPriority(.required, for: .horizontal)
+            tag.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(tag)
         }
         let shortageText: String? = CartV2Logic.shortage(item).map { left in
             String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
@@ -480,8 +485,9 @@ final class CartV2ViewController: BaseViewControler {
             warn.backgroundColor = UIColor(hexString: "FEE2E2")
             warn.layer.cornerRadius = 6
             warn.clipsToBounds = true
-            let wrap = UIStackView(arrangedSubviews: [warn, UIView()])
-            column.addArrangedSubview(wrap)
+            warn.setContentHuggingPriority(.required, for: .horizontal)
+            warn.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(warn)
         }
 
         // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. A sale line keeps "Còn N"

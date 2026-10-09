@@ -2106,8 +2106,8 @@
 /* #518 Cho tạo đơn khi trùng lịch */
 "cart.overlap.tag" = "Hết đồ %@ · đã thuê ở đơn %@";
 "cart.overlap.tag.noOrders" = "Hết đồ %@";
-"cart.overlap.tagOneDay" = "Hết hàng ngày %@";
-"cart.overlap.tagRange" = "Hết hàng từ %@ → %@";
+"cart.overlap.tagOneDay" = "Hết %@";
+"cart.overlap.tagRange" = "Hết %@ → %@";
 "cart.overlap.tagHint" = "Xem các đơn đang giữ món ngày %@";
 "cart.overlap.line" = "%@ thiếu %d bộ ngày %@ (đã thuê ở %@).";
 "cart.overlap.line.noOrders" = "%@ thiếu %d bộ ngày %@.";

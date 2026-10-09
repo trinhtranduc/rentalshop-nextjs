@@ -33,9 +33,9 @@ object OverlapWarnings {
 
     /** Copy; the defaults are the boards' Vietnamese, the screens pass string resources */
     data class Texts(
-        /** #684: the cart tag shows the days only ("Hết hàng ngày 03/10" / "Hết hàng từ 03/10 → 05/10") */
-        val cartLineOneDay: String = "Hết hàng ngày %1\$s",
-        val cartLineRange: String = "Hết hàng từ %1\$s → %2\$s",
+        /** #684: the cart tag beside the name shows the days only ("Hết 03/10" / "Hết 03/10 → 05/10") */
+        val cartLineOneDay: String = "Hết %1\$s",
+        val cartLineRange: String = "Hết %1\$s → %2\$s",
         val confirmLine: String = "%1\$s thiếu %2\$d bộ ngày %3\$s (đã thuê ở %4\$s).",
         val confirmLineNoOrder: String = "%1\$s thiếu %2\$d bộ ngày %3\$s.",
     )

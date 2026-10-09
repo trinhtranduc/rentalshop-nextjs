@@ -774,6 +774,52 @@ final class AnyRentE2ETests: XCTestCase {
                       "the picked role fills the field")
     }
 
+    /// #684: cart lines without cards (name, blue pricing link with "× N ngày", tag, total + −/+). Needs products
+    /// "Váy cưới thuê theo ngày" (DAILY), "Vest xanh navy thuê lần" (FIXED) and "Váy trùng đơn test" (booked today).
+    func test8dCartLines() throws {
+        try e2e.requireRole("merchant")
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh"])
+        XCTAssertTrue(search.waitForExistence(timeout: 10), "Home search")
+        for name in ["Váy cưới thuê theo ngày", "Vest xanh navy thuê lần", "Váy trùng đơn test"] {
+            search.tap()
+            search.clearText()
+            search.typeText(name + "\n")
+            sleep(2)
+            let row = app.tables.cells.containing(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+            guard row.waitForExistence(timeout: 8) else { e2e.soft(false, "row \(name)"); continue }
+            let plus = row.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
+            if plus.exists, !plus.label.contains("trong giỏ") { plus.tap() }
+            sleep(1)
+        }
+        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar")
+        e2e.cartBar.tap()
+        // The dates row: "Chọn ngày thuê" on a new cart, "T6 09/10 → T6 09/10" when dates were kept
+        let chooser = app.descendants(matching: .any).matching(NSPredicate(format:
+            "label BEGINSWITH 'Chọn ngày thuê' OR label BEGINSWITH 'Choose rental dates' OR label CONTAINS '→'")).firstMatch
+        if chooser.waitForExistence(timeout: 5) {
+            chooser.tap()
+            sleep(1)
+            // Tomorrow, then 2 days later: a 3-day rental (the sheet's days are plain labels; today has another label)
+            let start = Calendar.current.component(.day, from: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+            let end = Calendar.current.component(.day, from: Calendar.current.date(byAdding: .day, value: 3, to: Date())!)
+            for day in [start, end] {
+                let label = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "\(day)")).allElementsBoundByIndex
+                    .first { $0.isHittable }
+                label?.tap()
+                sleep(1)
+            }
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        }
+        sleep(3)
+        e2e.shot("85-cart-lines")
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("85b-cart-lines-scrolled")
+    }
+
     // MARK: - Screens that landed on dev with #482 #490 #491 #496 #518 #519 (#530)
 
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: In hoá đơn, Ghi chú, Lịch sử thay đổi,

@@ -41,8 +41,8 @@ class Issue518519ResourcesTest {
         "api_error_order_schedule_conflict" to "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.",
         "v2_cart_overlap_blocked" to "Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.",
         // #684 (owner 2026-10-09): the cart tag shows the days only
-        "v2_cart_overlap_one_day" to "Hết hàng ngày %1\$s",
-        "v2_cart_overlap_range" to "Hết hàng từ %1\$s → %2\$s",
+        "v2_cart_overlap_one_day" to "Hết %1\$s",
+        "v2_cart_overlap_range" to "Hết %1\$s → %2\$s",
         "v2_create_overlap_title" to "Trùng lịch",
         "v2_create_overlap_line" to "%1\$s thiếu %2\$d bộ ngày %3\$s (đã thuê ở %4\$s).",
         "v2_create_anyway" to "Vẫn tạo đơn",

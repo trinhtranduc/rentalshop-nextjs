@@ -47,7 +47,7 @@ class OverlapWarningsTest {
         assertEquals(LocalDate.of(2026, 10, 5), c.to)
         assertEquals(1, c.missing)
         // #684: the tag shows the days only; the orders are in Lịch trống
-        assertEquals("Hết hàng từ 03/10 → 05/10", OverlapWarnings.cartLine(c))
+        assertEquals("Hết 03/10 → 05/10", OverlapWarnings.cartLine(c))
         assertEquals("Vest đen slim fit thiếu 1 bộ ngày 03–05/10 (đã thuê ở #482113).", OverlapWarnings.confirmLine(c))
     }
 
@@ -61,7 +61,7 @@ class OverlapWarningsTest {
             4, "Vest", 1, availability(0, false, holder("B", "2026-10-04T17:00:00Z", "2026-10-08T05:00:00Z")), pickup, ret,
         )!!
         assertEquals("05/10", OverlapWarnings.dayRange(startsOn05.from, startsOn05.to))
-        assertEquals("Hết hàng ngày 05/10", OverlapWarnings.cartLine(startsOn05))
+        assertEquals("Hết 05/10", OverlapWarnings.cartLine(startsOn05))
     }
 
     @Test fun shortOfStockWithoutOtherOrdersIsNotADoubleBooking() {
@@ -80,10 +80,10 @@ class OverlapWarningsTest {
         // Unknown days fall back to the cart's range
         assertEquals(pickup, c.from)
         assertEquals(ret, c.to)
-        assertEquals("Hết hàng từ 03/10 → 05/10", OverlapWarnings.cartLine(c))
+        assertEquals("Hết 03/10 → 05/10", OverlapWarnings.cartLine(c))
         val noNumber = OverlapWarnings.conflict(4, "Áo dài", 1, availability(-2, false, holder(null, null, null)), pickup, ret)!!
         assertEquals(1 + 0, noNumber.missing)
-        assertEquals("Hết hàng từ 03/10 → 05/10", OverlapWarnings.cartLine(noNumber))
+        assertEquals("Hết 03/10 → 05/10", OverlapWarnings.cartLine(noNumber))
         assertEquals("Áo dài thiếu 1 bộ ngày 03–05/10.", OverlapWarnings.confirmLine(noNumber))
     }
 

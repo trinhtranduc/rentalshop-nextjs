@@ -2108,8 +2108,8 @@
 /* #518 Cho tạo đơn khi trùng lịch */
 "cart.overlap.tag" = "Booked out %@ · rented in order %@";
 "cart.overlap.tag.noOrders" = "Booked out %@";
-"cart.overlap.tagOneDay" = "Booked out on %@";
-"cart.overlap.tagRange" = "Booked out %@ → %@";
+"cart.overlap.tagOneDay" = "Out %@";
+"cart.overlap.tagRange" = "Out %@ → %@";
 "cart.overlap.tagHint" = "See the orders holding it on %@";
 "cart.overlap.line" = "%@ is %d short on %@ (rented in %@).";
 "cart.overlap.line.noOrders" = "%@ is %d short on %@.";
