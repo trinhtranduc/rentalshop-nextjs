@@ -398,7 +398,8 @@ enum OverviewRelatedKind: Equatable {
     case orderValue
     /// Every money event of the period (status=all); collateral in and out included, as the Thực thu tile (#710)
     case collected
-    /// Hand-overs (+ collateral received) and returns (− collateral handed back) of the period
+    /// The collateral of each money event of the period (status=all, row `collateral`, #721): + received at hand-over,
+    /// − handed back at return or cancel; a same-day hand-over then return or cancel moves none, as the tile
     case collateral
     /// Orders created in the period that still owe money (rent not picked up: total − deposit; sale not completed),
     /// the rule of `revenue.outstanding` (BF-OUT), so the count and the total equal the tile
@@ -408,8 +409,7 @@ enum OverviewRelatedKind: Equatable {
     var buckets: [String] {
         switch self {
         case .orderValue, .outstanding: return ["new"]
-        case .collected: return ["all"]
-        case .collateral: return ["pickup", "return"]
+        case .collected, .collateral: return ["all"]
         }
     }
 }
@@ -448,12 +448,9 @@ extension OverviewDashLogic {
                     amount = 0
                 }
                 detail = "overview.related.owes".localized()
-            case (.collateral, "pickup"):
-                amount = item.securityDeposit ?? 0
-                detail = "overview.related.collateralIn".localized()
             case (.collateral, _):
-                amount = -(item.securityDeposit ?? 0)
-                detail = "overview.related.collateralOut".localized()
+                amount = item.collateral ?? 0
+                detail = (amount < 0 ? "overview.related.collateralOut" : "overview.related.collateralIn").localized()
             }
             if kind == .collateral && amount == 0 { return nil }
             if kind == .outstanding && amount <= 0 { return nil }
