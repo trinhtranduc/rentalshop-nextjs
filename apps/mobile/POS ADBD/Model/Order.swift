@@ -634,10 +634,11 @@ struct OrderDetail: Codable {
     let updatedAt: Date
     let outletId: Int
     let customerId: Int
-    let createdById: Int
+    /// Null after the creator was deleted (`onDelete: SetNull`, #697)
+    let createdById: Int?
     let customer: CustomerDetail
     let outlet: OutletDetail
-    let createdBy: UserDetail
+    let createdBy: UserDetail?
     let orderItems: [OrderItem]
     let payments: [Payment]
     
@@ -685,8 +686,8 @@ extension Order {
             return name
         }
         let customerName = customerNameParts.joined(separator: " ")
-        let createdByFirstName = detail.createdBy.firstName
-        let createdByLastName = detail.createdBy.lastName.trimmingCharacters(in: .whitespaces)
+        let createdByFirstName = detail.createdBy?.firstName
+        let createdByLastName = detail.createdBy?.lastName.trimmingCharacters(in: .whitespaces) ?? ""
         let createdByNameParts = [createdByFirstName, createdByLastName.isEmpty ? nil : createdByLastName].compactMap { $0 }
         let createdByName = createdByNameParts.joined(separator: " ")
         let totalPaid = detail.payments.reduce(0) { $0 + $1.amount }
@@ -731,7 +732,7 @@ extension Order {
             outletName: detail.outlet.name,
             merchantId: detail.outlet.merchant.id,
             merchantName: detail.outlet.merchant.name,
-            createdById: detail.createdById,
+            createdById: detail.createdById ?? 0,
             createdByName: createdByName,
             orderItems: detail.orderItems,
             itemCount: detail.orderItems.count,
