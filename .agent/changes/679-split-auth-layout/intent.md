@@ -19,13 +19,13 @@ Visitors and shop owners on `apps/client` web: /login, /register (+ steps), /for
 
 ## Constraints
 
-- Form logic, validation, Google login, and links are untouched.
+- Form validation and links stay unchanged. Web login and registration use email/password only.
 - No horizontal scroll at 375px. Light only, like today.
 - Strings in en, vi, ja, ko, zh.
 
 ## Open questions
 
-- Google sign-in stays on /register? (kept; only /login drops it)
+- None. Google sign-up is also hidden on /register (approved review correction).
 
 ## Decision log (cont.)
 
