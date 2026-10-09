@@ -195,7 +195,7 @@ export default function UsersPage() {
   // URL state
   const q = (searchParams.get('q') || '').trim();
   const outletId = byOutlet ? parseOutletParam(searchParams.get('outlet')) : null;
-  const role = ['OUTLET_ADMIN', 'OUTLET_STAFF'].includes(searchParams.get('role') || '') ? (searchParams.get('role') as string) : '';
+  const role = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'].includes(searchParams.get('role') || '') ? (searchParams.get('role') as string) : '';
   const status = ['active', 'inactive'].includes(searchParams.get('status') || '') ? (searchParams.get('status') as string) : '';
   const page = parseStaffPage(searchParams.get('page'));
   const limit = parseStaffPageSize(searchParams.get('limit'));
@@ -395,6 +395,7 @@ export default function UsersPage() {
                 { value: 'all', label: t('filters.all') },
                 { value: 'OUTLET_ADMIN', label: t('roles.admin') },
                 { value: 'OUTLET_STAFF', label: t('roles.staff') },
+                { value: 'OUTLET_INVENTORY', label: t('roles.inventory') },
               ]}
               onChange={(v) => update({ role: v === 'all' ? null : v })}
             />

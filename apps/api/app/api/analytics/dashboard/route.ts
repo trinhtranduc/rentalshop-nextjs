@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { shopToday } from '../../../../lib/report-days';
@@ -73,7 +73,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           })
         );
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {

@@ -387,5 +387,6 @@
   "SEARCH_TIMEOUT": "The image search took too long. Please try again in a few minutes.",
   "INVALID_LIMIT": "Invalid number of results requested",
   "INVALID_MIN_SIMILARITY": "Invalid minimum similarity (must be between 0 and 1)",
-  "NO_PRODUCTS_FOUND": "No similar products found"
+  "NO_PRODUCTS_FOUND": "No similar products found",
+  "ROLE_NOT_AVAILABLE": "This role cannot be assigned yet"
 }

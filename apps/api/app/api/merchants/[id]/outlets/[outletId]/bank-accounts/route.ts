@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
-import { USER_ROLE } from '@rentalshop/constants';
+import { USER_ROLE, isStaffLikeRole } from '@rentalshop/constants';
 import { 
   handleApiError, 
   ResponseBuilder,
@@ -89,7 +89,7 @@ export async function POST(
   return withPermissions(['outlet.view'])(async (request, { user, userScope }) => {
     try {
       // Block OUTLET_STAFF from creating bank accounts
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }

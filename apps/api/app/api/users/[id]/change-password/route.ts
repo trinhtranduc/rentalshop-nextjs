@@ -2,7 +2,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth, hashPassword } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import {API, USER_ROLE} from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 
 /**
  * PATCH /api/users/[id]/change-password
@@ -100,7 +100,7 @@ export async function PATCH(
           userScopeMerchantId: userScope.merchantId
         });
       }
-    } else if (currentUser.role === USER_ROLE.OUTLET_ADMIN || currentUser.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (isOutletRole(currentUser.role)) {
       // OUTLET_* can change passwords for users in their outlet
       // Compare both outletId (direct field) and outlet.id (relation) with userScope.outletId
       if (targetOutletId && userScope.outletId && targetOutletId === userScope.outletId) {

@@ -79,7 +79,7 @@ export const userSwaggerConfig = {
             description: 'Filter by user role',
             schema: { 
               type: 'string',
-              enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']
+              enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']
             }
           },
           {
@@ -743,7 +743,7 @@ export const userSwaggerConfig = {
           phone: { type: 'string', nullable: true },
           role: { 
             type: 'string',
-            enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']
+            enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']
           },
           isActive: { type: 'boolean' },
           createdAt: { type: 'string', format: 'date-time' },
@@ -794,7 +794,7 @@ export const userSwaggerConfig = {
           },
           role: { 
             type: 'string',
-            enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'],
+            enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'],
             description: 'User role'
           },
           isActive: { 
@@ -823,7 +823,7 @@ export const userSwaggerConfig = {
           },
           role: { 
             type: 'string',
-            enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'],
+            enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'],
             description: 'User role'
           },
           isActive: { 

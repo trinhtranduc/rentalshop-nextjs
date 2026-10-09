@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
@@ -54,7 +54,7 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       if (merchant && merchant.outlets) {
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId );
       if (outlet) {
@@ -233,7 +233,7 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         rentalCount: item.rentalCount, // Only rental orders
         saleCount: item.saleCount, // Only sale orders
         // Hide financial data from OUTLET_STAFF
-        totalSpent: user.role !== USER_ROLE.OUTLET_STAFF ? item.totalRevenue : null,
+        totalSpent: !isStaffLikeRole(user.role) ? item.totalRevenue : null,
       });
     }
 

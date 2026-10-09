@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
 import { percentChange } from '@rentalshop/utils/server';
-import { API, ORDER_STATUS } from '@rentalshop/constants';
+import { API, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { monthKeysOf, previousPeriodKeys, readReportRange, reportRangeOfKeys, shopToday } from '../../../../lib/report-days';
 
 /**
@@ -45,7 +45,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       if (merchant && merchant.outlets) {
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {

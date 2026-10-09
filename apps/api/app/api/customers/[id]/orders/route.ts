@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
-import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { API, ORDER_STATUS, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import {
   fetchCustomerLoyaltySnapshot,
   fetchMerchantLoyaltyStatus,
@@ -116,7 +116,7 @@ export async function GET(
       if (user.role === USER_ROLE.MERCHANT) {
         // Merchants can see all outlets - no outlet filtering
         // searchFilters.outletId = undefined (no filter)
-      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (isOutletRole(user.role)) {
         // Outlet users can only see orders from their assigned outlet
         searchFilters.outletId = userScope.outletId;
       }

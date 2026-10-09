@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import { calculateEffectivelyAvailable, resolveTotalAvailableStock, resolveAvailabilityQueryWindow, AVAILABILITY_CALENDAR_TIMEZONE } from '../../../../lib/availability';
 import { z } from 'zod';
@@ -135,7 +135,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       // Determine outlet ID based on user role
       let finalOutletId: number;
       
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || (userOutletId || 0);
       } else if (user.role === USER_ROLE.MERCHANT && !queryOutletId) {

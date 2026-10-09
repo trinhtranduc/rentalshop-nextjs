@@ -4,7 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { userUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
-import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../../lib/user-scope';
+import { canAccessUser, canAssignRole, isAllowedPlacement, isRoleAssignable, toPublicUser } from '../../../../lib/user-scope';
 import { applyUserAccessChange, buildUserAuditContext } from '../../../../lib/user-merchant-assignment';
 
 /**
@@ -122,6 +122,10 @@ export async function PUT(
       // Role and placement the caller may give
       if (parsed.data.role !== undefined && !canAssignRole(user, parsed.data.role, existingUser.role)) {
         return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+      // #682: a user who already has Nhân viên kho keeps it; giving it needs INVENTORY_ROLE_ENABLED=true
+      if (parsed.data.role !== undefined && parsed.data.role !== existingUser.role && !isRoleAssignable(parsed.data.role)) {
+        return NextResponse.json(ResponseBuilder.error('ROLE_NOT_AVAILABLE'), { status: 400 });
       }
       const placementAllowed = await isAllowedPlacement(
         user,

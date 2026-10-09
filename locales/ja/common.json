@@ -182,7 +182,8 @@
     "ADMIN": "管理者",
     "MERCHANT": "事業者",
     "OUTLET_ADMIN": "店舗管理者",
-    "OUTLET_STAFF": "店舗スタッフ"
+    "OUTLET_STAFF": "店舗スタッフ",
+    "OUTLET_INVENTORY": "在庫担当"
   },
   "actions": {
     "selectAll": "すべて選択"

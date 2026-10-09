@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
 import {
   calculatePeriodRevenueBatch,
   getOrderRevenueEvents,
@@ -158,7 +158,7 @@ export async function resolveAnalyticsOutletFilter(
     return {};
   }
   if (
-    (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+    isOutletRole(user.role) &&
     userScope.outletId
   ) {
     const outlet = await db.outlets.findById(userScope.outletId);
@@ -899,7 +899,7 @@ export async function buildAnalyticsPeriodReport(
         orderCount: item.orderCount,
         rentalCount: item.rentalCount,
         saleCount: item.saleCount,
-        totalSpent: userRole !== USER_ROLE.OUTLET_STAFF ? item.totalRevenue : null
+        totalSpent: !isStaffLikeRole(userRole) ? item.totalRevenue : null
       });
     }
     return result;

@@ -56,7 +56,8 @@
     "MERCHANT": "Merchant Owner",
     "OUTLET_ADMIN": "Outlet Manager",
     "OUTLET_STAFF": "Outlet Staff",
-    "ARTICLE": "Article editor"
+    "ARTICLE": "Article editor",
+    "OUTLET_INVENTORY": "Inventory staff"
   },
   "actions": {
     "activate": "Activate User",
@@ -189,7 +190,8 @@
     "title": "Roles",
     "OUTLET_ADMIN": "Runs one outlet: orders, products, customers and the staff of that outlet.",
     "OUTLET_STAFF": "Creates and handles orders. Cannot change product prices.",
-    "loginNote": "The new user signs in with this email and password, and can change the password later."
+    "loginNote": "The new user signs in with this email and password, and can change the password later.",
+    "OUTLET_INVENTORY": "Sells like staff, and also manages products and categories (add, edit prices, delete, Excel import and export). No revenue."
   },
   "web": {
     "title": "Staff",
@@ -217,7 +219,8 @@
       "owner": "Shop owner",
       "admin": "Outlet manager",
       "staff": "Staff",
-      "other": "Other"
+      "other": "Other",
+      "inventory": "Inventory staff"
     },
     "lastSeen": {
       "current": "Using now",
@@ -247,7 +250,8 @@
       "admin": "One outlet: orders, products, prices, customers, the day's money, that outlet's staff.",
       "staff": "Create orders, hand over, take returns, add customers. Cannot change product prices or see money reports.",
       "rolePermissions": "See permissions per role",
-      "permissions": "Grant extra permissions"
+      "permissions": "Grant extra permissions",
+      "inventory": "Sells like staff, and also manages products and categories (add, edit prices, delete, Excel import and export). No revenue."
     },
     "permissions": {
       "title": "Extra staff permissions",

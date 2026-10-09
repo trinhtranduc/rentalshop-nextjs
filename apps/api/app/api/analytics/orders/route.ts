@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '@rentalshop/utils';
-import { API, USER_ROLE, ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_TYPE, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { readAnalyticsTimeZone } from '../../../../lib/analytics-days';
 
 /**
@@ -104,7 +104,7 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
         if (merchant && merchant.outlets) {
           orderWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
         }
-      } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+      } else if (isOutletRole(user.role) && userScope.outletId) {
         const outletObj = await db.outlets.findById(userScope.outletId);
         if (outletObj) {
           orderWhereClause.outletId = outletObj.id;

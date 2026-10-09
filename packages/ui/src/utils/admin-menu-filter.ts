@@ -73,7 +73,8 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
     );
   }
 
-  if (userRole === 'OUTLET_STAFF') {
+  // #682: Nhân viên kho gets the staff menu
+  if (userRole === 'OUTLET_STAFF' || userRole === 'OUTLET_INVENTORY') {
     return items.filter(
       (item) =>
         !isBlogPath(item.href) &&

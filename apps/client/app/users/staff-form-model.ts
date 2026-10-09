@@ -4,7 +4,7 @@
  * Error values are i18n keys under `users.web.form.errors`.
  */
 
-export type StaffRole = 'OUTLET_ADMIN' | 'OUTLET_STAFF';
+export type StaffRole = 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY';
 export type FormMode = 'create' | 'edit';
 
 export interface StaffFormValues {
@@ -30,7 +30,9 @@ export const EMPTY_STAFF_FORM: StaffFormValues = {
   confirmPassword: '',
 };
 
-const OUTLET_ROLES: readonly StaffRole[] = ['OUTLET_ADMIN', 'OUTLET_STAFF'];
+const OUTLET_ROLES: readonly StaffRole[] = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
+/** Cards always offered; Nhân viên kho is added behind the API flag (#682) */
+const BASE_CHOICES: readonly StaffRole[] = ['OUTLET_ADMIN', 'OUTLET_STAFF'];
 
 const upper = (role?: string | null) => String(role || '').toUpperCase();
 
@@ -39,9 +41,14 @@ export function canCreateStaff(role?: string | null): boolean {
   return ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'].includes(upper(role));
 }
 
-/** Roles the caller may give on the shop web: the outlet roles (old RoleSelect; API `canAssignRole`). */
-export function roleChoices(role?: string | null): StaffRole[] {
-  return canCreateStaff(role) ? [...OUTLET_ROLES] : [];
+/**
+ * Roles the caller may give on the shop web: the outlet roles (old RoleSelect; API `canAssignRole`).
+ * #682: Nhân viên kho only once the API allows it (app-config `inventoryRole`), or when the user already has it.
+ */
+export function roleChoices(role?: string | null, opts: { inventoryRole?: boolean; currentRole?: string | null } = {}): StaffRole[] {
+  if (!canCreateStaff(role)) return [];
+  const inventory = opts.inventoryRole || upper(opts.currentRole) === 'OUTLET_INVENTORY';
+  return inventory ? [...BASE_CHOICES, 'OUTLET_INVENTORY'] : [...BASE_CHOICES];
 }
 
 /** Merchants (and platform admins) pick the outlet; an outlet admin's staff go to their own outlet. */

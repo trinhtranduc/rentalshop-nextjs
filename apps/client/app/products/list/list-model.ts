@@ -179,7 +179,7 @@ export function stockView(p: ProductLike, scopedOutletId?: number): StockView {
 /** Outlet users see their outlet's stock; a merchant picks one with the outlet filter. */
 export function scopedOutletFor(filterOutletId: number | undefined, user: { role?: string | null; outletId?: number | null } | null | undefined): number | undefined {
   if (filterOutletId != null) return filterOutletId;
-  if ((user?.role === 'OUTLET_ADMIN' || user?.role === 'OUTLET_STAFF') && typeof user.outletId === 'number') return user.outletId;
+  if ((user?.role === 'OUTLET_ADMIN' || user?.role === 'OUTLET_STAFF' || user?.role === 'OUTLET_INVENTORY') && typeof user.outletId === 'number') return user.outletId;
   return undefined;
 }
 

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API, ORDER_STATUS} from '@rentalshop/constants';
+import { API, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 
 /**
@@ -47,7 +47,7 @@ export const GET = withPermissions(['analytics.view.orders'])(async (request, { 
       if (merchant && merchant.outlets) {
         whereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF') && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
-import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS, isStaffLikeRole } from '@rentalshop/constants';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -42,7 +42,7 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
     const { orderIds } = parsed.data;
 
     // OUTLET_STAFF cannot delete orders
-    if (user.role === USER_ROLE.OUTLET_STAFF) {
+    if (isStaffLikeRole(user.role)) {
       return NextResponse.json(
         ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
         { status: API.STATUS.FORBIDDEN }

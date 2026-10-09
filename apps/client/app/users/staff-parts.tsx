@@ -15,6 +15,7 @@ export const ROLE_CLASS: Record<StaffRoleTone, string> = {
   owner: 'bg-ar-line text-ar-ink',
   admin: 'bg-ar-reserved-bg text-ar-reserved',
   staff: 'bg-ar-subtle text-ar-ink-2',
+  inventory: 'bg-ar-renting-bg text-ar-renting',
   other: 'bg-ar-subtle text-ar-muted',
 };
 

@@ -182,7 +182,8 @@
     "ADMIN": "관리자",
     "MERCHANT": "상인",
     "OUTLET_ADMIN": "매장 관리자",
-    "OUTLET_STAFF": "매장 직원"
+    "OUTLET_STAFF": "매장 직원",
+    "OUTLET_INVENTORY": "재고 담당"
   },
   "actions": {
     "selectAll": "모두 선택"

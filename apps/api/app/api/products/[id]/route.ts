@@ -19,7 +19,7 @@ import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3K
 import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
-import { API, USER_ROLE, VALIDATION, ORDER_STATUS } from '@rentalshop/constants';
+import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 
 function buildImageUploadErrorResponse(detail?: string) {
   const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
@@ -513,7 +513,7 @@ export async function PUT(
 
       // For OUTLET_ADMIN / OUTLET_STAFF: same outlet scope as create
       if (
-        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+        (isOutletRole(user.role)) &&
         userScope.outletId
       ) {
         // Check if product currently has stock at user's outlet
@@ -548,7 +548,7 @@ export async function PUT(
         outletStock &&
         Array.isArray(outletStock) &&
         outletStock.length > 0 &&
-        (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+        (isOutletRole(user.role)) &&
         userScope.outletId
       ) {
         const wrongOutlet = outletStock.filter((os: any) => os.outletId !== userScope.outletId);
@@ -911,8 +911,8 @@ export async function DELETE(
         );
       }
 
-      // For OUTLET_ADMIN: Verify product has stock at their outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN && userScope.outletId) {
+      // For OUTLET_ADMIN and Nhân viên kho (#682): Verify product has stock at their outlet
+      if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) && userScope.outletId) {
         const hasStockAtOutlet = existingProduct.outletStock?.some(
           (os: any) => os.outlet?.id === userScope.outletId
         );

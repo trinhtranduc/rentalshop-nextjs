@@ -25,5 +25,6 @@
   "SEARCH_TIMEOUT": "画像検索に時間がかかりすぎました。数分後に再度お試しください。",
   "INVALID_LIMIT": "取得件数の指定が無効です",
   "INVALID_MIN_SIMILARITY": "最小類似度が無効です（0〜1の範囲で指定してください）",
-  "NO_PRODUCTS_FOUND": "似ている商品が見つかりませんでした"
+  "NO_PRODUCTS_FOUND": "似ている商品が見つかりませんでした",
+  "ROLE_NOT_AVAILABLE": "この役割はまだ割り当てられません"
 }

@@ -29,7 +29,7 @@ interface OrderTableProps {
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
-  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // ⭐ User role for permission checks
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY'; // ⭐ User role for permission checks
   hideCopyPhone?: boolean; // ⭐ Hide copy phone button
 }
 
@@ -88,7 +88,7 @@ export const OrderTable = React.memo(function OrderTable({
   }, [selectedOrders]);
 
   // Check if user can delete (not OUTLET_STAFF)
-  const canDelete = userRole !== 'OUTLET_STAFF';
+  const canDelete = userRole !== 'OUTLET_STAFF' && userRole !== 'OUTLET_INVENTORY';
   
   // Check if user is ADMIN (can delete any order)
   const isAdmin = userRole === 'ADMIN';
@@ -103,7 +103,7 @@ export const OrderTable = React.memo(function OrderTable({
   React.useEffect(() => {
     if (orders.length > 0) {
       console.log('📋 OrderTable - Order statuses:', orders.map(o => {
-        const canDelete = userRole !== 'OUTLET_STAFF' && (isAdmin || o.status === 'CANCELLED');
+        const canDelete = userRole !== 'OUTLET_STAFF' && userRole !== 'OUTLET_INVENTORY' && (isAdmin || o.status === 'CANCELLED');
         return { 
           orderNumber: o.orderNumber, 
           status: o.status,
@@ -437,7 +437,7 @@ export const OrderTable = React.memo(function OrderTable({
                     >
                       <Edit className="h-4 w-4 shrink-0" />
                     </Button>
-                    {(userRole !== 'OUTLET_STAFF' && (isAdmin || order.status === 'CANCELLED')) ? (
+                    {(userRole !== 'OUTLET_STAFF' && userRole !== 'OUTLET_INVENTORY' && (isAdmin || order.status === 'CANCELLED')) ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 rounded-md border border-gray-200 p-0 shrink-0 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800" title={t('actions.delete')}>

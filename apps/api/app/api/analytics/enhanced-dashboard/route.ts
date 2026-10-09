@@ -10,7 +10,7 @@ import {
   getUtcRangeForDateKeys,
   toDateKeyInTimeZone,
 } from '@rentalshop/utils';
-import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { readAnalyticsTimeZone } from '../../../../lib/analytics-days';
 
 /**
@@ -67,7 +67,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         customerWhereClause.merchantId = merchant.id;
         outletStockWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {

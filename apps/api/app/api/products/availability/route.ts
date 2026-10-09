@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName, parseProductImages } from '@rentalshop/utils';
 import { z } from 'zod';
 import { getAvailabilityCivilRangeBounds, orderOverlapsAvailabilityBounds } from '../../../../lib/availability';
@@ -119,7 +119,7 @@ export const GET = withPermissions(['products.view'], { requireActiveSubscriptio
       // Role-based outlet filtering
       let finalOutletId = queryOutletId;
       
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
         finalOutletId = queryOutletId || userScope.outletId;
       } else if (user.role === USER_ROLE.MERCHANT) {

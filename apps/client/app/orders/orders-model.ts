@@ -575,7 +575,7 @@ function actorOf(entry: HistoryEntryLike): HistoryActor | undefined {
   const name = (entry.actor?.name || '').trim();
   if (!name) return undefined;
   const role = String(entry.actor?.role || '').toUpperCase();
-  return { name, staff: role === 'OUTLET_STAFF' }; // #677: outlet admins are not "(nhân viên)"
+  return { name, staff: role === 'OUTLET_STAFF' || role === 'OUTLET_INVENTORY' }; // #677: outlet admins are not "(nhân viên)"; #682 Nhân viên kho is
 }
 
 const msOf = (value: string) => {

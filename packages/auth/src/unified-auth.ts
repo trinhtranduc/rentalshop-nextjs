@@ -256,7 +256,7 @@ export const withAdminOrReadOnlyAuth = withAuthRoles(['ADMIN'], { requireActiveS
  * 
  * Usage:
  * ```typescript
- * // Instead of: withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])
+ * // Instead of: withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'])
  * // Use: withPermissions(['products.view'])
  * // This automatically includes all roles that have 'products.view' in ROLE_PERMISSIONS
  * export const GET = withPermissions(['products.view'])(async (request, { user, userScope }) => {

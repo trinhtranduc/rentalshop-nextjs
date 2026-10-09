@@ -40,8 +40,8 @@ Issue: #682 · Status: accepted · Intent: ./intent.md
    `OUTLET_STAFF`); `OUTLET_STAFF` and `OUTLET_INVENTORY` may not assign anything.
    `POST /api/merchants/[id]/users` applies the same rule.
 10. While env `INVENTORY_ROLE_ENABLED` is not `true`, assigning `OUTLET_INVENTORY` (create or update)
-    → 400 `ROLE_NOT_AVAILABLE`; existing users keep it. `GET /api/mobile/app-config` adds
-    `features.inventoryRole: boolean` (additive key).
+    → 400 `ROLE_NOT_AVAILABLE`; existing users keep it. `GET /api/mobile/app-config` adds a top-level
+    `inventoryRole: boolean` (additive key; `features` stays screen flags only).
 11. A role change to or from `OUTLET_INVENTORY` sets `permissionsChangedAt` and ends sessions (#443).
 12. `GET /api/users` for `MERCHANT` / `OUTLET_ADMIN` lists `OUTLET_INVENTORY` users with the staff.
     `OUTLET_ADMIN` may manage `OUTLET_INVENTORY` users of its outlet like staff.
@@ -49,7 +49,7 @@ Issue: #682 · Status: accepted · Intent: ./intent.md
 ### Web (`apps/client`, `apps/admin`)
 
 13. Add/edit staff: a third role card "Nhân viên kho" (help: "Bán hàng như nhân viên, thêm quản lý sản
-    phẩm và danh mục") when `features.inventoryRole` is on. Staff list, detail and badges show its name.
+    phẩm và danh mục") when app-config `inventoryRole` is on. Staff list, detail and badges show its name.
 14. Nav and settings: hidden for it whatever is hidden for `OUTLET_STAFF` (Nhân viên, Chi nhánh, revenue).
     Products, Categories, Import, Export and labels show their manage controls (permission-based).
 15. Product form: price and cost fields editable (`canEditPricing` from `products.manage`, no role check
@@ -65,7 +65,7 @@ Issue: #682 · Status: accepted · Intent: ./intent.md
 19. Products: add, edit (prices), delete visible; categories: add, rename, delete visible.
 20. Money hidden and actions blocked exactly as for staff (orders `hidesMoney`, overview, settings rows,
     change history, bank accounts, user form, export).
-21. Merchant / outlet admin can pick "Nhân viên kho" in the add-user form when `features.inventoryRole`.
+21. Merchant / outlet admin can pick "Nhân viên kho" in the add-user form when app-config `inventoryRole` is on.
 
 ### Seed and tests
 

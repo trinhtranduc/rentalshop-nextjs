@@ -1530,7 +1530,7 @@ export const comprehensiveSwaggerConfig = {
             description: 'Filter by user role',
             schema: { 
               type: 'string',
-              enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']
+              enum: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']
             }
           }
         ],
