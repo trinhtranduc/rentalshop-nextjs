@@ -61,11 +61,18 @@ describeE2E('BF-STAT Overview tiles agree with the rows their tap opens', () => 
     expect(collateral).toBe(report.operational.collateralFlow?.received ?? report.revenue.collateralFlow?.received);
   });
 
-  knownBug('#708', 'BF-STAT-03 Thực thu: the revenue of every event in the period adds up to the collected tile', async () => {
+  test('BF-STAT-03 Thực thu: the revenue of every event in the period adds up to cashCollected (collateral included)', async () => {
     const report = await s.period(today, today);
-    const n = overviewNumbers(report);
     const rows = await incomeRows(s, 'all', today);
     const revenue = rows.reduce((sum, r) => sum + (Number(r.revenue) || 0), 0);
-    expect(revenue).toBe(n.collected);
+    expect(revenue).toBe(report.revenue.cashCollected);
+  });
+
+  test('BF-STAT-04 Thế chân: the net of pickup rows and return rows equals collateralFlow received − returned', async () => {
+    const report = await s.period(today, today);
+    const pick = (await incomeRows(s, 'pickup', today)).reduce((sum, r) => sum + (Number(r.securityDeposit) || 0), 0);
+    const back = (await incomeRows(s, 'return', today)).reduce((sum, r) => sum + (Number(r.securityDeposit) || 0), 0);
+    const flow = report.revenue.collateralFlow || { received: 0, returned: 0 };
+    expect(pick - back).toBe((flow.received || 0) - (flow.returned || 0));
   });
 });
