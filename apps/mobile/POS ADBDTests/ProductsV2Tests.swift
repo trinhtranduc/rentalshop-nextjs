@@ -23,6 +23,28 @@ final class ProductsV2Tests: XCTestCase {
 
     // MARK: - Roles
 
+    // MARK: - Home row price line (#681)
+
+    func testRowPriceShowsTheDefaultOptionFirstAndTheOtherSecond() throws {
+        let rentalDefault = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":1,"type":"FIXED","price":300000,"isDefault":true},{"id":2,"type":"DAILY","price":120000,"isDefault":false}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(rentalDefault),
+                       ProductRowPrice(main: 300_000, mainMode: .perRental, second: 120_000, secondMode: .perDay))
+        let dayDefault = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":1,"type":"FIXED","price":300000,"isDefault":false},{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(dayDefault),
+                       ProductRowPrice(main: 120_000, mainMode: .perDay, second: 300_000, secondMode: .perRental))
+    }
+
+    func testRowPriceWithOneOptionHasNoSecondAndSaleOnlyHasNoMode() throws {
+        let rentalOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":900000}"#)
+        XCTAssertEqual(ProductRowLogic.price(rentalOnly), ProductRowPrice(main: 300_000, mainMode: .perRental, second: nil, secondMode: nil))
+        let dayOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(dayOnly), ProductRowPrice(main: 120_000, mainMode: .perDay, second: nil, secondMode: nil))
+        let saleOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":0,"salePrice":900000}"#)
+        XCTAssertEqual(ProductRowLogic.price(saleOnly), ProductRowPrice(main: 900_000, mainMode: nil, second: nil, secondMode: nil))
+        let none = try product(#"{"id":1,"name":"Áo dài","rentPrice":0}"#)
+        XCTAssertNil(ProductRowLogic.price(none))
+    }
+
     // MARK: - Full-screen photos (#472)
 
     func testViewerUrlsUseImagesWithoutBlanksElseImageUrl() throws {

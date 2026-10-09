@@ -191,9 +191,10 @@ final class ProductsHomeViewController: BaseViewControler {
     }
 
     private func buildCartBar() {
-        cartBar.backgroundColor = DS.Color.primary
+        // #681: slate, so the bar stands apart from the blue + buttons above it
+        cartBar.backgroundColor = DS.Color.text
         cartBar.layer.cornerRadius = 16
-        cartBar.layer.shadowColor = DS.Color.primary.cgColor
+        cartBar.layer.shadowColor = DS.Color.text.cgColor
         cartBar.layer.shadowOpacity = 0.28
         cartBar.layer.shadowRadius = 8
         cartBar.layer.shadowOffset = CGSize(width: 0, height: 6)
@@ -475,14 +476,13 @@ final class ProductRowV2Cell: UITableViewCell {
     static let reuseId = "ProductRowV2Cell"
     private let photo = V2.thumbnail(size: 68, radius: 12)
     private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
-    private let metaLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
-    /// "● Còn N" / "● Hết hôm nay": 14pt regular, the colour carries the state (#468)
-    private let stockLabel = V2.label(size: DS.TextSize.secondary)
+    /// "● Còn N hôm nay" / "● Hết hôm nay": the colour carries the state (#468); 13pt semibold (#681)
+    private let stockLabel = V2.label(size: 13, weight: .semibold)
     private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)
     private let addButton = UIButton(type: .system)
     private let plusImage = DS.symbol("plus", DS.Icon.sm, weight: .semibold)
-    /// The + of a product already in the cart: the count on a darker blue (board SP-dong)
-    private static let inCartFill = UIColor(hexString: "1E3A8A")
+    /// #681: the + stays light until the product is in the cart
+    private static let addFill = UIColor(hexString: "EFF4FF")
     var onAdd: (() -> Void)?
     /// A tap on the thumbnail (#472)
     var onImage: (() -> Void)?
@@ -493,20 +493,12 @@ final class ProductRowV2Cell: UITableViewCell {
         selectionStyle = .default
         photo.isUserInteractionEnabled = true
         photo.addGestureRecognizer(photoTap)
-        let spacer = UIView()
-        spacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
-        spacer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
-        let metaRow = UIStackView(arrangedSubviews: [metaLabel, stockLabel, spacer])
-        metaRow.spacing = 8
-        metaLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        stockLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        stockLabel.setContentHuggingPriority(.required, for: .horizontal)
-        metaLabel.setContentHuggingPriority(.required, for: .horizontal)
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         priceLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let texts = UIStackView(arrangedSubviews: [nameLabel, metaRow, priceLabel])
+        // #681: name, price, stock — one fact per line, 8 pt apart
+        let texts = UIStackView(arrangedSubviews: [nameLabel, priceLabel, stockLabel])
         texts.axis = .vertical
-        texts.spacing = DS.Gap.line
+        texts.spacing = DS.Spacing.sm
         texts.alignment = .fill
         texts.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         texts.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
@@ -551,10 +543,7 @@ final class ProductRowV2Cell: UITableViewCell {
                 if case .success = result { photo?.contentMode = .scaleAspectFill }
             }
         }
-        let subtitle = ProductRowLogic.subtitle(product)
-        metaLabel.text = subtitle.code
-        metaLabel.isHidden = subtitle.code == nil
-        let free = subtitle.free
+        let free = ProductRowLogic.subtitle(product).free
         if free > 0 {
             stockLabel.text = "● " + String(format: "products.stock.free".localized(), free)
             stockLabel.textColor = free == 1 ? V2.warn : V2.ok
@@ -566,22 +555,17 @@ final class ProductRowV2Cell: UITableViewCell {
         let text = NSMutableAttributedString()
         let strong: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name), NSAttributedString.Key.foregroundColor: DS.Color.text]
         let muted: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary), NSAttributedString.Key.foregroundColor: DS.Color.textMuted]
-        var parts: [String] = []
-        if let perRental = ProductPricing.perRental(product) {
-            text.append(NSAttributedString(string: MoneyFormatter.format(perRental), attributes: strong))
-            text.append(NSAttributedString(string: "products.unit.perRental".localized(), attributes: muted))
-            if let perDay = ProductPricing.perDay(product) {
-                parts.append(MoneyFormatter.format(perDay) + "products.unit.perDay".localized())
+        let unit: (ProductPricingMode) -> String = { $0 == .perDay ? "products.unit.perDay".localized() : "products.unit.perRental".localized() }
+        if let price = ProductRowLogic.price(product) {
+            if let mode = price.mainMode {
+                text.append(NSAttributedString(string: MoneyFormatter.format(price.main), attributes: strong))
+                text.append(NSAttributedString(string: unit(mode), attributes: muted))
+                if let second = price.second, let secondMode = price.secondMode {
+                    text.append(NSAttributedString(string: " · " + MoneyFormatter.format(second) + unit(secondMode), attributes: muted))
+                }
+            } else {
+                text.append(NSAttributedString(string: String(format: "products.price.saleShort".localized(), MoneyFormatter.format(price.main)), attributes: muted))
             }
-        } else if let perDay = ProductPricing.perDay(product) {
-            text.append(NSAttributedString(string: MoneyFormatter.format(perDay), attributes: strong))
-            text.append(NSAttributedString(string: "products.unit.perDay".localized(), attributes: muted))
-        }
-        if let sale = ProductPricing.sale(product) {
-            parts.append(String(format: "products.price.saleShort".localized(), MoneyFormatter.format(sale)))
-        }
-        if !parts.isEmpty {
-            text.append(NSAttributedString(string: (text.length > 0 ? " · " : "") + parts.joined(separator: " · "), attributes: muted))
         }
         priceLabel.attributedText = text
 
@@ -589,17 +573,19 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
         switch ProductRowLogic.addState(free: free, inCart: inCart) {
         case .add, .out:
-            // #671: out today still adds (another day can be rented), so the button keeps its colour
+            // #671: out today still adds (another day can be rented), so the button keeps its colour.
+            // #681: light until the product is in the cart
             addButton.setImage(plusImage, for: .normal)
             addButton.setTitle(nil, for: .normal)
-            addButton.backgroundColor = DS.Color.primary
-            addButton.tintColor = .white
+            addButton.backgroundColor = Self.addFill
+            addButton.tintColor = DS.Color.primary
             addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
         case .inCart(let count):
             addButton.setImage(nil, for: .normal)
             addButton.setTitle("\(count)", for: .normal)
-            addButton.backgroundColor = Self.inCartFill
+            // #681: solid primary once in the cart, against the light + of the other rows
+            addButton.backgroundColor = DS.Color.primary
             addButton.tintColor = .white
             addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.inCart.accessibility".localized(), name, count)

@@ -1533,7 +1533,7 @@
 "products.search.placeholder" = "Name, barcode…";
 "products.search.empty" = "No matching products";
 "products.empty" = "No products yet";
-"products.stock.free" = "%d free";
+"products.stock.free" = "%d free today";
 "products.stock.noneToday" = "None free today";
 "products.stock.summary" = "On rent %d · free %d · total %d";
 "products.unit.perRental" = "/rental";

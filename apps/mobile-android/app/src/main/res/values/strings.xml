@@ -553,7 +553,7 @@
     <string name="v2_search_placeholder">Name, barcode…</string>
     <string name="v2_search_empty">No matching products</string>
     <string name="v2_products_empty">No products yet</string>
-    <string name="v2_stock_free">%1$d free</string>
+    <string name="v2_stock_free">%1$d free today</string>
     <string name="v2_stock_none_today">None free today</string>
     <string name="v2_stock_summary">On rent %1$d · free %2$d · total %3$d</string>
     <string name="v2_unit_per_rental">/rental</string>

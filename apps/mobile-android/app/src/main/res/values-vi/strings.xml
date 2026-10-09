@@ -552,7 +552,7 @@
     <string name="v2_search_placeholder">Tên, mã vạch…</string>
     <string name="v2_search_empty">Không có sản phẩm nào khớp</string>
     <string name="v2_products_empty">Chưa có sản phẩm</string>
-    <string name="v2_stock_free">Còn %1$d</string>
+    <string name="v2_stock_free">Còn %1$d hôm nay</string>
     <string name="v2_stock_none_today">Hết hôm nay</string>
     <string name="v2_stock_summary">Đang cho thuê %1$d · còn trống %2$d · tổng %3$d</string>
     <string name="v2_unit_per_rental">/lần</string>

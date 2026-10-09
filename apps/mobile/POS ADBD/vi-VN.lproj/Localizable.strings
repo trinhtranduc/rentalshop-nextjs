@@ -1531,7 +1531,7 @@
 "products.search.placeholder" = "Tên, mã vạch…";
 "products.search.empty" = "Không có sản phẩm nào khớp";
 "products.empty" = "Chưa có sản phẩm";
-"products.stock.free" = "Còn %d";
+"products.stock.free" = "Còn %d hôm nay";
 "products.stock.noneToday" = "Hết hôm nay";
 "products.stock.summary" = "Đang cho thuê %d · còn trống %d · tổng %d";
 "products.unit.perRental" = "/lần";

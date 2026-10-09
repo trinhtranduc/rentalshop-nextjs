@@ -35,6 +35,36 @@ final class AnyRentE2ETests: XCTestCase {
 
     // MARK: - Flows
 
+    /// #681: the stock line of each Home row, logged for comparison with the database (see the e2e report).
+    /// Seeded edge orders make some products out today or down to one; the run prints every line it reads.
+    func test1bHomeStockLines() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 15), "Product list should load")
+        let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "search field on Home")
+        for number in [3, 5, 6, 7, 8, 9, 10, 18, 26, 27, 28] {
+            search.tap()
+            search.clearText()
+            search.typeText("Product \(number) -\n")
+            sleep(2)
+            let name = app.tables.cells.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Product \(number) -")).firstMatch
+            guard name.waitForExistence(timeout: 5) else {
+                e2e.soft(false, "row for Product \(number)")
+                continue
+            }
+            let cell = app.tables.cells.containing(NSPredicate(format: "label BEGINSWITH %@", "Product \(number) -")).firstMatch
+            let stock = cell.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "●")).firstMatch
+            e2e.note("STOCK Product \(number): \(stock.exists ? stock.label : "<no stock line>")")
+            if number == 5 || number == 10 { e2e.shot("15-home-stock-p\(number)") }
+        }
+        search.clearText()
+        search.typeText("\n")
+        sleep(2)
+        e2e.shot("16-home-list-after")
+    }
+
     func test1HomeProducts() throws {
         try e2e.requireFlag("newProducts")
         try e2e.start()
