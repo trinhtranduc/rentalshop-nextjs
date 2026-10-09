@@ -534,6 +534,61 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// WEB/MOBILE-STAT (#712 follow-up): the four Overview tiles on the phone. Their labels (value included) are noted
+    /// as `E2E_NOTE: TILE <title> | <label>`; the e2e checker compares them with GET /api/analytics/period.
+    func test7kOverviewTiles() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        sleep(4)
+        let titles = ["Giá trị đơn mới", "Doanh thu", "Thực thu", "Còn phải thu", "Thế chân"]
+        var found = 0
+        for button in app.buttons.allElementsBoundByIndex where button.exists {
+            let label = button.label
+            guard let title = titles.first(where: { label.hasPrefix($0) }) else { continue }
+            found += 1
+            e2e.note("TILE \(title) | \(label)")
+        }
+        e2e.shot("72-overview-tiles")
+        e2e.soft(found >= 4, "four Overview tiles on the phone (found \(found))")
+    }
+
+    /// Each Overview tile opens its detail sheet; every row of the sheet is noted as `E2E_NOTE: SHEET <tile> | <label>`
+    /// (headline "<tile> · <period>, <value>", rows "<name>, <note>, <value>") for the stats check against the API.
+    func test7lOverviewSheets() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        sleep(4)
+        let tiles = ["Giá trị đơn mới", "Thực thu", "Còn phải thu", "Thế chân"]
+        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phí hư hỏng, trễ", "Hoàn đơn huỷ",
+                        "Thực thu", "Sẽ thu khi khách lấy đồ", "Quá ngày lấy, chưa thu", "Đã nhận", "Đã trả lại khách",
+                        "Sẽ nhận khi giao", "Đang giữ, sẽ trả lại"]
+        for (index, title) in tiles.enumerated() {
+            let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            guard tile.waitForExistence(timeout: 8) else { e2e.soft(false, "tile \(title)"); continue }
+            e2e.note("TILE \(title) | \(tile.label)")
+            tile.tap()
+            let link = e2e.element(labelBeginsWith: ["Xem các đơn liên quan"], type: .button)
+            e2e.soft(link.waitForExistence(timeout: 6), "\(title) sheet opened")
+            sleep(1)
+            for element in app.descendants(matching: .other).allElementsBoundByIndex where element.exists {
+                let label = element.label
+                guard !label.isEmpty else { continue }
+                if label.hasPrefix("\(title) ·") || rowNames.contains(where: { label.hasPrefix("\($0),") }) {
+                    e2e.note("SHEET \(title) | \(label)")
+                }
+            }
+            e2e.shot("73-overview-sheet-\(index)")
+            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            sleep(1)
+        }
+    }
+
     func test7Overview() throws {
         try e2e.requireFlag("newOverview")
         try e2e.start()

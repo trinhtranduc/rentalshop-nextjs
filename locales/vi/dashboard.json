@@ -324,7 +324,13 @@
       "returned": "Đã trả lại khách",
       "toCollect": "Sẽ nhận khi giao",
       "toReturn": "Đang giữ, sẽ trả lại",
-      "hatchNote": "Thanh gạch chéo: sắp tới, chưa tính vào số trên."
+      "hatchNote": "Thanh gạch chéo: sắp tới, chưa tính vào số trên.",
+      "rule": {
+        "orderValue": "Tổng tiền các đơn tạo trong kỳ, theo ngày tạo. Không tính đơn đã huỷ.",
+        "collected": "Tiền thật đã thu trong kỳ: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn.",
+        "outstanding": "Phần chưa thu của các đơn tạo trong kỳ: đơn thuê đang đặt là tổng trừ cọc, đơn bán chưa hoàn tất là cả tổng.",
+        "collateral": "Thế chân nhận khi giao đồ trừ thế chân trả lại khi nhận đồ, trong kỳ."
+      }
     }
   }
 }

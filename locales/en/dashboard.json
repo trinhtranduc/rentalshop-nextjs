@@ -324,7 +324,13 @@
       "returned": "Returned to customers",
       "toCollect": "To receive at pickup",
       "toReturn": "Held, to return",
-      "hatchNote": "Hatched bars: upcoming, not in the numbers above."
+      "hatchNote": "Hatched bars: upcoming, not in the numbers above.",
+      "rule": {
+        "orderValue": "Total of the orders created in the period, by creation day. Cancelled orders are not counted.",
+        "collected": "Money actually collected in the period: deposits, rent on hand-over, sales, extra fees, minus refunds.",
+        "outstanding": "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.",
+        "collateral": "Collateral received at hand-over minus collateral handed back at return, in the period."
+      }
     }
   }
 }
