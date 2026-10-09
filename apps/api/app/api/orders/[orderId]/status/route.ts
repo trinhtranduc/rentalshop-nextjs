@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, canChangeOrderStatus } from '@rentalshop/constants';
+import { ORDER_STATUS, PLATFORM_OPS_ROLES, canChangeOrderStatus, isOutletRole } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
@@ -108,7 +108,7 @@ export async function PATCH(
     }
 
     // Scope (#361): outlet roles only their outlet, other merchant roles only their merchant
-    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    if (isOutletRole(user.role)) {
       if (existingOrder.outletId !== userScope.outletId) {
         return NextResponse.json(
           ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),

@@ -69,7 +69,7 @@ export default function ServerTopNavigation({ currentPage, userRole }: ServerTop
         item.href !== '/payments' &&
         item.href !== '/authors'
       );
-    } else if (userRole === 'OUTLET_STAFF') {
+    } else if (userRole === 'OUTLET_STAFF' || userRole === 'OUTLET_INVENTORY') {
       // OUTLET_STAFF cannot see users, outlets, subscriptions, plans, payments, authors (limited permissions)
       return items.filter(item => 
         item.href !== '/users' && 

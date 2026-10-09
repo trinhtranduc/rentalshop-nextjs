@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, isOutletRole } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/outlets
@@ -39,7 +39,7 @@ export async function GET(
 
       // Role-based outlet filtering:
       // - OUTLET_ADMIN/OUTLET_STAFF: Can only see their assigned outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         if (userScope.outletId) {
           searchFilters.outletId = userScope.outletId;
         }

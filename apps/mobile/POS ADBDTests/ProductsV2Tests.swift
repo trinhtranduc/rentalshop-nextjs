@@ -104,6 +104,37 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(ProductAccess.canEdit(role: .outletStaff, permissions: ["products.manage"]))
     }
 
+    // MARK: - Nhân viên kho (#682)
+
+    func testInventoryStaffManagesProductsAndCategoriesButHidesMoneyLikeStaff() throws {
+        let perms = ["outlet.view", "products.view", "products.create", "products.update", "products.manage",
+                     "products.export", "orders.create", "orders.view", "orders.update", "customers.view", "customers.manage"]
+        XCTAssertEqual(Role(rawValue: "OUTLET_INVENTORY"), .outletInventory)
+        XCTAssertTrue(ProductAccess.canCreate(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(ProductAccess.canEdit(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(ProductAccess.canDelete(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(ProductAccess.showsPriceFields(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(CategoryRules.canAdd(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(CategoryRules.canManage(role: .outletInventory))
+        XCTAssertFalse(CategoryRules.canManage(role: .outletAdmin))
+        XCTAssertTrue(Role.outletInventory.isStaffLike)
+        XCTAssertFalse(Role.outletAdmin.isStaffLike)
+        XCTAssertTrue(OrdersHomeLogic.hidesMoney(role: .outletInventory, hideForStaff: true))
+        XCTAssertFalse(OrdersHomeLogic.hidesMoney(role: .outletInventory, hideForStaff: false))
+        XCTAssertTrue(ChangeHistoryLogic.isStaff("OUTLET_INVENTORY"))
+        XCTAssertFalse(ChangeHistoryLogic.canView("OUTLET_INVENTORY"))
+    }
+
+    func testInventoryRoleIsPickedOnlyWhenTheApiAllowsIt() throws {
+        XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: nil), [.outletStaff, .outletAdmin])
+        XCTAssertEqual(UserFormRoles.choices(inventoryRole: true, currentRole: nil), [.outletStaff, .outletAdmin, .outletInventory])
+        XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: .outletInventory).last, .outletInventory)
+        let on = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"features":{},"inventoryRole":true}"#.utf8))
+        XCTAssertTrue(on.inventoryRole)
+        let old = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"features":{}}"#.utf8))
+        XCTAssertFalse(old.inventoryRole)
+    }
+
     func testMerchantAndOutletAdminManagePrices() {
         for role in [Role.merchant, .outletAdmin] {
             XCTAssertTrue(ProductAccess.showsPriceFields(role: role, permissions: ["products.manage"]))

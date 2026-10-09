@@ -390,5 +390,6 @@
   "SEARCH_TIMEOUT": "Tìm bằng hình ảnh mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.",
   "INVALID_LIMIT": "Số lượng kết quả yêu cầu không hợp lệ",
   "INVALID_MIN_SIMILARITY": "Độ tương đồng tối thiểu không hợp lệ (phải từ 0 đến 1)",
-  "NO_PRODUCTS_FOUND": "Không tìm thấy sản phẩm nào giống ảnh này"
+  "NO_PRODUCTS_FOUND": "Không tìm thấy sản phẩm nào giống ảnh này",
+  "ROLE_NOT_AVAILABLE": "Vai trò này chưa thể gán"
 }

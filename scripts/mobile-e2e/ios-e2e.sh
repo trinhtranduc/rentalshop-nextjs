@@ -6,7 +6,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff] [--only <testMethod>] [--lang vi|en]
+Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff|inventory] [--only <testMethod>] [--lang vi|en]
 
 Builds the Development scheme and runs -only-testing:"POS ADBDUITests/AnyRentE2ETests" on $E2E_SIMULATOR
 (default "iPhone 17 Pro Max") with API_BASE_URL=http://localhost:$E2E_API_PORT. Start the API first
@@ -14,7 +14,7 @@ Builds the Development scheme and runs -only-testing:"POS ADBDUITests/AnyRentE2E
 
   --fresh            uninstall the app (com.anyrent.debug) first: onboarding, notification prompt and
                      the 5-minute app-config cache start clean
-  --account          merchant (default) or staff; credentials from env.sh
+  --account          merchant (default), staff or inventory (Nhân viên kho, #682); credentials from env.sh
   --only <method>    run one test method, e.g. testCartRent
   --lang vi|en       app language for the run (xcodebuild -testLanguage); default: simulator setting
 
@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
     --fresh) FRESH=1 ;;
-    --account) E2E_ACCOUNT="${2:?--account needs merchant|staff}"; shift ;;
+    --account) E2E_ACCOUNT="${2:?--account needs merchant|staff|inventory}"; shift ;;
     --only) ONLY="${2:?--only needs a test method}"; shift ;;
     --lang)
       case "${2:-}" in

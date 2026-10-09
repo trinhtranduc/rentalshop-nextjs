@@ -4100,8 +4100,10 @@ function usePermissions() {
       if (!user) {
         return false;
       }
-      if (user.role === "ADMIN" && (!permissions || permissions.length === 0)) {
-        return true;
+      if ((user.role === "ADMIN" || user.role === "OPS") && (!permissions || permissions.length === 0)) {
+        if (user.role === "ADMIN") {
+          return true;
+        }
       }
       if (!permissions || !permissions.length) {
         return false;
@@ -4134,9 +4136,17 @@ function usePermissions() {
     };
   }, [user, permissions]);
   const canManageProducts = useMemo(() => hasPermission("products.manage"), [hasPermission]);
-  const canAddOrEditProducts = useMemo(
-    () => hasPermission("products.manage") || hasPermission("products.create") || hasPermission("products.update"),
+  const canCreateProducts = useMemo(
+    () => hasPermission("products.manage") || hasPermission("products.create"),
     [hasPermission]
+  );
+  const canUpdateProducts = useMemo(
+    () => hasPermission("products.manage") || hasPermission("products.update"),
+    [hasPermission]
+  );
+  const canAddOrEditProducts = useMemo(
+    () => canCreateProducts || canUpdateProducts,
+    [canCreateProducts, canUpdateProducts]
   );
   const canViewProducts = useMemo(() => hasPermission("products.view"), [hasPermission]);
   const canExportProducts = useMemo(() => hasPermission("products.export"), [hasPermission]);
@@ -4176,6 +4186,8 @@ function usePermissions() {
     // Raw permissions array
     // Convenience methods for products
     canManageProducts,
+    canCreateProducts,
+    canUpdateProducts,
     canAddOrEditProducts,
     canViewProducts,
     canExportProducts,
@@ -5040,7 +5052,7 @@ function usePagination(config = {}) {
 }
 
 // src/hooks/usePaymentsData.ts
-import { paymentsApi } from "@rentalshop/utils";
+import { paymentsApi, getShopTodayKey, toDateKeyInTimeZone, SHOP_TIMEZONE } from "@rentalshop/utils";
 function usePaymentsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
@@ -5072,15 +5084,15 @@ function usePaymentsData(options) {
         );
       }
       if (filters2.dateFilter && filters2.dateFilter !== "all") {
-        const now = /* @__PURE__ */ new Date();
+        const todayKey = getShopTodayKey();
         filteredPayments = filteredPayments.filter((p2) => {
-          const paymentDate = new Date(p2.createdAt);
+          const paymentKey = toDateKeyInTimeZone(p2.createdAt, SHOP_TIMEZONE) || "";
           if (filters2.dateFilter === "today") {
-            return now.toDateString() === paymentDate.toDateString();
+            return paymentKey === todayKey;
           } else if (filters2.dateFilter === "this_month") {
-            return now.getMonth() === paymentDate.getMonth() && now.getFullYear() === paymentDate.getFullYear();
+            return paymentKey.slice(0, 7) === todayKey.slice(0, 7);
           } else if (filters2.dateFilter === "this_year") {
-            return now.getFullYear() === paymentDate.getFullYear();
+            return paymentKey.slice(0, 4) === todayKey.slice(0, 4);
           }
           return true;
         });
@@ -5185,76 +5197,84 @@ function usePlansData(options) {
 
 // src/hooks/useProductAvailability.ts
 import { useCallback as useCallback8 } from "react";
-import { getUTCDateKey } from "@rentalshop/utils";
-function useProductAvailability() {
-  const calculateAvailability = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
-    const pickup = new Date(pickupDate);
-    const return_ = new Date(returnDate);
-    if (pickup > return_) {
-      return {
-        available: false,
-        availableQuantity: 0,
-        conflicts: [],
-        message: "Return date cannot be before pickup date"
-      };
-    }
-    const conflicts = existingOrders.filter((order) => {
-      if (order.orderType !== "RENT")
-        return false;
-      const activeStatuses = ["RESERVED", "PICKUPED"];
-      if (!activeStatuses.includes(order.status))
-        return false;
-      const hasProduct = order.orderItems.some((item) => item.productId === product.id);
-      if (!hasProduct)
-        return false;
-      const orderPickup = new Date(order.pickupPlanAt);
-      const orderReturn = new Date(order.returnPlanAt);
-      return pickup <= orderReturn && return_ >= orderPickup || orderPickup <= return_ && orderReturn >= pickup;
-    });
-    const conflictingQuantity = conflicts.reduce((total, order) => {
-      const orderItem = order.orderItems.find((item) => item.productId === product.id);
-      return total + (orderItem?.quantity || 0);
-    }, 0);
-    const availableQuantity = Math.max(0, product.available - conflictingQuantity);
-    const available = availableQuantity >= requestedQuantity;
-    let message = "";
-    if (available) {
-      message = `Available: ${availableQuantity} units`;
-    } else {
-      message = `Only ${availableQuantity} units available (requested: ${requestedQuantity})`;
-    }
+var VN_OFFSET_MS = 7 * 60 * 60 * 1e3;
+var DAY_MS = 24 * 60 * 60 * 1e3;
+var DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+function vnDayKey(value) {
+  if (!value)
+    return "";
+  if (typeof value === "string" && DATE_KEY.test(value.trim()))
+    return value.trim();
+  const ms = value instanceof Date ? value.getTime() : Date.parse(value);
+  if (Number.isNaN(ms))
+    return "";
+  return new Date(Math.floor((ms + VN_OFFSET_MS) / DAY_MS) * DAY_MS).toISOString().slice(0, 10);
+}
+function nextDayKey(key) {
+  return new Date(Date.parse(`${key}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10);
+}
+function calculateProductAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders = []) {
+  const pickupKey = vnDayKey(pickupDate);
+  const returnKey = vnDayKey(returnDate);
+  if (!pickupKey || !returnKey || pickupKey > returnKey) {
     return {
-      available,
-      availableQuantity,
-      conflicts,
-      message
+      available: false,
+      availableQuantity: 0,
+      conflicts: [],
+      message: "Return date cannot be before pickup date"
     };
-  }, []);
-  const isProductAvailable = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
-    const status = calculateAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders);
-    return status.available;
-  }, [calculateAvailability]);
-  const getAvailabilityForDateRange = useCallback8((product, startDate, endDate, existingOrders = []) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const results = [];
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dateStr = getUTCDateKey(date);
-      const status = calculateAvailability(
-        product,
-        dateStr,
-        dateStr,
-        1,
-        existingOrders
-      );
-      results.push({
-        date: dateStr,
-        available: status.availableQuantity,
-        conflicts: status.conflicts
-      });
-    }
+  }
+  const conflicts = existingOrders.filter((order) => {
+    if (order.orderType !== "RENT")
+      return false;
+    const activeStatuses = ["RESERVED", "PICKUPED"];
+    if (!activeStatuses.includes(order.status))
+      return false;
+    const hasProduct = order.orderItems.some((item) => item.productId === product.id);
+    if (!hasProduct)
+      return false;
+    const orderPickupKey = vnDayKey(order.pickupPlanAt);
+    const orderReturnKey = vnDayKey(order.returnPlanAt);
+    if (!orderPickupKey || !orderReturnKey)
+      return false;
+    return pickupKey <= orderReturnKey && orderPickupKey <= returnKey;
+  });
+  const conflictingQuantity = conflicts.reduce((total, order) => {
+    const orderItem = order.orderItems.find((item) => item.productId === product.id);
+    return total + (orderItem?.quantity || 0);
+  }, 0);
+  const availableQuantity = Math.max(0, product.available - conflictingQuantity);
+  const available = availableQuantity >= requestedQuantity;
+  const message = available ? `Available: ${availableQuantity} units` : `Only ${availableQuantity} units available (requested: ${requestedQuantity})`;
+  return {
+    available,
+    availableQuantity,
+    conflicts,
+    message
+  };
+}
+function availabilityForDateRange(product, startDate, endDate, existingOrders = []) {
+  const startKey = vnDayKey(startDate);
+  const endKey = vnDayKey(endDate);
+  const results = [];
+  if (!startKey || !endKey)
     return results;
-  }, [calculateAvailability]);
+  for (let dateKey = startKey; dateKey <= endKey; dateKey = nextDayKey(dateKey)) {
+    const status = calculateProductAvailability(product, dateKey, dateKey, 1, existingOrders);
+    results.push({
+      date: dateKey,
+      available: status.availableQuantity,
+      conflicts: status.conflicts
+    });
+  }
+  return results;
+}
+function useProductAvailability() {
+  const calculateAvailability = useCallback8(calculateProductAvailability, []);
+  const isProductAvailable = useCallback8((product, pickupDate, returnDate, requestedQuantity, existingOrders = []) => {
+    return calculateProductAvailability(product, pickupDate, returnDate, requestedQuantity, existingOrders).available;
+  }, []);
+  const getAvailabilityForDateRange = useCallback8(availabilityForDateRange, []);
   return {
     calculateAvailability,
     isProductAvailable,
@@ -5595,23 +5615,29 @@ function useLocale() {
 }
 
 // src/hooks/useUserRole.ts
+import { isPlatformOpsRole } from "@rentalshop/constants";
 function useUserRole() {
   const { user } = useAuth();
   const role = user?.role;
+  const isPlatformStaff = isPlatformOpsRole(role);
   return {
     role,
     isAdmin: role === "ADMIN",
+    isOps: role === "OPS",
+    isPlatformStaff,
     isMerchant: role === "MERCHANT",
     isOutletAdmin: role === "OUTLET_ADMIN",
     isOutletStaff: role === "OUTLET_STAFF",
+    // #682 Nhân viên kho: staff + products and categories
+    isOutletInventory: role === "OUTLET_INVENTORY",
     // Permission checks
     canManageUsers: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN",
-    canManageProducts: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN",
-    canManageCategories: role === "ADMIN" || role === "MERCHANT",
+    canManageProducts: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN" || role === "OUTLET_INVENTORY",
+    canManageCategories: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_INVENTORY",
     canManageOutlets: role === "ADMIN" || role === "MERCHANT",
-    canManageSubscriptions: role === "ADMIN" || role === "MERCHANT",
-    canViewBilling: role === "ADMIN" || role === "MERCHANT",
-    canExportData: role === "ADMIN" || role === "MERCHANT" || role === "OUTLET_ADMIN"
+    canManageSubscriptions: isPlatformStaff || role === "MERCHANT",
+    canViewBilling: isPlatformStaff || role === "MERCHANT",
+    canExportData: isPlatformStaff || role === "MERCHANT" || role === "OUTLET_ADMIN"
   };
 }
 function useCanManageProducts() {
@@ -6022,6 +6048,8 @@ function useCategoriesWithFilters(options) {
 export {
   CurrencyProvider,
   ErrorCheckers,
+  availabilityForDateRange,
+  calculateProductAvailability,
   clearApiCache,
   extractErrorCode,
   extractErrorMessage,

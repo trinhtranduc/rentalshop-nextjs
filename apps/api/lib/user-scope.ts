@@ -1,10 +1,10 @@
-import { USER_ROLE, isPlatformOpsRole } from '@rentalshop/constants';
+import { USER_ROLE, OUTLET_USER_ROLES, isPlatformOpsRole } from '@rentalshop/constants';
 
 /**
  * Who may read or change which user (user routes).
  * - ADMIN / OPS: every user.
  * - MERCHANT: users of its merchant.
- * - OUTLET_ADMIN / OUTLET_STAFF: users of its outlet.
+ * - OUTLET_ADMIN / OUTLET_STAFF / OUTLET_INVENTORY: users of its outlet.
  * Out-of-scope users are answered as "not found" by the routes, so ids cannot be probed.
  */
 
@@ -18,7 +18,7 @@ type TargetUser = {
   outlet?: { id?: number | null } | null;
 };
 
-const OUTLET_ROLES: string[] = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+const OUTLET_ROLES: string[] = [...OUTLET_USER_ROLES];
 
 export function canAccessUser(actor: Actor, scope: Scope, target: TargetUser): boolean {
   if (isPlatformOpsRole(actor.role)) return true;
@@ -48,6 +48,15 @@ export function canAssignRole(actor: Actor, newRole: string, currentRole: string
     return OUTLET_ROLES.includes(newRole);
   }
   return false;
+}
+
+/**
+ * #682: Nhân viên kho can be given only once `INVENTORY_ROLE_ENABLED=true` (both new app versions released:
+ * an old Android app reads the role as UNKNOWN). Users who already have it keep it. Other roles always pass.
+ */
+export function isRoleAssignable(role: string, env: Record<string, string | undefined> = process.env): boolean {
+  if (role !== USER_ROLE.OUTLET_INVENTORY) return true;
+  return env.INVENTORY_ROLE_ENABLED === 'true';
 }
 
 /**

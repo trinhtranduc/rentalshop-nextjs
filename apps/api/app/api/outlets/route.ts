@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 
 /**
  * GET /api/outlets
@@ -53,7 +53,7 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
         : userScope.merchantId,           // Others restricted to their merchant
       
       // Outlet-level users can only see their own outlet
-      outletId: (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) 
+      outletId: (isOutletRole(user.role)) 
         ? userScope.outletId 
         : undefined,
         

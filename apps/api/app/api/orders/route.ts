@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
 import { 
   ordersQuerySchema, 
   orderCreateSchema, 
@@ -176,7 +176,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = queryOutletId;
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (isOutletRole(user.role)) {
       // Outlet users can only see orders from their assigned outlet
       searchFilters.outletId = userScope.outletId;
     } else if (user.role === USER_ROLE.ADMIN) {
@@ -615,7 +615,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     }
 
     // ✅ Validate outletId based on user role
-    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    if (isOutletRole(user.role)) {
       // Outlet users can only create orders for their assigned outlet
       if (parsed.data.outletId !== userScope.outletId) {
         console.log('❌ Outlet user trying to create order for different outlet:', {
@@ -1239,7 +1239,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         }
 
         // Outlet users cannot change order outlet
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (isOutletRole(user.role)) {
           if (targetOutletId !== userScope.outletId) {
             return NextResponse.json(
               ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
@@ -1274,7 +1274,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
             );
           }
         }
-      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (isOutletRole(user.role)) {
         // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
@@ -1285,7 +1285,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       }
     } else {
       // If no outletId in update, validate existing order belongs to user's scope
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
             ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),

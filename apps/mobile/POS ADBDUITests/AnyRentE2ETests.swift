@@ -5,7 +5,7 @@
 //  End-to-end walk through the main features, like a human tester (#395).
 //  Run it with scripts/mobile-e2e/ios-e2e.sh; it reads (via TEST_RUNNER_ prefixing):
 //    E2E_EMAIL, E2E_PASSWORD   the account to log in with
-//    E2E_ROLE                  merchant | staff (staff runs read-only flows + restrictions)
+//    E2E_ROLE                  merchant | staff | inventory (staff runs read-only flows + restrictions; inventory = #682)
 //    E2E_FEATURES              comma list of MOBILE_FEATURES that are on; steps for off flags are skipped
 //    E2E_OUT_DIR               where NN-feature-step.png screenshots are written
 //  Test methods are numbered so XCTest runs them in flow order; each one launches the app and logs in
@@ -687,6 +687,52 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.note("Add product (+) is hidden for this staff account")
             e2e.shot("91-staff-no-add-product")
         }
+    }
+
+    /// #682 Nhân viên kho: the staff app plus product and category management. Logs the Home stock lines so the run
+    /// can be compared with the database, then checks Sửa / Xoá, price fields, Danh mục and no Người dùng / Xuất dữ liệu.
+    func test8bInventoryRole() throws {
+        try e2e.requireRole("inventory")
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let firstRow = app.tables.cells.firstMatch
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 15), "Product list should load")
+        e2e.shot("95-inventory-home")
+        for index in 0..<min(4, app.tables.cells.count) {
+            let cell = app.tables.cells.element(boundBy: index)
+            let name = cell.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Product")).firstMatch
+            let stock = cell.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "●")).firstMatch
+            e2e.note("STOCK \(name.exists ? name.label : "?"): \(stock.exists ? stock.label : "<no stock line>")")
+        }
+
+        e2e.tapRow(firstRow)
+        XCTAssertTrue(e2e.button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10), "Product detail opens")
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "Nhân viên kho sees Sửa on product detail")
+        XCTAssertTrue(e2e.button(["Delete product", "Xoá sản phẩm", "Xóa sản phẩm", "Delete", "Xoá", "Xóa"]).exists,
+                      "Nhân viên kho sees Xoá on product detail")
+        e2e.soft(!e2e.button(["Change history", "Lịch sử thay đổi"]).exists, "no change history for Nhân viên kho")
+        e2e.shot("96-inventory-product-detail")
+        edit.tap()
+        let priceLabels = ["Rent per rental", "Thuê theo lần", "Rent per day", "Thuê theo ngày", "Sale price", "Giá bán"]
+        let price = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", priceLabels)).firstMatch
+        XCTAssertTrue(price.waitForExistence(timeout: 8), "Nhân viên kho sees the price fields")
+        e2e.shot("97-inventory-product-form")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]))
+        sleep(1)
+        e2e.tapIfExists(e2e.button(["Back", "Quay lại"]))
+
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let label = { [app] (names: [String]) in app.staticTexts.matching(NSPredicate(format: "label IN %@", names)).firstMatch }
+        let categories = label(["Categories", "Danh mục"])
+        XCTAssertTrue(categories.waitForExistence(timeout: 8), "Settings shows Danh mục")
+        XCTAssertFalse(label(["Users", "Người dùng"]).exists, "no Người dùng for Nhân viên kho")
+        XCTAssertFalse(label(["Export Data", "Xuất dữ liệu"]).exists, "no Xuất dữ liệu for Nhân viên kho")
+        e2e.shot("98-inventory-settings")
+        categories.tap()
+        sleep(3)
+        e2e.shot("99-inventory-categories")
     }
 
     // MARK: - Screens that landed on dev with #482 #490 #491 #496 #518 #519 (#530)

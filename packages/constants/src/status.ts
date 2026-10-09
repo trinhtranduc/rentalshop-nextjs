@@ -116,7 +116,8 @@ export const USER_ROLE = {
   ARTICLE: 'ARTICLE',                // Blog / CMS editor only
   MERCHANT: 'MERCHANT',              // Business Owner
   OUTLET_ADMIN: 'OUTLET_ADMIN',      // Outlet Manager
-  OUTLET_STAFF: 'OUTLET_STAFF'       // Outlet Employee
+  OUTLET_STAFF: 'OUTLET_STAFF',      // Outlet Employee
+  OUTLET_INVENTORY: 'OUTLET_INVENTORY' // Outlet Employee who also manages products and categories (#682)
 } as const;
 
 export type UserRole = typeof USER_ROLE[keyof typeof USER_ROLE];
@@ -144,6 +145,30 @@ export function isSystemLevelUserRole(role: string | undefined | null): boolean 
 
 export function isPlatformOpsRole(role: string | undefined | null): boolean {
   return role === USER_ROLE.ADMIN || role === USER_ROLE.OPS;
+}
+
+/** Roles scoped to one outlet (#682: Nhân viên kho is one) */
+export const OUTLET_USER_ROLES = [
+  USER_ROLE.OUTLET_ADMIN,
+  USER_ROLE.OUTLET_STAFF,
+  USER_ROLE.OUTLET_INVENTORY,
+] as const;
+
+export function isOutletRole(role: string | undefined | null): boolean {
+  return (OUTLET_USER_ROLES as readonly string[]).includes(role ?? '');
+}
+
+/**
+ * Roles that see and do what outlet staff do: money hidden, no order delete, no staff or outlet admin (#682).
+ * Nhân viên kho adds product and category management through its permissions, not through this check.
+ */
+export const STAFF_LIKE_ROLES = [
+  USER_ROLE.OUTLET_STAFF,
+  USER_ROLE.OUTLET_INVENTORY,
+] as const;
+
+export function isStaffLikeRole(role: string | undefined | null): boolean {
+  return (STAFF_LIKE_ROLES as readonly string[]).includes(role ?? '');
 }
 
 // ============================================================================

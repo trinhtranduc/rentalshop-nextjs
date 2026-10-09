@@ -859,6 +859,7 @@ enum UserRole {
   MERCHANT
   OUTLET_ADMIN
   OUTLET_STAFF
+  OUTLET_INVENTORY
 }
 
 model Post {

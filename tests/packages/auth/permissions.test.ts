@@ -5,7 +5,7 @@ import { ROLE_PERMISSIONS, CRITICAL_PERMISSIONS } from '../../../packages/auth/s
 import type { Permission, Role } from '../../../packages/auth/src/permissions';
 
 describe('@rentalshop/auth - Permissions', () => {
-  const ALL_ROLES: Role[] = ['ADMIN', 'OPS', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
+  const ALL_ROLES: Role[] = ['ADMIN', 'OPS', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
 
   describe('ROLE_PERMISSIONS', () => {
     it('should define permissions for all roles', () => {

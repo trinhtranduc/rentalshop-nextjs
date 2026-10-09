@@ -16,6 +16,8 @@ enum Role: String, CaseIterable, Codable {
     case merchant = "MERCHANT"
     case outletAdmin = "OUTLET_ADMIN"
     case outletStaff = "OUTLET_STAFF"
+    /// #682 Nhân viên kho: staff + products and categories
+    case outletInventory = "OUTLET_INVENTORY"
     
     func inString() -> String {
         return self.rawValue
@@ -31,8 +33,14 @@ enum Role: String, CaseIterable, Codable {
             return "Outlet Admin".localized()
         case .outletStaff:
             return "Outlet Staff".localized()
+        case .outletInventory:
+            return "Inventory Staff".localized()
         }
     }
+
+    /// Sees and does what outlet staff do (money hidden, no export of orders, no staff admin).
+    /// Nhân viên kho adds products and categories through its permissions (#682).
+    var isStaffLike: Bool { self == .outletStaff || self == .outletInventory }
 }
 
 // MARK: - User Model (Codable) - Extended to replace Account model
@@ -342,8 +350,18 @@ class User: NSObject, Codable {
                 self.role = .outletAdmin
             case "OUTLET_STAFF", "EMPLOYEE", "SALE":
                 self.role = .outletStaff
+            case "OUTLET_INVENTORY":
+                self.role = .outletInventory
             default:
                 self.role = .outletStaff
             }
+    }
+}
+
+/// Roles a merchant or outlet admin may pick in the user form (#682)
+enum UserFormRoles {
+    /// Staff and outlet admin always; Nhân viên kho once the API allows it, or when the user already has it
+    static func choices(inventoryRole: Bool, currentRole: Role?) -> [Role] {
+        inventoryRole || currentRole == .outletInventory ? [.outletStaff, .outletAdmin, .outletInventory] : [.outletStaff, .outletAdmin]
     }
 }

@@ -22,7 +22,7 @@ import {
   SCHEDULE_CONFLICT_STATUS,
   type ScheduleDbClient,
 } from '../../../../lib/schedule-conflict-check';
-import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
   calculateAmountDue,
@@ -633,7 +633,7 @@ export const PUT = async (
           }
 
           // Outlet users cannot change order outlet
-          if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          if (isOutletRole(user.role)) {
             if (targetOutletId !== userScope.outletId) {
               return NextResponse.json(
                 ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
@@ -668,7 +668,7 @@ export const PUT = async (
               );
             }
           }
-        } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        } else if (isOutletRole(user.role)) {
           // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
           if (existingOrder.outletId !== userScope.outletId) {
             return NextResponse.json(
@@ -679,7 +679,7 @@ export const PUT = async (
         }
       } else {
         // If no outletId in update, validate existing order belongs to user's scope
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (isOutletRole(user.role)) {
           if (existingOrder.outletId !== userScope.outletId) {
             return NextResponse.json(
               ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
@@ -1046,7 +1046,7 @@ export const DELETE = async (
 
       // Authorization checks based on user role
       // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { status: API.STATUS.FORBIDDEN }

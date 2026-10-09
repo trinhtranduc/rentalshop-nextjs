@@ -32,7 +32,7 @@ const processOrderPaymentSchema = z.object({
  * Process payment
  */
 export async function POST(request: NextRequest) {
-  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])(async (request, { user, userScope }) => {
+  return withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'])(async (request, { user, userScope }) => {
     try {
       const parsed = processOrderPaymentSchema.safeParse(await request.json());
       if (!parsed.success) {

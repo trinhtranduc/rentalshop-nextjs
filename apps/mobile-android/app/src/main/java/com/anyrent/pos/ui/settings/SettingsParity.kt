@@ -55,6 +55,8 @@ import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.data.UserFormRoles
+import com.anyrent.pos.data.repository.SessionStoreAppConfigCache
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.print.ThermalPrinter
@@ -537,6 +539,10 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var role by remember { mutableStateOf(initial?.role ?: "OUTLET_STAFF") }
+    // #682: Nhân viên kho is offered once the API allows it (cached app config), or when the user already has it
+    val roleChoices = remember(initial?.role) {
+        UserFormRoles.choices(SessionStoreAppConfigCache.read()?.inventoryRole ?: false, initial?.role)
+    }
     var active by remember { mutableStateOf(initial?.isActive ?: true) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
@@ -600,7 +606,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
                         visualTransformation = PasswordVisualTransformation(),
                     )
                 }
-                val roles = listOf("OUTLET_ADMIN", "OUTLET_STAFF")
+                val roles = roleChoices
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.role), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                     V2Segmented(
@@ -718,7 +724,7 @@ fun UserFormScreen(initial: StaffUser?, onBack: () -> Unit, onSaved: () -> Unit,
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            listOf("OUTLET_ADMIN", "OUTLET_STAFF").forEach { roleKey ->
+                            roleChoices.forEach { roleKey ->
                                 AppFilterChip(
                                     label = roleDisplayValue(roleKey),
                                     selected = role == roleKey,

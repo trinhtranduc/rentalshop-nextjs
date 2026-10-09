@@ -72,7 +72,8 @@ export function resolveScopedOutletIdForProductStock(
   const role = user?.role;
   if (
     role === USER_ROLE.OUTLET_ADMIN ||
-    role === USER_ROLE.OUTLET_STAFF
+    role === USER_ROLE.OUTLET_STAFF ||
+    role === USER_ROLE.OUTLET_INVENTORY
   ) {
     if (typeof user?.outletId === 'number') return user.outletId;
   }

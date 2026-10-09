@@ -16,13 +16,13 @@ object ProductAccess {
     /** MERCHANT / OUTLET_ADMIN have `products.manage`; OUTLET_STAFF only `products.create` */
     fun canCreate(role: UserRole): Boolean = role != UserRole.UNKNOWN
 
-    /** OUTLET_STAFF has no `products.update` */
+    /** OUTLET_STAFF has no `products.update`; Nhân viên kho has `products.manage` (#682) */
     fun canEdit(role: UserRole): Boolean =
-        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
     /** `DELETE /api/products/{id}` needs `products.manage`: never OUTLET_STAFF (#390) */
     fun canDelete(role: UserRole): Boolean =
-        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
     /** Price fields in the form and price edits in the cart */
     fun showsPriceFields(role: UserRole): Boolean = canEdit(role)
@@ -40,9 +40,11 @@ object CategoryRules {
     enum class NameError { REQUIRED, TOO_SHORT, TOO_LONG }
 
     fun canAdd(role: UserRole): Boolean =
-        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
-    fun canManage(role: UserRole): Boolean = role == UserRole.ADMIN || role == UserRole.MERCHANT
+    /** Rename / delete: owners and Nhân viên kho (#682); the API refuses outlet admins */
+    fun canManage(role: UserRole): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_INVENTORY
 
     /** The default category ("General") is never deleted, only renamed */
     fun canDelete(isDefault: Boolean): Boolean = !isDefault

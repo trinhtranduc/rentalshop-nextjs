@@ -541,7 +541,7 @@ class OverviewViewController: DemoBaseViewController {
     /// Check if current user is outlet staff by role
     /// Outlet staff should only see Daily Report mode and cannot change date
     private var isOutletStaff: Bool {
-        return User.account()?.role == .outletStaff
+        return User.account()?.role.isStaffLike ?? false
     }
     
     // MARK: - Actions

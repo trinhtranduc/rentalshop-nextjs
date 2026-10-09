@@ -388,9 +388,9 @@ enum OrdersHomeLogic {
         return query
     }
 
-    /// Money is hidden for outlet staff when the shop turned on "hide financial data for staff"
+    /// Money is hidden for outlet staff (and Nhân viên kho, #682) when the shop turned on "hide financial data for staff"
     static func hidesMoney(role: Role?, hideForStaff: Bool) -> Bool {
-        role == .outletStaff && hideForStaff
+        (role?.isStaffLike ?? false) && hideForStaff
     }
 }
 

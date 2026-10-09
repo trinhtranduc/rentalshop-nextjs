@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { overdueReturnWhere, shopToday } from '../../../../lib/report-days';
@@ -37,7 +37,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         orderWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
         outletStockWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get CUID
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
@@ -120,7 +120,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       if (merchant && merchant.outlets) {
         overdueWhereClause.outletId = { in: merchant.outlets.map(outlet => outlet.id) };
       }
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
         overdueWhereClause.outletId = outlet.id;

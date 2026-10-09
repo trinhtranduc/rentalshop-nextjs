@@ -54,8 +54,9 @@ enum CategoryRules {
         return permissions.contains("products.manage")
     }
 
+    /// Rename / delete: owners, and Nhân viên kho (#682); the API refuses outlet admins
     static func canManage(role: Role?) -> Bool {
-        role == .merchant || role == .admin
+        role == .merchant || role == .admin || role == .outletInventory
     }
 
     /// The default category ("General") is never deleted, only renamed

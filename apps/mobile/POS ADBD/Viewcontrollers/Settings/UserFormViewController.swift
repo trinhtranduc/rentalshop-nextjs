@@ -659,7 +659,8 @@ class UserFormViewController: BaseViewControler {
         )
         
         // Only allow outletStaff and outletAdmin roles (not admin or merchant)
-        let allowedRoles: [Role] = [.outletStaff, .outletAdmin]
+        let allowedRoles = UserFormRoles.choices(inventoryRole: AppConfigService.shared.cached?.inventoryRole ?? false,
+                                                 currentRole: user?.role)
         
         for role in allowedRoles {
             alert.addAction(UIAlertAction(title: role.displayName, style: .default) { [weak self] _ in

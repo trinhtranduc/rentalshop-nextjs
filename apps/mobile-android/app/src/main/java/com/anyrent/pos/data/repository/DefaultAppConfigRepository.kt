@@ -38,6 +38,7 @@ object SessionStoreAppConfigCache : AppConfigCache {
         .put("ios", platform(config.ios))
         .put("android", platform(config.android))
         .put("features", JSONObject().apply { MobileFeature.entries.forEach { put(it.key, it in config.features) } })
+        .put("inventoryRole", config.inventoryRole)
         .toString()
 
     fun decode(json: String): AppConfig = appConfigFromJson(JSONObject(json))
@@ -64,5 +65,6 @@ internal fun appConfigFromJson(data: JSONObject): AppConfig {
         ios = platform("ios"),
         android = platform("android"),
         features = MobileFeature.entries.filter { features.optBoolean(it.key, true) }.toSet(),
+        inventoryRole = data.optBoolean("inventoryRole", false),
     )
 }

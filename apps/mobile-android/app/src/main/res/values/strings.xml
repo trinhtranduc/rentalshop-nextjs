@@ -412,6 +412,7 @@
     <string name="role_merchant">Merchant</string>
     <string name="role_outlet_admin">Outlet Admin</string>
     <string name="role_outlet_staff">Outlet Staff</string>
+    <string name="role_outlet_inventory">Inventory Staff</string>
     <string name="active">Active</string>
     <string name="inactive">Inactive</string>
     <string name="active_badge">Active</string>

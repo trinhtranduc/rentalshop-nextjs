@@ -7,7 +7,7 @@ import { deleteFromS3, commitStagingFiles, generateAccessUrl, uploadToS3, getBuc
 import { compressImageTo1MB } from '../../../lib/image-compression';
 import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
-import { API, USER_ROLE, VALIDATION } from '@rentalshop/constants';
+import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
 import { z } from 'zod';
 import {
   batchTodayEffectiveAvailability,
@@ -579,7 +579,7 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     // AUTHORIZATION: Outlet-scoped roles — stock only at their outlet
     // ============================================================================
     if (
-      (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) &&
+      (isOutletRole(user.role)) &&
       userScope.outletId
     ) {
       if (!outletStockData || !Array.isArray(outletStockData) || outletStockData.length === 0) {

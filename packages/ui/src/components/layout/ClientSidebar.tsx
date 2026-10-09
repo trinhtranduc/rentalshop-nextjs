@@ -144,7 +144,9 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   const filterMenuItemsByRole = (items: MenuItem[], userRole?: string) => {
     if (!userRole) return items;
 
-    const normalizedUserRole = userRole.trim().toUpperCase();
+    // #682: Nhân viên kho sees the staff menu; product and category actions come from its permissions
+    const upperRole = userRole.trim().toUpperCase();
+    const normalizedUserRole = upperRole === 'OUTLET_INVENTORY' ? 'OUTLET_STAFF' : upperRole;
     
     // Hide specific tabs based on user role
     if (normalizedUserRole === 'OUTLET_ADMIN') {

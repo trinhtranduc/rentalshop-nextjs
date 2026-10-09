@@ -1,4 +1,4 @@
-import { USER_ROLE, isPlatformOpsRole } from '@rentalshop/constants';
+import { USER_ROLE, isPlatformOpsRole, isOutletRole } from '@rentalshop/constants';
 import { formatDateKeyInTimeZone, getLocalDateKey } from '@rentalshop/utils';
 
 /**
@@ -13,7 +13,7 @@ export function calendarScopeWhere(
   if (isPlatformOpsRole(user.role)) {
     return outletId ? { outletId } : {};
   }
-  if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+  if (isOutletRole(user.role)) {
     return { outletId: userScope.outletId ?? -1 };
   }
   if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {

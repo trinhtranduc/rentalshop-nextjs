@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {
   AVAILABILITY_CALENDAR_TIMEZONE,
@@ -60,7 +60,7 @@ export async function GET(
         }
 
         let finalOutletId = 0;
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (isOutletRole(user.role)) {
           finalOutletId = queryOutletId || userOutletId || 0;
         } else if (user.role === USER_ROLE.MERCHANT && !queryOutletId) {
           // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one

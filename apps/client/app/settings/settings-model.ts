@@ -23,7 +23,7 @@ export interface SettingsTabDef {
 
 export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'merchant', group: 'shop', roles: ['MERCHANT'] },
-  { id: 'outlet', group: 'shop', roles: ['OUTLET_ADMIN', 'OUTLET_STAFF'] },
+  { id: 'outlet', group: 'shop', roles: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'] },
   { id: 'bank-accounts', group: 'shop', roles: ['OUTLET_ADMIN'] },
   /** Phiếu in (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
   { id: 'receipt', group: 'shop' },
@@ -46,7 +46,7 @@ export function tabsForRole(role?: string | null, opts: { themeSwitch?: boolean 
 export function defaultTab(role?: string | null): SettingsTab {
   const r = String(role || '').toUpperCase();
   if (r === 'MERCHANT') return 'merchant';
-  if (r === 'OUTLET_ADMIN' || r === 'OUTLET_STAFF') return 'outlet';
+  if (r === 'OUTLET_ADMIN' || r === 'OUTLET_STAFF' || r === 'OUTLET_INVENTORY') return 'outlet';
   return 'profile';
 }
 

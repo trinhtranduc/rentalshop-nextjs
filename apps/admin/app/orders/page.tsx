@@ -430,7 +430,7 @@ export default function AdminOrdersPage() {
           filterStyle="dropdown"
           showStats={false}
           showMerchant={true}
-          userRole={(user?.role === 'OPS' ? 'ADMIN' : user?.role) as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
+          userRole={(user?.role === 'OPS' ? 'ADMIN' : user?.role) as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY'}
         />
         )}
       </div>

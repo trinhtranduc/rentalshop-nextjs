@@ -1008,6 +1008,7 @@
 "Merchant" = "Merchant";
 "Outlet Admin" = "Outlet Admin";
 "Outlet Staff" = "Outlet Staff";
+"Inventory Staff" = "Inventory Staff";
 "Generating receipt..." = "Generating receipt...";
 "Failed to generate PDF" = "Failed to generate PDF";
 "RENTAL RECEIPT" = "RENTAL RECEIPT";

@@ -897,6 +897,7 @@ function normalizeRole(role: string | undefined | null): Role | null {
   if (upper === 'MERCHANT') return 'MERCHANT';
   if (upper === 'OUTLET_ADMIN') return 'OUTLET_ADMIN';
   if (upper === 'OUTLET_STAFF') return 'OUTLET_STAFF';
+  if (upper === 'OUTLET_INVENTORY') return 'OUTLET_INVENTORY';
   return null;
 }
 
@@ -923,7 +924,7 @@ export function isMerchantLevel(user: Pick<AuthUser, 'role'>): boolean {
  * Check if user has outlet-level access
  */
 export function isOutletTeam(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']);
 }
 
 /**
@@ -954,7 +955,7 @@ export function canManageOutlets(user: Pick<AuthUser, 'role'>): boolean {
  * Check if user can manage products
  */
 export function canManageProducts(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_INVENTORY']);
 }
 
 /**
@@ -972,21 +973,21 @@ export function canAccessUserManagement(user: Pick<AuthUser, 'role'>): boolean {
  * Check if user can create orders
  */
 export function canCreateOrders(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']);
 }
 
 /**
  * Check if user can view orders
  */
 export function canViewOrders(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']);
 }
 
 /**
  * Check if user can update orders
  */
 export function canUpdateOrders(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']);
 }
 
 /**
@@ -1020,7 +1021,7 @@ export function canExportOrders(user: Pick<AuthUser, 'role'>): boolean {
  * OUTLET_STAFF cannot export products
  */
 export function canExportProducts(user: Pick<AuthUser, 'role'>): boolean {
-  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN']);
+  return hasAnyRole(user, ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_INVENTORY']);
 }
 
 /**

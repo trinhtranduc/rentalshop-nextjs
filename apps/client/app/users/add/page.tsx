@@ -65,7 +65,20 @@ export default function AddUserPage() {
   const [outlets, setOutlets] = useState<OutletOption[]>([]);
   const [loadingOutlets, setLoadingOutlets] = useState(false);
   const [saving, setSaving] = useState(false);
+  // #682: the Nhân viên kho card shows once the API allows the role
+  const [inventoryRole, setInventoryRole] = useState(false);
   const roleTitleId = useId();
+
+  useEffect(() => {
+    if (!allowed) return;
+    let cancelled = false;
+    usersApi.inventoryRoleEnabled().then((on) => {
+      if (!cancelled) setInventoryRole(on);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [allowed]);
   const outletTitleId = useId();
 
   // Outlet admin: their outlet, fixed. Merchant: pick from GET /api/outlets (only one → preselected).
@@ -192,7 +205,7 @@ export default function AddUserPage() {
             <span id={roleTitleId} className="text-sm font-semibold text-ar-ink-2">
               {t('form.role')} <span className="font-normal text-ar-danger">{required}</span>
             </span>
-            <RoleCards choices={roleChoices(viewer?.role)} value={form.role} onChange={(r) => set('role', r)} labelledBy={roleTitleId} t={t} />
+            <RoleCards choices={roleChoices(viewer?.role, { inventoryRole })} value={form.role} onChange={(r) => set('role', r)} labelledBy={roleTitleId} t={t} />
             {errors.role && <span className="text-sm text-ar-danger">{err('role')}</span>}
           </div>
           <div className="flex flex-col gap-1.5" data-invalid={errors.outletId ? 'true' : undefined}>

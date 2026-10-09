@@ -410,6 +410,7 @@
     <string name="role_merchant">Chủ cửa hàng</string>
     <string name="role_outlet_admin">Quản trị chi nhánh</string>
     <string name="role_outlet_staff">Nhân viên chi nhánh</string>
+    <string name="role_outlet_inventory">Nhân viên kho</string>
     <string name="active">Đang hoạt động</string>
     <string name="inactive">Đã khóa</string>
     <string name="active_badge">Hoạt động</string>

@@ -36,8 +36,8 @@ export const SHELL_MAIN_NAV: ShellNavItem[] = [
 ];
 
 export const SHELL_MANAGE_NAV: ShellNavItem[] = [
-  { key: 'staff', href: '/users', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', hiddenFor: ['OUTLET_STAFF'] },
-  { key: 'outlets', href: '/outlets', icon: 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6', hiddenFor: ['OUTLET_ADMIN', 'OUTLET_STAFF'] },
+  { key: 'staff', href: '/users', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', hiddenFor: ['OUTLET_STAFF', 'OUTLET_INVENTORY'] },
+  { key: 'outlets', href: '/outlets', icon: 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6', hiddenFor: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'] },
   { key: 'categories', href: '/categories', icon: 'M3 12l9-9h7a2 2 0 0 1 2 2v7l-9 9zM16 8h.01' },
   { key: 'loyalty', href: '/loyalty', icon: 'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 0 1 0-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 0 0 0-5c-3 0-4 5-4 5z', roles: ['MERCHANT'] },
   { key: 'settings', href: '/settings', icon: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 4v4M10 10v4M18 16v4' },

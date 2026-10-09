@@ -16,6 +16,7 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
       case 'MERCHANT':
         return 'default';
       case 'OUTLET_STAFF':
+      case 'OUTLET_INVENTORY':
         return 'secondary';
       case 'CLIENT':
         return 'outline';
@@ -32,6 +33,8 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
         return 'Merchant';
       case 'OUTLET_STAFF':
         return 'Staff';
+      case 'OUTLET_INVENTORY':
+        return 'Inventory Staff';
       case 'CLIENT':
         return 'Client';
       default:

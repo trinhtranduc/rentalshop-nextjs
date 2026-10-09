@@ -3,7 +3,7 @@
  * load it. Day logic takes an injected `toDayKey` (getLocalDateKey, Vietnam civil day).
  */
 
-export type StaffRoleTone = 'owner' | 'admin' | 'staff' | 'other';
+export type StaffRoleTone = 'owner' | 'admin' | 'staff' | 'inventory' | 'other';
 
 export interface StaffLike {
   id: number;
@@ -21,10 +21,10 @@ export interface StaffLike {
 
 export const STAFF_PAGE_SIZES = [10, 20, 50, 100] as const;
 
-/** OUTLET_STAFF has no `users.view`: the page is not for them (same as the hidden nav item). */
+/** OUTLET_STAFF and Nhân viên kho (#682) have no `users.view`: the page is not for them (same as the hidden nav item). */
 export function canSeeStaffPage(role?: string | null): boolean {
   const r = String(role || '').toUpperCase();
-  return !!r && r !== 'OUTLET_STAFF';
+  return !!r && r !== 'OUTLET_STAFF' && r !== 'OUTLET_INVENTORY';
 }
 
 /** Only merchants pick an outlet; outlet admins are scoped to theirs by the API. */
@@ -46,6 +46,8 @@ export function roleTone(role?: string | null): StaffRoleTone {
       return 'admin';
     case 'OUTLET_STAFF':
       return 'staff';
+    case 'OUTLET_INVENTORY':
+      return 'inventory';
     default:
       return 'other';
   }

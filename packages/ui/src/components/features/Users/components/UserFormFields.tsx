@@ -118,6 +118,7 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({
           )}
           <SelectItem value="OUTLET_ADMIN">{t('roles.OUTLET_ADMIN')}</SelectItem>
           <SelectItem value="OUTLET_STAFF">{t('roles.OUTLET_STAFF')}</SelectItem>
+                <SelectItem value="OUTLET_INVENTORY">{t('roles.OUTLET_INVENTORY')}</SelectItem>
         </SelectContent>
       </Select>
       {error && (

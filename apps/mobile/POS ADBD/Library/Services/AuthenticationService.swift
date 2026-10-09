@@ -247,6 +247,8 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
                                 user.role = .outletAdmin
                             case "OUTLET_STAFF", "EMPLOYEE", "SALE":
                                 user.role = .outletStaff
+                            case "OUTLET_INVENTORY":
+                                user.role = .outletInventory
                             default:
                                 user.role = .outletStaff
                             }

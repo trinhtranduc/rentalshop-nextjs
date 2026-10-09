@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
-import { USER_ROLE } from '@rentalshop/constants';
+import { isStaffLikeRole } from '@rentalshop/constants';
 import { 
   handleApiError, 
   ResponseBuilder,
@@ -112,7 +112,7 @@ export async function PUT(
       }
 
       // Block OUTLET_STAFF from updating bank accounts
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }
@@ -255,7 +255,7 @@ export async function DELETE(
       }
 
       // Block OUTLET_STAFF from deleting bank accounts
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
           { status: 403 }

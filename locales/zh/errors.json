@@ -25,5 +25,6 @@
   "SEARCH_TIMEOUT": "图片搜索耗时过长，请几分钟后重试。",
   "INVALID_LIMIT": "请求的结果数量无效",
   "INVALID_MIN_SIMILARITY": "最小相似度无效（必须在 0 到 1 之间）",
-  "NO_PRODUCTS_FOUND": "未找到相似的商品"
+  "NO_PRODUCTS_FOUND": "未找到相似的商品",
+  "ROLE_NOT_AVAILABLE": "该角色暂时无法分配"
 }

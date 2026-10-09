@@ -134,6 +134,16 @@ export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
     // ❌ NO products.update — staff cannot edit existing products
     'orders.view',          // Must view orders to process them
     'customers.view',       // Must view customers for order management
+  ],
+
+  // #682 Nhân viên kho: staff critical keys + product management
+  'OUTLET_INVENTORY': [
+    'outlet.view',
+    'products.view',
+    'products.create',
+    'products.manage',      // ✅ Critical: manages products and categories (the point of the role)
+    'orders.view',
+    'customers.view',
   ]
 };
 
@@ -242,5 +252,21 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'loyalty.view'
     // ❌ NO billing.manage - staff cannot modify subscription
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
+  ],
+  // #682 Nhân viên kho: exactly OUTLET_STAFF, plus full product and category management (prices, cost,
+  // delete, import, export). Money stays hidden like staff: no revenue / orders analytics, no order delete.
+  'OUTLET_INVENTORY': [
+    'outlet.view',
+    'products.view',
+    'products.create',
+    'products.update',
+    'products.manage',
+    'products.export',
+    'orders.create', 'orders.view', 'orders.update',
+    'customers.view', 'customers.manage',
+    'analytics.view.dashboard',
+    'analytics.view.revenue.daily',
+    'billing.view',
+    'loyalty.view'
   ]
 };
