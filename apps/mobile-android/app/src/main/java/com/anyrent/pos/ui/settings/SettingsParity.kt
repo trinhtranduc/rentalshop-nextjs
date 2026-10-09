@@ -92,6 +92,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -785,7 +794,10 @@ internal fun RoleField(role: String?, onClick: () -> Unit) {
     }
 }
 
-/** #684 (iOS `RolePickerSheet`): one row per role the caller may give, with what it can do; the picked one is checked */
+/**
+ * #684 (canvas N3, iOS `RolePickerSheet`): "Chọn quyền" like the order ⋯ action sheet — title + ✕, one row per role
+ * the caller may give (icon box, role name, what it can do), the current role with a blue icon and ✓
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RolePickerSheet(roles: List<String>, selected: String?, onDismiss: () -> Unit, onPick: (String) -> Unit) {
@@ -795,35 +807,48 @@ internal fun RolePickerSheet(roles: List<String>, selected: String?, onDismiss: 
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         containerColor = DS.Colors.Surface,
     ) {
-        Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(stringResource(R.string.role_select), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
+                Text(stringResource(R.string.role_select), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f))
+                val closeLabel = stringResource(R.string.close)
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = Color(0xFF475569), modifier = Modifier.size(18.dp)) }
+            }
             roles.forEach { key ->
                 val on = key == selected
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                        .background(if (on) Color(0xFFEFF4FF) else DS.Colors.Surface)
-                        .border(1.dp, if (on) DS.Colors.Primary else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                    Modifier.fillMaxWidth().heightIn(min = 64.dp)
                         .selectable(selected = on, role = Role.RadioButton, onClick = { onPick(key) })
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = 4.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(roleDisplayValue(key), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-                        roleHelp(key)?.let { Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
+                    Box(
+                        Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(if (on) Color(0xFFEFF4FF) else Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(roleIcon(key), contentDescription = null, tint = if (on) DS.Colors.Primary else DS.Colors.Text, modifier = Modifier.size(20.dp))
                     }
-                    Icon(
-                        if (on) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-                        contentDescription = null,
-                        tint = if (on) DS.Colors.Primary else Color(0xFFCBD5E1),
-                    )
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(roleDisplayValue(key) ?: key, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                            color = if (on) DS.Colors.Primary else DS.Colors.Text)
+                        roleHelp(key)?.let { Text(it, fontSize = DS.TextSize.Secondary, color = Color(0xFF475569)) }
+                    }
+                    if (on) Icon(Icons.Filled.Check, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(22.dp))
                 }
+                HorizontalDivider(color = Color(0xFFF1F5F9))
             }
         }
     }
+}
+
+private fun roleIcon(role: String): androidx.compose.ui.graphics.vector.ImageVector = when (role) {
+    "OUTLET_ADMIN" -> Icons.Outlined.Storefront
+    "OUTLET_INVENTORY" -> Icons.Outlined.Inventory2
+    else -> Icons.Outlined.Person
 }
 
 @Composable

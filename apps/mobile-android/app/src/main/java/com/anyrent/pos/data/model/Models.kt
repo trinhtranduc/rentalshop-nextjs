@@ -232,6 +232,8 @@ data class CartLine(
     val isSale: Boolean = false,
     val pricingType: String = product.pricingType,
     val unitPriceOverride: Double? = null,
+    /** #684: this line's note, sent as `orderItems[].notes` (iOS `CartItem.note`) */
+    val note: String? = null,
 ) {
     val unitPrice: Double
         get() = unitPriceOverride ?: if (isSale) {

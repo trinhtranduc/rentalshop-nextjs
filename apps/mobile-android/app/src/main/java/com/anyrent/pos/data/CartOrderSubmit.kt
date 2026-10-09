@@ -57,6 +57,7 @@ object CartOrderSubmit {
             depositsByProduct = lines.associate { it.product.id to it.product.deposit },
             pricingTypesByProduct = lines.associate { it.product.id to it.pricingType },
             rentalDaysByProduct = lines.associate { it.product.id to it.rentalDays },
+            notesByProduct = lines.mapNotNull { line -> line.note?.let { line.product.id to it } }.toMap(),
             idempotencyKey = idempotencyKey,
             noteImages = noteImages,
         )
@@ -117,6 +118,7 @@ object CartOrderSubmit {
             depositsByProduct = lines.associate { it.product.id to it.product.deposit },
             pricingTypesByProduct = lines.associate { it.product.id to it.pricingType },
             rentalDaysByProduct = lines.associate { it.product.id to it.rentalDays },
+            notesByProduct = lines.mapNotNull { line -> line.note?.let { line.product.id to it } }.toMap(),
         )
     }
 

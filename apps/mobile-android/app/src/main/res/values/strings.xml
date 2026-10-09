@@ -1237,6 +1237,15 @@
     <string name="v2_cart_overlap_one_day">Out %1$s</string>
     <string name="v2_cart_overlap_range">Out %1$s → %2$s</string>
     <string name="v2_cart_overlap_hint">See the orders holding it</string>
+    <string name="v2_item_note_add">+ Note</string>
+    <string name="v2_item_note_label">Note</string>
+    <string name="v2_item_note_edit">Edit</string>
+    <string name="v2_item_note_title">Item note</string>
+    <string name="v2_item_note_placeholder">e.g. take in the waist 2cm, add the veil</string>
+    <string name="v2_item_note_hint">For this item in this order only. The order\'s own note is under Notes below the cart.</string>
+    <string name="v2_item_note_clear">Delete note</string>
+    <string name="v2_item_note_save">Save</string>
+    <string name="v2_item_note_accessibility">Note for %1$s</string>
     <string name="v2_cart_overlap_blocked">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
     <string name="v2_create_overlap_title">Overlapping booking</string>
     <string name="v2_create_overlap_line">%1$s is short %2$d on %3$s (rented in %4$s).</string>

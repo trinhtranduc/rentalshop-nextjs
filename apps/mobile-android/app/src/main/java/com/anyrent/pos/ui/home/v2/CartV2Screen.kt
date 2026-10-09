@@ -96,6 +96,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
@@ -174,6 +185,8 @@ fun CartV2Screen(
     var confirmCancelEdit by remember { mutableStateOf(false) }
     // #482: product id of the line whose "Cách tính giá" sheet is open
     var pricingLineId by remember { mutableStateOf<Int?>(null) }
+    // #684: the line whose "Ghi chú món" sheet is open
+    var noteLineId by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     // iOS `Cart.validate()` copy, all problems in one alert (#448)
     val needPriceText = stringResource(R.string.v2_cart_need_price)
@@ -460,6 +473,7 @@ fun CartV2Screen(
                     },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
                     onOpenPricing = { pricingLineId = line.product.id },
+                    onOpenNote = { noteLineId = line.product.id },
                 )
             }
 
@@ -617,6 +631,19 @@ fun CartV2Screen(
                     CartStore.applyLinePricing(id, type, price)
                     pricingLineId = null
                 },
+            )
+        }
+    }
+    noteLineId?.let { id ->
+        val line = lines.firstOrNull { it.product.id == id }
+        if (line == null) {
+            noteLineId = null
+        } else {
+            CartItemNoteSheet(
+                productName = line.product.name,
+                note = line.note,
+                onDismiss = { noteLineId = null },
+                onSave = { note -> CartStore.updateNote(id, note); noteLineId = null },
             )
         }
     }
@@ -787,6 +814,7 @@ private fun ItemRow(
     onOpenOverlap: (() -> Unit)? = null,
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
+    onOpenNote: () -> Unit = {},
 ) {
     val calc = CartV2Logic.calc(line, isSale)
     Column(Modifier.fillMaxWidth()) {
@@ -815,6 +843,8 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
+                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món"
+                ItemNoteEntry(line.product.name, line.note, onOpenNote)
                 if (isSale && available != null) {
                     Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
@@ -835,7 +865,6 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
     // #684 (Dòng gọn): the chip carries the line's numbers; a daily price over several days shows the days too
     val days = (CartV2Logic.calc(line, isSale).kind as? CartLineCalc.Kind.PerDay)?.days?.takeIf { it > 1 }
     val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
-    val price = line.unitPrice.takeIf { it > 0 }?.let { pricingPriceText(it, line.pricingType, isSale) + (daysText?.let { d -> " × $d" } ?: "") }
     val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
     // #684: a blue link "Theo ngày · 400.000đ/ngày × 2 ngày ⌄" (15sp, no border), iOS pricingChip
     Row(
@@ -846,14 +875,16 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
             .padding(end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary, maxLines = 1)
-        if (price != null) {
-            Text(" · $price", fontSize = DS.TextSize.Body, color = DS.Colors.Primary, maxLines = 1,
-                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-        } else {
-            Text(" · " + stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Body,
-                fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary, maxLines = 1)
-        }
+        // #684 (owner): price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày"; "Nhập giá / theo lần"
+        Text(
+            if (line.unitPrice > 0) formatMoneyVnd(line.unitPrice) else stringResource(R.string.v2_pricing_enter_price),
+            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary, maxLines = 1,
+        )
+        Text(
+            " / " + label.lowercase(java.util.Locale("vi")) + (daysText?.let { " × $it" } ?: ""),
+            fontSize = DS.TextSize.Body, color = DS.Colors.Primary, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+        )
         Spacer(Modifier.size(4.dp))
         Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
     }
@@ -979,6 +1010,84 @@ private fun CartPricingSheet(
                 onClick = { onApply(if (isSale) null else type, price) },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             )
+        }
+    }
+}
+
+/** #684 (canvas N1, iOS itemNoteButton): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" (2 lines) */
+@Composable
+private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Unit) {
+    val label = stringResource(R.string.v2_item_note_accessibility, productName)
+    val text = CartV2Logic.noteText(note)
+    if (text == null) {
+        Text(
+            stringResource(R.string.v2_item_note_add),
+            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569),
+            modifier = Modifier.clip(RoundedCornerShape(6.dp))
+                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                .padding(vertical = 4.dp, horizontal = 2.dp),
+        )
+    } else {
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))) { append(stringResource(R.string.v2_item_note_label)) }
+                withStyle(SpanStyle(color = Color(0xFF334155))) { append(" · $text ") }
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)) { append(stringResource(R.string.v2_item_note_edit)) }
+            },
+            fontSize = DS.TextSize.Secondary, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFF8FAFC))
+                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        )
+    }
+}
+
+/** #684 (canvas N2, iOS CartItemNoteSheet): "Ghi chú món" — title + ✕, product name, text area, "Xoá ghi chú" / "Lưu" */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
+    var text by remember { mutableStateOf(note.orEmpty()) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = DS.Colors.Surface,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.v2_item_note_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f))
+                val closeLabel = stringResource(R.string.close)
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = Color(0xFF475569), modifier = Modifier.size(18.dp)) }
+            }
+            Text(productName, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 2)
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text(stringResource(R.string.v2_item_note_placeholder)) },
+                minLines = 5,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+            Text(stringResource(R.string.v2_item_note_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!CartV2Logic.noteText(note).isNullOrEmpty()) {
+                    OutlinedButton(onClick = { onSave(null) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
+                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1.6f).height(50.dp)) {
+                    Text(stringResource(R.string.v2_item_note_save), fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

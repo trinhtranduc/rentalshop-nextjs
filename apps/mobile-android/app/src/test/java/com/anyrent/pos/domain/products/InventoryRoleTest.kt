@@ -48,6 +48,9 @@ class InventoryRoleTest {
         assertEquals(listOf("OUTLET_ADMIN", "OUTLET_STAFF"), UserFormRoles.choices(false, null))
         assertEquals(listOf("OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY"), UserFormRoles.choices(true, null))
         assertTrue("OUTLET_INVENTORY" in UserFormRoles.choices(false, "OUTLET_INVENTORY"))
+        // #684: an item note is trimmed; a blank one clears it
+        assertEquals(null, CartV2Logic.noteText("  \n "))
+        assertEquals("Sửa eo 2cm", CartV2Logic.noteText("  Sửa eo 2cm \n"))
         // #684: no role until one is picked
         assertFalse(UserFormRoles.isComplete(null))
         assertFalse(UserFormRoles.isComplete(""))
