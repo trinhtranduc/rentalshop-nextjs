@@ -98,10 +98,10 @@ class OverviewRelatedViewModel(private val loader: suspend () -> Result<List<Rel
 }
 
 private fun titleOf(kind: OverviewRelatedKind): Int = when (kind) {
-    OverviewRelatedKind.ORDER_VALUE -> R.string.overview_v2_new_order_value
-    OverviewRelatedKind.COLLECTED -> R.string.overview_v2_collected
-    OverviewRelatedKind.OUTSTANDING -> R.string.overview_v2_outstanding
-    OverviewRelatedKind.COLLATERAL -> R.string.overview_v2_collateral
+    OverviewRelatedKind.ORDER_VALUE -> R.string.overview_dash_kpi_order_value
+    OverviewRelatedKind.COLLECTED -> R.string.overview_dash_kpi_collected
+    OverviewRelatedKind.OUTSTANDING -> R.string.overview_dash_kpi_outstanding
+    OverviewRelatedKind.COLLATERAL -> R.string.overview_dash_kpi_collateral
 }
 
 /**
