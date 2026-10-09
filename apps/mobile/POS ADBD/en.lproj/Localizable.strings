@@ -2429,3 +2429,4 @@
 "overview.dash.rule.outstanding" = "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.";
 "overview.dash.rule.collateral" = "Collateral received at hand-over minus collateral handed back at return, in the period.";
 "overview.related.owes" = "To collect at pickup";
+"overview.dash.chip.newOrders" = "%d new orders";
