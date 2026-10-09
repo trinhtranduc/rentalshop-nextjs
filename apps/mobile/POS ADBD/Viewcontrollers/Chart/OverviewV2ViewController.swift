@@ -328,7 +328,9 @@ final class OverviewV2ViewController: BaseViewControler {
                 endDate: OverviewLogic.date(of: range.end),
                 periodSubtitle: OverviewLogic.longRange(range))
         case .outstanding:
-            controller = RentedOutOrdersViewController(mode: .notPickedUp)
+            // The same orders as the tile: created in the period and still owing money
+            controller = RentedOutOrdersViewController(mode: .notPickedUp,
+                                                       outstandingPeriod: (start: OverviewLogic.date(of: range.start), end: OverviewLogic.date(of: range.end)))
         case .collateral:
             controller = RentedOutOrdersViewController(startsAtLate: false)
         }
