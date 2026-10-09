@@ -815,6 +815,21 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(3)
         e2e.shot("85-cart-lines")
+        // #684 (N1/N2): "+ Ghi chú" → the item note sheet → the note shows on the line
+        let addNote = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Ghi chú cho' OR label BEGINSWITH 'Note for'")).firstMatch
+        if addNote.waitForExistence(timeout: 5) {
+            addNote.tap()
+            sleep(1)
+            e2e.shot("85c-item-note-sheet")
+            app.textViews.firstMatch.typeText("Sửa eo 2cm, giao kèm voan trắng")
+            e2e.button(["Lưu", "Save"]).tap()
+            sleep(2)
+            let shown = app.buttons.matching(NSPredicate(format: "value CONTAINS 'Sửa eo 2cm'")).firstMatch
+            e2e.soft(shown.exists, "the note shows on the cart line")
+        } else {
+            e2e.soft(false, "+ Ghi chú on the cart line")
+        }
+        e2e.shot("85d-cart-with-note")
         app.swipeUp()
         sleep(1)
         e2e.shot("85b-cart-lines-scrolled")
