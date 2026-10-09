@@ -12,7 +12,7 @@ E2E_DATABASE_URL="${E2E_DATABASE_URL:-postgresql://postgres@127.0.0.1:54343/anyr
 # Local API.
 E2E_API_PORT="${E2E_API_PORT:-3180}"
 E2E_API_DIR="${E2E_API_DIR:-$E2E_ROOT/apps/api}"   # a prebuilt apps/api from another checkout also works
-MOBILE_FEATURES="${MOBILE_FEATURES:-newOrders,newOrderDetail,newProducts,newCalendar,newOverview,newSettings}"
+MOBILE_FEATURES="${MOBILE_FEATURES:-newOrders,newOrderDetail,newProducts,newCalendar,newOverview,newSettings,newAuth,newCustomers}"  # matches dev-api's default (unset = all on, apps/api/lib/mobile-app-config.ts)
 
 # node_modules used by seed-local.sh (prisma CLI, @prisma/client, bcryptjs). Point it at another checkout
 # with the same prisma/schema.prisma when this one has no node_modules.

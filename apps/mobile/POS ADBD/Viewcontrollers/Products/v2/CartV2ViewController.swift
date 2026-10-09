@@ -1018,6 +1018,7 @@ final class CartV2ViewController: BaseViewControler {
         CartStore.shared.resetCart()
         ProductAvailabilityCache.shared.clearAll()
         HapticFeedback.success()
+        if let orderId = order?.id { CreatedOrderAutoPrint.run(orderId: orderId) }
 
         let created = OrderCreatedSheet(summary: CreateOrderSheetLogic.created(orderNumber: order?.orderNumber ?? "", confirm: confirm))
         created.onNewOrder = { [weak self] in

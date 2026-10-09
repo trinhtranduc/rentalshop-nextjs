@@ -307,6 +307,15 @@ final class OrderDetailLogicTests: XCTestCase {
     }
 }
 
+/// #700 — Tạo đơn prints only when a bill printer was saved
+final class CreatedOrderAutoPrintTests: XCTestCase {
+    func testPrintsOnlyWithASavedPrinter() {
+        XCTAssertFalse(CreatedOrderAutoPrint.shouldPrint(savedPrinterIP: nil), "never set up: the 192.168.1.199 fallback is not a printer")
+        XCTAssertFalse(CreatedOrderAutoPrint.shouldPrint(savedPrinterIP: "  "))
+        XCTAssertTrue(CreatedOrderAutoPrint.shouldPrint(savedPrinterIP: "192.168.1.50"))
+    }
+}
+
 /// #697 — an order whose creator was deleted (`createdById` SetNull) still opens on iOS
 final class OrderDetailDeletedCreatorTests: XCTestCase {
     /// GET /api/orders/{id} for a local-seed rental after its creator was deleted (createdById/createdBy null)
