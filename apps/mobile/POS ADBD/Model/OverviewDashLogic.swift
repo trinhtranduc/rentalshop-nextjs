@@ -27,6 +27,16 @@ enum OverviewChip: CaseIterable, Equatable {
 enum OverviewTileKind: CaseIterable, Equatable {
     case orderValue, collected, outstanding, collateral
 
+    /// The rule behind the number, shown first in the tile's detail sheet (key, localized there)
+    var rule: String {
+        switch self {
+        case .orderValue: return "overview.dash.rule.orderValue"
+        case .collected: return "overview.dash.rule.collected"
+        case .outstanding: return "overview.dash.rule.outstanding"
+        case .collateral: return "overview.dash.rule.collateral"
+        }
+    }
+
     var title: String {
         switch self {
         case .orderValue: return "overview.dash.kpi.orderValue".localized()
@@ -86,7 +96,7 @@ struct OverviewDashBar: Equatable {
 }
 
 struct OverviewWaterfallRow: Equatable {
-    enum Key: Equatable { case deposits, pickupAndSale, fees, refunds, total }
+    enum Key: Equatable { case deposits, pickupAndSale, fees, refunds, collateral, total }
     let key: Key
     /// Signed contribution; the total row carries the total
     let amount: Double
@@ -203,7 +213,9 @@ enum OverviewDashLogic {
         return [
             OverviewTile(kind: .orderValue, value: report?.totalOrderValue, signed: false,
                          chip: growthChip(report?.orderValueGrowth)),
-            OverviewTile(kind: .collected, value: report?.netRevenue, signed: false, chip: growthChip(report?.revenueGrowth)),
+            // #708: Thực thu is the money held, collateral included (cashCollected); older APIs keep collected
+            OverviewTile(kind: .collected, value: report?.cashCollected ?? report?.netRevenue, signed: false,
+                         chip: growthChip(report?.revenueGrowth)),
             OverviewTile(kind: .outstanding, value: report?.outstanding, signed: false, chip: outstandingChip),
             OverviewTile(kind: .collateral, value: report?.collateralFlow?.net, signed: true, chip: collateralChip),
         ]
@@ -292,10 +304,12 @@ enum OverviewDashLogic {
     // MARK: Detail sheets
 
     /// Thực thu as a waterfall: three additions, minus refunds, = total. Handles a negative total (web `waterfallRows`)
-    static func waterfall(_ parts: OverviewReport.CollectedBreakdown, total: Double) -> [OverviewWaterfallRow] {
-        let steps: [(OverviewWaterfallRow.Key, Double)] = [
+    /// `collateral`: collateral received − handed back (#708), a step before the total when Thực thu includes it
+    static func waterfall(_ parts: OverviewReport.CollectedBreakdown, total: Double, collateral: Double? = nil) -> [OverviewWaterfallRow] {
+        var steps: [(OverviewWaterfallRow.Key, Double)] = [
             (.deposits, parts.deposits), (.pickupAndSale, parts.pickupAndSale), (.fees, parts.fees), (.refunds, -parts.refunds),
         ]
+        if let collateral { steps.append((.collateral, collateral)) }
         var spans: [(key: OverviewWaterfallRow.Key, amount: Double, from: Double, to: Double, total: Bool)] = []
         var run = 0.0
         for (key, amount) in steps {
@@ -367,5 +381,67 @@ enum OverviewDashLogic {
             OverviewTopRow(id: item.id, name: item.name, amount: item.amount, count: item.count,
                            ratio: top > 0 ? max(0, item.amount) / top : 0)
         }
+    }
+}
+
+// MARK: - #708 Xem các đơn liên quan: the rows behind a tile, each with the money it adds to the tile
+
+/// Which tile the list explains. `Còn phải thu` keeps its own list (RentedOutOrdersViewController, #706).
+enum OverviewRelatedKind: Equatable {
+    /// Orders created in the period (GET income/orders status=new); a cancelled order is listed with 0
+    case orderValue
+    /// Every money event of the period (status=all); collateral in and out included, as the Thực thu tile (#710)
+    case collected
+    /// Hand-overs (+ collateral received) and returns (− collateral handed back) of the period
+    case collateral
+
+    /// The income/orders buckets to load
+    var buckets: [String] {
+        switch self {
+        case .orderValue: return ["new"]
+        case .collected: return ["all"]
+        case .collateral: return ["pickup", "return"]
+        }
+    }
+}
+
+struct OverviewRelatedRow: Equatable {
+    let orderId: Int
+    let orderNumber: String
+    let customer: String
+    let detail: String
+    let amount: Double
+}
+
+extension OverviewDashLogic {
+    /// One row per income/orders row, with the money it adds to the tile; Σ amount = the tile (BF-STAT)
+    static func relatedRows(_ kind: OverviewRelatedKind, bucket: String, items: [DailyIncomeOrder]) -> [OverviewRelatedRow] {
+        items.compactMap { item in
+            guard let id = item.id else { return nil }
+            let amount: Double
+            let detail: String
+            switch (kind, bucket) {
+            case (.orderValue, _):
+                let cancelled = item.status?.uppercased() == "CANCELLED"
+                amount = cancelled ? 0 : (item.totalAmount ?? 0)
+                detail = cancelled ? "overview.related.cancelled".localized() : "overview.related.created".localized()
+            case (.collected, _):
+                amount = item.revenue ?? 0
+                detail = item.description ?? ""
+            case (.collateral, "pickup"):
+                amount = item.securityDeposit ?? 0
+                detail = "overview.related.collateralIn".localized()
+            case (.collateral, _):
+                amount = -(item.securityDeposit ?? 0)
+                detail = "overview.related.collateralOut".localized()
+            }
+            if kind == .collateral && amount == 0 { return nil }
+            return OverviewRelatedRow(orderId: id, orderNumber: item.orderNumber ?? "#\(id)",
+                                      customer: item.customerName ?? "", detail: detail, amount: amount)
+        }
+    }
+
+    static func relatedTotal(_ rows: [OverviewRelatedRow]) -> Double {
+        rows.reduce(0) { $0 + $1.amount }
     }
 }

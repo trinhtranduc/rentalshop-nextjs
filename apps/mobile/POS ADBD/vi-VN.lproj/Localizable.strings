@@ -2415,3 +2415,14 @@
 "order.detail.navTitle" = "Đơn %@";
 "order.detail.goods" = "Tiền hàng";
 "order.detail.deposit" = "Cọc";
+"overview.related.created" = "Đơn tạo trong kỳ";
+"overview.related.cancelled" = "Đã huỷ, không tính";
+"overview.related.collateralIn" = "Nhận thế chân khi giao";
+"overview.related.collateralOut" = "Trả thế chân khi nhận đồ";
+"overview.related.total" = "Tổng các dòng";
+"overview.related.empty" = "Không có đơn nào trong kỳ.";
+"overview.dash.money.collateralNet" = "Thế chân nhận − trả";
+"overview.dash.rule.orderValue" = "Tổng tiền các đơn tạo trong kỳ, theo ngày tạo. Không tính đơn đã huỷ.";
+"overview.dash.rule.collected" = "Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.";
+"overview.dash.rule.outstanding" = "Phần chưa thu của các đơn tạo trong kỳ: đơn thuê đang đặt là tổng trừ cọc, đơn bán chưa hoàn tất là cả tổng.";
+"overview.dash.rule.collateral" = "Thế chân nhận khi giao đồ trừ thế chân trả lại khi nhận đồ, trong kỳ.";
