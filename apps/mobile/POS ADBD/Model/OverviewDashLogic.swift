@@ -394,11 +394,14 @@ enum OverviewRelatedKind: Equatable {
     case collected
     /// Hand-overs (+ collateral received) and returns (− collateral handed back) of the period
     case collateral
+    /// Orders created in the period that still owe money (rent not picked up: total − deposit; sale not completed),
+    /// the rule of `revenue.outstanding` (BF-OUT), so the count and the total equal the tile
+    case outstanding
 
     /// The income/orders buckets to load
     var buckets: [String] {
         switch self {
-        case .orderValue: return ["new"]
+        case .orderValue, .outstanding: return ["new"]
         case .collected: return ["all"]
         case .collateral: return ["pickup", "return"]
         }
@@ -428,6 +431,17 @@ extension OverviewDashLogic {
             case (.collected, _):
                 amount = item.revenue ?? 0
                 detail = item.description ?? ""
+            case (.outstanding, _):
+                let type = item.orderType?.uppercased() ?? ""
+                let status = item.status?.uppercased() ?? ""
+                if type == "RENT" && status == "RESERVED" {
+                    amount = max(0, (item.totalAmount ?? 0) - (item.depositAmount ?? 0))
+                } else if type == "SALE" && status != "COMPLETED" && status != "CANCELLED" {
+                    amount = item.totalAmount ?? 0
+                } else {
+                    amount = 0
+                }
+                detail = "overview.related.owes".localized()
             case (.collateral, "pickup"):
                 amount = item.securityDeposit ?? 0
                 detail = "overview.related.collateralIn".localized()
@@ -436,6 +450,7 @@ extension OverviewDashLogic {
                 detail = "overview.related.collateralOut".localized()
             }
             if kind == .collateral && amount == 0 { return nil }
+            if kind == .outstanding && amount <= 0 { return nil }
             return OverviewRelatedRow(orderId: id, orderNumber: item.orderNumber ?? "#\(id)",
                                       customer: item.customerName ?? "", detail: detail, amount: amount)
         }

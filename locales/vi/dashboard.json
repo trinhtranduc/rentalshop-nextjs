@@ -348,7 +348,7 @@
         "created": "Đơn tạo trong kỳ",
         "cancelled": "Đã huỷ, không tính",
         "event": "",
-        "owes": "Còn phải thu",
+        "owes": "Sẽ thu khi khách lấy đồ",
         "collateralIn": "Nhận thế chân khi giao",
         "collateralOut": "Trả thế chân khi nhận đồ"
       }

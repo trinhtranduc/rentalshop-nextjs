@@ -45,11 +45,16 @@ async function main() {
   const tiles = {};
   const sheets = {};
   const related = {};
+  const relatedCount = {};
   for (const l of notes) {
     const m = /^E2E_NOTE: (TILE|SHEET|RELATED) (.+?) \| (.+)$/.exec(l);
     if (!m) continue;
     if (m[1] === 'TILE') tiles[m[2]] = num(m[3].split(', ')[1]);
-    else if (m[1] === 'RELATED') related[m[2]] = num(m[3].slice(m[3].lastIndexOf(':') + 1));
+    else if (m[1] === 'RELATED') {
+      related[m[2]] = num(m[3].slice(m[3].lastIndexOf(':') + 1));
+      const c = /·\s*(\d+):/.exec(m[3]);
+      relatedCount[m[2]] = c ? Number(c[1]) : null;
+    }
     else (sheets[m[2]] = sheets[m[2]] || []).push(m[3]);
   }
 
@@ -125,9 +130,14 @@ async function main() {
       check(`${tile} › Đơn mới count = Cho thuê + Bán orders`, !!total && row(total).count === split, `sheet=${total && row(total).count} rent+sale=${split}`);
     }
     // #708: the total of "Xem các đơn liên quan" equals the tile's number by the agreed definition
-    const relatedWant = { 'Giá trị đơn mới': r.totalOrderValue, 'Thực thu': r.cashCollected, 'Thế chân': (flow.received || 0) - (flow.returned || 0) }[tile];
+    const relatedWant = { 'Giá trị đơn mới': r.totalOrderValue, 'Thực thu': r.cashCollected, 'Còn phải thu': r.outstanding, 'Thế chân': (flow.received || 0) - (flow.returned || 0) }[tile];
     if (relatedWant !== undefined) {
       check(`${tile} › related orders total = tile`, related[tile] === relatedWant, `list=${related[tile]} want=${relatedWant}`);
+      if (tile === 'Còn phải thu') {
+        // the list has the orders the tile counts ("6 đơn chờ lấy" opened a list of 3 before)
+        const want = (ob.atPickup?.orders ?? 0) + (ob.overduePickup?.orders ?? 0);
+        check(`${tile} › related orders count = tile orders`, relatedCount[tile] === want, `list=${relatedCount[tile]} want=${want}`);
+      }
     }
     if (Object.keys(shown).length) {
       const total = s.sum(shown);

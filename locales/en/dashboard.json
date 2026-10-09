@@ -348,7 +348,7 @@
         "created": "Created in the period",
         "cancelled": "Cancelled, not counted",
         "event": "",
-        "owes": "Still to collect",
+        "owes": "To collect at pickup",
         "collateralIn": "Collateral received at hand-over",
         "collateralOut": "Collateral returned"
       }

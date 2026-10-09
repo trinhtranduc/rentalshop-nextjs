@@ -584,8 +584,8 @@ final class AnyRentE2ETests: XCTestCase {
                 }
             }
             e2e.shot("73-overview-sheet-\(index)")
-            // #708: the related orders, with their total at the bottom (Còn phải thu keeps its own list, no total)
-            if title != "Còn phải thu", link.exists {
+            // #708: the related orders, with their total at the bottom (it must equal the tile)
+            if link.exists {
                 link.tap()
                 let total = app.staticTexts["related.total"]
                 if total.waitForExistence(timeout: 20) {

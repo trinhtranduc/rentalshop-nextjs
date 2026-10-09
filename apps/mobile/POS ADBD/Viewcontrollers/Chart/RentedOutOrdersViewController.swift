@@ -536,7 +536,7 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         let amount = UILabel()
         amount.font = Utils.boldFont(size: DS.TextSize.body)
         amount.textColor = row.amount < 0 ? V2.danger : DS.Color.text
-        amount.text = (row.amount > 0 && kind != .orderValue ? "+" : "") + MoneyFormatter.format(row.amount)
+        amount.text = (row.amount > 0 && kind != .orderValue && kind != .outstanding ? "+" : "") + MoneyFormatter.format(row.amount)
         amount.sizeToFit()
         cell.accessoryView = amount
         cell.accessibilityLabel = "\(row.orderNumber), \(row.detail), \(amount.text ?? "")"

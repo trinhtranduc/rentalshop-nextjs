@@ -2426,3 +2426,4 @@
 "overview.dash.rule.collected" = "Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.";
 "overview.dash.rule.outstanding" = "Phần chưa thu của các đơn tạo trong kỳ: đơn thuê đang đặt là tổng trừ cọc, đơn bán chưa hoàn tất là cả tổng.";
 "overview.dash.rule.collateral" = "Thế chân nhận khi giao đồ trừ thế chân trả lại khi nhận đồ, trong kỳ.";
+"overview.related.owes" = "Sẽ thu khi khách lấy đồ";

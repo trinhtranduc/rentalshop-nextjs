@@ -317,7 +317,8 @@ final class OverviewV2ViewController: BaseViewControler {
     }
 
     /// "Xem các đơn liên quan" (#708): the rows behind the tile, each with the money it adds, total = the tile.
-    /// Còn phải thu keeps its list of the period's booked orders that still owe money (#706).
+    /// Còn phải thu lists the period's orders that still owe money, with the same rule as the tile (the not-picked-up
+    /// list counted differently: 6 on the tile, 3 in the list).
     private func openOrders(for kind: OverviewTileKind) {
         let start = OverviewLogic.date(of: range.start)
         let end = OverviewLogic.date(of: range.end)
@@ -331,7 +332,7 @@ final class OverviewV2ViewController: BaseViewControler {
         case .collateral:
             controller = OverviewRelatedOrdersViewController(kind: .collateral, title: kind.title, period: period, startDate: start, endDate: end)
         case .outstanding:
-            controller = RentedOutOrdersViewController(mode: .notPickedUp, outstandingPeriod: (start: start, end: end))
+            controller = OverviewRelatedOrdersViewController(kind: .outstanding, title: kind.title, period: period, startDate: start, endDate: end)
         }
         controller.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(controller, animated: true)
