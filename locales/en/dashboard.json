@@ -309,6 +309,7 @@
       "overdue": "{count} past pickup",
       "waiting": "{count} awaiting pickup",
       "held": "holding {count} orders",
+      "newOrders": "{count} new orders",
       "open": "{label}: {value}. Show details",
       "trend": "Collected per day",
       "forecast": "{amount} more expected today",
