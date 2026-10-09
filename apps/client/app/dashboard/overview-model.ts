@@ -106,6 +106,7 @@ export interface PeriodReportLike {
     collected?: Num;
     collectedBreakdown?: { deposits?: Num; pickupAndSale?: Num; fees?: Num; refunds?: Num } | null;
     collateralFlow?: { received?: Num; returned?: Num } | null;
+    orderValueByType?: { rent?: { amount?: Num; orders?: Num } | null; sale?: { amount?: Num; orders?: Num } | null } | null;
   } | null;
   growth?: {
     collected?: { growth?: Num } | null;
@@ -182,7 +183,11 @@ export function buildKpis(report: PeriodReportLike | null | undefined): Overview
   return {
     orderValue: num(revenue?.totalOrderValue),
     orderValueGrowth: toGrowth(report?.growth?.orderValue?.growth),
-    newOrders: num(report?.operational?.orderCounts?.new),
+    // #716: the orders behind the order value (cancelled left out); orderCounts.new also counts orders cancelled later
+    newOrders:
+      revenue?.orderValueByType != null
+        ? (num(revenue.orderValueByType.rent?.orders) ?? 0) + (num(revenue.orderValueByType.sale?.orders) ?? 0)
+        : num(report?.operational?.orderCounts?.new),
     collected,
     collectedGrowth: toGrowth(report?.growth?.collected?.growth),
     outstanding: num(revenue?.outstanding),

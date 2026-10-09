@@ -193,6 +193,8 @@ export function DetailDrawer({
         </>
       }
     >
+      {/* Where the number comes from, in one sentence, before its breakdown */}
+      <p className="m-0 text-sm leading-relaxed text-ar-ink-2">{t(`home.detail.rule.${kind}`)}</p>
       {kind === 'collected' && <CollectedBody parts={parts} t={t} money={money} />}
       {kind === 'outstanding' && <OutstandingBody parts={parts} t={t} money={money} />}
       {kind === 'collateral' && <CollateralBody parts={parts} cash={cash} t={t} money={money} />}

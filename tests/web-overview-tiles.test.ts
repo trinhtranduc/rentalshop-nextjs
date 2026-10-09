@@ -312,3 +312,15 @@ describe('Xem tất cả (#620)', () => {
     expect(topBars(many.map((c) => ({ id: c.id, name: c.name, totalRevenue: c.totalSpent })), Infinity)).toHaveLength(12);
   });
 });
+
+describe('buildKpis new orders (#716)', () => {
+  it('counts the orders behind the order value, not orders cancelled later', async () => {
+    const { buildKpis } = await import('../apps/client/app/dashboard/overview-model');
+    const k = buildKpis({
+      operational: { orderCounts: { new: 15 } },
+      revenue: { totalOrderValue: 3579, orderValueByType: { rent: { amount: 1457, orders: 8 }, sale: { amount: 2122, orders: 5 } } },
+    } as PeriodReportLike);
+    expect(k.newOrders).toBe(13);
+    expect(buildKpis({ operational: { orderCounts: { new: 4 } }, revenue: {} } as PeriodReportLike).newOrders).toBe(4);
+  });
+});

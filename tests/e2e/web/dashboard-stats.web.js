@@ -30,7 +30,7 @@ const CFG = {
 };
 
 /** Checks that fail on purpose until the named issue is fixed (a pass there is reported as "fixed?") */
-const KNOWN = { 'Thực thu': '#708' };
+const KNOWN = { 'Thực thu': '#708', 'Giá trị đơn mới › row Đơn mới count': '#716' };
 
 function loadPlaywright() {
   for (const p of [env.PLAYWRIGHT_CORE_PATH, 'playwright-core'].filter(Boolean)) {
@@ -47,6 +47,14 @@ function loadPlaywright() {
  * The tile's value line: the line right after its label, e.g. "5,047", "-18", "+600.000đ", "−356đ".
  * Thousand separators (`.` or `,`) are dropped; the first line with a number is the value (not a chip such as "6 đơn chờ lấy").
  */
+/** "+1,234", "−50", "1.918đ" → number */
+function parseNum(text) {
+  const m = /([−+-]?)\s?(\d[\d.,]*)/.exec(text || '');
+  if (!m) return null;
+  const n = Number(m[2].replace(/[.,]/g, ''));
+  return m[1] === '−' || m[1] === '-' ? -n : n;
+}
+
 function parseTileValue(raw) {
   const lines = String(raw || '').split('\n').map((l) => l.trim()).filter(Boolean);
   const value = lines.find((l, i) => i > 0 && /^[−+-]?\s?\d[\d.,]*\s?đ?$/.test(l));
@@ -111,15 +119,85 @@ async function main() {
       check(label, want !== null && shown === want, `shown=${shown} expected=${want} raw=${JSON.stringify(raw).slice(0, 160)}`);
     }
 
-    // a tap opens the drawer of that tile, with its link to the orders
-    const first = tiles.filter({ hasText: 'Còn phải thu' }).first();
-    await first.click();
-    const dialog = page.locator('[role="dialog"]').first();
-    await dialog.waitFor({ timeout: 15000 });
-    check('drawer: the outstanding tile opens its drawer', await dialog.isVisible(), '');
-    const link = dialog.locator('a[href*="/orders"]').first();
-    const href = await link.getAttribute('href').catch(() => null);
-    check('drawer: link goes to orders filtered RESERVED', !!href && href.includes('status=RESERVED'), `href=${href}`);
+    // A tap on each tile opens its drawer: every row must match the API, and the rows must add up to the
+    // drawer's headline, which must equal the tile
+    const ops = await api.get('/api/analytics/outlet-operations');
+    const r = report.revenue || {};
+    const cb = r.collectedBreakdown || {};
+    const ob = r.outstandingBreakdown || {};
+    const flow = r.collateralFlow || {};
+    const cash = (ops && ops.cash) || {};
+    const drawers = [
+      {
+        tile: 'Giá trị đơn mới',
+        rows: { 'Đơn mới': r.totalOrderValue },
+        // the orders behind the money: created in the period, not cancelled (rent + sale)
+        counts: { 'Đơn mới': (r.orderValueByType?.rent?.orders ?? 0) + (r.orderValueByType?.sale?.orders ?? 0) },
+        sum: (v) => v['Đơn mới'],
+        headline: r.totalOrderValue
+      },
+      {
+        tile: 'Thực thu',
+        rows: { 'Cọc khi tạo đơn': cb.deposits, 'Thu khi giao, bán': cb.pickupAndSale, 'Phí hư hỏng, trễ hạn': cb.fees, 'Hoàn tiền đơn huỷ': -(cb.refunds || 0), 'Thực thu': r.collected },
+        sum: (v) => v['Cọc khi tạo đơn'] + v['Thu khi giao, bán'] + v['Phí hư hỏng, trễ hạn'] + v['Hoàn tiền đơn huỷ'],
+        total: 'Thực thu',
+        headline: r.collected
+      },
+      {
+        tile: 'Còn phải thu',
+        rows: { 'Sẽ thu khi khách lấy đồ': ob.atPickup?.amount, 'Quá ngày lấy, chưa thu': ob.overduePickup?.amount },
+        counts: { 'Sẽ thu khi khách lấy đồ': ob.atPickup?.orders, 'Quá ngày lấy, chưa thu': ob.overduePickup?.orders },
+        sum: (v) => v['Sẽ thu khi khách lấy đồ'] + v['Quá ngày lấy, chưa thu'],
+        headline: r.outstanding
+      },
+      {
+        tile: 'Thế chân',
+        rows: {
+          'Đã nhận': flow.received,
+          'Đã trả lại khách': flow.returned,
+          'Sẽ nhận khi giao': cash.collateralToCollect?.securityDeposit,
+          'Đang giữ, sẽ trả lại': cash.collateralToReturn?.securityDeposit
+        },
+        counts: { 'Sẽ nhận khi giao': cash.collateralToCollect?.orders, 'Đang giữ, sẽ trả lại': cash.collateralToReturn?.orders },
+        sum: (v) => v['Đã nhận'] - v['Đã trả lại khách'],
+        headline: (flow.received || 0) - (flow.returned || 0)
+      }
+    ];
+    for (const d of drawers) {
+      const tileEl = tiles.filter({ hasText: d.tile }).first();
+      const tileValue = parseTileValue(await tileEl.innerText());
+      await tileEl.click();
+      const dialog = page.locator('[role="dialog"]').first();
+      await dialog.waitFor({ timeout: 15000 });
+      await page.waitForTimeout(400);
+      const lines = (await dialog.innerText()).split('\n').map((l) => l.trim()).filter(Boolean);
+      const headline = parseNum(lines.find((l) => /^[−+-]?\s?\d/.test(l)));
+      check(`${d.tile} › drawer headline = tile`, headline === tileValue, `drawer=${headline} tile=${tileValue}`);
+      check(`${d.tile} › drawer headline = API`, headline === d.headline, `drawer=${headline} api=${d.headline}`);
+      const shown = {};
+      for (const [label, want] of Object.entries(d.rows)) {
+        const i = lines.findIndex((l, k) => k > 0 && l.startsWith(label));
+        if (i < 0) {
+          check(`${d.tile} › row ${label}`, want == null, `row not shown, api=${want}`);
+          continue;
+        }
+        const own = /([−+-]?\s?\d[\d.,]*)\s*đ?$/.exec(lines[i].replace(/·.*$/, ''));
+        const value = parseNum(lines.slice(i + 1).find((l) => /^[−+-]?\s?\d[\d.,]*\s*đ?$/.test(l)) ?? (own && own[1]));
+        shown[label] = value;
+        check(`${d.tile} › row ${label}`, value === (want ?? 0), `shown=${value} api=${want}`);
+        const wantCount = d.counts && d.counts[label];
+        if (wantCount != null) {
+          const m = /·\s*(\d+)/.exec(lines[i]);
+          check(`${d.tile} › row ${label} count`, !!m && Number(m[1]) === wantCount, `shown=${m && m[1]} api=${wantCount}`);
+        }
+      }
+      if (d.sum && Object.keys(d.rows).every((k) => shown[k] !== undefined || k.startsWith('Sẽ') || k.startsWith('Đang'))) {
+        const total = d.sum(shown);
+        check(`${d.tile} › rows add up to the headline`, total === headline, `sum=${total} headline=${headline}`);
+      }
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
+    }
     await ctx.close();
   } finally {
     await browser.close();

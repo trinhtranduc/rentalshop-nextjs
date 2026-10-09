@@ -914,7 +914,8 @@ final class OverviewDetailSheet: UIViewController {
 
     private func orderValueBody() -> [UIView] {
         var views: [UIView] = []
-        let count = content.report.newOrders
+        // #716: the orders behind the money (created in the period, cancelled left out), not orderCounts.new
+        let count = content.report.orderValueByType.map { $0.rent.orders + $0.sale.orders } ?? content.report.newOrders
         views.append(legendRow(OVColor.ink, "overview.dash.detail.newOrders".localized(), note: count.map(orders) ?? "—",
                                value: content.report.totalOrderValue.map(MoneyFormatter.format) ?? "—"))
         if let split = content.report.orderValueByType {
