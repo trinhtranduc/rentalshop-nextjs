@@ -415,17 +415,12 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
             return
         }
 
-        view.addSubview(headerCard)
+        // The stats drill-down has no header card: the list starts right under the title bar
         view.addSubview(ordersTableView)
         view.addSubview(emptyStateLabel)
 
-        headerCard.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-
         ordersTableView.snp.makeConstraints { make in
-            make.top.equalTo(headerCard.snp.bottom).offset(12)
+            make.top.equalTo(customNavBar.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
 
