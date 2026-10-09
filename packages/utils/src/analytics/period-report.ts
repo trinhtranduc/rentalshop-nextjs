@@ -84,6 +84,10 @@ export interface AnalyticsPeriodSeriesPoint {
    * Not `futureIncome`: old Android adds `futureIncome` to the revenue bar. Left out when it cannot be computed.
    */
   expectedCollected?: number;
+  /** #710: `expectedCollected` plus the collateral of the day: to receive at pickup (+), to hand back at return (−) */
+  expectedCash?: number;
+  /** #711: money held on the day, collateral included: `collected` + collateral received − handed back that day */
+  cashCollected?: number;
   /** `totalAmount` of the orders created in the bucket, not cancelled (#605); sums to `revenue.totalOrderValue` */
   newOrderValue?: number;
 }
@@ -121,6 +125,8 @@ export interface AnalyticsPeriodReport {
     collectedBreakdown?: { deposits: number; pickupAndSale: number; fees: number; refunds: number };
     /** Collateral received and handed back in the period (#494). Not part of `collected`. */
     collateralFlow?: { received: number; returned: number };
+    /** #710: money the shop holds from the period, collateral included: `collected + received − returned` */
+    cashCollected?: number;
     /** Where `outstanding` will come from, split at the start of today (#494) */
     outstandingBreakdown?: OutstandingBreakdown;
     /** `totalOrderValue` split by order type (#605); `rent.amount + sale.amount = totalOrderValue` */
@@ -697,6 +703,69 @@ export async function buildAnalyticsPeriodReport(
     );
   };
 
+  // #710: collateral moved on each day from today on — received on the pickup day of RESERVED rentals, handed back
+  // on the return day of rentals still out (not overdue). Returns null when the range does not reach today.
+  const computeExpectedCash = async (): Promise<Map<string, number> | null> => {
+    if (rangeEnd < todayStart) return null;
+    const from = rangeStart > todayStart ? rangeStart : todayStart;
+    const [reserved, out] = await Promise.all([
+      prisma.order.findMany({
+        where: {
+          ...outletFilter,
+          deletedAt: null,
+          orderType: ORDER_TYPE.RENT as any,
+          status: ORDER_STATUS.RESERVED as any,
+          pickupPlanAt: { gte: from, lte: rangeEnd }
+        } as any,
+        select: { securityDeposit: true, pickupPlanAt: true },
+        take: 10000
+      }),
+      prisma.order.findMany({
+        where: {
+          ...outletFilter,
+          deletedAt: null,
+          orderType: ORDER_TYPE.RENT as any,
+          status: ORDER_STATUS.PICKUPED as any,
+          returnPlanAt: { gte: from, lte: rangeEnd }
+        } as any,
+        select: { securityDeposit: true, returnPlanAt: true },
+        take: 10000
+      })
+    ]);
+    return sumByBucket(
+      [
+        ...reserved.map((o: any) => ({ at: o.pickupPlanAt, amount: o.securityDeposit || 0 })),
+        ...out.map((o: any) => ({ at: o.returnPlanAt, amount: -(o.securityDeposit || 0) }))
+      ],
+      groupBy,
+      timeZone
+    );
+  };
+
+  // #711: collateral moved on each day of the range: received on the pickup day, handed back on the return day
+  const computeSeriesCollateral = async (): Promise<Map<string, number>> => {
+    const [picked, returned] = await Promise.all([
+      prisma.order.findMany({
+        where: { ...outletFilter, deletedAt: null, orderType: ORDER_TYPE.RENT as any, pickedUpAt: { gte: rangeStart, lte: rangeEnd } } as any,
+        select: { securityDeposit: true, pickedUpAt: true },
+        take: 10000
+      }),
+      prisma.order.findMany({
+        where: { ...outletFilter, deletedAt: null, orderType: ORDER_TYPE.RENT as any, returnedAt: { gte: rangeStart, lte: rangeEnd } } as any,
+        select: { securityDeposit: true, returnedAt: true },
+        take: 10000
+      })
+    ]);
+    return sumByBucket(
+      [
+        ...picked.map((o: any) => ({ at: o.pickedUpAt, amount: o.securityDeposit || 0 })),
+        ...returned.map((o: any) => ({ at: o.returnedAt, amount: -(o.securityDeposit || 0) }))
+      ],
+      groupBy,
+      timeZone
+    );
+  };
+
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
     const fetchRevenue = async (ps: Date, pe: Date): Promise<{ revenue: number; collected: number }> => {
       const orders = await prisma.order.findMany({
@@ -919,7 +988,9 @@ export async function buildAnalyticsPeriodReport(
       limit
     }),
     computeOrderValue(),
-    computeExpectedCollected()
+    computeExpectedCollected(),
+    computeExpectedCash(),
+    computeSeriesCollateral()
   ]);
 
   const valueOr = <T>(result: PromiseSettledResult<T>, fallback: T, label: string): T => {
@@ -958,6 +1029,8 @@ export async function buildAnalyticsPeriodReport(
 
   // #605 fields: each one isolated, so a failure leaves that field out and every other field as it was
   const expectedByBucket = valueOr<Map<string, number> | null>(settled[7], null, 'expectedCollected');
+  const expectedCashByBucket = valueOr<Map<string, number> | null>(settled[8], null, 'expectedCash');
+  const seriesCollateralByBucket = valueOr<Map<string, number> | null>(settled[9], null, 'cashCollected');
   let orderValueByType: OrderValueByType | null = null;
   try {
     const newValueByBucket = orderValue
@@ -974,6 +1047,14 @@ export async function buildAnalyticsPeriodReport(
       const key = seriesPointKey(point);
       if (key == null) continue;
       if (expectedByBucket) point.expectedCollected = expectedByBucket.get(key) || 0;
+      // #710: left out (not 0) when the collateral part could not be computed
+      // #711: left out when the day's collateral could not be read
+      if (seriesCollateralByBucket && point.collected !== undefined) {
+        point.cashCollected = point.collected + (seriesCollateralByBucket.get(key) || 0);
+      }
+      if (expectedByBucket && expectedCashByBucket) {
+        point.expectedCash = (expectedByBucket.get(key) || 0) + (expectedCashByBucket.get(key) || 0);
+      }
       if (newValueByBucket) point.newOrderValue = newValueByBucket.get(key) || 0;
     }
   } catch (error) {
@@ -981,6 +1062,8 @@ export async function buildAnalyticsPeriodReport(
     orderValueByType = null;
     for (const point of series) {
       delete point.expectedCollected;
+      delete point.expectedCash;
+      delete point.cashCollected;
       delete point.newOrderValue;
     }
   }
@@ -1014,7 +1097,15 @@ export async function buildAnalyticsPeriodReport(
         ? {
             collected: operational.totalCollected,
             collectedBreakdown: operational.collectedBreakdown,
-            collateralFlow: operational.collateralFlow
+            collateralFlow: operational.collateralFlow,
+            ...(operational.collateralFlow
+              ? {
+                  cashCollected:
+                    operational.totalCollected +
+                    (operational.collateralFlow.received || 0) -
+                    (operational.collateralFlow.returned || 0)
+                }
+              : {})
           }
         : {})
     },
