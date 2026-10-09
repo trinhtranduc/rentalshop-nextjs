@@ -16,3 +16,4 @@
    (15pt; "· Nhập giá" when no price) that opens Cách tính giá; the "Hết …" tag beside the name (owner) when there is one;
    last row the line total (bold, left, under the text) and the −/+ stepper (right). No separate "450.000/lần × 1"
    line. Sale lines keep "Còn N" under the link.
+9. Web Thêm nhân viên (`apps/client/app/users/add`): no role card selected by default (the cards already explain each role); saving without one shows the existing "Chọn vai trò" error.
