@@ -705,6 +705,75 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("99-inventory-categories")
     }
 
+    /// #684: the cart tag of a booked-out line reads "Hết hàng …" and opens Lịch trống on that day (the orders holding it);
+    /// Thêm người dùng starts with no role and a sheet explains each role. Needs a product "Váy trùng đơn test" with
+    /// stock 1 booked today (staged through the API before the run).
+    func test8cOverlapTagAndRoleSheet() throws {
+        try e2e.requireRole("merchant")
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh"])
+        XCTAssertTrue(search.waitForExistence(timeout: 10), "Home search")
+        search.tap()
+        search.typeText("Váy trùng đơn test\n")
+        sleep(2)
+        let row = app.tables.cells.containing(NSPredicate(format: "label BEGINSWITH %@", "Váy trùng đơn test")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "the staged product")
+        let plus = row.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
+        if plus.exists, !plus.label.contains("trong giỏ"), !plus.label.contains("in cart") { plus.tap() }
+        sleep(1)
+        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar")
+        e2e.cartBar.tap()
+        let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
+        if dates.waitForExistence(timeout: 5) {
+            dates.tap()
+            e2e.pickTodayInDateSheet()
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        }
+        sleep(3)
+        let tag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders'")).firstMatch
+        XCTAssertTrue(tag.waitForExistence(timeout: 8), "the booked-out tag is a button")
+        e2e.note("TAG title: \(tag.staticTexts.firstMatch.exists ? tag.staticTexts.firstMatch.label : tag.label)")
+        e2e.shot("84a-cart-overlap-tag")
+        tag.tap()
+        sleep(4)
+        e2e.shot("84b-calendar-on-day")
+        let holder = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '#'")).firstMatch
+        XCTAssertTrue(holder.waitForExistence(timeout: 8), "Lịch trống lists the order holding the product that day")
+        e2e.note("CALENDAR holder: \(holder.label)")
+        e2e.tapIfExists(e2e.button(["Back", "Quay lại"]))
+        sleep(1)
+        e2e.emptyCart()
+        // Back to the tab bar from the cart
+        app.terminate()
+        try e2e.start()
+
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let users = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Users", "Người dùng"])).firstMatch
+        XCTAssertTrue(users.waitForExistence(timeout: 8), "Người dùng row")
+        users.tap()
+        let add = e2e.button(["Add User", "Thêm người dùng"])
+        XCTAssertTrue(add.waitForExistence(timeout: 8), "Add user button")
+        add.tap()
+        sleep(2)
+        let role = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Select role", "Chọn quyền"])).firstMatch
+        let roleField = app.textFields.matching(NSPredicate(format: "placeholderValue IN %@", ["Select role", "Chọn quyền"])).firstMatch
+        XCTAssertTrue(role.waitForExistence(timeout: 5) || roleField.exists, "the role starts empty (Chọn quyền)")
+        e2e.shot("84c-user-form-no-role")
+        (roleField.exists ? roleField : role).tap()
+        let staff = app.buttons.matching(NSPredicate(format: "label IN %@", ["Outlet Staff", "Nhân viên cửa hàng"])).firstMatch
+        XCTAssertTrue(staff.waitForExistence(timeout: 5), "the role sheet lists Nhân viên")
+        e2e.note("ROLE hint: \(staff.value as? String ?? "")")
+        e2e.shot("84d-role-sheet")
+        staff.tap()
+        sleep(1)
+        e2e.shot("84e-role-picked")
+        XCTAssertTrue(app.textFields.matching(NSPredicate(format: "value IN %@", ["Outlet Staff", "Nhân viên cửa hàng"])).firstMatch.exists
+                      || app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Outlet Staff", "Nhân viên cửa hàng"])).firstMatch.exists,
+                      "the picked role fills the field")
+    }
+
     // MARK: - Screens that landed on dev with #482 #490 #491 #496 #518 #519 (#530)
 
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: In hoá đơn, Ghi chú, Lịch sử thay đổi,
