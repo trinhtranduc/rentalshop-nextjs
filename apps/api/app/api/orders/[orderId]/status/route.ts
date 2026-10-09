@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, canChangeOrderStatus, isOutletRole } from '@rentalshop/constants';
+import { ORDER_STATUS, PLATFORM_OPS_ROLES, canChangeOrderStatus, isOutletRole } from '@rentalshop/constants';
 import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';

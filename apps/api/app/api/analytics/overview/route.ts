@@ -7,7 +7,7 @@ import {
   emptyAnalyticsPeriodReport,
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
-import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { API, isOutletRole } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
 /**
