@@ -41,6 +41,16 @@ enum RentedOutLogic {
 
 /// Rent orders still reserved (#496 "Chưa lấy đồ"), split at the start of today's Vietnam civil day
 enum NotPickedUpLogic {
+    /// What the order still owes, as the Overview tile counts it (packages/utils/src/analytics/order-value.ts):
+    /// rent RESERVED owes total - deposit, a sale not COMPLETED owes its total, anything else owes nothing
+    static func owed(_ order: Order) -> Double {
+        switch (order.orderType, order.status) {
+        case (.rent, .reserved): return max(0, order.totalAmount - order.depositAmount)
+        case (.sale, let status) where status != .completed && status != .cancelled: return order.totalAmount
+        default: return 0
+        }
+    }
+
     /// Pickup day before today (overdue, with its days) and the others, each by pickup day ascending
     /// (no pickup day last, with the others)
     static func groups(_ orders: [Order], now: Date = Date(),
@@ -126,11 +136,16 @@ final class RentedOutOrdersViewController: BaseViewControler {
     /// `startsAtLate`: opened from "Đang thuê · trễ hạn trả"; the list opens at the late group (the whole list stays)
     init(startsAtLate: Bool = false) {
         self.mode = .rentedOut(startsAtLate: startsAtLate)
+        self.outstandingPeriod = nil
         super.init(nibName: nil, bundle: nil)
     }
 
-    init(mode: Mode) {
+    /// "Còn phải thu" of a period: the orders created on its days that still owe money (the same orders as the tile)
+    private let outstandingPeriod: (start: Date?, end: Date?)?
+
+    init(mode: Mode, outstandingPeriod: (start: Date?, end: Date?)? = nil) {
         self.mode = mode
+        self.outstandingPeriod = outstandingPeriod
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -225,30 +240,43 @@ final class RentedOutOrdersViewController: BaseViewControler {
     }
 
     private func loadPage(_ page: Int, collected: [Order], token: Int) {
-        OrderService.shared.loadOrders(
-            productIds: nil,
-            keyword: nil,
-            page: page,
-            limit: RentedOutOrdersViewController.pageSize,
-            orderType: .rent,
-            sortBy: mode == .notPickedUp ? "pickupPlanAt" : "returnPlanAt",
-            sortOrder: "asc",
-            status: mode == .notPickedUp ? .reserved : .pickuped
-        ) { [weak self] response, error in
+        let completion: (OrdersResponse?, NSError?) -> Void = { [weak self] response, error in
             DispatchQueue.main.async {
                 guard let self, token == self.generation else { return }
                 if let error, response == nil {
                     self.finish(collected, error: collected.isEmpty ? error : nil)
                     return
                 }
-                let pageOrders = response?.data?.orders ?? []
+                // "Còn phải thu" keeps only the orders that still owe money, as the tile counts them
+                let rawOrders = response?.data?.orders ?? []
+                let pageOrders = rawOrders.filter { self.outstandingPeriod == nil || NotPickedUpLogic.owed($0) > 0 }
                 let all = collected + pageOrders
-                if response?.data?.hasMore == true, !pageOrders.isEmpty, page < RentedOutOrdersViewController.maxPages {
+                // Paging follows the server's pages, not the filtered rows (a page can be all paid)
+                if response?.data?.hasMore == true, !rawOrders.isEmpty, page < RentedOutOrdersViewController.maxPages {
                     self.loadPage(page + 1, collected: all, token: token)
                 } else {
                     self.finish(all, error: nil)
                 }
             }
+        }
+        if let period = outstandingPeriod {
+            OrderService.shared.loadOrders(
+                from: nil, productIds: nil, productId: nil, customerId: nil,
+                startDate: period.start, endDate: period.end, keyword: nil,
+                page: page, limit: RentedOutOrdersViewController.pageSize,
+                orderType: nil, sortBy: "pickupPlanAt", sortOrder: "asc",
+                status: .reserved, dateField: "createdAt", completion: completion)
+        } else {
+            OrderService.shared.loadOrders(
+                productIds: nil,
+                keyword: nil,
+                page: page,
+                limit: RentedOutOrdersViewController.pageSize,
+                orderType: .rent,
+                sortBy: mode == .notPickedUp ? "pickupPlanAt" : "returnPlanAt",
+                sortOrder: "asc",
+                status: mode == .notPickedUp ? .reserved : .pickuped,
+                completion: completion)
         }
     }
 
