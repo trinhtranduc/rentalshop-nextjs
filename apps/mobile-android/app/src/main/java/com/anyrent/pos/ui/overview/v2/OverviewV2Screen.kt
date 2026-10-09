@@ -702,6 +702,8 @@ private fun ReceivedDetailSheet(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         SheetTitle("${stringResource(R.string.overview_v2_received_title)} · $periodTitle")
+        // Where the number comes from, in one sentence (same rule as iOS)
+        Text(stringResource(R.string.overview_v2_rule_received), fontSize = DS.TextSize.Body, lineHeight = 22.sp, color = Color(0xFF334155))
         Column {
             Text(stringResource(R.string.overview_v2_received_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             Text(formatMoneyVnd(flow.totalReceived(report.netRevenue)), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)

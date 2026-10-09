@@ -1501,4 +1501,5 @@
     <string name="image_search_tip_photo">The product needs a photo in your list</string>
     <string name="detail_nav_title">Order %1$s</string>
     <string name="detail_deposit">Deposit</string>
+    <string name="overview_v2_rule_received">Money actually collected in the period (deposits, rent on hand-over, sales, extra fees, minus refunds) and the collateral held. Collateral is shown separately.</string>
 </resources>
