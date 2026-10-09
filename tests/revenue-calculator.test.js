@@ -585,13 +585,28 @@ describe('Revenue Calculator Utility', () => {
         };
 
         const events = getOrderRevenueEvents(order, startDate, endDate);
-        
-        expect(events).toHaveLength(1);
-        // Tổng đã thu: pickup revenue (800+300 = 1100k) - KHÔNG tính deposit riêng
-        // Hoàn lại: -1100k
-        expect(events[0].revenue).toBe(-1100000);
-        expect(events[0].revenueType).toBe('RENT_CANCELLED');
-        expect(events[0].description).toBe('Đơn hủy (hoàn lại)');
+
+        // #503: booked, handed over and cancelled the same day: no pickup event was made, so nothing is refunded
+        // either; the day nets to 0 (it was -1.100.000 before)
+        expect(events).toHaveLength(0);
+      });
+
+      it('refunds only the earlier deposit when handed over and cancelled the same later day (#503)', () => {
+        const [startDate, endDate] = createDateRange('2026-01-17T00:00:00Z', '2026-01-17T23:59:59Z');
+        const order = {
+          orderType: ORDER_TYPE.RENT,
+          status: ORDER_STATUS.CANCELLED,
+          totalAmount: 800000,
+          depositAmount: 200000,
+          securityDeposit: 300000,
+          damageFee: 0,
+          createdAt: new Date('2026-01-15T10:00:00Z'), // deposit taken on 15/01
+          updatedAt: new Date('2026-01-17T16:00:00Z'),
+          pickedUpAt: new Date('2026-01-17T14:00:00Z')
+        };
+        const events = getOrderRevenueEvents(order, startDate, endDate);
+        // 17/01: +600k rent +300k collateral at hand-over, −1.100k at cancel: the day hands back the 200k deposit
+        expect(events.map((e) => [e.revenueType, e.revenue])).toEqual([['RENT_CANCELLED', -200000]]);
       });
     });
 

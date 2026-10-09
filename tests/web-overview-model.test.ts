@@ -16,6 +16,9 @@ import {
   progressPercent,
   toGrowth,
   type OutletOpsLike,
+  relatedBuckets,
+  relatedRows,
+  relatedTotal,
 } from '../apps/client/app/dashboard/overview-model';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
 
@@ -211,5 +214,38 @@ describe('today', () => {
     expect(rows[0].pickupKey).toBe('2026-10-06');
     expect(rows[0].returnKey).toBe('2026-10-08');
     expect(rows[3].returnKey).toBe('2026-10-02');
+  });
+});
+
+describe('related orders (#708, #721)', () => {
+  it('Thế chân reads each event row\'s collateral, so a same-day hand-over then cancel adds nothing', () => {
+    expect(relatedBuckets('collateral')).toEqual(['all']);
+    const rows = relatedRows('collateral', 'all', [
+      { id: 1, orderNumber: '100001', status: 'PICKUPED', revenue: 500, collateral: 300 },
+      { id: 2, orderNumber: '100002', status: 'CANCELLED', revenue: 0, collateral: 0, securityDeposit: 400 },
+      { id: 3, orderNumber: '100003', status: 'RETURNED', revenue: -100, collateral: -100 },
+      { id: 4, orderNumber: '100004', status: 'RESERVED', revenue: 50 },
+    ]);
+    expect(rows.map((r) => [r.orderNumber, r.amount, r.note])).toEqual([
+      ['100001', 300, 'collateralIn'],
+      ['100003', -100, 'collateralOut'],
+    ]);
+    expect(relatedTotal(rows)).toBe(200);
+  });
+
+  it('Còn phải thu lists what the tile counts; Giá trị đơn mới shows cancelled orders with 0', () => {
+    const items = [
+      { id: 1, orderNumber: 'a', orderType: 'RENT', status: 'RESERVED', totalAmount: 500, depositAmount: 200 },
+      { id: 2, orderNumber: 'b', orderType: 'RENT', status: 'PICKUPED', totalAmount: 900, depositAmount: 0 },
+      { id: 3, orderNumber: 'c', orderType: 'SALE', status: 'RESERVED', totalAmount: 250, depositAmount: 0 },
+      { id: 4, orderNumber: 'd', orderType: 'RENT', status: 'CANCELLED', totalAmount: 700, depositAmount: 0 },
+    ];
+    expect(relatedRows('outstanding', 'new', items).map((r) => [r.orderNumber, r.amount])).toEqual([
+      ['a', 300],
+      ['c', 250],
+    ]);
+    const value = relatedRows('orderValue', 'new', items);
+    expect(value.map((r) => r.amount)).toEqual([500, 900, 250, 0]);
+    expect(value[3].note).toBe('cancelled');
   });
 });

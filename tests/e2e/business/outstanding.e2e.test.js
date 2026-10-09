@@ -26,7 +26,18 @@ function owedOf(order) {
 
 /** The orders the tap opens: RESERVED, created on the period's days, still owing money */
 async function listedOutstanding(s, from, to) {
-  const rows = await s.listOrders({ status: 'RESERVED', startDate: from, endDate: to, dateField: 'createdAt', sortBy: 'pickupPlanAt', sortOrder: 'asc' });
+  // every page: the shared e2e database holds more than one page of booked orders by the end of a run
+  const rows = [];
+  for (let page = 1; page <= 100; page++) {
+    const data = await s.get(
+      `/api/orders?${new URLSearchParams({ status: 'RESERVED', startDate: from, endDate: to, dateField: 'createdAt', sortBy: 'pickupPlanAt', sortOrder: 'asc', limit: '100', page: String(page) })}`
+    );
+    if (!data.ok) throw new Error(`list orders failed: HTTP ${data.status}`);
+    const body = data.body.data || {};
+    const items = body.orders || body.items || [];
+    rows.push(...items);
+    if (!body.hasMore || items.length === 0) break;
+  }
   return rows.map((o) => ({ id: o.id, owed: owedOf(o), orderType: o.orderType, pickupPlanAt: o.pickupPlanAt })).filter((r) => r.owed > 0);
 }
 
