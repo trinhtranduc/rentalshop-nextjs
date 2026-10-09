@@ -38,7 +38,15 @@ class DatePickerViewController: UIViewController {
     enum SelectionMode {
         case single     // Select a single date
         case range      // Select a date range
+        case extend     // #696 Gia hạn: the pickup day is fixed, a tap moves the return day past the rented days
     }
+
+    /// #696: shown inside another sheet (Gia hạn), without the header and the Confirm button
+    var isEmbedded = false
+    /// #696: the new return day (phone-zone midnight, as FSCalendar reports it) after each tap in `.extend`
+    var onExtendDayChange: ((Date) -> Void)?
+    /// #696: last day already rented; only later days can be picked in `.extend`
+    private var rentedEnd: Date?
     
     private var selectionMode: SelectionMode = .single
     
@@ -145,6 +153,17 @@ class DatePickerViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
+        if isEmbedded {
+            view.backgroundColor = .clear
+            view.addSubview(calendar)
+            NSLayoutConstraint.activate([
+                calendar.topAnchor.constraint(equalTo: view.topAnchor),
+                calendar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                calendar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                calendar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
+            return
+        }
 
         headerView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(headerView)
@@ -250,6 +269,36 @@ class DatePickerViewController: UIViewController {
         }
     }
     
+    /// #696 Gia hạn: shade pickup → current return, and the new return day after it. Dates are phone-zone midnights
+    /// (`devicePickFromShopDay`), like the cart's range.
+    func configureForExtension(pickup: Date, currentReturn: Date, newReturn: Date, maximumDate: Date? = nil) {
+        selectionMode = .extend
+        calendar.allowsMultipleSelection = true
+        let day = Calendar.current
+        minimumDate = day.startOfDay(for: pickup)
+        self.maximumDate = maximumDate
+        firstDate = day.startOfDay(for: pickup)
+        rentedEnd = day.startOfDay(for: currentReturn)
+        calendar.reloadData()
+        selectExtension(to: newReturn)
+        calendar.setCurrentPage(newReturn, animated: false)
+    }
+
+    private func selectExtension(to date: Date) {
+        guard let first = firstDate else { return }
+        for d in calendar.selectedDates { calendar.deselect(d) }
+        let range = datesRange(from: first, to: date)
+        lastDate = range.last
+        datesRange = range
+        range.forEach { calendar.select($0, scrollToDate: false) }
+        calendar.reloadData()
+    }
+
+    private func isExtensionDay(_ date: Date) -> Bool {
+        guard let rentedEnd else { return false }
+        return Calendar.current.startOfDay(for: date) > rentedEnd
+    }
+
     // Helper method to generate a range of dates
     private func datesRange(from: Date, to: Date) -> [Date] {
         // Normalize dates to start of day
@@ -315,6 +364,10 @@ class DatePickerViewController: UIViewController {
             guard let date = selectedDate else { return }
             delegate?.didSelectDate(date, sender: self)
             
+        case .extend:
+            guard let first = firstDate, let last = lastDate else { return }
+            delegate?.didSelectDateRange(start: first, end: last, sender: self)
+
         case .range:
             guard let first = firstDate, let last = lastDate else {
                 // If only first date is selected, treat it as a single date selection
@@ -372,7 +425,11 @@ extension DatePickerViewController: FSCalendarDelegate {
         case .single:
             selectedDate = date
             confirmButton.isEnabled = true
-            
+
+        case .extend:
+            selectExtension(to: date)
+            onExtendDayChange?(date)
+
         case .range:
             // Nothing selected yet
             if firstDate == nil {
@@ -421,6 +478,21 @@ extension DatePickerViewController: FSCalendarDelegate {
         }
     }
     
+    /// #696: in `.extend` only a day after the rented days moves the return day; a tap on a shaded later day
+    /// shortens the extension to it instead of clearing the range
+    func calendar(_ calendar: FSCalendar, shouldSelect date: Date, at monthPosition: FSCalendarMonthPosition) -> Bool {
+        selectionMode != .extend || isExtensionDay(date)
+    }
+
+    func calendar(_ calendar: FSCalendar, shouldDeselect date: Date, at monthPosition: FSCalendarMonthPosition) -> Bool {
+        guard selectionMode == .extend else { return true }
+        if isExtensionDay(date) {
+            selectExtension(to: date)
+            onExtendDayChange?(date)
+        }
+        return false
+    }
+
     func calendarCurrentPageDidChange(_ calendar: FSCalendar) {
         onVisibleMonthChange?(calendar.currentPage)
     }
@@ -472,6 +544,12 @@ extension DatePickerViewController: FSCalendarDelegateAppearance {
     }
 
     func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
+        if selectionMode == .extend {
+            // Pickup black as in the cart, rented days grey, added days light blue, the new return day blue
+            if date == lastDate, isExtensionDay(date) { return DS.Color.primary }
+            if date == firstDate { return .label }
+            return isExtensionDay(date) ? UIColor(hexString: "DBEAFE") : UIColor.label.withAlphaComponent(0.12)
+        }
         if selectionMode == .range {
             if date == firstDate || date == lastDate {
                 return .label
@@ -486,6 +564,10 @@ extension DatePickerViewController: FSCalendarDelegateAppearance {
     }
 
     func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, titleSelectionColorFor date: Date) -> UIColor? {
+        if selectionMode == .extend {
+            if date == firstDate || (date == lastDate && isExtensionDay(date)) { return .white }
+            return isExtensionDay(date) ? DS.Color.primary : .textPrimary
+        }
         if selectionMode == .range, datesRange?.contains(date) == true,
            date != firstDate, date != lastDate {
             return .textPrimary
