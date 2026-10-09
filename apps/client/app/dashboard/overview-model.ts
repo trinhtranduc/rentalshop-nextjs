@@ -725,8 +725,8 @@ export function parseRelated(value: string | null | undefined): RelatedKind | nu
 
 /** income/orders buckets each list loads */
 export function relatedBuckets(kind: RelatedKind): string[] {
-  if (kind === 'collected') return ['all'];
-  if (kind === 'collateral') return ['pickup', 'return'];
+  // #721: Thế chân reads each event's `collateral` (a same-day hand-over then return or cancel moves none, as the tile)
+  if (kind === 'collected' || kind === 'collateral') return ['all'];
   return ['new'];
 }
 
@@ -741,6 +741,8 @@ export interface IncomeOrderLike {
   totalAmount?: Num;
   depositAmount?: Num;
   securityDeposit?: Num;
+  /** #721 (`all` rows): the collateral part of `revenue`, + received, − handed back */
+  collateral?: Num;
 }
 
 export type RelatedNote = 'created' | 'cancelled' | 'event' | 'owes' | 'collateralIn' | 'collateralOut';
@@ -776,10 +778,9 @@ export function relatedRows(kind: RelatedKind, bucket: string, items: IncomeOrde
       if (amount <= 0) continue;
       note = 'owes';
     } else {
-      const deposit = num(it.securityDeposit) ?? 0;
-      if (!deposit) continue;
-      amount = bucket === 'pickup' ? deposit : -deposit;
-      note = bucket === 'pickup' ? 'collateralIn' : 'collateralOut';
+      amount = num(it.collateral) ?? 0;
+      if (!amount) continue;
+      note = amount > 0 ? 'collateralIn' : 'collateralOut';
     }
     rows.push({ id: it.id, orderNumber: it.orderNumber || `#${it.id}`, customer: it.customerName || '', note, description: it.description || '', amount });
   }
