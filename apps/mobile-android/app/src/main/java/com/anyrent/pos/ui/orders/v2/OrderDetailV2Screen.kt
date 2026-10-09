@@ -91,6 +91,7 @@ import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.copyUriToCacheFile
 import com.anyrent.pos.ui.common.fileToNotesJpegBytes
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.domain.products.CartV2Logic
@@ -498,35 +499,35 @@ private fun DetailHeader(detail: OrderDetail) {
             .padding(top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // #643: name large, phone small under it, a round call button on the right (no full-width phone bar)
+        // Board D2 (owner 2026-10-09): bold name, then "phone · T6 09/10 → CN 11/10" on one line; tap the phone to dial
         val dial = OrderDetailHeader.dialNumber(summary.customerPhone)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        val callLabel = stringResource(R.string.detail_call_customer)
+        val pickup = OrderPlanDays.dayOf(summary.pickupPlanAt)?.let { formatDayShort(it) }
+        val returned = OrderPlanDays.dayOf(summary.returnPlanAt)?.let { formatDayShort(it) }
+        val line = buildList {
+            summary.customerPhone?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
+            if (isRent && pickup != null && returned != null) add("$pickup → $returned")
+        }.joinToString(" · ")
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.Bold,
+                color = DS.Colors.Text,
+            )
+            if (line.isNotEmpty()) {
                 Text(
-                    OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DS.Colors.Text,
-                )
-                if (dial != null) {
-                    Text(summary.customerPhone.orEmpty().trim(), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
-                }
-            }
-            if (dial != null) {
-                val callLabel = stringResource(R.string.detail_call_customer)
-                Box(
-                    Modifier
-                        .size(46.dp)
-                        .clip(CircleShape)
-                        .background(DS.Status.Done.fill)
-                        .clickable(onClickLabel = callLabel) {
+                    line,
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                    modifier = if (dial != null) {
+                        Modifier.clickable(onClickLabel = callLabel) {
                             context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$dial")))
                         }
-                        .semantics { contentDescription = callLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Status.Done.text, modifier = Modifier.size(DS.Icon.Md))
-                }
+                    } else {
+                        Modifier
+                    },
+                )
             }
         }
         if (lateDays > 0) {

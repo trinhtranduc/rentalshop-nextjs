@@ -198,31 +198,42 @@ final class OrderDetailViewController: BaseViewControler {
         renderActions(detail)
     }
 
-    /// #643 (mockups/header-truoc-sau.png): name large with the phone under it and a round call button; then one
-    /// light box with the status pill, "7 ngày · trả sau 2 ngày" and the three steps (sale: pill and date only)
+    /// Board D2 (owner 2026-10-09): the customer block is the bold name, then "phone · T6 09/10 → CN 11/10" in one
+    /// line; the phone dials when tapped. Then one light box with the status pill and the three steps (sale: pill and date only)
     private func headerView(_ detail: OrderDetail, order: Order) -> UIView {
         let customer = OrderDetailLogic.headerCustomer(name: order.customerName, phone: detail.customer.phone)
         let name = UILabel()
-        name.font = Utils.boldFont(size: 22)
+        name.font = Utils.boldFont(size: DS.TextSize.name)
         name.textColor = DS.Color.text
         name.numberOfLines = 2
         name.text = customer.name ?? "order.header.walkIn".localized()
         name.accessibilityIdentifier = "order.detail.customer"
-        let texts = UIStackView(arrangedSubviews: [name])
+
+        let line = UILabel()
+        line.font = Utils.regularFont(size: DS.TextSize.secondary)
+        line.textColor = DS.Color.textMuted
+        line.numberOfLines = 0
+        var parts: [String] = []
+        if let phone = customer.phone { parts.append(phone) }
+        if let pickup = detail.pickupPlanAt, let returnDay = detail.returnPlanAt, detail.orderType == .rent {
+            parts.append("\(DayFormatter.short(pickup)) → \(DayFormatter.short(returnDay))")
+        }
+        line.text = parts.joined(separator: " · ")
+        line.accessibilityIdentifier = "order.detail.customerLine"
+        if let phone = customer.phone {
+            line.isUserInteractionEnabled = true
+            line.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dialCustomer(_:))))
+            line.accessibilityLabel = "order.header.call".localized() + " " + phone
+            line.accessibilityTraits = UIAccessibilityTraitButton
+            dialNumber = phone
+        }
+
+        let texts = UIStackView(arrangedSubviews: [name, line])
         texts.axis = .vertical
-        texts.spacing = 2
+        texts.spacing = 4
         let customerRow = UIStackView(arrangedSubviews: [texts])
         customerRow.axis = .horizontal
         customerRow.alignment = .center
-        customerRow.spacing = DS.Spacing.md
-        if let phone = customer.phone {
-            let phoneLabel = UILabel()
-            phoneLabel.font = Utils.regularFont(size: DS.TextSize.body)
-            phoneLabel.textColor = DS.Color.textMuted
-            phoneLabel.text = phone
-            texts.addArrangedSubview(phoneLabel)
-            customerRow.addArrangedSubview(callButton(phone))
-        }
 
         let stack = UIStackView(arrangedSubviews: [customerRow])
         stack.axis = .vertical
@@ -236,21 +247,11 @@ final class OrderDetailViewController: BaseViewControler {
         return padded(stack, top: DS.Spacing.xs, bottom: DS.Spacing.lg, thickBottom: true)
     }
 
-    /// Round 46 pt green button that dials the customer
-    private func callButton(_ phone: String) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setImage(DS.symbol("phone", DS.Icon.md), for: .normal)
-        button.tintColor = DS.Status.done.text
-        button.backgroundColor = DS.Status.done.fill
-        button.layer.cornerRadius = 23
-        button.accessibilityLabel = "order.header.call".localized()
-        button.accessibilityIdentifier = "order.detail.call"
-        button.setContentHuggingPriority(.required, for: .horizontal)
-        button.snp.makeConstraints { make in make.size.equalTo(46) }
-        button.addAction(UIAction { _ in
-            if let url = URL(string: "tel://\(phone)") { UIApplication.shared.open(url) }
-        }, for: .touchUpInside)
-        return button
+    private var dialNumber: String?
+
+    @objc private func dialCustomer(_ gesture: UITapGestureRecognizer) {
+        guard let phone = dialNumber, let url = URL(string: "tel://\(phone)") else { return }
+        UIApplication.shared.open(url)
     }
 
     private func statusBox(_ detail: OrderDetail) -> UIView {
