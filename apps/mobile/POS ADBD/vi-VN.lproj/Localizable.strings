@@ -1660,6 +1660,11 @@
 "products.cart.edit.keepEditing" = "Tiếp tục sửa";
 "products.cart.edit.saved" = "Đã lưu đơn #%@";
 "products.cart.edit.savedNoNumber" = "Đã lưu đơn";
+"products.cart.more" = "Thêm";
+"products.cart.menu.shareQuote" = "Chia sẻ báo giá";
+"products.cart.clear.title" = "Xoá giỏ hàng";
+"products.cart.clear.message" = "Xoá toàn bộ sản phẩm và thông tin đơn hàng trong giỏ này?";
+"products.cart.clear.confirm" = "Xoá";
 "products.cart.edit.cancel" = "Huỷ sửa";
 "products.cart.edit.cancelTitle" = "Huỷ sửa đơn #%@?";
 "products.cart.edit.cancelTitleNoNumber" = "Huỷ sửa đơn này?";

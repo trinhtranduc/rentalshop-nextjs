@@ -502,12 +502,24 @@ enum CartV2Logic {
     /// #684 (owner): the cart line's blue link reads price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày",
     /// "900.000đ / giá bán"; `amount` nil = no price yet ("Nhập giá / theo lần")
     static func link(_ item: CartItem, orderType: OrderType) -> (amount: String?, unit: String) {
-        let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
+        (item.price > 0 ? money(item.price) : nil,
+         pricingUnit(type: currentType(item), days: item.rentalDays, orderType: orderType))
+    }
+
+    /// "theo lần", "theo ngày × 3 ngày", "giá bán": the unit after the price, in the cart and on order detail
+    static func pricingUnit(type: String, days: Int, orderType: OrderType) -> String {
+        let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(type)
         var unit = label.lowercased(with: Locale(identifier: "vi_VN"))
-        if orderType == .rent, item.isDailyPricing, item.rentalDays > 1 {
-            unit += " × " + PluralText.format("products.cart.days", count: item.rentalDays, item.rentalDays)
+        if orderType == .rent, type.uppercased() == ProductPricingMode.perDay.rawValue, days > 1 {
+            unit += " × " + PluralText.format("products.cart.days", count: days, days)
         }
-        return (item.price > 0 ? money(item.price) : nil, unit)
+        return unit
+    }
+
+    /// Order detail item line, same wording as the cart link: "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày"
+    static func orderItemPricing(unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> String {
+        let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+        return money(unitPrice) + " / " + pricingUnit(type: type, days: rentalDays ?? 1, orderType: orderType)
     }
 
     /// "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise
@@ -593,6 +605,20 @@ enum CartV2Logic {
     static func ctaTitleKey(isEditMode: Bool, isRent: Bool) -> String {
         if isEditMode { return "products.cart.edit.save" }
         return isRent ? "products.cart.create" : "products.cart.sellAndCollect"
+    }
+
+    /// #677 (board gio-menu): the cart's ⋯ menu. Nil while editing an order (no ⋯; "Huỷ sửa" is in the bottom bar).
+    /// An empty cart disables both items; the quote also needs a rental's dates (`DraftShareRule`).
+    struct MoreMenuState: Equatable {
+        let shareEnabled: Bool
+        let clearEnabled: Bool
+    }
+
+    static func moreMenu(_ cart: Cart) -> MoreMenuState? {
+        guard !cart.isEditMode else { return nil }
+        let share = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
+                                            pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
+        return MoreMenuState(shareEnabled: share, clearEnabled: !cart.items.isEmpty)
     }
 
     /// #677: the action on the Home cart bar: "Sửa đơn #482913" (or "Sửa đơn") while the cart edits an order, else

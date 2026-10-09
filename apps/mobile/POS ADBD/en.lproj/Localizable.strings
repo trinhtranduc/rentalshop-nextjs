@@ -1662,6 +1662,11 @@
 "products.cart.edit.keepEditing" = "Keep editing";
 "products.cart.edit.saved" = "Saved order #%@";
 "products.cart.edit.savedNoNumber" = "Order saved";
+"products.cart.more" = "More";
+"products.cart.menu.shareQuote" = "Share quote";
+"products.cart.clear.title" = "Clear cart";
+"products.cart.clear.message" = "Remove all products and order information from this cart?";
+"products.cart.clear.confirm" = "Delete";
 "products.cart.edit.cancel" = "Cancel edit";
 "products.cart.edit.cancelTitle" = "Cancel editing order #%@?";
 "products.cart.edit.cancelTitleNoNumber" = "Cancel editing this order?";
