@@ -2414,3 +2414,6 @@
 "imageSearch.empty.tip.whole" = "Capture the whole item in good light";
 "imageSearch.empty.tip.background" = "Plain background, nothing else in the shot";
 "imageSearch.empty.tip.photo" = "The product needs a photo in your list";
+"order.detail.navTitle" = "Order %@";
+"order.detail.goods" = "Goods";
+"order.detail.deposit" = "Deposit";

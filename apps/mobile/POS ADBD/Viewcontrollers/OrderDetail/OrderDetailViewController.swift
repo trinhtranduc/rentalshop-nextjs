@@ -48,13 +48,15 @@ final class OrderDetailViewController: BaseViewControler {
         moreButton.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
         navBar.addRightButton(moreButton)
         // #430: a long order number ("#ORD-003-0022") shrinks to fit between the buttons instead of being cut
-        let titleLabel = UILabel()
-        titleLabel.font = Utils.boldFont(size: 20)
-        titleLabel.textColor = APP_TEXT_COLOR
-        titleLabel.textAlignment = .center
-        titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.7
-        navBar.setCustomTitleView(titleLabel, centered: true)
+        headerTitleLabel.font = Utils.boldFont(size: 20)
+        headerTitleLabel.textColor = APP_TEXT_COLOR
+        headerTitleLabel.adjustsFontSizeToFitWidth = true
+        headerTitleLabel.minimumScaleFactor = 0.7
+        let titleRow = UIStackView(arrangedSubviews: [headerTitleLabel, headerStatusTag])
+        titleRow.axis = .horizontal
+        titleRow.alignment = .center
+        titleRow.spacing = DS.Spacing.sm
+        navBar.setCustomTitleView(titleRow, centered: true)
         buildLayout()
         load()
     }
@@ -180,8 +182,9 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func render() {
         guard let detail, let order = orderViewModel?.currentOrder else { return }
-        customNavBar?.title = String(format: OrderDetailLogic.titleKey(orderType: detail.orderType).localized(),
-                                     detail.orderNumber)
+        headerTitleLabel.text = String(format: "order.detail.navTitle".localized(), detail.orderNumber)
+        let status = OrdersHomeLogic.statusTag(detail.status)
+        headerStatusTag.apply(status.text, status.colors)
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         contentStack.addArrangedSubview(headerView(detail, order: order))
         contentStack.addArrangedSubview(infoRows(detail, order: order))
@@ -189,7 +192,6 @@ final class OrderDetailViewController: BaseViewControler {
         for item in detail.orderItems {
             contentStack.addArrangedSubview(itemRow(item, orderType: detail.orderType))
         }
-        contentStack.addArrangedSubview(sectionTitle("MONEY".localized()))
         contentStack.addArrangedSubview(moneyRows(detail))
         contentStack.addArrangedSubview(notesSection(detail))
         let spacer = UIView()
@@ -243,11 +245,13 @@ final class OrderDetailViewController: BaseViewControler {
         if late > 0 {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
-        stack.addArrangedSubview(statusBox(detail))
         return padded(stack, top: DS.Spacing.xs, bottom: DS.Spacing.lg, thickBottom: true)
     }
 
     private var dialNumber: String?
+    /// Board D2: the top bar reads "Đơn 482913" with the status pill beside it
+    private let headerTitleLabel = UILabel()
+    private let headerStatusTag = RowTagLabel(style: .status)
 
     @objc private func dialCustomer(_ gesture: UITapGestureRecognizer) {
         guard let phone = dialNumber, let url = URL(string: "tel://\(phone)") else { return }
@@ -367,18 +371,7 @@ final class OrderDetailViewController: BaseViewControler {
         let stack = UIStackView()
         stack.axis = .vertical
         if detail.orderType == .rent {
-            // #643: the steps carry the dates; the row stays only where there are no steps (cancelled)
-            if let from = detail.pickupPlanAt, let to = detail.returnPlanAt,
-               !OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
-                let days = detail.rentalDuration ?? OrderDetailLogic.rentalDays(pickup: from, return: to) ?? 1
-                stack.addArrangedSubview(keyValue("Rental dates".localized(),
-                    "\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to)) · " + PluralText.format("%d days", count: days, days),
-                    bold: true))
-            }
-            if OrderDetailLogic.showsReadyToDeliver(orderType: detail.orderType, status: detail.status,
-                                                    canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
-                stack.addArrangedSubview(readyToDeliverRow(detail))
-            }
+            // Board D2: the dates sit in the customer line and the "Sẵn sàng giao" switch is gone from the screen
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
                 stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.short(picked)))
             }
@@ -572,9 +565,10 @@ final class OrderDetailViewController: BaseViewControler {
         let totalTitle = discount > 0
             ? String(format: "Total (discount %@)".localized(), MoneyFormatter.format(discount))
             : "Order total".localized()
-        stack.addArrangedSubview(keyValue(totalTitle, MoneyFormatter.format(detail.totalAmount), divider: false))
+        stack.addArrangedSubview(keyValue(discount > 0 ? totalTitle : "order.detail.goods".localized(),
+                                          MoneyFormatter.format(detail.totalAmount), divider: false))
         if detail.depositAmount > 0 {
-            stack.addArrangedSubview(keyValue("Deposit paid at booking".localized(), MoneyFormatter.format(-detail.depositAmount), divider: false))
+            stack.addArrangedSubview(keyValue("order.detail.deposit".localized(), MoneyFormatter.format(detail.depositAmount), divider: false))
         }
         if detail.securityDeposit > 0 {
             stack.addArrangedSubview(keyValue("Collateral money".localized(), "+" + MoneyFormatter.format(detail.securityDeposit), divider: false))

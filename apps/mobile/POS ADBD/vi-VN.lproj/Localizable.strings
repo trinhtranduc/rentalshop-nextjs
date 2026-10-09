@@ -2412,3 +2412,6 @@
 "imageSearch.empty.tip.whole" = "Chụp cả món đồ, đủ sáng";
 "imageSearch.empty.tip.background" = "Nền gọn, không lẫn đồ khác";
 "imageSearch.empty.tip.photo" = "Sản phẩm cần có ảnh trong danh sách";
+"order.detail.navTitle" = "Đơn %@";
+"order.detail.goods" = "Tiền hàng";
+"order.detail.deposit" = "Cọc";

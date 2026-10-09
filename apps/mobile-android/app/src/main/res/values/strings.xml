@@ -1499,4 +1499,6 @@
     <string name="image_search_tip_whole">Capture the whole item in good light</string>
     <string name="image_search_tip_background">Plain background, nothing else in the shot</string>
     <string name="image_search_tip_photo">The product needs a photo in your list</string>
+    <string name="detail_nav_title">Order %1$s</string>
+    <string name="detail_deposit">Deposit</string>
 </resources>
