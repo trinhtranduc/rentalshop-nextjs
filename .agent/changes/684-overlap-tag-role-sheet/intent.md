@@ -23,3 +23,4 @@ iOS is the reference, Android matches, one PR. Stacked on #682 (role list includ
 - 2026-10-09 — Tag wording "Hết hàng từ x → y" instead of "Trùng đơn ngày x" (owner)
 - 2026-10-09 — Cart lines: the card option's content without cards, blue pricing link, total + stepper on the last row; per-day shows "× N ngày" (owner, after trying "Dòng gọn")
 - 2026-10-09 — The cart tag sits beside the product name, short text "Hết x → y ›" (owner)
+- 2026-10-09 — Per-item note in its own sheet; role sheet styled like the order action sheet (owner, canvas N1–N3)

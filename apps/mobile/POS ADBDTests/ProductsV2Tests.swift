@@ -107,6 +107,10 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: nil), [.outletStaff, .outletAdmin])
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: true, currentRole: nil), [.outletStaff, .outletAdmin, .outletInventory])
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: .outletInventory).last, .outletInventory)
+        // #684: an item note is trimmed; a blank one clears it
+        XCTAssertNil(CartV2Logic.noteText(nil))
+        XCTAssertNil(CartV2Logic.noteText("  \n "))
+        XCTAssertEqual(CartV2Logic.noteText("  Sửa eo 2cm \n"), "Sửa eo 2cm")
         // #684: no role until one is picked; every pickable role has a one-line explanation
         XCTAssertFalse(UserFormRoles.isComplete(nil))
         XCTAssertTrue(UserFormRoles.isComplete(.outletStaff))
@@ -671,6 +675,10 @@ extension ProductsV2Tests {
 
     func testChipAndPreviewTexts() throws {
         let cart = try pricingCart()
+        // #684: the cart link reads price first
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "350.000đ")
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).unit,
+                       "products.price.perRental".localized().lowercased(with: Locale(identifier: "vi_VN")))
         XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).label, "products.price.perRental".localized())
         XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).price, "350.000đ")
         cart.selectPricingType(at: 0, type: "DAILY")

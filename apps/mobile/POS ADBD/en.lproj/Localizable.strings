@@ -2111,6 +2111,15 @@
 "cart.overlap.tagOneDay" = "Out %@";
 "cart.overlap.tagRange" = "Out %@ → %@";
 "cart.overlap.tagHint" = "See the orders holding it on %@";
+"cart.itemNote.add" = "+ Note";
+"cart.itemNote.label" = "Note";
+"cart.itemNote.edit" = "Edit";
+"cart.itemNote.title" = "Item note";
+"cart.itemNote.placeholder" = "e.g. take in the waist 2cm, add the veil";
+"cart.itemNote.hint" = "For this item in this order only. The order's own note is under Notes below the cart.";
+"cart.itemNote.clear" = "Delete note";
+"cart.itemNote.save" = "Save";
+"cart.itemNote.accessibility" = "Note for %@";
 "cart.overlap.line" = "%@ is %d short on %@ (rented in %@).";
 "cart.overlap.line.noOrders" = "%@ is %d short on %@.";
 "cart.overlap.title" = "Schedule overlap";

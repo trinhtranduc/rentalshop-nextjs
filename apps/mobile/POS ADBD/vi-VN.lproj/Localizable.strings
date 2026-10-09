@@ -2109,6 +2109,15 @@
 "cart.overlap.tagOneDay" = "Hết %@";
 "cart.overlap.tagRange" = "Hết %@ → %@";
 "cart.overlap.tagHint" = "Xem các đơn đang giữ món ngày %@";
+"cart.itemNote.add" = "+ Ghi chú";
+"cart.itemNote.label" = "Ghi chú";
+"cart.itemNote.edit" = "Sửa";
+"cart.itemNote.title" = "Ghi chú món";
+"cart.itemNote.placeholder" = "Ví dụ: sửa eo 2cm, giao kèm voan";
+"cart.itemNote.hint" = "Chỉ cho món này trong đơn. Ghi chú chung của đơn ở mục Ghi chú bên dưới giỏ.";
+"cart.itemNote.clear" = "Xoá ghi chú";
+"cart.itemNote.save" = "Lưu";
+"cart.itemNote.accessibility" = "Ghi chú cho %@";
 "cart.overlap.line" = "%@ thiếu %d bộ ngày %@ (đã thuê ở %@).";
 "cart.overlap.line.noOrders" = "%@ thiếu %d bộ ngày %@.";
 "cart.overlap.title" = "Trùng lịch";

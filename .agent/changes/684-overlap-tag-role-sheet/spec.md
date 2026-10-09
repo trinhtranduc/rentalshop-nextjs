@@ -17,3 +17,10 @@
    last row the line total (bold, left, under the text) and the −/+ stepper (right). No separate "450.000/lần × 1"
    line. Sale lines keep "Còn N" under the link.
 9. Web Thêm nhân viên (`apps/client/app/users/add`): no role card selected by default (the cards already explain each role); saving without one shows the existing "Chọn vai trò" error.
+10. Cart per-item note (canvas N1/N2): under the pricing link, "+ Ghi chú" (14pt semibold, muted) when the line has no
+    note, else a light box "Ghi chú · <note> Sửa" (2 lines max). Either opens a separate sheet "Ghi chú món" (title + ✕,
+    product name, 5-line text area, "Chỉ cho món này trong đơn…", "Xoá ghi chú" / "Lưu"). The note is sent as
+    `orderItems[].notes` (already supported by the API and both cart models). Empty text clears it.
+11. Role sheet (canvas N3) looks like the order ⋯ action sheet: title "Chọn quyền" + ✕, subtitle, one row per allowed
+    role with an icon box, the role name (16pt) and its help line; the current role has a blue icon and ✓.
+

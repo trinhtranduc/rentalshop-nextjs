@@ -471,6 +471,17 @@ enum CartV2Logic {
         return (label, price)
     }
 
+    /// #684 (owner): the cart line's blue link reads price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày",
+    /// "900.000đ / giá bán"; `amount` nil = no price yet ("Nhập giá / theo lần")
+    static func link(_ item: CartItem, orderType: OrderType) -> (amount: String?, unit: String) {
+        let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
+        var unit = label.lowercased(with: Locale(identifier: "vi_VN"))
+        if orderType == .rent, item.isDailyPricing, item.rentalDays > 1 {
+            unit += " × " + PluralText.format("products.cart.days", count: item.rentalDays, item.rentalDays)
+        }
+        return (item.price > 0 ? money(item.price) : nil, unit)
+    }
+
     /// "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise
     static func priceText(_ price: Double, type: String, orderType: OrderType) -> String {
         guard orderType == .rent, type.uppercased() == ProductPricingMode.perDay.rawValue else { return money(price) }
@@ -485,6 +496,12 @@ enum CartV2Logic {
             return ("\(money(price)) × \(dayText) × \(quantity)", price * Double(days) * Double(quantity))
         }
         return ("\(money(price)) × \(quantity)", price * Double(quantity))
+    }
+
+    /// #684: a line's note as shown and sent: trimmed; nil when blank (an empty sheet clears the note)
+    static func noteText(_ note: String?) -> String? {
+        let trimmed = (note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
