@@ -109,4 +109,9 @@ describe('mobile app-config (#362)', () => {
     expect(res.body.data.features.newOrders).toBe(true);
     expect(res.headers['Cache-Control']).toBe('public, max-age=300');
   });
+  it('#682 inventoryRole is on by default and off only with INVENTORY_ROLE_ENABLED=false', () => {
+    expect(buildMobileAppConfig({}).inventoryRole).toBe(true);
+    expect(buildMobileAppConfig({ INVENTORY_ROLE_ENABLED: 'true' }).inventoryRole).toBe(true);
+    expect(buildMobileAppConfig({ INVENTORY_ROLE_ENABLED: 'false' }).inventoryRole).toBe(false);
+  });
 });

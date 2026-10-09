@@ -58,10 +58,11 @@ describe('#682 assigning the role', () => {
     expect(canAssignRole({ role: 'OUTLET_INVENTORY' }, 'OUTLET_STAFF', null)).toBe(false);
   });
 
-  it('cannot be given while INVENTORY_ROLE_ENABLED is not true; other roles are not affected', () => {
-    expect(isRoleAssignable('OUTLET_INVENTORY', {})).toBe(false);
+  it('can be given by default; INVENTORY_ROLE_ENABLED=false turns it off; other roles are not affected', () => {
+    expect(isRoleAssignable('OUTLET_INVENTORY', {})).toBe(true);
     expect(isRoleAssignable('OUTLET_INVENTORY', { INVENTORY_ROLE_ENABLED: 'false' })).toBe(false);
     expect(isRoleAssignable('OUTLET_INVENTORY', { INVENTORY_ROLE_ENABLED: 'true' })).toBe(true);
+    expect(isRoleAssignable('OUTLET_STAFF', { INVENTORY_ROLE_ENABLED: 'false' })).toBe(true);
     expect(isRoleAssignable('OUTLET_STAFF', {})).toBe(true);
   });
 });

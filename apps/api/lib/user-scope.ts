@@ -51,12 +51,13 @@ export function canAssignRole(actor: Actor, newRole: string, currentRole: string
 }
 
 /**
- * #682: Nhân viên kho can be given only once `INVENTORY_ROLE_ENABLED=true` (both new app versions released:
+ * #682: Nhân viên kho can be given unless `INVENTORY_ROLE_ENABLED=false` (kill switch; on by default since 2026-10-09:
  * an old Android app reads the role as UNKNOWN). Users who already have it keep it. Other roles always pass.
  */
 export function isRoleAssignable(role: string, env: Record<string, string | undefined> = process.env): boolean {
   if (role !== USER_ROLE.OUTLET_INVENTORY) return true;
-  return env.INVENTORY_ROLE_ENABLED === 'true';
+  // Owner 2026-10-09: on by default; INVENTORY_ROLE_ENABLED=false is the kill switch
+  return env.INVENTORY_ROLE_ENABLED !== 'false';
 }
 
 /**
