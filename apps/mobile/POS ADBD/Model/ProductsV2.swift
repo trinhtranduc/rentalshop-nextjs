@@ -522,6 +522,15 @@ enum CartV2Logic {
         return parts.amount + " / " + parts.unit
     }
 
+    /// Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent), the total sits on the right
+    static func orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> String {
+        let money = money(unitPrice)
+        let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+        guard orderType == .rent, type == ProductPricingMode.perDay.rawValue else { return "\(quantity) × \(money)" }
+        let days = max(1, rentalDays ?? 1)
+        return "\(quantity) × \(money) × " + PluralText.format("products.cart.days", count: days, days)
+    }
+
     /// The same line in two parts, for the bold price on order detail (board D2)
     static func orderItemPricingParts(unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> (amount: String, unit: String) {
         let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue

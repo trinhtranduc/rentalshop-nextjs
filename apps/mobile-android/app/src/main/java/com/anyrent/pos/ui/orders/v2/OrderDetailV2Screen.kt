@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -97,7 +98,6 @@ import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.ui.home.v2.orderItemPricingParts
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -225,23 +225,22 @@ fun OrderDetailV2Screen(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back), modifier = Modifier.size(DS.Icon.Lg))
             }
             // #643: "Đơn thuê #n" / "Đơn bán #n", centred between ← and ⋯
-            // Board D2: "Đơn 482913" with the status pill beside it
-            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                Text(
-                    detail?.summary?.let { stringResource(R.string.detail_nav_title, it.orderNumber) } ?: stringResource(R.string.order_detail),
-                    color = DS.Colors.Text,
-                    fontSize = DS.TextSize.Name,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                detail?.summary?.let { navSummary ->
-                    Spacer(Modifier.width(8.dp))
-                    Tag(stringResource(OrderStatusTag.labelRes(navSummary.status)), OrderStatusTag.colors(navSummary.status), RowTagStyle.STATUS)
-                }
-            }
+            // #643: "Đơn thuê #n" / "Đơn bán #n", centred between ← and ⋯
+            Text(
+                detail?.summary?.let {
+                    stringResource(
+                        if (OrderDetailHeader.isRent(it.orderType)) R.string.detail_title_rent else R.string.detail_title_sale,
+                        it.orderNumber,
+                    )
+                } ?: stringResource(R.string.order_detail),
+                color = DS.Colors.Text,
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (detail != null && actions != null) {
                 // #519 (board CT-thao-tac): only ⋯ in the header; it opens the action sheet
                 IconButton(onClick = { menuOpen = true }) {
@@ -269,6 +268,20 @@ fun OrderDetailV2Screen(
                         detail,
                         onPreview = { previewImage = it },
                         onEditNotes = { openNotes(detail) },
+                        readyRow = if (showReady) {
+                            {
+                                ReadyToDeliverRow(detail, saving = state.savingReady) { value, revert ->
+                                    vm.setReadyToDeliver(value) { error ->
+                                        if (error != null) {
+                                            revert()
+                                            toast(ApiErrorMessages.resolve(context, null, error))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            null
+                        },
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -491,11 +504,8 @@ private fun DetailHeader(detail: OrderDetail) {
         // Board D2 (owner 2026-10-09): bold name, then "phone · T6 09/10 → CN 11/10" on one line; tap the phone to dial
         val dial = OrderDetailHeader.dialNumber(summary.customerPhone)
         val callLabel = stringResource(R.string.detail_call_customer)
-        val pickup = OrderPlanDays.dayOf(summary.pickupPlanAt)?.let { formatDayShort(it) }
-        val returned = OrderPlanDays.dayOf(summary.returnPlanAt)?.let { formatDayShort(it) }
         val line = buildList {
             summary.customerPhone?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
-            if (isRent && pickup != null && returned != null) add("$pickup → $returned")
         }.joinToString(" · ")
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
@@ -550,6 +560,67 @@ private fun DetailHeader(detail: OrderDetail) {
             }
         }
     }
+        // #643: one light box: status pill + note (rent) or sale day, then the three steps of a rent
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF8FAFC), RoundedCornerShape(14.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tag(stringResource(OrderStatusTag.labelRes(summary.status)), OrderStatusTag.colors(summary.status), RowTagStyle.STATUS)
+                Spacer(Modifier.weight(1f))
+                val note = if (isRent) OrderDetailHeader.note(summary) else null
+                val text = if (isRent) note?.let { headerNoteText(it) }.orEmpty() else OrderDetailHeader.saleDay(summary, weekdays)
+                if (text.isNotEmpty()) {
+                    Text(
+                        text,
+                        fontSize = DS.TextSize.Secondary,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (note?.due is OrderDetailHeader.Due.PastPickup) DS.Status.Late.text else DS.Colors.TextMuted,
+                        textAlign = TextAlign.End,
+                    )
+                }
+            }
+            val steps = OrderDetailHeader.steps(summary, weekdays)
+            if (steps.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    steps.forEach { step ->
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .background(if (step.done) DS.Colors.Primary else Color(0xFFCBD5E1), RoundedCornerShape(4.dp)),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                stringResource(
+                                    when (step.title) {
+                                        OrderDetailHeader.StepTitle.BOOKED -> R.string.detail_step_booked
+                                        OrderDetailHeader.StepTitle.HAND_OVER -> R.string.detail_step_hand_over
+                                        OrderDetailHeader.StepTitle.HANDED_OVER -> R.string.detail_step_handed_over
+                                        OrderDetailHeader.StepTitle.RETURN -> R.string.detail_step_return
+                                        OrderDetailHeader.StepTitle.RETURNED -> R.string.detail_step_returned
+                                    },
+                                ),
+                                fontSize = DS.TextSize.Secondary,
+                                color = DS.Colors.TextMuted,
+                                maxLines = 1,
+                            )
+                            Text(
+                                step.day,
+                                fontSize = DS.TextSize.Body,
+                                fontWeight = FontWeight.Bold,
+                                color = if (step.accent) DS.Colors.Primary else DS.Colors.Text,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 }
 
@@ -581,6 +652,7 @@ private fun DetailBody(
     val status = summary.status.uppercase()
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         // #643: no "Lịch thuê" / "Ngày bán" rows; the header box carries the days, the steps and the sale day
+        if (isRent) readyRow?.invoke()
         detail.collateralDetails?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.collateral), it) }
 
         SectionTitle(stringResource(R.string.detail_items_count, detail.items.sumOf { it.quantity }))
@@ -861,6 +933,16 @@ internal fun MoneyRow(label: String, value: String, total: Boolean = false, valu
  * Board D2 (owner 2026-10-09): the row reads like the cart line — name, "400.000đ / theo ngày × 3 ngày", the item
  * note in a yellow box, then "SL N" and the line total (iOS `itemRow`)
  */
+/** Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent); the total stays on the right */
+@Composable
+private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): String {
+    val money = formatMoneyVnd(unitPrice)
+    val type = pricingType?.takeIf { it.isNotBlank() } ?: "FIXED"
+    if (isSale || !type.equals("DAILY", ignoreCase = true)) return "$quantity × $money"
+    val days = rentalDays.coerceAtLeast(1)
+    return "$quantity × $money × " + pluralStringResource(R.plurals.v2_cart_days, days, days)
+}
+
 @Composable
 private fun ItemRow(item: OrderItem, orderType: String) {
     val (amount, unit) = orderItemPricingParts(item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true))
@@ -890,7 +972,7 @@ private fun ItemRow(item: OrderItem, orderType: String) {
             CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(R.string.v2_detail_item_qty, item.quantity),
+                    orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
                     fontSize = DS.TextSize.Secondary,
                     color = DS.Colors.TextMuted,
                     modifier = Modifier.weight(1f),
@@ -916,7 +998,7 @@ private fun ItemNoteBox(note: String) {
             .semantics(mergeDescendants = true) { contentDescription = "$label: $note" },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(Icons.Outlined.Edit, contentDescription = null, tint = ink, modifier = Modifier.padding(top = 2.dp).size(16.dp))
+        Icon(Icons.Outlined.StickyNote2, contentDescription = null, tint = ink, modifier = Modifier.padding(top = 2.dp).size(16.dp))
         Text(note, fontSize = DS.TextSize.Secondary, color = ink)
     }
 }

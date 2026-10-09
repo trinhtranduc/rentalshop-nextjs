@@ -48,15 +48,13 @@ final class OrderDetailViewController: BaseViewControler {
         moreButton.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
         navBar.addRightButton(moreButton)
         // #430: a long order number ("#ORD-003-0022") shrinks to fit between the buttons instead of being cut
-        headerTitleLabel.font = Utils.boldFont(size: 20)
-        headerTitleLabel.textColor = APP_TEXT_COLOR
-        headerTitleLabel.adjustsFontSizeToFitWidth = true
-        headerTitleLabel.minimumScaleFactor = 0.7
-        let titleRow = UIStackView(arrangedSubviews: [headerTitleLabel, headerStatusTag])
-        titleRow.axis = .horizontal
-        titleRow.alignment = .center
-        titleRow.spacing = DS.Spacing.sm
-        navBar.setCustomTitleView(titleRow, centered: true)
+        let titleLabel = UILabel()
+        titleLabel.font = Utils.boldFont(size: 20)
+        titleLabel.textColor = APP_TEXT_COLOR
+        titleLabel.textAlignment = .center
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.7
+        navBar.setCustomTitleView(titleLabel, centered: true)
         buildLayout()
         load()
     }
@@ -182,9 +180,8 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func render() {
         guard let detail, let order = orderViewModel?.currentOrder else { return }
-        headerTitleLabel.text = String(format: "order.detail.navTitle".localized(), detail.orderNumber)
-        let status = OrdersHomeLogic.statusTag(detail.status)
-        headerStatusTag.apply(status.text, status.colors)
+        customNavBar?.title = String(format: OrderDetailLogic.titleKey(orderType: detail.orderType).localized(),
+                                     detail.orderNumber)
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         contentStack.addArrangedSubview(headerView(detail, order: order))
         contentStack.addArrangedSubview(infoRows(detail, order: order))
@@ -217,9 +214,6 @@ final class OrderDetailViewController: BaseViewControler {
         line.numberOfLines = 0
         var parts: [String] = []
         if let phone = customer.phone { parts.append(phone) }
-        if let pickup = detail.pickupPlanAt, let returnDay = detail.returnPlanAt, detail.orderType == .rent {
-            parts.append("\(DayFormatter.short(pickup)) → \(DayFormatter.short(returnDay))")
-        }
         line.text = parts.joined(separator: " · ")
         line.accessibilityIdentifier = "order.detail.customerLine"
         if let phone = customer.phone {
@@ -245,13 +239,11 @@ final class OrderDetailViewController: BaseViewControler {
         if late > 0 {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
+        stack.addArrangedSubview(statusBox(detail))
         return padded(stack, top: DS.Spacing.xs, bottom: DS.Spacing.lg, thickBottom: true)
     }
 
     private var dialNumber: String?
-    /// Board D2: the top bar reads "Đơn 482913" with the status pill beside it
-    private let headerTitleLabel = UILabel()
-    private let headerStatusTag = RowTagLabel(style: .status)
 
     @objc private func dialCustomer(_ gesture: UITapGestureRecognizer) {
         guard let phone = dialNumber, let url = URL(string: "tel://\(phone)") else { return }
@@ -371,7 +363,18 @@ final class OrderDetailViewController: BaseViewControler {
         let stack = UIStackView()
         stack.axis = .vertical
         if detail.orderType == .rent {
-            // Board D2: the dates sit in the customer line and the "Sẵn sàng giao" switch is gone from the screen
+            // #643: the steps carry the dates; the row stays only where there are no steps (cancelled)
+            if let from = detail.pickupPlanAt, let to = detail.returnPlanAt,
+               !OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
+                let days = detail.rentalDuration ?? OrderDetailLogic.rentalDays(pickup: from, return: to) ?? 1
+                stack.addArrangedSubview(keyValue("Rental dates".localized(),
+                    "\(OrderDetailLogic.dayMonth(from)) → \(OrderDetailLogic.dayMonth(to)) · " + PluralText.format("%d days", count: days, days),
+                    bold: true))
+            }
+            if OrderDetailLogic.showsReadyToDeliver(orderType: detail.orderType, status: detail.status,
+                                                    canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
+                stack.addArrangedSubview(readyToDeliverRow(detail))
+            }
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
                 stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.short(picked)))
             }
@@ -493,7 +496,8 @@ final class OrderDetailViewController: BaseViewControler {
         let qty = UILabel()
         qty.font = Utils.regularFont(size: DS.TextSize.secondary)
         qty.textColor = DS.Color.textMuted
-        qty.text = "Qty".localized() + " \(item.quantity)"
+        qty.text = CartV2Logic.orderItemQuantityLine(quantity: item.quantity, unitPrice: item.unitPrice, pricingType: item.pricingType,
+                                                     rentalDays: item.rentalDays, orderType: orderType)
         let total = UILabel()
         total.font = Utils.boldFont(size: DS.TextSize.name)
         total.textColor = DS.Color.text
@@ -514,10 +518,10 @@ final class OrderDetailViewController: BaseViewControler {
         return padded(row, top: 0, bottom: 0, divider: true)
     }
 
-    /// Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name
+    /// Board D2: the item note on a light yellow box with a note icon, so it does not read as part of the name
     private func noteBox(_ note: String) -> UIView {
         let ink = UIColor(hexString: "7A4A00")
-        let icon = UIImageView(image: DS.symbol("pencil", 14, weight: .semibold))
+        let icon = UIImageView(image: DS.symbol("note.text", 14, weight: .semibold))
         icon.tintColor = ink
         icon.setContentHuggingPriority(.required, for: .horizontal)
         let label = UILabel()
