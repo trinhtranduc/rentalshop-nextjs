@@ -1501,6 +1501,15 @@
     <string name="image_search_tip_photo">The product needs a photo in your list</string>
     <string name="detail_nav_title">Order %1$s</string>
     <string name="detail_deposit">Deposit</string>
-    <string name="overview_v2_rule_received">Money actually collected in the period (deposits, rent on hand-over, sales, extra fees, minus refunds) and the collateral held. Collateral is shown separately.</string>
+    <string name="overview_v2_rule_received">Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.</string>
     <string name="overview_v2_new_orders_count">%1$d new orders</string>
+    <string name="overview_v2_related_view">See the orders behind it →</string>
+    <string name="overview_v2_related_total">Total of the rows</string>
+    <string name="overview_v2_related_empty">No orders in this period.</string>
+    <string name="overview_v2_related_created">Created in the period</string>
+    <string name="overview_v2_related_cancelled">Cancelled, not counted</string>
+    <string name="overview_v2_related_owes">To collect at pickup</string>
+    <string name="overview_v2_related_collateral_in">Collateral received at hand-over</string>
+    <string name="overview_v2_related_collateral_out">Collateral returned</string>
+    <string name="overview_v2_collected_includes_collateral">Collateral included</string>
 </resources>

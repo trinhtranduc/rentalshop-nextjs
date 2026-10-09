@@ -93,9 +93,11 @@ import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
 import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.domain.overview.OverviewLinks
+import com.anyrent.pos.domain.overview.OverviewRelatedKind
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
 import com.anyrent.pos.ui.overview.v2.NotPickedUpScreen
+import com.anyrent.pos.ui.overview.v2.OverviewRelatedScreen
 import com.anyrent.pos.ui.overview.v2.OverviewTopAllScreen
 import java.time.LocalDate
 import com.anyrent.pos.domain.overview.DayRange
@@ -138,6 +140,8 @@ object Routes {
     const val RentedOut = "rented-out"
     // #496: "Chưa lấy đồ" list of the redesigned overview (past pickup day first)
     const val NotPickedUp = "not-picked-up"
+    // #722: "Xem các đơn liên quan" of an overview figure ([OverviewRelatedKind.key]), rows add up to the figure
+    const val OverviewRelated = "overview-related/{kind}/{startDate}/{endDate}"
     // #633: "Xem tất cả" of the overview's Top sản phẩm / Top khách hàng
     const val OverviewTopAll = "overview-top/{kind}/{startDate}/{endDate}"
     const val Cart = "cart"
@@ -166,6 +170,7 @@ object Routes {
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
     fun analyticsOrders(entityType: String, entityId: Int, start: String, end: String) =
         "analytics-orders/$entityType/$entityId?start=$start&end=$end"
+    fun overviewRelated(kind: String, startDate: String, endDate: String) = "overview-related/$kind/$startDate/$endDate"
     fun overviewStatusOrders(kind: String, startDate: String, endDate: String) =
         "overview-orders/$kind/$startDate/$endDate"
     fun overviewTopAll(kind: String, startDate: String, endDate: String) =
@@ -439,6 +444,23 @@ fun AnyRentNavHost(
                     val type = if (kind == OverviewTopKind.PRODUCTS) "product" else "customer"
                     rootNavController.navigate(Routes.analyticsOrders(type, id, start, end))
                 },
+                onBack = { rootNavController.popBackStack() },
+            )
+        }
+        composable(
+            Routes.OverviewRelated,
+            arguments = listOf(
+                navArgument("kind") { type = NavType.StringType },
+                navArgument("startDate") { type = NavType.StringType },
+                navArgument("endDate") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val kind = OverviewRelatedKind.from(entry.arguments?.getString("kind")) ?: return@composable
+            OverviewRelatedScreen(
+                kind = kind,
+                startDate = entry.arguments?.getString("startDate").orEmpty(),
+                endDate = entry.arguments?.getString("endDate").orEmpty(),
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                 onBack = { rootNavController.popBackStack() },
             )
         }
@@ -906,6 +928,7 @@ private fun MainTabs(
                     onOpenTopAll = { kind, start, end -> rootNavController.navigate(Routes.overviewTopAll(kind, start, end)) },
                     onOpenRentedOut = { rootNavController.navigate(Routes.RentedOut) { launchSingleTop = true } },
                     onOpenNotPickedUp = { rootNavController.navigate(Routes.NotPickedUp) { launchSingleTop = true } },
+                    onOpenRelated = { kind, start, end -> rootNavController.navigate(Routes.overviewRelated(kind, start, end)) },
                     // #496: "Việc hôm nay" rows open the Orders tab, like tapping the tab
                     onOpenOrdersTab = { MainTabRouter.openOrdersList(refresh = false) },
                 )

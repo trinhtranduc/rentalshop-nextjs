@@ -76,6 +76,7 @@ import com.anyrent.pos.domain.overview.CollateralFlow
 import com.anyrent.pos.domain.overview.CollectedBreakdown
 import com.anyrent.pos.domain.overview.DayRange
 import com.anyrent.pos.domain.overview.OverviewLinks
+import com.anyrent.pos.domain.overview.OverviewRelatedKind
 import com.anyrent.pos.domain.overview.OverviewBar
 import com.anyrent.pos.domain.overview.OverviewChart
 import com.anyrent.pos.domain.overview.OutstandingBreakdown
@@ -136,6 +137,8 @@ fun OverviewV2Screen(
     onOpenNotPickedUp: () -> Unit = {},
     /** #496: the "Việc hôm nay" rows open the Orders tab */
     onOpenOrdersTab: () -> Unit = {},
+    /** #722: "Xem các đơn liên quan" of a figure: ([OverviewRelatedKind.key], start, end) */
+    onOpenRelated: (String, String, String) -> Unit = { _, _, _ -> },
 ) {
     val state by viewModel.state.collectAsState()
     // #674: back on screen or an order changed: quiet reload only when dirty or 10 minutes old
@@ -148,6 +151,7 @@ fun OverviewV2Screen(
     var showPicker by remember { mutableStateOf(false) }
     val today = viewModel.today()
     val range = OverviewLogic.range(state.period, today)
+    val openRelated = { kind: OverviewRelatedKind -> onOpenRelated(kind.key, range.start.toString(), range.end.toString()) }
     val periodTitle = when (val period = state.period) {
         is OverviewPeriod.Preset -> presetTitle(period.preset)
         is OverviewPeriod.Custom -> OverviewLogic.shortRange(period.range)
@@ -207,7 +211,10 @@ fun OverviewV2Screen(
                 }
                 // #388: each figure opens its list (the kind of the `overview-orders` route)
                 val stats = buildList {
-                    state.report?.newOrders?.takeIf { state.showsRevenue }?.let { add(StatRowData(R.string.overview_v2_new_orders, it.toString(), DS.Colors.Text, OverviewLinks.NEW)) }
+                    // #722: the orders behind the order value (rent + sale, cancelled left out, #716); older API: orderCounts.new
+                    (state.report?.orderValueOrders ?: state.report?.newOrders)?.takeIf { state.showsRevenue }?.let {
+                        add(StatRowData(R.string.overview_v2_new_orders, it.toString(), DS.Colors.Text, OverviewLinks.NEW))
+                    }
                     state.now?.rentedOut?.let { add(StatRowData(R.string.overview_v2_rented_out, it.toString(), DS.Colors.Text, OverviewLinks.RENTED)) }
                     state.now?.takeIf { state.showsOperations }?.let {
                         add(StatRowData(R.string.overview_v2_late_returns, it.lateReturns.toString(), if (it.lateReturns > 0) V2Colors.Danger else DS.Colors.Text, OverviewLinks.LATE))
@@ -227,6 +234,12 @@ fun OverviewV2Screen(
                                         when (kind) {
                                             OverviewLinks.RENTED, OverviewLinks.LATE -> Modifier.clickable(onClick = onOpenRentedOut)
                                             NO_SHOWS_KIND -> Modifier.clickable(onClick = onOpenNotPickedUp)
+                                            // #722: the created orders with their value (cancelled ones at 0), total = the order value
+                                            OverviewLinks.NEW -> if (state.report?.orderValueOrders != null) {
+                                                Modifier.clickable { openRelated(OverviewRelatedKind.ORDER_VALUE) }
+                                            } else {
+                                                Modifier.clickable { onOpenList(kind, range.start.toString(), range.end.toString()) }
+                                            }
                                             else -> Modifier.clickable { onOpenList(kind, range.start.toString(), range.end.toString()) }
                                         }
                                     } ?: Modifier,
@@ -320,6 +333,10 @@ fun OverviewV2Screen(
                     collateralToCollect = state.now?.collateralToCollect,
                     periodTitle = periodTitle,
                     onClose = { showDetails = false },
+                    onOpenRelated = { kind ->
+                        showDetails = false
+                        openRelated(kind)
+                    },
                 )
             } else {
                 CollectedDetailSheet(
@@ -344,10 +361,10 @@ fun OverviewV2Screen(
                 breakdown = outstandingBreakdown,
                 periodTitle = periodTitle,
                 onClose = { showOutstanding = false },
-                // #496: both rows open "Chưa lấy đồ"; the sheet closes first
+                // #722: both rows open the period's orders still owing (the tile's orders), not every order not picked up
                 onOpenNotPickedUp = {
                     showOutstanding = false
-                    onOpenNotPickedUp()
+                    openRelated(OverviewRelatedKind.OUTSTANDING)
                 },
             )
         }
@@ -433,11 +450,15 @@ private fun RevenueSection(
                 val tiles = buildList {
                     if (orderValue != null) {
                         add(
+                            // #722: money held, collateral included (cashCollected), as on iOS and web
                             TileData(
-                                stringResource(R.string.overview_v2_collected), formatMoneyVnd(report.netRevenue), DS.Colors.Text,
-                                sub = stringResource(R.string.overview_v2_collected_excludes_collateral),
+                                stringResource(R.string.overview_v2_collected), formatMoneyVnd(report.heldCash), DS.Colors.Text,
+                                sub = stringResource(
+                                    if (report.cashCollected != null || report.collateralFlow != null) R.string.overview_v2_collected_includes_collateral
+                                    else R.string.overview_v2_collected_excludes_collateral,
+                                ),
                                 onClick = onDetails,
-                                description = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.netRevenue)),
+                                description = stringResource(R.string.overview_v2_collected_tile_accessibility, formatMoneyVnd(report.heldCash)),
                             ),
                         )
                     }
@@ -699,6 +720,7 @@ private fun ReceivedDetailSheet(
     collateralToCollect: CollateralCount?,
     periodTitle: String,
     onClose: () -> Unit,
+    onOpenRelated: (OverviewRelatedKind) -> Unit,
 ) {
     var collectedOpen by remember { mutableStateOf(false) }
     var collateralOpen by remember { mutableStateOf(false) }
@@ -707,17 +729,18 @@ private fun ReceivedDetailSheet(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SheetTitle("${stringResource(R.string.overview_v2_received_title)} · $periodTitle")
+        // #722: this is "Thực thu" (money held, collateral included), as on iOS and web
+        SheetTitle("${stringResource(R.string.overview_v2_collected)} · $periodTitle")
         // Where the number comes from, in one sentence (same rule as iOS)
         Text(stringResource(R.string.overview_v2_rule_received), fontSize = DS.TextSize.Body, lineHeight = 22.sp, color = Color(0xFF334155))
         Column {
             Text(stringResource(R.string.overview_v2_received_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-            Text(formatMoneyVnd(flow.totalReceived(report.netRevenue)), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
+            Text(formatMoneyVnd(report.heldCash), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1)
         }
         Column {
             ThinDivider()
             DetailRow(
-                stringResource(R.string.overview_v2_collected), stringResource(R.string.overview_v2_collected_shop),
+                stringResource(R.string.overview_v2_collected_shop), null,
                 formatMoneyVnd(report.netRevenue),
                 expanded = if (breakdown != null) collectedOpen else null,
                 onClick = if (breakdown != null) ({ collectedOpen = !collectedOpen }) else null,
@@ -743,10 +766,12 @@ private fun ReceivedDetailSheet(
                 Column(Modifier.padding(start = 16.dp)) {
                     AmountRow(stringResource(R.string.overview_v2_collateral_received), "+" + formatMoneyVnd(flow.received))
                     AmountRow(stringResource(R.string.overview_v2_collateral_returned), "−" + formatMoneyVnd(flow.returned), V2Colors.Danger)
+                    RelatedLink { onOpenRelated(OverviewRelatedKind.COLLATERAL) }
                 }
             }
             ThinDivider()
         }
+        RelatedLink { onOpenRelated(OverviewRelatedKind.COLLECTED) }
         if (collateralToReturn != null || collateralToCollect != null) {
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(V2Colors.Section).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -859,6 +884,16 @@ private fun Chevron() {
 internal fun topTitle(kind: OverviewTopKind): Int = when (kind) {
     OverviewTopKind.PRODUCTS -> R.string.overview_v2_top_rented
     OverviewTopKind.CUSTOMERS -> R.string.overview_v2_top_customers
+}
+
+/** #722 "Xem các đơn liên quan →" under a figure */
+@Composable
+private fun RelatedLink(onClick: () -> Unit) {
+    Text(
+        stringResource(R.string.overview_v2_related_view),
+        fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).heightIn(min = 44.dp).padding(vertical = 10.dp),
+    )
 }
 
 @Composable
