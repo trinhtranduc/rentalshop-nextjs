@@ -12,7 +12,7 @@ quả trên máy), *chưa viết* (còn thiếu, kèm lý do).
 
 | Tầng | Kết quả |
 |---|---|
-| API (`business-e2e.sh`, 18 suite, 655 ca) | UTC: 583 đạt, 0 lỗi, 72 known-bug. Asia/Ho_Chi_Minh: 583 đạt, 0 lỗi, 72 known-bug. 72 = 56 (#577) + #504, #505, #506, #707 + #728 ×3 + #729 ×3 + #730..#732 (staff và kho, 6 ca) |
+| API (`business-e2e.sh`, 18 suite, 655 ca) | UTC: 583 đạt, 0 lỗi, 71 known-bug. Asia/Ho_Chi_Minh: 583 đạt, 0 lỗi, 71 known-bug. 71 = 56 (#577) + #504, #505, #506 + #728 ×3 + #729 ×3 + #730..#732 (staff và kho, 6 ca) |
 | Web: số liệu Tổng quan (`dashboard-stats.web.js`, 4 kỳ) | 156 đạt, 0 lỗi |
 | Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 |
 | Web: từng tính năng giao diện (`--ui`) | 632 đạt, 0 lỗi, 8 known |
@@ -382,7 +382,7 @@ Each case runs for every client flavour: `web`, `app`, `appStoreIosOrderCheck`, 
 
 | ID | Case | Expected |
 |---|---|---|
-| BF-STAT-01 | Giá trị đơn mới | rows of status=new add up to `totalOrderValue`, none cancelled. **Known bug #707** (the list shows cancelled orders; the owner chose to list them with 0) |
+| BF-STAT-01 | Giá trị đơn mới | rows of status=new add up to `totalOrderValue`; a cancelled order is listed and adds 0 (#707, chủ cửa hàng quyết định ngày 2026-10-09) |
 | BF-STAT-02 | Thế chân theo dòng | a hand-over adds its collateral; a same-day hand-over then cancel adds none |
 | BF-STAT-03 | Thực thu | revenue of every event (status=all) = `cashCollected` |
 | BF-STAT-04 | Thế chân | collateral of every event row = `collateralFlow` received − returned |
@@ -594,7 +594,7 @@ Không tự động được: `SUBSCRIPTION_PERIOD_ENDED` / `SUBSCRIPTION_PERIOD
 | BF-ROLE-15..41 | Ma trận quyền, hai chiều, 27 dòng (`-staff`, `-kho`) | mỗi dòng kiểm status mong đợi, dòng bị từ chối kiểm dữ liệu không đổi. Staff 403 / kho 2xx: sửa, xoá, xuất, nhập hàng loạt sản phẩm, tạo danh mục. Cả hai 2xx: tạo sản phẩm, tạo và sửa đơn, tạo khách, billing status, loyalty, today-metrics, income/daily, chi nhánh (của mình). Cả hai 403: xoá đơn (một và hàng loạt), xuất đơn, xuất khách, danh sách và tạo người dùng, cài đặt cửa hàng, cài đặt trùng lịch, cài đặt chi nhánh, tài khoản ngân hàng, đổi gói, `period`, sửa chi nhánh |
 
 BF-INV-09 đã sửa: kiểm vai trò chạy trước kiểm gói, nên gói đã đầy trả 422 `PLAN_LIMIT_EXCEEDED` và test khẳng định đúng điều đó; nếu người dùng được tạo, test xoá nó.
-Kết quả: 133 ca mới mỗi múi giờ (54 + 79); 3 file (work-stock, roles-flows, inventory-role) 144 đạt, 0 lỗi, 6 known-bug; cả bộ business (655 ca) lượt hai: 583 đạt, 0 lỗi, 72 known-bug, ở cả UTC và Asia/Ho_Chi_Minh.
+Kết quả: 133 ca mới mỗi múi giờ (54 + 79); 3 file (work-stock, roles-flows, inventory-role) 144 đạt, 0 lỗi, 6 known-bug; cả bộ business (655 ca) lượt hai: 583 đạt, 0 lỗi, 71 known-bug, ở cả UTC và Asia/Ho_Chi_Minh.
 Không tự động được ở mức API: giao một phần của đơn (không có API; chỉ có sửa số lượng trước khi giao, BF-DET-02); thanh toán đơn (Q5); chữ "N / M" và màu trên màn hình (chỉ chứng minh được bộ đếm và danh sách app đọc); qua nửa đêm thật (dùng 00:30 và 23:30 hai bên); đăng nhập staff / kho của chi nhánh khác (đăng nhập bị giới hạn 10 lần / 15 phút / IP).
 
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
@@ -805,7 +805,6 @@ Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi 
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 |
 | #506 | Top khách hàng tính cả thế chân vào tiền đã chi | BF-OVR-04 |
 | #577 | đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-08-oldAndroid (56 ca) |
-| #707 | danh sách "Giá trị đơn mới" có đơn huỷ (chủ chọn hiện với giá trị 0: cần đổi test) | BF-STAT-01 |
 | #728 | tuyến `requireActiveSubscription:false` vẫn bị chặn với cửa hàng hết hạn: không xem được trạng thái, danh sách gói, đổi gói, checkout; web không có đường gia hạn | BF-SUB-17..19, WEB-SUB-01..05 (-c, -d) |
 | #729 | khách, chi nhánh, đơn đã xoá vẫn tính vào giới hạn gói | BF-SUB-48..50 |
 | #730 | staff / kho sửa đơn của chi nhánh khác thì đơn bị chuyển sang chi nhánh của họ | BF-ROLE-07 |

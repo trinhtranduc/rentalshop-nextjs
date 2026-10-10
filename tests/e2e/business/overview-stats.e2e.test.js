@@ -2,7 +2,7 @@
  * BF-STAT: each Overview tile equals the sum of the rows its tap opens (apps: GET /api/analytics/income/orders).
  *
  * - "Giá trị đơn mới" = totalOrderValue (orders created in the period, cancelled excluded): the rows of status=new
- *   must add up to the same money, so a cancelled order must not be in that list.
+ *   add up to the same money; a cancelled order is listed and adds 0 (#707, owner decision).
  * - "Thế chân" = collateralFlow received − returned: the `collateral` of every event row (status=all, #721) must add up
  *   to it. The pickup / return buckets list orders by day and do not net a same-day pickup + return or + cancel.
  * - "Thực thu" = revenue.cashCollected: the revenue of every event in the period (status=all) must add up to it.
@@ -13,8 +13,7 @@ const {
   vnDateKey,
   rentBody,
   futureWindow,
-  overviewNumbers,
-  knownBug
+  overviewNumbers
 } = require('../helpers/api');
 
 /** Rows of GET /api/analytics/income/orders for one bucket of the period, every page (as the apps load them) */
@@ -40,7 +39,9 @@ describeE2E('BF-STAT Overview tiles agree with the rows their tap opens', () => 
     s = await Session.login('merchant');
   });
 
-  knownBug('#707', 'BF-STAT-01 Giá trị đơn mới: the new-orders rows add up to totalOrderValue (no cancelled rows)', async () => {
+  // #707, owner decision (2026-10-09): a cancelled order is listed with value 0, the apps show it that way and the rows
+  // still add up to the tile because only the orders that are not cancelled add money.
+  test('BF-STAT-01 Giá trị đơn mới: the new-orders rows add up to totalOrderValue (a cancelled order is listed and adds 0)', async () => {
     const rentP = await s.createProduct({ kind: 'DAILY', price: 70000, stock: 5 });
     const c1 = await s.createCustomer();
     const c2 = await s.createCustomer();
@@ -52,7 +53,7 @@ describeE2E('BF-STAT Overview tiles agree with the rows their tap opens', () => 
     const report = await s.period(today, today);
     const rows = await incomeRows(s, 'new', today);
     const money = rows.filter((r) => r.status !== 'CANCELLED').reduce((sum, r) => sum + (Number(r.totalAmount) || 0), 0);
-    expect(rows.some((r) => r.status === 'CANCELLED')).toBe(false);
+    expect(rows.some((r) => r.id === cancelled.id && r.status === 'CANCELLED')).toBe(true);
     expect(money).toBe(report.revenue.totalOrderValue);
   });
 
