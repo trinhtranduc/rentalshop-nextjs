@@ -17,8 +17,8 @@ const F = require('./web-fixtures');
 
 /** Checks that fail on purpose until the named issue is fixed: id -> '#N' (a pass is reported "fixed?") */
 const KNOWN = {
-  'WEB-ROLE-10c': '#736', // /outlets shows Thêm chi nhánh / Sửa to staff (API 403)
-  'WEB-ROLE-11c': '#736', // same for kho
+  'WEB-ROLE-10d': '#745', // Thêm chi nhánh is hidden for everybody by PR #746; remove this line once it is merged here
+  'WEB-ROLE-11d': '#745',
   'WEB-ROLE-26': '#737', // /loyalty raw key errors.PLAN_UPGRADE_REQUIRED (staff)
   'WEB-ROLE-27': '#737' // same (merchant)
 };
@@ -146,7 +146,8 @@ async function main() {
       const merchantPut = await F.raw(M, 'PUT', `/api/outlets?outletId=${outletId}`, { name: `E2E Web ${tag} - Cửa hàng chính` });
       check(`${id}a`, `${role}: /outlets lists only the own outlet`, !t.includes(otherOutletName), `otherOutletShown=${t.includes(otherOutletName)}`);
       check(`${id}b`, `${role}: API rejects create (403) and edit (403/404) of an outlet; the merchant's own edit works (${merchantPut.status})`, apiPost.status === 403 && [403, 404].includes(apiPut.status) && merchantPut.status === 200, `post=${apiPost.status} put=${apiPut.status} merchantPut=${merchantPut.status}`);
-      check(`${id}c`, `${role}: "Thêm chi nhánh" and "Sửa" are hidden (the API rejects them)`, addBtn === 0 && editBtn === 0, `addButtons=${addBtn} editButtons=${editBtn}`);
+      check(`${id}c`, `${role}: "Sửa" is hidden (the API rejects it)`, editBtn === 0, `editButtons=${editBtn}`);
+      check(`${id}d`, `${role}: "Thêm chi nhánh" is hidden (the API rejects it)`, addBtn === 0, `addButtons=${addBtn}`);
     }
 
     // ---------------------------------------------------------------- WEB-ROLE-12..14 products: controls vs API
