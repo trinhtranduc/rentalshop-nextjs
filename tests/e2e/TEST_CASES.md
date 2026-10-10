@@ -8,16 +8,17 @@ và trạng thái. Khi thêm một luật hay một màn hình mới, thêm ca v
 đang fail có chủ đích vì lỗi #N; `BIZ_E2E_SHOW_BUGS=1` cho thấy số thật), *đã viết, chưa chạy* (có code, chưa có kết
 quả trên máy), *chưa viết* (còn thiếu, kèm lý do).
 
-## Kết quả lần chạy gần nhất (2026-10-10, nhánh `test/full-e2e-cases` đã gộp `dev`)
+## Kết quả lần chạy gần nhất (2026-10-10, trên `dev` sau khi merge các bản sửa)
 
 | Tầng | Kết quả |
 |---|---|
-| API (`business-e2e.sh`, 18 suite, 655 ca) | UTC: 583 đạt, 0 lỗi, 71 known-bug. Asia/Ho_Chi_Minh: 583 đạt, 0 lỗi, 71 known-bug. 71 = 56 (#577) + #504, #505, #506 + #728 ×3 + #729 ×3 + #730..#732 (staff và kho, 6 ca) |
+| API (`business-e2e.sh --build`, 19 suite, 671 ca) | UTC: 614 đạt, 0 lỗi, 57 known-bug. Asia/Ho_Chi_Minh: giống hệt. 57 = 56 ca của #577 (giỏ Android cũ trước #413) + 1 ca của #505 (BF-EDIT-11, chờ PR #764) |
 | Web: số liệu Tổng quan (`dashboard-stats.web.js`, 4 kỳ) | 156 đạt, 0 lỗi |
-| Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 |
-| Web: từng tính năng giao diện (`--ui`) | 632 đạt, 0 lỗi, 8 known |
-| iOS | lượt đầy đủ trước đó: 25 đạt, 7 fail (xem mục iOS); các test mới và 7 ca fail đang được chạy lại, kết quả cập nhật ở mục MOB |
+| Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 (chưa lật các known của #728, #736 sau khi sửa) |
+| Web: từng tính năng giao diện (`--ui`), trình duyệt thật trên `dev` | public 130/130; products 56 đạt, 1 known (#742, đã sửa sau lần chạy này); settings 66 đạt, kiểm tra cuối của SET-06 đã sửa trong test, chưa chạy lại riêng |
+| iOS | các luồng mới đều đạt với số khớp API; 2 lỗi app mới (#753, #754) đang được sửa; xem mục iOS |
 | Android | số liệu Báo cáo khớp API (kỳ 7 ngày); các luồng khác đang được chạy lại |
+| Unit (`cd tests && npx jest`) | 30 nhóm / 34 test fail trên `dev` trước #763; sau #763 3 nhóm bảo vệ đã cập nhật; 13 nhóm không chạy được vì lỗi cấu hình jest (`Unexpected token '<'`), xem #762 |
 
 ## Lệnh chạy
 
@@ -645,7 +646,7 @@ Kết quả lần chạy đầy đủ `--accounts --headed`: roles 63 đạt / 0
 | WEB-ROLE-21, 22 | Lịch và tồn trống, staff, kho | mở hai trang | bảng ngày và tìm kiếm tải được, không lỗi |
 | WEB-ROLE-23, 24 | Cài đặt, staff, kho (a, b) | `/dashboard?settings=subscription` | rơi về tab chi nhánh chỉ đọc, không có gói hay giá; API PUT chi nhánh và GET merchant bị từ chối |
 | WEB-ROLE-25 | Cài đặt, merchant | mở cài đặt | thấy các tab và gói |
-| WEB-ROLE-26, 27 | /loyalty khi gói không có loyalty (staff, merchant) | mở /loyalty | thẻ nâng cấp, không lộ key (**known #737**: đang hiện `errors.PLAN_UPGRADE_REQUIRED`) |
+| WEB-ROLE-26, 27 | /loyalty khi gói không có loyalty (staff, merchant) | mở /loyalty | thẻ nâng cấp, không lộ key (#737, đã sửa bằng #743) |
 | WEB-ROLE-28..30 | Tiếng Anh, staff, kho, merchant | 5 trang chính ở en | chỉ chữ Anh, không lộ key |
 | WEB-DASH-01 (hôm nay, 7 ngày, tháng) | Merchant chưa có đơn | mở từng kỳ | bốn thẻ 0, không NaN, không "không tải được" |
 | WEB-DASH-02 | Cùng merchant | /dashboard | "Hôm nay không có đơn cần giao hay nhận trả", bộ đếm 0/0 |
@@ -818,7 +819,9 @@ Lượt chạy đầy đủ gần nhất (merchant1, API cục bộ, tiếng Vi�
 
 Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi app) và sửa hoặc ghi known bug; chưa làm trong PR này.
 
-## Lỗi đã biết mà test đang giữ (known bug)
+## Lỗi đã biết mà test đang giữ (known bug) và lỗi đã sửa trong đợt này
+
+Còn giữ bằng test:
 
 | Issue | Lỗi | Ca test |
 |---|---|---|
@@ -828,21 +831,14 @@ Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi 
 | #504 | (đã sửa) sửa số lượng đơn đang thuê làm kẹt món ở "đang thuê" | BF-QTY-04..12 |
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 |
 | #577 | đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-08-oldAndroid (56 ca) |
-| #728 | tuyến `requireActiveSubscription:false` vẫn bị chặn với cửa hàng hết hạn: không xem được trạng thái, danh sách gói, đổi gói, checkout; web không có đường gia hạn | BF-SUB-17..19, WEB-SUB-01..05 (-c, -d) |
-| #729 | khách, chi nhánh, đơn đã xoá vẫn tính vào giới hạn gói | BF-SUB-48..50 |
-| #730 | staff / kho sửa đơn của chi nhánh khác thì đơn bị chuyển sang chi nhánh của họ | BF-ROLE-07 |
-| #731 | staff / kho đọc được đơn của chi nhánh khác (`GET /api/orders/{id}`, by-number) | BF-ROLE-08 |
-| #732 | staff / kho đọc được tồn và lịch đặt của chi nhánh khác qua các route availability | BF-ROLE-09 |
-| #736 | staff / kho thấy "Thêm chi nhánh" và "Sửa" ở /outlets (API từ chối) | WEB-ROLE-10c, 11c |
-| #737, #738 (sửa trong PR #743) | /loyalty và gói không có quyền web hiện khoá thô `errors.…` | WEB-ROLE-26, 27; WEB-SUB-08 |
-| #740 (PR #743) | 118 mã lỗi API chưa dịch, `translateError` hiện `errors.<MÃ>` | `tests/error-codes-translated.test.ts` |
-| #733 | thẻ gói trên trang chủ hiện khoá thô `plans.features.loyalty` (không có trong `locales/*/plans.json`) | WEB-UI-PUB (known) |
-| #734 | `/pricing` viết cứng tiếng Anh, bỏ qua ngôn ngữ | WEB-UI-PUB (known) |
-| #735 | `/pricing` lỗi hydration ("2,000" ở server, "2.000" ở client: `toLocaleString()` không có locale) | WEB-UI-PUB (known) |
-| #741 | sửa sản phẩm chỉ cho thuê (giá bán 0, như app tạo) bị chặn "Nhập giá bán" | WEB-UI-PRD (known) |
-| #744 | lưu "Tài khoản của tôi" xong, thanh bên và form vẫn hiện tên cũ đến lần đăng nhập sau | WEB-UI-SET (known) |
+| #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 (PR #764 chờ migration) |
+| #532, #533, #753, #754 | iOS: bảng đổi mật khẩu bị cắt, thông báo dài chạy tràn, Home và Tổng quan không nêu lý do khi gói bị chặn | điểm kiểm mềm trong `AnyRentE2ETests.swift` (PR đang được làm) |
+| #756, #757, #758 | mobile: thông báo gói bằng tiếng Anh trên Android, lý do bằng tiếng Việt ở app tiếng Anh, thêm sản phẩm khi gói bị chặn | ghi trong báo cáo Android |
+| #736 | nút Sửa và Thêm chi nhánh của staff và kho: đã ẩn (#746, #748), cần lật WEB-ROLE-10c/11c sau khi chạy lại | WEB-ROLE-10c, 11c |
 
-**Theo dõi chi nhánh (#745, PR #746):** web ẩn "Thêm chi nhánh" cho đến khi làm xong nhiều chi nhánh (`NEXT_PUBLIC_ENABLE_ADD_OUTLET=true` bật lại). Sau khi PR này merge, WEB-ROLE-10c / 11c (nút "Thêm chi nhánh" của staff và kho, #736) đạt phần nút thêm, WEB-SUB-24 (giới hạn gói chi nhánh qua giao diện) và WEB-UI-MAN (thêm chi nhánh) không còn nút để bấm: cần cập nhật theo.
+Đã sửa và đã vào `dev` (các ca là test thường): #504 (BF-QTY-04..12), #506 (BF-OVR-04), #707 (đơn huỷ hiện với giá trị 0, BF-STAT-01), #728 và #729 (BF-SUB-17..19, 48..50), #730 đến #732 (BF-ROLE-07..09), #733 đến #735, #737, #738, #740, #741, #744, #739, #742, #751.
+
+**Theo dõi chi nhánh (#745, PR #746):** web ẩn "Thêm chi nhánh" cho đến khi làm xong nhiều chi nhánh (`NEXT_PUBLIC_ENABLE_ADD_OUTLET=true` bật lại). WEB-SUB-24 (giới hạn gói chi nhánh qua giao diện) và WEB-UI-MAN (thêm chi nhánh) không còn nút để bấm: cần cập nhật theo.
 
 ## Câu hỏi cho chủ cửa hàng (hiện trạng đang được khẳng định)
 
