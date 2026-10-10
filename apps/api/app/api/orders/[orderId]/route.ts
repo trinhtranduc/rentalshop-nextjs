@@ -876,6 +876,7 @@ export const PUT = async (
         createdById: fullOrder.createdById,
         createdByName: fullOrder.createdBy ? formatFullName(fullOrder.createdBy.firstName, fullOrder.createdBy.lastName) : null,
         totalAmount: fullOrder.totalAmount,
+        pickupTotalAmount: fullOrder.pickupTotalAmount ?? null, // #505 (additive): total collected at hand-over
         depositAmount: fullOrder.depositAmount,
         securityDeposit: fullOrder.securityDeposit,
         damageFee: fullOrder.damageFee,
