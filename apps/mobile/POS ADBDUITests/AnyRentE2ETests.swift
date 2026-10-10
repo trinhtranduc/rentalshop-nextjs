@@ -2010,6 +2010,480 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
+    // MARK: - #727 expired / out-of-plan accounts (run with ios-e2e.sh --scenario <slug> --role owner|staff|kho)
+
+    /// MOB-SUB: login and every tab of an account whose subscription is expired, cancelled, paused or past due.
+    /// Records what the person reads (E2E_NOTE: SUB …) and fails on a raw API code on screen. Nothing may be created
+    /// (tests/e2e/mobile/subscription-flow.sh compares the row counts before and after).
+    func test10aSubscriptionBroken() throws {
+        try e2e.requireScenario(["expired-trial", "expired-active", "cancelled-ended", "paused", "past-due"])
+        e2e.startLoose()
+        let tag = "\(e2e.scenario)/\(e2e.scenarioRole)"
+        e2e.shot("10a-sub-after-login")
+        e2e.note("SUB \(tag) after-login tabBar=\(app.tabBars.firstMatch.exists) texts=\(e2e.screenTexts().prefix(25))")
+        var raw = e2e.rawKeys()
+        e2e.dismissAlerts()
+        let tabs: [(String, [String], Int?)] = [
+            ("home", ["Home", "Trang chủ"], 0), ("orders", ["My Order", "Đơn hàng"], 1),
+            ("calendar", ["Calendar", "Lịch Thuê", "Lịch"], 2), ("reports", ["Reports", "Báo cáo", "Overview", "Tổng quan"], 3),
+            ("settings", ["Settings", "Cài đặt", "Setting"], nil),
+        ]
+        for (name, labels, index) in tabs {
+            guard e2e.tapTab(labels, index: index) else { e2e.note("SUB \(tag) \(name): tab not offered"); continue }
+            sleep(4)
+            e2e.shot("10b-sub-\(name)")
+            e2e.note("SUB \(tag) \(name): alert=\(app.alerts.firstMatch.exists) texts=\(e2e.screenTexts().prefix(25))")
+            raw += e2e.rawKeys()
+            e2e.dismissAlerts()
+        }
+        XCTAssertTrue(raw.isEmpty, "raw API codes on screen: \(raw)")
+    }
+
+    /// MOB-SUB: after the subscription was fixed in the database (prepare-accounts.sh fix <slug>) the same login works:
+    /// tab bar, product rows, orders. Run by subscription-flow.sh after test10aSubscriptionBroken.
+    func test10bSubscriptionFixed() throws {
+        try e2e.requireScenario(["expired-trial", "expired-active", "cancelled-ended", "paused", "past-due"])
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 20), "Home lists products again after the subscription was fixed")
+        e2e.shot("10c-sub-fixed-home")
+        e2e.note("SUB \(e2e.scenario)/\(e2e.scenarioRole) fixed home: \(e2e.screenTexts().prefix(12))")
+        XCTAssertTrue(e2e.rawKeys().isEmpty, "raw API codes on screen: \(e2e.rawKeys())")
+        if e2e.tapTab(["My Order", "Đơn hàng"], index: 1) {
+            sleep(3)
+            e2e.shot("10d-sub-fixed-orders")
+            XCTAssertTrue(app.cells.firstMatch.waitForExistence(timeout: 10) || e2e.button(["All orders", "Tất cả đơn"]).exists, "Orders loads")
+        }
+    }
+
+    // MARK: - #727 stock left, calendar, "Việc cần làm", order detail (scenario accounts with known data)
+
+    /// Free units from a Home stock line: "● Còn 3 hôm nay" → 3, "● Hết hôm nay" / "● Out today" → 0
+    private func freeFrom(_ line: String) -> Int? {
+        if let digits = line.components(separatedBy: CharacterSet.decimalDigits.inverted).first(where: { !$0.isEmpty }), let n = Int(digits) { return n }
+        return line.contains("Hết") || line.contains("Out") || line.contains("None") ? 0 : nil
+    }
+
+    /// The "● …" stock line of a Home row found by name
+    private func stockLine(_ key: String) -> (line: String, colour: String)? {
+        guard let row = homeRow(key) else { return nil }
+        let label = row.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '● '")).firstMatch
+        guard label.waitForExistence(timeout: 3) else { return nil }
+        return (label.label, e2e.colourName(of: label))
+    }
+
+    /// Adds the product of a Home row to the cart through its + button
+    private func addFromHome(_ key: String) -> Bool {
+        guard let row = homeRow(key) else { return false }
+        let plus = row.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
+        guard plus.exists else { return false }
+        plus.tap()
+        sleep(1)
+        return e2e.cartBar.waitForExistence(timeout: 5)
+    }
+
+    private func openCart() -> Bool {
+        guard e2e.cartBar.waitForExistence(timeout: 5) else { return false }
+        e2e.cartBar.tap()
+        return e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
+    }
+
+    /// MOB-STOCK-01..08 (scenario stock, merchant owner): "Còn N hôm nay" on Home after a sale and a rent order created
+    /// in the cart, the warning colour at 1 left, the cart's "Chỉ còn N trống" for the chosen dates, and a product that
+    /// is out today (+ stays usable, a future day is free). The final lines are compared with GET /api/products/{id}/availability
+    /// by tests/e2e/mobile/stock-flow-check.js.
+    func test1dStockFlow() throws {
+        try e2e.requireScenario(["stock"])
+        try e2e.requireRole("merchant")
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.emptyCart()
+
+        // MOB-STOCK-01: starting lines. Con5 has 5, Con1 has 1 (warning colour), Het is held by an order today
+        guard let con5 = stockLine("E2E Con5"), let con1 = stockLine("E2E Con1"), let het = stockLine("E2E Het") else {
+            return XCTFail("E2E Con5 / Con1 / Het not on Home (is this the stock scenario?)")
+        }
+        e2e.note("STOCKFLOW start Con5: \(con5.line) [\(con5.colour)]")
+        e2e.note("STOCKFLOW start Con1: \(con1.line) [\(con1.colour)]")
+        e2e.note("STOCKFLOW start Het: \(het.line) [\(het.colour)]")
+        e2e.shot("1d-stock-start")
+        XCTAssertEqual(freeFrom(con5.line), 5, "Con5 starts with 5 free")
+        XCTAssertEqual(freeFrom(con1.line), 1, "Con1 starts with 1 free")
+        XCTAssertEqual(freeFrom(het.line), 0, "Het is out today")
+        e2e.soft(con5.colour == "green", "5 left is green (\(con5.colour))")
+        e2e.soft(con1.colour == "amber", "exactly 1 left is the warning colour (\(con1.colour))")
+        e2e.soft(het.colour == "red", "out today is red (\(het.colour))")
+
+        // MOB-STOCK-02: sale of 2 × Con5 → 3 free
+        XCTAssertTrue(addFromHome("E2E Con5"), "add Con5")
+        XCTAssertTrue(openCart(), "cart opens")
+        e2e.tapIfExists(e2e.button(["Sale", "Bán"]), timeout: 3)
+        let more = e2e.button(["Thêm 1", "One more"])
+        if more.waitForExistence(timeout: 3) { more.tap(); sleep(1) }
+        let inStock = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'trong kho' OR label CONTAINS 'in stock'")).firstMatch
+        e2e.note("STOCKFLOW sale cart line: \(inStock.exists ? inStock.label : "<none>")")
+        e2e.soft(inStock.exists && inStock.label.contains("5"), "a sale line shows the 5 in stock")
+        e2e.shot("1d-stock-cart-sale")
+        _ = e2e.pickFirstCustomer()
+        XCTAssertTrue(e2e.createOrderFromCart(cta: ["Sell & collect", "Bán & thu tiền"], shotPrefix: "1d-sale"), "sale created (\(e2e.lastAlert ?? "no alert"))")
+        if let afterSale = stockLine("E2E Con5") {
+            e2e.note("STOCKFLOW after-sale Con5: \(afterSale.line)")
+            XCTAssertEqual(freeFrom(afterSale.line), 3, "after selling 2 of 5 the row says 3 left")
+        }
+
+        // MOB-STOCK-03: rent of 1 × Con5 today → 2 free
+        e2e.emptyCart()
+        XCTAssertTrue(addFromHome("E2E Con5"), "add Con5 again")
+        XCTAssertTrue(openCart(), "cart opens")
+        e2e.cartRentToday()
+        _ = e2e.pickFirstCustomer()
+        XCTAssertTrue(e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "1d-rent"), "rent created (\(e2e.lastAlert ?? "no alert"))")
+        if let afterRent = stockLine("E2E Con5") {
+            e2e.note("STOCKFLOW after-rent Con5: \(afterRent.line)")
+            XCTAssertEqual(freeFrom(afterRent.line), 2, "after the rent order the row says 2 left")
+        }
+
+        // MOB-STOCK-04: product detail shows the same number
+        if e2e.openProduct(named: "E2E Con5") {
+            sleep(2)
+            e2e.shot("1d-stock-detail")
+            e2e.note("STOCKFLOW detail Con5: \(e2e.screenTexts().prefix(30))")
+            let texts = e2e.screenTexts().joined(separator: " ¦ ")
+            e2e.soft(texts.contains("Còn 2") || texts.contains("2 left") || texts.contains("Còn trống"), "detail shows 2 free")
+            e2e.goBackOnce()
+        }
+
+        // MOB-STOCK-05: out today → the + stays enabled (grey look is a screenshot check), and adding works
+        if let row = homeRow("E2E Het") {
+            let plus = row.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
+            XCTAssertTrue(plus.exists && plus.isEnabled, "+ on an out-today product is enabled")
+            e2e.shot("1d-stock-het-row")
+        }
+
+        // MOB-STOCK-06: out today, rent TODAY → "Hết đồ" tag; MOB-STOCK-07: tomorrow is free (no tag, no shortage)
+        e2e.emptyCart()
+        XCTAssertTrue(addFromHome("E2E Het"), "add Het")
+        XCTAssertTrue(openCart(), "cart opens")
+        e2e.cartRentToday()
+        sleep(3)
+        let tag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders' OR label BEGINSWITH 'Hết' OR label BEGINSWITH 'Out'")).firstMatch
+        e2e.note("STOCKFLOW het-today tag: \(tag.exists ? tag.label : "<none>")")
+        XCTAssertTrue(tag.exists, "Het rented today shows the booked-out tag")
+        e2e.shot("1d-stock-het-today")
+        let tomorrowDay = e2e.vnDay(1).day
+        let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
+        let datesAlt = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '→'")).firstMatch
+        (dates.exists ? dates : datesAlt).tap()
+        sleep(1)
+        e2e.pickDayInDateSheet(tomorrowDay)
+        e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        sleep(3)
+        let shortage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only'")).firstMatch
+        e2e.note("STOCKFLOW het-tomorrow shortage: \(shortage.exists ? shortage.label : "<none>") tag: \(tag.exists)")
+        XCTAssertFalse(shortage.exists, "Het is free tomorrow: no shortage line")
+        e2e.shot("1d-stock-het-tomorrow")
+        // MOB-STOCK-08: 2 × Het tomorrow, only 1 exists → "Chỉ còn 1 trống trong ngày đã chọn"
+        let plusOne = e2e.button(["Thêm 1", "One more"])
+        if plusOne.waitForExistence(timeout: 3) { plusOne.tap(); sleep(2) }
+        let short2 = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only'")).firstMatch
+        e2e.note("STOCKFLOW het-tomorrow x2 shortage: \(short2.exists ? short2.label : "<none>")")
+        XCTAssertTrue(short2.exists, "2 × Het for tomorrow shows how many are left")
+        XCTAssertEqual(freeFrom(short2.label), 1, "…and says 1")
+        e2e.shot("1d-stock-het-short")
+        e2e.emptyCart()
+
+        // final lines for the API checker
+        for key in ["E2E Con5", "E2E Con1", "E2E Het"] {
+            if let last = stockLine(key) { e2e.note("STOCKFLOW final \(key): \(last.line)") }
+        }
+    }
+
+    /// MOB-CAL-01..: month grid and day list for the ops scenario (orders 710001..710009 around today). Every selected day's
+    /// header summary ("giao x · trả y") and the order numbers of its rows are noted as `E2E_NOTE: CAL <yyyy-MM-dd> | …`
+    /// for tests/e2e/mobile/calendar-check.js (API: /api/calendar/orders/count and /by-date).
+    func test6bCalendarOps() throws {
+        try e2e.requireScenario(["ops"])
+        try e2e.requireRole("merchant")
+        try e2e.requireFlag("newCalendar")
+        try e2e.start()
+        e2e.tapTab(["Calendar", "Lịch Thuê", "Lịch"], index: 2)
+        XCTAssertTrue(e2e.button(["Next month", "Tháng sau"]).waitForExistence(timeout: 10), "Calendar month header")
+        sleep(2)
+        // MOB-CAL-01: the screen opens on today (Vietnam day): header "HÔM NAY · T7 10/10"
+        let todayDM = e2e.vnDay(0).dm
+        let header = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'HÔM NAY' OR label BEGINSWITH 'TODAY'")).firstMatch
+        XCTAssertTrue(header.waitForExistence(timeout: 8), "the day list opens on today")
+        e2e.note("CAL header: \(header.label)")
+        XCTAssertTrue(header.label.contains(todayDM), "today's header shows the Vietnam day \(todayDM) (\(header.label))")
+        e2e.shot("6b-calendar-today")
+        for offset in -5...4 {
+            let day = e2e.vnDay(offset)
+            let cell = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + day.dm)).firstMatch
+            guard cell.waitForExistence(timeout: 3), cell.isHittable else { e2e.note("CAL \(day.key) | not on this month's grid"); continue }
+            cell.tap()
+            sleep(3)
+            let title = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", day.dm)).allElementsBoundByIndex
+                .map(\.label).first { $0.uppercased() == $0 || $0.hasPrefix("HÔM NAY") } ?? ""
+            let summary = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'giao ' OR label CONTAINS 'hand'")).allElementsBoundByIndex.map(\.label).joined(separator: " / ")
+            var numbers: [String] = []
+            for cellRow in app.tables.cells.allElementsBoundByIndex where cellRow.exists {
+                let text = E2E.texts(cellRow)
+                if let r = text.range(of: "#\\d+", options: .regularExpression) { numbers.append(String(text[r]).replacingOccurrences(of: "#", with: "")) }
+            }
+            e2e.note("CAL \(day.key) | title=\(title) | summary=\(summary) | orders=\(numbers.sorted().joined(separator: ","))")
+            if offset == 0 || offset == 1 || offset == -2 || offset == 3 { e2e.shot("6b-calendar-\(day.key)") }
+        }
+        // MOB-CAL-02: a day row opens its order
+        if let day = Optional(e2e.vnDay(0)), let cell = Optional(app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + day.dm)).firstMatch), cell.exists {
+            cell.tap()
+            sleep(2)
+            if app.tables.cells.firstMatch.waitForExistence(timeout: 5) {
+                e2e.tapRow(app.tables.cells.firstMatch)
+                XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "a calendar row opens the order")
+                e2e.shot("6b-calendar-order")
+                e2e.goBack()
+            }
+        }
+    }
+
+    /// MOB-TODO-01..: Tổng quan → "Hôm nay" counters and what each opens, for the ops scenario. Noted as
+    /// `E2E_NOTE: TODO <counter> | <label> | rows=<numbers>` for tests/e2e/mobile/todo-check.js (API: /api/analytics/outlet-operations).
+    func test7mTodayCounters() throws {
+        try e2e.requireScenario(["ops"])
+        try e2e.requireRole("merchant")
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { throw XCTSkip("no Tổng quan tab") }
+        sleep(4)
+        let counters: [(key: String, labels: [String])] = [
+            ("pickups", ["Cần giao", "To hand over"]), ("returns", ["Cần nhận trả", "To take back"]),
+            ("late", ["Trễ hạn trả", "Late returns"]), ("noshows", ["Quá ngày lấy", "Pickup day passed"]),
+        ]
+        for c in counters {
+            let el = e2e.element(labelBeginsWith: c.labels, type: .button)
+            _ = e2e.scrollTo(el)
+            e2e.note("TODO \(c.key) | \(el.exists ? el.label : "<missing>")")
+            XCTAssertTrue(el.exists, "counter \(c.key) on the Hôm nay card")
+        }
+        let tomorrow = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Ngày mai' OR label BEGINSWITH 'Tomorrow'")).firstMatch
+        e2e.note("TODO tomorrow | \(tomorrow.exists ? tomorrow.label : "<missing>")")
+        XCTAssertTrue(tomorrow.exists, "tomorrow line on the Hôm nay card")
+        e2e.shot("7m-today-card")
+
+        func rowNumbers() -> String {
+            var numbers: [String] = []
+            for cell in app.cells.allElementsBoundByIndex where cell.exists {
+                if let r = E2E.texts(cell).range(of: "#\\d{5,6}", options: .regularExpression) {
+                    numbers.append(String(E2E.texts(cell)[r]).replacingOccurrences(of: "#", with: ""))
+                }
+            }
+            return numbers.sorted().joined(separator: ",")
+        }
+        // Trễ hạn trả → list of late returns; Quá ngày lấy → "Chưa lấy đồ"
+        for (key, labels, shot) in [("late", ["Trễ hạn trả", "Late returns"], "7m-late-list"), ("noshows", ["Quá ngày lấy", "Pickup day passed"], "7m-noshow-list")] {
+            let el = e2e.element(labelBeginsWith: labels, type: .button)
+            guard e2e.scrollTo(el) else { continue }
+            el.tap()
+            sleep(4)
+            e2e.note("TODOLIST \(key) | rows=\(rowNumbers())")
+            e2e.shot(shot)
+            e2e.goBack()
+            e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3)
+            sleep(2)
+        }
+        // Cần giao / Cần nhận trả → Đơn hàng → Việc cần làm
+        let pickups = e2e.element(labelBeginsWith: ["Cần giao", "To hand over"], type: .button)
+        if e2e.scrollTo(pickups) {
+            pickups.tap()
+            sleep(3)
+            e2e.tapIfExists(e2e.button(["To do", "Việc cần làm"]), timeout: 3)
+            sleep(3)
+            e2e.note("TODOLIST orders-todo | rows=\(rowNumbers())")
+            e2e.shot("7m-orders-todo")
+        }
+    }
+
+    /// MOB-DETAIL-01..: money lines of orders 710001..710009 on the order detail (ops scenario). Each screen's texts are noted as
+    /// `E2E_NOTE: DETAIL #<n> | …`; tests/e2e/mobile/detail-check.js looks for the API's total, deposit, collateral and amount due in them.
+    func test5gOrderDetailMoney() throws {
+        try e2e.requireScenario(["ops"])
+        try e2e.requireRole("merchant")
+        try e2e.requireFlag("newOrders")
+        try e2e.start()
+        for number in ["710001", "710002", "710003", "710004", "710005", "710008", "710009"] {
+            e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+            let all = e2e.button(["All orders", "Tất cả đơn"])
+            guard all.waitForExistence(timeout: 8) else { return XCTFail("Orders tab") }
+            all.tap()
+            sleep(2)
+            if number == "710009" { e2e.tapIfExists(e2e.saleModeButton, timeout: 3); sleep(2) }
+            let search = e2e.ordersSearchField
+            guard search.waitForExistence(timeout: 5) else { return XCTFail("orders search") }
+            search.tap()
+            search.clearText()
+            search.typeText(number)
+            sleep(3)
+            let row = app.cells.firstMatch
+            guard row.waitForExistence(timeout: 8) else { e2e.note("DETAIL #\(number) | not in the list"); XCTFail("order \(number) not listed"); continue }
+            e2e.tapRow(row)
+            guard e2e.orderMoreButton.waitForExistence(timeout: 10) else { XCTFail("detail of \(number) did not open"); continue }
+            sleep(2)
+            var texts = e2e.screenTexts()
+            app.swipeUp(); sleep(1)
+            texts += e2e.screenTexts()
+            app.swipeUp(); sleep(1)
+            texts += e2e.screenTexts()
+            e2e.note("DETAIL #\(number) | \(Array(NSOrderedSet(array: texts)).compactMap { $0 as? String }.joined(separator: " ¦ "))")
+            e2e.shot("5g-detail-\(number)")
+            e2e.goBack()
+        }
+    }
+
+    // MARK: - #727 roles on every screen, plan limits
+
+    /// MOB-ROLE-01..: what Nhân viên (staff) and Nhân viên kho (inventory) see on each tab. Hard checks: no raw API code anywhere,
+    /// no revenue tiles on Tổng quan, no delete on an order, no Người dùng / Xuất dữ liệu in Cài đặt, orders and calendar load.
+    /// Everything else is noted as `E2E_NOTE: ROLE <role> <screen> | …` (use --scenario ops --role staff|kho for known data).
+    func test8eRoleScreens() throws {
+        if e2e.role != "staff" && e2e.role != "inventory" { throw XCTSkip("staff or inventory run only (this run: \(e2e.role))") }
+        try e2e.start()
+        let tag = e2e.role
+        var raw: [String] = []
+        let tabBar = app.tabBars.firstMatch
+        e2e.note("ROLE \(tag) tabs | \(tabBar.buttons.allElementsBoundByIndex.map(\.label))")
+
+        // Orders: list, Việc cần làm, detail ⋯ sheet without delete
+        if e2e.tapTab(["My Order", "Đơn hàng"], index: 1) {
+            sleep(3)
+            let todo = e2e.button(["To do", "Việc cần làm"])
+            e2e.note("ROLE \(tag) orders | todoSegment=\(todo.exists) texts=\(e2e.screenTexts().prefix(15))")
+            e2e.shot("8e-\(tag)-orders-todo")
+            raw += e2e.rawKeys()
+            let all = e2e.button(["All orders", "Tất cả đơn"])
+            if all.waitForExistence(timeout: 5) {
+                all.tap()
+                sleep(3)
+                XCTAssertTrue(app.cells.firstMatch.waitForExistence(timeout: 10), "\(tag) sees orders of the outlet")
+                e2e.shot("8e-\(tag)-orders-all")
+                raw += e2e.rawKeys()
+                e2e.tapRow(app.cells.firstMatch)
+                if e2e.orderMoreButton.waitForExistence(timeout: 10) {
+                    sleep(2)
+                    e2e.shot("8e-\(tag)-order-detail")
+                    e2e.note("ROLE \(tag) order-detail | \(e2e.screenTexts().prefix(40))")
+                    raw += e2e.rawKeys()
+                    if e2e.openOrderSheet() {
+                        e2e.shot("8e-\(tag)-order-sheet")
+                        e2e.note("ROLE \(tag) order-sheet | \(app.buttons.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty })")
+                        XCTAssertFalse(e2e.button(["Delete order", "Xoá đơn", "Xóa đơn"]).exists, "\(tag) cannot delete an order (no orders.delete)")
+                        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 1)
+                        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
+                    }
+                    e2e.goBack()
+                }
+            }
+        }
+
+        // Calendar: the day list loads, no raw keys
+        if e2e.tapTab(["Calendar", "Lịch Thuê", "Lịch"], index: 2) {
+            sleep(4)
+            e2e.shot("8e-\(tag)-calendar")
+            e2e.note("ROLE \(tag) calendar | \(e2e.screenTexts().prefix(20))")
+            raw += e2e.rawKeys()
+        }
+
+        // Tổng quan: no revenue (analytics.view.revenue is missing); today's work (analytics.view.dashboard) may show
+        if e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) {
+            sleep(4)
+            e2e.shot("8e-\(tag)-overview")
+            let texts = e2e.screenTexts()
+            e2e.note("ROLE \(tag) overview | \(texts.prefix(40))")
+            raw += e2e.rawKeys()
+            let revenue = ["Real income", "Thực thu", "New orders total", "Giá trị đơn mới", "Revenue", "Doanh thu", "Collateral", "Tiền cọc", "Still to collect", "Còn phải thu"]
+            let shown = texts.filter { t in revenue.contains(where: { t.hasPrefix($0) }) }
+            XCTAssertTrue(shown.isEmpty, "\(tag) must not see revenue figures on Tổng quan: \(shown)")
+            e2e.soft(e2e.element(labelBeginsWith: ["Today's work", "Việc hôm nay", "Hôm nay", "Today"]).exists, "\(tag) sees the Hôm nay card (analytics.view.dashboard)")
+        } else {
+            e2e.note("ROLE \(tag) overview | no Tổng quan tab")
+        }
+
+        // Cài đặt
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let rows = app.staticTexts.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty }
+        e2e.note("ROLE \(tag) settings | \(rows.prefix(40))")
+        e2e.shot("8e-\(tag)-settings")
+        raw += e2e.rawKeys()
+        for hidden in [["Users", "Người dùng"], ["Export Data", "Xuất dữ liệu"], ["Bank accounts", "Tài khoản ngân hàng"], ["Subscription", "Gói đăng ký", "Gói dịch vụ"]] {
+            e2e.soft(!rows.contains(where: { hidden.contains($0) }), "\(tag) does not see \(hidden[0]) in Cài đặt")
+        }
+        XCTAssertTrue(raw.isEmpty, "raw API codes on screen: \(raw)")
+    }
+
+    /// MOB-SUB-10..: at-limit merchant (plan limits equal to what exists: 2 products, 2 customers, 1 order): creating a customer, an
+    /// order or a product must answer with a readable message (no raw code), and must not create anything
+    /// (the DB counts are compared by tests/e2e/mobile/subscription-flow.sh). Run for owner, staff and kho.
+    func test10cPlanLimit() throws {
+        try e2e.requireScenario(["at-limit"])
+        try e2e.start()
+        let tag = "at-limit/\(e2e.scenarioRole)"
+        var seen: [String] = []
+        func record(_ what: String) {
+            let texts = e2e.screenTexts()
+            e2e.note("LIMIT \(tag) \(what) | alert=\(e2e.lastAlert ?? "<none>") texts=\(texts.prefix(20))")
+            seen += e2e.rawKeys()
+            if let alert = e2e.lastAlert { seen += [alert].filter { $0.contains("PLAN_LIMIT") || $0.contains("_EXCEEDED") } }
+        }
+
+        // customer, through the cart's picker ("Khách mới")
+        e2e.lastAlert = nil
+        if e2e.openCartWithOneItem() {
+            _ = e2e.createCustomerInPicker(name: "Khach Gioi Han", phone: E2E.uniquePhone())
+            sleep(2)
+            e2e.shot("10e-limit-customer")
+            record("customer")
+            e2e.dismissAlerts()
+            // order: the first existing customer, rent today
+            e2e.lastAlert = nil
+            e2e.goBackOnce()
+            if e2e.openCartWithOneItem() {
+                e2e.cartRentToday()
+                _ = e2e.pickFirstCustomer()
+                let created = e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "10e-limit-order")
+                XCTAssertFalse(created, "an order must not be created when the plan's order limit is reached")
+                e2e.shot("10e-limit-order-result")
+                record("order")
+                e2e.dismissAlerts()
+            }
+            e2e.emptyCart()
+        } else {
+            e2e.note("LIMIT \(tag) cart | could not open the cart")
+        }
+
+        // product (owner and kho; staff has no add button on Home)
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        if add.waitForExistence(timeout: 5) {
+            add.tap()
+            let name = e2e.field(["Product name", "Tên sản phẩm"])
+            if name.waitForExistence(timeout: 8) {
+                name.tap()
+                name.typeText("SP vuot gioi han \(Int(Date().timeIntervalSince1970) % 100000)")
+                e2e.hideKeyboard()
+                e2e.shot("10e-limit-product-form")
+                let save = e2e.button(["Save", "Lưu", "Save product", "Lưu sản phẩm", "Add", "Thêm"])
+                if save.waitForExistence(timeout: 3) { save.tap(); sleep(3) } else { e2e.note("LIMIT \(tag) product | no save button") }
+                e2e.shot("10e-limit-product-result")
+                record("product")
+                e2e.dismissAlerts()
+                e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 2)
+            }
+        } else {
+            e2e.note("LIMIT \(tag) product | no Add product button for this role")
+        }
+        XCTAssertTrue(seen.isEmpty, "raw API codes shown for a plan limit: \(seen)")
+    }
+
     func test9SettingsLogout() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
@@ -2039,6 +2513,10 @@ private final class E2E {
     let email: String
     let password: String
     let role: String
+    /// #727: dedicated accounts from scripts/mobile-e2e/prepare-accounts.sh (expired-trial, paused, at-limit, stock, …)
+    let scenario: String
+    /// owner | staff | kho (only with a scenario)
+    let scenarioRole: String
     let features: Set<String>
     let outDir: String
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -2050,6 +2528,8 @@ private final class E2E {
         email = env["E2E_EMAIL"] ?? ""
         password = env["E2E_PASSWORD"] ?? ""
         role = (env["E2E_ROLE"] ?? "merchant").lowercased()
+        scenario = (env["E2E_SCENARIO"] ?? "").lowercased()
+        scenarioRole = (env["E2E_SCENARIO_ROLE"] ?? "owner").lowercased()
         features = Set((env["E2E_FEATURES"] ?? "").split(separator: ",").map {
             $0.trimmingCharacters(in: .whitespaces)
         })
@@ -2070,8 +2550,55 @@ private final class E2E {
         if !features.contains(flag) { throw XCTSkip("flag \(flag) is off; rest of the flow skipped") }
     }
 
+    /// #727: the run was started with --scenario <slug> (one of `slugs`)
+    func requireScenario(_ slugs: [String]) throws {
+        if !slugs.contains(scenario) { throw XCTSkip("scenario run only: \(slugs.joined(separator: "|")) (this run: \(scenario.isEmpty ? "none" : scenario))") }
+    }
+
     func requireRole(_ wanted: String) throws {
         if role != wanted { throw XCTSkip("\(wanted) run only (this run: \(role))") }
+    }
+
+    // MARK: #727 helpers: accounts whose subscription is broken (the main shell may never come up)
+
+    /// Launch and log in without requiring the tab bar: an expired account may land on an alert or an empty shell.
+    func startLoose() {
+        app.launch()
+        if isLoginScreen(timeout: 8) {
+            for attempt in 1...3 {
+                login()
+                if !app.secureTextFields.firstMatch.waitForNonExistence(timeout: 8) {
+                    shot("00-login-retry-\(attempt)", attachOnly: true)
+                    dismissAlerts()
+                    continue
+                }
+                break
+            }
+        }
+        // notification prompt / onboarding, then give the first requests time to fail or succeed
+        let deadline = Date().addingTimeInterval(14)
+        while Date() < deadline {
+            dismissSystemAlert()
+            let skip = button(["Skip", "Bỏ qua"])
+            if skip.exists && skip.isHittable { skip.tap() }
+            sleep(1)
+        }
+    }
+
+    /// Every visible static text, button label and alert text (what a person can read on this screen)
+    func screenTexts() -> [String] {
+        var out: [String] = []
+        for alert in app.alerts.allElementsBoundByIndex where alert.exists {
+            out.append("ALERT[" + ([alert.label] + alert.staticTexts.allElementsBoundByIndex.map(\.label)).joined(separator: " | ") + "]")
+        }
+        out += app.staticTexts.allElementsBoundByIndex.prefix(60).map(\.label).filter { !$0.isEmpty }
+        return out
+    }
+
+    /// Raw API codes on screen ("SUBSCRIPTION_EXPIRED", "PLAN_LIMIT_EXCEEDED", "errors.x.y") are a bug
+    func rawKeys() -> [String] {
+        let pattern = "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$|.*(SUBSCRIPTION_|PLAN_LIMIT|PERIOD_ENDED|NO_SUBSCRIPTION|INSUFFICIENT_PERMISSIONS|VALIDATION_ERROR).*|^[a-z]+(\\.[A-Za-z0-9]+){2,}$"
+        return screenTexts().filter { NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: $0) }
     }
 
     // MARK: Launch + login
@@ -2697,6 +3224,55 @@ private final class E2E {
     /// Text of every static text inside an element (cell, row)
     static func texts(_ element: XCUIElement) -> String {
         ([element.label] + element.staticTexts.allElementsBoundByIndex.map(\.label)).joined(separator: " ")
+    }
+
+    // MARK: #727 helpers: Vietnam days, pixel colour, date sheet
+
+    /// The shop (Vietnam) civil day `offset` days from today: key "yyyy-MM-dd", "dd/MM" as on the calendar cells, day number
+    func vnDay(_ offset: Int) -> (key: String, dm: String, day: Int) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+        let date = calendar.date(byAdding: .day, value: offset, to: Date())!
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        let (y, m, d) = (parts.year!, parts.month!, parts.day!)
+        return (String(format: "%04d-%02d-%02d", y, m, d), String(format: "%02d/%02d", d, m), d)
+    }
+
+    /// In the date sheet (FSCalendar), tap a day number once: a same-day range on that day (same rule as pickTodayInDateSheet)
+    func pickDayInDateSheet(_ day: Int) {
+        sleep(1)
+        let matches = app.collectionViews.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", "\(day)", "\(day) "))
+        let texts = app.collectionViews.staticTexts.matching(NSPredicate(format: "label == %@", "\(day)"))
+        let pool = matches.count > 0 ? matches : texts
+        guard pool.count > 0 else { return note("No day \(day) in the date sheet") }
+        let target = day < 15 ? pool.element(boundBy: 0) : pool.element(boundBy: pool.count - 1)
+        if target.isHittable { target.tap() } else { note("Day \(day) not hittable in the date sheet") }
+        sleep(1)
+    }
+
+    /// green | amber | red | other: the dominant saturated colour in the left 16 pt of an element (the "●" of a stock line)
+    func colourName(of element: XCUIElement) -> String {
+        guard let image = XCUIScreen.main.screenshot().image.cgImage else { return "?" }
+        let scale = CGFloat(image.width) / app.windows.firstMatch.frame.width
+        let frame = element.frame
+        let rect = CGRect(x: frame.minX * scale, y: frame.minY * scale, width: min(16, frame.width) * scale, height: frame.height * scale).integral
+        guard let crop = image.cropping(to: rect), crop.width > 0, crop.height > 0 else { return "?" }
+        var pixels = [UInt8](repeating: 0, count: crop.width * crop.height * 4)
+        guard let context = CGContext(data: &pixels, width: crop.width, height: crop.height, bitsPerComponent: 8, bytesPerRow: crop.width * 4,
+                                      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return "?" }
+        context.draw(crop, in: CGRect(x: 0, y: 0, width: crop.width, height: crop.height))
+        var r = 0.0, g = 0.0, b = 0.0, n = 0.0
+        for i in stride(from: 0, to: pixels.count, by: 4) {
+            let (pr, pg, pb) = (Double(pixels[i]), Double(pixels[i + 1]), Double(pixels[i + 2]))
+            let high = max(pr, pg, pb), low = min(pr, pg, pb)
+            if high > 0, (high - low) / high > 0.45 { r += pr; g += pg; b += pb; n += 1 }
+        }
+        guard n > 0 else { return "other" }
+        (r, g, b) = (r / n, g / n, b / n)
+        if g > r * 1.15 && g > b * 1.3 { return "green" }
+        if r > 180 && g > 110 && b < 90 && g < r * 0.85 { return "amber" }
+        if r > g * 1.8 && r > b * 1.8 { return "red" }
+        return "other(\(Int(r)),\(Int(g)),\(Int(b)))"
     }
 
     // MARK: Reporting
