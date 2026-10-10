@@ -163,7 +163,9 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 | BF-EDIT-08 | Đổi tiền cọc | D 100.000 → 250.000 | Δ collected = deposits +150.000, outstanding −150.000; amountDue A − 250.000 |
 | BF-EDIT-09 | Đổi thế chân trước khi giao | S 200.000 → 500.000 | amountDue A + S; Overview Δ 0 |
 | BF-EDIT-10 | Ghi chú không đổi tiền | notes | Δ 0, totals same |
-| BF-EDIT-11 | **Known bug #505** Gia hạn khi đang thuê | A 300.000, S 500.000, extend +100.000 | refundDue 400.000 and pickup-day collected unchanged (today refundDue 500.000) |
+| BF-EDIT-11 | Gia hạn khi đang thuê (#505) | A 300.000, S 500.000, extend +100.000 | `pickupTotalAmount` 300.000; refundDue 400.000; pickup-day collected unchanged |
+| BF-EDIT-14 | Gia hạn rồi trả | như trên, trả sau 2 ngày | ngày giao collected 300.000 rồi 0 sau gia hạn; ngày trả collected +100.000 |
+| BF-EDIT-15 | Gia hạn lớn hơn tiền thế chân; đơn không gia hạn | S 100.000, +250.000 | amountDue 150.000, refundDue 0; đơn không gia hạn refundDue 100.000; RESERVED `pickupTotalAmount` null |
 | BF-EDIT-12 | Trả trễ, phí trễ | DAILY 50.000, return 2 days late, L 100.000 | amountDue 100.000; return day Δ collected = fees +100.000 |
 | BF-EDIT-13 | Sửa sau khi giao / đơn đã đóng | PUT on PICKUPED, RETURNED, CANCELLED, COMPLETED | all edits 200 (Q3); status back-moves 400 |
 
@@ -802,7 +804,7 @@ Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi 
 | Issue | Lỗi | Ca test |
 |---|---|---|
 | #504 | sửa số lượng đơn đang thuê làm kẹt món ở "đang thuê" | BF-QTY-04 |
-| #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 |
+| #505 | (đã sửa) gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11, 14, 15 |
 | #506 | Top khách hàng tính cả thế chân vào tiền đã chi | BF-OVR-04 |
 | #577 | đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-08-oldAndroid (56 ca) |
 | #728 | tuyến `requireActiveSubscription:false` vẫn bị chặn với cửa hàng hết hạn: không xem được trạng thái, danh sách gói, đổi gói, checkout; web không có đường gia hạn | BF-SUB-17..19, WEB-SUB-01..05 (-c, -d) |

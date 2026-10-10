@@ -23,6 +23,19 @@ describe('computeOrderBalance (#362)', () => {
     expect(computeOrderBalance(order)).toEqual({ amountDue: 80000, refundDue: 0 });
   });
 
+  it('PICKUPED rental extended (#505): extra rent = total - pickup total is due at return, taken from the collateral', () => {
+    const order = { orderType: 'RENT', status: 'PICKUPED', totalAmount: 400000, pickupTotalAmount: 300000, securityDeposit: 500000, lateFee: 0, damageFee: 0, payments: [] };
+    expect(computeOrderBalance(order)).toEqual({ amountDue: 0, refundDue: 400000 });
+    expect(computeOrderBalance({ ...order, securityDeposit: 50000 })).toEqual({ amountDue: 50000, refundDue: 0 });
+  });
+
+  it('PICKUPED rental never extended (#505): no pickup total recorded or equal to the total = as before', () => {
+    const order = { orderType: 'RENT', status: 'PICKUPED', totalAmount: 400000, securityDeposit: 500000, lateFee: 0, damageFee: 0, payments: [] };
+    expect(computeOrderBalance(order)).toEqual({ amountDue: 0, refundDue: 500000 });
+    expect(computeOrderBalance({ ...order, pickupTotalAmount: null })).toEqual({ amountDue: 0, refundDue: 500000 });
+    expect(computeOrderBalance({ ...order, pickupTotalAmount: 400000 })).toEqual({ amountDue: 0, refundDue: 500000 });
+  });
+
   it('SALE: total minus sale payments', () => {
     const order = { orderType: 'SALE', status: 'COMPLETED', totalAmount: 1150000, payments: [paid(1150000, 'SALE')] };
     expect(computeOrderBalance(order)).toEqual({ amountDue: 0, refundDue: 0 });

@@ -315,10 +315,9 @@ describeE2E('BF-EDIT order edits', () => {
     });
   });
 
-  // Suspected bug #505: gia hạn (#425) raises totalAmount of a PICKUPED order, but the balance
-  // (computeOrderBalance) only looks at fees - collateral, and the pickup event is recomputed from the new total,
-  // so the extra rent is never due and is booked on the pickup day.
-  knownBug('#505', 'BF-EDIT-11 PICKUPED: extend (gia hạn) with extra rent: extra is due, pickup day money unchanged', async () => {
+  // #505: gia hạn (#425) raises totalAmount of a PICKUPED order. The extra rent is due at return (the balance adds
+  // totalAmount - pickupTotalAmount), and the money collected at hand-over stays what it was on the pickup day.
+  test('BF-EDIT-11 PICKUPED: extend (gia hạn) with extra rent: extra is due, pickup day money unchanged', async () => {
     const A = 300000;
     const X = 100000; // extra rent entered in the Gia hạn sheet
     const S = 500000;
@@ -337,10 +336,54 @@ describeE2E('BF-EDIT order edits', () => {
     });
     expect(r.status).toBe(200);
     expect(r.body.data.totalAmount).toBe(A + X);
+    expect(r.body.data.pickupTotalAmount).toBe(A);
     // collateral S held, X still owed: hand back S - X at return
     const row = await s.orderRow(order.id);
     expect([row.amountDue, row.refundDue]).toEqual([0, S - X]);
     expect(pick(await ovP.delta(), ['collected'])).toEqual({ collected: 0 });
+  });
+
+  test('BF-EDIT-14 extend, then return: the extra rent is collected on the return day, the pickup day keeps its money', async () => {
+    const A = 300000;
+    const X = 100000;
+    const S = 500000;
+    const product = await s.createProduct({ kind: 'FIXED', price: A, stock: 1 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(2);
+    const order = await s.createOrder(rentBody({ customer, lines: [{ product }], from: w.from, to: w.to }).body);
+    const ovPickup = await watchOverview(s, w.from);
+    await s.setStatus(order.id, 'PICKUPED', { pickedUpAt: vnAt(w.from, '09:00').toISOString(), securityDeposit: S });
+    expect(pick(await ovPickup.delta(), ['collected'])).toEqual({ collected: A });
+    await s.updateOrder(order.id, { rentalDuration: 4, totalAmount: A + X });
+    expect(pick(await ovPickup.delta(), ['collected'])).toEqual({ collected: 0 });
+    const returnDay = addDays(w.to, 2);
+    const ovReturn = await watchOverview(s, returnDay);
+    await s.setStatus(order.id, 'RETURNED', { returnedAt: vnAt(returnDay, '10:00').toISOString() });
+    expect(pick(await ovReturn.delta(), ['collected'])).toEqual({ collected: X });
+    expect(pick(await ovPickup.delta(), ['collected'])).toEqual({ collected: 0 });
+  });
+
+  test('BF-EDIT-15 extension larger than the collateral: the rest is due (amountDue); not extended = as before', async () => {
+    const A = 300000;
+    const S = 100000;
+    const product = await s.createProduct({ kind: 'FIXED', price: A, stock: 2 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(2);
+    const plain = await s.createOrder(rentBody({ customer, lines: [{ product }], from: w.from, to: w.to }).body);
+    await s.setStatus(plain.id, 'PICKUPED', { pickedUpAt: vnAt(w.from, '09:00').toISOString(), securityDeposit: S });
+    // another customer: an identical order within 60 s is a retry of the first (#341)
+    const extended = await s.createOrder(rentBody({ customer: await s.createCustomer(), lines: [{ product }], from: w.from, to: w.to }).body);
+    await s.setStatus(extended.id, 'PICKUPED', { pickedUpAt: vnAt(w.from, '09:00').toISOString(), securityDeposit: S });
+    await s.updateOrder(extended.id, { totalAmount: A + 250000 });
+    const rowPlain = await s.orderRow(plain.id);
+    expect([rowPlain.amountDue, rowPlain.refundDue]).toEqual([0, S]);
+    const rowExt = await s.orderRow(extended.id);
+    expect([rowExt.amountDue, rowExt.refundDue]).toEqual([150000, 0]);
+    // a RESERVED order is unaffected by pickupTotalAmount (still null)
+    const reserved = await s.createOrder(rentBody({ customer: await s.createCustomer(), lines: [{ product }], from: w.from, to: w.to }).body);
+    const detail = await s.getOrder(reserved.id);
+    expect(detail.pickupTotalAmount ?? null).toBeNull();
+    expect((await s.orderRow(reserved.id)).amountDue).toBe(A);
   });
 
   test('BF-EDIT-12 late return: late fee (2 days x daily price) is collected on the return day', async () => {
