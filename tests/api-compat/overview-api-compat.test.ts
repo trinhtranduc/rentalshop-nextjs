@@ -22,6 +22,9 @@ const ADDED_FIELDS = [
   // #605: expected collections and new order value per series point, rent/sale split of the order value
   /^period\w+\.series\.\[\]\.(expectedCollected|newOrderValue)$/,
   /^period\w+\.revenue\.orderValueByType(\.|$)/,
+  // #710, #711: cash held incl. collateral, per period and per day; expected cash per day
+  /^period\w+\.revenue\.cashCollected$/,
+  /^period\w+\.series\.\[\]\.(expectedCash|cashCollected)$/,
   // GET /api/analytics/outlet-operations (managers only)
   /^operations\w+\.cash\.(collateralToCollect|collateralToReturn)(\.|$)/,
 ];
