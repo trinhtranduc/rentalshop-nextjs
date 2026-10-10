@@ -10,13 +10,16 @@
  * old app reads the first 10 characters of the stored instant back as its day (UTC day P), so moving it to
  * `P-1 T17:00Z` would show P-1 on that phone. The new return keeps the same UTC date R for that reason too.
  *
- * Why the return instant is the discriminator: every current client sends a return whose UTC seconds are not 00
- * (iOS and Android `...:59.000Z`: 23:59:59 in the device zone, whatever the zone; web / admin send
- * `T17:00:00.000Z`, a Vietnam midnight, with minutes 00 and hour 17). `T23:59:00` is only produced by the
- * old `atTime(23, 59)` formatting.
+ * Why the pair is the discriminator: the old app always sends BOTH instants together (cart and order-detail date
+ * edit), the pickup at exactly UTC midnight and the return at exactly 23:59:00 UTC on the same or a later day.
+ * Current clients never send that pair: iOS / Android return `...:59.000Z` (23:59:59 in the device zone, so UTC
+ * seconds are 59 in every zone), web sends Vietnam midnights (`T17:00:00.000Z`). A return alone at `T23:59:00Z`
+ * (06:59 Vietnam, e.g. typed by hand) is a real time of day and is kept.
  */
 import { getUtcRangeForDateKeys } from './date-range';
 
+/** `YYYY-MM-DDT00:00:00Z` or `...T00:00:00.000Z`. */
+const LEGACY_PICKUP = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.0{1,3})?Z$/;
 /** `YYYY-MM-DDT23:59:00Z` or `...T23:59:00.000Z`, exactly (not 23:59:59, not another offset). */
 const LEGACY_RETURN = /^(\d{4}-\d{2}-\d{2})T23:59:00(?:\.0{1,3})?Z$/;
 
@@ -40,7 +43,9 @@ function validKey(key: string): boolean {
 export function normalizeLegacyPlanDays(input: PlanDaysInput): NormalizedPlanDays {
   const { pickupPlanAt, returnPlanAt } = input;
   const ret = typeof returnPlanAt === 'string' ? LEGACY_RETURN.exec(returnPlanAt) : null;
-  if (!ret || !validKey(ret[1])) {
+  const pick = typeof pickupPlanAt === 'string' ? LEGACY_PICKUP.exec(pickupPlanAt) : null;
+  // both instants of the old pattern, on valid days, return day not before pickup day
+  if (!ret || !pick || !validKey(ret[1]) || !validKey(pick[1]) || ret[1] < pick[1]) {
     return { pickupPlanAt, returnPlanAt, legacy: false };
   }
   // 23:59:59.000 Vietnam time of R, the form the current apps send

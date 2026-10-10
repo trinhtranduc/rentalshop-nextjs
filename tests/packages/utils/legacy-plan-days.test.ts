@@ -35,11 +35,20 @@ describe('normalizeLegacyPlanDays (#577)', () => {
     expect(vnDay(r.returnPlanAt as string)).toBe('2027-01-01');
   });
 
-  test('return alone (edit) is rewritten, a missing pickup stays missing', () => {
+  test('a return alone (06:59 Vietnam typed by hand) is a real time of day and is kept', () => {
     const r = normalizeLegacyPlanDays({ returnPlanAt: '2026-11-16T23:59:00Z' });
-    expect(r.legacy).toBe(true);
-    expect(r.returnPlanAt).toBe('2026-11-16T16:59:59.000Z');
-    expect(r.pickupPlanAt).toBeUndefined();
+    expect(r).toEqual({ pickupPlanAt: undefined, returnPlanAt: '2026-11-16T23:59:00Z', legacy: false });
+  });
+
+  test('06:59 VN return with a pickup that is not UTC midnight (BF-RT-09a) is kept', () => {
+    const r = normalizeLegacyPlanDays({ pickupPlanAt: '2026-11-15T17:30:00.000Z', returnPlanAt: '2026-11-17T23:59:00.000Z' });
+    expect(r.legacy).toBe(false);
+    expect(r.returnPlanAt).toBe('2026-11-17T23:59:00.000Z');
+  });
+
+  test('a return day before the pickup day is not the old pattern', () => {
+    const r = normalizeLegacyPlanDays({ pickupPlanAt: '2026-11-17T00:00:00Z', returnPlanAt: '2026-11-16T23:59:00Z' });
+    expect(r.legacy).toBe(false);
   });
 
   test.each([

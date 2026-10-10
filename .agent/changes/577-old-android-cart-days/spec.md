@@ -1,8 +1,9 @@
 # Spec
 
 - `normalizeLegacyPlanDays({ pickupPlanAt, returnPlanAt })` (`packages/utils/src/core/legacy-plan-days.ts`), pure.
-- Recognised: `returnPlanAt` exactly `YYYY-MM-DDT23:59:00Z` or `...T23:59:00.000Z` (valid calendar day).
-  Rewritten to `R T16:59:59.000Z` (23:59:59 Vietnam of R, the form iOS and the current Android send).
+- Recognised: the PAIR the old app always sends together: `pickupPlanAt` exactly `P T00:00:00[.000]Z` and
+  `returnPlanAt` exactly `R T23:59:00[.000]Z`, valid days, R not before P. A return alone, or with another pickup,
+  is a real time of day (06:59 Vietnam, BF-RT-09a) and is kept. The return is rewritten to `R T16:59:59.000Z` (23:59:59 Vietnam of R, the form iOS and the current Android send).
 - The pickup is not touched: `P T00:00:00Z` is P 07:00 in Vietnam (right civil day) and the old app reads the first 10
   characters of the stored instant as its day, so moving it to `P-1 T17:00Z` would show P-1 on that phone.
 - Used on write only: `POST /api/orders`, `PUT /api/orders` (query id), `PUT /api/orders/{id}`.
