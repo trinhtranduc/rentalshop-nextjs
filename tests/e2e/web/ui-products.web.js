@@ -195,7 +195,7 @@ async function main() {
       await page.waitForTimeout(800);
       const t3 = (await H.bodyText(page)).replace(/\s+/g, ' ');
       const stockPart = (t3.match(/Tồn kho theo chi nhánh(.*)/) || [])[1] || '';
-      check('PRD-06 rent price 135.000; stock table: total 9, renting 1', /135[.,]000/.test(t3) && /\b9\b/.test(stockPart) && /\b1\b/.test(stockPart), stockPart.slice(0, 300));
+      check('PRD-06 rent price 135.000; stock table: 9 total, 9 free, 0 renting (the order is in the future)', /135[.,]000/.test(t3) && /Main Branch 9 9 0/.test(stockPart) && /Tổng cộng 9 9 0/.test(stockPart), stockPart.slice(0, 300));
       const pr = await H.pageProblems(page, st);
       check('PRD-06 healthy page', pr.length === 0, pr.join('; '));
       const avail = page.getByRole('link', { name: 'Kiểm tra còn hàng' }).or(page.getByRole('button', { name: 'Kiểm tra còn hàng' })).first();
