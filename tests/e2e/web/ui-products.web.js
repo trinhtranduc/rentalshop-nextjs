@@ -13,7 +13,6 @@ const { WebApi, vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
 const KNOWN = {
-  'PRD-05 a rent-only product (sale price 0) can be saved without typing a sale price': '#741',
   'PRD-12 two products without a barcode can both be edited': '#742'
 };
 
