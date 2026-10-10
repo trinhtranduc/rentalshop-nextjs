@@ -19,6 +19,25 @@ final class NotificationsNotesV2Tests: XCTestCase {
         )
     }
 
+    // MARK: Paging (#751)
+
+    func testAppendPageSkipsRowsAlreadyInTheList() {
+        // a notification arrived while the list was open: page 2 starts with the last row of page 1
+        let page1 = (11...30).reversed().map { item($0, "2026-10-05T02:00:00Z") }
+        let page2 = (1...11).reversed().map { item($0, "2026-10-05T02:00:00Z") }
+        let merged = NotificationsLogic.appendPage(page1, page2)
+        XCTAssertEqual(merged.map { $0.id }, Array((1...30).reversed()))
+        XCTAssertEqual(Set(merged.map { $0.id }).count, merged.count)
+    }
+
+    func testAppendPageKeepsOrderAndHandlesEmptyPages() {
+        let first = [item(5, "2026-10-05T02:00:00Z"), item(4, "2026-10-05T02:00:00Z")]
+        XCTAssertEqual(NotificationsLogic.appendPage(first, []).map { $0.id }, [5, 4])
+        XCTAssertEqual(NotificationsLogic.appendPage([], first).map { $0.id }, [5, 4])
+        let page = [item(4, "2026-10-05T02:00:00Z"), item(3, "2026-10-05T02:00:00Z"), item(3, "2026-10-05T02:00:00Z")]
+        XCTAssertEqual(NotificationsLogic.appendPage(first, page).map { $0.id }, [5, 4, 3])
+    }
+
     // MARK: Day groups on Vietnam civil days
 
     func testVietnamMidnightSplitsGroupsAt17UTC() {

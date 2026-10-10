@@ -112,6 +112,14 @@ enum NotificationsLogic {
         return title.uppercased(with: locale)
     }
 
+    /// #751: the list after another page landed. The API pages by number, so when a notification arrives while the
+    /// list is open the next page starts with the last row of the page before: a row already in the list is not
+    /// added twice.
+    static func appendPage(_ existing: [InboxNotification], _ page: [InboxNotification]) -> [InboxNotification] {
+        var seen = Set(existing.map { $0.id })
+        return existing + page.filter { seen.insert($0.id).inserted }
+    }
+
     /// "09:12" in Vietnam time, matching the day group
     static func time(_ date: Date?) -> String {
         guard let date else { return "" }
