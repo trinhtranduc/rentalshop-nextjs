@@ -139,3 +139,53 @@ clear_cart() {
     have_any "$(L v2_cart_back)" && "$U" tap "$(L v2_cart_back)" >/dev/null; sleep 1
   fi
 }
+
+# ---- create attempts (broken subscription / plan limit): each sets MSG to the dialog text (or "" when no dialog) -----------------------
+RAWRE='(^|[ |¦])[A-Z][A-Z0-9]*(_[A-Z0-9]+)+([ |¦]|$)|SUBSCRIPTION_|PLAN_LIMIT|PERIOD_ENDED|NO_SUBSCRIPTION|INSUFFICIENT_PERMISSIONS|VALIDATION_ERROR|errors\.[a-zA-Z]|auth\.[a-z]+\.'
+# dialog_msg: the body text of an alert dialog on screen: the node between its title (Error/Lỗi) and the OK button
+dialog_msg() { "$U" dump | python3 -c '
+import sys
+rows = [l.rstrip("\n").split(" | ")[0].strip() for l in sys.stdin]
+rows = [r for r in rows if r]
+ok = sys.argv[1]
+if ok in rows:
+    i = rows.index(ok); print(rows[i - 1] if i > 0 else "")' "$(L ok)"; }
+settle_dialog() { # wait for an alert dialog (OK button) up to 12 s; MSG = its text
+  MSG=""; wait_any "$(L ok)" 12 && MSG="$(dialog_msg)"
+}
+to_tabs() { local i; for i in 1 2 3 4 5; do have_any "$(L settings)" && have_any "$(L home)" && return 0; tap_any "$(L ok)" >/dev/null 2>&1 || "$U" back >/dev/null; sleep 1; done; }
+tap_field() { "$U" tap "$1" 2 >/dev/null 2>&1 || "$U" tap "$1" 1 >/dev/null 2>&1; }   # a labelled field: the label text and the field both match, the field is the last
+attempt_product() { # Home -> New product -> name + price -> Save
+  to_tabs; go_home; tap_any "$(L new_product)" || { MSG="<no add-product button>"; return 1; }
+  sleep 3; tap_field "$(L v2_form_name)" || { MSG="<form did not open: $(texts 300)>"; return 1; }
+  "$U" type "E2E%sNew%sProduct" >/dev/null; "$U" back >/dev/null
+  tap_field "$(L v2_form_per_rental)"; "$U" type 1000 >/dev/null; "$U" back >/dev/null
+  tap_any "$(L v2_form_save)"; sleep 2; settle_dialog; "$U" shot "a-attempt-product-$ATT" >/dev/null
+  tap_any "$(L ok)" >/dev/null 2>&1; sleep 1; tap_any "$(L close)" >/dev/null 2>&1; sleep 1
+}
+attempt_customer() { # Settings -> Customers -> + -> phone + name -> Save
+  to_tabs; tap_any "$(L settings)" || { MSG="<no settings tab>"; return 1; }; sleep 2; "$U" swipe up >/dev/null
+  tap_any "$(L customers)" || { MSG="<no Customers row>"; return 1; }; sleep 3
+  tap_any "$(L customers_v2_add)" || { MSG="<no add-customer button>"; "$U" back >/dev/null; return 1; }; sleep 2
+  tap_field "$(L customers_v2_phone)"; "$U" type 0933333333 >/dev/null; "$U" back >/dev/null
+  tap_field "$(L customers_v2_name)"; "$U" type "E2E%sNew%sCustomer" >/dev/null; "$U" back >/dev/null
+  tap_any "$(L save)"; sleep 2; settle_dialog; "$U" shot "a-attempt-customer-$ATT" >/dev/null
+  tap_any "$(L ok)" >/dev/null 2>&1; sleep 1; "$U" back >/dev/null; sleep 1; "$U" back >/dev/null; sleep 1
+}
+attempt_order() { # <product name>: Home -> + -> cart -> customer -> Create order x2
+  to_tabs; go_home; add_to_cart "$1" 1 || { MSG="<no product '$1' on Home: $(texts 250)>"; return 1; }
+  open_cart; pick_customer "Khách E2E 1"; pick_dates 0 1
+  "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 2
+  if wait_any "$(L v2_create_confirm_rent_title)" 6; then "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 3; fi
+  settle_dialog
+  if [ -z "$MSG" ] && have_any "~$(L v2_create_done_title '' | cut -d'#' -f1)#"; then MSG="<order created>"; tap_any "$(L v2_create_done_new_order)"; fi
+  "$U" shot "a-attempt-order-$ATT" >/dev/null
+  tap_any "$(L ok)" >/dev/null 2>&1; sleep 1; clear_cart
+}
+# msg_readable <text>: not empty, no raw key / bare code, in the current language (Vietnamese letters in vi, none in en)
+msg_readable() {
+  [ -n "$1" ] || return 1
+  echo "$1" | grep -Eq "$RAWRE" && return 1
+  if [ "$LANG_E2E" = vi ]; then echo "$1" | grep -Eq '[ạảãàáâậầấẩẫăắằặẳẵéèẻẽẹêếềểễệđíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]'
+  else ! echo "$1" | grep -Eq '[ạảãàáâậầấẩẫăắằặẳẵéèẻẽẹêếềểễệđíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]'; fi
+}

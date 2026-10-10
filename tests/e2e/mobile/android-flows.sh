@@ -57,18 +57,44 @@ case "${1:-}" in
   login) do_login "${2:?email}" "${3:?password}" ;;
   tabs) do_tabs "${2:?tag}" ;;
   sub)
-    slug="${2:?slug}"; role="${3:?role}"; PREP="$ROOT/scripts/mobile-e2e/prepare-accounts.sh"
+    slug="${2:?slug}"; role="${3:?role}"; PREP="$ROOT/scripts/mobile-e2e/prepare-accounts.sh"; ATT="$LANG_E2E-$slug-$role"; tag="[$LANG_E2E $slug/$role]"
     set_lang; "$PREP" break "$slug" >/dev/null; before="$(counts "$slug")"
-    do_login "$slug.$role@e2e-sub.test" "$(role_pw "$role")"; rc=0; do_tabs "$LANG_E2E/$slug/$role/broken" || rc=1
-    [ "$(counts "$slug")" = "$before" ] && pass "[$LANG_E2E $slug/$role] nothing created ($before)" || { fail "[$LANG_E2E $slug/$role] rows changed: $before -> $(counts "$slug")"; rc=1; }
+    do_login "$slug.$role@e2e-sub.test" "$(role_pw "$role")"; rc=0; clear_cart; do_tabs "$LANG_E2E/$slug/$role/broken" || rc=1
+    [ $rc = 0 ] && pass "$tag no raw key on any tab" || fail "$tag a raw key shows on a tab"
+    # the screens say why (Home / Orders / Overview show the API error text)
+    shown="$(grep -h "SUB $LANG_E2E/$slug/$role/broken tab[124]" "$OUT/notes.txt" | tail -3)"
+    if echo "$shown" | grep -Eq "$(L api_error_subscription_expired)|$(L api_error_trial_expired)"; then pass "$tag a tab names the reason: $(L api_error_subscription_expired)"
+    else note "NOREASON? $tag no tab shows the expired text; texts: $(echo "$shown" | cut -c1-500)"; fi
+    for what in product customer order; do
+      MSG=""; case $what in product) attempt_product ;; customer) attempt_customer ;; order) attempt_order "E2E SP 1" ;; esac
+      note "ATTEMPT $tag $what | msg=$MSG"
+      case "$MSG" in "<no "*|"<form did not"*) note "SKIP $tag add $what: ${MSG:0:80}" ;;
+        "<order created>") fail "$tag an order was created in a broken state" ;;
+        *) msg_readable "$MSG" && pass "$tag add $what -> readable message: $MSG" || fail "$tag add $what -> message not readable in $LANG_E2E: '$MSG'" ;; esac
+    done
+    [ "$(counts "$slug")" = "$before" ] && pass "$tag nothing created ($before)" || { fail "$tag rows changed: $before -> $(counts "$slug")"; rc=1; }
     "$PREP" fix "$slug" >/dev/null
-    restart_app; sleep 8; go_home; sleep 4; "$U" shot "a-$LANG_E2E-$slug-$role-fixed-home" >/dev/null
+    restart_app; sleep 8; go_home; sleep 4; "$U" shot "a-$ATT-fixed-home" >/dev/null
     t="$(texts)"; note "SUB $slug/$role fixed home | $t"
-    echo "$t" | grep -q "E2E SP" && pass "[$LANG_E2E $slug/$role] fixed: Home lists the products again" || { fail "[$LANG_E2E $slug/$role] fixed: Home shows no product"; rc=1; }
+    echo "$t" | grep -q "E2E SP" && pass "$tag fixed: Home lists the products again" || { fail "$tag fixed: Home shows no product"; rc=1; }
     "$PREP" break "$slug" >/dev/null
-    exit $rc ;;
+    exit $((FAILS > 0)) ;;
+  limit)
+    role="${2:?role}"; slug=at-limit; ATT="$LANG_E2E-$slug-$role"; tag="[$LANG_E2E $slug/$role]"; want="$(L api_error_plan_limit_exceeded)"
+    set_lang; before="$(counts "$slug")"; do_login "$slug.$role@e2e-sub.test" "$(role_pw "$role")"; clear_cart
+    for what in product customer order; do
+      MSG=""; case $what in product) attempt_product ;; customer) attempt_customer ;; order) attempt_order "E2E SP 1" ;; esac
+      note "ATTEMPT $tag $what | msg=$MSG"
+      case "$MSG" in "<no "*|"<form did not"*) note "SKIP $tag add $what: ${MSG:0:120}" ;;
+        "<order created>") fail "$tag an order was created at the limit" ;;
+        "$want") pass "$tag add $what -> '$MSG'" ;;
+        *) msg_readable "$MSG" && fail "$tag add $what -> readable but not the plan-limit message: '$MSG' (want '$want')" || fail "$tag add $what -> message not readable in $LANG_E2E: '$MSG'" ;; esac
+    done
+    [ "$(counts "$slug")" = "$before" ] && pass "$tag nothing created ($before)" || fail "$tag rows changed: $before -> $(counts "$slug")"
+    exit $((FAILS > 0)) ;;
   calendar) source "$CHK/android-flow-calendar.sh" ;;
   todo) source "$CHK/android-flow-todo.sh" ;;
+  role) source "$CHK/android-flow-role.sh" "$@" ;;
   stock) source "$CHK/android-flow-stock.sh" ;;
   *) sed -n 2,19p "$0"; exit 64 ;;
 esac
