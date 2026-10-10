@@ -12,9 +12,7 @@ const F = require('./ui-order-flow');
 const { WebApi, vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
-const KNOWN = {
-  'PRD-12 two products without a barcode can both be edited': '#742'
-};
+const KNOWN = {};
 
 const dayIso = (key) => new Date(`${key}T00:00:00+07:00`).toISOString();
 const qs = (o) => new URLSearchParams(o).toString();
