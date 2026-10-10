@@ -2030,7 +2030,7 @@ export const simplifiedOrders = {
    */
   findByIdDetail: async (id: number) => {
     const order = await prisma.order.findUnique({
-      where: { id },
+      where: { id, deletedAt: null }, // #739: soft-deleted orders are 404 like by number
       select: {
         id: true,
         orderNumber: true,
@@ -2394,7 +2394,7 @@ export const simplifiedOrders = {
     }
 
     return await prisma.order.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       select
     });
   },

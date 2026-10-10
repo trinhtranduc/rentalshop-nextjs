@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getOrderRevenueEvents } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollateral } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 
@@ -207,7 +207,9 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       }
 
       // Sum revenue from all events in the date range
-      const orderRevenueInRange = revenueEvents.reduce((sum, event) => sum + event.revenue, 0);
+      // #506: collateral is never spending
+      const orderRevenueInRange = getOrderRevenueEvents(withoutCollateral(orderData), dateStart, dateEnd)
+        .reduce((sum, event) => sum + event.revenue, 0);
       customerData.totalRevenue += orderRevenueInRange;
     }
 
