@@ -67,6 +67,8 @@ case "${1:-}" in
     echo "$t" | grep -q "E2E SP" && pass "[$LANG_E2E $slug/$role] fixed: Home lists the products again" || { fail "[$LANG_E2E $slug/$role] fixed: Home shows no product"; rc=1; }
     "$PREP" break "$slug" >/dev/null
     exit $rc ;;
+  calendar) source "$CHK/android-flow-calendar.sh" ;;
+  todo) source "$CHK/android-flow-todo.sh" ;;
   stock) source "$CHK/android-flow-stock.sh" ;;
   *) sed -n 2,19p "$0"; exit 64 ;;
 esac
