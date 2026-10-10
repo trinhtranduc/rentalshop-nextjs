@@ -374,9 +374,10 @@ model Order {
   orderType             OrderType
   status                OrderStatus          @default(RESERVED)
   totalAmount           Float
+  pickupTotalAmount     Float?
   depositAmount         Float                @default(0)
   securityDeposit       Float                @default(0)
-  damageFee             Float                @default(0)
+  damageFee            Float                @default(0)
   lateFee               Float                @default(0)
   discountType          String?
   discountValue         Float                @default(0)

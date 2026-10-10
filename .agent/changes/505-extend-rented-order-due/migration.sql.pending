@@ -1,0 +1,4 @@
+-- Put this file at prisma/migrations/20261010120000_add_order_pickup_total_amount/migration.sql
+-- #505: the total that was collected at hand-over.
+-- Null = the order was not handed over after this change; readers then use totalAmount (nothing extended).
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "pickupTotalAmount" DOUBLE PRECISION;

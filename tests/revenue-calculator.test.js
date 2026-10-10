@@ -421,6 +421,50 @@ describe('Revenue Calculator Utility', () => {
       });
     });
 
+    describe('#505 extension (gia hạn) of a handed-over order', () => {
+      const base = {
+        orderType: ORDER_TYPE.RENT,
+        status: ORDER_STATUS.PICKUPED,
+        totalAmount: 400000, // 300k at hand-over + 100k extra rent
+        pickupTotalAmount: 300000,
+        depositAmount: 0,
+        securityDeposit: 500000,
+        damageFee: 0,
+        createdAt: new Date('2026-01-16T10:00:00Z'),
+        updatedAt: new Date('2026-01-18T10:00:00Z'),
+        pickedUpAt: new Date('2026-01-17T02:00:00Z'),
+        returnedAt: null
+      };
+
+      it('pickup day keeps what was collected at hand-over', () => {
+        const events = getOrderRevenueEvents(base);
+        const pickup = events.find((e) => e.revenueType === 'RENT_PICKUP');
+        expect(pickup.revenue).toBe(300000 + 500000);
+        expect(calculateOrderRevenueByStatus(base)).toBe(300000 + 500000);
+      });
+
+      it('the extra rent is booked at return with the collateral handed back', () => {
+        const returned = { ...base, status: ORDER_STATUS.RETURNED, returnedAt: new Date('2026-01-20T03:00:00Z') };
+        const events = getOrderRevenueEvents(returned);
+        expect(events.find((e) => e.revenueType === 'RENT_RETURN').revenue).toBe(100000 - 500000);
+        // pickup + return add up to the total
+        expect(events.reduce((acc, e) => acc + e.revenue, 0)).toBe(400000);
+      });
+
+      it('an order without a recorded pickup total behaves as before', () => {
+        const legacy = { ...base, pickupTotalAmount: null };
+        expect(getOrderRevenueEvents(legacy).find((e) => e.revenueType === 'RENT_PICKUP').revenue).toBe(400000 + 500000);
+        const returned = { ...legacy, status: ORDER_STATUS.RETURNED, returnedAt: new Date('2026-01-20T03:00:00Z') };
+        expect(getOrderRevenueEvents(returned).find((e) => e.revenueType === 'RENT_RETURN').revenue).toBe(-500000);
+      });
+
+      it('cancelling after the extension refunds only what was collected', () => {
+        const cancelled = { ...base, status: ORDER_STATUS.CANCELLED, updatedAt: new Date('2026-01-19T10:00:00Z') };
+        const refund = getOrderRevenueEvents(cancelled).find((e) => e.revenueType === 'RENT_CANCELLED');
+        expect(refund.revenue).toBe(-(300000 + 500000));
+      });
+    });
+
     describe('Order Updates - Orders should appear after updates', () => {
       it('should show order with revenue = 0 if depositAmount = 0', () => {
         // Scenario: Order created with no deposit

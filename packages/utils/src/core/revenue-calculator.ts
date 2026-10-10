@@ -54,6 +54,11 @@ export interface OrderRevenueData {
   orderType: string;
   status: string;
   totalAmount: number;
+  /**
+   * #505: the total collected at hand-over. `totalAmount - pickupTotalAmount` is the extra rent of a later
+   * extension (gia hạn), due at return; it is not part of the pickup day's money. Null / missing = use `totalAmount`.
+   */
+  pickupTotalAmount?: number | null;
   depositAmount: number;
   securityDeposit: number;
   damageFee: number;
@@ -65,6 +70,16 @@ export interface OrderRevenueData {
   pickupPlanAt?: Date | string | null; // For future pickup revenue calculation
   returnPlanAt?: Date | string | null; // For future return revenue calculation
   updatedAt?: Date | string | null;
+}
+
+/** Total collected at hand-over (#505); the order's total when it was never recorded */
+export function pickupTotalOf(order: Pick<OrderRevenueData, 'totalAmount' | 'pickupTotalAmount'>): number {
+  return order.pickupTotalAmount ?? order.totalAmount ?? 0;
+}
+
+/** Extra rent added to a handed-over order after hand-over (#505): zero when no pickup total was recorded */
+export function extensionAmountOf(order: Pick<OrderRevenueData, 'totalAmount' | 'pickupTotalAmount'>): number {
+  return order.pickupTotalAmount == null ? 0 : (order.totalAmount || 0) - order.pickupTotalAmount;
 }
 
 export interface RevenueEvent {
@@ -127,10 +142,12 @@ export function getOrderRevenueEvents(
 
   // Extract values with defaults
   const totalAmount = order.totalAmount || 0;
+  const pickupTotal = pickupTotalOf(order);
   const depositAmount = order.depositAmount || 0;
   const securityDeposit = order.securityDeposit || 0;
   const damageFee = order.damageFee || 0;
   const returnFees = damageFee + (order.lateFee || 0);
+  const extensionAmount = extensionAmountOf(order);
 
   // ============================================================================
   // SALE ORDERS
@@ -205,10 +222,10 @@ export function getOrderRevenueEvents(
       let pickupRevenue: number;
       if (isSameDayPickup) {
         // Same day pickup: totalAmount + securityDeposit (KHÔNG trừ depositAmount)
-        pickupRevenue = totalAmount + securityDeposit;
+        pickupRevenue = pickupTotal + securityDeposit;
       } else {
         // Different day: totalAmount - depositAmount + securityDeposit (trừ depositAmount vì đã thu riêng)
-        pickupRevenue = totalAmount - depositAmount + securityDeposit;
+        pickupRevenue = pickupTotal - depositAmount + securityDeposit;
       }
 
       events.push({
@@ -233,9 +250,9 @@ export function getOrderRevenueEvents(
         returnRevenue = totalAmount + returnFees;
         description = 'Thuê và trả trong cùng ngày';
       } else {
-        // Different day: damageFee - securityDeposit
+        // Different day: damageFee - securityDeposit (+ the extra rent of a gia hạn, due at return, #505)
         // Note: âm vì securityDeposit đã thu ở pickup, giờ trừ đi
-        returnRevenue = returnFees - securityDeposit;
+        returnRevenue = returnFees + extensionAmount - securityDeposit;
         if (returnRevenue > 0) {
           description = 'Thu phí hư hỏng';
         } else if (returnRevenue < 0) {
@@ -265,10 +282,10 @@ export function getOrderRevenueEvents(
         // Already picked up: calculate total collected
         if (isSameDayPickup) {
           // Pickup same day as created: pickup revenue already included deposit
-          totalCollected = totalAmount + securityDeposit; // Note: không trừ depositAmount vì đã bao gồm
+          totalCollected = pickupTotal + securityDeposit; // Note: không trừ depositAmount vì đã bao gồm
         } else {
           // Pickup different day: deposit separately + pickup revenue
-          totalCollected = depositAmount + (totalAmount - depositAmount + securityDeposit);
+          totalCollected = depositAmount + (pickupTotal - depositAmount + securityDeposit);
         }
       } else if (createdAt && createdAt < updatedAt) {
         // Only deposited: only deposit amount
@@ -471,7 +488,7 @@ export function getFutureRevenueEvents(
     if (returnPlanAt >= dateRangeStart && returnPlanAt <= dateRangeEnd && returnPlanAt > now) {
       // Future return revenue = damageFee - securityDeposit (ước tính sẽ thu/hoàn khi return)
       // Note: Đây là ước tính vì damageFee chưa biết chính xác, có thể là 0 hoặc ước tính
-      const futureReturnRevenue = damageFee - securityDeposit;
+      const futureReturnRevenue = damageFee + extensionAmountOf(order) - securityDeposit;
       
       // Only add event if there's actual revenue (positive or negative)
       // If damageFee is 0 (chưa có hư hỏng), thì revenue = -securityDeposit (sẽ hoàn tiền cọc)
@@ -580,10 +597,12 @@ export function getOrderRevenueForDate(
   const returnPlanAt = order.returnPlanAt ? new Date(order.returnPlanAt) : null;
 
   const totalAmount = order.totalAmount || 0;
+  const pickupTotal = pickupTotalOf(order);
   const depositAmount = order.depositAmount || 0;
   const securityDeposit = order.securityDeposit || 0;
   const damageFee = order.damageFee || 0;
   const returnFees = damageFee + (order.lateFee || 0);
+  const extensionAmount = extensionAmountOf(order);
 
   // ============================================================================
   // CASE 1: Order đã RETURNED và returnedAt < targetDate (quá khứ)
@@ -606,8 +625,8 @@ export function getOrderRevenueForDate(
         // Same day return: totalAmount + damageFee + lateFee
         return totalAmount + returnFees;
       } else {
-        // Different day return: damageFee + lateFee - securityDeposit
-        return returnFees - securityDeposit;
+        // Different day return: damageFee + lateFee - securityDeposit (+ extra rent of a gia hạn, #505)
+        return returnFees + extensionAmount - securityDeposit;
       }
     }
   }
@@ -636,7 +655,7 @@ export function getOrderRevenueForDate(
       const returnPlanAtKey = shopDayKey(returnPlanAt);
       if (returnPlanAtKey === targetDateKey) {
         // Future return revenue = damageFee - securityDeposit
-        futureRevenue += damageFee - securityDeposit;
+        futureRevenue += damageFee + extensionAmount - securityDeposit;
       }
     }
 
@@ -783,10 +802,10 @@ export function calculateOrderRevenueByStatus(order: OrderRevenueData): number {
       // - Pickup khác ngày: totalAmount - depositAmount + securityDeposit (trừ depositAmount vì đã thu riêng)
       if (isSameDayPickup) {
         // Same day pickup: totalAmount + securityDeposit (KHÔNG trừ depositAmount)
-        return (order.totalAmount || 0) + (order.securityDeposit || 0);
+        return pickupTotalOf(order) + (order.securityDeposit || 0);
       } else {
         // Different day: totalAmount - depositAmount + securityDeposit (trừ depositAmount vì đã thu riêng)
-        return (order.totalAmount || 0) - (order.depositAmount || 0) + (order.securityDeposit || 0);
+        return pickupTotalOf(order) - (order.depositAmount || 0) + (order.securityDeposit || 0);
       }
 
     case ORDER_STATUS.RETURNED:
