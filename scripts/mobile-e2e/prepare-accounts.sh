@@ -8,12 +8,16 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF2'
-Usage: scripts/mobile-e2e/prepare-accounts.sh [create|list|fix <slug>|break <slug>|--help]
+Usage: scripts/mobile-e2e/prepare-accounts.sh [create|list|fix <slug>|break <slug>|staged|--help]
 
   create        (default) create or recreate every scenario below in $E2E_DATABASE_URL
   list          print the accounts and the subscription state of each scenario
   fix <slug>    make the scenario's subscription healthy again (ACTIVE, period ends in 30 days)
   break <slug>  put the scenario back to its broken state (what create does)
+  staged        add three products to the seeded merchant1 (additive, idempotent, `create` does not run it): "Váy cưới thuê theo ngày"
+                (DAILY 400.000, 3 in stock), "Vest xanh navy thuê lần" (FIXED 380.000, 3 in stock), "Váy trùng đơn test" (1 in stock, all of
+                it held by a RENT order today, order 720001, so the cart shows the "Xem các đơn đang giữ món" tag). Needed by the iOS
+                test8cOverlapTagAndRoleSheet and test8dCartLines (merchant account, merchant1@example.com).
 
 Scenarios (slug: subscription state):
   expired-trial    TRIAL, period ended 3 days ago           -> 403 SUBSCRIPTION_EXPIRED
@@ -199,10 +203,58 @@ SQL4
   echo "$1: status=$2, period end in ${3}d"
 }
 
+staged_products() {
+  "${PSQL[@]}" <<'SQL5'
+BEGIN;
+DO $$
+DECLARE m int; o int; c int; cust int; p int; od int;
+BEGIN
+  SELECT id INTO m FROM "Merchant" WHERE email = 'merchant1@example.com';
+  IF m IS NULL THEN RAISE EXCEPTION 'merchant1@example.com not found: run seed-local.sh first'; END IF;
+  SELECT id INTO o FROM "Outlet" WHERE "merchantId" = m ORDER BY "isDefault" DESC, id LIMIT 1;
+  SELECT id INTO c FROM "Category" WHERE "merchantId" = m ORDER BY id LIMIT 1;
+  SELECT id INTO cust FROM "Customer" WHERE "merchantId" = m ORDER BY id LIMIT 1;
+  -- remove a previous run
+  DELETE FROM "OrderItem" WHERE "orderId" IN (SELECT id FROM "Order" WHERE "orderNumber" = '720001');
+  DELETE FROM "Order" WHERE "orderNumber" = '720001';
+  DELETE FROM "OutletStock" WHERE "productId" IN (SELECT id FROM "Product" WHERE "merchantId" = m AND name IN ('Váy cưới thuê theo ngày','Vest xanh navy thuê lần','Váy trùng đơn test'));
+  DELETE FROM "ProductPricingOption" WHERE "productId" IN (SELECT id FROM "Product" WHERE "merchantId" = m AND name IN ('Váy cưới thuê theo ngày','Vest xanh navy thuê lần','Váy trùng đơn test'));
+  DELETE FROM "Product" WHERE "merchantId" = m AND name IN ('Váy cưới thuê theo ngày','Vest xanh navy thuê lần','Váy trùng đơn test');
+  PERFORM setval(pg_get_serial_sequence('"Product"','id'), GREATEST((SELECT max(id) FROM "Product"), 1000));
+  PERFORM setval(pg_get_serial_sequence('"Order"','id'), GREATEST((SELECT max(id) FROM "Order"), 1000));
+  PERFORM setval(pg_get_serial_sequence('"ProductPricingOption"','id'), GREATEST((SELECT coalesce(max(id),1) FROM "ProductPricingOption"), 100));
+
+  INSERT INTO "Product"(name, "totalStock", "rentPrice", "salePrice", deposit, "merchantId", "categoryId", "pricingType", "updatedAt")
+    VALUES ('Váy cưới thuê theo ngày', 3, 400000, 0, 0, m, c, 'DAILY', now()) RETURNING id INTO p;
+  INSERT INTO "ProductPricingOption"("productId", type, price, "isDefault", "isActive", "sortOrder", "updatedAt") VALUES (p, 'DAILY', 400000, true, true, 0, now());
+  INSERT INTO "OutletStock"(stock, available, renting, "productId", "outletId", "updatedAt") VALUES (3, 3, 0, p, o, now());
+
+  INSERT INTO "Product"(name, "totalStock", "rentPrice", "salePrice", deposit, "merchantId", "categoryId", "pricingType", "updatedAt")
+    VALUES ('Vest xanh navy thuê lần', 3, 380000, 0, 0, m, c, 'FIXED', now()) RETURNING id INTO p;
+  INSERT INTO "ProductPricingOption"("productId", type, price, "isDefault", "isActive", "sortOrder", "updatedAt") VALUES (p, 'FIXED', 380000, true, true, 0, now());
+  INSERT INTO "OutletStock"(stock, available, renting, "productId", "outletId", "updatedAt") VALUES (3, 3, 0, p, o, now());
+
+  INSERT INTO "Product"(name, "totalStock", "rentPrice", "salePrice", deposit, "merchantId", "categoryId", "pricingType", "updatedAt")
+    VALUES ('Váy trùng đơn test', 1, 200000, 0, 0, m, c, 'DAILY', now()) RETURNING id INTO p;
+  INSERT INTO "ProductPricingOption"("productId", type, price, "isDefault", "isActive", "sortOrder", "updatedAt") VALUES (p, 'DAILY', 200000, true, true, 0, now());
+  INSERT INTO "OutletStock"(stock, available, renting, "productId", "outletId", "updatedAt") VALUES (1, 0, 1, p, o, now());
+  INSERT INTO "Order"("orderNumber","orderType",status,"totalAmount","depositAmount","outletId","customerId","pickupPlanAt","returnPlanAt","updatedAt")
+    VALUES ('720001','RENT','RESERVED', 400000, 0, o, cust,
+      (((now() at time zone 'Asia/Ho_Chi_Minh')::date + time '09:00') at time zone 'Asia/Ho_Chi_Minh') at time zone 'UTC',
+      (((now() at time zone 'Asia/Ho_Chi_Minh')::date + 2 + time '18:00') at time zone 'Asia/Ho_Chi_Minh') at time zone 'UTC', now()) RETURNING id INTO od;
+  INSERT INTO "OrderItem"(quantity,"unitPrice","totalPrice",deposit,"orderId","productId","productName","rentalDays")
+    VALUES (1, 200000, 400000, 0, od, p, 'Váy trùng đơn test', 2);
+END $$;
+COMMIT;
+SQL5
+  echo "staged: 3 products on merchant1 (order 720001 holds 'Váy trùng đơn test' today)"
+}
+
 CMD="${1:-create}"
 case "$CMD" in
   -h|--help|help) usage ;;
   create) for s in "${SLUGS[@]}"; do create_one "$s"; done ;;
+  staged) staged_products ;;
   list)
     psql "$E2E_DATABASE_URL" -c "SELECT split_part(u.email,'.',1) AS scenario, u.email, u.role, s.status, s.\"currentPeriodEnd\"::date AS period_end
       FROM \"User\" u JOIN \"Subscription\" s ON s.\"merchantId\" = u.\"merchantId\" WHERE u.email LIKE '%@e2e-sub.test' ORDER BY 1, u.role" ;;

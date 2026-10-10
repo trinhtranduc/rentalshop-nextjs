@@ -22,7 +22,13 @@ counts() {
     (SELECT count(*) FROM \"Outlet\" WHERE \"merchantId\" = m.id)
     FROM \"Merchant\" m WHERE m.email = '$EMAIL'"
 }
-run_ios() { "$ROOT/scripts/mobile-e2e/ios-e2e.sh" --scenario "$SLUG" --role "$ROLE" --only "$1" ${LANG_ARG[@]+"${LANG_ARG[@]}"}; }
+# keeps each run's xcodebuild log (the next run of the same account overwrites it): <label>-<test>.log
+run_ios() {
+  local rc=0
+  "$ROOT/scripts/mobile-e2e/ios-e2e.sh" --scenario "$SLUG" --role "$ROLE" --only "$1" ${LANG_ARG[@]+"${LANG_ARG[@]}"} || rc=$?
+  cp "$E2E_OUT/ios/sub-$SLUG-$ROLE-xcodebuild.log" "$E2E_OUT/ios/sub-$SLUG-$ROLE-$1.log" 2>/dev/null || true
+  return $rc
+}
 
 "$PREP" break "$SLUG" >/dev/null 2>&1 || true
 BEFORE="$(counts)"

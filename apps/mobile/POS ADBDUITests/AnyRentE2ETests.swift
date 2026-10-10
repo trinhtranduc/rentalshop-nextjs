@@ -1825,7 +1825,8 @@ final class AnyRentE2ETests: XCTestCase {
             all.tap()
         }
         checkEntityOrders(title: ["Orders by product", "Đơn theo sản phẩm"],
-                          tiles: [["Orders, ", "Số đơn, "], ["Rentals, ", "Lượt thuê, "], ["Revenue, ", "Doanh thu, "]],
+                          tiles: [["Orders, ", "Số đơn, "], ["Rentals, ", "Lượt thuê, "]],
+                          absentTiles: [["Revenue, ", "Doanh thu, "]], // #658: the product screen has no money tile
                           shot: "63b-orders-by-product")
         e2e.goBack()
 
@@ -1850,12 +1851,15 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
-    private func checkEntityOrders(title: [String], tiles: [[String]], shot: String) {
+    private func checkEntityOrders(title: [String], tiles: [[String]], absentTiles: [[String]] = [], shot: String) {
         let header = app.staticTexts.matching(NSPredicate(format: "label IN %@", title)).firstMatch
         XCTAssertTrue(header.waitForExistence(timeout: 10), "\(shot): \(title) opens")
         sleep(3)
         for labels in tiles {
             XCTAssertTrue(e2e.element(labelBeginsWith: labels).exists, "\(shot): tile \(labels)")
+        }
+        for labels in absentTiles {
+            XCTAssertFalse(e2e.element(labelBeginsWith: labels).exists, "\(shot): no tile \(labels)")
         }
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["ORDERS", "ĐƠN HÀNG"])).firstMatch.exists,
                       "\(shot): ĐƠN HÀNG band")
@@ -1897,8 +1901,9 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
-    /// Tổng quan → "Việc hôm nay" (#496): Cần giao / Cần nhận trả hôm nay rows open Đơn hàng; "Quá ngày lấy, khách chưa
-    /// đến" opens "Chưa lấy đồ" (board DT-chua-lay).
+    /// Tổng quan → the "Hôm nay" card (#496, now four tiles: Cần giao x/y, Cần nhận trả x/y, Trễ hạn trả, Quá ngày lấy, and the
+    /// "Ngày mai" line): "Quá ngày lấy" opens "Chưa lấy đồ" (board DT-chua-lay), "Cần giao" opens Đơn hàng. The numbers are
+    /// compared with the API by test7mTodayCounters (scenario ops); this flow only needs a shop with any data.
     func test7jTodayWorkAndNotPickedUp() throws {
         try e2e.requireFlag("newOverview")
         try e2e.start()
@@ -1906,18 +1911,21 @@ final class AnyRentE2ETests: XCTestCase {
             throw XCTSkip("No Tổng quan tab for this account")
         }
         sleep(3)
-        let header = e2e.element(labelBeginsWith: ["Today's work ·", "Việc hôm nay ·", "VIỆC HÔM NAY ·", "TODAY'S WORK ·"])
-        XCTAssertTrue(e2e.scrollTo(header), "Việc hôm nay section on Tổng quan")
-        let pickups = e2e.element(labelBeginsWith: ["To hand over today", "Cần giao hôm nay"], type: .button)
-        let returns = e2e.element(labelBeginsWith: ["To take back today", "Cần nhận trả hôm nay"], type: .button)
-        XCTAssertTrue(pickups.exists, "Cần giao hôm nay row")
-        XCTAssertTrue(returns.exists, "Cần nhận trả hôm nay row")
-        if pickups.exists { e2e.note("today row: \(pickups.label)") }
+        let pickups = e2e.element(labelBeginsWith: ["To hand over", "Cần giao"], type: .button)
+        let returns = e2e.element(labelBeginsWith: ["To take back", "Cần nhận trả"], type: .button)
+        XCTAssertTrue(e2e.scrollTo(pickups), "Cần giao tile on the Hôm nay card")
+        XCTAssertTrue(returns.exists, "Cần nhận trả tile on the Hôm nay card")
+        let header = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Today", "Hôm nay"])).allElementsBoundByIndex
+            .first { $0.frame.maxY < pickups.frame.minY && pickups.frame.minY - $0.frame.maxY < 120 }
+        e2e.soft(header != nil, "the Hôm nay card has its header above the tiles")
+        if pickups.exists { e2e.note("today tile: \(pickups.label)") }
+        let tomorrow = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Ngày mai' OR label BEGINSWITH 'Tomorrow'")).firstMatch
+        e2e.soft(tomorrow.exists, "the Hôm nay card has the Ngày mai line")
         e2e.shot("65a-overview-today-work")
 
         let noShows = e2e.element(labelBeginsWith: ["Pickup day passed", "Quá ngày lấy"], type: .button)
-        XCTAssertTrue(e2e.scrollTo(noShows), "Quá ngày lấy, khách chưa đến row")
-        e2e.note("no-show row: \(noShows.label)")
+        XCTAssertTrue(e2e.scrollTo(noShows), "Quá ngày lấy tile")
+        e2e.note("no-show tile: \(noShows.label)")
         noShows.tap()
         let title = e2e.element(labelBeginsWith: ["Not picked up", "Chưa lấy đồ"])
         XCTAssertTrue(title.waitForExistence(timeout: 8), "Chưa lấy đồ opens")
@@ -1935,13 +1943,13 @@ final class AnyRentE2ETests: XCTestCase {
         }
         e2e.goBack()
 
-        // Cần giao hôm nay → Đơn hàng (Việc cần làm)
+        // Cần giao → Đơn hàng
         e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3)
         sleep(2)
         if e2e.scrollTo(pickups) {
             pickups.tap()
             sleep(2)
-            XCTAssertTrue(e2e.button(["All orders", "Tất cả đơn"]).waitForExistence(timeout: 8), "Cần giao hôm nay opens Đơn hàng")
+            XCTAssertTrue(e2e.button(["All orders", "Tất cả đơn"]).waitForExistence(timeout: 8), "Cần giao opens Đơn hàng")
             e2e.shot("65b-today-work-orders")
         }
     }
@@ -2033,6 +2041,11 @@ final class AnyRentE2ETests: XCTestCase {
             sleep(4)
             e2e.shot("10b-sub-\(name)")
             e2e.note("SUB \(tag) \(name): alert=\(app.alerts.firstMatch.exists) texts=\(e2e.screenTexts().prefix(25))")
+            // Every tab that loads data should say why it is empty. Known misses, soft so the run stays green but honest:
+            let explains = e2e.screenTexts().contains { $0.contains("Đăng ký") || $0.contains("Thanh toán gói") || $0.lowercased().contains("subscription") || $0.lowercased().contains("payment") }
+            if name == "home" { e2e.soft(explains, "\(tag) home gives the reason, not 'Chưa có sản phẩm' (known: #753)") }
+            if name == "reports" && e2e.role != "merchant" { e2e.soft(explains, "\(tag) Tổng quan gives the reason, not only 'Hôm nay —' (known: #754)") }
+            if name == "orders" || name == "calendar" { XCTAssertTrue(explains, "\(tag) \(name) shows the subscription reason") }
             raw += e2e.rawKeys()
             // #753 (Home, every role) and #754 (Tổng quan of staff and kho): the reason and Retry, never a bare empty state
             if name == "home" || name == "reports" {
@@ -2471,10 +2484,17 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.shot("10e-limit-customer")
             record("customer")
             e2e.dismissAlerts()
-            // order: the first existing customer, rent today
+            // The failed save leaves the "Khách mới" form open over the picker over the cart: form back → picker, then swipe the
+            // picker sheet down. Then the order: the first existing customer, rent today.
             e2e.lastAlert = nil
             e2e.goBackOnce()
-            if e2e.openCartWithOneItem() {
+            if !e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).isHittable {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.07))
+                    .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+                sleep(1)
+            }
+            e2e.shot("10e-limit-back-in-cart")
+            if e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 5) {
                 e2e.cartRentToday()
                 _ = e2e.pickFirstCustomer()
                 let created = e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "10e-limit-order")
@@ -2482,7 +2502,10 @@ final class AnyRentE2ETests: XCTestCase {
                 e2e.shot("10e-limit-order-result")
                 record("order")
                 e2e.dismissAlerts()
+            } else {
+                e2e.note("LIMIT \(tag) order | could not get back to the cart after the customer error")
             }
+            for _ in 0..<2 where !app.tabBars.firstMatch.isHittable { e2e.goBackOnce() }
             e2e.emptyCart()
         } else {
             e2e.note("LIMIT \(tag) cart | could not open the cart")
