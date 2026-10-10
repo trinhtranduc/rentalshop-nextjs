@@ -21,7 +21,8 @@ import {
   extractStagingKeysFromUrls,
   mapStagingUrlsToProductionUrls,
   getUtcRangeForDateKeys,
-  toDateKeyInTimeZone
+  toDateKeyInTimeZone,
+  normalizeLegacyPlanDays
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
@@ -612,6 +613,14 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
+    }
+    // #577: the Android cart before #413 sends `R T23:59:00Z` (= R+1 in Vietnam): store the chosen days
+    {
+      const days = normalizeLegacyPlanDays(parsed.data);
+      if (days.legacy) {
+        parsed.data.pickupPlanAt = days.pickupPlanAt as string | undefined;
+        parsed.data.returnPlanAt = days.returnPlanAt as string | undefined;
+      }
     }
 
     // ✅ Validate outletId based on user role
@@ -1205,6 +1214,14 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         ResponseBuilder.validationError(parsed.error.flatten()),
         { status: 400 }
       );
+    }
+    // #577: same old Android pattern on edit
+    {
+      const days = normalizeLegacyPlanDays(parsed.data);
+      if (days.legacy) {
+        parsed.data.pickupPlanAt = days.pickupPlanAt as string | undefined;
+        parsed.data.returnPlanAt = days.returnPlanAt as string | undefined;
+      }
     }
 
     if (!id) {
