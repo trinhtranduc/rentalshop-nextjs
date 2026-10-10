@@ -192,6 +192,12 @@ DELETE FROM "Order" WHERE "orderNumber" NOT LIKE '7100%' AND "outletId" IN (SELE
 COMMIT;
 SQL3
   fi
+  # Timestamps are naive UTC. The column default (CURRENT_TIMESTAMP in the server's Asia/Ho_Chi_Minh) is 7 hours ahead, which
+  # puts the new orders in the future and sorts them above orders the apps create later. Stamp them with the real UTC time.
+  "${PSQL[@]}" -v email="$slug.owner@e2e-sub.test" <<'SQL6'
+UPDATE "Order" SET "createdAt" = now() at time zone 'UTC'
+  WHERE "outletId" IN (SELECT id FROM "Outlet" WHERE "merchantId" = (SELECT id FROM "Merchant" WHERE email = :'email'));
+SQL6
   echo "created $slug ($status, period end ${days}d)"
 }
 
@@ -238,8 +244,9 @@ BEGIN
     VALUES ('Váy trùng đơn test', 1, 200000, 0, 0, m, c, 'DAILY', now()) RETURNING id INTO p;
   INSERT INTO "ProductPricingOption"("productId", type, price, "isDefault", "isActive", "sortOrder", "updatedAt") VALUES (p, 'DAILY', 200000, true, true, 0, now());
   INSERT INTO "OutletStock"(stock, available, renting, "productId", "outletId", "updatedAt") VALUES (1, 0, 1, p, o, now());
-  INSERT INTO "Order"("orderNumber","orderType",status,"totalAmount","depositAmount","outletId","customerId","pickupPlanAt","returnPlanAt","updatedAt")
-    VALUES ('720001','RENT','RESERVED', 400000, 0, o, cust,
+  INSERT INTO "Order"("orderNumber","orderType",status,"totalAmount","depositAmount","outletId","customerId","createdAt","pickupPlanAt","returnPlanAt","updatedAt")
+    VALUES ('720001','RENT','RESERVED', 400000, 0, o, cust, now() at time zone 'UTC',  -- timestamps are naive UTC: now() alone is 7 hours ahead
+
       (((now() at time zone 'Asia/Ho_Chi_Minh')::date + time '09:00') at time zone 'Asia/Ho_Chi_Minh') at time zone 'UTC',
       (((now() at time zone 'Asia/Ho_Chi_Minh')::date + 2 + time '18:00') at time zone 'Asia/Ho_Chi_Minh') at time zone 'UTC', now()) RETURNING id INTO od;
   INSERT INTO "OrderItem"(quantity,"unitPrice","totalPrice",deposit,"orderId","productId","productName","rentalDays")

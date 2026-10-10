@@ -725,7 +725,9 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
 
         // A product without open orders is deleted and leaves the list.
-        guard e2e.openProduct(where: { $0 == 0 }) != nil else { return XCTFail("No product without open orders") }
+        // From the end of the list: test7dProductChangeHistory edits Product 25 and test7eOverlapSetting uses Product 2, so the product
+        // this test deletes must be neither (it used to take the first one without orders, Product 2, which broke 7e in a full run).
+        guard e2e.openProduct(where: { $0 == 0 }, upTo: 30, descending: true) != nil else { return XCTFail("No product without open orders") }
         e2e.button(["Delete product", "Xóa sản phẩm", "Delete", "Xóa"]).tap()
         let ok = app.sheets.buttons.matching(NSPredicate(format: "label IN %@", ["Delete product", "Xóa sản phẩm"])).firstMatch
         if ok.waitForExistence(timeout: 5) { ok.tap() }
@@ -1231,11 +1233,18 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
         sleep(3)
         XCTAssertTrue(app.cells.firstMatch.waitForExistence(timeout: 8), "Tất cả đơn has rows")
-        // Seed rows can carry a createdAt later than now and sort above it: look at the first rows
-        let topTexts = app.cells.allElementsBoundByIndex.prefix(5).map { E2E.texts($0) }
+        // The seed has orders whose createdAt is later today than now (ORD-001-0004 is created at 22:44 Vietnam time), and they sort above
+        // a new order: so the new order must be in the loaded list without a pull-to-refresh, not necessarily the top row.
+        let topTexts = app.cells.allElementsBoundByIndex.prefix(8).map { E2E.texts($0) }
         e2e.note("top rows after create: \(topTexts.joined(separator: " || "))")
-        XCTAssertTrue(topTexts.contains { $0.contains(number) },
-                      "#674: new order #\(number) is at the top of Tất cả đơn without pull-to-refresh")
+        var listed = topTexts.contains { $0.contains(number) }
+        for _ in 0..<3 where !listed {
+            app.swipeUp()
+            listed = app.cells.allElementsBoundByIndex.contains { E2E.texts($0).contains(number) }
+        }
+        XCTAssertTrue(listed, "#674: new order #\(number) is in Tất cả đơn without pull-to-refresh")
+        e2e.soft(topTexts.first?.contains(number) == true, "the new order is the top row (the seed has orders created later today, so it may not be)")
+        for _ in 0..<3 { app.swipeDown() }
         e2e.shot("60c-all-orders-after-create")
 
         var row = app.cells.containing(NSPredicate(format: "label CONTAINS %@", number)).firstMatch
@@ -1325,7 +1334,9 @@ final class AnyRentE2ETests: XCTestCase {
             if toast.exists { toastSeen = true; e2e.note("toast: \(toast.label)"); break }
             usleep(250_000)
         }
-        XCTAssertTrue(toastSeen, "toast 'Đã lưu đơn #\(number)'")
+        // The toast is on screen (60i-edit-saved-burst-0.png shows "Đã lưu đơn #n") but its label is not in the accessibility tree (the screen's
+        // accessibilityElements leave the ToastView out), so the query cannot see it: soft, and the saved detail below is the hard proof.
+        e2e.soft(toastSeen, "toast 'Đã lưu đơn #\(number)' is queryable (it shows in 60i-edit-saved-burst-0.png, not in the accessibility tree)")
         XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "save lands on the order detail")
         XCTAssertFalse(save.exists, "no review/cart screen after the save")
         sleep(2)
@@ -1660,12 +1671,14 @@ final class AnyRentE2ETests: XCTestCase {
         let plus = e2e.button(["One more", "Thêm 1"])
         let short = app.staticTexts.matching(NSPredicate(format:
             "label CONTAINS 'trống trong ngày' OR label CONTAINS 'free on these dates' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
-        for _ in 0..<40 where !short.exists {
+        // A product already booked out today (an earlier run took the units) shows the red "Hết …" tag at once instead of "Chỉ còn N trống"
+        let outTag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders'")).firstMatch
+        for _ in 0..<40 where !short.exists && !outTag.exists {
             guard plus.exists else { break }
             plus.tap()
             sleep(1)
         }
-        e2e.soft(short.waitForExistence(timeout: 3), "the line says the stock runs out")
+        e2e.soft(short.waitForExistence(timeout: 3) || outTag.exists, "the line says the stock runs out")
         e2e.shot("33b-overlap-first-order-cart")
         _ = e2e.pickFirstCustomer()
         guard e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "33c-overlap-first") else {
@@ -1676,11 +1689,11 @@ final class AnyRentE2ETests: XCTestCase {
         // 2. Same product, same day: the line shows the clash; the confirm sheet warns and reads "Vẫn tạo đơn"
         guard e2e.addToCartAndOpen(product: key) else { return XCTFail("Could not put \(key) in the cart again") }
         e2e.cartRentToday()
-        let clash = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Hết đồ' OR label CONTAINS 'Booked out'")).firstMatch
-        XCTAssertTrue(clash.waitForExistence(timeout: 10), "the cart line shows Hết đồ … · đã thuê ở đơn #…")
-        if clash.exists {
-            e2e.soft(firstNumber.isEmpty || clash.label.contains(firstNumber), "clash names order #\(firstNumber) (\(clash.label))")
-        }
+        // #684: the line carries a red tag "Hết 10/10 ›" (a button: "Xem các đơn đang giữ món ngày 10/10"); the old text line
+        // "Hết đồ … · đã thuê ở đơn #…" is gone. The tag opens Lịch trống on that day (test8cOverlapTagAndRoleSheet).
+        let clash = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders'")).firstMatch
+        XCTAssertTrue(clash.waitForExistence(timeout: 10), "the cart line shows the Hết tag (Xem các đơn đang giữ món ngày …)")
+        if clash.exists { e2e.note("clash tag: \(clash.label) (first order #\(firstNumber))") }
         _ = e2e.pickFirstCustomer()
         e2e.shot("33d-overlap-on-cart")
         let cta = e2e.button(["Create order", "Tạo đơn"])
@@ -2859,15 +2872,25 @@ private final class E2E {
     /// Home → search the product by name → open its detail. True when "Add to cart" shows.
     func openProduct(named name: String) -> Bool {
         tapTab(["Home", "Trang chủ"], index: 0)
-        let search = field(["Name, barcode…", "Tên, mã vạch…"])
-        guard search.waitForExistence(timeout: 10) else { return false }
+        // v2 placeholder "Tìm tên, mã vạch hoặc chụp ảnh" (the old "Tên, mã vạch…" is gone: openProduct never found its field)
+        let search = field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+        guard search.waitForExistence(timeout: 10) else { note("openProduct '\(name)': no Home search field"); shot("openproduct-no-search"); return false }
         search.tap()
         search.clearText()
         search.typeText(name + "\n")
         sleep(3)
         let row = app.cells.containing(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
         let text = app.staticTexts[name]
-        if row.waitForExistence(timeout: 5) { tapRow(row) } else if text.exists { text.tap() } else { return false }
+        // "Product 2 -" also matches Product 20…29 (word prefix), and the list is sorted by name: the row can be further down
+        if !row.waitForExistence(timeout: 5) {
+            note("openProduct '\(name)': first rows \(screenTexts().prefix(12))")
+            for _ in 0..<6 where !row.exists { app.swipeUp() }
+        }
+        if row.exists { tapRow(row) } else if text.exists { text.tap() } else {
+            note("openProduct '\(name)': no row. search=\((search.value as? String) ?? "?") cells=\(app.cells.allElementsBoundByIndex.prefix(4).map(\.label))")
+            shot("openproduct-missing")
+            return false
+        }
         return button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10)
     }
 
@@ -2886,8 +2909,8 @@ private final class E2E {
     }
 
     /// Opens the first seed product ("Product N - …") whose open-order count matches; returns its search key
-    func openProduct(where match: (Int) -> Bool, upTo last: Int = 20) -> String? {
-        for index in 1...last {
+    func openProduct(where match: (Int) -> Bool, upTo last: Int = 20, descending: Bool = false) -> String? {
+        for index in (descending ? Array((1...last).reversed()) : Array(1...last)) {
             let key = "Product \(index) -"
             guard openProduct(named: key) else { continue }
             if let count = productOpenOrderCount(), match(count) { return key }
