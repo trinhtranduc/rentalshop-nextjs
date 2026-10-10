@@ -17,7 +17,7 @@ quả trên máy), *chưa viết* (còn thiếu, kèm lý do).
 | Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 (chưa lật các known của #728, #736 sau khi sửa) |
 | Web: từng tính năng giao diện (`--ui`), trình duyệt thật trên `dev` | public 130/130; products 56 đạt, 1 known (#742, đã sửa sau lần chạy này); settings 66 đạt, kiểm tra cuối của SET-06 đã sửa trong test, chưa chạy lại riêng |
 | iOS | các luồng mới đều đạt với số khớp API; 2 lỗi app mới (#753, #754) đang được sửa; xem mục iOS |
-| Android | số liệu Báo cáo khớp API (kỳ 7 ngày); các luồng khác đang được chạy lại |
+| Android (emulator, `android-all.sh`, en + vi) | 231 đạt, 0 fail, 18 ghi chú của 3 known bug (#756 #757 #758). Tổng quan Hôm nay và 7 ngày, tồn, lịch, việc cần làm, vai trò, giới hạn gói, 5 trạng thái hết hạn × owner / staff / kho: số trên màn hình bằng API. Tổng quan chưa chạy bằng tiếng Việt; 2 trong 15 lượt `sub` bị bỏ qua ở lượt cuối |
 | Unit (`cd tests && npx jest`) | 30 nhóm / 34 test fail trên `dev` trước #763; sau #763 3 nhóm bảo vệ đã cập nhật; 13 nhóm không chạy được vì lỗi cấu hình jest (`Unexpected token '<'`), xem #762 |
 
 ## Lệnh chạy
@@ -746,7 +746,7 @@ Không tự động được: thêm / sửa / xoá người dùng và thêm chi 
 
 ## MOB — Mobile (iOS XCUITest + Android adb) (#727)
 
-**Trạng thái trung thực:** các test iOS đã viết và biên dịch được (kiểm bằng SDK iphonesimulator) nhưng **chưa chạy trên máy**: ổ đĩa đầy giữa chừng, cả hai lần build iOS chết vì hết chỗ. Android: chỉ chạy một phần luồng đăng ký. Kết quả pass/fail iOS sẽ có sau khi chạy lại (lệnh bên dưới).
+**Trạng thái:** Android đã chạy hết các luồng trên emulator (231 đạt, 0 fail, xem bảng; 3 known bug). iOS đã chạy lại các luồng mới và 7 test cũ đã sửa; số liệu khớp API, lỗi tìm được là #753 #754 #532 #533 (đã sửa trong PR #766). Bảng iOS bên dưới là của lượt cũ và chưa cập nhật từng dòng. Cột Android trong bảng: "đạt" nghĩa là đã chạy ở lượt cuối.
 Tài khoản thử trong DB riêng, tạo bằng `scripts/mobile-e2e/prepare-accounts.sh`: `<slug>.owner|staff|kho@e2e-sub.test` (mật khẩu merchant123 / staff123 / inventory123); slug: expired-trial, expired-active, cancelled-ended, paused, past-due, at-limit, healthy, stock, ops. Không đụng cửa hàng seed.
 
 Chạy:
@@ -765,33 +765,35 @@ Giới hạn đăng nhập ~10 lần / 15 phút / IP (trong bộ nhớ): khởi 
 
 | ID | Case | Steps | Expected | iOS | Android |
 |---|---|---|---|---|---|
-| MOB-STOCK-01 | Dòng tồn lúc đầu và màu | Home, tìm E2E | Con5 "Còn 5" xanh, Con1 "Còn 1" vàng, Het "Hết hôm nay" đỏ | đã viết | chưa chạy |
-| MOB-STOCK-02 | Sau khi bán | bán 2 × Con5 qua giỏ | "Còn 3 hôm nay"; dòng giỏ bán "Còn 5 trong kho" | đã viết | chưa chạy |
-| MOB-STOCK-03 | Sau khi thuê | thuê 1 × Con5 hôm nay | "Còn 2 hôm nay"; khớp API (stock-flow-check) | đã viết | chưa chạy |
-| MOB-STOCK-04 | Chi tiết sản phẩm | mở Con5 | cùng số | đã viết (mềm) | chưa chạy |
-| MOB-STOCK-05 | Hết hôm nay | dòng Het | nút + vẫn bấm được; nhìn xám kiểm bằng ảnh | đã viết | chưa chạy |
-| MOB-STOCK-06 | Hết hôm nay, thuê hôm nay | Het trong giỏ cho hôm nay | thẻ "Hết hàng" | đã viết | chưa chạy |
-| MOB-STOCK-07 | Hết hôm nay, thuê ngày mai | Het trong giỏ cho ngày mai | trống, không dòng thiếu | đã viết | chưa chạy |
-| MOB-STOCK-08 | Không đủ cho các ngày | 2 × Het cho ngày mai | "Chỉ còn 1 trống trong ngày đã chọn" | đã viết | chưa chạy |
-| MOB-CAL-01 | Mở đúng ngày Việt Nam | tab Lịch | tiêu đề HÔM NAY và dd/MM hôm nay | đã viết | chưa chạy |
-| MOB-CAL-02 | Danh sách từng ngày | chọn ngày −5 đến +4 | đơn và "giao x · trả y" = API; đơn huỷ 710007 không có | đã viết | script viết, chưa chạy |
-| MOB-CAL-03 | Dòng mở đúng đơn | bấm một dòng | mở chi tiết đơn | đã viết | chưa chạy |
+| MOB-STOCK-01 | Dòng tồn lúc đầu và màu | Home, tìm E2E | Con5 "Còn 5" xanh, Con1 "Còn 1" vàng, Het "Hết hôm nay" đỏ | đã viết | đạt (Con5 5, Con1 1, Het không có) |
+| MOB-STOCK-02 | Sau khi bán | bán 2 × Con5 qua giỏ | "Còn 3 hôm nay"; dòng giỏ bán "Còn 5 trong kho" | đã viết | đạt (bán 2 → 3; dòng giỏ "5 in stock") |
+| MOB-STOCK-03 | Sau khi thuê | thuê 1 × Con5 hôm nay | "Còn 2 hôm nay"; khớp API (stock-flow-check) | đã viết | đạt (thuê 1 → 2; `stock-flow-check.js` 10/10) |
+| MOB-STOCK-04 | Chi tiết sản phẩm | mở Con5 | cùng số | đã viết (mềm) | đạt (dải sản phẩm hiện 2 hôm nay) |
+| MOB-STOCK-05 | Hết hôm nay | dòng Het | nút + vẫn bấm được; nhìn xám kiểm bằng ảnh | đã viết | đạt (tag "Out 10/10" mở lịch ngày trống) |
+| MOB-STOCK-06 | Hết hôm nay, thuê hôm nay | Het trong giỏ cho hôm nay | thẻ "Hết hàng" | đã viết | đạt |
+| MOB-STOCK-07 | Hết hôm nay, thuê ngày mai | Het trong giỏ cho ngày mai | trống, không dòng thiếu | đã viết | đạt (không có tag) |
+| MOB-STOCK-08 | Không đủ cho các ngày | 2 × Het cho ngày mai | "Chỉ còn 1 trống trong ngày đã chọn" | đã viết | đạt ("Only 1 free on these dates") |
+| MOB-CAL-01 | Mở đúng ngày Việt Nam | tab Lịch | tiêu đề HÔM NAY và dd/MM hôm nay | đã viết | đạt (en, vi) |
+| MOB-CAL-02 | Danh sách từng ngày | chọn ngày −5 đến +4 | đơn và "giao x · trả y" = API; đơn huỷ 710007 không có | đã viết | đạt (`calendar-check.js` 20/20; đơn huỷ 710007 không có) |
+| MOB-CAL-03 | Dòng mở đúng đơn | bấm một dòng | mở chi tiết đơn | đã viết | đạt |
 | MOB-DETAIL-01 | Tiền trong chi tiết đơn | mở 710001–710009 | tổng, cọc, thế chân, còn thu và các dòng = API | đã viết | chưa chạy |
 | MOB-DETAIL-02 | Sau khi sửa đơn | — | — | **chưa viết** | chưa viết |
-| MOB-TODO-01 | Bộ đếm | Tổng quan, thẻ Hôm nay | Cần giao x/y, Cần nhận trả x/y, Trễ hạn trả, Quá ngày lấy, Ngày mai = outlet-operations | đã viết | script viết, chưa chạy |
-| MOB-TODO-02 | Danh sách của từng bộ đếm | mở danh sách trễ, quá ngày lấy, và Đơn hàng → Việc cần làm | cùng các đơn như API | đã viết | chưa chạy |
+| MOB-TODO-01 | Bộ đếm | Tổng quan, thẻ Hôm nay | Cần giao x/y, Cần nhận trả x/y, Trễ hạn trả, Quá ngày lấy, Ngày mai = outlet-operations | đã viết | đạt (`todo-check.js` 8/8) |
+| MOB-TODO-02 | Danh sách của từng bộ đếm | mở danh sách trễ, quá ngày lấy, và Đơn hàng → Việc cần làm | cùng các đơn như API | đã viết | đạt (710001–710004) |
 | MOB-RPT-01 | Kỳ rỗng, khoảng tuỳ chọn, vai trò không có doanh thu | — | — | **chưa viết** (staff và kho không có thẻ tiền đã nằm trong MOB-ROLE-03) | — |
-| MOB-ROLE-01 | Đơn hàng của staff / kho | Đơn hàng, Tất cả đơn | tải được; không có Xoá trong menu đơn | đã viết | chưa chạy |
-| MOB-ROLE-02 | Lịch | tab Lịch | tải được, không lộ key | đã viết | chưa chạy |
-| MOB-ROLE-03 | Tổng quan | tab Tổng quan | không có số doanh thu | đã viết | chưa chạy |
-| MOB-ROLE-04 | Cài đặt | Cài đặt | không có Người dùng, Xuất, Tài khoản ngân hàng, Gói | đã viết (mềm) | chưa chạy |
-| MOB-ROLE-05 | Ca sản phẩm của staff / kho có sẵn | chi tiết và form thêm sản phẩm | staff không sửa giá; kho có giá | `test8`/`test8b` có sẵn | chưa chạy |
-| MOB-SUB-01..05 | Hết hạn trial, hết hạn active, huỷ đã hết, tạm dừng, nợ | đăng nhập, đi hết các tab, rồi sửa | thông báo đọc được, không lộ key, không tạo gì, dùng lại được sau khi sửa | đã viết (`test10a`/`test10b`) | owner của expired-trial, paused, past-due chạy một phần; còn lại chưa |
-| MOB-SUB-06 | Staff và kho của cửa hàng hết hạn | cùng luồng | thông báo phù hợp | đã viết | chưa hợp lệ (script để app ở màn hình chính) |
-| MOB-SUB-10 | at-limit: tạo khách, đơn, sản phẩm | tạo từng cái | thông báo đọc được, không tạo gì | đã viết (`test10c`) | chưa chạy |
+| MOB-ROLE-01 | Đơn hàng của staff / kho | Đơn hàng, Tất cả đơn | tải được; không có Xoá trong menu đơn | đã viết | đạt (không có Xoá) |
+| MOB-ROLE-02 | Lịch | tab Lịch | tải được, không lộ key | đã viết | đạt |
+| MOB-ROLE-03 | Tổng quan | tab Tổng quan | không có số doanh thu | đã viết | đạt (chỉ thẻ Hôm nay) |
+| MOB-ROLE-04 | Cài đặt | Cài đặt | không có Người dùng, Xuất, Tài khoản ngân hàng (mục Gói vẫn hiện cho staff và kho: iOS `if hasPlan`, Android `hasPlan && role != ADMIN`) | đã viết (mềm) | đạt: không có Người dùng, Xuất, Tài khoản ngân hàng; **mục Gói vẫn hiện** cho staff và kho trên cả hai nền tảng (xem ghi chú) |
+| MOB-ROLE-05 | Ca sản phẩm của staff / kho có sẵn | chi tiết và form thêm sản phẩm | staff không sửa giá; kho có giá | `test8`/`test8b` có sẵn | đạt (staff không có Sửa / Xoá, kho có Sửa) |
+| MOB-SUB-01..05 | Hết hạn trial, hết hạn active, huỷ đã hết, tạm dừng, nợ | đăng nhập, đi hết các tab, rồi sửa | thông báo đọc được, không lộ key, không tạo gì, dùng lại được sau khi sửa | đã viết (`test10a`/`test10b`) | đạt cả 5 trạng thái × owner, staff, kho (en; owner vi). Có 3 known bug: #756, #758 (và #757 ở Tổng quan) |
+| MOB-SUB-06 | Staff và kho của cửa hàng hết hạn | cùng luồng | thông báo phù hợp | đã viết | đạt (staff, kho; en) |
+| MOB-SUB-10 | at-limit: tạo khách, đơn, sản phẩm | tạo từng cái | thông báo đọc được, không tạo gì | đã viết (`test10c`) | đạt (owner, staff, kho; en, owner vi; số dòng DB không đổi) |
 | MOB-SUB-11 | Giới hạn người dùng / chi nhánh trên giao diện | — | — | **chưa viết** (chỉ có ở API) | — |
 
 Android đã quan sát (tiếng Anh, owner): expired-trial, paused và past-due không tạo được gì (số dòng trước = sau); thông báo hiện như banner kèm Thử lại trên Home, Orders, Overview ("Your subscription has expired.", "Your subscription is paused. Please contact support to reactivate.", "Your payment is overdue…"); sau khi sửa thì Home hiện sản phẩm lại. Không thấy mã lỗi thô. Cài đặt của owner **không có mục Gói** nên không có đường gia hạn thấy được.
+Android lượt cuối (AVD anyrent_371, cổng 5570; `tests/e2e/mobile/android-all.sh`, khoảng 3 giờ): các luồng overview, stock, calendar, todo, role, sub, limit. Ghi chú trong `$E2E_OUT/android/notes.txt`. Không đổi code app hay API trong lượt này.
+Ghi chú: mục Gói trong Cài đặt hiện cho staff và kho (kỳ vọng cũ "ẩn" sai); owner của cửa hàng hết hạn không có mục Gói (chưa mở issue); màu "Còn 1 hôm nay" là 9A3412, giống iOS nhưng gần màu đỏ của "Hết hôm nay"; uiautomator không thấy Toast nên chỉ kiểm hộp thoại và chữ trong trang.
 Không tự động được / chưa làm: phân loại màu xanh / vàng / đỏ dựa vào điểm ảnh (kiểm mềm); nút + xám cần xem ảnh; selector Android cho lịch, việc cần làm, tồn, giới hạn gói còn là đoán đến khi lái emulator thật.
 
 ## iOS UI test hiện có (`apps/mobile/POS ADBDUITests/AnyRentE2ETests.swift`)
