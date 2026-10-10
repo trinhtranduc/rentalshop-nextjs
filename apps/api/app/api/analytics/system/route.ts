@@ -174,6 +174,7 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       securityDeposit: order.securityDeposit || 0,
       damageFee: order.damageFee || 0,
       lateFee: order.lateFee || 0,
+      pickupTotalAmount: order.pickupTotalAmount ?? null,
       createdAt: order.createdAt,
       pickedUpAt: order.pickedUpAt,
       returnedAt: order.returnedAt,

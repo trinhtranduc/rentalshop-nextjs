@@ -121,6 +121,8 @@ export interface OrderWithRelations {
   orderType: string
   status: string
   totalAmount: number
+  /** #505: total collected at hand-over; null = not handed over after this field existed (use totalAmount) */
+  pickupTotalAmount?: number | null
   depositAmount: number
   securityDeposit: number
   damageFee: number
@@ -204,6 +206,7 @@ const orderSelect = {
   orderType: true,
   status: true,
   totalAmount: true,
+  pickupTotalAmount: true,
   depositAmount: true,
   securityDeposit: true,
   damageFee: true,
@@ -305,6 +308,7 @@ function transformOrder(order: any): OrderWithRelations {
     orderType: order.orderType,
     status: order.status,
     totalAmount: order.totalAmount,
+    pickupTotalAmount: order.pickupTotalAmount ?? null,
     depositAmount: order.depositAmount ?? 0,
     securityDeposit: order.securityDeposit ?? 0,
     damageFee: order.damageFee ?? 0,
@@ -432,6 +436,8 @@ export async function createOrder(data: {
       orderType: data.orderType as any, // ✅ Type safe with Prisma enum
       status: (data.status ?? ORDER_STATUS.RESERVED) as any, // ✅ Type safe with Prisma enum
       totalAmount: data.totalAmount,
+      // #505: what is collected at hand-over, so a later raise of totalAmount (gia hạn) is the extra rent
+      pickupTotalAmount: data.status === ORDER_STATUS.PICKUPED ? data.totalAmount : null,
       depositAmount: data.depositAmount ?? 0,
       securityDeposit: data.securityDeposit ?? 0,
       damageFee: data.damageFee ?? 0,
@@ -555,6 +561,7 @@ export async function updateOrder(
     select: {
       orderType: true,
       status: true,
+      totalAmount: true,
       outletId: true,
       pickedUpAt: true, // Include để kiểm tra khi auto-set
       returnedAt: true, // Include để kiểm tra khi auto-set
@@ -679,6 +686,11 @@ export async function updateOrder(
     }
   }
   
+  // #505: remember the total collected at hand-over; a later change of totalAmount is extra rent (or a refund)
+  if (newStatus === ORDER_STATUS.PICKUPED && newStatus !== oldStatus) {
+    updateData.pickupTotalAmount = updateData.totalAmount ?? oldOrder?.totalAmount ?? null;
+  }
+
   // CRITICAL: Tự động set returnedAt khi status thay đổi sang RETURNED
   // (nếu chưa được set hoặc không được cung cấp trong updateData)
   if (newStatus === ORDER_STATUS.RETURNED && newStatus !== oldStatus) {
@@ -886,6 +898,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
         orderType: true,
         status: true,
         totalAmount: true,
+        pickupTotalAmount: true,
         depositAmount: true,
         pickupPlanAt: true,
         returnPlanAt: true,
@@ -922,6 +935,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
     orderType: order.orderType as any,
     status: order.status as any,
     totalAmount: order.totalAmount,
+    pickupTotalAmount: order.pickupTotalAmount ?? null,
     depositAmount: order.depositAmount,
     pickupPlanAt: order.pickupPlanAt,
     returnPlanAt: order.returnPlanAt,
@@ -1220,6 +1234,7 @@ export const simplifiedOrders = {
           orderType: true,
           status: true,
           totalAmount: true,
+          pickupTotalAmount: true,
           depositAmount: true,
           securityDeposit: true,
           damageFee: true,
@@ -1565,6 +1580,7 @@ export const simplifiedOrders = {
           orderType: true,
           status: true,
           totalAmount: true,
+          pickupTotalAmount: true,
           depositAmount: true,
           notes: true,
           createdAt: true,
@@ -1639,6 +1655,7 @@ export const simplifiedOrders = {
       orderType: order.orderType,
       status: order.status,
       totalAmount: order.totalAmount,
+      pickupTotalAmount: order.pickupTotalAmount ?? null,
       depositAmount: order.depositAmount,
       notes: order.notes,
       createdAt: order.createdAt,
@@ -1782,6 +1799,7 @@ export const simplifiedOrders = {
       orderType: true,
       status: true,
       totalAmount: true,
+      pickupTotalAmount: true,
       depositAmount: true,
       securityDeposit: true,
       damageFee: true,
@@ -1938,6 +1956,7 @@ export const simplifiedOrders = {
       orderType: order.orderType,
       status: order.status,
       totalAmount: order.totalAmount,
+      pickupTotalAmount: order.pickupTotalAmount ?? null,
       depositAmount: order.depositAmount,
       securityDeposit: order.securityDeposit,
       damageFee: order.damageFee,
@@ -2037,6 +2056,7 @@ export const simplifiedOrders = {
         orderType: true,
         status: true,
         totalAmount: true,
+        pickupTotalAmount: true,
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,
@@ -2262,6 +2282,7 @@ export const simplifiedOrders = {
       orderType: true,
       status: true,
       totalAmount: true,
+      pickupTotalAmount: true,
       depositAmount: true,
       securityDeposit: true,
       damageFee: true,
@@ -2469,6 +2490,7 @@ export const simplifiedOrders = {
         orderType: true,
         status: true,
         totalAmount: true,
+        pickupTotalAmount: true,
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,
