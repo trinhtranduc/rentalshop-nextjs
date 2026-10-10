@@ -10,7 +10,8 @@ import {
   generateFileName,
   splitKeyIntoParts,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls
+  mapStagingUrlsToProductionUrls,
+  normalizeLegacyPlanDays
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
