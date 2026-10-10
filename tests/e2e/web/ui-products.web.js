@@ -13,7 +13,8 @@ const { WebApi, vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
 const KNOWN = {
-  'PRD-05 a rent-only product (sale price 0) can be saved without typing a sale price': '#741'
+  'PRD-05 a rent-only product (sale price 0) can be saved without typing a sale price': '#741',
+  'PRD-12 two products without a barcode can both be edited': '#742'
 };
 
 const dayIso = (key) => new Date(`${key}T00:00:00+07:00`).toISOString();
@@ -168,6 +169,7 @@ async function main() {
       check('PRD-05 prefilled name and rent price', (await f('name').inputValue()) === baseP.name && digits(await f('perRental').inputValue()) === 100000, `${await f('name').inputValue()} ${await f('perRental').inputValue()}`);
       await f('name').fill(`${baseP.name} Sửa`);
       await f('perRental').fill('135000');
+      await f('barcode').fill(`BC${tag}`);
       await f(`outlet-${outletId}`).fill('9');
       await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
       await page.waitForTimeout(700);
@@ -178,7 +180,7 @@ async function main() {
       const res = await put.catch(() => null);
       check('PRD-05 the save request succeeded', !!res && res.status() === 200, res && `${res.request().method()} ${res.status()}`);
       const full = await api.get(`/api/products/${baseP.id}`);
-      check('PRD-05 API: new name, rent price 135.000, stock 9', full.name === `${baseP.name} Sửa` && full.rentPrice === 135000 && (full.outletStock || []).find((s) => s.outletId === outletId)?.stock === 9, JSON.stringify({ n: full.name, r: full.rentPrice, s: full.outletStock }));
+      check('PRD-05 API: new name, rent price 135.000, stock 9, barcode', full.name === `${baseP.name} Sửa` && full.rentPrice === 135000 && full.barcode === `BC${tag}` && (full.outletStock || []).find((s) => s.outletId === outletId)?.stock === 9, JSON.stringify({ n: full.name, r: full.rentPrice, s: full.outletStock }));
       check('PRD-05 the pricing option follows the new price', (full.pricingOptions || []).some((o) => o.price === 135000), JSON.stringify(full.pricingOptions));
       baseP.name = `${baseP.name} Sửa`;
       await page.waitForTimeout(800);
@@ -190,7 +192,10 @@ async function main() {
       await F.go(page, `/products/${baseP.id}`);
       const t = await H.bodyText(page);
       check('PRD-06 name, price rows, stock table "Tồn kho theo chi nhánh"', t.includes(baseP.name) && /Giá/.test(t) && /Tồn kho theo chi nhánh/.test(t) && /Thuê theo lần/.test(t), t.slice(0, 400));
-      check('PRD-06 rent price 135.000 and stock total 9 / renting 1 shown', /135[.,]000/.test(t) && /Đang thuê/.test(t), t.replace(/\s+/g, ' ').slice(0, 700));
+      await page.waitForTimeout(800);
+      const t3 = (await H.bodyText(page)).replace(/\s+/g, ' ');
+      const stockPart = (t3.match(/Tồn kho theo chi nhánh(.*)/) || [])[1] || '';
+      check('PRD-06 rent price 135.000; stock table: total 9, renting 1', /135[.,]000/.test(t3) && /\b9\b/.test(stockPart) && /\b1\b/.test(stockPart), stockPart.slice(0, 300));
       const pr = await H.pageProblems(page, st);
       check('PRD-06 healthy page', pr.length === 0, pr.join('; '));
       const avail = page.getByRole('link', { name: 'Kiểm tra còn hàng' }).or(page.getByRole('button', { name: 'Kiểm tra còn hàng' })).first();
@@ -226,7 +231,7 @@ async function main() {
       await page.waitForTimeout(1200);
       await H.settle(page);
       const t1 = await H.bodyText(page);
-      check('PRD-08 search lists the product (it has no barcode: "Chưa có mã")', t1.includes(baseP.name) && /Chưa có mã/.test(t1), t1.slice(0, 400));
+      check('PRD-08 search by name lists the product with its barcode', t1.includes(baseP.name) && t1.includes(`BC${tag}`), t1.slice(0, 500));
       const pr = await H.pageProblems(page, st);
       check('PRD-08 healthy page', pr.length === 0, pr.join('; '));
     }, sp);
@@ -306,6 +311,26 @@ async function main() {
       check('PRD-10 a product with an open order: the API and the screen agree (deleted and gone, or kept with an error message)', still ? /Không xoá được/.test(t) : !/Không xoá được/.test(t), `still=${still} ${t.slice(-200)}`);
       if (!still) made.splice(made.indexOf(baseP.id), 1);
     }, sp);
+
+    await H.runCase('WEB-UI-PRD-12', 'two products without a barcode can both be edited on the web', async () => {
+      const a = await api.createProduct(`${tag} NoBarA`, 2, outletId);
+      const b = await api.createProduct(`${tag} NoBarB`, 2, outletId);
+      made.push(a.id, b.id);
+      let ok = true;
+      const statuses = [];
+      for (const prod of [a, b]) {
+        await F.go(page, `/products/${prod.id}/edit`);
+        await f('name').fill(`${prod.name} S`);
+        await f('salePrice').fill('150000');
+        const put = page.waitForResponse((r) => /\/api\/products\/\d+$/.test(r.url().split('?')[0]) && r.request().method() === 'PUT', { timeout: 30000 });
+        await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+        const res = await put.catch(() => null);
+        statuses.push(res && res.status());
+        if (!res || res.status() !== 200) ok = false;
+      }
+      check('PRD-12 two products without a barcode can both be edited', ok, `PUT statuses ${statuses.join(', ')}`);
+    }, sp);
+
   } finally {
     for (const id of madeOrders) await api.cancel(id);
     for (const id of made) await api.call('DELETE', `/api/products/${id}`).catch(() => {});
