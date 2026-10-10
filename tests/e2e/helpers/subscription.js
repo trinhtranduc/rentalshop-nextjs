@@ -187,16 +187,17 @@ function deleteAddons(merchantId) {
   sql(`DELETE FROM "PlanLimitAddon" WHERE "merchantId" = ${merchantId}`);
 }
 
-/** The counts the API compares with the limit (packages/utils/src/core/validation/entity-counts.ts). */
+/** The counts the API compares with the limit (packages/utils/src/core/validation/entity-counts.ts, #729: a deleted
+ * customer / outlet is isActive false, a deleted order has deletedAt). */
 function counts(merchantId) {
   const row = sql(
     `SELECT
-       (SELECT count(*) FROM "Outlet" WHERE "merchantId" = ${merchantId}),
+       (SELECT count(*) FROM "Outlet" WHERE "merchantId" = ${merchantId} AND "isActive" = true),
        (SELECT count(*) FROM "User" WHERE "merchantId" = ${merchantId} AND "deletedAt" IS NULL
           AND role IN ('MERCHANT','OUTLET_ADMIN','OUTLET_STAFF','OUTLET_INVENTORY')),
        (SELECT count(*) FROM "Product" WHERE "merchantId" = ${merchantId} AND "deletedAt" IS NULL),
-       (SELECT count(*) FROM "Customer" WHERE "merchantId" = ${merchantId}),
-       (SELECT count(*) FROM "Order" o JOIN "Outlet" t ON t.id = o."outletId" WHERE t."merchantId" = ${merchantId})`
+       (SELECT count(*) FROM "Customer" WHERE "merchantId" = ${merchantId} AND "isActive" = true AND "deletedAt" IS NULL),
+       (SELECT count(*) FROM "Order" o JOIN "Outlet" t ON t.id = o."outletId" WHERE t."merchantId" = ${merchantId} AND o."deletedAt" IS NULL)`
   ).split('|');
   const [outlets, users, products, customers, orders] = row.map(Number);
   return { outlets, users, products, customers, orders };
