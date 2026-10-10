@@ -14,16 +14,25 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 . "$ROOT/scripts/mobile-e2e/env.sh"
+set +e   # env.sh sets -e; the flows tolerate a missing control and keep going
 U="$ROOT/scripts/mobile-e2e/adb-ui.sh"
 OUT="$E2E_OUT/android"; mkdir -p "$OUT"
 note() { echo "ANDROID_NOTE: $*" | tee -a "$OUT/notes.txt"; }
 RAW='(^|[ |])[A-Z][A-Z0-9]*(_[A-Z0-9]+)+([ |]|$)|SUBSCRIPTION_|PLAN_LIMIT|PERIOD_ENDED|NO_SUBSCRIPTION|INSUFFICIENT_PERMISSIONS|VALIDATION_ERROR'
 TABS=("Trang chủ|Home" "Đơn hàng|Orders" "Lịch|Calendar" "Tổng quan|Overview|Báo cáo|Reports" "Cài đặt|Settings")
 
+# monkey aborts on emulators without hardware keys: start the launcher activity instead
+launch_app() {
+  local a; a="$(adb -s "emulator-$E2E_AVD_PORT" shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER anyrent.shop | tail -1 | tr -d '\r')"
+  adb -s "emulator-$E2E_AVD_PORT" shell am start -W -n "$a" >/dev/null
+}
+
 texts() { "$U" dump | cut -d'|' -f1,2 | tr '\n' '¦' | cut -c1-1500; }
 tap_any() { local IFS='|'; for s in $1; do if "$U" has "$s" >/dev/null 2>&1; then "$U" tap "$s" >/dev/null; return 0; fi; done; return 1; }
 
 do_login() { # email password
+  launch_app; sleep 4
+  tap_any "Don’t allow|Không cho phép" >/dev/null 2>&1; sleep 1   # notification permission prompt after a data clear
   if "$U" has "~Sign in" >/dev/null 2>&1 || "$U" has "~Đăng nhập" >/dev/null 2>&1; then :; else
     # in the app: log out through Settings
     tap_any "Cài đặt|Settings" || true; "$U" swipe up >/dev/null; "$U" swipe up >/dev/null
@@ -44,7 +53,7 @@ do_tabs() { # tag
   for spec in "${TABS[@]}"; do
     n=$((n + 1))
     if tap_any "$spec"; then
-      sleep 4; "$U" shot "a-$tag-tab$n" >/dev/null
+      sleep 4; "$U" shot "a-${tag//\//-}-tab$n" >/dev/null
       local t; t="$(texts)"
       note "SUB $tag tab$n | $t"
       if echo "$t" | grep -Eq "$RAW"; then note "RAWKEY $tag tab$n | $(echo "$t" | grep -Eo "$RAW" | head -3 | tr '\n' ' ')"; raw=1; fi
@@ -68,7 +77,7 @@ case "${1:-}" in
     [ "$(counts "$slug")" = "$before" ] && note "PASS nothing created ($before)" || { note "FAIL rows changed: $before -> $(counts "$slug")"; rc=1; }
     "$PREP" fix "$slug" >/dev/null
     adb -s "emulator-$E2E_AVD_PORT" shell am force-stop anyrent.shop; sleep 1
-    adb -s "emulator-$E2E_AVD_PORT" shell monkey -p anyrent.shop -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 8
+    launch_app; sleep 8
     tap_any "Trang chủ|Home"; sleep 4; "$U" shot "a-$slug-$role-fixed-home" >/dev/null
     t="$(texts)"; note "SUB $slug/$role fixed home | $t"
     echo "$t" | grep -q "E2E SP" && note "PASS fixed: Home lists the products again" || { note "FAIL fixed: Home shows no product"; rc=1; }

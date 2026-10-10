@@ -191,8 +191,11 @@ SQL3
   echo "created $slug ($status, period end ${days}d)"
 }
 
-set_state() { # slug status days
-  "${PSQL[@]}" -v email="$1.owner@e2e-sub.test" -v status="$2" -v days="$3" -c "UPDATE \"Subscription\" SET status = :'status', \"currentPeriodEnd\" = now() + (:'days' || ' days')::interval, \"updatedAt\" = now() WHERE \"merchantId\" = (SELECT id FROM \"Merchant\" WHERE email = :'email')"
+set_state() { # slug status days   (psql -c does not expand :'var', so the SQL goes through stdin)
+  "${PSQL[@]}" -v email="$1.owner@e2e-sub.test" -v status="$2" -v days="$3" <<'SQL4'
+UPDATE "Subscription" SET status = :'status', "currentPeriodEnd" = now() + (:'days' || ' days')::interval, "updatedAt" = now()
+  WHERE "merchantId" = (SELECT id FROM "Merchant" WHERE email = :'email');
+SQL4
   echo "$1: status=$2, period end in ${3}d"
 }
 
