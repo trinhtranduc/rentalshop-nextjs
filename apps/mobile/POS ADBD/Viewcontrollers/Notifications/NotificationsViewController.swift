@@ -292,7 +292,7 @@ final class NotificationsViewController: BaseViewControler {
             if page == 1 {
                 self.notifications = data.notifications
             } else {
-                self.notifications.append(contentsOf: data.notifications)
+                self.notifications = NotificationsLogic.appendPage(self.notifications, data.notifications)
             }
 
             self.currentPage = data.page
