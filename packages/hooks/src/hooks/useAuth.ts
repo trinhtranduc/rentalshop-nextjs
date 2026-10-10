@@ -1,5 +1,6 @@
 'use client';
 
+import { storedUserDiffers } from './auth-sync';
 import { useState, useEffect, useCallback } from 'react';
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
@@ -286,7 +287,8 @@ export function useAuth() {
     if (token && storedUser) {
       setState(prev => {
         // Only update if state is different to avoid unnecessary re-renders
-        if (prev.user?.id !== storedUser.id) {
+        // #744: also when the same user was saved with another name or phone (see auth-sync.ts)
+        if (storedUserDiffers(prev.user as any, storedUser as any)) {
           console.log('🔄 useAuth: Syncing user state from localStorage');
           console.log('🔍 useAuth: Stored user permissions:', (storedUser as any).permissions);
           // ✅ Ensure permissions are included when syncing from localStorage

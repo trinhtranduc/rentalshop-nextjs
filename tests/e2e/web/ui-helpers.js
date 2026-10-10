@@ -154,7 +154,9 @@ async function openSession({ browser, api, viewport = { width: 1440, height: 900
   const ctx = await browser.newContext({ viewport, locale, timezoneId: CFG.zone });
   await ctx.addInitScript(
     ([a, th]) => {
-      if (a) {
+      // only when there is no session yet: this script runs on every navigation, and a session the app has updated
+      // itself (a saved profile name, #744) must not be put back to the login-time user
+      if (a && !localStorage.getItem('authData')) {
         localStorage.setItem('authData', a);
         localStorage.setItem('last_login_time', String(Date.now()));
       }
