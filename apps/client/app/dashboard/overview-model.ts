@@ -736,6 +736,8 @@ export interface IncomeOrderLike {
   orderType?: string | null;
   status?: string | null;
   revenue?: Num;
+  /** `SALE`, `RENT_DEPOSIT` ... `MULTIPLE` (#757) */
+  revenueType?: string | null;
   description?: string | null;
   customerName?: string | null;
   totalAmount?: Num;
@@ -753,7 +755,57 @@ export interface RelatedRow {
   customer: string;
   note: RelatedNote;
   description: string;
+  /** #757: the reasons of a `note === 'event'` row (one per joined event); `key` null = unknown, show `text` */
+  reasons: RelatedReason[];
   amount: number;
+}
+
+export interface RelatedReason {
+  /** suffix of `home.related.event.<key>`; null when this build does not know the event */
+  key: string | null;
+  /** the API text, the fallback */
+  text: string;
+}
+
+/** The API's own sentences (`revenue-calculator.ts`), so a RENT_RETURN or a MULTIPLE part maps exactly */
+const KNOWN_EVENT_TEXT: Record<string, string> = {
+  'Đơn bán được tạo': 'saleCreated',
+  'Đơn bán bị hủy (hoàn lại)': 'saleCancelled',
+  'Thu tiền cọc': 'deposit',
+  'Thu tiền khi lấy hàng': 'pickup',
+  'Thuê và trả trong cùng ngày': 'sameDay',
+  'Thu phí hư hỏng': 'damageFee',
+  'Hoàn tiền cọc': 'depositRefund',
+  'Không có phát sinh': 'nothing',
+  'Đơn hủy (hoàn lại)': 'rentCancelled',
+  'Doanh thu dự kiến khi lấy hàng': 'futurePickup',
+  'Ước tính thu phí hư hỏng khi trả hàng': 'futureDamageFee',
+  'Ước tính hoàn tiền cọc khi trả hàng': 'futureRefund',
+  'Ước tính không có phát sinh khi trả hàng': 'futureNothing',
+};
+
+function eventKeyForType(type: string, revenue: number): string | null {
+  switch (type) {
+    case 'SALE': return 'saleCreated';
+    case 'SALE_CANCELLED': return 'saleCancelled';
+    case 'RENT_DEPOSIT': return 'deposit';
+    case 'RENT_PICKUP': return 'pickup';
+    case 'RENT_CANCELLED': return 'rentCancelled';
+    case 'RENT_FUTURE_PICKUP': return 'futurePickup';
+    case 'RENT_RETURN': return revenue < 0 ? 'depositRefund' : revenue > 0 ? 'returnCollected' : 'nothing';
+    case 'RENT_FUTURE_RETURN': return revenue < 0 ? 'futureRefund' : revenue > 0 ? 'futureDamageFee' : 'futureNothing';
+    default: return null;
+  }
+}
+
+/** The event reasons of one Collected row, from `revenueType` (or the known API sentence); `description` stays the fallback */
+export function eventReasons(revenueType: string | null | undefined, description: string | null | undefined, revenue: number): RelatedReason[] {
+  const type = (revenueType || '').toUpperCase();
+  const text = description || '';
+  if (type === 'MULTIPLE' || (!type && text.includes(' + '))) {
+    return text.split(' + ').map((part) => ({ key: KNOWN_EVENT_TEXT[part] ?? null, text: part }));
+  }
+  return [{ key: KNOWN_EVENT_TEXT[text] ?? eventKeyForType(type, revenue), text }];
 }
 
 /** What one income/orders row adds to the tile (same rules as the API, see BF-STAT / BF-OUT) */
@@ -782,7 +834,7 @@ export function relatedRows(kind: RelatedKind, bucket: string, items: IncomeOrde
       if (!amount) continue;
       note = amount > 0 ? 'collateralIn' : 'collateralOut';
     }
-    rows.push({ id: it.id, orderNumber: it.orderNumber || `#${it.id}`, customer: it.customerName || '', note, description: it.description || '', amount });
+    rows.push({ id: it.id, orderNumber: it.orderNumber || `#${it.id}`, customer: it.customerName || '', note, description: it.description || '', reasons: note === 'event' ? eventReasons(it.revenueType, it.description, amount) : [], amount });
   }
   return rows;
 }
