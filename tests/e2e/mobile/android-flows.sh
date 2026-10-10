@@ -17,6 +17,7 @@
 CHK="$ROOT/tests/e2e/mobile"
 RAW='(^|[ |¦])[A-Z][A-Z0-9]*(_[A-Z0-9]+)+([ |¦]|$)|SUBSCRIPTION_|PLAN_LIMIT|PERIOD_ENDED|NO_SUBSCRIPTION|INSUFFICIENT_PERMISSIONS|VALIDATION_ERROR|errors\.[a-zA-Z]|auth\.[a-z]+\.'
 psqlc() { psql "$E2E_DATABASE_URL" -qAt -F ' ' "$@"; }
+reason_re() { case "$1" in expired-*) echo "$(L api_error_subscription_expired)|$(L api_error_trial_expired)" ;; *) echo "subscription|payment is overdue|đăng ký|gói|thanh toán" ;; esac; }   # the API text of a blocked shop names the subscription
 tabs_specs() { echo "$(L home)|$(L orders)|$(L calendar)|$(L overview)|$(L settings)"; }
 
 do_tabs() { # do_tabs <tag>: visit every tab, note the texts, flag raw keys; returns 1 when a raw key shows
@@ -58,19 +59,32 @@ case "${1:-}" in
   tabs) do_tabs "${2:?tag}" ;;
   sub)
     slug="${2:?slug}"; role="${3:?role}"; PREP="$ROOT/scripts/mobile-e2e/prepare-accounts.sh"; ATT="$LANG_E2E-$slug-$role"; tag="[$LANG_E2E $slug/$role]"
-    set_lang; "$PREP" break "$slug" >/dev/null; before="$(counts "$slug")"
-    do_login "$slug.$role@e2e-sub.test" "$(role_pw "$role")"; rc=0; clear_cart; do_tabs "$LANG_E2E/$slug/$role/broken" || rc=1
+    # log in while the shop is healthy and leave a ready cart (product, customer, dates), then break the subscription: the order
+    # attempt below submits that kept cart (Home lists nothing in a broken state, so a cart cannot be built there)
+    set_lang; "$PREP" fix "$slug" >/dev/null; before="$(counts "$slug")"
+    do_login "$slug.$role@e2e-sub.test" "$(role_pw "$role")"; rc=0; clear_cart; go_home
+    add_to_cart "E2E SP 1" 1 && { open_cart; pick_customer "Khách E2E 1"; pick_dates 0 1; tap_any "$(L v2_cart_back)"; sleep 1; }
+    "$PREP" break "$slug" >/dev/null; restart_app; sleep 8
+    do_tabs "$LANG_E2E/$slug/$role/broken" || rc=1
     [ $rc = 0 ] && pass "$tag no raw key on any tab" || fail "$tag a raw key shows on a tab"
-    # the screens say why (Home / Orders / Overview show the API error text)
+    # the screens say why (Home / Orders / Overview show the API error text), in the app language
     shown="$(grep -h "SUB $LANG_E2E/$slug/$role/broken tab[124]" "$OUT/notes.txt" | tail -3)"
-    if echo "$shown" | grep -Eq "$(L api_error_subscription_expired)|$(L api_error_trial_expired)"; then pass "$tag a tab names the reason: $(L api_error_subscription_expired)"
-    else note "NOREASON? $tag no tab shows the expired text; texts: $(echo "$shown" | cut -c1-500)"; fi
+    seg="$(echo "$shown" | sed -E 's/^[^|]*\| //' | tr '¦' '\n' | sed -E 's/ \| *$//' | grep -Ei "$(reason_re "$slug")" | head -1)"
+    if [ -z "$seg" ]; then fail "$tag no tab says why the shop is blocked (looked for /$(reason_re "$slug")/): $(echo "$shown" | cut -c1-300)"
+    elif msg_readable "$seg"; then pass "$tag a tab says why: '$seg'"
+    else
+      if [ "$LANG_E2E" = vi ] && [ "$slug" != expired-trial ] && [ "$slug" != expired-active ]; then known 758 "$tag the reason is not translated: '$seg'"
+      else fail "$tag the reason is not readable in $LANG_E2E: '$seg'"; fi
+    fi
     for what in product customer order; do
       MSG=""; case $what in product) attempt_product ;; customer) attempt_customer ;; order) attempt_order "E2E SP 1" ;; esac
       note "ATTEMPT $tag $what | msg=$MSG"
       case "$MSG" in "<no "*|"<form did not"*) note "SKIP $tag add $what: ${MSG:0:80}" ;;
         "<order created>") fail "$tag an order was created in a broken state" ;;
-        *) msg_readable "$MSG" && pass "$tag add $what -> readable message: $MSG" || fail "$tag add $what -> message not readable in $LANG_E2E: '$MSG'" ;; esac
+        "$(L v2_form_error_outlet)") [ "$what" = product ] && [ "$role" = owner ] && known 756 "$tag add product -> '$MSG' (the reason is the subscription)" || fail "$tag add $what -> wrong reason: '$MSG'" ;;
+        *) if msg_readable "$MSG"; then pass "$tag add $what -> readable message: $MSG"
+           elif [ "$LANG_E2E" = vi ] && [ "$slug" != expired-trial ] && [ "$slug" != expired-active ] && echo "$MSG" | grep -Eiq "subscription|payment"; then known 758 "$tag add $what -> English text in vi: '$MSG'"
+           else fail "$tag add $what -> message not readable in $LANG_E2E: '$MSG'"; fi ;; esac
     done
     [ "$(counts "$slug")" = "$before" ] && pass "$tag nothing created ($before)" || { fail "$tag rows changed: $before -> $(counts "$slug")"; rc=1; }
     "$PREP" fix "$slug" >/dev/null

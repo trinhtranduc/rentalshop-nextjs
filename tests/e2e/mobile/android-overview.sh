@@ -100,6 +100,10 @@ for per in ("today", "last7"):
             s1, s2 = money(after(sheet, "Due when the customer picks up")), money(after(sheet, "Past pickup date, unpaid"))
             say((s1 or 0) + (s2 or 0) == want, f"{per} sheet rows add up", f"{s1}+{s2}", want)
         if title == "Collected":
+            vn = [t for r in rel for t in r[:1] if re.search(r"[ạảãàáâậầấẩẫăắằặẳẵéèẻẽẹêếềểễệđíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]", t)]
+            if vn:
+                line = f"ANDROID_NOTE: KNOWN 757 | {per} Collected related rows show Vietnamese reasons in the English app: {sorted(set(vn))[:3]}"; print(line); notes.write(line + "\n")
+            else: say(True, f"{per} Collected related reasons are English", "-", "-")
             parts_ = [money(after(sheet, p)) or 0 for p in ("Deposits at order", "Paid at pickup, sales", "Damage and late fees", "Refunds on cancelled", "Collateral in")]
             say(sum(parts_) == want, f"{per} sheet rows add up", "+".join(map(str, parts_)), want)
         if title == "Collateral" and per == "today":

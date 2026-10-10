@@ -173,8 +173,13 @@ attempt_customer() { # Settings -> Customers -> + -> phone + name -> Save
   tap_any "$(L ok)" >/dev/null 2>&1; sleep 1; "$U" back >/dev/null; sleep 1; "$U" back >/dev/null; sleep 1
 }
 attempt_order() { # <product name>: Home -> + -> cart -> customer -> Create order x2
-  to_tabs; go_home; add_to_cart "$1" 1 || { MSG="<no product '$1' on Home: $(texts 250)>"; return 1; }
-  open_cart; pick_customer "Khách E2E 1"; pick_dates 0 1
+  to_tabs; go_home
+  if ! have_any "$(L v2_cart_create)"; then   # no cart kept from before: build one
+    add_to_cart "$1" 1 || { MSG="<no product '$1' on Home: $(texts 250)>"; return 1; }
+  fi
+  open_cart
+  have_any "$(L v2_cart_pick_customer)" && pick_customer "Khách E2E 1"
+  have_any "$(L v2_cart_pick_dates)" && pick_dates 0 1
   "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 2
   if wait_any "$(L v2_create_confirm_rent_title)" 6; then "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 3; fi
   settle_dialog
