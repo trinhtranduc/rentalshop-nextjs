@@ -102,7 +102,8 @@
     "dedicatedAccountManager": "전담 계정 관리자",
     "customReporting": "사용자 정의 보고서",
     "247PhoneSupport": "24/7 전화 지원",
-    "additionalUserPricing": "추가 사용자당 30,000 동"
+    "additionalUserPricing": "추가 사용자당 30,000 동",
+    "loyalty": "로열티 프로그램"
   },
   "pricing": {
     "addOnUserPrice": "추가 사용자 가격",

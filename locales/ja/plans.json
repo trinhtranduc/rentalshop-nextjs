@@ -102,7 +102,8 @@
     "dedicatedAccountManager": "専任アカウントマネージャー",
     "customReporting": "カスタムレポート",
     "247PhoneSupport": "24/7電話サポート",
-    "additionalUserPricing": "追加ユーザーあたり30,000ドン"
+    "additionalUserPricing": "追加ユーザーあたり30,000ドン",
+    "loyalty": "ロイヤルティプログラム"
   },
   "pricing": {
     "addOnUserPrice": "追加ユーザー価格",
