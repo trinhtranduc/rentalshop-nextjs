@@ -108,6 +108,8 @@ fi
 
 xcrun simctl boot "$UDID" 2>/dev/null || true
 xcrun simctl bootstatus "$UDID" -b >/dev/null
+# A scenario / --email run must log in as that account: the app keeps the previous session, so always start clean.
+if [ -n "$SCENARIO" ] || [ -n "$ARG_EMAIL" ]; then FRESH=1; fi
 if [ "$FRESH" = 1 ]; then
   echo "Uninstalling $BUNDLE_ID"
   xcrun simctl uninstall "$UDID" "$BUNDLE_ID" 2>/dev/null || true

@@ -1174,7 +1174,7 @@ final class AnyRentE2ETests: XCTestCase {
     private func homeRow(_ key: String) -> XCUIElement? {
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
         let search = homeSearch
-        guard search.waitForExistence(timeout: 10) else { e2e.note("home search field not found"); return nil }
+        guard search.waitForExistence(timeout: 10) else { e2e.note("home search field not found"); e2e.shot("home-search-missing"); return nil }
         search.tap()
         search.clearText()
         search.typeText(key + "\n")
@@ -2198,6 +2198,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(short2.exists, "2 × Het for tomorrow shows how many are left")
         XCTAssertEqual(freeFrom(short2.label), 1, "…and says 1")
         e2e.shot("1d-stock-het-short")
+        e2e.goBackOnce() // the cart screen has no tab bar: back to Home, then empty the cart from there
         e2e.emptyCart()
 
         // final lines for the API checker
@@ -2287,13 +2288,26 @@ final class AnyRentE2ETests: XCTestCase {
             }
             return numbers.sorted().joined(separator: ",")
         }
+        // The two lists open a screen with two sections: the first holds the tile's orders ("TRỄ HẠN TRẢ · 1",
+        // "QUÁ NGÀY LẤY, CHƯA THU · 1"), the second the rest ("CÒN HẠN", "SẼ THU KHI KHÁCH LẤY ĐỒ"). `first=` is the first section.
+        func firstSection() -> String {
+            let headers = app.staticTexts.allElementsBoundByIndex.filter { $0.exists && $0.label == $0.label.uppercased() && $0.label.range(of: "· \\d+$", options: .regularExpression) != nil }
+                .sorted { $0.frame.minY < $1.frame.minY }
+            guard let head = headers.first, let r = head.label.range(of: "\\d+$", options: .regularExpression), let n = Int(head.label[r]) else { return "" }
+            let ordered = app.cells.allElementsBoundByIndex.filter { $0.exists }.sorted { $0.frame.minY < $1.frame.minY }
+            var numbers: [String] = []
+            for cell in ordered.prefix(n) {
+                if let r = E2E.texts(cell).range(of: "#\\d{5,6}", options: .regularExpression) { numbers.append(String(E2E.texts(cell)[r]).replacingOccurrences(of: "#", with: "")) }
+            }
+            return numbers.sorted().joined(separator: ",")
+        }
         // Trễ hạn trả → list of late returns; Quá ngày lấy → "Chưa lấy đồ"
         for (key, labels, shot) in [("late", ["Trễ hạn trả", "Late returns"], "7m-late-list"), ("noshows", ["Quá ngày lấy", "Pickup day passed"], "7m-noshow-list")] {
             let el = e2e.element(labelBeginsWith: labels, type: .button)
             guard e2e.scrollTo(el) else { continue }
             el.tap()
             sleep(4)
-            e2e.note("TODOLIST \(key) | rows=\(rowNumbers())")
+            e2e.note("TODOLIST \(key) | rows=\(rowNumbers()) | first=\(firstSection())")
             e2e.shot(shot)
             e2e.goBack()
             e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3)
@@ -2319,11 +2333,15 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newOrders")
         try e2e.start()
         for number in ["710001", "710002", "710003", "710004", "710005", "710008", "710009"] {
-            e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
-            let all = e2e.button(["All orders", "Tất cả đơn"])
-            guard all.waitForExistence(timeout: 8) else { return XCTFail("Orders tab") }
-            all.tap()
-            sleep(2)
+            e2e.hideKeyboard()
+            // after the first order the app is already on the "Tất cả đơn" list (search field there): no tab button to press
+            if !e2e.ordersSearchField.exists {
+                e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+                let all = e2e.button(["All orders", "Tất cả đơn"])
+                guard all.waitForExistence(timeout: 8) else { e2e.shot("5g-orders-tab-missing"); return XCTFail("Orders tab") }
+                all.tap()
+                sleep(2)
+            }
             if number == "710009" { e2e.tapIfExists(e2e.saleModeButton, timeout: 3); sleep(2) }
             let search = e2e.ordersSearchField
             guard search.waitForExistence(timeout: 5) else { return XCTFail("orders search") }
@@ -2422,9 +2440,11 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("ROLE \(tag) settings | \(rows.prefix(40))")
         e2e.shot("8e-\(tag)-settings")
         raw += e2e.rawKeys()
-        for hidden in [["Users", "Người dùng"], ["Export Data", "Xuất dữ liệu"], ["Bank accounts", "Tài khoản ngân hàng"], ["Subscription", "Gói đăng ký", "Gói dịch vụ"]] {
+        for hidden in [["Users", "Người dùng"], ["Export Data", "Xuất dữ liệu"], ["Bank accounts", "Tài khoản ngân hàng"]] {
             e2e.soft(!rows.contains(where: { hidden.contains($0) }), "\(tag) does not see \(hidden[0]) in Cài đặt")
         }
+        // "Gói dịch vụ" stays: staff and kho carry billing.view (the login permissions), so the row is by design, not a leak.
+        e2e.note("ROLE \(tag) settings plan row shown=\(rows.contains(where: { ["Subscription", "Gói đăng ký", "Gói dịch vụ"].contains($0) })) (billing.view)")
         XCTAssertTrue(raw.isEmpty, "raw API codes on screen: \(raw)")
     }
 
@@ -2576,7 +2596,7 @@ private final class E2E {
             for attempt in 1...3 {
                 login()
                 if !app.secureTextFields.firstMatch.waitForNonExistence(timeout: 8) {
-                    shot("00-login-retry-\(attempt)", attachOnly: true)
+                    shot("00-login-retry-\(attempt)")
                     dismissAlerts()
                     continue
                 }
@@ -2621,7 +2641,7 @@ private final class E2E {
             for attempt in 1...3 {
                 login()
                 if !app.secureTextFields.firstMatch.waitForNonExistence(timeout: 8) {
-                    shot("00-login-retry-\(attempt)", attachOnly: true)
+                    shot("00-login-retry-\(attempt)")
                     dismissAlerts()
                     continue
                 }
@@ -2668,11 +2688,14 @@ private final class E2E {
         pass.tap()
         pass.clearText()
         pass.typeText(password)
-        if let typed = pass.value as? String, typed.isEmpty || typed == pass.placeholderValue {
+        // An empty secure field reports its placeholder (8 dots) as its value. A password of exactly 8 characters (staff123)
+        // also reads as 8 dots, so only retype when the length differs: typing it twice made 16 characters and a failed login.
+        if let typed = pass.value as? String, typed.isEmpty || (typed == pass.placeholderValue && typed.count != password.count) {
             pass.tap()
             pass.typeText(password)
         }
         shot("01-login-filled", attachOnly: true)
+        note("LOGIN typed email=\(resolved.value as? String ?? "?") passwordChars=\((pass.value as? String)?.count ?? -1) expected=\(password.count)")
         let loginButton = button(["Login", "Đăng nhập", "Log in"])
         XCTAssertTrue(loginButton.waitForExistence(timeout: 5), "Login button")
         if !loginButton.isHittable { app.tap() } // hide the keyboard
@@ -3278,7 +3301,8 @@ private final class E2E {
         guard n > 0 else { return "other" }
         (r, g, b) = (r / n, g / n, b / n)
         if g > r * 1.15 && g > b * 1.3 { return "green" }
-        if r > 180 && g > 110 && b < 90 && g < r * 0.85 { return "amber" }
+        // app colours: ok 047857 (green), warn 9A3412 (dark orange: g about a third of r, b well below g), danger B91C1C (red: g and b alike and low)
+        if r > 130 && g > r * 0.22 && g < r * 0.85 && b < g * 0.6 { return "amber" }
         if r > g * 1.8 && r > b * 1.8 { return "red" }
         return "other(\(Int(r)),\(Int(g)),\(Int(b)))"
     }
