@@ -102,15 +102,15 @@ INSERT INTO "Subscription"("merchantId", "planId", status, "currentPeriodStart",
   SELECT mm.id, mm."planId", :'status', now() - interval '30 days', now() + (:'days' || ' days')::interval, 0, 'USD', now()
   FROM "Merchant" mm WHERE mm.email = :'slug' || '.owner@e2e-sub.test';
 
--- users: password hashes copied from the seeded accounts of the same role
+-- users: password hashes copied from a seeded account of the same role (by role: a reseed renumbers merchant1@ to merchant<id>@)
 INSERT INTO "User"(email, password, "firstName", "lastName", phone, role, "merchantId", "outletId", "isActive", "updatedAt")
-  SELECT :'slug' || '.owner@e2e-sub.test', (SELECT password FROM "User" WHERE email = 'merchant1@example.com'), 'Chủ', :'slug', '+84-900-100-001', 'MERCHANT', mm.id, NULL, true, now()
+  SELECT :'slug' || '.owner@e2e-sub.test', (SELECT password FROM "User" WHERE role = 'MERCHANT' AND email NOT LIKE '%@e2e-sub.test' ORDER BY id LIMIT 1), 'Chủ', :'slug', '+84-900-100-001', 'MERCHANT', mm.id, NULL, true, now()
   FROM "Merchant" mm WHERE mm.email = :'slug' || '.owner@e2e-sub.test';
 INSERT INTO "User"(email, password, "firstName", "lastName", phone, role, "merchantId", "outletId", "isActive", "updatedAt")
-  SELECT :'slug' || '.staff@e2e-sub.test', (SELECT password FROM "User" WHERE email = 'staff.outlet1@example.com'), 'Nhân viên', :'slug', '+84-900-100-002', 'OUTLET_STAFF', mm.id, o.id, true, now()
+  SELECT :'slug' || '.staff@e2e-sub.test', (SELECT password FROM "User" WHERE role = 'OUTLET_STAFF' AND email NOT LIKE '%@e2e-sub.test' ORDER BY id LIMIT 1), 'Nhân viên', :'slug', '+84-900-100-002', 'OUTLET_STAFF', mm.id, o.id, true, now()
   FROM "Merchant" mm JOIN "Outlet" o ON o."merchantId" = mm.id WHERE mm.email = :'slug' || '.owner@e2e-sub.test';
 INSERT INTO "User"(email, password, "firstName", "lastName", phone, role, "merchantId", "outletId", "isActive", "updatedAt")
-  SELECT :'slug' || '.kho@e2e-sub.test', (SELECT password FROM "User" WHERE email = 'inventory.outlet1@example.com'), 'Kho', :'slug', '+84-900-100-003', 'OUTLET_INVENTORY', mm.id, o.id, true, now()
+  SELECT :'slug' || '.kho@e2e-sub.test', (SELECT password FROM "User" WHERE role = 'OUTLET_INVENTORY' AND email NOT LIKE '%@e2e-sub.test' ORDER BY id LIMIT 1), 'Kho', :'slug', '+84-900-100-003', 'OUTLET_INVENTORY', mm.id, o.id, true, now()
   FROM "Merchant" mm JOIN "Outlet" o ON o."merchantId" = mm.id WHERE mm.email = :'slug' || '.owner@e2e-sub.test';
 
 -- catalogue: one category, two products with 5 in stock, two customers
