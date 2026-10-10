@@ -14,8 +14,7 @@ const {
   addDays,
   futureWindow,
   rentBody,
-  uniqueName,
-  knownBug
+  uniqueName
 } = require('../helpers/api');
 const F = require('../helpers/flows');
 
@@ -210,7 +209,7 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect(await s.outletStock(pO.id, O)).toEqual({ stock: 3, available: 3, renting: 0 });
       });
 
-      knownBug('#730', `BF-ROLE-07-${tag} cannot change an order of another outlet: PUT and status answer 403 and the order stays at its outlet`, async () => {
+      test(`BF-ROLE-07-${tag} cannot change an order of another outlet: PUT and status answer 403 and the order stays at its outlet`, async () => {
         const pO = await product(3, O);
         const theirs = track(await F.bookRent(s, { product: pO, quantity: 1, outletId: O, ...futureWindow(1) }));
         const edit = await r.updateOrder(theirs.id, { notes: 'role edit' });
@@ -220,7 +219,7 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect([after.outletId, after.status, after.notes]).toEqual([O, 'RESERVED', null]);
       });
 
-      knownBug('#731', `BF-ROLE-08-${tag} cannot open an order of another outlet: GET by id and by number are refused`, async () => {
+      test(`BF-ROLE-08-${tag} cannot open an order of another outlet: GET by id and by number are refused`, async () => {
         const pO = await product(3, O);
         const theirs = track(await F.bookRent(s, { product: pO, quantity: 1, outletId: O, ...futureWindow(1) }));
         const byId = await r.get(`/api/orders/${theirs.id}`);
@@ -228,7 +227,7 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect([[403, 404].includes(byId.status), [403, 404].includes(byNumber.status)]).toEqual([true, true]);
       });
 
-      knownBug('#732', `BF-ROLE-09-${tag} cannot read another outlet's stock and bookings: availability, free-days grid and cart check are refused`, async () => {
+      test(`BF-ROLE-09-${tag} cannot read another outlet's stock and bookings: availability, free-days grid and cart check are refused`, async () => {
         const pO = await product(3, O);
         const w = futureWindow(1);
         await F.bookRent(s, { product: pO, quantity: 1, outletId: O, ...w }).then(track);
@@ -236,6 +235,14 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         const grid = await r.get(`/api/products/${pO.id}/availability-calendar?from=${w.from}&to=${w.to}&outletId=${O}`);
         const cart = await r.post('/api/products/batch-availability', { products: [{ productId: pO.id, quantity: 1 }], startDate: new Date().toISOString(), endDate: new Date(Date.now() + 86400000).toISOString(), outletId: O });
         expect([single.status, grid.status, cart.status]).toEqual([403, 403, 403]);
+      });
+
+      test(`BF-ROLE-09B-${tag} the legacy availability and the order QR of another outlet are refused too (#732 audit)`, async () => {
+        const pO = await product(3, O);
+        const theirs = track(await F.bookRent(s, { product: pO, quantity: 1, outletId: O, ...futureWindow(1) }));
+        const legacy = await r.get(`/api/products/availability?productId=${pO.id}&date=${today}&outletId=${O}`);
+        const qr = await r.get(`/api/orders/${theirs.id}/qr-code`);
+        expect([legacy.status, [403, 404].includes(qr.status)]).toEqual([403, true]);
       });
 
       test(`BF-ROLE-10-${tag} reports: money endpoints are 403, the operational ones work (the merchant gets 200 on all of them)`, async () => {

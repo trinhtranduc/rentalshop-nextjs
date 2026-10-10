@@ -9,12 +9,7 @@ const { CFG } = H;
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
 const HEALTHY = 'healthy (no raw keys, console errors, failed requests)';
-const KNOWN = {
-  [`PUB / [vi] ${HEALTHY}`]: '#733', // raw key plans.features.loyalty on the plan cards
-  [`PUB / [en] ${HEALTHY}`]: '#733',
-  'PUB /pricing [vi] shows Vietnamese': '#734', // hard-coded English
-  [`PUB /pricing [vi] ${HEALTHY}`]: '#735' // hydration mismatch 2,000 / 2.000
-};
+const KNOWN = {};
 
 /** path, text that proves the Vietnamese version, text that proves the English version */
 const PAGES = [

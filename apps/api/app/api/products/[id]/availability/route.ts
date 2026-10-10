@@ -100,6 +100,13 @@ export async function GET(
       
       if (isOutletRole(user.role)) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
+        // Outlet roles read only their own outlet's stock and bookings (#732)
+        if (outletId && Number(outletId) !== userOutletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('NO_OUTLET_ACCESS'),
+            { status: 403 }
+          );
+        }
         finalOutletId = outletId ? parseInt(outletId) : (userOutletId || 0);
       } else if (user.role === USER_ROLE.MERCHANT && !outletId) {
         // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one

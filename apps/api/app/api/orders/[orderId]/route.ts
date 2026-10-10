@@ -275,6 +275,10 @@ export const GET = async (
         if (!orderOutlet || orderOutlet.merchantId !== userMerchantId) {
           return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
         }
+        // Outlet roles see only their own outlet's orders, like the list (#731)
+        if (isOutletRole(user.role) && order.outletId !== userScope.outletId) {
+          return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+        }
       }
 
       console.log('✅ Order found:', order);
@@ -605,6 +609,15 @@ export const PUT = async (
             { status: 403 }
           );
         }
+      }
+
+      // Outlet roles work only on their own outlet's orders (#730). Checked before the outletId below is
+      // auto-filled into a "move to my outlet", which used to let an order of another outlet be taken over.
+      if (isOutletRole(user.role) && existingOrder.outletId !== userScope.outletId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+          { status: 403 }
+        );
       }
 
       // Only valid status changes (#361); iOS/Android send status through this route, and an echo of

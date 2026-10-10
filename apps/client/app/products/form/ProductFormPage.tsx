@@ -553,7 +553,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>
                     <AmountInput id="pf-deposit" value={form.deposit} invalid={!!errors.deposit} onChange={(n) => patch({ deposit: n }, ['deposit'])} />
                   </Field>
-                  <Field id="pf-salePrice" label={t('form.salePrice')} required={t('form.required')} error={err('salePrice')}>
+                  <Field id="pf-salePrice" label={t('form.salePrice')} error={err('salePrice')}>
                     <AmountInput id="pf-salePrice" value={form.salePrice} invalid={!!errors.salePrice} onChange={(n) => patch({ salePrice: n }, ['salePrice'])} />
                   </Field>
                   <Field id="pf-costPrice" label={t('form.costPrice')} hint={t('form.costHint')}>

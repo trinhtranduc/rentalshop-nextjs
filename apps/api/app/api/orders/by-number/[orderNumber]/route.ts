@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError, parseProductImages } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 
 export const runtime = 'nodejs';
 
@@ -113,6 +113,14 @@ export async function GET(
       } else {
         // Admin without merchantId can see all orders
         console.log('✅ Admin without merchantId - allowing access to all orders');
+      }
+
+      // Outlet roles see only their own outlet's orders, like the list (#731)
+      if (isOutletRole(user.role) && order.outletId !== userScope.outletId) {
+        return NextResponse.json(
+          ResponseBuilder.error('ORDER_NOT_FOUND'),
+          { status: API.STATUS.NOT_FOUND }
+        );
       }
 
       console.log('✅ Order found:', order);
