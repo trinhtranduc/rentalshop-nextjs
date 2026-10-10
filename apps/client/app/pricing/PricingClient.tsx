@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { 
   Card, 
   CardHeader, 
@@ -26,8 +26,17 @@ import {
   SUBSCRIPTION_PLANS, 
   getPlanComparison
 } from '@rentalshop/constants';
+import {
+  COMPARISON_NAME_KEYS,
+  formatComparisonValue,
+  formatPlanLimit,
+  formatPricingPrice,
+  planTextKeys,
+} from '../../lib/pricing-format';
 
 export default function PricingClient() {
+  const t = useTranslations('plans.pricingPage');
+  const locale = useLocale();
   const plans = Object.values(SUBSCRIPTION_PLANS).sort((a, b) => a.sortOrder - b.sortOrder);
   const comparison = getPlanComparison();
 
@@ -41,13 +50,9 @@ export default function PricingClient() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0
-    }).format(price);
-  };
+  const formatPrice = (price: number) => formatPricingPrice(price, locale);
+  const limit = (value: number) => formatPlanLimit(value, locale, t('unlimited'));
+  const cell = (value: string | boolean) => (typeof value === 'string' ? formatComparisonValue(value, locale) : value);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -56,10 +61,10 @@ export default function PricingClient() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Perfect Plan
+            {t('title')}
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Simple subscription pricing with clear limits and features. No hidden costs, no complex calculations.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -67,35 +72,36 @@ export default function PricingClient() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-12">
           <div className="flex items-center mb-4">
             <LinkIcon className="h-8 w-8 text-blue-700 mr-3" />
-            <h2 className="text-2xl font-bold text-blue-900">Product Public Check</h2>
+            <h2 className="text-2xl font-bold text-blue-900">{t('publicCheckTitle')}</h2>
           </div>
           <p className="text-blue-800 mb-4">
-            All plans include the ability to share product catalogs publicly with customers. 
-            Send shareable links that allow customers to view your products and pricing without logging in.
+            {t('publicCheckIntro')}
           </p>
           <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-700">
             <div className="flex items-center">
               <Check className="h-4 w-4 mr-2" />
-              <span>Share product links via WhatsApp, email, or social media</span>
+              <span>{t('publicCheck1')}</span>
             </div>
             <div className="flex items-center">
               <Check className="h-4 w-4 mr-2" />
-              <span>Customers can view prices and availability instantly</span>
+              <span>{t('publicCheck2')}</span>
             </div>
             <div className="flex items-center">
               <Check className="h-4 w-4 mr-2" />
-              <span>No login required for customers</span>
+              <span>{t('publicCheck3')}</span>
             </div>
             <div className="flex items-center">
               <Check className="h-4 w-4 mr-2" />
-              <span>Perfect for marketing and customer outreach</span>
+              <span>{t('publicCheck4')}</span>
             </div>
           </div>
         </div>
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">
-          {plans.map((plan) => (
+          {plans.map((plan) => {
+            const keys = planTextKeys(plan.id, plan.badge);
+            return (
             <Card key={plan.id} className={`relative ${plan.isPopular ? 'ring-2 ring-purple-500 shadow-xl' : 'shadow-lg'}`}>
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -103,7 +109,7 @@ export default function PricingClient() {
                     plan.badge === 'Most Popular' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'
                   }`}>
                     <Star className="h-3 w-3 mr-1" />
-                    {plan.badge}
+                    {keys.badge ? t(keys.badge) : plan.badge}
                   </Badge>
                 </div>
               )}
@@ -117,14 +123,14 @@ export default function PricingClient() {
                 }`}>
                   {getPlanIcon(plan.id)}
                 </div>
-                <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
-                <p className="text-gray-600 mt-2">{plan.description}</p>
+                <CardTitle className="text-2xl font-bold text-gray-900">{keys.name ? t(keys.name) : plan.name}</CardTitle>
+                <p className="text-gray-600 mt-2">{keys.description ? t(keys.description) : plan.description}</p>
                 
                 <div className="mt-4">
                   <span className="text-4xl font-bold text-gray-900">
                     {formatPrice(plan.basePrice)}
                   </span>
-                  <span className="text-gray-500 ml-2">/month</span>
+                  <span className="text-gray-500 ml-2">{t('perMonth')}</span>
                 </div>
               </CardHeader>
               
@@ -132,13 +138,13 @@ export default function PricingClient() {
                 {/* Platform Access */}
                 <div className="flex items-center text-sm">
                   <Smartphone className="h-4 w-4 mr-2 text-gray-400" />
-                  <span className="text-gray-600">Mobile App</span>
+                  <span className="text-gray-600">{t('mobileApp')}</span>
                   <Check className="h-4 w-4 ml-auto text-green-500" />
                 </div>
                 
                 <div className="flex items-center text-sm">
                   <Globe className="h-4 w-4 mr-2 text-gray-400" />
-                  <span className="text-gray-600">Web Dashboard</span>
+                  <span className="text-gray-600">{t('webDashboard')}</span>
                   {plan.platform === 'mobile+web' ? (
                     <Check className="h-4 w-4 ml-auto text-green-500" />
                   ) : (
@@ -149,24 +155,24 @@ export default function PricingClient() {
                 {/* Limits */}
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Products</span>
-                    <span className="font-medium">{plan.limits.products === -1 ? 'Unlimited' : plan.limits.products.toLocaleString()}</span>
+                    <span className="text-gray-600">{t('products')}</span>
+                    <span className="font-medium">{limit(plan.limits.products)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Customers</span>
-                    <span className="font-medium">{plan.limits.customers === -1 ? 'Unlimited' : plan.limits.customers.toLocaleString()}</span>
+                    <span className="text-gray-600">{t('customers')}</span>
+                    <span className="font-medium">{limit(plan.limits.customers)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Users</span>
-                    <span className="font-medium">{plan.limits.users === -1 ? 'Unlimited' : plan.limits.users}</span>
+                    <span className="text-gray-600">{t('users')}</span>
+                    <span className="font-medium">{limit(plan.limits.users)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Outlets</span>
-                    <span className="font-medium">{plan.limits.outlets === -1 ? 'Unlimited' : plan.limits.outlets}</span>
+                    <span className="text-gray-600">{t('outlets')}</span>
+                    <span className="font-medium">{limit(plan.limits.outlets)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Orders</span>
-                    <span className="font-medium">{plan.limits.orders === -1 ? 'Unlimited' : plan.limits.orders.toLocaleString()}</span>
+                    <span className="text-gray-600">{t('orders')}</span>
+                    <span className="font-medium">{limit(plan.limits.orders)}</span>
                   </div>
                 </div>
 
@@ -174,7 +180,7 @@ export default function PricingClient() {
                 <div className="border-t pt-4">
                   <div className="flex items-center text-sm">
                     <LinkIcon className="h-4 w-4 mr-2 text-blue-500" />
-                    <span className="text-gray-600">Product Public Check</span>
+                    <span className="text-gray-600">{t('publicCheckTitle')}</span>
                     <Check className="h-4 w-4 ml-auto text-green-500" />
                   </div>
                 </div>
@@ -188,18 +194,19 @@ export default function PricingClient() {
                         : 'bg-gray-900 hover:bg-gray-800 text-white'
                     }`}
                   >
-                    Get Started
+                    {t('getStarted')}
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {/* Feature Comparison Table */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-12">
           <div className="px-6 py-4 bg-gray-50 border-b">
-            <h2 className="text-xl font-bold text-gray-900">Feature Comparison</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('comparisonTitle')}</h2>
           </div>
           
           <div className="overflow-x-auto">
@@ -207,16 +214,16 @@ export default function PricingClient() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Features
+                    {t('comparisonFeatures')}
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Basic
+                    {t('planBasic')}
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Professional
+                    {t('planProfessional')}
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Enterprise
+                    {t('planEnterprise')}
                   </th>
                 </tr>
               </thead>
@@ -224,7 +231,7 @@ export default function PricingClient() {
                 {comparison.features.map((feature, index) => (
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {feature.name}
+                      {COMPARISON_NAME_KEYS[feature.name] ? t(COMPARISON_NAME_KEYS[feature.name]) : feature.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                       {typeof feature.basic === 'boolean' ? (
@@ -234,7 +241,7 @@ export default function PricingClient() {
                           <X className="h-5 w-5 text-red-400 mx-auto" />
                         )
                       ) : (
-                        feature.basic
+                        cell(feature.basic)
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
@@ -245,7 +252,7 @@ export default function PricingClient() {
                           <X className="h-5 w-5 text-red-400 mx-auto" />
                         )
                       ) : (
-                        feature.professional
+                        cell(feature.professional)
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
@@ -256,7 +263,7 @@ export default function PricingClient() {
                           <X className="h-5 w-5 text-red-400 mx-auto" />
                         )
                       ) : (
-                        feature.enterprise
+                        cell(feature.enterprise)
                       )}
                     </td>
                   </tr>
@@ -268,47 +275,42 @@ export default function PricingClient() {
 
         {/* FAQ Section */}
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('faqTitle')}</h2>
           
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                What is Product Public Check?
+                {t('faq1q')}
               </h3>
               <p className="text-gray-600">
-                Product Public Check allows you to share your product catalog with customers via public links. 
-                Customers can view your products and pricing without needing to log in or create an account. 
-                Perfect for marketing, social media sharing, and customer outreach.
+                {t('faq1a')}
               </p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Can I upgrade my plan later?
+                {t('faq2q')}
               </h3>
               <p className="text-gray-600">
-                Yes, you can upgrade your plan at any time. Your billing will be prorated, 
-                and you'll immediately get access to the higher limits and features.
+                {t('faq2a')}
               </p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                What happens if I exceed my plan limits?
+                {t('faq3q')}
               </h3>
               <p className="text-gray-600">
-                If you exceed your plan limits, you'll need to upgrade to a higher plan. 
-                We'll notify you when you're approaching your limits so you can plan accordingly.
+                {t('faq3a')}
               </p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Do you offer a free trial?
+                {t('faq4q')}
               </h3>
               <p className="text-gray-600">
-                Yes! All plans come with a 14-day free trial. You can explore all features 
-                and see if our platform fits your business needs before committing to a paid plan.
+                {t('faq4a')}
               </p>
             </div>
           </div>
@@ -317,17 +319,17 @@ export default function PricingClient() {
         {/* CTA Section */}
         <div className="text-center mt-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to Get Started?
+            {t('ctaTitle')}
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Join thousands of rental businesses already using our platform
+            {t('ctaSubtitle')}
           </p>
           <div className="space-x-4">
             <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white">
-              Start Free Trial
+              {t('startTrial')}
             </Button>
             <Button variant="outline" size="lg">
-              Contact Sales
+              {t('contactSales')}
             </Button>
           </div>
         </div>
