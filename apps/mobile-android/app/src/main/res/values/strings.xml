@@ -547,6 +547,17 @@
     <string name="api_error_insufficient_permissions">You do not have permission to do this.</string>
     <string name="api_error_subscription_expired">Your subscription has expired.</string>
     <string name="api_error_trial_expired">Your trial has ended.</string>
+    <string name="api_error_subscription_paused">Your subscription is paused.</string>
+    <string name="api_error_subscription_cancelled">Your subscription has been cancelled.</string>
+    <string name="api_error_subscription_past_due">Your subscription payment is past due. Please update your payment method.</string>
+    <string name="api_error_subscription_period_ended">Your subscription period has ended. Please renew to continue.</string>
+    <string name="api_error_no_subscription">No active subscription found. Please subscribe to continue.</string>
+    <string name="api_error_plan_upgrade_required">This feature is not included in your plan. Please upgrade to use it.</string>
+    <string name="api_error_platform_access_denied">Your plan does not include access from this device. Please upgrade your plan or use another device.</string>
+    <string name="api_error_order_other_outlet">You can only update orders of your own branch.</string>
+    <string name="api_error_no_outlet_access">You do not have access to this outlet.</string>
+    <string name="api_error_order_not_found">Order not found.</string>
+    <string name="api_error_subscription_generic">There is a problem with your subscription. Please contact support.</string>
     <string name="api_error_product_out_of_stock">This product is out of stock.</string>
     <string name="api_error_product_has_no_images">Add a product photo, then try again.</string>
     <string name="api_error_invalid_credentials">Incorrect email or password.</string>
@@ -1508,6 +1519,20 @@
     <string name="overview_v2_related_empty">No orders in this period.</string>
     <string name="overview_v2_related_created">Created in the period</string>
     <string name="overview_v2_related_cancelled">Cancelled, not counted</string>
+    <string name="overview_v2_event_sale_created">Sale created</string>
+    <string name="overview_v2_event_sale_cancelled">Sale cancelled, refunded</string>
+    <string name="overview_v2_event_deposit">Deposit collected</string>
+    <string name="overview_v2_event_pickup">Collected at pickup</string>
+    <string name="overview_v2_event_same_day">Rented and returned the same day</string>
+    <string name="overview_v2_event_damage_fee">Damage fee collected</string>
+    <string name="overview_v2_event_deposit_refund">Deposit refunded</string>
+    <string name="overview_v2_event_nothing">Nothing to settle</string>
+    <string name="overview_v2_event_rent_cancelled">Order cancelled, refunded</string>
+    <string name="overview_v2_event_return_collected">Collected at return</string>
+    <string name="overview_v2_event_future_pickup">Expected at pickup</string>
+    <string name="overview_v2_event_future_damage_fee">Expected damage fee at return</string>
+    <string name="overview_v2_event_future_refund">Expected deposit refund at return</string>
+    <string name="overview_v2_event_future_nothing">Nothing expected at return</string>
     <string name="overview_v2_related_owes">To collect at pickup</string>
     <string name="overview_v2_related_collateral_in">Collateral received at hand-over</string>
     <string name="overview_v2_related_collateral_out">Collateral returned</string>
@@ -1580,4 +1605,6 @@
     </plurals>
     <string name="notifications_v2_delete_one">Delete notification</string>
     <string name="notifications_v2_delete_one_confirm">Delete this notification? This cannot be undone.</string>
+    <string name="notifications_v2_mark_read">Mark read</string>
+    <string name="notifications_v2_mark_unread">Mark unread</string>
 </resources>

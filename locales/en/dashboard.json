@@ -352,6 +352,22 @@
         "owes": "To collect at pickup",
         "collateralIn": "Collateral received at hand-over",
         "collateralOut": "Collateral returned"
+      },
+      "event": {
+        "saleCreated": "Sale created",
+        "saleCancelled": "Sale cancelled, refunded",
+        "deposit": "Deposit collected",
+        "pickup": "Collected at pickup",
+        "sameDay": "Rented and returned the same day",
+        "damageFee": "Damage fee collected",
+        "depositRefund": "Deposit refunded",
+        "nothing": "Nothing to settle",
+        "rentCancelled": "Order cancelled, refunded",
+        "returnCollected": "Collected at return",
+        "futurePickup": "Expected at pickup",
+        "futureDamageFee": "Expected damage fee at return",
+        "futureRefund": "Expected deposit refund at return",
+        "futureNothing": "Nothing expected at return"
       }
     }
   }

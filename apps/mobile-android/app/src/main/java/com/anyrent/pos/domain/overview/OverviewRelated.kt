@@ -1,5 +1,7 @@
 package com.anyrent.pos.domain.overview
 
+import androidx.annotation.StringRes
+import com.anyrent.pos.R
 import org.json.JSONObject
 
 /**
@@ -39,6 +41,8 @@ data class IncomeRow(
     val depositAmount: Double,
     /** #721, `status=all` rows only; null on an older API */
     val collateral: Double?,
+    /** `SALE`, `RENT_DEPOSIT` ... `MULTIPLE` (#757); blank on an older API */
+    val revenueType: String = "",
 )
 
 enum class RelatedNote { CREATED, CANCELLED, EVENT, OWES, COLLATERAL_IN, COLLATERAL_OUT }
@@ -48,10 +52,70 @@ data class RelatedRow(
     val orderNumber: String,
     val customer: String,
     val note: RelatedNote,
-    /** The API's event text, shown for [RelatedNote.EVENT] */
+    /** The API's event text, the fallback of [RelatedNote.EVENT] */
     val description: String,
+    /** #757: the event reasons of [RelatedNote.EVENT], one per joined event, in the app's language */
+    val reasons: List<EventPart> = emptyList(),
     val amount: Double,
 )
+
+/** One event of a Collected row: its [reason] (a string of the app) or, when unknown, the API [text] */
+data class EventPart(val reason: EventReason?, val text: String)
+
+/**
+ * #757: why money moved, from `revenueType` (or from the API's own sentence, which also splits a `MULTIPLE` row
+ * "a + b"). The API `description` is Vietnamese, so the English app maps it to strings.
+ */
+enum class EventReason(@StringRes val res: Int) {
+    SALE_CREATED(R.string.overview_v2_event_sale_created),
+    SALE_CANCELLED(R.string.overview_v2_event_sale_cancelled),
+    DEPOSIT(R.string.overview_v2_event_deposit),
+    PICKUP(R.string.overview_v2_event_pickup),
+    SAME_DAY(R.string.overview_v2_event_same_day),
+    DAMAGE_FEE(R.string.overview_v2_event_damage_fee),
+    DEPOSIT_REFUND(R.string.overview_v2_event_deposit_refund),
+    NOTHING(R.string.overview_v2_event_nothing),
+    RENT_CANCELLED(R.string.overview_v2_event_rent_cancelled),
+    RETURN_COLLECTED(R.string.overview_v2_event_return_collected),
+    FUTURE_PICKUP(R.string.overview_v2_event_future_pickup),
+    FUTURE_DAMAGE_FEE(R.string.overview_v2_event_future_damage_fee),
+    FUTURE_REFUND(R.string.overview_v2_event_future_refund),
+    FUTURE_NOTHING(R.string.overview_v2_event_future_nothing),
+    ;
+
+    companion object {
+        /** The API's sentences (`revenue-calculator.ts`) */
+        private val known = mapOf(
+            "Đơn bán được tạo" to SALE_CREATED, "Đơn bán bị hủy (hoàn lại)" to SALE_CANCELLED,
+            "Thu tiền cọc" to DEPOSIT, "Thu tiền khi lấy hàng" to PICKUP, "Thuê và trả trong cùng ngày" to SAME_DAY,
+            "Thu phí hư hỏng" to DAMAGE_FEE, "Hoàn tiền cọc" to DEPOSIT_REFUND, "Không có phát sinh" to NOTHING,
+            "Đơn hủy (hoàn lại)" to RENT_CANCELLED, "Doanh thu dự kiến khi lấy hàng" to FUTURE_PICKUP,
+            "Ước tính thu phí hư hỏng khi trả hàng" to FUTURE_DAMAGE_FEE,
+            "Ước tính hoàn tiền cọc khi trả hàng" to FUTURE_REFUND,
+            "Ước tính không có phát sinh khi trả hàng" to FUTURE_NOTHING,
+        )
+
+        fun forType(revenueType: String, revenue: Double): EventReason? = when (revenueType) {
+            "SALE" -> SALE_CREATED
+            "SALE_CANCELLED" -> SALE_CANCELLED
+            "RENT_DEPOSIT" -> DEPOSIT
+            "RENT_PICKUP" -> PICKUP
+            "RENT_CANCELLED" -> RENT_CANCELLED
+            "RENT_FUTURE_PICKUP" -> FUTURE_PICKUP
+            "RENT_RETURN" -> if (revenue < 0) DEPOSIT_REFUND else if (revenue > 0) RETURN_COLLECTED else NOTHING
+            "RENT_FUTURE_RETURN" -> if (revenue < 0) FUTURE_REFUND else if (revenue > 0) FUTURE_DAMAGE_FEE else FUTURE_NOTHING
+            else -> null
+        }
+
+        fun parts(revenueType: String, description: String, revenue: Double): List<EventPart> {
+            val type = revenueType.uppercase()
+            if (type == "MULTIPLE" || (type.isEmpty() && description.contains(" + "))) {
+                return description.split(" + ").map { EventPart(known[it], it) }
+            }
+            return listOf(EventPart(known[description] ?: forType(type, revenue), description))
+        }
+    }
+}
 
 object OverviewRelated {
     /** What each row adds to the figure; rows that add nothing to Còn phải thu or Thế chân are left out */
@@ -77,7 +141,8 @@ object OverviewRelated {
                 moved to if (moved > 0) RelatedNote.COLLATERAL_IN else RelatedNote.COLLATERAL_OUT
             }
         }
-        RelatedRow(item.id, item.orderNumber, item.customerName, note, item.description, amount)
+        val reasons = if (note == RelatedNote.EVENT) EventReason.parts(item.revenueType, item.description, amount) else emptyList()
+        RelatedRow(item.id, item.orderNumber, item.customerName, note, item.description, reasons, amount)
     }
 
     fun total(rows: List<RelatedRow>): Double = rows.sumOf { it.amount }
@@ -106,6 +171,7 @@ object OverviewRelated {
                             totalAmount = number(o, "totalAmount") ?: 0.0,
                             depositAmount = number(o, "depositAmount") ?: 0.0,
                             collateral = number(o, "collateral"),
+                            revenueType = text(o, "revenueType"),
                         ),
                     )
                 }

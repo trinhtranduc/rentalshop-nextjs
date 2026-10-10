@@ -66,6 +66,8 @@ final class ProductFormViewController: BaseViewControler {
         return ProductStock.counts(product, outletId: outlet)
     }
 
+    private var outletsLoadError: String?
+
     private var userOutletId: Int? { User.current()?.outlet?.id ?? User.current()?.outletId }
 
     init(product: Product?) {
@@ -404,9 +406,11 @@ final class ProductFormViewController: BaseViewControler {
     }
 
     private func loadOutlets() {
-        OutletService.shared.getOutlets { [weak self] outlets, _ in
+        OutletService.shared.getOutlets { [weak self] outlets, error in
             DispatchQueue.main.async {
                 self?.merchantOutlets = (outlets ?? []).filter { $0.isActive != false }.map { (id: $0.id, isDefault: $0.isDefault == true) }
+                // #756: keep why the list was refused (blocked subscription ...), not "could not tell which store"
+                self?.outletsLoadError = error?.localizedDescription
                 self?.renderStock()
             }
         }
@@ -549,7 +553,7 @@ final class ProductFormViewController: BaseViewControler {
             return
         }
         guard let outletId = ProductOutletChoice.outletId(userOutletId: userOutletId, product: product, merchantOutlets: merchantOutlets) else {
-            UIAlertController.alert(parent: self, title: "Error".localized(), message: "products.form.error.outlet".localized())
+            UIAlertController.alert(parent: self, title: "Error".localized(), message: outletsLoadError ?? "products.form.error.outlet".localized())
             return
         }
         save(input, outletId: outletId)

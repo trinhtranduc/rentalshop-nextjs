@@ -184,7 +184,9 @@ private fun RelatedRowItem(row: RelatedRow, signed: Boolean, onClick: () -> Unit
         RelatedNote.OWES -> stringResource(R.string.overview_v2_related_owes)
         RelatedNote.COLLATERAL_IN -> stringResource(R.string.overview_v2_related_collateral_in)
         RelatedNote.COLLATERAL_OUT -> stringResource(R.string.overview_v2_related_collateral_out)
-        RelatedNote.EVENT -> row.description
+        RelatedNote.EVENT ->
+            if (row.reasons.isEmpty()) row.description
+            else row.reasons.map { part -> part.reason?.let { stringResource(it.res) } ?: part.text }.joinToString(" + ")
     }
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp),

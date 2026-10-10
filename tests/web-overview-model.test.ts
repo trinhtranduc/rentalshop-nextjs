@@ -19,6 +19,7 @@ import {
   relatedBuckets,
   relatedRows,
   relatedTotal,
+  eventReasons,
 } from '../apps/client/app/dashboard/overview-model';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
 
@@ -247,5 +248,46 @@ describe('related orders (#708, #721)', () => {
     const value = relatedRows('orderValue', 'new', items);
     expect(value.map((r) => r.amount)).toEqual([500, 900, 250, 0]);
     expect(value[3].note).toBe('cancelled');
+  });
+});
+
+describe('Collected related reasons (#757)', () => {
+  const keys = (type: string | null, text: string | null, revenue: number) => eventReasons(type, text, revenue).map((r) => r.key);
+
+  it('maps revenueType, not the Vietnamese API text', () => {
+    expect(keys('RENT_DEPOSIT', 'Thu tiền cọc', 100)).toEqual(['deposit']);
+    expect(keys('RENT_PICKUP', null, 100)).toEqual(['pickup']);
+    expect(keys('SALE', 'Đơn bán được tạo', 100)).toEqual(['saleCreated']);
+    expect(keys('SALE_CANCELLED', '', -100)).toEqual(['saleCancelled']);
+    expect(keys('RENT_CANCELLED', 'Đơn hủy (hoàn lại)', -100)).toEqual(['rentCancelled']);
+    expect(keys('RENT_FUTURE_PICKUP', null, 5)).toEqual(['futurePickup']);
+    expect(keys('RENT_FUTURE_RETURN', null, -5)).toEqual(['futureRefund']);
+  });
+
+  it('RENT_RETURN uses the API sentence, then the sign', () => {
+    expect(keys('RENT_RETURN', 'Thuê và trả trong cùng ngày', 500)).toEqual(['sameDay']);
+    expect(keys('RENT_RETURN', 'Thu phí hư hỏng', 50)).toEqual(['damageFee']);
+    expect(keys('RENT_RETURN', 'Hoàn tiền cọc', -100)).toEqual(['depositRefund']);
+    expect(keys('RENT_RETURN', '?', -5)).toEqual(['depositRefund']);
+    expect(keys('RENT_RETURN', '?', 5)).toEqual(['returnCollected']);
+  });
+
+  it('splits a MULTIPLE row and keeps an unknown part and an unknown type as the API text', () => {
+    expect(keys('MULTIPLE', 'Thu tiền cọc + Thu tiền khi lấy hàng', 300)).toEqual(['deposit', 'pickup']);
+    expect(eventReasons('MULTIPLE', 'Thu tiền cọc + Lạ', 300)[1]).toEqual({ key: null, text: 'Lạ' });
+    expect(eventReasons('NEW_TYPE', 'Văn bản', 1)).toEqual([{ key: null, text: 'Văn bản' }]);
+  });
+
+  it('relatedRows carries the reasons for the collected tile only', () => {
+    const rows = relatedRows('collected', 'all', [{ id: 1, orderNumber: 'a', revenue: 100, revenueType: 'RENT_DEPOSIT', description: 'Thu tiền cọc' }]);
+    expect(rows[0].reasons.map((r) => r.key)).toEqual(['deposit']);
+    expect(relatedRows('orderValue', 'new', [{ id: 1, totalAmount: 5 }])[0].reasons).toEqual([]);
+  });
+
+  it('every reason key has en and vi text', () => {
+    const en = require('../locales/en/dashboard.json').home.related.event;
+    const vi = require('../locales/vi/dashboard.json').home.related.event;
+    const used = ['saleCreated', 'saleCancelled', 'deposit', 'pickup', 'sameDay', 'damageFee', 'depositRefund', 'nothing', 'rentCancelled', 'returnCollected', 'futurePickup', 'futureDamageFee', 'futureRefund', 'futureNothing'];
+    for (const k of used) { expect(en[k]).toBeTruthy(); expect(vi[k]).toBeTruthy(); }
   });
 });

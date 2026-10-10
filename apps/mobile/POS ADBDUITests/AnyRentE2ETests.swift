@@ -605,6 +605,38 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #757: the reasons under the Collected rows read in the app language (the API text is Vietnamese)
+    func test7mCollectedReasonsFollowTheLanguage() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        sleep(4)
+        let week = e2e.element(labelBeginsWith: ["7 days", "7 ngày"], type: .button)
+        guard week.waitForExistence(timeout: 8) else { throw XCTSkip("No period chips for this account") }
+        week.tap()
+        sleep(3)
+        let collected = e2e.element(labelBeginsWith: ["Collected", "Thực thu"], type: .button)
+        XCTAssertTrue(collected.waitForExistence(timeout: 8), "Collected tile")
+        let english = collected.label.hasPrefix("Collected")
+        collected.tap()
+        let link = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "detail sheet links to the orders")
+        link.tap()
+        let total = app.staticTexts["related.total"]
+        XCTAssertTrue(total.waitForExistence(timeout: 20), "related list total")
+        sleep(2)
+        e2e.shot("74-overview-related-collected-reasons")
+        let texts = app.staticTexts.allElementsBoundByIndex.map(\.label)
+        e2e.note("RELATED REASONS english=\(english) | \(texts.prefix(24))")
+        if english {
+            let vietnamese = ["Thu tiền cọc", "Thu tiền khi lấy hàng", "Hoàn tiền cọc", "Đơn bán được tạo", "Đơn hủy (hoàn lại)",
+                              "Thu phí hư hỏng", "Thuê và trả trong cùng ngày"]
+            XCTAssertTrue(texts.filter { vietnamese.contains($0) }.isEmpty, "#757 Vietnamese reasons in the English app: \(texts)")
+        }
+    }
+
     func test7Overview() throws {
         try e2e.requireFlag("newOverview")
         try e2e.start()
@@ -2043,6 +2075,28 @@ final class AnyRentE2ETests: XCTestCase {
                 XCTAssertFalse(bare.exists, "#753 \(tag) Home shows the reason, not \"Chưa có sản phẩm\"")
             }
             e2e.dismissAlerts()
+        }
+        // #756: an owner has no outlet of their own; adding a product says why the shop is blocked, not "which store"
+        if e2e.scenarioRole == "owner", e2e.tapTab(["Home", "Trang chủ"], index: 0) {
+            let add = e2e.button(["Add product", "Thêm sản phẩm"])
+            if add.waitForExistence(timeout: 5) {
+                add.tap()
+                let name = e2e.field(["Product name", "Tên sản phẩm"])
+                if name.waitForExistence(timeout: 8) {
+                    name.tap()
+                    name.typeText("SP khoa \(Int(Date().timeIntervalSince1970) % 100000)")
+                    e2e.hideKeyboard()
+                    let save = e2e.button(["Save", "Lưu", "Save product", "Lưu sản phẩm"])
+                    if save.waitForExistence(timeout: 3) { save.tap(); sleep(3) }
+                    e2e.shot("10f-sub-add-product")
+                    let texts = e2e.screenTexts()
+                    e2e.note("SUB \(tag) add product: texts=\(texts.prefix(12))")
+                    XCTAssertFalse(texts.contains { $0.contains("which store") || $0.contains("cửa hàng để lưu") },
+                                   "#756 \(tag) add product shows the subscription reason, not the outlet message: \(texts)")
+                    e2e.dismissAlerts()
+                    e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 2)
+                }
+            }
         }
         XCTAssertTrue(raw.isEmpty, "raw API codes on screen: \(raw)")
     }

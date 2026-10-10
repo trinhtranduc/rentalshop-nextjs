@@ -352,6 +352,22 @@
         "owes": "Sẽ thu khi khách lấy đồ",
         "collateralIn": "Nhận thế chân khi giao",
         "collateralOut": "Trả thế chân khi nhận đồ"
+      },
+      "event": {
+        "saleCreated": "Đơn bán được tạo",
+        "saleCancelled": "Đơn bán bị hủy (hoàn lại)",
+        "deposit": "Thu tiền cọc",
+        "pickup": "Thu tiền khi lấy hàng",
+        "sameDay": "Thuê và trả trong cùng ngày",
+        "damageFee": "Thu phí hư hỏng",
+        "depositRefund": "Hoàn tiền cọc",
+        "nothing": "Không có phát sinh",
+        "rentCancelled": "Đơn hủy (hoàn lại)",
+        "returnCollected": "Thu khi trả hàng",
+        "futurePickup": "Doanh thu dự kiến khi lấy hàng",
+        "futureDamageFee": "Dự kiến thu phí hư hỏng khi trả hàng",
+        "futureRefund": "Dự kiến hoàn tiền cọc khi trả hàng",
+        "futureNothing": "Dự kiến không có phát sinh khi trả hàng"
       }
     }
   }

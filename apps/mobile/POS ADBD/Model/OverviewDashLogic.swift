@@ -422,6 +422,57 @@ struct OverviewRelatedRow: Equatable {
     let amount: Double
 }
 
+/// #757: the reason under a "Collected" row in the app's language. The API `description` is Vietnamese, so the
+/// reason comes from `revenueType` (or the known API sentence, which also splits a `MULTIPLE` row); `description`
+/// stays the fallback for a type this build does not know.
+enum RelatedEventReason: String, CaseIterable {
+    case saleCreated, saleCancelled, deposit, pickup, sameDay, damageFee, depositRefund, nothing
+    case rentCancelled, returnCollected, futurePickup, futureDamageFee, futureRefund, futureNothing
+
+    var localizedKey: String { "overview.related.event.\(rawValue)" }
+
+    /// The API's own sentences (`revenue-calculator.ts`), so a `RENT_RETURN` or a `MULTIPLE` part maps exactly
+    static let knownDescriptions: [String: RelatedEventReason] = [
+        "Đơn bán được tạo": .saleCreated, "Đơn bán bị hủy (hoàn lại)": .saleCancelled, "Thu tiền cọc": .deposit,
+        "Thu tiền khi lấy hàng": .pickup, "Thuê và trả trong cùng ngày": .sameDay, "Thu phí hư hỏng": .damageFee,
+        "Hoàn tiền cọc": .depositRefund, "Không có phát sinh": .nothing, "Đơn hủy (hoàn lại)": .rentCancelled,
+        "Doanh thu dự kiến khi lấy hàng": .futurePickup, "Ước tính thu phí hư hỏng khi trả hàng": .futureDamageFee,
+        "Ước tính hoàn tiền cọc khi trả hàng": .futureRefund, "Ước tính không có phát sinh khi trả hàng": .futureNothing,
+    ]
+
+    static func forType(_ revenueType: String, revenue: Double) -> RelatedEventReason? {
+        switch revenueType {
+        case "SALE": return .saleCreated
+        case "SALE_CANCELLED": return .saleCancelled
+        case "RENT_DEPOSIT": return .deposit
+        case "RENT_PICKUP": return .pickup
+        case "RENT_CANCELLED": return .rentCancelled
+        case "RENT_FUTURE_PICKUP": return .futurePickup
+        case "RENT_RETURN": return revenue < 0 ? .depositRefund : (revenue > 0 ? .returnCollected : .nothing)
+        case "RENT_FUTURE_RETURN": return revenue < 0 ? .futureRefund : (revenue > 0 ? .futureDamageFee : .futureNothing)
+        default: return nil
+        }
+    }
+
+    /// The reason of each event of a row: one for a single event, one per part of a `MULTIPLE` row ("a + b").
+    /// `nil` reason = unknown, keep the API text of that part.
+    static func parts(revenueType: String?, description: String?, revenue: Double) -> [(reason: RelatedEventReason?, text: String)] {
+        let type = (revenueType ?? "").uppercased()
+        let text = description ?? ""
+        if type == "MULTIPLE" || (type.isEmpty && text.contains(" + ")) {
+            return text.components(separatedBy: " + ").map { (knownDescriptions[$0], $0) }
+        }
+        return [(knownDescriptions[text] ?? forType(type, revenue: revenue), text)]
+    }
+
+    static func text(revenueType: String?, description: String?, revenue: Double,
+                     localize: (String) -> String = { $0.localized() }) -> String {
+        parts(revenueType: revenueType, description: description, revenue: revenue)
+            .map { $0.reason.map { localize($0.localizedKey) } ?? $0.text }
+            .joined(separator: " + ")
+    }
+}
+
 extension OverviewDashLogic {
     /// One row per income/orders row, with the money it adds to the tile; Σ amount = the tile (BF-STAT)
     static func relatedRows(_ kind: OverviewRelatedKind, bucket: String, items: [DailyIncomeOrder]) -> [OverviewRelatedRow] {
@@ -436,7 +487,7 @@ extension OverviewDashLogic {
                 detail = cancelled ? "overview.related.cancelled".localized() : "overview.related.created".localized()
             case (.collected, _):
                 amount = item.revenue ?? 0
-                detail = item.description ?? ""
+                detail = RelatedEventReason.text(revenueType: item.revenueType, description: item.description, revenue: amount)
             case (.outstanding, _):
                 let type = item.orderType?.uppercased() ?? ""
                 let status = item.status?.uppercased() ?? ""

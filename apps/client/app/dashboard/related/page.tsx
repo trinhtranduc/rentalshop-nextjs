@@ -24,6 +24,12 @@ import {
 
 type T = (key: string, values?: Record<string, unknown>) => string;
 
+/** #757: the reason of a Collected row in the UI language; the API text only for an event this build does not know */
+function eventText(row: RelatedRow, t: T): string {
+  if (!row.reasons.length) return row.description;
+  return row.reasons.map((p) => (p.key ? t(`home.related.event.${p.key}`) : p.text)).join(' + ');
+}
+
 const PAGE = 200;
 const MAX_PAGES = 25;
 
@@ -112,7 +118,7 @@ function RelatedOrders() {
                     </Link>
                   </td>
                   <td className="border-b border-ar-subtle px-3 py-2">{r.customer}</td>
-                  <td className="border-b border-ar-subtle px-3 py-2 text-ar-ink-2">{r.note === 'event' ? r.description : t(`home.related.note.${r.note}`)}</td>
+                  <td className="border-b border-ar-subtle px-3 py-2 text-ar-ink-2">{r.note === 'event' ? eventText(r, t) : t(`home.related.note.${r.note}`)}</td>
                   <td className={`border-b border-ar-subtle px-3 py-2 text-right tabular-nums ${r.amount < 0 ? 'text-ar-late' : ''}`}>{signed(r.amount)}</td>
                 </tr>
               ))}
