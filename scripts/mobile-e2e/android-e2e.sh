@@ -166,7 +166,7 @@ step 40-calendar
 # 5. Overview
 first_of "Tổng quan" "Overview" "Báo cáo" "Reports" || echo "MISS  overview tab"
 step 50-overview
-step 51-overview-period first_of "~Khoảng thời gian:" "~Period:"
+step 51-overview-period first_of "7 ngày" "7 days"
 ui back || true
 # 6. Settings + logout
 first_of "Cài đặt" "Settings" || echo "MISS  settings tab"

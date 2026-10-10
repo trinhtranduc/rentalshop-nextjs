@@ -53,6 +53,8 @@ data class OverviewReport(
     val orderValueOrders: Int? = null,
     /** #722 `revenue.cashCollected` (#710): money held from the period, collateral included; null on an older API */
     val cashCollected: Double? = null,
+    /** #725 (iOS #616) `revenue.orderValueByType`: rent / sale split of [totalOrderValue]; null on an older API */
+    val orderValueByType: OrderValueByType? = null,
 ) {
     /** "Thực thu" as iOS and web show it: money held, collateral included; an older API falls back */
     val heldCash: Double get() = cashCollected ?: collateralFlow?.totalReceived(netRevenue) ?: netRevenue
@@ -61,7 +63,14 @@ data class OverviewReport(
      * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
      * [newOrderCount] (#484) is null on an older API.
      */
-    data class Point(val dayKey: String?, val monthLabel: String?, val realIncome: Double, val newOrderCount: Int? = null)
+    data class Point(
+        val dayKey: String?,
+        val monthLabel: String?,
+        val realIncome: Double,
+        val newOrderCount: Int? = null,
+        /** #725 (iOS #616) `expectedCollected`: money still expected that day; null on an older API */
+        val expectedCollected: Double? = null,
+    )
     data class TopProduct(val id: Int?, val name: String, val rentalCount: Int, val totalRevenue: Double, val image: String?)
 
     /** #633 one of `topCustomers`; [totalSpent] null (hidden) counts as 0 */
@@ -108,6 +117,12 @@ data class CollateralFlow(val received: Double, val returned: Double) {
 /** #494 an amount over [orders] orders */
 data class AmountOrders(val amount: Double, val orders: Int)
 
+/** #725 `revenue.orderValueByType`: the new orders' value split into rentals and sales (cancelled left out) */
+data class OrderValueByType(val rent: AmountOrders, val sale: AmountOrders)
+
+/** #725 (iOS #616) `tomorrow` of outlet-operations: tomorrow's hand-overs and returns */
+data class Tomorrow(val pickups: Int, val returns: Int)
+
 /** #494 `revenue.outstandingBreakdown`: [atPickup] + [overduePickup] = `revenue.outstanding` */
 data class OutstandingBreakdown(val atPickup: AmountOrders, val overduePickup: AmountOrders)
 
@@ -132,6 +147,8 @@ data class OverviewNow(
     val returnsToday: TodayTask? = null,
     /** #496 `noShows.count`: rent orders still RESERVED past their pickup day; null when missing */
     val noShows: Int? = null,
+    /** #725 `tomorrow`; null when the API leaves it out */
+    val tomorrow: Tomorrow? = null,
 )
 
 /** #496 one row of "VIỆC HÔM NAY": [remaining] still to do, [done] already done today */
@@ -283,6 +300,7 @@ object OverviewLogic {
                     monthLabel = if (monthly || date == null) p.optString("month").takeIf { it.isNotBlank() } else null,
                     realIncome = number(p, "collected") ?: number(p, "realIncome") ?: 0.0,
                     newOrderCount = number(p, "newOrderCount")?.toInt(),
+                    expectedCollected = number(p, "expectedCollected"),
                 )
             },
             topProducts = (0 until (top?.length() ?: 0)).mapNotNull { i ->
@@ -308,6 +326,12 @@ object OverviewLogic {
             cashCollected = number(revenue, "cashCollected"),
             orderValueOrders = revenue?.optJSONObject("orderValueByType")?.let { split ->
                 (split.optJSONObject("rent")?.optInt("orders", 0) ?: 0) + (split.optJSONObject("sale")?.optInt("orders", 0) ?: 0)
+            },
+            orderValueByType = revenue?.optJSONObject("orderValueByType")?.let { split ->
+                fun part(key: String): AmountOrders = split.optJSONObject(key).let { p ->
+                    AmountOrders(amount = number(p, "amount") ?: 0.0, orders = number(p, "orders")?.toInt() ?: 0)
+                }
+                OrderValueByType(rent = part("rent"), sale = part("sale"))
             },
             outstanding = number(revenue, "outstanding"),
             orderValueGrowth = data.optJSONObject("growth")?.optJSONObject("orderValue")?.let { g ->
@@ -362,6 +386,7 @@ object OverviewLogic {
             pickupsToday = todayTask(data, "pickupsToday", "pickups"),
             returnsToday = todayTask(data, "returnsToday", "returns"),
             noShows = count(data.optJSONObject("noShows"), "count"),
+            tomorrow = data.optJSONObject("tomorrow")?.let { Tomorrow(count(it, "pickups") ?: 0, count(it, "returns") ?: 0) },
         )
     }
 }

@@ -15,6 +15,7 @@
  * }
  */
 
+import { lookupErrorTranslation, looksLikeErrorCode } from '@rentalshop/utils';
 import { useErrorTranslations } from './useTranslation';
 
 export function useApiError() {
@@ -47,46 +48,29 @@ export function useApiError() {
       return translateError(response.response.data);
     }
 
+    // #740: a code with no translation never reaches the user, not as the code and not as `errors.<CODE>`, and
+    // not as the API's English sentence either: the localized generic message is shown and the code is logged
+    const unknown = (code?: string): string => {
+      console.warn('translateError: no translation for error code', code);
+      return t('UNKNOWN_ERROR');
+    };
+
     // ✅ PRIORITY 1: Standard API error format
     // Format: { success: false, code: "PLAN_LIMIT_EXCEEDED", message: "...", error: "..." }
     if (response?.code && typeof response.code === 'string') {
-      console.log('🔍 translateError: Found code field:', response.code);
-      const translated = t(response.code);
-      console.log('🔍 translateError: Translation result:', { code: response.code, translated, isTranslated: translated !== response.code });
-      
-      // Translation exists if it's different from the code
-      if (translated !== response.code) {
-        console.log('✅ translateError: Using translated message:', translated);
-        return translated;
-      }
-      // Fallback to message if translation doesn't exist
-      if (response?.message) {
-        console.log('⚠️ translateError: Translation not found, using message:', response.message);
-        return response.message;
-      }
-      // Last resort: return code itself
-      console.log('⚠️ translateError: No translation or message, returning code:', response.code);
-      return response.code;
+      return lookupErrorTranslation(t, response.code) ?? unknown(response.code);
     }
 
     // ✅ PRIORITY 2: Error object with code attached (from authenticatedFetch)
     // Format: Error { code: "PLAN_LIMIT_EXCEEDED", message: "...", response: { data: {...} } }
     if (response instanceof Error && (response as any).code) {
       const code = (response as any).code;
-      const translated = t(code);
-      if (translated !== code) {
-        return translated;
-      }
-      // Fallback to error message
-      return response.message;
+      return lookupErrorTranslation(t, code) ?? unknown(code);
     }
 
-    // ✅ PRIORITY 3: Check if message is an error code format (legacy support)
-    if (response?.message && typeof response.message === 'string' && /^[A-Z_]+$/.test(response.message)) {
-      const translated = t(response.message);
-      if (translated !== response.message) {
-        return translated;
-      }
+    // ✅ PRIORITY 3: The message is itself an error code (legacy support)
+    if (response?.message && typeof response.message === 'string' && looksLikeErrorCode(response.message)) {
+      return lookupErrorTranslation(t, response.message) ?? unknown(response.message);
     }
 
     // ✅ PRIORITY 4: Use message as plain text
@@ -96,11 +80,8 @@ export function useApiError() {
 
     // ✅ PRIORITY 5: Handle string errors
     if (typeof response === 'string') {
-      if (/^[A-Z_]+$/.test(response)) {
-        const translated = t(response);
-        if (translated !== response) {
-          return translated;
-        }
+      if (looksLikeErrorCode(response)) {
+        return lookupErrorTranslation(t, response) ?? unknown(response);
       }
       return response;
     }
@@ -115,16 +96,11 @@ export function useApiError() {
    */
   const translateSuccess = (response: any): string => {
     // Priority 1: Use code field
-    if (response?.code && typeof response.code === 'string') {
-      const translated = t(response.code);
-      // If translation exists, use it; otherwise fallback to message
-      if (translated !== response.code) {
-        return translated;
-      }
-    }
+    const translated = lookupErrorTranslation(t, response?.code);
+    if (translated) return translated;
 
-    // Priority 2: Use message if available
-    if (response?.message) {
+    // Priority 2: Use message if available (not a bare code)
+    if (response?.message && !looksLikeErrorCode(response.message)) {
       return response.message;
     }
 
