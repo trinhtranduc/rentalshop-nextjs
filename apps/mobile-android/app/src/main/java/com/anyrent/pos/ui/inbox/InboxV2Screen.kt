@@ -104,6 +104,8 @@ fun InboxV2Screen(
     var unreadCount by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDeleteRead by remember { mutableStateOf(false) }
+    // #751: a long press asks first instead of deleting at once
+    var pendingDelete by remember { mutableStateOf<InboxNotification?>(null) }
     // Bumped by a reset: a page that lands after a newer reset is dropped
     var generation by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -128,7 +130,7 @@ fun InboxV2Screen(
             loading = false
             refreshing = false
             result.onSuccess { data ->
-                items = if (wanted == 1) data.items else items + data.items
+                items = if (wanted == 1) data.items else NotificationsLogic.appendPage(items, data.items)
                 hasMore = data.hasMore
                 page = wanted + 1
                 data.unreadCount?.let {
@@ -233,12 +235,7 @@ fun InboxV2Screen(
                                             item.orderId?.let(onOpenOrder)
                                         }
                                     },
-                                    onLongClick = {
-                                        scope.launch {
-                                            withContext(Dispatchers.IO) { ApiParity.deleteNotification(item.id) }
-                                            load(reset = true)
-                                        }
-                                    },
+                                    onLongClick = { pendingDelete = item },
                                 )
                             }
                         }
@@ -246,6 +243,23 @@ fun InboxV2Screen(
                 }
             }
         }
+    }
+
+    pendingDelete?.let { target ->
+        AppAlertConfirm(
+            title = stringResource(R.string.notifications_v2_delete_one),
+            message = stringResource(R.string.notifications_v2_delete_one_confirm),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            onConfirm = {
+                pendingDelete = null
+                scope.launch {
+                    withContext(Dispatchers.IO) { ApiParity.deleteNotification(target.id) }
+                    load(reset = true)
+                }
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 
     if (confirmDeleteRead) {
