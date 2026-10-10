@@ -172,8 +172,14 @@ describe('validation', () => {
 
   it('price rules only when prices are shown', () => {
     const f = valid({ salePrice: 0, defaultMode: 'DAILY', perDay: 0, perRental: -1 });
-    expect(validateForm(f, { canEditPricing: true })).toEqual({ perRental: 'priceNegative', defaultMode: 'dailyNeedsPrice', salePrice: 'saleRequired' });
+    expect(validateForm(f, { canEditPricing: true })).toEqual({ perRental: 'priceNegative', defaultMode: 'dailyNeedsPrice' });
     expect(validateForm(f, { canEditPricing: false })).toEqual({});
+  });
+
+  it('a product for rent only can be saved without a sale price (#741)', () => {
+    const f = valid({ salePrice: 0, perRental: 135000, perDay: 0, defaultMode: 'ONCE' });
+    expect(validateForm(f, { canEditPricing: true })).toEqual({});
+    expect(buildPayload(f, { canEditPricing: true, productId: 5 })).not.toHaveProperty('salePrice');
   });
 
   it('negative deposit or outlet stock', () => {
