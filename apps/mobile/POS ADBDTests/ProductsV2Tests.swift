@@ -415,6 +415,28 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertTrue(model.hasMore)
     }
 
+    /// #753: a 403 (subscription expired, cancelled, paused, past due) is the empty state's reason, with Retry
+    func testFailedLoadShowsTheReasonNotNoProducts() throws {
+        let source = FakeSource()
+        let model = ProductsHomeViewModel(dataSource: source)
+        model.reload()
+        let reason = NSError.errorWithOwnMessage(message: "Đăng ký đã hết hạn", domain: "RC")
+        source.calls[0].completion(nil, reason)
+        waitMain()
+        XCTAssertNotNil(model.loadError)
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: false, hasQuery: false, error: model.loadError),
+                       .failed("Đăng ký đã hết hạn"))
+        model.reload() // Retry: the reason goes while the answer is on its way
+        XCTAssertNil(model.loadError)
+        source.calls[1].completion(ProductsPage(products: [], hasMore: false), nil)
+        waitMain()
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: false, hasQuery: false, error: model.loadError), .empty)
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: false, hasQuery: true, error: nil), .searchEmpty)
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 3, isLoading: false, hasQuery: false, error: reason), .none,
+                       "rows on screen: no empty state")
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: true, hasQuery: false, error: nil), .none)
+    }
+
     /// #681 (Home option 1): the "● Còn N hôm nay" / "● Hết hôm nay" line is 13pt semibold (was 14pt regular, #468)
     func testStockLabelIsSemibold13() throws {
         let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
