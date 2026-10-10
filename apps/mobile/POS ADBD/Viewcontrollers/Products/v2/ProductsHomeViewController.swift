@@ -37,6 +37,8 @@ final class ProductsHomeViewController: BaseViewControler {
         return table
     }()
     private let emptyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+    /// #753: under the reason when the list could not load
+    private let retryButton = UIButton(type: .system)
     private let cartBar = UIControl()
     private let cartCountLabel = V2.label(size: DS.TextSize.secondary, color: UIColor.white.withAlphaComponent(0.85))
     private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
@@ -188,6 +190,21 @@ final class ProductsHomeViewController: BaseViewControler {
             make.top.equalTo(header.snp.bottom).offset(48)
             make.leading.trailing.equalToSuperview().inset(32)
         }
+        retryButton.setTitle("Retry".localized(), for: .normal)
+        retryButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        retryButton.tintColor = DS.Color.primary
+        retryButton.isHidden = true
+        retryButton.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
+        view.addSubview(retryButton)
+        retryButton.snp.makeConstraints { make in
+            make.top.equalTo(emptyLabel.snp.bottom).offset(DS.Spacing.sm)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(DS.touchTarget)
+        }
+    }
+
+    @objc private func retryTapped() {
+        viewModel.reload()
     }
 
     private func buildCartBar() {
@@ -255,13 +272,26 @@ final class ProductsHomeViewController: BaseViewControler {
             guard let self else { return }
             self.endRefresh()
             self.list.reloadData()
-            let empty = self.viewModel.products.isEmpty && !self.viewModel.isLoading
-            self.emptyLabel.isHidden = !empty
-            self.emptyLabel.text = self.viewModel.query == nil ? "products.empty".localized() : "products.search.empty".localized()
+            let state = ProductsHomeEmptyState.state(productCount: self.viewModel.products.count, isLoading: self.viewModel.isLoading,
+                                                      hasQuery: self.viewModel.query != nil, error: self.viewModel.loadError)
+            self.emptyLabel.isHidden = state == .none
+            self.retryButton.isHidden = true
+            switch state {
+            case .none: break
+            case .empty: self.emptyLabel.text = "products.empty".localized()
+            case .searchEmpty: self.emptyLabel.text = "products.search.empty".localized()
+            case .failed(let reason):
+                self.emptyLabel.text = reason
+                self.retryButton.isHidden = false
+            }
         }
         viewModel.onError = { [weak self] error in
-            self?.endRefresh()
-            UIAlertController.errorAlert(parent: self, error: error)
+            guard let self else { return }
+            self.endRefresh()
+            // With no rows the reason is on the screen with Retry (#753); the alert is for a list that has rows
+            if !self.viewModel.products.isEmpty {
+                UIAlertController.errorAlert(parent: self, error: error)
+            }
         }
     }
 

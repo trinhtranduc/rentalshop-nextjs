@@ -2034,6 +2034,14 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.shot("10b-sub-\(name)")
             e2e.note("SUB \(tag) \(name): alert=\(app.alerts.firstMatch.exists) texts=\(e2e.screenTexts().prefix(25))")
             raw += e2e.rawKeys()
+            // #753 (Home, every role) and #754 (Tổng quan of staff and kho): the reason and Retry, never a bare empty state
+            if name == "home" || name == "reports" {
+                let retry = app.descendants(matching: .any)
+                    .matching(NSPredicate(format: "label CONTAINS[c] 'Thử lại' OR label CONTAINS[c] 'Retry'")).firstMatch
+                XCTAssertTrue(retry.exists, "#753/#754 \(tag) \(name) shows the reason with Thử lại")
+                let bare = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Chưa có sản phẩm", "No products yet"])).firstMatch
+                XCTAssertFalse(bare.exists, "#753 \(tag) Home shows the reason, not \"Chưa có sản phẩm\"")
+            }
             e2e.dismissAlerts()
         }
         XCTAssertTrue(raw.isEmpty, "raw API codes on screen: \(raw)")

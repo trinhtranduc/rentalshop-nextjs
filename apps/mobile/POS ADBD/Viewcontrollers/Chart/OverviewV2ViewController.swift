@@ -29,6 +29,8 @@ final class OverviewV2ViewController: BaseViewControler {
     private var chartReport: OverviewReport?
     private var now: OverviewNow?
     private var reportFailed: String?
+    /// #754: staff and warehouse (no revenue) have only the Hôm nay card; its failure shows the reason with Retry
+    private var nowFailed: String?
     private var loading = false
     private var generation = 0
     private var requests: [DataRequest] = []
@@ -152,6 +154,7 @@ final class OverviewV2ViewController: BaseViewControler {
         if !keep {
             loading = true
             reportFailed = nil
+            nowFailed = nil
             render()
         }
 
@@ -160,6 +163,7 @@ final class OverviewV2ViewController: BaseViewControler {
         var newChart: OverviewReport?
         var newNow: OverviewNow?
         var failure: NSError?
+        var nowFailure: NSError?
         if showsRevenue {
             group.enter()
             requests.append(TabsV2APIService.shared.overviewReport(range) { report, error in
@@ -177,8 +181,9 @@ final class OverviewV2ViewController: BaseViewControler {
         }
         if showsOperations {
             group.enter()
-            requests.append(TabsV2APIService.shared.overviewNow { now, _ in
+            requests.append(TabsV2APIService.shared.overviewNow { now, error in
                 newNow = now
+                nowFailure = error
                 group.leave()
             })
         }
@@ -195,6 +200,8 @@ final class OverviewV2ViewController: BaseViewControler {
             self.report = newReport
             self.chartReport = chartRange == range ? newReport : newChart
             if let newNow { self.now = newNow }
+            self.nowFailed = (newNow == nil && !self.showsRevenue && self.now == nil)
+                ? (nowFailure?.localizedDescription ?? "") : nil
             if self.showsRevenue, newReport == nil {
                 self.reportFailed = failure?.localizedDescription ?? ""
             } else {
@@ -226,8 +233,11 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(chartCard())
         }
         // #620: the Hôm nay counters belong to today only
-        if showsOperations, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey) {
+        if showsOperations, nowFailed == nil || loading, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey) {
             contentStack.addArrangedSubview(todayCard())
+        }
+        if let failed = nowFailed, !loading {
+            contentStack.addArrangedSubview(failureCard(failed))
         }
         if showsRevenue, reportFailed == nil {
             contentStack.addArrangedSubview(topCard(products: true))
@@ -258,16 +268,21 @@ final class OverviewV2ViewController: BaseViewControler {
         chip == .custom ? OverviewLogic.shortRange(range) : chip.title
     }
 
+    /// The reason the figures could not load, red, tap = Retry (#754 shares it with the owner's tiles)
+    private func failureCard(_ reason: String) -> UIView {
+        let label = OVFont.label((reason.isEmpty ? "Something went wrong".localized() : reason) + " · " + "Retry".localized(),
+                                 DS.TextSize.secondary, color: OVColor.red, lines: 0)
+        label.isUserInteractionEnabled = true
+        label.accessibilityTraits = UIAccessibilityTraitButton
+        label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pulled)))
+        return card([label])
+    }
+
     // MARK: Tiles
 
     private func tilesGrid() -> UIView {
         if let failed = reportFailed, !loading {
-            let label = OVFont.label((failed.isEmpty ? "Something went wrong".localized() : failed) + " · " + "Retry".localized(),
-                                     DS.TextSize.secondary, color: OVColor.red, lines: 0)
-            label.isUserInteractionEnabled = true
-            label.accessibilityTraits = UIAccessibilityTraitButton
-            label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pulled)))
-            return card([label])
+            return failureCard(failed)
         }
         let tiles = OverviewDashLogic.tiles(report: report, now: now)
         let forecast = OverviewDashLogic.forecast(collected: report?.netRevenue, series: report?.series ?? [], todayKey: todayKey)

@@ -39,6 +39,24 @@ struct LiveProductsHomeDataSource: ProductsHomeDataSource {
     }
 }
 
+/// What the list area shows when there are no rows (#753): the reason the list could not load comes before "no products"
+enum ProductsHomeEmptyState: Equatable {
+    case none
+    case empty
+    case searchEmpty
+    /// The server's reason (an expired, cancelled, paused or past-due subscription answers 403), shown with Retry
+    case failed(String)
+
+    static func state(productCount: Int, isLoading: Bool, hasQuery: Bool, error: NSError?) -> ProductsHomeEmptyState {
+        guard productCount == 0, !isLoading else { return .none }
+        if let error {
+            let reason = error.localizedDescription
+            return .failed(reason.isEmpty ? "Something went wrong".localized() : reason)
+        }
+        return hasQuery ? .searchEmpty : .empty
+    }
+}
+
 final class ProductsHomeViewModel {
     static let pageSize = 20
 
@@ -47,6 +65,8 @@ final class ProductsHomeViewModel {
     private(set) var hasMore = false
     private(set) var isLoading = false
     private(set) var query: String?
+    /// The last load failed and there is nothing on screen to keep (#753); cleared by the next answer
+    private(set) var loadError: NSError?
     private var page = 1
     /// Bumped on every new query; an answer for an older one is dropped
     private var generation = 0
@@ -114,6 +134,7 @@ final class ProductsHomeViewModel {
 
     private func load(page nextPage: Int) {
         if nextPage == 1 { generation += 1 }
+        loadError = nil
         let token = generation
         isLoading = true
         dataSource.loadProducts(query: query, page: nextPage, limit: Self.pageSize) { [weak self] result, error in
@@ -121,6 +142,8 @@ final class ProductsHomeViewModel {
                 guard let self, token == self.generation else { return }
                 self.isLoading = false
                 if let error {
+                    // No rows to show: the screen explains the error itself, with Retry (an alert is for a failed next page)
+                    self.loadError = error
                     self.onError?(error)
                     self.onChange?()
                     return
