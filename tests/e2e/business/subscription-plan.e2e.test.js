@@ -20,7 +20,6 @@
 const {
   Session,
   describeE2E,
-  knownBug,
   must,
   futureWindow,
   rentBody,
@@ -218,10 +217,10 @@ describeSub('BF-SUB system roles and recovery routes', () => {
     expect((await ops.get('/api/products?limit=1')).status).toBe(200);
   });
 
-  // The route comment says: requireActiveSubscription: false — "Merchants must still read status when subscription is
+  // (#728, fixed) The route comment says: requireActiveSubscription: false — "Merchants must still read status when subscription is
   // expired/paused (banner, renew CTA)". authenticateRequest (core.ts) runs the subscription check regardless of that
   // option, so every route that sets it is closed to an expired merchant too.
-  knownBug('#728', 'BF-SUB-17 an expired merchant, staff and kho can read /api/subscriptions/status (reason and renew banner)', async () => {
+  test('BF-SUB-17 an expired merchant, staff and kho can read /api/subscriptions/status (reason and renew banner)', async () => {
     for (const role of ['merchant', 'staff', 'kho']) {
       const r = await ctx.sessions[role].get('/api/subscriptions/status');
       expect({ role, status: r.status }).toEqual({ role, status: 200 });
@@ -229,12 +228,12 @@ describeSub('BF-SUB system roles and recovery routes', () => {
     }
   });
 
-  knownBug('#728', 'BF-SUB-18 an expired merchant can list the plans to renew (GET /api/plans)', async () => {
+  test('BF-SUB-18 an expired merchant can list the plans to renew (GET /api/plans)', async () => {
     const r = await ctx.sessions.merchant.get('/api/plans');
     expect(r.status).toBe(200);
   });
 
-  knownBug('#728', 'BF-SUB-19 an expired merchant can start a plan change or a checkout (not blocked by SUBSCRIPTION_EXPIRED)', async () => {
+  test('BF-SUB-19 an expired merchant can start a plan change or a checkout (not blocked by SUBSCRIPTION_EXPIRED)', async () => {
     const change = await ctx.sessions.merchant.post(`/api/subscriptions/${subscriptionId}/change-plan`, { planId: ctx.world.planId });
     const checkout = await ctx.sessions.merchant.post('/api/lemonsqueezy/subscription-checkout', { planId: ctx.world.planId });
     expect({ change: change.body?.code, checkout: checkout.body?.code }).toEqual({
@@ -631,7 +630,7 @@ describeSub('BF-SUB plan limits per entity', () => {
     expect(outcome(await userByUsers())).toBe('ok');
   });
 
-  knownBug('#729', 'BF-SUB-48 a deleted customer frees its slot (like a deleted product)', async () => {
+  test('BF-SUB-48 a deleted customer frees its slot (like a deleted product)', async () => {
     allowRoom('customers', 1);
     const c = await S.createCustomerRaw(ctx.sessions.merchant);
     expect(outcome(c)).toBe('ok');
@@ -640,7 +639,7 @@ describeSub('BF-SUB plan limits per entity', () => {
     expect(outcome(await S.createCustomerRaw(ctx.sessions.merchant))).toBe('ok');
   });
 
-  knownBug('#729', 'BF-SUB-49 a deleted outlet frees its slot', async () => {
+  test('BF-SUB-49 a deleted outlet frees its slot', async () => {
     allowRoom('outlets', 1);
     const o = await outletBy('merchant')();
     expect(outcome(o)).toBe('ok');
@@ -649,7 +648,7 @@ describeSub('BF-SUB plan limits per entity', () => {
     expect(outcome(await outletBy('merchant')())).toBe('ok');
   });
 
-  knownBug('#729', 'BF-SUB-50 a deleted order frees its slot', async () => {
+  test('BF-SUB-50 a deleted order frees its slot', async () => {
     allowRoom('orders', 1);
     const o = await orderBy('staff')();
     expect(outcome(o)).toBe('ok');
