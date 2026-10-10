@@ -8,6 +8,25 @@
 
 import Foundation
 
+/// #758: one place that turns an API `code` into a localized sentence.
+enum APIErrorText {
+    /// SUBSCRIPTION_*, PLAN_*, TRIAL_*, NO_SUBSCRIPTION*, PLATFORM_ACCESS*: a shop user can hit these.
+    static func isSubscriptionFamily(_ code: String) -> Bool {
+        let c = code.uppercased()
+        return ["SUBSCRIPTION_", "PLAN_", "TRIAL_", "NO_SUBSCRIPTION", "PLATFORM_ACCESS"].contains { c.hasPrefix($0) }
+    }
+
+    /// The app's sentence for `code`; a generic localized sentence for an unknown subscription / plan code;
+    /// nil for any other code (the caller keeps its own fallback). Never the raw code.
+    static func message(forCode code: String, lookup: (String) -> String = { $0.localized() }) -> String? {
+        let key = code.uppercased()
+        let text = lookup(key)
+        if text != key { return text }
+        if isSubscriptionFamily(key) { return lookup("SUBSCRIPTION_GENERIC") }
+        return nil
+    }
+}
+
 /// API Error Codes - Matches backend ErrorCode enum
 enum APIErrorCode: String, Codable, CaseIterable {
     // MARK: - Authentication & Authorization
@@ -520,8 +539,8 @@ enum APIErrorCode: String, Codable, CaseIterable {
     var defaultMessage: String {
         // Try to get from Localizable.strings first (using error code as key)
         let localizedKey = self.rawValue
-        let localizedMessage = localizedKey.localized()
-        
+        let localizedMessage = APIErrorText.message(forCode: localizedKey) ?? localizedKey
+
         // If localization returns the key itself (not found), use fallback
         if localizedMessage == localizedKey {
             // Fallback to hardcoded messages
@@ -1345,6 +1364,11 @@ struct APIErrorResponse: Codable {
     
     /// Get localized error message
     var localizedMessage: String {
+        // #758: a code the app has a sentence for (or a subscription / plan code it does not know)
+        // never shows the API's English text
+        if let code = code, !code.isEmpty, let text = APIErrorText.message(forCode: code) {
+            return text
+        }
         if let errorCode = errorCode {
             return errorCode.defaultMessage
         }

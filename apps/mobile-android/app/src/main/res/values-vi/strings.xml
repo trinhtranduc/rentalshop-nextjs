@@ -546,6 +546,17 @@
     <string name="api_error_insufficient_permissions">Bạn không có quyền thực hiện thao tác này.</string>
     <string name="api_error_subscription_expired">Gói đăng ký đã hết hạn.</string>
     <string name="api_error_trial_expired">Thời gian dùng thử đã hết.</string>
+    <string name="api_error_subscription_paused">Gói đăng ký đang tạm dừng.</string>
+    <string name="api_error_subscription_cancelled">Gói đăng ký đã bị hủy.</string>
+    <string name="api_error_subscription_past_due">Thanh toán gói đăng ký đã quá hạn. Vui lòng cập nhật phương thức thanh toán.</string>
+    <string name="api_error_subscription_period_ended">Thời hạn gói đăng ký đã kết thúc. Vui lòng gia hạn để tiếp tục.</string>
+    <string name="api_error_no_subscription">Không tìm thấy gói đăng ký hoạt động. Vui lòng đăng ký để tiếp tục sử dụng.</string>
+    <string name="api_error_plan_upgrade_required">Gói của bạn không có tính năng này. Hãy nâng cấp gói để sử dụng.</string>
+    <string name="api_error_platform_access_denied">Gói của bạn không bao gồm truy cập từ thiết bị này. Hãy nâng cấp gói hoặc dùng thiết bị khác.</string>
+    <string name="api_error_order_other_outlet">Bạn chỉ có thể sửa đơn của chi nhánh mình.</string>
+    <string name="api_error_no_outlet_access">Bạn không có quyền truy cập cửa hàng này.</string>
+    <string name="api_error_order_not_found">Không tìm thấy đơn hàng.</string>
+    <string name="api_error_subscription_generic">Gói đăng ký có vấn đề. Vui lòng liên hệ hỗ trợ.</string>
     <string name="api_error_product_out_of_stock">Sản phẩm đã hết hàng.</string>
     <string name="api_error_product_has_no_images">Thêm ảnh sản phẩm rồi thử lại.</string>
     <string name="api_error_invalid_credentials">Email hoặc mật khẩu không đúng.</string>
@@ -1482,6 +1493,20 @@
     <string name="overview_v2_related_empty">Không có đơn nào trong kỳ.</string>
     <string name="overview_v2_related_created">Đơn tạo trong kỳ</string>
     <string name="overview_v2_related_cancelled">Đã huỷ, không tính</string>
+    <string name="overview_v2_event_sale_created">Đơn bán được tạo</string>
+    <string name="overview_v2_event_sale_cancelled">Đơn bán bị hủy (hoàn lại)</string>
+    <string name="overview_v2_event_deposit">Thu tiền cọc</string>
+    <string name="overview_v2_event_pickup">Thu tiền khi lấy hàng</string>
+    <string name="overview_v2_event_same_day">Thuê và trả trong cùng ngày</string>
+    <string name="overview_v2_event_damage_fee">Thu phí hư hỏng</string>
+    <string name="overview_v2_event_deposit_refund">Hoàn tiền cọc</string>
+    <string name="overview_v2_event_nothing">Không có phát sinh</string>
+    <string name="overview_v2_event_rent_cancelled">Đơn hủy (hoàn lại)</string>
+    <string name="overview_v2_event_return_collected">Thu khi trả hàng</string>
+    <string name="overview_v2_event_future_pickup">Doanh thu dự kiến khi lấy hàng</string>
+    <string name="overview_v2_event_future_damage_fee">Dự kiến thu phí hư hỏng khi trả hàng</string>
+    <string name="overview_v2_event_future_refund">Dự kiến hoàn tiền cọc khi trả hàng</string>
+    <string name="overview_v2_event_future_nothing">Dự kiến không có phát sinh khi trả hàng</string>
     <string name="overview_v2_related_owes">Sẽ thu khi khách lấy đồ</string>
     <string name="overview_v2_related_collateral_in">Nhận thế chân khi giao</string>
     <string name="overview_v2_related_collateral_out">Trả thế chân khi nhận đồ</string>
@@ -1554,4 +1579,6 @@
     </plurals>
     <string name="notifications_v2_delete_one">Xoá thông báo</string>
     <string name="notifications_v2_delete_one_confirm">Xoá thông báo này? Không thể hoàn tác.</string>
+    <string name="notifications_v2_mark_read">Đánh dấu đã đọc</string>
+    <string name="notifications_v2_mark_unread">Đánh dấu chưa đọc</string>
 </resources>
