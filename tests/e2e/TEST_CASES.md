@@ -147,7 +147,15 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 | BF-QTY-01 | Giảm 3 → 1 khi đang đặt | DAILY 70.000 × 2 days, D 50.000 | total 140.000, line `{1, 70.000, 140.000, 2}`; Δ orderValue = outstanding −280.000, collected 0; 2 free; amountDue 90.000 |
 | BF-QTY-02 | Tăng quá tồn | stock 3, qty 2 → 4 | cart check (excludeOrderId) qty 4 refused, qty 3 ok; PUT accepted (Q1) |
 | BF-QTY-03 | Giảm tồn kho dưới số đã đặt | stock 2, booked 2, PUT stock 1 | accepted; window effectivelyAvailable 0; other day 1 |
-| BF-QTY-04 | **Known bug #504** Giảm số lượng khi đang thuê | qty 2 PICKUPED → edit qty 1 → RETURNED | stock `{2,2,0}` (today `{2,1,1}`) |
+| BF-QTY-04 | Giảm số lượng khi đang thuê (#504) | qty 2 PICKUPED → edit qty 1 → RETURNED | sau khi sửa `{2,1,1}`; sau khi trả `{2,2,0}` |
+| BF-QTY-05 | Tăng số lượng khi đang thuê | stock 2, qty 1 → 2 | `{2,0,2}`; trả → `{2,2,0}` |
+| BF-QTY-06 | Tăng quá tồn khi đang thuê | stock 2, qty 2 → 3 | 200 như lúc giao (Q1); `{2,0,3}` (available dừng ở 0); trả → `{2,2,0}` |
+| BF-QTY-07 | Bỏ dòng / thêm dòng khi đang thuê | a×2 + b×1 → a×2 + c×2 | b trả về, c lấy ra; trả → tất cả đủ |
+| BF-QTY-08 | Đổi sản phẩm khi đang thuê | a×2 → b×1 | a `{2,2,0}`, b `{2,1,1}`; trả → đủ |
+| BF-QTY-09 | Sửa mà số lượng không đổi | cùng dòng / chỉ ghi chú | stock không đổi |
+| BF-QTY-10 | Đơn RESERVED sửa số lượng | qty 3 → 1 | stock không đổi; giao lấy 1; trả → đủ |
+| BF-QTY-11 | Một PUT vừa sửa dòng vừa giao | RESERVED qty 3, PUT qty 1 + `PICKUPED` | `{3,2,1}`; trả → `{3,3,0}` |
+| BF-QTY-12 | Nhiều cửa hàng | sửa qty ở outlet A; chuyển đơn sang outlet B | chỉ outlet của đơn đổi; chuyển → A trả, B lấy; trả → đủ cả hai |
 
 ## BF-EDIT — Sửa đơn (`order-edit.e2e.test.js`)
 
@@ -812,7 +820,7 @@ Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi 
 
 | Issue | Lỗi | Ca test |
 |---|---|---|
-| #504 | sửa số lượng đơn đang thuê làm kẹt món ở "đang thuê" | BF-QTY-04 |
+| #504 | (đã sửa) sửa số lượng đơn đang thuê làm kẹt món ở "đang thuê" | BF-QTY-04..12 |
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 |
 | #577 | đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-08-oldAndroid (56 ca) |
 | #728 | tuyến `requireActiveSubscription:false` vẫn bị chặn với cửa hàng hết hạn: không xem được trạng thái, danh sách gói, đổi gói, checkout; web không có đường gia hạn | BF-SUB-17..19, WEB-SUB-01..05 (-c, -d) |

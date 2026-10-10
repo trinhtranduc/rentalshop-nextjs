@@ -100,20 +100,143 @@ describeE2E('BF-QTY quantity changes', () => {
     expect((await s.availability(product.id, { from: addDays(w.to, 5) })).availabilityByOutlet[0].effectivelyAvailable).toBe(1);
   });
 
-  // Suspected bug #504: PUT orderItems on a PICKUPED order replaces the lines without moving
-  // OutletStock.renting; RETURNED then gives back only the new quantity, so units stay "renting" forever.
-  knownBug('#504', 'BF-QTY-04 PICKUPED: lowering quantity 2 -> 1 then returning gives every unit back', async () => {
-    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+  // #504: PUT orderItems on a PICKUPED order moves OutletStock.renting/available by the difference,
+  // so the return gives back every unit that was handed out. Hand-over has no stock guard (Q1/Q9), so an
+  // increase is accepted exactly like the same quantity at hand-over.
+  const STOCK = (stock, available, renting) => ({ stock, available, renting });
+
+  async function pickedUp(lines) {
     const customer = await s.createCustomer();
     const w = futureWindow(1);
     const args = { customer, from: w.from, to: w.to };
-    const order = await s.createOrder(rentBody({ ...args, lines: [{ product, quantity: 2 }] }).body);
+    const order = await s.createOrder(rentBody({ ...args, lines }).body);
     await s.setStatus(order.id, 'PICKUPED');
-    expect(await s.outletStock(product.id, product.outletId)).toEqual({ stock: 2, available: 0, renting: 2 });
+    return { order, args };
+  }
+
+  test('BF-QTY-04 PICKUPED: lowering quantity 2 -> 1 gives the unit back at once and the return gives every unit back', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 2 }]);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
     const r = await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body);
     expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 1, 1));
     await s.setStatus(order.id, 'RETURNED');
-    expect(await s.outletStock(product.id, product.outletId)).toEqual({ stock: 2, available: 2, renting: 0 });
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-05 PICKUPED: raising quantity 1 -> 2 takes the unit, the return gives both back', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 1 }]);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 1, 1));
+    expect((await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 2 }] }).body)).status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-06 PICKUPED: raising quantity beyond stock is accepted like at hand-over (Q1); available stops at 0', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 2 }]);
+    const r = await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 3 }] }).body);
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 3));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-07 PICKUPED: a removed line gives its units back, an added line takes them', async () => {
+    const a = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 3 });
+    const b = await s.createProduct({ kind: 'FIXED', price: 50000, stock: 3 });
+    const c = await s.createProduct({ kind: 'FIXED', price: 70000, stock: 3 });
+    const { order, args } = await pickedUp([{ product: a, quantity: 2 }, { product: b, quantity: 1 }]);
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(3, 2, 1));
+    // remove b, add c x2, keep a
+    const r = await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product: a, quantity: 2 }, { product: c, quantity: 2 }] }).body);
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(a.id, a.outletId)).toEqual(STOCK(3, 1, 2));
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(3, 3, 0));
+    expect(await s.outletStock(c.id, c.outletId)).toEqual(STOCK(3, 1, 2));
+    await s.setStatus(order.id, 'RETURNED');
+    for (const p of [a, b, c]) expect(await s.outletStock(p.id, p.outletId)).toEqual(STOCK(3, 3, 0));
+  });
+
+  test('BF-QTY-08 PICKUPED: swapping a product moves the units from the old one to the new one', async () => {
+    const a = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const b = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product: a, quantity: 2 }]);
+    await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product: b, quantity: 1 }] }).body);
+    expect(await s.outletStock(a.id, a.outletId)).toEqual(STOCK(2, 2, 0));
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(2, 1, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-09 PICKUPED: an edit that keeps the quantities does not move stock', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 2 }]);
+    const r = await s.updateOrder(order.id, { ...updateBody({ ...args, lines: [{ product, quantity: 2 }] }).body, notes: 'same lines' });
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
+    await s.updateOrder(order.id, { notes: 'no lines at all' });
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
+  });
+
+  test('BF-QTY-10 RESERVED: editing the lines moves no stock; the hand-over then takes the saved lines', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 3 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(1);
+    const args = { customer, from: w.from, to: w.to };
+    const order = await s.createOrder(rentBody({ ...args, lines: [{ product, quantity: 3 }] }).body);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+    await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+    await s.setStatus(order.id, 'PICKUPED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 2, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+  });
+
+  test('BF-QTY-11 one PUT that edits the lines and hands the order over takes the saved lines', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 3 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(1);
+    const args = { customer, from: w.from, to: w.to };
+    const order = await s.createOrder(rentBody({ ...args, lines: [{ product, quantity: 3 }] }).body);
+    const r = await s.updateOrder(order.id, { ...updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body, status: 'PICKUPED' });
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 2, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+  });
+
+  test('BF-QTY-12 multi-outlet: an edit moves only its own outlet; moving the order to the other outlet moves the units', async () => {
+    const outlets = (await s.get('/api/outlets?limit=50')).body.data.outlets;
+    const home = await s.defaultOutletId();
+    const other = outlets.find((o) => o.id !== home);
+    if (!other) return; // seed has 2 outlets per merchant
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    expect(
+      (await s.updateProduct(product.id, {
+        totalStock: 4,
+        outletStock: [{ outletId: home, stock: 2 }, { outletId: other.id, stock: 2 }]
+      })).status
+    ).toBe(200);
+    const customer = await s.createCustomer();
+    const w = futureWindow(1);
+    const args = { customer, from: w.from, to: w.to };
+    const order = await s.createOrder({ ...rentBody({ ...args, lines: [{ product, quantity: 2 }] }).body, outletId: home });
+    await s.setStatus(order.id, 'PICKUPED');
+    await s.updateOrder(order.id, { ...updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body, outletId: home });
+    expect(await s.outletStock(product.id, home)).toEqual(STOCK(2, 1, 1));
+    expect(await s.outletStock(product.id, other.id)).toEqual(STOCK(2, 2, 0));
+    const moved = await s.updateOrder(order.id, { outletId: other.id });
+    expect(moved.status).toBe(200);
+    expect(await s.outletStock(product.id, home)).toEqual(STOCK(2, 2, 0));
+    expect(await s.outletStock(product.id, other.id)).toEqual(STOCK(2, 1, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, home)).toEqual(STOCK(2, 2, 0));
+    expect(await s.outletStock(product.id, other.id)).toEqual(STOCK(2, 2, 0));
   });
 });
 

@@ -1134,6 +1134,51 @@ export async function updateOutletStockForOrder(
 }
 
 /**
+ * #504: the lines (or the outlet) of a PICKUPED RENT order were edited while the units are out.
+ * `renting` follows the difference between the old and the new lines, `available = stock - renting`
+ * (same formula and no stock guard as the hand-over in updateOutletStockForOrder, so an increase is
+ * accepted exactly like the same quantity at hand-over). Products are matched by productId, so a removed
+ * line gives its units back, an added line takes them and a swapped product moves from one to the other.
+ */
+export async function adjustOutletStockForEditedOrderItems(
+  outletId: number,
+  oldItems: Array<{ productId: number; quantity: number }>,
+  newItems: Array<{ productId: number; quantity: number }>
+): Promise<void> {
+  const delta = new Map<number, number>();
+  for (const item of oldItems) {
+    if (!item.productId) continue;
+    delta.set(item.productId, (delta.get(item.productId) || 0) - item.quantity);
+  }
+  for (const item of newItems) {
+    if (!item.productId) continue;
+    delta.set(item.productId, (delta.get(item.productId) || 0) + item.quantity);
+  }
+
+  for (const [productId, change] of delta) {
+    if (change === 0) continue;
+    const outletStock = await prisma.outletStock.findUnique({
+      where: { productId_outletId: { productId, outletId } },
+    });
+    if (!outletStock) {
+      // Same as the hand-over: a missing row is created, renting may go up
+      await prisma.outletStock.create({
+        data: { productId, outletId, stock: 0, renting: Math.max(0, change), available: 0 },
+      });
+      continue;
+    }
+    const newRenting = outletStock.renting + change;
+    await prisma.outletStock.update({
+      where: { id: outletStock.id },
+      data: {
+        renting: { increment: change },
+        available: Math.max(0, outletStock.stock - newRenting),
+      },
+    });
+  }
+}
+
+/**
  * Delete product - follows dual ID system
  * Input: id (number), Output: deleted product data
  */
