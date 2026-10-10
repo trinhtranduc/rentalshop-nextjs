@@ -922,7 +922,6 @@ private fun MainTabs(
             val features by FeatureFlags.enabled.collectAsState()
             if (MobileFeature.NEW_OVERVIEW in features) {
                 OverviewV2Screen(
-                    onOpenList = { kind, start, end -> rootNavController.navigate(Routes.overviewStatusOrders(kind, start, end)) },
                     onOpenProduct = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("product", id, start, end)) },
                     onOpenCustomer = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("customer", id, start, end)) },
                     onOpenTopAll = { kind, start, end -> rootNavController.navigate(Routes.overviewTopAll(kind, start, end)) },

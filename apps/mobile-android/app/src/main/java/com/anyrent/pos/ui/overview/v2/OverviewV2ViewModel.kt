@@ -8,10 +8,11 @@ import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.RefreshPolicy
 import com.anyrent.pos.domain.RefreshTracker
 import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.domain.overview.DayRange
+import com.anyrent.pos.domain.overview.OverviewChip
+import com.anyrent.pos.domain.overview.OverviewDashLogic
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewNow
-import com.anyrent.pos.domain.overview.OverviewPeriod
-import com.anyrent.pos.domain.overview.OverviewPreset
 import com.anyrent.pos.domain.overview.OverviewReport
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import java.time.Instant
@@ -30,10 +31,14 @@ import org.json.JSONObject
 import java.time.LocalDate
 
 data class OverviewV2State(
-    val period: OverviewPeriod = OverviewPeriod.Preset(OverviewPreset.LAST_7),
+    /** #725: the iOS chips; Hôm nay first, as iOS */
+    val chip: OverviewChip = OverviewChip.TODAY,
+    val custom: DayRange? = null,
     val showsRevenue: Boolean = false,
     val showsOperations: Boolean = false,
     val report: OverviewReport? = null,
+    /** #725: the report of the chart's range (Hôm nay charts 14 days); the period's own report when they are equal */
+    val chartReport: OverviewReport? = null,
     val now: OverviewNow? = null,
     val loading: Boolean = true,
     val reportError: String? = null,
@@ -63,8 +68,10 @@ class OverviewV2ViewModel(
         load()
     }
 
-    fun select(period: OverviewPeriod) {
-        _state.update { it.copy(period = period) }
+    fun range(state: OverviewV2State = _state.value): DayRange = OverviewDashLogic.range(state.chip, today(), state.custom)
+
+    fun select(chip: OverviewChip, custom: DayRange? = null) {
+        _state.update { it.copy(chip = chip, custom = if (chip == OverviewChip.CUSTOM) custom else it.custom) }
         load()
     }
 
@@ -83,13 +90,14 @@ class OverviewV2ViewModel(
     fun load(quiet: Boolean = false) {
         job?.cancel()
         val snapshot = _state.value
-        val range = OverviewLogic.range(snapshot.period, today())
+        val range = range(snapshot)
+        val chartRange = OverviewDashLogic.chartRange(snapshot.chip, range)
         val keep = quiet && snapshot.reportError == null &&
             (if (snapshot.showsRevenue) snapshot.report != null else snapshot.now != null)
-        if (!keep) _state.update { it.copy(loading = true, report = null, reportError = null) }
+        if (!keep) _state.update { it.copy(loading = true, report = null, chartReport = null, reportError = null) }
         val version = freshness.begin()
         job = viewModelScope.launch {
-            val (report, now) = withContext(Dispatchers.IO) {
+            val (report, chart, now) = withContext(Dispatchers.IO) {
                 coroutineScope {
                     val report = async {
                         if (!snapshot.showsRevenue) null
@@ -98,13 +106,19 @@ class OverviewV2ViewModel(
                             OverviewLogic.reportFromJson(json.optJSONObject("data") ?: JSONObject())
                         }
                     }
+                    val chart = async {
+                        if (!snapshot.showsRevenue || chartRange == range) null
+                        else runCatching {
+                            OverviewLogic.reportFromJson(fetch(OverviewLogic.periodPath(chartRange)).optJSONObject("data") ?: JSONObject())
+                        }.getOrNull()
+                    }
                     val now = async {
                         if (!snapshot.showsOperations) null
                         else runCatching {
                             OverviewLogic.nowFromJson(fetch(OverviewLogic.outletOperationsPath()).optJSONObject("data") ?: JSONObject())
                         }.getOrNull()
                     }
-                    report.await() to now.await()
+                    Triple(report.await(), chart.await(), now.await())
                 }
             }
             if (report?.exceptionOrNull() is CancellationException) return@launch
@@ -116,6 +130,7 @@ class OverviewV2ViewModel(
             _state.update {
                 it.copy(
                     report = report?.getOrNull(),
+                    chartReport = if (chartRange == range) report?.getOrNull() else chart,
                     reportError = report?.exceptionOrNull()?.let { e -> e.message ?: "" },
                     now = now ?: it.now,
                     loading = false,
