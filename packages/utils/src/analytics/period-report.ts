@@ -947,7 +947,10 @@ export async function buildAnalyticsPeriodReport(
       c.orderCount += 1;
       if (order.orderType === ORDER_TYPE.RENT) c.rentalCount += 1;
       else if (order.orderType === ORDER_TYPE.SALE) c.saleCount += 1;
-      c.totalRevenue += events.reduce((sum, e) => sum + e.revenue, 0);
+      // #506: collateral is never spending (same rule as the headline revenue, #484). `events` above
+      // only decides whether the order took part in the period.
+      const spendEvents = getOrderRevenueEvents(withoutCollateral(orderData), rangeStart, rangeEnd);
+      c.totalRevenue += spendEvents.reduce((sum, e) => sum + e.revenue, 0);
     }
 
     const top = Array.from(customerMap.values())

@@ -12,9 +12,7 @@ const F = require('./ui-order-flow');
 const { WebApi, vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
-const KNOWN = {
-  'PRD-12 two products without a barcode can both be edited': '#742'
-};
+const KNOWN = {};
 
 const dayIso = (key) => new Date(`${key}T00:00:00+07:00`).toISOString();
 const qs = (o) => new URLSearchParams(o).toString();
@@ -170,14 +168,12 @@ async function main() {
       await f('perRental').fill('135000');
       await f('barcode').fill(`BC${tag}`);
       await f(`outlet-${outletId}`).fill('9');
-      await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
-      await page.waitForTimeout(700);
-      check('PRD-05 a rent-only product (sale price 0) can be saved without typing a sale price', !/Nhập giá bán/.test(await H.bodyText(page)), 'form says "Nhập giá bán"');
-      await f('salePrice').fill('200000');
+      // #741: a rent-only product (sale price 0) saves at the first click: the form no longer asks for a sale price
       const put = page.waitForResponse((r) => /\/api\/products(\/\d+)?$/.test(r.url().split('?')[0]) && r.request().method() !== 'GET', { timeout: 30000 });
       await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
       const res = await put.catch(() => null);
-      check('PRD-05 the save request succeeded', !!res && res.status() === 200, res && `${res.request().method()} ${res.status()}`);
+      check('PRD-05 a rent-only product (sale price 0) is saved without typing a sale price', !!res && res.status() === 200, res && `${res.request().method()} ${res.status()}`);
+      check('PRD-05 the form does not say "Nhập giá bán"', !/Nhập giá bán/.test(await H.bodyText(page)), 'form says "Nhập giá bán"');
       const full = await api.get(`/api/products/${baseP.id}`);
       check('PRD-05 API: new name, rent price 135.000, stock 9, barcode', full.name === `${baseP.name} Sửa` && full.rentPrice === 135000 && full.barcode === `BC${tag}` && (full.outletStock || []).find((s) => s.outletId === outletId)?.stock === 9, JSON.stringify({ n: full.name, r: full.rentPrice, s: full.outletStock }));
       check('PRD-05 the pricing option follows the new price', (full.pricingOptions || []).some((o) => o.price === 135000), JSON.stringify(full.pricingOptions));

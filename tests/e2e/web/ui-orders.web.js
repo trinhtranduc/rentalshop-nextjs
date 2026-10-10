@@ -11,9 +11,7 @@ const { CFG } = H;
 const { vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
-const KNOWN = {
-  'ORD-18 API: by id the order is gone (404)': '#739' // GET /api/orders/:id returns a soft-deleted order
-};
+const KNOWN = {};
 
 /** 00:00 Vietnam of a day key as an ISO instant (what the web sends) */
 const dayIso = (key) => new Date(`${key}T00:00:00+07:00`).toISOString();

@@ -9,7 +9,8 @@
  * - #355 (PR #381) Vietnam days: lines are listed on the Vietnam civil day of their event, and
  *   `startDate`/`endDate` name Vietnam days (was UTC days). Only events between 00:00 and 07:00 Vietnam move.
  * - #484 (PR #485) the return line counts the late fee (`lateFee`), like the damage fee.
- * - Added fields: none. (#355 also added the optional `timeZone` query param; old apps do not send it.)
+ * - Added field (#721): `collateral` on every order line of `status=all`: the collateral part of the line's revenue.
+ *   (#355 also added the optional `timeZone` query param; old apps do not send it.)
  *
  * Runs the same under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
@@ -19,7 +20,7 @@ import { freezeClock } from './load-route';
 import { notOnlyNow, oldEntriesMovedToVietnamDays, onlyNow, paths, withoutAdded } from './income-compat';
 
 /** Field paths (array indexes as []) added since main-real; nothing else may appear or disappear */
-const ADDED_FIELDS: RegExp[] = [];
+const ADDED_FIELDS: RegExp[] = [/\.orders\.\[\]\.collateral$/];
 const isAdded = (path: string) => ADDED_FIELDS.some((re) => re.test(path));
 
 /** Scenarios whose answer changes on purpose; checked one by one below */
@@ -52,9 +53,12 @@ describe('every field an installed app reads is unchanged', () => {
   });
 });
 
+/** #721 `collateral` is an added field: lines are compared with the old response without it */
+const withoutCollateral = (rows: any[]) => rows.map(({ collateral: _collateral, ...rest }) => rest);
+
 describe('intended changes (edge shop)', () => {
   it('#355 + #484 status=all: each old line moves to its Vietnam day; the return line adds the late fee', () => {
-    expect(notOnlyNow(now.edgeOrdersAll)).toEqual(oldEntriesMovedToVietnamDays(before.edgeOrdersAll, true));
+    expect(withoutCollateral(notOnlyNow(now.edgeOrdersAll))).toEqual(oldEntriesMovedToVietnamDays(before.edgeOrdersAll, true));
   });
 
   it('#355 status=new: created-on lines move to the Vietnam day of creation', () => {

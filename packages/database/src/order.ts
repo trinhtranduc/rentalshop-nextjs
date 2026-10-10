@@ -710,8 +710,45 @@ export async function updateOrder(
 
   console.log('✅ Order updated successfully');
 
-  // Update outlet stock if status changed and we have order items
-  if (newStatus && newStatus !== oldStatus && orderType && oldOutletId && oldOrderItems.length > 0) {
+  // #504: the lines or the outlet of a rented-out order changed while it stays PICKUPED:
+  // renting/available follow the difference (nothing moves on a RESERVED order).
+  const editedItems = inputOrderItems && inputOrderItems.length > 0 ? inputOrderItems : null;
+  const outletChanged = inputOutletId !== undefined && oldOutletId !== undefined && inputOutletId !== oldOutletId;
+  if (
+    orderType === ORDER_TYPE.RENT &&
+    oldStatus === ORDER_STATUS.PICKUPED &&
+    (!newStatus || newStatus === ORDER_STATUS.PICKUPED) &&
+    oldOutletId &&
+    (editedItems || outletChanged)
+  ) {
+    try {
+      const { adjustOutletStockForEditedOrderItems } = await import('./product');
+      const before = oldOrderItems
+        .filter((item) => item.productId)
+        .map((item) => ({ productId: item.productId as number, quantity: item.quantity }));
+      const after = editedItems
+        ? editedItems.filter((item) => item.productId).map((item) => ({ productId: item.productId, quantity: item.quantity }))
+        : before;
+      if (outletChanged) {
+        await adjustOutletStockForEditedOrderItems(oldOutletId, before, []);
+        await adjustOutletStockForEditedOrderItems(inputOutletId as number, [], after);
+      } else {
+        await adjustOutletStockForEditedOrderItems(oldOutletId, before, after);
+      }
+      console.log('✅ Outlet stock adjusted for edited PICKUPED order');
+    } catch (error) {
+      console.error('❌ Error adjusting outlet stock for edited order:', error);
+    }
+  }
+
+  // Update outlet stock if status changed and we have order items.
+  // Leaving a state that holds stock (PICKUPED / COMPLETED) gives back what was taken: the old lines at the old outlet.
+  // Entering it takes the lines and outlet that this request saves (#504).
+  const leavesHeldStock = oldStatus === ORDER_STATUS.PICKUPED || oldStatus === ORDER_STATUS.COMPLETED;
+  const stockItemsSource: Array<{ productId: number | null; quantity: number }> =
+    !leavesHeldStock && editedItems ? editedItems : oldOrderItems;
+  const stockOutletId = !leavesHeldStock && outletChanged ? (inputOutletId as number) : oldOutletId;
+  if (newStatus && newStatus !== oldStatus && orderType && stockOutletId && stockItemsSource.length > 0) {
     try {
       // Import the function from product module
       const productModule = await import('./product');
@@ -727,8 +764,8 @@ export async function updateOrder(
         oldStatus,
         newStatus,
         orderType as 'RENT' | 'SALE',
-        oldOutletId,
-        oldOrderItems.map((item: { productId: number | null; quantity: number }) => ({
+        stockOutletId,
+        stockItemsSource.map((item: { productId: number | null; quantity: number }) => ({
           productId: item.productId!,
           quantity: item.quantity,
         })).filter((item: { productId: number }): boolean => item.productId > 0)
@@ -2049,7 +2086,7 @@ export const simplifiedOrders = {
    */
   findByIdDetail: async (id: number) => {
     const order = await prisma.order.findUnique({
-      where: { id },
+      where: { id, deletedAt: null }, // #739: soft-deleted orders are 404 like by number
       select: {
         id: true,
         orderNumber: true,
@@ -2415,7 +2452,7 @@ export const simplifiedOrders = {
     }
 
     return await prisma.order.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       select
     });
   },
