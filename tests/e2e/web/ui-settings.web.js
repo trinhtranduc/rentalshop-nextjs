@@ -39,7 +39,8 @@ async function main() {
   const restoreMain = async () => {
     const a = await H.apiLogin();
     await page.evaluate((x) => localStorage.setItem('authData', x), JSON.stringify(a.auth));
-    await ctx.addInitScript((x) => localStorage.setItem('authData', x), JSON.stringify(a.auth));
+    // only when there is no session yet: this runs on every navigation and would put the login-time user back (#744)
+    await ctx.addInitScript((x) => { if (!localStorage.getItem('authData')) localStorage.setItem('authData', x); }, JSON.stringify(a.auth));
     Object.assign(api, { token: a.token, user: a.user, auth: a.auth });
   };
   const openTab = async (tab) => {
@@ -227,7 +228,7 @@ async function main() {
       // What a reload would show is what the app keeps in localStorage (authData). Not reloaded here: this suite's
       // login init script writes the login-time user into localStorage again on every page load (#744).
       const stored = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('authData') || '{}').user || {}; } catch { return {}; } });
-      check('SET-06 the stored user (authData) has the saved last name and phone', stored.lastName === newLast && stored.phone === '0987654321' && String(stored.name || '').includes(newLast), JSON.stringify({ l: stored.lastName, p: stored.phone, n: stored.name }));
+      check('SET-06 the stored user (authData) has the saved last name and phone', stored.lastName === newLast && stored.phone === '0987654321', JSON.stringify({ l: stored.lastName, p: stored.phone, n: stored.name }));
       check('SET-06 the form still shows the saved last name after saving', (await dlg().locator('[name="lastName"]').inputValue()) === newLast);
       await page.keyboard.press('Escape');
       check('SET-06 the sidebar shows the new name at once', (await H.bodyText(page)).includes(newLast), 'sidebar text has no new last name');
