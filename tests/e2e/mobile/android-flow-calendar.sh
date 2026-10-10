@@ -3,7 +3,7 @@ cal_parse() { "$U" dump | python3 -c '
 import sys, re
 rows = [l.rstrip("\n").split(" | ") for l in sys.stdin]
 texts = [t.strip() for r in rows for t in r[:2] if t.strip()]
-title = next((t for t in texts if re.match(r"^(TODAY|HÔM NAY|[A-ZÀ-Ỹ0-9]{2,4}[ .]+\d\d/\d\d)", t)), "")
+title = next((r[0].strip() for r in rows if re.match(r"^(TODAY|HÔM NAY|[A-ZÀ-Ỹ0-9]{2,4}[ .]+\d\d/\d\d)", r[0].strip())), "")
 summary = next((t for t in texts if re.search(r"(out|giao) \d+ · (back|trả) \d+", t)), "")
 orders = sorted(set(re.findall(r"#(\d{6})", " ".join(texts))))
 print(title + "\t" + summary + "\t" + ",".join(orders))'; }

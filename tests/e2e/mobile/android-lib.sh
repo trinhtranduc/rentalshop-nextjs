@@ -124,7 +124,7 @@ pick_dates() {
 submit_order() { # submit_order -> prints the order number; the confirm sheet's button is the only "create" node on screen
   local want="${1:-rent}" k=v2_create_confirm_rent_title b=v2_cart_create
   [ "$want" = sale ] && { k=v2_create_confirm_sale_title; b=v2_cart_sell_and_collect; }
-  "$U" tap "$(L $b)" >/dev/null; sleep 2
+  if [ "$b" = v2_cart_create ]; then tap_create; else "$U" tap "$(L $b)" >/dev/null; fi; sleep 2
   wait_any "$(L $k)" 8 || { echo "NOSHEET"; return 1; }
   "$U" tap "$(L $b)" >/dev/null; sleep 3
   wait_any "~$(L v2_create_done_title '' | cut -d'#' -f1)#" 20 || { echo "NODONE"; return 1; }
@@ -155,6 +155,7 @@ settle_dialog() { # wait for an alert dialog (OK button) up to 12 s; MSG = its t
 }
 to_tabs() { local i; for i in 1 2 3 4 5; do have_any "$(L settings)" && have_any "$(L home)" && return 0; tap_any "$(L ok)" >/dev/null 2>&1 || "$U" back >/dev/null; sleep 1; done; }
 tap_field() { "$U" tap "$1" 2 >/dev/null 2>&1 || "$U" tap "$1" 1 >/dev/null 2>&1; }   # a labelled field: the label text and the field both match, the field is the last
+tap_create() { "$U" tap "$(L v2_cart_create)" 2 >/dev/null 2>&1 || "$U" tap "$(L v2_cart_create)" >/dev/null; }
 attempt_product() { # Home -> New product -> name + price -> Save
   to_tabs; go_home; tap_any "$(L new_product)" || { MSG="<no add-product button>"; return 1; }
   sleep 3; tap_field "$(L v2_form_name)" || { MSG="<form did not open: $(texts 300)>"; return 1; }
@@ -180,7 +181,7 @@ attempt_order() { # <product name>: Home -> + -> cart -> customer -> Create orde
   open_cart
   have_any "$(L v2_cart_pick_customer)" && pick_customer "Khách E2E 1"
   have_any "$(L v2_cart_pick_dates)" && pick_dates 0 1
-  "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 2
+  tap_create; sleep 2   # in Vietnamese the cart title and the button are both "Tạo đơn": the button is the 2nd match
   if wait_any "$(L v2_create_confirm_rent_title)" 6; then "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 3; fi
   settle_dialog
   if [ -z "$MSG" ] && have_any "~$(L v2_create_done_title '' | cut -d'#' -f1)#"; then MSG="<order created>"; tap_any "$(L v2_create_done_new_order)"; fi
