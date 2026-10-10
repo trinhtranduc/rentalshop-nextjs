@@ -11,7 +11,9 @@ const { CFG } = H;
 const { vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
-const KNOWN = {};
+const KNOWN = {
+  'ORD-18 API: by id the order is gone (404)': '#739' // GET /api/orders/:id returns a soft-deleted order
+};
 
 /** 00:00 Vietnam of a day key as an ISO instant (what the web sends) */
 const dayIso = (key) => new Date(`${key}T00:00:00+07:00`).toISOString();
@@ -312,6 +314,206 @@ async function main() {
       const list2 = await api.get(`/api/orders?${qs({ q: small.name, limit: 20 })}`);
       check('ORD-10 API now has two open orders for the one-piece product', list2.orders.filter((x) => x.status !== 'CANCELLED').length === 2, `n=${list2.orders.length}`);
     }, sp);
+
+    // ================================================================ detail and actions
+    /** Open the order page; the page needs a moment before its buttons react */
+    const openOrder = async (o, path = '') => {
+      await F.go(page, `/orders/${o.orderNumber}${path}`);
+      await page.getByText(`#${o.orderNumber}`).first().waitFor({ timeout: 30000 }).catch(() => {});
+    };
+    const openMenu = async () => {
+      await page.getByRole('button', { name: 'Thêm thao tác' }).click();
+      await page.waitForTimeout(400);
+    };
+
+    await H.runCase('WEB-UI-ORD-11', 'order page: header, items, payment, customer link, not-found page', async () => {
+      st.reset();
+      await openOrder(oRes);
+      const t = await H.bodyText(page);
+      check('ORD-11 header: customer name, "Đơn thuê", #number, status', t.includes(accentName) && /Đơn thuê/.test(t) && t.includes(`#${oRes.orderNumber}`) && /Đã đặt/.test(t), t.slice(0, 300));
+      check('ORD-11 items: product name, "SL 1", line total 100.000', t.includes(prodA.name) && /100[.,]000/.test(t));
+      check('ORD-11 payment card: total 100.000, deposit 30.000, due 70.000', /30[.,]000/.test(t) && /70[.,]000/.test(t));
+      check('ORD-11 buttons: In phiếu, Sửa đơn, Thêm thao tác, Giao đồ', (await page.getByRole('button', { name: 'In phiếu' }).count()) === 1 && (await page.getByRole('link', { name: 'Sửa đơn' }).or(page.getByRole('button', { name: 'Sửa đơn' })).count()) >= 1 && (await page.getByRole('button', { name: 'Thêm thao tác' }).count()) === 1);
+      const pr = await H.pageProblems(page, st);
+      check('ORD-11 healthy page', pr.length === 0, pr.join('; '));
+      await page.getByRole('link', { name: 'Xem khách' }).click();
+      await page.waitForURL(new RegExp(`/customers/${custA.id}$`), { timeout: 30000 }).catch(() => {});
+      check('ORD-11 "Xem khách" opens that customer', new RegExp(`/customers/${custA.id}$`).test(page.url()), page.url());
+      await F.go(page, '/orders/000000');
+      const nf = await H.bodyText(page);
+      check('ORD-11 unknown number: "Không tìm thấy đơn này." and a way back', /Không tìm thấy đơn này/.test(nf) && /Về danh sách đơn/.test(nf), nf.slice(-200));
+      check('ORD-11 unknown number: no raw key', H.rawKeys(nf).length === 0, H.rawKeys(nf).join());
+    }, sp);
+
+    // an overdue order (pickup 3 days ago, return yesterday) for the hand-over / return flows
+    const oFlow = await apiOrder({ P: addDays(today, -3), R: addDays(today, -1), deposit: 20000, customer: custA });
+    await H.runCase('WEB-UI-ORD-12', 'collateral on the order page, then Giao đồ: money rows, API status PICKUPED', async () => {
+      await openOrder(oFlow);
+      const t0 = await H.bodyText(page);
+      check('ORD-12 overdue pickup says so ("Quá 3 ngày chưa giao")', /Quá 3 ngày chưa giao/.test(t0), t0.slice(0, 200));
+      for (let i = 0; i < 4; i += 1) {
+        await page.getByRole('button', { name: 'Sửa thế chấp & phí' }).click();
+        if (await page.getByLabel('Tiền thế chấp').isVisible({ timeout: 2000 }).catch(() => false)) break;
+      }
+      await page.getByLabel('Tiền thế chấp').fill('200000');
+      await page.getByLabel('Loại thế chấp').selectOption({ label: 'CCCD' });
+      await page.getByLabel('Chi tiết thế chấp').fill('CCCD 079123');
+      await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+      await page.getByText(/Giữ/).first().waitFor({ timeout: 15000 }).catch(() => {});
+      let o = await getOrder(oFlow.id);
+      check('ORD-12 API: securityDeposit 200.000, type ID_CARD, details saved', o.securityDeposit === 200000 && o.collateralType === 'ID_CARD' && o.collateralDetails === 'CCCD 079123', `${o.securityDeposit} ${o.collateralType} ${o.collateralDetails}`);
+      const t1 = await H.bodyText(page);
+      check('ORD-12 payment card: Thế chân thu thêm 200.000, Thu khi giao 280.000', /Thế chân thu thêm/.test(t1) && /280[.,]000/.test(t1), t1.slice(-500));
+      await page.getByRole('button', { name: /^Giao đồ · thu/ }).click();
+      const dlg = page.getByRole('dialog');
+      await dlg.waitFor({ timeout: 10000 });
+      const dt = await dlg.innerText();
+      check('ORD-12 dialog: total 100.000, deposit 20.000, collateral 200.000, "Thu bây giờ" 280.000, papers kept', /Giao đồ cho khách/.test(dt) && /Thu bây giờ/.test(dt) && /280[.,]000/.test(dt) && /Giấy tờ để lại: CCCD/.test(dt), dt.replace(/\s+/g, ' ').slice(0, 400));
+      await dlg.getByRole('button', { name: /^Giao đồ · thu/ }).click();
+      await page.getByText('Đang thuê').first().waitFor({ timeout: 20000 }).catch(() => {});
+      o = await getOrder(oFlow.id);
+      check('ORD-12 API: status PICKUPED, pickedUpAt set, collateral kept', o.status === 'PICKUPED' && !!o.pickedUpAt && o.securityDeposit === 200000, `${o.status} ${o.pickedUpAt} ${o.securityDeposit}`);
+      const t2 = await H.bodyText(page);
+      check('ORD-12 page: "Đang thuê", next step "Trễ trả 1 ngày", "Nhận trả · hoàn 200.000"', /Đang thuê/.test(t2) && /Trễ trả 1 ngày/.test(t2) && /Nhận trả · hoàn 200[.,]000/.test(t2), t2.slice(-600));
+      check('ORD-12 history: "Đã giao đồ cho khách"', /Đã giao đồ cho khách/.test(t2));
+    }, sp);
+
+    await H.runCase('WEB-UI-ORD-13', 'Nhận trả with a late fee and a damage fee: refund = collateral − fees; API RETURNED with both fees', async () => {
+      await openOrder(oFlow);
+      await page.getByRole('button', { name: /^Nhận trả/ }).first().click();
+      const dlg = page.getByRole('dialog');
+      await dlg.waitFor({ timeout: 10000 });
+      check('ORD-13 dialog says "trả trễ 1 ngày" and has a late-fee row', /trả trễ 1 ngày/.test(await dlg.innerText()) && /Phí trễ \(1 ngày\)/.test(await dlg.innerText()));
+      await dlg.locator('input').nth(0).fill('10000');
+      await dlg.locator('input').nth(1).fill('30000');
+      await page.waitForTimeout(300);
+      const dt = await dlg.innerText();
+      check('ORD-13 dialog: fees 40.000, collateral 200.000, "Trả lại khách" 160.000', /40[.,]000/.test(dt) && /Trả lại khách/.test(dt) && /160[.,]000/.test(dt), dt.replace(/\s+/g, ' ').slice(0, 400));
+      await dlg.getByRole('button', { name: /^Nhận trả · trả khách/ }).click();
+      await page.getByText('Đã trả').first().waitFor({ timeout: 20000 }).catch(() => {});
+      await page.waitForTimeout(800);
+      const o = await getOrder(oFlow.id);
+      check('ORD-13 API: RETURNED, returnedAt set', o.status === 'RETURNED' && !!o.returnedAt, `${o.status} ${o.returnedAt}`);
+      check('ORD-13 API: lateFee 10.000 and damageFee 30.000 as typed', o.lateFee === 10000 && o.damageFee === 30000, `${o.lateFee} ${o.damageFee}`);
+      const t = await H.bodyText(page);
+      check('ORD-13 page shows "Đã trả" and the fees', /Đã trả/.test(t) && /Phí trễ/.test(t) && /Phí hư hỏng/.test(t), t.slice(-500));
+    }, sp);
+
+    await H.runCase('WEB-UI-ORD-14', 'Huỷ đơn: "Giữ đơn" keeps it, "Huỷ đơn" cancels (API CANCELLED, stock freed)', async () => {
+      const o1 = await apiOrder({ P: addDays(today, 12), R: addDays(today, 13), customer: custB });
+      await openOrder(o1);
+      await openMenu();
+      const items = await page.evaluate(() => [...document.querySelectorAll('[role="menuitem"]')].map((e) => e.innerText.trim()));
+      check('ORD-14 menu offers "Huỷ đơn"', items.some((x) => /Huỷ đơn/.test(x)), items.join(' | '));
+      await page.getByRole('menuitem', { name: /Huỷ đơn/ }).click();
+      const dlg = page.getByRole('dialog');
+      await dlg.waitFor({ timeout: 10000 });
+      check('ORD-14 confirm dialog names the order', new RegExp(`Bạn có muốn huỷ đơn hàng .*${o1.orderNumber}`).test(await dlg.innerText()), await dlg.innerText());
+      await dlg.getByRole('button', { name: 'Giữ đơn' }).click();
+      await page.waitForTimeout(600);
+      check('ORD-14 "Giữ đơn": still RESERVED', (await getOrder(o1.id)).status === 'RESERVED');
+      await openMenu();
+      await page.getByRole('menuitem', { name: /Huỷ đơn/ }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Huỷ đơn' }).click();
+      await page.getByText('Đã huỷ').first().waitFor({ timeout: 20000 }).catch(() => {});
+      await page.waitForTimeout(500);
+      check('ORD-14 "Huỷ đơn": API CANCELLED', (await getOrder(o1.id)).status === 'CANCELLED');
+      check('ORD-14 page shows "Đã huỷ" and no Giao đồ button', /Đã huỷ/.test(await H.bodyText(page)) && (await page.getByRole('button', { name: /^Giao đồ/ }).count()) === 0);
+      // the menu of a cancelled order
+      await openMenu();
+      const items2 = await page.evaluate(() => [...document.querySelectorAll('[role="menuitem"]')].map((e) => e.innerText.trim()));
+      check('ORD-14 cancelled order: no "Huỷ đơn" in the menu', !items2.some((x) => /^Huỷ đơn/.test(x)), items2.join(' | '));
+      console.log('  info: menu of a cancelled order:', items2.join(' | '));
+      await page.keyboard.press('Escape');
+    }, sp);
+
+    await H.runCase('WEB-UI-ORD-15', 'order note: typed on the order page is saved (API notes) and shown', async () => {
+      await openOrder(oRes);
+      for (let i = 0; i < 4; i += 1) {
+        await page.getByRole('button', { name: 'Sửa ghi chú' }).first().click();
+        if (await page.getByPlaceholder('Nhập ghi chú đơn hàng...').isVisible({ timeout: 2000 }).catch(() => false)) break;
+      }
+      await page.getByPlaceholder('Nhập ghi chú đơn hàng...').fill('Khách hẹn lấy sau 5 giờ');
+      const saved = page.waitForResponse((r) => /\/api\/orders\/\d+$/.test(r.url().split('?')[0]) && r.request().method() === 'PUT', { timeout: 20000 });
+      await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+      check('ORD-15 save sends PUT /api/orders/:id and succeeds', (await saved.catch(() => null))?.status() === 200);
+      await page.waitForTimeout(800);
+      const o = await getOrder(oRes.id);
+      check('ORD-15 API: notes saved', (o.notes || '').includes('Khách hẹn lấy sau 5 giờ'), o.notes);
+      check('ORD-15 the page shows the note (not "Chưa có ghi chú.")', (await H.bodyText(page)).includes('Khách hẹn lấy sau 5 giờ') && !/Chưa có ghi chú\./.test(await H.bodyText(page)));
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await H.settle(page);
+      check('ORD-15 the note survives a reload', (await H.bodyText(page)).includes('Khách hẹn lấy sau 5 giờ'));
+    }, sp);
+
+    await H.runCase('WEB-UI-ORD-16', 'Sửa đơn: change quantity and discount, save; API equals, "Về đơn" returns', async () => {
+      const oe = await apiOrder({ P: addDays(today, 14), R: addDays(today, 15), customer: custB, product: prodA, qty: 1, price: 100000 });
+      await openOrder(oe, '/edit');
+      const t = await H.bodyText(page);
+      check('ORD-16 edit screen titled "Sửa đơn #number" with a way back', t.includes(`Sửa đơn #${oe.orderNumber}`) && t.includes(`Về đơn #${oe.orderNumber}`), t.slice(0, 300));
+      check('ORD-16 prefilled: product line, customer', t.includes(prodA.name) && t.includes(custB.firstName), t.slice(0, 600));
+      const cart = page.locator('[aria-label="Đơn đang tạo"]').first();
+      await cart.getByRole('button', { name: `Thêm 1 ${prodA.name}` }).click();
+      await cart.getByRole('button', { name: 'Thêm', exact: true }).click().catch(() => {});
+      await cart.getByLabel('Giảm giá', { exact: true }).fill('10000');
+      const put = page.waitForResponse((r) => /\/api\/orders\/\d+$/.test(r.url().split('?')[0]) && r.request().method() === 'PUT', { timeout: 30000 });
+      await cart.getByRole('button', { name: /^Lưu thay đổi/ }).click();
+      const dlg = page.getByRole('dialog').getByRole('button', { name: /^(Vẫn lưu thay đổi|Lưu thay đổi|Xác nhận)/ });
+      if (await dlg.count()) await dlg.first().click().catch(() => {});
+      const res = await put.catch(() => null);
+      check('ORD-16 PUT /api/orders/:id succeeded', !!res && res.status() === 200, res && res.status());
+      const o = await getOrder(oe.id);
+      check('ORD-16 API: quantity 2, discount 10.000, total 190.000', o.orderItems[0].quantity === 2 && o.discountAmount === 10000 && o.totalAmount === 190000, `${o.orderItems[0].quantity} ${o.discountAmount} ${o.totalAmount}`);
+      check('ORD-16 API: dates unchanged', o.pickupPlanAt === dayIso(addDays(today, 14)) && o.returnPlanAt === dayIso(addDays(today, 15)), `${o.pickupPlanAt} ${o.returnPlanAt}`);
+      await page.waitForTimeout(1000);
+      check('ORD-16 after saving the screen is the order page or shows the saved order', page.url().includes(`/orders/${oe.orderNumber}`), page.url());
+    }, sp);
+
+    await H.runCase('WEB-UI-ORD-17', 'In phiếu: hoá đơn dialog shows the order, closes, and the print button is there', async () => {
+      await openOrder(oRes);
+      await page.evaluate(() => {
+        window.__printed = 0;
+        window.print = () => { window.__printed += 1; };
+      });
+      await page.getByRole('button', { name: 'In phiếu' }).click();
+      const dlg = page.getByRole('dialog', { name: new RegExp(`Hoá đơn #${oRes.orderNumber}`) });
+      await dlg.waitFor({ timeout: 15000 });
+      const t = await dlg.innerText();
+      check('ORD-17 hoá đơn shows the customer, the product, the deposit and the total', t.includes(accentName) && t.includes(prodA.name) && /Tiền cọc/.test(t) && /100\.000/.test(t), t.replace(/\s+/g, ' ').slice(0, 400));
+      check('ORD-17 rental dates on the slip (Ngày thuê / Ngày trả)', /Ngày thuê/.test(t) && /Ngày trả/.test(t));
+      check('ORD-17 no raw key on the slip', H.rawKeys(t).length === 0, H.rawKeys(t).join());
+      check('ORD-17 print button present', (await dlg.getByRole('button', { name: 'In' }).count()) === 1);
+      await dlg.getByRole('button', { name: 'Đóng' }).first().click();
+      await dlg.waitFor({ state: 'hidden', timeout: 5000 });
+      check('ORD-17 Đóng closes the dialog', true);
+    }, sp);
+
+
+    await H.runCase('WEB-UI-ORD-18', 'Xoá đơn (cancelled order): "Giữ lại" keeps it, "Xoá đơn" removes it for good and returns to the list', async () => {
+      const od = await apiOrder({ P: addDays(today, 20), R: addDays(today, 21), customer: custB });
+      await api.cancel(od.id);
+      await openOrder(od);
+      await openMenu();
+      await page.getByRole('menuitem', { name: /^Xoá đơn/ }).click();
+      const dlg = page.getByRole('dialog');
+      await dlg.waitFor({ timeout: 10000 });
+      check('ORD-18 dialog "Xoá hẳn đơn <number>? Không hoàn tác được."', new RegExp(`Xoá hẳn đơn #?${od.orderNumber}`).test(await dlg.innerText()), await dlg.innerText());
+      await dlg.getByRole('button', { name: 'Giữ lại' }).click();
+      await page.waitForTimeout(500);
+      check('ORD-18 "Giữ lại": the order still exists', (await getOrder(od.id)).orderNumber === od.orderNumber);
+      await openMenu();
+      await page.getByRole('menuitem', { name: /^Xoá đơn/ }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Xoá đơn' }).click();
+      await page.waitForURL(/\/orders(\?|$)/, { timeout: 30000 }).catch(() => {});
+      check('ORD-18 after deleting the screen goes back to the order list', new URL(page.url()).pathname === '/orders', page.url());
+      const is404 = (p) => api.get(p).then(() => false).catch((e) => /404/.test(e.message));
+      check('ORD-18 API: by number the order is gone (404)', await is404(`/api/orders/${od.orderNumber}`));
+      check('ORD-18 API: the list does not return it', (await api.get(`/api/orders?${qs({ q: od.orderNumber })}`)).orders.length === 0);
+      check('ORD-18 API: by id the order is gone (404)', await is404(`/api/orders/${od.id}`)); // #739
+      const idx = created.indexOf(od.id);
+      if (idx >= 0) created.splice(idx, 1);
+    }, sp);
+
   } finally {
     for (const id of created) await api.cancel(id);
     await browser.close();

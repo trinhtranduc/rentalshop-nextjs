@@ -58,12 +58,16 @@ function collect(page) {
     st.console.push(t.slice(0, 300));
   });
   page.on('pageerror', (e) => st.pageErrors.push(String(e.message || e).slice(0, 300)));
+  // third-party scripts (ads, analytics, fonts) are not ours: only localhost requests count
+  const ours = (u) => /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(u);
   page.on('requestfailed', (r) => {
+    if (!ours(r.url())) return;
     const f = r.failure()?.errorText || '';
     if (/ERR_ABORTED|NS_BINDING_ABORTED/.test(f)) return; // navigation / cancelled by the app
     st.failed.push(`${r.method()} ${r.url().slice(0, 140)} ${f}`);
   });
   page.on('response', (r) => {
+    if (!ours(r.url())) return;
     const s = r.status();
     const line = `${s} ${r.request().method()} ${r.url().replace(/^https?:\/\/[^/]+/, '').slice(0, 140)}`;
     if (s >= 500) st.http5xx.push(line);
