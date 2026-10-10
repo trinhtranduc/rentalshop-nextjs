@@ -12,7 +12,7 @@ quả trên máy), *chưa viết* (còn thiếu, kèm lý do).
 
 | Tầng | Kết quả |
 |---|---|
-| API (`business-e2e.sh --build`, 19 suite, 671 ca) | UTC: 614 đạt, 0 lỗi, 57 known-bug. Asia/Ho_Chi_Minh: giống hệt. 57 = 56 ca của #577 (giỏ Android cũ trước #413) + 1 ca của #505 (BF-EDIT-11, chờ PR #764) |
+| API (`business-e2e.sh --build`, 19 suite, 673 ca) | UTC: 673 đạt, 0 lỗi, 0 known-bug. Asia/Ho_Chi_Minh: giống hệt (#577 đã sửa: 56 ca giỏ Android cũ là test thường) |
 | Web: số liệu Tổng quan (`dashboard-stats.web.js`, 4 kỳ) | 156 đạt, 0 lỗi |
 | Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 (chưa lật các known của #728, #736 sau khi sửa) |
 | Web: từng tính năng giao diện (`--ui`), trình duyệt thật trên `dev` | public 130/130; products 56 đạt, 1 known (#742, đã sửa sau lần chạy này); settings 66 đạt, kiểm tra cuối của SET-06 đã sửa trong test, chưa chạy lại riêng |
