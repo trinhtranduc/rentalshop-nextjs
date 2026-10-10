@@ -12,7 +12,7 @@ quả trên máy), *chưa viết* (còn thiếu, kèm lý do).
 
 | Tầng | Kết quả |
 |---|---|
-| API (`business-e2e.sh --build`, 19 suite, 671 ca) | UTC: 614 đạt, 0 lỗi, 57 known-bug. Asia/Ho_Chi_Minh: giống hệt. 57 = 56 ca của #577 (giỏ Android cũ trước #413) + 1 ca của #505 (BF-EDIT-11, chờ PR #764) |
+| API (`business-e2e.sh --build`, 19 suite, 673 ca) | UTC: 673 đạt, 0 lỗi, 0 known-bug. Asia/Ho_Chi_Minh: giống hệt (#577 đã sửa: 56 ca giỏ Android cũ là test thường) |
 | Web: số liệu Tổng quan (`dashboard-stats.web.js`, 4 kỳ) | 156 đạt, 0 lỗi |
 | Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 (chưa lật các known của #728, #736 sau khi sửa) |
 | Web: từng tính năng giao diện (`--ui`), trình duyệt thật trên `dev` | public 130/130; products 56 đạt, 1 known (#742, đã sửa sau lần chạy này); settings 66 đạt, kiểm tra cuối của SET-06 đã sửa trong test, chưa chạy lại riêng |
@@ -268,7 +268,7 @@ Known bugs (`test.failing`):
 
 - **#575** `availability old iOS` (all clients): the day before P reads busy (batch route uses `lte` on the exclusive civil-day end).
 - **#576** `availability old Android` (web, ios, android orders): `T23:59:59Z` without ms is not read as a UTC-day window.
-- **#577** `oldAndroid` detail, list, availability, edit, after hand-over: `R T23:59:00Z` is R + 1 in Vietnam, stored as is.
+- **#577** (fixed) `oldAndroid`: `R T23:59:00Z` was R + 1 in Vietnam and stored as is; `POST` / `PUT /api/orders` now store `R T16:59:59.000Z` (`normalizeLegacyPlanDays`). The 56 cases are normal tests.
 
 ## WEB-RT — Shop web: chọn ngày ở Tạo đơn, đọc lại trên mọi màn hình (`tests/e2e/web/date-roundtrip.web.js`, #573)
 
@@ -830,7 +830,7 @@ Còn giữ bằng test:
 | #506 | Top khách hàng tính cả thế chân vào tiền đã chi | BF-OVR-04 |
 | #504 | (đã sửa) sửa số lượng đơn đang thuê làm kẹt món ở "đang thuê" | BF-QTY-04..12 |
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 |
-| #577 | đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-08-oldAndroid (56 ca) |
+| #577 | (đã sửa) đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-01..08-oldAndroid (56 ca) |
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 (PR #764 chờ migration) |
 | #532, #533, #753, #754 | iOS: bảng đổi mật khẩu bị cắt, thông báo dài chạy tràn, Home và Tổng quan không nêu lý do khi gói bị chặn | điểm kiểm mềm trong `AnyRentE2ETests.swift` (PR đang được làm) |
 | #756, #757, #758 | mobile: thông báo gói bằng tiếng Anh trên Android, lý do bằng tiếng Việt ở app tiếng Anh, thêm sản phẩm khi gói bị chặn | ghi trong báo cáo Android |

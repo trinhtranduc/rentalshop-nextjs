@@ -10,7 +10,8 @@ import {
   generateFileName,
   splitKeyIntoParts,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls
+  mapStagingUrlsToProductionUrls,
+  normalizeLegacyPlanDays
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
@@ -713,6 +714,15 @@ export const PUT = async (
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
       const { subtotal, taxAmount, id, loyaltyRedeem, ...validUpdateData } = body;
+
+      // #577: the Android cart before #413 sends the return day as `R T23:59:00Z` (= R+1 in Vietnam)
+      {
+        const days = normalizeLegacyPlanDays(validUpdateData);
+        if (days.legacy) {
+          validUpdateData.pickupPlanAt = days.pickupPlanAt;
+          validUpdateData.returnPlanAt = days.returnPlanAt;
+        }
+      }
 
       // Preserve each item's pricing snapshot when older clients update an order
       // without sending the newly supported pricing fields.

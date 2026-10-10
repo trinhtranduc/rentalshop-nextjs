@@ -179,6 +179,7 @@ export * from './timezone';
 // Date utilities
 export * from './date';
 export * from './date-range';
+export * from './legacy-plan-days';
 // Browser-safe Vietnam-day helpers: today, month math, pickers, datetime-local, formatInShopZone (#578 batch C)
 export * from './shop-day';
 
