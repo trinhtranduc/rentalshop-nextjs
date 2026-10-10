@@ -13,6 +13,8 @@ const free = (line) => {
   if (m) return Number(m[1]);
   return /Hết|Out|None/i.test(line || '') ? 0 : null;
 };
+/** free units on a day: the sum of effectivelyAvailable over the outlets of GET /api/products/{id}/availability */
+const freeOf = (a) => (a?.availabilityByOutlet || []).reduce((sum, o) => sum + (o.effectivelyAvailable ?? 0), 0);
 const window = (day) => new URLSearchParams({ startDate: new Date(`${day}T00:00:00+07:00`).toISOString(), endDate: new Date(`${day}T23:59:59.999+07:00`).toISOString(), quantity: '1', timeZone: ZONE });
 
 (async () => {
@@ -27,11 +29,11 @@ const window = (day) => new URLSearchParams({ startDate: new Date(`${day}T00:00:
     const product = ((list && (list.products || list.items)) || []).find((p) => p.name === name);
     if (!product) { results.push(fail(`${name}`, 'not found in the API')); continue; }
     const a = await api.get(`/api/products/${product.id}/availability?${window(today)}`);
-    const want = a?.effectivelyAvailable ?? a?.availableQuantity ?? null;
-    results.push(check(free(line) === want, `${name} > Home line = free today`, `app="${line}" api=${want} (stock ${a?.totalStock}, booked ${a?.conflictingQuantity})`));
+    const want = freeOf(a);
+    results.push(check(free(line) === want, `${name} > Home line = free today`, `app="${line}" api=${want} (stock ${a?.totalStock}, renting ${a?.totalRenting})`));
     if (name === 'E2E Het') {
       const t = await api.get(`/api/products/${product.id}/availability?${window(tomorrow)}`);
-      results.push(check((t?.effectivelyAvailable ?? t?.availableQuantity) === 1, `${name} > free tomorrow`, `api=${t?.effectivelyAvailable ?? t?.availableQuantity}`));
+      results.push(check(freeOf(t) === 1, `${name} > free tomorrow`, `api=${freeOf(t)}`));
     }
     if (name === 'E2E Con5') results.push(check(want === 2, `${name} > 5 in stock - sale 2 - rent 1`, `api free today=${want}`));
   }
