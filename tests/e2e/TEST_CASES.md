@@ -8,6 +8,17 @@ và trạng thái. Khi thêm một luật hay một màn hình mới, thêm ca v
 đang fail có chủ đích vì lỗi #N; `BIZ_E2E_SHOW_BUGS=1` cho thấy số thật), *đã viết, chưa chạy* (có code, chưa có kết
 quả trên máy), *chưa viết* (còn thiếu, kèm lý do).
 
+## Kết quả lần chạy gần nhất (2026-10-10, nhánh `test/full-e2e-cases` đã gộp `dev`)
+
+| Tầng | Kết quả |
+|---|---|
+| API (`business-e2e.sh`, 18 suite, 655 ca) | UTC: 583 đạt, 0 lỗi, 72 known-bug. Asia/Ho_Chi_Minh: 583 đạt, 0 lỗi, 72 known-bug. 72 = 56 (#577) + #504, #505, #506, #707 + #728 ×3 + #729 ×3 + #730..#732 (staff và kho, 6 ca) |
+| Web: số liệu Tổng quan (`dashboard-stats.web.js`, 4 kỳ) | 156 đạt, 0 lỗi |
+| Web: vai trò, gói, tồn, lịch, việc cần làm | roles 63 đạt / 4 known, plan 77 đạt / 11 known, stock 17/17 |
+| Web: từng tính năng giao diện (`--ui`) | 632 đạt, 0 lỗi, 8 known |
+| iOS | lượt đầy đủ trước đó: 25 đạt, 7 fail (xem mục iOS); các test mới và 7 ca fail đang được chạy lại, kết quả cập nhật ở mục MOB |
+| Android | số liệu Báo cáo khớp API (kỳ 7 ngày); các luồng khác đang được chạy lại |
+
 ## Lệnh chạy
 
 | Tầng | Lệnh | Ghi chú |
