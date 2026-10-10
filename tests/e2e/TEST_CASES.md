@@ -174,12 +174,23 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 | BF-OVR-01 | Đẳng thức nội bộ (today, 7 days) | deposits + pickupAndSale + fees − refunds = collected; atPickup + overdue = outstanding; totalRevenue − collected = received − returned; Σ series = headline; growth.current = headline; income/daily Σ = period |
 | BF-OVR-02 | Một ngày kinh doanh | 4 orders (booked 280.000 D 50.000; picked up 140.000 S 300.000; sale 135.000; booked+cancelled D 10.000) → Δ collected 325.000, orderValue 555.000, outstanding = atPickup 230.000, deposits 60.000, pickupAndSale 275.000, refunds 10.000, received = held 300.000, new 4, pickups 1, cancelled 1; "Đã chi" excludes cancelled; renting 1; list by product |
 | BF-OVR-03 | Top sản phẩm: tile vs drill-down | rent qty 3 + sale qty 1 + cancelled qty 2 → tile rentalCount 1 / saleCount 1 (lines, #429), drill-down rentalCount 3 / saleCount 1 / quantity 4 (units), revenue 4 × price both; first in today's list |
-| BF-OVR-04 | **Known bug #506** Top khách: thế chân không phải chi tiêu | totalSpent = A (today A + S) |
+| BF-OVR-04 | Top khách: thế chân không phải chi tiêu (#506, đã sửa) | totalSpent = A |
 | BF-OVR-05 | Top khách: đếm đơn, bỏ đơn huỷ | orderCount 2, rentalCount 1, saleCount 1, totalSpent A + 1.000 |
 | BF-OVR-06 | Tăng trưởng so với kỳ trước | yesterday vs today: growth.collected.previous = yesterday's collected, growth = percentChange; same for orderValue |
 | BF-OVR-07 | Thu theo ngày = biểu đồ | pickup day Δ collected 130.000, return day 15.000, collateral 100.000 in/out; income/daily = series per day |
 | BF-OVR-08 | Thế chân đang giữ / sẽ nhận | cash.collateralToCollect +250.000 (1), depositsHeld +400.000 (1); back after return/cancel |
 | BF-OVR-09 | Dự kiến thu theo ngày giao, giá trị đơn mới (#605) | future RESERVED 140.000, D 50.000, S 300.000 → pickup day Δ expectedCollected 90.000 (no collateral), futureIncome 0; today Δ Σ newOrderValue 140.000 = totalOrderValue identity; orderValueByType.rent +140.000 (1), rent + sale = totalOrderValue; after cancel both back |
+
+## BF-FIX — Sửa lỗi nhỏ của API (`small-fixes.e2e.test.js`, #739 #742)
+
+| ID | Case | Expected |
+|---|---|---|
+| BF-FIX-01 | Đơn đã xoá (#739) | huỷ rồi `DELETE`: theo id 404 `ORDER_NOT_FOUND`, theo số 404, danh sách rỗng, `/qr-code` 404, xoá lần hai 404, đổi trạng thái 404 (trước đó theo id vẫn 200) |
+| BF-FIX-02 | Đơn đã huỷ chưa xoá | theo id vẫn 200, status CANCELLED |
+| BF-FIX-03 | Tạo sản phẩm với barcode `""`, `"   "`, `""` (#742) | cả ba tạo được, barcode đọc lại NULL |
+| BF-FIX-04 | Sửa hai sản phẩm không mã vạch, gửi `barcode: ""` | cả hai 200 (trước đó cái thứ hai 409), barcode NULL |
+| BF-FIX-05 | Mã vạch thật trùng | tạo và sửa trùng vẫn 409 `DUPLICATE_ENTRY`; gửi `""` đổi mã thành NULL |
+| BF-FIX-06 | Migration dữ liệu `20261010100000_product_blank_barcode_to_null` | `''` và `'  '` thành NULL, mã thật giữ nguyên (cần `E2E_DATABASE_URL`) |
 
 ## BF-DAY — Ngày giờ Việt Nam (`vn-days.e2e.test.js`, run under TZ=UTC and TZ=Asia/Ho_Chi_Minh)
 
@@ -713,7 +724,7 @@ scripts/e2e/web-e2e.sh --ui          # hoặc --ui orders,customers (một khu v
 | WEB-UI-ORD-15 | Ghi chú đơn | sửa và lưu | API lưu ghi chú, còn sau khi tải lại |
 | WEB-UI-ORD-16 | Sửa đơn | đổi số lượng và giảm giá | PUT 200, API = nhập vào, ngày không đổi |
 | WEB-UI-ORD-17 | In phiếu | mở phiếu | khách, dòng, cọc, tổng, ngày, Đóng |
-| WEB-UI-ORD-18 | Xoá đơn (đã huỷ) | Giữ lại, rồi Xoá | mất theo số và trong danh sách; theo id vẫn 200 (known #739) |
+| WEB-UI-ORD-18 | Xoá đơn (đã huỷ) | Giữ lại, rồi Xoá | mất theo số, theo id (404) và trong danh sách (#739, đã sửa) |
 | WEB-UI-CUS-01..10 | Khách hàng | danh sách / số lượng, tìm, thêm có kiểm tra, trùng điện thoại, sửa, bảng chi tiết, hồ sơ + đơn, nhập Excel (CSV), xoá (có đơn mở bị từ chối / không đơn thì xoá), hộp xuất | danh sách = API; API = dữ liệu nhập; thông báo bằng chữ |
 | WEB-UI-PRD-01..12 | Sản phẩm | danh sách / số lượng, tìm / danh mục / sắp xếp, thêm có kiểm tra, kiểm tra tồn và giá, sửa, trang chi tiết, đơn của sản phẩm, nhãn, nhập Excel, xoá (có và không có đơn), quy tắc giá của OUTLET_STAFF, hai lần sửa không mã vạch | API = nhập vào; giá của staff không đổi (known #741, #742) |
 | WEB-UI-SET-01..10 | Cài đặt | 7 tab; lưu thông tin cửa hàng; tiền tệ so với ngôn ngữ; vi↔en; Tối/Sáng; hồ sơ; kiểm tra mật khẩu + hộp xác nhận xoá tài khoản; cài đặt in; tab gói = API; tắt trùng lịch rồi vào Tạo đơn | mọi thứ khôi phục cuối cùng (known #744) |
@@ -803,7 +814,6 @@ Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi 
 |---|---|---|
 | #504 | sửa số lượng đơn đang thuê làm kẹt món ở "đang thuê" | BF-QTY-04 |
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 |
-| #506 | Top khách hàng tính cả thế chân vào tiền đã chi | BF-OVR-04 |
 | #577 | đơn từ giỏ Android cũ (trước #413) đọc lại thì ngày trả trễ 1 ngày | BF-RT-08-oldAndroid (56 ca) |
 | #728 | tuyến `requireActiveSubscription:false` vẫn bị chặn với cửa hàng hết hạn: không xem được trạng thái, danh sách gói, đổi gói, checkout; web không có đường gia hạn | BF-SUB-17..19, WEB-SUB-01..05 (-c, -d) |
 | #729 | khách, chi nhánh, đơn đã xoá vẫn tính vào giới hạn gói | BF-SUB-48..50 |
@@ -816,9 +826,7 @@ Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi 
 | #733 | thẻ gói trên trang chủ hiện khoá thô `plans.features.loyalty` (không có trong `locales/*/plans.json`) | WEB-UI-PUB (known) |
 | #734 | `/pricing` viết cứng tiếng Anh, bỏ qua ngôn ngữ | WEB-UI-PUB (known) |
 | #735 | `/pricing` lỗi hydration ("2,000" ở server, "2.000" ở client: `toLocaleString()` không có locale) | WEB-UI-PUB (known) |
-| #739 | `GET /api/orders/:id` vẫn trả đơn đã xoá (theo số, danh sách, tìm kiếm thì không) | WEB-UI-ORD-18 |
 | #741 | sửa sản phẩm chỉ cho thuê (giá bán 0, như app tạo) bị chặn "Nhập giá bán" | WEB-UI-PRD (known) |
-| #742 | lưu sản phẩm không mã vạch ghi `''`; lần lưu sau lỗi 409 `DUPLICATE_ENTRY`, toast chỉ nói "Không lưu được sản phẩm" | WEB-UI-PRD-12 |
 | #744 | lưu "Tài khoản của tôi" xong, thanh bên và form vẫn hiện tên cũ đến lần đăng nhập sau | WEB-UI-SET (known) |
 
 **Theo dõi chi nhánh (#745, PR #746):** web ẩn "Thêm chi nhánh" cho đến khi làm xong nhiều chi nhánh (`NEXT_PUBLIC_ENABLE_ADD_OUTLET=true` bật lại). Sau khi PR này merge, WEB-ROLE-10c / 11c (nút "Thêm chi nhánh" của staff và kho, #736) đạt phần nút thêm, WEB-SUB-24 (giới hạn gói chi nhánh qua giao diện) và WEB-UI-MAN (thêm chi nhánh) không còn nút để bấm: cần cập nhật theo.
