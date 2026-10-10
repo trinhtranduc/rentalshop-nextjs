@@ -409,7 +409,10 @@ export function sessionRejectedResponse(status: 'replaced' | 'expired'): NextRes
  * Authenticate request and return user or error
  * This is the SINGLE authentication function used everywhere
  */
-export async function authenticateRequest(request: NextRequest): Promise<{
+export async function authenticateRequest(
+  request: NextRequest,
+  options?: { skipSubscriptionCheck?: boolean }
+): Promise<{
   success: true;
   user: AuthUser;
 } | {
@@ -591,7 +594,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     // SUBSCRIPTION STATUS CHECK
     // ============================================================================
     // Check if merchant has active subscription (skip for ADMIN users)
-    if (!isSystemLevelUserRole(user.role) && user.merchantId) {
+    if (!options?.skipSubscriptionCheck && !isSystemLevelUserRole(user.role) && user.merchantId) {
       const subscriptionCheck = await checkMerchantSubscriptionStatus(user.merchantId, request);
       if (!subscriptionCheck.success) {
         return {

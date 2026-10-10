@@ -10,9 +10,7 @@ const F = require('./ui-order-flow');
 const { vnDateKey, addDays } = require('./web-api');
 
 /** Checks that fail on purpose until the named issue is fixed ("<check name>": '#N') */
-const KNOWN = {
-  'SET-06 reopening the profile shows the saved last name': '#744' // stored user not updated after a profile save
-};
+const KNOWN = {};
 const qs = (o) => new URLSearchParams(o).toString();
 
 async function main() {
@@ -224,12 +222,17 @@ async function main() {
       check('SET-06 save request succeeded', !!res && res.status() === 200, res && res.status());
       const p = await api.get('/api/users/profile');
       check('SET-06 API: last name and phone saved, email unchanged', p.lastName === `E2E${tag.slice(-4)}` && p.phone === '0987654321' && p.email === profile0.email, JSON.stringify({ l: p.lastName, p: p.phone }));
+      const newLast = `E2E${tag.slice(-4)}`;
+      await page.waitForTimeout(1500);
+      // What a reload would show is what the app keeps in localStorage (authData). Not reloaded here: this suite's
+      // login init script writes the login-time user into localStorage again on every page load (#744).
+      const stored = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('authData') || '{}').user || {}; } catch { return {}; } });
+      check('SET-06 the stored user (authData) has the saved last name and phone', stored.lastName === newLast && stored.phone === '0987654321' && String(stored.name || '').includes(newLast), JSON.stringify({ l: stored.lastName, p: stored.phone, n: stored.name }));
+      check('SET-06 the form still shows the saved last name after saving', (await dlg().locator('[name="lastName"]').inputValue()) === newLast);
       await page.keyboard.press('Escape');
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await H.settle(page);
+      check('SET-06 the sidebar shows the new name at once', (await H.bodyText(page)).includes(newLast), 'sidebar text has no new last name');
       await openTab('profile');
-      check('SET-06 reopening the profile shows the saved last name', (await dlg().locator('[name="lastName"]').inputValue()) === `E2E${tag.slice(-4)}`);
-      console.log(`  info: sidebar name after a profile save + reload: ${(await H.bodyText(page)).includes(`E2E${tag.slice(-4)}`) ? 'updated' : 'still the old name (stale until the next login)'}`);
+      check('SET-06 reopening the profile shows the saved last name', (await dlg().locator('[name="lastName"]').inputValue()) === newLast);
     }, sp);
 
     await H.runCase('WEB-UI-SET-07', 'password form validation (nothing is changed) and the delete-account confirm', async () => {

@@ -137,6 +137,13 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
       
       if (isOutletRole(user.role)) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
+        // Outlet roles read only their own outlet's stock and bookings (#732)
+        if (queryOutletId && Number(queryOutletId) !== userOutletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('NO_OUTLET_ACCESS'),
+            { status: 403 }
+          );
+        }
         finalOutletId = queryOutletId || (userOutletId || 0);
       } else if (user.role === USER_ROLE.MERCHANT && !queryOutletId) {
         // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one

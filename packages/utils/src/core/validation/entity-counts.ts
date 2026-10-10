@@ -66,11 +66,11 @@ export async function getCurrentEntityCounts(merchantId: number): Promise<Entity
     }, 'getCurrentEntityCounts - Merchant user details');
 
     const [outlets, users, products, customers, orders] = await Promise.all([
-      prisma.outlet.count({ where: { merchantId } }),
+      prisma.outlet.count({ where: { merchantId, isActive: true } }), // #729 deleted outlet = isActive false
       countMerchantUsersForPlanLimit(merchantId),
       prisma.product.count({ where: { merchantId, deletedAt: null } }), // #389 soft-deleted products free their slot
-      prisma.customer.count({ where: { merchantId } }),
-      prisma.order.count({ where: { outlet: { merchantId } } }),
+      prisma.customer.count({ where: { merchantId, isActive: true, deletedAt: null } }), // #729 DELETE sets isActive false
+      prisma.order.count({ where: { outlet: { merchantId }, deletedAt: null } }), // #729
     ]);
 
     logger.debug({ merchantId, outlets, users, products, customers, orders }, 'Entity counts for merchant');

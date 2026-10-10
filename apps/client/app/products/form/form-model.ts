@@ -238,7 +238,6 @@ export type ErrorCode =
   | 'categoryRequired'
   | 'priceNegative'
   | 'dailyNeedsPrice'
-  | 'saleRequired'
   | 'depositNegative'
   | 'stockRequired'
   | 'outletStockNegative';
@@ -253,7 +252,7 @@ export function validateForm(form: FormState, opts: { canEditPricing: boolean })
   if (opts.canEditPricing) {
     if (form.perRental < 0 || form.perDay < 0) errors.perRental = 'priceNegative';
     if (form.defaultMode === 'DAILY' && !(form.perDay > 0)) errors.defaultMode = 'dailyNeedsPrice';
-    if (!(form.salePrice > 0)) errors.salePrice = 'saleRequired';
+    // #741: the sale price is optional (a rent-only product has 0, as the apps and the API create it)
   }
   if (form.deposit < 0) errors.deposit = 'depositNegative';
   if (!(form.totalStock > 0)) errors.totalStock = 'stockRequired';

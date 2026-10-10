@@ -11,7 +11,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
 import { outletsApi } from '@rentalshop/utils';
 import type { OutletFilters } from '@rentalshop/types';
@@ -87,6 +87,7 @@ export default function OutletsPage() {
   // #745: multi-branch comes later, so the web does not offer "Thêm chi nhánh"
   const canAdd = isAddOutletEnabled();
   const { user } = useAuth();
+  const { canManageOutlets } = usePermissions();
   const { toastSuccess } = useToast();
 
   const { q, page, limit, sortBy, sortOrder } = parseOutletParams(searchParams);
@@ -207,12 +208,14 @@ export default function OutletsPage() {
     typeof row._count?.users === 'number' ? t('staffCount', { count: row._count.users }) : '';
 
   const actions = (row: OutletLike) => {
-    const allowed = outletActions(row);
+    const allowed = outletActions(row, canManageOutlets);
     return (
       <span className="flex items-center justify-end gap-1">
-        <button type="button" onClick={() => setDialog({ kind: 'edit', row })} className={smallBtn}>
-          {t('edit')}
-        </button>
+        {allowed.includes('edit') && (
+          <button type="button" onClick={() => setDialog({ kind: 'edit', row })} className={smallBtn}>
+            {t('edit')}
+          </button>
+        )}
         <RowMenu
           label={t('more', { name: row.name })}
           items={[

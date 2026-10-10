@@ -92,7 +92,7 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
       
       try {
         // Step 1: Authenticate request
-        const authResult = await authenticateRequest(request);
+        const authResult = await authenticateRequest(request, { skipSubscriptionCheck: !requireSubscription });
         if (!authResult.success) {
           console.log('❌ [AUTH] Authentication failed - returning 401');
           // Try to log error details if available
@@ -288,7 +288,7 @@ export function withPermissions(
       
       try {
         // Step 1: Authenticate request
-        const authResult = await authenticateRequest(request);
+        const authResult = await authenticateRequest(request, { skipSubscriptionCheck: !requireSubscription });
         if (!authResult.success) {
           console.log('❌ [AUTH] Authentication failed - returning 401');
           return authResult.response;
