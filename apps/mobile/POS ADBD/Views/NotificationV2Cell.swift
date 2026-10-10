@@ -57,7 +57,9 @@ final class NotificationV2Cell: UITableViewCell {
         text.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(14)
             make.leading.equalTo(tile.snp.trailing).offset(DS.Spacing.md)
-            make.bottom.lessThanOrEqualToSuperview().offset(-14)
+            make.bottom.equalToSuperview().offset(-14)
+            // 14 + 40 + 14 = the 68pt minimum row; the row is never shorter than the type tile
+            make.height.greaterThanOrEqualTo(40)
         }
         dot.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(21)
@@ -66,8 +68,9 @@ final class NotificationV2Cell: UITableViewCell {
             make.size.equalTo(9)
         }
         line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
-        contentView.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(68).priority(.high) }
-        tile.snp.makeConstraints { make in make.bottom.lessThanOrEqualToSuperview().offset(-14) }
+        // #533: never put SnapKit constraints on contentView itself. SnapKit turns off its
+        // translatesAutoresizingMaskIntoConstraints, the table can no longer pin its width, and the
+        // labels measure one line as wide as the whole text (right edge ~1500pt on a 402pt screen).
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
