@@ -17,6 +17,7 @@ import { outletsApi } from '@rentalshop/utils';
 import type { OutletFilters } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
+import { isAddOutletEnabled } from '../../lib/outlets';
 import { Modal } from '../orders/create/parts';
 import { OutletFormDialog, RowMenu, smallBtn } from './parts';
 import {
@@ -83,6 +84,8 @@ export default function OutletsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('outlets.web') as unknown as T;
+  // #745: multi-branch comes later, so the web does not offer "Thêm chi nhánh"
+  const canAdd = isAddOutletEnabled();
   const { user } = useAuth();
   const { toastSuccess } = useToast();
 
@@ -258,10 +261,12 @@ export default function OutletsPage() {
           {t('title')}
           {data && !error && !q && <span className="text-base font-normal text-ar-muted"> · {total}</span>}
         </h1>
-        <button type="button" onClick={() => setDialog({ kind: 'add' })} className={primaryBtn}>
-          <ShellIcon d={ICONS.plus} size={18} />
-          {t('add')}
-        </button>
+        {canAdd && (
+          <button type="button" onClick={() => setDialog({ kind: 'add' })} className={primaryBtn}>
+            <ShellIcon d={ICONS.plus} size={18} />
+            {t('add')}
+          </button>
+        )}
       </div>
 
       <section className={`${cardClass} min-w-0 overflow-hidden`}>
@@ -363,14 +368,16 @@ export default function OutletsPage() {
         )}
       </section>
 
-      <OutletFormDialog
-        open={dialog?.kind === 'add'}
-        mode="add"
-        initial={EMPTY_OUTLET_FORM}
-        onClose={() => setDialog(null)}
-        onSubmit={create}
-        t={t}
-      />
+      {canAdd && (
+        <OutletFormDialog
+          open={dialog?.kind === 'add'}
+          mode="add"
+          initial={EMPTY_OUTLET_FORM}
+          onClose={() => setDialog(null)}
+          onSubmit={create}
+          t={t}
+        />
+      )}
       <OutletFormDialog
         open={dialog?.kind === 'edit'}
         mode="edit"
