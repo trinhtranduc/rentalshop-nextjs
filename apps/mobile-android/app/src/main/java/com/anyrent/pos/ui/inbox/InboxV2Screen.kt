@@ -25,6 +25,8 @@ import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.LocalShipping
+import androidx.compose.material.icons.outlined.MarkEmailRead
+import androidx.compose.material.icons.outlined.MarkEmailUnread
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Payments
@@ -106,6 +108,7 @@ fun InboxV2Screen(
     var confirmDeleteRead by remember { mutableStateOf(false) }
     // #751: a long press asks first instead of deleting at once
     var pendingDelete by remember { mutableStateOf<InboxNotification?>(null) }
+    var actionsFor by remember { mutableStateOf<Int?>(null) }
     // Bumped by a reset: a page that lands after a newer reset is dropped
     var generation by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -219,6 +222,28 @@ fun InboxV2Screen(
                         groups.forEach { group ->
                             item(key = "day-${group.key}") { DayHeader(group) }
                             items(group.items, key = { it.id }) { item ->
+                              Box {
+                                // #767: a long press offers mark unread / read (as the iOS swipe) and delete
+                                AppOverflowMenu(
+                                    expanded = actionsFor == item.id,
+                                    onDismiss = { actionsFor = null },
+                                    actions = listOf(
+                                        AppMenuAction(
+                                            stringResource(if (item.isRead) R.string.notifications_v2_mark_unread else R.string.notifications_v2_mark_read),
+                                            if (item.isRead) Icons.Outlined.MarkEmailUnread else Icons.Outlined.MarkEmailRead,
+                                            {
+                                                scope.launch {
+                                                    withContext(Dispatchers.IO) {
+                                                        if (item.isRead) ApiParity.markNotificationUnread(item.id)
+                                                        else ApiClient.get().markNotificationRead(item.id)
+                                                    }
+                                                    load(reset = true)
+                                                }
+                                            },
+                                        ),
+                                        AppMenuAction(stringResource(R.string.delete), Icons.Outlined.DeleteSweep, { pendingDelete = item }, destructive = true),
+                                    ),
+                                )
                                 NotificationRowV2(
                                     item = item,
                                     onClick = {
@@ -235,8 +260,9 @@ fun InboxV2Screen(
                                             item.orderId?.let(onOpenOrder)
                                         }
                                     },
-                                    onLongClick = { pendingDelete = item },
+                                    onLongClick = { actionsFor = item.id },
                                 )
+                              }
                             }
                         }
                     }
