@@ -84,7 +84,7 @@ launch_app() { # monkey aborts on emulators without hardware keys (exit 251), so
 if [ "$BUILD" = 1 ]; then
   export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
   echo "Building debug with API $API_URL"
-  (cd "$APP_DIR" && run ./gradlew :app:assembleDebug -PapiBaseUrl="$API_URL")
+  (cd "$APP_DIR" && run ./gradlew --no-daemon :app:assembleDebug -PapiBaseUrl="$API_URL")
 fi
 if [ "$FRESH" = 1 ]; then adb_s uninstall "$PKG" >/dev/null 2>&1 || true; fi
 adb_s install -r -g "$APK"   # -g grants runtime permissions (no notification prompt)

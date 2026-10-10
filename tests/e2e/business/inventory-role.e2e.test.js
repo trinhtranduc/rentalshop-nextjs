@@ -104,7 +104,15 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     const email = `kho-new-${Date.now()}@example.com`;
     const r = await s.post('/api/users', { email, password: 'secret123', firstName: 'Kho', lastName: 'Moi', phone: `09${Date.now() % 100000000}`, role: 'OUTLET_INVENTORY', outletId });
     if (cfg.inventoryRole) {
-      expect(r.status).toBe(200);
+      // The role check runs before the plan check. A plan that is already full answers 422 PLAN_LIMIT_EXCEEDED
+      // (the seed has more users than the Basic plan allows): the role was accepted. A created user is deleted
+      // again, so the test repeats on the same database.
+      const planFull = r.status === 422 && r.body?.code === 'PLAN_LIMIT_EXCEEDED';
+      expect({ status: r.status, code: r.body?.code }).toEqual(
+        planFull ? { status: 422, code: 'PLAN_LIMIT_EXCEEDED' } : { status: 200, code: r.body?.code }
+      );
+      const createdId = r.body?.data?.id ?? r.body?.data?.user?.id;
+      if (r.status === 200 && createdId) await del(s, `/api/users/${createdId}`);
     } else {
       expect({ status: r.status, code: r.body?.code }).toEqual({ status: 400, code: 'ROLE_NOT_AVAILABLE' });
     }
