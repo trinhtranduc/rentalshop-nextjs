@@ -158,7 +158,7 @@ async function openSession({ browser, api, viewport = { width: 1440, height: 900
         localStorage.setItem('authData', a);
         localStorage.setItem('last_login_time', String(Date.now()));
       }
-      localStorage.setItem('anyrent-theme', th);
+      if (th) localStorage.setItem('anyrent-theme', th);
     },
     [api && api.auth ? JSON.stringify(api.auth) : '', theme]
   );
