@@ -19,6 +19,11 @@ API to check the return day, then cancels it (always, also on failure). Catalogu
 Needs: a running API and shop web, a MERCHANT account on that API, Chrome for Testing, and playwright-core
 (cd tests && yarn install --frozen-lockfile).
 
+Shop web UI suites (WEB-UI, #727; the MERCHANT of WEB_E2E_EMAIL, data of its own, settings restored):
+       scripts/e2e/web-e2e.sh --ui [auth,public,orders,customers,products,settings,manage,layout]   (no list = all)
+  Needs the API started with CORS_ORIGINS=<the shop web origin> when the shop web is not on :3000/3001/3002, or the login form
+  fails with "Failed to fetch". Run them with a visible browser: WEB_E2E_HEADED=1. Results: $WEB_E2E_OUT/web-ui-<area>-results.json.
+
 Account suites (#727; each registers its own DEDICATED merchants with their own staff and kho, never the seeded ones):
   --roles    WEB-ROLE / WEB-DASH: menu, Tổng quan, orders, products, customers, categories, calendar, settings for merchant,
              staff and kho; control vs API; direct URLs of admin pages must not leak; merchant with no orders; custom range.
@@ -63,6 +68,14 @@ while [ $# -gt 0 ]; do
     --plan) SUITES+=(plan.web.js) ;;
     --stock) SUITES+=(stock.web.js) ;;
     --accounts) SUITES+=(roles.web.js plan.web.js stock.web.js) ;;
+    # --- WEB-UI (#727): the rest of the shop web, one file per area: --ui (all) or --ui orders[,customers,...]
+    --ui)
+      UI_ALL=(auth public orders customers products settings manage layout)
+      if [ "${2:-}" != "" ] && [ "${2#--}" = "$2" ]; then shift; IFS=',' read -r -a UI_PICK <<<"$1"; else UI_PICK=("${UI_ALL[@]}"); fi
+      for area in "${UI_PICK[@]}"; do
+        case " ${UI_ALL[*]} " in *" $area "*) SUITES+=("ui-$area.web.js") ;; *) echo "Unknown --ui area: $area (${UI_ALL[*]})" >&2; exit 64 ;; esac
+      done ;;
+    # --- end WEB-UI
     --only) shift; export WEB_E2E_ONLY="${1:?--only needs a value}" ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 64 ;;
   esac
