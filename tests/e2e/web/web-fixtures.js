@@ -279,7 +279,8 @@ async function openSession(browser, account, { lang = 'vi', apiUrl = CFG.api, lo
     ([a, l]) => {
       try {
         localStorage.setItem('anyrent-theme', 'light');
-        if (a) {
+        // only when there is no session yet (runs on every navigation; a user the app updated must stay, #744)
+        if (a && !localStorage.getItem('authData')) {
           localStorage.setItem('authData', a);
           localStorage.setItem('last_login_time', String(Date.now()));
         }
