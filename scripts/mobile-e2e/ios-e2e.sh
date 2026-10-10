@@ -6,7 +6,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff|inventory] [--only <testMethod>] [--lang vi|en]
+Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff|inventory] [--only <testMethod>] [--skip <testMethod>]... [--lang vi|en]
        scripts/mobile-e2e/ios-e2e.sh --scenario <slug> --role owner|staff|kho [--only <testMethod>] [--lang vi|en]
        scripts/mobile-e2e/ios-e2e.sh --email <e> --password <p> --role merchant|staff|inventory [--label <dir>]
 
@@ -18,6 +18,8 @@ Builds the Development scheme and runs -only-testing:"POS ADBDUITests/AnyRentE2E
                      the 5-minute app-config cache start clean
   --account          merchant (default), staff or inventory (Nhân viên kho, #682); credentials from env.sh
   --only <method>    run one test method, e.g. testCartRent
+  --skip <method>    leave one test method out of a full run (repeatable), e.g. --skip test0AuthFlows: its many logins hit the
+                     API's login rate limit (about 10 per 15 minutes per IP) and the flows after it fail to log in
   --scenario <slug>  log in as <slug>.<role>@e2e-sub.test (an account made by prepare-accounts.sh: expired-trial,
                      expired-active, cancelled-ended, paused, past-due, at-limit, healthy); --role owner|staff|kho
                      (default owner). The UI test gets E2E_SCENARIO and runs the test10* subscription flows.
@@ -36,6 +38,7 @@ EOF
 
 FRESH=0
 ONLY=""
+SKIPS=()
 SCENARIO=""; ROLE_ARG=""; ARG_EMAIL=""; ARG_PASSWORD=""; LABEL=""
 LANG_ARGS=()
 while [ $# -gt 0 ]; do
@@ -44,6 +47,7 @@ while [ $# -gt 0 ]; do
     --fresh) FRESH=1 ;;
     --account) E2E_ACCOUNT="${2:?--account needs merchant|staff|inventory}"; shift ;;
     --only) ONLY="${2:?--only needs a test method}"; shift ;;
+    --skip) SKIPS+=("-skip-testing:POS ADBDUITests/AnyRentE2ETests/${2:?--skip needs a test method}"); shift ;;
     --scenario) SCENARIO="${2:?--scenario needs a slug}"; shift ;;
     --role) ROLE_ARG="${2:?--role needs a role}"; shift ;;
     --email) ARG_EMAIL="${2:?--email needs a value}"; shift ;;
@@ -108,6 +112,8 @@ fi
 
 xcrun simctl boot "$UDID" 2>/dev/null || true
 xcrun simctl bootstatus "$UDID" -b >/dev/null
+# A scenario / --email run must log in as that account: the app keeps the previous session, so always start clean.
+if [ -n "$SCENARIO" ] || [ -n "$ARG_EMAIL" ]; then FRESH=1; fi
 if [ "$FRESH" = 1 ]; then
   echo "Uninstalling $BUNDLE_ID"
   xcrun simctl uninstall "$UDID" "$BUNDLE_ID" 2>/dev/null || true
@@ -137,6 +143,7 @@ set +e
     -derivedDataPath "$DERIVED" \
     -resultBundlePath "$RESULT" \
     -only-testing:"$TARGET" \
+    ${SKIPS[@]+"${SKIPS[@]}"} \
     ${LANG_ARGS[@]+"${LANG_ARGS[@]}"} \
     API_BASE_URL="$(e2e_api_base_url)" \
     SWIFT_PRECOMPILE_BRIDGING_HEADER=NO \

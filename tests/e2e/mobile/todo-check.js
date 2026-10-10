@@ -14,7 +14,10 @@ const nums = (o) => (o?.orders || []).map((x) => x.orderNumber).sort().join(',')
 (async () => {
   const all = notes(process.argv[2]);
   const label = (k) => (all.map((n) => new RegExp(`^TODO ${k} \\| (.*)$`).exec(n)).filter(Boolean).pop() || [])[1];
-  const rows = (k) => (all.map((n) => new RegExp(`^TODOLIST ${k} \\| rows=(.*)$`).exec(n)).filter(Boolean).pop() || [])[1];
+  const listLine = (k) => (all.map((n) => new RegExp(`^TODOLIST ${k} \\| rows=([^|]*?)(?: \\| first=(.*))?$`).exec(n)).filter(Boolean).pop() || []);
+  const rows = (k) => listLine(k)[1];
+  // the late / no-show screens list the tile's orders in their first section and more orders below it
+  const first = (k) => (listLine(k)[2] !== undefined ? listLine(k)[2] : listLine(k)[1]);
   if (!label('pickups')) throw new Error('no TODO notes (run test7mTodayCounters with --scenario ops)');
   const api = await login(process.env.MOBILE_STAT_EMAIL || 'ops.owner@e2e-sub.test', process.env.MOBILE_STAT_PASSWORD || 'merchant123');
   const d = await api.get(`/api/analytics/outlet-operations?${new URLSearchParams({ timeZone: ZONE })}`);
@@ -30,9 +33,9 @@ const nums = (o) => (o?.orders || []).map((x) => x.orderNumber).sort().join(',')
   results.push(check(ns === d.noShows.count, 'Quá ngày lấy', `app=${ns} api=${d.noShows.count}`));
   const tm = ints(label('tomorrow'));
   results.push(check(tm[0] === d.tomorrow.pickups && tm[1] === d.tomorrow.returns, 'Ngày mai line', `app="${label('tomorrow')}" api pickups=${d.tomorrow.pickups} returns=${d.tomorrow.returns}`));
-  if (rows('late') !== undefined) results.push(check(rows('late') === nums(d.overdueReturns), 'Trễ hạn trả list = the orders', `app=[${rows('late')}] api=[${nums(d.overdueReturns)}]`));
+  if (rows('late') !== undefined) results.push(check(first('late') === nums(d.overdueReturns), 'Trễ hạn trả list = the orders', `app=[${first('late')}] (all rows [${rows('late')}]) api=[${nums(d.overdueReturns)}]`));
   else results.push(fail('Trễ hạn trả list', 'not opened'));
-  if (rows('noshows') !== undefined) results.push(check(rows('noshows') === nums(d.noShows), 'Chưa lấy đồ list = the orders', `app=[${rows('noshows')}] api=[${nums(d.noShows)}]`));
+  if (rows('noshows') !== undefined) results.push(check(first('noshows') === nums(d.noShows), 'Chưa lấy đồ list = the orders', `app=[${first('noshows')}] (all rows [${rows('noshows')}]) api=[${nums(d.noShows)}]`));
   else results.push(fail('Chưa lấy đồ list', 'not opened'));
   if (rows('orders-todo') !== undefined) {
     const have = new Set(rows('orders-todo').split(',').filter(Boolean));
