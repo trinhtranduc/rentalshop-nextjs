@@ -6,6 +6,8 @@
  * (hand-overs, and returns with `kind=return`) and, on today, the late returns of
  * GET /api/analytics/outlet-operations. Month and day are kept in the URL.
  * #852: an owner with 2+ branches picks one branch or all (`?outlet=`); the routes keep it inside the shop.
+ * #849: the calendar routes stay open to an expired / paused / cancelled / past-due shop, so the page reads the
+ * subscription status and shows its retry cards, like the other pages.
  */
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -20,6 +22,7 @@ import {
   calendarApi,
   getLocalDateKey,
   parseApiResponse,
+  subscriptionsApi,
   type CalendarOrderSummary,
 } from '@rentalshop/utils';
 import { useShopToday } from '../hooks/useShopToday';
@@ -41,6 +44,7 @@ import {
   mondayFirst,
   parseMonth,
   shiftMonth,
+  subscriptionBlocked,
   type CountResponseLike,
   type DayCount,
   type DayOrderLike,
@@ -202,6 +206,21 @@ function CalendarContent() {
     };
   }, [authLoading, user, branchesReady, outletId, month.month, month.year, todayKey, nonce]);
 
+  // #849: blocked subscription -> the month and day retry cards; Thử lại reads the status again (nonce)
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let live = true;
+    subscriptionsApi
+      .getCurrentUserSubscriptionStatus()
+      .then((res) => live && setBlocked(subscriptionBlocked(res)))
+      .catch(() => live && setBlocked(false));
+    return () => {
+      live = false;
+    };
+  }, [authLoading, user, nonce]);
+  const retryAll = () => setNonce((n) => n + 1);
+
   const ready = !authLoading && !!user && branchesReady;
   const setOutlet = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -286,17 +305,17 @@ function CalendarContent() {
               </span>
             ))}
           </div>
-          {countState.failed && (
+          {(countState.failed || blocked) && (
             <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-ar-subtle px-4 py-3 text-sm text-ar-muted">
               <span>{t('loadFailed')}</span>
-              <button type="button" onClick={() => setNonce((n) => n + 1)} className="h-8 rounded-[10px] border border-ar-line px-3 text-sm font-semibold text-ar-ink hover:bg-ar-subtle">
+              <button type="button" onClick={retryAll} className="h-8 rounded-[10px] border border-ar-line px-3 text-sm font-semibold text-ar-ink hover:bg-ar-subtle">
                 {t('retry')}
               </button>
             </div>
           )}
           <div className="grid grid-cols-7" aria-busy={countState.loading || undefined}>
             {cells.map((c) => {
-              const count = c.inMonth ? counts.get(c.key) : undefined;
+              const count = c.inMonth && !blocked ? counts.get(c.key) : undefined;
               const isSel = c.key === selected;
               return (
                 <button
@@ -338,9 +357,9 @@ function CalendarContent() {
           </div>
           <DaySection
             kind="pickup"
-            heading={t('sections.pickups', { count: pickups.total })}
-            rows={pickups.rows}
-            state={pickups}
+            heading={t('sections.pickups', { count: blocked ? 0 : pickups.total })}
+            rows={blocked ? [] : pickups.rows}
+            state={{ ...pickups, failed: pickups.failed || blocked, hasMore: pickups.hasMore && !blocked, retry: blocked ? retryAll : pickups.retry }}
             empty={t('emptyPickups')}
             weekdays={weekdays}
             t={t}
@@ -348,9 +367,9 @@ function CalendarContent() {
           />
           <DaySection
             kind="return"
-            heading={t('sections.returns', { count: returns.total + lateExtra })}
-            rows={returnRows}
-            state={returns}
+            heading={t('sections.returns', { count: blocked ? 0 : returns.total + lateExtra })}
+            rows={blocked ? [] : returnRows}
+            state={{ ...returns, failed: returns.failed || blocked, hasMore: returns.hasMore && !blocked, retry: blocked ? retryAll : returns.retry }}
             empty={t('emptyReturns')}
             weekdays={weekdays}
             t={t}
