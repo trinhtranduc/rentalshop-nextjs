@@ -66,7 +66,7 @@ describe('admin dialogs and forms (#807)', () => {
 
   it('the add-on dialog uses the dialog surface and footer', () => {
     const src = read('apps/admin/app/merchants/[id]/plan-limit-addons/page.tsx');
-    expect(src).toMatch(/<DialogContent className="[^"]*\bar-dialog\b/);
-    expect(src).toMatch(/ar-dialog-footer/);
+    expect(src).toMatch(/const PHONE_DIALOG = '[^']*\bar-dialog\b/);
+    expect(src).toMatch(/const PHONE_FOOTER = '[^']*\bar-dialog-footer\b/);
   });
 });

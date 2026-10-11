@@ -1,0 +1,236 @@
+/* #807 (step 5 of #802): dialogs and forms in the portal (apps/client) style.
+   Only admin loads this file (imported by providers/ToastProvider.tsx), so the shared @rentalshop/ui components
+   that carry these class names look the same in apps/client. Colours come from the --ar-* tokens. */
+
+/* ---- dialog surface (.ar-dialog on a DialogContent) ---- */
+.ar-dialog {
+  background: rgb(var(--ar-surface));
+  color: rgb(var(--ar-ink));
+  border: 1px solid rgb(var(--ar-line));
+  border-radius: 0.75rem;
+  box-shadow: var(--ar-shadow);
+}
+@media (max-width: 767px) {
+  /* a full-screen dialog on a phone: no card edge */
+  .ar-dialog {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+.ar-dialog h2 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: rgb(var(--ar-ink));
+}
+.ar-dialog p[id^='radix-'],
+.ar-dialog [id^='radix-'][class*='text-sm'] {
+  color: rgb(var(--ar-muted));
+}
+.ar-dialog label {
+  font-weight: 600;
+  color: rgb(var(--ar-ink));
+}
+/* 44px fields with the portal border and focus ring */
+.ar-dialog input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+.ar-dialog textarea,
+.ar-dialog select,
+.ar-dialog [role='combobox'] {
+  min-height: 44px;
+  border-radius: 0.5rem;
+  border-color: rgb(var(--ar-line));
+  background: rgb(var(--ar-surface));
+  color: rgb(var(--ar-ink));
+  font-size: 0.9375rem;
+}
+.ar-dialog input:focus-visible,
+.ar-dialog textarea:focus-visible,
+.ar-dialog [role='combobox']:focus-visible {
+  outline: none;
+  border-color: rgb(var(--ar-primary));
+  box-shadow: 0 0 0 3px rgb(var(--ar-primary) / 0.18);
+}
+.ar-dialog input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: rgb(var(--ar-primary));
+}
+
+/* ---- footer: blue primary, quiet cancel (.ar-dialog-footer on the action row) ---- */
+.ar-dialog-footer {
+  background: rgb(var(--ar-surface));
+  border-color: rgb(var(--ar-line));
+}
+.ar-dialog-footer button {
+  min-height: 44px;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+.ar-dialog-footer button:not(:last-child) {
+  background: transparent;
+  color: rgb(var(--ar-ink-2));
+  border-color: rgb(var(--ar-line));
+}
+.ar-dialog-footer button:last-child:not(:disabled) {
+  background: rgb(var(--ar-primary));
+  color: rgb(var(--ar-on-primary));
+  border-color: transparent;
+}
+.ar-dialog-footer button:last-child:disabled {
+  opacity: 0.5;
+}
+@media (min-width: 768px) {
+  .ar-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+  .ar-dialog-footer button {
+    min-width: 6.5rem;
+  }
+}
+
+/* ---- confirmation dialogs (Suspend / Cancel / Delete): .ar-confirm + data-confirm-type ---- */
+.ar-confirm {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--ar-line));
+  background: rgb(var(--ar-surface));
+  box-shadow: var(--ar-shadow);
+}
+.ar-confirm h2 {
+  font-weight: 700;
+  color: rgb(var(--ar-ink));
+}
+.ar-confirm > div:first-child svg {
+  flex: none;
+}
+.ar-confirm[data-confirm-type='danger'] > div:first-child svg,
+.ar-confirm[data-confirm-type='warning'] > div:first-child svg {
+  color: rgb(var(--ar-danger));
+}
+/* the action row: confirm on top and full width on a phone, a right-aligned pair from 768px */
+.ar-confirm > div:last-of-type {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.ar-confirm > div:last-of-type > * {
+  margin: 0 !important;
+}
+.ar-confirm > div:first-child,
+.ar-confirm > div:first-child * {
+  text-align: left;
+}
+.ar-confirm button:not([aria-label]):not([class*='absolute']) {
+  min-height: 44px;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  width: 100%;
+}
+.ar-confirm > div:last-of-type > button:first-child {
+  background: transparent;
+  color: rgb(var(--ar-ink-2));
+  border: 1px solid rgb(var(--ar-line));
+}
+.ar-confirm[data-confirm-type='danger'] > div:last-of-type > button:last-child,
+.ar-confirm[data-confirm-type='warning'] > div:last-of-type > button:last-child {
+  background: rgb(var(--ar-danger));
+  color: #fff;
+  border-color: transparent;
+}
+.ar-confirm[data-confirm-type='danger'] > div:last-of-type > button:last-child:hover:not(:disabled),
+.ar-confirm[data-confirm-type='warning'] > div:last-of-type > button:last-child:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+.ar-confirm[data-confirm-type='info'] > div:last-of-type > button:last-child,
+.ar-confirm[data-confirm-type='success'] > div:last-of-type > button:last-child {
+  background: rgb(var(--ar-primary));
+  color: rgb(var(--ar-on-primary));
+  border-color: transparent;
+}
+@media (min-width: 768px) {
+  .ar-confirm > div:last-of-type {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .ar-confirm button:not([aria-label]):not([class*='absolute']) {
+    width: auto;
+    min-width: 6.5rem;
+  }
+}
+
+/* ---- page forms (subscription create / edit, merchant edit) ---- */
+.ar-form-section {
+  background: rgb(var(--ar-surface));
+  border: 1px solid rgb(var(--ar-line));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: var(--ar-shadow);
+}
+@media (min-width: 768px) {
+  .ar-form-section {
+    padding: 1.25rem;
+  }
+}
+.ar-form-section > h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgb(var(--ar-ink));
+}
+.ar-form-section > h3 svg {
+  color: rgb(var(--ar-primary));
+}
+.ar-form-section label {
+  font-weight: 600;
+  color: rgb(var(--ar-ink));
+}
+.ar-form-section input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+.ar-form-section textarea,
+.ar-form-section [role='combobox'] {
+  min-height: 44px;
+  border-radius: 0.5rem;
+  border-color: rgb(var(--ar-line));
+  background: rgb(var(--ar-surface));
+}
+.ar-form-section input:focus-visible,
+.ar-form-section textarea:focus-visible,
+.ar-form-section [role='combobox']:focus-visible {
+  outline: none;
+  border-color: rgb(var(--ar-primary));
+  box-shadow: 0 0 0 3px rgb(var(--ar-primary) / 0.18);
+}
+.ar-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.ar-form-actions button {
+  min-height: 44px;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+.ar-form-actions button:not([type='submit']):not(:last-child) {
+  background: transparent;
+  color: rgb(var(--ar-ink-2));
+  border-color: rgb(var(--ar-line));
+}
+@media (max-width: 767px) {
+  /* the action bar stays at the bottom of the screen while the form scrolls */
+  .ar-form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin: 0 -1rem;
+    padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+    background: rgb(var(--ar-surface));
+    border-top: 1px solid rgb(var(--ar-line));
+  }
+  .ar-form-actions button:last-child {
+    flex: 1;
+  }
+}
