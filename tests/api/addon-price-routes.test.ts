@@ -38,6 +38,7 @@ jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/validation-schemas'),
   ...jest.requireActual('../../packages/utils/src/core/plan-addon-rules'),
   ...jest.requireActual('../../packages/utils/src/core/addon-pricing'),
+  ...jest.requireActual('../../packages/utils/src/core/subscription-billing-calculations'),
   ResponseBuilder: {
     error: (code: string) => ({ success: false, code }),
     success: (code: string, data: any) => ({ success: true, code, data }),
@@ -228,7 +229,7 @@ describe('GET /api/merchants/[id]/addons (#850)', () => {
     mockMerchantAddons.listForMerchant.mockResolvedValue([]);
     mockAddonPrices.list.mockResolvedValue([]);
     const { getPlanLimitsInfo } = jest.requireMock('@rentalshop/utils/server');
-    getPlanLimitsInfo.mockResolvedValue({ planLimits: SINGLE, addonLimits: { outlets: 0, users: 0, products: 0, customers: 0, orders: 0 }, totalLimits: SINGLE, currentUsage: {} });
+    getPlanLimitsInfo.mockResolvedValue({ planLimits: SINGLE, basePlanLimits: SINGLE, addonLimits: { outlets: 0, users: 0, products: 0, customers: 0, orders: 0 }, currentCounts: {} });
     const res: any = await listShopAddons(req(), { params: { id: '7' } });
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty('addons');
@@ -269,18 +270,31 @@ describe('wiring (#850)', () => {
     for (const c of CODES) expect(flat).toContain(`"${c}"`);
   });
 
-  it('ErrorCode has the new codes and iOS knows them', () => {
+  it('ErrorCode has the new codes (admin-only routes: the POS apps never receive them)', () => {
     const errors = read('packages/utils/src/core/errors.ts');
-    const ios = read('apps/mobile/POS ADBD/Model/ErrorCodes.swift');
-    for (const c of CODES) {
-      expect(errors).toContain(`${c} = '${c}'`);
-      expect(ios).toContain(`"${c}"`);
-    }
+    for (const c of CODES) expect(errors).toContain(`${c} = '${c}'`);
   });
 
   it('admin menu: Plans → Add-on prices', () => {
     const nav = read('apps/admin/app/components/shell/nav.ts');
     expect(nav).toMatch(/label: 'Add-on prices', href: '\/plans\/addon-prices'/);
+  });
+
+  it('OPS sees Plans → Add-on prices only (read), ADMIN sees every Plans item', () => {
+    const { filterAdminMenuByRole } = jest.requireActual('../../packages/ui/src/utils/admin-menu-filter');
+    const items = [
+      { label: 'Plans', href: '/plans', subItems: [
+        { label: 'Plans', href: '/plans' },
+        { label: 'Add-on prices', href: '/plans/addon-prices' },
+        { label: 'Stripe Billing', href: '/plans/billing' },
+      ] },
+      { label: 'Merchants', href: '/merchants' },
+    ];
+    const ops = filterAdminMenuByRole(items, 'OPS');
+    const plans = ops.find((i: any) => i.label === 'Plans');
+    expect(plans.subItems.map((s: any) => s.href)).toEqual(['/plans/addon-prices']);
+    const admin = filterAdminMenuByRole(items, 'ADMIN');
+    expect(admin.find((i: any) => i.label === 'Plans').subItems).toHaveLength(3);
   });
 
   it('the migration is additive: no DROP, no RENAME, no column type change', () => {

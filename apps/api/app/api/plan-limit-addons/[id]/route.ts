@@ -85,6 +85,12 @@ export async function PUT(
         );
       }
 
+      // #850: a priced add-on (bought from the price list) holds packs × pack size; it changes only from the
+      // shop's Add-on tab (removal at the end of the period), never here
+      if ((existingAddon as { addonPriceId?: number | null }).addonPriceId != null) {
+        return NextResponse.json(ResponseBuilder.error('PRICED_ADDON_READ_ONLY'), { status: 422 });
+      }
+
       const body = await request.json();
       // The id comes from the URL; the schema asks for it, so it is added here and never written (#800)
       const parsed = planLimitAddonUpdateSchema.safeParse({ ...body, id });
@@ -198,6 +204,12 @@ export async function DELETE(
           ResponseBuilder.error('PLAN_LIMIT_ADDON_NOT_FOUND'),
           { status: 404 }
         );
+      }
+
+      // #850: a priced add-on (bought from the price list) holds packs × pack size; it changes only from the
+      // shop's Add-on tab (removal at the end of the period), never here
+      if ((existingAddon as { addonPriceId?: number | null }).addonPriceId != null) {
+        return NextResponse.json(ResponseBuilder.error('PRICED_ADDON_READ_ONLY'), { status: 422 });
       }
 
       // Validate deletion only for active addons
