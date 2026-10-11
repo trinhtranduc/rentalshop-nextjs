@@ -17,7 +17,11 @@ const mockTx = {
   payment: { create: jest.fn() },
   subscription: { update: jest.fn() },
 };
-const mockDb = { subscriptions: { findById: jest.fn() } };
+const mockDb = {
+  subscriptions: { findById: jest.fn() },
+  // add-ons and modules of the shop (#782): none unless a test gives some
+  billingModules: { renewalItems: jest.fn(), applyRenewal: jest.fn() },
+};
 jest.mock('@rentalshop/database', () => ({
   db: mockDb,
   prisma: { $transaction: (fn: any) => fn(mockTx) },
@@ -27,6 +31,7 @@ jest.mock('@rentalshop/database', () => ({
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/billing-dates'),
   ...jest.requireActual('../../packages/utils/src/core/subscription-billing-calculations'),
+  ...jest.requireActual('../../packages/utils/src/core/module-pricing'),
   ResponseBuilder: {
     error: (code: string) => ({ success: false, code, message: code, error: code }),
     success: (code: string, data: any) => ({ success: true, code, data }),
@@ -71,6 +76,8 @@ describe('POST /api/subscriptions/[id]/renew (#779)', () => {
     jest.useFakeTimers().setSystemTime(NOW);
     ctx = admin;
     givenSubscription();
+    mockDb.billingModules.renewalItems.mockResolvedValue([]);
+    mockDb.billingModules.applyRenewal.mockResolvedValue(undefined);
     mockTx.payment.create.mockImplementation(async ({ data }: any) => ({ id: 1, ...data }));
     mockTx.subscription.update.mockImplementation(async ({ data }: any) => ({
       id: 7,
@@ -129,6 +136,18 @@ describe('POST /api/subscriptions/[id]/renew (#779)', () => {
     const res = await call({ ...base, duration: 1 });
     expect(Object.keys(res.body.data)).toEqual(expect.arrayContaining(['subscription', 'payment', 'renewal']));
     expect(res.body.data.renewal.totalDue).toBeCloseTo(29, 2);
+  });
+
+  it('adds the shop\'s add-ons and modules to the total, and ends the ones marked for removal (#782)', async () => {
+    mockDb.billingModules.renewalItems.mockResolvedValue([
+      { id: 1, name: 'Thêm nhân viên', kind: 'quantity', isActive: true, removeAtPeriodEnd: false, quantity: 2, unitPrice: 30, limits: { users: 1 } },
+    ]);
+    const res = await call({ ...base, duration: 1 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create.mock.calls[0][0].data.amount).toBeCloseTo(29 + 60, 2); // plan + 2 × 30
+    expect(mockTx.subscription.update.mock.calls[0][0].data.amount).toBeCloseTo(29, 2); // the subscription keeps the plan price
+    expect(mockDb.billingModules.applyRenewal).toHaveBeenCalledWith(mockTx, 2);
+    expect(res.body.data.modules).toEqual([expect.objectContaining({ name: 'Thêm nhân viên', quantity: 2, unitPrice: 30 })]);
   });
 
   it('a duration other than 1/3/6/12 is refused with 400 INVALID_DURATION', async () => {
