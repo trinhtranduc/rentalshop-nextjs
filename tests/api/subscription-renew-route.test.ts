@@ -173,6 +173,20 @@ describe('POST /api/subscriptions/[id]/renew (#779)', () => {
     expect(lines.map((l: any) => [l.id, l.renew])).toEqual([[1, true], [2, false], [3, false]]);
   });
 
+  it('#870: a renewed add-on takes the current pack size and its pending fewer packs', async () => {
+    givenSubscription({ currency: 'VND', interval: 'monthly', plan: { id: 3, name: 'Enterprise', basePrice: 399000, currency: 'VND' } });
+    mockDb.merchantAddons.renewalItems.mockResolvedValueOnce({
+      items: [{ id: 1, addonPriceId: 10, packs: 3, nextPacks: 1, unitPrice: 40000, isActive: true, name: 'Gói nhân viên', limitKind: 'users', packSize: 2 }],
+      catalog: new Map([[10, { id: 10, monthlyPrice: 40000, isActive: true, packSize: 3 }]]),
+    });
+    const res = await call({ ...base, duration: 1 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create.mock.calls[0][0].data.amount).toBe(399000 + 40000);
+    expect(res.body.data.addons).toEqual([expect.objectContaining({ id: 1, packs: 1, packSize: 3, monthlyAmount: 40000 })]);
+    const lines = mockDb.merchantAddons.applyRenewal.mock.calls[0][1];
+    expect(lines).toEqual([expect.objectContaining({ id: 1, renew: true, packs: 1, packSize: 3, limitKind: 'users' })]);
+  });
+
   it("a merchant cannot renew another merchant's subscription (403, nothing written)", async () => {
     ctx = { ...merchant2, user: { ...merchant2.user, merchantId: 9 }, userScope: { merchantId: 9 } };
     const res = await call({ ...base, duration: 1 });

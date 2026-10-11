@@ -740,7 +740,7 @@ bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi
 |---|---|---|---|
 | BF-ADD-01 | Tạo bảng giá | ADMIN `POST /api/addon-prices`: +1 user 30.000, +2 user 40.000; `GET` | 201; đúng loại, số lượng mỗi gói, giá, `VND`, đang bán; danh sách có `shopsUsing` 0 |
 | BF-ADD-02 | Merchant không đụng bảng giá | MERCHANT gọi `GET/POST/PUT /api/addon-prices`, `POST /api/merchants/[id]/addons`; ADMIN gửi loại lạ, gói 0, giá âm | 403; 400 |
-| BF-ADD-03 | Sửa giá, tạm tắt, số lượng mỗi gói | đổi giá + số lượng mỗi gói khi chưa ai dùng; shop mua; đổi số lượng mỗi gói; tạm tắt | 200; 422 `ADDON_PRICE_IN_USE`; 200 `isActive` false |
+| BF-ADD-03 | Sửa giá, tạm tắt, số lượng mỗi gói | đổi giá + số lượng mỗi gói khi chưa ai dùng; shop mua; đổi số lượng mỗi gói; tạm tắt | 200; 200 (đổi được cả khi đã có shop dùng, #870); 200 `isActive` false |
 | BF-ADD-04 | Báo giá giữa kỳ | `GET .../addons/quote?addonPriceId&packs=2` | `periodDays`, `remainingDays` theo ngày VN; `amountDue` = round(80.000 × còn ÷ kỳ) |
 | BF-ADD-05 | Mua để vượt giới hạn user | 3/3 user; thêm user; mua 1 gói +2 user; thêm 3 user | 422 `PLAN_LIMIT_EXCEEDED`; mua 201, Payment `PLAN_CHANGE` đúng số tiền; 2 user được, user thứ 3 bị 422; giới hạn 3 + 2 = 5 |
 | BF-ADD-06 | Giá trong body bị bỏ qua | gửi `unitPrice: 1` | item lưu giá 40.000 từ bảng giá |
@@ -752,6 +752,12 @@ bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi
 | BF-ADD-12 | Không gỡ khi đang dùng vượt | 4/4 user (3 + 1 add-on); đánh dấu gỡ | 422 `CANNOT_DELETE_ADDON_LIMIT_EXCEEDED` |
 | BF-ADD-13 | Gia hạn | 3 add-on: 2 × user (giá lên 32.000), 1 sản phẩm đã đánh dấu gỡ, 1 khách mà dòng giá đã tạm tắt; xem trước; `POST /renew` 1 tháng | xem trước và gia hạn: gói 399.000 + add-on 64.000; Payment = 463.000; `subscription.amount` = 399.000; chỉ item user được gia hạn, giá mới 32.000; 2 item còn lại có `endsAt` |
 | BF-ADD-14 | Route cũ | `GET` plan-limit-addons; `PUT`/`DELETE` item có giá; `PUT` add-on cũ miễn phí | thấy trường mới; 422 `PRICED_ADDON_READ_ONLY`; add-on cũ vẫn sửa được |
+| BF-ADD-15 | Dùng thử rồi gia hạn (#870) | TRIAL mua 1 gói +2 user 40.000; `POST /renew` 1 tháng | mua thu 0; Payment gia hạn = 399.000 + 40.000; ACTIVE |
+| BF-ADD-16 | Gia hạn thêm ngày có add-on (#870) | 2 × user 30.000; `extend/calculate` +10 ngày; `POST /extend` `PAYMENT_RECEIVED` không gửi `amount` | `addonMonthlyTotal` 60.000; `totalPrice` = phần gói + phần add-on (ngày ÷ ngày kỳ); Payment `PLAN_EXTENSION` = `totalPrice` |
+| BF-ADD-17 | Đổi số lượng mỗi gói khi đang dùng (#870) | shop mua gói +2 user; sửa dòng thành +3; gia hạn | 200; trước gia hạn giới hạn 3 + 2; sau gia hạn item `packSize` 3, cột users 3, giới hạn 3 + 3 |
+| BF-ADD-18 | Đổi sang gói 1 chi nhánh khi còn add-on chi nhánh (#870) | gói 3 chi nhánh + add-on chi nhánh, kỳ đã hết; đổi sang gói 1 chi nhánh; gỡ add-on; đổi lại | 422 `PLAN_CHANGE_REMOVE_OUTLET_ADDONS`, không có Payment, gói không đổi; sau khi gỡ: 200, Payment 399.000 |
+| BF-ADD-19 | Đổi gói từ dùng thử (#870) | TRIAL gói 0 ₫ + add-on user 30.000; đổi sang gói 399.000 | `addonPeriodPrice` 30.000, `addonCreditValue` 0; Payment `PLAN_CHANGE` 429.000; ACTIVE |
+| BF-ADD-20 | Tăng / giảm số gói (#870) | 1 gói +2 user; `PATCH packs: 3`; `PATCH packs: 1`; gia hạn | tăng: thu ngay round(40.000 × 2 × còn ÷ kỳ), cột users 6, giới hạn 9; giảm: không thu, `nextPacks` 1, giới hạn vẫn 9, xem trước gia hạn add-on 40.000; sau gia hạn packs 1, users 2, giới hạn 5 |
 
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 

@@ -114,7 +114,7 @@ describeAdd('BF-ADD price list: one kind + pack size + VND price per pack', () =
     expect((await a.post('/api/addon-prices', { name: uniqueName('x'), limitKind: 'users', packSize: 1, monthlyPrice: -1 })).status).toBe(400);
   });
 
-  test('BF-ADD-03 the admin pauses a row and changes its price; pack size cannot change once a shop uses it', async () => {
+  test('BF-ADD-03 the admin pauses a row and changes its price; pack size changes even once a shop uses it (#870)', async () => {
     const row = await createRow({ name: 'Thêm nhân viên', limitKind: 'users', packSize: 1, monthlyPrice: 30000 });
     const a = await admin();
     const r = await a.put(`/api/addon-prices/${row.id}`, { monthlyPrice: 35000, packSize: 3 });
@@ -124,7 +124,9 @@ describeAdd('BF-ADD price list: one kind + pack size + VND price per pack', () =
     const world = S.createWorld('add-pack', { planId: pricedPlan('add-pack') });
     setPeriod(world.merchantId);
     expect(created(await buy(world.merchantId, row.id, 1))).toBe(true);
-    expect(brief(await a.put(`/api/addon-prices/${row.id}`, { packSize: 1 }))).toEqual({ status: 422, code: 'ADDON_PRICE_IN_USE' });
+    const packEdit = await a.put(`/api/addon-prices/${row.id}`, { packSize: 1 });
+    expect(packEdit.status).toBe(200);
+    expect((packEdit.body.data.addonPrice || packEdit.body.data).packSize).toBe(1);
     const off = await a.put(`/api/addon-prices/${row.id}`, { isActive: false });
     expect(off.status).toBe(200);
     expect((off.body.data.addonPrice || off.body.data).isActive).toBe(false);
@@ -337,5 +339,154 @@ describeAdd('BF-ADD old plan-limit-addons routes', () => {
     expect(brief(await a.put(`/api/plan-limit-addons/${addonId}`, { users: 9 }))).toEqual({ status: 422, code: 'PRICED_ADDON_READ_ONLY' });
     expect(brief(await a.delete(`/api/plan-limit-addons/${addonId}`))).toEqual({ status: 422, code: 'PRICED_ADDON_READ_ONLY' });
     expect((await a.put(`/api/plan-limit-addons/${legacyId}`, { notes: 'still editable' })).status).toBe(200);
+  });
+});
+
+// ============================================================================================================
+// F. #870: add-ons on every paid-period path, pack size from the next renewal, packs up / down, plan switch
+// ============================================================================================================
+
+const subRow = (merchantId) => {
+  const [id, status, start, end] = S.sql(
+    `SELECT id || '|' || status || '|' || to_char("currentPeriodStart", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') || '|' || to_char("currentPeriodEnd", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') FROM "Subscription" WHERE "merchantId" = ${merchantId}`
+  ).split('|');
+  return { id: Number(id), status, start: new Date(start), end: new Date(end) };
+};
+const addonRow = (id) => {
+  const [packs, nextPacks, packSize, users, unitPrice] = S.sql(
+    `SELECT packs || '|' || coalesce("nextPacks"::text, '') || '|' || "packSize" || '|' || users || '|' || "unitPrice" FROM "PlanLimitAddon" WHERE id = ${id}`
+  ).split('|');
+  return { packs: Number(packs), nextPacks: nextPacks === '' ? null : Number(nextPacks), packSize: Number(packSize), users: Number(users), unitPrice: Number(unitPrice) };
+};
+
+describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and packs changes', () => {
+  test('BF-ADD-15 a trial shop adds an add-on for 0 now; the first paid renewal charges plan + add-on', async () => {
+    const row = await createRow({ name: 'Gói 2 nhân viên', limitKind: 'users', packSize: 2, monthlyPrice: 40000 });
+    const world = S.createWorld('add-15', { planId: pricedPlan('add-15') });
+    setPeriod(world.merchantId, { status: 'TRIAL' });
+    const payments = paymentCount(world.merchantId);
+    const bought = await buy(world.merchantId, row.id, 1);
+    expect(bought.body.data.quote).toMatchObject({ amountDue: 0, reason: 'trial' });
+    expect(paymentCount(world.merchantId)).toBe(payments);
+    const r = await (await admin()).post(`/api/subscriptions/${subscriptionId(world.merchantId)}/renew`, { method: 'TRANSFER', duration: 1, transactionId: `E2E-15-${Date.now()}` });
+    expect(r.status).toBe(200);
+    expect(lastPayment(world.merchantId).amount).toBe(PLAN_PRICE + 40000);
+    expect(r.body.data.subscription.status).toBe('ACTIVE');
+  });
+
+  test('BF-ADD-16 extend: the preview and the payment count plan + add-on for the extra days', async () => {
+    const row = await createRow({ name: 'Thêm nhân viên', limitKind: 'users', packSize: 1, monthlyPrice: 30000 });
+    const world = S.createWorld('add-16', { planId: pricedPlan('add-16', { users: 5 }) });
+    const { end } = setPeriod(world.merchantId);
+    expect(created(await buy(world.merchantId, row.id, 2))).toBe(true);
+    const a = await admin();
+    const sid = subscriptionId(world.merchantId);
+    const newEnd = new Date(new Date(end).getTime() + 10 * DAY_MS).toISOString();
+    const calc = await a.get(`/api/subscriptions/${sid}/extend/calculate?newEndDate=${encodeURIComponent(newEnd)}`);
+    expect(calc.status).toBe(200);
+    const d = calc.body.data;
+    expect(d.addonMonthlyTotal).toBe(60000);
+    const days = vnDaysBetween(end, newEnd);
+    expect(d.extensionDays).toBe(days);
+    expect(d.extensionPrice).toBeCloseTo((days / d.selectedPeriodDays) * PLAN_PRICE, 1);
+    expect(d.addonPrice).toBeCloseTo((days / d.selectedPeriodDays) * 60000, 1);
+    expect(d.totalPrice).toBeCloseTo(d.extensionPrice + d.addonPrice, 1);
+
+    const r = await a.post(`/api/subscriptions/${sid}/extend`, { newEndDate: newEnd, method: 'PAYMENT_RECEIVED', sendEmail: false });
+    expect(r.status).toBe(200);
+    expect(lastPayment(world.merchantId)).toMatchObject({ type: 'PLAN_EXTENSION' });
+    expect(lastPayment(world.merchantId).amount).toBeCloseTo(d.totalPrice, 1);
+  });
+
+  test('BF-ADD-17 pack size 2 → 3 while a shop uses the row: +2 until the renewal, +3 after it', async () => {
+    const row = await createRow({ name: 'Gói nhân viên', limitKind: 'users', packSize: 2, monthlyPrice: 40000 });
+    const world = S.createWorld('add-17', { planId: pricedPlan('add-17', { users: 3 }) });
+    setPeriod(world.merchantId);
+    const item = (await buy(world.merchantId, row.id, 1)).body.data.addon;
+    const a = await admin();
+    const edit = await a.put(`/api/addon-prices/${row.id}`, { packSize: 3 });
+    expect(edit.status).toBe(200);
+    expect((await shop(world.merchantId)).limits.total.users).toBe(5);
+    expect(addonRow(item.id)).toMatchObject({ packSize: 2, users: 2 });
+
+    const r = await a.post(`/api/subscriptions/${subscriptionId(world.merchantId)}/renew`, { method: 'TRANSFER', duration: 1, transactionId: `E2E-17-${Date.now()}` });
+    expect(r.status).toBe(200);
+    expect(lastPayment(world.merchantId).amount).toBe(PLAN_PRICE + 40000);
+    expect(addonRow(item.id)).toMatchObject({ packSize: 3, users: 3, packs: 1 });
+    expect((await shop(world.merchantId)).limits.total.users).toBe(6);
+  });
+
+  test('BF-ADD-18 switching to a single-branch plan with a branch add-on is refused until the add-on is removed', async () => {
+    const branch = await createRow({ name: 'Thêm chi nhánh', limitKind: 'outlets', packSize: 1, monthlyPrice: 150000 });
+    const multi = pricedPlan('add-18m', { outlets: 3 });
+    const single = pricedPlan('add-18s', { outlets: 1 });
+    const world = S.createWorld('add-18', { planId: multi });
+    setPeriod(world.merchantId);
+    const item = (await buy(world.merchantId, branch.id, 1)).body.data.addon;
+    // a new period (the old one ended an hour ago): any plan may be chosen
+    setPeriod(world.merchantId, { start: new Date(Date.now() - 31 * DAY_MS), end: new Date(Date.now() - 3600 * 1000) });
+    const a = await admin();
+    const url = `/api/subscriptions/${subscriptionId(world.merchantId)}/change-plan`;
+    const pay = { billingInterval: 'monthly', method: 'TRANSFER', transactionId: `E2E-18-${Date.now()}` };
+    const payments = paymentCount(world.merchantId);
+    expect(brief(await a.post(url, { planId: single, ...pay }))).toEqual({ status: 422, code: 'PLAN_CHANGE_REMOVE_OUTLET_ADDONS' });
+    expect(paymentCount(world.merchantId)).toBe(payments);
+    expect(Number(S.sql(`SELECT "planId" FROM "Subscription" WHERE "merchantId" = ${world.merchantId}`))).toBe(multi);
+
+    expect((await a.patch(`/api/merchants/${world.merchantId}/addons/${item.id}`, { removeAtPeriodEnd: true })).status).toBe(200);
+    const ok = await a.post(url, { planId: single, ...pay });
+    expect(ok.status).toBe(200);
+    expect(lastPayment(world.merchantId).amount).toBe(PLAN_PRICE);
+  });
+
+  test('BF-ADD-19 change-plan from a trial charges the new plan + the add-on (no add-on credit: nothing was paid)', async () => {
+    const row = await createRow({ name: 'Thêm nhân viên', limitKind: 'users', packSize: 1, monthlyPrice: 30000 });
+    const trialPlan = pricedPlan('add-19t', { users: 5 });
+    const paid = pricedPlan('add-19p', { users: 5 });
+    S.sql(`UPDATE "Plan" SET "basePrice" = 0 WHERE id = ${trialPlan}`);
+    const world = S.createWorld('add-19', { planId: trialPlan });
+    setPeriod(world.merchantId, { status: 'TRIAL' });
+    S.sql(`UPDATE "Subscription" SET amount = 0 WHERE "merchantId" = ${world.merchantId}`);
+    expect(created(await buy(world.merchantId, row.id, 1))).toBe(true);
+    const r = await (await admin()).post(`/api/subscriptions/${subscriptionId(world.merchantId)}/change-plan`, {
+      planId: paid, billingInterval: 'monthly', method: 'TRANSFER', transactionId: `E2E-19-${Date.now()}`,
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.data.planChange).toMatchObject({ addonPeriodPrice: 30000, addonCreditValue: 0 });
+    expect(lastPayment(world.merchantId)).toMatchObject({ amount: PLAN_PRICE + 30000, type: 'PLAN_CHANGE' });
+    expect(subRow(world.merchantId).status).toBe('ACTIVE');
+  });
+
+  test('BF-ADD-20 more packs apply now and charge the extra packs; fewer packs wait for the renewal, no refund', async () => {
+    const row = await createRow({ name: 'Gói 2 nhân viên', limitKind: 'users', packSize: 2, monthlyPrice: 40000 });
+    const world = S.createWorld('add-20', { planId: pricedPlan('add-20', { users: 3 }) });
+    const { start, end } = setPeriod(world.merchantId);
+    const item = (await buy(world.merchantId, row.id, 1)).body.data.addon;
+    const a = await admin();
+    const url = `/api/merchants/${world.merchantId}/addons/${item.id}`;
+
+    const before = new Date();
+    const payments = paymentCount(world.merchantId);
+    const up = await a.patch(url, { packs: 3, method: 'TRANSFER', transactionId: `E2E-20-${Date.now()}` });
+    expect(up.status).toBe(200);
+    const expected = Math.round((40000 * 2 * vnDaysBetween(before, end)) / vnDaysBetween(start, end));
+    expect(up.body.data.quote.amountDue).toBe(expected);
+    expect(paymentCount(world.merchantId)).toBe(payments + 1);
+    expect(lastPayment(world.merchantId)).toMatchObject({ amount: expected, type: 'PLAN_CHANGE' });
+    expect(addonRow(item.id)).toMatchObject({ packs: 3, users: 6 });
+    expect((await shop(world.merchantId)).limits.total.users).toBe(9);
+
+    const down = await a.patch(url, { packs: 1 });
+    expect(down.status).toBe(200);
+    expect(paymentCount(world.merchantId)).toBe(payments + 1);
+    expect(addonRow(item.id)).toMatchObject({ packs: 3, nextPacks: 1, users: 6 });
+    expect((await shop(world.merchantId)).limits.total.users).toBe(9);
+    expect((await shop(world.merchantId)).renewal.monthly).toMatchObject({ addonPrice: 40000 });
+
+    const r = await a.post(`/api/subscriptions/${subscriptionId(world.merchantId)}/renew`, { method: 'TRANSFER', duration: 1, transactionId: `E2E-20R-${Date.now()}` });
+    expect(r.status).toBe(200);
+    expect(lastPayment(world.merchantId).amount).toBe(PLAN_PRICE + 40000);
+    expect(addonRow(item.id)).toMatchObject({ packs: 1, nextPacks: null, users: 2 });
+    expect((await shop(world.merchantId)).limits.total.users).toBe(5);
   });
 });

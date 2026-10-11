@@ -104,7 +104,7 @@ describe('price list routes (#850)', () => {
     expect(bad.status).toBe(400);
   });
 
-  it('PUT changes the price; the pack size of a row in use is refused with 422 ADDON_PRICE_IN_USE', async () => {
+  it('PUT changes the price; the pack size of a row in use changes too (#870: applies from the next renewal)', async () => {
     mockAddonPrices.findById.mockResolvedValue({ id: 1, limitKind: 'users', packSize: 1, monthlyPrice: 30000, isActive: true });
     mockAddonPrices.update.mockImplementation(async (id: number, d: any) => ({ id, ...d }));
     const ok: any = await updatePrice(req({ monthlyPrice: 35000 }), { params: { id: '1' } });
@@ -113,8 +113,8 @@ describe('price list routes (#850)', () => {
 
     mockAddonPrices.countShopsUsing.mockResolvedValue(3);
     const busy: any = await updatePrice(req({ packSize: 2 }), { params: { id: '1' } });
-    expect(busy.status).toBe(422);
-    expect(busy.body.code).toBe('ADDON_PRICE_IN_USE');
+    expect(busy.status).toBe(200);
+    expect(mockAddonPrices.update).toHaveBeenLastCalledWith(1, { packSize: 2 });
 
     mockAddonPrices.findById.mockResolvedValue(null);
     const missing: any = await updatePrice(req({ monthlyPrice: 1 }), { params: { id: '404' } });
