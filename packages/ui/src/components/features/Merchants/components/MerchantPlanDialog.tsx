@@ -115,7 +115,7 @@ export function MerchantPlanDialog({
   const totalBasePrice = basePrice * duration;
   const totalSavings = selectedPricing?.savings || (totalBasePrice - totalPrice);
   
-  const currency = selectedPlan?.currency || 'USD';
+  const currency = selectedPlan?.currency || 'VND';
 
 
   const handleSubmit = async () => {

@@ -158,7 +158,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
         name: 'Trial',
         description: 'Free trial plan for new merchants to test the platform',
         basePrice: 0, // Free
-        currency: 'USD',
+        currency: 'VND',
         trialDays: 14,
         limits: JSON.stringify({
           outlets: 1,
@@ -294,7 +294,7 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
       planId: trialPlan.id,
       status: 'trial',
       amount: 0, // Free trial
-      currency: 'USD',
+      currency: 'VND',
       interval: 'month', // Default to monthly for trial
       intervalCount: 1, // 1 month intervals
       currentPeriodStart: subscriptionStartDate,
