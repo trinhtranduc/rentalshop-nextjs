@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
-import { usePermissions } from '@rentalshop/hooks';
+import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
@@ -17,7 +17,7 @@ import { Modal } from '../../orders/create/parts';
 import { PRODUCT_ICON } from '../list/parts';
 import { BARCODE_ICON } from '../labels/LabelSheet';
 import { productPrices, type ProductLike } from '../list/list-model';
-import { defaultModeOf, imagesOf, type ProductSource } from '../form/form-model';
+import { defaultModeOf, imagesOf, isBranchRole, type ProductSource } from '../form/form-model';
 
 const CHECK_ICON = 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11';
 const LIST_ICON = 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01';
@@ -108,6 +108,9 @@ export default function ProductDetailPage() {
   const money = useFormatCurrency();
   const { toastSuccess } = useToast();
   const { canManageProducts, canUpdateProducts } = usePermissions();
+  const { user } = useAuth();
+  // #825: only the shop owner deletes products (a product is shared by every branch)
+  const canDeleteProducts = canManageProducts && !isBranchRole((user as unknown as { role?: string } | null)?.role);
   const [nonce, setNonce] = useState(0);
   const state = useProduct(id, nonce);
 
@@ -212,7 +215,7 @@ export default function ProductDetailPage() {
               {t('detail.edit')}
             </Link>
           )}
-          {canManageProducts && (
+          {canDeleteProducts && (
             <button type="button" onClick={() => setConfirm(true)} className={`${outlineBtn} text-ar-danger`}>
               <ShellIcon d={TRASH_ICON} size={18} />
               {t('detail.delete')}

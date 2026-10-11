@@ -348,9 +348,11 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
     const profileMerchant = async () => (await must(s.get('/api/users/profile'), 'profile')).merchant;
     /** [name, allowed for staff, allowed for kho, run(r) -> { res, ...ctx }, verify(res, ctx, allowed)] */
     const MATRIX = [
-      ['products.create POST /api/products', true, true,
+      // #825 (owner 2026-10-11): staff no longer creates products; kho does (stock at its own outlet)
+      ['products.create POST /api/products', false, true,
         async (r) => ({ res: await r.postForm('/api/products', { name: uniqueName('SP mx'), rentPrice: 0, totalStock: 1, outletStock: [{ outletId: M, stock: 1 }] }) })],
-      ['products.update PUT /api/products/{id}', false, true,
+      // #825: changing the name is a shared field, merchant only; kho edits its own outlet stock only
+      ['products.update PUT /api/products/{id}', false, false,
         async (r) => {
           const p = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2, outletId: M });
           return { p, res: await r.updateProduct(p.id, { name: `${p.name} mx`, totalStock: 5, outletStock: [{ outletId: M, stock: 5 }] }) };
@@ -359,7 +361,8 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
           const now = await s.getProduct(p.id);
           expect([now.name === `${p.name} mx`, (await s.outletStock(p.id, M)).stock]).toEqual(allowed ? [true, 5] : [false, 2]);
         }],
-      ['products.delete DELETE /api/products/{id}', false, true,
+      // #825: only the merchant deletes products
+      ['products.delete DELETE /api/products/{id}', false, false,
         async (r) => {
           const p = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2, outletId: M });
           return { p, res: await del(r, `/api/products/${p.id}`) };

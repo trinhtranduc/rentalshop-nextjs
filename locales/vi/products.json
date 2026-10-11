@@ -534,6 +534,7 @@
       "costPrice": "Giá vốn",
       "costHint": "Chỉ chủ cửa hàng và quản lý thấy.",
       "staffPrices": "Giá thuê và giá bán do chủ cửa hàng đặt.",
+      "branchLocked": "Tên, ảnh, giá, danh mục và mã do chủ shop sửa. Bạn chỉ cập nhật số lượng của chi nhánh mình.",
       "quantity": "Số lượng",
       "quantityAt": "Tại {outlet}",
       "perOutlet": "Số lượng ở mỗi chi nhánh",

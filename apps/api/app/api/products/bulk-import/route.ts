@@ -300,6 +300,14 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
+    // #825 (owner 2026-10-11): outlet staff do not add products, even with a customised permission
+    if (user.role === USER_ROLE.OUTLET_STAFF) {
+      return NextResponse.json(
+        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
     // #825: a branch role always imports into its own outlet; without one it is refused
     if (isOutletRole(user.role) && !userScope.outletId) {
       return NextResponse.json(

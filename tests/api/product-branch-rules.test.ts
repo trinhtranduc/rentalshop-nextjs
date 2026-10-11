@@ -7,6 +7,7 @@
  * - A branch role without an outlet is refused instead of skipping the branch checks.
  * - Only the merchant deletes products (DELETE and batch-delete).
  * - A new product (form or Excel import) gets a 0-stock row at every other active outlet of the shop.
+ * - Outlet staff do not add products (owner 2026-10-11), even with a customised products.create.
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -87,6 +88,7 @@ import { changedSharedFields, zeroStockRowsForOtherOutlets } from '../../apps/ap
 const merchant = { user: { id: 3, role: 'MERCHANT', email: 'm@x' }, userScope: { merchantId: 2 } };
 const outletAdmin = { user: { id: 8, role: 'OUTLET_ADMIN', email: 'a@x' }, userScope: { merchantId: 2, outletId: 1 } };
 const inventory = { user: { id: 9, role: 'OUTLET_INVENTORY', email: 'k@x' }, userScope: { merchantId: 2, outletId: 1 } };
+const staff = { user: { id: 11, role: 'OUTLET_STAFF', email: 's@x' }, userScope: { merchantId: 2, outletId: 1 } };
 const outletAdminNoOutlet = { user: { id: 10, role: 'OUTLET_ADMIN', email: 'n@x' }, userScope: { merchantId: 2 } };
 
 // Merchant 2 owns outlets 1 and 3; outlet 50 belongs to merchant 99.
@@ -296,7 +298,7 @@ describe('POST /api/products — a new product has a row at every active outlet'
     mockDb.products.create.mockImplementation(async (data: any) => ({ id: 70, images: [], ...data }));
   });
 
-  it.each([['MERCHANT', merchant], ['OUTLET_ADMIN', outletAdmin]])('%s: 0 at the other active outlets', async (_r, who) => {
+  it.each([['MERCHANT', merchant], ['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('%s: 0 at the other active outlets', async (_r, who) => {
     ctx = who;
     const res: any = await createProduct(createRequest({ name: 'Áo dài', rentPrice: 1, outletStock: [{ outletId: 1, stock: 5 }] }));
     expect(res.status).toBe(200);
@@ -306,6 +308,14 @@ describe('POST /api/products — a new product has a row at every active outlet'
       { outlet: { connect: { id: 1 } }, stock: 5, available: 5, renting: 0 },
       { outlet: { connect: { id: 3 } }, stock: 0, available: 0, renting: 0 },
     ]);
+  });
+
+  it('OUTLET_STAFF is refused with INSUFFICIENT_PERMISSIONS, nothing created', async () => {
+    ctx = staff;
+    const res: any = await createProduct(createRequest({ name: 'Áo dài', rentPrice: 1, outletStock: [{ outletId: 1, stock: 5 }] }));
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('INSUFFICIENT_PERMISSIONS');
+    expect(mockDb.products.create).not.toHaveBeenCalled();
   });
 
   it('a branch role without an outlet is refused', async () => {
@@ -339,6 +349,14 @@ describe('POST /api/products/bulk-import — imported products have a row at eve
       { outletId: 1, stock: 4, available: 4, renting: 0 },
       { outletId: 3, stock: 0, available: 0, renting: 0 },
     ]);
+  });
+
+  it('OUTLET_STAFF is refused with INSUFFICIENT_PERMISSIONS', async () => {
+    ctx = staff;
+    const res: any = await bulkImport(importRequest());
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('INSUFFICIENT_PERMISSIONS');
+    expect(txCreate).not.toHaveBeenCalled();
   });
 
   it('a branch role without an outlet is refused', async () => {

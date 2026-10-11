@@ -35,6 +35,7 @@ import {
   type Selection,
   type SortKey,
 } from './list/list-model';
+import { isBranchRole, roleMayCreateProducts } from './form/form-model';
 
 /** Board icon paths that the shell icon set does not have. */
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
@@ -145,6 +146,8 @@ export default function ProductsPage() {
   const { user } = useAuth();
   const canExport = useCanExportData();
   const { canManageProducts, canCreateProducts, canUpdateProducts } = usePermissions();
+  // #825: only the shop owner deletes products (a product is shared by every branch)
+  const canDeleteProducts = canManageProducts && !isBranchRole((user as unknown as { role?: string } | null)?.role);
   const { outlets } = useOutletsData();
 
   const query = useMemo(() => parseListQuery((k) => searchParams.get(k)), [searchParams]);
@@ -335,7 +338,7 @@ export default function ProductsPage() {
               {t('importExcel')}
             </Link>
           )}
-          {canCreateProducts && (
+          {canCreateProducts && roleMayCreateProducts((user as unknown as { role?: string } | null)?.role) && (
             <Link href="/products/add" className={primaryBtn}>
               <ShellIcon d={ICONS.plus} size={18} />
               {t('add')}
@@ -392,7 +395,7 @@ export default function ProductsPage() {
             canExport={canExport}
             exporting={exporting}
             onExport={() => exportExcel(true)}
-            canDelete={canManageProducts}
+            canDelete={canDeleteProducts}
             onDelete={() => setConfirm({ kind: 'many' })}
             t={t}
           />
@@ -477,7 +480,7 @@ export default function ProductsPage() {
           onToggleRow={(id) => setSelection((s) => toggleOne(s, id, pageIds))}
           onTogglePage={() => setSelection((s) => togglePage(s, pageIds))}
           canEdit={canUpdateProducts}
-          canDelete={canManageProducts}
+          canDelete={canDeleteProducts}
           onDelete={(row) => setConfirm({ kind: 'one', row })}
           t={t}
           money={money}
