@@ -108,7 +108,10 @@ export function OrdersTable({
   money,
   skeletonRows = 6,
   selection,
+  branchOf,
 }: {
+  /** #852: the branch of a row (owner with 2+ branches), shown small under the status */
+  branchOf?: (row: OrderRow) => { name: string; color: string } | null;
   /** Row checkboxes for "Xuất Excel" of the chosen orders (#526). */
   selection?: { ids: Set<number>; toggle: (id: number) => void; setMany: (ids: number[], on: boolean) => void };
   rows: OrderRow[];
@@ -146,6 +149,17 @@ export function OrdersTable({
   }
 
   const href = (r: OrderRow) => `/orders/${r.orderNumber}`;
+  const branch = (r: OrderRow) => {
+    const b = branchOf?.(r);
+    return (
+      b && (
+        <span data-row-branch className="flex min-w-0 max-w-[160px] items-center gap-1.5 text-xs text-ar-muted">
+          <span aria-hidden="true" className={`h-1.5 w-1.5 flex-none rounded-full ${b.color}`} />
+          <span className="truncate">{b.name}</span>
+        </span>
+      )
+    );
+  };
   const allOn = !!selection && rows.length > 0 && rows.every((r) => selection.ids.has(r.id));
   const box = (r: OrderRow) =>
     selection && (
@@ -192,7 +206,10 @@ export function OrdersTable({
             >
               {selection && <td className="py-3 pl-4 pr-1 align-middle">{box(r)}</td>}
               <td className={`py-3 pr-2 align-middle ${selection ? 'pl-2' : 'pl-4'}`}>
-                <StatusTag status={r.status} t={t} />
+                <span className="flex flex-col items-start gap-1">
+                  <StatusTag status={r.status} t={t} />
+                  {branch(r)}
+                </span>
               </td>
               <td className="px-2 py-3 align-middle">
                 <Link href={href(r)} onClick={(e) => e.stopPropagation()} className="flex flex-col gap-0.5 text-inherit no-underline">
@@ -228,7 +245,10 @@ export function OrdersTable({
                 </span>
                 <StatusTag status={r.status} t={t} />
               </span>
-              <span className="text-sm tabular-nums text-ar-ink-2">{scheduleText(r.schedule, t, weekdays)}</span>
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-sm tabular-nums text-ar-ink-2">{scheduleText(r.schedule, t, weekdays)}</span>
+                {branch(r)}
+              </span>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className={`font-bold tabular-nums ${r.cancelled ? 'text-ar-muted line-through' : 'text-ar-ink'}`}>{money(r.total)}</span>
                 <PayText pay={r.pay} t={t} money={money} />
