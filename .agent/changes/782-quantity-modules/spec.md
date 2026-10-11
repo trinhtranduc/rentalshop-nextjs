@@ -1,9 +1,9 @@
 # Spec (step 1)
 
 ## Data (one additive migration)
-1. `BillingModule` (catalog): `id`, `name`, `kind` (`quantity` | `feature`), `limitKey` (`outlets` | `users` | `products` | `customers` | `orders`, only for `quantity`), `featureKey` (`loyalty` | `payroll`, only for `feature`), `monthlyPrice` (Float, VND, set per module by the admin), `currency` (default `VND`), `isActive`, `sortOrder`, timestamps. Both kinds exist from the first migration so step 2 needs no new table; step 1 only enforces `quantity`.
+1. `BillingModule` (catalog): `id`, `name`, `kind` (`quantity` | `feature`), `limitKey` (`outlets` | `users` | `products` | `customers` | `orders`, only for `quantity`), `featureKey` (`loyalty`, `payroll`, … text, only for `feature`; no value is used in step 1), `monthlyPrice` (Float, VND, set per module by the admin), `currency` (default `VND`), `isActive`, `sortOrder`, timestamps. Both kinds exist from the first migration so step 2 needs no new table; step 1 only enforces `quantity`.
 2. `MerchantModule` (what a shop has): `id`, `merchantId`, `moduleId`, `quantity` (Int ≥ 1), `unitPrice` (VND per unit per month at purchase), `removeAtPeriodEnd` (Bool), `isActive`, `endedAt?`, timestamps.
-3. Data migration: modules **Loyalty** and **Payroll** (`feature`, price 0, inactive until step 2 enforces them); one `quantity` `BillingModule` per limit key at price 0 ("Thêm chi nhánh", "Thêm người dùng", "Thêm sản phẩm", "Thêm khách hàng", "Thêm đơn hàng"); every active `PlanLimitAddon` becomes one `MerchantModule` per non-zero column, `unitPrice 0`. `PlanLimitAddon` stays (history), no longer written.
+3. Data migration: no feature module is created yet (Loyalty and Payroll come in step 2, Payroll after the owner settles its business logic); one `quantity` `BillingModule` per limit key at price 0 ("Thêm chi nhánh", "Thêm người dùng", "Thêm sản phẩm", "Thêm khách hàng", "Thêm đơn hàng"); every active `PlanLimitAddon` becomes one `MerchantModule` per non-zero column, `unitPrice 0`. `PlanLimitAddon` stays (history), no longer written.
 
 ## Plans vs modules (owner, 2026-10-11)
 - **Multiple branches is a separate plan**, not a module: a plan with a higher `outlets` limit and its own price. Changing to it is the normal plan change of #779. Extra branches beyond the plan are still the `outlets` quantity module.
