@@ -4,6 +4,8 @@
 // Functions for managing plan limit addons (additional limits for merchants)
 
 import { prisma } from './client';
+import { calculateTotalLimits } from './billing-module';
+import { readModuleLimits } from '@rentalshop/utils';
 import type { 
   PlanLimitAddonCreateInput, 
   PlanLimitAddonUpdateInput,
@@ -56,12 +58,26 @@ export async function getPlanLimitAddonsByMerchant(merchantId: number) {
  * These are the addons that contribute to the total limits
  */
 export async function getActivePlanLimitAddonsByMerchant(merchantId: number) {
-  return await prisma.planLimitAddon.findMany({
-    where: { 
-      merchantId,
-      isActive: true 
-    },
+  // #782: read the new table, keep the old row shape (the extend routes list these)
+  const rows = await prisma.merchantModule.findMany({
+    where: { merchantId, isActive: true, kind: 'quantity' },
     orderBy: { createdAt: 'desc' },
+  });
+  return rows.map((row) => {
+    const per = readModuleLimits(row.limits);
+    return {
+      id: row.id,
+      merchantId: row.merchantId,
+      outlets: per.outlets * row.quantity,
+      users: per.users * row.quantity,
+      products: per.products * row.quantity,
+      customers: per.customers * row.quantity,
+      orders: per.orders * row.quantity,
+      notes: row.name,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
   });
 }
 
@@ -70,24 +86,8 @@ export async function getActivePlanLimitAddonsByMerchant(merchantId: number) {
  * Returns the sum of all active addons
  */
 export async function calculateTotalAddonLimits(merchantId: number) {
-  const addons = await getActivePlanLimitAddonsByMerchant(merchantId);
-  
-  return addons.reduce(
-    (total, addon) => ({
-      outlets: total.outlets + addon.outlets,
-      users: total.users + addon.users,
-      products: total.products + addon.products,
-      customers: total.customers + addon.customers,
-      orders: total.orders + addon.orders,
-    }),
-    {
-      outlets: 0,
-      users: 0,
-      products: 0,
-      customers: 0,
-      orders: 0,
-    }
-  );
+  // #782: add-ons are MerchantModule rows now (the old rows were copied there at the same limits).
+  return calculateTotalLimits(merchantId);
 }
 
 /**

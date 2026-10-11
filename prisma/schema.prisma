@@ -133,63 +133,64 @@ model RefreshToken {
 }
 
 model Merchant {
-  id                   Int                  @id @default(autoincrement())
-  name                 String
-  email                String               @unique
-  phone                String?
+  id                     Int                  @id @default(autoincrement())
+  name                   String
+  email                  String               @unique
+  phone                  String?
   /// Stripe customer id for subscription billing
-  stripeCustomerId     String?              @unique
+  stripeCustomerId       String?              @unique
   /// Lemon Squeezy customer id (optional, synced via webhooks)
-  lemonCustomerId      String?              @unique
+  lemonCustomerId        String?              @unique
   /// Human friendly tenant key (used for subdomain like aodaipham1.anyrent.shop)
   /// Optional now to avoid breaking existing data, but should be filled for new merchants.
-  tenantKey            String?              @unique
-  address              String?
-  city                 String?
-  state                String?
-  zipCode              String?
-  country              String?
-  businessType         BusinessType         @default(GENERAL)
+  tenantKey              String?              @unique
+  address                String?
+  city                   String?
+  state                  String?
+  zipCode                String?
+  country                String?
+  businessType           BusinessType         @default(GENERAL)
   /// Niche rental tags selected at signup (JSON string[] of BusinessTag codes)
-  businessTags         Json?
-  taxId                String?
-  website              String?
-  description          String?
-  planId               Int?
-  totalRevenue         Float                @default(0)
-  lastActiveAt         DateTime?
-  isActive             Boolean              @default(true)
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  pricingConfig        String?              @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
-  pricingType          PricingType          @default(FIXED)
-  currency             String               @default("USD")
-  avatar               String?
+  businessTags           Json?
+  taxId                  String?
+  website                String?
+  description            String?
+  planId                 Int?
+  totalRevenue           Float                @default(0)
+  lastActiveAt           DateTime?
+  isActive               Boolean              @default(true)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  pricingConfig          String?              @default("{\"businessType\":\"GENERAL\",\"defaultPricingType\":\"FIXED\",\"businessRules\":{\"requireRentalDates\":false,\"showPricingOptions\":false},\"durationLimits\":{\"minDuration\":1,\"maxDuration\":1,\"defaultDuration\":1}}")
+  pricingType            PricingType          @default(FIXED)
+  currency               String               @default("USD")
+  avatar                 String?
   /// #518 "Cho tạo đơn khi trùng lịch". true (default) = today's behaviour, no availability check on save.
   /// false = the API rejects RENT orders that would exceed outlet stock on some VN civil day.
-  allowOverlappingOrders Boolean            @default(true)
+  allowOverlappingOrders Boolean              @default(true)
   /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
   /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
-  timezone             String               @default("Asia/Ho_Chi_Minh")
+  timezone               String               @default("Asia/Ho_Chi_Minh")
   /// ID of merchant who referred this merchant (for referral tracking)
-  referredByMerchantId Int?
-  categories           Category[]
-  customers            Customer[]
-  Plan                 Plan?                @relation(fields: [planId], references: [id])
-  roles                MerchantRole[]
-  outlets              Outlet[]
-  payments             Payment[]
-  products             Product[]
-  subscription         Subscription?
-  users                User[]
-  auditLogs            AuditLog[]
-  requestLogs          RequestLog[]         @relation("RequestLogs")
-  planLimitAddons      PlanLimitAddon[]
-  referredBy           Merchant?            @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
-  referredMerchants    Merchant[]           @relation("MerchantReferrals")
-  loyaltyProgram       LoyaltyProgram?
-  customerLoyalty      CustomerLoyalty[]
-  loyaltyTransactions  LoyaltyTransaction[]
+  referredByMerchantId   Int?
+  categories             Category[]
+  customers              Customer[]
+  Plan                   Plan?                @relation(fields: [planId], references: [id])
+  roles                  MerchantRole[]
+  outlets                Outlet[]
+  payments               Payment[]
+  products               Product[]
+  subscription           Subscription?
+  users                  User[]
+  auditLogs              AuditLog[]
+  requestLogs            RequestLog[]         @relation("RequestLogs")
+  planLimitAddons        PlanLimitAddon[]
+  merchantModules        MerchantModule[]
+  referredBy             Merchant?            @relation("MerchantReferrals", fields: [referredByMerchantId], references: [id])
+  referredMerchants      Merchant[]           @relation("MerchantReferrals")
+  loyaltyProgram         LoyaltyProgram?
+  customerLoyalty        CustomerLoyalty[]
+  loyaltyTransactions    LoyaltyTransaction[]
 
   @@index([name])
   @@index([email])
@@ -377,7 +378,7 @@ model Order {
   pickupTotalAmount     Float?
   depositAmount         Float                @default(0)
   securityDeposit       Float                @default(0)
-  damageFee            Float                @default(0)
+  damageFee             Float                @default(0)
   lateFee               Float                @default(0)
   discountType          String?
   discountValue         Float                @default(0)
@@ -1086,4 +1087,52 @@ model LoyaltyPointLot {
   @@index([customerLoyaltyId, expiresAt])
   @@index([earnTransactionId])
   @@index([expiresAt, remainingPoints])
+}
+
+/// Add-ons (kind "quantity": branches, staff) and modules (kind "feature": Loyalty, Payroll) the admin sells.
+/// One catalog, a VND price per item for the whole shop (#782).
+model BillingModule {
+  id              Int              @id @default(autoincrement())
+  name            String
+  /// "quantity" adds `limits` per unit; "feature" switches a feature on (`featureKey`)
+  kind            String           @default("quantity")
+  featureKey      String?
+  /// Per unit: any of outlets, users, products, customers, orders (only for kind "quantity")
+  limits          Json?
+  /// VND per unit per month
+  monthlyPrice    Float
+  currency        String           @default("VND")
+  isActive        Boolean          @default(true)
+  sortOrder       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  merchantModules MerchantModule[]
+
+  @@index([isActive, sortOrder])
+}
+
+/// What a shop bought. name, kind, featureKey and limits are copied from the catalog at purchase, so a later
+/// catalog edit never changes a period already paid. Migrated old addons have no moduleId and unitPrice 0.
+model MerchantModule {
+  id                Int            @id @default(autoincrement())
+  merchantId        Int
+  moduleId          Int?
+  name              String
+  kind              String         @default("quantity")
+  featureKey        String?
+  limits            Json?
+  quantity          Int            @default(1)
+  /// VND per unit per month, set again from the catalog at every renewal
+  unitPrice         Float          @default(0)
+  /// Ends at the next renewal instead of being charged again
+  removeAtPeriodEnd Boolean        @default(false)
+  isActive          Boolean        @default(true)
+  endedAt           DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  merchant          Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  module            BillingModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId, isActive])
+  @@index([moduleId])
 }

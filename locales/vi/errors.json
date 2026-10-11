@@ -508,5 +508,12 @@
   "INVALID_PAYMENT_ORDER_REFS": "Một số khoản thanh toán trỏ tới đơn không tồn tại.",
   "ZERO_AMOUNT_ORDERS_DETECTED": "Một số đơn có số tiền bằng 0.",
   "STATISTICS_FOUND": "Đã tải thống kê",
-  "INVALID_DURATION": "Thời hạn gia hạn phải là 1, 3, 6 hoặc 12 tháng"
+  "INVALID_DURATION": "Thời hạn gia hạn phải là 1, 3, 6 hoặc 12 tháng",
+  "MODULE_NOT_FOUND": "Không tìm thấy module",
+  "MODULE_ALREADY_ACTIVE": "Module này đã được bật cho cửa hàng",
+  "INVALID_QUANTITY": "Số lượng phải là số nguyên từ 1 trở lên",
+  "MODULE_NOT_AVAILABLE_FOR_PLAN": "Add-on này cần gói có nhiều hơn một chi nhánh",
+  "CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED": "Không thể gỡ vì mức đang dùng sẽ vượt hạn mức",
+  "PLAN_HAS_BRANCH_MODULES": "Hãy gỡ các add-on chi nhánh trước khi đổi sang gói một chi nhánh",
+  "ADDONS_REPLACED_BY_MODULES": "Add-on nay được quản lý như module"
 }

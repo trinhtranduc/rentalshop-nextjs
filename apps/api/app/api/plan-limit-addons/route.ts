@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { 
-  planLimitAddonCreateSchema, 
+import {  
   planLimitAddonsQuerySchema,
   handleApiError,
   ResponseBuilder,
-  sendPlanLimitAddonChangeEmail
 } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
 
 /**
  * GET /api/plan-limit-addons
@@ -52,85 +49,10 @@ export const GET = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
 
 /**
  * POST /api/plan-limit-addons
- * Create a new plan limit addon
- * Authorization: ADMIN only
+ * Add-ons are managed as modules since #782 (see /api/billing-modules and /api/merchants/[id]/modules).
+ * The old rows stay readable; writing answers 410.
  */
-export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
-  try {
-    const body = await request.json();
-    
-    // Validate input
-    const parsed = planLimitAddonCreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        ResponseBuilder.validationError(parsed.error.flatten()),
-        { status: 400 }
-      );
-    }
-
-    // Verify merchant exists
-    const merchant = await db.merchants.findById(parsed.data.merchantId);
-    if (!merchant) {
-      return NextResponse.json(
-        ResponseBuilder.error('MERCHANT_NOT_FOUND'),
-        { status: 404 }
-      );
-    }
-
-    // Create plan limit addon
-    const addon = await db.planLimitAddons.create(parsed.data);
-
-      // Send email notification (non-blocking) - TEMPORARILY DISABLED
-      // if (merchant.email) {
-      //   console.log('📨 [Addon] Sending addon created email...', {
-      //     to: merchant.email,
-      //     merchantName: merchant.name,
-      //     addonLimits: {
-      //       outlets: addon.outlets,
-      //       users: addon.users,
-      //       products: addon.products,
-      //       customers: addon.customers,
-      //       orders: addon.orders
-      //     },
-      //     provider: process.env.EMAIL_PROVIDER || 'console'
-      //   });
-      //   
-      //   sendPlanLimitAddonChangeEmail({
-      //     merchantName: merchant.name || 'Quý khách',
-      //     email: merchant.email,
-      //     action: 'CREATED',
-      //     addonLimits: {
-      //       outlets: addon.outlets,
-      //       users: addon.users,
-      //       products: addon.products,
-      //       customers: addon.customers,
-      //       orders: addon.orders
-      //     },
-      //     notes: addon.notes || undefined
-      //   })
-      //     .then((emailResult) => {
-      //       console.log('📬 [Addon] Addon created email result:', {
-      //         success: emailResult.success,
-      //         error: emailResult.error,
-      //         messageId: emailResult.messageId,
-      //         provider: process.env.EMAIL_PROVIDER
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.error('❌ [Addon] Failed to send addon created email:', error);
-      //     });
-      // } else {
-      //   console.warn('⚠️ [Addon] Cannot send addon created email: merchant email not found');
-      // }
-
-    return NextResponse.json(
-      ResponseBuilder.success('PLAN_LIMIT_ADDON_CREATED_SUCCESS', addon),
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error creating plan limit addon:', error);
-    const { response, statusCode } = handleApiError(error);
-    return NextResponse.json(response, { status: statusCode });
-  }
+export const POST = withAuthRoles(['ADMIN'])(async (_request: NextRequest) => {
+  return NextResponse.json(ResponseBuilder.error('ADDONS_REPLACED_BY_MODULES'), { status: 410 });
 });
 

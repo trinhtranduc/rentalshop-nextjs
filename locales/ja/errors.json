@@ -27,5 +27,12 @@
   "INVALID_MIN_SIMILARITY": "最小類似度が無効です（0〜1の範囲で指定してください）",
   "NO_PRODUCTS_FOUND": "似ている商品が見つかりませんでした",
   "ROLE_NOT_AVAILABLE": "この役割はまだ割り当てられません",
-  "INVALID_DURATION": "更新期間は1、3、6、12か月のいずれかである必要があります"
+  "INVALID_DURATION": "更新期間は1、3、6、12か月のいずれかである必要があります",
+  "MODULE_NOT_FOUND": "モジュールが見つかりません",
+  "MODULE_ALREADY_ACTIVE": "このモジュールは既に有効です",
+  "INVALID_QUANTITY": "数量は1以上の整数にしてください",
+  "MODULE_NOT_AVAILABLE_FOR_PLAN": "このアドオンには複数店舗のプランが必要です",
+  "CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED": "現在の利用量が上限を超えるため削除できません",
+  "PLAN_HAS_BRANCH_MODULES": "1店舗プランに変更する前に店舗アドオンを削除してください",
+  "ADDONS_REPLACED_BY_MODULES": "アドオンはモジュールとして管理されます"
 }

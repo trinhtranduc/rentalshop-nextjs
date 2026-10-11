@@ -27,5 +27,12 @@
   "INVALID_MIN_SIMILARITY": "最小相似度无效（必须在 0 到 1 之间）",
   "NO_PRODUCTS_FOUND": "未找到相似的商品",
   "ROLE_NOT_AVAILABLE": "该角色暂时无法分配",
-  "INVALID_DURATION": "续订期限必须为 1、3、6 或 12 个月"
+  "INVALID_DURATION": "续订期限必须为 1、3、6 或 12 个月",
+  "MODULE_NOT_FOUND": "未找到模块",
+  "MODULE_ALREADY_ACTIVE": "该模块已启用",
+  "INVALID_QUANTITY": "数量必须为不小于 1 的整数",
+  "MODULE_NOT_AVAILABLE_FOR_PLAN": "此附加项需要支持多个门店的套餐",
+  "CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED": "当前用量将超出上限，无法移除",
+  "PLAN_HAS_BRANCH_MODULES": "更换为单门店套餐前请先移除门店附加项",
+  "ADDONS_REPLACED_BY_MODULES": "附加项现已作为模块管理"
 }

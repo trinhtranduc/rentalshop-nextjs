@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
+import { calculateRenewalTotal, handleApiError, moduleMonthlyTotal, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
@@ -72,8 +72,11 @@ export async function POST(
       // Owner rules (#779): plan (+ addons) for the cycle with 0/0/5/10 %; expired → from now,
       // not expired → from the current end; calendar months on the Vietnam day.
       const existingPlan = (existing as { plan?: { basePrice?: number; currency?: string } }).plan;
+      // Add-ons and modules of the shop at today's catalog price; those marked for removal are not charged (#782)
+      const moduleItems = await db.billingModules.renewalItems(existing.merchantId);
       const renewal = calculateRenewalTotal({
         basePrice: existingPlan?.basePrice ?? 0,
+        addonMonthlyTotal: moduleMonthlyTotal(moduleItems),
         interval,
         currentPeriodEnd: existing.currentPeriodEnd,
         now: new Date(),
@@ -100,13 +103,16 @@ export async function POST(
           }
         });
 
+        // Items marked for removal end now; the others take today's catalog price (#782)
+        await db.billingModules.applyRenewal(tx as any, existing.merchantId);
+
         // Update subscription period
         const updatedSubscription = await tx.subscription.update({
           where: { id: subscriptionId },
           data: {
             currentPeriodStart: renewal.periodStart,
             currentPeriodEnd: renewal.periodEnd,
-            amount: renewal.totalDue,
+            amount: renewal.planPrice,
             interval: renewal.interval,
             intervalCount: renewal.months,
             period: renewal.months,
@@ -179,7 +185,8 @@ export async function POST(
         ResponseBuilder.success('SUBSCRIPTION_RENEWED_SUCCESS', {
           subscription: result.updatedSubscription,
           payment: result.payment,
-          renewal
+          renewal,
+          modules: moduleItems.map((m) => ({ id: m.id, name: m.name, kind: m.kind, quantity: m.quantity, unitPrice: m.unitPrice }))
         })
       );
     } catch (error) {

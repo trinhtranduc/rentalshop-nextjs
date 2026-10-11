@@ -54,6 +54,13 @@ export enum ErrorCode {
   PAYMENT_FAILED = 'PAYMENT_FAILED',
   INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
   INVALID_DURATION = 'INVALID_DURATION',
+  MODULE_NOT_FOUND = 'MODULE_NOT_FOUND',
+  MODULE_ALREADY_ACTIVE = 'MODULE_ALREADY_ACTIVE',
+  INVALID_QUANTITY = 'INVALID_QUANTITY',
+  MODULE_NOT_AVAILABLE_FOR_PLAN = 'MODULE_NOT_AVAILABLE_FOR_PLAN',
+  CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED = 'CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED',
+  PLAN_HAS_BRANCH_MODULES = 'PLAN_HAS_BRANCH_MODULES',
+  ADDONS_REPLACED_BY_MODULES = 'ADDONS_REPLACED_BY_MODULES',
   
   // Resource Specific Errors
   EMAIL_EXISTS = 'EMAIL_EXISTS',
@@ -144,6 +151,13 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.PAYMENT_FAILED]: 'Payment processing failed',
   [ErrorCode.INVALID_PAYMENT_METHOD]: 'Invalid payment method',
   [ErrorCode.INVALID_DURATION]: 'Renewal period must be 1, 3, 6 or 12 months',
+  [ErrorCode.MODULE_NOT_FOUND]: "Module not found",
+  [ErrorCode.MODULE_ALREADY_ACTIVE]: "This module is already active for the shop",
+  [ErrorCode.INVALID_QUANTITY]: "Quantity must be a whole number of at least 1",
+  [ErrorCode.MODULE_NOT_AVAILABLE_FOR_PLAN]: "This add-on needs a plan with more than one branch",
+  [ErrorCode.CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED]: "Cannot remove: current usage would exceed the limit",
+  [ErrorCode.PLAN_HAS_BRANCH_MODULES]: "Remove the branch add-ons before changing to a one-branch plan",
+  [ErrorCode.ADDONS_REPLACED_BY_MODULES]: "Add-ons are now managed as modules",
   
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
@@ -219,6 +233,13 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.PAYMENT_FAILED]: 402,
   [ErrorCode.INVALID_PAYMENT_METHOD]: 400,
   [ErrorCode.INVALID_DURATION]: 400,
+  [ErrorCode.MODULE_NOT_FOUND]: 404,
+  [ErrorCode.MODULE_ALREADY_ACTIVE]: 409,
+  [ErrorCode.INVALID_QUANTITY]: 400,
+  [ErrorCode.MODULE_NOT_AVAILABLE_FOR_PLAN]: 422,
+  [ErrorCode.CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED]: 422,
+  [ErrorCode.PLAN_HAS_BRANCH_MODULES]: 422,
+  [ErrorCode.ADDONS_REPLACED_BY_MODULES]: 410,
   
   // Resource Specific Errors (4xx)
   [ErrorCode.EMAIL_EXISTS]: 409,
