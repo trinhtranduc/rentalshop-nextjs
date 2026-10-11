@@ -150,7 +150,7 @@ export function PaymentHistoryTable({
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="table-cards w-full">
                 <thead className="border-b">
                   <tr className="text-left text-sm text-gray-600">
                     <th className="pb-3 font-medium">Date</th>
@@ -165,13 +165,13 @@ export function PaymentHistoryTable({
                 <tbody>
                   {payments.map((payment) => (
                     <tr key={payment.id} className="border-b hover:bg-gray-50">
-                      <td className="py-4 text-sm">
+                      <td className="py-4 text-sm" data-primary>
                         {formatDateTime(new Date(payment.createdAt))}
                       </td>
-                      <td className="py-4 text-sm font-semibold">
+                      <td className="py-4 text-sm font-semibold" data-label="Amount">
                         {formatCurrency(payment.amount, payment.currency)}
                       </td>
-                      <td className="py-4 text-sm">
+                      <td className="py-4 text-sm" data-label="Method">
                         <div className="flex items-center gap-2">
                           <span>{getMethodIcon(payment.method)}</span>
                           <span>
@@ -179,13 +179,13 @@ export function PaymentHistoryTable({
                           </span>
                         </div>
                       </td>
-                      <td className="py-4 text-sm">
+                      <td className="py-4 text-sm" data-label="Status">
                         {getStatusBadge(payment.status)}
                       </td>
-                      <td className="py-4 text-sm font-mono">
+                      <td className="py-4 text-sm font-mono" data-label="Transaction ID">
                         {payment.transactionId}
                       </td>
-                      <td className="py-4 text-sm">
+                      <td className="py-4 text-sm" data-label="Invoice">
                         {payment.invoiceNumber ? (
                           <Button
                             variant="ghost"
@@ -199,7 +199,7 @@ export function PaymentHistoryTable({
                           <span className="text-gray-400">N/A</span>
                         )}
                       </td>
-                      <td className="py-4 text-sm text-right">
+                      <td className="py-4 text-sm text-right" data-actions>
                         <Button
                           variant="ghost"
                           size="sm"

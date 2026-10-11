@@ -171,7 +171,7 @@ export default function BillingCyclesPage() {
   return (
     <PageWrapper>
       <PageHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <PageTitle>Billing Cycles</PageTitle>
           <Button
             onClick={() => setShowCreateForm(true)}
