@@ -622,7 +622,7 @@
       "loadFailed": "Could not load the product.",
       "retry": "Try again",
       "otherOutletsTitle": "Stock at other outlets",
-      "otherOutletsHint": "View only. Free = stock minus rented out."
+      "otherOutletsHint": "View only. Available = total minus rented out."
     },
     "orders": {
       "back": "Back to product",

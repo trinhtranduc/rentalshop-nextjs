@@ -622,7 +622,7 @@
       "loadFailed": "Không tải được sản phẩm.",
       "retry": "Thử lại",
       "otherOutletsTitle": "Tồn chi nhánh khác",
-      "otherOutletsHint": "Chỉ xem. Còn = tồn trừ số đang thuê."
+      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê."
     },
     "orders": {
       "back": "Quay lại sản phẩm",
