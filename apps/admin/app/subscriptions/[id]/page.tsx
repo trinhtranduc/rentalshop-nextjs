@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { subscriptionsApi, planLimitAddonsApi, formatInShopZone } from '@rentalshop/utils';
-import { SubscriptionExtendDialogEnhanced } from '@rentalshop/ui';
+import { SubscriptionExtendDialogEnhanced, ManualRenewalModal } from '@rentalshop/ui';
 import type { PlanLimitAddon } from '@rentalshop/types';
 import { Card,
   CardHeader,
@@ -72,6 +72,8 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   });
   const [loading, setLoading] = useState(true);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [renewalLoading, setRenewalLoading] = useState(false);
 
   // Toast management
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -179,6 +181,28 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     }
   };
 
+  // The API returns the status upper-case (ACTIVE); compare without case.
+  const isStatus = (status: string) => String(subscription?.status ?? '').toLowerCase() === status;
+
+  const handleManualRenewal = async (data: Parameters<typeof subscriptionsApi.renew>[1]) => {
+    try {
+      setRenewalLoading(true);
+      const result = await subscriptionsApi.renew(parseInt(params.id), data);
+      if (result.success) {
+        setShowRenewalModal(false);
+        await fetchSubscription(); // Refresh data
+        toastSuccess('Subscription Renewed', 'Subscription has been renewed successfully');
+      } else {
+        toastError('Renewal Failed', result.message || 'Failed to renew subscription');
+      }
+    } catch (error) {
+      console.error('Error renewing subscription:', error);
+      toastError('Renewal Failed', 'Error renewing subscription. Please try again.');
+    } finally {
+      setRenewalLoading(false);
+    }
+  };
+
   const handleDelete = () => {
     setConfirmationDialog({
       open: true,
@@ -193,7 +217,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       if (result.success) {
         toastSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
         // Redirect to subscriptions list
-        router.push('/admin/subscriptions');
+        router.push('/subscriptions');
       } else {
         toastError('Deletion Failed', result.message || 'Failed to delete subscription');
       }
@@ -307,7 +331,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         <h2 className="text-2xl font-bold text-gray-900">Subscription Not Found</h2>
         <p className="text-gray-600 mt-2">The subscription you're looking for doesn't exist.</p>
         <Button 
-          onClick={() => router.push('/admin/subscriptions')}
+          onClick={() => router.push('/subscriptions')}
           className="mt-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -343,10 +367,18 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/subscriptions/${subscription.id}/edit`)}
+            onClick={() => router.push(`/subscriptions/${subscription.id}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowRenewalModal(true)}
+            disabled={isStatus('cancelled')}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Renew
           </Button>
           <Button
             variant="outline"
@@ -355,7 +387,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             <CreditCard className="h-4 w-4 mr-2" />
             Extend
           </Button>
-          {subscription.status === 'active' && (
+          {isStatus('active') && (
             <Button
               variant="outline"
               onClick={handlePause}
@@ -365,7 +397,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               Suspend
             </Button>
           )}
-          {subscription.status === 'active' && (
+          {isStatus('active') && (
             <Button
               variant="outline"
               onClick={handleCancel}
@@ -497,7 +529,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/admin/merchants/${subscription.merchantId}/plan-limit-addons`)}
+                    onClick={() => router.push(`/merchants/${subscription.merchantId}/plan-limit-addons`)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Manage Addons
@@ -743,6 +775,23 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           </Card>
         </div>
       </div>
+
+      {/* Renewal Modal: charges and dates like POST /renew (#779) */}
+      <ManualRenewalModal
+        isOpen={showRenewalModal}
+        onClose={() => setShowRenewalModal(false)}
+        subscription={{
+          id: subscription.id,
+          merchantName: subscription.merchant?.name || '',
+          planName: subscription.plan?.name || '',
+          amount: subscription.amount,
+          plan: { basePrice: subscription.plan?.basePrice },
+          currency: subscription.currency || 'USD',
+          currentPeriodEnd: new Date(subscription.currentPeriodEnd)
+        }}
+        onRenew={handleManualRenewal}
+        loading={renewalLoading}
+      />
 
       {/* Extend Modal - Enhanced with Auto-calculation */}
       <SubscriptionExtendDialogEnhanced

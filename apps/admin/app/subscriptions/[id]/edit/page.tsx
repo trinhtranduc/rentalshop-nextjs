@@ -74,7 +74,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
 
       if (result.success) {
         // Redirect to subscription detail page
-        router.push(`/admin/subscriptions/${params.id}`);
+        router.push(`/subscriptions/${params.id}`);
       } else {
         alert(`Error updating subscription: ${result.message || (result as any).error || 'Request failed'}`);
       }
@@ -87,7 +87,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
   };
 
   const handleCancel = () => {
-    router.push(`/admin/subscriptions/${params.id}`);
+    router.push(`/subscriptions/${params.id}`);
   };
 
   if (loading) {
@@ -104,7 +104,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
         <h2 className="text-2xl font-bold text-gray-900">Subscription Not Found</h2>
         <p className="text-gray-600 mt-2">The subscription you're trying to edit doesn't exist.</p>
         <Button 
-          onClick={() => router.push('/admin/subscriptions')}
+          onClick={() => router.push('/subscriptions')}
           className="mt-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

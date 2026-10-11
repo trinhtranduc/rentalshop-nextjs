@@ -26,6 +26,17 @@ describe('admin subscription pages (#792)', () => {
     expect(page).toMatch(/Renew/);
   });
 
+  it("the detail page compares the status without case (the API returns ACTIVE)", () => {
+    expect(read('subscriptions/[id]/page.tsx')).not.toMatch(/status === '(active|cancelled)'/);
+  });
+
+  it('every subscriptionsApi method the detail page calls exists', () => {
+    const page = read('subscriptions/[id]/page.tsx');
+    const api = fs.readFileSync(path.resolve(__dirname, '../packages/utils/src/api/subscriptions.ts'), 'utf8');
+    const used = [...page.matchAll(/subscriptionsApi\.(\w+)\(/g)].map((m) => m[1]);
+    for (const name of new Set(used)) expect([name, new RegExp(`async ${name}\\(`).test(api)]).toEqual([name, true]);
+  });
+
   it('the detail page does not renew with a raw fetch', () => {
     expect(read('subscriptions/[id]/page.tsx')).not.toMatch(/fetch\(`\/api\/subscriptions\/\$\{[^}]+\}\/renew`/);
   });
