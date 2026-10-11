@@ -21,7 +21,7 @@ import {
   plansApi,
   planLimitAddonsApi
 } from '@rentalshop/utils';
-import { useAuth } from '@rentalshop/hooks';
+import { useApiError, useAuth } from '@rentalshop/hooks';
 import type { Merchant } from '@rentalshop/types';
 
 export default function MerchantDetailPage() {
@@ -29,6 +29,7 @@ export default function MerchantDetailPage() {
   const router = useRouter();
   const merchantId = params.id as string;
   const { user } = useAuth();
+  const { translateError } = useApiError();
   
   const [merchant, setMerchant] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
@@ -208,7 +209,8 @@ export default function MerchantDetailPage() {
         return { success: true };
       }
       console.error('Failed to change plan:', response.message);
-      return { success: false, message: response.message || (response as any).error || 'The plan could not be changed.' };
+      // The API sends a code (e.g. PLAN_CHANGE_REMOVE_OUTLET_ADDONS, #870): show its translation
+      return { success: false, message: translateError(response) || 'The plan could not be changed.' };
     } catch (error: any) {
       console.error('Error changing plan:', error);
       return { success: false, message: error?.message || 'The plan could not be changed.' };

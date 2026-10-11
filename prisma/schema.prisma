@@ -652,6 +652,8 @@ model PlanLimitAddon {
   limitKind         String?
   packSize          Int?
   packs             Int?
+  /// #870 fewer packs from the next renewal (NULL = no pending change); more packs apply at once
+  nextPacks         Int?
   /// #850 VND per pack per month captured at purchase (renewal sets today's list price). NULL = old free add-on
   unitPrice         Int?
   /// #850 removal takes effect at the end of the period: the item counts until `endsAt`

@@ -72,7 +72,7 @@ export async function POST(
       // Owner rules (#779): plan (+ addons) for the cycle with 0/0/5/10 %; expired → from now,
       // not expired → from the current end; calendar months on the Vietnam day.
       const existingPlan = (existing as { plan?: { basePrice?: number; currency?: string } }).plan;
-      // #850: add-ons renewed at today's list price (paused rows and items marked for removal are not renewed)
+      // #850/#870: add-ons renewed at today's list price and pack size (paused rows and items marked for removal are not renewed)
       const renewNow = new Date();
       const { items: addonItems, catalog: addonCatalog } = await db.merchantAddons.renewalItems(existing.merchantId, renewNow);
       const addonRenewal = addonRenewalLines(addonItems, addonCatalog, renewNow);
@@ -80,7 +80,8 @@ export async function POST(
         .filter((line) => line.renew && line.monthlyAmount > 0)
         .map((line) => {
           const item: any = addonItems.find((i: any) => i.id === line.id) || {};
-          return { id: line.id, name: item.name ?? null, limitKind: item.limitKind ?? null, packSize: item.packSize ?? null, packs: line.packs, unitPrice: line.unitPrice, monthlyAmount: line.monthlyAmount };
+          // #870: the pack size and packs of the new period (current catalog pack size, pending reduction)
+          return { id: line.id, name: item.name ?? null, limitKind: line.limitKind ?? item.limitKind ?? null, packSize: line.packSize ?? item.packSize ?? null, packs: line.packs, unitPrice: line.unitPrice, monthlyAmount: line.monthlyAmount };
         });
       const renewal = calculateRenewalTotal({
         basePrice: existingPlan?.basePrice ?? 0,

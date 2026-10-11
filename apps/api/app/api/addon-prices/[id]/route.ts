@@ -7,7 +7,7 @@ import { USER_ROLE } from '@rentalshop/constants';
 /**
  * PUT /api/addon-prices/[id] — change the name, the price, on sale / paused ("Tạm tắt") or the order (#850). ADMIN only.
  * A new price applies to new purchases and later renewals; bought items keep their captured price.
- * The pack size changes only while no shop holds an item of the row (else 422 ADDON_PRICE_IN_USE); the kind never.
+ * A new pack size, like a new price, applies from each shop's next renewal (#870); bought items keep theirs. The kind never changes.
  */
 export async function PUT(
   request: NextRequest,
@@ -29,13 +29,8 @@ export async function PUT(
         return NextResponse.json(ResponseBuilder.error('ADDON_PRICE_NOT_FOUND'), { status: 404 });
       }
       const changes = { ...parsed.data };
-      if (changes.packSize !== undefined && changes.packSize !== existing.packSize) {
-        if ((await db.addonPrices.countShopsUsing(id)) > 0) {
-          return NextResponse.json(ResponseBuilder.error('ADDON_PRICE_IN_USE'), { status: 422 });
-        }
-      } else {
-        delete changes.packSize;
-      }
+      // #870: the pack size changes even while shops use the row; bought items keep theirs until the next renewal
+      if (changes.packSize === undefined || changes.packSize === existing.packSize) delete changes.packSize;
       const addonPrice = await db.addonPrices.update(id, changes);
       return NextResponse.json(ResponseBuilder.success('ADDON_PRICE_UPDATED', { addonPrice }));
     } catch (error) {

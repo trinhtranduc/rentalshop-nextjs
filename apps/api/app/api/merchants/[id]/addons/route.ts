@@ -36,7 +36,7 @@ export async function GET(
       const priceIds = Array.from(new Set(items.map((i) => i.addonPriceId).filter((v): v is number => v != null)));
       const rows = (priceIds.length ? await db.addonPrices.findManyByIds(priceIds) : []) as AddonPriceRowLike[];
       const catalog = new Map<number, AddonPriceRowLike>(rows.map((r) => [r.id, r] as [number, AddonPriceRowLike]));
-      const { lines, monthlyTotal: renewalAddonMonthly } = addonRenewalLines(items, catalog, now);
+      const { lines, monthlyTotal: renewalAddonMonthly, paidMonthlyTotal } = addonRenewalLines(items, catalog, now);
       const lineById = new Map(lines.map((l) => [l.id, l]));
 
       const addons = items.map((item) => {
@@ -48,6 +48,9 @@ export async function GET(
           renews: !!line?.renew,
           renewUnitPrice: line?.renew ? line.unitPrice : null,
           renewMonthlyAmount: line?.monthlyAmount ?? 0,
+          // #870: packs and pack size of the next period (pending reduction, current catalog pack size)
+          renewPacks: line?.renew ? line.packs : null,
+          renewPackSize: line?.renew ? line.packSize : null,
         };
       });
 
@@ -65,6 +68,8 @@ export async function GET(
       const renewal = subscription
         ? {
             addonMonthlyTotal: renewalAddonMonthly,
+            // #870: what the current period's renewed add-ons were bought at (change-plan credit preview)
+            addonPaidMonthlyTotal: paidMonthlyTotal,
             monthly: calculateRenewalTotal({
               basePrice: planPrice,
               addonMonthlyTotal: renewalAddonMonthly,

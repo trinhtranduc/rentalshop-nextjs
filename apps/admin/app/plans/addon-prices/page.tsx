@@ -219,12 +219,11 @@ export default function AddonPricesPage() {
                     id="ap-pack"
                     inputMode="numeric"
                     value={draft.packSize}
-                    disabled={!!editing && editing.shopsUsing > 0}
                     onChange={(e) => setDraft({ ...draft, packSize: digits(e.target.value) })}
                   />
                   <span>{unit}</span>
                 </div>
-                {editing && editing.shopsUsing > 0 && <span className="muted">Đang có shop dùng nên không đổi được. Muốn gói khác thì thêm dòng mới.</span>}
+                {editing && editing.shopsUsing > 0 && <span className="muted">{editing.shopsUsing} shop đang dùng, áp dụng từ kỳ gia hạn sau</span>}
               </div>
               <div className="field">
                 <label htmlFor="ap-price">Giá mỗi gói mỗi tháng</label>

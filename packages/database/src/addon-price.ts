@@ -7,7 +7,9 @@
 import { prisma } from './client';
 import type { AddonPrice, Payment, PlanLimitAddon } from '@prisma/client';
 import type { AddonPriceCreateInput, AddonPriceUpdateInput, AddonQuote, AddonRenewalLine, LimitKind } from '@rentalshop/utils';
-import { addonColumnsFor } from '@rentalshop/utils';
+import { addonColumnsFor, LIMIT_KINDS } from '@rentalshop/utils';
+
+const LIMIT_KIND_SET = new Set<string>(LIMIT_KINDS);
 
 /** Items that still count: switched on and not past their end. */
 const notEnded = (now: Date) => ({ isActive: true, OR: [{ endsAt: null }, { endsAt: { gt: now } }] });
@@ -132,6 +134,60 @@ export const simplifiedMerchantAddons = {
     });
   },
 
+  /**
+   * #870: more packs of an item, at once: the kind column grows by the item's pack size × extra packs, a pending
+   * reduction is dropped, and the extra packs are charged now (same payment as a purchase) when the quote is > 0.
+   */
+  addPacks: async (input: {
+    itemId: number;
+    merchantId: number;
+    subscriptionId: number | null;
+    name: string;
+    packs: number;
+    extraPacks: number;
+    columns: Record<LimitKind, number>;
+    addonPriceId: number;
+    unitPrice: number;
+    quote: AddonQuote;
+    method?: 'TRANSFER' | 'STRIPE';
+    transactionId?: string;
+    reference?: string;
+    createdBy?: string;
+  }) => {
+    const method = input.method || 'TRANSFER';
+    return prisma.$transaction(async (tx) => {
+      const addon = await tx.planLimitAddon.update({
+        where: { id: input.itemId },
+        data: { packs: input.packs, nextPacks: null, ...input.columns },
+      });
+      let payment: Payment | null = null;
+      if (input.quote.amountDue > 0) {
+        payment = await tx.payment.create({
+          data: {
+            merchantId: input.merchantId,
+            subscriptionId: input.subscriptionId ?? undefined,
+            amount: input.quote.amountDue,
+            currency: 'VND',
+            method: method as any,
+            type: 'PLAN_CHANGE' as any,
+            status: (method === 'STRIPE' ? 'COMPLETED' : 'PENDING') as any,
+            transactionId: input.transactionId || undefined,
+            reference: input.reference || undefined,
+            description: `Add-on: ${input.name} +${input.extraPacks} gói (${input.packs} gói), ${input.quote.remainingDays}/${input.quote.periodDays} ngày`,
+            metadata: JSON.stringify({ addonId: input.itemId, addonPriceId: input.addonPriceId, packs: input.packs, extraPacks: input.extraPacks, unitPrice: input.unitPrice, ...input.quote }),
+            processedAt: method === 'STRIPE' ? new Date() : null,
+            processedBy: input.createdBy,
+          },
+        });
+      }
+      return { addon, payment };
+    });
+  },
+
+  /** #870: fewer packs from the next renewal (`null` cancels a pending reduction). Nothing changes now. */
+  setNextPacks: async (id: number, nextPacks: number | null) =>
+    prisma.planLimitAddon.update({ where: { id }, data: { nextPacks } }),
+
   /** Mark (endsAt = the period end) or unmark (endsAt null) an item for removal at the end of the period. */
   setRemoveAtPeriodEnd: async (id: number, removeAtPeriodEnd: boolean, endsAt: Date | null) =>
     prisma.planLimitAddon.update({ where: { id }, data: { removeAtPeriodEnd, endsAt } }),
@@ -149,13 +205,22 @@ export const simplifiedMerchantAddons = {
   },
 
   /**
-   * Inside the renewal transaction: renewed items take today's list price; the others end at the old period end
-   * (still counting until then).
+   * Inside the transaction of a renewal, an extension or a plan change (#870): renewed items take today's list price
+   * and pack size, and a pending reduction (their kind column = packSize × packs); the others end at the old period
+   * end (still counting until then).
    */
   applyRenewal: async (tx: any, lines: AddonRenewalLine[], oldPeriodEnd: Date | null, now = new Date()) => {
     for (const line of lines) {
       if (line.renew) {
-        await tx.planLimitAddon.update({ where: { id: line.id }, data: { unitPrice: line.unitPrice } });
+        const kind = line.limitKind as LimitKind | null;
+        const sized = kind && line.packSize != null && (LIMIT_KIND_SET as Set<string>).has(kind);
+        await tx.planLimitAddon.update({
+          where: { id: line.id },
+          data: {
+            unitPrice: line.unitPrice,
+            ...(sized ? { packSize: line.packSize, packs: line.packs, nextPacks: null, ...addonColumnsFor(kind as LimitKind, line.packSize as number, line.packs) } : {}),
+          },
+        });
         continue;
       }
       const item = await tx.planLimitAddon.findUnique({ where: { id: line.id }, select: { endsAt: true } });

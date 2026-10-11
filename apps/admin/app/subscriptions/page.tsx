@@ -35,7 +35,7 @@ import {
   Clock,
   X
 } from 'lucide-react';
-import { useSubscriptionsData } from '@rentalshop/hooks';
+import { useApiError, useSubscriptionsData } from '@rentalshop/hooks';
 import type { Subscription, Plan, Merchant, BillingInterval } from '@rentalshop/types';
 
 /**
@@ -51,6 +51,7 @@ export default function SubscriptionsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toastSuccess, toastError, toastWarning } = useToast();
+  const { translateError } = useApiError();
 
   // ============================================================================
   // URL PARAMS - Single Source of Truth
@@ -235,11 +236,12 @@ export default function SubscriptionsPage() {
         toastSuccess('Operation Successful', 'Subscription plan changed successfully');
         return { success: true };
       }
-      return { success: false, message: result.message || (result as any).error || 'The plan could not be changed.' };
+      // The API sends a code (e.g. PLAN_CHANGE_REMOVE_OUTLET_ADDONS, #870): show its translation
+      return { success: false, message: translateError(result) || 'The plan could not be changed.' };
     } catch (error: any) {
       return { success: false, message: error?.message || 'The plan could not be changed.' };
     }
-  }, [refetch, toastSuccess]);
+  }, [refetch, toastSuccess, translateError]);
 
   const handleConfirmationConfirm = useCallback(async (reason: string) => {
     const { type, subscription, data: confirmData } = confirmationDialog;

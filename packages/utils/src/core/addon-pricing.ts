@@ -28,6 +28,10 @@ export interface AddonItemLike {
   id?: number;
   addonPriceId?: number | null;
   packs?: number | null;
+  /** #870: fewer packs from the next renewal (NULL = no change). */
+  nextPacks?: number | null;
+  limitKind?: string | null;
+  packSize?: number | null;
   unitPrice?: number | null;
   isActive?: boolean | null;
   removeAtPeriodEnd?: boolean | null;
@@ -105,6 +109,7 @@ export interface AddonPriceLike {
   id: number;
   monthlyPrice: number;
   isActive: boolean;
+  packSize?: number | null;
 }
 
 export interface AddonRenewalLine {
@@ -113,37 +118,64 @@ export interface AddonRenewalLine {
   renew: boolean;
   /** Price per pack per month for the next period (today's list price), or the item's own price when not renewed. */
   unitPrice: number;
+  /** Packs for the next period: `nextPacks` when a reduction is pending, else the item's packs (#870). */
   packs: number;
+  /** Units per pack for the next period: the row's current pack size when renewed, else the item's (#870). */
+  packSize: number | null;
+  limitKind: string | null;
   /** unitPrice × packs when renewed, else 0. */
   monthlyAmount: number;
+  /** Captured price × current packs: what the current period was paid at (#870, plan-change credit). */
+  paidMonthlyAmount: number;
 }
 
 /**
- * What a renewal does with each item that has not ended: renewed at today's list price when its row is on sale and it
- * is not marked for removal; an old free item (no row) keeps running at its own price (0). Marked items and items of a
- * paused row are not renewed (they end with the period they were paid for).
+ * What a renewal does with each item that has not ended: renewed at today's list price and pack size when its row is on
+ * sale and it is not marked for removal; an old free item (no row) keeps running at its own price (0). Marked items and
+ * items of a paused row are not renewed (they end with the period they were paid for). A pending reduction
+ * (`nextPacks`) applies to a renewed item. Shared by every path that starts or extends a paid period (#870): renew,
+ * extend, change-plan.
  */
 export function addonRenewalLines(
   items: AddonItemLike[],
   catalog: Record<number, AddonPriceLike> | Map<number, AddonPriceLike>,
   now: Date = new Date()
-): { lines: AddonRenewalLine[]; monthlyTotal: number } {
+): { lines: AddonRenewalLine[]; monthlyTotal: number; paidMonthlyTotal: number } {
   const lookup = (id: number) => (catalog instanceof Map ? catalog.get(id) : catalog[id]);
   const lines: AddonRenewalLine[] = [];
   for (const item of items) {
     if (!item || isAddonEnded(item, now)) continue;
-    const packs = Math.max(0, Math.floor(Number(item.packs ?? 1) || 0));
+    const currentPacks = Math.max(0, Math.floor(Number(item.packs ?? 1) || 0));
     const own = Math.max(0, Math.round(Number(item.unitPrice) || 0));
     let renew = !item.removeAtPeriodEnd;
     let unitPrice = own;
+    let packSize = item.packSize == null ? null : Number(item.packSize);
     if (item.addonPriceId != null) {
       const row = lookup(Number(item.addonPriceId));
       if (!row || !row.isActive) renew = false;
-      else if (renew) unitPrice = Math.max(0, Math.round(row.monthlyPrice));
+      else if (renew) {
+        unitPrice = Math.max(0, Math.round(row.monthlyPrice));
+        if (row.packSize != null && Number(row.packSize) >= 1) packSize = Number(row.packSize);
+      }
     }
-    lines.push({ id: Number(item.id), renew, unitPrice, packs, monthlyAmount: renew ? unitPrice * packs : 0 });
+    const next = item.nextPacks != null && Number(item.nextPacks) >= 1 ? Math.floor(Number(item.nextPacks)) : null;
+    const packs = renew && next != null ? next : currentPacks;
+    lines.push({
+      id: Number(item.id),
+      renew,
+      unitPrice,
+      packs,
+      packSize,
+      limitKind: item.limitKind ?? null,
+      monthlyAmount: renew ? unitPrice * packs : 0,
+      paidMonthlyAmount: renew ? own * currentPacks : 0,
+    });
   }
-  return { lines, monthlyTotal: lines.reduce((sum, l) => sum + l.monthlyAmount, 0) };
+  return {
+    lines,
+    monthlyTotal: lines.reduce((sum, l) => sum + l.monthlyAmount, 0),
+    paidMonthlyTotal: lines.reduce((sum, l) => sum + l.paidMonthlyAmount, 0),
+  };
 }
 
 // ============================================================================
@@ -183,7 +215,17 @@ export const merchantAddonCreateSchema = z
   })
   .strip();
 
-export const merchantAddonUpdateSchema = z.object({ removeAtPeriodEnd: z.boolean() });
+/** `removeAtPeriodEnd` (#850), or a new number of packs (#870: more now and charged, fewer from the next period). */
+export const merchantAddonUpdateSchema = z
+  .object({
+    removeAtPeriodEnd: z.boolean().optional(),
+    packs: z.coerce.number().int().min(1).max(1000).optional(),
+    method: z.enum(['TRANSFER', 'STRIPE']).optional(),
+    transactionId: z.string().trim().max(200).optional(),
+    reference: z.string().trim().max(200).optional(),
+  })
+  .strip()
+  .refine((d) => d.removeAtPeriodEnd !== undefined || d.packs !== undefined, { message: 'removeAtPeriodEnd or packs' });
 
 export const addonQuoteQuerySchema = z.object({
   addonPriceId: z.coerce.number().int().positive(),

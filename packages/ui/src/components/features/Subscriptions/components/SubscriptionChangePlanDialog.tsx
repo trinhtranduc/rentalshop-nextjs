@@ -77,6 +77,8 @@ export function SubscriptionChangePlanDialog({
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [addons, setAddons] = useState<PlanLimitAddon[]>([]);
+  // #870: priced add-ons count in the change (new cycle at today's price, credit for unused paid days), as the API
+  const [addonTotals, setAddonTotals] = useState({ monthly: 0, paidMonthly: 0 });
   const [totalAddonLimits, setTotalAddonLimits] = useState({
     outlets: 0,
     users: 0,
@@ -119,6 +121,17 @@ export function SubscriptionChangePlanDialog({
       };
       
       fetchAddons();
+      const fetchAddonTotals = async () => {
+        try {
+          const { addonPricesApi } = await import('@rentalshop/utils');
+          const res = await addonPricesApi.listForMerchant(subscription.merchantId!);
+          const renewal = res.success ? res.data?.renewal : null;
+          setAddonTotals({ monthly: renewal?.addonMonthlyTotal || 0, paidMonthly: renewal?.addonPaidMonthlyTotal || 0 });
+        } catch {
+          setAddonTotals({ monthly: 0, paidMonthly: 0 });
+        }
+      };
+      fetchAddonTotals();
     }
   }, [isOpen, subscription?.merchantId]);
 
@@ -223,9 +236,12 @@ export function SubscriptionChangePlanDialog({
           currentPeriodEnd: subscription.currentPeriodEnd || new Date(),
           billingInterval: oldInterval,
           plan: { basePrice: subscription.plan?.basePrice || 0 },
+          status: subscription.status as any,
         },
         newPlan: { basePrice: selectedPlan.basePrice || 0 },
         selectedInterval,
+        addonMonthlyTotal: addonTotals.monthly,
+        paidAddonMonthlyTotal: addonTotals.paidMonthly,
       })
     : null;
   const oldCurrency = (subscription.currency || subscription.plan?.currency || 'USD') as any;
@@ -407,6 +423,18 @@ export function SubscriptionChangePlanDialog({
                             </span>
                             <span className="font-medium">-{formatCurrency(planChange.remainingCreditValue, oldCurrency)}</span>
                           </div>
+                          {planChange.addonPeriodPrice > 0 && (
+                            <div className="flex justify-between">
+                              <span>Add-ons (new cycle):</span>
+                              <span className="font-medium">{formatCurrency(planChange.addonPeriodPrice, newCurrency)}</span>
+                            </div>
+                          )}
+                          {planChange.addonCreditValue > 0 && (
+                            <div className="flex justify-between text-green-700">
+                              <span>Add-on credit for unused days:</span>
+                              <span className="font-medium">-{formatCurrency(planChange.addonCreditValue, oldCurrency)}</span>
+                            </div>
+                          )}
                           <div className="flex justify-between pt-1 border-t font-semibold text-sm">
                             <span>Total due:</span>
                             <span className="text-primary">{formatCurrency(planChange.totalDue, newCurrency)}</span>
