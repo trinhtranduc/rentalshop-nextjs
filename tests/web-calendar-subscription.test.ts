@@ -15,8 +15,19 @@ describe('subscriptionBlocked', () => {
     }
   });
 
+  it('blocks a paused or past-due shop whose period is still running (status ACTIVE, dbStatus PAUSED / PAST_DUE)', () => {
+    // GET /api/subscriptions/status computes `status` from the period end only; the API gate also blocks these
+    for (const dbStatus of ['PAUSED', 'PAST_DUE', 'paused']) {
+      expect(subscriptionBlocked({ success: true, data: { status: 'ACTIVE', dbStatus } })).toBe(true);
+    }
+    // cancelled keeps access until the period ends
+    expect(subscriptionBlocked({ success: true, data: { status: 'ACTIVE', dbStatus: 'CANCELLED' } })).toBe(false);
+    expect(subscriptionBlocked({ success: true, data: { status: 'ACTIVE', dbStatus: 'ACTIVE' } })).toBe(false);
+    expect(subscriptionBlocked({ success: true, data: { status: 'TRIAL', dbStatus: 'TRIAL' } })).toBe(false);
+  });
+
   it('blocks the 403 answer of the status route (#728) by its subscription code', () => {
-    for (const code of ['SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_PAST_DUE', 'TRIAL_EXPIRED']) {
+    for (const code of ['SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_PAST_DUE', 'SUBSCRIPTION_PERIOD_ENDED', 'TRIAL_EXPIRED']) {
       expect(subscriptionBlocked({ success: false, code })).toBe(true);
     }
   });
