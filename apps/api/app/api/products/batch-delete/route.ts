@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -22,11 +22,19 @@ const batchDeleteSchema = z.object({
  * - a product on a RESERVED or PICKUPED order is not deleted and is reported in `errors`
  *   (`code: PRODUCT_HAS_OPEN_ORDERS`); 409 when that is every product.
  *
- * Authorization: Users with 'products.manage' permission can delete products
+ * Authorization: 'products.manage', and not a branch role (#825: 403 PRODUCT_DELETE_MERCHANT_ONLY)
  */
 export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
   try {
     console.log(`🔍 POST /api/products/batch-delete - User: ${user.email} (${user.role})`);
+
+    // #825: only the merchant (and ADMIN) deletes products; a product is shared by every branch
+    if (isOutletRole(user.role)) {
+      return NextResponse.json(
+        ResponseBuilder.error('PRODUCT_DELETE_MERCHANT_ONLY'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
 
     const body = await request.json();
     

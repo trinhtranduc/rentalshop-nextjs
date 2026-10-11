@@ -32,8 +32,10 @@ describe('#682 OUTLET_INVENTORY permissions', () => {
     const others = Object.fromEntries(
       Object.entries(ROLE_PERMISSIONS).filter(([role]) => role !== 'OUTLET_INVENTORY').map(([role, keys]) => [role, [...keys].sort()])
     );
-    // Recorded from the code before #682
-    expect(others).toEqual(require('./__fixtures__/role-permissions-before-682.json'));
+    // Recorded from the code before #682; #825 (owner 2026-10-11) then took products.create from OUTLET_STAFF
+    const before682 = require('./__fixtures__/role-permissions-before-682.json');
+    const expected = { ...before682, OUTLET_STAFF: before682.OUTLET_STAFF.filter((k: string) => k !== 'products.create') };
+    expect(others).toEqual(expected);
   });
 });
 

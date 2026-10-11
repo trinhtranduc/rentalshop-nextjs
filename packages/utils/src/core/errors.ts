@@ -35,6 +35,7 @@ export enum ErrorCode {
   // Business Logic Errors
   PLAN_LIMIT_EXCEEDED = 'PLAN_LIMIT_EXCEEDED',
   CANNOT_DELETE_ADDON_LIMIT_EXCEEDED = 'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED',
+  ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN = 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN',
   CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET = 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET',
   CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT = 'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT',
   CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET = 'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET',
@@ -57,6 +58,8 @@ export enum ErrorCode {
   PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED = 'PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED',
   PLAN_CHANGE_ONLY_AT_NEW_PERIOD = 'PLAN_CHANGE_ONLY_AT_NEW_PERIOD',
   DOWNGRADE_ONLY_AT_NEW_PERIOD = 'DOWNGRADE_ONLY_AT_NEW_PERIOD',
+  PRODUCT_SHARED_FIELDS_MERCHANT_ONLY = 'PRODUCT_SHARED_FIELDS_MERCHANT_ONLY',
+  PRODUCT_DELETE_MERCHANT_ONLY = 'PRODUCT_DELETE_MERCHANT_ONLY',
   
   // Resource Specific Errors
   EMAIL_EXISTS = 'EMAIL_EXISTS',
@@ -128,6 +131,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   // Business Logic Errors
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 'Plan limit exceeded',
   [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 'Cannot delete addon: Current usage exceeds limits after deletion',
+  [ErrorCode.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN]: 'Only a multi-branch plan (Enterprise) can take a branch add-on',
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 'Cannot create order for other outlet. You can only create orders for your assigned outlet.',
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 'Cannot create order for outlet from different merchant.',
   [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
@@ -150,6 +154,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED]: 'Payment method and transaction ID are required',
   [ErrorCode.PLAN_CHANGE_ONLY_AT_NEW_PERIOD]: "The plan can only be changed in a new period",
   [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: "A downgrade is only possible in a new period",
+  [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 'Only the shop owner can change the name, prices, photos, category or other shared details of a product',
+  [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 'Only the shop owner can delete products',
   
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
@@ -206,6 +212,7 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   // Business Logic Errors (4xx)
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 403,
   [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 422,
+  [ErrorCode.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN]: 422,
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 403,
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 403,
   [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 403,
@@ -228,6 +235,8 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED]: 400,
   [ErrorCode.PLAN_CHANGE_ONLY_AT_NEW_PERIOD]: 403,
   [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: 422,
+  [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 403,
+  [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 403,
   
   // Resource Specific Errors (4xx)
   [ErrorCode.EMAIL_EXISTS]: 409,
