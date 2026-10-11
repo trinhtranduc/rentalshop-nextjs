@@ -16,4 +16,13 @@ describe('locale files', () => {
   it.each(files)('%s is valid JSON', (file) => {
     expect(() => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'))).not.toThrow();
   });
+
+  // Two PRs that both appended the same codes left each code twice; JSON.parse keeps the LAST (older) text silently.
+  it.each(files)('%s has no key twice at the same level', (file) => {
+    const text = fs.readFileSync(path.join(root, file), 'utf8');
+    const data = JSON.parse(text);
+    if (Object.values(data).some((v) => v && typeof v === 'object')) return; // nested files: checked by their own tests
+    const keys = [...text.matchAll(/^\s*"([^"]+)"\s*:/gm)].map((m) => m[1]);
+    expect(keys.filter((k, i) => keys.indexOf(k) !== i)).toEqual([]);
+  });
 });
