@@ -1,10 +1,13 @@
 # Spec (step 1, simplified; owner 2026-10-11)
 
-Model like Sapo: plans by tier, quantity add-ons on top. **Plans: Basic, Pro, Enterprise** (Enterprise = multiple branches). **Add-ons are quantities** (more branches, more staff), priced in VND, for the whole shop. Features (Loyalty, payroll, mobile / web) belong to the plan tiers, not to modules.
+Model like Sapo: plans by tier, add-ons on top. **Plans: Basic, Pro, Enterprise** (Enterprise = multiple branches). On top of any plan the shop can have two kinds of items, **managed in one place** (one catalog, one list per shop), each priced in VND for the whole shop:
+- **Add-on** (`kind = quantity`): a number of branches or staff, e.g. "Thêm chi nhánh", "Thêm nhân viên".
+- **Module** (`kind = feature`): switches a feature on, e.g. **Loyalty**, **Payroll** (bảng lương).
+Step 1 builds the catalog, the shop list, pricing and renewal for both kinds and enforces the **add-ons**. Enforcing the feature modules is step 2 (Payroll waits for the owner's business logic).
 
 ## Data (one additive migration)
-1. `BillingModule` (catalog, admin-defined): `id`, `name`, `limits` (JSON per unit, any of `outlets`, `users`, `products`, `customers`, `orders`; e.g. "Thêm chi nhánh" = `{outlets:1, users:3}`, "Thêm nhân viên" = `{users:1}`), `monthlyPrice` (Float, VND per unit), `isActive`, `sortOrder`, timestamps.
-2. `MerchantModule` (what a shop bought): `id`, `merchantId`, `moduleId` (null for migrated addons), `name` (snapshot), `limits` (JSON per unit, snapshot), `quantity` (Int ≥ 1), `unitPrice` (VND per unit per month), `removeAtPeriodEnd` (Bool), `isActive`, `endedAt?`, timestamps. The snapshot means a later catalog edit never changes a period already paid.
+1. `BillingModule` (catalog, admin-defined): `id`, `name`, `kind` (`quantity` | `feature`), `featureKey` (only for `feature`: `loyalty`, `payroll`, …), `limits` (JSON per unit, only for `quantity`, any of `outlets`, `users`, `products`, `customers`, `orders`; e.g. "Thêm chi nhánh" = `{outlets:1, users:3}`, "Thêm nhân viên" = `{users:1}`), `monthlyPrice` (Float, VND per unit), `isActive`, `sortOrder`, timestamps.
+2. `MerchantModule` (what a shop bought): `id`, `merchantId`, `moduleId` (null for migrated addons), `name`, `kind`, `featureKey`, `limits` (snapshots), `quantity` (Int ≥ 1; always 1 for `feature`), `unitPrice` (VND per unit per month), `removeAtPeriodEnd` (Bool), `isActive`, `endedAt?`, timestamps. The snapshot means a later catalog edit never changes a period already paid.
 3. Data migration: every active `PlanLimitAddon` becomes one `MerchantModule` (`moduleId` null, name "Addon (cũ)", `limits` = its non-zero columns, `quantity` 1, `unitPrice` 0). The catalog starts empty: the admin creates the two real modules and sets their prices. `PlanLimitAddon` stays for history and is no longer written.
 
 ## Rules
@@ -16,14 +19,20 @@ Model like Sapo: plans by tier, quantity add-ons on top. **Plans: Basic, Pro, En
 9. A catalog price change affects new purchases and the next renewal only.
 10. Over the limit after a module ends or the plan expires: existing branches / users stay, creating new ones is blocked, nothing is deleted.
 
+## Feature modules (step 2, same tables)
+- Effective features of a shop = plan features + `featureKey` of its active feature modules. The API checks it on every route of that feature (403 `MODULE_NOT_ENABLED` when off); the apps read the enabled list from the session / `app-config` (additive field).
+- Expired or removed: the feature switches off completely and the data is kept untouched (no read-only mode); buying it again shows everything.
+- Loyalty is in every plan's features today. It stays until the owner removes it from the plans; then shops that use it get the Loyalty module at price 0 in the same migration, so nobody loses it.
+- Payroll: only after the owner settles its business logic.
+
 ## API (ADMIN / OPS)
 11. `GET/POST /api/billing-modules`, `PUT /api/billing-modules/[id]` (hide with `isActive`, no delete).
 12. `GET /api/merchants/[id]/modules` (the MERCHANT may read its own), `GET .../modules/quote?moduleId&quantity` (amount due now), `POST .../modules` (add + payment), `PATCH .../modules/[id]` (`removeAtPeriodEnd` true / false).
 13. Old `plan-limit-addons` routes: GET keeps working (reads the new table, same shape); POST / PUT / DELETE → 410 `ADDONS_REPLACED_BY_MODULES`.
 
 ## Admin UI
-14. `/billing-modules`: one table (name, adds per unit, VND price, on / off), add and edit inline.
+14. `/billing-modules`: one table (name, type Add-on / Module, what it adds or enables, VND price, on / off), add and edit inline. In step 1 only the Add-on type can be created.
 15. Merchant page, block "Gói & Module": the plan, the modules (quantity, price, ends with the period, marked for removal), "Thêm module" (pick the module, quantity, quote from the API, payment fields), "Bỏ cuối kỳ" / undo, and the next renewal total (plan + modules).
 
-## Not in scope
-Feature modules and payroll (features live in plan tiers), merchant self-purchase and Sepay (later), Lemon Squeezy, mobile apps.
+## Not in scope (step 1)
+Enforcing feature modules (Loyalty, Payroll: step 2), merchant self-purchase and Sepay (later), Lemon Squeezy, mobile apps.
