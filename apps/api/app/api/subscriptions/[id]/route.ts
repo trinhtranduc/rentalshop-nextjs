@@ -3,6 +3,7 @@ import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { ApiError, ErrorCode, handleApiError } from '@rentalshop/utils';
 import { API, PLATFORM_OPS_ROLES, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { pickEditableSubscriptionFields } from '../../../../lib/subscription-update';
 
 /**
  * GET /api/subscriptions/[id]
@@ -94,7 +95,7 @@ export async function PUT(
         );
         
         // Update other fields if provided (excluding planId and billingInterval which are handled by changePlan)
-        const { planId, billingInterval: _, interval, method: _method, transactionId: _transactionId, reference: _reference, description: _description, ...otherFields } = body;
+        const otherFields = pickEditableSubscriptionFields(body);
         if (Object.keys(otherFields).length > 0) {
           await db.subscriptions.update(subscriptionId, otherFields);
         }
@@ -105,7 +106,7 @@ export async function PUT(
         return NextResponse.json({ success: true, data: finalSubscription || updatedSubscription });
       } else {
         // For non-plan changes, update directly
-        const updatedSubscription = await db.subscriptions.update(subscriptionId, body);
+        const updatedSubscription = await db.subscriptions.update(subscriptionId, pickEditableSubscriptionFields(body));
         return NextResponse.json({ success: true, data: updatedSubscription });
       }
     } catch (error) {
