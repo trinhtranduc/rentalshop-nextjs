@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.domain.RefreshPolicy
+import com.anyrent.pos.domain.RefreshTracker
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.calendar.CalendarDayOrder
 import com.anyrent.pos.domain.calendar.CalendarDayRow
 import com.anyrent.pos.domain.calendar.CalendarLogic
 import com.anyrent.pos.domain.calendar.CalendarMonthCounts
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -37,6 +41,9 @@ data class CalendarV2State(
 class CalendarV2ViewModel(
     private val fetch: (String) -> org.json.JSONObject = { ApiClient.get().authedGet(it) },
     private val today: () -> LocalDate = { ShopTime.today() },
+    private val now: () -> Instant = Instant::now,
+    /** App-wide "orders changed" version (#674); replaceable in tests */
+    changes: () -> Long = { OrdersChanged.version.value },
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         today().let { CalendarV2State(YearMonth.from(it), it.toString()) },
@@ -45,11 +52,15 @@ class CalendarV2ViewModel(
     private var monthJob: Job? = null
     private var dayJob: Job? = null
     private var loadedKey: String? = null
+    /** #674: the day list reloads on show only when an order changed or it is 5 minutes old */
+    private val freshness = RefreshTracker(changes)
 
     val todayKey: String get() = today().toString()
 
-    /** Called each time the tab is shown (first show, back from an order): marks and the day list again */
+    /** Called each time the tab is shown (first show, back from an order) and on an orders-changed signal while shown */
     fun onShown() {
+        if (dayJob?.isActive == true) return
+        if (!freshness.shouldReload(now(), RefreshPolicy.LIST_TTL)) return
         loadMonth()
         loadDay()
     }
@@ -94,6 +105,7 @@ class CalendarV2ViewModel(
         // Same day again (back from an order): keep the rows on screen while they reload
         val sameDay = key == loadedKey && _state.value.dayError == null
         _state.update { it.copy(dayLoading = !sameDay, dayError = null, rows = if (sameDay) it.rows else emptyList()) }
+        val version = freshness.begin()
         dayJob = viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
@@ -108,9 +120,15 @@ class CalendarV2ViewModel(
             if (result.exceptionOrNull() is CancellationException || _state.value.selectedKey != key) return@launch
             result.onSuccess { rows ->
                 loadedKey = key
+                freshness.loaded(version, now())
                 _state.update { it.copy(rows = rows, dayLoading = false, refreshing = false) }
             }.onFailure { error ->
-                _state.update { it.copy(dayLoading = false, dayError = error.message ?: "", refreshing = false) }
+                if (sameDay) {
+                    // Quiet refresh of the rows on screen (#674): keep them; the next show tries again
+                    _state.update { it.copy(dayLoading = false, refreshing = false) }
+                } else {
+                    _state.update { it.copy(dayLoading = false, dayError = error.message ?: "", refreshing = false) }
+                }
             }
         }
     }

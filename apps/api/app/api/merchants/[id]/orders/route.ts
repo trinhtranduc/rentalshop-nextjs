@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, ordersQuerySchema, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
-import { API, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { API, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/orders
@@ -84,7 +84,7 @@ export async function GET(
       // - ADMIN role: Can see orders from all outlets
       // - MERCHANT role: Can see orders from all outlets of their merchant
       // - OUTLET_ADMIN/OUTLET_STAFF: Can only see orders from their assigned outlet
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         // Outlet users can only see orders from their assigned outlet
         searchFilters.outletId = userScope.outletId;
       } else if (queryOutletId) {
@@ -194,7 +194,7 @@ export async function POST(
         }
 
         // For OUTLET_ADMIN/OUTLET_STAFF, verify they can only create orders for their outlet
-        if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && outletId !== userScope.outletId) {
+        if (isOutletRole(user.role) && outletId !== userScope.outletId) {
           console.log('❌ Outlet user trying to create order for different outlet:', {
             requestedOutletId: outletId,
             userOutletId: userScope.outletId

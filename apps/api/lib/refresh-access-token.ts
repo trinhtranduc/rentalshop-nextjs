@@ -88,6 +88,15 @@ export async function refreshWithRefreshToken(input: {
     return { ok: false, code: 'USER_NOT_FOUND_OR_INACTIVE', status: 401 };
   }
 
+  // A refresh token issued before the last password change or reset cannot refresh (#661).
+  // The password routes re-stamp the session they keep, so only other devices land here.
+  const passwordChangedAt = dbUser.passwordChangedAt ? new Date(dbUser.passwordChangedAt).getTime() : null;
+  const issuedAt = rotation.issuedAt ? new Date(rotation.issuedAt).getTime() : null;
+  if (passwordChangedAt !== null && issuedAt !== null && issuedAt < passwordChangedAt) {
+    await db.refreshTokens.revoke(rotation.newToken);
+    return sessionFailure('expired');
+  }
+
   // Refresh-token clients get a 1-hour access token (#344)
   return {
     ok: true,

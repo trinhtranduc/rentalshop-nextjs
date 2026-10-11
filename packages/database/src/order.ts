@@ -121,6 +121,8 @@ export interface OrderWithRelations {
   orderType: string
   status: string
   totalAmount: number
+  /** #505: total collected at hand-over; null = not handed over after this field existed (use totalAmount) */
+  pickupTotalAmount?: number | null
   depositAmount: number
   securityDeposit: number
   damageFee: number
@@ -204,6 +206,7 @@ const orderSelect = {
   orderType: true,
   status: true,
   totalAmount: true,
+  pickupTotalAmount: true,
   depositAmount: true,
   securityDeposit: true,
   damageFee: true,
@@ -305,6 +308,7 @@ function transformOrder(order: any): OrderWithRelations {
     orderType: order.orderType,
     status: order.status,
     totalAmount: order.totalAmount,
+    pickupTotalAmount: order.pickupTotalAmount ?? null,
     depositAmount: order.depositAmount ?? 0,
     securityDeposit: order.securityDeposit ?? 0,
     damageFee: order.damageFee ?? 0,
@@ -432,6 +436,8 @@ export async function createOrder(data: {
       orderType: data.orderType as any, // ✅ Type safe with Prisma enum
       status: (data.status ?? ORDER_STATUS.RESERVED) as any, // ✅ Type safe with Prisma enum
       totalAmount: data.totalAmount,
+      // #505: what is collected at hand-over, so a later raise of totalAmount (gia hạn) is the extra rent
+      pickupTotalAmount: data.status === ORDER_STATUS.PICKUPED ? data.totalAmount : null,
       depositAmount: data.depositAmount ?? 0,
       securityDeposit: data.securityDeposit ?? 0,
       damageFee: data.damageFee ?? 0,
@@ -555,6 +561,7 @@ export async function updateOrder(
     select: {
       orderType: true,
       status: true,
+      totalAmount: true,
       outletId: true,
       pickedUpAt: true, // Include để kiểm tra khi auto-set
       returnedAt: true, // Include để kiểm tra khi auto-set
@@ -679,6 +686,11 @@ export async function updateOrder(
     }
   }
   
+  // #505: remember the total collected at hand-over; a later change of totalAmount is extra rent (or a refund)
+  if (newStatus === ORDER_STATUS.PICKUPED && newStatus !== oldStatus) {
+    updateData.pickupTotalAmount = updateData.totalAmount ?? oldOrder?.totalAmount ?? null;
+  }
+
   // CRITICAL: Tự động set returnedAt khi status thay đổi sang RETURNED
   // (nếu chưa được set hoặc không được cung cấp trong updateData)
   if (newStatus === ORDER_STATUS.RETURNED && newStatus !== oldStatus) {
@@ -698,8 +710,45 @@ export async function updateOrder(
 
   console.log('✅ Order updated successfully');
 
-  // Update outlet stock if status changed and we have order items
-  if (newStatus && newStatus !== oldStatus && orderType && oldOutletId && oldOrderItems.length > 0) {
+  // #504: the lines or the outlet of a rented-out order changed while it stays PICKUPED:
+  // renting/available follow the difference (nothing moves on a RESERVED order).
+  const editedItems = inputOrderItems && inputOrderItems.length > 0 ? inputOrderItems : null;
+  const outletChanged = inputOutletId !== undefined && oldOutletId !== undefined && inputOutletId !== oldOutletId;
+  if (
+    orderType === ORDER_TYPE.RENT &&
+    oldStatus === ORDER_STATUS.PICKUPED &&
+    (!newStatus || newStatus === ORDER_STATUS.PICKUPED) &&
+    oldOutletId &&
+    (editedItems || outletChanged)
+  ) {
+    try {
+      const { adjustOutletStockForEditedOrderItems } = await import('./product');
+      const before = oldOrderItems
+        .filter((item) => item.productId)
+        .map((item) => ({ productId: item.productId as number, quantity: item.quantity }));
+      const after = editedItems
+        ? editedItems.filter((item) => item.productId).map((item) => ({ productId: item.productId, quantity: item.quantity }))
+        : before;
+      if (outletChanged) {
+        await adjustOutletStockForEditedOrderItems(oldOutletId, before, []);
+        await adjustOutletStockForEditedOrderItems(inputOutletId as number, [], after);
+      } else {
+        await adjustOutletStockForEditedOrderItems(oldOutletId, before, after);
+      }
+      console.log('✅ Outlet stock adjusted for edited PICKUPED order');
+    } catch (error) {
+      console.error('❌ Error adjusting outlet stock for edited order:', error);
+    }
+  }
+
+  // Update outlet stock if status changed and we have order items.
+  // Leaving a state that holds stock (PICKUPED / COMPLETED) gives back what was taken: the old lines at the old outlet.
+  // Entering it takes the lines and outlet that this request saves (#504).
+  const leavesHeldStock = oldStatus === ORDER_STATUS.PICKUPED || oldStatus === ORDER_STATUS.COMPLETED;
+  const stockItemsSource: Array<{ productId: number | null; quantity: number }> =
+    !leavesHeldStock && editedItems ? editedItems : oldOrderItems;
+  const stockOutletId = !leavesHeldStock && outletChanged ? (inputOutletId as number) : oldOutletId;
+  if (newStatus && newStatus !== oldStatus && orderType && stockOutletId && stockItemsSource.length > 0) {
     try {
       // Import the function from product module
       const productModule = await import('./product');
@@ -715,8 +764,8 @@ export async function updateOrder(
         oldStatus,
         newStatus,
         orderType as 'RENT' | 'SALE',
-        oldOutletId,
-        oldOrderItems.map((item: { productId: number | null; quantity: number }) => ({
+        stockOutletId,
+        stockItemsSource.map((item: { productId: number | null; quantity: number }) => ({
           productId: item.productId!,
           quantity: item.quantity,
         })).filter((item: { productId: number }): boolean => item.productId > 0)
@@ -886,6 +935,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
         orderType: true,
         status: true,
         totalAmount: true,
+        pickupTotalAmount: true,
         depositAmount: true,
         pickupPlanAt: true,
         returnPlanAt: true,
@@ -922,6 +972,7 @@ export async function searchOrders(filters: OrderSearchFilter): Promise<OrderSea
     orderType: order.orderType as any,
     status: order.status as any,
     totalAmount: order.totalAmount,
+    pickupTotalAmount: order.pickupTotalAmount ?? null,
     depositAmount: order.depositAmount,
     pickupPlanAt: order.pickupPlanAt,
     returnPlanAt: order.returnPlanAt,
@@ -1220,6 +1271,7 @@ export const simplifiedOrders = {
           orderType: true,
           status: true,
           totalAmount: true,
+          pickupTotalAmount: true,
           depositAmount: true,
           securityDeposit: true,
           damageFee: true,
@@ -1565,6 +1617,7 @@ export const simplifiedOrders = {
           orderType: true,
           status: true,
           totalAmount: true,
+          pickupTotalAmount: true,
           depositAmount: true,
           notes: true,
           createdAt: true,
@@ -1639,6 +1692,7 @@ export const simplifiedOrders = {
       orderType: order.orderType,
       status: order.status,
       totalAmount: order.totalAmount,
+      pickupTotalAmount: order.pickupTotalAmount ?? null,
       depositAmount: order.depositAmount,
       notes: order.notes,
       createdAt: order.createdAt,
@@ -1782,6 +1836,7 @@ export const simplifiedOrders = {
       orderType: true,
       status: true,
       totalAmount: true,
+      pickupTotalAmount: true,
       depositAmount: true,
       securityDeposit: true,
       damageFee: true,
@@ -1938,6 +1993,7 @@ export const simplifiedOrders = {
       orderType: order.orderType,
       status: order.status,
       totalAmount: order.totalAmount,
+      pickupTotalAmount: order.pickupTotalAmount ?? null,
       depositAmount: order.depositAmount,
       securityDeposit: order.securityDeposit,
       damageFee: order.damageFee,
@@ -2030,13 +2086,14 @@ export const simplifiedOrders = {
    */
   findByIdDetail: async (id: number) => {
     const order = await prisma.order.findUnique({
-      where: { id },
+      where: { id, deletedAt: null }, // #739: soft-deleted orders are 404 like by number
       select: {
         id: true,
         orderNumber: true,
         orderType: true,
         status: true,
         totalAmount: true,
+        pickupTotalAmount: true,
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,
@@ -2262,6 +2319,7 @@ export const simplifiedOrders = {
       orderType: true,
       status: true,
       totalAmount: true,
+      pickupTotalAmount: true,
       depositAmount: true,
       securityDeposit: true,
       damageFee: true,
@@ -2394,7 +2452,7 @@ export const simplifiedOrders = {
     }
 
     return await prisma.order.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       select
     });
   },
@@ -2469,6 +2527,7 @@ export const simplifiedOrders = {
         orderType: true,
         status: true,
         totalAmount: true,
+        pickupTotalAmount: true,
         depositAmount: true,
         securityDeposit: true,
         damageFee: true,

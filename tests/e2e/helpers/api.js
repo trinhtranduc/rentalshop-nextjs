@@ -28,6 +28,11 @@ const ACCOUNTS = {
     // OUTLET_STAFF of the main merchant's default outlet
     email: process.env.BIZ_E2E_STAFF_EMAIL || 'staff.outlet2@example.com',
     password: process.env.BIZ_E2E_STAFF_PASSWORD || 'staff123'
+  },
+  inventory: {
+    // #682 OUTLET_INVENTORY (Nhân viên kho) of the same outlet as `staff`
+    email: process.env.BIZ_E2E_INVENTORY_EMAIL || 'inventory.outlet2@example.com',
+    password: process.env.BIZ_E2E_INVENTORY_PASSWORD || 'inventory123'
   }
 };
 
@@ -68,6 +73,11 @@ async function passwordLogin(account) {
 async function request(token, method, path, { json, form, headers = {} } = {}) {
   assertLocalBase();
   const h = { ...headers };
+  // The login limiter (10 per 15 minutes, in memory) keys on x-forwarded-for: a login of the suite gets its own address,
+  // so a long run with many accounts does not trip it (a run of 650+ tests logs in far more than 10 times)
+  if (/\/auth\/login\b/.test(path) && !h['x-forwarded-for']) {
+    h['x-forwarded-for'] = `10.${Math.floor(Math.random() * 250) + 1}.${Math.floor(Math.random() * 250) + 1}.${Math.floor(Math.random() * 250) + 1}`;
+  }
   if (token) h.Authorization = `Bearer ${token}`;
   let body;
   if (form) {

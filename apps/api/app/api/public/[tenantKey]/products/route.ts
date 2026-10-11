@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder, parseProductImages } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { buildCorsHeaders } from '@rentalshop/utils/server';
+import { toPublicProduct } from '../../../../../lib/public-product';
 
 /**
  * OPTIONS /api/public/[tenantKey]/products
@@ -180,14 +181,8 @@ export async function GET(
       outletsResult = [];
     }
 
-    // Transform products to ensure they have categoryId
-    const transformedProducts = (productsResult.data || []).map((product: any) => ({
-      ...product,
-      categoryId: product.categoryId || product.category?.id,
-      // ✅ Use shared parseProductImages() for backward compatibility
-      // Handles: array, JSON string, comma-separated string, quoted string
-      images: parseProductImages(product.images)
-    }));
+    // #663: allowlisted fields only (no cost price, CUIDs or internal fields on a public page)
+    const transformedProducts = (productsResult.data || []).map(toPublicProduct);
 
     const responseData = {
       merchant: {

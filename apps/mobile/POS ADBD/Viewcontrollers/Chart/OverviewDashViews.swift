@@ -360,10 +360,11 @@ final class OverviewTileView: UIControl {
             column.addArrangedSubview(note)
             column.setCustomSpacing(4, after: bar)
         }
-        if !loading, let chip = tile.chip {
-            let pill = OverviewPillLabel(chip)
-            let row = UIStackView(arrangedSubviews: [pill, UIView()])
+        let pills = loading ? [] : [tile.chip, tile.count].compactMap { $0 }.map { OverviewPillLabel($0) }
+        if !pills.isEmpty {
+            let row = UIStackView(arrangedSubviews: pills + [UIView()])
             row.alignment = .center
+            row.spacing = 6
             column.addArrangedSubview(row)
         }
         addSubview(column)
@@ -375,7 +376,7 @@ final class OverviewTileView: UIControl {
 
         isAccessibilityElement = true
         accessibilityTraits = UIAccessibilityTraitButton
-        accessibilityLabel = [tile.kind.title, loading ? nil : valueText, forecastText, tile.chip?.text]
+        accessibilityLabel = [tile.kind.title, loading ? nil : valueText, forecastText, tile.chip?.text, loading ? nil : tile.count?.text]
             .compactMap { $0 }.joined(separator: ", ")
         accessibilityHint = "overview.dash.openDetail".localized()
     }
@@ -781,12 +782,16 @@ final class OverviewDetailSheet: UIViewController {
     // MARK: Bodies
 
     private func bodyViews() -> [UIView] {
+        // The rule first: where the number comes from, in one sentence (the breakdown follows)
+        let rule = OVFont.label(content.kind.rule.localized(), DS.TextSize.secondary, color: OVColor.ink2, lines: 0)
+        let rest: [UIView]
         switch content.kind {
-        case .collected: return collectedBody()
-        case .outstanding: return outstandingBody()
-        case .collateral: return collateralBody()
-        case .orderValue: return orderValueBody()
+        case .collected: rest = collectedBody()
+        case .outstanding: rest = outstandingBody()
+        case .collateral: rest = collateralBody()
+        case .orderValue: rest = orderValueBody()
         }
+        return [rule] + rest
     }
 
     private func empty() -> [UIView] {
@@ -841,9 +846,14 @@ final class OverviewDetailSheet: UIViewController {
             .pickupAndSale: "overview.dash.money.pickupAndSale".localized(),
             .fees: "overview.dash.money.fees".localized(),
             .refunds: "overview.dash.money.refunds".localized(),
+            .collateral: "overview.dash.money.collateralNet".localized(),
             .total: "overview.dash.kpi.collected".localized(),
         ]
-        return OverviewDashLogic.waterfall(parts, total: content.report.netRevenue).map { row in
+        // #708: with cashCollected the rows end with collateral received − handed back, so they add up to the tile
+        let report = content.report
+        let collateral = report.cashCollected != nil ? report.collateralFlow?.net : nil
+        let total = collateral != nil ? (report.cashCollected ?? report.netRevenue) : report.netRevenue
+        return OverviewDashLogic.waterfall(parts, total: total, collateral: collateral).map { row in
             let color: UIColor = row.isTotal ? OVColor.total : (row.amount < 0 ? OVColor.red : OVColor.blue)
             let value = row.isTotal ? MoneyFormatter.format(row.amount) : Self.signedMoney(row.amount)
             return barRow(names[row.key] ?? "", bar: track(left: row.left, width: row.width, color: color), value: value, strong: row.isTotal)
@@ -914,7 +924,8 @@ final class OverviewDetailSheet: UIViewController {
 
     private func orderValueBody() -> [UIView] {
         var views: [UIView] = []
-        let count = content.report.newOrders
+        // #716: the orders behind the money (created in the period, cancelled left out), not orderCounts.new
+        let count = content.report.orderValueByType.map { $0.rent.orders + $0.sale.orders } ?? content.report.newOrders
         views.append(legendRow(OVColor.ink, "overview.dash.detail.newOrders".localized(), note: count.map(orders) ?? "—",
                                value: content.report.totalOrderValue.map(MoneyFormatter.format) ?? "—"))
         if let split = content.report.orderValueByType {

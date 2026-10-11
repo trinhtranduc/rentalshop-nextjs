@@ -44,6 +44,7 @@ import {
   type OrderLike,
   type OrderType,
   type ProductLike,
+  setLineNote,
 } from './create-model';
 import { allowsOverlap, conflictFromResult, ctaState, dayRangeText, orderListText, type BatchResultLike, type LineConflict } from './schedule-model';
 import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard, fieldClass, type LineStatus, type StockView } from './parts';
@@ -765,6 +766,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                   onQuantity={(n) => setLines((cur) => setQuantity(cur, l.productId, n))}
                   onMode={(mode) => setLines((cur) => selectMode(cur, l.productId, mode))}
                   onPrice={(price) => setLines((cur) => setLinePrice(cur, l.productId, price))}
+                  onNote={(note) => setLines((cur) => setLineNote(cur, l.productId, note))}
                   t={t}
                   money={money}
                 />

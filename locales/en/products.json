@@ -534,6 +534,7 @@
       "costPrice": "Cost price",
       "costHint": "Only the owner and managers see this.",
       "staffPrices": "Rent and sale prices are set by the shop owner.",
+      "branchLocked": "Only the shop owner changes the name, photos, prices, category and code. You can update the stock of your branch.",
       "quantity": "Quantity",
       "quantityAt": "At {outlet}",
       "perOutlet": "Quantity at each outlet",
@@ -658,5 +659,26 @@
       "previewMore": "+{count} more labels",
       "printHint": "In the print dialog: pick the label printer, paper size = label size, scale 100%, margins None."
     }
+  },
+  "public": {
+    "searchPlaceholder": "Search products…",
+    "all": "All",
+    "count": "{count} items",
+    "call": "Call",
+    "callShop": "Call shop",
+    "zalo": "Message on Zalo",
+    "askZalo": "Ask to rent on Zalo",
+    "perRent": "/ rental",
+    "perDay": "/ day",
+    "orDaily": "or {price} / day",
+    "sale": "Buy {price}",
+    "rentFixed": "Per rental",
+    "rentDaily": "Per day",
+    "deposit": "Deposit",
+    "buy": "Buy",
+    "askNote": "Message the shop with your dates to check availability.",
+    "footer": "Book on Zalo or call the shop · Made with AnyRent",
+    "close": "Close",
+    "noPhoto": "No photo"
   }
 }

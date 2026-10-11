@@ -5,7 +5,13 @@
 import { buildChangeTimeline, type ChangeEntityType, type ChangeEntry, type ChangeLogRow } from './change-timeline';
 
 const PLATFORM_ROLES = ['ADMIN', 'OPS'];
-const OUTLET_ROLES = ['OUTLET_ADMIN', 'OUTLET_STAFF'];
+const OUTLET_ROLES = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
+
+/** #670: change history (who did what) is for owners and outlet admins; outlet staff never read it */
+const HISTORY_ROLES = [...PLATFORM_ROLES, 'MERCHANT', 'OUTLET_ADMIN'];
+export function canSeeChangeHistory(role: string | null | undefined): boolean {
+  return HISTORY_ROLES.includes(String(role || '').toUpperCase());
+}
 
 export interface HistoryCaller {
   role: string;

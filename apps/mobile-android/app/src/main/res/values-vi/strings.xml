@@ -410,6 +410,12 @@
     <string name="role_merchant">Chủ cửa hàng</string>
     <string name="role_outlet_admin">Quản trị chi nhánh</string>
     <string name="role_outlet_staff">Nhân viên chi nhánh</string>
+    <string name="role_outlet_inventory">Nhân viên kho</string>
+    <string name="role_select">Chọn quyền</string>
+    <string name="role_required">Chọn quyền cho người dùng</string>
+    <string name="role_help_outlet_admin">Một chi nhánh: đơn, sản phẩm, giá, khách, tiền trong ngày, nhân viên của chi nhánh.</string>
+    <string name="role_help_outlet_staff">Tạo đơn, giao đồ, nhận trả, thêm khách. Không sửa giá sản phẩm, không xem báo cáo tiền.</string>
+    <string name="role_help_outlet_inventory">Như nhân viên, thêm quản lý sản phẩm và danh mục (thêm, sửa giá, xoá). Không xem báo cáo tiền.</string>
     <string name="active">Đang hoạt động</string>
     <string name="inactive">Đã khóa</string>
     <string name="active_badge">Hoạt động</string>
@@ -524,7 +530,6 @@
     <string name="image_search">Tìm theo hình</string>
     <string name="image_search_capture">Chụp</string>
     <string name="image_quality_percent">Chất lượng ảnh %1$d%%</string>
-    <string name="image_search_results">Kết quả: %1$d sản phẩm</string>
     <string name="image_search_empty">Không tìm thấy sản phẩm tương tự</string>
     <string name="photo_library">Thư viện ảnh</string>
     <string name="grant_camera_permission">Cho phép camera</string>
@@ -541,6 +546,17 @@
     <string name="api_error_insufficient_permissions">Bạn không có quyền thực hiện thao tác này.</string>
     <string name="api_error_subscription_expired">Gói đăng ký đã hết hạn.</string>
     <string name="api_error_trial_expired">Thời gian dùng thử đã hết.</string>
+    <string name="api_error_subscription_paused">Gói đăng ký đang tạm dừng.</string>
+    <string name="api_error_subscription_cancelled">Gói đăng ký đã bị hủy.</string>
+    <string name="api_error_subscription_past_due">Thanh toán gói đăng ký đã quá hạn. Vui lòng cập nhật phương thức thanh toán.</string>
+    <string name="api_error_subscription_period_ended">Thời hạn gói đăng ký đã kết thúc. Vui lòng gia hạn để tiếp tục.</string>
+    <string name="api_error_no_subscription">Không tìm thấy gói đăng ký hoạt động. Vui lòng đăng ký để tiếp tục sử dụng.</string>
+    <string name="api_error_plan_upgrade_required">Gói của bạn không có tính năng này. Hãy nâng cấp gói để sử dụng.</string>
+    <string name="api_error_platform_access_denied">Gói của bạn không bao gồm truy cập từ thiết bị này. Hãy nâng cấp gói hoặc dùng thiết bị khác.</string>
+    <string name="api_error_order_other_outlet">Bạn chỉ có thể sửa đơn của chi nhánh mình.</string>
+    <string name="api_error_no_outlet_access">Bạn không có quyền truy cập cửa hàng này.</string>
+    <string name="api_error_order_not_found">Không tìm thấy đơn hàng.</string>
+    <string name="api_error_subscription_generic">Gói đăng ký có vấn đề. Vui lòng liên hệ hỗ trợ.</string>
     <string name="api_error_product_out_of_stock">Sản phẩm đã hết hàng.</string>
     <string name="api_error_product_has_no_images">Thêm ảnh sản phẩm rồi thử lại.</string>
     <string name="api_error_invalid_credentials">Email hoặc mật khẩu không đúng.</string>
@@ -553,7 +569,7 @@
     <string name="v2_search_placeholder">Tên, mã vạch…</string>
     <string name="v2_search_empty">Không có sản phẩm nào khớp</string>
     <string name="v2_products_empty">Chưa có sản phẩm</string>
-    <string name="v2_stock_free">Còn %1$d</string>
+    <string name="v2_stock_free">Còn %1$d hôm nay</string>
     <string name="v2_stock_none_today">Hết hôm nay</string>
     <string name="v2_stock_summary">Đang cho thuê %1$d · còn trống %2$d · tổng %3$d</string>
     <string name="v2_unit_per_rental">/lần</string>
@@ -652,6 +668,31 @@
     <string name="v2_create_confirm_items">Món</string>
     <string name="v2_create_confirm_collect_deposit">Thu cọc ngay</string>
     <string name="v2_create_confirm_collect_sale">Thu ngay</string>
+    <!-- #676 sửa đơn từ giỏ mới (board sua-don) -->
+    <string name="v2_cart_edit_title_number">Sửa đơn #%1$s</string>
+    <string name="v2_cart_edit_rent_type">Đơn thuê</string>
+    <string name="v2_cart_edit_sale_type">Đơn bán</string>
+    <string name="v2_cart_edit_save">Lưu thay đổi</string>
+    <string name="v2_edit_confirm_title">Lưu thay đổi đơn #%1$s?</string>
+    <string name="v2_edit_confirm_title_no_number">Lưu thay đổi đơn này?</string>
+    <string name="v2_edit_confirm_dates">Ngày thuê</string>
+    <string name="v2_edit_confirm_rent_items">Đồ thuê</string>
+    <string name="v2_edit_confirm_sale_items">Đồ bán</string>
+    <plurals name="v2_edit_confirm_item_count">
+        <item quantity="other">%1$d món</item>
+    </plurals>
+    <string name="v2_edit_confirm_paid">Đã thu</string>
+    <string name="v2_edit_confirm_collect_at_hand_over">Thu khi giao</string>
+    <string name="v2_edit_confirm_changed">Đã đổi</string>
+    <string name="v2_edit_confirm_keep_editing">Tiếp tục sửa</string>
+    <string name="v2_edit_saved">Đã lưu đơn #%1$s</string>
+    <string name="v2_edit_saved_no_number">Đã lưu đơn</string>
+    <string name="v2_cart_more">Thêm</string>
+    <string name="v2_cart_share_quote">Chia sẻ báo giá</string>
+    <string name="v2_cart_edit_cancel">Huỷ sửa</string>
+    <string name="v2_cart_edit_cancel_title">Huỷ sửa đơn #%1$s?</string>
+    <string name="v2_cart_edit_cancel_title_no_number">Huỷ sửa đơn này?</string>
+    <string name="v2_cart_edit_cancel_message">Các thay đổi chưa lưu sẽ mất.</string>
     <string name="v2_create_done_title">Đã tạo đơn #%1$s</string>
     <string name="v2_create_done_paid_deposit">Đã thu cọc %1$s</string>
     <string name="v2_create_done_paid_sale">Đã thu %1$s</string>
@@ -1185,8 +1226,19 @@
     <string name="settings_v2_allow_overlap_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
     <string name="api_error_order_schedule_conflict">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
     <string name="api_error_invalid_timezone">Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).</string>
-    <string name="v2_cart_overlap_line">Hết đồ %1$s · đã thuê ở đơn %2$s</string>
-    <string name="v2_cart_overlap_line_no_order">Hết đồ %1$s</string>
+    <string name="v2_cart_overlap_one_day">Hết %1$s</string>
+    <string name="v2_cart_overlap_range">Hết %1$s → %2$s</string>
+    <string name="v2_cart_overlap_hint">Xem các đơn đang giữ món</string>
+    <string name="v2_item_note_add">+ Ghi chú</string>
+    <string name="v2_item_note_label">Ghi chú</string>
+    <string name="v2_detail_item_qty">SL %1$d</string>
+    <string name="v2_item_note_edit">Sửa</string>
+    <string name="v2_item_note_title">Ghi chú món</string>
+    <string name="v2_item_note_placeholder">Ví dụ: sửa eo 2cm, giao kèm voan</string>
+    <string name="v2_item_note_hint">Chỉ cho món này trong đơn. Ghi chú chung của đơn ở mục Ghi chú bên dưới giỏ.</string>
+    <string name="v2_item_note_clear">Xoá ghi chú</string>
+    <string name="v2_item_note_save">Lưu</string>
+    <string name="v2_item_note_accessibility">Ghi chú cho %1$s</string>
     <string name="v2_cart_overlap_blocked">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
     <string name="v2_create_overlap_title">Trùng lịch</string>
     <string name="v2_create_overlap_line">%1$s thiếu %2$d bộ ngày %3$s (đã thuê ở %4$s).</string>
@@ -1221,6 +1273,7 @@
     <string name="history_other">Cập nhật</string>
     <string name="history_refund">Hoàn tiền</string>
     <string name="history_staff_name">%1$s (nhân viên)</string>
+    <string name="history_actor_by">bởi %1$s</string>
     <string name="history_per_day">/ngày</string>
     <string name="history_per_rental">/lần</string>
     <string name="history_per_hour">/giờ</string>
@@ -1265,14 +1318,14 @@
         <item>returnedAt|Đã trả</item>
         <item>totalAmount|Tổng đơn</item>
         <item>depositAmount|Cọc trả trước</item>
-        <item>securityDeposit|Tiền thế chấp</item>
+        <item>securityDeposit|Tiền thế chân</item>
         <item>discountType|Kiểu giảm giá</item>
         <item>discountValue|Mức giảm</item>
         <item>discountAmount|Giảm giá</item>
         <item>damageFee|Phí hư hỏng</item>
         <item>lateFee|Phí trả trễ</item>
-        <item>collateralType|Loại thế chấp</item>
-        <item>collateralDetails|Thế chấp</item>
+        <item>collateralType|Loại thế chân</item>
+        <item>collateralDetails|Thế chân</item>
         <item>pickupNotes|Ghi chú khi giao</item>
         <item>returnNotes|Ghi chú khi trả</item>
         <item>damageNotes|Ghi chú hư hỏng</item>
@@ -1339,6 +1392,11 @@
     <string name="api_error_category_name_exists">Tên danh mục đã tồn tại</string>
     <string name="api_error_category_name_required">Vui lòng nhập tên danh mục</string>
     <string name="api_error_cannot_delete_default_category">Không thể xoá danh mục mặc định</string>
+    <!-- #654 image search -->
+    <string name="api_error_invalid_limit">Số lượng kết quả không hợp lệ</string>
+    <string name="api_error_invalid_min_similarity">Ngưỡng độ giống không hợp lệ</string>
+    <string name="api_error_search_failed">Chưa tìm được bằng hình ảnh lúc này. Vui lòng thử lại sau ít phút hoặc tìm bằng chữ.</string>
+    <string name="api_error_search_timeout">Tìm bằng hình ảnh mất quá lâu. Hãy thử ảnh nhỏ hơn hoặc thử lại sau vài phút.</string>
     <string name="v2_category_add_title">Thêm danh mục</string>
     <string name="v2_category_rename_title">Đổi tên danh mục</string>
     <string name="v2_category_name_placeholder">Tên danh mục</string>
@@ -1411,4 +1469,116 @@
     <string name="share_thanks">Cảm ơn quý khách đã tin chọn %1$s</string>
     <string name="share_made_with">Tạo bằng AnyRent</string>
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
+    <string name="v2_home_search_placeholder">Tìm tên, mã vạch hoặc chụp ảnh</string>
+    <string name="v2_home_image_search">Tìm bằng hình</string>
+    <!-- #672 image search results -->
+    <plurals name="image_search_results_title">
+        <item quantity="other">%1$d sản phẩm giống</item>
+    </plurals>
+    <string name="image_search_results_empty_title">Không thấy sản phẩm giống</string>
+    <string name="image_search_results_subtitle">Từ ảnh bạn vừa chụp</string>
+    <string name="image_search_retake">Chụp lại</string>
+    <string name="image_search_by_name">Tìm bằng tên</string>
+    <string name="image_search_empty_headline">Chưa tìm ra sản phẩm này</string>
+    <string name="image_search_empty_message">Có thể sản phẩm chưa có ảnh trong cửa hàng, hoặc ảnh chụp chưa rõ.</string>
+    <string name="image_search_tip_whole">Chụp cả món đồ, đủ sáng</string>
+    <string name="image_search_tip_background">Nền gọn, không lẫn đồ khác</string>
+    <string name="image_search_tip_photo">Sản phẩm cần có ảnh trong danh sách</string>
+    <string name="detail_nav_title">Đơn %1$s</string>
+    <string name="detail_deposit">Cọc</string>
+    <string name="overview_v2_rule_received">Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.</string>
+    <string name="overview_v2_new_orders_count">%1$d đơn mới</string>
+    <string name="overview_v2_related_view">Xem các đơn liên quan →</string>
+    <string name="overview_v2_related_total">Tổng các dòng</string>
+    <string name="overview_v2_related_empty">Không có đơn nào trong kỳ.</string>
+    <string name="overview_v2_related_created">Đơn tạo trong kỳ</string>
+    <string name="overview_v2_related_cancelled">Đã huỷ, không tính</string>
+    <string name="overview_v2_event_sale_created">Đơn bán được tạo</string>
+    <string name="overview_v2_event_sale_cancelled">Đơn bán bị hủy (hoàn lại)</string>
+    <string name="overview_v2_event_deposit">Thu tiền cọc</string>
+    <string name="overview_v2_event_pickup">Thu tiền khi lấy hàng</string>
+    <string name="overview_v2_event_same_day">Thuê và trả trong cùng ngày</string>
+    <string name="overview_v2_event_damage_fee">Thu phí hư hỏng</string>
+    <string name="overview_v2_event_deposit_refund">Hoàn tiền cọc</string>
+    <string name="overview_v2_event_nothing">Không có phát sinh</string>
+    <string name="overview_v2_event_rent_cancelled">Đơn hủy (hoàn lại)</string>
+    <string name="overview_v2_event_return_collected">Thu khi trả hàng</string>
+    <string name="overview_v2_event_future_pickup">Doanh thu dự kiến khi lấy hàng</string>
+    <string name="overview_v2_event_future_damage_fee">Dự kiến thu phí hư hỏng khi trả hàng</string>
+    <string name="overview_v2_event_future_refund">Dự kiến hoàn tiền cọc khi trả hàng</string>
+    <string name="overview_v2_event_future_nothing">Dự kiến không có phát sinh khi trả hàng</string>
+    <string name="overview_v2_related_owes">Sẽ thu khi khách lấy đồ</string>
+    <string name="overview_v2_related_collateral_in">Nhận thế chân khi giao</string>
+    <string name="overview_v2_related_collateral_out">Trả thế chân khi nhận đồ</string>
+    <string name="overview_v2_collected_includes_collateral">Gồm thế chân</string>
+    <!-- #725 Overview in the iOS layout (iOS overview.dash.*) -->
+    <string name="overview_dash_period_today">Hôm nay</string>
+    <string name="overview_dash_period_last7">7 ngày</string>
+    <string name="overview_dash_period_this_month">Tháng này</string>
+    <string name="overview_dash_period_custom">Tuỳ chọn</string>
+    <string name="overview_dash_kpi_order_value">Giá trị đơn mới</string>
+    <string name="overview_dash_kpi_collected">Thực thu</string>
+    <string name="overview_dash_kpi_outstanding">Còn phải thu</string>
+    <string name="overview_dash_kpi_collateral">Thế chân</string>
+    <string name="overview_dash_chip_new">Mới</string>
+    <string name="overview_dash_chip_up">▲ %1$d%%</string>
+    <string name="overview_dash_chip_down">▼ %1$d%%</string>
+    <string name="overview_dash_chip_overdue">%1$d đơn quá ngày</string>
+    <string name="overview_dash_chip_waiting">%1$d đơn chờ lấy</string>
+    <string name="overview_dash_chip_held">đang giữ %1$d đơn</string>
+    <string name="overview_dash_chip_new_orders">%1$d đơn mới</string>
+    <string name="overview_dash_open_detail">Xem chi tiết</string>
+    <string name="overview_dash_forecast_today">dự kiến thêm %1$s hôm nay</string>
+    <string name="overview_dash_forecast_until">dự kiến thêm %1$s đến %2$s</string>
+    <string name="overview_dash_chart_title">Thực thu theo ngày</string>
+    <string name="overview_dash_chart_today">Hôm nay</string>
+    <string name="overview_dash_chart_collected">Thực thu</string>
+    <string name="overview_dash_chart_forecast">Dự kiến</string>
+    <string name="overview_dash_chart_total">Tổng</string>
+    <string name="overview_dash_chart_empty">Chưa có số liệu trong khoảng này.</string>
+    <string name="overview_dash_detail_view_orders">Xem các đơn liên quan →</string>
+    <string name="overview_dash_detail_empty">Chưa có số liệu.</string>
+    <string name="overview_dash_detail_received">Đã nhận</string>
+    <string name="overview_dash_detail_returned">Đã trả lại khách</string>
+    <string name="overview_dash_detail_to_collect">Sẽ nhận khi giao</string>
+    <string name="overview_dash_detail_to_return">Đang giữ, sẽ trả lại</string>
+    <string name="overview_dash_detail_hatch_note">Thanh gạch chéo: sắp tới, chưa tính vào số trên.</string>
+    <string name="overview_dash_detail_new_orders">Đơn mới</string>
+    <string name="overview_dash_detail_rent">Cho thuê</string>
+    <string name="overview_dash_detail_sale">Bán</string>
+    <string name="overview_dash_detail_close">Đóng</string>
+    <string name="overview_dash_vs_previous_period">so với kỳ trước</string>
+    <string name="overview_dash_money_deposits">Cọc khi tạo đơn</string>
+    <string name="overview_dash_money_pickup_and_sale">Thu khi giao, bán</string>
+    <string name="overview_dash_money_fees">Phí hư hỏng, trễ</string>
+    <string name="overview_dash_money_refunds">Hoàn đơn huỷ</string>
+    <string name="overview_dash_money_collateral_net">Thế chân nhận − trả</string>
+    <string name="overview_dash_money_at_pickup">Sẽ thu khi khách lấy đồ</string>
+    <string name="overview_dash_money_overdue_pickup">Quá ngày lấy, chưa thu</string>
+    <string name="overview_dash_today_title">Hôm nay</string>
+    <string name="overview_dash_today_pickups">Cần giao</string>
+    <string name="overview_dash_today_returns">Cần nhận trả</string>
+    <string name="overview_dash_today_overdue">Trễ hạn trả</string>
+    <string name="overview_dash_today_no_shows">Quá ngày lấy</string>
+    <string name="overview_dash_today_tomorrow">Ngày mai · Giao %1$d · Trả %2$d</string>
+    <string name="overview_dash_top_products">Top sản phẩm</string>
+    <string name="overview_dash_top_customers">Top khách hàng</string>
+    <string name="overview_dash_top_empty">Chưa có trong khoảng này.</string>
+    <string name="overview_dash_top_view_all">Xem tất cả</string>
+    <string name="overview_dash_rule_order_value">Tổng tiền các đơn tạo trong kỳ, theo ngày tạo. Không tính đơn đã huỷ.</string>
+    <string name="overview_dash_rule_collected">Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.</string>
+    <string name="overview_dash_rule_outstanding">Phần chưa thu của các đơn tạo trong kỳ: đơn thuê đang đặt là tổng trừ cọc, đơn bán chưa hoàn tất là cả tổng.</string>
+    <string name="overview_dash_rule_collateral">Thế chân nhận khi giao đồ trừ thế chân trả lại khi nhận đồ, trong kỳ.</string>
+    <plurals name="overview_dash_orders">
+        <item quantity="one">%1$d đơn</item>
+        <item quantity="other">%1$d đơn</item>
+    </plurals>
+    <plurals name="overview_dash_top_rentals">
+        <item quantity="one">%1$d lượt thuê</item>
+        <item quantity="other">%1$d lượt thuê</item>
+    </plurals>
+    <string name="notifications_v2_delete_one">Xoá thông báo</string>
+    <string name="notifications_v2_delete_one_confirm">Xoá thông báo này? Không thể hoàn tác.</string>
+    <string name="notifications_v2_mark_read">Đánh dấu đã đọc</string>
+    <string name="notifications_v2_mark_unread">Đánh dấu chưa đọc</string>
 </resources>

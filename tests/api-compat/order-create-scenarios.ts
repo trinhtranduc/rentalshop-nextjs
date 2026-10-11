@@ -18,8 +18,8 @@ const OUTLET = { id: 1, name: 'Cửa hàng 1', merchantId: 1 };
 const CUSTOMER = { id: 101, firstName: 'Lan', lastName: 'Nguyễn', phone: '0901234567', email: 'lan@test', merchantId: 1 };
 const STAFF = { id: 7, email: 'staff@test', role: 'OUTLET_STAFF', firstName: 'Minh', lastName: 'Trần' };
 const PRODUCTS: Record<number, any> = {
-  11: { id: 11, name: 'Áo dài đỏ', barcode: '8930000000011', images: '["https://img.test/11.jpg"]', pricingType: 'FIXED', pricingOptions: [] },
-  12: { id: 12, name: 'Váy cưới', barcode: '8930000000012', images: null, pricingType: 'DAILY', pricingOptions: [] },
+  11: { id: 11, name: 'Áo dài đỏ', barcode: '8930000000011', images: '["https://img.test/11.jpg"]', pricingType: 'FIXED', pricingOptions: [], merchantId: 1 },
+  12: { id: 12, name: 'Váy cưới', barcode: '8930000000012', images: null, pricingType: 'DAILY', pricingOptions: [], merchantId: 1 },
 };
 
 const AUTH = { user: STAFF, userScope: { merchantId: 1, outletId: 1 } };

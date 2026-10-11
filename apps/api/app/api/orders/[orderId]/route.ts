@@ -10,19 +10,21 @@ import {
   generateFileName,
   splitKeyIntoParts,
   extractStagingKeysFromUrls,
-  mapStagingUrlsToProductionUrls
+  mapStagingUrlsToProductionUrls,
+  normalizeLegacyPlanDays
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
+import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
 import {
   findEditScheduleConflicts,
   scheduleConflictBody,
   SCHEDULE_CONFLICT_STATUS,
   type ScheduleDbClient,
 } from '../../../../lib/schedule-conflict-check';
-import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus } from '@rentalshop/constants';
+import { API, USER_ROLE, ORDER_STATUS, VALIDATION, canChangeOrderStatus, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
 import {
   adjustRedeemOnOrderEdit,
   calculateAmountDue,
@@ -273,6 +275,10 @@ export const GET = async (
       if (user.role !== USER_ROLE.ADMIN) {
         const orderOutlet = await db.outlets.findById(order.outletId);
         if (!orderOutlet || orderOutlet.merchantId !== userMerchantId) {
+          return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+        }
+        // Outlet roles see only their own outlet's orders, like the list (#731)
+        if (isOutletRole(user.role) && order.outletId !== userScope.outletId) {
           return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
         }
       }
@@ -607,6 +613,15 @@ export const PUT = async (
         }
       }
 
+      // Outlet roles work only on their own outlet's orders (#730). Checked before the outletId below is
+      // auto-filled into a "move to my outlet", which used to let an order of another outlet be taken over.
+      if (isOutletRole(user.role) && existingOrder.outletId !== userScope.outletId) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
+          { status: 403 }
+        );
+      }
+
       // Only valid status changes (#361); iOS/Android send status through this route, and an echo of
       // the current status is a no-op
       if (body.status !== undefined && body.status !== null &&
@@ -633,7 +648,7 @@ export const PUT = async (
           }
 
           // Outlet users cannot change order outlet
-          if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+          if (isOutletRole(user.role)) {
             if (targetOutletId !== userScope.outletId) {
               return NextResponse.json(
                 ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
@@ -668,7 +683,7 @@ export const PUT = async (
               );
             }
           }
-        } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        } else if (isOutletRole(user.role)) {
           // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
           if (existingOrder.outletId !== userScope.outletId) {
             return NextResponse.json(
@@ -679,7 +694,7 @@ export const PUT = async (
         }
       } else {
         // If no outletId in update, validate existing order belongs to user's scope
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (isOutletRole(user.role)) {
           if (existingOrder.outletId !== userScope.outletId) {
             return NextResponse.json(
               ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),
@@ -700,6 +715,15 @@ export const PUT = async (
 
       // Filter to only valid Order fields (exclude calculated fields like subtotal, taxAmount, id)
       const { subtotal, taxAmount, id, loyaltyRedeem, ...validUpdateData } = body;
+
+      // #577: the Android cart before #413 sends the return day as `R T23:59:00Z` (= R+1 in Vietnam)
+      {
+        const days = normalizeLegacyPlanDays(validUpdateData);
+        if (days.legacy) {
+          validUpdateData.pickupPlanAt = days.pickupPlanAt;
+          validUpdateData.returnPlanAt = days.returnPlanAt;
+        }
+      }
 
       // Preserve each item's pricing snapshot when older clients update an order
       // without sending the newly supported pricing fields.
@@ -731,6 +755,20 @@ export const PUT = async (
 
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
+
+      // The products and the customer of the edited order belong to the merchant of its outlet (#789)
+      if (merchantId != null) {
+        const refsCheck = await checkOrderRefsInMerchant({
+          merchantId,
+          productIds: Array.isArray(validUpdateData.orderItems)
+            ? validUpdateData.orderItems.map((item: any) => item.productId)
+            : [],
+          customerId: 'customerId' in validUpdateData ? (validUpdateData as any).customerId : undefined,
+        });
+        if (!refsCheck.ok) {
+          return NextResponse.json(ResponseBuilder.error(refsCheck.code), { status: 404 });
+        }
+      }
 
       // #518: shop setting "Cho tạo đơn khi trùng lịch" OFF → refuse an edit that over-books (new dates,
       // outlet, or more units). Runs before any write (loyalty below). Default ON queries nothing extra.
@@ -863,6 +901,7 @@ export const PUT = async (
         createdById: fullOrder.createdById,
         createdByName: fullOrder.createdBy ? formatFullName(fullOrder.createdBy.firstName, fullOrder.createdBy.lastName) : null,
         totalAmount: fullOrder.totalAmount,
+        pickupTotalAmount: fullOrder.pickupTotalAmount ?? null, // #505 (additive): total collected at hand-over
         depositAmount: fullOrder.depositAmount,
         securityDeposit: fullOrder.securityDeposit,
         damageFee: fullOrder.damageFee,
@@ -1046,7 +1085,7 @@ export const DELETE = async (
 
       // Authorization checks based on user role
       // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)
-      if (user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { status: API.STATUS.FORBIDDEN }

@@ -87,7 +87,7 @@ fun InboxScreen(
             }
             loading = false
             result.onSuccess { data ->
-                items = if (reset) data.items else items + data.items
+                items = if (reset) data.items else com.anyrent.pos.domain.notifications.NotificationsLogic.appendPage(items, data.items)
                 hasMore = data.hasMore
                 page += 1
             }.onFailure {

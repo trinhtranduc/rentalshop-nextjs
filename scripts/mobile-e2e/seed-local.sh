@@ -81,6 +81,6 @@ psql "$URL" -c "SELECT 'Merchant' AS table, count(*) FROM \"Merchant\"
   UNION ALL SELECT 'Order', count(*) FROM \"Order\"
   UNION ALL SELECT 'OrderItem', count(*) FROM \"OrderItem\""
 
-echo "Seed accounts (passwords: ADMIN admin123, MERCHANT merchant123, OUTLET_ADMIN admin123, OUTLET_STAFF staff123):"
+echo "Seed accounts (passwords: ADMIN admin123, MERCHANT merchant123, OUTLET_ADMIN admin123, OUTLET_STAFF staff123, OUTLET_INVENTORY inventory123):"
 psql "$URL" -c "SELECT u.email, u.role, o.name AS outlet
   FROM \"User\" u LEFT JOIN \"Outlet\" o ON o.id = u.\"outletId\" ORDER BY u.role, u.email"

@@ -659,7 +659,7 @@ export const OrderSettingsCard: React.FC<OrderSettingsCardProps> = ({
                   href={previewImageUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-primary hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
                 >
                   {t('detail.openInNewTab') || 'Open in new tab'}
                 </a>

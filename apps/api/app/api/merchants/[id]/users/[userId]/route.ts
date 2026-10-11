@@ -4,7 +4,7 @@ import { withPermissions, validateMerchantAccess, hashPassword } from '@rentalsh
 import { handleApiError, ResponseBuilder, userUpdateSchema } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
-import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../../../../lib/user-scope';
+import { canAccessUser, canAssignRole, isAllowedPlacement, isRoleAssignable, toPublicUser } from '../../../../../../lib/user-scope';
 import { applyUserAccessChange, buildUserAuditContext } from '../../../../../../lib/user-merchant-assignment';
 
 /**
@@ -102,6 +102,10 @@ export async function PUT(
       }
       if (parsed.data.role !== undefined && !canAssignRole(user, parsed.data.role, existing.role)) {
         return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+      // #682: a user who already has Nhân viên kho keeps it; giving it needs INVENTORY_ROLE_ENABLED=true
+      if (parsed.data.role !== undefined && parsed.data.role !== existing.role && !isRoleAssignable(parsed.data.role)) {
+        return NextResponse.json(ResponseBuilder.error('ROLE_NOT_AVAILABLE'), { status: 400 });
       }
       const placementAllowed = await isAllowedPlacement(
         user,

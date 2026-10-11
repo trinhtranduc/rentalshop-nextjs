@@ -23,6 +23,28 @@ final class ProductsV2Tests: XCTestCase {
 
     // MARK: - Roles
 
+    // MARK: - Home row price line (#681)
+
+    func testRowPriceShowsTheDefaultOptionFirstAndTheOtherSecond() throws {
+        let rentalDefault = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":1,"type":"FIXED","price":300000,"isDefault":true},{"id":2,"type":"DAILY","price":120000,"isDefault":false}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(rentalDefault),
+                       ProductRowPrice(main: 300_000, mainMode: .perRental, second: 120_000, secondMode: .perDay))
+        let dayDefault = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":1,"type":"FIXED","price":300000,"isDefault":false},{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(dayDefault),
+                       ProductRowPrice(main: 120_000, mainMode: .perDay, second: 300_000, secondMode: .perRental))
+    }
+
+    func testRowPriceWithOneOptionHasNoSecondAndSaleOnlyHasNoMode() throws {
+        let rentalOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":900000}"#)
+        XCTAssertEqual(ProductRowLogic.price(rentalOnly), ProductRowPrice(main: 300_000, mainMode: .perRental, second: nil, secondMode: nil))
+        let dayOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(dayOnly), ProductRowPrice(main: 120_000, mainMode: .perDay, second: nil, secondMode: nil))
+        let saleOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":0,"salePrice":900000}"#)
+        XCTAssertEqual(ProductRowLogic.price(saleOnly), ProductRowPrice(main: 900_000, mainMode: nil, second: nil, secondMode: nil))
+        let none = try product(#"{"id":1,"name":"Áo dài","rentPrice":0}"#)
+        XCTAssertNil(ProductRowLogic.price(none))
+    }
+
     // MARK: - Full-screen photos (#472)
 
     func testViewerUrlsUseImagesWithoutBlanksElseImageUrl() throws {
@@ -80,6 +102,48 @@ final class ProductsV2Tests: XCTestCase {
         // Even a stray permission does not give staff the price fields or edit
         XCTAssertFalse(ProductAccess.showsPriceFields(role: .outletStaff, permissions: ["products.manage"]))
         XCTAssertFalse(ProductAccess.canEdit(role: .outletStaff, permissions: ["products.manage"]))
+    }
+
+    // MARK: - Nhân viên kho (#682)
+
+    func testInventoryStaffManagesProductsAndCategoriesButHidesMoneyLikeStaff() throws {
+        let perms = ["outlet.view", "products.view", "products.create", "products.update", "products.manage",
+                     "products.export", "orders.create", "orders.view", "orders.update", "customers.view", "customers.manage"]
+        XCTAssertEqual(Role(rawValue: "OUTLET_INVENTORY"), .outletInventory)
+        XCTAssertTrue(ProductAccess.canCreate(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(ProductAccess.canEdit(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(ProductAccess.canDelete(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(ProductAccess.showsPriceFields(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(CategoryRules.canAdd(role: .outletInventory, permissions: perms))
+        XCTAssertTrue(CategoryRules.canManage(role: .outletInventory))
+        XCTAssertFalse(CategoryRules.canManage(role: .outletAdmin))
+        XCTAssertTrue(Role.outletInventory.isStaffLike)
+        XCTAssertFalse(Role.outletAdmin.isStaffLike)
+        XCTAssertTrue(OrdersHomeLogic.hidesMoney(role: .outletInventory, hideForStaff: true))
+        XCTAssertFalse(OrdersHomeLogic.hidesMoney(role: .outletInventory, hideForStaff: false))
+        XCTAssertTrue(ChangeHistoryLogic.isStaff("OUTLET_INVENTORY"))
+        XCTAssertFalse(ChangeHistoryLogic.canView("OUTLET_INVENTORY"))
+    }
+
+    func testInventoryRoleIsPickedOnlyWhenTheApiAllowsIt() throws {
+        XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: nil), [.outletStaff, .outletAdmin])
+        XCTAssertEqual(UserFormRoles.choices(inventoryRole: true, currentRole: nil), [.outletStaff, .outletAdmin, .outletInventory])
+        XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: .outletInventory).last, .outletInventory)
+        // #684: an item note is trimmed; a blank one clears it
+        XCTAssertNil(CartV2Logic.noteText(nil))
+        XCTAssertNil(CartV2Logic.noteText("  \n "))
+        XCTAssertEqual(CartV2Logic.noteText("  Sửa eo 2cm \n"), "Sửa eo 2cm")
+        // #684: no role until one is picked; every pickable role has a one-line explanation
+        XCTAssertFalse(UserFormRoles.isComplete(nil))
+        XCTAssertTrue(UserFormRoles.isComplete(.outletStaff))
+        for role in UserFormRoles.choices(inventoryRole: true, currentRole: nil) {
+            XCTAssertFalse(UserFormRoles.help(role).isEmpty, "\(role) has a help line")
+            XCTAssertNotEqual(UserFormRoles.help(role), "users.role.help.\(role)", "\(role) help is localized")
+        }
+        let on = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"features":{},"inventoryRole":true}"#.utf8))
+        XCTAssertTrue(on.inventoryRole)
+        let old = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"features":{}}"#.utf8))
+        XCTAssertFalse(old.inventoryRole)
     }
 
     func testMerchantAndOutletAdminManagePrices() {
@@ -285,7 +349,7 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0), .add)
         XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 2), .inCart(2))
         XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 0), .out)
-        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 2), .out)
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 2), .inCart(2)) // #677: in-cart wins
     }
 
     // MARK: - List paging
@@ -310,6 +374,8 @@ final class ProductsV2Tests: XCTestCase {
         let a = try product(#"{"id":1,"name":"A"}"#)
         let b = try product(#"{"id":2,"name":"B"}"#)
 
+        model.refreshQuietly() // nothing loaded yet: no call
+        XCTAssertTrue(source.calls.isEmpty)
         model.setQuery("ao")
         model.setQuery("vest")
         source.calls[1].completion(ProductsPage(products: [b], hasMore: true), nil)
@@ -326,15 +392,60 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(model.hasMore)
     }
 
-    /// #468 — board "Danh sách sản phẩm": the "● Còn N" / "● Hết hôm nay" label is 14pt regular
-    func testStockLabelIsRegularWeight() throws {
+    /// #677 — after an order changed, the loaded rows take the new stock in place (same rows, same order)
+    func testQuietRefreshUpdatesRowsInPlace() throws {
+        let source = FakeSource()
+        let model = ProductsHomeViewModel(dataSource: source)
+        model.reload()
+        source.calls[0].completion(ProductsPage(products: [try product(#"{"id":1,"name":"A","available":5}"#),
+                                                           try product(#"{"id":2,"name":"B","available":3}"#)],
+                                                hasMore: true), nil)
+        waitMain()
+
+        model.refreshQuietly()
+        XCTAssertEqual(source.calls.count, 2)
+        XCTAssertEqual(source.calls[1].page, 1)
+        // The answer has B with less stock and a product not on screen: only B changes
+        source.calls[1].completion(ProductsPage(products: [try product(#"{"id":3,"name":"C"}"#),
+                                                           try product(#"{"id":2,"name":"B2","available":1}"#)],
+                                                hasMore: true), nil)
+        waitMain()
+        XCTAssertEqual(model.products.map { $0.id }, [1, 2])
+        XCTAssertEqual(model.products.map { $0.name }, ["A", "B2"])
+        XCTAssertTrue(model.hasMore)
+    }
+
+    /// #753: a 403 (subscription expired, cancelled, paused, past due) is the empty state's reason, with Retry
+    func testFailedLoadShowsTheReasonNotNoProducts() throws {
+        let source = FakeSource()
+        let model = ProductsHomeViewModel(dataSource: source)
+        model.reload()
+        let reason = NSError.errorWithOwnMessage(message: "Đăng ký đã hết hạn", domain: "RC")
+        source.calls[0].completion(nil, reason)
+        waitMain()
+        XCTAssertNotNil(model.loadError)
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: false, hasQuery: false, error: model.loadError),
+                       .failed("Đăng ký đã hết hạn"))
+        model.reload() // Retry: the reason goes while the answer is on its way
+        XCTAssertNil(model.loadError)
+        source.calls[1].completion(ProductsPage(products: [], hasMore: false), nil)
+        waitMain()
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: false, hasQuery: false, error: model.loadError), .empty)
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: false, hasQuery: true, error: nil), .searchEmpty)
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 3, isLoading: false, hasQuery: false, error: reason), .none,
+                       "rows on screen: no empty state")
+        XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: true, hasQuery: false, error: nil), .none)
+    }
+
+    /// #681 (Home option 1): the "● Còn N hôm nay" / "● Hết hôm nay" line is 13pt semibold (was 14pt regular, #468)
+    func testStockLabelIsSemibold13() throws {
         let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
         cell.bind(try product(#"{"id":1,"name":"Áo dài"}"#), inCart: 0)
         func labels(_ view: UIView) -> [UILabel] {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
         let stock = try XCTUnwrap(labels(cell.contentView).first { $0.text?.hasPrefix("● ") == true })
-        XCTAssertEqual(stock.font, Utils.regularFont(size: DS.TextSize.secondary))
+        XCTAssertEqual(stock.font, V2.label(size: 13, weight: .semibold).font)
     }
 }
 
@@ -606,8 +717,28 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.startPrice(line, type: "BLOCK"), 0)
     }
 
+    /// Owner 2026-10-09: order detail lines read like the cart link
+    func testOrderItemPricingMatchesCartLink() {
+        let vi = Locale(identifier: "vi_VN")
+        let perRental = "products.price.perRental".localized().lowercased(with: vi)
+        let perDay = "products.price.perDay".localized().lowercased(with: vi)
+        let days = PluralText.format("products.cart.days", count: 3, 3)
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 200_000, pricingType: "FIXED", rentalDays: 3, orderType: .rent),
+                       "200.000đ / \(perRental)")
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 200_000, pricingType: nil, rentalDays: nil, orderType: .rent),
+                       "200.000đ / \(perRental)", "old rows without a type are per rental")
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 400_000, pricingType: "DAILY", rentalDays: 3, orderType: .rent),
+                       "400.000đ / \(perDay) × \(days)")
+        XCTAssertEqual(CartV2Logic.orderItemPricing(unitPrice: 900_000, pricingType: nil, rentalDays: nil, orderType: .sale),
+                       "900.000đ / " + "products.cart.pricing.sale".localized().lowercased(with: vi))
+    }
+
     func testChipAndPreviewTexts() throws {
         let cart = try pricingCart()
+        // #684: the cart link reads price first
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "350.000đ")
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).unit,
+                       "products.price.perRental".localized().lowercased(with: Locale(identifier: "vi_VN")))
         XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).label, "products.price.perRental".localized())
         XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).price, "350.000đ")
         cart.selectPricingType(at: 0, type: "DAILY")
@@ -730,7 +861,7 @@ extension ProductsV2Tests {
 
     func testOnlyANewOrderUsesTheSheet() {
         XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: false), .confirmSheet)
-        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .preview, "editing an order keeps the review screen")
+        XCTAssertEqual(CartV2Logic.ctaRoute(isEditMode: true), .editSheet, "#676: an edit saves from its own sheet, not the review screen")
     }
 
     func testOneCreateAtATimeAndTheKeyIsReusedOnRetry() {
@@ -788,5 +919,236 @@ extension ProductsV2Tests {
         XCTAssertNil(CategoryRules.validateName(" Áo "))
         XCTAssertNil(CategoryRules.validateName(String(repeating: "đ", count: 50)))
         XCTAssertEqual(CategoryRules.validateName(String(repeating: "đ", count: 51)), .tooLong)
+    }
+}
+
+/// #676 — editing an order: "Lưu thay đổi" on the cart and a sheet that tags the rows changed since the order loaded
+extension ProductsV2Tests {
+    private func editCart(paid: Double = 200_000) throws -> Cart {
+        let cart = try rentCart()
+        cart.orderId = 42
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: "482913", paid: paid)
+        return cart
+    }
+
+    func testEditCartSaysSaveChanges() {
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: true, isRent: true), "products.cart.edit.save")
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: true, isRent: false), "products.cart.edit.save")
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: false, isRent: true), "products.cart.create")
+        XCTAssertEqual(CartV2Logic.ctaTitleKey(isEditMode: false, isRent: false), "products.cart.sellAndCollect")
+    }
+
+    func testEditHeaderNamesTheOrderTheCustomerAndTheType() throws {
+        XCTAssertNil(EditOrderSheetLogic.header(try rentCart()), "a new order keeps the cart title")
+        let header = try XCTUnwrap(EditOrderSheetLogic.header(try editCart()))
+        XCTAssertEqual(header.number, "482913")
+        XCTAssertEqual(header.subtitle, "Trần Văn Minh · " + "products.cart.edit.rentType".localized())
+
+        let legacy = try rentCart()
+        legacy.orderId = 42 // a draft saved before #676 has no snapshot
+        XCTAssertNil(EditOrderSheetLogic.header(legacy)?.number)
+    }
+
+    func testUnchangedEditSheetHasNoTags() throws {
+        let cart = try editCart()
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.number, "482913")
+        XCTAssertFalse(confirm.isSale)
+        XCTAssertEqual(confirm.range, "03/10 → 05/10", "same date format as the create sheet")
+        XCTAssertEqual(confirm.days, 3)
+        XCTAssertEqual(confirm.itemCount, 3)
+        XCTAssertEqual(confirm.total, cart.totalAmount)
+        // #677: a draft without payment notes: the 300.000đ booking deposit + its payments
+        XCTAssertEqual(confirm.paid, 500_000)
+        XCTAssertNil(confirm.collectAtHandOver, "status unknown: no Thu khi giao")
+        XCTAssertEqual(confirm.itemsKey, "products.cart.edit.rentItems")
+        XCTAssertFalse(confirm.datesChanged)
+        XCTAssertFalse(confirm.itemsChanged)
+    }
+
+    func testNewDatesTagTheDatesRowOnly() throws {
+        let cart = try editCart()
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-06T16:59:59Z") // T3 06/10
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertTrue(confirm.datesChanged)
+        XCTAssertFalse(confirm.itemsChanged)
+    }
+
+    func testAnotherTimeOnTheSameShopDayIsNotAChange() throws {
+        let cart = try editCart()
+        cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-03T03:00:00Z") // 10:00 on 03/10 in Vietnam
+        XCTAssertFalse(EditOrderSheetLogic.confirm(cart, timeZone: vn).datesChanged)
+    }
+
+    func testQuantityPriceAndLineChangesTagTheItemsRow() throws {
+        let quantity = try editCart()
+        quantity.updateQuantity(at: 0, quantity: 2)
+        XCTAssertTrue(EditOrderSheetLogic.confirm(quantity, timeZone: vn).itemsChanged)
+        XCTAssertFalse(EditOrderSheetLogic.confirm(quantity, timeZone: vn).datesChanged)
+
+        let price = try editCart()
+        price.updatePrice(at: 1, price: 280_000)
+        XCTAssertTrue(EditOrderSheetLogic.confirm(price, timeZone: vn).itemsChanged)
+
+        let removed = try editCart()
+        removed.removeItem(at: 0)
+        XCTAssertTrue(EditOrderSheetLogic.confirm(removed, timeZone: vn).itemsChanged)
+    }
+
+    func testBackToTheLoadedQuantityClearsTheTag() throws {
+        let cart = try editCart()
+        cart.updateQuantity(at: 0, quantity: 3)
+        cart.updateQuantity(at: 0, quantity: 1)
+        XCTAssertFalse(EditOrderSheetLogic.confirm(cart, timeZone: vn).itemsChanged)
+    }
+
+    func testNothingCollectedHidesThePaidRow() throws {
+        let cart = try editCart(paid: 0)
+        cart.setManualDepositAmount(0)
+        XCTAssertNil(EditOrderSheetLogic.confirm(cart, timeZone: vn).paid)
+    }
+
+    // MARK: #677 — "Đã thu" and "Thu khi giao" on the save sheet
+
+    private func bookedCart(payments: [OrderPaymentLine]) throws -> Cart {
+        let cart = try rentCart()
+        cart.orderId = 42
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: "482913", paid: payments.reduce(0) { $0 + $1.amount },
+                                                     status: .reserved, payments: payments)
+        return cart
+    }
+
+    func testDepositOnlyOrderShowsTheDepositAsCollected() throws {
+        let cart = try bookedCart(payments: [])
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.paid, 300_000, "bug B: a booking deposit alone shows Đã thu")
+        XCTAssertEqual(confirm.collectAtHandOver, cart.totalAmount - 300_000)
+    }
+
+    func testDepositAndPaymentsCountOnlyCompletedPickupPayments() throws {
+        let cart = try bookedCart(payments: [
+            OrderPaymentLine(amount: 100_000, status: "COMPLETED", notes: "PICKUP"),
+            OrderPaymentLine(amount: 50_000, status: "PENDING", notes: "PICKUP"),
+            OrderPaymentLine(amount: 20_000, status: "COMPLETED", notes: "RETURN_ADJUSTMENT"),
+        ])
+        cart.updateQuantity(at: 0, quantity: 2) // the new total counts
+        cart.setManualDepositAmount(300_000) // the order's booking deposit
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.paid, 400_000)
+        XCTAssertEqual(confirm.collectAtHandOver,
+                       OrderDetailLogic.handOver(total: cart.totalAmount, deposit: 300_000, securityDeposit: 0,
+                                                 payments: cart.editOriginal?.payments ?? []).due)
+        XCTAssertEqual(confirm.collectAtHandOver, cart.totalAmount - 300_000 - 100_000)
+    }
+
+    func testTheChanIsNeverCollectedButIsAskedAtHandOver() throws {
+        let cart = try bookedCart(payments: [OrderPaymentLine(amount: 100_000, status: "COMPLETED", notes: "PICKUP")])
+        cart.manualSecurityDeposit = 500_000
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.paid, 400_000, "thế chân is not in Đã thu")
+        XCTAssertEqual(confirm.collectAtHandOver, cart.totalAmount - 400_000 + 500_000)
+    }
+
+    func testSaleOrderCountsSalePaymentsAndHasNoHandOver() throws {
+        let cart = try rentCart()
+        cart.orderType = .sale
+        cart.orderId = 43
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: "482914", paid: 0, status: .reserved, payments: [
+            OrderPaymentLine(amount: 200_000, status: "COMPLETED", notes: "SALE"),
+            OrderPaymentLine(amount: 70_000, status: "COMPLETED", notes: "PICKUP"),
+        ])
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.paid, 200_000)
+        XCTAssertNil(confirm.collectAtHandOver)
+    }
+
+    func testPickedUpRentalHasNoHandOverRow() throws {
+        let cart = try bookedCart(payments: [])
+        cart.editOriginal?.status = .pickuped
+        XCTAssertNil(EditOrderSheetLogic.confirm(cart, timeZone: vn).collectAtHandOver)
+    }
+
+    func testPaymentsSurviveTheSavedDraft() throws {
+        let cart = try bookedCart(payments: [OrderPaymentLine(amount: 100_000, status: "COMPLETED", notes: "PICKUP")])
+        let data = try JSONEncoder().encode(cart.makeDiskSnapshot())
+        let restored = Cart()
+        restored.applyDiskSnapshot(try JSONDecoder().decode(Cart.DiskSnapshot.self, from: data))
+        XCTAssertEqual(restored.editOriginal, cart.editOriginal)
+        XCTAssertEqual(restored.editOriginal?.status, .reserved)
+    }
+
+    // MARK: #677 — the Home cart bar and "Huỷ sửa"
+
+    func testCartBarSaysEditOrderWhileEditing() throws {
+        XCTAssertEqual(CartV2Logic.cartBarAction(isEditMode: false, number: nil), "products.cart.create".localized())
+        XCTAssertEqual(CartV2Logic.cartBarAction(isEditMode: true, number: "482913"),
+                       String(format: "products.cart.edit.title".localized(), "482913"))
+        XCTAssertEqual(CartV2Logic.cartBarAction(isEditMode: true, number: nil), "products.cart.editTitle".localized())
+        let cart = try editCart()
+        XCTAssertEqual(CartV2Logic.cartBarAction(isEditMode: cart.isEditMode, number: EditOrderSheetLogic.number(cart)),
+                       String(format: "products.cart.edit.title".localized(), "482913"))
+    }
+
+    /// #677 (board gio-menu) — the cart's ⋯: none while editing, both items off on an empty cart
+    func testCartMoreMenuState() throws {
+        XCTAssertNil(CartV2Logic.moreMenu(try editCart()), "no ⋯ while editing")
+        XCTAssertEqual(CartV2Logic.moreMenu(Cart()), CartV2Logic.MoreMenuState(shareEnabled: false, clearEnabled: false))
+        XCTAssertEqual(CartV2Logic.moreMenu(try rentCart()), CartV2Logic.MoreMenuState(shareEnabled: true, clearEnabled: true))
+        let noDates = try rentCart()
+        noDates.returnPlanAt = nil
+        XCTAssertEqual(CartV2Logic.moreMenu(noDates), CartV2Logic.MoreMenuState(shareEnabled: false, clearEnabled: true),
+                       "a rental without dates cannot be quoted yet, but can be cleared")
+    }
+
+    func testCancelEditReturnsTheOrderAndTitle() throws {
+        XCTAssertNil(EditOrderSheetLogic.cancelEdit(try rentCart()), "a new order has nothing to cancel")
+        XCTAssertEqual(EditOrderSheetLogic.cancelEdit(try editCart()), 42)
+        XCTAssertEqual(EditOrderSheetLogic.cancelTitle(number: "482913"),
+                       String(format: "products.cart.edit.cancelTitle".localized(), "482913"))
+        XCTAssertEqual(EditOrderSheetLogic.cancelTitle(number: nil), "products.cart.edit.cancelTitleNoNumber".localized())
+    }
+
+    func testSaleEditHasNoDatesRow() throws {
+        let cart = try editCart()
+        cart.orderType = .sale
+        cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: "482914", paid: 0)
+        let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertNil(confirm.range)
+        XCTAssertFalse(confirm.datesChanged)
+        XCTAssertEqual(confirm.itemsKey, "products.cart.edit.saleItems")
+        XCTAssertEqual(EditOrderSheetLogic.header(cart)?.subtitle, "Trần Văn Minh · " + "products.cart.edit.saleType".localized())
+    }
+
+    func testEditSnapshotSurvivesTheSavedDraftAndClears() throws {
+        let cart = try editCart()
+        let data = try JSONEncoder().encode(cart.makeDiskSnapshot())
+        let restored = Cart()
+        restored.applyDiskSnapshot(try JSONDecoder().decode(Cart.DiskSnapshot.self, from: data))
+        XCTAssertEqual(restored.editOriginal, cart.editOriginal)
+
+        // A draft saved before #676 still loads, without a snapshot
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        json.removeValue(forKey: "editOriginal")
+        let old = Cart()
+        old.applyDiskSnapshot(try JSONDecoder().decode(Cart.DiskSnapshot.self, from: JSONSerialization.data(withJSONObject: json)))
+        XCTAssertEqual(old.orderId, 42)
+        XCTAssertNil(old.editOriginal)
+
+        cart.clear()
+        XCTAssertNil(cart.editOriginal)
+    }
+
+    func testEditSheetTagsOnlyTheChangedRows() throws {
+        let cart = try editCart()
+        cart.updateQuantity(at: 0, quantity: 2)
+        let sheet = EditOrderConfirmSheet(confirm: EditOrderSheetLogic.confirm(cart, timeZone: vn))
+        sheet.loadViewIfNeeded()
+        sheet.view.frame = CGRect(x: 0, y: 0, width: 390, height: 520)
+        sheet.view.layoutIfNeeded()
+        func tags(in view: UIView) -> Int {
+            (view.accessibilityIdentifier == "cart.edit.changed" ? 1 : 0) + view.subviews.reduce(0) { $0 + tags(in: $1) }
+        }
+        XCTAssertEqual(tags(in: sheet.view), 1, "only Đồ thuê changed")
+        XCTAssertEqual(sheet.saveButton.title(for: .normal), "products.cart.edit.save".localized())
     }
 }

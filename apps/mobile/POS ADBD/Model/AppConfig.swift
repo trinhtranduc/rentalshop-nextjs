@@ -40,8 +40,10 @@ struct AppConfig: Codable, Equatable {
     var ios = PlatformConfig()
     var android = PlatformConfig()
     var features: Set<MobileFeature> = Set(MobileFeature.allCases)
+    /// #682: Nhân viên kho can be given in the user form (off until the API says `true`)
+    var inventoryRole = false
 
-    enum CodingKeys: String, CodingKey { case ios, android, features }
+    enum CodingKeys: String, CodingKey { case ios, android, features, inventoryRole }
 
     init(ios: PlatformConfig = PlatformConfig(), android: PlatformConfig = PlatformConfig(), features: Set<MobileFeature> = Set(MobileFeature.allCases)) {
         self.ios = ios
@@ -57,6 +59,7 @@ struct AppConfig: Codable, Equatable {
         // screen off, so a missing map (an API without flags) or a missing key keeps it on
         let flags = (try? container.decodeIfPresent([String: Bool].self, forKey: .features)) ?? nil
         features = Set(MobileFeature.allCases.filter { flags?[$0.rawValue] ?? true })
+        inventoryRole = ((try? container.decodeIfPresent(Bool.self, forKey: .inventoryRole)) ?? nil) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -65,6 +68,7 @@ struct AppConfig: Codable, Equatable {
         try container.encode(android, forKey: .android)
         let flags = Dictionary(uniqueKeysWithValues: MobileFeature.allCases.map { ($0.rawValue, features.contains($0)) })
         try container.encode(flags, forKey: .features)
+        try container.encode(inventoryRole, forKey: .inventoryRole)
     }
 
     /// True when this iOS build is older than the minimum the server asks for

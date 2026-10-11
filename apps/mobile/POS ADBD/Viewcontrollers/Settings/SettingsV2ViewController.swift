@@ -8,6 +8,7 @@
 
 import UIKit
 import SnapKit
+import IQKeyboardManagerSwift
 
 final class SettingsV2ViewController: BaseViewControler {
     private enum Row {
@@ -23,6 +24,8 @@ final class SettingsV2ViewController: BaseViewControler {
     private var plan: SettingsPlan?
     /// Totals next to Khách hàng / Người dùng (#388)
     private var counts: [SettingsV2Item: Int] = [:]
+    /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
+    private var lastFetchedAt: Date?
 
     private var user: User? { User.account() }
 
@@ -35,6 +38,8 @@ final class SettingsV2ViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         rebuild()
+        guard RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: lastFetchedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
+        lastFetchedAt = Date()
         loadPlan()
         loadCounts()
         refreshOverlapSetting()
@@ -108,7 +113,7 @@ final class SettingsV2ViewController: BaseViewControler {
     /// The shop's current value, so the switch matches what was saved on another device
     private func refreshOverlapSetting() {
         guard showsOverlapSetting else { return }
-        OverlapSetting.refresh(force: true) { [weak self] _ in
+        OverlapSetting.refresh { [weak self] _ in
             guard let self, self.showsOverlapSetting, !OverlapSetting.saving else { return }
             self.listView.reloadData()
         }
@@ -582,7 +587,11 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
         scroll.keyboardDismissMode = .interactive
         scroll.alwaysBounceVertical = true
         view.addSubview(scroll)
-        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
+        // #532: the scroll view fills the sheet and the home-indicator inset is added as content inset
+        // (viewSafeAreaInsetsDidChange). Pinned to the safe area it was 34pt shorter than the form
+        // (fittingHeight() did not count it) and scrolled the title and the close button off the top.
+        scroll.contentInsetAdjustmentBehavior = .never
+        scroll.snp.makeConstraints { make in make.edges.equalToSuperview() }
         scroll.addSubview(content)
         content.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(24)
@@ -592,9 +601,29 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
         render()
     }
 
+    // #532: IQKeyboardManager pushed a content inset equal to the keyboard onto the scroll view and scrolled it
+    // 44pt, so the title and the close button left the top of the sheet. The sheet lifts itself above the keyboard.
+    private var keyboardManagerWasEnabled = true
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         currentField.becomeFirstResponder()
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        scroll.contentInset.bottom = view.safeAreaInsets.bottom
     }
 
     /// Height of the form, so the sheet is only as tall as its content (board DMK-doi-mat-khau)
@@ -605,7 +634,9 @@ final class ChangePasswordSheetViewController: UIViewController, UITextFieldDele
         let size = content.systemLayoutSizeFitting(CGSize(width: width, height: 0),
                                                    withHorizontalFittingPriority: .required,
                                                    verticalFittingPriority: .fittingSizeLevel)
-        return 24 + size.height + 20
+        let homeIndicator = view.safeAreaInsets.bottom > 0 ? view.safeAreaInsets.bottom
+            : (view.window ?? UIApplication.shared.windows.first)?.safeAreaInsets.bottom ?? 34
+        return 24 + size.height + 20 + homeIndicator
     }
 
     private func field(_ textField: UITextField, title: String, message: UILabel, newPassword: Bool) -> UIView {

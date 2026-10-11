@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { AdminSidebar, SidebarSkeleton, HeaderSkeleton } from '@rentalshop/ui';
-import { Button } from '@rentalshop/ui';
-import { Menu, X } from 'lucide-react';
+import { SidebarSkeleton, HeaderSkeleton } from '@rentalshop/ui';
 import { useAuth } from '@rentalshop/hooks';
+import { AdminShell } from './shell/AdminShell';
 import SubscriptionExpiryBanner from './SubscriptionExpiryBanner';
 import { isArticleOnlyAdminPath } from '@rentalshop/ui';
 
@@ -20,8 +19,6 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   const isLoginPage = pathname === '/login';
@@ -41,7 +38,7 @@ export default function AdminLayout({
     return (
       <div className="flex h-screen bg-bg-primary">
         {showSidebar && (
-          <div className="hidden w-64 shrink-0 border-r border-border bg-bg-card lg:block">
+          <div className="hidden w-[248px] shrink-0 border-r border-border bg-bg-card lg:block">
             <SidebarSkeleton />
           </div>
         )}
@@ -76,70 +73,17 @@ export default function AdminLayout({
     logout();
   };
 
-  return (
-    <div className="flex h-screen bg-bg-primary">
-      {/* Sidebar — only when authenticated on protected routes */}
-      {showSidebar && (
-        <>
-          {/* Mobile Menu Overlay */}
-          {isMobileMenuOpen && (
-            <div 
-              className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-          )}
-
-          {/* Sidebar */}
-          <div className={`
-            fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
-            ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          `}>
-            <AdminSidebar
-              user={user}
-              isOpen={isMobileMenuOpen}
-              onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              onLogout={handleLogout}
-              isCollapsed={isCollapsed}
-              onCollapseToggle={() => setIsCollapsed(!isCollapsed)}
-              notificationsCount={notificationsCount}
-            />
-          </div>
-        </>
-      )}
-
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden ${!showSidebar ? 'w-full' : ''}`}>
-        {/* Top Bar for Mobile - Only show if sidebar is visible */}
-        {showSidebar && (
-          <div className="lg:hidden bg-bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <span className="font-semibold text-text-primary">AnyRent Admin</span>
-            </div>
-
-            <div className="w-8" /> {/* Spacer for centering */}
-          </div>
-        )}
-
-        {/* Subscription Expiry Banner - Top of page */}
-        {showSidebar && <SubscriptionExpiryBanner />}
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-bg-primary">
-          {children}
-        </main>
+  if (!showSidebar) {
+    return (
+      <div className="flex h-screen bg-bg-primary">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-bg-primary">{children}</main>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <AdminShell user={user} pathname={pathname} onLogout={handleLogout} banner={<SubscriptionExpiryBanner />}>
+      {children}
+    </AdminShell>
   );
 }

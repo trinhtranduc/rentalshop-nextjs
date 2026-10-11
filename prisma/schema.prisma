@@ -374,9 +374,10 @@ model Order {
   orderType             OrderType
   status                OrderStatus          @default(RESERVED)
   totalAmount           Float
+  pickupTotalAmount     Float?
   depositAmount         Float                @default(0)
   securityDeposit       Float                @default(0)
-  damageFee             Float                @default(0)
+  damageFee            Float                @default(0)
   lateFee               Float                @default(0)
   discountType          String?
   discountValue         Float                @default(0)
@@ -469,7 +470,7 @@ model OrderItem {
 model Payment {
   id             Int           @id @default(autoincrement())
   amount         Float
-  currency       String        @default("USD")
+  currency       String        @default("VND")
   method         PaymentMethod
   type           PaymentType
   status         PaymentStatus @default(PENDING)
@@ -505,7 +506,7 @@ model Plan {
   name          String                    @unique
   description   String
   basePrice     Float
-  currency      String                    @default("USD")
+  currency      String                    @default("VND")
   /// Stripe Price ID for subscription checkout (mode=subscription)
   stripePriceId String?                   @unique
   trialDays     Int                       @default(14)
@@ -595,7 +596,7 @@ model Subscription {
   canceledAt           DateTime?
   cancelReason         String?
   amount               Float
-  currency             String                 @default("USD")
+  currency             String                 @default("VND")
   interval             String                 @default("month")
   intervalCount        Int                    @default(1)
   period               Int                    @default(1)
@@ -859,6 +860,7 @@ enum UserRole {
   MERCHANT
   OUTLET_ADMIN
   OUTLET_STAFF
+  OUTLET_INVENTORY
 }
 
 model Post {

@@ -132,4 +132,24 @@ class NotificationsLogicTest {
         assertNull(NoteEditorLogic.titleSuffix(null))
         assertNull(NoteEditorLogic.titleSuffix(""))
     }
+
+    private fun note(id: Int) = InboxNotification(id, "Title $id", "Body $id", "ORDER_CREATED", false, "2026-10-09T03:00:00.000Z", null)
+
+    /** #751: a notification that arrived while the list was open pushes the last row of page 1 onto page 2 */
+    @Test
+    fun appendPageSkipsRowsAlreadyInTheList() {
+        val page1 = (30 downTo 11).map(::note)
+        val page2 = (11 downTo 1).map(::note) // 11 again: one new notification arrived meanwhile
+        val merged = NotificationsLogic.appendPage(page1, page2)
+        assertEquals((30 downTo 1).toList(), merged.map { it.id })
+        assertEquals(merged.size, merged.map { it.id }.toSet().size)
+    }
+
+    @Test
+    fun appendPageKeepsOrderAndHandlesEmptyPages() {
+        val first = listOf(note(5), note(4))
+        assertEquals(first, NotificationsLogic.appendPage(first, emptyList()))
+        assertEquals(first, NotificationsLogic.appendPage(emptyList(), first))
+        assertEquals(listOf(5, 4, 3), NotificationsLogic.appendPage(first, listOf(note(4), note(3), note(3))).map { it.id })
+    }
 }

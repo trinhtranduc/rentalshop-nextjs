@@ -1,0 +1,47 @@
+-- #577 data fix for orders ALREADY stored by the Android cart before #413.   STATUS: PENDING OWNER DECISION
+--
+-- NOT a migration (nothing under prisma/migrations). Do not run without the owner's go, and not on production
+-- without a backup. Run the SELECTs first and read the numbers.
+--
+-- What is wrong: those orders have returnPlanAt = 'R T23:59:00Z' (UTC), which is R+1 06:59 in Vietnam, so every
+-- screen shows return day R+1 (and an extra rental day when the duration was derived from the dates).
+-- The API now rewrites that instant on write; rows saved before the deploy keep it.
+--
+-- Pattern: UTC time exactly 23:59:00.000.
+-- Risk of a false hit: a return planned on purpose at exactly 23:59:00.000 UTC (06:59 VN next day). Current apps
+-- never send it; read the sample list before the UPDATE.
+-- The new value is the one the API now writes: 23:59:59 Vietnam time of the written day = R 16:59:59 UTC.
+
+-- 1. How many, by status
+SELECT status, COUNT(*) AS orders
+FROM "Order"
+WHERE "orderType" = 'RENT'
+  AND "returnPlanAt" IS NOT NULL
+  AND to_char("returnPlanAt" AT TIME ZONE 'UTC', 'HH24:MI:SS.MS') = '23:59:00.000'
+GROUP BY status
+ORDER BY status;
+
+-- 2. Sample to read by eye (what it shows now, what it would become)
+SELECT id, "orderNumber", status, "pickupPlanAt", "returnPlanAt",
+       (date_trunc('day', "returnPlanAt" AT TIME ZONE 'UTC') + interval '16 hours 59 minutes 59 seconds') AT TIME ZONE 'UTC' AS "returnPlanAt_fixed"
+FROM "Order"
+WHERE "orderType" = 'RENT'
+  AND to_char("returnPlanAt" AT TIME ZONE 'UTC', 'HH24:MI:SS.MS') = '23:59:00.000'
+ORDER BY "createdAt" DESC
+LIMIT 50;
+
+-- 3. The fix (return day R written in UTC -> 23:59:59 Vietnam of R). The pickup `P T00:00:00Z` is already on the
+--    right Vietnam day (07:00) and is left alone. Only open orders; closed ones are history. Run in a transaction.
+-- BEGIN;
+-- UPDATE "Order"
+-- SET "returnPlanAt" = (date_trunc('day', "returnPlanAt" AT TIME ZONE 'UTC') + interval '16 hours 59 minutes 59 seconds') AT TIME ZONE 'UTC',
+--     "updatedAt" = now()
+-- WHERE "orderType" = 'RENT'
+--   AND status IN ('RESERVED', 'PICKUPED')
+--   AND "returnPlanAt" IS NOT NULL
+--   AND to_char("returnPlanAt" AT TIME ZONE 'UTC', 'HH24:MI:SS.MS') = '23:59:00.000';
+-- -- check the row count, then COMMIT; or ROLLBACK;
+--
+-- Not changed by this script: rentalDuration / item rentalDays / totals. The old app sent inclusive days P..R,
+-- which were right. Only orders whose duration the server derived from the dates (no duration sent) have days + 1;
+-- the owner decides whether to re-price those.

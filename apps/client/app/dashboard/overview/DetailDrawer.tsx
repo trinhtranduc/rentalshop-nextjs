@@ -32,6 +32,7 @@ const WATERFALL_LABEL: Record<WaterfallKey, string> = {
   pickupAndSale: 'home.money.pickupAndSale',
   fees: 'home.money.fees',
   refunds: 'home.money.refunds',
+  collateral: 'home.money.collateralNet',
   total: 'home.money.collectedTotal',
 };
 
@@ -42,7 +43,9 @@ function CollectedBody({ parts, t, money }: { parts: MoneyBreakdown; t: T; money
     <div className="flex flex-col gap-2.5">
       {rows.map((r) => {
         const label = t(WATERFALL_LABEL[r.key]);
-        const value = r.total ? money(r.amount) : r.amount < 0 ? `−${money(-r.amount)}` : `+${money(r.amount)}`;
+        // `|| 0` turns −0 (no refunds: −(0)) into 0, which showed "+-0" (#721)
+        const amount = r.amount || 0;
+        const value = r.total ? money(amount) : amount < 0 ? `−${money(-amount)}` : `+${money(amount)}`;
         const tone = r.total ? 'font-bold text-ar-ink' : 'text-ar-ink-2';
         const fill = r.total ? 'bg-ar-ink' : r.negative ? 'bg-ar-chart-red' : 'bg-ar-chart-blue';
         return (
@@ -193,6 +196,8 @@ export function DetailDrawer({
         </>
       }
     >
+      {/* Where the number comes from, in one sentence, before its breakdown */}
+      <p className="m-0 text-sm leading-relaxed text-ar-ink-2">{t(`home.detail.rule.${kind}`)}</p>
       {kind === 'collected' && <CollectedBody parts={parts} t={t} money={money} />}
       {kind === 'outstanding' && <OutstandingBody parts={parts} t={t} money={money} />}
       {kind === 'collateral' && <CollateralBody parts={parts} cash={cash} t={t} money={money} />}

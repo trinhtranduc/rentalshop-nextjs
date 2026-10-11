@@ -143,7 +143,7 @@ export const merchantAuth = createAuthMiddleware({
 });
 
 export const outletAuth = createAuthMiddleware({
-  requiredRoles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF']
+  requiredRoles: ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']
 });
 
 export const optionalAuth = createAuthMiddleware({

@@ -35,7 +35,7 @@ export type AccessChangeResult =
   | { ok: true; accessChanged: boolean }
   | { ok: false; code: string; status: number };
 
-const OUTLET_ROLES: string[] = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+const OUTLET_ROLES: string[] = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF, USER_ROLE.OUTLET_INVENTORY];
 const NO_TENANT_ROLES: string[] = [USER_ROLE.ARTICLE, USER_ROLE.OPS];
 
 const fail = (code: string, status: number): AccessChangeResult => ({ ok: false, code, status });

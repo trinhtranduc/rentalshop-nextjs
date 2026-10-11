@@ -7,6 +7,7 @@ import com.anyrent.pos.data.model.Customer
 import com.anyrent.pos.data.model.PricingOption
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.domain.products.PricingTypes
@@ -38,6 +39,10 @@ object CartStore {
     /** Non-null when cart was loaded from an existing order (iOS `cart.orderId`). */
     private val _editingOrderId = MutableStateFlow<Int?>(null)
     val editingOrderId: StateFlow<Int?> = _editingOrderId.asStateFlow()
+
+    /** #676: the order as it was loaded for edit (number, dates, lines, paid); null for a new order (iOS `editOriginal`) */
+    private val _editOriginal = MutableStateFlow<EditOrderSheet.Original?>(null)
+    val editOriginal: StateFlow<EditOrderSheet.Original?> = _editOriginal.asStateFlow()
 
     private val _lines = MutableStateFlow<List<CartLine>>(emptyList())
     val lines: StateFlow<List<CartLine>> = _lines.asStateFlow()
@@ -260,6 +265,13 @@ object CartStore {
         persist()
     }
 
+    /** #684: the line's note from the "Ghi chú món" sheet; blank clears it */
+    fun updateNote(productId: Int, note: String?) {
+        val clean = com.anyrent.pos.domain.products.CartV2Logic.noteText(note)
+        _lines.update { list -> list.map { if (it.product.id == productId) it.copy(note = clean) else it } }
+        persist()
+    }
+
     fun updateRentalDays(productId: Int, days: Int) {
         val safe = days.coerceAtLeast(1)
         _lines.update { list ->
@@ -310,9 +322,20 @@ object CartStore {
         persist()
     }
 
+    /**
+     * #677 "Huỷ sửa": leave edit mode with an empty cart (the saved draft too). Returns the order that was being
+     * edited, to show again; null (and nothing cleared) when the cart was not editing (iOS `EditOrderSheetLogic.cancelEdit`).
+     */
+    fun cancelEdit(persistToDisk: Boolean = true): Int? {
+        val orderId = _editingOrderId.value ?: return null
+        clear(persistToDisk)
+        return orderId
+    }
+
     fun clear(persistToDisk: Boolean = true) {
         dropNoteImages()
         _editingOrderId.value = null
+        _editOriginal.value = null
         _lines.value = emptyList()
         _customer.value = null
         _notes.value = ""
@@ -393,12 +416,22 @@ object CartStore {
                 isSale = sale,
                 pricingType = item.pricingType.ifBlank { "FIXED" },
                 unitPriceOverride = item.unitPrice,
+                note = item.note,
             )
         }
 
         // Assign after building so collectors never see a cleared mid-load cart.
         dropNoteImages()
         _editingOrderId.value = summary.id
+        _editOriginal.value = EditOrderSheet.Original(
+            orderNumber = summary.orderNumber,
+            pickup = if (sale) null else pickup,
+            returnDate = if (sale) null else ret,
+            lines = EditOrderSheet.lines(mappedLines, sale),
+            paid = detail.payments.sumOf { it.amount },
+            status = summary.status,
+            payments = detail.payments.map { com.anyrent.pos.domain.orders.BalancePayment(it.amount, it.status, it.notes) },
+        )
         _orderType.value = if (sale) "SALE" else "RENT"
         _pickupDate.value = pickup
         _returnDate.value = ret
@@ -425,12 +458,15 @@ object CartStore {
         _customer.value = customer
         _lines.value = mappedLines
 
-        android.util.Log.i(
-            "AnyRentCart",
-            "Loaded order #${summary.orderNumber} id=${summary.id} " +
-                "lines=${mappedLines.size} customer=${customer?.id} " +
-                "deposit=${summary.depositAmount} security=${detail.securityDeposit}",
-        )
+        // Logging only; no android.util.Log in JVM unit tests (#677)
+        runCatching {
+            android.util.Log.i(
+                "AnyRentCart",
+                "Loaded order #${summary.orderNumber} id=${summary.id} " +
+                    "lines=${mappedLines.size} customer=${customer?.id} " +
+                    "deposit=${summary.depositAmount} security=${detail.securityDeposit}",
+            )
+        }
         persistToDisk()
     }
 
@@ -490,6 +526,7 @@ object CartStore {
                 .put("pricingOptions", options)
             linesJson.put(
                 JSONObject()
+                    .put("itemNote", line.note ?: JSONObject.NULL)
                     .put("quantity", line.quantity)
                     .put("rentalDays", line.rentalDays)
                     .put("isSale", line.isSale)
@@ -500,6 +537,7 @@ object CartStore {
         }
         return JSONObject()
             .put("editingOrderId", _editingOrderId.value ?: JSONObject.NULL)
+            .put("editOriginal", _editOriginal.value?.let(::editOriginalJson) ?: JSONObject.NULL)
             .put("orderType", _orderType.value)
             .put("pickup", _pickupDate.value.toString())
             .put("return", _returnDate.value.toString())
@@ -517,6 +555,8 @@ object CartStore {
 
     private fun applyJson(json: JSONObject) {
         _editingOrderId.value = json.optInt("editingOrderId", 0).takeIf { it > 0 }
+        // A draft saved before #676 has no snapshot: no "Đã đổi" tags, title without a number
+        _editOriginal.value = json.optJSONObject("editOriginal")?.takeIf { _editingOrderId.value != null }?.let(::parseEditOriginal)
         _orderType.value = json.optString("orderType").ifBlank { "RENT" }
         _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(ShopTime.today())
         _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(ShopTime.today().plusDays(1))
@@ -579,6 +619,7 @@ object CartStore {
                 rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),
                 isSale = line.optBoolean("isSale"),
                 pricingType = PricingTypes.normalizeOption(line.optString("pricingType").ifBlank { product.pricingType }),
+                note = line.optString("itemNote").takeIf { it.isNotBlank() && it != "null" },
                 unitPriceOverride = override,
             )
         }
@@ -586,6 +627,63 @@ object CartStore {
         depositManual = if (json.has("depositManual")) json.optBoolean("depositManual")
         else _depositAmount.value != autoDeposit(_lines.value)
     }
+
+    private fun editOriginalJson(original: EditOrderSheet.Original): JSONObject {
+        val lines = JSONArray()
+        original.lines.forEach { line ->
+            lines.put(
+                JSONObject()
+                    .put("productId", line.productId)
+                    .put("quantity", line.quantity)
+                    .put("unitPrice", line.unitPrice)
+                    .put("pricingType", line.pricingType),
+            )
+        }
+        return JSONObject()
+            .put("orderNumber", original.orderNumber)
+            .put("pickup", original.pickup?.toString() ?: JSONObject.NULL)
+            .put("return", original.returnDate?.toString() ?: JSONObject.NULL)
+            .put("paid", original.paid)
+            .put("lines", lines)
+            .put("status", original.status)
+            .apply {
+                original.payments?.let { payments ->
+                    put("payments", JSONArray().apply {
+                        payments.forEach { put(JSONObject().put("amount", it.amount).put("status", it.status ?: JSONObject.NULL).put("notes", it.notes ?: JSONObject.NULL)) }
+                    })
+                }
+            }
+    }
+
+    private fun parseEditOriginal(json: JSONObject): EditOrderSheet.Original? = runCatching {
+        val lines = json.optJSONArray("lines") ?: JSONArray()
+        EditOrderSheet.Original(
+            orderNumber = json.optString("orderNumber"),
+            pickup = json.optString("pickup").takeIf { it.isNotBlank() && it != "null" }?.let(LocalDate::parse),
+            returnDate = json.optString("return").takeIf { it.isNotBlank() && it != "null" }?.let(LocalDate::parse),
+            lines = (0 until lines.length()).mapNotNull { index ->
+                val line = lines.optJSONObject(index) ?: return@mapNotNull null
+                EditOrderSheet.Line(
+                    productId = line.optInt("productId"),
+                    quantity = line.optInt("quantity"),
+                    unitPrice = line.optDouble("unitPrice", 0.0),
+                    pricingType = line.optString("pricingType"),
+                )
+            },
+            paid = json.optDouble("paid", 0.0),
+            status = json.optString("status"),
+            payments = json.optJSONArray("payments")?.let { payments ->
+                (0 until payments.length()).mapNotNull { index ->
+                    val payment = payments.optJSONObject(index) ?: return@mapNotNull null
+                    com.anyrent.pos.domain.orders.BalancePayment(
+                        amount = payment.optDouble("amount", 0.0),
+                        status = payment.optString("status").takeIf { !payment.isNull("status") },
+                        notes = payment.optString("notes").takeIf { !payment.isNull("notes") },
+                    )
+                }
+            },
+        )
+    }.getOrNull()
 
     /** Shop day (#602), the same zone the cart sends with `isoPickup` / `isoReturn` (#413) */
     private fun parseOrderDate(raw: String?): LocalDate? = OrderPlanDays.dayOf(raw)

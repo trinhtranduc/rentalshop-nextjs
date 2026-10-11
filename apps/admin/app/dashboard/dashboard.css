@@ -1,0 +1,43 @@
+/* #808 admin dashboard, portal style. Colours come from the --ar-* tokens only. */
+.ar-dash-seg {
+  display: inline-flex;
+  max-width: 100%;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgb(var(--ar-subtle));
+  overflow-x: auto;
+}
+.ar-dash-seg-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: rgb(var(--ar-muted));
+}
+.ar-dash-seg-btn[aria-selected='true'] {
+  background: rgb(var(--ar-surface));
+  color: rgb(var(--ar-ink));
+  box-shadow: var(--ar-shadow);
+}
+.ar-dash-refresh {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgb(var(--ar-line));
+  background: rgb(var(--ar-surface));
+  color: rgb(var(--ar-ink));
+  font-size: 14px;
+  font-weight: 500;
+}
+.ar-dash-refresh:disabled { opacity: 0.5; }
+.ar-dash-chart-scroll { overflow-x: auto; }
+.ar-dash-chart-inner { min-width: 100%; }
+@media (max-width: 639px) {
+  .ar-dash-seg-btn, .ar-dash-refresh { min-height: 44px; }
+  .ar-dash-seg { width: 100%; }
+  .ar-dash-seg-btn { flex: 1 1 0; padding: 0 8px; }
+  .ar-dash-chart-inner { min-width: 520px; }
+}

@@ -29,9 +29,13 @@ final class OverviewV2ViewController: BaseViewControler {
     private var chartReport: OverviewReport?
     private var now: OverviewNow?
     private var reportFailed: String?
+    /// #754: staff and warehouse (no revenue) have only the Hôm nay card; its failure shows the reason with Retry
+    private var nowFailed: String?
     private var loading = false
     private var generation = 0
     private var requests: [DataRequest] = []
+    /// #674: dirty on the orders-changed signal; reloaded on appear when dirty or 10 minutes old
+    private var freshness = RefreshTracker()
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -58,12 +62,25 @@ final class OverviewV2ViewController: BaseViewControler {
         }
         #endif
         setupUI()
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         load()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        refreshIfNeeded()
+    }
+
+    /// #674: quiet (figures stay, no spinner) and only when an order changed or the figures are 10 minutes old
+    private func refreshIfNeeded() {
+        guard !loading, freshness.shouldReload(now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
+        load(quiet: true)
+    }
+
+    @objc private func ordersChanged() {
+        freshness.markDirty()
+        if isViewLoaded, view.window != nil { refreshIfNeeded() }
     }
 
     override func setupUI() {
@@ -120,26 +137,33 @@ final class OverviewV2ViewController: BaseViewControler {
         render()
     }
 
-    @objc private func pulled() { load() }
+    @objc private func pulled() { load(quiet: true) }
 
     // MARK: - Data
 
-    private func load() {
+    /// `quiet` (#674: appear, pull): the figures on screen stay until the answer replaces them; a failure keeps them
+    private func load(quiet: Bool = false) {
         requests.forEach { $0.cancel() }
         requests = []
         generation += 1
         let token = generation
         let range = self.range
         let chartRange = self.chartRange
-        loading = true
-        reportFailed = nil
-        render()
+        let version = freshness.begin()
+        let keep = quiet && reportFailed == nil && (showsRevenue ? report != nil : now != nil)
+        if !keep {
+            loading = true
+            reportFailed = nil
+            nowFailed = nil
+            render()
+        }
 
         let group = DispatchGroup()
         var newReport: OverviewReport?
         var newChart: OverviewReport?
         var newNow: OverviewNow?
         var failure: NSError?
+        var nowFailure: NSError?
         if showsRevenue {
             group.enter()
             requests.append(TabsV2APIService.shared.overviewReport(range) { report, error in
@@ -157,8 +181,9 @@ final class OverviewV2ViewController: BaseViewControler {
         }
         if showsOperations {
             group.enter()
-            requests.append(TabsV2APIService.shared.overviewNow { now, _ in
+            requests.append(TabsV2APIService.shared.overviewNow { now, error in
                 newNow = now
+                nowFailure = error
                 group.leave()
             })
         }
@@ -166,11 +191,21 @@ final class OverviewV2ViewController: BaseViewControler {
             guard let self, token == self.generation else { return }
             self.refresh.endRefreshing()
             self.loading = false
+            if keep, self.showsRevenue, newReport == nil {
+                // Quiet refresh failed: keep the figures, try again on the next appear
+                if let newNow { self.now = newNow }
+                self.render()
+                return
+            }
             self.report = newReport
             self.chartReport = chartRange == range ? newReport : newChart
             if let newNow { self.now = newNow }
+            self.nowFailed = (newNow == nil && !self.showsRevenue && self.now == nil)
+                ? (nowFailure?.localizedDescription ?? "") : nil
             if self.showsRevenue, newReport == nil {
                 self.reportFailed = failure?.localizedDescription ?? ""
+            } else {
+                self.freshness.loaded(version: version, at: Date())
             }
             self.render()
         }
@@ -198,8 +233,11 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(chartCard())
         }
         // #620: the Hôm nay counters belong to today only
-        if showsOperations, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey) {
+        if showsOperations, nowFailed == nil || loading, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey) {
             contentStack.addArrangedSubview(todayCard())
+        }
+        if let failed = nowFailed, !loading {
+            contentStack.addArrangedSubview(failureCard(failed))
         }
         if showsRevenue, reportFailed == nil {
             contentStack.addArrangedSubview(topCard(products: true))
@@ -230,16 +268,21 @@ final class OverviewV2ViewController: BaseViewControler {
         chip == .custom ? OverviewLogic.shortRange(range) : chip.title
     }
 
+    /// The reason the figures could not load, red, tap = Retry (#754 shares it with the owner's tiles)
+    private func failureCard(_ reason: String) -> UIView {
+        let label = OVFont.label((reason.isEmpty ? "Something went wrong".localized() : reason) + " · " + "Retry".localized(),
+                                 DS.TextSize.secondary, color: OVColor.red, lines: 0)
+        label.isUserInteractionEnabled = true
+        label.accessibilityTraits = UIAccessibilityTraitButton
+        label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pulled)))
+        return card([label])
+    }
+
     // MARK: Tiles
 
     private func tilesGrid() -> UIView {
         if let failed = reportFailed, !loading {
-            let label = OVFont.label((failed.isEmpty ? "Something went wrong".localized() : failed) + " · " + "Retry".localized(),
-                                     DS.TextSize.secondary, color: OVColor.red, lines: 0)
-            label.isUserInteractionEnabled = true
-            label.accessibilityTraits = UIAccessibilityTraitButton
-            label.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pulled)))
-            return card([label])
+            return failureCard(failed)
         }
         let tiles = OverviewDashLogic.tiles(report: report, now: now)
         let forecast = OverviewDashLogic.forecast(collected: report?.netRevenue, series: report?.series ?? [], todayKey: todayKey)
@@ -288,21 +331,23 @@ final class OverviewV2ViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
-    /// "Xem các đơn liên quan": orders created in the period, "Chưa lấy đồ", or the rentals out now
+    /// "Xem các đơn liên quan" (#708): the rows behind the tile, each with the money it adds, total = the tile.
+    /// Còn phải thu lists the period's orders that still owe money, with the same rule as the tile (the not-picked-up
+    /// list counted differently: 6 on the tile, 3 in the list).
     private func openOrders(for kind: OverviewTileKind) {
+        let start = OverviewLogic.date(of: range.start)
+        let end = OverviewLogic.date(of: range.end)
+        let period = OverviewLogic.longRange(range)
         let controller: UIViewController
         switch kind {
-        case .orderValue, .collected:
-            let title = "overview.v2.newOrders".localized()
-            controller = OverviewRankingOrdersViewController(
-                filter: .snapshot(.newOrders, title: title),
-                startDate: OverviewLogic.date(of: range.start),
-                endDate: OverviewLogic.date(of: range.end),
-                periodSubtitle: OverviewLogic.longRange(range))
-        case .outstanding:
-            controller = RentedOutOrdersViewController(mode: .notPickedUp)
+        case .orderValue:
+            controller = OverviewRelatedOrdersViewController(kind: .orderValue, title: kind.title, period: period, startDate: start, endDate: end)
+        case .collected:
+            controller = OverviewRelatedOrdersViewController(kind: .collected, title: kind.title, period: period, startDate: start, endDate: end)
         case .collateral:
-            controller = RentedOutOrdersViewController(startsAtLate: false)
+            controller = OverviewRelatedOrdersViewController(kind: .collateral, title: kind.title, period: period, startDate: start, endDate: end)
+        case .outstanding:
+            controller = OverviewRelatedOrdersViewController(kind: .outstanding, title: kind.title, period: period, startDate: start, endDate: end)
         }
         controller.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(controller, animated: true)

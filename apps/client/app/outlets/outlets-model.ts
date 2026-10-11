@@ -139,7 +139,9 @@ export function outletUpdatePayload(id: number, form: OutletForm) {
 export type OutletAction = 'view' | 'edit' | 'bank' | 'disable' | 'enable';
 
 /** Row menu: the default outlet can never be paused (as before). */
-export function outletActions(o: Pick<OutletLike, 'isDefault' | 'isActive'>): OutletAction[] {
+export function outletActions(o: Pick<OutletLike, 'isDefault' | 'isActive'>, canManage = true): OutletAction[] {
+  // #736: a role without outlet.manage (OUTLET_STAFF, OUTLET_INVENTORY) only looks; the API rejects the rest
+  if (!canManage) return ['view', 'bank'];
   const base: OutletAction[] = ['view', 'edit', 'bank'];
   if (o.isDefault) return base;
   return [...base, o.isActive === false ? 'enable' : 'disable'];

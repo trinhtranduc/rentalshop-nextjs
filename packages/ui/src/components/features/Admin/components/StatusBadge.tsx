@@ -16,7 +16,8 @@ export default function AdminStatusBadge({ status, type = 'default', className =
           'ADMIN': { color: 'bg-red-100 text-red-800', text: 'Admin' },
           'MERCHANT': { color: 'bg-blue-100 text-blue-800', text: 'Merchant' },
           'OUTLET_ADMIN': { color: 'bg-green-100 text-green-800', text: 'Outlet Admin' },
-          'OUTLET_STAFF': { color: 'bg-gray-100 text-gray-800', text: 'Outlet Staff' }
+          'OUTLET_STAFF': { color: 'bg-gray-100 text-gray-800', text: 'Outlet Staff' },
+          'OUTLET_INVENTORY': { color: 'bg-amber-100 text-amber-800', text: 'Inventory Staff' }
         };
       
       case 'user':

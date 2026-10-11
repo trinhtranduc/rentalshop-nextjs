@@ -33,8 +33,9 @@ object OverlapWarnings {
 
     /** Copy; the defaults are the boards' Vietnamese, the screens pass string resources */
     data class Texts(
-        val cartLine: String = "Hết đồ %1\$s · đã thuê ở đơn %2\$s",
-        val cartLineNoOrder: String = "Hết đồ %1\$s",
+        /** #684: the cart tag beside the name shows the days only ("Hết 03/10" / "Hết 03/10 → 05/10") */
+        val cartLineOneDay: String = "Hết %1\$s",
+        val cartLineRange: String = "Hết %1\$s → %2\$s",
         val confirmLine: String = "%1\$s thiếu %2\$d bộ ngày %3\$s (đã thuê ở %4\$s).",
         val confirmLineNoOrder: String = "%1\$s thiếu %2\$d bộ ngày %3\$s.",
     )
@@ -92,12 +93,13 @@ object OverlapWarnings {
         return if (more > 0) "$shown +$more" else shown
     }
 
-    /** Red line under the cart item */
-    fun cartLine(conflict: LineConflict, texts: Texts = Texts()): String {
-        val range = dayRange(conflict.from, conflict.to)
-        return if (conflict.orderNumbers.isEmpty()) texts.cartLineNoOrder.format(range)
-        else texts.cartLine.format(range, orderRefs(conflict.orderNumbers))
-    }
+    /**
+     * Red tag under the cart item (#684, iOS `ScheduleConflictLogic.tagText`): the booked-out days only; a tap opens
+     * Lịch trống on [conflict.from], which lists the orders holding the product that day
+     */
+    fun cartLine(conflict: LineConflict, texts: Texts = Texts()): String =
+        if (conflict.from == conflict.to) texts.cartLineOneDay.format(dayRange(conflict.from, conflict.from))
+        else texts.cartLineRange.format(dayRange(conflict.from, conflict.from), dayRange(conflict.to, conflict.to))
 
     /** One sentence of the orange "Trùng lịch" block */
     fun confirmLine(conflict: LineConflict, texts: Texts = Texts()): String {

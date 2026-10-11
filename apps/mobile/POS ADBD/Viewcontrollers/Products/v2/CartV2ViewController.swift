@@ -4,7 +4,8 @@
 //
 //  Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
 //  State lives in CartStore. "Tạo đơn" confirms a new order in a sheet on this screen and creates it with the
-//  same request the review screen sends (#476); an edited order still opens the review screen.
+//  same request the review screen sends (#476); "Lưu thay đổi" saves an edited order from a sheet with the review
+//  screen's update request (#676).
 //
 
 import UIKit
@@ -17,8 +18,21 @@ final class CartV2ViewController: BaseViewControler {
     private let collectTitle = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let collectAmount = V2.label(size: DS.TextSize.amount, weight: .bold)
     private let ctaButton = V2.primaryButton("products.cart.create".localized())
+    private let titleLabel = V2.label(size: 20, weight: .bold)
+    /// #676: "Heather Robinson · Đơn thuê" under "Sửa đơn #482913"
+    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     /// #640: share the cart as a draft image (lines, and for a rental both dates)
-    private let shareButton = UIButton(type: .system)
+    /// #677 (board gio-menu): ⋯ with "Chia sẻ báo giá" (#640 draft image) and "Xoá giỏ hàng"; none while editing
+    private let moreButton = UIButton(type: .system)
+    /// #677 (board huy-sua, option B): while editing, the bottom bar is "Tổng đơn" over "Huỷ sửa" + "Lưu thay đổi"
+    private let editBar = UIStackView()
+    private let editTotalAmount = V2.label(size: 18, weight: .bold)
+    private let cancelEditButton = V2.secondaryButton("products.cart.edit.cancel".localized())
+    private let editSaveButton = V2.primaryButton("products.cart.edit.save".localized())
+    /// The create bar (amount to collect + "Tạo đơn"), hidden while editing
+    private let ctaRow = UIView()
+    /// Keeps the title left of the switch; off while editing (switch and ⋯ hidden)
+    private var switchAfterTitle: Constraint?
     private let availabilityDebouncer = DebounceManager(delay: 0.3)
     /// Bumped on each availability call; an older answer is dropped
     private var availabilityGeneration = 0
@@ -26,6 +40,8 @@ final class CartV2ViewController: BaseViewControler {
     private var pricingChecked = Set<Int>()
     /// One create at a time, one Idempotency-Key per checkout (#341, #476)
     private let submission = CreateOrderSubmission()
+    /// One save of an edited order at a time (#676)
+    private let editSubmission = CreateOrderSubmission()
     /// #518: lines booked out for the chosen dates, by product (from the batch availability answer)
     private var conflicts: [Int: CartScheduleConflict] = [:]
     private lazy var blockedNotice: UIView = CartOverlapViews.notice("cart.overlap.blocked".localized(), style: .blocked)
@@ -53,6 +69,19 @@ final class CartV2ViewController: BaseViewControler {
         view.backgroundColor = .white
         buildLayout()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
+    }
+
+    /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
+    private func openConflictDay(_ conflict: CartScheduleConflict) {
+        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+            DispatchQueue.main.async {
+                guard let self, let product else { return }
+                let calendar = ProductCalendarViewController(product: product, orders: nil,
+                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                calendar.hidesBottomBarWhenPushed = true
+                self.navigationController?.pushViewController(calendar, animated: true)
+            }
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -89,15 +118,21 @@ final class CartV2ViewController: BaseViewControler {
         back.tintColor = DS.Color.text
         back.accessibilityLabel = "products.cart.back".localized()
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)
-        let title = V2.label((cart.isEditMode ? "products.cart.editTitle" : "products.cart.title").localized(), size: 20, weight: .bold)
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.8
+        let title = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        title.axis = .vertical
+        title.spacing = 1
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        subtitleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         typeToggle.addTarget(self, action: #selector(typeChanged), for: .valueChanged)
         typeToggle.accessibilityLabel = "products.cart.type".localized()
-        shareButton.setImage(DS.symbol("square.and.arrow.up", DS.Icon.md, weight: .semibold), for: .normal)
-        shareButton.tintColor = DS.Color.text
-        shareButton.accessibilityLabel = "share.draft.action".localized()
-        shareButton.accessibilityIdentifier = "cart.share"
-        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
-        [back, title, shareButton, typeToggle].forEach(header.addSubview)
+        moreButton.setImage(DS.symbol("ellipsis", DS.Icon.md, weight: .semibold), for: .normal)
+        moreButton.tintColor = DS.Color.text
+        moreButton.accessibilityLabel = "products.cart.more".localized()
+        moreButton.accessibilityIdentifier = "cart.more"
+        moreButton.showsMenuAsPrimaryAction = true
+        [back, title, typeToggle, moreButton].forEach(header.addSubview)
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
@@ -113,15 +148,19 @@ final class CartV2ViewController: BaseViewControler {
             make.leading.equalTo(back.snp.trailing).offset(4)
             make.centerY.equalToSuperview()
         }
-        typeToggle.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-        }
-        shareButton.snp.makeConstraints { make in
-            make.trailing.equalTo(typeToggle.snp.leading).offset(-4)
-            make.leading.greaterThanOrEqualTo(title.snp.trailing).offset(4)
+        moreButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-4)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(DS.touchTarget)
+        }
+        typeToggle.snp.makeConstraints { make in
+            make.trailing.equalTo(moreButton.snp.leading).offset(-2)
+            switchAfterTitle = make.leading.greaterThanOrEqualTo(title.snp.trailing).offset(8).constraint
+            make.centerY.equalToSuperview()
+        }
+        // #677: while editing, nothing sits right of the title (no switch, no ⋯): it may take the whole row
+        title.snp.makeConstraints { make in
+            make.trailing.lessThanOrEqualToSuperview().offset(-DS.Spacing.lg)
         }
 
         let bottom = UIView()
@@ -132,9 +171,9 @@ final class CartV2ViewController: BaseViewControler {
         texts.axis = .vertical
         ctaButton.addTarget(self, action: #selector(ctaTapped), for: .touchUpInside)
         // #518 (board GH-trung-tat): the "no overlapping orders" notice sits above the CTA row while it is blocked
-        let ctaRow = UIView()
         [texts, ctaButton].forEach(ctaRow.addSubview)
-        let bottomColumn = UIStackView(arrangedSubviews: [blockedNotice, ctaRow])
+        buildEditBar()
+        let bottomColumn = UIStackView(arrangedSubviews: [blockedNotice, ctaRow, editBar])
         bottomColumn.axis = .vertical
         bottomColumn.spacing = 10
         blockedNotice.isHidden = true
@@ -170,6 +209,30 @@ final class CartV2ViewController: BaseViewControler {
         }
     }
 
+    /// #677 (option B): "Tổng đơn ……… 730.000đ" over "Huỷ sửa" (outline, 1 part) + "Lưu thay đổi" (primary, 2 parts)
+    private func buildEditBar() {
+        let totalTitle = V2.label("products.cart.total".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let totalRow = UIStackView(arrangedSubviews: [totalTitle, UIView(), editTotalAmount])
+        totalRow.alignment = .firstBaseline
+        cancelEditButton.accessibilityIdentifier = "cart.edit.cancel"
+        cancelEditButton.addTarget(self, action: #selector(cancelEditTapped), for: .touchUpInside)
+        editSaveButton.accessibilityIdentifier = "cart.edit.cta"
+        editSaveButton.addTarget(self, action: #selector(ctaTapped), for: .touchUpInside)
+        editSaveButton.contentEdgeInsets = .zero
+        for button in [cancelEditButton, editSaveButton] {
+            button.layer.cornerRadius = 12
+            button.snp.remakeConstraints { make in make.height.equalTo(48) }
+        }
+        let buttons = UIStackView(arrangedSubviews: [cancelEditButton, editSaveButton])
+        buttons.spacing = 10
+        cancelEditButton.snp.makeConstraints { make in make.width.equalTo(editSaveButton).multipliedBy(0.5) }
+        editBar.addArrangedSubview(totalRow)
+        editBar.addArrangedSubview(buttons)
+        editBar.axis = .vertical
+        editBar.spacing = 10
+        editBar.isHidden = true
+    }
+
     // MARK: - Render
 
     @objc private func cartChanged() {
@@ -178,13 +241,16 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     private func render() {
+        renderTitle()
         typeToggle.select(isRent ? 0 : 1)
         typeToggle.isEnabled = !cart.isEditMode
-        typeToggle.alpha = cart.isEditMode ? 0.6 : 1
-        let canShare = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
-                                               pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
-        shareButton.isEnabled = canShare
-        shareButton.alpha = canShare ? 1 : 0.35
+        // #677 (option B): while editing the header is back + "Sửa đơn #n" + subtitle only (no switch, no share);
+        // the bottom bar carries "Huỷ sửa" next to "Lưu thay đổi"
+        typeToggle.isHidden = cart.isEditMode
+        if cart.isEditMode { switchAfterTitle?.deactivate() } else { switchAfterTitle?.activate() }
+        ctaRow.isHidden = cart.isEditMode
+        editBar.isHidden = !cart.isEditMode
+        renderMoreMenu()
 
         content.arrangedSubviews.forEach { $0.removeFromSuperview() }
         content.addArrangedSubview(band())
@@ -252,15 +318,37 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(note)
         content.addArrangedSubview(UIView.spacer(height: 24))
 
-        collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
-        collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
-        ctaButton.setTitle((isRent ? "products.cart.create" : "products.cart.sellAndCollect").localized(), for: .normal)
+        if cart.isEditMode {
+            // #676 (board sua-don): nothing is collected on save; the bar shows the order total
+            collectTitle.text = "products.cart.total".localized()
+            collectAmount.text = MoneyFormatter.format(cart.totalAmount)
+        } else {
+            collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
+            collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
+        }
+        ctaButton.setTitle(CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
         // #518 OFF: "Tạo đơn" is greyed and disabled with the notice; the API refuses the order too
         let blocked = ctaState == .blocked
         blockedNotice.isHidden = !blocked
         ctaButton.isEnabled = !blocked
         ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
         ctaButton.alpha = cart.items.isEmpty && !blocked ? 0.5 : 1
+        editTotalAmount.text = MoneyFormatter.format(cart.totalAmount)
+        editSaveButton.isEnabled = !blocked
+        editSaveButton.backgroundColor = ctaButton.backgroundColor
+        editSaveButton.alpha = ctaButton.alpha
+    }
+
+    /// "Giỏ hàng", or "Sửa đơn #482913" over "Heather Robinson · Đơn thuê" while editing an order (#676)
+    private func renderTitle() {
+        guard let header = EditOrderSheetLogic.header(cart) else {
+            titleLabel.text = "products.cart.title".localized()
+            subtitleLabel.isHidden = true
+            return
+        }
+        titleLabel.text = header.number.map { String(format: "products.cart.edit.title".localized(), $0) } ?? "products.cart.editTitle".localized()
+        subtitleLabel.text = header.subtitle
+        subtitleLabel.isHidden = false
     }
 
     private func band() -> UIView {
@@ -354,7 +442,7 @@ final class CartV2ViewController: BaseViewControler {
 
     private func itemRow(_ item: CartItem, index: Int) -> UIView {
         let row = UIView()
-        let thumb = V2.thumbnail(size: 56, radius: 10)
+        let thumb = V2.thumbnail(size: 64, radius: 12)
         thumb.image = V2.placeholder
         thumb.contentMode = .center
         if let url = item.imageUrl, let link = URL(string: url) {
@@ -367,51 +455,71 @@ final class CartV2ViewController: BaseViewControler {
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .bold)
-        total.textAlignment = .right
+        total.textAlignment = .left
         total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let top = UIStackView(arrangedSubviews: [name, total])
-        top.alignment = .top
-        top.spacing = 8
-        let calcLabel = V2.label(calc.text, size: DS.TextSize.secondary,
-                                 color: CartV2Logic.needsPrice(item, orderType: cart.orderType) ? V2.danger : DS.Color.textMuted, lines: 0)
-        let column = UIStackView(arrangedSubviews: [top, calcLabel])
+        // #684 (owner 2026-10-09): name; the blue pricing link; the "Hết hàng …" tag; last row the total and −/+.
+        // No card, and no separate "450.000/lần × 1" line: its numbers are in the link
+        let stepper = V2Stepper(compact: true)
+        stepper.minimum = 0
+        stepper.value = item.quantity
+        stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
+        stepper.setContentHuggingPriority(.required, for: .horizontal)
+        stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let link = pricingChip(item, index: index)
+        link.titleLabel?.lineBreakMode = .byTruncatingTail
+        // #518 / #684: "Hết 09/10 → 11/10 ›" beside the name (owner) when other rentals hold the item on those days;
+        // a tap opens Lịch trống on the first clashing day (the orders of that day)
+        let nameRow = UIStackView(arrangedSubviews: [name])
+        nameRow.alignment = .top
+        nameRow.spacing = 8
+        let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
 
-        // #518 (boards GH-trung-bat / GH-trung-tat): "Hết đồ 03–05/10 · đã thuê ở đơn #482113" when other rentals
-        // hold the item on those days; otherwise the free-units tag as before
-        let overlapText: String? = isRent ? conflicts[item.productId].map(ScheduleConflictLogic.tagText) : nil
+        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet
+        column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
+
+        if isRent, let conflict = conflicts[item.productId] {
+            let tag = UIButton(type: .system)
+            tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
+            tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
+            tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
+            tag.backgroundColor = UIColor(hexString: "FEE2E2")
+            tag.layer.cornerRadius = 6
+            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
+            tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
+            tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
+            tag.setContentHuggingPriority(.required, for: .horizontal)
+            tag.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(tag)
+        }
         let shortageText: String? = CartV2Logic.shortage(item).map { left in
             String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
         }
-        if let text = overlapText ?? shortageText {
+        if !(isRent && conflicts[item.productId] != nil), let text = shortageText {
             let warn = V2.label(" " + text + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
             warn.numberOfLines = 0
             warn.backgroundColor = UIColor(hexString: "FEE2E2")
             warn.layer.cornerRadius = 6
             warn.clipsToBounds = true
-            let wrap = UIStackView(arrangedSubviews: [warn, UIView()])
-            column.addArrangedSubview(wrap)
+            warn.setContentHuggingPriority(.required, for: .horizontal)
+            warn.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(warn)
         }
 
-        // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet. The price is
-        // for this order only, any role, any time (owner 2026-10-05); never the product's price.
-        let chipRow = UIStackView(arrangedSubviews: [pricingChip(item, index: index), UIView()])
-        column.addArrangedSubview(chipRow)
-
-        let stepper = V2Stepper(compact: true)
-        stepper.minimum = 0
-        stepper.value = item.quantity
-        stepper.onChange = { [weak self] value in self?.changeQuantity(index: index, quantity: value) }
-        var leading: UIView = UIView()
+        // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. A sale line keeps "Còn N"
         if !isRent, let available = item.availabilityStatus?.available {
-            leading = V2.label(String(format: "products.cart.inStock".localized(), available), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            column.addArrangedSubview(V2.label(String(format: "products.cart.inStock".localized(), available),
+                                               size: DS.TextSize.secondary, color: DS.Color.textMuted))
         }
-        let controls = UIStackView(arrangedSubviews: [leading, UIView(), stepper])
-        controls.alignment = .center
-        column.addArrangedSubview(controls)
+        let bottom = UIStackView(arrangedSubviews: [total, UIView(), stepper])
+        bottom.alignment = .center
+        bottom.spacing = 8
+        column.setCustomSpacing(10, after: column.arrangedSubviews.last ?? link)
+        column.addArrangedSubview(bottom)
 
         row.addSubview(thumb)
         row.addSubview(column)
@@ -431,40 +539,78 @@ final class CartV2ViewController: BaseViewControler {
         return row
     }
 
-    /// "Theo ngày · 150.000đ/ngày" with a down chevron; "· Nhập giá" in blue while the line has no price
-    private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
-        let chip = CartV2Logic.chip(item, orderType: cart.orderType)
+    /// #684 (canvas N1): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" in a light box (2 lines)
+    private func itemNoteButton(_ item: CartItem, index: Int) -> UIButton {
         let button = UIButton(type: .system)
-        let title = NSMutableAttributedString(string: chip.label, attributes: [
-            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
-            NSAttributedString.Key.foregroundColor: DS.Color.text,
-        ])
-        if let price = chip.price {
-            title.append(NSAttributedString(string: " · " + price, attributes: [
-                NSAttributedString.Key.font: UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.secondary, weight: .regular),
-                NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
+        button.contentHorizontalAlignment = .leading
+        button.titleLabel?.numberOfLines = 2
+        if let note = CartV2Logic.noteText(item.note) {
+            let title = NSMutableAttributedString(string: "cart.itemNote.label".localized(), attributes: [
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
+            ])
+            title.append(NSAttributedString(string: " · " + note + " ", attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "334155"),
             ]))
-        } else {
-            title.append(NSAttributedString(string: " · " + "products.cart.pricing.enterPrice".localized(), attributes: [
+            title.append(NSAttributedString(string: "cart.itemNote.edit".localized(), attributes: [
                 NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
                 NSAttributedString.Key.foregroundColor: DS.Color.primary,
             ]))
+            button.setAttributedTitle(title, for: .normal)
+            button.titleLabel?.lineBreakMode = .byTruncatingMiddle
+            button.backgroundColor = UIColor(hexString: "F8FAFC")
+            button.layer.cornerRadius = 10
+            button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+        } else {
+            button.setTitle("cart.itemNote.add".localized(), for: .normal)
+            button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
+            button.setTitleColor(UIColor(hexString: "475569"), for: .normal)
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 8)
         }
+        button.accessibilityLabel = String(format: "cart.itemNote.accessibility".localized(), item.productName ?? "")
+        button.accessibilityValue = CartV2Logic.noteText(item.note)
+        button.addAction(UIAction { [weak self] _ in self?.openItemNote(index: index) }, for: .touchUpInside)
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
+        return button
+    }
+
+    /// #684 (canvas N2): the separate "Ghi chú món" sheet; an empty text clears the note
+    private func openItemNote(index: Int) {
+        guard index < cart.items.count else { return }
+        let item = cart.items[index]
+        let sheet = CartItemNoteSheet(productName: item.productName ?? "", note: item.note)
+        sheet.onSave = { note in CartStore.shared.updateNote(at: index, note: CartV2Logic.noteText(note)) }
+        present(sheet, animated: true)
+    }
+
+    /// #684: blue link, price first — "200.000đ / theo lần ⌄", "400.000đ / theo ngày × 3 ngày ⌄" (15pt, no border);
+    /// "Nhập giá / theo lần" while the line has no price
+    private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
+        let chip = CartV2Logic.chip(item, orderType: cart.orderType)
+        let link = CartV2Logic.link(item, orderType: cart.orderType)
+        let button = UIButton(type: .system)
+        let title = NSMutableAttributedString(string: link.amount ?? "products.cart.pricing.enterPrice".localized(), attributes: [
+            NSAttributedString.Key.font: link.amount == nil ? Utils.boldFont(size: DS.TextSize.body)
+                : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .bold),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
+        ])
+        title.append(NSAttributedString(string: " / " + link.unit, attributes: [
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
+        ]))
         button.setAttributedTitle(title, for: .normal)
-        button.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
-        button.tintColor = DS.Color.textMuted
+        button.setImage(DS.symbol("chevron.down", 13, weight: .semibold), for: .normal)
+        button.tintColor = DS.Color.primary
         button.semanticContentAttribute = .forceRightToLeft
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 18)
-        button.layer.cornerRadius = 10
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
-        button.backgroundColor = DS.Color.surface
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
+        button.contentHorizontalAlignment = .leading
         button.tag = index
         button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
         button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
         button.addTarget(self, action: #selector(pricingChipTapped(_:)), for: .touchUpInside)
-        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(36) }
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         return button
     }
 
@@ -547,10 +693,39 @@ final class CartV2ViewController: BaseViewControler {
 
     // MARK: - Actions
 
-    @objc private func shareTapped() {
+    /// #677: the ⋯ menu for this cart state; hidden while editing an order
+    private func renderMoreMenu() {
+        guard let state = CartV2Logic.moreMenu(cart) else {
+            moreButton.isHidden = true
+            return
+        }
+        moreButton.isHidden = false
+        let share = UIAction(title: "products.cart.menu.shareQuote".localized(), image: UIImage(systemName: "square.and.arrow.up"),
+                             attributes: state.shareEnabled ? [] : .disabled) { [weak self] _ in self?.shareTapped() }
+        let clear = UIAction(title: "products.cart.clear.title".localized(), image: UIImage(systemName: "trash"),
+                             attributes: state.clearEnabled ? .destructive : [.destructive, .disabled]) { [weak self] _ in
+            self?.confirmClearCart()
+        }
+        moreButton.menu = UIMenu(children: [share, UIMenu(options: .displayInline, children: [clear])])
+    }
+
+    private func shareTapped() {
         guard DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
                                       pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt) else { return }
-        OrderSharePresenter.share(OrderShareSource(cart: cart, shop: ShareShop.current()), from: self, sourceView: shareButton)
+        OrderSharePresenter.share(OrderShareSource(cart: cart, shop: ShareShop.current()), from: self, sourceView: moreButton)
+    }
+
+    /// "Xoá giỏ hàng": the cart and its saved draft are cleared; this screen stays, empty, as after a create (#677)
+    private func confirmClearCart() {
+        guard presentedViewController == nil, !cart.isEditMode else { return }
+        let alert = UIAlertController(title: "products.cart.clear.title".localized(),
+                                      message: "products.cart.clear.message".localized(), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "products.cart.clear.confirm".localized(), style: .destructive) { _ in
+            CartStore.shared.resetCart()
+            ProductAvailabilityCache.shared.clearAll()
+        })
+        present(alert, animated: true)
     }
 
     @objc private func goBack() {
@@ -680,14 +855,124 @@ final class CartV2ViewController: BaseViewControler {
             return
         }
         switch CartV2Logic.ctaRoute(isEditMode: cart.isEditMode) {
-        case .preview:
-            let preview = PreviewViewController(cart: cart)
-            preview.hidesBottomBarWhenPushed = true
-            preview.delegate = self
-            navigationController?.pushViewController(preview, animated: true)
+        case .editSheet:
+            presentEditSheet()
         case .confirmSheet:
             presentConfirmSheet()
         }
+    }
+
+    // MARK: - Save an edited order (#676, board sua-don)
+
+    private func presentEditSheet() {
+        let sheet = EditOrderConfirmSheet(confirm: EditOrderSheetLogic.confirm(cart))
+        sheet.onConfirm = { [weak self, weak sheet] in self?.saveEditedOrder(sheet: sheet) }
+        present(sheet, animated: true)
+    }
+
+    /// The review screen's update request (`CartOrderUpdate`, same body as `CartViewModel.saveOrder`). The cart already
+    /// ran the same checks the review screen relied on: `validate()`, missing prices and the overlap block.
+    private func saveEditedOrder(sheet: EditOrderConfirmSheet?) {
+        guard let orderId = cart.orderId, editSubmission.begin() else { return }
+        sheet?.setBusy(true)
+        let number = EditOrderSheetLogic.number(cart)
+        CartOrderUpdate.send(cart) { [weak self] order, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let error {
+                    // The sheet and the cart stay; the next tap retries
+                    self.editSubmission.failed()
+                    sheet?.setBusy(false)
+                    UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    return
+                }
+                self.editSubmission.succeeded()
+                self.orderSaved(order, orderId: orderId, number: number, sheet: sheet)
+            }
+        }
+    }
+
+    /// Same clean-up as the review screen, then the order's detail (loaded fresh) with "Đã lưu đơn #…"
+    private func orderSaved(_ order: Order?, orderId: Int, number: String?, sheet: EditOrderConfirmSheet?) {
+        if let order {
+            OrderListViewModel.shared.updateOrder(order)
+        } else {
+            OrderListViewModel.shared.setNeedsRefresh()
+        }
+        OrdersChangeSignal.post() // #674
+        ProductAvailabilityCache.shared.clearAll()
+        HapticFeedback.success()
+        // #677: the cart is emptied once the order's detail has replaced it, so an empty "Tạo đơn" cart never shows
+        let open: () -> Void = { [weak self] in
+            guard let self else { return CartStore.shared.resetCart() }
+            self.openSavedOrder(order, orderId: orderId, number: number)
+            self.resetCartAfterTransition()
+        }
+        if let sheet, sheet.presentingViewController != nil {
+            sheet.dismiss(animated: true, completion: open)
+        } else {
+            open()
+        }
+    }
+
+    /// The edited order's detail in place of the cart; the detail loads the saved order itself
+    private func openSavedOrder(_ order: Order?, orderId: Int, number: String?) {
+        guard let detail = replaceWithOrderDetail(order, orderId: orderId) else { return }
+        let message = number.map { String(format: "products.cart.edit.saved".localized(), $0) } ?? "products.cart.edit.savedNoNumber".localized()
+        (detail as? BaseViewControler)?.showToast(message: message, duration: 2.5)
+    }
+
+    /// The order's detail in place of this cart (loaded fresh), or the stack root without the new detail and no order
+    @discardableResult
+    private func replaceWithOrderDetail(_ order: Order?, orderId: Int) -> UIViewController? {
+        guard let navigationController else { return nil }
+        let detail: UIViewController
+        if OrderDetailRouter.usesNewDetail {
+            let controller = OrderDetailViewController(orderId: orderId)
+            controller.hidesBottomBarWhenPushed = true
+            detail = controller
+        } else if let order {
+            detail = OrderDetailRouter.detailController(for: order, delegate: nil)
+        } else {
+            navigationController.popToRootViewController(animated: true)
+            return nil
+        }
+        var stack = navigationController.viewControllers
+        if stack.last === self { stack.removeLast() }
+        stack.append(detail)
+        navigationController.setViewControllers(stack, animated: true)
+        return detail
+    }
+
+    /// #677: empty the cart once the navigation away has finished (this screen no longer draws it)
+    private func resetCartAfterTransition() {
+        if let coordinator = navigationController?.transitionCoordinator {
+            coordinator.animate(alongsideTransition: nil) { _ in CartStore.shared.resetCart() }
+        } else {
+            CartStore.shared.resetCart()
+        }
+    }
+
+    // MARK: - Leave edit mode (#677)
+
+    /// "Huỷ sửa": confirm, then leave edit mode with an empty cart (and draft) and show the order again
+    @objc private func cancelEditTapped() {
+        guard presentedViewController == nil, let orderId = EditOrderSheetLogic.cancelEdit(cart) else { return }
+        let alert = UIAlertController(title: EditOrderSheetLogic.cancelTitle(number: EditOrderSheetLogic.number(cart)),
+                                      message: "products.cart.edit.cancelMessage".localized(), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "products.cart.edit.keepEditing".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: "products.cart.edit.cancel".localized(), style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            ProductAvailabilityCache.shared.clearAll()
+            if self.replaceWithOrderDetail(nil, orderId: orderId) == nil, !OrderDetailRouter.usesNewDetail {
+                // The old detail needs the order first: open it from the screen under the cart
+                if let previous = self.navigationController?.topViewController as? BaseViewControler {
+                    OrderDetailRouter.open(orderId: orderId, from: previous)
+                }
+            }
+            self.resetCartAfterTransition()
+        })
+        present(alert, animated: true)
     }
 
     // MARK: - Create order sheets (#476)
@@ -729,9 +1014,11 @@ final class CartV2ViewController: BaseViewControler {
         } else {
             OrderListViewModel.shared.setNeedsRefresh()
         }
+        OrdersChangeSignal.post() // #674
         CartStore.shared.resetCart()
         ProductAvailabilityCache.shared.clearAll()
         HapticFeedback.success()
+        if let orderId = order?.id { CreatedOrderAutoPrint.run(orderId: orderId) }
 
         let created = OrderCreatedSheet(summary: CreateOrderSheetLogic.created(orderNumber: order?.orderNumber ?? "", confirm: confirm))
         created.onNewOrder = { [weak self] in
@@ -803,19 +1090,6 @@ extension CartV2ViewController: NumberPickerViewControllerDelegate {
             CartStore.shared.setDiscount(value)
         case .normal:
             CartStore.shared.setManualDepositAmount(value)
-        }
-    }
-}
-
-extension CartV2ViewController: PreviewViewControllerDelegate {
-    func didCompleteOrder(sender: PreviewViewController, updatedOrder: Order?) {
-        if let order = updatedOrder {
-            OrderListViewModel.shared.updateOrder(order)
-        } else {
-            OrderListViewModel.shared.setNeedsRefresh()
-        }
-        DispatchQueue.main.async {
-            self.navigationController?.popToRootViewController(animated: true)
         }
     }
 }
@@ -1026,3 +1300,106 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         dismiss(animated: true)
     }
 }
+
+/// #684 (canvas N2): "Ghi chú món" — title + ✕, the product name, a text area, "Xoá ghi chú" / "Lưu"
+final class CartItemNoteSheet: UIViewController {
+    var onSave: ((String?) -> Void)?
+    private let productName: String
+    private let note: String?
+    private let textView = UITextView()
+    private let placeholder = V2.label("cart.itemNote.placeholder".localized(), size: DS.TextSize.input, color: UIColor(hexString: "94A3B8"))
+
+    init(productName: String, note: String?) {
+        self.productName = productName
+        self.note = note
+        super.init(nibName: nil, bundle: nil)
+        if let sheet = sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+        let title = V2.label("cart.itemNote.title".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let close = UIButton(type: .system)
+        close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
+        close.tintColor = UIColor(hexString: "475569")
+        close.backgroundColor = UIColor(hexString: "F1F5F9")
+        close.layer.cornerRadius = 18
+        close.accessibilityLabel = "Close".localized()
+        close.addAction(UIAction { [weak self] _ in self?.dismiss(animated: true) }, for: .touchUpInside)
+        close.snp.makeConstraints { make in make.size.equalTo(36) }
+        let header = UIStackView(arrangedSubviews: [title, close])
+        header.alignment = .center
+        header.spacing = DS.Spacing.md
+        let name = V2.label(productName, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 2)
+
+        textView.text = note
+        textView.font = Utils.regularFont(size: DS.TextSize.input)
+        textView.textColor = DS.Color.text
+        textView.layer.borderWidth = 1
+        textView.layer.borderColor = DS.Color.primary.cgColor
+        textView.layer.cornerRadius = 12
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        textView.accessibilityLabel = "cart.itemNote.title".localized()
+        textView.delegate = self
+        textView.snp.makeConstraints { make in make.height.equalTo(140) }
+        textView.addSubview(placeholder)
+        placeholder.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(15)
+        }
+        placeholder.isHidden = !(note ?? "").isEmpty
+        let hint = V2.label("cart.itemNote.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+
+        let clear = UIButton(type: .system)
+        clear.setTitle("cart.itemNote.clear".localized(), for: .normal)
+        clear.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        clear.setTitleColor(V2.danger, for: .normal)
+        clear.layer.borderWidth = 1
+        clear.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
+        clear.layer.cornerRadius = 14
+        clear.isHidden = (note ?? "").isEmpty
+        clear.addAction(UIAction { [weak self] _ in self?.finish(nil) }, for: .touchUpInside)
+        let save = V2.primaryButton("cart.itemNote.save".localized())
+        save.addAction(UIAction { [weak self] _ in self?.finish(self?.textView.text) }, for: .touchUpInside)
+        let buttons = UIStackView(arrangedSubviews: [clear, save])
+        buttons.spacing = 10
+        buttons.distribution = .fillEqually
+        buttons.snp.makeConstraints { make in make.height.equalTo(50) }
+
+        let stack = UIStackView(arrangedSubviews: [header, name, textView, hint, buttons])
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.setCustomSpacing(16, after: name)
+        stack.setCustomSpacing(22, after: hint)
+        view.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(28)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        textView.becomeFirstResponder()
+    }
+
+    private func finish(_ text: String?) {
+        let onSave = self.onSave
+        dismiss(animated: true) { onSave?(text) }
+    }
+}
+
+extension CartItemNoteSheet: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        placeholder.isHidden = !textView.text.isEmpty
+    }
+}
+

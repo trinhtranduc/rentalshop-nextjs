@@ -5,7 +5,9 @@ import {
   planLimitAddonUpdateSchema,
   handleApiError,
   ResponseBuilder,
-  sendPlanLimitAddonChangeEmail
+  sendPlanLimitAddonChangeEmail,
+  addonAddsBranches,
+  isMultiBranchPlan
 } from '@rentalshop/utils';
 import { validateAddonDeletion } from '@rentalshop/utils/server';
 
@@ -84,7 +86,8 @@ export async function PUT(
       }
 
       const body = await request.json();
-      const parsed = planLimitAddonUpdateSchema.safeParse(body);
+      // The id comes from the URL; the schema asks for it, so it is added here and never written (#800)
+      const parsed = planLimitAddonUpdateSchema.safeParse({ ...body, id });
       if (!parsed.success) {
         return NextResponse.json(
           ResponseBuilder.validationError(parsed.error.flatten()),
@@ -92,7 +95,20 @@ export async function PUT(
         );
       }
 
-      const addon = await db.planLimitAddons.update(id, parsed.data);
+      const { id: _id, ...changes } = parsed.data;
+
+      // #826: raising outlets (or turning a branch add-on back on) needs a multi-branch plan
+      if (addonAddsBranches(existingAddon, changes)) {
+        const merchant = await db.merchants.findById(existingAddon.merchantId);
+        if (!isMultiBranchPlan(merchant?.subscription?.plan?.limits)) {
+          return NextResponse.json(
+            ResponseBuilder.error('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN'),
+            { status: 422 }
+          );
+        }
+      }
+
+      const addon = await db.planLimitAddons.update(id, changes);
       
       // Send email notification (non-blocking) - TEMPORARILY DISABLED
       // if (addon.merchant?.email) {

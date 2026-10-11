@@ -194,7 +194,7 @@ export async function createPlan(data: PlanCreateInput): Promise<Plan> {
         name: data.name,
         description: data.description,
         basePrice: data.basePrice,
-        currency: data.currency || 'USD',
+        currency: data.currency || 'VND',
         trialDays: data.trialDays,
         limits: JSON.stringify(data.limits),
         features: JSON.stringify(data.features),

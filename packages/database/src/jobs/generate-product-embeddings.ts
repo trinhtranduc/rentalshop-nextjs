@@ -4,10 +4,8 @@
  */
 
 import { getEmbeddingService } from '../ml/image-embeddings';
-import { getVectorStore } from '../ml/vector-store';
+import { getVectorStore, productImagePointId } from '../ml/vector-store';
 import { db } from '../index';
-import { prisma } from '../client';
-import { randomUUID } from 'crypto';
 import { extractKeyFromImageUrl, parseProductImages } from '@rentalshop/utils';
 
 function resolveEmbeddingBucketName(): string {
@@ -38,8 +36,9 @@ function getEmbeddingCooldownMs(): number {
 }
 
 /**
- * Generate và store embeddings cho TẤT CẢ images của một product
- * Mỗi image sẽ có UUID riêng trong Qdrant
+ * Generate và store embeddings cho TẤT CẢ images của một product.
+ * Point id = productImagePointId(productId, imageIndex) (UUIDv5, deterministic).
+ * The product's old points are deleted first; no images left → points deleted.
  * 
  * @param productId - Product ID (number)
  */
@@ -53,9 +52,14 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
     }
     console.log(`[Embedding] Step 1 done: product "${product.name}" (id=${product.id})`);
 
-    const images = parseProductImages(product.images);
+    const images = parseProductImages(product.images)
+      .filter((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim() !== '')
+      .map((imageUrl) => imageUrl.trim());
     if (images.length === 0) {
-      console.log(`[Embedding] ⚠️ Product ${productId} has no images, skipping`);
+      // All photos removed: drop the product's old vectors so search stops matching them.
+      console.log(`[Embedding] Product ${productId} has no images, deleting its vectors`);
+      const vectorStoreForDelete = getVectorStore();
+      await vectorStoreForDelete.deleteProductEmbeddings(productId);
       return;
     }
     console.log(`[Embedding] Step 2: Parsed ${images.length} image URL(s)`);
@@ -124,7 +128,7 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
       };
     } | null> = [];
 
-    const buildEmbeddingPayload = (imageUrl: string, embedding: number[]) => {
+    const buildEmbeddingPayload = (imageIndex: number, imageUrl: string, embedding: number[]) => {
       // Get merchantId - ensure we get the correct publicId (number)
       // Product from db.products.findById may have merchantId directly or via merchant.id
       const merchantId = (product as any).merchantId ?? (product as any).merchant?.id;
@@ -136,7 +140,7 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
       const categoryId = (product as any).categoryId ?? (product as any).category?.id;
 
       return {
-        imageId: randomUUID(), // UUID cho mỗi image
+        imageId: productImagePointId(product.id, imageIndex),
         embedding,
         metadata: {
           productId: String(product.id),
@@ -148,20 +152,19 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
       };
     };
 
-    const normalizedImageUrls = images
-      .filter((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim() !== '')
-      .map((imageUrl) => imageUrl.trim());
+    const normalizedImageUrls = images;
 
-    const imagesWithS3Keys: Array<{ imageUrl: string; s3Key: string }> = [];
-    const imagesWithoutS3Keys: string[] = [];
-    for (const imageUrl of normalizedImageUrls) {
+    // imageIndex = position in product.images; it keys the deterministic point id.
+    const imagesWithS3Keys: Array<{ imageIndex: number; imageUrl: string; s3Key: string }> = [];
+    const imagesWithoutS3Keys: Array<{ imageIndex: number; imageUrl: string }> = [];
+    normalizedImageUrls.forEach((imageUrl, imageIndex) => {
       const s3Key = extractKeyFromImageUrl(imageUrl);
       if (s3Key) {
-        imagesWithS3Keys.push({ imageUrl, s3Key });
+        imagesWithS3Keys.push({ imageIndex, imageUrl, s3Key });
       } else {
-        imagesWithoutS3Keys.push(imageUrl);
+        imagesWithoutS3Keys.push({ imageIndex, imageUrl });
       }
-    }
+    });
 
     // Primary path: direct S3 batch embedding (lower transfer + lower compute cost)
     if (imagesWithS3Keys.length > 0) {
@@ -189,21 +192,24 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
           `[Embedding]    s3-batch OK: ${s3Embeddings.length} vector(s), dim=${dim}`
         );
         s3Embeddings.forEach((embedding, index) => {
-          embeddings.push(buildEmbeddingPayload(imagesWithS3Keys[index].imageUrl, embedding));
+          const item = imagesWithS3Keys[index];
+          embeddings.push(buildEmbeddingPayload(item.imageIndex, item.imageUrl, embedding));
         });
       } catch (error) {
         console.warn(
           `[Embedding]    s3-batch failed, fallback to per-image for keyed images:`,
           (error as Error)?.message
         );
-        imagesWithoutS3Keys.push(...imagesWithS3Keys.map((item) => item.imageUrl));
+        imagesWithoutS3Keys.push(
+          ...imagesWithS3Keys.map(({ imageIndex, imageUrl }) => ({ imageIndex, imageUrl }))
+        );
       }
     }
 
     // Fallback path: per-image embedding API
     if (imagesWithoutS3Keys.length > 0) {
       const perImageEmbeddings = await Promise.all(
-        imagesWithoutS3Keys.map(async (imageUrl, index) => {
+        imagesWithoutS3Keys.map(async ({ imageIndex, imageUrl }, index) => {
           try {
             console.log(
               `[Embedding]    Fallback image ${index + 1}/${imagesWithoutS3Keys.length}: fetch + embed ${imageUrl.substring(0, 55)}...`
@@ -212,7 +218,7 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
             const embedding = await embeddingService.generateEmbedding(imageUrl);
             const embeddingDuration = Date.now() - embeddingStartTime;
             console.log(`[Embedding]    Fallback image ${index + 1} done: ${embeddingDuration}ms, dim=${embedding.length}`);
-            return buildEmbeddingPayload(imageUrl, embedding);
+            return buildEmbeddingPayload(imageIndex, imageUrl, embedding);
           } catch (error) {
             console.error(`[Embedding]    Fallback image ${index + 1} failed:`, (error as Error)?.message);
             return null;
@@ -229,8 +235,8 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
     }>;
 
     if (validEmbeddings.length === 0) {
-      console.log(`[Embedding] ⚠️ Step 5: No valid embeddings for product ${productId}`);
-      return;
+      // Keep the old vectors and fail so the job queue retries later.
+      throw new Error(`No embedding could be generated for product ${productId} (${images.length} image(s))`);
     }
     console.log(`[Embedding] Step 5 done: ${validEmbeddings.length} vector(s)`);
 
@@ -238,12 +244,13 @@ async function runGenerateProductEmbedding(productId: number): Promise<void> {
     console.log(`[Embedding]    Point IDs:`, validEmbeddings.map(e => e.imageId));
 
     try {
-      // Delete AFTER vectors are ready so a skipped/failed job cannot leave the
-      // product with no searchable image. Then insert points for the current photo(s).
+      // Delete AFTER vectors are ready so a failed job cannot leave the product with
+      // no searchable image. Then upsert one point per current photo (deterministic ids).
       try {
         await vectorStore.deleteProductEmbeddings(productId);
         console.log(`[Embedding]    Deleted previous vectors for product ${productId}`);
       } catch (deleteError) {
+        // Upsert still overwrites the same ids; stale extra points go on the next run.
         console.warn(
           `[Embedding]    Delete previous vectors failed (will still upsert):`,
           (deleteError as Error)?.message
@@ -369,28 +376,19 @@ export async function generateAllProductEmbeddings(
     const productList = products.data || [];
     console.log(`📊 Found ${productList.length} products`);
 
-    // Filter products with images
-    const productsWithImages = productList.filter((p: { images: any }) => {
-      const images = parseProductImages(p.images);
-      
-      if (images.length === 0) return false;
-      
-      const imageUrl = images[0];
-      return imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '';
-    });
+    // Every product goes through the same per-product path as live indexing:
+    // all images, deterministic point ids, old points deleted first, and a
+    // product without images gets its points removed.
+    const targetProducts = productList as Array<{ id: number; images: any }>;
+    const withImages = targetProducts.filter((p) => parseProductImages(p.images).length > 0).length;
+    console.log(`📊 ${withImages} product(s) with images, ${targetProducts.length - withImages} without`);
 
-    console.log(`📊 Found ${productsWithImages.length} products with images`);
-
-    if (productsWithImages.length === 0) {
-      console.log('⚠️ No products with images found');
+    if (targetProducts.length === 0) {
+      console.log('⚠️ No products found');
       return;
     }
 
-    // Process in batches
-    const embeddingService = getEmbeddingService();
     const vectorStore = getVectorStore();
-
-    // Initialize collection if needed (creates collection and indexes)
     try {
       await vectorStore.initialize();
     } catch (error) {
@@ -401,13 +399,11 @@ export async function generateAllProductEmbeddings(
     let processed = 0;
     let errors = 0;
 
-    // Helper function to retry with exponential backoff
-    // For production, use longer delays between retries
-    const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' || 
+    const isProduction = process.env.QDRANT_COLLECTION_ENV === 'production' ||
                          process.env.QDRANT_COLLECTION_ENV === 'prod' ||
                          process.env.NODE_ENV === 'production';
-    const baseRetryDelay = isProduction ? 5000 : 1000; // 5s for production, 1s for dev
-    
+    const baseRetryDelay = isProduction ? 5000 : 1000;
+
     const retryWithBackoff = async <T>(
       fn: () => Promise<T>,
       retries: number = maxRetries,
@@ -417,138 +413,46 @@ export async function generateAllProductEmbeddings(
         return await fn();
       } catch (error) {
         if (retries > 0) {
-          const backoffDelay = delay * (maxRetries - retries + 1) * 2; // Exponential backoff
-          console.log(`   ⚠️ Retry in ${(backoffDelay/1000).toFixed(1)}s... (${retries} retries left)`);
-          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          const backoffDelay = delay * (maxRetries - retries + 1) * 2;
+          console.log(`   ⚠️ Retry in ${(backoffDelay / 1000).toFixed(1)}s... (${retries} retries left)`);
+          await new Promise((resolve) => setTimeout(resolve, backoffDelay));
           return retryWithBackoff(fn, retries - 1, delay);
         }
         throw error;
       }
     };
 
-    for (let i = 0; i < productsWithImages.length; i += batchSize) {
-      const batch = productsWithImages.slice(i, i + batchSize);
+    for (let i = 0; i < targetProducts.length; i += batchSize) {
+      const batch = targetProducts.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
-      const totalBatches = Math.ceil(productsWithImages.length / batchSize);
+      const totalBatches = Math.ceil(targetProducts.length / batchSize);
+      console.log(`\n📦 Batch ${batchNumber}/${totalBatches} (${batch.length} products)`);
 
-      // Display batch header with current progress
-      const currentProgress = ((i / productsWithImages.length) * 100).toFixed(1);
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`📦 Batch ${batchNumber}/${totalBatches} (${batch.length} products) | Current Progress: ${currentProgress}%`);
-      console.log(`${'='.repeat(60)}`);
-
-      // Process products in parallel within batch for faster processing
-      // Use Promise.all with controlled concurrency to avoid overwhelming the API
-      const embeddings = await Promise.all(
-        batch.map(async (product: { images: any; id: number; name: string; merchantId?: number; merchant?: { id: number }; categoryId?: number; category?: { id: number } }) => {
-        try {
-          const images = parseProductImages(product.images);
-          const imageUrl = images[0];
-
-          if (!imageUrl) {
-            console.log(`⚠️ Product ${product.id}: No image URL, skipping`);
-              return null;
-            }
-
-            // Check if we should skip existing embeddings
-            if (skipExisting) {
-              // Note: Skip check is done at batch level for performance
-              // Individual product check would be too slow for large datasets
+      const results = await Promise.all(
+        batch.map(async (product) => {
+          try {
+            await retryWithBackoff(
+              () => generateProductEmbedding(product.id, { force: true }),
+              maxRetries,
+              2000
+            );
+            return true;
+          } catch (error) {
+            console.error(`❌ Error processing product ${product.id}:`, (error as Error)?.message);
+            return false;
           }
-
-          // Generate embedding with retry
-          const embedding = await retryWithBackoff(
-            () => embeddingService.generateEmbedding(imageUrl),
-            maxRetries,
-            2000 // 2 second base delay
-          );
-          
-          // Get merchantId - ensure we get the correct publicId (number)
-          // Product from db.products.search may have merchantId directly or via merchant.id
-          const productMerchantId = (product as any).merchantId ?? (product as any).merchant?.id;
-          if (!productMerchantId) {
-            throw new Error(`Product ${product.id} missing merchantId`);
-          }
-          
-          // Get categoryId - ensure we get the correct publicId (number)
-          const categoryId = (product as any).categoryId ?? (product as any).category?.id;
-          
-            return {
-            productId: product.id,
-            embedding,
-            pointId: randomUUID(), // Generate UUID for Qdrant point ID
-            metadata: {
-              productId: String(product.id),
-              imageUrl,
-              merchantId: String(productMerchantId), // Store as string of publicId (number)
-              categoryId: categoryId ? String(categoryId) : undefined,
-              productName: product.name
-            }
-            };
-        } catch (error) {
-          console.error(`❌ Error processing product ${product.id}:`, error);
-            return null;
-        }
         })
       );
+      processed += results.filter(Boolean).length;
+      errors += results.filter((ok) => !ok).length;
 
-      // Filter out nulls (errors)
-      const validEmbeddings = embeddings.filter(e => e !== null) as Array<{
-        productId: number;
-        embedding: number[];
-        pointId: string;
-        metadata: any;
-      }>;
+      const done = Math.min(i + batchSize, targetProducts.length);
+      console.log(
+        `📊 Progress: ${done}/${targetProducts.length} (${((done / targetProducts.length) * 100).toFixed(1)}%) | OK: ${processed} | Errors: ${errors}`
+      );
 
-      // Store in batch with retry
-      if (validEmbeddings.length > 0) {
-        try {
-          await retryWithBackoff(
-            () => vectorStore.storeEmbeddingsBatch(validEmbeddings),
-            maxRetries,
-            1000
-          );
-          processed += validEmbeddings.length;
-        } catch (error) {
-          console.error(`❌ Error storing batch ${batchNumber}:`, error);
-          errors += validEmbeddings.length;
-        }
-      }
-
-      // Calculate and display progress
-      const progress = ((processed / productsWithImages.length) * 100).toFixed(2);
-      const remaining = productsWithImages.length - processed;
-      
-      // Progress bar
-      const barWidth = 40;
-      const filled = Math.floor((processed / productsWithImages.length) * barWidth);
-      const empty = barWidth - filled;
-      const bar = '█'.repeat(filled) + '░'.repeat(empty);
-      
-      // Estimated time remaining (assuming ~2.5 seconds per product on average)
-      const avgTimePerProduct = 2.5;
-      const estimatedSecondsRemaining = remaining * avgTimePerProduct;
-      const estimatedMinutes = Math.floor(estimatedSecondsRemaining / 60);
-      const estimatedHours = Math.floor(estimatedMinutes / 60);
-      const estimatedMins = estimatedMinutes % 60;
-      
-      // Display progress
-      console.log(`\n📊 Progress:`);
-      console.log(`   Batch: ${batchNumber}/${totalBatches} | Processed: ${processed}/${productsWithImages.length} | Errors: ${errors}`);
-      console.log(`   [${bar}] ${progress}%`);
-      if (remaining > 0) {
-        if (estimatedHours > 0) {
-          console.log(`   ⏱️  Estimated time remaining: ${estimatedHours}h ${estimatedMins}m`);
-        } else {
-          console.log(`   ⏱️  Estimated time remaining: ${estimatedMins}m`);
-        }
-      }
-      console.log(`   ✅ Stored ${validEmbeddings.length} embeddings in this batch`);
-
-      // Delay between batches to avoid overwhelming the system
-      if (i + batchSize < productsWithImages.length && delayBetweenBatches > 0) {
-        console.log(`   ⏳ Waiting ${(delayBetweenBatches / 1000).toFixed(1)}s before next batch...`);
-        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+      if (i + batchSize < targetProducts.length && delayBetweenBatches > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayBetweenBatches));
       }
     }
 

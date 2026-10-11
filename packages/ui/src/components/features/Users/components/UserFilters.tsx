@@ -53,7 +53,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
   return (
     <>
       {/* Search Field */}
-      <div className="flex-1 min-w-[280px]">
+      <div className="flex-1 min-w-[280px] max-md:min-w-0 max-md:basis-full">
         <div className="relative">
           <Input
             placeholder={t('placeholders.searchUsers')}
@@ -89,6 +89,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
           <SelectItem value="MERCHANT">Merchant</SelectItem>
           <SelectItem value="OUTLET_ADMIN">Outlet Admin</SelectItem>
           <SelectItem value="OUTLET_STAFF">Outlet Staff</SelectItem>
+              <SelectItem value="OUTLET_INVENTORY">Inventory Staff</SelectItem>
         </SelectContent>
       </Select>
 

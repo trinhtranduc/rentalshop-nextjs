@@ -339,7 +339,7 @@ export type { ExpiringSubscription } from './subscription-expiry-reminder';
 export { getSubscriptionByMerchantId, createSubscriptionPayment, updateSubscription, getExpiredSubscriptions, getSubscriptionById, changePlan, renewSubscription, cancelSubscription, pauseSubscription, resumeSubscription } from './subscription';
 
 // Export product functions
-export { syncProductTotalStock, updateOutletStockForOrder } from './product';
+export { syncProductTotalStock, updateOutletStockForOrder, adjustOutletStockForEditedOrderItems } from './product';
 export { AuditLogger, getAuditLogger, extractAuditContext } from './audit';
 export type { AuditContext } from './audit';
 export { getOutletOrderStats, createOrderNumberWithFormat } from './order-number-generator';

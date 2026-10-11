@@ -186,6 +186,47 @@ export async function invalidateAllUserSessions(userId: number): Promise<void> {
 }
 
 /**
+ * Log a user out after a password change or reset (#661).
+ *
+ * Deactivates every active session of the user except `keepSessionId`, and revokes every live refresh
+ * token that does not belong to the kept session (tokens of those sessions and tokens with no session).
+ * `invalidatedAt` matches no newer login's createdAt, so getSessionStatus answers 'expired'
+ * (SESSION_EXPIRED), not 'replaced'.
+ *
+ * The kept session's live refresh tokens are stamped with `at` (pass the same Date as the new
+ * passwordChangedAt) so the refresh flow's "issued before the password change" check lets them through.
+ */
+export async function invalidateUserSessionsExcept(
+  userId: number,
+  keepSessionId?: string | null,
+  at: Date = new Date()
+): Promise<void> {
+  const keep = keepSessionId || null;
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await tx.userSession.updateMany({
+      where: keep ? { userId, isActive: true, sessionId: { not: keep } } : { userId, isActive: true },
+      data: { isActive: false, invalidatedAt: at },
+    });
+
+    // `sessionId <> keep` is never true for NULL, so unbound tokens are listed explicitly
+    await tx.refreshToken.updateMany({
+      where: keep
+        ? { userId, isRevoked: false, OR: [{ sessionId: null }, { sessionId: { not: keep } }] }
+        : { userId, isRevoked: false },
+      data: { isRevoked: true, revokedAt: at },
+    });
+
+    if (keep) {
+      await tx.refreshToken.updateMany({
+        where: { userId, isRevoked: false, sessionId: keep },
+        data: { createdAt: at },
+      });
+    }
+  });
+}
+
+/**
  * Invalidate all sessions for all users of a merchant
  * Useful when subscription plan changes (especially allowWebAccess)
  */
@@ -269,6 +310,7 @@ export const sessions = {
   validateSession,
   invalidateSession,
   invalidateAllUserSessions,
+  invalidateUserSessionsExcept,
   invalidateAllMerchantUserSessions,
   getUserActiveSessions,
   cleanupExpiredSessions,

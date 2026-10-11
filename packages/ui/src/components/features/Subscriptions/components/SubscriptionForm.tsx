@@ -103,7 +103,7 @@ export function SubscriptionForm({
     trialStart: initialData?.trialStart,
     trialEnd: initialData?.trialEnd,
     amount: initialData?.amount || 0,
-    currency: initialData?.currency || 'USD',
+    currency: initialData?.currency || 'VND',
     interval: initialData?.interval || 'month',
     intervalCount: initialData?.intervalCount || 1,
     period: initialData?.period || 1,
@@ -303,7 +303,7 @@ export function SubscriptionForm({
     return <StatusBadge status={mappedStatus} />;
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'VND') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -312,14 +312,14 @@ export function SubscriptionForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CreditCard className="h-5 w-5" />
-            <span>{title || (mode === 'create' ? 'Create Subscription' : 'Edit Subscription')}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <h2 className="flex items-center gap-2 text-lg font-bold text-ar-ink">
+        <CreditCard className="h-5 w-5 text-ar-primary" />
+        <span>{title || (mode === 'create' ? 'Create Subscription' : 'Edit Subscription')}</span>
+      </h2>
+
+      {/* #807: sections in the portal style (ar-form-section is styled by apps/admin/app/forms.css) */}
+      <section className="ar-form-section space-y-5" aria-label="Merchant and plan">
+        <h3><Building className="h-4 w-4" /><span>Merchant &amp; plan</span></h3>
           {/* Merchant Selection */}
           <div className="space-y-2">
             <Label htmlFor="merchantId" className="flex items-center space-x-2">
@@ -429,6 +429,10 @@ export function SubscriptionForm({
             </div>
           </div>
 
+      </section>
+
+      <section className="ar-form-section space-y-5" aria-label="Billing period">
+        <h3><Calendar className="h-4 w-4" /><span>Billing period</span></h3>
           {/* Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -511,6 +515,10 @@ export function SubscriptionForm({
             </div>
           )}
 
+      </section>
+
+      <section className="ar-form-section space-y-5" aria-label="Amount and options">
+        <h3><DollarSign className="h-4 w-4" /><span>Amount &amp; options</span></h3>
           {/* Amount and Currency */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -546,6 +554,7 @@ export function SubscriptionForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="VND">VND</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
                   <SelectItem value="GBP">GBP</SelectItem>
@@ -615,6 +624,10 @@ export function SubscriptionForm({
             <Label htmlFor="autoRenew">Auto-renew subscription</Label>
           </div>
 
+      </section>
+
+      <section className="ar-form-section space-y-5" aria-label="Notes">
+        <h3><CheckCircle className="h-4 w-4" /><span>Notes</span></h3>
           {/* Change Reason */}
           <div className="space-y-2">
             <Label htmlFor="changeReason">Change Reason</Label>
@@ -627,11 +640,10 @@ export function SubscriptionForm({
               rows={3}
             />
           </div>
-        </CardContent>
-      </Card>
+      </section>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end space-x-2">
+      {/* Actions: fixed at the bottom of the screen on a phone */}
+      <div className="ar-form-actions">
         <Button
           type="button"
           variant="outline"

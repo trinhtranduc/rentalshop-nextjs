@@ -6,22 +6,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +48,10 @@ import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.RentalExtension
 import com.anyrent.pos.domain.products.MoneyInput
 import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.common.AppRangeCalendar
+import com.anyrent.pos.ui.common.toLocalDateUtc
+import com.anyrent.pos.ui.common.toUtcMillis
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.theme.DS
@@ -73,19 +77,29 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
         RentalExtension.currentReturnDay(detail.summary.returnPlanAt, zone) ?: ShopTime.today()
     }
     val first = RentalExtension.firstSelectableDay(current)
-    val picker = rememberDatePickerState(
-        initialSelectedDateMillis = first.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        initialDisplayedMonthMillis = first.withDayOfMonth(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+    // #696: the cart's rental calendar; pickup → current return stays shaded, a tap moves only the return day
+    val pickup = remember(detail) { OrderPlanDays.dayOf(detail.summary.pickupPlanAt, zone) ?: current }
+    val range = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = pickup.toUtcMillis(),
+        initialSelectedEndDateMillis = first.toUtcMillis(),
+        initialDisplayedMonthMillis = first.withDayOfMonth(1).toUtcMillis(),
         selectableDates = remember(first) {
             object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                    !Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isBefore(first)
-
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean = !utcTimeMillis.toLocalDateUtc().isBefore(first)
                 override fun isSelectableYear(year: Int): Boolean = year >= first.year
             }
         },
     )
-    val chosen = picker.selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
+    LaunchedEffect(range.selectedStartDateMillis, range.selectedEndDateMillis) {
+        val start = range.selectedStartDateMillis
+        val end = range.selectedEndDateMillis
+        // A tap after a full range starts a new one at the tapped day: keep the pickup and make that day the return
+        if (start != pickup.toUtcMillis()) {
+            val tapped = (start ?: end)?.toLocalDateUtc()?.takeIf { !it.isBefore(first) } ?: first
+            range.setSelection(pickup.toUtcMillis(), tapped.toUtcMillis())
+        }
+    }
+    val chosen = range.selectedEndDateMillis?.toLocalDateUtc()
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var extraText by remember { mutableStateOf("") }
@@ -111,13 +125,7 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
         ) {
             Text(stringResource(R.string.extend_rental_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             Text(stringResource(R.string.extend_rental_current, dayText(current)), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
-            DatePicker(
-                state = picker,
-                title = null,
-                headline = null,
-                showModeToggle = false,
-                colors = DatePickerDefaults.colors(containerColor = DS.Colors.Surface),
-            )
+            AppRangeCalendar(range, Modifier.fillMaxWidth().height(420.dp))
             if (window != null && chosen != null) {
                 val extra = RentalExtension.extraDays(current, chosen)
                 Text(pluralStringResource(R.plurals.extend_rental_extra_days, extra, extra), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)

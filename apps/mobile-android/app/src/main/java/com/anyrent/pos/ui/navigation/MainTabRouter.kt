@@ -30,7 +30,10 @@ object MainTabRouter {
     /** Close cart flow externally, then call this to show the orders list. */
     fun openOrdersList(refresh: Boolean = true) {
         pendingTab.value = ORDERS
-        if (refresh) _refreshOrders.tryEmit(Unit)
+        if (refresh) {
+            OrdersChanged.notifyChanged() // #674: an order was created or edited
+            _refreshOrders.tryEmit(Unit)
+        }
     }
 
     /** iOS swipe “Update Order” → Home tab (cart badge), then open cart route. */

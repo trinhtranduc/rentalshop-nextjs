@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { getAuditLogger, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { canReadProductHistory, type HistoryDb } from '../../../../../lib/change-history';
+import { canSeeChangeHistory, canReadProductHistory, type HistoryDb } from '../../../../../lib/change-history';
 
 /**
  * GET /api/products/[id]/history - Get change history for a product (raw audit rows)
@@ -20,6 +20,10 @@ export async function GET(
   const { id } = resolvedParams;
 
   return withPermissions(['products.view'])(async (request, { user, userScope }) => {
+    // #670: outlet staff do not see change history
+    if (!canSeeChangeHistory(user.role)) {
+      return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+    }
     try {
       if (!/^\d+$/.test(id)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_PRODUCT_ID_FORMAT'), { status: 400 });

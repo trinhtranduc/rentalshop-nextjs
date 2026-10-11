@@ -1425,11 +1425,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
         {/* Action Buttons */}
         {!hideSubmitButton && (
-          <div className="flex justify-end">
+          <div className="flex justify-end max-md:sticky max-md:bottom-0 max-md:z-10 max-md:border-t max-md:bg-bg-card max-md:py-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <Button
               type="submit"
               disabled={isSubmitting || !validateForm()}
-              className="min-w-[120px]"
+              className="min-w-[120px] max-md:w-full"
             >
               {isSubmitting ? (
                 <>

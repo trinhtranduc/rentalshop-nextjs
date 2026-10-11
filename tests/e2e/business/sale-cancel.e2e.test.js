@@ -156,7 +156,7 @@ describeE2E('BF-CANC cancellation', () => {
 
   // Suspected bug #503: revenue-calculator drops the pickup event when the cancel is on the
   // pickup day ("isSameDayCancelled") but still refunds everything collected, so the day goes negative.
-  knownBug('#503', 'BF-CANC-03 cancel after a same-day hand-over: money in and out cancel to zero', async () => {
+  test('BF-CANC-03 cancel after a same-day hand-over: money in and out cancel to zero (#503)', async () => {
     const A = 300000;
     const D = 100000;
     const S = 400000;

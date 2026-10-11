@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { generateVietQRString } from '@rentalshop/utils';
 import type { BankAccountReference } from '@rentalshop/types';
@@ -69,6 +69,14 @@ export const GET = async (
           return NextResponse.json(
             ResponseBuilder.error('ACCESS_DENIED'),
             { status: 403 }
+          );
+        }
+
+        // Outlet roles only see their own outlet's orders (#731 audit): the QR carries the outlet's bank account
+        if (isOutletRole(user.role) && order.outletId !== userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('ORDER_NOT_FOUND'),
+            { status: 404 }
           );
         }
 

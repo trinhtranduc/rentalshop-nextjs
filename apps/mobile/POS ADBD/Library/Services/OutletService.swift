@@ -21,14 +21,14 @@ class OutletService: BaseService, OutletServiceProtocol {
             parameters: nil,
             responseType: APIOutletsResponse.self,
             context: "OutletService.getOutlets"
-        ) { apiResponse, error in
+        ) { [self] apiResponse, error in
             if let error = error {
                 DispatchQueue.main.async {
                     completion(nil, error)
                 }
                 return
             }
-            
+
             guard let apiResponse = apiResponse else {
                 let error = NSError.errorWithOwnMessage(
                     message: "No response received",
@@ -39,16 +39,18 @@ class OutletService: BaseService, OutletServiceProtocol {
                 }
                 return
             }
-            
+
             if apiResponse.success, let outletsResponse = apiResponse.data, let outlets = outletsResponse.outlets {
                 DispatchQueue.main.async {
                     completion(outlets, nil)
                 }
             } else {
-                let errorMessage = apiResponse.message ?? apiResponse.error ?? "Failed to load outlets"
-                let error = NSError.errorWithOwnMessage(
-                    message: errorMessage,
-                    domain: "RC"
+                // #756: through the code, so a blocked subscription reads in the app language
+                let error = self.createErrorFromResponse(
+                    success: apiResponse.success,
+                    code: apiResponse.code,
+                    message: apiResponse.message ?? "Failed to load outlets",
+                    error: apiResponse.error
                 )
                 DispatchQueue.main.async {
                     completion(nil, error)

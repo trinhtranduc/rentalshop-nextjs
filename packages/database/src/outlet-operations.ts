@@ -21,6 +21,7 @@ const orderRowSelect = {
   orderType: true,
   status: true,
   lateFee: true,
+  pickupTotalAmount: true,
   damageFee: true,
   payments: { select: { amount: true, status: true, notes: true } },
   customer: { select: { firstName: true, lastName: true, phone: true } },

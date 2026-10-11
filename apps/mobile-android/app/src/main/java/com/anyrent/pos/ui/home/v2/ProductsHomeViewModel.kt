@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,12 +49,17 @@ class ProductsHomeViewModel(
             ProductsV2Api.listProducts(page, PAGE_SIZE, query).getOrThrow()
         }
     },
+    /** #677: the orders-changed version (#674 `OrdersChanged`) */
+    changes: () -> Long = { OrdersChanged.version.value },
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProductsHomeState())
     val state: StateFlow<ProductsHomeState> = _state.asStateFlow()
     private var page = 1
     private var generation = 0
     private var job: Job? = null
+    private var quietJob: Job? = null
+    /** The orders-changed version the rows' stock reflects */
+    private var stockVersion = changes()
 
     fun reload(fromPull: Boolean = false) = load(1, fromPull)
 
@@ -68,6 +74,35 @@ class ProductsHomeViewModel(
         val current = _state.value
         if (!current.hasMore || current.loading || job?.isActive == true) return
         load(page + 1, false)
+    }
+
+    /**
+     * #677: an order was created or edited ([version] of `OrdersChanged`, read whenever the list shows): refresh the
+     * loaded rows' stock once per change.
+     */
+    fun onOrdersVersion(version: Long) {
+        if (version == stockVersion) return
+        stockVersion = version
+        refreshQuietly()
+    }
+
+    /**
+     * Fetch the loaded pages again and update the rows in place: no spinner, same rows in the same order (the scroll
+     * stays). Rows the answer does not carry stay as they were (iOS `ProductsHomeViewModel.refreshQuietly`).
+     */
+    fun refreshQuietly() {
+        val current = _state.value
+        if (current.products.isEmpty() || current.loading) return
+        val token = generation
+        val query = current.query.ifBlank { null }
+        val pages = page.coerceIn(1, QUIET_MAX_PAGES)
+        quietJob?.cancel()
+        quietJob = viewModelScope.launch {
+            val fresh = runCatching { (1..pages).flatMap { source.load(it, query).items } }.getOrNull() ?: return@launch
+            if (token != generation) return@launch
+            val byId = fresh.associateBy { it.id }
+            _state.value = _state.value.copy(products = _state.value.products.map { byId[it.id] ?: it })
+        }
     }
 
     /** Put a saved product back without a reload */
@@ -117,5 +152,7 @@ class ProductsHomeViewModel(
 
     companion object {
         const val PAGE_SIZE = 20
+        /** Pages the quiet refresh fetches at most */
+        const val QUIET_MAX_PAGES = 5
     }
 }

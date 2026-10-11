@@ -26,6 +26,7 @@ const ROLE_TONE: Record<string, string> = {
   MERCHANT: 'bg-blue-50 text-blue-700',
   OUTLET_ADMIN: 'bg-emerald-50 text-emerald-800',
   OUTLET_STAFF: 'bg-gray-100 text-gray-800',
+  OUTLET_INVENTORY: 'bg-amber-100 text-amber-800',
 };
 
 export const userDisplayName = (user: User): string =>

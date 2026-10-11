@@ -1,5 +1,7 @@
 'use client';
 
+import '../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageWrapper,
@@ -297,7 +299,7 @@ export default function AdminOrderDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -312,7 +314,7 @@ export default function AdminOrderDetailPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -333,7 +335,7 @@ export default function AdminOrderDetailPage() {
 
   if (!order) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -351,10 +353,10 @@ export default function AdminOrderDetailPage() {
   }
 
   return (
-    <PageWrapper>
+    <PageWrapper className="ar-detail">
       <PageHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Button variant="ghost" onClick={handleBackToOrders}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back

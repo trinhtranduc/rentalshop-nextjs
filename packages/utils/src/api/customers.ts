@@ -6,6 +6,9 @@ import type {
 } from '@rentalshop/types';
 import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
+import { listQuery } from './list-query';
+
+
 
 // ============================================================================
 // CUSTOMER API TYPES
@@ -47,8 +50,14 @@ export const customersApi = {
   /**
    * Get all customers
    */
-  async getCustomers(): Promise<CustomerApiResponse> {
-    const response = await authenticatedFetch(apiUrls.customers.list);
+  async getCustomers(filters?: {
+    merchantId?: number;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<CustomerApiResponse> {
+    const response = await authenticatedFetch(`${apiUrls.customers.list}${listQuery(filters)}`);
     return await parseApiResponse<CustomerApiResponse>(response);
   },
 

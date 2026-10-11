@@ -60,3 +60,36 @@ export function getErrorDetails(error: any): string | undefined {
   return error?.details || error?.message;
 }
 
+
+/**
+ * #740: the translation of an API error code, or null when there is none.
+ *
+ * next-intl does not return the code for a missing key: it returns `<namespace>.<code>` (for the errors
+ * namespace, `errors.PLAN_UPGRADE_REQUIRED`). A check like `t(code) !== code` therefore takes that raw key for a
+ * translation and shows it. This asks the message catalogue first (`t.has`), and for a translator without `has`
+ * rejects both the code and the `<namespace>.<code>` form.
+ *
+ * @param t - the `useErrorTranslations()` function (or any next-intl translator)
+ * @param code - the API error code
+ */
+export function lookupErrorTranslation(t: any, code: unknown): string | null {
+  if (typeof code !== 'string' || !code) return null;
+  try {
+    if (typeof t?.has === 'function') {
+      if (!t.has(code)) return null;
+      const out = t(code);
+      return typeof out === 'string' && out ? out : null;
+    }
+    const out = t(code);
+    if (typeof out !== 'string' || !out) return null;
+    if (out === code || out.endsWith(`.${code}`)) return null;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** True for text that is an API error code or a message key (`errors.X`, `SOME_CODE`) and not a sentence */
+export function looksLikeErrorCode(text: unknown): boolean {
+  return typeof text === 'string' && /^([a-z][A-Za-z]*\.)?[A-Z][A-Z0-9_]{2,}$/.test(text.trim());
+}

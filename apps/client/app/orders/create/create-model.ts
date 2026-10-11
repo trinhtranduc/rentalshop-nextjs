@@ -284,6 +284,12 @@ export function setLinePrice(lines: CartLine[], productId: number, price: number
   );
 }
 
+/** #684: a line's note (sent as `orderItems[].notes`), trimmed; blank clears it. */
+export function setLineNote(lines: CartLine[], productId: number, note: string): CartLine[] {
+  const value = String(note ?? '').trim();
+  return lines.map((l) => (l.productId === productId ? { ...l, notes: value } : l));
+}
+
 /** A rent line without a price yet (a mode the product has no price for). */
 export const needsPrice = (line: CartLine, orderType: OrderType): boolean => orderType === 'RENT' && !(line.unitPrice > 0);
 

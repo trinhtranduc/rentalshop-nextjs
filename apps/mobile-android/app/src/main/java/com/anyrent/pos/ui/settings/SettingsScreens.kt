@@ -639,6 +639,7 @@ internal fun roleDisplayValue(role: String?): String = when (role?.uppercase()) 
     "MERCHANT", "MERCHANT_ADMIN", "OWNER" -> stringResource(R.string.role_merchant)
     "OUTLET_ADMIN" -> stringResource(R.string.role_outlet_admin)
     "OUTLET_STAFF", "STAFF" -> stringResource(R.string.role_outlet_staff)
+    "OUTLET_INVENTORY" -> stringResource(R.string.role_outlet_inventory)
     else -> role
         ?.lowercase()
         ?.split("_")

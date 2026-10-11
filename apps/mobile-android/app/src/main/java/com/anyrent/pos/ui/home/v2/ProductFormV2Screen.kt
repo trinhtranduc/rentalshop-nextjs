@@ -144,6 +144,7 @@ fun ProductFormV2Screen(
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
     var merchantOutlets by remember { mutableStateOf<List<Pair<Int, Boolean>>>(emptyList()) }
+    var outletsError by remember { mutableStateOf<String?>(null) }
     val outletId = ProductStock.outletFor(SessionStore.outletId, initial, merchantOutlets)
     val counts = initial?.let { ProductStock.counts(it, outletId) }
     var quantity by remember { mutableIntStateOf(counts?.total ?: 1) }
@@ -173,7 +174,10 @@ fun ProductFormV2Screen(
     LaunchedEffect(Unit) {
         categories = withContext(Dispatchers.IO) { ApiParity.listCategories().getOrDefault(emptyList()) }
         if (SessionStore.outletId == null) {
-            merchantOutlets = withContext(Dispatchers.IO) { ProductsV2Api.listOutlets().getOrDefault(emptyList()) }
+            val result = withContext(Dispatchers.IO) { ProductsV2Api.listOutlets() }
+            merchantOutlets = result.getOrDefault(emptyList())
+            // #756: keep why the list was refused (blocked subscription ...), not "could not tell which store"
+            outletsError = result.exceptionOrNull()?.message?.takeIf { it.isNotBlank() }
         }
     }
     LaunchedEffect(counts?.total) { if (initial != null && counts != null) quantity = counts.total }
@@ -223,7 +227,7 @@ fun ProductFormV2Screen(
             return
         }
         val target = outletId ?: run {
-            error = issueText.getValue("outlet")
+            error = outletsError ?: issueText.getValue("outlet")
             return
         }
         loading = true

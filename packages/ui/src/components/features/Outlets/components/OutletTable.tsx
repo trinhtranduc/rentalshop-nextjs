@@ -12,7 +12,7 @@ import {
 import { Outlet } from '@rentalshop/types';
 import { Eye, Edit, XCircle, CheckCircle, MoreVertical, Building2, CreditCard } from 'lucide-react';
 import { useOutletsTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
+import { formatInShopZone } from '@rentalshop/utils';
 
 interface OutletTableProps {
   outlets: Outlet[];
@@ -50,7 +50,7 @@ export function OutletTable({
   }
 
   // Use centralized date formatting hook (DRY principle)
-  const formatDate = useFormattedFullDate;
+  const formatDate = (value: string | Date) => formatInShopZone(value, 'vi', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
@@ -75,7 +75,7 @@ export function OutletTable({
       <CardContent className="p-0 flex-1 overflow-hidden">
         {/* Table with scroll - flex layout */}
         <div className="flex-1 overflow-auto h-full">
-        <table className="w-full">
+        <table className="table-cards w-full">
           {/* Table Header - Sticky */}
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
             <tr>
@@ -121,7 +121,7 @@ export function OutletTable({
             {outlets.map((outlet) => (
                 <tr key={outlet.id} className="hover:bg-bg-secondary transition-colors">
                 {/* Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap" data-primary>
                   <div className="text-sm">
                     <div className="flex items-center gap-2">
                         <div className="font-medium text-text-primary">
@@ -137,33 +137,33 @@ export function OutletTable({
                 </td>
                 
                 {/* Address */}
-                <td className="px-6 py-4">
+                <td className="px-6 py-4" data-label={tc('labels.address')}>
                     <div className="text-sm text-text-primary">
                     {outlet.address || t('fields.notAvailable')}
                   </div>
                 </td>
                 
                 {/* Contact */}
-                <td className="px-6 py-4">
+                <td className="px-6 py-4" data-label={t('fields.phone')}>
                     <div className="text-sm text-text-primary">
                     {outlet.phone || t('fields.notAvailable')}
                   </div>
                 </td>
                 
                 {/* Status */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap" data-label={tc('labels.status')}>
                   {getStatusBadge(outlet.isActive)}
                 </td>
                 
                 {/* Created Date */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap" data-label={tc('labels.createdAt')}>
                     <div className="text-sm text-text-primary">
                     {formatDate(outlet.createdAt)}
                   </div>
                 </td>
                 
                 {/* Actions - Dropdown Menu */}
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-actions>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -180,14 +180,14 @@ export function OutletTable({
                       open={openDropdownId === outlet.id}
                       onOpenChange={(open: boolean) => setOpenDropdownId(open ? outlet.id : null)}
                     >
-                      <DropdownMenuItem onClick={() => {
+                      <DropdownMenuItem className="max-md:min-h-11 max-md:items-center" onClick={() => {
                         onOutletAction('view', outlet.id);
                         setOpenDropdownId(null);
                       }}>
                         <Eye className="h-4 w-4 mr-2" />
                         {t('actions.viewDetails')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
+                      <DropdownMenuItem className="max-md:min-h-11 max-md:items-center" onClick={() => {
                         onOutletAction('edit', outlet.id);
                         setOpenDropdownId(null);
                       }}>
@@ -195,7 +195,7 @@ export function OutletTable({
                         {t('actions.editOutlet')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => {
+                      <DropdownMenuItem className="max-md:min-h-11 max-md:items-center" onClick={() => {
                         onOutletAction('manageBanks', outlet.id);
                         setOpenDropdownId(null);
                       }}>
@@ -212,7 +212,7 @@ export function OutletTable({
                               onOutletAction(outlet.isActive ? 'disable' : 'enable', outlet.id);
                               setOpenDropdownId(null);
                             }}
-                            className={outlet.isActive ? "text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300" : "text-green-600 dark:text-green-400 focus:text-green-700 dark:focus:text-green-300"}
+                            className={"max-md:min-h-11 max-md:items-center " + (outlet.isActive ? "text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300" : "text-green-600 dark:text-green-400 focus:text-green-700 dark:focus:text-green-300")}
                           >
                             {outlet.isActive ? <XCircle className="h-4 w-4 mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                             {outlet.isActive ? t('actions.disableOutlet') : t('actions.enableOutlet')}

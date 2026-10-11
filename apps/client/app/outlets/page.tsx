@@ -11,12 +11,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '@rentalshop/hooks';
+import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
 import { outletsApi } from '@rentalshop/utils';
 import type { OutletFilters } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
+import { isAddOutletEnabled } from '../../lib/outlets';
 import { Modal } from '../orders/create/parts';
 import { OutletFormDialog, RowMenu, smallBtn } from './parts';
 import {
@@ -83,7 +84,10 @@ export default function OutletsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('outlets.web') as unknown as T;
+  // #745: multi-branch comes later, so the web does not offer "Thêm chi nhánh"
+  const canAdd = isAddOutletEnabled();
   const { user } = useAuth();
+  const { canManageOutlets } = usePermissions();
   const { toastSuccess } = useToast();
 
   const { q, page, limit, sortBy, sortOrder } = parseOutletParams(searchParams);
@@ -204,12 +208,14 @@ export default function OutletsPage() {
     typeof row._count?.users === 'number' ? t('staffCount', { count: row._count.users }) : '';
 
   const actions = (row: OutletLike) => {
-    const allowed = outletActions(row);
+    const allowed = outletActions(row, canManageOutlets);
     return (
       <span className="flex items-center justify-end gap-1">
-        <button type="button" onClick={() => setDialog({ kind: 'edit', row })} className={smallBtn}>
-          {t('edit')}
-        </button>
+        {allowed.includes('edit') && (
+          <button type="button" onClick={() => setDialog({ kind: 'edit', row })} className={smallBtn}>
+            {t('edit')}
+          </button>
+        )}
         <RowMenu
           label={t('more', { name: row.name })}
           items={[
@@ -258,10 +264,12 @@ export default function OutletsPage() {
           {t('title')}
           {data && !error && !q && <span className="text-base font-normal text-ar-muted"> · {total}</span>}
         </h1>
-        <button type="button" onClick={() => setDialog({ kind: 'add' })} className={primaryBtn}>
-          <ShellIcon d={ICONS.plus} size={18} />
-          {t('add')}
-        </button>
+        {canAdd && (
+          <button type="button" onClick={() => setDialog({ kind: 'add' })} className={primaryBtn}>
+            <ShellIcon d={ICONS.plus} size={18} />
+            {t('add')}
+          </button>
+        )}
       </div>
 
       <section className={`${cardClass} min-w-0 overflow-hidden`}>
@@ -363,14 +371,16 @@ export default function OutletsPage() {
         )}
       </section>
 
-      <OutletFormDialog
-        open={dialog?.kind === 'add'}
-        mode="add"
-        initial={EMPTY_OUTLET_FORM}
-        onClose={() => setDialog(null)}
-        onSubmit={create}
-        t={t}
-      />
+      {canAdd && (
+        <OutletFormDialog
+          open={dialog?.kind === 'add'}
+          mode="add"
+          initial={EMPTY_OUTLET_FORM}
+          onClose={() => setDialog(null)}
+          onSubmit={create}
+          t={t}
+        />
+      )}
       <OutletFormDialog
         open={dialog?.kind === 'edit'}
         mode="edit"

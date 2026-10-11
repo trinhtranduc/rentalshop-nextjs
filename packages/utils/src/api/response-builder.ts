@@ -60,6 +60,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'INVALID_UPDATE_DATA': 'Invalid update data',
   'BUSINESS_NAME_REQUIRED': 'Business name is required',
   'CATEGORY_NAME_REQUIRED': 'Category name is required',
+  'ROLE_NOT_AVAILABLE': 'This role cannot be assigned yet',
   'OUTLET_NAME_ADDRESS_REQUIRED': 'Outlet name and address are required',
   'USER_ID_REQUIRED': 'User ID is required',
   'CUSTOMER_ID_REQUIRED': 'Customer ID is required',

@@ -5,25 +5,25 @@
 /* Using next/font (Inter) from layout.tsx; remove external Google Fonts import to avoid FOUT/metrics mismatch */
 
 :root {
-  /* Green Theme – Clean & Less Eye-Straining */
-  --brand-primary: #4CAF50;        /* Primary green - softer, less saturated */
-  --brand-secondary: #81C784;      /* Secondary green - pastel */
+  /* Blue style of the shop portal, same values as its --ar-* tokens (#802) */
+  --brand-primary: #1D4ED8;  /* Primary blue (--ar-primary) */
+  --brand-secondary: #93C5FD;  /* Soft blue */
   
   /* Action Colors - Reduced Saturation */
-  --action-primary: #4CAF50;       /* Main green - same as brand-primary */
-  --action-success: #2E7D32;       /* Darker green for success */
+  --action-primary: #1D4ED8;  /* Main action blue, same as brand-primary */
+  --action-success: #047857;  /* Success green (--ar-done), status only */
   --action-danger: #E53935;        /* Softer red for danger */
   --action-warning: #FFC107;       /* Yellow for warnings */
   
   /* Clean Text Colors - Better Contrast */
-  --text-primary: #212121;         /* Dark gray for headings */
-  --text-secondary: #757575;       /* Medium gray for descriptions */
-  --text-tertiary: #9E9E9E;        /* Light gray for tertiary text */
+  --text-primary: #0F172A;  /* Headings and body (--ar-ink) */
+  --text-secondary: #475569;  /* Descriptions (--ar-muted) */
+  --text-tertiary: #94A3B8;  /* Tertiary text (--ar-faint) */
   --text-inverted: #ffffff;        /* White text */
-  --text-muted: #BDBDBD;           /* Muted text color */
+  --text-muted: #CBD5E1;  /* Muted text */
   
   /* Background Colors - Softer, Less Eye-Straining */
-  --background-primary: #F8FAFC;   /* Very light blue-gray */
+  --background-primary: #F3F4F6;  /* Page background (--ar-page) */
   --background-secondary: #F1F5F9; /* Slightly darker background */
   --background-tertiary: #E2E8F0;  /* Medium background */
   --background-card: #ffffff;      /* Pure white for cards */
@@ -38,13 +38,13 @@
   
   /* Status Colors - Following Your Suggestions */
   --status-pending: #FFC107;       /* Yellow - pending */
-  --status-confirmed: #4CAF50;     /* Green - confirmed */
+  --status-confirmed: #047857;  /* Green - confirmed */
   --status-in-progress: #2196F3;   /* Blue - in progress */
   --status-completed: #2E7D32;     /* Dark green - completed */
   --status-cancelled: #F44336;     /* Red - cancelled */
   --status-overdue: #E53935;       /* Dark red - overdue */
   --status-refunded: #9E9E9E;      /* Gray - refunded */
-  --status-active: #4CAF50;        /* Green - active */
+  --status-active: #047857;  /* Green - active */
   --status-inactive: #9E9E9E;      /* Gray - inactive */
   --status-error: #E53935;         /* Red - error */
 
@@ -53,24 +53,24 @@
   
   /* Shadcn/UI Variables - Required for proper styling */
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 222 47% 11%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 142 71% 45%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 224 76% 48%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary-foreground: 222 47% 11%;
   --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --muted-foreground: 215 19% 35%;
+  --accent: 214 100% 97%;
+  --accent-foreground: 224 76% 48%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 100%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 142 71% 45%;
+  --ring: 224 76% 48%;
   --radius: 0.5rem;
 }
 
@@ -456,3 +456,215 @@ a {
   padding-bottom: 0.5714286em;
   padding-left: 0.5714286em;
 } 
+/* #775 — wide admin tables become cards on a phone.
+   Opt-in: only a <table class="table-cards"> is affected, so apps/client (same components) is unchanged.
+   td[data-label]: label left, value right. td[data-primary]: full-width card title. td[data-actions]: right edge. */
+@media (max-width: 767px) {
+  /* Pages are a fixed-height column with an inner scroll box for the table. On a phone the filters fill the
+     screen and leave the box a few dozen px, so let every wrapper of a card list grow and the page scroll. */
+  main div:has(table.table-cards) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
+  table.table-cards,
+  table.table-cards tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  table.table-cards thead {
+    display: none;
+  }
+  table.table-cards tbody {
+    padding: 0.75rem;
+  }
+  table.table-cards tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.875rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    background: var(--background-card);
+  }
+  table.table-cards tr[hidden] {
+    display: none;
+  }
+  table.table-cards tr:last-child {
+    margin-bottom: 0;
+  }
+  table.table-cards td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0 !important;
+    min-width: 0 !important;
+    text-align: right;
+    white-space: normal;
+  }
+  table.table-cards td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: left;
+  }
+  table.table-cards td[data-primary] {
+    justify-content: flex-start;
+    text-align: left;
+  }
+  table.table-cards td[data-actions] {
+    justify-content: flex-end;
+    padding-top: 0.5rem !important;
+    border-top: 1px solid var(--border-light);
+  }
+  table.table-cards td[data-actions] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* #787 — wrapper for admin pages that must work on a phone. Only admin defines it, so components shared with
+   apps/client are unchanged when they sit inside it. Apply `className="admin-phone"` to a page's wrapper. */
+@media (max-width: 767px) {
+  .admin-phone {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .admin-phone button,
+  .admin-phone [role='button'],
+  .admin-phone [role='tab'],
+  .admin-phone [role='combobox'],
+  .admin-phone select,
+  .admin-phone textarea,
+  .admin-phone input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']) {
+    min-height: 44px;
+  }
+  .admin-phone input[type='checkbox'],
+  .admin-phone input[type='radio'] {
+    width: 20px;
+    height: 20px;
+  }
+  /* a checkbox or radio with its label is one 44 px tap row */
+  .admin-phone label:has(> input[type='checkbox']),
+  .admin-phone label:has(> input[type='radio']) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+  }
+  /* a wide table that was not turned into cards scrolls inside its own box instead of widening the page */
+  .admin-phone table:not(.table-cards) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .admin-phone img,
+  .admin-phone video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+/* menus and dialogs open in a portal outside the page wrapper: give their items a 44 px row */
+@media (max-width: 767px) {
+  [data-radix-popper-content-wrapper] [role='menuitem'],
+  [data-radix-popper-content-wrapper] [role='option'] {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* ==========================================================================
+   AnyRent shell tokens, copied from apps/client so the admin web follows the portal style (#802, #509). RGB triplets so Tailwind `ar-*` colours
+   accept opacity modifiers. Light by default; dark only inside `.ar-theme`
+   when the boot script sets <html data-ar-theme="dark">, so public pages
+   never change.
+   ========================================================================== */
+:root {
+  --ar-page: 243 244 246;
+  --ar-surface: 255 255 255;
+  --ar-surface-muted: 248 250 252;
+  --ar-subtle: 241 245 249;
+  --ar-line: 226 232 240;
+  --ar-line-soft: 238 240 243;
+  --ar-line-strong: 203 213 225;
+  --ar-ink: 15 23 42;
+  --ar-ink-2: 51 65 85;
+  --ar-muted: 71 85 105;
+  --ar-faint: 148 163 184;
+  --ar-primary: 29 78 216;
+  --ar-primary-ink: 29 78 216;
+  --ar-primary-soft: 239 246 255;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 185 28 28;
+  --ar-danger-soft: 254 226 226;
+  --ar-unread: 248 251 255;
+  /* Order status pills: text on background */
+  --ar-reserved: 30 64 175;
+  --ar-reserved-bg: 219 234 254;
+  --ar-renting: 91 33 182;
+  --ar-renting-bg: 237 233 254;
+  --ar-done: 4 120 87;
+  --ar-done-bg: 209 250 229;
+  --ar-cancelled: 71 85 105;
+  --ar-cancelled-bg: 241 245 249;
+  --ar-late: 153 27 27;
+  --ar-late-bg: 254 226 226;
+  --ar-unprepared: 154 52 18;
+  --ar-unprepared-bg: 255 237 213;
+  --ar-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  /* Chart series (#604): validated categorical palette; text never wears these */
+  --ar-chart-blue: 37 99 235;
+  --ar-chart-blue-soft: 191 219 254;
+  --ar-chart-amber: 217 119 6;
+  --ar-chart-green: 5 150 105;
+  --ar-chart-violet: 124 58 237;
+  --ar-chart-red: 220 38 38;
+}
+
+html[data-ar-theme='dark'] .ar-theme {
+  color-scheme: dark;
+  --ar-page: 11 17 32;
+  --ar-surface: 17 24 39;
+  --ar-surface-muted: 22 32 50;
+  --ar-subtle: 30 41 59;
+  --ar-line: 39 50 68;
+  --ar-line-soft: 31 41 55;
+  --ar-line-strong: 51 65 85;
+  --ar-ink: 241 245 249;
+  --ar-ink-2: 203 213 225;
+  --ar-muted: 148 163 184;
+  --ar-faint: 100 116 139;
+  --ar-primary: 37 99 235;
+  --ar-primary-ink: 96 165 250;
+  --ar-primary-soft: 23 37 84;
+  --ar-on-primary: 255 255 255;
+  --ar-danger: 220 38 38;
+  --ar-danger-soft: 59 13 13;
+  --ar-unread: 21 32 58;
+  --ar-reserved: 147 197 253;
+  --ar-reserved-bg: 23 37 84;
+  --ar-renting: 196 181 253;
+  --ar-renting-bg: 46 16 101;
+  --ar-done: 110 231 183;
+  --ar-done-bg: 5 46 31;
+  --ar-cancelled: 148 163 184;
+  --ar-cancelled-bg: 30 41 59;
+  --ar-late: 252 165 165;
+  --ar-late-bg: 59 13 13;
+  --ar-unprepared: 253 186 116;
+  --ar-unprepared-bg: 58 26 6;
+  --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ar-chart-blue: 59 130 246;
+  --ar-chart-blue-soft: 30 58 138;
+  --ar-chart-amber: 217 119 6;
+  --ar-chart-green: 5 150 105;
+  --ar-chart-violet: 139 92 246;
+  --ar-chart-red: 239 68 68;
+}

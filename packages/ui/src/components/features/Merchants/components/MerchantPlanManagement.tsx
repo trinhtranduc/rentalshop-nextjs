@@ -29,6 +29,7 @@ import {
   SubscriptionExtendDialogEnhanced 
 } from '../../Subscriptions';
 import { SubscriptionHistoryDialog } from '../../Subscriptions/components/SubscriptionHistoryDialog';
+import { ResponsiveDialogFooter } from '../../Subscriptions/components/ResponsiveDialogFooter';
 import type { BillingInterval } from '@rentalshop/types';
 import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
 import { 
@@ -41,7 +42,7 @@ import {
   X,
   History
 } from 'lucide-react';
-import { formatSubscriptionPeriod, formatDateTimeLong } from '@rentalshop/utils';
+import { formatSubscriptionPeriod, formatInShopZone } from '@rentalshop/utils';
 import type { Plan, Subscription } from '@rentalshop/types';
 
 type BillingCycleConfig = {
@@ -81,7 +82,10 @@ interface MerchantPlanManagementProps {
     duration?: number;
     discount?: number;
     totalPrice?: number;
-  }) => Promise<void>;
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+  }) => Promise<void | { success?: boolean; message?: string }>;
   onExtend?: (extendData: {
     subscription: Subscription;
     duration: number;
@@ -157,22 +161,30 @@ export function MerchantPlanManagement({
     }).format(price);
   };
 
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  };
+  // Vietnam civil day, dd/MM/yyyy
+  const formatDate = (date: Date | string) =>
+    formatInShopZone(date, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+  // dd/MM/yyyy HH:mm on the Vietnam day
+  const formatDateTime = (date: Date | string | null | undefined) =>
+    date
+      ? `${formatInShopZone(date, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' })} ${formatInShopZone(date, 'vi', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+      : 'N/A';
+
+  // Dialog classes: full screen below 768 px, unchanged from 768 px
+  const phoneDialog = 'max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:overflow-hidden max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5';
+  const phoneBody = 'max-md:flex-1 max-md:min-h-0 max-md:overflow-y-auto max-md:pb-4';
 
   // Adapter function to convert SubscriptionChangePlanDialog callback to onPlanChange format
-  const handleChangePlanConfirm = (
+  const handleChangePlanConfirm = async (
     subscription: Subscription,
     newPlanId: number,
     interval: BillingInterval,
     startDate?: Date,
     reason?: string,
-    sendEmail?: boolean
+    sendEmail?: boolean,
+    customPrice?: number,
+    payment?: { method: string; transactionId: string; reference?: string }
   ) => {
     const selectedPlan = plans.find(p => p.id === newPlanId);
     if (!selectedPlan) return;
@@ -196,10 +208,16 @@ export function MerchantPlanManagement({
       billingInterval: interval, // Use BillingInterval directly, no conversion
       duration: cycleConfig.months,
       discount: cycleConfig.discount,
-      totalPrice
+      totalPrice,
+      method: payment?.method,
+      transactionId: payment?.transactionId,
+      reference: payment?.reference
     };
 
-    onPlanChange(planChangeData);
+    const result = await onPlanChange(planChangeData);
+    // An API error keeps the dialog open; the dialog shows the message
+    if (result && result.success === false) return result;
+    setShowChangeDialog(false);
   };
 
   // Adapter function to convert SubscriptionExtendDialogEnhanced callback to onExtend format
@@ -330,7 +348,7 @@ export function MerchantPlanManagement({
       {/* Current Plan Overview */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between max-md:flex-wrap max-md:gap-3">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Current Subscription
@@ -384,10 +402,10 @@ export function MerchantPlanManagement({
               {/* Subscription Period - Simplified */}
               {currentSubscription && (
                 <div className="p-4 bg-gray-50 border rounded-lg space-y-2">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm max-md:flex-col max-md:items-start max-md:gap-1">
                     <span className="text-gray-600">Period:</span>
                     <span className="font-medium">
-                      {formatDateTimeLong(currentSubscription.currentPeriodStart)} - {formatDateTimeLong(currentSubscription.currentPeriodEnd)}
+                      {formatDateTime(currentSubscription.currentPeriodStart)} - {formatDateTime(currentSubscription.currentPeriodEnd)}
                     </span>
                   </div>
                   
@@ -429,7 +447,7 @@ export function MerchantPlanManagement({
 
               {/* Only show action buttons for ADMIN and MERCHANT roles */}
               {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
-                <div className="flex flex-wrap items-center gap-3 pt-4">
+                <div className="flex flex-wrap items-center gap-3 pt-4 max-md:grid max-md:grid-cols-1 max-md:[&_button]:min-h-11 max-md:[&_button]:w-full max-md:[&_button]:justify-center">
                   {/* Trial Users: Show Upgrade Button */}
                   {isTrialPlan && (
                     <Button
@@ -518,7 +536,7 @@ export function MerchantPlanManagement({
               <p className="text-gray-500 mb-4">This merchant doesn't have an active subscription.</p>
               {/* Only show action buttons for ADMIN and MERCHANT roles */}
               {(currentUserRole === 'ADMIN' || currentUserRole === 'MERCHANT') && (
-                <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-3 max-md:flex-col max-md:[&_button]:min-h-11 max-md:[&_button]:w-full">
                   <Button onClick={() => setShowChangeDialog(true)}>
                     <CreditCard className="h-4 w-4 mr-2" />
                     Create Subscription
@@ -609,8 +627,8 @@ export function MerchantPlanManagement({
 
       {/* Cancel Plan Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
-          <DialogHeader>
+        <DialogContent className={`max-w-md max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
+          <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <X className="h-5 w-5 text-red-500" />
               Cancel Plan
@@ -620,7 +638,7 @@ export function MerchantPlanManagement({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className={`space-y-4 ${phoneBody}`}>
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2">
                 <X className="h-5 w-5 text-red-500" />
@@ -633,7 +651,7 @@ export function MerchantPlanManagement({
             <div>
               <Label htmlFor="cancelType">Cancellation Type</Label>
               <Select value={cancelType} onValueChange={(value: 'immediate' | 'end_of_period') => setCancelType(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="max-md:min-h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -657,33 +675,39 @@ export function MerchantPlanManagement({
                 onChange={(e) => setCancelReason(e.target.value)}
                 placeholder="Enter reason for canceling this plan..."
                 rows={3}
+                className="max-md:min-h-11"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
+          <ResponsiveDialogFooter
+            className="max-md:-mx-4"
+            secondary={
+              <Button
               variant="outline"
               onClick={() => setShowCancelDialog(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button
+            }
+            primary={
+              <Button
               variant="destructive"
               onClick={handleCancel}
               disabled={!cancelReason.trim() || isSubmitting}
             >
               {isSubmitting ? 'Canceling...' : 'Cancel Plan'}
             </Button>
-          </DialogFooter>
+            }
+          />
         </DialogContent>
       </Dialog>
 
       {/* Pause Plan Dialog */}
       <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
-          <DialogHeader>
+        <DialogContent className={`max-w-md max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
+          <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Pause className="h-5 w-5 text-orange-500" />
               Pause Plan
@@ -693,7 +717,7 @@ export function MerchantPlanManagement({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className={`space-y-4 ${phoneBody}`}>
             <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-orange-500" />
@@ -711,33 +735,39 @@ export function MerchantPlanManagement({
                 onChange={(e) => setSuspendReason(e.target.value)}
                 placeholder="Enter reason for pausing this plan..."
                 rows={3}
+                className="max-md:min-h-11"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
+          <ResponsiveDialogFooter
+            className="max-md:-mx-4"
+            secondary={
+              <Button
               variant="outline"
               onClick={() => setShowSuspendDialog(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button
+            }
+            primary={
+              <Button
               variant="destructive"
               onClick={handleSuspend}
               disabled={!suspendReason.trim() || isSubmitting}
             >
               {isSubmitting ? 'Pausing...' : 'Pause Plan'}
             </Button>
-          </DialogFooter>
+            }
+          />
         </DialogContent>
       </Dialog>
 
       {/* Resume Plan Dialog */}
       <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto flex flex-col">
-          <DialogHeader>
+        <DialogContent className={`max-w-md max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
+          <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Play className="h-5 w-5 text-green-500" />
               Resume Subscription
@@ -747,7 +777,7 @@ export function MerchantPlanManagement({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 flex-1 overflow-y-auto">
+          <div className={`space-y-4 flex-1 overflow-y-auto ${phoneBody}`}>
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <h4 className="font-semibold text-green-900 mb-2">Resuming Subscription</h4>
               <ul className="text-sm text-green-800 space-y-1">
@@ -772,15 +802,19 @@ export function MerchantPlanManagement({
             )}
           </div>
 
-          <DialogFooter className="flex-shrink-0">
-            <Button
+          <ResponsiveDialogFooter
+            className="max-md:-mx-4"
+            secondary={
+              <Button
               variant="outline"
               onClick={() => setShowResumeDialog(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button
+            }
+            primary={
+              <Button
               variant="default"
               onClick={handleReactivate}
               disabled={isSubmitting}
@@ -788,14 +822,15 @@ export function MerchantPlanManagement({
             >
               {isSubmitting ? 'Resuming...' : 'Resume Subscription'}
             </Button>
-          </DialogFooter>
+            }
+          />
         </DialogContent>
       </Dialog>
 
       {/* Subscription History Dialog */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className={`max-w-4xl max-h-[90vh] overflow-y-auto max-md:flex max-md:flex-col ${phoneDialog}`}>
+          <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5 text-blue-500" />
               Subscription Activity & Payment History
@@ -805,21 +840,27 @@ export function MerchantPlanManagement({
             </DialogDescription>
           </DialogHeader>
           
-          <div className="mt-4">
+          <div className={`mt-4 ${phoneBody}`}>
             <SubscriptionHistoryDialog 
               subscriptionId={currentSubscription?.id}
               merchantId={merchant.id}
             />
           </div>
 
-          <DialogFooter>
-            <Button
+          <ResponsiveDialogFooter
+            className="max-md:-mx-4"
+            secondary={
+              null
+            }
+            primary={
+              <Button
               variant="outline"
               onClick={() => setShowHistoryDialog(false)}
             >
               Close
             </Button>
-          </DialogFooter>
+            }
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -25,6 +25,7 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.domain.settings.OverlapSetting
+import com.anyrent.pos.domain.products.ImageSearchQuery
 import com.anyrent.pos.domain.products.PricingTypes
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -366,6 +367,21 @@ class ApiClient(
         )
     }
 
+    /** #722: one page of income/orders rows of a bucket, as they are (an order may be on several days), and hasMore */
+    fun incomeRows(
+        startDate: String,
+        endDate: String,
+        status: String,
+        offset: Int,
+        limit: Int = 200,
+    ): Result<Pair<List<com.anyrent.pos.domain.overview.IncomeRow>, Boolean>> = runCatching {
+        val json = authedGet(
+            "/api/analytics/income/orders?startDate=$startDate&endDate=$endDate" +
+                "&status=$status&plan=false&limit=$limit&offset=$offset",
+        )
+        com.anyrent.pos.domain.overview.OverviewRelated.pageFromJson(json.optJSONObject("data") ?: JSONObject())
+    }
+
     internal fun parseOrdersPage(json: JSONObject): PageResult<OrderSummary> {
         requireSuccess(json)
         val data = json.optJSONObject("data") ?: JSONObject()
@@ -433,6 +449,8 @@ class ApiClient(
         depositsByProduct: Map<Int, Double> = emptyMap(),
         pricingTypesByProduct: Map<Int, String> = emptyMap(),
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
+        /** #684: each line's note (`orderItems[].notes`) */
+        notesByProduct: Map<Int, String> = emptyMap(),
         /** #341: one value per checkout, reused on retry, so the API never creates the order twice. */
         idempotencyKey: String? = null,
         /** #480: cart note photos (JPEG ~180KB); empty = the same JSON request as before */
@@ -452,6 +470,7 @@ class ApiClient(
                     .put("totalPrice", lineTotal)
                     .apply {
                         depositsByProduct[productId]?.let { put("deposit", it) }
+                        notesByProduct[productId]?.let { put("notes", it) }
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
                             put("pricingType", pricingType)
@@ -518,6 +537,8 @@ class ApiClient(
         depositsByProduct: Map<Int, Double> = emptyMap(),
         pricingTypesByProduct: Map<Int, String> = emptyMap(),
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
+        /** #684: each line's note (`orderItems[].notes`) */
+        notesByProduct: Map<Int, String> = emptyMap(),
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
@@ -533,6 +554,7 @@ class ApiClient(
                     .put("totalPrice", lineTotal)
                     .apply {
                         depositsByProduct[productId]?.let { put("deposit", it) }
+                        notesByProduct[productId]?.let { put("notes", it) }
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
                             put("pricingType", pricingType)
@@ -755,8 +777,27 @@ class ApiClient(
             .addFormDataPart("limit", limit.toString())
             .addFormDataPart("minSimilarity", minSimilarity.toString())
             .build()
-        val json = authedMultipart("/api/products/searchByImage", multipart)
-        requireSuccess(json)
+        val request = Request.Builder()
+            .url("$baseUrl/api/products/searchByImage")
+            .post(multipart)
+            .applyAuth(true)
+            .header("Accept", "application/json")
+            .build()
+        // #654: wait past the server's 20 s SEARCH_TIMEOUT so that code reaches the app (same as iOS)
+        val searchClient = client.newBuilder()
+            .callTimeout(ImageSearchQuery.REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(ImageSearchQuery.REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(ImageSearchQuery.REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+        val json = try {
+            execute(request, http = searchClient)
+        } catch (error: AppError) {
+            // "Nothing matched" is the empty state, not an error
+            if (ImageSearchQuery.isNoMatch(error.code)) {
+                return@runCatching PageResult(items = emptyList(), hasMore = false, total = 0)
+            }
+            throw error
+        }
         val data = json.optJSONObject("data") ?: JSONObject()
         val array = data.optJSONArray("products") ?: JSONArray()
         PageResult(
@@ -1013,9 +1054,13 @@ class ApiClient(
     // HTTP helpers + parsers
     // -------------------------------------------------------------------------
 
-    private fun execute(request: Request, allowRefresh: Boolean = true): JSONObject {
+    private fun execute(
+        request: Request,
+        allowRefresh: Boolean = true,
+        http: OkHttpClient = client,
+    ): JSONObject {
         try {
-            client.newCall(request).execute().use { response ->
+            http.newCall(request).execute().use { response ->
                 val raw = response.body?.string().orEmpty()
                 val json = try {
                     JSONObject(if (raw.isBlank()) "{}" else raw)
@@ -1038,6 +1083,7 @@ class ApiClient(
                                         .header("Authorization", "Bearer ${outcome.accessToken}")
                                         .build(),
                                     allowRefresh = false,
+                                    http = http,
                                 )
                                 is RefreshOutcome.Rejected -> {
                                     onUnauthorized(outcome.code ?: code)

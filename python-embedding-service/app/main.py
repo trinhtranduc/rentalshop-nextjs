@@ -40,13 +40,33 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def _cors_allowed_origins() -> list[str]:
+    """Origins allowed by CORS. The Node API calls this service server-to-server
+    (no browser), so the default is none. Set CORS_ALLOWED_ORIGINS to a comma
+    list (e.g. "https://admin.anyrent.shop") only if a browser must call it.
+    "*" is ignored on purpose."""
+    raw = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    return [o.strip() for o in raw.split(",") if o.strip() and o.strip() != "*"]
+
+
+_allowed_origins = _cors_allowed_origins()
+if _allowed_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_allowed_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
+
+
+def _redact(text: str, *secrets: Optional[str]) -> str:
+    """Remove credential values from a message before it is logged or returned."""
+    for secret in secrets:
+        value = (secret or "").strip()
+        if value:
+            text = text.replace(value, "[REDACTED]")
+    return text
 
 
 def _require_model() -> EmbeddingModel:
@@ -166,8 +186,10 @@ async def generate_embeddings_from_s3(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error generating embeddings from S3: {e}")
-        raise HTTPException(status_code=500, detail=f"S3 embedding generation failed: {str(e)}")
+        # Never log or return any part of the AWS credentials.
+        message = _redact(str(e), aws_secret_access_key, aws_access_key_id)
+        print(f"❌ Error generating embeddings from S3: {message}")
+        raise HTTPException(status_code=500, detail=f"S3 embedding generation failed: {message}")
 
 
 @app.post("/search")

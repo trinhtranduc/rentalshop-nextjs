@@ -48,3 +48,17 @@ export function normalizeBillingInterval(input: unknown): BillingInterval {
   return 'monthly';
 }
 
+
+const CYCLE_BY_MONTHS: Record<number, BillingInterval> = { 1: 'monthly', 3: 'quarterly', 6: 'semi_annual', 12: 'annual' };
+
+/**
+ * Billing cycle of a stored subscription. Older rows keep the unit in `interval` and the length in
+ * `intervalCount` (`'month'` × 3 = quarterly, `'year'` × 1 = annual); newer rows store the cycle name (#779).
+ */
+export function storedBillingInterval(interval: unknown, intervalCount?: number | null): BillingInterval {
+  const raw = String(interval ?? '').trim().toLowerCase();
+  const count = Number(intervalCount) || 1;
+  if (raw === 'month' && CYCLE_BY_MONTHS[count]) return CYCLE_BY_MONTHS[count];
+  if (raw === 'year' && count === 1) return 'annual';
+  return normalizeBillingInterval(interval);
+}

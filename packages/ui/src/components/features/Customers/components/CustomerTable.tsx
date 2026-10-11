@@ -136,7 +136,7 @@ export function CustomerTable({
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 w-9 p-0"
+            className="h-9 w-9 p-0 max-md:w-11"
             aria-label={`${t('actions.title')}: ${name(c)}`}
             onClick={(e) => {
               e.stopPropagation();
@@ -179,14 +179,14 @@ export function CustomerTable({
   const phoneCell = (c: Customer) =>
     c.phone ? (
       <span className="inline-flex items-center gap-1">
-        <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium tabular-nums text-gray-900 hover:text-blue-700 hover:underline">
+        <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium tabular-nums text-gray-900 hover:text-blue-700 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">
           {formatPhoneNumber(c.phone)}
         </a>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); handleCopyPhone(c.phone); }}
           aria-label={`${t('fields.phone')}: copy`}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+          className="flex h-7 w-7 max-md:h-11 max-md:w-11 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-900"
         >
           <Copy className="h-3.5 w-3.5" />
         </button>

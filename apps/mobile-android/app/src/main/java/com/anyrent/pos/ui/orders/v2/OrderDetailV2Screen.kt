@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -91,9 +93,14 @@ import com.anyrent.pos.ui.common.FullScreenImagePreview
 import com.anyrent.pos.ui.common.LoadingBox
 import com.anyrent.pos.ui.common.copyUriToCacheFile
 import com.anyrent.pos.ui.common.fileToNotesJpegBytes
+import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
-import com.anyrent.pos.ui.common.orderLinePricingText
+import com.anyrent.pos.domain.products.CartV2Logic
+import com.anyrent.pos.ui.home.v2.orderItemPricingParts
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.anyrent.pos.ui.navigation.loadOrderIntoCart
 import com.anyrent.pos.ui.orders.shareOrderReceipt
 import com.anyrent.pos.ui.theme.DS
@@ -218,6 +225,7 @@ fun OrderDetailV2Screen(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back), modifier = Modifier.size(DS.Icon.Lg))
             }
             // #643: "Đơn thuê #n" / "Đơn bán #n", centred between ← and ⋯
+            // #643: "Đơn thuê #n" / "Đơn bán #n", centred between ← and ⋯
             Text(
                 detail?.summary?.let {
                     stringResource(
@@ -303,9 +311,12 @@ fun OrderDetailV2Screen(
 
     if (menuOpen && detail != null && actions != null) {
         val isSale = detail.summary.orderType.equals("SALE", ignoreCase = true)
-        val rows = OrderActionSheet.rows(actions, isSale, canExtend)
+        val canViewHistory = remember { PermissionManager.canViewChangeHistory() }
+        val rows = OrderActionSheet.rows(actions, isSale, canExtend, canViewHistory)
         val historyTexts = remember { changeHistoryTexts(context.resources) }
         LaunchedEffect(orderId) {
+            // #670: the API answers 403 to OUTLET_STAFF; no request, no row
+            if (!canViewHistory) return@LaunchedEffect
             withContext(Dispatchers.IO) { ApiClient.get().orderChanges(orderId, limit = 1) }
                 .onSuccess { historyPage = it }
         }
@@ -330,7 +341,7 @@ fun OrderDetailV2Screen(
                 when (action) {
                     OrderActionSheet.Action.PRINT -> print(detail)
                     OrderActionSheet.Action.NOTES -> openNotes(detail)
-                    OrderActionSheet.Action.HISTORY -> onOpenHistory(historySubtitleText)
+                    OrderActionSheet.Action.HISTORY -> if (canViewHistory) onOpenHistory(historySubtitleText)
                     OrderActionSheet.Action.EDIT -> {
                         if (!editing) {
                             editing = true
@@ -423,7 +434,7 @@ fun OrderDetailV2Screen(
             onExtended = { day ->
                 extending = false
                 toast(doneTemplate.format(formatDayShort(day)))
-                vm.load()
+                vm.extended()
             },
         )
     }
@@ -451,7 +462,10 @@ fun OrderDetailV2Screen(
                 confirmDelete = false
                 scope.launch {
                     withContext(Dispatchers.IO) { ApiParity.deleteOrder(orderId) }
-                        .onSuccess { onBack() }
+                        .onSuccess {
+                            vm.deleted()
+                            onBack()
+                        }
                         .onFailure { toast(it.message) }
                 }
             },
@@ -487,35 +501,32 @@ private fun DetailHeader(detail: OrderDetail) {
             .padding(top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // #643: name large, phone small under it, a round call button on the right (no full-width phone bar)
+        // Board D2 (owner 2026-10-09): bold name, then "phone · T6 09/10 → CN 11/10" on one line; tap the phone to dial
         val dial = OrderDetailHeader.dialNumber(summary.customerPhone)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        val callLabel = stringResource(R.string.detail_call_customer)
+        val line = buildList {
+            summary.customerPhone?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
+        }.joinToString(" · ")
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.Bold,
+                color = DS.Colors.Text,
+            )
+            if (line.isNotEmpty()) {
                 Text(
-                    OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DS.Colors.Text,
-                )
-                if (dial != null) {
-                    Text(summary.customerPhone.orEmpty().trim(), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
-                }
-            }
-            if (dial != null) {
-                val callLabel = stringResource(R.string.detail_call_customer)
-                Box(
-                    Modifier
-                        .size(46.dp)
-                        .clip(CircleShape)
-                        .background(DS.Status.Done.fill)
-                        .clickable(onClickLabel = callLabel) {
+                    line,
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                    modifier = if (dial != null) {
+                        Modifier.clickable(onClickLabel = callLabel) {
                             context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$dial")))
                         }
-                        .semantics { contentDescription = callLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Status.Done.text, modifier = Modifier.size(DS.Icon.Md))
-                }
+                    } else {
+                        Modifier
+                    },
+                )
             }
         }
         if (lateDays > 0) {
@@ -548,6 +559,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 }
             }
         }
+    }
         // #643: one light box: status pill + note (rent) or sale day, then the three steps of a rent
         Column(
             Modifier
@@ -609,7 +621,6 @@ private fun DetailHeader(detail: OrderDetail) {
                 }
             }
         }
-    }
     Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 }
 
@@ -647,18 +658,20 @@ private fun DetailBody(
         SectionTitle(stringResource(R.string.detail_items_count, detail.items.sumOf { it.quantity }))
         detail.items.forEach { ItemRow(it, summary.orderType) }
 
-        SectionTitle(stringResource(R.string.detail_money))
         if (isRent) {
             val totalLabel = if (detail.discountAmount > 0) {
                 stringResource(R.string.detail_total_discount, formatMoneyVnd(detail.discountAmount))
             } else {
                 stringResource(R.string.total)
             }
-            MoneyRow(totalLabel, formatMoneyVnd(summary.totalAmount))
+            MoneyRow(
+                if (detail.discountAmount > 0) totalLabel else stringResource(R.string.detail_goods),
+                formatMoneyVnd(summary.totalAmount),
+            )
             val pickedUp = status == "PICKUPED" || status == "PICKED_UP"
             // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
             if (!pickedUp && summary.depositAmount > 0) {
-                MoneyRow(stringResource(R.string.detail_deposit_paid), formatMoneyVnd(-summary.depositAmount))
+                MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
             }
             if (!pickedUp && detail.securityDeposit > 0) {
                 MoneyRow(stringResource(R.string.detail_collateral_money), formatMoneyVnd(detail.securityDeposit))
@@ -916,30 +929,78 @@ internal fun MoneyRow(label: String, value: String, total: Boolean = false, valu
     }
 }
 
+/**
+ * Board D2 (owner 2026-10-09): the row reads like the cart line — name, "400.000đ / theo ngày × 3 ngày", the item
+ * note in a yellow box, then "SL N" and the line total (iOS `itemRow`)
+ */
+/** Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent); the total stays on the right */
+@Composable
+private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): String {
+    val money = formatMoneyVnd(unitPrice)
+    val type = pricingType?.takeIf { it.isNotBlank() } ?: "FIXED"
+    if (isSale || !type.equals("DAILY", ignoreCase = true)) return "$quantity × $money"
+    val days = rentalDays.coerceAtLeast(1)
+    return "$quantity × $money × " + pluralStringResource(R.plurals.v2_cart_days, days, days)
+}
+
 @Composable
 private fun ItemRow(item: OrderItem, orderType: String) {
+    val (amount, unit) = orderItemPricingParts(item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true))
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Thumb(item.imageUrl, 48.dp)
-        Column(Modifier.weight(1f)) {
+        Thumb(item.imageUrl, 56.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                "${item.productName ?: "—"} × ${item.quantity}",
-                fontSize = DS.TextSize.Body,
-                fontWeight = FontWeight.Medium,
+                item.productName ?: "—",
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.SemiBold,
                 color = DS.Colors.Text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                orderLinePricingText(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, orderType),
-                fontSize = DS.TextSize.Secondary,
-                color = DS.Colors.TextMuted,
+                buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(amount) }
+                    append(" / $unit")
+                },
+                fontSize = DS.TextSize.Body,
+                color = Color(0xFF475569),
             )
+            CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+            }
         }
-        Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
     }
     HorizontalDivider(color = DS.Colors.Divider)
+}
+
+/** Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name */
+@Composable
+private fun ItemNoteBox(note: String) {
+    val ink = Color(0xFF7A4A00)
+    val label = stringResource(R.string.v2_item_note_label)
+    Row(
+        Modifier
+            .padding(top = 2.dp)
+            .fillMaxWidth()
+            .background(Color(0xFFFFF7E6), RoundedCornerShape(10.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .semantics(mergeDescendants = true) { contentDescription = "$label: $note" },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Outlined.StickyNote2, contentDescription = null, tint = ink, modifier = Modifier.padding(top = 2.dp).size(16.dp))
+        Text(note, fontSize = DS.TextSize.Secondary, color = ink)
+    }
 }
 
 @Composable

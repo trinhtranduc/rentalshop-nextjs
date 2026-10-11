@@ -1,103 +1,83 @@
 'use client';
 
 import React from 'react';
-import { Store, MapPin, Phone } from 'lucide-react';
+import { MessageCircle, Phone } from 'lucide-react';
 import { LanguageSwitcher } from '@rentalshop/ui';
-import { cn } from '@rentalshop/ui';
+import { useTranslations } from 'next-intl';
+import { shopInitials, telLink, zaloLink } from '../lib/public-shop';
 
-interface Outlet {
+export interface PublicOutlet {
   id: number;
   name: string;
   address?: string | null;
   phone?: string | null;
   city?: string | null;
-  state?: string | null;
-  zipCode?: string | null;
-  country?: string | null;
 }
 
 interface MerchantHeaderProps {
   merchant: {
     name: string;
     description?: string | null;
+    address?: string | null;
+    phone?: string | null;
   };
-  outlets?: Outlet[];
-  className?: string;
+  outlets?: PublicOutlet[];
 }
 
-export function MerchantHeader({ merchant, outlets = [], className }: MerchantHeaderProps) {
-  // Get the first active outlet or default outlet
-  const displayOutlet = outlets.length > 0 ? outlets[0] : null;
-  
-  // Build full address
-  const buildAddress = (outlet: Outlet) => {
-    const parts = [
-      outlet.address,
-      outlet.city,
-      outlet.state,
-      outlet.zipCode,
-      outlet.country
-    ].filter(Boolean);
-    return parts.join(', ');
-  };
+/** #665 — shop name, outlet address and the Gọi / Nhắn Zalo buttons */
+export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) {
+  const t = useTranslations('products.public');
+  const outlet = outlets[0];
+  const phone = outlet?.phone || merchant.phone || null;
+  const tel = telLink(phone);
+  const zalo = zaloLink(phone);
+  const address = [outlet?.address || merchant.address, outlet?.city].filter(Boolean).join(', ');
+  const place = [outlet?.name, address].filter(Boolean).join(' · ');
 
   return (
-    <div className={cn('bg-white border-b border-gray-200', className)}>
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          {/* Merchant Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <Store className="w-6 h-6 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{merchant.name}</h1>
-                {merchant.description && (
-                  <p className="text-sm text-gray-600 mt-1">{merchant.description}</p>
-                )}
-              </div>
+    <header className="w-full border-b border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-start gap-3 sm:items-center px-4 py-4 sm:gap-5 sm:px-5 sm:py-6">
+        <div className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-2xl bg-blue-700 text-xl font-extrabold text-white sm:h-16 sm:w-16 sm:text-2xl">
+          {shopInitials(merchant.name)}
+        </div>
+        <div className="min-w-0 flex-1 basis-56">
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{merchant.name}</h1>
+            <div className="flex-none sm:hidden">
+              <LanguageSwitcher variant="compact" />
             </div>
-
-            {/* Outlet Information */}
-            {displayOutlet && (
-              <div className="mt-4 space-y-2 pl-9">
-                {/* Outlet Name */}
-                {displayOutlet.name && (
-                  <div className="flex items-start gap-2">
-                    <Store className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-900">{displayOutlet.name}</span>
-                  </div>
-                )}
-                
-                {/* Outlet Address */}
-                {buildAddress(displayOutlet) && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">{buildAddress(displayOutlet)}</span>
-                  </div>
-                )}
-                
-                {/* Outlet Phone */}
-                {displayOutlet.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                    <a 
-                      href={`tel:${displayOutlet.phone}`}
-                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {displayOutlet.phone}
-                    </a>
-                  </div>
-                )}
-              </div>
+          </div>
+          {place && <p className="mt-1 text-sm text-slate-600">{place}</p>}
+          {merchant.description && <p className="mt-0.5 text-sm text-slate-600">{merchant.description}</p>}
+        </div>
+        {(tel || zalo) && (
+          <div className="flex w-full gap-2.5 sm:w-auto">
+            {tel && (
+              <a
+                href={tel}
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-slate-200 bg-white px-4 text-[15px] font-bold text-slate-900 hover:bg-slate-50 sm:flex-none"
+              >
+                <Phone className="h-[18px] w-[18px]" aria-hidden />
+                {phone}
+              </a>
+            )}
+            {zalo && (
+              <a
+                href={zalo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-[15px] font-bold text-white hover:bg-blue-800 sm:flex-none"
+              >
+                <MessageCircle className="h-[18px] w-[18px]" aria-hidden />
+                {t('zalo')}
+              </a>
             )}
           </div>
-
-          {/* Language Switcher */}
-          <div className="flex-shrink-0">
-            <LanguageSwitcher variant="compact" />
-          </div>
+        )}
+        <div className="hidden flex-none sm:block">
+          <LanguageSwitcher variant="compact" />
         </div>
       </div>
-    </div>
+    </header>
   );
 }

@@ -16,13 +16,13 @@ object ProductAccess {
     /** MERCHANT / OUTLET_ADMIN have `products.manage`; OUTLET_STAFF only `products.create` */
     fun canCreate(role: UserRole): Boolean = role != UserRole.UNKNOWN
 
-    /** OUTLET_STAFF has no `products.update` */
+    /** OUTLET_STAFF has no `products.update`; Nhân viên kho has `products.manage` (#682) */
     fun canEdit(role: UserRole): Boolean =
-        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
     /** `DELETE /api/products/{id}` needs `products.manage`: never OUTLET_STAFF (#390) */
     fun canDelete(role: UserRole): Boolean =
-        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
     /** Price fields in the form and price edits in the cart */
     fun showsPriceFields(role: UserRole): Boolean = canEdit(role)
@@ -40,9 +40,11 @@ object CategoryRules {
     enum class NameError { REQUIRED, TOO_SHORT, TOO_LONG }
 
     fun canAdd(role: UserRole): Boolean =
-        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
-    fun canManage(role: UserRole): Boolean = role == UserRole.ADMIN || role == UserRole.MERCHANT
+    /** Rename / delete: owners and Nhân viên kho (#682); the API refuses outlet admins */
+    fun canManage(role: UserRole): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_INVENTORY
 
     /** The default category ("General") is never deleted, only renamed */
     fun canDelete(isDefault: Boolean): Boolean = !isDefault
@@ -166,6 +168,12 @@ sealed class AddButtonState {
 /** The line under the name: the product code and today's free count (no category) */
 data class ProductRowSubtitle(val code: String?, val free: Int)
 
+/**
+ * The Home row's price line (#681, iOS `ProductRowPrice`): the default rent option first, the other one muted after it.
+ * `mainMode == null` means a sale-only product, shown as "bán <price>".
+ */
+data class ProductRowPrice(val main: Double, val mainMode: PricingMode?, val second: Double? = null, val secondMode: PricingMode? = null)
+
 object ProductRowLogic {
     /** Units of this product already in the cart */
     fun cartCount(productId: Int, lines: List<CartLine>): Int =
@@ -174,10 +182,26 @@ object ProductRowLogic {
     fun subtitle(product: Product): ProductRowSubtitle =
         ProductRowSubtitle(code = product.barcodeText, free = ProductStock.freeToday(product))
 
-    /** Out today wins over the cart count, so the button stays grey as before */
+    fun price(product: Product): ProductRowPrice? {
+        val rental = ProductPricing.perRental(product)
+        val day = ProductPricing.perDay(product)
+        return when {
+            rental != null && day != null ->
+                if (ProductPricing.defaultMode(product) == PricingMode.PER_DAY) {
+                    ProductRowPrice(day, PricingMode.PER_DAY, rental, PricingMode.PER_RENTAL)
+                } else {
+                    ProductRowPrice(rental, PricingMode.PER_RENTAL, day, PricingMode.PER_DAY)
+                }
+            rental != null -> ProductRowPrice(rental, PricingMode.PER_RENTAL)
+            day != null -> ProductRowPrice(day, PricingMode.PER_DAY)
+            else -> ProductPricing.sale(product)?.let { ProductRowPrice(it, null) }
+        }
+    }
+
+    /** The cart count wins (#677, iOS `ProductRowLogic.addState`): a product out today that is in the cart shows its count */
     fun addState(free: Int, inCart: Int): AddButtonState = when {
-        free <= 0 -> AddButtonState.Out
         inCart > 0 -> AddButtonState.InCart(inCart)
+        free <= 0 -> AddButtonState.Out
         else -> AddButtonState.Add
     }
 }
@@ -306,6 +330,19 @@ data class CartLineCalc(
 enum class CartProblem { EMPTY, NO_CUSTOMER, NO_PICKUP, NO_RETURN }
 
 object CartV2Logic {
+    /** #684: a line's note as shown and sent: trimmed; null when blank (an empty sheet clears it), iOS `noteText` */
+    fun noteText(note: String?): String? = note?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** #677: the cart header's ⋯ menu ("Chia sẻ báo giá", "Xoá giỏ hàng") */
+    data class MoreMenu(val shareEnabled: Boolean, val clearEnabled: Boolean)
+
+    /**
+     * #677: null while editing an order (no ⋯; "Huỷ sửa" is in the bottom bar). An empty cart disables both items;
+     * the quote also needs the rental dates ([datesReady]), as the share did (iOS `CartV2Logic.moreMenu`).
+     */
+    fun moreMenu(editing: Boolean, itemCount: Int, isSale: Boolean, datesReady: Boolean): MoreMenu? =
+        if (editing) null else MoreMenu(shareEnabled = itemCount > 0 && (isSale || datesReady), clearEnabled = itemCount > 0)
+
     /** Every problem at once, like the iOS alert; a sale needs no dates (#448) */
     fun problems(itemCount: Int, hasCustomer: Boolean, isSale: Boolean, datesChosen: Boolean): List<CartProblem> =
         buildList {

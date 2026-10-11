@@ -18,6 +18,17 @@ export interface UserApiResponse {
 // ============================================================================
 
 export const usersApi = {
+  /** #682: Nhân viên kho can be given (app-config `inventoryRole`; the API turns it off only with INVENTORY_ROLE_ENABLED=false) */
+  async inventoryRoleEnabled(): Promise<boolean> {
+    try {
+      const response = await authenticatedFetch(`${apiUrls.base}/api/mobile/app-config`);
+      const result = await parseApiResponse<{ inventoryRole?: boolean }>(response);
+      return !!(result.success && result.data?.inventoryRole);
+    } catch {
+      return false;
+    }
+  },
+
   // ============================================================================
   // USER CRUD OPERATIONS
   // ============================================================================

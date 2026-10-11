@@ -84,6 +84,34 @@ class OrderDetailV2ViewModelTest {
         assertEquals(2, source.loads)
     }
 
+    @Test
+    fun `order actions send the orders-changed signal (#674)`() = runTest(dispatcher) {
+        var signals = 0
+        val vm = OrderDetailV2ViewModel(7, FakeSource(statusResult = Result.success(Unit))) { signals++ }
+        advanceUntilIdle()
+        assertEquals("opening the order is not a change", 0, signals)
+
+        vm.changeStatus("PICKUPED"); advanceUntilIdle()
+        assertEquals(1, signals)
+        vm.saveNotes("note", emptyList(), emptyList()) {}; advanceUntilIdle()
+        assertEquals(2, signals)
+        vm.setReadyToDeliver(true) {}; advanceUntilIdle()
+        assertEquals(3, signals)
+        vm.extended(); advanceUntilIdle()
+        assertEquals(4, signals)
+        vm.deleted()
+        assertEquals(5, signals)
+    }
+
+    @Test
+    fun `a failed action sends no signal (#674)`() = runTest(dispatcher) {
+        var signals = 0
+        val vm = OrderDetailV2ViewModel(7, FakeSource(statusResult = Result.failure(AppError.Network("offline")))) { signals++ }
+        advanceUntilIdle()
+        vm.changeStatus("PICKUPED"); advanceUntilIdle()
+        assertEquals(0, signals)
+    }
+
     private class FakeSource(private val statusResult: Result<Unit>) : OrderDetailSource {
         var loads = 0
         var status = "RESERVED"

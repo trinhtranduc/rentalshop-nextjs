@@ -1,6 +1,8 @@
 /**
  * #521 — GET /api/orders/:id must not return an order of another merchant.
- * Same shop (any outlet) and ADMIN keep reading as before, so installed apps are unaffected.
+ * #731 — an outlet role (staff, kho, outlet admin) reads only the orders of its own outlet; the owner of the shop and
+ * ADMIN still read every outlet. (#521 first left the outlet alone "so installed apps are unaffected": they open
+ * orders from outlet-scoped lists, see .agent/changes/730-outlet-scope.)
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -82,10 +84,25 @@ describe('GET /api/orders/:id scope (#521)', () => {
     expect((await get('11')).body.data.id).toBe(11);
   });
 
-  it('outlet staff of the same shop keep reading (no new outlet restriction)', async () => {
+  it('outlet staff reads the orders of its own outlet (#731)', async () => {
     ctx = staffOutlet1;
     expect((await get('10')).status).toBe(200);
-    expect((await get('11')).status).toBe(200);
+  });
+
+  it('outlet staff gets 404 ORDER_NOT_FOUND for an order of another outlet of the same shop (#731)', async () => {
+    ctx = staffOutlet1;
+    const res = await get('11');
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('ORDER_NOT_FOUND');
+    expect(res.body.data).toBeUndefined();
+  });
+
+  it('kho and outlet admin follow the same outlet rule (#731)', async () => {
+    for (const role of ['OUTLET_INVENTORY', 'OUTLET_ADMIN']) {
+      ctx = { user: { ...staffOutlet1.user, role }, userScope: staffOutlet1.userScope };
+      expect((await get('10')).status).toBe(200);
+      expect((await get('11')).status).toBe(404);
+    }
   });
 
   it('ADMIN reads any order', async () => {

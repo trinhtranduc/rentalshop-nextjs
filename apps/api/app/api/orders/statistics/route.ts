@@ -3,6 +3,7 @@ import { withReadOnlyAuth } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { PerformanceMonitor } from '@rentalshop/utils';
+import { isOutletRole } from '@rentalshop/constants';
 
 /**
  * GET /api/orders/statistics
@@ -17,7 +18,7 @@ export const GET = withReadOnlyAuth(async (request, { user, userScope }) => {
     // Parse query parameters
     const filters = {
       merchantId: userScope.merchantId,
-      outletId: user.role === 'OUTLET_ADMIN' || user.role === 'OUTLET_STAFF' ? userScope.outletId : undefined,
+      outletId: isOutletRole(user.role) ? userScope.outletId : undefined,
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined
     };

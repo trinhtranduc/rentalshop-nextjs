@@ -123,6 +123,7 @@ class SettingsViewController: BaseViewControler {
             
             // Hide export only for outlet staff role (outlet admin can see export)
             let isOutletStaff = User.current()?.role == .outletStaff || User.account()?.role == .outletStaff
+                || User.current()?.role == .outletInventory || User.account()?.role == .outletInventory
             
             // Show export if user has export permission AND not outlet staff
             if !isOutletStaff {

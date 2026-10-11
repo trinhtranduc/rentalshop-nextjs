@@ -3,7 +3,7 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { getAuditLogger, prisma } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
-import { canReadOrderHistory, type HistoryDb } from '../../../../../lib/change-history';
+import { canSeeChangeHistory, canReadOrderHistory, type HistoryDb } from '../../../../../lib/change-history';
 
 /**
  * GET /api/orders/[orderId]/history - Get change history for an order (raw audit rows)
@@ -20,6 +20,10 @@ export async function GET(
   const { orderId } = resolvedParams;
 
   return withPermissions(['orders.view'])(async (request, { user, userScope }) => {
+    // #670: outlet staff do not see change history
+    if (!canSeeChangeHistory(user.role)) {
+      return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+    }
     try {
       if (!/^\d+$/.test(orderId)) {
         return NextResponse.json(ResponseBuilder.error('INVALID_ORDER_ID_FORMAT'), { status: 400 });

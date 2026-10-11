@@ -584,6 +584,31 @@ async function createOutletUsers(outlets) {
   return outletUsers;
 }
 
+// #682: one Nhân viên kho per outlet. Created after everything else so earlier public ids and phones stay
+// the same (e2e tests and docs read them).
+async function createInventoryUsers(outlets) {
+  console.log('\n📦 Creating inventory staff (Nhân viên kho)...');
+  const password = await hashPassword('inventory123');
+  const users = [];
+  for (const outlet of outlets) {
+    users.push(await prisma.user.create({
+      data: {
+        id: getNextPublicId(),
+        email: `inventory.outlet${outlet.id}@example.com`,
+        password,
+        firstName: 'Inventory',
+        lastName: `Outlet ${outlet.id}`,
+        phone: `+1-556-${String(outlet.id).padStart(4, '0')}`,
+        role: 'OUTLET_INVENTORY',
+        isActive: true,
+        merchantId: outlet.merchantId,
+        outletId: outlet.id
+      }
+    }));
+  }
+  return users;
+}
+
 // Step 6: Create categories
 async function createCategories(merchants) {
   console.log('\n📂 Creating product categories...');
@@ -1192,7 +1217,10 @@ async function main() {
     // Step 14: Create subscription payments
     console.log('📋 Creating subscription payments...');
     const subscriptionPayments = await createSubscriptionPayments(subscriptions);
-    
+
+    // Step 14b (#682): inventory staff last, so the ids above do not move
+    const inventoryUsers = await createInventoryUsers(allOutlets);
+
     // Step 13: Skip payment creation (using unified Payment model)
     // const additionalPayments = await createAdditionalPayments(orders);
     
@@ -1234,6 +1262,11 @@ async function main() {
     const staff = outletUsers.filter(u => u.role === 'OUTLET_STAFF');
     staff.forEach((staffUser, index) => {
       console.log(`  Staff ${index + 1}: ${staffUser.email} / staff123`);
+    });
+
+    console.log('\n=== NHÂN VIÊN KHO (OUTLET_INVENTORY) ===');
+    inventoryUsers.forEach((user, index) => {
+      console.log(`  Inventory ${index + 1}: ${user.email} / inventory123`);
     });
     
     console.log('\n📈 Order Summary:');

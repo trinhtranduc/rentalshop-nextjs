@@ -8,6 +8,7 @@ import {
   clockOf,
   dayKeyOf,
   formatDayLabel,
+  actorInitials,
   type HistoryEvent,
   type NextStep,
   type PaySummary,
@@ -231,7 +232,7 @@ export function HistoryCard({ events, toDayKey, t, money }: { events: HistoryEve
   const text = (e: HistoryEvent) => {
     switch (e.kind) {
       case 'created':
-        return e.by ? t('detail.history.created', { by: e.by }) : t('detail.history.createdNoBy');
+        return t('detail.history.createdNoBy');
       case 'payment':
         return t(e.refund ? 'detail.history.refund' : 'detail.history.payment', { amount: money(e.amount) });
       default:
@@ -239,14 +240,38 @@ export function HistoryCard({ events, toDayKey, t, money }: { events: HistoryEve
     }
   };
   return (
-    <section className={`${cardClass} flex flex-col gap-2.5 px-5 py-4`}>
-      <h2 className={`${h2Class} mb-1`}>{t('detail.history.title')}</h2>
-      {events.map((e, i) => (
-        <div key={`${e.kind}-${e.at}-${i}`} className="flex gap-3 text-[15px]">
-          <span className="w-24 flex-none tabular-nums text-ar-muted">{clockDay(e.at, toDayKey)}</span>
-          <span className="text-ar-ink">{text(e)}</span>
-        </div>
-      ))}
+    <section className={`${cardClass} flex flex-col px-5 py-4`}>
+      <h2 className={`${h2Class} mb-3`}>{t('detail.history.title')}</h2>
+      {events.map((e, i) => {
+        const last = i === events.length - 1;
+        // #670: avatar + "bởi <name> (nhân viên) · 14:32 05/10"
+        return (
+          <div key={`${e.kind}-${e.at}-${i}`} className={`relative flex gap-3 ${last ? '' : 'pb-4'}`}>
+            {!last && <span aria-hidden className="absolute bottom-0.5 left-[15px] top-[34px] w-0.5 bg-ar-line" />}
+            <span
+              aria-hidden
+              className={`flex h-8 w-8 flex-none items-center justify-center rounded-full text-xs font-extrabold text-white ${
+                !e.actor ? 'bg-slate-400' : e.actor.staff ? 'bg-teal-700' : 'bg-ar-primary'
+              }`}
+            >
+              {e.actor ? actorInitials(e.actor.name) : '•'}
+            </span>
+            <div className="min-w-0">
+              <div className="text-[15px] font-bold leading-snug text-ar-ink">{text(e)}</div>
+              <div className="mt-0.5 text-[13px] text-ar-muted">
+                {e.actor && (
+                  <>
+                    {t('detail.history.by')} <b className="font-semibold text-ar-ink">{e.actor.name}</b>
+                    {e.actor.staff ? ` ${t('detail.history.staff')}` : ''}
+                    {' · '}
+                  </>
+                )}
+                <span className="tabular-nums">{clockDay(e.at, toDayKey)}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </section>
   );
 }

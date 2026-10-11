@@ -37,6 +37,17 @@ object ApiErrorMessages {
         "INSUFFICIENT_PERMISSIONS" -> R.string.api_error_insufficient_permissions
         "SUBSCRIPTION_EXPIRED" -> R.string.api_error_subscription_expired
         "TRIAL_EXPIRED" -> R.string.api_error_trial_expired
+        // #758: every subscription / plan code a shop user can hit (wording of locales/*/errors.json)
+        "SUBSCRIPTION_PAUSED" -> R.string.api_error_subscription_paused
+        "SUBSCRIPTION_CANCELLED" -> R.string.api_error_subscription_cancelled
+        "SUBSCRIPTION_PAST_DUE" -> R.string.api_error_subscription_past_due
+        "SUBSCRIPTION_PERIOD_ENDED" -> R.string.api_error_subscription_period_ended
+        "NO_SUBSCRIPTION" -> R.string.api_error_no_subscription
+        "PLAN_UPGRADE_REQUIRED" -> R.string.api_error_plan_upgrade_required
+        "PLATFORM_ACCESS_DENIED" -> R.string.api_error_platform_access_denied
+        "CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET" -> R.string.api_error_order_other_outlet
+        "NO_OUTLET_ACCESS" -> R.string.api_error_no_outlet_access
+        "ORDER_NOT_FOUND" -> R.string.api_error_order_not_found
         "PRODUCT_OUT_OF_STOCK" -> R.string.api_error_product_out_of_stock
         "PRODUCT_HAS_NO_IMAGES" -> R.string.api_error_product_has_no_images
         "INVALID_CREDENTIALS" -> R.string.api_error_invalid_credentials
@@ -56,7 +67,20 @@ object ApiErrorMessages {
         "CATEGORY_NAME_EXISTS" -> R.string.api_error_category_name_exists
         "CATEGORY_NAME_REQUIRED" -> R.string.api_error_category_name_required
         "CANNOT_DELETE_DEFAULT_CATEGORY" -> R.string.api_error_cannot_delete_default_category
-        else -> 0
+        // #654: image search (NO_PRODUCTS_FOUND is the empty state, not an error: see ImageSearchQuery)
+        "SEARCH_FAILED" -> R.string.api_error_search_failed
+        "SEARCH_TIMEOUT" -> R.string.api_error_search_timeout
+        "INVALID_LIMIT" -> R.string.api_error_invalid_limit
+        "INVALID_MIN_SIMILARITY" -> R.string.api_error_invalid_min_similarity
+        "NO_PRODUCTS_FOUND" -> R.string.image_search_empty
+        // A subscription / plan code with no string of its own: a generic localized sentence,
+        // never the API's English text (#758).
+        else -> if (isSubscriptionFamily(code)) R.string.api_error_subscription_generic else 0
+    }
+
+    internal fun isSubscriptionFamily(code: String?): Boolean {
+        val c = code?.uppercase() ?: return false
+        return c.startsWith("SUBSCRIPTION_") || c.startsWith("PLAN_") || c.startsWith("TRIAL_")
     }
 
     private val SNAKE_CODE = Regex("^[A-Z][A-Z0-9_]{3,}$")

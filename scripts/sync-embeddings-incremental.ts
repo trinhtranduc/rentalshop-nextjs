@@ -75,7 +75,7 @@ loadEnvFile(envPath);
 import { PrismaClient, Prisma } from '@prisma/client';
 import { getEmbeddingService, getVectorStore } from '../packages/database/src/server';
 import { extractKeyFromImageUrl, parseProductImages } from '@rentalshop/utils';
-import { randomUUID } from 'crypto';
+import { productImagePointId } from '../packages/database/src/ml/vector-store';
 
 function resolveEmbeddingBucketName(): string {
   const env = (process.env.NODE_ENV || 'development').toLowerCase();
@@ -307,7 +307,9 @@ async function processBatch(
     for (let i = 0; i < embeddings.length && i < batchData.length; i++) {
       const { product, imageUrl } = batchData[i];
       results.push({
-        imageId: randomUUID(),
+        // #654: the same deterministic id as the backfill (first image = index 0), so a re-run overwrites
+        // the point instead of adding a duplicate
+        imageId: productImagePointId(product.id, 0),
         embedding: embeddings[i],
         metadata: {
           productId: String(product.id), // Use CUID as string

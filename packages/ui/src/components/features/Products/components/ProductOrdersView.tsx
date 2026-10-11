@@ -548,7 +548,7 @@ export const ProductOrdersView: React.FC<ProductOrdersViewProps> = ({
                 onFiltersChange={handleFiltersChange}
                 onSearchChange={handleSearchChange}
                 onClearFilters={handleClearFilters}
-                userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
+                userRole={user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY'}
               />
             </div>
           </CardContent>

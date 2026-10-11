@@ -84,7 +84,7 @@ launch_app() { # monkey aborts on emulators without hardware keys (exit 251), so
 if [ "$BUILD" = 1 ]; then
   export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
   echo "Building debug with API $API_URL"
-  (cd "$APP_DIR" && run ./gradlew :app:assembleDebug -PapiBaseUrl="$API_URL")
+  (cd "$APP_DIR" && run ./gradlew --no-daemon :app:assembleDebug -PapiBaseUrl="$API_URL")
 fi
 if [ "$FRESH" = 1 ]; then adb_s uninstall "$PKG" >/dev/null 2>&1 || true; fi
 adb_s install -r -g "$APK"   # -g grants runtime permissions (no notification prompt)
@@ -166,7 +166,7 @@ step 40-calendar
 # 5. Overview
 first_of "Tổng quan" "Overview" "Báo cáo" "Reports" || echo "MISS  overview tab"
 step 50-overview
-step 51-overview-period first_of "~Khoảng thời gian:" "~Period:"
+step 51-overview-period first_of "7 ngày" "7 days"
 ui back || true
 # 6. Settings + logout
 first_of "Cài đặt" "Settings" || echo "MISS  settings tab"

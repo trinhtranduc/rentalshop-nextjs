@@ -54,8 +54,9 @@ enum CategoryRules {
         return permissions.contains("products.manage")
     }
 
+    /// Rename / delete: owners, and Nhân viên kho (#682); the API refuses outlet admins
     static func canManage(role: Role?) -> Bool {
-        role == .merchant || role == .admin
+        role == .merchant || role == .admin || role == .outletInventory
     }
 
     /// The default category ("General") is never deleted, only renamed
@@ -201,6 +202,15 @@ struct ProductRowSubtitle: Equatable {
     let free: Int
 }
 
+/// The Home row's price line (#681): the default rent option first, the other one muted after it.
+/// `mainMode == nil` means a sale-only product, shown as "bán <price>".
+struct ProductRowPrice: Equatable {
+    let main: Double
+    let mainMode: ProductPricingMode?
+    let second: Double?
+    let secondMode: ProductPricingMode?
+}
+
 enum ProductRowLogic {
     /// The id the cart stores for this product (same rule as `CartItem(from:)`)
     static func cartId(_ product: Product) -> Int {
@@ -218,10 +228,29 @@ enum ProductRowLogic {
         return ProductRowSubtitle(code: valid, free: ProductStock.freeToday(product))
     }
 
-    /// Out today wins over the cart count, so the button stays grey as before
+    static func price(_ product: Product) -> ProductRowPrice? {
+        let perRental = ProductPricing.perRental(product)
+        let perDay = ProductPricing.perDay(product)
+        switch (perRental, perDay) {
+        case let (rental?, day?):
+            if ProductPricing.defaultMode(product) == .perDay {
+                return ProductRowPrice(main: day, mainMode: .perDay, second: rental, secondMode: .perRental)
+            }
+            return ProductRowPrice(main: rental, mainMode: .perRental, second: day, secondMode: .perDay)
+        case let (rental?, nil):
+            return ProductRowPrice(main: rental, mainMode: .perRental, second: nil, secondMode: nil)
+        case let (nil, day?):
+            return ProductRowPrice(main: day, mainMode: .perDay, second: nil, secondMode: nil)
+        case (nil, nil):
+            guard let sale = ProductPricing.sale(product) else { return nil }
+            return ProductRowPrice(main: sale, mainMode: nil, second: nil, secondMode: nil)
+        }
+    }
+
+    /// The cart count wins (#677): a product out today that is already in the cart still shows its count
     static func addState(free: Int, inCart: Int) -> ProductAddState {
-        if free <= 0 { return .out }
-        return inCart > 0 ? .inCart(inCart) : .add
+        if inCart > 0 { return .inCart(inCart) }
+        return free <= 0 ? .out : .add
     }
 }
 
@@ -458,11 +487,54 @@ enum CartV2Logic {
         }
     }
 
-    /// The chip of a line: "Theo ngày" + "150.000đ/ngày" ("Giá bán" on a sale); price nil = "Nhập giá"
+    /// The chip of a line: "Theo ngày" + "150.000đ/ngày × 2 ngày" ("Giá bán" on a sale); price nil = "Nhập giá".
+    /// #684 (Dòng gọn): the chip carries the line's numbers, so a daily price over several days shows the days too
     static func chip(_ item: CartItem, orderType: OrderType) -> (label: String, price: String?) {
         let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
         guard item.price > 0 else { return (label, nil) }
-        return (label, priceText(item.price, type: currentType(item), orderType: orderType))
+        var price = priceText(item.price, type: currentType(item), orderType: orderType)
+        if orderType == .rent, item.isDailyPricing, item.rentalDays > 1 {
+            price += " × " + PluralText.format("products.cart.days", count: item.rentalDays, item.rentalDays)
+        }
+        return (label, price)
+    }
+
+    /// #684 (owner): the cart line's blue link reads price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày",
+    /// "900.000đ / giá bán"; `amount` nil = no price yet ("Nhập giá / theo lần")
+    static func link(_ item: CartItem, orderType: OrderType) -> (amount: String?, unit: String) {
+        (item.price > 0 ? money(item.price) : nil,
+         pricingUnit(type: currentType(item), days: item.rentalDays, orderType: orderType))
+    }
+
+    /// "theo lần", "theo ngày × 3 ngày", "giá bán": the unit after the price, in the cart and on order detail
+    static func pricingUnit(type: String, days: Int, orderType: OrderType) -> String {
+        let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(type)
+        var unit = label.lowercased(with: Locale(identifier: "vi_VN"))
+        if orderType == .rent, type.uppercased() == ProductPricingMode.perDay.rawValue, days > 1 {
+            unit += " × " + PluralText.format("products.cart.days", count: days, days)
+        }
+        return unit
+    }
+
+    /// Order detail item line, same wording as the cart link: "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày"
+    static func orderItemPricing(unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> String {
+        let parts = orderItemPricingParts(unitPrice: unitPrice, pricingType: pricingType, rentalDays: rentalDays, orderType: orderType)
+        return parts.amount + " / " + parts.unit
+    }
+
+    /// Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent), the total sits on the right
+    static func orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> String {
+        let money = money(unitPrice)
+        let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+        guard orderType == .rent, type == ProductPricingMode.perDay.rawValue else { return "\(quantity) × \(money)" }
+        let days = max(1, rentalDays ?? 1)
+        return "\(quantity) × \(money) × " + PluralText.format("products.cart.days", count: days, days)
+    }
+
+    /// The same line in two parts, for the bold price on order detail (board D2)
+    static func orderItemPricingParts(unitPrice: Double, pricingType: String?, rentalDays: Int?, orderType: OrderType) -> (amount: String, unit: String) {
+        let type = pricingType?.uppercased() ?? ProductPricingMode.perRental.rawValue
+        return (money(unitPrice), pricingUnit(type: type, days: rentalDays ?? 1, orderType: orderType))
     }
 
     /// "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise
@@ -479,6 +551,12 @@ enum CartV2Logic {
             return ("\(money(price)) × \(dayText) × \(quantity)", price * Double(days) * Double(quantity))
         }
         return ("\(money(price)) × \(quantity)", price * Double(quantity))
+    }
+
+    /// #684: a line's note as shown and sent: trimmed; nil when blank (an empty sheet clears the note)
+    static func noteText(_ note: String?) -> String? {
+        let trimmed = (note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
@@ -527,14 +605,185 @@ enum CartV2Logic {
         previousIsProductsHome ? .pop : .openHomeTab
     }
 
-    /// What "Tạo đơn" opens (#476): a new order is confirmed in a sheet on the cart; an edited order keeps the review screen
+    /// What the cart button opens: a new order is confirmed in a sheet on the cart (#476); an edited order in the
+    /// "Lưu thay đổi" sheet (#676). The old review screen is no longer used from this cart.
     enum CtaRoute: Equatable {
         case confirmSheet
-        case preview
+        case editSheet
     }
 
     static func ctaRoute(isEditMode: Bool) -> CtaRoute {
-        isEditMode ? .preview : .confirmSheet
+        isEditMode ? .editSheet : .confirmSheet
+    }
+
+    /// The cart button: "Lưu thay đổi" for an edited order (#676), else "Tạo đơn" / "Bán & thu tiền"
+    static func ctaTitleKey(isEditMode: Bool, isRent: Bool) -> String {
+        if isEditMode { return "products.cart.edit.save" }
+        return isRent ? "products.cart.create" : "products.cart.sellAndCollect"
+    }
+
+    /// #677 (board gio-menu): the cart's ⋯ menu. Nil while editing an order (no ⋯; "Huỷ sửa" is in the bottom bar).
+    /// An empty cart disables both items; the quote also needs a rental's dates (`DraftShareRule`).
+    struct MoreMenuState: Equatable {
+        let shareEnabled: Bool
+        let clearEnabled: Bool
+    }
+
+    static func moreMenu(_ cart: Cart) -> MoreMenuState? {
+        guard !cart.isEditMode else { return nil }
+        let share = DraftShareRule.canShare(itemCount: cart.items.count, orderType: cart.orderType,
+                                            pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt)
+        return MoreMenuState(shareEnabled: share, clearEnabled: !cart.items.isEmpty)
+    }
+
+    /// #677: the action on the Home cart bar: "Sửa đơn #482913" (or "Sửa đơn") while the cart edits an order, else
+    /// "Tạo đơn"
+    static func cartBarAction(isEditMode: Bool, number: String?) -> String {
+        guard isEditMode else { return "products.cart.create".localized() }
+        return number.map { String(format: "products.cart.edit.title".localized(), $0) } ?? "products.cart.editTitle".localized()
+    }
+}
+
+// MARK: - Edit order (#676, board sua-don)
+
+/// "Sửa đơn #482913" + "Heather Robinson · Đơn thuê" on the cart while it edits an order
+struct EditOrderHeader: Equatable {
+    /// Short order number; nil for a draft saved before #676 (title "Sửa đơn")
+    let number: String?
+    /// `Heather Robinson · Đơn thuê`
+    let subtitle: String
+}
+
+/// "Lưu thay đổi đơn #482913?" sheet content
+struct EditOrderConfirm: Equatable {
+    let number: String?
+    let isSale: Bool
+    /// `Heather Robinson · Đơn thuê`
+    let subtitle: String
+    /// `10/10 → 12/10`; nil for a sale
+    let range: String?
+    let days: Int?
+    /// Units in the cart ("2 món")
+    let itemCount: Int
+    let total: Double
+    /// "Đã thu" (#677): booking deposit + payments made toward the order, never thế chân; nil hides the row
+    let paid: Double?
+    /// "Thu khi giao" (#677): what Giao đồ will ask after saving (hand-over formula with the new total); rentals still
+    /// booked only, else nil
+    let collectAtHandOver: Double?
+    let datesChanged: Bool
+    let itemsChanged: Bool
+
+    var itemsKey: String { isSale ? "products.cart.edit.saleItems" : "products.cart.edit.rentItems" }
+}
+
+enum EditOrderSheetLogic {
+    static func typeKey(isSale: Bool) -> String {
+        isSale ? "products.cart.edit.saleType" : "products.cart.edit.rentType"
+    }
+
+    static func subtitle(_ cart: Cart) -> String {
+        let customer = cart.customer.map(CustomersV2Logic.displayName) ?? "—"
+        return customer + " · " + typeKey(isSale: cart.orderType == .sale).localized()
+    }
+
+    /// Nil while the cart creates a new order
+    static func header(_ cart: Cart) -> EditOrderHeader? {
+        guard cart.isEditMode else { return nil }
+        return EditOrderHeader(number: number(cart), subtitle: subtitle(cart))
+    }
+
+    static func number(_ cart: Cart) -> String? {
+        guard let raw = cart.editOriginal?.orderNumber, !raw.isEmpty else { return nil }
+        return OrdersHomeLogic.shortNumber(raw)
+    }
+
+    /// #677 "Huỷ sửa" confirm title: "Huỷ sửa đơn #482913?" (or "Huỷ sửa đơn này?")
+    static func cancelTitle(number: String?) -> String {
+        number.map { String(format: "products.cart.edit.cancelTitle".localized(), $0) }
+            ?? "products.cart.edit.cancelTitleNoNumber".localized()
+    }
+
+    /// #677: "Huỷ sửa" leaves edit mode and empties the cart; the order to show again (nil = not editing)
+    static func cancelEdit(_ cart: Cart) -> Int? {
+        cart.isEditMode ? cart.orderId : nil
+    }
+
+    static func confirm(_ cart: Cart, timeZone: TimeZone = Date.shopTimeZone) -> EditOrderConfirm {
+        let isSale = cart.orderType == .sale
+        var range: String?
+        var days: Int?
+        if !isSale, let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt {
+            range = CreateOrderSheetLogic.dayMonth(pickup, timeZone: timeZone) + " → " + CreateOrderSheetLogic.dayMonth(ret, timeZone: timeZone)
+            days = CartV2Logic.rentalDays(pickup: pickup, return: ret, timeZone: timeZone)
+        }
+        let original = cart.editOriginal
+        let paid = collected(cart)
+        return EditOrderConfirm(
+            number: number(cart),
+            isSale: isSale,
+            subtitle: subtitle(cart),
+            range: range,
+            days: days,
+            itemCount: cart.itemCount,
+            total: cart.totalAmount,
+            paid: paid > 0 ? paid : nil,
+            collectAtHandOver: collectAtHandOver(cart),
+            datesChanged: !isSale && datesChanged(cart, original: original, timeZone: timeZone),
+            itemsChanged: itemsChanged(cart, original: original)
+        )
+    }
+
+    /// #677 "Đã thu": a rental's booking deposit (`depositAmount`) plus the payments the hand-over counts as paid
+    /// before (PICKUP); a sale's SALE payments. Never thế chân. A draft saved before #677 has no payment notes: all
+    /// its payments count, as before.
+    static func collected(_ cart: Cart) -> Double {
+        let isSale = cart.orderType == .sale
+        let deposit = isSale ? 0 : cart.depositAmount
+        guard let original = cart.editOriginal else { return deposit }
+        guard let payments = original.payments else { return deposit + original.paid }
+        return deposit + OrderDetailLogic.paid(payments, purpose: isSale ? "SALE" : "PICKUP")
+    }
+
+    /// #677 "Thu khi giao": `OrderDetailLogic.handOver(...).due` with the cart's new total, deposit and thế chân, so
+    /// it matches Giao đồ after the save. Only for a rental still booked (RESERVED).
+    static func collectAtHandOver(_ cart: Cart) -> Double? {
+        guard cart.orderType == .rent, let original = cart.editOriginal, original.status == .reserved else { return nil }
+        return OrderDetailLogic.handOver(total: cart.totalAmount, deposit: cart.depositAmount,
+                                         securityDeposit: cart.manualSecurityDeposit ?? 0,
+                                         payments: original.payments ?? []).due
+    }
+
+    /// "Đã đổi" on Ngày thuê: the pickup or return shop day differs from the loaded order (times inside a day do not
+    /// count: the cart moves a picked day to its first / last second). Unknown original = no tag.
+    static func datesChanged(_ cart: Cart, original: CartEditOriginal?, timeZone: TimeZone = Date.shopTimeZone) -> Bool {
+        guard let original else { return false }
+        return dayKey(cart.pickupPlanAt, timeZone) != dayKey(original.pickupPlanAt, timeZone)
+            || dayKey(cart.returnPlanAt, timeZone) != dayKey(original.returnPlanAt, timeZone)
+    }
+
+    /// "Đã đổi" on Đồ thuê / Đồ bán: a line added or removed, or a line's quantity, price or pricing type changed.
+    /// Line order does not count. Unknown original = no tag.
+    static func itemsChanged(_ cart: Cart, original: CartEditOriginal?) -> Bool {
+        guard let original else { return false }
+        return sorted(CartEditOriginal.lines(of: cart)) != sorted(original.lines)
+    }
+
+    private static func sorted(_ lines: [CartEditOriginal.Line]) -> [CartEditOriginal.Line] {
+        lines.sorted { a, b in
+            if a.productId != b.productId { return a.productId < b.productId }
+            if a.quantity != b.quantity { return a.quantity < b.quantity }
+            if a.unitPrice != b.unitPrice { return a.unitPrice < b.unitPrice }
+            return a.pricingType < b.pricingType
+        }
+    }
+
+    private static func dayKey(_ date: Date?, _ timeZone: TimeZone) -> String? {
+        guard let date else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 }
 

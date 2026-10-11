@@ -1004,6 +1004,11 @@
 "Merchant" = "Thương hiệu";
 "Outlet Admin" = "Quản trị cửa hàng";
 "Outlet Staff" = "Nhân viên cửa hàng";
+"Inventory Staff" = "Nhân viên kho";
+"users.role.required" = "Chọn quyền cho người dùng";
+"users.role.help.outletAdmin" = "Một chi nhánh: đơn, sản phẩm, giá, khách, tiền trong ngày, nhân viên của chi nhánh.";
+"users.role.help.outletStaff" = "Tạo đơn, giao đồ, nhận trả, thêm khách. Không sửa giá sản phẩm, không xem báo cáo tiền.";
+"users.role.help.outletInventory" = "Như nhân viên, thêm quản lý sản phẩm và danh mục (thêm, sửa giá, xoá). Không xem báo cáo tiền.";
 "Generating receipt..." = "Đang tạo hóa đơn...";
 "Failed to generate PDF" = "Không thể tạo PDF";
 "RENTAL RECEIPT" = "HÓA ĐƠN CHO THUÊ";
@@ -1124,6 +1129,12 @@
 "INVALID_SESSION_ID" = "ID phiên không hợp lệ";
 "INVALID_TENANT_KEY" = "Khóa tenant được cung cấp không hợp lệ";
 "INVALID_TIMEZONE" = "Múi giờ không hợp lệ. Hãy chọn một múi giờ trong danh sách (ví dụ Asia/Ho_Chi_Minh).";
+/* #654 image search */
+"INVALID_LIMIT" = "Số lượng kết quả không hợp lệ";
+"INVALID_MIN_SIMILARITY" = "Ngưỡng độ giống không hợp lệ";
+"SEARCH_FAILED" = "Chưa tìm được bằng hình ảnh lúc này. Vui lòng thử lại sau ít phút hoặc tìm bằng chữ.";
+"SEARCH_TIMEOUT" = "Tìm bằng hình ảnh mất quá lâu. Hãy thử ảnh nhỏ hơn hoặc thử lại sau vài phút.";
+"NO_PRODUCTS_FOUND" = "Không tìm thấy sản phẩm tương tự";
 "INVALID_USER_ID" = "ID người dùng không hợp lệ";
 "INVALID_USER_ROLE" = "Vai trò người dùng không hợp lệ";
 "LOGIN_SUCCESS" = "Đăng nhập thành công";
@@ -1302,7 +1313,6 @@
 "Search by Image" = "Tìm kiếm bằng hình ảnh";
 "Searching..." = "Đang tìm kiếm...";
 "Search Results" = "Kết quả tìm kiếm";
-"Results: %d products" = "Kết quả: %d sản phẩm";
 "No similar products found" = "Không tìm thấy sản phẩm tương tự";
 "AI is searching for products..." = "🤖 AI đang tìm kiếm sản phẩm...";
 "Found products!" = "✅ Tìm thấy sản phẩm!";
@@ -1507,6 +1517,7 @@
 
 /* Notifications inbox */
 "Notifications" = "Thông báo";
+"Notification" = "Thông báo"; // #677: image-search alert title
 "notifications.empty" = "Chưa có thông báo";
 "notifications.markAllRead" = "Đánh dấu đã đọc tất cả";
 "notifications.markRead" = "Đánh dấu đã đọc";
@@ -1525,7 +1536,7 @@
 "products.search.placeholder" = "Tên, mã vạch…";
 "products.search.empty" = "Không có sản phẩm nào khớp";
 "products.empty" = "Chưa có sản phẩm";
-"products.stock.free" = "Còn %d";
+"products.stock.free" = "Còn %d hôm nay";
 "products.stock.noneToday" = "Hết hôm nay";
 "products.stock.summary" = "Đang cho thuê %d · còn trống %d · tổng %d";
 "products.unit.perRental" = "/lần";
@@ -1632,6 +1643,32 @@
 "products.cart.created.paidSale" = "Đã thu %@";
 "products.cart.created.newOrder" = "Tạo đơn mới";
 "products.cart.created.viewOrder" = "Xem đơn";
+"products.cart.edit.title" = "Sửa đơn #%@";
+"products.cart.edit.rentType" = "Đơn thuê";
+"products.cart.edit.saleType" = "Đơn bán";
+"products.cart.edit.save" = "Lưu thay đổi";
+"products.cart.edit.confirmTitle" = "Lưu thay đổi đơn #%@?";
+"products.cart.edit.confirmTitleNoNumber" = "Lưu thay đổi đơn này?";
+"products.cart.edit.dates" = "Ngày thuê";
+"products.cart.edit.rentItems" = "Đồ thuê";
+"products.cart.edit.saleItems" = "Đồ bán";
+"products.cart.edit.itemCount" = "%d món";
+"products.cart.edit.itemCount.one" = "%d món";
+"products.cart.edit.paid" = "Đã thu";
+"products.cart.edit.collectAtHandOver" = "Thu khi giao";
+"products.cart.edit.changed" = "Đã đổi";
+"products.cart.edit.keepEditing" = "Tiếp tục sửa";
+"products.cart.edit.saved" = "Đã lưu đơn #%@";
+"products.cart.edit.savedNoNumber" = "Đã lưu đơn";
+"products.cart.more" = "Thêm";
+"products.cart.menu.shareQuote" = "Chia sẻ báo giá";
+"products.cart.clear.title" = "Xoá giỏ hàng";
+"products.cart.clear.message" = "Xoá toàn bộ sản phẩm và thông tin đơn hàng trong giỏ này?";
+"products.cart.clear.confirm" = "Xoá";
+"products.cart.edit.cancel" = "Huỷ sửa";
+"products.cart.edit.cancelTitle" = "Huỷ sửa đơn #%@?";
+"products.cart.edit.cancelTitleNoNumber" = "Huỷ sửa đơn này?";
+"products.cart.edit.cancelMessage" = "Các thay đổi chưa lưu sẽ mất.";
 "products.cart.needPrice" = "Nhập giá cho %@";
 "products.cart.editPrice" = "Sửa giá cho đơn này";
 // MARK: - Orders tab (#371)
@@ -2074,6 +2111,18 @@
 /* #518 Cho tạo đơn khi trùng lịch */
 "cart.overlap.tag" = "Hết đồ %@ · đã thuê ở đơn %@";
 "cart.overlap.tag.noOrders" = "Hết đồ %@";
+"cart.overlap.tagOneDay" = "Hết %@";
+"cart.overlap.tagRange" = "Hết %@ → %@";
+"cart.overlap.tagHint" = "Xem các đơn đang giữ món ngày %@";
+"cart.itemNote.add" = "+ Ghi chú";
+"cart.itemNote.label" = "Ghi chú";
+"cart.itemNote.edit" = "Sửa";
+"cart.itemNote.title" = "Ghi chú món";
+"cart.itemNote.placeholder" = "Ví dụ: sửa eo 2cm, giao kèm voan";
+"cart.itemNote.hint" = "Chỉ cho món này trong đơn. Ghi chú chung của đơn ở mục Ghi chú bên dưới giỏ.";
+"cart.itemNote.clear" = "Xoá ghi chú";
+"cart.itemNote.save" = "Lưu";
+"cart.itemNote.accessibility" = "Ghi chú cho %@";
 "cart.overlap.line" = "%@ thiếu %d bộ ngày %@ (đã thuê ở %@).";
 "cart.overlap.line.noOrders" = "%@ thiếu %d bộ ngày %@.";
 "cart.overlap.title" = "Trùng lịch";
@@ -2111,6 +2160,7 @@
 "history.summary.today" = "%@ hôm nay";
 "history.actor.unknown" = "Hệ thống";
 "history.actor.staff" = "%@ (nhân viên)";
+"history.actor.by" = "bởi %@";
 "history.spoken.to" = "thành";
 "history.kind.ORDER_CREATED" = "Tạo đơn";
 "history.kind.ORDER_EDITED" = "Sửa đơn";
@@ -2142,14 +2192,14 @@
 "history.field.returnedAt" = "Đã nhận trả";
 "history.field.totalAmount" = "Tổng đơn";
 "history.field.depositAmount" = "Cọc trả trước";
-"history.field.securityDeposit" = "Tiền thế chấp";
+"history.field.securityDeposit" = "Tiền thế chân";
 "history.field.discountType" = "Kiểu giảm giá";
 "history.field.discountValue" = "Mức giảm";
 "history.field.discountAmount" = "Tiền giảm";
 "history.field.damageFee" = "Phí hư hỏng";
 "history.field.lateFee" = "Phí trễ hạn";
-"history.field.collateralType" = "Loại thế chấp";
-"history.field.collateralDetails" = "Thế chấp";
+"history.field.collateralType" = "Loại thế chân";
+"history.field.collateralDetails" = "Thế chân";
 "history.field.pickupNotes" = "Ghi chú giao";
 "history.field.returnNotes" = "Ghi chú trả";
 "history.field.damageNotes" = "Ghi chú hư hỏng";
@@ -2345,3 +2395,61 @@
 "share.thanks" = "Cảm ơn quý khách đã tin chọn %@";
 "share.madeWith" = "Tạo bằng AnyRent";
 "share.draft.action" = "Chia sẻ đơn nháp";
+
+/* #651 Home search field */
+"products.home.searchPlaceholder" = "Tìm tên, mã vạch hoặc chụp ảnh";
+"products.home.imageSearch" = "Tìm bằng hình";
+
+/* #672 Image search results */
+"imageSearch.results.title" = "%d sản phẩm giống";
+"imageSearch.results.title.one" = "%d sản phẩm giống";
+"imageSearch.results.empty.title" = "Không thấy sản phẩm giống";
+"imageSearch.results.subtitle" = "Từ ảnh bạn vừa chụp";
+"imageSearch.action.retake" = "Chụp lại";
+"imageSearch.action.searchByName" = "Tìm bằng tên";
+"imageSearch.empty.headline" = "Chưa tìm ra sản phẩm này";
+"imageSearch.empty.message" = "Có thể sản phẩm chưa có ảnh trong cửa hàng, hoặc ảnh chụp chưa rõ.";
+"imageSearch.empty.tip.whole" = "Chụp cả món đồ, đủ sáng";
+"imageSearch.empty.tip.background" = "Nền gọn, không lẫn đồ khác";
+"imageSearch.empty.tip.photo" = "Sản phẩm cần có ảnh trong danh sách";
+"order.detail.navTitle" = "Đơn %@";
+"order.detail.goods" = "Tiền hàng";
+"order.detail.deposit" = "Cọc";
+"overview.related.created" = "Đơn tạo trong kỳ";
+"overview.related.cancelled" = "Đã huỷ, không tính";
+"overview.related.collateralIn" = "Nhận thế chân khi giao";
+"overview.related.collateralOut" = "Trả thế chân khi nhận đồ";
+"overview.related.total" = "Tổng các dòng";
+"overview.related.empty" = "Không có đơn nào trong kỳ.";
+"overview.dash.money.collateralNet" = "Thế chân nhận − trả";
+"overview.dash.rule.orderValue" = "Tổng tiền các đơn tạo trong kỳ, theo ngày tạo. Không tính đơn đã huỷ.";
+"overview.dash.rule.collected" = "Tiền thật nắm trong tay từ kỳ này: cọc, tiền thuê khi giao, tiền bán, phí thêm, trừ tiền đã hoàn, cộng thế chân nhận trừ thế chân trả.";
+"overview.dash.rule.outstanding" = "Phần chưa thu của các đơn tạo trong kỳ: đơn thuê đang đặt là tổng trừ cọc, đơn bán chưa hoàn tất là cả tổng.";
+"overview.dash.rule.collateral" = "Thế chân nhận khi giao đồ trừ thế chân trả lại khi nhận đồ, trong kỳ.";
+"overview.related.owes" = "Sẽ thu khi khách lấy đồ";
+"overview.dash.chip.newOrders" = "%d đơn mới";
+"SUBSCRIPTION_EXPIRED" = "Gói đăng ký đã hết hạn.";
+"SUBSCRIPTION_PAUSED" = "Gói đăng ký đang tạm dừng.";
+"SUBSCRIPTION_CANCELLED" = "Gói đăng ký đã bị hủy.";
+"TRIAL_EXPIRED" = "Thời gian dùng thử đã hết.";
+"PLAN_LIMIT_EXCEEDED" = "Đã vượt giới hạn gói. Nâng cấp gói để thêm nữa.";
+"PLAN_UPGRADE_REQUIRED" = "Gói của bạn không có tính năng này. Hãy nâng cấp gói để sử dụng.";
+"PLATFORM_ACCESS_DENIED" = "Gói của bạn không bao gồm truy cập từ thiết bị này. Hãy nâng cấp gói hoặc dùng thiết bị khác.";
+"CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET" = "Bạn chỉ có thể sửa đơn của chi nhánh mình.";
+"NO_OUTLET_ACCESS" = "Bạn không có quyền truy cập cửa hàng này.";
+"ORDER_NOT_FOUND" = "Không tìm thấy đơn hàng.";
+"SUBSCRIPTION_GENERIC" = "Gói đăng ký có vấn đề. Vui lòng liên hệ hỗ trợ.";
+"overview.related.event.saleCreated" = "Đơn bán được tạo";
+"overview.related.event.saleCancelled" = "Đơn bán bị hủy (hoàn lại)";
+"overview.related.event.deposit" = "Thu tiền cọc";
+"overview.related.event.pickup" = "Thu tiền khi lấy hàng";
+"overview.related.event.sameDay" = "Thuê và trả trong cùng ngày";
+"overview.related.event.damageFee" = "Thu phí hư hỏng";
+"overview.related.event.depositRefund" = "Hoàn tiền cọc";
+"overview.related.event.nothing" = "Không có phát sinh";
+"overview.related.event.rentCancelled" = "Đơn hủy (hoàn lại)";
+"overview.related.event.returnCollected" = "Thu khi trả hàng";
+"overview.related.event.futurePickup" = "Doanh thu dự kiến khi lấy hàng";
+"overview.related.event.futureDamageFee" = "Dự kiến thu phí hư hỏng khi trả hàng";
+"overview.related.event.futureRefund" = "Dự kiến hoàn tiền cọc khi trả hàng";
+"overview.related.event.futureNothing" = "Dự kiến không có phát sinh khi trả hàng";

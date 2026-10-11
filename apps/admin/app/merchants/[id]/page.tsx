@@ -1,5 +1,7 @@
 'use client';
 
+import '../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
@@ -178,7 +180,10 @@ export default function MerchantDetailPage() {
     duration?: number;
     discount?: number;
     totalPrice?: number;
-  }) => {
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+  }): Promise<{ success: boolean; message?: string }> => {
     try {
       console.log('🔍 Admin: Plan change data received:', planData);
       
@@ -190,18 +195,23 @@ export default function MerchantDetailPage() {
         billingInterval: planData.billingInterval,
         duration: planData.duration,
         discount: planData.discount,
-        totalPrice: planData.totalPrice
+        totalPrice: planData.totalPrice,
+        method: planData.method,
+        transactionId: planData.transactionId,
+        reference: planData.reference
       });
 
       if (response.success) {
         console.log('Plan changed successfully');
         // Refresh merchant data
         fetchMerchantDetails();
-      } else {
-        console.error('Failed to change plan:', response.message);
+        return { success: true };
       }
-    } catch (error) {
+      console.error('Failed to change plan:', response.message);
+      return { success: false, message: response.message || (response as any).error || 'The plan could not be changed.' };
+    } catch (error: any) {
       console.error('Error changing plan:', error);
+      return { success: false, message: error?.message || 'The plan could not be changed.' };
     }
   };
 
@@ -328,7 +338,7 @@ export default function MerchantDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageContent>
           <div className="animate-pulse">
             <div className="h-8 bg-bg-tertiary rounded w-1/4 mb-6"></div>
@@ -346,7 +356,7 @@ export default function MerchantDetailPage() {
 
   if (error || !merchant) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageContent>
           <div className="text-center py-12">
             <div className="text-4xl mb-4">⚠️</div>
@@ -397,7 +407,7 @@ export default function MerchantDetailPage() {
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="ar-detail admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageContent>
         <MerchantDetail

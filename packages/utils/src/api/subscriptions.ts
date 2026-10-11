@@ -107,6 +107,16 @@ export const subscriptionsApi = {
   },
 
   /**
+   * Delete subscription (admin): DELETE /api/subscriptions/[id]
+   */
+  async delete(id: number): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.subscriptions.delete(id), {
+      method: 'DELETE',
+    });
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
    * Change subscription plan
    */
   async changePlan(
@@ -118,9 +128,15 @@ export const subscriptionsApi = {
       reason?: string;
       sendEmail?: boolean;
       customPrice?: number;
+      method?: string;
+      transactionId?: string;
+      reference?: string;
     }
   ): Promise<ApiResponse<Subscription>> {
     const payload: any = { newPlanId };
+    if (options?.method) payload.method = options.method;
+    if (options?.transactionId) payload.transactionId = options.transactionId;
+    if (options?.reference) payload.reference = options.reference;
 
     if (options?.billingInterval) payload.billingInterval = options.billingInterval;
     if (options?.startDate) {

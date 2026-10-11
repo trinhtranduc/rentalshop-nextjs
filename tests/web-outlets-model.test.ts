@@ -2,6 +2,7 @@
  * #545 shop web Chi nhánh: pure model. Run under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
+import { ROLE_PERMISSIONS } from '../packages/auth/src/permissions';
 import {
   EMPTY_OUTLET_FORM,
   formatOutletDate,
@@ -162,5 +163,21 @@ describe('parseOutletId / groupAccountNumber', () => {
     expect(groupAccountNumber('1234567890')).toBe('1234 5678 90');
     expect(groupAccountNumber(' 1234 5678 ')).toBe('1234 5678');
     expect(groupAccountNumber(null)).toBe('');
+  });
+});
+
+describe('outletActions without outlet.manage (#736)', () => {
+  it('a role that cannot manage outlets gets no edit, disable or enable', () => {
+    expect(outletActions({ isDefault: false, isActive: true }, false)).toEqual(['view', 'bank']);
+    expect(outletActions({ isDefault: false, isActive: false }, false)).toEqual(['view', 'bank']);
+  });
+  it('the edit control follows outlet.manage of the permission matrix (same as PUT /api/outlets)', () => {
+    const edits = (role: string) => (ROLE_PERMISSIONS as Record<string, string[]>)[role].includes('outlet.manage');
+    expect(edits('MERCHANT')).toBe(true);
+    expect(edits('OUTLET_ADMIN')).toBe(true);
+    expect(edits('OUTLET_STAFF')).toBe(false);
+    expect(edits('OUTLET_INVENTORY')).toBe(false);
+    expect(outletActions({ isDefault: true, isActive: true }, edits('OUTLET_STAFF'))).not.toContain('edit');
+    expect(outletActions({ isDefault: true, isActive: true }, edits('MERCHANT'))).toContain('edit');
   });
 });

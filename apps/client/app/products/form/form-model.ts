@@ -238,7 +238,6 @@ export type ErrorCode =
   | 'categoryRequired'
   | 'priceNegative'
   | 'dailyNeedsPrice'
-  | 'saleRequired'
   | 'depositNegative'
   | 'stockRequired'
   | 'outletStockNegative';
@@ -253,7 +252,7 @@ export function validateForm(form: FormState, opts: { canEditPricing: boolean })
   if (opts.canEditPricing) {
     if (form.perRental < 0 || form.perDay < 0) errors.perRental = 'priceNegative';
     if (form.defaultMode === 'DAILY' && !(form.perDay > 0)) errors.defaultMode = 'dailyNeedsPrice';
-    if (!(form.salePrice > 0)) errors.salePrice = 'saleRequired';
+    // #741: the sale price is optional (a rent-only product has 0, as the apps and the API create it)
   }
   if (form.deposit < 0) errors.deposit = 'depositNegative';
   if (!(form.totalStock > 0)) errors.totalStock = 'stockRequired';
@@ -269,8 +268,26 @@ export function firstError(errors: Partial<Record<FieldKey, ErrorCode>>): FieldK
 // Payload
 // ----------------------------------------------------------------------------
 
+/** Branch roles (same list as `isOutletRole` in @rentalshop/constants; this module imports no @rentalshop/*). */
+const BRANCH_ROLES = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
+
+/**
+ * #825: name, prices, photos, category, code and description are shared by every branch; only the shop owner changes
+ * them. A branch role edits its own branch stock only, and does not delete products.
+ */
+export function isBranchRole(role: string | null | undefined): boolean {
+  return BRANCH_ROLES.includes(role ?? '');
+}
+
+/** #825 (owner 2026-10-11): outlet staff do not add products (the API refuses it). */
+export function roleMayCreateProducts(role: string | null | undefined): boolean {
+  return role !== 'OUTLET_STAFF';
+}
+
 export interface PayloadOptions {
   canEditPricing: boolean;
+  /** #825: the branch of a branch-role user. Its stock row is the only one sent; on edit nothing else is sent. */
+  branchOutletId?: number;
   /** Edit only */
   productId?: number;
   merchantId?: number;
@@ -282,6 +299,12 @@ export interface PayloadOptions {
  * prices otherwise. On edit `images` lists the saved photos to keep; the API adds the uploaded files after them.
  */
 export function buildPayload(form: FormState, opts: PayloadOptions): Record<string, unknown> {
+  const branch = opts.branchOutletId;
+  const stockRows = form.outletStock
+    .filter((r) => branch == null || r.outletId === branch)
+    .map((r) => ({ outletId: r.outletId, stock: r.stock }));
+  // #825: a branch role saves only its own stock on edit (the API refuses a changed shared field)
+  if (branch != null && opts.productId != null) return { id: opts.productId, outletStock: stockRows };
   const pricing: Record<string, unknown> = {};
   if (opts.canEditPricing) {
     const pricingOptions = buildPricingOptions(form.perRental, form.perDay, form.defaultMode);
@@ -297,7 +320,7 @@ export function buildPayload(form: FormState, opts: PayloadOptions): Record<stri
     categoryId: form.categoryId,
     totalStock: form.totalStock,
     deposit: form.deposit,
-    outletStock: form.outletStock.map((r) => ({ outletId: r.outletId, stock: r.stock })),
+    outletStock: stockRows,
     ...pricing,
   };
   // Create: the API schema requires rentPrice, so a user without price rights sends 0 (the API's own default,

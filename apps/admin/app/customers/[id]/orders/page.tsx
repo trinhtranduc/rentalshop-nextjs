@@ -219,7 +219,7 @@ export default function AdminCustomerOrdersPage() {
         }}
         showStats={false}
         showMerchant={true}
-        userRole={(user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF') || 'ADMIN'}
+        userRole={(user?.role as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY') || 'ADMIN'}
       />
     </PageWrapper>
   );

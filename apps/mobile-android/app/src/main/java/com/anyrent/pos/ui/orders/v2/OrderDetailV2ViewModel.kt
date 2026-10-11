@@ -10,6 +10,7 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.domain.orders.OrderDetailLogic
 import com.anyrent.pos.domain.orders.StatusErrorOutcome
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -83,6 +84,8 @@ data class OrderDetailUiState(
 class OrderDetailV2ViewModel(
     private val orderId: Int,
     private val source: OrderDetailSource,
+    /** #674: tells Orders, Calendar and Overview that an order changed */
+    private val ordersChanged: () -> Unit = OrdersChanged::notifyChanged,
 ) : ViewModel() {
     private val _state = MutableStateFlow(OrderDetailUiState())
     val state: StateFlow<OrderDetailUiState> = _state.asStateFlow()
@@ -121,6 +124,7 @@ class OrderDetailV2ViewModel(
         _state.update { it.copy(busy = true) }
         viewModelScope.launch {
             val result = call()
+            if (result.isSuccess) ordersChanged()
             val failure = result.exceptionOrNull()?.let(OrderDetailLogic::statusError)
             _state.update { it.copy(busy = false, statusError = failure) }
             if (failure == null || failure.reload) reload()
@@ -150,6 +154,7 @@ class OrderDetailV2ViewModel(
     suspend fun saveFees(lateFee: Double, damageFee: Double): Result<OrderDetail> {
         _state.update { it.copy(busy = true) }
         val saved = source.saveFees(orderId, lateFee, damageFee)
+        if (saved.isSuccess) ordersChanged()
         val detail = if (saved.isSuccess) reload() else null
         _state.update { it.copy(busy = false) }
         saved.exceptionOrNull()?.let { return Result.failure(it) }
@@ -167,7 +172,10 @@ class OrderDetailV2ViewModel(
         viewModelScope.launch {
             val result = source.saveNotes(orderId, notes, original, kept, newImages)
             _state.update { it.copy(busy = false) }
-            if (result.isSuccess) reload()
+            if (result.isSuccess) {
+                ordersChanged()
+                reload()
+            }
             onDone(result.exceptionOrNull()?.let { AppError.from(it).message })
         }
     }
@@ -181,13 +189,25 @@ class OrderDetailV2ViewModel(
         _state.update { it.copy(savingReady = true) }
         viewModelScope.launch {
             val result = source.setReadyToDeliver(orderId, ready)
-            if (result.isSuccess) reload()
+            if (result.isSuccess) {
+                ordersChanged()
+                reload()
+            }
             _state.update { it.copy(savingReady = false) }
             onDone(result.exceptionOrNull()?.let { AppError.from(it).message })
         }
     }
 
     fun dismissStatusError() = _state.update { it.copy(statusError = null) }
+
+    /** Extend (board Gia-han) saved by its sheet: signal it (#674) and show the new dates */
+    fun extended() {
+        ordersChanged()
+        load()
+    }
+
+    /** The order was deleted from the screen (#674) */
+    fun deleted() = ordersChanged()
 
     class Factory(
         private val orderId: Int,

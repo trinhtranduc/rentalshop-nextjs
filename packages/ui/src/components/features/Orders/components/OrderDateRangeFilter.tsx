@@ -183,15 +183,15 @@ export function OrderDateRangeFilter({
 
       {/* Custom Date Range Dialog */}
       <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+          <DialogHeader className="max-md:pr-10">
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               Custom Date Range
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto">
             <div>
               <Label htmlFor="start-date">Start Date</Label>
               <Input
@@ -220,7 +220,7 @@ export function OrderDateRangeFilter({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="max-md:-mx-4 max-md:shrink-0 max-md:border-t max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:flex-row max-md:gap-2 max-md:[&_button]:min-h-11 max-md:[&>button:last-child]:flex-1">
             <Button
               variant="outline"
               onClick={() => {

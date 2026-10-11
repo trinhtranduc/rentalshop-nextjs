@@ -55,6 +55,29 @@ class ProductRulesTest {
         assertFalse(ProductAccess.canCreate(UserRole.UNKNOWN))
     }
 
+    // Home row price line (#681)
+
+    @Test
+    fun `row price shows the default option first and the other second`() {
+        assertEquals(
+            ProductRowPrice(300_000.0, PricingMode.PER_RENTAL, 120_000.0, PricingMode.PER_DAY),
+            ProductRowLogic.price(product()),
+        )
+        val dayDefault = product(options = listOf(fixed.copy(isDefault = false), daily.copy(isDefault = true)))
+        assertEquals(
+            ProductRowPrice(120_000.0, PricingMode.PER_DAY, 300_000.0, PricingMode.PER_RENTAL),
+            ProductRowLogic.price(dayDefault),
+        )
+    }
+
+    @Test
+    fun `row price with one option has no second and sale only has no mode`() {
+        assertEquals(ProductRowPrice(300_000.0, PricingMode.PER_RENTAL), ProductRowLogic.price(product(options = emptyList())))
+        assertEquals(ProductRowPrice(120_000.0, PricingMode.PER_DAY), ProductRowLogic.price(product(options = listOf(daily.copy(isDefault = true)))))
+        assertEquals(ProductRowPrice(900_000.0, null), ProductRowLogic.price(product(rentPrice = 0.0, salePrice = 900_000.0, options = emptyList())))
+        assertNull(ProductRowLogic.price(product(rentPrice = 0.0, salePrice = null, options = emptyList())))
+    }
+
     // Prices and stock
 
     @Test
@@ -232,7 +255,7 @@ class ProductRulesTest {
         assertEquals(AddButtonState.Add, ProductRowLogic.addState(free = 3, inCart = 0))
         assertEquals(AddButtonState.InCart(2), ProductRowLogic.addState(free = 3, inCart = 2))
         assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 0))
-        assertEquals(AddButtonState.Out, ProductRowLogic.addState(free = 0, inCart = 2))
+        assertEquals(AddButtonState.InCart(2), ProductRowLogic.addState(free = 0, inCart = 2)) // #677: in-cart wins
     }
 
     // #632 — categories from the product form (same table as iOS ProductsV2Tests)

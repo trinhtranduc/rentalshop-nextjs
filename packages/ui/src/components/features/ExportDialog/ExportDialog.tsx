@@ -101,7 +101,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] admin-phone">
         <DialogHeader>
           <DialogTitle>Export {resourceName}</DialogTitle>
           <DialogDescription>

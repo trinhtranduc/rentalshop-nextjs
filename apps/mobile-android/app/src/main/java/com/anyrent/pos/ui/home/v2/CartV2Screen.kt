@@ -1,5 +1,10 @@
 package com.anyrent.pos.ui.home.v2
 
+import com.anyrent.pos.ui.common.AppMenuAction
+import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -68,6 +73,7 @@ import com.anyrent.pos.domain.availability.ValidateRentalCartAvailability
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
+import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartV2Logic
@@ -88,27 +94,45 @@ import com.anyrent.pos.data.FeatureFlags
 import com.anyrent.pos.domain.appconfig.MobileFeature
 import com.anyrent.pos.ui.theme.DS
 import com.anyrent.pos.ui.common.copyUriToCacheFile
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
  * State lives in [CartStore]. "Tạo đơn" confirms a new order in a sheet on this screen and sends the review screen's
- * create request ([CartOrderSubmit], #476); an edited order still opens the review screen ([onPreview]).
+ * create request ([CartOrderSubmit], #476); "Lưu thay đổi" saves an edited order from a sheet with the review screen's
+ * update request and checks (#676), then [onOrderSaved].
  */
 @Composable
 fun CartV2Screen(
     onBack: () -> Unit,
-    onPreview: () -> Unit,
     /** "+ Add": the product list on Home (#433), not the screen that opened the cart */
     onAddItems: () -> Unit = onBack,
     /** "Tạo đơn mới" after a create (#476): the product list with an empty cart */
     onNewOrder: () -> Unit = onAddItems,
     /** "Xem đơn" after a create (#476) */
     onOpenOrder: (Int) -> Unit = {},
+    /** #676: an edited order was saved: its id and short number (null for a draft saved before #676) */
+    onOrderSaved: (Int, String?) -> Unit = { id, _ -> onOpenOrder(id) },
+    /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
+    onEditCancelled: (Int) -> Unit = onOpenOrder,
+    /** #684: the "Hết hàng …" tag → Lịch trống of the product on that day (`yyyy-MM-dd`) */
+    onOpenCalendar: (Int, String) -> Unit = { _, _ -> },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -121,6 +145,7 @@ fun CartV2Screen(
     val discountType by CartStore.discountType.collectAsState()
     val deposit by CartStore.depositAmount.collectAsState()
     val editingOrderId by CartStore.editingOrderId.collectAsState()
+    val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
     val app = LocalContext.current.applicationContext as AnyRentApp
 
@@ -160,8 +185,15 @@ fun CartV2Screen(
         }
     }
     var removeLine by remember { mutableStateOf<CartLine?>(null) }
+    // #677: the "Huỷ sửa đơn #…?" confirm is open
+    var confirmCancelEdit by remember { mutableStateOf(false) }
+    // #677: the ⋯ menu and its "Xoá giỏ hàng" confirm
+    var moreOpen by remember { mutableStateOf(false) }
+    var confirmClearCart by remember { mutableStateOf(false) }
     // #482: product id of the line whose "Cách tính giá" sheet is open
     var pricingLineId by remember { mutableStateOf<Int?>(null) }
+    // #684: the line whose "Ghi chú món" sheet is open
+    var noteLineId by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     // iOS `Cart.validate()` copy, all problems in one alert (#448)
     val needPriceText = stringResource(R.string.v2_cart_need_price)
@@ -207,8 +239,8 @@ fun CartV2Screen(
         }
     }
     val overlapTexts = OverlapWarnings.Texts(
-        cartLine = stringResource(R.string.v2_cart_overlap_line),
-        cartLineNoOrder = stringResource(R.string.v2_cart_overlap_line_no_order),
+        cartLineOneDay = stringResource(R.string.v2_cart_overlap_one_day),
+        cartLineRange = stringResource(R.string.v2_cart_overlap_range),
         confirmLine = stringResource(R.string.v2_create_overlap_line),
         confirmLineNoOrder = stringResource(R.string.v2_create_overlap_line_no_order),
     )
@@ -236,6 +268,7 @@ fun CartV2Screen(
     val validateRentalCart = remember { ValidateRentalCartAvailability(app.container.availabilityRepository) }
     val sessionExpiredMessage = stringResource(R.string.session_expired_error)
     val availabilityFailedMessage = stringResource(R.string.availability_check_failed)
+    val conflictsLabel = stringResource(R.string.availability_conflicts)
     val validationFallbackMessage = stringResource(R.string.order_validation_fallback)
 
     // Same checks, request and messages as the review screen's submit (CartCheckoutScreen)
@@ -269,9 +302,11 @@ fun CartV2Screen(
             submitting = false
             result.onSuccess { order ->
                 submission.succeeded()
+                OrdersChanged.notifyChanged() // #674: Orders, Calendar and Overview refresh on next show
                 CartStore.clear()
                 confirmSheet = null
                 createdSheet = CreateOrderSheet.created(order.orderNumber, confirm) to order.id
+                com.anyrent.pos.print.CreatedOrderAutoPrint.run(app, order.id) // #700
             }.onFailure {
                 // The cart and the sheet stay; the next confirm retries with the same key
                 submission.failed()
@@ -282,50 +317,120 @@ fun CartV2Screen(
         }
     }
 
+    // #676 (board sua-don): "Lưu thay đổi" sheet → the review screen's update request → the order's detail
+    val editSubmission = remember { CreateOrderSubmission() }
+    var editSheet by remember { mutableStateOf<EditOrderSheet.Confirm?>(null) }
+    var saving by remember { mutableStateOf(false) }
+
+    fun saveEditedOrder() {
+        val orderId = editingOrderId ?: return
+        if (!editSubmission.begin()) return
+        saving = true
+        val number = EditOrderSheet.number(editOriginal)
+        scope.launch {
+            // Same check, request and messages as the review screen's save (CartCheckoutScreen)
+            val blocked = CartOrderSubmit.editAvailabilityError(
+                validateRentalCart, orderId, sessionExpiredMessage, availabilityFailedMessage, conflictsLabel,
+            )
+            if (blocked != null) {
+                editSubmission.failed()
+                saving = false
+                error = blocked
+                return@launch
+            }
+            val result = withContext(Dispatchers.IO) { CartOrderSubmit.update(orderId) }
+            saving = false
+            result.onSuccess { order ->
+                editSubmission.succeeded()
+                OrdersChanged.notifyChanged() // #674
+                CartStore.clear()
+                editSheet = null
+                onOrderSaved(order.id.takeIf { it > 0 } ?: orderId, number)
+            }.onFailure {
+                // The cart and the sheet stay; the next tap retries
+                editSubmission.failed()
+                error = CartOrderSubmit.errorMessage(it, validationFallbackMessage)
+            }
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().height(60.dp).padding(start = 4.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.v2_cart_back), modifier = Modifier.size(DS.Icon.Lg))
             }
-            Text(
-                stringResource(if (editingOrderId != null) R.string.v2_cart_edit_title else R.string.v2_cart_title),
-                fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
-            )
+            Column(Modifier.weight(1f)) {
+                // #676: "Sửa đơn #482913" over "Heather Robinson · Đơn thuê" while editing an order
+                val number = EditOrderSheet.number(editOriginal)
+                Text(
+                    when {
+                        editingOrderId == null -> stringResource(R.string.v2_cart_title)
+                        number != null -> stringResource(R.string.v2_cart_edit_title_number, number)
+                        else -> stringResource(R.string.v2_cart_edit_title)
+                    },
+                    // #677: while editing nothing sits right of the title, so "Sửa đơn #948372" fits on a 360dp phone
+                    fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                if (editingOrderId != null) {
+                    Text(
+                        editOrderSubtitle(customer?.displayName.orEmpty(), isSale),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
             // #640: the cart as a draft image ("Đơn nháp"), once it has lines (rent: dates chosen)
             val shareContext = LocalContext.current
-            IconButton(
-                onClick = {
-                    scope.launch {
-                        runCatching {
-                            com.anyrent.pos.ui.orders.shareOrderImage(
-                                shareContext,
-                                com.anyrent.pos.domain.orders.OrderShareModel.fromDraft(
-                                    lines = lines,
-                                    customer = customer,
-                                    isSale = isSale,
-                                    pickup = pickup.takeIf { datesChosen },
-                                    returnDate = ret.takeIf { datesChosen },
-                                    discountAmount = discountAmount,
-                                    deposit = deposit,
-                                    securityDeposit = CartStore.securityDeposit.value,
-                                    collateralDetails = CartStore.collateralDetails.value,
-                                    shop = com.anyrent.pos.ui.orders.shareShop(),
-                                    vi = shareContext.shareIsVietnamese(),
-                                ),
-                            )
-                        }.onFailure { error = it.message }
-                    }
-                },
-                enabled = lines.isNotEmpty() && (isSale || datesChosen),
-            ) {
-                Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.share_draft_action), modifier = Modifier.size(DS.Icon.Lg))
+            fun shareQuote() {
+                scope.launch {
+                    runCatching {
+                        com.anyrent.pos.ui.orders.shareOrderImage(
+                            shareContext,
+                            com.anyrent.pos.domain.orders.OrderShareModel.fromDraft(
+                                lines = lines,
+                                customer = customer,
+                                isSale = isSale,
+                                pickup = pickup.takeIf { datesChosen },
+                                returnDate = ret.takeIf { datesChosen },
+                                discountAmount = discountAmount,
+                                deposit = deposit,
+                                securityDeposit = CartStore.securityDeposit.value,
+                                collateralDetails = CartStore.collateralDetails.value,
+                                shop = com.anyrent.pos.ui.orders.shareShop(),
+                                vi = shareContext.shareIsVietnamese(),
+                            ),
+                        )
+                    }.onFailure { error = it.message }
+                }
             }
-            V2Segmented(
-                titles = listOf(stringResource(R.string.v2_cart_rent), stringResource(R.string.v2_cart_sale)),
-                selected = if (isSale) 1 else 0,
-                onSelect = { CartStore.setOrderType(if (it == 1) "SALE" else "RENT") },
-                enabled = editingOrderId == null,
-            )
+            // #677 (board gio-menu): ⋯ with "Chia sẻ báo giá" and "Xoá giỏ hàng"; none while editing an order
+            CartV2Logic.moreMenu(
+                editing = editingOrderId != null, itemCount = lines.size, isSale = isSale, datesReady = datesChosen,
+            )?.let { menu ->
+                AppOverflowMenuAnchor(
+                    contentDescription = stringResource(R.string.v2_cart_more),
+                    actions = listOf(
+                        AppMenuAction(stringResource(R.string.v2_cart_share_quote), Icons.Outlined.Share, ::shareQuote, enabled = menu.shareEnabled),
+                        AppMenuAction(
+                            stringResource(R.string.clear_cart), Icons.Outlined.DeleteOutline, { confirmClearCart = true },
+                            destructive = true, enabled = menu.clearEnabled,
+                        ),
+                    ),
+                    expanded = moreOpen,
+                    onExpandedChange = { moreOpen = it },
+                    modifier = Modifier.testTag("cart.more"),
+                    icon = Icons.Outlined.MoreHoriz,
+                    iconSize = DS.Icon.Lg,
+                    iconTint = DS.Colors.Text,
+                )
+            }
+            // While editing the type cannot change: header = back + "Sửa đơn #n" + subtitle only (#677)
+            if (editingOrderId == null) {
+                V2Segmented(
+                    titles = listOf(stringResource(R.string.v2_cart_rent), stringResource(R.string.v2_cart_sale)),
+                    selected = if (isSale) 1 else 0,
+                    onSelect = { CartStore.setOrderType(if (it == 1) "SALE" else "RENT") },
+                )
+            }
         }
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -374,8 +479,12 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
+                    onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
+                        { onOpenCalendar(c.productId, c.from.toString()) }
+                    },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
                     onOpenPricing = { pricingLineId = line.product.id },
+                    onOpenNote = { noteLineId = line.product.id },
                 )
             }
 
@@ -417,40 +526,92 @@ fun CartV2Screen(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
             )
         }
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+        // The cart button: the create / sale confirm sheet, or the "Lưu thay đổi" sheet while editing
+        fun onCta() {
+            val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
+            val messages = problems.map { problemText.getValue(it) } +
+                CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
+            if (messages.isNotEmpty()) {
+                error = messages.joinToString("\n")
+            } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.EDIT_SHEET) {
+                if (editSheet == null) {
+                    editSheet = EditOrderSheet.confirm(
+                        isSale = isSale,
+                        customerName = customer?.displayName.orEmpty(),
+                        pickup = pickup,
+                        returnDate = ret,
+                        lines = lines,
+                        total = total,
+                        original = editOriginal,
+                        deposit = deposit,
+                        securityDeposit = CartStore.securityDeposit.value,
+                    )
+                }
+            } else if (confirmSheet == null && createdSheet == null) {
+                confirmSheet = CreateOrderSheet.confirm(
+                    isSale = isSale,
+                    customerName = customer?.displayName.orEmpty(),
+                    pickup = pickup,
+                    returnDate = ret,
+                    lines = lines.map { it.product.name to it.quantity },
+                    total = total,
+                    deposit = deposit,
+                )
             }
-            AppPrimaryButton(
-                stringResource(if (isSale) R.string.v2_cart_sell_and_collect else R.string.v2_cart_create),
-                modifier = Modifier.weight(1.1f),
-                enabled = !createBlocked,
-                onClick = {
-                    val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
-                    val messages = problems.map { problemText.getValue(it) } +
-                        CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
-                    if (messages.isNotEmpty()) {
-                        error = messages.joinToString("\n")
-                    } else if (CreateOrderSheet.ctaRoute(editing = editingOrderId != null) == CreateOrderSheet.CtaRoute.PREVIEW) {
-                        onPreview()
-                    } else if (confirmSheet == null && createdSheet == null) {
-                        confirmSheet = CreateOrderSheet.confirm(
-                            isSale = isSale,
-                            customerName = customer?.displayName.orEmpty(),
-                            pickup = pickup,
-                            returnDate = ret,
-                            lines = lines.map { it.product.name to it.quantity },
-                            total = total,
-                            deposit = deposit,
-                        )
+        }
+
+        if (editingOrderId != null) {
+            // #677 (board huy-sua, option B): "Tổng đơn" over "Huỷ sửa" (outline, 1 part) + "Lưu thay đổi" (2 parts)
+            Column(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.v2_cart_total), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
+                    Text(formatMoneyVnd(total), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { confirmCancelEdit = true },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, DS.Colors.Border),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = DS.Colors.Text),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text(stringResource(R.string.v2_cart_edit_cancel), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
-                },
-            )
+                    AppPrimaryButton(
+                        stringResource(R.string.v2_cart_edit_save),
+                        modifier = Modifier.weight(2f).height(48.dp),
+                        enabled = !createBlocked,
+                        onClick = ::onCta,
+                    )
+                }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                    Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+                }
+                AppPrimaryButton(
+                    stringResource(
+                        when (EditOrderSheet.ctaLabel(editing = false, isSale = isSale)) {
+                            EditOrderSheet.CtaLabel.SAVE_CHANGES -> R.string.v2_cart_edit_save
+                            EditOrderSheet.CtaLabel.SELL_AND_COLLECT -> R.string.v2_cart_sell_and_collect
+                            EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
+                        },
+                    ),
+                    modifier = Modifier.weight(1.1f),
+                    enabled = !createBlocked,
+                    onClick = ::onCta,
+                )
+            }
         }
     }
 
@@ -509,6 +670,19 @@ fun CartV2Screen(
                     CartStore.applyLinePricing(id, type, price)
                     pricingLineId = null
                 },
+            )
+        }
+    }
+    noteLineId?.let { id ->
+        val line = lines.firstOrNull { it.product.id == id }
+        if (line == null) {
+            noteLineId = null
+        } else {
+            CartItemNoteSheet(
+                productName = line.product.name,
+                note = line.note,
+                onDismiss = { noteLineId = null },
+                onSave = { note -> CartStore.updateNote(id, note); noteLineId = null },
             )
         }
     }
@@ -572,6 +746,36 @@ fun CartV2Screen(
         )
     }
     notePreview?.let { com.anyrent.pos.ui.common.FullScreenImagePreview(model = it, onDismiss = { notePreview = null }) }
+    if (confirmClearCart) {
+        AppAlertConfirm(
+            title = stringResource(R.string.clear_cart),
+            message = stringResource(R.string.clear_cart_confirmation),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            onDismiss = { confirmClearCart = false },
+            onConfirm = {
+                confirmClearCart = false
+                // The cart and its saved draft; the screen stays, empty, as after a create (#677)
+                CartStore.clear()
+            },
+        )
+    }
+    if (confirmCancelEdit) {
+        val number = EditOrderSheet.number(editOriginal)
+        AppAlertConfirm(
+            title = number?.let { stringResource(R.string.v2_cart_edit_cancel_title, it) }
+                ?: stringResource(R.string.v2_cart_edit_cancel_title_no_number),
+            message = stringResource(R.string.v2_cart_edit_cancel_message),
+            confirmLabel = stringResource(R.string.v2_cart_edit_cancel),
+            cancelLabel = stringResource(R.string.v2_edit_confirm_keep_editing),
+            destructive = true,
+            onDismiss = { confirmCancelEdit = false },
+            onConfirm = {
+                confirmCancelEdit = false
+                CartStore.cancelEdit()?.let(onEditCancelled)
+            },
+        )
+    }
     removeLine?.let { line ->
         AppAlertConfirm(
             title = stringResource(R.string.v2_cart_remove_title),
@@ -597,6 +801,14 @@ fun CartV2Screen(
             },
             onDismiss = { confirmSheet = null },
             onConfirm = { submitOrder(confirm) },
+        )
+    }
+    editSheet?.let { confirm ->
+        EditOrderConfirmSheet(
+            confirm = confirm,
+            busy = saving,
+            onDismiss = { editSheet = null },
+            onConfirm = { saveEditedOrder() },
         )
     }
     createdSheet?.let { (created, orderId) ->
@@ -649,49 +861,48 @@ private fun ItemRow(
     line: CartLine,
     isSale: Boolean,
     available: Int?,
-    /** #518 "Hết đồ 03–05/10 · đã thuê ở đơn #482113"; replaces the shortage chip */
+    /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
     overlapText: String? = null,
+    /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
+    onOpenOverlap: (() -> Unit)? = null,
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
+    onOpenNote: () -> Unit = {},
 ) {
     val calc = CartV2Logic.calc(line, isSale)
-    val price = formatMoneyVnd(calc.unitPrice)
-    val calcText = when (val kind = calc.kind) {
-        CartLineCalc.Kind.Sale -> stringResource(R.string.v2_calc_sale, price, calc.quantity)
-        CartLineCalc.Kind.PerRental -> stringResource(R.string.v2_calc_per_rental, price, calc.quantity)
-        is CartLineCalc.Kind.PerDay -> pluralStringResource(R.plurals.v2_calc_per_day, kind.days, price, kind.days) +
-            if (calc.quantity > 1) " × ${formatQuantity(calc.quantity)}" else ""
-    }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ProductThumb(line.product.images.firstOrNull() ?: line.product.imageUrl, 56.dp, 10.dp)
+            ProductThumb(line.product.images.firstOrNull() ?: line.product.imageUrl, 64.dp, 12.dp)
+            // #684 (owner 2026-10-09, iOS itemRow): name; the blue pricing link; the "Hết hàng …" tag; last row the
+            // total and −/+. No card, and no separate "450.000/lần × 1" line: its numbers are in the link
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1)
-                }
-                Text(
-                    calcText, fontSize = DS.TextSize.Secondary,
-                    color = if (CartV2Logic.needsPrice(line, isSale)) Color(0xFFB91C1C) else DS.Colors.TextMuted,
-                )
-                val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
-                    stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
-                }
-                shortText?.let { text ->
-                    Text(
-                        text,
-                        fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2)).padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
-                }
-                // #482 (board Gio-hang): one chip with the line's pricing; it opens the "Cách tính giá" sheet
-                PricingChip(line, isSale, onOpenPricing)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) {
-                        if (isSale && available != null) {
-                            Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                        }
+                // #684: the "Hết 09/10 → 11/10 ›" tag (or the shortage chip) beside the name, on its right (owner)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
+                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
                     }
+                    shortText?.let { text ->
+                        val hint = stringResource(R.string.v2_cart_overlap_hint)
+                        Text(
+                            if (onOpenOverlap != null) "$text ›" else text,
+                            fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
+                                .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                                .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
+                        )
+                    }
+                }
+                // #482: the link opens the "Cách tính giá" sheet
+                PricingChip(line, isSale, onOpenPricing)
+                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món"
+                ItemNoteEntry(line.product.name, line.note, onOpenNote)
+                if (isSale && available != null) {
+                    Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
                 }
             }
@@ -702,30 +913,51 @@ private fun ItemRow(
 
 /** "Theo ngày · 150.000đ/ngày" (or "· Nhập giá" in blue) with a down chevron (#482, iOS `pricingChip`) */
 @Composable
-private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit) {
+private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val label = if (isSale) stringResource(R.string.v2_pricing_sale) else pricingLabel(line.pricingType)
-    val price = line.unitPrice.takeIf { it > 0 }?.let { pricingPriceText(it, line.pricingType, isSale) }
+    // #684 (Dòng gọn): the chip carries the line's numbers; a daily price over several days shows the days too
+    val days = (CartV2Logic.calc(line, isSale).kind as? CartLineCalc.Kind.PerDay)?.days?.takeIf { it > 1 }
+    val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
     val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
+    // #684: a blue link "Theo ngày · 400.000đ/ngày × 2 ngày ⌄" (15sp, no border), iOS pricingChip
     Row(
-        Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp))
-            .background(DS.Colors.Surface)
+        modifier
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClickLabel = changeLabel, onClick = onClick)
-            .heightIn(min = 36.dp)
-            .padding(start = 12.dp, end = 10.dp),
+            .heightIn(min = 32.dp)
+            .padding(end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1)
-        if (price != null) {
-            Text(" · $price", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
-        } else {
-            Text(" · " + stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Secondary,
-                fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary, maxLines = 1)
-        }
-        Spacer(Modifier.size(8.dp))
-        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.TextMuted, modifier = Modifier.size(16.dp))
+        // #684 (owner): price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày"; "Nhập giá / theo lần"
+        Text(
+            if (line.unitPrice > 0) formatMoneyVnd(line.unitPrice) else stringResource(R.string.v2_pricing_enter_price),
+            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary, maxLines = 1,
+        )
+        Text(
+            " / " + label.lowercase(java.util.Locale("vi")) + (daysText?.let { " × $it" } ?: ""),
+            fontSize = DS.TextSize.Body, color = DS.Colors.Primary, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+        )
+        Spacer(Modifier.size(4.dp))
+        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
     }
+}
+
+/** Order detail item line, same wording as the cart link: "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày" (iOS `orderItemPricing`) */
+@Composable
+internal fun orderItemPricingText(unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): String {
+    val (amount, unit) = orderItemPricingParts(unitPrice, pricingType, rentalDays, isSale)
+    return "$amount / $unit"
+}
+
+/** The same line in two parts, for the bold price on order detail (board D2) */
+@Composable
+internal fun orderItemPricingParts(unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): Pair<String, String> {
+    val type = pricingType?.takeIf { it.isNotBlank() } ?: "FIXED"
+    val label = if (isSale) stringResource(R.string.v2_pricing_sale) else pricingLabel(type)
+    val days = rentalDays.takeIf { !isSale && type.equals("DAILY", ignoreCase = true) && it > 1 }
+    val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
+    return formatMoneyVnd(unitPrice) to label.lowercase(java.util.Locale("vi")) + (daysText?.let { " × $it" } ?: "")
 }
 
 @Composable
@@ -848,6 +1080,84 @@ private fun CartPricingSheet(
                 onClick = { onApply(if (isSale) null else type, price) },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             )
+        }
+    }
+}
+
+/** #684 (canvas N1, iOS itemNoteButton): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" (2 lines) */
+@Composable
+private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Unit) {
+    val label = stringResource(R.string.v2_item_note_accessibility, productName)
+    val text = CartV2Logic.noteText(note)
+    if (text == null) {
+        Text(
+            stringResource(R.string.v2_item_note_add),
+            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569),
+            modifier = Modifier.clip(RoundedCornerShape(6.dp))
+                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                .padding(vertical = 4.dp, horizontal = 2.dp),
+        )
+    } else {
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))) { append(stringResource(R.string.v2_item_note_label)) }
+                withStyle(SpanStyle(color = Color(0xFF334155))) { append(" · $text ") }
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)) { append(stringResource(R.string.v2_item_note_edit)) }
+            },
+            fontSize = DS.TextSize.Secondary, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFF8FAFC))
+                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        )
+    }
+}
+
+/** #684 (canvas N2, iOS CartItemNoteSheet): "Ghi chú món" — title + ✕, product name, text area, "Xoá ghi chú" / "Lưu" */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
+    var text by remember { mutableStateOf(note.orEmpty()) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = DS.Colors.Surface,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.v2_item_note_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f))
+                val closeLabel = stringResource(R.string.close)
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = Color(0xFF475569), modifier = Modifier.size(18.dp)) }
+            }
+            Text(productName, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 2)
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text(stringResource(R.string.v2_item_note_placeholder)) },
+                minLines = 5,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+            Text(stringResource(R.string.v2_item_note_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!CartV2Logic.noteText(note).isNullOrEmpty()) {
+                    OutlinedButton(onClick = { onSave(null) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
+                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1.6f).height(50.dp)) {
+                    Text(stringResource(R.string.v2_item_note_save), fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

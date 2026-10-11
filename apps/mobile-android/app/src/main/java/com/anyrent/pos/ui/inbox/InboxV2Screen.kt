@@ -25,6 +25,8 @@ import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.LocalShipping
+import androidx.compose.material.icons.outlined.MarkEmailRead
+import androidx.compose.material.icons.outlined.MarkEmailUnread
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Payments
@@ -104,6 +106,9 @@ fun InboxV2Screen(
     var unreadCount by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDeleteRead by remember { mutableStateOf(false) }
+    // #751: a long press asks first instead of deleting at once
+    var pendingDelete by remember { mutableStateOf<InboxNotification?>(null) }
+    var actionsFor by remember { mutableStateOf<Int?>(null) }
     // Bumped by a reset: a page that lands after a newer reset is dropped
     var generation by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -128,10 +133,13 @@ fun InboxV2Screen(
             loading = false
             refreshing = false
             result.onSuccess { data ->
-                items = if (wanted == 1) data.items else items + data.items
+                items = if (wanted == 1) data.items else NotificationsLogic.appendPage(items, data.items)
                 hasMore = data.hasMore
                 page = wanted + 1
-                data.unreadCount?.let { unreadCount = it }
+                data.unreadCount?.let {
+                    unreadCount = it
+                    InboxUnread.set(it) // #674: the home badge follows
+                }
             }.onFailure { error = it.message }
         }
     }
@@ -214,6 +222,28 @@ fun InboxV2Screen(
                         groups.forEach { group ->
                             item(key = "day-${group.key}") { DayHeader(group) }
                             items(group.items, key = { it.id }) { item ->
+                              Box {
+                                // #767: a long press offers mark unread / read (as the iOS swipe) and delete
+                                AppOverflowMenu(
+                                    expanded = actionsFor == item.id,
+                                    onDismiss = { actionsFor = null },
+                                    actions = listOf(
+                                        AppMenuAction(
+                                            stringResource(if (item.isRead) R.string.notifications_v2_mark_unread else R.string.notifications_v2_mark_read),
+                                            if (item.isRead) Icons.Outlined.MarkEmailUnread else Icons.Outlined.MarkEmailRead,
+                                            {
+                                                scope.launch {
+                                                    withContext(Dispatchers.IO) {
+                                                        if (item.isRead) ApiParity.markNotificationUnread(item.id)
+                                                        else ApiClient.get().markNotificationRead(item.id)
+                                                    }
+                                                    load(reset = true)
+                                                }
+                                            },
+                                        ),
+                                        AppMenuAction(stringResource(R.string.delete), Icons.Outlined.DeleteSweep, { pendingDelete = item }, destructive = true),
+                                    ),
+                                )
                                 NotificationRowV2(
                                     item = item,
                                     onClick = {
@@ -221,6 +251,7 @@ fun InboxV2Screen(
                                             // Optimistic, as on iOS; the server call follows
                                             items = items.map { if (it.id == item.id) it.copy(isRead = true) else it }
                                             if (unreadCount > 0) unreadCount -= 1
+                                            InboxUnread.set(unreadCount)
                                         }
                                         scope.launch {
                                             if (!item.isRead) {
@@ -229,19 +260,32 @@ fun InboxV2Screen(
                                             item.orderId?.let(onOpenOrder)
                                         }
                                     },
-                                    onLongClick = {
-                                        scope.launch {
-                                            withContext(Dispatchers.IO) { ApiParity.deleteNotification(item.id) }
-                                            load(reset = true)
-                                        }
-                                    },
+                                    onLongClick = { actionsFor = item.id },
                                 )
+                              }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    pendingDelete?.let { target ->
+        AppAlertConfirm(
+            title = stringResource(R.string.notifications_v2_delete_one),
+            message = stringResource(R.string.notifications_v2_delete_one_confirm),
+            confirmLabel = stringResource(R.string.delete),
+            destructive = true,
+            onConfirm = {
+                pendingDelete = null
+                scope.launch {
+                    withContext(Dispatchers.IO) { ApiParity.deleteNotification(target.id) }
+                    load(reset = true)
+                }
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 
     if (confirmDeleteRead) {

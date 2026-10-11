@@ -9,8 +9,8 @@ import { withPermissions, hashPassword } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { usersQuerySchema, userCreateSchema, userUpdateSchema, handleApiError, ResponseBuilder, resolveUsersIsActiveFilter } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
-import { API, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
-import { canAccessUser, canAssignRole, isAllowedPlacement, toPublicUser } from '../../../lib/user-scope';
+import { API, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole, isOutletRole } from '@rentalshop/constants';
+import { canAccessUser, canAssignRole, isAllowedPlacement, isRoleAssignable, toPublicUser } from '../../../lib/user-scope';
 import { applyUserAccessChange, buildUserAuditContext as buildAuditContext } from '../../../lib/user-merchant-assignment';
 
 export interface UserFilters {
@@ -92,7 +92,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = q.outletId;
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (isOutletRole(user.role)) {
       // Outlet users can only see users from their assigned outlet
       searchFilters.outletId = userScope.outletId;
     } else if (isPlatformOpsRole(user.role)) {
@@ -105,7 +105,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     if (user.role === USER_ROLE.MERCHANT) {
       if (!q.role) {
         // If no specific role filter is requested, restrict to outlet-level roles only
-        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF, USER_ROLE.OUTLET_INVENTORY];
         delete searchFilters.role; // Remove single role filter since we're using roles array
         console.log('🔒 MERCHANT user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
       } else if (q.role === USER_ROLE.MERCHANT) {
@@ -122,7 +122,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
             totalPages: 0
           }
         });
-      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (isOutletRole(q.role)) {
         // Allow these specific role requests from merchant
         console.log(`✅ MERCHANT user: Allowed request for ${q.role} users`);
       }
@@ -133,7 +133,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
     if (user.role === USER_ROLE.OUTLET_ADMIN) {
       if (!q.role) {
         // If no specific role filter is requested, restrict to outlet-level roles only
-        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF];
+        searchFilters.roles = [USER_ROLE.OUTLET_ADMIN, USER_ROLE.OUTLET_STAFF, USER_ROLE.OUTLET_INVENTORY];
         delete searchFilters.role; // Remove single role filter since we're using roles array
         console.log('🔒 OUTLET_ADMIN user: Restricting to OUTLET_ADMIN and OUTLET_STAFF only');
       } else if (q.role === USER_ROLE.ADMIN || q.role === USER_ROLE.OPS || q.role === USER_ROLE.MERCHANT) {
@@ -150,7 +150,7 @@ export const GET = withPermissions(['users.view'])(async (request, { user, userS
             totalPages: 0
           }
         });
-      } else if (q.role === USER_ROLE.OUTLET_ADMIN || q.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (isOutletRole(q.role)) {
         // Allow these specific role requests from outlet admin
         console.log(`✅ OUTLET_ADMIN user: Allowed request for ${q.role} users`);
       }
@@ -226,6 +226,10 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
     if (!canAssignRole(user, parsed.data.role, null)) {
       return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
     }
+    // #682: Nhân viên kho is given only once INVENTORY_ROLE_ENABLED=true
+    if (!isRoleAssignable(parsed.data.role)) {
+      return NextResponse.json(ResponseBuilder.error('ROLE_NOT_AVAILABLE'), { status: 400 });
+    }
     const placementAllowed = await isAllowedPlacement(
       user,
       userScope,
@@ -254,7 +258,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
       // MERCHANT must have merchantId, no outletId
       merchantId = requestedMerchantId || userScope.merchantId;
       outletId = undefined;
-    } else if (parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (isOutletRole(parsed.data.role)) {
       // OUTLET users must have both merchantId and outletId
       merchantId = requestedMerchantId || userScope.merchantId;
       outletId = parsed.data.outletId || userScope.outletId;
@@ -270,7 +274,7 @@ export const POST = withPermissions(['users.manage'])(async (request, { user, us
 
     // NOTE: Only MERCHANT users need email verification
     // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
-    const isOutletUser = parsed.data.role === USER_ROLE.OUTLET_ADMIN || parsed.data.role === USER_ROLE.OUTLET_STAFF;
+    const isOutletUser = isOutletRole(parsed.data.role);
 
     const userData = {
       ...parsed.data,

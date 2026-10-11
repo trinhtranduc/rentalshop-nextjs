@@ -12,7 +12,7 @@ E2E_DATABASE_URL="${E2E_DATABASE_URL:-postgresql://postgres@127.0.0.1:54343/anyr
 # Local API.
 E2E_API_PORT="${E2E_API_PORT:-3180}"
 E2E_API_DIR="${E2E_API_DIR:-$E2E_ROOT/apps/api}"   # a prebuilt apps/api from another checkout also works
-MOBILE_FEATURES="${MOBILE_FEATURES:-newOrders,newOrderDetail,newProducts,newCalendar,newOverview,newSettings}"
+MOBILE_FEATURES="${MOBILE_FEATURES:-newOrders,newOrderDetail,newProducts,newCalendar,newOverview,newSettings,newAuth,newCustomers}"  # matches dev-api's default (unset = all on, apps/api/lib/mobile-app-config.ts)
 
 # node_modules used by seed-local.sh (prisma CLI, @prisma/client, bcryptjs). Point it at another checkout
 # with the same prisma/schema.prisma when this one has no node_modules.
@@ -31,18 +31,22 @@ E2E_MERCHANT_EMAIL="${E2E_MERCHANT_EMAIL:-merchant1@example.com}"
 E2E_MERCHANT_PASSWORD="${E2E_MERCHANT_PASSWORD:-merchant123}"
 E2E_STAFF_EMAIL="${E2E_STAFF_EMAIL:-staff.outlet1@example.com}"
 E2E_STAFF_PASSWORD="${E2E_STAFF_PASSWORD:-staff123}"
-E2E_ACCOUNT="${E2E_ACCOUNT:-merchant}"   # merchant | staff
+# #682 Nhân viên kho (OUTLET_INVENTORY)
+E2E_INVENTORY_EMAIL="${E2E_INVENTORY_EMAIL:-inventory.outlet1@example.com}"
+E2E_INVENTORY_PASSWORD="${E2E_INVENTORY_PASSWORD:-inventory123}"
+E2E_ACCOUNT="${E2E_ACCOUNT:-merchant}"   # merchant | staff | inventory
 
 export E2E_ROOT E2E_DATABASE_URL E2E_API_PORT E2E_API_DIR MOBILE_FEATURES E2E_NODE_MODULES \
   E2E_SIMULATOR E2E_AVD E2E_AVD_PORT E2E_OUT \
-  E2E_MERCHANT_EMAIL E2E_MERCHANT_PASSWORD E2E_STAFF_EMAIL E2E_STAFF_PASSWORD E2E_ACCOUNT
+  E2E_MERCHANT_EMAIL E2E_MERCHANT_PASSWORD E2E_STAFF_EMAIL E2E_STAFF_PASSWORD E2E_INVENTORY_EMAIL E2E_INVENTORY_PASSWORD E2E_ACCOUNT
 
 # Credentials for the selected account.
 e2e_account_credentials() {
   case "$E2E_ACCOUNT" in
     merchant) E2E_EMAIL="$E2E_MERCHANT_EMAIL"; E2E_PASSWORD="$E2E_MERCHANT_PASSWORD" ;;
     staff) E2E_EMAIL="$E2E_STAFF_EMAIL"; E2E_PASSWORD="$E2E_STAFF_PASSWORD" ;;
-    *) echo "E2E_ACCOUNT must be merchant or staff (got '$E2E_ACCOUNT')" >&2; return 1 ;;
+    inventory) E2E_EMAIL="$E2E_INVENTORY_EMAIL"; E2E_PASSWORD="$E2E_INVENTORY_PASSWORD" ;;
+    *) echo "E2E_ACCOUNT must be merchant, staff or inventory (got '$E2E_ACCOUNT')" >&2; return 1 ;;
   esac
   export E2E_EMAIL E2E_PASSWORD
 }

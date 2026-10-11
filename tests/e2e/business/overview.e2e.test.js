@@ -15,8 +15,7 @@ const {
   watchOverview,
   overviewNumbers,
   pick,
-  risingPrice,
-  knownBug
+  risingPrice
 } = require('../helpers/api');
 
 /** percentChange of packages/utils/src/analytics/period-report.ts */
@@ -130,9 +129,9 @@ describeE2E('BF-OVR Overview agrees with itself and with the orders', () => {
     expect(orders).toHaveLength(3); // the list still shows the cancelled one
   });
 
-  // Suspected bug #506: period topCustomers[].totalSpent sums revenue events WITH
-  // collateral (securityDeposit at pickup), so a customer holding collateral looks like a bigger spender.
-  knownBug('#506', 'BF-OVR-04 top customers: spent = rent paid, collateral is not spending', async () => {
+  // #506: period topCustomers[].totalSpent used to sum revenue events WITH collateral (securityDeposit at pickup),
+  // so a customer holding collateral looked like a bigger spender.
+  test('BF-OVR-04 top customers: spent = rent paid, collateral is not spending (#506)', async () => {
     const A = risingPrice();
     const S = 5000000;
     const p = await s.createProduct({ kind: 'FIXED', price: A, stock: 1 });

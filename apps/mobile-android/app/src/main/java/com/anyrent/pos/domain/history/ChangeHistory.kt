@@ -164,6 +164,8 @@ object ChangeHistory {
         val refundKind: String = "Hoàn tiền",
         /** The actor's name for OUTLET_STAFF / OUTLET_ADMIN */
         val staffName: String = "%1\$s (nhân viên)",
+        /** Footer actor: "bởi Lan Anh (nhân viên)" */
+        val actorBy: String = "bởi %1\$s",
         val perDay: String = "/ngày",
         val perRental: String = "/lần",
         val perHour: String = "/giờ",
@@ -193,8 +195,11 @@ object ChangeHistory {
         val initials: String,
         val title: String,
         val lines: List<Line>,
+        /** "bởi Nguyễn An (nhân viên) · 15:10", or the time alone when nobody is known */
         val footer: String,
         val tone: Tone = Tone.SLATE,
+        /** Where the actor name sits in [footer] (drawn bold, ink); null without a known actor */
+        val footerName: IntRange? = null,
     )
 
     fun tone(kind: String): Tone = when (kind) {
@@ -238,14 +243,18 @@ object ChangeHistory {
         return if (day == today) texts.todayHeader.format(label) else label
     }
 
-    fun row(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): Row = Row(
-        id = entry.id,
-        initials = initials(entry.actor?.name),
-        title = title(entry, texts),
-        lines = lines(entry, texts, zone),
-        footer = footer(entry, texts, zone),
-        tone = tone(entry.kind),
-    )
+    fun row(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): Row {
+        val footer = footerParts(entry, texts, zone)
+        return Row(
+            id = entry.id,
+            initials = initials(entry.actor?.name),
+            title = title(entry, texts),
+            lines = lines(entry, texts, zone),
+            footer = footer.text,
+            tone = tone(entry.kind),
+            footerName = footer.name,
+        )
+    }
 
     fun title(entry: Entry, texts: Texts = Texts()): String {
         if (entry.kind == "ORDER_PAYMENT" && entry.changes.any { it.field == "paymentRefunded" }) return texts.refundKind
@@ -258,17 +267,43 @@ object ChangeHistory {
         return words.take(2).joinToString("") { it.first().uppercase() }.ifEmpty { "?" }
     }
 
-    /** "15:10 · Nguyễn An (nhân viên)"; the time alone when nobody is known */
-    fun footer(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): String {
+    /** Footer text and the range of the actor name in it (the only bold run) */
+    data class Footer(val text: String, val name: IntRange?)
+
+    /** "bởi Nguyễn An (nhân viên) · 15:10"; the time alone when nobody is known */
+    fun footer(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): String = footerParts(entry, texts, zone).text
+
+    fun footerParts(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): Footer {
         val time = entry.at?.let { hhmm(it, zone) }
-        val actor = entry.actor
-        val name = actor?.name?.takeIf { it.isNotBlank() }?.let { n ->
-            if (isStaff(actor?.role)) texts.staffName.format(n) else n
+        val name = entry.actor?.name?.trim()?.takeIf { it.isNotEmpty() }
+            ?: return Footer(time.orEmpty(), null)
+        var (head, tail) = splitFormat(texts.actorBy)
+        if (isStaff(entry.actor?.role)) {
+            val (staffHead, staffTail) = splitFormat(texts.staffName)
+            head += staffHead
+            tail = staffTail + tail
         }
-        return listOfNotNull(time, name).joinToString(" · ")
+        val text = head + name + tail + (time?.let { " · $it" } ?: "")
+        return Footer(text, head.length until head.length + name.length)
     }
 
-    fun isStaff(role: String?): Boolean = role.equals("OUTLET_STAFF", true) || role.equals("OUTLET_ADMIN", true)
+    /** "bởi %1\$s" → ("bởi ", ""); a format without the placeholder keeps the whole text before the name */
+    fun splitFormat(format: String): Pair<String, String> {
+        val at = format.indexOf("%1\$s").takeIf { it >= 0 } ?: format.indexOf("%s").takeIf { it >= 0 }
+            ?: return format to ""
+        val length = if (format.startsWith("%1\$s", at)) 4 else 2
+        return format.substring(0, at) to format.substring(at + length)
+    }
+
+    /**
+     * #670: change history is for ADMIN, OPS, MERCHANT and OUTLET_ADMIN; OUTLET_STAFF (and an unknown role) gets
+     * neither the entry points nor the changes request (the API answers 403). Same rule as iOS `ChangeHistoryLogic.canView`
+     */
+    fun canView(role: String?): Boolean = role?.trim()?.uppercase() in setOf("ADMIN", "OPS", "MERCHANT", "OUTLET_ADMIN")
+
+    /** #677: only OUTLET_STAFF is "(nhân viên)"; an OUTLET_ADMIN manages the outlet (iOS `ChangeHistoryLogic.isStaff`) */
+    fun isStaff(role: String?): Boolean =
+        role?.trim()?.uppercase() in setOf("OUTLET_STAFF", "OUTLET_INVENTORY") // #682: Nhân viên kho is staff too
 
     fun lines(entry: Entry, texts: Texts = Texts(), zone: ZoneId = shopZone): List<Line> {
         val out = mutableListOf<Line>()
@@ -296,8 +331,13 @@ object ChangeHistory {
             )
             if (parts.isNotEmpty()) out += Line(null, null, null, capitalize(parts.joinToString(", ")))
         }
-        return out
+        // #677: a field empty before and after ("Thế chân: —") did not change: no line (iOS `isEmptyChange`)
+        return out.filterNot { isEmptyChange(it, texts) }
     }
+
+    /** A labelled line whose old and new values are both empty ("—") */
+    fun isEmptyChange(line: Line, texts: Texts = Texts()): Boolean =
+        line.label != null && line.text == null && (line.to ?: texts.empty) == texts.empty && (line.from ?: texts.empty) == texts.empty
 
     private fun imagesText(added: Int, removed: Int, texts: Texts): String? {
         val parts = listOfNotNull(
@@ -439,14 +479,14 @@ object ChangeHistory {
         "returnedAt" to "Đã trả",
         "totalAmount" to "Tổng đơn",
         "depositAmount" to "Cọc trả trước",
-        "securityDeposit" to "Tiền thế chấp",
+        "securityDeposit" to "Tiền thế chân",
         "discountType" to "Kiểu giảm giá",
         "discountValue" to "Mức giảm",
         "discountAmount" to "Giảm giá",
         "damageFee" to "Phí hư hỏng",
         "lateFee" to "Phí trả trễ",
-        "collateralType" to "Loại thế chấp",
-        "collateralDetails" to "Thế chấp",
+        "collateralType" to "Loại thế chân",
+        "collateralDetails" to "Thế chân",
         "pickupNotes" to "Ghi chú khi giao",
         "returnNotes" to "Ghi chú khi trả",
         "damageNotes" to "Ghi chú hư hỏng",

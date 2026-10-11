@@ -2,7 +2,15 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+
+/** Merchant whose categories the caller manages: its own, or its outlet's (outlet users, #682) */
+async function resolveCategoryMerchantId(userScope: { merchantId?: number; outletId?: number }): Promise<number | undefined> {
+  if (userScope.merchantId) return userScope.merchantId;
+  if (!userScope.outletId) return undefined;
+  const outlet = await db.outlets.findById(userScope.outletId);
+  return outlet?.merchantId ?? undefined;
+}
 
 /**
  * GET /api/categories/[id]
@@ -30,7 +38,7 @@ export async function GET(
     
     if (user.role === USER_ROLE.MERCHANT && userScope.merchantId) {
       where.merchantId = userScope.merchantId;
-    } else if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) && userScope.outletId) {
+    } else if (isOutletRole(user.role) && userScope.outletId) {
       // Find outlet by id to get merchant
       const outlet = await db.outlets.findById(userScope.outletId);
       if (outlet) {
@@ -103,11 +111,12 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const categoryId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_INVENTORY])(async (request: NextRequest, { user, userScope }) => {
     try {
 
-    // Check if user can manage categories
-    if (!userScope.merchantId) {
+    // #682: Nhân viên kho manages its merchant's categories; its merchant comes from its outlet if not in scope
+    const merchantId = await resolveCategoryMerchantId(userScope);
+    if (!merchantId) {
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
@@ -135,7 +144,7 @@ export async function PUT(
     // Find category by id and verify ownership
     const existingCategory = await db.categories.findFirst({
       id: categoryId,
-      merchantId: userScope.merchantId
+      merchantId
     });
 
     if (!existingCategory) {
@@ -156,7 +165,7 @@ export async function PUT(
     // Check if new name conflicts with existing category (excluding current one)
     const nameConflict = await db.categories.findFirst({
       name: name.trim(),
-      merchantId: userScope.merchantId,
+      merchantId,
       id: { not: categoryId }
     });
 
@@ -223,11 +232,12 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const categoryId = parseInt(resolvedParams.id);
   
-  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT])(async (request: NextRequest, { user, userScope }) => {
+  return withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.MERCHANT, USER_ROLE.OUTLET_INVENTORY])(async (request: NextRequest, { user, userScope }) => {
     try {
 
-    // Check if user can manage categories
-    if (!userScope.merchantId) {
+    // #682: Nhân viên kho manages its merchant's categories; its merchant comes from its outlet if not in scope
+    const merchantId = await resolveCategoryMerchantId(userScope);
+    if (!merchantId) {
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_ACCESS_REQUIRED'),
         { status: API.STATUS.FORBIDDEN }
@@ -244,7 +254,7 @@ export async function DELETE(
     // Find category by id and verify ownership
     const existingCategory = await db.categories.findFirst({
       id: categoryId,
-      merchantId: userScope.merchantId
+      merchantId
     });
 
     if (!existingCategory) {

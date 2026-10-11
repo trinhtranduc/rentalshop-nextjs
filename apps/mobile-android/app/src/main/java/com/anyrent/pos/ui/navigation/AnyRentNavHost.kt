@@ -93,9 +93,11 @@ import com.anyrent.pos.ui.orders.FindOrderScreen
 import com.anyrent.pos.ui.orders.OrderDetailScreen
 import com.anyrent.pos.ui.orders.OrdersScreen
 import com.anyrent.pos.domain.overview.OverviewLinks
+import com.anyrent.pos.domain.overview.OverviewRelatedKind
 import com.anyrent.pos.ui.overview.OverviewScreen
 import com.anyrent.pos.ui.overview.v2.OverviewV2Screen
 import com.anyrent.pos.ui.overview.v2.NotPickedUpScreen
+import com.anyrent.pos.ui.overview.v2.OverviewRelatedScreen
 import com.anyrent.pos.ui.overview.v2.OverviewTopAllScreen
 import java.time.LocalDate
 import com.anyrent.pos.domain.overview.DayRange
@@ -138,6 +140,8 @@ object Routes {
     const val RentedOut = "rented-out"
     // #496: "Chưa lấy đồ" list of the redesigned overview (past pickup day first)
     const val NotPickedUp = "not-picked-up"
+    // #722: "Xem các đơn liên quan" of an overview figure ([OverviewRelatedKind.key]), rows add up to the figure
+    const val OverviewRelated = "overview-related/{kind}/{startDate}/{endDate}"
     // #633: "Xem tất cả" of the overview's Top sản phẩm / Top khách hàng
     const val OverviewTopAll = "overview-top/{kind}/{startDate}/{endDate}"
     const val Cart = "cart"
@@ -154,9 +158,8 @@ object Routes {
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
     // #642 "Lịch trống" month screen opened from the new product detail (the old availability route stays)
-    const val ProductCalendar = "product-calendar/{productId}"
+    const val ProductCalendar = "product-calendar/{productId}?day={day}"
     const val CartV2 = "cart-v2"
-    const val CartV2Preview = "cart-v2-preview"
     // #387 redesigned customer detail (flag newCustomers)
     const val CustomerDetailV2 = "customer-v2/{customerId}"
     const val CustomerEditV2 = "customer-v2-edit/{customerId}"
@@ -167,13 +170,14 @@ object Routes {
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
     fun analyticsOrders(entityType: String, entityId: Int, start: String, end: String) =
         "analytics-orders/$entityType/$entityId?start=$start&end=$end"
+    fun overviewRelated(kind: String, startDate: String, endDate: String) = "overview-related/$kind/$startDate/$endDate"
     fun overviewStatusOrders(kind: String, startDate: String, endDate: String) =
         "overview-orders/$kind/$startDate/$endDate"
     fun overviewTopAll(kind: String, startDate: String, endDate: String) =
         "overview-top/$kind/$startDate/$endDate"
     fun productAvailability(id: Int) = "product-availability/$id"
     fun productDetailV2(id: Int) = "product-v2/$id"
-    fun productCalendar(id: Int) = "product-calendar/$id"
+    fun productCalendar(id: Int, day: String? = null) = if (day == null) "product-calendar/$id" else "product-calendar/$id?day=$day"
     fun customerDetailV2(id: Int) = "customer-v2/$id"
     fun customerEditV2(id: Int) = "customer-v2-edit/$id"
     fun changeHistory(target: ChangeHistoryTarget, id: Int, subtitle: String) =
@@ -443,6 +447,23 @@ fun AnyRentNavHost(
                 onBack = { rootNavController.popBackStack() },
             )
         }
+        composable(
+            Routes.OverviewRelated,
+            arguments = listOf(
+                navArgument("kind") { type = NavType.StringType },
+                navArgument("startDate") { type = NavType.StringType },
+                navArgument("endDate") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val kind = OverviewRelatedKind.from(entry.arguments?.getString("kind")) ?: return@composable
+            OverviewRelatedScreen(
+                kind = kind,
+                startDate = entry.arguments?.getString("startDate").orEmpty(),
+                endDate = entry.arguments?.getString("endDate").orEmpty(),
+                onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                onBack = { rootNavController.popBackStack() },
+            )
+        }
         composable(Routes.NotPickedUp) {
             NotPickedUpScreen(
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
@@ -483,12 +504,16 @@ fun AnyRentNavHost(
         }
         composable(
             Routes.ProductCalendar,
-            arguments = listOf(navArgument("productId") { type = NavType.IntType }),
+            arguments = listOf(
+                navArgument("productId") { type = NavType.IntType },
+                navArgument("day") { type = NavType.StringType; nullable = true; defaultValue = null },
+            ),
         ) { entry ->
             ProductCalendarScreen(
                 productId = entry.arguments?.getInt("productId") ?: 0,
                 onBack = { rootNavController.popBackStack() },
                 onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                initialDay = entry.arguments?.getString("day")?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() },
             )
         }
         composable(
@@ -510,6 +535,7 @@ fun AnyRentNavHost(
         composable(Routes.CartV2) {
             CartV2Screen(
                 onBack = { rootNavController.popBackStack() },
+                onOpenCalendar = { id, day -> rootNavController.navigate(Routes.productCalendar(id, day)) },
                 onAddItems = {
                     // #433: the product list on Home, not the screen that opened the cart (e.g. a customer)
                     val backStack = rootNavController.currentBackStack.value.map { it.destination.route }
@@ -521,25 +547,26 @@ fun AnyRentNavHost(
                         rootNavController.popBackStack(target, inclusive = false)
                     }
                 },
-                onPreview = { rootNavController.navigate(Routes.CartV2Preview) { launchSingleTop = true } },
                 // #476 "Xem đơn": the new order's detail in place of the (now empty) cart
                 onOpenOrder = { id ->
                     rootNavController.navigate(Routes.orderDetail(id)) {
                         popUpTo(Routes.CartV2) { inclusive = true }
                     }
                 },
-            )
-        }
-        composable(Routes.CartV2Preview) {
-            // Existing preview logic with the iOS review copy and confirm sheet (#448)
-            CartCheckoutScreen(
-                previewMode = true,
-                reviewV2 = true,
-                onBack = { rootNavController.popBackStack() },
-                onPreview = {},
-                onCreated = {
-                    rootNavController.popBackStack(Routes.CartV2, inclusive = true)
-                    MainTabRouter.openOrdersList()
+                // #676: the saved order's detail (loaded fresh) in place of the cart, with "Đã lưu đơn #…"
+                onOrderSaved = { id, number ->
+                    val message = number?.let { context.getString(R.string.v2_edit_saved, it) }
+                        ?: context.getString(R.string.v2_edit_saved_no_number)
+                    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+                    rootNavController.navigate(Routes.orderDetail(id)) {
+                        popUpTo(Routes.CartV2) { inclusive = true }
+                    }
+                },
+                // #677 "Huỷ sửa": the order's detail again (loaded fresh) in place of the now empty cart
+                onEditCancelled = { id ->
+                    rootNavController.navigate(Routes.orderDetail(id)) {
+                        popUpTo(Routes.CartV2) { inclusive = true }
+                    }
                 },
             )
         }
@@ -859,6 +886,7 @@ private fun MainTabs(
                 } else {
                     HomeScreen(
                         onOpenCart = { rootNavController.navigate(Routes.Cart) },
+                        onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
                         onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                         onCheckProductAvailability = { id ->
                             rootNavController.navigate(Routes.productAvailability(id))
@@ -894,12 +922,12 @@ private fun MainTabs(
             val features by FeatureFlags.enabled.collectAsState()
             if (MobileFeature.NEW_OVERVIEW in features) {
                 OverviewV2Screen(
-                    onOpenList = { kind, start, end -> rootNavController.navigate(Routes.overviewStatusOrders(kind, start, end)) },
                     onOpenProduct = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("product", id, start, end)) },
                     onOpenCustomer = { id, start, end -> rootNavController.navigate(Routes.analyticsOrders("customer", id, start, end)) },
                     onOpenTopAll = { kind, start, end -> rootNavController.navigate(Routes.overviewTopAll(kind, start, end)) },
                     onOpenRentedOut = { rootNavController.navigate(Routes.RentedOut) { launchSingleTop = true } },
                     onOpenNotPickedUp = { rootNavController.navigate(Routes.NotPickedUp) { launchSingleTop = true } },
+                    onOpenRelated = { kind, start, end -> rootNavController.navigate(Routes.overviewRelated(kind, start, end)) },
                     // #496: "Việc hôm nay" rows open the Orders tab, like tapping the tab
                     onOpenOrdersTab = { MainTabRouter.openOrdersList(refresh = false) },
                 )

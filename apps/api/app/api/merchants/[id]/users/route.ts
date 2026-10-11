@@ -3,7 +3,8 @@ import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess, hashPassword } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, userCreateSchema } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { canAssignRole, isRoleAssignable } from '../../../../../lib/user-scope';
 
 /**
  * GET /api/merchants/[id]/users
@@ -185,6 +186,15 @@ export async function POST(
       
       const { email, phone, role, outletId, password } = parsed.data;
 
+      // Only roles the caller may give (#682: this route skipped the check, so a merchant could create any role)
+      const newRole = role || USER_ROLE.OUTLET_STAFF;
+      if (!canAssignRole(user, newRole, null)) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+      if (!isRoleAssignable(newRole)) {
+        return NextResponse.json(ResponseBuilder.error('ROLE_NOT_AVAILABLE'), { status: 400 });
+      }
+
       // For OUTLET_ADMIN, validate they can only create users for their outlet
       if (user.role === USER_ROLE.OUTLET_ADMIN && outletId && outletId !== userScope.outletId) {
         console.log('❌ Outlet admin trying to create user for different outlet:', {
@@ -233,7 +243,7 @@ export async function POST(
 
       // NOTE: Only MERCHANT users need email verification
       // OUTLET_ADMIN and OUTLET_STAFF can use any email without verification
-      const isOutletUser = role === USER_ROLE.OUTLET_ADMIN || role === USER_ROLE.OUTLET_STAFF;
+      const isOutletUser = isOutletRole(role);
 
       // Prepare user data with hashed password (same as /api/users)
       const userData = {

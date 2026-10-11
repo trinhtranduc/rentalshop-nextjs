@@ -128,13 +128,15 @@ export const UserForm: React.FC<UserFormProps> = ({
     (currentUser?.role === 'ADMIN' ||
       currentUser?.role === 'MERCHANT' ||
       currentUser?.role === 'OUTLET_ADMIN' ||
-      currentUser?.role === 'OUTLET_STAFF');
+      currentUser?.role === 'OUTLET_STAFF' ||
+      currentUser?.role === 'OUTLET_INVENTORY');
   const showOutletField =
     !isArticleRole &&
     (currentUser?.role === 'ADMIN' ||
       currentUser?.role === 'MERCHANT' ||
       currentUser?.role === 'OUTLET_ADMIN' ||
-      currentUser?.role === 'OUTLET_STAFF');
+      currentUser?.role === 'OUTLET_STAFF' ||
+      currentUser?.role === 'OUTLET_INVENTORY');
 
   // Search merchants function for dynamic search (admin only)
   const searchMerchants = useCallback(async (query: string): Promise<Array<{ value: string; label: string; description?: string }>> => {
@@ -191,7 +193,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       
       // Ensure role is properly typed
       const userRole = user.role as UserRole;
-      const validRoles: UserRole[] = ['ADMIN', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'];
+      const validRoles: UserRole[] = ['ADMIN', 'ARTICLE', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
       const role = validRoles.includes(userRole) ? userRole : 'OUTLET_STAFF';
       
       // Combine firstName and lastName into name field
@@ -657,7 +659,7 @@ export const UserForm: React.FC<UserFormProps> = ({
         className={
           isPage
             ? 'sticky bottom-0 z-20 flex flex-wrap items-center justify-end gap-3 rounded-xl border border-gray-200 bg-white/95 px-4 py-3 backdrop-blur'
-            : 'flex justify-end gap-3 mt-6 pt-4 border-t'
+            : 'flex justify-end gap-3 mt-6 pt-4 border-t max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-bg-card max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button]:flex-1'
         }
       >
         <Button

@@ -130,10 +130,19 @@ export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
   'OUTLET_STAFF': [
     'outlet.view',          // Must view own outlet
     'products.view',        // Must view products to check availability
-    'products.create',      // May add products at outlet (no update / delete / import)
-    // ❌ NO products.update — staff cannot edit existing products
+    // ❌ NO products.create (#825, owner 2026-10-11), NO products.update — staff cannot add or edit products
     'orders.view',          // Must view orders to process them
     'customers.view',       // Must view customers for order management
+  ],
+
+  // #682 Nhân viên kho: staff critical keys + product management
+  'OUTLET_INVENTORY': [
+    'outlet.view',
+    'products.view',
+    'products.create',
+    'products.manage',      // ✅ Critical: manages products and categories (the point of the role)
+    'orders.view',
+    'customers.view',
   ]
 };
 
@@ -230,7 +239,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   'OUTLET_STAFF': [
     'outlet.view',
     'products.view', // ❌ NO products.export
-    'products.create', // May create; ❌ NO products.update (cannot edit existing products)
+    // ❌ NO products.create (#825, owner 2026-10-11), NO products.update: staff cannot add or edit products
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
     'customers.view', 'customers.manage', // ❌ NO customers.export
     'analytics.view.dashboard',          // ✅ Daily/today-metrics (dashboard only)
@@ -242,5 +251,21 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'loyalty.view'
     // ❌ NO billing.manage - staff cannot modify subscription
     // ❌ NO bankAccounts permissions - staff cannot see bank accounts
+  ],
+  // #682 Nhân viên kho: exactly OUTLET_STAFF, plus full product and category management (prices, cost,
+  // delete, import, export). Money stays hidden like staff: no revenue / orders analytics, no order delete.
+  'OUTLET_INVENTORY': [
+    'outlet.view',
+    'products.view',
+    'products.create',
+    'products.update',
+    'products.manage',
+    'products.export',
+    'orders.create', 'orders.view', 'orders.update',
+    'customers.view', 'customers.manage',
+    'analytics.view.dashboard',
+    'analytics.view.revenue.daily',
+    'billing.view',
+    'loyalty.view'
   ]
 };

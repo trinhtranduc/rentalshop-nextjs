@@ -14,7 +14,7 @@ import {
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useLocale } from 'next-intl';
-import { formatPhoneNumber, formatFullDateByLocale, formatDateTimeByLocale } from '@rentalshop/utils';
+import { formatPhoneNumber, formatFullDateByLocale, formatDateTimeByLocale, formatInShopZone } from '@rentalshop/utils';
 import { ChevronDown, Copy, Gift } from 'lucide-react';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
@@ -29,9 +29,12 @@ interface OrderTableProps {
   sortOrder?: 'asc' | 'desc';
   onSort?: (column: string) => void;
   showMerchant?: boolean; // ⭐ Show merchant column for admin view
-  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'; // ⭐ User role for permission checks
+  userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY'; // ⭐ User role for permission checks
   hideCopyPhone?: boolean; // ⭐ Hide copy phone button
 }
+
+const VN_DAY: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+const VN_TIME: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
 
 export const OrderTable = React.memo(function OrderTable({ 
   orders, 
@@ -88,7 +91,7 @@ export const OrderTable = React.memo(function OrderTable({
   }, [selectedOrders]);
 
   // Check if user can delete (not OUTLET_STAFF)
-  const canDelete = userRole !== 'OUTLET_STAFF';
+  const canDelete = userRole !== 'OUTLET_STAFF' && userRole !== 'OUTLET_INVENTORY';
   
   // Check if user is ADMIN (can delete any order)
   const isAdmin = userRole === 'ADMIN';
@@ -103,7 +106,7 @@ export const OrderTable = React.memo(function OrderTable({
   React.useEffect(() => {
     if (orders.length > 0) {
       console.log('📋 OrderTable - Order statuses:', orders.map(o => {
-        const canDelete = userRole !== 'OUTLET_STAFF' && (isAdmin || o.status === 'CANCELLED');
+        const canDelete = userRole !== 'OUTLET_STAFF' && userRole !== 'OUTLET_INVENTORY' && (isAdmin || o.status === 'CANCELLED');
         return { 
           orderNumber: o.orderNumber, 
           status: o.status,
@@ -151,13 +154,24 @@ export const OrderTable = React.memo(function OrderTable({
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return '—';
     // Use the new date utility for consistent formatting (date only for pickup/return dates)
-    return formatFullDateByLocale(dateString, locale);
+    // On a phone (< 768 px) show the Vietnam day as dd/MM/yyyy; from 768 px the locale format is unchanged
+    return (
+      <>
+        <span className="md:hidden">{formatInShopZone(dateString, 'vi', VN_DAY)}</span>
+        <span className="max-md:hidden">{formatFullDateByLocale(dateString, locale)}</span>
+      </>
+    );
   };
   
   // Format date with time for createdAt
   const formatDateTime = (dateString: string | Date | undefined) => {
     if (!dateString) return '—';
-    return formatDateTimeByLocale(dateString, locale);
+    return (
+      <>
+        <span className="md:hidden">{formatInShopZone(dateString, 'vi', VN_DAY)} {formatInShopZone(dateString, 'vi', VN_TIME)}</span>
+        <span className="max-md:hidden">{formatDateTimeByLocale(dateString, locale)}</span>
+      </>
+    );
   };
 
   const getOrderIcon = () => {
@@ -203,7 +217,7 @@ export const OrderTable = React.memo(function OrderTable({
         </div>
       )}
       <div className="overflow-x-auto overflow-y-auto flex-1 h-full">
-        <table className="w-full min-w-[800px]">
+        <table className="table-cards w-full md:min-w-[800px]">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
@@ -213,7 +227,8 @@ export const OrderTable = React.memo(function OrderTable({
               {/* Select All Checkbox */}
               {onSelectionChange && (
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">
-                  <input
+                  <label className="md:contents">
+                    <input
                     type="checkbox"
                     checked={allSelected}
                     ref={(input) => {
@@ -223,6 +238,7 @@ export const OrderTable = React.memo(function OrderTable({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                     title={allSelected ? t('actions.deselectAll') || 'Deselect all' : t('actions.selectAll') || 'Select all'}
                   />
+                  </label>
                 </th>
               )}
               <th 
@@ -321,16 +337,18 @@ export const OrderTable = React.memo(function OrderTable({
                 {/* Checkbox */}
                 {onSelectionChange && (
                   <td className="px-3 py-3 whitespace-nowrap">
-                    <input
+                    <label className="md:contents">
+                      <input
                       type="checkbox"
                       checked={orderIsSelected}
                       onChange={() => handleToggleSelect(order.id)}
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
+                    </label>
                   </td>
                 )}
                 {/* Order Number + type (type had its own column; merged to keep the table within the page, #350) */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-primary>
                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
                     {order.orderNumber}
                     {((order as any).loyaltyPointsRedeemed > 0 || (order as any).loyaltyPointsEarned > 0) && (
@@ -342,12 +360,12 @@ export const OrderTable = React.memo(function OrderTable({
                 
                 
                 {/* Status */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-label={t('status.label')}>
                   {getStatusBadge(order.status)}
                 </td>
                 
                 {/* Customer */}
-                <td className="px-3 py-3 min-w-[160px] max-w-[220px]">
+                <td className="px-3 py-3 md:min-w-[160px] max-w-[220px]" data-label={t('customer.label')}>
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white truncate" title={order.customerName || undefined}>
                       {order.customerName || '—'}
@@ -372,7 +390,7 @@ export const OrderTable = React.memo(function OrderTable({
                 
                 {/* Merchant */}
                 {showMerchant && (
-                  <td className="px-3 py-3 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap" data-label="Merchant">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900 dark:text-white">
                         {order.merchantName || '—'}
@@ -385,7 +403,7 @@ export const OrderTable = React.memo(function OrderTable({
                 )}
                 
                 {/* Amount */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-label={t('amount.total')}>
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">{formatMoney(order.totalAmount)}</div>
                     {order.depositAmount > 0 && (
@@ -397,7 +415,7 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Pickup Date */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-label={t('dates.pickupDate')}>
                   <div className="text-sm text-gray-900 dark:text-white">
                     {formatDate(order.pickupPlanAt)}
                   </div>
@@ -409,12 +427,12 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Created Date */}
-                <td className="hidden min-[1400px]:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className="hidden min-[1400px]:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" data-label={t('dates.createdDate')}>
                   {formatDateTime(order.createdAt)}
                 </td>
                 
                 {/* Actions - View & Edit outside (icon + label), Delete in dropdown */}
-                <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium" data-actions>
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       variant="ghost"
@@ -437,7 +455,7 @@ export const OrderTable = React.memo(function OrderTable({
                     >
                       <Edit className="h-4 w-4 shrink-0" />
                     </Button>
-                    {(userRole !== 'OUTLET_STAFF' && (isAdmin || order.status === 'CANCELLED')) ? (
+                    {(userRole !== 'OUTLET_STAFF' && userRole !== 'OUTLET_INVENTORY' && (isAdmin || order.status === 'CANCELLED')) ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 rounded-md border border-gray-200 p-0 shrink-0 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800" title={t('actions.delete')}>
@@ -462,7 +480,7 @@ export const OrderTable = React.memo(function OrderTable({
                   </div>
                 </td>
               </tr>
-              <tr id={informationId} hidden={!isExpanded} className="bg-gray-50 dark:bg-gray-800/50">
+              <tr id={informationId} hidden={!isExpanded} className="bg-gray-50 dark:bg-gray-800/50 [&[hidden]]:hidden">
                 {isExpanded && (
                   <td colSpan={8 + (onSelectionChange ? 1 : 0) + (showMerchant ? 1 : 0)} className="px-6 py-5">
                     <div className="space-y-4">
@@ -483,7 +501,7 @@ export const OrderTable = React.memo(function OrderTable({
                           ] : []),
                           [t('dates.createdDate'), formatDateTime(order.createdAt)],
                         ].map(([label, value]) => (
-                          <div key={label} className="min-w-0">
+                          <div key={String(label)} className="min-w-0">
                             <dt className="text-xs text-gray-500 dark:text-gray-400">{label}</dt>
                             <dd className="mt-1 break-words text-sm font-medium text-gray-900 dark:text-white">{value}</dd>
                           </div>

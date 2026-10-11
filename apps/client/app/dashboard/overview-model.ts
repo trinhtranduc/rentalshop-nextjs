@@ -106,6 +106,9 @@ export interface PeriodReportLike {
     collected?: Num;
     collectedBreakdown?: { deposits?: Num; pickupAndSale?: Num; fees?: Num; refunds?: Num } | null;
     collateralFlow?: { received?: Num; returned?: Num } | null;
+    /** #710: money held from the period, collateral included */
+    cashCollected?: Num;
+    orderValueByType?: { rent?: { amount?: Num; orders?: Num } | null; sale?: { amount?: Num; orders?: Num } | null } | null;
   } | null;
   growth?: {
     collected?: { growth?: Num } | null;
@@ -182,7 +185,11 @@ export function buildKpis(report: PeriodReportLike | null | undefined): Overview
   return {
     orderValue: num(revenue?.totalOrderValue),
     orderValueGrowth: toGrowth(report?.growth?.orderValue?.growth),
-    newOrders: num(report?.operational?.orderCounts?.new),
+    // #716: the orders behind the order value (cancelled left out); orderCounts.new also counts orders cancelled later
+    newOrders:
+      revenue?.orderValueByType != null
+        ? (num(revenue.orderValueByType.rent?.orders) ?? 0) + (num(revenue.orderValueByType.sale?.orders) ?? 0)
+        : num(report?.operational?.orderCounts?.new),
     collected,
     collectedGrowth: toGrowth(report?.growth?.collected?.growth),
     outstanding: num(revenue?.outstanding),
@@ -192,7 +199,8 @@ export function buildKpis(report: PeriodReportLike | null | undefined): Overview
 }
 
 export interface MoneyBreakdown {
-  collected: { deposits: number; pickupAndSale: number; fees: number; refunds: number; total: number } | null;
+  /** #708: `collateral` = received − returned, a step of Thực thu; `total` = cashCollected when the API sends it */
+  collected: { deposits: number; pickupAndSale: number; fees: number; refunds: number; collateral: number | null; total: number } | null;
   outstanding: {
     atPickup: { amount: number; orders: number };
     overduePickup: { amount: number; orders: number };
@@ -214,7 +222,11 @@ export function buildMoney(report: PeriodReportLike | null | undefined): MoneyBr
           pickupAndSale: amt(cb.pickupAndSale),
           fees: amt(cb.fees),
           refunds: amt(cb.refunds),
-          total: num(revenue?.collected) ?? amt(cb.deposits) + amt(cb.pickupAndSale) + amt(cb.fees) - amt(cb.refunds),
+          collateral: num(revenue?.cashCollected) != null && flow ? amt(flow.received) - amt(flow.returned) : null,
+          total:
+            num(revenue?.cashCollected) ??
+            num(revenue?.collected) ??
+            amt(cb.deposits) + amt(cb.pickupAndSale) + amt(cb.fees) - amt(cb.refunds),
         }
       : null,
     outstanding: ob
@@ -482,6 +494,8 @@ export interface Tile {
   /** Show a leading `+` for a positive value (net collateral). */
   signed: boolean;
   chip: TileChip | null;
+  /** #719: a second chip, e.g. "18 đơn mới" on Giá trị đơn mới */
+  count?: TileChip | null;
 }
 
 export function growthChip(growth: Growth): TileChip | null {
@@ -512,8 +526,19 @@ export function buildTiles(report: PeriodReportLike | null | undefined, cash?: C
   }
   const held = cash?.depositsHeld?.orders;
   return [
-    { kind: 'orderValue', value: kpis.orderValue, signed: false, chip: growthChip(kpis.orderValueGrowth) },
-    { kind: 'collected', value: kpis.collected, signed: false, chip: growthChip(kpis.collectedGrowth) },
+    {
+      kind: 'orderValue',
+      value: kpis.orderValue,
+      signed: false,
+      chip: growthChip(kpis.orderValueGrowth),
+      // #719: the orders behind the money (rent + sale, cancelled left out); none on an API without orderValueByType
+      count:
+        report?.revenue?.orderValueByType != null && kpis.newOrders != null
+          ? { tone: 'info', key: 'home.tiles.newOrders', values: { count: kpis.newOrders } }
+          : null,
+    },
+    // #708: Thực thu is the money held, collateral included (cashCollected); older APIs keep collected
+    { kind: 'collected', value: num(report?.revenue?.cashCollected) ?? kpis.collected, signed: false, chip: growthChip(kpis.collectedGrowth) },
     { kind: 'outstanding', value: kpis.outstanding, signed: false, chip: outstandingChip },
     {
       kind: 'collateral',
@@ -544,7 +569,7 @@ export function sparkPoints(values: number[], width = 96, height = 28): string |
     .join(' ');
 }
 
-export type WaterfallKey = 'deposits' | 'pickupAndSale' | 'fees' | 'refunds' | 'total';
+export type WaterfallKey = 'deposits' | 'pickupAndSale' | 'fees' | 'refunds' | 'collateral' | 'total';
 
 export interface WaterfallRow {
   key: WaterfallKey;
@@ -565,6 +590,7 @@ export function waterfallRows(collected: MoneyBreakdown['collected']): Waterfall
     { key: 'pickupAndSale', amount: collected.pickupAndSale },
     { key: 'fees', amount: collected.fees },
     { key: 'refunds', amount: -collected.refunds },
+    ...(collected.collateral != null ? [{ key: 'collateral' as WaterfallKey, amount: collected.collateral }] : []),
   ];
   const spans: Array<{ key: WaterfallKey; amount: number; from: number; to: number; total: boolean }> = [];
   let run = 0;
@@ -685,3 +711,135 @@ export const TOP_ALL_LIMIT = 50;
 export function parseTop(value: string | null | undefined): TopKind | null {
   return value === 'products' || value === 'customers' ? value : null;
 }
+
+// ----------------------------------------------------------------------------
+// #708 Xem các đơn liên quan: the rows behind a tile (GET /api/analytics/income/orders), Σ amount = the tile
+// ----------------------------------------------------------------------------
+
+export type RelatedKind = 'orderValue' | 'collected' | 'outstanding' | 'collateral';
+export const RELATED_KINDS: RelatedKind[] = ['orderValue', 'collected', 'outstanding', 'collateral'];
+
+export function parseRelated(value: string | null | undefined): RelatedKind | null {
+  return RELATED_KINDS.find((k) => k === value) ?? null;
+}
+
+/** income/orders buckets each list loads */
+export function relatedBuckets(kind: RelatedKind): string[] {
+  // #721: Thế chân reads each event's `collateral` (a same-day hand-over then return or cancel moves none, as the tile)
+  if (kind === 'collected' || kind === 'collateral') return ['all'];
+  return ['new'];
+}
+
+export interface IncomeOrderLike {
+  id?: number | null;
+  orderNumber?: string | null;
+  orderType?: string | null;
+  status?: string | null;
+  revenue?: Num;
+  /** `SALE`, `RENT_DEPOSIT` ... `MULTIPLE` (#757) */
+  revenueType?: string | null;
+  description?: string | null;
+  customerName?: string | null;
+  totalAmount?: Num;
+  depositAmount?: Num;
+  securityDeposit?: Num;
+  /** #721 (`all` rows): the collateral part of `revenue`, + received, − handed back */
+  collateral?: Num;
+}
+
+export type RelatedNote = 'created' | 'cancelled' | 'event' | 'owes' | 'collateralIn' | 'collateralOut';
+
+export interface RelatedRow {
+  id: number;
+  orderNumber: string;
+  customer: string;
+  note: RelatedNote;
+  description: string;
+  /** #757: the reasons of a `note === 'event'` row (one per joined event); `key` null = unknown, show `text` */
+  reasons: RelatedReason[];
+  amount: number;
+}
+
+export interface RelatedReason {
+  /** suffix of `home.related.event.<key>`; null when this build does not know the event */
+  key: string | null;
+  /** the API text, the fallback */
+  text: string;
+}
+
+/** The API's own sentences (`revenue-calculator.ts`), so a RENT_RETURN or a MULTIPLE part maps exactly */
+const KNOWN_EVENT_TEXT: Record<string, string> = {
+  'Đơn bán được tạo': 'saleCreated',
+  'Đơn bán bị hủy (hoàn lại)': 'saleCancelled',
+  'Thu tiền cọc': 'deposit',
+  'Thu tiền khi lấy hàng': 'pickup',
+  'Thuê và trả trong cùng ngày': 'sameDay',
+  'Thu phí hư hỏng': 'damageFee',
+  'Hoàn tiền cọc': 'depositRefund',
+  'Không có phát sinh': 'nothing',
+  'Đơn hủy (hoàn lại)': 'rentCancelled',
+  'Doanh thu dự kiến khi lấy hàng': 'futurePickup',
+  'Ước tính thu phí hư hỏng khi trả hàng': 'futureDamageFee',
+  'Ước tính hoàn tiền cọc khi trả hàng': 'futureRefund',
+  'Ước tính không có phát sinh khi trả hàng': 'futureNothing',
+};
+
+function eventKeyForType(type: string, revenue: number): string | null {
+  switch (type) {
+    case 'SALE': return 'saleCreated';
+    case 'SALE_CANCELLED': return 'saleCancelled';
+    case 'RENT_DEPOSIT': return 'deposit';
+    case 'RENT_PICKUP': return 'pickup';
+    case 'RENT_CANCELLED': return 'rentCancelled';
+    case 'RENT_FUTURE_PICKUP': return 'futurePickup';
+    case 'RENT_RETURN': return revenue < 0 ? 'depositRefund' : revenue > 0 ? 'returnCollected' : 'nothing';
+    case 'RENT_FUTURE_RETURN': return revenue < 0 ? 'futureRefund' : revenue > 0 ? 'futureDamageFee' : 'futureNothing';
+    default: return null;
+  }
+}
+
+/** The event reasons of one Collected row, from `revenueType` (or the known API sentence); `description` stays the fallback */
+export function eventReasons(revenueType: string | null | undefined, description: string | null | undefined, revenue: number): RelatedReason[] {
+  const type = (revenueType || '').toUpperCase();
+  const text = description || '';
+  if (type === 'MULTIPLE' || (!type && text.includes(' + '))) {
+    return text.split(' + ').map((part) => ({ key: KNOWN_EVENT_TEXT[part] ?? null, text: part }));
+  }
+  return [{ key: KNOWN_EVENT_TEXT[text] ?? eventKeyForType(type, revenue), text }];
+}
+
+/** What one income/orders row adds to the tile (same rules as the API, see BF-STAT / BF-OUT) */
+export function relatedRows(kind: RelatedKind, bucket: string, items: IncomeOrderLike[]): RelatedRow[] {
+  const rows: RelatedRow[] = [];
+  for (const it of items) {
+    if (it.id == null) continue;
+    const total = num(it.totalAmount) ?? 0;
+    const cancelled = (it.status || '').toUpperCase() === 'CANCELLED';
+    let amount = 0;
+    let note: RelatedNote = 'event';
+    if (kind === 'orderValue') {
+      amount = cancelled ? 0 : total;
+      note = cancelled ? 'cancelled' : 'created';
+    } else if (kind === 'collected') {
+      amount = num(it.revenue) ?? 0;
+    } else if (kind === 'outstanding') {
+      const type = (it.orderType || '').toUpperCase();
+      const status = (it.status || '').toUpperCase();
+      if (type === 'RENT' && status === 'RESERVED') amount = Math.max(0, total - (num(it.depositAmount) ?? 0));
+      else if (type === 'SALE' && status !== 'COMPLETED' && status !== 'CANCELLED') amount = total;
+      if (amount <= 0) continue;
+      note = 'owes';
+    } else {
+      amount = num(it.collateral) ?? 0;
+      if (!amount) continue;
+      note = amount > 0 ? 'collateralIn' : 'collateralOut';
+    }
+    rows.push({ id: it.id, orderNumber: it.orderNumber || `#${it.id}`, customer: it.customerName || '', note, description: it.description || '', reasons: note === 'event' ? eventReasons(it.revenueType, it.description, amount) : [], amount });
+  }
+  return rows;
+}
+
+export function relatedTotal(rows: RelatedRow[]): number {
+  return rows.reduce((sum, r) => sum + r.amount, 0);
+}
+

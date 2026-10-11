@@ -56,13 +56,17 @@ export async function POST(request: NextRequest) {
     console.log('🔑 [Reset Password] Hashing new password...');
     const hashedPassword = await hashPassword(validatedData.password);
 
+    // Log out every session of the user and revoke all refresh tokens (#661)
+    const changedAt = new Date();
+    await db.sessions.invalidateUserSessionsExcept(user.id, null, changedAt);
+
     // Update user password and set passwordChangedAt to invalidate old tokens
     console.log('💾 [Reset Password] Updating user password...');
     await db.prisma.user.update({
       where: { id: user.id },
       data: { 
         password: hashedPassword,
-        passwordChangedAt: new Date() // Invalidate all existing tokens
+        passwordChangedAt: changedAt // Invalidate all existing tokens
       },
     });
 

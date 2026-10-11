@@ -10,10 +10,10 @@ import java.util.UUID
  * Gio-hang-xac-nhan, Gio-hang-da-tao). iOS `CreateOrderSheetLogic`.
  */
 object CreateOrderSheet {
-    enum class CtaRoute { CONFIRM_SHEET, PREVIEW }
+    enum class CtaRoute { CONFIRM_SHEET, EDIT_SHEET }
 
-    /** A new order is confirmed in a sheet; an edited order keeps the review screen */
-    fun ctaRoute(editing: Boolean): CtaRoute = if (editing) CtaRoute.PREVIEW else CtaRoute.CONFIRM_SHEET
+    /** A new order is confirmed in a sheet; an edited order in the "Lưu thay đổi" sheet (#676), not the review screen */
+    fun ctaRoute(editing: Boolean): CtaRoute = if (editing) CtaRoute.EDIT_SHEET else CtaRoute.CONFIRM_SHEET
 
     data class Confirm(
         val isSale: Boolean,

@@ -35,6 +35,11 @@ async function handleChangePlan(
         return NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
+      // A merchant changes only its own subscription (#779; was: any id)
+      if (user.role === USER_ROLE.MERCHANT && existing.merchantId !== userScope?.merchantId) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+
       // Verify plan exists before updating
       const plan = await db.plans.findById(planId);
       if (!plan) {
@@ -59,34 +64,29 @@ async function handleChangePlan(
       const allowWebAccessChanged = oldAllowWebAccess !== newAllowWebAccess;
 
       // Change subscription plan using changePlan() function (includes email notification)
-      const updatedSubscription = await changePlan(subscriptionId, planId, billingInterval as any);
+      // The rules (who, when) and the Payment of the amount due are applied inside changePlan (#785)
+      const updatedSubscription = await changePlan(subscriptionId, planId, billingInterval as any, {
+        actorRole: user.role,
+        payment: {
+          method: body.method,
+          transactionId: body.transactionId,
+          reference: body.reference,
+          description: body.description,
+          paymentDate: body.paymentDate ? new Date(body.paymentDate) : undefined,
+        },
+      });
+      const planChange = (updatedSubscription as { planChange?: Record<string, unknown> }).planChange;
       
-      // Determine if we need to update status
-      // If subscription is TRIAL and new plan is a paid plan (trialDays === 0 or null), change to ACTIVE
-      const isCurrentTrial = existing.status?.toLowerCase() === SUBSCRIPTION_STATUS.TRIAL.toLowerCase();
-      const isNewPlanTrial = plan.trialDays && plan.trialDays > 0;
-      const shouldActivate = isCurrentTrial && !isNewPlanTrial;
-
-      // If changing from TRIAL to paid plan, update status to ACTIVE
-      if (shouldActivate) {
-        await db.subscriptions.update(subscriptionId, {
-          status: SUBSCRIPTION_STATUS.ACTIVE,
-          updatedAt: new Date()
-        });
-        console.log('🔄 Updated status from TRIAL to ACTIVE for paid plan');
-      }
-
-      // Get updated subscription with status if it was changed
-      const finalSubscription = shouldActivate 
-        ? await db.subscriptions.findById(subscriptionId)
-        : updatedSubscription;
+      // A trial turned into a paid plan is activated inside changePlan (#785)
+      const finalSubscription = updatedSubscription;
+      const statusChanged = String(existing.status).toUpperCase() !== String(updatedSubscription.status).toUpperCase();
 
       console.log('✅ Subscription plan updated successfully:', {
         subscriptionId,
         newPlanId: updatedSubscription.planId,
         planName: plan.name,
         newStatus: finalSubscription?.status || updatedSubscription.status,
-        statusChanged: shouldActivate,
+        statusChanged,
         allowWebAccessChanged,
         oldAllowWebAccess,
         newAllowWebAccess
@@ -116,7 +116,8 @@ async function handleChangePlan(
           newPlanName: plan.name,
           previousStatus: existing.status,
           newStatus: finalSubscription?.status || updatedSubscription.status,
-          statusChanged: shouldActivate,
+          statusChanged,
+          planChange,
           performedBy: {
             userId: user.userId || user.id,
             email: user.email,
@@ -131,7 +132,7 @@ async function handleChangePlan(
       });
 
     return NextResponse.json(
-      ResponseBuilder.success('PLAN_CHANGED_SUCCESS', finalSubscription || updatedSubscription)
+      ResponseBuilder.success('PLAN_CHANGED_SUCCESS', { ...(finalSubscription || updatedSubscription), planChange })
     );
     } catch (error) {
       console.error('Error changing subscription plan:', error);

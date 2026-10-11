@@ -14,6 +14,10 @@ import AudioToolbox
 
 final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
+    /// Last time the unread badge came from the server or the inbox signal (#674)
+    private var badgeLoadedAt: Date?
+    /// #677: an order changed (`OrdersChangeSignal`) while the list was off screen
+    private var stockStale = false
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
@@ -33,9 +37,13 @@ final class ProductsHomeViewController: BaseViewControler {
         return table
     }()
     private let emptyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
+    /// #753: under the reason when the list could not load
+    private let retryButton = UIButton(type: .system)
     private let cartBar = UIControl()
     private let cartCountLabel = V2.label(size: DS.TextSize.secondary, color: UIColor.white.withAlphaComponent(0.85))
     private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
+    /// "Tạo đơn ›", or "Sửa đơn #482913 ›" while the cart edits an order (#677)
+    private let cartActionLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
     private let notificationButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
 
     private lazy var reader: QRCodeReaderViewController = {
@@ -56,6 +64,7 @@ final class ProductsHomeViewController: BaseViewControler {
         bindViewModel()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         viewModel.reload()
     }
 
@@ -63,7 +72,24 @@ final class ProductsHomeViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
-        refreshNotificationBadge()
+        // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
+        if stockStale {
+            stockStale = false
+            viewModel.refreshQuietly()
+        }
+        // #674: the badge follows `.inboxUnreadCountDidChange`; the server is asked on first show and when 10 min old
+        if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: badgeLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
+            refreshNotificationBadge()
+        }
+    }
+
+    /// #677: "Còn N" / "Hết hôm nay" follow a created or edited order without a pull-to-refresh
+    @objc private func ordersChanged() {
+        guard isViewLoaded, view.window != nil else {
+            stockStale = true
+            return
+        }
+        viewModel.refreshQuietly()
     }
 
     override func startRefresh(_ sender: Any) {
@@ -100,18 +126,19 @@ final class ProductsHomeViewController: BaseViewControler {
         searchBox.layer.cornerRadius = 12
         let glass = UIImageView(image: DS.symbol("magnifyingglass", DS.Icon.sm))
         glass.tintColor = DS.Color.textMuted
-        searchField.placeholder = "products.search.placeholder".localized()
+        searchField.placeholder = "products.home.searchPlaceholder".localized()
         searchField.font = Utils.regularFont(size: DS.TextSize.body)
         searchField.clearButtonMode = .whileEditing
         searchField.returnKeyType = .search
         searchField.autocorrectionType = .no
-        searchField.accessibilityLabel = "products.search.placeholder".localized()
+        searchField.accessibilityLabel = "products.home.searchPlaceholder".localized()
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
-        // Board SP-dong: image search and barcode scan are icon buttons at the trailing end inside the field
-        let photoButton = iconButton("camera", size: DS.Icon.md, label: "AI Image Search".localized(), action: #selector(imageSearch))
+        // Board SP-dong: barcode scan is an icon inside the field; #651: image search is the solid blue camera button
+        // at the end so users see it (owner chose option B)
         let scanButton = iconButton("barcode.viewfinder", size: DS.Icon.md, label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
-        let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, photoButton, scanButton])
+        let photoButton = imageSearchButton()
+        let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, scanButton, photoButton])
         fieldRow.alignment = .center
         fieldRow.spacing = 0
         fieldRow.setCustomSpacing(8, after: glass)
@@ -122,7 +149,7 @@ final class ProductsHomeViewController: BaseViewControler {
         searchField.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
         fieldRow.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-2)
+            make.trailing.equalToSuperview().offset(-5)
             make.centerY.equalToSuperview()
         }
         searchBox.snp.makeConstraints { make in make.height.equalTo(48) }
@@ -163,12 +190,28 @@ final class ProductsHomeViewController: BaseViewControler {
             make.top.equalTo(header.snp.bottom).offset(48)
             make.leading.trailing.equalToSuperview().inset(32)
         }
+        retryButton.setTitle("Retry".localized(), for: .normal)
+        retryButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        retryButton.tintColor = DS.Color.primary
+        retryButton.isHidden = true
+        retryButton.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
+        view.addSubview(retryButton)
+        retryButton.snp.makeConstraints { make in
+            make.top.equalTo(emptyLabel.snp.bottom).offset(DS.Spacing.sm)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(DS.touchTarget)
+        }
+    }
+
+    @objc private func retryTapped() {
+        viewModel.reload()
     }
 
     private func buildCartBar() {
-        cartBar.backgroundColor = DS.Color.primary
+        // #681: slate, so the bar stands apart from the blue + buttons above it
+        cartBar.backgroundColor = DS.Color.text
         cartBar.layer.cornerRadius = 16
-        cartBar.layer.shadowColor = DS.Color.primary.cgColor
+        cartBar.layer.shadowColor = DS.Color.text.cgColor
         cartBar.layer.shadowOpacity = 0.28
         cartBar.layer.shadowRadius = 8
         cartBar.layer.shadowOffset = CGSize(width: 0, height: 6)
@@ -178,7 +221,8 @@ final class ProductsHomeViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [cartCountLabel, cartTotalLabel])
         texts.axis = .vertical
         texts.isUserInteractionEnabled = false
-        let go = V2.label("products.cart.create".localized() + " ›", size: DS.TextSize.name, weight: .bold, color: .white)
+        let go = cartActionLabel
+        go.setContentCompressionResistancePriority(.required, for: .horizontal)
         cartBar.addSubview(texts)
         cartBar.addSubview(go)
         view.addSubview(cartBar)
@@ -198,6 +242,19 @@ final class ProductsHomeViewController: BaseViewControler {
         updateCartBar()
     }
 
+    /// #651: 38 pt solid accent square with a white camera; the touch area grows to 46 pt
+    private func imageSearchButton() -> UIButton {
+        let button = HitSlopButton(type: .system)
+        button.setImage(DS.symbol("camera.fill", DS.Icon.sm), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = DS.Color.primary
+        button.layer.cornerRadius = 10
+        button.accessibilityLabel = "products.home.imageSearch".localized()
+        button.addTarget(self, action: #selector(imageSearch), for: .touchUpInside)
+        button.snp.makeConstraints { make in make.width.height.equalTo(38) }
+        return button
+    }
+
     private func iconButton(_ symbol: String, size: CGFloat, label: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(DS.symbol(symbol, size), for: .normal)
@@ -215,13 +272,26 @@ final class ProductsHomeViewController: BaseViewControler {
             guard let self else { return }
             self.endRefresh()
             self.list.reloadData()
-            let empty = self.viewModel.products.isEmpty && !self.viewModel.isLoading
-            self.emptyLabel.isHidden = !empty
-            self.emptyLabel.text = self.viewModel.query == nil ? "products.empty".localized() : "products.search.empty".localized()
+            let state = ProductsHomeEmptyState.state(productCount: self.viewModel.products.count, isLoading: self.viewModel.isLoading,
+                                                      hasQuery: self.viewModel.query != nil, error: self.viewModel.loadError)
+            self.emptyLabel.isHidden = state == .none
+            self.retryButton.isHidden = true
+            switch state {
+            case .none: break
+            case .empty: self.emptyLabel.text = "products.empty".localized()
+            case .searchEmpty: self.emptyLabel.text = "products.search.empty".localized()
+            case .failed(let reason):
+                self.emptyLabel.text = reason
+                self.retryButton.isHidden = false
+            }
         }
         viewModel.onError = { [weak self] error in
-            self?.endRefresh()
-            UIAlertController.errorAlert(parent: self, error: error)
+            guard let self else { return }
+            self.endRefresh()
+            // With no rows the reason is on the screen with Retry (#753); the alert is for a list that has rows
+            if !self.viewModel.products.isEmpty {
+                UIAlertController.errorAlert(parent: self, error: error)
+            }
         }
     }
 
@@ -230,7 +300,9 @@ final class ProductsHomeViewController: BaseViewControler {
         cartBar.isHidden = cart.items.isEmpty
         cartCountLabel.text = PluralText.format("products.cart.bar", count: cart.itemCount, cart.itemCount)
         cartTotalLabel.text = MoneyFormatter.format(cart.totalAmount)
-        cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, "products.cart.create".localized()]
+        let action = CartV2Logic.cartBarAction(isEditMode: cart.isEditMode, number: EditOrderSheetLogic.number(cart))
+        cartActionLabel.text = action + " ›"
+        cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, action]
             .compactMap { $0 }.joined(separator: ", ")
         list.contentInset.bottom = cart.items.isEmpty ? 16 : 96
     }
@@ -238,7 +310,9 @@ final class ProductsHomeViewController: BaseViewControler {
     private func refreshNotificationBadge() {
         guard User.account() != nil else { return }
         NotificationService.shared.getUnreadCount { [weak self] count, _ in
-            self?.applyBadge(count ?? 0)
+            guard let self else { return }
+            if count != nil { self.badgeLoadedAt = Date() }
+            self.applyBadge(count ?? 0)
         }
     }
 
@@ -250,7 +324,12 @@ final class ProductsHomeViewController: BaseViewControler {
     // MARK: - Actions
 
     @objc private func inboxCountChanged(_ note: Notification) {
-        if let count = note.userInfo?["count"] as? Int { applyBadge(count) } else { refreshNotificationBadge() }
+        if let count = note.userInfo?["count"] as? Int {
+            badgeLoadedAt = Date()
+            applyBadge(count)
+        } else {
+            refreshNotificationBadge()
+        }
     }
 
     @objc private func cartChanged() {
@@ -287,6 +366,8 @@ final class ProductsHomeViewController: BaseViewControler {
 
     @objc private func imageSearch() {
         let search = ImageSearchViewController()
+        // #672: "Tìm bằng tên" on empty results lands in this search field with the keyboard up
+        search.onSearchByName = { [weak self] in self?.searchField.becomeFirstResponder() }
         let nav = UINavigationController(rootViewController: search)
         nav.modalPresentationStyle = .fullScreen
         present(nav, animated: true)
@@ -425,14 +506,13 @@ final class ProductRowV2Cell: UITableViewCell {
     static let reuseId = "ProductRowV2Cell"
     private let photo = V2.thumbnail(size: 68, radius: 12)
     private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
-    private let metaLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
-    /// "● Còn N" / "● Hết hôm nay": 14pt regular, the colour carries the state (#468)
-    private let stockLabel = V2.label(size: DS.TextSize.secondary)
+    /// "● Còn N hôm nay" / "● Hết hôm nay": the colour carries the state (#468); 13pt semibold (#681)
+    private let stockLabel = V2.label(size: 13, weight: .semibold)
     private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)
     private let addButton = UIButton(type: .system)
     private let plusImage = DS.symbol("plus", DS.Icon.sm, weight: .semibold)
-    /// The + of a product already in the cart: the count on a darker blue (board SP-dong)
-    private static let inCartFill = UIColor(hexString: "1E3A8A")
+    /// #681: the + stays light until the product is in the cart
+    private static let addFill = UIColor(hexString: "EFF4FF")
     var onAdd: (() -> Void)?
     /// A tap on the thumbnail (#472)
     var onImage: (() -> Void)?
@@ -443,27 +523,19 @@ final class ProductRowV2Cell: UITableViewCell {
         selectionStyle = .default
         photo.isUserInteractionEnabled = true
         photo.addGestureRecognizer(photoTap)
-        let spacer = UIView()
-        spacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
-        spacer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
-        let metaRow = UIStackView(arrangedSubviews: [metaLabel, stockLabel, spacer])
-        metaRow.spacing = 8
-        metaLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        stockLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        stockLabel.setContentHuggingPriority(.required, for: .horizontal)
-        metaLabel.setContentHuggingPriority(.required, for: .horizontal)
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         priceLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let texts = UIStackView(arrangedSubviews: [nameLabel, metaRow, priceLabel])
+        // #681: name, price, stock — one fact per line, 8 pt apart
+        let texts = UIStackView(arrangedSubviews: [nameLabel, priceLabel, stockLabel])
         texts.axis = .vertical
-        texts.spacing = DS.Gap.line
+        texts.spacing = DS.Spacing.sm
         texts.alignment = .fill
         texts.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         texts.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
         addButton.setImage(plusImage, for: .normal)
         addButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         addButton.setTitleColor(.white, for: .normal)
-        addButton.layer.cornerRadius = 12
+        addButton.layer.cornerRadius = DS.touchTarget / 2 // #671: round
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
         addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
         let row = UIStackView(arrangedSubviews: [photo, texts, addButton])
@@ -501,10 +573,7 @@ final class ProductRowV2Cell: UITableViewCell {
                 if case .success = result { photo?.contentMode = .scaleAspectFill }
             }
         }
-        let subtitle = ProductRowLogic.subtitle(product)
-        metaLabel.text = subtitle.code
-        metaLabel.isHidden = subtitle.code == nil
-        let free = subtitle.free
+        let free = ProductRowLogic.subtitle(product).free
         if free > 0 {
             stockLabel.text = "● " + String(format: "products.stock.free".localized(), free)
             stockLabel.textColor = free == 1 ? V2.warn : V2.ok
@@ -516,22 +585,17 @@ final class ProductRowV2Cell: UITableViewCell {
         let text = NSMutableAttributedString()
         let strong: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name), NSAttributedString.Key.foregroundColor: DS.Color.text]
         let muted: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary), NSAttributedString.Key.foregroundColor: DS.Color.textMuted]
-        var parts: [String] = []
-        if let perRental = ProductPricing.perRental(product) {
-            text.append(NSAttributedString(string: MoneyFormatter.format(perRental), attributes: strong))
-            text.append(NSAttributedString(string: "products.unit.perRental".localized(), attributes: muted))
-            if let perDay = ProductPricing.perDay(product) {
-                parts.append(MoneyFormatter.format(perDay) + "products.unit.perDay".localized())
+        let unit: (ProductPricingMode) -> String = { $0 == .perDay ? "products.unit.perDay".localized() : "products.unit.perRental".localized() }
+        if let price = ProductRowLogic.price(product) {
+            if let mode = price.mainMode {
+                text.append(NSAttributedString(string: MoneyFormatter.format(price.main), attributes: strong))
+                text.append(NSAttributedString(string: unit(mode), attributes: muted))
+                if let second = price.second, let secondMode = price.secondMode {
+                    text.append(NSAttributedString(string: " · " + MoneyFormatter.format(second) + unit(secondMode), attributes: muted))
+                }
+            } else {
+                text.append(NSAttributedString(string: String(format: "products.price.saleShort".localized(), MoneyFormatter.format(price.main)), attributes: muted))
             }
-        } else if let perDay = ProductPricing.perDay(product) {
-            text.append(NSAttributedString(string: MoneyFormatter.format(perDay), attributes: strong))
-            text.append(NSAttributedString(string: "products.unit.perDay".localized(), attributes: muted))
-        }
-        if let sale = ProductPricing.sale(product) {
-            parts.append(String(format: "products.price.saleShort".localized(), MoneyFormatter.format(sale)))
-        }
-        if !parts.isEmpty {
-            text.append(NSAttributedString(string: (text.length > 0 ? " · " : "") + parts.joined(separator: " · "), attributes: muted))
         }
         priceLabel.attributedText = text
 
@@ -539,17 +603,19 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
         switch ProductRowLogic.addState(free: free, inCart: inCart) {
         case .add, .out:
-            let available = free > 0
+            // #671: out today still adds (another day can be rented), so the button keeps its colour.
+            // #681: light until the product is in the cart
             addButton.setImage(plusImage, for: .normal)
             addButton.setTitle(nil, for: .normal)
-            addButton.backgroundColor = available ? DS.Color.primary : V2.sectionFill
-            addButton.tintColor = available ? .white : DS.Color.textMuted
-            addButton.layer.borderWidth = available ? 0 : 1
+            addButton.backgroundColor = Self.addFill
+            addButton.tintColor = DS.Color.primary
+            addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
         case .inCart(let count):
             addButton.setImage(nil, for: .normal)
             addButton.setTitle("\(count)", for: .normal)
-            addButton.backgroundColor = Self.inCartFill
+            // #681: solid primary once in the cart, against the light + of the other rows
+            addButton.backgroundColor = DS.Color.primary
             addButton.tintColor = .white
             addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.inCart.accessibility".localized(), name, count)
@@ -562,5 +628,12 @@ final class ProductRowV2Cell: UITableViewCell {
 
     @objc private func photoTapped() {
         onImage?()
+    }
+}
+
+/// A button whose touch area reaches 4 pt past its visible bounds (#651: 38 pt button, 46 pt target)
+private final class HitSlopButton: UIButton {
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        bounds.insetBy(dx: -4, dy: -4).contains(point)
     }
 }

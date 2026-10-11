@@ -11,7 +11,58 @@
  */
 
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+
+/**
+ * Fixed namespace for product image point ids. Never change it: every indexed
+ * point id is derived from it, and a change would orphan all existing points.
+ */
+export const PRODUCT_IMAGE_POINT_NAMESPACE = '6f1c2a4e-3b7d-4c8e-9a51-2d0e7b3f4a86';
+
+/** RFC 4122 UUID version 5 (SHA-1, name-based). */
+export function uuidV5(name: string, namespace: string): string {
+  const ns = Buffer.from(namespace.replace(/-/g, ''), 'hex');
+  if (ns.length !== 16) {
+    throw new Error(`Invalid UUID namespace: ${namespace}`);
+  }
+  const hash = createHash('sha1').update(ns).update(Buffer.from(name, 'utf8')).digest();
+  const bytes = Buffer.from(hash.subarray(0, 16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Deterministic Qdrant point id for one product image.
+ * Same product + same image position → same id, so re-indexing overwrites instead of duplicating.
+ */
+export function productImagePointId(productId: string | number, imageIndex: number): string {
+  return uuidV5(`${productId}:${imageIndex}`, PRODUCT_IMAGE_POINT_NAMESPACE);
+}
+
+export interface VectorSearchHit {
+  productId: string;
+  similarity: number;
+  metadata: any;
+}
+
+/**
+ * A product has one point per image. Keep one hit per product with its best
+ * score, sorted best first, so search returns each product once.
+ */
+export function groupHitsByProduct(hits: VectorSearchHit[]): VectorSearchHit[] {
+  const best = new Map<string, VectorSearchHit>();
+  for (const hit of hits) {
+    if (hit.productId === undefined || hit.productId === null || hit.productId === '') continue;
+    const key = String(hit.productId);
+    const current = best.get(key);
+    if (!current || hit.similarity > current.similarity) {
+      best.set(key, { ...hit, productId: key });
+    }
+  }
+  return Array.from(best.values()).sort((a, b) => b.similarity - a.similarity);
+}
 
 export interface ProductEmbeddingMetadata {
   productId: string;
@@ -203,11 +254,7 @@ export class ProductVectorStore {
       minSimilarity?: number;
       limit?: number;
     } = {}
-  ): Promise<Array<{
-    productId: string;
-    similarity: number;
-    metadata: any;
-  }>> {
+  ): Promise<VectorSearchHit[]> {
     const {
       merchantId,
       outletId,
@@ -254,9 +301,9 @@ export class ProductVectorStore {
         categoryId
       });
 
-      // OPTIMIZATION: Use score_threshold at database level (faster than filtering in code)
-      // Also reduce search limit multiplier from 3x to 2x for better performance
-      const searchLimit = Math.max(limit * 2, 30); // Reduced from limit * 3 to limit * 2
+      // Products have one point per image: ask for more points than `limit`,
+      // then group by productId so each product appears once.
+      const searchLimit = Math.min(Math.max(limit * 4, 40), 500);
       
       const results = await this.client.search(this.collectionName, {
         vector: queryEmbedding,
@@ -287,15 +334,14 @@ export class ProductVectorStore {
         console.warn(`   5. minSimilarity (${minSimilarity}) too high`);
       }
 
-      // OPTIMIZATION: No need to filter by similarity in code (already filtered by Qdrant)
-      // Just slice to limit and map results
-      const filteredResults = results
-        .slice(0, limit)
-        .map((result: any) => ({
+      // Score threshold already applied by Qdrant; group per product, then cut to limit.
+      const filteredResults = groupHitsByProduct(
+        results.map((result: any) => ({
           productId: result.payload?.productId || result.payload?.product_id,
           similarity: result.score,
           metadata: result.payload
-        }));
+        }))
+      ).slice(0, limit);
 
       console.log(`✅ Final results (top ${filteredResults.length}): ${filteredResults.length} products`);
 
@@ -344,6 +390,24 @@ export class ProductVectorStore {
     } catch (error) {
       console.error(`Error deleting embeddings for product ${productId}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Replace all points of one product: delete by productId filter, then upsert
+   * the given points. An empty list only deletes (product has no images left).
+   */
+  async replaceProductEmbeddings(
+    productId: string | number,
+    embeddings: Array<{
+      imageId: string;
+      embedding: number[];
+      metadata: ProductEmbeddingMetadata;
+    }>
+  ): Promise<void> {
+    await this.deleteProductEmbeddings(productId);
+    if (embeddings.length > 0) {
+      await this.storeProductImagesEmbeddings(embeddings);
     }
   }
 

@@ -18,6 +18,8 @@ const mockDb = {
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: { $transaction: jest.fn() } }));
 jest.mock('@rentalshop/utils', () => ({
+  // #577: the order routes call normalizeLegacyPlanDays; the real helper, straight from source
+  ...jest.requireActual('../../packages/utils/src/core/legacy-plan-days'),
   ResponseBuilder: { error: (code: string) => ({ success: false, code, message: code, error: code }) },
   handleApiError: (e: any) => ({ response: { success: false, message: String(e) }, statusCode: 500 }),
   formatFullName: (a: string, b: string) => [a, b].filter(Boolean).join(' '),

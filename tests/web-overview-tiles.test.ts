@@ -59,11 +59,22 @@ describe('buildTiles', () => {
   it('orders the tiles and fills value and chip from the report and cash', () => {
     const tiles = buildTiles(report, cash);
     expect(tiles.map((t) => t.kind)).toEqual(['orderValue', 'collected', 'outstanding', 'collateral']);
-    expect(tiles[0]).toEqual({ kind: 'orderValue', value: 18_650_000, signed: false, chip: { tone: 'down', key: 'home.tiles.down', values: { value: 13 } } });
+    // no orderValueByType in this report: no order-count chip (#719)
+    expect(tiles[0]).toEqual({ kind: 'orderValue', value: 18_650_000, signed: false, chip: { tone: 'down', key: 'home.tiles.down', values: { value: 13 } }, count: null });
     expect(tiles[1].chip).toEqual({ tone: 'up', key: 'home.tiles.up', values: { value: 8 } });
     expect(tiles[2]).toMatchObject({ value: 11_590_000, chip: { tone: 'warn', key: 'home.tiles.overdue', values: { count: 1 } } });
     // Thế chân = received − returned, signed
     expect(tiles[3]).toEqual({ kind: 'collateral', value: 6_390_000, signed: true, chip: { tone: 'info', key: 'home.tiles.held', values: { count: 11 } } });
+  });
+
+  it('counts the new orders behind the money: rent + sale, not orderCounts.new (#719)', () => {
+    const r = {
+      ...report,
+      operational: { orderCounts: { new: 15 } },
+      revenue: { ...report.revenue, orderValueByType: { rent: { amount: 1, orders: 8 }, sale: { amount: 1, orders: 5 } } },
+    };
+    expect(buildTiles(r, null)[0].count).toEqual({ tone: 'info', key: 'home.tiles.newOrders', values: { count: 13 } });
+    expect(buildTiles({ ...report, operational: { orderCounts: { new: 15 } } }, null)[0].count).toBeNull();
   });
 
   it('says how many orders wait for pickup when none is overdue', () => {
@@ -310,5 +321,17 @@ describe('Xem tất cả (#620)', () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `C${i}`, orderCount: 1, totalSpent: 100 - i }));
     expect(topCustomerBars(many, Infinity)).toHaveLength(12);
     expect(topBars(many.map((c) => ({ id: c.id, name: c.name, totalRevenue: c.totalSpent })), Infinity)).toHaveLength(12);
+  });
+});
+
+describe('buildKpis new orders (#716)', () => {
+  it('counts the orders behind the order value, not orders cancelled later', async () => {
+    const { buildKpis } = await import('../apps/client/app/dashboard/overview-model');
+    const k = buildKpis({
+      operational: { orderCounts: { new: 15 } },
+      revenue: { totalOrderValue: 3579, orderValueByType: { rent: { amount: 1457, orders: 8 }, sale: { amount: 2122, orders: 5 } } },
+    } as PeriodReportLike);
+    expect(k.newOrders).toBe(13);
+    expect(buildKpis({ operational: { orderCounts: { new: 4 } }, revenue: {} } as PeriodReportLike).newOrders).toBe(4);
   });
 });

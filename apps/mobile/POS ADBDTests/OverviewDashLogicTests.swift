@@ -170,11 +170,114 @@ final class OverviewDashLogicTests: XCTestCase {
             let none = OverviewReport.OutstandingBreakdown(atPickup: .init(amount: 0, orders: 0), overduePickup: .init(amount: 0, orders: 0))
             XCTAssertNil(OverviewDashLogic.tiles(report: report(outstanding: none), now: nil)[2].chip, zone)
 
+            // #719: "N đơn mới" = rent + sale orders behind the money (not newOrders, which counts later-cancelled ones)
+            XCTAssertNil(tiles[0].count, zone)
+            let split = OverviewReport(netRevenue: 0, revenueGrowth: nil, newOrders: 15, series: [], topProducts: [],
+                                       orderValueByType: .init(rent: .init(amount: 1_457_000, orders: 8), sale: .init(amount: 2_122_000, orders: 5)))
+            XCTAssertEqual(OverviewDashLogic.tiles(report: split, now: nil)[0].count,
+                           OverviewTileChip(tone: .info, key: "overview.dash.chip.newOrders", count: 13), zone)
+
             // An older API: no values, no chips, "—"
             let older = OverviewDashLogic.tiles(report: nil, now: nil)
             XCTAssertEqual(older.map(\.value), [nil, nil, nil, nil], zone)
             XCTAssertTrue(older.allSatisfy { $0.chip == nil }, zone)
             XCTAssertEqual(OverviewDashLogic.tileText(older[0], vietnamese: true), "—", zone)
+        }
+    }
+
+    // MARK: - Related orders
+
+    /// Còn phải thu lists what the tile counts: rent not picked up owes total − deposit, a sale not completed owes its
+    /// total, nothing else (the old not-picked-up list showed 3 orders under "6 đơn chờ lấy")
+    func testOutstandingRelatedRowsFollowTheTileRule() throws {
+        let json = """
+        [{"id":1,"orderNumber":"100001","orderType":"RENT","status":"RESERVED","totalAmount":500,"depositAmount":200},
+         {"id":2,"orderNumber":"100002","orderType":"RENT","status":"RESERVED","totalAmount":300,"depositAmount":300},
+         {"id":3,"orderNumber":"100003","orderType":"RENT","status":"PICKUPED","totalAmount":900,"depositAmount":0},
+         {"id":4,"orderNumber":"100004","orderType":"SALE","status":"RESERVED","totalAmount":250,"depositAmount":0},
+         {"id":5,"orderNumber":"100005","orderType":"SALE","status":"COMPLETED","totalAmount":400,"depositAmount":0},
+         {"id":6,"orderNumber":"100006","orderType":"RENT","status":"CANCELLED","totalAmount":700,"depositAmount":0}]
+        """
+        let items = try JSONDecoder().decode([DailyIncomeOrder].self, from: Data(json.utf8))
+        let rows = OverviewDashLogic.relatedRows(.outstanding, bucket: "new", items: items)
+        XCTAssertEqual(rows.map(\.orderNumber), ["100001", "100004"])
+        XCTAssertEqual(rows.map(\.amount), [300, 250])
+        XCTAssertEqual(OverviewDashLogic.relatedTotal(rows), 550)
+        XCTAssertEqual(OverviewRelatedKind.outstanding.buckets, ["new"])
+    }
+
+    /// Thế chân reads each event row's `collateral` (#721): a same-day hand-over then cancel adds nothing
+    func testCollateralRelatedRowsUseTheRowCollateral() throws {
+        let json = """
+        [{"id":1,"orderNumber":"100001","status":"PICKUPED","revenue":500,"collateral":300,"securityDeposit":300},
+         {"id":2,"orderNumber":"100002","status":"CANCELLED","revenue":0,"collateral":0,"securityDeposit":400},
+         {"id":3,"orderNumber":"100003","status":"RETURNED","revenue":-100,"collateral":-100,"securityDeposit":100},
+         {"id":4,"orderNumber":"100004","status":"RESERVED","revenue":50}]
+        """
+        let items = try JSONDecoder().decode([DailyIncomeOrder].self, from: Data(json.utf8))
+        let rows = OverviewDashLogic.relatedRows(.collateral, bucket: "all", items: items)
+        XCTAssertEqual(rows.map(\.orderNumber), ["100001", "100003"])
+        XCTAssertEqual(rows.map(\.amount), [300, -100])
+        XCTAssertEqual(OverviewDashLogic.relatedTotal(rows), 200)
+        XCTAssertEqual(OverviewRelatedKind.collateral.buckets, ["all"])
+    }
+
+    /// #757: the reason under a Collected row comes from `revenueType`, not from the Vietnamese API text
+    func testCollectedReasonsAreMappedFromTheRevenueType() {
+        let key = { (type: String?, text: String?, revenue: Double) in
+            RelatedEventReason.parts(revenueType: type, description: text, revenue: revenue).map { $0.reason?.rawValue ?? "?" }
+        }
+        XCTAssertEqual(key("RENT_DEPOSIT", "Thu tiền cọc", 100), ["deposit"])
+        XCTAssertEqual(key("RENT_PICKUP", nil, 100), ["pickup"])
+        XCTAssertEqual(key("SALE", "Đơn bán được tạo", 100), ["saleCreated"])
+        XCTAssertEqual(key("SALE_CANCELLED", "", -100), ["saleCancelled"])
+        XCTAssertEqual(key("RENT_CANCELLED", "Đơn hủy (hoàn lại)", -100), ["rentCancelled"])
+        XCTAssertEqual(key("RENT_RETURN", "Hoàn tiền cọc", -100), ["depositRefund"])
+        XCTAssertEqual(key("RENT_RETURN", "Thuê và trả trong cùng ngày", 500), ["sameDay"])
+        XCTAssertEqual(key("RENT_RETURN", "Thu phí hư hỏng", 50), ["damageFee"])
+        XCTAssertEqual(key("RENT_RETURN", "?", -5), ["depositRefund"], "unknown sentence: the sign decides")
+        XCTAssertEqual(key("RENT_FUTURE_PICKUP", nil, 10), ["futurePickup"])
+        XCTAssertEqual(key("RENT_FUTURE_RETURN", nil, -10), ["futureRefund"])
+        XCTAssertEqual(key("MULTIPLE", "Thu tiền cọc + Thu tiền khi lấy hàng", 300), ["deposit", "pickup"])
+        XCTAssertEqual(key("MULTIPLE", "Thu tiền cọc + Lạ", 300), ["deposit", "?"])
+        XCTAssertEqual(key("SOMETHING_NEW", "Văn bản", 1), ["?"])
+    }
+
+    func testCollectedReasonIsLocalizedAndKeepsTheApiTextForAnUnknownType() throws {
+        let en = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))))
+        let vi = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "vi-VN", ofType: "lproj"))))
+        for reason in RelatedEventReason.allCases {
+            let e = en.localizedString(forKey: reason.localizedKey, value: "MISSING", table: nil)
+            let v = vi.localizedString(forKey: reason.localizedKey, value: "MISSING", table: nil)
+            XCTAssertNotEqual(e, "MISSING", reason.rawValue)
+            XCTAssertNotEqual(v, "MISSING", reason.rawValue)
+            XCTAssertFalse(e.contains(where: { "ăâđêôơưàáạảãèéẹẻẽìíịỉĩòóọỏõùúụủũỳýỵỷỹ".contains($0) }), "English text has Vietnamese letters: \(e)")
+        }
+        let english = RelatedEventReason.text(revenueType: "MULTIPLE", description: "Thu tiền cọc + Thu tiền khi lấy hàng", revenue: 1) {
+            en.localizedString(forKey: $0, value: nil, table: nil)
+        }
+        XCTAssertEqual(english, "Deposit collected + Collected at pickup")
+        XCTAssertEqual(RelatedEventReason.text(revenueType: "NEW_TYPE", description: "Văn bản", revenue: 1), "Văn bản")
+    }
+
+    /// #758: a paused / cancelled / past-due subscription reads in the app language; an unknown plan code is generic
+    func testSubscriptionCodesHaveASentenceInEnglishAndVietnamese() throws {
+        let en = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))))
+        let vi = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "vi-VN", ofType: "lproj"))))
+        let codes = ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PAUSED", "SUBSCRIPTION_CANCELLED", "SUBSCRIPTION_PAST_DUE",
+                     "SUBSCRIPTION_PERIOD_ENDED", "NO_SUBSCRIPTION", "PLAN_LIMIT_EXCEEDED", "PLAN_UPGRADE_REQUIRED",
+                     "PLATFORM_ACCESS_DENIED", "CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET", "NO_OUTLET_ACCESS", "ORDER_NOT_FOUND"]
+        for (bundle, name) in [(en, "en"), (vi, "vi")] {
+            let lookup = { (key: String) in bundle.localizedString(forKey: key, value: key, table: nil) }
+            for code in codes {
+                let text = try XCTUnwrap(APIErrorText.message(forCode: code, lookup: lookup), code)
+                XCTAssertNotEqual(text, code, "\(name) \(code)")
+                XCTAssertNotEqual(text, lookup("SUBSCRIPTION_GENERIC"), "\(name) \(code) has its own sentence")
+            }
+            let generic = try XCTUnwrap(APIErrorText.message(forCode: "SUBSCRIPTION_BRAND_NEW", lookup: lookup))
+            XCTAssertEqual(generic, lookup("SUBSCRIPTION_GENERIC"))
+            XCTAssertNotEqual(generic, "SUBSCRIPTION_GENERIC")
+            XCTAssertNil(APIErrorText.message(forCode: "SOMETHING_ELSE", lookup: lookup))
         }
     }
 

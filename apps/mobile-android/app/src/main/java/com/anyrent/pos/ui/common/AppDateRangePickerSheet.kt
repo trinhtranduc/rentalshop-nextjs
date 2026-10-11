@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -156,31 +157,7 @@ fun AppDateRangePickerSheet(
                     }
                 }
 
-                DateRangePicker(
-                    state = rangeState,
-                    modifier = Modifier.fillMaxWidth().height(420.dp),
-                    title = null,
-                    headline = null,
-                    showModeToggle = false,
-                    colors = DatePickerDefaults.colors(
-                        containerColor = Color.White,
-                        selectedDayContainerColor = MaterialTheme.colorScheme.onSurface,
-                        selectedDayContentColor = Color.White,
-                        todayContentColor = MaterialTheme.colorScheme.onSurface,
-                        todayDateBorderColor = MaterialTheme.colorScheme.onSurface,
-                        dayInSelectionRangeContainerColor =
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                        dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
-                        selectedYearContainerColor = MaterialTheme.colorScheme.onSurface,
-                        selectedYearContentColor = Color.White,
-                        currentYearContentColor = MaterialTheme.colorScheme.onSurface,
-                        navigationContentColor = MaterialTheme.colorScheme.onSurface,
-                        headlineContentColor = MaterialTheme.colorScheme.onSurface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        subheadContentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                )
+                AppRangeCalendar(rangeState, Modifier.fillMaxWidth().height(420.dp))
 
                 AppPrimaryButton(
                     text = stringResource(R.string.confirm),
@@ -196,10 +173,44 @@ fun AppDateRangePickerSheet(
     }
 }
 
-private fun LocalDate.toUtcMillis(): Long =
+/** The rental-dates calendar (cart, export, Overview) — also inside Gia hạn (#696), so both look the same */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppRangeCalendar(state: DateRangePickerState, modifier: Modifier = Modifier) {
+    DateRangePicker(
+        state = state,
+        modifier = modifier,
+        title = null,
+        headline = null,
+        showModeToggle = false,
+        colors = DatePickerDefaults.colors(
+            containerColor = Color.White,
+            selectedDayContainerColor = MaterialTheme.colorScheme.onSurface,
+            selectedDayContentColor = Color.White,
+            // #696: Gia hạn keeps the pickup selected though it cannot be tapped; draw it like any selected day
+            disabledSelectedDayContainerColor = MaterialTheme.colorScheme.onSurface,
+            disabledSelectedDayContentColor = Color.White,
+            todayContentColor = MaterialTheme.colorScheme.onSurface,
+            todayDateBorderColor = MaterialTheme.colorScheme.onSurface,
+            dayInSelectionRangeContainerColor =
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSurface,
+            selectedYearContainerColor = MaterialTheme.colorScheme.onSurface,
+            selectedYearContentColor = Color.White,
+            currentYearContentColor = MaterialTheme.colorScheme.onSurface,
+            navigationContentColor = MaterialTheme.colorScheme.onSurface,
+            headlineContentColor = MaterialTheme.colorScheme.onSurface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            subheadContentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+    )
+}
+
+internal fun LocalDate.toUtcMillis(): Long =
     atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
-private fun Long.toLocalDateUtc(): LocalDate =
+internal fun Long.toLocalDateUtc(): LocalDate =
     Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 private fun Long?.toDisplayDate(formatter: DateTimeFormatter): String =

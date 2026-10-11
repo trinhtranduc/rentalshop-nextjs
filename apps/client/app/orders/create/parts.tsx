@@ -444,6 +444,7 @@ export function CartLineRow({
   onQuantity,
   onMode,
   onPrice,
+  onNote,
   t,
   money,
 }: {
@@ -455,13 +456,18 @@ export function CartLineRow({
   onQuantity: (q: number) => void;
   onMode: (mode: string) => void;
   onPrice: (price: number) => void;
+  /** #684: this line's note */
+  onNote?: (note: string) => void;
   t: T;
   money: Money;
 }) {
   const rent = orderType === 'RENT';
   const type = rent ? line.pricingType : 'SALE';
   const [editing, setEditing] = useState(false);
+  const [noting, setNoting] = useState(false);
   const panelId = useId();
+  const notePanelId = useId();
+  const note = (line.notes || '').trim();
   const missingPrice = needsPrice(line, orderType);
   const chip = missingPrice
     ? t('editor.pricing.chipEmpty', { mode: t(`editor.pricing.mode.${modeKey(type)}`, { type }) })
@@ -510,6 +516,59 @@ export function CartLineRow({
           </button>
         </div>
       </div>
+      {/* #684: the line's own note, in its own panel (mobile: the "Ghi chú món" sheet) */}
+      {onNote && !noting &&
+        (note ? (
+          <button
+            type="button"
+            onClick={() => setNoting(true)}
+            aria-expanded={false}
+            aria-controls={notePanelId}
+            aria-label={t('editor.lineNote.for', { name: line.name })}
+            className="line-clamp-2 rounded-[10px] bg-ar-subtle px-2.5 py-2 text-left text-sm text-ar-ink-2 hover:bg-ar-line-soft"
+          >
+            <span className="font-semibold text-ar-muted">{t('editor.lineNote.label')}</span> · {note}{' '}
+            <span className="font-semibold text-ar-primary">{t('editor.lineNote.edit')}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setNoting(true)}
+            aria-expanded={false}
+            aria-controls={notePanelId}
+            aria-label={t('editor.lineNote.for', { name: line.name })}
+            className="self-start text-sm font-semibold text-ar-muted hover:text-ar-ink"
+          >
+            {t('editor.lineNote.add')}
+          </button>
+        ))}
+      {onNote && noting && (
+        <div id={notePanelId} className="flex flex-col gap-2 rounded-xl bg-ar-subtle p-3">
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-ar-ink">
+            {t('editor.lineNote.title')}
+            <textarea
+              autoFocus
+              rows={3}
+              defaultValue={line.notes || ''}
+              onBlur={(e) => onNote(e.target.value)}
+              onChange={(e) => onNote(e.target.value)}
+              placeholder={t('editor.lineNote.placeholder')}
+              className="w-full resize-y rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 py-2 text-[15px] font-normal text-ar-ink outline-none focus:border-ar-primary"
+            />
+          </label>
+          <span className="text-xs text-ar-muted">{t('editor.lineNote.hint')}</span>
+          <div className="flex justify-end gap-2">
+            {note && (
+              <button type="button" onClick={() => { onNote(''); setNoting(false); }} className={`${outlineBtn} text-ar-danger`}>
+                {t('editor.lineNote.clear')}
+              </button>
+            )}
+            <button type="button" onClick={() => setNoting(false)} className={outlineBtn}>
+              {t('editor.lineNote.done')}
+            </button>
+          </div>
+        </div>
+      )}
       {rent && editing && (
         <div id={panelId} className="flex flex-col gap-2.5 rounded-xl bg-ar-subtle p-3">
           <span className="text-sm font-semibold text-ar-ink">{t('editor.pricing.title')}</span>

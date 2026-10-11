@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useToasts } from '@rentalshop/ui';
+import { lookupErrorTranslation, looksLikeErrorCode } from '@rentalshop/utils';
 import { useSubscriptionTranslations, useErrorTranslations } from './useTranslation';
 
 export interface SubscriptionError {
@@ -53,21 +54,15 @@ export function useSubscriptionError(): UseSubscriptionErrorReturn {
     const errorMessage = error.message || error?.response?.data?.message;
     let translatedMessage = errorMessage || t('errors.generic');
     
-    // Translate specific error codes
-    if (errorCode === 'PLAN_LIMIT_EXCEEDED') {
-      translatedMessage = te('PLAN_LIMIT_EXCEEDED');
-    } else if (errorCode === 'SUBSCRIPTION_PERIOD_ENDED') {
-      translatedMessage = te('SUBSCRIPTION_PERIOD_ENDED');
-    } else if (errorCode === 'SUBSCRIPTION_PERIOD_MISSING') {
-      translatedMessage = te('SUBSCRIPTION_PERIOD_MISSING');
-    } else if (errorCode && typeof errorCode === 'string' && errorCode.includes('SUBSCRIPTION')) {
-      // Try to translate any subscription error code
-      const translated = te(errorCode);
-      if (translated !== errorCode) {
-        translatedMessage = translated;
-      }
+    // Translate the error code (#740: with no translation the localized generic message is shown, never the code,
+    // `errors.<CODE>` or the API's English sentence)
+    const translatedCode = lookupErrorTranslation(te, errorCode);
+    if (translatedCode) {
+      translatedMessage = translatedCode;
+    } else if (errorCode || looksLikeErrorCode(translatedMessage)) {
+      translatedMessage = t('errors.generic');
     }
-    
+
     const subscriptionError: SubscriptionError = {
       message: translatedMessage,
       subscriptionStatus,

@@ -16,6 +16,12 @@ function nextBackoff(attempts: number): Date {
   return new Date(Date.now() + delayMinutes * 60 * 1000);
 }
 
+/** A RUNNING job older than this is treated as lost (process restarted mid-job). */
+export function getEmbeddingJobStaleMinutes(): number {
+  const configured = Number(process.env.EMBEDDING_JOB_STALE_MINUTES);
+  return Number.isFinite(configured) && configured > 0 ? configured : 15;
+}
+
 export const simplifiedEmbeddingJobs = {
   enqueue: async (input: EnqueueInput) => {
     const { productId, source = 'manual', priority = 0, maxAttempts = 5 } = input;
@@ -49,6 +55,51 @@ export const simplifiedEmbeddingJobs = {
         status: 'PENDING'
       }
     });
+  },
+
+  /**
+   * Reclaim jobs stuck in RUNNING (the worker died before it could finish).
+   * `attempts` was already counted when the job was claimed, so a job that has
+   * used all its attempts becomes FAILED; the rest go back to PENDING now.
+   */
+  reclaimStale: async (options?: { staleMinutes?: number; now?: Date; limit?: number }) => {
+    const staleMinutes = options?.staleMinutes ?? getEmbeddingJobStaleMinutes();
+    const now = options?.now ?? new Date();
+    const cutoff = new Date(now.getTime() - staleMinutes * 60 * 1000);
+    let reclaimed = 0;
+    let failed = 0;
+
+    const staleJobs = await prismaAny.embeddingJob.findMany({
+      where: {
+        status: 'RUNNING',
+        OR: [
+          { startedAt: { lt: cutoff } },
+          { startedAt: null, updatedAt: { lt: cutoff } }
+        ]
+      },
+      orderBy: { startedAt: 'asc' },
+      take: Math.max(1, Math.min(500, options?.limit ?? 100))
+    });
+
+    for (const job of staleJobs) {
+      const exhausted = (job.attempts ?? 0) >= (job.maxAttempts || 5);
+      const lastError = `Reclaimed: RUNNING for more than ${staleMinutes} min (attempt ${job.attempts ?? 0}/${job.maxAttempts || 5})`;
+      // Guard on status + startedAt so a job that just finished or was re-claimed is not touched.
+      const result = await prismaAny.embeddingJob.updateMany({
+        where: { id: job.id, status: 'RUNNING', startedAt: job.startedAt ?? null },
+        data: exhausted
+          ? { status: 'FAILED', finishedAt: now, startedAt: null, lastError }
+          : { status: 'PENDING', nextRunAt: now, startedAt: null, finishedAt: null, lastError }
+      });
+      if (result.count === 0) continue;
+      if (exhausted) failed += 1;
+      else reclaimed += 1;
+    }
+
+    if (reclaimed + failed > 0) {
+      console.warn(`[Embedding] Reclaimed ${reclaimed} stuck job(s), failed ${failed} (stale > ${staleMinutes} min)`);
+    }
+    return { reclaimed, failed };
   },
 
   processPending: async (options?: { batchSize?: number; productId?: number }) => {

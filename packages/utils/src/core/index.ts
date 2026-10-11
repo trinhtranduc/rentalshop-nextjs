@@ -167,6 +167,8 @@ export * from './billing-interval';
 export * from './subscription-billing-calculations';
 // Billing day counts and month addition on Vietnam civil days (#588)
 export * from './billing-dates';
+export * from './plan-change-rules';
+export * from './plan-addon-rules';
 
 // Order utilities
 // MOVED to server.ts - imports @rentalshop/database (server-only)
@@ -179,6 +181,7 @@ export * from './timezone';
 // Date utilities
 export * from './date';
 export * from './date-range';
+export * from './legacy-plan-days';
 // Browser-safe Vietnam-day helpers: today, month math, pickers, datetime-local, formatInShopZone (#578 batch C)
 export * from './shop-day';
 

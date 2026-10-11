@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import type { AuthUser } from '@rentalshop/auth';
 import {
@@ -16,7 +16,7 @@ import {
   formatDateKeyInTimeZone,
   SHOP_TIMEZONE,
 } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
@@ -96,7 +96,10 @@ async function handleExtendSubscription(
     const planAny = subscriptionAny.plan as { basePrice?: number } | undefined;
 
     // Calculate extension duration
-    const oldEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
+    // An expired subscription is extended from now, not from its old end (#779, owner rule).
+    const nowForBase = new Date();
+    const storedEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+    const oldEndDate = storedEnd && storedEnd.getTime() > nowForBase.getTime() ? storedEnd : nowForBase;
     // Vietnam civil days from the old end day to the new end day (#588). Acceptance stays on the
     // instants as before: any new end after the old end is valid (a same-day move counts 0 days).
     const extensionDays = Math.max(0, civilDaysBetween(oldEndDate, endDate));
@@ -149,21 +152,41 @@ async function handleExtendSubscription(
     const addons = await db.planLimitAddons.findActiveByMerchant(subscription.merchantId);
     const totalAddonLimits = await db.planLimitAddons.calculateTotal(subscription.merchantId);
     
-    // Update subscription period end + billing interval (single source of truth)
-    const extensionMonths = Math.round(extensionDays / 30);
-    const intervalValue = extensionMonths <= 1 ? 'monthly' : extensionMonths <= 3 ? 'quarterly' : extensionMonths <= 6 ? 'semi_annual' : 'annual';
+    // An extension moves the end date only: the cycle and the price of the plan stay (#785; it used to rewrite
+    // `interval` from the number of days, so an annual plan extended by 10 days became "monthly").
     const updateData = {
       currentPeriodEnd: endDate,
       status: 'ACTIVE',
-      interval: intervalValue,
-      intervalCount: 1,
       cancelAtPeriodEnd: false,
       canceledAt: null,
       cancelReason: null,
       updatedAt: new Date()
     };
     
-    const extendedSubscription = await db.subscriptions.update(subscriptionId, updateData);
+    // Only "Payment Received" is money the shop paid: it leaves a Payment. The other methods (Manual / Admin
+    // extension, Compensation) are free grants and leave none (#785).
+    const paymentReceived = method === 'PAYMENT_RECEIVED' && calculatedAmount > 0;
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({ where: { id: subscriptionId }, data: updateData });
+      if (paymentReceived) {
+        await tx.payment.create({
+          data: {
+            subscriptionId,
+            merchantId: subscription.merchantId,
+            amount: calculatedAmount,
+            currency: subscription.currency || (planAny as any)?.currency || 'VND',
+            method: PAYMENT_METHOD.MANUAL as any,
+            type: PAYMENT_TYPE.PLAN_EXTENSION as any,
+            status: PAYMENT_STATUS.COMPLETED as any,
+            transactionId: body.transactionId || undefined,
+            description: description || `Extension to ${formatDateKeyInTimeZone(endDate, SHOP_TIMEZONE)}`,
+            processedAt: new Date(),
+          },
+        });
+      }
+    });
+    // Same shape as before for the response (the converted subscription with merchant and plan)
+    const extendedSubscription = await db.subscriptions.update(subscriptionId, {});
     
     // Fetch subscription with merchant and plan for email
     const subscriptionWithDetails = await db.subscriptions.findById(subscriptionId);

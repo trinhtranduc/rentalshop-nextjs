@@ -9,6 +9,7 @@ import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.MainActivity
 import com.anyrent.pos.R
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.ui.inbox.InboxUnread
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -26,6 +27,7 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
             ?: message.data["body"]
             ?: ""
         val orderId = message.data["orderId"]?.toIntOrNull()
+        InboxUnread.invalidate() // #674: the home badge asks the server again (the row is already saved)
         if (orderId != null) {
             SessionStore.pendingOrderId = orderId
         }

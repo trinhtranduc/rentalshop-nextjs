@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
@@ -214,7 +216,7 @@ export default function UserDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <PageTitle>User Details</PageTitle>
         </PageHeader>
@@ -227,7 +229,7 @@ export default function UserDetailPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <PageTitle>User Details</PageTitle>
         </PageHeader>
@@ -240,7 +242,7 @@ export default function UserDetailPage() {
 
   if (!userDetails) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <PageTitle>User Details</PageTitle>
         </PageHeader>
@@ -252,17 +254,17 @@ export default function UserDetailPage() {
   }
 
   return (
-    <PageWrapper>
+    <PageWrapper className="ar-detail admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center">
       <PageHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between max-md:flex-wrap max-md:gap-2">
+          <div className="flex items-center gap-4 max-md:flex-wrap max-md:gap-2">
             <Button variant="ghost" onClick={() => router.push(`/merchants/${merchantId}/users`)}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-md:w-full [&>button]:max-md:flex-1">
             <Button variant="outline" onClick={handleEdit}>
               <Edit className="w-4 h-4 mr-2" />
               Edit User
@@ -273,14 +275,14 @@ export default function UserDetailPage() {
 
       <PageContent>
         {/* Header */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-6 max-md:flex-col max-md:gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 break-words">
               {userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}
             </h1>
             <p className="text-gray-600">{userDetails.email}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-md:flex-wrap max-md:w-full [&>button]:max-md:flex-1">
             <Button 
               onClick={handleEdit} 
               variant="default"
@@ -347,7 +349,7 @@ export default function UserDetailPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5 max-md:[&_input]:min-h-11 max-md:[&_textarea]:min-h-11 max-md:[&_button]:min-h-11 max-md:[&_[role=combobox]]:min-h-11">
           <DialogHeader>
             <DialogTitle>
               Edit User: {userDetails.name || `${userDetails.firstName} ${userDetails.lastName || ''}`.trim()}

@@ -1,0 +1,173 @@
+/* #805 (step 3 of #802): admin list pages in the style of the shop portal (apps/client).
+   Every rule is scoped to `.admin-list` (set on the page wrapper), so packages/ui components shared with
+   apps/client are unchanged. Tokens are the --ar-* triplets from globals.css. Behaviour is untouched. */
+
+/* ---- page header: portal title + pill actions ---- */
+.admin-list h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: rgb(var(--ar-ink));
+}
+.admin-list h1 + p,
+.admin-list h1 ~ p {
+  font-size: 0.875rem;
+  color: rgb(var(--ar-muted));
+}
+.admin-list > div:first-child button {
+  border-radius: 9999px;
+}
+
+/* ---- filter bar: bordered card, search + chip-style selects ---- */
+.admin-list .rounded-lg.border:not(:has(table)) {
+  border-color: rgb(var(--ar-line));
+  background: rgb(var(--ar-surface));
+  border-radius: 0.75rem;
+  box-shadow: none;
+}
+.admin-list .rounded-lg.border:not(:has(table)) input:not([type='checkbox']):not([type='radio']),
+.admin-list .rounded-lg.border:not(:has(table)) [role='combobox'],
+.admin-list .rounded-lg.border:not(:has(table)) select {
+  border-radius: 9999px;
+  border-color: rgb(var(--ar-line));
+  background: rgb(var(--ar-surface));
+}
+.admin-list .rounded-lg.border:not(:has(table)) input:focus-visible,
+.admin-list .rounded-lg.border:not(:has(table)) [role='combobox']:focus-visible {
+  border-color: rgb(var(--ar-accent, 29 78 216));
+}
+
+/* ---- table surface: white, bordered, sticky header ---- */
+.admin-list .rounded-lg:has(table) {
+  border: 1px solid rgb(var(--ar-line));
+  border-radius: 0.75rem;
+  background: rgb(var(--ar-surface));
+  box-shadow: none;
+}
+.admin-list table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgb(var(--ar-surface-muted));
+  border-bottom: 1px solid rgb(var(--ar-line));
+  color: rgb(var(--ar-muted));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.admin-list table tbody tr {
+  border-bottom: 1px solid rgb(var(--ar-line-soft));
+}
+.admin-list table tbody tr:hover {
+  background: rgb(var(--ar-surface-muted));
+}
+.admin-list table tbody td {
+  color: rgb(var(--ar-ink));
+}
+/* inactive / cancelled rows are muted (the portal strikes the number through) */
+.admin-list table tbody tr:has([class*='bg-red-100']) td:first-of-type + td,
+.admin-list table tbody tr[data-muted='true'] {
+  opacity: 0.7;
+}
+
+/* ---- pagination: tidy, thumb-sized on a phone ---- */
+.admin-list .py-4 button {
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .admin-list {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .admin-list h1 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  .admin-list > div:first-child button {
+    min-height: 44px;
+  }
+
+  /* filters collapse into one horizontally scrollable chip row */
+  .admin-list .rounded-lg.border:not(:has(table)) > div {
+    padding: 0.5rem !important;
+  }
+  .admin-list .rounded-lg.border:not(:has(table)) .flex-wrap {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .admin-list .rounded-lg.border:not(:has(table)) .flex-wrap::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-list .rounded-lg.border:not(:has(table)) .flex-wrap > * {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+  }
+  .admin-list .rounded-lg.border:not(:has(table)) .flex-wrap > .flex-1 {
+    min-width: 220px;
+  }
+  .admin-list .rounded-lg.border:not(:has(table)) .flex-wrap > .w-full {
+    width: auto;
+    min-width: 150px;
+  }
+
+  /* cards: the primary text first, ~8px between lines, key values labelled */
+  .admin-list table.table-cards tr {
+    position: relative;
+    gap: 0.5rem;
+    border-color: rgb(var(--ar-line));
+    background: rgb(var(--ar-surface));
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+  .admin-list table.table-cards td[data-primary] {
+    order: -1;
+    padding-right: 5.5rem !important;
+    font-weight: 600;
+  }
+  .admin-list table.table-cards td[data-label]::before {
+    color: rgb(var(--ar-muted));
+  }
+  /* the expand chevron and the selection checkbox sit in the card corner, not as rows of their own */
+  .admin-list table.table-cards td:not([data-label]):not([data-primary]):not([data-actions]) {
+    position: absolute;
+    top: 0;
+    right: 0.25rem;
+    z-index: 1;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center !important;
+  }
+  .admin-list table.table-cards td:not([data-label]):not([data-primary]):not([data-actions]) :is(input, [role='checkbox']) {
+    width: 22px;
+    height: 22px;
+    min-height: 0;
+    min-width: 0;
+  }
+  .admin-list table.table-cards td:not([data-label]):not([data-primary]):not([data-actions]):empty {
+    display: none;
+  }
+  .admin-list table.table-cards td:not([data-label]):not([data-primary]):not([data-actions]) + td:not([data-label]):not([data-primary]):not([data-actions]) {
+    right: 2.75rem;
+  }
+  .admin-list table.table-cards td[data-actions] {
+    border-top-color: rgb(var(--ar-line-soft));
+  }
+  .admin-list table.table-cards td[data-actions] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* pagination stacks, buttons are 44px */
+  .admin-list .py-4 button,
+  .admin-list .py-4 input {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

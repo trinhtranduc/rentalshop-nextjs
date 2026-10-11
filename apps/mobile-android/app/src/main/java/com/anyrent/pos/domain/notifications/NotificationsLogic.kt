@@ -84,6 +84,16 @@ object NotificationsLogic {
         }
     }
 
+    /**
+     * #751: the list after another page landed. The API pages by number, so when a notification arrives while the
+     * list is open the next page starts with the last row of the page before. A row already in the list is not added
+     * twice (a repeated id also crashes a LazyColumn that keys its rows by id).
+     */
+    fun appendPage(existing: List<InboxNotification>, page: List<InboxNotification>): List<InboxNotification> {
+        val seen = existing.mapTo(HashSet()) { it.id }
+        return existing + page.filter { seen.add(it.id) }
+    }
+
     /** "09:12" in Vietnam time, matching the day group */
     fun time(createdAt: String?): String {
         val local = instant(createdAt)?.atZone(zone) ?: return ""

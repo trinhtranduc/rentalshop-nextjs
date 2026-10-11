@@ -100,20 +100,143 @@ describeE2E('BF-QTY quantity changes', () => {
     expect((await s.availability(product.id, { from: addDays(w.to, 5) })).availabilityByOutlet[0].effectivelyAvailable).toBe(1);
   });
 
-  // Suspected bug #504: PUT orderItems on a PICKUPED order replaces the lines without moving
-  // OutletStock.renting; RETURNED then gives back only the new quantity, so units stay "renting" forever.
-  knownBug('#504', 'BF-QTY-04 PICKUPED: lowering quantity 2 -> 1 then returning gives every unit back', async () => {
-    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+  // #504: PUT orderItems on a PICKUPED order moves OutletStock.renting/available by the difference,
+  // so the return gives back every unit that was handed out. Hand-over has no stock guard (Q1/Q9), so an
+  // increase is accepted exactly like the same quantity at hand-over.
+  const STOCK = (stock, available, renting) => ({ stock, available, renting });
+
+  async function pickedUp(lines) {
     const customer = await s.createCustomer();
     const w = futureWindow(1);
     const args = { customer, from: w.from, to: w.to };
-    const order = await s.createOrder(rentBody({ ...args, lines: [{ product, quantity: 2 }] }).body);
+    const order = await s.createOrder(rentBody({ ...args, lines }).body);
     await s.setStatus(order.id, 'PICKUPED');
-    expect(await s.outletStock(product.id, product.outletId)).toEqual({ stock: 2, available: 0, renting: 2 });
+    return { order, args };
+  }
+
+  test('BF-QTY-04 PICKUPED: lowering quantity 2 -> 1 gives the unit back at once and the return gives every unit back', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 2 }]);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
     const r = await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body);
     expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 1, 1));
     await s.setStatus(order.id, 'RETURNED');
-    expect(await s.outletStock(product.id, product.outletId)).toEqual({ stock: 2, available: 2, renting: 0 });
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-05 PICKUPED: raising quantity 1 -> 2 takes the unit, the return gives both back', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 1 }]);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 1, 1));
+    expect((await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 2 }] }).body)).status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-06 PICKUPED: raising quantity beyond stock is accepted like at hand-over (Q1); available stops at 0', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 2 }]);
+    const r = await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 3 }] }).body);
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 3));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-07 PICKUPED: a removed line gives its units back, an added line takes them', async () => {
+    const a = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 3 });
+    const b = await s.createProduct({ kind: 'FIXED', price: 50000, stock: 3 });
+    const c = await s.createProduct({ kind: 'FIXED', price: 70000, stock: 3 });
+    const { order, args } = await pickedUp([{ product: a, quantity: 2 }, { product: b, quantity: 1 }]);
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(3, 2, 1));
+    // remove b, add c x2, keep a
+    const r = await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product: a, quantity: 2 }, { product: c, quantity: 2 }] }).body);
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(a.id, a.outletId)).toEqual(STOCK(3, 1, 2));
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(3, 3, 0));
+    expect(await s.outletStock(c.id, c.outletId)).toEqual(STOCK(3, 1, 2));
+    await s.setStatus(order.id, 'RETURNED');
+    for (const p of [a, b, c]) expect(await s.outletStock(p.id, p.outletId)).toEqual(STOCK(3, 3, 0));
+  });
+
+  test('BF-QTY-08 PICKUPED: swapping a product moves the units from the old one to the new one', async () => {
+    const a = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const b = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product: a, quantity: 2 }]);
+    await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product: b, quantity: 1 }] }).body);
+    expect(await s.outletStock(a.id, a.outletId)).toEqual(STOCK(2, 2, 0));
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(2, 1, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(b.id, b.outletId)).toEqual(STOCK(2, 2, 0));
+  });
+
+  test('BF-QTY-09 PICKUPED: an edit that keeps the quantities does not move stock', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    const { order, args } = await pickedUp([{ product, quantity: 2 }]);
+    const r = await s.updateOrder(order.id, { ...updateBody({ ...args, lines: [{ product, quantity: 2 }] }).body, notes: 'same lines' });
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
+    await s.updateOrder(order.id, { notes: 'no lines at all' });
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(2, 0, 2));
+  });
+
+  test('BF-QTY-10 RESERVED: editing the lines moves no stock; the hand-over then takes the saved lines', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 3 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(1);
+    const args = { customer, from: w.from, to: w.to };
+    const order = await s.createOrder(rentBody({ ...args, lines: [{ product, quantity: 3 }] }).body);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+    await s.updateOrder(order.id, updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+    await s.setStatus(order.id, 'PICKUPED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 2, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+  });
+
+  test('BF-QTY-11 one PUT that edits the lines and hands the order over takes the saved lines', async () => {
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 3 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(1);
+    const args = { customer, from: w.from, to: w.to };
+    const order = await s.createOrder(rentBody({ ...args, lines: [{ product, quantity: 3 }] }).body);
+    const r = await s.updateOrder(order.id, { ...updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body, status: 'PICKUPED' });
+    expect(r.status).toBe(200);
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 2, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, product.outletId)).toEqual(STOCK(3, 3, 0));
+  });
+
+  test('BF-QTY-12 multi-outlet: an edit moves only its own outlet; moving the order to the other outlet moves the units', async () => {
+    const outlets = (await s.get('/api/outlets?limit=50')).body.data.outlets;
+    const home = await s.defaultOutletId();
+    const other = outlets.find((o) => o.id !== home);
+    if (!other) return; // seed has 2 outlets per merchant
+    const product = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2 });
+    expect(
+      (await s.updateProduct(product.id, {
+        totalStock: 4,
+        outletStock: [{ outletId: home, stock: 2 }, { outletId: other.id, stock: 2 }]
+      })).status
+    ).toBe(200);
+    const customer = await s.createCustomer();
+    const w = futureWindow(1);
+    const args = { customer, from: w.from, to: w.to };
+    const order = await s.createOrder({ ...rentBody({ ...args, lines: [{ product, quantity: 2 }] }).body, outletId: home });
+    await s.setStatus(order.id, 'PICKUPED');
+    await s.updateOrder(order.id, { ...updateBody({ ...args, lines: [{ product, quantity: 1 }] }).body, outletId: home });
+    expect(await s.outletStock(product.id, home)).toEqual(STOCK(2, 1, 1));
+    expect(await s.outletStock(product.id, other.id)).toEqual(STOCK(2, 2, 0));
+    const moved = await s.updateOrder(order.id, { outletId: other.id });
+    expect(moved.status).toBe(200);
+    expect(await s.outletStock(product.id, home)).toEqual(STOCK(2, 2, 0));
+    expect(await s.outletStock(product.id, other.id)).toEqual(STOCK(2, 1, 1));
+    await s.setStatus(order.id, 'RETURNED');
+    expect(await s.outletStock(product.id, home)).toEqual(STOCK(2, 2, 0));
+    expect(await s.outletStock(product.id, other.id)).toEqual(STOCK(2, 2, 0));
   });
 });
 
@@ -315,10 +438,9 @@ describeE2E('BF-EDIT order edits', () => {
     });
   });
 
-  // Suspected bug #505: gia hạn (#425) raises totalAmount of a PICKUPED order, but the balance
-  // (computeOrderBalance) only looks at fees - collateral, and the pickup event is recomputed from the new total,
-  // so the extra rent is never due and is booked on the pickup day.
-  knownBug('#505', 'BF-EDIT-11 PICKUPED: extend (gia hạn) with extra rent: extra is due, pickup day money unchanged', async () => {
+  // #505: gia hạn (#425) raises totalAmount of a PICKUPED order. The extra rent is due at return (the balance adds
+  // totalAmount - pickupTotalAmount), and the money collected at hand-over stays what it was on the pickup day.
+  test('BF-EDIT-11 PICKUPED: extend (gia hạn) with extra rent: extra is due, pickup day money unchanged', async () => {
     const A = 300000;
     const X = 100000; // extra rent entered in the Gia hạn sheet
     const S = 500000;
@@ -337,10 +459,54 @@ describeE2E('BF-EDIT order edits', () => {
     });
     expect(r.status).toBe(200);
     expect(r.body.data.totalAmount).toBe(A + X);
+    expect(r.body.data.pickupTotalAmount).toBe(A);
     // collateral S held, X still owed: hand back S - X at return
     const row = await s.orderRow(order.id);
     expect([row.amountDue, row.refundDue]).toEqual([0, S - X]);
     expect(pick(await ovP.delta(), ['collected'])).toEqual({ collected: 0 });
+  });
+
+  test('BF-EDIT-14 extend, then return: the extra rent is collected on the return day, the pickup day keeps its money', async () => {
+    const A = 300000;
+    const X = 100000;
+    const S = 500000;
+    const product = await s.createProduct({ kind: 'FIXED', price: A, stock: 1 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(2);
+    const order = await s.createOrder(rentBody({ customer, lines: [{ product }], from: w.from, to: w.to }).body);
+    const ovPickup = await watchOverview(s, w.from);
+    await s.setStatus(order.id, 'PICKUPED', { pickedUpAt: vnAt(w.from, '09:00').toISOString(), securityDeposit: S });
+    expect(pick(await ovPickup.delta(), ['collected'])).toEqual({ collected: A });
+    await s.updateOrder(order.id, { rentalDuration: 4, totalAmount: A + X });
+    expect(pick(await ovPickup.delta(), ['collected'])).toEqual({ collected: 0 });
+    const returnDay = addDays(w.to, 2);
+    const ovReturn = await watchOverview(s, returnDay);
+    await s.setStatus(order.id, 'RETURNED', { returnedAt: vnAt(returnDay, '10:00').toISOString() });
+    expect(pick(await ovReturn.delta(), ['collected'])).toEqual({ collected: X });
+    expect(pick(await ovPickup.delta(), ['collected'])).toEqual({ collected: 0 });
+  });
+
+  test('BF-EDIT-15 extension larger than the collateral: the rest is due (amountDue); not extended = as before', async () => {
+    const A = 300000;
+    const S = 100000;
+    const product = await s.createProduct({ kind: 'FIXED', price: A, stock: 2 });
+    const customer = await s.createCustomer();
+    const w = futureWindow(2);
+    const plain = await s.createOrder(rentBody({ customer, lines: [{ product }], from: w.from, to: w.to }).body);
+    await s.setStatus(plain.id, 'PICKUPED', { pickedUpAt: vnAt(w.from, '09:00').toISOString(), securityDeposit: S });
+    // another customer: an identical order within 60 s is a retry of the first (#341)
+    const extended = await s.createOrder(rentBody({ customer: await s.createCustomer(), lines: [{ product }], from: w.from, to: w.to }).body);
+    await s.setStatus(extended.id, 'PICKUPED', { pickedUpAt: vnAt(w.from, '09:00').toISOString(), securityDeposit: S });
+    await s.updateOrder(extended.id, { totalAmount: A + 250000 });
+    const rowPlain = await s.orderRow(plain.id);
+    expect([rowPlain.amountDue, rowPlain.refundDue]).toEqual([0, S]);
+    const rowExt = await s.orderRow(extended.id);
+    expect([rowExt.amountDue, rowExt.refundDue]).toEqual([150000, 0]);
+    // a RESERVED order is unaffected by pickupTotalAmount (still null)
+    const reserved = await s.createOrder(rentBody({ customer: await s.createCustomer(), lines: [{ product }], from: w.from, to: w.to }).body);
+    const detail = await s.getOrder(reserved.id);
+    expect(detail.pickupTotalAmount ?? null).toBeNull();
+    expect((await s.orderRow(reserved.id)).amountDue).toBe(A);
   });
 
   test('BF-EDIT-12 late return: late fee (2 days x daily price) is collected on the return day', async () => {

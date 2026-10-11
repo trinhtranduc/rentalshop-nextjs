@@ -8,6 +8,25 @@
 
 import Foundation
 
+/// #758: one place that turns an API `code` into a localized sentence.
+enum APIErrorText {
+    /// SUBSCRIPTION_*, PLAN_*, TRIAL_*, NO_SUBSCRIPTION*, PLATFORM_ACCESS*: a shop user can hit these.
+    static func isSubscriptionFamily(_ code: String) -> Bool {
+        let c = code.uppercased()
+        return ["SUBSCRIPTION_", "PLAN_", "TRIAL_", "NO_SUBSCRIPTION", "PLATFORM_ACCESS"].contains { c.hasPrefix($0) }
+    }
+
+    /// The app's sentence for `code`; a generic localized sentence for an unknown subscription / plan code;
+    /// nil for any other code (the caller keeps its own fallback). Never the raw code.
+    static func message(forCode code: String, lookup: (String) -> String = { $0.localized() }) -> String? {
+        let key = code.uppercased()
+        let text = lookup(key)
+        if text != key { return text }
+        if isSubscriptionFamily(key) { return lookup("SUBSCRIPTION_GENERIC") }
+        return nil
+    }
+}
+
 /// API Error Codes - Matches backend ErrorCode enum
 enum APIErrorCode: String, Codable, CaseIterable {
     // MARK: - Authentication & Authorization
@@ -308,6 +327,12 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case invalidSessionId = "INVALID_SESSION_ID"
     case invalidTenantKey = "INVALID_TENANT_KEY"
     case invalidTimezone = "INVALID_TIMEZONE"
+    // #654: image search (POST /api/products/searchByImage)
+    case invalidLimit = "INVALID_LIMIT"
+    case invalidMinSimilarity = "INVALID_MIN_SIMILARITY"
+    case searchFailed = "SEARCH_FAILED"
+    case searchTimeout = "SEARCH_TIMEOUT"
+    case noProductsFound = "NO_PRODUCTS_FOUND"
     case invalidUserId = "INVALID_USER_ID"
     case invalidUserRole = "INVALID_USER_ROLE"
 
@@ -514,8 +539,8 @@ enum APIErrorCode: String, Codable, CaseIterable {
     var defaultMessage: String {
         // Try to get from Localizable.strings first (using error code as key)
         let localizedKey = self.rawValue
-        let localizedMessage = localizedKey.localized()
-        
+        let localizedMessage = APIErrorText.message(forCode: localizedKey) ?? localizedKey
+
         // If localization returns the key itself (not found), use fallback
         if localizedMessage == localizedKey {
             // Fallback to hardcoded messages
@@ -833,6 +858,11 @@ struct APIErrorMessages {
         .invalidSessionId: "Invalid session ID",
         .invalidTenantKey: "Invalid tenant key provided",
         .invalidTimezone: "Unknown time zone. Pick a zone from the list (for example Asia/Ho_Chi_Minh).",
+        .invalidLimit: "Invalid limit parameter",
+        .invalidMinSimilarity: "Invalid minimum similarity parameter",
+        .searchFailed: "We couldn't search by image right now. Please try again in a moment, or use text search.",
+        .searchTimeout: "The image search took too long. Try a smaller photo, or try again in a few minutes.",
+        .noProductsFound: "No similar products found",
         .invalidUserId: "Invalid user ID",
         .invalidUserRole: "Invalid user role",
         .loginSuccess: "Login successful",
@@ -1190,6 +1220,11 @@ struct APIErrorStatusCodes {
         .invalidSessionId: 400,
         .invalidTenantKey: 400,
         .invalidTimezone: 400,
+        .invalidLimit: 400,
+        .invalidMinSimilarity: 400,
+        .searchFailed: 503,
+        .searchTimeout: 503,
+        .noProductsFound: 200,
         .invalidUserId: 400,
         .invalidUserRole: 400,
         .loginSuccess: 200,
@@ -1329,6 +1364,11 @@ struct APIErrorResponse: Codable {
     
     /// Get localized error message
     var localizedMessage: String {
+        // #758: a code the app has a sentence for (or a subscription / plan code it does not know)
+        // never shows the API's English text
+        if let code = code, !code.isEmpty, let text = APIErrorText.message(forCode: code) {
+            return text
+        }
         if let errorCode = errorCode {
             return errorCode.defaultMessage
         }

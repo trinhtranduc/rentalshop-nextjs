@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiClient.PageResult
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.RefreshPolicy
+import com.anyrent.pos.domain.RefreshTracker
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.TodayWork
@@ -13,6 +15,7 @@ import com.anyrent.pos.domain.orders.TodayWorkRepository
 import com.anyrent.pos.domain.orders.TodayWorkRow
 import com.anyrent.pos.ui.common.dayKey
 import com.anyrent.pos.ui.common.formatDayShort
+import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -153,7 +156,7 @@ val LiveOrdersPageLoader = OrdersPageLoader { query ->
     withContext(Dispatchers.IO) {
         ApiClient.get().searchOrders(
             page = query.page,
-            limit = OrdersHomeViewModel.PAGE_SIZE,
+            limit = query.limit,
             q = query.q,
             status = query.status,
             orderType = query.orderType,
@@ -176,6 +179,8 @@ class OrdersHomeViewModel(
     private val now: () -> Instant = Instant::now,
     private val zone: () -> ZoneId = { ShopTime.zone },
     private val searchDelayMs: Long = 300,
+    /** App-wide "orders changed" version (#674); replaceable in tests */
+    private val changes: () -> Long = { OrdersChanged.version.value },
 ) : ViewModel() {
     private val _state = MutableStateFlow(OrdersHomeState())
     val state: StateFlow<OrdersHomeState> = _state.asStateFlow()
@@ -185,15 +190,76 @@ class OrdersHomeViewModel(
     private var page = 1
     private var loaded: List<OrderSummary> = emptyList()
 
-    /** The tab became visible: first load, or a quiet refresh after coming back from a detail */
+    /** What each segment showed last (#674): a segment switch shows it at once, then refreshes only when needed */
+    private data class Snapshot(
+        val sections: List<OrdersSection>,
+        val loaded: List<OrderSummary>,
+        val page: Int,
+        val hasMore: Boolean,
+        val total: Int?,
+        val filter: RentOrdersFilter,
+    )
+    private val snapshots = mutableMapOf<OrdersSegment, Snapshot>()
+
+    /** Dirty flag and last load time of each list: a segment, or the search (#674) */
+    private val trackers = mutableMapOf<String, RefreshTracker>()
+    private fun tracker(key: String) = trackers.getOrPut(key) { RefreshTracker(changes) }
+    private fun currentKey(state: OrdersHomeState = _state.value) =
+        if (state.isSearching) "search" else "segment-${state.segment}"
+
+    /** The current list changed on the server since it was loaded */
+    val isDirty: Boolean get() = tracker(currentKey()).isDirty
+
+    /** Dirty, never loaded, or older than 5 minutes */
+    val needsRefresh: Boolean get() = tracker(currentKey()).shouldReload(now(), RefreshPolicy.LIST_TTL)
+
+    /** The tab became visible: first load, or (#674) a quiet refresh only when the list is dirty or stale */
     fun onShown() {
-        if (loadJob == null) reload() else reload(keepRows = true)
+        if (loadJob == null) reload() else refreshIfNeeded()
+    }
+
+    /** Back from a detail, tab again, or an orders-changed signal while on screen: rows and scroll stay */
+    fun refreshIfNeeded() {
+        if (loadJob?.isActive == true) return
+        val current = _state.value
+        when {
+            current.error != null -> reload()
+            needsRefresh -> reload(keepRows = true)
+        }
     }
 
     fun select(segment: OrdersSegment) {
         if (segment == _state.value.segment) return
         _state.update { it.copy(segment = segment) }
-        reload()
+        showSegment()
+    }
+
+    /**
+     * The segment's last result at once when there is one, then a quiet refresh if it is dirty or stale;
+     * otherwise a load with the spinner (#674)
+     */
+    private fun showSegment() {
+        val current = _state.value
+        val snapshot = snapshots[current.segment]
+            ?.takeIf { !current.isSearching && (current.segment != OrdersSegment.RENT || it.filter == current.filter) }
+        if (snapshot == null) {
+            reload()
+            return
+        }
+        loadJob?.cancel()
+        loaded = snapshot.loaded
+        page = snapshot.page
+        _state.update {
+            it.copy(
+                sections = snapshot.sections,
+                loading = false,
+                refreshing = false,
+                error = null,
+                hasMore = snapshot.hasMore,
+                total = snapshot.total,
+            )
+        }
+        if (needsRefresh) reload(keepRows = true)
     }
 
     fun applyFilter(filter: RentOrdersFilter) {
@@ -221,13 +287,18 @@ class OrdersHomeViewModel(
                 reload()
             }
         } else if (wasSearching) {
-            reload() // back to the segment
+            showSegment() // back to the segment
         }
     }
 
-    /** Pull to refresh, coming back from a detail, or retry */
+    /**
+     * Retry, filter or search change, first load: rows cleared and the spinner shows. [keepRows] (pull to refresh,
+     * back from a detail, #674): the rows and scroll stay, every loaded page is asked again in one request, and a
+     * failure of a non-pull refresh keeps the rows.
+     */
     fun reload(fromPull: Boolean = false, keepRows: Boolean = fromPull) {
         loadJob?.cancel()
+        val pages = if (keepRows) page.coerceIn(1, MAX_QUIET_PAGES) else 1
         page = 1
         loaded = emptyList()
         _state.update {
@@ -241,11 +312,14 @@ class OrdersHomeViewModel(
             )
         }
         val current = _state.value
+        val key = currentKey(current)
+        val version = tracker(key).begin()
+        val quiet = keepRows && !fromPull
         loadJob = viewModelScope.launch {
             if (!current.isSearching && current.segment == OrdersSegment.TODAY) {
-                loadToday()
+                loadToday(key, version, quiet)
             } else {
-                loadPage(1)
+                loadPage(1, pages = pages, key = key, version = version, quiet = quiet)
             }
         }
     }
@@ -256,7 +330,7 @@ class OrdersHomeViewModel(
         loadJob = viewModelScope.launch { loadPage(page + 1) }
     }
 
-    private suspend fun loadToday() {
+    private suspend fun loadToday(key: String, version: Long, quiet: Boolean) {
         todayWork.load()
             .onSuccess { work ->
                 val sections = OrdersHomeLogic.todaySections(work)
@@ -268,31 +342,44 @@ class OrdersHomeViewModel(
                         todayBadge = OrdersBoardLogic.badgeCount(sections),
                     )
                 }
+                markLoaded(key, version)
             }
             .onFailure { error ->
                 if (error is CancellationException) throw error
                 if (error is AppError.Http && error.statusCode == 403) {
                     // No dashboard permission: the tab works without "Việc cần làm"
                     _state.update { it.copy(todayAvailable = false, segment = OrdersSegment.RENT) }
-                    loadPage(1)
+                    val rentKey = currentKey()
+                    loadPage(1, key = rentKey, version = tracker(rentKey).begin())
+                    return
+                }
+                if (quiet) {
+                    _state.update { it.copy(refreshing = false) } // keep the rows; the next show tries again
                     return
                 }
                 _state.update { it.copy(loading = false, refreshing = false, error = error.message.orEmpty()) }
             }
     }
 
-    private suspend fun loadPage(pageToLoad: Int) {
+    /** [pages] > 1 (quiet refresh): page 1 with room for every page already loaded, so the list keeps its length */
+    private suspend fun loadPage(
+        pageToLoad: Int,
+        pages: Int = 1,
+        key: String? = null,
+        version: Long? = null,
+        quiet: Boolean = false,
+    ) {
         val current = _state.value
         val searching = current.isSearching
         val query = when {
             searching -> OrdersQuery(q = current.query.trim(), page = pageToLoad)
             current.segment == OrdersSegment.SALE -> OrdersQuery(orderType = "SALE", page = pageToLoad)
             else -> OrdersBoardLogic.rentQuery(current.filter, pageToLoad, now(), zone())
-        }
+        }.copy(limit = PAGE_SIZE * pages)
         orders.load(query).onSuccess { result ->
             val known = loaded.map { it.id }.toSet()
             loaded = if (pageToLoad == 1) result.items else loaded + result.items.filter { it.id !in known }
-            page = pageToLoad
+            page = if (pageToLoad == 1) pages else pageToLoad
             _state.update {
                 it.copy(
                     sections = buildSections(searching, current.segment),
@@ -302,8 +389,13 @@ class OrdersHomeViewModel(
                     total = result.total,
                 )
             }
+            if (key != null && version != null) markLoaded(key, version) else saveSnapshot()
         }.onFailure { error ->
             if (error is CancellationException) throw error
+            if (pageToLoad == 1 && quiet) {
+                _state.update { it.copy(refreshing = false) } // keep the rows; the next show tries again
+                return
+            }
             _state.update {
                 if (pageToLoad == 1) {
                     it.copy(loading = false, refreshing = false, error = error.message.orEmpty())
@@ -312,6 +404,17 @@ class OrdersHomeViewModel(
                 }
             }
         }
+    }
+
+    private fun markLoaded(key: String, version: Long) {
+        tracker(key).loaded(version, now())
+        saveSnapshot()
+    }
+
+    private fun saveSnapshot() {
+        val current = _state.value
+        if (current.isSearching || current.loading || current.error != null) return
+        snapshots[current.segment] = Snapshot(current.sections, loaded, page, current.hasMore, current.total, current.filter)
     }
 
     private fun buildSections(searching: Boolean, segment: OrdersSegment): List<OrdersSection> {
@@ -333,5 +436,8 @@ class OrdersHomeViewModel(
 
     companion object {
         const val PAGE_SIZE = 20
+
+        /** A quiet refresh reloads at most this many pages in one request (API `limit` ≤ 100) */
+        const val MAX_QUIET_PAGES = 5
     }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS, USER_ROLE } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { handleApiError, ResponseBuilder, formatFullName } from '@rentalshop/utils';
 import {
   aggregateConflictingQuantities,
@@ -98,8 +98,15 @@ export async function GET(
       let finalOutletId: number;
       const { outletId } = query;
       
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         // Outlet users: use query outletId if provided, otherwise use their assigned outlet
+        // Outlet roles read only their own outlet's stock and bookings (#732)
+        if (outletId && Number(outletId) !== userOutletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('NO_OUTLET_ACCESS'),
+            { status: 403 }
+          );
+        }
         finalOutletId = outletId ? parseInt(outletId) : (userOutletId || 0);
       } else if (user.role === USER_ROLE.MERCHANT && !outletId) {
         // A merchant login has no outlet (#398): use the merchant's default outlet, else its only active one

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION } from '@rentalshop/constants';
+import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
 import { 
   ordersQuerySchema, 
   orderCreateSchema, 
@@ -21,9 +21,11 @@ import {
   extractStagingKeysFromUrls,
   mapStagingUrlsToProductionUrls,
   getUtcRangeForDateKeys,
-  toDateKeyInTimeZone
+  toDateKeyInTimeZone,
+  normalizeLegacyPlanDays
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
+import { checkOrderRefsInMerchant } from '../../../lib/order-scope';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
@@ -176,7 +178,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = queryOutletId;
-    } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    } else if (isOutletRole(user.role)) {
       // Outlet users can only see orders from their assigned outlet
       searchFilters.outletId = userScope.outletId;
     } else if (user.role === USER_ROLE.ADMIN) {
@@ -613,9 +615,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         { status: 400 }
       );
     }
+    // #577: the Android cart before #413 sends `R T23:59:00Z` (= R+1 in Vietnam): store the chosen days
+    {
+      const days = normalizeLegacyPlanDays(parsed.data);
+      if (days.legacy) {
+        parsed.data.pickupPlanAt = days.pickupPlanAt as string | undefined;
+        parsed.data.returnPlanAt = days.returnPlanAt as string | undefined;
+      }
+    }
 
     // ✅ Validate outletId based on user role
-    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+    if (isOutletRole(user.role)) {
       // Outlet users can only create orders for their assigned outlet
       if (parsed.data.outletId !== userScope.outletId) {
         console.log('❌ Outlet user trying to create order for different outlet:', {
@@ -678,13 +688,22 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           { status: 404 }
         );
       }
-      // Non-admin: check customer belongs to same merchant
-      if (user.role !== USER_ROLE.ADMIN && customer.merchantId !== outlet.merchantId) {
+      // The customer belongs to the merchant of the outlet, for every role (#789: an admin was skipped)
+      if (customer.merchantId !== outlet.merchantId) {
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Don't reveal customer exists for another merchant
           { status: 404 }
         );
       }
+    }
+
+    // The products of the order belong to the merchant of the outlet too (#789: never checked)
+    const refsCheck = await checkOrderRefsInMerchant({
+      merchantId: outlet.merchantId,
+      productIds: parsed.data.orderItems?.map((item) => item.productId),
+    });
+    if (!refsCheck.ok) {
+      return NextResponse.json(ResponseBuilder.error(refsCheck.code), { status: 404 });
     }
 
     // Generate order number: 6-digit random number (e.g., 123456, 789012)
@@ -1206,6 +1225,14 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         { status: 400 }
       );
     }
+    // #577: same old Android pattern on edit
+    {
+      const days = normalizeLegacyPlanDays(parsed.data);
+      if (days.legacy) {
+        parsed.data.pickupPlanAt = days.pickupPlanAt as string | undefined;
+        parsed.data.returnPlanAt = days.returnPlanAt as string | undefined;
+      }
+    }
 
     if (!id) {
       return NextResponse.json(
@@ -1239,7 +1266,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
         }
 
         // Outlet users cannot change order outlet
-        if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+        if (isOutletRole(user.role)) {
           if (targetOutletId !== userScope.outletId) {
             return NextResponse.json(
               ResponseBuilder.error('CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET'),
@@ -1274,7 +1301,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
             );
           }
         }
-      } else if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      } else if (isOutletRole(user.role)) {
         // If not changing outletId but user is outlet-level, validate current order belongs to their outlet
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
@@ -1285,7 +1312,7 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
       }
     } else {
       // If no outletId in update, validate existing order belongs to user's scope
-      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF) {
+      if (isOutletRole(user.role)) {
         if (existingOrder.outletId !== userScope.outletId) {
           return NextResponse.json(
             ResponseBuilder.error('CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET'),

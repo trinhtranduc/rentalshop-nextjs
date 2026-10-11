@@ -59,7 +59,8 @@
     "MERCHANT": "Chủ thương hiệu",
     "OUTLET_ADMIN": "Quản lý cửa hàng",
     "OUTLET_STAFF": "Nhân viên",
-    "ARTICLE": "Biên tập bài viết"
+    "ARTICLE": "Biên tập bài viết",
+    "OUTLET_INVENTORY": "Nhân viên kho"
   },
   "actions": {
     "activate": "Kích hoạt người dùng",
@@ -192,7 +193,8 @@
     "title": "Vai trò",
     "OUTLET_ADMIN": "Quản lý một cửa hàng: đơn hàng, sản phẩm, khách hàng và nhân viên của cửa hàng đó.",
     "OUTLET_STAFF": "Tạo và xử lý đơn hàng. Không sửa được giá sản phẩm.",
-    "loginNote": "Người dùng mới đăng nhập bằng email và mật khẩu này, sau đó có thể tự đổi mật khẩu."
+    "loginNote": "Người dùng mới đăng nhập bằng email và mật khẩu này, sau đó có thể tự đổi mật khẩu.",
+    "OUTLET_INVENTORY": "Bán hàng như nhân viên, thêm quản lý sản phẩm và danh mục (thêm, sửa giá, xoá, nhập và xuất Excel). Không xem doanh thu."
   },
   "web": {
     "title": "Nhân viên",
@@ -220,7 +222,8 @@
       "owner": "Chủ cửa hàng",
       "admin": "Quản lý chi nhánh",
       "staff": "Nhân viên",
-      "other": "Khác"
+      "other": "Khác",
+      "inventory": "Nhân viên kho"
     },
     "lastSeen": {
       "current": "Đang dùng",
@@ -250,7 +253,8 @@
       "admin": "Một chi nhánh: đơn, sản phẩm, giá, khách, tiền trong ngày, nhân viên của chi nhánh.",
       "staff": "Tạo đơn, giao đồ, nhận trả, thêm khách. Không sửa giá sản phẩm, không xem báo cáo tiền.",
       "rolePermissions": "Xem quyền từng vai trò",
-      "permissions": "Phân quyền thêm cho nhân viên"
+      "permissions": "Phân quyền thêm cho nhân viên",
+      "inventory": "Bán hàng như nhân viên, thêm quản lý sản phẩm và danh mục (thêm, sửa giá, xoá, nhập và xuất Excel). Không xem doanh thu."
     },
     "permissions": {
       "title": "Phân quyền thêm cho nhân viên",

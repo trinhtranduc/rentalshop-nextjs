@@ -15,6 +15,8 @@ data class AppConfig(
     val android: PlatformConfig = PlatformConfig(),
     /** #456: every new screen is on unless a config says `false` for it */
     val features: Set<MobileFeature> = MobileFeature.entries.toSet(),
+    /** #682: Nhân viên kho can be given in the user form (off until the API says `true`) */
+    val inventoryRole: Boolean = false,
 ) {
     /** True when this Android build is older than the minimum the server asks for */
     fun updateRequired(currentVersion: String): Boolean =

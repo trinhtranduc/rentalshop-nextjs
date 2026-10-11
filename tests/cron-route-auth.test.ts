@@ -14,6 +14,10 @@ test('loyalty expiry cron uses route-level CRON_SECRET authentication', () => {
   assert.equal(usesRouteManagedAuth('/api/cron/loyalty-expire'), true);
 });
 
+test('embedding jobs cron uses route-level CRON_SECRET authentication (#654)', () => {
+  assert.equal(usesRouteManagedAuth('/api/cron/embedding-jobs'), true);
+});
+
 test('normal API routes still require a user JWT', () => {
   assert.equal(usesRouteManagedAuth('/api/orders'), false);
   assert.equal(usesRouteManagedAuth('/api/cron/future-unsecured-job'), false);

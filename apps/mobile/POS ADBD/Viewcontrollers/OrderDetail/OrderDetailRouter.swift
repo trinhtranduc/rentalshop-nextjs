@@ -52,9 +52,10 @@ enum OrderDetailRouter {
 
 /// Edit an order the way the app does today: load it into the cart and open the sales tab
 enum OrderEditLauncher {
-    static func startEditing(_ order: Order) {
+    /// #677: [payments] = the order's payments when known, for "Đã thu" / "Thu khi giao" on the save sheet
+    static func startEditing(_ order: Order, payments: [OrderPaymentLine]? = nil) {
         guard let tabbarController = appDelegate.window?.rootViewController as? TabbarViewController else { return }
-        let cart = Cart.fromOrder(order)
+        let cart = Cart.fromOrder(order, payments: payments)
         // Ensure cart customer has complete information (including id)
         if var cartCustomer = cart.customer {
             cartCustomer.id = order.customerId

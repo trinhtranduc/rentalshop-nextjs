@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
@@ -95,7 +96,11 @@ fun SettingsV2Screen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var plan by remember { mutableStateOf<SettingsPlan?>(null) }
+    // #674: plan and counts live in a view model, read at most every 10 minutes, so they do not flash on re-show
+    val settingsVm: SettingsV2ViewModel = viewModel(factory = SettingsV2ViewModel.Factory())
+    val settingsData by settingsVm.data.collectAsState()
+    val plan = settingsData.plan
+    val counts = settingsData.counts
     var confirmLogout by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
@@ -109,9 +114,6 @@ fun SettingsV2Screen(
     var overlapPending by remember { mutableStateOf<Boolean?>(null) }
     var overlapError by remember { mutableStateOf<String?>(null) }
     val overlapFailedText = stringResource(R.string.settings_v2_allow_overlap_failed)
-    LaunchedEffect(role) {
-        if (OverlapSetting.canEdit(role)) withContext(Dispatchers.IO) { ApiClient.get().refreshAllowOverlappingOrders() }
-    }
 
     fun setAllowOverlap(value: Boolean) {
         if (overlapPending != null) return
@@ -128,27 +130,13 @@ fun SettingsV2Screen(
         }
     }
 
-    LaunchedEffect(role) {
-        if (role == "ADMIN") return@LaunchedEffect
-        plan = withContext(Dispatchers.IO) {
-            runCatching { SettingsRows.planFromJson(ApiClient.get().authedGet("/api/subscriptions/status").optJSONObject("data") ?: JSONObject()) }
-                .getOrNull()
-        }
-    }
-
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
     val sections = SettingsRows.sections(role, hasPlan = plan != null)
 
-    // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing
-    var counts by remember { mutableStateOf<Map<SettingsItem, Int>>(emptyMap()) }
+    // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing.
+    // #518 overlap switch re-read from the profile. #674: on show, but the view model skips it within 10 minutes.
     LaunchedEffect(role) {
-        val visible = sections.flatMap { it.items }
-        counts = withContext(Dispatchers.IO) {
-            visible.mapNotNull { item ->
-                val path = SettingsRows.countPath(item) ?: return@mapNotNull null
-                runCatching { SettingsRows.listTotal(ApiClient.get().authedGet(path)) }.getOrNull()?.let { item to it }
-            }.toMap()
-        }
+        settingsVm.onShown(role, OverlapSetting.canEdit(role), sections.flatMap { it.items })
     }
 
     fun signOut() {

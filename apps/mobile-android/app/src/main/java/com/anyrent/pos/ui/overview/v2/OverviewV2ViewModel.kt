@@ -5,12 +5,17 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.RefreshPolicy
+import com.anyrent.pos.domain.RefreshTracker
 import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.domain.overview.DayRange
+import com.anyrent.pos.domain.overview.OverviewChip
+import com.anyrent.pos.domain.overview.OverviewDashLogic
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewNow
-import com.anyrent.pos.domain.overview.OverviewPeriod
-import com.anyrent.pos.domain.overview.OverviewPreset
 import com.anyrent.pos.domain.overview.OverviewReport
+import com.anyrent.pos.ui.navigation.OrdersChanged
+import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,10 +31,14 @@ import org.json.JSONObject
 import java.time.LocalDate
 
 data class OverviewV2State(
-    val period: OverviewPeriod = OverviewPeriod.Preset(OverviewPreset.LAST_7),
+    /** #725: the iOS chips; Hôm nay first, as iOS */
+    val chip: OverviewChip = OverviewChip.TODAY,
+    val custom: DayRange? = null,
     val showsRevenue: Boolean = false,
     val showsOperations: Boolean = false,
     val report: OverviewReport? = null,
+    /** #725: the report of the chart's range (Hôm nay charts 14 days); the period's own report when they are equal */
+    val chartReport: OverviewReport? = null,
     val now: OverviewNow? = null,
     val loading: Boolean = true,
     val reportError: String? = null,
@@ -41,12 +50,17 @@ class OverviewV2ViewModel(
     private val fetch: (String) -> JSONObject = { ApiClient.get().authedGet(it) },
     private val today: () -> LocalDate = { ShopTime.today() },
     role: String? = SessionStore.role,
+    private val clock: () -> Instant = Instant::now,
+    /** App-wide "orders changed" version (#674); replaceable in tests */
+    changes: () -> Long = { OrdersChanged.version.value },
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         OverviewV2State(showsRevenue = OverviewLogic.showsRevenue(role), showsOperations = OverviewLogic.showsOperations(role)),
     )
     val state: StateFlow<OverviewV2State> = _state.asStateFlow()
     private var job: Job? = null
+    /** #674: re-show reloads (quietly) only when an order changed or the figures are 10 minutes old */
+    private val freshness = RefreshTracker(changes)
 
     fun today(): LocalDate = today.invoke()
 
@@ -54,23 +68,36 @@ class OverviewV2ViewModel(
         load()
     }
 
-    fun select(period: OverviewPeriod) {
-        _state.update { it.copy(period = period) }
+    fun range(state: OverviewV2State = _state.value): DayRange = OverviewDashLogic.range(state.chip, today(), state.custom)
+
+    fun select(chip: OverviewChip, custom: DayRange? = null) {
+        _state.update { it.copy(chip = chip, custom = if (chip == OverviewChip.CUSTOM) custom else it.custom) }
         load()
     }
 
     fun refresh() {
         _state.update { it.copy(refreshing = true) }
-        load()
+        load(quiet = true)
     }
 
-    fun load() {
+    /** The tab shows again or an order changed while it shows: quiet reload only when dirty or stale */
+    fun onShown() {
+        if (job?.isActive == true) return
+        if (freshness.shouldReload(clock(), RefreshPolicy.SUMMARY_TTL)) load(quiet = true)
+    }
+
+    /** [quiet] (#674: re-show, pull): the figures on screen stay until the answer replaces them; a failure keeps them */
+    fun load(quiet: Boolean = false) {
         job?.cancel()
         val snapshot = _state.value
-        val range = OverviewLogic.range(snapshot.period, today())
-        _state.update { it.copy(loading = true, report = null, reportError = null) }
+        val range = range(snapshot)
+        val chartRange = OverviewDashLogic.chartRange(snapshot.chip, range)
+        val keep = quiet && snapshot.reportError == null &&
+            (if (snapshot.showsRevenue) snapshot.report != null else snapshot.now != null)
+        if (!keep) _state.update { it.copy(loading = true, report = null, chartReport = null, reportError = null) }
+        val version = freshness.begin()
         job = viewModelScope.launch {
-            val (report, now) = withContext(Dispatchers.IO) {
+            val (report, chart, now) = withContext(Dispatchers.IO) {
                 coroutineScope {
                     val report = async {
                         if (!snapshot.showsRevenue) null
@@ -79,19 +106,31 @@ class OverviewV2ViewModel(
                             OverviewLogic.reportFromJson(json.optJSONObject("data") ?: JSONObject())
                         }
                     }
+                    val chart = async {
+                        if (!snapshot.showsRevenue || chartRange == range) null
+                        else runCatching {
+                            OverviewLogic.reportFromJson(fetch(OverviewLogic.periodPath(chartRange)).optJSONObject("data") ?: JSONObject())
+                        }.getOrNull()
+                    }
                     val now = async {
                         if (!snapshot.showsOperations) null
                         else runCatching {
                             OverviewLogic.nowFromJson(fetch(OverviewLogic.outletOperationsPath()).optJSONObject("data") ?: JSONObject())
                         }.getOrNull()
                     }
-                    report.await() to now.await()
+                    Triple(report.await(), chart.await(), now.await())
                 }
             }
             if (report?.exceptionOrNull() is CancellationException) return@launch
+            if (keep && report?.isFailure == true) {
+                _state.update { it.copy(now = now ?: it.now, refreshing = false) }
+                return@launch
+            }
+            if (report?.isFailure != true) freshness.loaded(version, clock())
             _state.update {
                 it.copy(
                     report = report?.getOrNull(),
+                    chartReport = if (chartRange == range) report?.getOrNull() else chart,
                     reportError = report?.exceptionOrNull()?.let { e -> e.message ?: "" },
                     now = now ?: it.now,
                     loading = false,

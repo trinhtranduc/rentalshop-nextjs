@@ -199,7 +199,8 @@
     "ARTICLE": "Article Editor",
     "MERCHANT": "Merchant",
     "OUTLET_ADMIN": "Outlet Admin",
-    "OUTLET_STAFF": "Outlet Staff"
+    "OUTLET_STAFF": "Outlet Staff",
+    "OUTLET_INVENTORY": "Inventory staff"
   },
   "import": {
     "preview": {

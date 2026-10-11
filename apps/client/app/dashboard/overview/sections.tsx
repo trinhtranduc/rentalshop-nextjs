@@ -163,7 +163,16 @@ export function KpiTiles({
               </span>
             )}
             <span className="flex min-h-[28px] w-full items-center justify-between gap-2">
-              {loading ? <Skeleton className="h-5 w-20" /> : tile.chip ? <Chip chip={tile.chip} t={t} /> : <span />}
+              {loading ? (
+                <Skeleton className="h-5 w-20" />
+              ) : tile.chip || tile.count ? (
+                <span className="flex flex-wrap items-center gap-1.5">
+                  {tile.chip && <Chip chip={tile.chip} t={t} />}
+                  {tile.count && <Chip chip={tile.count} t={t} />}
+                </span>
+              ) : (
+                <span />
+              )}
               {!loading && points && (
                 <svg aria-hidden="true" width="96" height="28" viewBox="0 0 96 28" className="flex-none overflow-visible">
                   <polyline points={points} fill="none" stroke="rgb(var(--ar-chart-blue))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

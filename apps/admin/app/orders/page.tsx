@@ -1,5 +1,6 @@
 'use client';
 
+import '../lists.css';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   OrdersLoading,
@@ -386,14 +387,14 @@ export default function AdminOrdersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="admin-list h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
             <PageTitle>All Orders</PageTitle>
             <p className="text-sm text-gray-600">View and manage all orders from all merchants</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {canExport && (
               <Button
                 onClick={() => setShowExportDialog(true)}
@@ -430,7 +431,7 @@ export default function AdminOrdersPage() {
           filterStyle="dropdown"
           showStats={false}
           showMerchant={true}
-          userRole={(user?.role === 'OPS' ? 'ADMIN' : user?.role) as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF'}
+          userRole={(user?.role === 'OPS' ? 'ADMIN' : user?.role) as 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY'}
         />
         )}
       </div>

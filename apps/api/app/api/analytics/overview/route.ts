@@ -7,7 +7,7 @@ import {
   emptyAnalyticsPeriodReport,
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, isOutletRole } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
 /**
@@ -73,7 +73,7 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       const stats = await db.orders.getStatistics({
         merchantId: userScope.merchantId,
         outletId:
-          user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF
+          isOutletRole(user.role)
             ? userScope.outletId
             : undefined,
         startDate: range.start,

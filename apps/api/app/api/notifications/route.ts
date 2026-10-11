@@ -10,6 +10,7 @@ const ROLES = [
   USER_ROLE.MERCHANT,
   USER_ROLE.OUTLET_ADMIN,
   USER_ROLE.OUTLET_STAFF,
+  USER_ROLE.OUTLET_INVENTORY,
 ] as const;
 
 const listQuerySchema = z.object({

@@ -4,12 +4,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   Button,
   Input,
   useFormatCurrency,
 } from '@rentalshop/ui';
 import { Package, RotateCcw } from 'lucide-react';
+import { ResponsiveDialogFooter } from '../../Subscriptions/components/ResponsiveDialogFooter';
 import { OrderWithDetails } from '@rentalshop/types';
 import { useOrderTranslations } from '@rentalshop/hooks';
 import { computeOrderMoney } from '../order-money';
@@ -103,8 +103,8 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+        <DialogHeader className="max-md:pr-10 max-md:pb-3">
           <DialogTitle className="flex items-center gap-2 text-lg">
             {isPickup ? <Package className="h-5 w-5 text-blue-700" aria-hidden="true" /> : <RotateCcw className="h-5 w-5 text-blue-700" aria-hidden="true" />}
             {isPickup ? t('dialogs.handover.title') : t('dialogs.takeBack.title')}
@@ -117,6 +117,7 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
           </p>
         </DialogHeader>
 
+        <div className="grid gap-4 max-md:min-h-0 max-md:flex-1 max-md:content-start max-md:overflow-y-auto">
         <dl className="divide-y divide-slate-100 text-sm">
           {isPickup ? (
             <>
@@ -143,7 +144,7 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
                       setDamageText(raw);
                       setDamageFee(Math.max(0, parseFloat(raw) || 0));
                     }}
-                    className="h-9 w-32 text-right tabular-nums"
+                    className="h-9 w-32 text-right tabular-nums max-md:h-11"
                   />
                 </dd>
               </div>
@@ -168,14 +169,21 @@ export const CollectionReturnModal: React.FC<CollectionReturnModalProps> = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-            {t('detail.close')}
-          </Button>
-          <Button type="button" onClick={handleConfirm} disabled={submitting} className="font-semibold">
-            {isPickup ? t('dialogs.handover.confirm') : t('dialogs.takeBack.confirm')}
-          </Button>
-        </DialogFooter>
+        </div>
+
+        <ResponsiveDialogFooter
+          className="max-md:-mx-4"
+          secondary={
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+              {t('detail.close')}
+            </Button>
+          }
+          primary={
+            <Button type="button" onClick={handleConfirm} disabled={submitting} className="font-semibold">
+              {isPickup ? t('dialogs.handover.confirm') : t('dialogs.takeBack.confirm')}
+            </Button>
+          }
+        />
       </DialogContent>
     </Dialog>
   );

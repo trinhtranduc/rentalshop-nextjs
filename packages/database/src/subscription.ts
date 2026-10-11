@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
+import { ApiError, ErrorCode, canChangePlan, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -167,7 +167,7 @@ function transformSubscriptionFromDb(sub: any): Subscription {
     trialStart: sub.trialStart,
     trialEnd: sub.trialEnd,
     amount: sub.amount,
-    currency: sub.currency || 'USD',
+    currency: sub.currency || 'VND',
     interval: sub.interval,
     intervalCount: sub.intervalCount || 1,
     period: sub.period || 1,
@@ -472,10 +472,23 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
 // SUBSCRIPTION ACTIONS
 // ============================================================================
 
+/** Who changes the plan and how the shop paid. `actorRole` is required: the plan rules are applied here, for every caller. */
+export interface ChangePlanOptions {
+  actorRole: string;
+  payment?: {
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+    description?: string;
+    paymentDate?: Date;
+  };
+}
+
 export async function changePlan(
   subscriptionId: number, 
   newPlanId: number, 
-  billingInterval: BillingInterval = 'monthly'
+  billingInterval: BillingInterval = 'monthly',
+  options: ChangePlanOptions
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
@@ -503,50 +516,103 @@ export async function changePlan(
     throw new Error('Plan not found');
   }
 
+  // #785: a plan is changed only in a new period; a merchant never changes it in the middle of a period, an
+  // admin only upgrades there. Applied here so no route can skip it.
+  const decision = canChangePlan({
+    role: options.actorRole,
+    status: subscription.status,
+    currentPeriodEnd: subscription.currentPeriodEnd,
+    currentPlanId: subscription.planId,
+    currentBasePrice: subscription.plan?.basePrice ?? 0,
+    newPlanId: plan.id,
+    newBasePrice: plan.basePrice,
+  });
+  if (!decision.allowed) {
+    throw new ApiError(ErrorCode[decision.code as keyof typeof ErrorCode]);
+  }
+
   // Get old plan name for email
   const oldPlanName = subscription.plan?.name || 'Unknown Plan';
 
   const convertedPlan = convertPrismaPlanToPlan(plan);
-  const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
+  const breakdown = getPricingBreakdown(convertedPlan, billingInterval);
+  const amount = breakdown.finalPrice;
 
-  // Calculate new period dates based on billing interval
+  // Owner rule (#779): credit for the unused Vietnam civil days of the old period, new period from now,
+  // one cycle of calendar months (was now + 30/90/180/365 × 24h and no credit).
   const now = new Date();
-  const newPeriodStart = now;
-  
-  // Calculate period duration in days based on billing interval
-  const getPeriodDays = (interval: BillingInterval): number => {
-    switch (interval) {
-      case 'monthly': return 30;
-      case 'quarterly': return 90;
-      case 'semi_annual': return 180;
-      case 'annual': return 365;
-      default: return 30;
-    }
-  };
-  
-  const periodDays = getPeriodDays(billingInterval);
-  const newPeriodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
+  const planChange = calculatePlanChangeTotal({
+    subscription: {
+      currentPeriodStart: subscription.currentPeriodStart,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      billingInterval: storedBillingInterval(subscription.interval, subscription.intervalCount),
+      plan: { basePrice: subscription.plan?.basePrice ?? 0 },
+    } as any,
+    newPlan: { basePrice: plan.basePrice },
+    selectedInterval: billingInterval,
+    now,
+  });
+  const newPeriodStart = planChange.newPeriodStart;
+  const newPeriodEnd = planChange.newPeriodEnd;
 
-  const updatedSubscription = await prisma.subscription.update({
-    where: { merchantId: subscription.merchantId },
-    data: {
-      planId: plan.id,
-      interval: billingInterval,
-      amount: amount,
-      currentPeriodStart: newPeriodStart,
-      currentPeriodEnd: newPeriodEnd,
-      updatedAt: new Date()
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
+  // What the shop pays now: the new cycle price minus the credit for the unused days (#779). VND has no decimals.
+  const currency = plan.currency || subscription.currency;
+  const amountDue = currency === 'VND' ? Math.round(planChange.totalDue) : Math.round(planChange.totalDue * 100) / 100;
+  const pay = options.payment ?? {};
+  if (amountDue > 0) {
+    if (!pay.method || !pay.transactionId) throw new ApiError(ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED);
+    if (!['STRIPE', 'TRANSFER', 'MANUAL'].includes(pay.method)) throw new ApiError(ErrorCode.INVALID_PAYMENT_METHOD);
+  }
+  // A trial turned into a paid plan is ACTIVE from now (it used to stay TRIAL: the route tested `trialDays > 0`).
+  const trialBecomesPaid = String(subscription.status).toUpperCase() === 'TRIAL' && plan.basePrice > 0;
+
+  const updatedSubscription = await prisma.$transaction(async (tx) => {
+    const updated = await tx.subscription.update({
+      where: { merchantId: subscription.merchantId },
+      data: {
+        planId: plan.id,
+        interval: billingInterval,
+        intervalCount: breakdown.totalMonths,
+        period: breakdown.totalMonths,
+        discount: breakdown.discount,
+        amount: amount,
+        currency,
+        currentPeriodStart: newPeriodStart,
+        currentPeriodEnd: newPeriodEnd,
+        ...(trialBecomesPaid ? { status: SUBSCRIPTION_STATUS.ACTIVE } : {}),
+        updatedAt: new Date()
       },
-      plan: true
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        },
+        plan: true
+      }
+    });
+    if (amountDue > 0) {
+      const paid = pay.method === PAYMENT_METHOD.STRIPE;
+      await tx.payment.create({
+        data: {
+          subscriptionId: subscription.id,
+          merchantId: subscription.merchantId,
+          amount: amountDue,
+          currency,
+          method: pay.method as any,
+          type: PAYMENT_TYPE.PLAN_CHANGE as any,
+          status: (paid ? PAYMENT_STATUS.COMPLETED : PAYMENT_STATUS.PENDING) as any,
+          transactionId: pay.transactionId,
+          reference: pay.reference || undefined,
+          description: pay.description || `${oldPlanName} → ${plan.name} (${billingInterval})`,
+          processedAt: paid ? new Date() : pay.paymentDate ?? null,
+          createdAt: pay.paymentDate ?? new Date(),
+        },
+      });
     }
+    return updated;
   });
 
   // No need to update merchant - subscription.status is the single source of truth
@@ -610,8 +676,21 @@ export async function changePlan(
       isActive: updatedSubscription.status === SUBSCRIPTION_STATUS.ACTIVE, // ✅ Use enum constant
       daysRemaining: civilDaysBetween(new Date(), updatedSubscription.currentPeriodEnd), // VN civil days (#588)
       nextBillingDate: updatedSubscription.currentPeriodEnd
-    }
-  };
+    },
+    // What this change costs now: new cycle price minus the credit for unused days (#779, additive)
+    planChange: {
+      oldPlanPeriodPrice: planChange.oldPlanPeriodPrice,
+      oldPlanPeriodDays: planChange.oldPlanPeriodDays,
+      usedDays: planChange.usedDays,
+      remainingDays: planChange.remainingDays,
+      remainingCreditValue: planChange.remainingCreditValue,
+      newPlanPeriodPrice: planChange.newPlanPeriodPrice,
+      amountDue: planChange.totalDue,
+      /** What was recorded as the Payment (whole VND), 0 when nothing was due */
+      amountDueRounded: amountDue,
+      currency: plan.currency || subscription.currency,
+    },
+  } as Subscription;
 }
 
 export async function pauseSubscription(subscriptionId: number): Promise<Subscription> {
@@ -1233,7 +1312,8 @@ export const simplifiedSubscriptions = {
       where: { id },
       include: {
         merchant: { select: { id: true, name: true, email: true } },
-        plan: { select: { id: true, name: true } },
+        // basePrice + currency: renew / extend price from the plan (#779; was 0); limits: allowWebAccess change on plan change
+        plan: { select: { id: true, name: true, basePrice: true, currency: true, limits: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 5

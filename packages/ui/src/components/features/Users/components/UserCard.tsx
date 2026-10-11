@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@rentalshop/ui';
 import { Mail, Phone, Calendar, Building, User as UserIcon } from 'lucide-react';
 import type { User } from '@rentalshop/types';
+import { formatInShopZone } from '@rentalshop/utils';
 
 interface UserCardProps {
   user: User;
@@ -16,6 +17,7 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
       case 'MERCHANT':
         return 'default';
       case 'OUTLET_STAFF':
+      case 'OUTLET_INVENTORY':
         return 'secondary';
       case 'CLIENT':
         return 'outline';
@@ -32,6 +34,8 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
         return 'Merchant';
       case 'OUTLET_STAFF':
         return 'Staff';
+      case 'OUTLET_INVENTORY':
+        return 'Inventory Staff';
       case 'CLIENT':
         return 'Client';
       default:
@@ -40,11 +44,7 @@ export function UserCard({ user, onUserAction }: UserCardProps) {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatInShopZone(dateString, 'vi', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   return (

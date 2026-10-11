@@ -92,7 +92,7 @@ export function withAuthRoles(allowedRoles?: UserRole[], options?: { requireActi
       
       try {
         // Step 1: Authenticate request
-        const authResult = await authenticateRequest(request);
+        const authResult = await authenticateRequest(request, { skipSubscriptionCheck: !requireSubscription });
         if (!authResult.success) {
           console.log('❌ [AUTH] Authentication failed - returning 401');
           // Try to log error details if available
@@ -256,7 +256,7 @@ export const withAdminOrReadOnlyAuth = withAuthRoles(['ADMIN'], { requireActiveS
  * 
  * Usage:
  * ```typescript
- * // Instead of: withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF'])
+ * // Instead of: withAuthRoles(['ADMIN', 'MERCHANT', 'OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'])
  * // Use: withPermissions(['products.view'])
  * // This automatically includes all roles that have 'products.view' in ROLE_PERMISSIONS
  * export const GET = withPermissions(['products.view'])(async (request, { user, userScope }) => {
@@ -288,7 +288,7 @@ export function withPermissions(
       
       try {
         // Step 1: Authenticate request
-        const authResult = await authenticateRequest(request);
+        const authResult = await authenticateRequest(request, { skipSubscriptionCheck: !requireSubscription });
         if (!authResult.success) {
           console.log('❌ [AUTH] Authentication failed - returning 401');
           return authResult.response;

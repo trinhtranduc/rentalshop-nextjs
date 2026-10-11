@@ -57,14 +57,6 @@ enum EntityOrdersLogic {
         orders.filter { $0.orderType == .rent && $0.status != .cancelled }.count
     }
 
-    /// The product's line totals in the loaded non-cancelled orders; the order total when a row has no items
-    static func productRevenue(_ orders: [Order], productId: Int) -> Double {
-        orders.filter { $0.status != .cancelled }.reduce(0) { sum, order in
-            guard !order.orderItems.isEmpty else { return sum + order.totalAmount }
-            return sum + order.orderItems.filter { $0.productId == productId }.reduce(0) { $0 + $1.totalPrice }
-        }
-    }
-
     /// Money of the loaded non-cancelled orders (customer "Đã chi" when the API sent no summary)
     static func spent(_ orders: [Order]) -> Double {
         orders.filter { $0.status != .cancelled }.reduce(0) { $0 + $1.totalAmount }
@@ -81,14 +73,13 @@ enum EntityOrdersLogic {
             : String(format: "orders.entity.million".localized(), whole, tenth)
     }
 
-    /// Số đơn (all matching orders), Lượt thuê and Doanh thu (loaded pages: "+" while more pages exist)
-    static func productTiles(orders: [Order], productId: Int, total: Int, hasMore: Bool, hidesMoney: Bool) -> [EntityOrdersTile] {
+    /// Số đơn (all matching orders) and Lượt thuê (loaded pages: "+" while more pages exist). #658: no money tile;
+    /// a product-only sum next to whole-order rows could not be read
+    static func productTiles(orders: [Order], total: Int, hasMore: Bool) -> [EntityOrdersTile] {
         let more = hasMore ? "+" : ""
         return [
             EntityOrdersTile(title: "orders.entity.tile.orders".localized(), value: "\(total)"),
             EntityOrdersTile(title: "orders.entity.tile.rentals".localized(), value: "\(rentals(orders))" + more),
-            EntityOrdersTile(title: "orders.entity.tile.revenue".localized(),
-                             value: hidesMoney ? "—" : compactMoney(productRevenue(orders, productId: productId)) + more),
         ]
     }
 
@@ -424,17 +415,12 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
             return
         }
 
-        view.addSubview(headerCard)
+        // The stats drill-down has no header card: the list starts right under the title bar
         view.addSubview(ordersTableView)
         view.addSubview(emptyStateLabel)
 
-        headerCard.snp.makeConstraints { make in
-            make.top.equalTo(customNavBar.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-
         ordersTableView.snp.makeConstraints { make in
-            make.top.equalTo(headerCard.snp.bottom).offset(12)
+            make.top.equalTo(customNavBar.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
 
@@ -565,8 +551,8 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
                     }
                 }
             }
-            tiles = EntityOrdersLogic.productTiles(orders: orders, productId: id, total: totalOrderCount,
-                                                   hasMore: hasMorePages && !orders.isEmpty, hidesMoney: hidesMoney)
+            tiles = EntityOrdersLogic.productTiles(orders: orders, total: totalOrderCount,
+                                                   hasMore: hasMorePages && !orders.isEmpty)
         default:
             let name = customer.map(CustomersV2Logic.displayName) ?? filter.entityName
             entityName.text = name

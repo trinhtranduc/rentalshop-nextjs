@@ -120,7 +120,7 @@ export async function rotateRefreshToken(
     userAgent?: string;
     ipAddress?: string;
   }
-): Promise<{ newToken: string; userId: number; sessionId: string | null } | null> {
+): Promise<{ newToken: string; userId: number; sessionId: string | null; issuedAt: Date } | null> {
   const oldTokenHash = hashToken(oldToken);
 
   const existingToken = await prisma.refreshToken.findUnique({
@@ -184,6 +184,8 @@ export async function rotateRefreshToken(
     newToken,
     userId: existingToken.userId,
     sessionId: existingToken.sessionId,
+    // When the presented (old) token was issued; the refresh flow rejects one older than a password change (#661)
+    issuedAt: existingToken.createdAt,
   };
 }
 

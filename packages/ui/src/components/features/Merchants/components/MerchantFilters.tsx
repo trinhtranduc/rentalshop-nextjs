@@ -64,7 +64,7 @@ export function MerchantFilters({
         <div className="relative">
           <Input
             type="text"
-            placeholder="Search merchants..."
+            placeholder="Search by shop name, phone, email or owner..."
             value={localSearch}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}

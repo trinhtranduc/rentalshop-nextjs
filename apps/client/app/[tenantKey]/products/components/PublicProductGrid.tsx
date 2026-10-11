@@ -1,269 +1,205 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { ProductCard, SearchableSelect, Pagination, Input, Button, Card, CardContent } from '@rentalshop/ui';
-import { cn } from '@rentalshop/ui';
+import { Search } from 'lucide-react';
+import { Pagination } from '@rentalshop/ui';
 import type { Product, Category } from '@rentalshop/types';
 import { useTranslations } from 'next-intl';
+import { formatShopMoney, productPriceLines } from '../lib/public-shop';
+import { PublicProductSheet } from './PublicProductSheet';
 
 interface PublicProductGridProps {
   products: Product[];
   categories: Category[];
+  currency?: string | null;
+  phone?: string | null;
   pagination?: {
     total: number;
     page: number;
     limit: number;
     hasMore: boolean;
   };
-  onProductClick?: (productId: number) => void;
-  className?: string;
 }
 
-export function PublicProductGrid({ 
-  products, 
-  categories, 
-  pagination,
-  onProductClick,
-  className 
-}: PublicProductGridProps) {
+/** #665 — search, category chips, product cards and the detail sheet */
+export function PublicProductGrid({ products, categories, currency, phone, pagination }: PublicProductGridProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('products');
+  const tp = useTranslations('products.public');
+  const money = (amount: number) => formatShopMoney(amount, currency);
 
-  // Get current filters from URL
-  const currentCategoryId = searchParams.get('categoryId') 
-    ? parseInt(searchParams.get('categoryId')!, 10) 
-    : null;
+  const currentCategoryId = searchParams.get('categoryId') ? parseInt(searchParams.get('categoryId')!, 10) : null;
   const currentSearch = searchParams.get('search') || '';
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
+  const [query, setQuery] = useState(currentSearch);
+  const [opened, setOpened] = useState<Product | null>(null);
 
-  // Update URL with new filters
-  const updateFilters = useCallback((updates: { categoryId?: number | null; search?: string; page?: number }) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    if (updates.categoryId === null || updates.categoryId === undefined) {
-      params.delete('categoryId');
-    } else if (updates.categoryId) {
-      params.set('categoryId', updates.categoryId.toString());
-    }
-    
-    if (updates.search === undefined) {
-      // Don't change search
-    } else if (updates.search === '') {
-      params.delete('search');
-    } else {
-      params.set('search', updates.search);
-    }
-    
-    if (updates.page === undefined) {
-      // Don't change page
-    } else if (updates.page === 1) {
-      params.delete('page');
-    } else {
-      params.set('page', updates.page.toString());
-    }
-    
-    router.push(`${pathname}?${params.toString()}`);
-  }, [router, pathname, searchParams]);
+  const updateFilters = useCallback(
+    (updates: { categoryId?: number | null; search?: string; page?: number }) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (updates.categoryId !== undefined) {
+        if (updates.categoryId) params.set('categoryId', String(updates.categoryId));
+        else params.delete('categoryId');
+      }
+      if (updates.search !== undefined) {
+        if (updates.search) params.set('search', updates.search);
+        else params.delete('search');
+      }
+      if (updates.page !== undefined) {
+        if (updates.page > 1) params.set('page', String(updates.page));
+        else params.delete('page');
+      }
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
 
-  // Category options for SearchableSelect
-  const categoryOptions = useMemo(() => {
-    return categories.map(cat => ({
-      value: cat.id.toString(),
-      label: cat.name || t('uncategorized')
-    }));
-  }, [categories, t]);
+  // Search once typing stops
+  useEffect(() => {
+    if (query.trim() === currentSearch) return;
+    const timer = setTimeout(() => updateFilters({ search: query.trim(), page: 1 }), 400);
+    return () => clearTimeout(timer);
+  }, [query, currentSearch, updateFilters]);
 
-  // Calculate product stats for display
-  const getProductStats = (product: any) => {
-    let totalStock = (product as any).totalStock || product.stock || 0;
-    let totalRenting = product.renting || 0;
-    let totalAvailable = product.available || totalStock;
-
-    if (product.outletStock && Array.isArray(product.outletStock)) {
-      totalStock = product.outletStock.reduce((sum: number, os: any) => sum + (os.stock || 0), 0);
-      totalRenting = product.outletStock.reduce((sum: number, os: any) => sum + (os.renting || 0), 0);
-      totalAvailable = product.outletStock.reduce((sum: number, os: any) => sum + (os.available || 0), 0);
-    }
-
-    return { totalStock, totalRenting, totalAvailable };
-  };
-
-  const handleCategoryChange = (categoryId: number | undefined) => {
-    updateFilters({ categoryId: categoryId || null, page: 1 });
-  };
-
-  const handleSearchChange = (search: string) => {
-    updateFilters({ search, page: 1 });
-  };
-
-  const handleClearSearch = () => {
-    updateFilters({ search: '' });
-  };
-
-  const handlePageChange = (page: number) => {
-    updateFilters({ page });
-    // Scroll to top when page changes
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const categoryName = (product: Product) => {
+    const id = product.categoryId || product.category?.id;
+    return categories.find((c) => c.id === id)?.name || product.category?.name;
   };
 
   const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 1;
+  const filtered = Boolean(currentSearch || currentCategoryId);
+  const chip = (active: boolean) =>
+    `inline-flex h-9 flex-none items-center whitespace-nowrap rounded-full border px-3.5 text-sm font-semibold ${
+      active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
+    }`;
 
   return (
-    <div className={cn('container mx-auto px-4 py-8', className)}>
-      {/* Filters Section - Same style as Order page */}
-      <Card className="shadow-sm border-border mb-6">
-        <CardContent className="pt-4 pb-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Field - Larger width */}
-            <div className="flex-1 min-w-[280px]">
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder={t('search.placeholder')}
-                  value={currentSearch}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-9 h-10"
-                />
-                <svg 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            {categories.length > 0 && (
-              <SearchableSelect
-                value={currentCategoryId || undefined}
-                onChange={handleCategoryChange}
-                options={categoryOptions}
-                placeholder={t('allCategories')}
-                emptyText={t('noCategories')}
-                className="w-[200px]"
-              />
-            )}
-
-            {/* Clear Filters Button */}
-            {(currentSearch || currentCategoryId) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  updateFilters({ categoryId: null, search: '', page: 1 });
-                }}
-                className="h-10"
+    <main className="mx-auto w-full max-w-6xl px-4 sm:px-5">
+      <div className="sticky top-0 z-10 bg-slate-50 pb-2.5 pt-4">
+        <label className="flex h-[46px] items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5">
+          <Search className="h-[18px] w-[18px] flex-none text-slate-500" aria-hidden />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={tp('searchPlaceholder')}
+            className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-slate-900 outline-none placeholder:text-slate-500"
+          />
+        </label>
+        {categories.length > 0 && (
+          <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
+            <button type="button" className={chip(!currentCategoryId)} onClick={() => updateFilters({ categoryId: null, page: 1 })}>
+              {tp('all')}
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={chip(currentCategoryId === c.id)}
+                onClick={() => updateFilters({ categoryId: c.id, page: 1 })}
               >
-                {t('clearFilters')}
-              </Button>
-            )}
+                {c.name || t('uncategorized')}
+              </button>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      {/* Products Count */}
       {pagination && pagination.total > 0 && (
-        <div className="mb-4 text-sm text-gray-600">
-          {t('showingProducts', { 
-            count: products.length, 
-            total: pagination.total 
-          })}
-        </div>
+        <div className="mb-3 mt-1.5 text-[13px] text-slate-600">{tp('count', { count: pagination.total })}</div>
       )}
 
-      {/* Products Grid */}
       {products.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 gap-3 pb-10 sm:gap-[18px] md:grid-cols-3 lg:grid-cols-4">
             {products.map((product) => {
-              const stats = getProductStats(product);
-              const productCategoryId = product.categoryId || product.category?.id;
-              const category = categories.find(c => c.id === productCategoryId);
-              
+              const prices = productPriceLines(product);
+              const image = product.images?.[0];
               return (
-                <ProductCard
+                <button
                   key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  description={product.description || undefined}
-                  stock={stats.totalStock}
-                  renting={stats.totalRenting}
-                  available={stats.totalAvailable}
-                  rentPrice={product.rentPrice}
-                  salePrice={product.salePrice || undefined}
-                  deposit={product.deposit || 0}
-                  images={product.images || []}
-                  category={{
-                    name: category?.name || product.category?.name || t('uncategorized')
-                  }}
-                  outlet={{
-                    name: t('store')
-                  }}
-                  onView={onProductClick}
-                  variant="client"
-                  className="h-full"
-                />
+                  type="button"
+                  onClick={() => setOpened(product)}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition-shadow hover:shadow-md"
+                >
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-100">
+                    {image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={image} alt={product.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500">{tp('noPhoto')}</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 px-2.5 pb-3 pt-2.5 sm:px-3.5 sm:pb-3.5 sm:pt-3">
+                    <div className="text-sm font-bold leading-snug text-slate-900 sm:text-[15px]">{product.name}</div>
+                    {prices.main && (
+                      <div className="text-[15px] font-extrabold text-blue-700 sm:text-[17px]">
+                        {money(prices.main.amount)}{' '}
+                        <span className="text-[13px] font-semibold text-slate-600">
+                          {prices.main.unit === 'day' ? tp('perDay') : tp('perRent')}
+                        </span>
+                      </div>
+                    )}
+                    {prices.daily != null && (
+                      <div className="text-[13px] font-semibold text-slate-900">{tp('orDaily', { price: money(prices.daily) })}</div>
+                    )}
+                    {prices.sale != null && (
+                      <div className="text-[13px] text-slate-600">{tp('sale', { price: money(prices.sale) })}</div>
+                    )}
+                  </div>
+                </button>
               );
             })}
           </div>
 
-          {/* Pagination */}
           {pagination && totalPages > 1 && (
-            <div className="mt-8">
+            <div className="pb-10">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 total={pagination.total}
                 limit={pagination.limit}
-                onPageChange={handlePageChange}
+                onPageChange={(page: number) => {
+                  updateFilters({ page });
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 itemName={t('productsPlural')}
               />
             </div>
           )}
         </>
       ) : (
-        <div className="text-center py-12">
-          <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {currentSearch || currentCategoryId
-                ? t('noProductsFound')
-                : t('noProducts')}
-            </h3>
-            <p className="text-gray-500">
-              {currentSearch || currentCategoryId
-                ? t('tryDifferentSearch')
-                : t('checkBackLater')}
-            </p>
-            {(currentSearch || currentCategoryId) && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  updateFilters({ categoryId: null, search: '', page: 1 });
-                }}
-                className="mt-4"
-              >
-                {t('clearFilters')}
-              </Button>
-            )}
-          </div>
+        <div className="py-16 text-center">
+          <h3 className="mb-2 text-lg font-semibold text-slate-900">{filtered ? t('noProductsFound') : t('noProducts')}</h3>
+          <p className="text-slate-500">{filtered ? t('tryDifferentSearch') : t('checkBackLater')}</p>
+          {filtered && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                updateFilters({ categoryId: null, search: '', page: 1 });
+              }}
+              className="mt-4 h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900"
+            >
+              {t('clearFilters')}
+            </button>
+          )}
         </div>
       )}
-    </div>
+
+      {opened && (
+        <PublicProductSheet
+          product={opened}
+          categoryName={categoryName(opened)}
+          currency={currency}
+          phone={phone}
+          onClose={() => setOpened(null)}
+        />
+      )}
+    </main>
   );
 }

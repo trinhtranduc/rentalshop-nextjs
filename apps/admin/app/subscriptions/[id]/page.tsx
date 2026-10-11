@@ -1,9 +1,12 @@
 'use client'
 
+import '../../details.css';
+import { DetailHeader } from '../../components/DetailHeader';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { subscriptionsApi, planLimitAddonsApi, formatInShopZone } from '@rentalshop/utils';
-import { SubscriptionExtendDialogEnhanced } from '@rentalshop/ui';
+import { SubscriptionExtendDialogEnhanced, ManualRenewalModal } from '@rentalshop/ui';
 import type { PlanLimitAddon } from '@rentalshop/types';
 import { Card,
   CardHeader,
@@ -72,6 +75,8 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   });
   const [loading, setLoading] = useState(true);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [renewalLoading, setRenewalLoading] = useState(false);
 
   // Toast management
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -179,6 +184,28 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     }
   };
 
+  // The API returns the status upper-case (ACTIVE); compare without case.
+  const isStatus = (status: string) => String(subscription?.status ?? '').toLowerCase() === status;
+
+  const handleManualRenewal = async (data: Parameters<typeof subscriptionsApi.renew>[1]) => {
+    try {
+      setRenewalLoading(true);
+      const result = await subscriptionsApi.renew(parseInt(params.id), data);
+      if (result.success) {
+        setShowRenewalModal(false);
+        await fetchSubscription(); // Refresh data
+        toastSuccess('Subscription Renewed', 'Subscription has been renewed successfully');
+      } else {
+        toastError('Renewal Failed', result.message || 'Failed to renew subscription');
+      }
+    } catch (error) {
+      console.error('Error renewing subscription:', error);
+      toastError('Renewal Failed', 'Error renewing subscription. Please try again.');
+    } finally {
+      setRenewalLoading(false);
+    }
+  };
+
   const handleDelete = () => {
     setConfirmationDialog({
       open: true,
@@ -193,7 +220,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       if (result.success) {
         toastSuccess('Subscription Deleted', 'Subscription has been deleted successfully');
         // Redirect to subscriptions list
-        router.push('/admin/subscriptions');
+        router.push('/subscriptions');
       } else {
         toastError('Deletion Failed', result.message || 'Failed to delete subscription');
       }
@@ -273,7 +300,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     });
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'VND') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -307,7 +334,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         <h2 className="text-2xl font-bold text-gray-900">Subscription Not Found</h2>
         <p className="text-gray-600 mt-2">The subscription you're looking for doesn't exist.</p>
         <Button 
-          onClick={() => router.push('/admin/subscriptions')}
+          onClick={() => router.push('/subscriptions')}
           className="mt-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -325,28 +352,35 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="ar-detail">
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-6" />
 
       <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Subscription #{subscription.id}
-          </h1>
-          <p className="text-gray-600">
-            {subscription.merchant?.name} - {subscription.plan?.name}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
+      <DetailHeader
+        backHref="/subscriptions"
+        backLabel="Subscriptions"
+        title={`Subscription #${subscription.id}`}
+        subtitle={`${subscription.merchant?.name} - ${subscription.plan?.name}`}
+        status={String(subscription.status || '').toLowerCase() || undefined}
+        statusTone={isStatus('active') ? 'success' : isStatus('cancelled') ? 'danger' : 'warning'}
+        actions={
+          <>
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/subscriptions/${subscription.id}/edit`)}
+            onClick={() => router.push(`/subscriptions/${subscription.id}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowRenewalModal(true)}
+            disabled={isStatus('cancelled')}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Renew
           </Button>
           <Button
             variant="outline"
@@ -355,7 +389,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             <CreditCard className="h-4 w-4 mr-2" />
             Extend
           </Button>
-          {subscription.status === 'active' && (
+          {isStatus('active') && (
             <Button
               variant="outline"
               onClick={handlePause}
@@ -365,7 +399,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               Suspend
             </Button>
           )}
-          {subscription.status === 'active' && (
+          {isStatus('active') && (
             <Button
               variant="outline"
               onClick={handleCancel}
@@ -383,8 +417,9 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Status Alert */}
       {(isExpiringSoon(subscription.currentPeriodEnd) || isExpired(subscription.currentPeriodEnd)) && (
@@ -420,7 +455,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Status</Label>
                   <div className="mt-1">
@@ -488,7 +523,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           {/* Plan Limits & Addons */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center space-x-2">
                   <Package className="h-5 w-5" />
                   <span>Plan Limits & Addons</span>
@@ -497,7 +532,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/admin/merchants/${subscription.merchantId}/plan-limit-addons`)}
+                    onClick={() => router.push(`/merchants/${subscription.merchantId}/plan-limit-addons`)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Manage Addons
@@ -509,7 +544,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               {/* Plan Base Limits */}
               <div>
                 <Label className="text-sm font-semibold text-gray-700 mb-3 block">Base Plan Limits</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span className="text-sm text-gray-600">Outlets</span>
                     <span className="font-semibold">
@@ -556,7 +591,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   {/* Total Limits with Addons */}
                   <div className="mb-3">
                     <Label className="text-xs text-gray-500 mb-2 block">Total Limits (Plan + Addons)</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {Object.entries(totalAddonLimits).map(([key, value]) => {
                         if (value === 0) return null;
                         const baseLimit = (subscription.plan?.limits?.[key as keyof typeof subscription.plan.limits] as number) || 0;
@@ -630,7 +665,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           {/* Payment History */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center space-x-2">
                   <CreditCard className="h-5 w-5" />
                   <span>Payment History</span>
@@ -647,7 +682,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   No payment records found
                 </div>
               ) : (
-                <Table>
+                <Table className="table-cards">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
@@ -660,13 +695,13 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <TableBody>
                     {payments.map((payment) => (
                       <TableRow key={payment.id}>
-                        <TableCell>{formatDate(payment.createdAt)}</TableCell>
-                        <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
-                        <TableCell>{payment.method}</TableCell>
-                        <TableCell>
+                        <TableCell data-primary>{formatDate(payment.createdAt)}</TableCell>
+                        <TableCell data-label="Amount">{formatCurrency(payment.amount, payment.currency)}</TableCell>
+                        <TableCell data-label="Method">{payment.method}</TableCell>
+                        <TableCell data-label="Status">
                           <StatusBadge status={payment.status} />
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="font-mono text-sm" data-label="Reference">
                           {payment.reference || 'N/A'}
                         </TableCell>
                       </TableRow>
@@ -729,7 +764,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Base Price</Label>
                   <p className="font-medium">
-                    {formatCurrency(subscription.plan?.basePrice || 0, subscription.plan?.currency || 'USD')}
+                    {formatCurrency(subscription.plan?.basePrice || 0, subscription.plan?.currency || 'VND')}
                   </p>
                 </div>
                 <div>
@@ -743,6 +778,23 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           </Card>
         </div>
       </div>
+
+      {/* Renewal Modal: charges and dates like POST /renew (#779) */}
+      <ManualRenewalModal
+        isOpen={showRenewalModal}
+        onClose={() => setShowRenewalModal(false)}
+        subscription={{
+          id: subscription.id,
+          merchantName: subscription.merchant?.name || '',
+          planName: subscription.plan?.name || '',
+          amount: subscription.amount,
+          plan: { basePrice: subscription.plan?.basePrice },
+          currency: subscription.currency || 'VND',
+          currentPeriodEnd: new Date(subscription.currentPeriodEnd)
+        }}
+        onRenew={handleManualRenewal}
+        loading={renewalLoading}
+      />
 
       {/* Extend Modal - Enhanced with Auto-calculation */}
       <SubscriptionExtendDialogEnhanced

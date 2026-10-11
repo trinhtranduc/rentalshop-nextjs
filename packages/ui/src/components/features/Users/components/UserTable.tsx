@@ -92,20 +92,20 @@ export function UserTable({
         open={openDropdownId === menuId}
         onOpenChange={(open: boolean) => setOpenDropdownId(open ? menuId : null)}
       >
-        <DropdownMenuItem onClick={() => { onUserAction('edit', user.id); setOpenDropdownId(null); }}>
+        <DropdownMenuItem className="max-md:min-h-11 max-md:items-center" onClick={() => { onUserAction('edit', user.id); setOpenDropdownId(null); }}>
           <Edit className="h-4 w-4 mr-2" />
           {t('actions.editUser')}
         </DropdownMenuItem>
         {user.role !== 'ADMIN' && (
           <>
-            <DropdownMenuItem onClick={() => { onUserAction(user.isActive ? 'deactivate' : 'activate', user.id); setOpenDropdownId(null); }}>
+            <DropdownMenuItem className="max-md:min-h-11 max-md:items-center" onClick={() => { onUserAction(user.isActive ? 'deactivate' : 'activate', user.id); setOpenDropdownId(null); }}>
               {user.isActive ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
               {user.isActive ? t('actions.deactivate') : t('actions.activate')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => { onUserAction('delete', user.id); setOpenDropdownId(null); }}
-              className="text-action-danger focus:text-action-danger"
+              className="max-md:min-h-11 max-md:items-center text-action-danger focus:text-action-danger"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {t('actions.delete')}

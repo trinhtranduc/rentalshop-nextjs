@@ -181,9 +181,8 @@ fun EntityOrdersScreen(
         titles = listOf(
             stringResource(R.string.orders_entity_tile_orders),
             stringResource(R.string.orders_entity_tile_rentals),
-            stringResource(R.string.orders_entity_tile_revenue),
         )
-        values = EntityOrdersLogic.productValues(orders, entityId, total, partial, hidesMoney = false, money = money)
+        values = EntityOrdersLogic.productValues(orders, total, partial)
     } else {
         titles = listOf(
             stringResource(R.string.orders_entity_tile_orders),

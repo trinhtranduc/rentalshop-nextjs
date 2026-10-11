@@ -41,6 +41,16 @@ enum RentedOutLogic {
 
 /// Rent orders still reserved (#496 "Chưa lấy đồ"), split at the start of today's Vietnam civil day
 enum NotPickedUpLogic {
+    /// What the order still owes, as the Overview tile counts it (packages/utils/src/analytics/order-value.ts):
+    /// rent RESERVED owes total - deposit, a sale not COMPLETED owes its total, anything else owes nothing
+    static func owed(_ order: Order) -> Double {
+        switch (order.orderType, order.status) {
+        case (.rent, .reserved): return max(0, order.totalAmount - order.depositAmount)
+        case (.sale, let status) where status != .completed && status != .cancelled: return order.totalAmount
+        default: return 0
+        }
+    }
+
     /// Pickup day before today (overdue, with its days) and the others, each by pickup day ascending
     /// (no pickup day last, with the others)
     static func groups(_ orders: [Order], now: Date = Date(),
@@ -93,6 +103,10 @@ final class RentedOutOrdersViewController: BaseViewControler {
     private var isLoading = false
     private var didInitialScroll = false
     private var generation = 0
+    /// #674: back from a detail reloads (quietly) only when an order changed or the list is 5 minutes old
+    private var freshness = RefreshTracker()
+    private var loadVersion = 0
+    private var isQuietLoad = false
 
     private let titleLabel = V2.label("overview.v2.rentedOut".localized(), size: 20, weight: .bold)
     private let emptyLabel = V2.label("rentedOut.empty".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
@@ -122,11 +136,16 @@ final class RentedOutOrdersViewController: BaseViewControler {
     /// `startsAtLate`: opened from "Đang thuê · trễ hạn trả"; the list opens at the late group (the whole list stays)
     init(startsAtLate: Bool = false) {
         self.mode = .rentedOut(startsAtLate: startsAtLate)
+        self.outstandingPeriod = nil
         super.init(nibName: nil, bundle: nil)
     }
 
-    init(mode: Mode) {
+    /// "Còn phải thu" of a period: the orders created on its days that still owe money (the same orders as the tile)
+    private let outstandingPeriod: (start: Date?, end: Date?)?
+
+    init(mode: Mode, outstandingPeriod: (start: Date?, end: Date?)? = nil) {
         self.mode = mode
+        self.outstandingPeriod = outstandingPeriod
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -137,12 +156,24 @@ final class RentedOutOrdersViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         load()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        refreshIfNeeded()
+    }
+
+    private func refreshIfNeeded() {
+        guard !isLoading, freshness.shouldReload(now: Date(), ttl: RefreshPolicy.listTTL) else { return }
+        load(quiet: true)
+    }
+
+    @objc private func ordersChanged() {
+        freshness.markDirty()
+        if isViewLoaded, view.window != nil { refreshIfNeeded() }
     }
 
     override func setupUI() {
@@ -196,9 +227,12 @@ final class RentedOutOrdersViewController: BaseViewControler {
 
     // MARK: - Data
 
-    private func load() {
+    /// The spinner shows only while the list is empty; `quiet` (appear, pull) also hides a failure while rows stay
+    private func load(quiet: Bool = false) {
         generation += 1
         let token = generation
+        loadVersion = freshness.begin()
+        isQuietLoad = quiet && !orders.isEmpty
         isLoading = true
         if orders.isEmpty && !refresh.isRefreshing { spinner.startAnimating() }
         emptyLabel.isHidden = true
@@ -206,30 +240,43 @@ final class RentedOutOrdersViewController: BaseViewControler {
     }
 
     private func loadPage(_ page: Int, collected: [Order], token: Int) {
-        OrderService.shared.loadOrders(
-            productIds: nil,
-            keyword: nil,
-            page: page,
-            limit: RentedOutOrdersViewController.pageSize,
-            orderType: .rent,
-            sortBy: mode == .notPickedUp ? "pickupPlanAt" : "returnPlanAt",
-            sortOrder: "asc",
-            status: mode == .notPickedUp ? .reserved : .pickuped
-        ) { [weak self] response, error in
+        let completion: (OrdersResponse?, NSError?) -> Void = { [weak self] response, error in
             DispatchQueue.main.async {
                 guard let self, token == self.generation else { return }
                 if let error, response == nil {
                     self.finish(collected, error: collected.isEmpty ? error : nil)
                     return
                 }
-                let pageOrders = response?.data?.orders ?? []
+                // "Còn phải thu" keeps only the orders that still owe money, as the tile counts them
+                let rawOrders = response?.data?.orders ?? []
+                let pageOrders = rawOrders.filter { self.outstandingPeriod == nil || NotPickedUpLogic.owed($0) > 0 }
                 let all = collected + pageOrders
-                if response?.data?.hasMore == true, !pageOrders.isEmpty, page < RentedOutOrdersViewController.maxPages {
+                // Paging follows the server's pages, not the filtered rows (a page can be all paid)
+                if response?.data?.hasMore == true, !rawOrders.isEmpty, page < RentedOutOrdersViewController.maxPages {
                     self.loadPage(page + 1, collected: all, token: token)
                 } else {
                     self.finish(all, error: nil)
                 }
             }
+        }
+        if let period = outstandingPeriod {
+            OrderService.shared.loadOrders(
+                from: nil, productIds: nil, productId: nil, customerId: nil,
+                startDate: period.start, endDate: period.end, keyword: nil,
+                page: page, limit: RentedOutOrdersViewController.pageSize,
+                orderType: nil, sortBy: "pickupPlanAt", sortOrder: "asc",
+                status: .reserved, dateField: "createdAt", completion: completion)
+        } else {
+            OrderService.shared.loadOrders(
+                productIds: nil,
+                keyword: nil,
+                page: page,
+                limit: RentedOutOrdersViewController.pageSize,
+                orderType: .rent,
+                sortBy: mode == .notPickedUp ? "pickupPlanAt" : "returnPlanAt",
+                sortOrder: "asc",
+                status: mode == .notPickedUp ? .reserved : .pickuped,
+                completion: completion)
         }
     }
 
@@ -238,9 +285,10 @@ final class RentedOutOrdersViewController: BaseViewControler {
         spinner.stopAnimating()
         refresh.endRefreshing()
         if let error {
-            UIAlertController.errorAlert(parent: self, error: error)
+            if !isQuietLoad { UIAlertController.errorAlert(parent: self, error: error) }
         } else {
             orders = loaded
+            freshness.loaded(version: loadVersion, at: Date())
         }
         render()
     }
@@ -347,5 +395,159 @@ extension RentedOutOrdersViewController: UITableViewDataSource, UITableViewDeleg
                 self?.navigationController?.pushViewController(preview, animated: true)
             }
         }
+    }
+}
+
+// MARK: - #708 Xem các đơn liên quan
+
+/// The orders behind an Overview tile, each with the money it adds to the tile, and their total at the bottom
+/// (it equals the tile). Rows come from GET /api/analytics/income/orders for the tile's buckets.
+final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    private static let pageSize = 200
+    private static let maxPages = 25
+
+    private let kind: OverviewRelatedKind
+    private let titleText: String
+    private let periodText: String
+    private let startDate: Date?
+    private let endDate: Date?
+    private var rows: [OverviewRelatedRow] = []
+    private let table = UITableView(frame: .zero, style: .plain)
+    private let totalLabel = UILabel()
+    private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
+    private let emptyLabel = UILabel()
+
+    init(kind: OverviewRelatedKind, title: String, period: String, startDate: Date?, endDate: Date?) {
+        self.kind = kind
+        self.titleText = title
+        self.periodText = period
+        self.startDate = startDate
+        self.endDate = endDate
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+        let back = CustomersV2UI.iconButton("chevron.left", label: "Back".localized(), size: DS.Icon.lg)
+        back.addTarget(self, action: #selector(close), for: .touchUpInside)
+        let title = V2.label(titleText, size: DS.TextSize.name, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let period = V2.label(periodText, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let titles = UIStackView(arrangedSubviews: [title, period])
+        titles.axis = .vertical
+        let header = UIStackView(arrangedSubviews: [back, titles])
+        header.alignment = .center
+        header.spacing = 4
+
+        totalLabel.font = Utils.boldFont(size: DS.TextSize.body)
+        totalLabel.textColor = DS.Color.text
+        totalLabel.numberOfLines = 0
+        totalLabel.accessibilityIdentifier = "related.total"
+        let footer = UIView()
+        footer.backgroundColor = V2.sectionFill
+        footer.addSubview(totalLabel)
+        totalLabel.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)) }
+
+        table.dataSource = self
+        table.delegate = self
+        table.rowHeight = UITableViewAutomaticDimension
+        table.estimatedRowHeight = 64
+        table.tableFooterView = UIView()
+        emptyLabel.text = "overview.related.empty".localized()
+        emptyLabel.textColor = DS.Color.textMuted
+        emptyLabel.textAlignment = .center
+        emptyLabel.isHidden = true
+
+        [header, table, footer, emptyLabel, spinner].forEach(view.addSubview)
+        header.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(8)
+        }
+        footer.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        table.snp.makeConstraints { make in
+            make.top.equalTo(header.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(footer.snp.top)
+        }
+        emptyLabel.snp.makeConstraints { make in make.center.equalTo(table) }
+        spinner.snp.makeConstraints { make in make.center.equalTo(table) }
+        load()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    @objc private func close() { navigationController?.popViewController(animated: true) }
+
+    private func load() {
+        spinner.startAnimating()
+        var collected: [OverviewRelatedRow] = []
+        let group = DispatchGroup()
+        for bucket in kind.buckets {
+            group.enter()
+            loadBucket(bucket, offset: 0, page: 1) { rows in
+                collected += rows
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) { [weak self] in
+            guard let self else { return }
+            self.spinner.stopAnimating()
+            self.rows = collected
+            self.emptyLabel.isHidden = !collected.isEmpty
+            let total = MoneyFormatter.format(OverviewDashLogic.relatedTotal(collected))
+            self.totalLabel.text = "\("overview.related.total".localized()) · \(collected.count): \(total)"
+            self.table.reloadData()
+        }
+    }
+
+    /// Every page of one bucket (the list total must equal the tile, so nothing is left unloaded)
+    private func loadBucket(_ bucket: String, offset: Int, page: Int, done: @escaping ([OverviewRelatedRow]) -> Void) {
+        AnalyticsAPIService.shared.loadIncomeOrders(startDate: startDate, endDate: endDate, status: bucket, plan: false,
+                                                    limit: Self.pageSize, offset: offset) { [weak self] data, _ in
+            guard let self else { return done([]) }
+            let items = data?.days?.flatMap { $0.orders ?? [] } ?? []
+            let rows = OverviewDashLogic.relatedRows(self.kind, bucket: bucket, items: items)
+            if data?.pagination?.hasMore == true, !items.isEmpty, page < Self.maxPages {
+                self.loadBucket(bucket, offset: offset + Self.pageSize, page: page + 1) { more in done(rows + more) }
+            } else {
+                done(rows)
+            }
+        }
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { rows.count }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "related") ?? UITableViewCell(style: .subtitle, reuseIdentifier: "related")
+        let row = rows[indexPath.row]
+        cell.textLabel?.text = [row.orderNumber, row.customer].filter { !$0.isEmpty }.joined(separator: " · ")
+        cell.textLabel?.font = Utils.mediumFont(size: DS.TextSize.body)
+        cell.detailTextLabel?.text = row.detail
+        cell.detailTextLabel?.textColor = DS.Color.textMuted
+        let amount = UILabel()
+        amount.font = Utils.boldFont(size: DS.TextSize.body)
+        amount.textColor = row.amount < 0 ? V2.danger : DS.Color.text
+        amount.text = (row.amount > 0 && kind != .orderValue && kind != .outstanding ? "+" : "") + MoneyFormatter.format(row.amount)
+        amount.sizeToFit()
+        cell.accessoryView = amount
+        cell.accessibilityLabel = "\(row.orderNumber), \(row.detail), \(amount.text ?? "")"
+        cell.accessibilityIdentifier = "related.row"
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let detail = OrderDetailViewController(orderId: rows[indexPath.row].orderId)
+        detail.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(detail, animated: true)
     }
 }

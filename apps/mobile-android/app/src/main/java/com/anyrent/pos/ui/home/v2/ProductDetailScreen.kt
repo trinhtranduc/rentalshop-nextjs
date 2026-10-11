@@ -138,6 +138,8 @@ fun ProductDetailScreen(
     // #519: "N lần thay đổi · gần nhất …" under the "Lịch sử thay đổi" row
     var historyPage by remember { mutableStateOf<ChangeHistory.Page?>(null) }
     val historyTexts = remember { changeHistoryTexts(context.resources) }
+    // #670: OUTLET_STAFF gets no history row and no changes request (the API answers 403)
+    val canViewHistory = remember { PermissionManager.canViewChangeHistory() }
     val scope = rememberCoroutineScope()
     val added = stringResource(R.string.v2_added_to_cart)
     val deletedText = stringResource(R.string.v2_product_deleted)
@@ -156,8 +158,10 @@ fun ProductDetailScreen(
             }
         withContext(Dispatchers.IO) { ApiClient.get().searchProductOrders(productId, page = 1, limit = 1) }
             .onSuccess { ordersTotal = it.total ?: it.items.size }
-        withContext(Dispatchers.IO) { ApiClient.get().productChanges(productId, limit = 1) }
-            .onSuccess { historyPage = it }
+        if (canViewHistory) {
+            withContext(Dispatchers.IO) { ApiClient.get().productChanges(productId, limit = 1) }
+                .onSuccess { historyPage = it }
+        }
         // One call per status of each chip
         val results = withContext(Dispatchers.IO) {
             ProductOrdersChip.entries.associateWith { c ->
@@ -262,26 +266,28 @@ fun ProductDetailScreen(
             }
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 
-            // #519: "Lịch sử thay đổi" (read only screen, newest first)
-            val historySubtitle = listOfNotNull(current.name.takeIf { it.isNotBlank() }, current.barcodeText?.takeIf { it.isNotBlank() })
-                .joinToString(" · ")
-            Row(
-                Modifier.fillMaxWidth().clickable { onOpenHistory(current.id, historySubtitle) }
-                    .semantics { role = Role.Button }
-                    .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Icon(Icons.Outlined.History, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.history_title), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text)
-                    historyPage?.let { ChangeHistory.countSummary(it.total, it.latestAt, Instant.now(), historyTexts) }?.let {
-                        Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            if (canViewHistory) {
+                // #519: "Lịch sử thay đổi" (read only screen, newest first)
+                val historySubtitle = listOfNotNull(current.name.takeIf { it.isNotBlank() }, current.barcodeText?.takeIf { it.isNotBlank() })
+                    .joinToString(" · ")
+                Row(
+                    Modifier.fillMaxWidth().clickable { onOpenHistory(current.id, historySubtitle) }
+                        .semantics { role = Role.Button }
+                        .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Outlined.History, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.history_title), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text)
+                        historyPage?.let { ChangeHistory.countSummary(it.total, it.latestAt, Instant.now(), historyTexts) }?.let {
+                            Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                        }
                     }
+                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))
                 }
-                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))
+                Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
             }
-            Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 
             // Orders
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {

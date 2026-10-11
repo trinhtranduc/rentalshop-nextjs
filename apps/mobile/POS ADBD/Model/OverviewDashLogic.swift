@@ -27,6 +27,16 @@ enum OverviewChip: CaseIterable, Equatable {
 enum OverviewTileKind: CaseIterable, Equatable {
     case orderValue, collected, outstanding, collateral
 
+    /// The rule behind the number, shown first in the tile's detail sheet (key, localized there)
+    var rule: String {
+        switch self {
+        case .orderValue: return "overview.dash.rule.orderValue"
+        case .collected: return "overview.dash.rule.collected"
+        case .outstanding: return "overview.dash.rule.outstanding"
+        case .collateral: return "overview.dash.rule.collateral"
+        }
+    }
+
     var title: String {
         switch self {
         case .orderValue: return "overview.dash.kpi.orderValue".localized()
@@ -59,6 +69,8 @@ struct OverviewTile: Equatable {
     /// "+" before a positive value (net collateral)
     let signed: Bool
     let chip: OverviewTileChip?
+    /// #719: a second chip, e.g. "13 đơn mới" on Giá trị đơn mới
+    var count: OverviewTileChip? = nil
 }
 
 /// Thực thu against what is still expected from today to the end of the period (web `forecastBar`, #612)
@@ -86,7 +98,7 @@ struct OverviewDashBar: Equatable {
 }
 
 struct OverviewWaterfallRow: Equatable {
-    enum Key: Equatable { case deposits, pickupAndSale, fees, refunds, total }
+    enum Key: Equatable { case deposits, pickupAndSale, fees, refunds, collateral, total }
     let key: Key
     /// Signed contribution; the total row carries the total
     let amount: Double
@@ -201,9 +213,15 @@ enum OverviewDashLogic {
             collateralChip = OverviewTileChip(tone: .info, key: "overview.dash.chip.held", count: held)
         }
         return [
+            // #719: the orders behind the money (rent + sale, cancelled left out); none on an API without orderValueByType
             OverviewTile(kind: .orderValue, value: report?.totalOrderValue, signed: false,
-                         chip: growthChip(report?.orderValueGrowth)),
-            OverviewTile(kind: .collected, value: report?.netRevenue, signed: false, chip: growthChip(report?.revenueGrowth)),
+                         chip: growthChip(report?.orderValueGrowth),
+                         count: report?.orderValueByType.map {
+                             OverviewTileChip(tone: .info, key: "overview.dash.chip.newOrders", count: $0.rent.orders + $0.sale.orders)
+                         }),
+            // #708: Thực thu is the money held, collateral included (cashCollected); older APIs keep collected
+            OverviewTile(kind: .collected, value: report?.cashCollected ?? report?.netRevenue, signed: false,
+                         chip: growthChip(report?.revenueGrowth)),
             OverviewTile(kind: .outstanding, value: report?.outstanding, signed: false, chip: outstandingChip),
             OverviewTile(kind: .collateral, value: report?.collateralFlow?.net, signed: true, chip: collateralChip),
         ]
@@ -292,10 +310,12 @@ enum OverviewDashLogic {
     // MARK: Detail sheets
 
     /// Thực thu as a waterfall: three additions, minus refunds, = total. Handles a negative total (web `waterfallRows`)
-    static func waterfall(_ parts: OverviewReport.CollectedBreakdown, total: Double) -> [OverviewWaterfallRow] {
-        let steps: [(OverviewWaterfallRow.Key, Double)] = [
+    /// `collateral`: collateral received − handed back (#708), a step before the total when Thực thu includes it
+    static func waterfall(_ parts: OverviewReport.CollectedBreakdown, total: Double, collateral: Double? = nil) -> [OverviewWaterfallRow] {
+        var steps: [(OverviewWaterfallRow.Key, Double)] = [
             (.deposits, parts.deposits), (.pickupAndSale, parts.pickupAndSale), (.fees, parts.fees), (.refunds, -parts.refunds),
         ]
+        if let collateral { steps.append((.collateral, collateral)) }
         var spans: [(key: OverviewWaterfallRow.Key, amount: Double, from: Double, to: Double, total: Bool)] = []
         var run = 0.0
         for (key, amount) in steps {
@@ -367,5 +387,130 @@ enum OverviewDashLogic {
             OverviewTopRow(id: item.id, name: item.name, amount: item.amount, count: item.count,
                            ratio: top > 0 ? max(0, item.amount) / top : 0)
         }
+    }
+}
+
+// MARK: - #708 Xem các đơn liên quan: the rows behind a tile, each with the money it adds to the tile
+
+/// Which tile the list explains. `Còn phải thu` keeps its own list (RentedOutOrdersViewController, #706).
+enum OverviewRelatedKind: Equatable {
+    /// Orders created in the period (GET income/orders status=new); a cancelled order is listed with 0
+    case orderValue
+    /// Every money event of the period (status=all); collateral in and out included, as the Thực thu tile (#710)
+    case collected
+    /// The collateral of each money event of the period (status=all, row `collateral`, #721): + received at hand-over,
+    /// − handed back at return or cancel; a same-day hand-over then return or cancel moves none, as the tile
+    case collateral
+    /// Orders created in the period that still owe money (rent not picked up: total − deposit; sale not completed),
+    /// the rule of `revenue.outstanding` (BF-OUT), so the count and the total equal the tile
+    case outstanding
+
+    /// The income/orders buckets to load
+    var buckets: [String] {
+        switch self {
+        case .orderValue, .outstanding: return ["new"]
+        case .collected, .collateral: return ["all"]
+        }
+    }
+}
+
+struct OverviewRelatedRow: Equatable {
+    let orderId: Int
+    let orderNumber: String
+    let customer: String
+    let detail: String
+    let amount: Double
+}
+
+/// #757: the reason under a "Collected" row in the app's language. The API `description` is Vietnamese, so the
+/// reason comes from `revenueType` (or the known API sentence, which also splits a `MULTIPLE` row); `description`
+/// stays the fallback for a type this build does not know.
+enum RelatedEventReason: String, CaseIterable {
+    case saleCreated, saleCancelled, deposit, pickup, sameDay, damageFee, depositRefund, nothing
+    case rentCancelled, returnCollected, futurePickup, futureDamageFee, futureRefund, futureNothing
+
+    var localizedKey: String { "overview.related.event.\(rawValue)" }
+
+    /// The API's own sentences (`revenue-calculator.ts`), so a `RENT_RETURN` or a `MULTIPLE` part maps exactly
+    static let knownDescriptions: [String: RelatedEventReason] = [
+        "Đơn bán được tạo": .saleCreated, "Đơn bán bị hủy (hoàn lại)": .saleCancelled, "Thu tiền cọc": .deposit,
+        "Thu tiền khi lấy hàng": .pickup, "Thuê và trả trong cùng ngày": .sameDay, "Thu phí hư hỏng": .damageFee,
+        "Hoàn tiền cọc": .depositRefund, "Không có phát sinh": .nothing, "Đơn hủy (hoàn lại)": .rentCancelled,
+        "Doanh thu dự kiến khi lấy hàng": .futurePickup, "Ước tính thu phí hư hỏng khi trả hàng": .futureDamageFee,
+        "Ước tính hoàn tiền cọc khi trả hàng": .futureRefund, "Ước tính không có phát sinh khi trả hàng": .futureNothing,
+    ]
+
+    static func forType(_ revenueType: String, revenue: Double) -> RelatedEventReason? {
+        switch revenueType {
+        case "SALE": return .saleCreated
+        case "SALE_CANCELLED": return .saleCancelled
+        case "RENT_DEPOSIT": return .deposit
+        case "RENT_PICKUP": return .pickup
+        case "RENT_CANCELLED": return .rentCancelled
+        case "RENT_FUTURE_PICKUP": return .futurePickup
+        case "RENT_RETURN": return revenue < 0 ? .depositRefund : (revenue > 0 ? .returnCollected : .nothing)
+        case "RENT_FUTURE_RETURN": return revenue < 0 ? .futureRefund : (revenue > 0 ? .futureDamageFee : .futureNothing)
+        default: return nil
+        }
+    }
+
+    /// The reason of each event of a row: one for a single event, one per part of a `MULTIPLE` row ("a + b").
+    /// `nil` reason = unknown, keep the API text of that part.
+    static func parts(revenueType: String?, description: String?, revenue: Double) -> [(reason: RelatedEventReason?, text: String)] {
+        let type = (revenueType ?? "").uppercased()
+        let text = description ?? ""
+        if type == "MULTIPLE" || (type.isEmpty && text.contains(" + ")) {
+            return text.components(separatedBy: " + ").map { (knownDescriptions[$0], $0) }
+        }
+        return [(knownDescriptions[text] ?? forType(type, revenue: revenue), text)]
+    }
+
+    static func text(revenueType: String?, description: String?, revenue: Double,
+                     localize: (String) -> String = { $0.localized() }) -> String {
+        parts(revenueType: revenueType, description: description, revenue: revenue)
+            .map { $0.reason.map { localize($0.localizedKey) } ?? $0.text }
+            .joined(separator: " + ")
+    }
+}
+
+extension OverviewDashLogic {
+    /// One row per income/orders row, with the money it adds to the tile; Σ amount = the tile (BF-STAT)
+    static func relatedRows(_ kind: OverviewRelatedKind, bucket: String, items: [DailyIncomeOrder]) -> [OverviewRelatedRow] {
+        items.compactMap { item in
+            guard let id = item.id else { return nil }
+            let amount: Double
+            let detail: String
+            switch (kind, bucket) {
+            case (.orderValue, _):
+                let cancelled = item.status?.uppercased() == "CANCELLED"
+                amount = cancelled ? 0 : (item.totalAmount ?? 0)
+                detail = cancelled ? "overview.related.cancelled".localized() : "overview.related.created".localized()
+            case (.collected, _):
+                amount = item.revenue ?? 0
+                detail = RelatedEventReason.text(revenueType: item.revenueType, description: item.description, revenue: amount)
+            case (.outstanding, _):
+                let type = item.orderType?.uppercased() ?? ""
+                let status = item.status?.uppercased() ?? ""
+                if type == "RENT" && status == "RESERVED" {
+                    amount = max(0, (item.totalAmount ?? 0) - (item.depositAmount ?? 0))
+                } else if type == "SALE" && status != "COMPLETED" && status != "CANCELLED" {
+                    amount = item.totalAmount ?? 0
+                } else {
+                    amount = 0
+                }
+                detail = "overview.related.owes".localized()
+            case (.collateral, _):
+                amount = item.collateral ?? 0
+                detail = (amount < 0 ? "overview.related.collateralOut" : "overview.related.collateralIn").localized()
+            }
+            if kind == .collateral && amount == 0 { return nil }
+            if kind == .outstanding && amount <= 0 { return nil }
+            return OverviewRelatedRow(orderId: id, orderNumber: item.orderNumber ?? "#\(id)",
+                                      customer: item.customerName ?? "", detail: detail, amount: amount)
+        }
+    }
+
+    static func relatedTotal(_ rows: [OverviewRelatedRow]) -> Double {
+        rows.reduce(0) { $0 + $1.amount }
     }
 }

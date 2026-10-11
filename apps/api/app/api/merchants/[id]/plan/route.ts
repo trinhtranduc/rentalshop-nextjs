@@ -91,6 +91,7 @@ export async function PUT(
         // subscriptionStatus removed - subscription status is managed via Subscription model
       });
 
+      let planChange: Record<string, unknown> | undefined;
       // Also update the subscription record if it exists
       if (merchant.subscription) {
         // Get old plan for activity log
@@ -106,20 +107,27 @@ export async function PUT(
           billingInterval: normalizedBillingInterval
         });
         
+        // The rules (who, when) and the Payment of the amount due are applied inside changePlan (#785)
         const updatedSubscription = await changePlan(
           merchant.subscription.id,
           planId,
-          normalizedBillingInterval as any
+          normalizedBillingInterval as any,
+          {
+            actorRole: user.role,
+            payment: {
+              method: body.method,
+              transactionId: body.transactionId,
+              reference: body.reference,
+              description: body.description,
+              paymentDate: body.paymentDate ? new Date(body.paymentDate) : undefined,
+            },
+          }
         );
 
-        // Update additional fields if provided (discount, custom amount, etc.)
-        if (discount !== undefined || amount !== undefined) {
-          await db.subscriptions.update(merchant.subscription.id, {
-          discount: discount || 0,
-            // Only update amount if explicitly provided (otherwise use calculated amount from changePlan)
-            ...(amount !== undefined && amount !== 0 ? { amount } : {})
-          });
-        }
+        // The server prices the change (#779): changePlan() stores the cycle price, discount % and currency.
+        // `totalPrice` / `discount` from the client are still accepted but no longer written (a client could
+        // store any amount, e.g. totalPrice: 1).
+        planChange = (updatedSubscription as { planChange?: Record<string, unknown> }).planChange;
 
         // Log activity to database
         await db.subscriptionActivities.create({
@@ -139,7 +147,8 @@ export async function PUT(
               amount: updatedSubscription.amount || amount
             },
             billingInterval: normalizedBillingInterval,
-            discount: discount || 0,
+            discount: updatedSubscription.discount ?? 0,
+            planChange,
             effectiveDate: updatedSubscription.currentPeriodStart 
               ? (typeof updatedSubscription.currentPeriodStart === 'string' 
                   ? updatedSubscription.currentPeriodStart 
@@ -180,7 +189,7 @@ export async function PUT(
 
       return NextResponse.json({
         success: true,
-        data: refreshedMerchant,
+        data: refreshedMerchant ? { ...refreshedMerchant, planChange } : refreshedMerchant,
         code: 'PLAN_UPDATED_SUCCESS',
         message: 'Plan updated successfully'
       });
