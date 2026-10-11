@@ -114,6 +114,88 @@ final class Phase8Tests: XCTestCase {
         XCTAssertNotEqual(error.localizedDescription, "Product has open orders")
     }
 
+    // MARK: 4b. Branch error codes (#859)
+
+    private func branchError(_ code: String, data: String = "") throws -> APIErrorResponse {
+        let json = #"{"success":false,"code":"\#(code)","message":"English API text"\#(data)}"#
+        return try JSONDecoder().decode(APIErrorResponse.self, from: Data(json.utf8))
+    }
+
+    /// The sentence in one locale's Localizable.strings of the app bundle.
+    private func sentence(_ key: String, _ localization: String) -> String? {
+        guard let path = Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: localization),
+              let table = NSDictionary(contentsOfFile: path) as? [String: String] else { return nil }
+        return table[key]
+    }
+
+    func testBranchCodesShowTheLocalizedSentence() throws {
+        let expected: [(String, APIErrorCode, Int)] = [
+            ("OUTLET_DEACTIVATED", .outletDeactivated, 403),
+            ("PRODUCT_SHARED_FIELDS_MERCHANT_ONLY", .productSharedFieldsMerchantOnly, 403),
+            ("PRODUCT_DELETE_MERCHANT_ONLY", .productDeleteMerchantOnly, 403),
+            ("OUTLET_HAS_OPEN_ORDERS", .outletHasOpenOrders, 409),
+        ]
+        for (code, errorCode, status) in expected {
+            let response = try branchError(code)
+            XCTAssertEqual(response.errorCode, errorCode, code)
+            XCTAssertEqual(errorCode.httpStatusCode, status, code)
+            let error = response.toNSError()
+            XCTAssertEqual(error.code, status, code)
+            XCTAssertEqual(error.localizedDescription, code.localized(), code)
+            XCTAssertNotEqual(error.localizedDescription, code)
+            XCTAssertNotEqual(error.localizedDescription, "English API text", code)
+        }
+    }
+
+    func testBranchCodeTextsMatchTheWeb() {
+        let vi: [String: String] = [
+            "OUTLET_DEACTIVATED": "Chi nhánh đã ngừng hoạt động, liên hệ chủ shop.",
+            "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Nhân viên không sửa được tên, giá, ảnh, danh mục và thông tin chung của sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho. Bạn chỉ sửa được tồn kho của chi nhánh mình.",
+            "PRODUCT_DELETE_MERCHANT_ONLY": "Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho.",
+            "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.",
+            "PRODUCT_HELD_BY_OTHER_OUTLETS_NO_PARAMS": "Chi nhánh khác còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.",
+            "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
+        ]
+        let en: [String: String] = [
+            "OUTLET_DEACTIVATED": "This branch has been deactivated. Please contact the shop owner.",
+            "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Staff cannot change the name, prices, photos, category or other shared details of a product; ask the shop owner, the branch manager or the warehouse staff. You can update your branch's stock.",
+            "PRODUCT_DELETE_MERCHANT_ONLY": "Staff cannot delete products; ask the shop owner, the branch manager or the warehouse staff.",
+            "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.",
+            "PRODUCT_HELD_BY_OTHER_OUTLETS_NO_PARAMS": "Another branch still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.",
+            "OUTLET_HAS_OPEN_ORDERS": "This branch still has orders that are reserved or being rented. Complete or cancel them before turning the branch off.",
+        ]
+        for (key, text) in vi { XCTAssertEqual(sentence(key, "vi-VN"), text, key) }
+        for (key, text) in en { XCTAssertEqual(sentence(key, "en"), text, key) }
+    }
+
+    func testHeldByOtherOutletsNamesTheBranches() throws {
+        let data = #","data":{"outlets":[{"id":1,"name":"Main","stock":3},{"id":2,"name":"Kho","stock":0}],"messageParams":{"outlets":"Main (3), Kho (0)"}}"#
+        let response = try branchError("PRODUCT_HELD_BY_OTHER_OUTLETS", data: data)
+        XCTAssertEqual(response.errorCode, .productHeldByOtherOutlets)
+        let error = response.toNSError(httpStatusCode: 409)
+        XCTAssertEqual(error.code, 409)
+        let expected = "PRODUCT_HELD_BY_OTHER_OUTLETS".localized().replacingOccurrences(of: "{outlets}", with: "Main (3), Kho (0)")
+        XCTAssertEqual(error.localizedDescription, expected)
+        XCTAssertTrue(error.localizedDescription.hasPrefix("Main (3), Kho (0) "))
+        XCTAssertFalse(error.localizedDescription.contains("{outlets}"))
+    }
+
+    func testHeldByOtherOutletsWithoutNamesUsesTheGeneralSentence() throws {
+        for data in ["", #","data":null"#, #","data":{"outlets":[]}"#, #","data":{"messageParams":{"outlets":""}}"#, #","data":[1,2]"#] {
+            let response = try branchError("PRODUCT_HELD_BY_OTHER_OUTLETS", data: data)
+            XCTAssertEqual(response.toNSError().localizedDescription, "PRODUCT_HELD_BY_OTHER_OUTLETS_NO_PARAMS".localized(), data)
+            XCTAssertFalse(response.toNSError().localizedDescription.contains("{"), data)
+        }
+    }
+
+    func testPlaceholderFillUsesTheLookup() {
+        let table = ["X": "{outlets} has it", "X_NO_PARAMS": "Another has it"]
+        let lookup: (String) -> String = { table[$0] ?? $0 }
+        XCTAssertEqual(APIErrorText.message(forCode: "X", params: ["outlets": "A (1)"], lookup: lookup), "A (1) has it")
+        XCTAssertEqual(APIErrorText.message(forCode: "X", params: [:], lookup: lookup), "Another has it")
+        XCTAssertNil(APIErrorText.message(forCode: "UNKNOWN_CODE", params: ["outlets": "A"], lookup: lookup))
+    }
+
     // MARK: 5. Extend rental
 
     func testExtendOnlyOpenRentalsWithOrdersUpdate() {

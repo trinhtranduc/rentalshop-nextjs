@@ -96,6 +96,8 @@ final class AuthSessionTests: XCTestCase {
     func testAnotherDeviceLoginGetsItsOwnMessage() {
         XCTAssertEqual(SessionEndReason.errorCode(forServerCode: "SESSION_REPLACED"), .sessionReplaced)
         XCTAssertEqual(SessionEndReason.errorCode(forServerCode: "SESSION_EXPIRED"), .sessionExpired)
+        // #859: staff of a turned-off branch are told why
+        XCTAssertEqual(SessionEndReason.errorCode(forServerCode: "OUTLET_DEACTIVATED"), .outletDeactivated)
         XCTAssertEqual(SessionEndReason.errorCode(forServerCode: "TOKEN_EXPIRED"), .sessionExpired)
         XCTAssertEqual(SessionEndReason.errorCode(forServerCode: nil), .sessionExpired)
     }
