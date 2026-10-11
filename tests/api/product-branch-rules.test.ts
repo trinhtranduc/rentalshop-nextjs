@@ -6,7 +6,7 @@
  *   sent again (whole payload from an app or a stale tab) pass and only the stock is written.
  * - A branch role without an outlet is refused instead of skipping the branch checks.
  * - Only the merchant deletes products (DELETE and batch-delete).
- * - A new product gets a 0-stock row at every other active outlet of the shop.
+ * - A new product (form or Excel import) gets a 0-stock row at every other active outlet of the shop.
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -22,14 +22,16 @@ jest.mock('@rentalshop/middleware', () => ({ searchRateLimiter: () => null }));
 
 const mockDb: any = {
   products: { findById: jest.fn(), update: jest.fn(), create: jest.fn() },
-  outlets: { findById: jest.fn() },
+  outlets: { findById: jest.fn(), search: jest.fn() },
   merchants: { findById: jest.fn() },
+  categories: { search: jest.fn() },
   embeddingJobs: { kickOff: jest.fn() },
 };
 const mockPrisma: any = {
   outlet: { findMany: jest.fn() },
   orderItem: { findMany: jest.fn() },
-  product: { updateMany: jest.fn(), findMany: jest.fn() },
+  product: { updateMany: jest.fn(), findMany: jest.fn(), findFirst: jest.fn() },
+  $transaction: jest.fn(),
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: mockPrisma, syncProductTotalStock: jest.fn() }));
 jest.mock('@rentalshop/database/server', () => ({
@@ -79,6 +81,7 @@ jest.mock('../../apps/api/lib/image-compression', () => ({
 import { PUT, DELETE } from '../../apps/api/app/api/products/[id]/route';
 import { POST as createProduct } from '../../apps/api/app/api/products/route';
 import { POST as batchDelete } from '../../apps/api/app/api/products/batch-delete/route';
+import { POST as bulkImport } from '../../apps/api/app/api/products/bulk-import/route';
 import { changedSharedFields, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
 
 const merchant = { user: { id: 3, role: 'MERCHANT', email: 'm@x' }, userScope: { merchantId: 2 } };
@@ -152,7 +155,13 @@ beforeEach(() => {
   ctx = merchant;
   mockDb.products.findById.mockResolvedValue(product);
   mockDb.outlets.findById.mockImplementation(async (id: number) => outlets[id] ?? null);
-  mockDb.products.update.mockImplementation(async (id: number, data: any) => ({ ...product, ...data, id }));
+  mockDb.products.update.mockImplementation(async (id: number, data: any) => ({
+    ...product,
+    ...data,
+    id,
+    createdAt: new Date('2026-10-01T00:00:00Z'),
+    updatedAt: new Date('2026-10-03T00:00:00Z'),
+  }));
 });
 
 describe('changedSharedFields', () => {
@@ -305,5 +314,38 @@ describe('POST /api/products — a new product has a row at every active outlet'
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('OUTLET_REQUIRED');
     expect(mockDb.products.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/products/bulk-import — imported products have a row at every active outlet', () => {
+  const txCreate = jest.fn();
+  const importRequest = (): any => ({ json: async () => ({ products: [{ name: 'Áo dài', rentPrice: 1, stock: 4 }] }) });
+
+  beforeEach(() => {
+    mockDb.merchants.findById.mockResolvedValue({ id: 2, name: 'Shop' });
+    mockDb.categories.search.mockResolvedValue({ data: [{ id: 4, name: 'default' }] });
+    mockPrisma.outlet.findMany.mockResolvedValue([{ id: 1 }, { id: 3 }]);
+    mockPrisma.product.findFirst.mockResolvedValue(null);
+    txCreate.mockImplementation(async ({ data }: any) => ({ id: 71, name: data.name }));
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => fn({ product: { create: txCreate } }));
+  });
+
+  it('the import outlet gets the stock, the other active outlets 0', async () => {
+    ctx = outletAdmin;
+    const res: any = await bulkImport(importRequest());
+    expect(res.status).toBe(200);
+    expect(mockPrisma.outlet.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { merchantId: 2, isActive: true } }));
+    expect(txCreate.mock.calls[0][0].data.outletStock.create).toEqual([
+      { outletId: 1, stock: 4, available: 4, renting: 0 },
+      { outletId: 3, stock: 0, available: 0, renting: 0 },
+    ]);
+  });
+
+  it('a branch role without an outlet is refused', async () => {
+    ctx = outletAdminNoOutlet;
+    const res: any = await bulkImport(importRequest());
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('OUTLET_REQUIRED');
+    expect(txCreate).not.toHaveBeenCalled();
   });
 });

@@ -6,7 +6,8 @@ import {
   ResponseBuilder,
   productCreateSchema
 } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { zeroStockRowsForOtherOutlets } from '../../../../lib/product-branch-rules';
 import { z } from 'zod';
 
 const MAX_IMPORT_ROWS = 3000;
@@ -299,6 +300,14 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
+    // #825: a branch role always imports into its own outlet; without one it is refused
+    if (isOutletRole(user.role) && !userScope.outletId) {
+      return NextResponse.json(
+        ResponseBuilder.error('OUTLET_REQUIRED'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
     // Get outlet ID (from user scope or first outlet)
     let outletId = userScope.outletId;
     if (!outletId) {
@@ -320,6 +329,13 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         { status: 404 }
       );
     }
+
+    // #825: each new product also gets a 0-stock row at every other active outlet of the shop
+    const activeOutlets = await prisma.outlet.findMany({
+      where: { merchantId: merchant.id, isActive: true },
+      select: { id: true },
+    });
+    const zeroStockRows = zeroStockRowsForOtherOutlets([{ outletId: outlet.id }], activeOutlets.map((o: { id: number }) => o.id));
 
     // Build category map
     const categories = await db.categories.search({ merchantId, limit: 1000 });
@@ -492,12 +508,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               merchantId: merchant.id,
                 categoryId: validatedProduct.categoryId,
               outletStock: {
-                create: [{
-                  outletId: outlet.id,
+                create: [
+                  {
+                    outletId: outlet.id,
                     stock: validatedProduct.data.totalStock || 0,
                     available: validatedProduct.data.totalStock || 0,
-                  renting: 0
-                }]
+                    renting: 0
+                  },
+                  ...zeroStockRows.map((row) => ({ outletId: row.outletId, stock: 0, available: 0, renting: 0 }))
+                ]
               }
             },
               select: {

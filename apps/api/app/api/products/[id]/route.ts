@@ -622,20 +622,18 @@ export async function PUT(
                 { status: API.STATUS.NOT_FOUND }
               );
             }
-            {
-              const renting = rentingByOutlet.get(outlet.id) || 0;
-              if (stock.stock < renting) {
-                return NextResponse.json(
-                  ResponseBuilder.error('STOCK_BELOW_RENTED'),
-                  { status: 400 }
-                );
-              }
-              outletStockUpserts.push({
-                where: { productId_outletId: { productId, outletId: outlet.id } },
-                update: { stock: stock.stock, available: stock.stock - renting },
-                create: { outletId: outlet.id, stock: stock.stock, available: stock.stock, renting: 0 }
-              });
+            const renting = rentingByOutlet.get(outlet.id) || 0;
+            if (stock.stock < renting) {
+              return NextResponse.json(
+                ResponseBuilder.error('STOCK_BELOW_RENTED'),
+                { status: 400 }
+              );
             }
+            outletStockUpserts.push({
+              where: { productId_outletId: { productId, outletId: outlet.id } },
+              update: { stock: stock.stock, available: stock.stock - renting },
+              create: { outletId: outlet.id, stock: stock.stock, available: stock.stock, renting: 0 }
+            });
           } else {
             console.log(`❌ Invalid outletStock entry:`, stock);
           }
@@ -683,7 +681,8 @@ export async function PUT(
 
       // Cleanup old images that are no longer in the new images list
       // IMPORTANT: This ensures orphaned images are deleted from S3 when updating product images
-      if (productUpdateData.images !== undefined) {
+      // #825: a branch role never writes images, so it never removes any
+      if (!isBranchRole && productUpdateData.images !== undefined) {
         try {
           // Parse existing images before update
           const existingImageUrls = parseProductImages(existingProduct.images);
@@ -864,8 +863,8 @@ export async function PUT(
  * - 409 PRODUCT_HAS_OPEN_ORDERS while the product is on a RESERVED or PICKUPED order (nothing changes).
  * - Response shape unchanged: { id, name, images }, code PRODUCT_DELETED_SUCCESS.
  *
- * Authorization: All roles with 'products.manage' permission can access
- * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN
+ * Authorization: 'products.manage', and not a branch role (#825: OUTLET_ADMIN / OUTLET_INVENTORY get 403
+ * PRODUCT_DELETE_MERCHANT_ONLY; the product is shared by every branch)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
@@ -928,22 +927,12 @@ export async function DELETE(
         );
       }
 
-      // For OUTLET_ADMIN and Nhân viên kho (#682): Verify product has stock at their outlet
-      if ((user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) && userScope.outletId) {
-        const hasStockAtOutlet = existingProduct.outletStock?.some(
-          (os: any) => os.outlet?.id === userScope.outletId
+      // #825: only the merchant (and ADMIN) deletes products; a product is shared by every branch
+      if (isOutletRole(user.role)) {
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_DELETE_MERCHANT_ONLY'),
+          { status: API.STATUS.FORBIDDEN }
         );
-        if (!hasStockAtOutlet) {
-          console.log('❌ Product does not have stock at user\'s outlet:', {
-          productId: productId,
-            userOutletId: userScope.outletId,
-            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
-          });
-          return NextResponse.json(
-            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
-            { status: API.STATUS.FORBIDDEN }
-          );
-        }
       }
 
       // ============================================================================
