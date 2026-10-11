@@ -9,6 +9,7 @@ import { ORDER_STATUS } from '@rentalshop/constants';
 import type { SimpleFilters, SimpleResponse } from './index';
 import { removeVietnameseDiacritics, generateUniqueTenantKey, generateTenantKeyFromName } from '@rentalshop/utils';
 import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
+import { buildMerchantSearchConditions, phoneDigitsForLookup } from './merchant-search';
 
 // ============================================================================
 // TYPES
@@ -285,6 +286,19 @@ export async function findByTenantKey(tenantKey: string) {
   return merchant;
 }
 
+/** Ids of merchants whose phone, or whose owner's phone, contains `digits` once the separators are removed (#817). */
+async function findMerchantIdsByPhoneDigits(digits: string): Promise<number[]> {
+  const pattern = `%${digits.replace(/[\\%_]/g, '')}%`;
+  const rows = await prisma.$queryRaw<{ id: number }[]>`
+    SELECT m."id" FROM "Merchant" m
+    WHERE regexp_replace(COALESCE(m."phone", ''), '[^0-9]', '', 'g') LIKE ${pattern}
+    UNION
+    SELECT u."merchantId" AS id FROM "User" u
+    WHERE u."role" = 'MERCHANT' AND u."deletedAt" IS NULL AND u."merchantId" IS NOT NULL
+      AND regexp_replace(COALESCE(u."phone", ''), '[^0-9]', '', 'g') LIKE ${pattern}`;
+  return rows.map((r) => Number(r.id));
+}
+
 /**
  * Search merchants with filtering and pagination
  */
@@ -307,18 +321,12 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     const searchTerm = search.trim();
     const normalizedTerm = removeVietnameseDiacritics(searchTerm);
     
-    const searchConditions: any[] = [
-      { name: { contains: searchTerm, mode: 'insensitive' } },
-      { email: { contains: searchTerm, mode: 'insensitive' } }
-    ];
-    
-    // Add normalized search if different from original
-    if (normalizedTerm !== searchTerm) {
-      searchConditions.push(
-        { name: { contains: normalizedTerm, mode: 'insensitive' } }
-      );
-    }
-    
+    // Shop name, email and phone, and the owner's name, email and phone (#817)
+    // Stored numbers may hold spaces, dots or dashes: compare digits only for the shop and its owners
+    const digits = phoneDigitsForLookup(searchTerm);
+    const phoneMatchedIds = digits ? await findMerchantIdsByPhoneDigits(digits) : [];
+    const searchConditions = buildMerchantSearchConditions(searchTerm, normalizedTerm, phoneMatchedIds);
+
     where.OR = searchConditions;
   }
 
