@@ -21,7 +21,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let searchDebouncer = DebounceManager(delay: 0.3)
 
     private let header = UIView()
-    private let shopLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    /// #828: "🏬 <branch> ▾" for a merchant with several branches, else the branch name (replaces "shop · branch")
+    private let outletButton = OutletHeaderButton()
     private let titleLabel = V2.label("products.home.title".localized(), size: DS.TextSize.title, weight: .bold)
     private let searchField = UITextField()
     private lazy var list: UITableView = {
@@ -65,6 +66,13 @@ final class ProductsHomeViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        viewModel.reload()
+    }
+
+    /// #828: products and stock of the branch now in use
+    @objc private func outletChanged() {
+        updateCartBar()
         viewModel.reload()
     }
 
@@ -72,6 +80,7 @@ final class ProductsHomeViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
+        outletButton.refresh()
         // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
         if stockStale {
             stockStale = false
@@ -94,13 +103,16 @@ final class ProductsHomeViewController: BaseViewControler {
 
     override func startRefresh(_ sender: Any) {
         viewModel.reload()
+        CurrentOutlet.shared.refresh(onFallback: { [weak self] name in
+            guard let self else { return }
+            OutletSwitcher.showFallback(name, from: self)
+        })
     }
 
     // MARK: - Layout
 
     private func buildHeader() {
-        let user = User.current()
-        shopLabel.text = [user?.merchant?.name, user?.outlet?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+        outletButton.presenter = self
 
         notificationButton.setImage(DS.symbol("bell", DS.Icon.lg), for: .normal)
         notificationButton.tintColor = DS.Color.text
@@ -114,8 +126,11 @@ final class ProductsHomeViewController: BaseViewControler {
         let addButton = iconButton("plus", size: DS.Icon.lg, label: "product.action.add.accessibility".localized(), action: #selector(addProduct))
         addButton.isHidden = !ProductAccess.canCreate(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
 
-        let titles = UIStackView(arrangedSubviews: [shopLabel, titleLabel])
+        let titles = UIStackView(arrangedSubviews: [outletButton, titleLabel])
         titles.axis = .vertical
+        titles.alignment = .leading
+        // The button is 44 pt tall for touch; its pill is 32 pt, so the title sits right under it (board SP-dong)
+        titles.setCustomSpacing(-4, after: outletButton)
         let topRow = UIStackView(arrangedSubviews: [titles, UIView(), addButton, notificationButton])
         topRow.alignment = .center
         topRow.spacing = 4

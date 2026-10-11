@@ -2534,6 +2534,103 @@ final class AnyRentE2ETests: XCTestCase {
     /// MOB-SUB-10..: at-limit merchant (plan limits equal to what exists: 2 products, 2 customers, 1 order): creating a customer, an
     /// order or a product must answer with a readable message (no raw code), and must not create anything
     /// (the DB counts are compared by tests/e2e/mobile/subscription-flow.sh). Run for owner, staff and kho.
+    /// #828 branch picker. Merchant (shop with two active branches): the "🏬 <branch> ▾" button above the Home title
+    /// opens "Chọn chi nhánh"; an empty cart switches at once and Home stock follows the branch; a cart with lines asks
+    /// "Đổi sang …?" and "Xoá giỏ và đổi" empties it. Orders, Calendar and Overview have no button (Home only) and
+    /// follow the chosen branch.
+    /// Staff / inventory: the branch name in the same place, not a button.
+    func test9zOutletPicker() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 15), "Product list should load")
+        let header = app.descendants(matching: .any)["outlet.header.button"]
+        XCTAssertTrue(header.waitForExistence(timeout: 10), "branch line above the Home title")
+        guard e2e.role == "merchant" else {
+            header.tap()
+            e2e.soft(!app.buttons["outlet.picker.use"].waitForExistence(timeout: 2), "outlet user: no branch sheet")
+            e2e.note("OUTLET header (\(e2e.role)): \(header.label)")
+            e2e.shot("11f-outlet-staff-home")
+            return
+        }
+        e2e.emptyCart()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let button = app.buttons["outlet.header.button"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10), "merchant with two branches gets the branch button")
+        let firstStock = { () -> String in
+            let line = self.app.tables.cells.firstMatch.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "●")).firstMatch
+            return line.exists ? line.label : "<none>"
+        }
+        let before = button.label
+        let stockBefore = firstStock()
+        e2e.note("OUTLET before: \(before) | first row \(stockBefore)")
+        e2e.shot("11a-outlet-home")
+
+        // Empty cart: pick the other branch, it switches without a question
+        button.tap()
+        let use = app.buttons["outlet.picker.use"]
+        XCTAssertTrue(use.waitForExistence(timeout: 5), "branch sheet opens")
+        e2e.shot("11b-outlet-sheet")
+        let rows = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'outlet.picker.row.'"))
+        let other = rows.matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch
+        XCTAssertTrue(other.exists, "another active branch in the sheet")
+        other.tap()
+        use.tap()
+        XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 2), "empty cart: no question")
+        sleep(3)
+        let after = button.label
+        e2e.soft(after != before, "button shows the new branch (\(before) → \(after))")
+        let stockAfter = firstStock()
+        e2e.note("OUTLET after: \(after) | first row \(stockAfter)")
+        e2e.shot("11c-outlet-switched")
+
+        // Cart with a line: the switch asks first, then empties the cart
+        let plus = app.tables.cells.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
+        if plus.waitForExistence(timeout: 5) {
+            plus.tap()
+            XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar after +")
+            button.tap()
+            XCTAssertTrue(use.waitForExistence(timeout: 5), "branch sheet opens again")
+            rows.matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch.tap()
+            use.tap()
+            let confirm = app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Xoá giỏ và đổi", "Empty cart and switch"])).firstMatch
+            XCTAssertTrue(confirm.waitForExistence(timeout: 5), "cart with lines: 'Đổi sang …?' asks first")
+            e2e.shot("11d-outlet-cart-alert")
+            confirm.tap()
+            sleep(3)
+            e2e.soft(!e2e.cartBar.exists, "cart emptied by the switch")
+            e2e.soft(button.label == before, "back on the first branch (\(button.label))")
+            e2e.shot("11e-outlet-after-cart-switch")
+        } else {
+            e2e.soft(false, "a + button on Home")
+        }
+
+        // Switch to the other branch again, then the same button on the other tabs
+        button.tap()
+        if use.waitForExistence(timeout: 5) {
+            rows.matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch.tap()
+            use.tap()
+            sleep(2)
+        }
+        for (names, index, shot) in [(["My Order", "Đơn hàng"], 1, "11g-outlet-orders"), (["Calendar", "Lịch"], 2, "11h-outlet-calendar"),
+                                     (["Overview", "Tổng quan"], 3, "11i-outlet-overview")] {
+            e2e.tapTab(names, index: index)
+            sleep(3)
+            // Owner (#828): the button is on Home only; the other tabs just follow the chosen branch
+            e2e.soft(!app.descendants(matching: .any)["outlet.header.button"].exists, "\(names[1]): no branch button")
+            e2e.shot(shot)
+        }
+        // Leave the account on its default branch for the next flows
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        if button.waitForExistence(timeout: 5), button.label != before {
+            button.tap()
+            if use.waitForExistence(timeout: 5) {
+                rows.matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch.tap()
+                use.tap()
+            }
+        }
+    }
+
     func test10cPlanLimit() throws {
         try e2e.requireScenario(["at-limit"])
         try e2e.start()

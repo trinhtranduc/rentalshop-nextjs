@@ -1009,7 +1009,7 @@ class Cart {
 
 // MARK: - CreateOrderRequest Model
 /// API request model for creating orders - matches comprehensive API structure
-/// Note: outletId is not included as it is automatically determined from the authenticated user's token
+/// outletId: only a merchant sends it (its chosen branch, #828); outlet users get theirs from the token
 struct CreateOrderRequest: Codable {
     let orderType: String
     let customerId: Int
@@ -1030,6 +1030,8 @@ struct CreateOrderRequest: Codable {
     let loyaltyRedeem: LoyaltyRedeemRequest?
     let rentalDuration: Int?
     let rentalDurationUnit: String?
+    /// #828: set by `OrderService.createOrder` for a merchant; nil keeps the API default (the default outlet)
+    var outletId: Int? = nil
     
     struct LoyaltyRedeemRequest: Codable {
         let points: Int
@@ -1056,7 +1058,8 @@ struct CreateOrderRequest: Codable {
         case loyaltyRedeem
         case rentalDuration
         case rentalDurationUnit
-        // Explicitly exclude 'subtotal' and 'outletId' fields
+        case outletId
+        // Explicitly exclude 'subtotal'
     }
     
     // MARK: - Custom Encoding
@@ -1082,6 +1085,7 @@ struct CreateOrderRequest: Codable {
         try container.encodeIfPresent(loyaltyRedeem, forKey: .loyaltyRedeem)
         try container.encodeIfPresent(rentalDuration, forKey: .rentalDuration)
         try container.encodeIfPresent(rentalDurationUnit, forKey: .rentalDurationUnit)
+        try container.encodeIfPresent(outletId, forKey: .outletId)
         
         // Explicitly NOT encoding 'subtotal' field
     }

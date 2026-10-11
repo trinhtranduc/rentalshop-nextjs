@@ -63,6 +63,12 @@ final class OverviewV2ViewController: BaseViewControler {
         #endif
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        load()
+    }
+
+    /// #828: figures of the branch chosen on Home (revenue needs the API `outletIds` of #827)
+    @objc private func outletChanged() {
         load()
     }
 
