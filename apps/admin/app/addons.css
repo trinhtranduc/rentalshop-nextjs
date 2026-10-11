@@ -32,9 +32,9 @@
 .ar-addons .field label { font-weight: 600; }
 .ar-addons .input { display: flex; align-items: center; border: 1px solid rgb(var(--ar-line-strong)); border-radius: 8px;
   padding: 0 10px; gap: 6px; background: rgb(var(--ar-surface)); min-height: 44px; }
-.ar-addons .input input, .ar-addons .input select { border: 0; outline: 0; font: inherit; font-size: 15px; font-weight: 600; width: 100%;
+.ar-addons .input input, .ar-addons .input select { border: 0; outline: 0; font: inherit; font-size: 15px; font-weight: 600; flex: 1 1 auto; width: 100%; min-width: 0;
   background: transparent; color: rgb(var(--ar-ink)); font-variant-numeric: tabular-nums; min-height: 42px; }
-.ar-addons .input span { color: rgb(var(--ar-faint)); white-space: nowrap; font-size: 13px; }
+.ar-addons .input span { color: rgb(var(--ar-faint)); white-space: nowrap; font-size: 13px; flex: 0 0 auto; }
 .ar-addons .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .ar-addons .btn { font: inherit; font-size: 13px; border-radius: 8px; padding: 8px 14px; border: 1px solid rgb(var(--ar-line-strong));
   background: rgb(var(--ar-surface)); color: rgb(var(--ar-ink)); cursor: pointer; white-space: nowrap; min-height: 36px; }
@@ -57,4 +57,8 @@
 @media (max-width: 860px) {
   .ar-addons .grid2 { grid-template-columns: 1fr; }
   .ar-addons .btn { min-height: 44px; }
+}
+/* inside the dialog the field box draws the border, not the bare input (forms.css styles .ar-dialog inputs) */
+.ar-dialog .ar-addons .input input:not([type='checkbox']), .ar-dialog .ar-addons .input select {
+  border: 0; box-shadow: none; background: transparent; padding: 0; min-height: 42px;
 }
