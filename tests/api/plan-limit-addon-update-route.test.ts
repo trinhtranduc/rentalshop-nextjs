@@ -12,10 +12,13 @@ jest.mock('@rentalshop/auth/server', () => ({
 }));
 
 const mockAddons = { findById: jest.fn(), update: jest.fn() };
-jest.mock('@rentalshop/database', () => ({ db: { planLimitAddons: mockAddons } }));
+// #826: raising outlets reads the merchant's plan; this merchant is on a multi-branch plan
+const mockMerchants = { findById: jest.fn(async () => ({ id: 2, subscription: { plan: { limits: { outlets: 3 } } } })) };
+jest.mock('@rentalshop/database', () => ({ db: { planLimitAddons: mockAddons, merchants: mockMerchants } }));
 jest.mock('@rentalshop/utils/server', () => ({ validateAddonDeletion: jest.fn() }));
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/validation-schemas'),
+  ...jest.requireActual('../../packages/utils/src/core/plan-addon-rules'),
   ResponseBuilder: {
     error: (code: string) => ({ success: false, code }),
     success: (code: string, data: any) => ({ success: true, code, data }),
