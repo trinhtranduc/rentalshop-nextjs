@@ -242,6 +242,12 @@ export default function MerchantAddonsPage() {
                       )}
                     </span>
                     <span className="num">{formatVnd(item.monthlyAmount)}/tháng</span>
+                    {item.nextPacks != null && !item.removeAtPeriodEnd && (
+                      <span className="muted">Từ kỳ sau: {item.nextPacks} gói</span>
+                    )}
+                    {canEdit && !item.legacy && !item.removeAtPeriodEnd && (
+                      <PacksEditor merchantId={merchantId} item={item} busy={busy} onSaved={load} />
+                    )}
                     {canEdit && (
                       <div className="actions">
                         {item.removeAtPeriodEnd ? (
@@ -318,5 +324,79 @@ export default function MerchantAddonsPage() {
         </div>
       </div>
     </PageWrapper>
+  );
+}
+
+/**
+ * #870: number of packs of a bought item. More packs apply now and the extra packs are charged now (the quote of the
+ * add form); fewer packs apply from the next period, no refund.
+ */
+function PacksEditor({ merchantId, item, busy, onSaved }: { merchantId: number; item: MerchantAddonItem; busy: boolean; onSaved: () => Promise<void> }) {
+  const { toastSuccess, toastError } = useToast();
+  const { translateError } = useApiError();
+  const current = item.packs || 1;
+  const [value, setValue] = useState(String(item.nextPacks ?? current));
+  const [charge, setCharge] = useState<AddonQuoteData | null>(null);
+  const [saving, setSaving] = useState(false);
+  const target = Number(value);
+  const extra = target - current;
+
+  useEffect(() => {
+    setValue(String(item.nextPacks ?? item.packs ?? 1));
+  }, [item.nextPacks, item.packs]);
+
+  useEffect(() => {
+    if (!item.addonPriceId || !(extra > 0)) {
+      setCharge(null);
+      return;
+    }
+    let live = true;
+    const t = setTimeout(async () => {
+      const res = await addonPricesApi.quote(merchantId, item.addonPriceId as number, extra);
+      if (live) setCharge(res.success && res.data ? res.data : null);
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [merchantId, item.addonPriceId, extra]);
+
+  const unchanged = !(target >= 1) || target === (item.nextPacks ?? current);
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await addonPricesApi.setPacks(merchantId, item.id, { packs: target, method: 'TRANSFER' });
+      if (res.success) {
+        toastSuccess(extra > 0 ? 'Đã thêm gói' : extra < 0 ? 'Giảm gói từ kỳ sau' : 'Đã cập nhật');
+        await onSaved();
+      } else toastError(translateError(res));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="kv" data-testid={`addon-packs-${item.id}`}>
+      <label htmlFor={`packs-${item.id}`}>Số gói</label>
+      <span className="input" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          id={`packs-${item.id}`}
+          inputMode="numeric"
+          style={{ width: 64 }}
+          value={value}
+          onChange={(e) => setValue(e.target.value.replace(/[^\d]/g, '').slice(0, 4))}
+        />
+        <button className="btn" type="button" disabled={busy || saving || unchanged} onClick={save}>
+          Lưu
+        </button>
+      </span>
+      {extra > 0 && (
+        <>
+          <span>Thu ngay (+{extra} gói)</span>
+          <span className="num">{charge ? formatVnd(charge.amountDue) : '…'}</span>
+        </>
+      )}
+      {extra < 0 && target >= 1 && <span className="muted">Còn {target} gói từ kỳ gia hạn sau, không hoàn tiền</span>}
+    </div>
   );
 }

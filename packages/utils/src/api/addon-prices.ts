@@ -44,6 +44,11 @@ export interface MerchantAddonItem {
   renews: boolean;
   renewUnitPrice: number | null;
   renewMonthlyAmount: number;
+  /** #870: fewer packs pending for the next period (null = none) */
+  nextPacks?: number | null;
+  /** #870: packs and pack size of the next period when renewed */
+  renewPacks?: number | null;
+  renewPackSize?: number | null;
 }
 
 type Limits = Record<LimitKind, number>;
@@ -63,7 +68,7 @@ export interface MerchantAddonsData {
   addons: MerchantAddonItem[];
   monthlyTotal: number;
   limits: null | { plan: Limits; addons: Limits; total: Limits; usage: Limits };
-  renewal: null | { addonMonthlyTotal: number; monthly: RenewalCalculation };
+  renewal: null | { addonMonthlyTotal: number; addonPaidMonthlyTotal?: number; monthly: RenewalCalculation };
 }
 
 export type AddonQuoteData = AddonQuote & {
@@ -104,6 +109,15 @@ export const addonPricesApi = {
     data: { addonPriceId: number; packs: number; method?: 'TRANSFER' | 'STRIPE'; transactionId?: string; reference?: string }
   ): Promise<ApiResponse<{ addon: MerchantAddonItem; payment: unknown; quote: AddonQuote }>> {
     return parseApiResponse(await authenticatedFetch(apiUrls.addonPrices.merchantAdd(merchantId), json('POST', data)));
+  },
+
+  /** #870: more packs now (the extra packs are charged now), fewer from the next period (no refund). */
+  async setPacks(
+    merchantId: number,
+    addonId: number,
+    data: { packs: number; method?: 'TRANSFER' | 'STRIPE'; transactionId?: string; reference?: string }
+  ): Promise<ApiResponse<{ addon: MerchantAddonItem; payment?: unknown; quote?: AddonQuote }>> {
+    return parseApiResponse(await authenticatedFetch(apiUrls.addonPrices.merchantUpdate(merchantId, addonId), json('PATCH', data)));
   },
 
   async setRemoveAtPeriodEnd(merchantId: number, addonId: number, removeAtPeriodEnd: boolean): Promise<ApiResponse<{ addon: MerchantAddonItem }>> {

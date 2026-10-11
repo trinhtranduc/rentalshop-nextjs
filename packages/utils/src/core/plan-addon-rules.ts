@@ -49,3 +49,23 @@ export function addonAddsBranches(before: AddonOutletsState | null, after: Addon
   if (!isActive || newOutlets <= 0) return false;
   return newOutlets > oldOutlets || !wasActive;
 }
+
+interface AddonForPlanSwitch {
+  outlets?: number | null;
+  isActive?: boolean | null;
+  removeAtPeriodEnd?: boolean | null;
+  endsAt?: Date | string | null;
+}
+
+/**
+ * #870: a plan without multi-branch cannot be chosen while the shop has a branch add-on that still counts and is not
+ * marked for removal (the admin removes the branch add-ons first).
+ */
+export function outletAddonsBlockPlan(items: AddonForPlanSwitch[], newPlanLimits: unknown, now: Date = new Date()): boolean {
+  if (isMultiBranchPlan(newPlanLimits)) return false;
+  return items.some((item) => {
+    if (!item || item.isActive === false || item.removeAtPeriodEnd) return false;
+    if (item.endsAt && new Date(item.endsAt).getTime() <= now.getTime()) return false;
+    return Number(item.outlets ?? 0) > 0;
+  });
+}

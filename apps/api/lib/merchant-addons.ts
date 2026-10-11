@@ -37,6 +37,10 @@ export interface ShopAddonItem {
   addonPriceId: number | null;
   unitPrice: number | null;
   packs: number | null;
+  /** #870: fewer packs from the next renewal */
+  nextPacks?: number | null;
+  limitKind?: string | null;
+  packSize?: number | null;
   isActive: boolean;
   removeAtPeriodEnd: boolean;
   endsAt: Date | null;

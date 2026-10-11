@@ -405,6 +405,7 @@
   "ADDON_PRICE_NOT_FOUND": "Không tìm thấy dòng giá add-on.",
   "ADDON_PRICE_NOT_ON_SALE": "Add-on này đang tạm tắt, không bán mới.",
   "ADDON_PRICE_IN_USE": "Đang có shop dùng add-on này nên không đổi được số lượng mỗi gói. Hãy tạo dòng mới.",
+  "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "Shop còn add-on chi nhánh. Hãy gỡ add-on chi nhánh trước rồi mới đổi sang gói không có nhiều chi nhánh.",
   "ADDON_ALREADY_ENDED": "Add-on này đã hết hiệu lực.",
   "PRICED_ADDON_READ_ONLY": "Add-on có giá được thay đổi ở tab Add-on của shop.",
   "LEMON_SQUEEZY_NOT_CONFIGURED": "Thanh toán trực tuyến chưa được cấu hình. Vui lòng liên hệ hỗ trợ.",

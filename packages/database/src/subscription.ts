@@ -3,7 +3,8 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { ApiError, ErrorCode, canChangePlan, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
+import { simplifiedMerchantAddons } from './addon-price';
+import { ApiError, ErrorCode, addonRenewalLines, outletAddonsBlockPlan, canChangePlan, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -531,6 +532,15 @@ export async function changePlan(
     throw new ApiError(ErrorCode[decision.code as keyof typeof ErrorCode]);
   }
 
+  // #870: the shop's add-ons that continue into the new period (same helper as renew / extend)
+  const now = new Date();
+  const { items: addonItems, catalog: addonCatalog } = await simplifiedMerchantAddons.renewalItems(subscription.merchantId, now);
+  // A plan without multi-branch while a branch add-on still runs: the admin removes the branch add-ons first
+  if (outletAddonsBlockPlan(addonItems, plan.limits, now)) {
+    throw new ApiError(ErrorCode.PLAN_CHANGE_REMOVE_OUTLET_ADDONS);
+  }
+  const addonRenewal = addonRenewalLines(addonItems, addonCatalog, now);
+
   // Get old plan name for email
   const oldPlanName = subscription.plan?.name || 'Unknown Plan';
 
@@ -540,16 +550,19 @@ export async function changePlan(
 
   // Owner rule (#779): credit for the unused Vietnam civil days of the old period, new period from now,
   // one cycle of calendar months (was now + 30/90/180/365 × 24h and no credit).
-  const now = new Date();
+  // #870: plus the add-ons for the new cycle, minus the unused paid add-on days (none for a trial).
   const planChange = calculatePlanChangeTotal({
     subscription: {
       currentPeriodStart: subscription.currentPeriodStart,
       currentPeriodEnd: subscription.currentPeriodEnd,
       billingInterval: storedBillingInterval(subscription.interval, subscription.intervalCount),
       plan: { basePrice: subscription.plan?.basePrice ?? 0 },
+      status: subscription.status,
     } as any,
     newPlan: { basePrice: plan.basePrice },
     selectedInterval: billingInterval,
+    addonMonthlyTotal: addonRenewal.monthlyTotal,
+    paidAddonMonthlyTotal: addonRenewal.paidMonthlyTotal,
     now,
   });
   const newPeriodStart = planChange.newPeriodStart;
@@ -593,6 +606,8 @@ export async function changePlan(
         plan: true
       }
     });
+    // #870: continuing add-ons take today's price and pack size; marked / paused ones end at the old period end
+    await simplifiedMerchantAddons.applyRenewal(tx, addonRenewal.lines, subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null, now);
     if (amountDue > 0) {
       const paid = pay.method === PAYMENT_METHOD.STRIPE;
       await tx.payment.create({
@@ -685,6 +700,9 @@ export async function changePlan(
       remainingDays: planChange.remainingDays,
       remainingCreditValue: planChange.remainingCreditValue,
       newPlanPeriodPrice: planChange.newPlanPeriodPrice,
+      // #870 (additive): add-ons for the new cycle and the credit for their unused paid days
+      addonPeriodPrice: planChange.addonPeriodPrice,
+      addonCreditValue: planChange.addonCreditValue,
       amountDue: planChange.totalDue,
       /** What was recorded as the Payment (whole VND), 0 when nothing was due */
       amountDueRounded: amountDue,
