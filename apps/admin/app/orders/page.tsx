@@ -1,5 +1,6 @@
 'use client';
 
+import '../lists.css';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   OrdersLoading,
@@ -386,7 +387,7 @@ export default function AdminOrdersPage() {
   // ============================================================================
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="admin-list h-full flex flex-col px-2 sm:px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
