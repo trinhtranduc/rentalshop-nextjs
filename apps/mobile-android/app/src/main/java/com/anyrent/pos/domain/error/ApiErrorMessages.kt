@@ -12,9 +12,13 @@ import com.anyrent.pos.R
  * the save bar instead of a dialog).
  */
 object ApiErrorMessages {
-    fun resolve(context: Context?, code: String?, fallback: String): String {
+    /** [params] are the API's `data.messageParams` (e.g. `outlets`), filled into `{name}` placeholders (#859) */
+    fun resolve(context: Context?, code: String?, fallback: String, params: Map<String, String> = emptyMap()): String {
         val id = stringId(code)
-        if (context != null && id != 0) return context.getString(id)
+        if (context != null && id != 0) {
+            val noParams = noParamsStringId(code).takeIf { it != 0 }?.let { context.getString(it) }
+            return fillParams(context.getString(id), params, noParams)
+        }
 
         val cleaned = fallback.trim()
         if (cleaned.matches(SNAKE_CODE)) {
@@ -73,9 +77,41 @@ object ApiErrorMessages {
         "INVALID_LIMIT" -> R.string.api_error_invalid_limit
         "INVALID_MIN_SIMILARITY" -> R.string.api_error_invalid_min_similarity
         "NO_PRODUCTS_FOUND" -> R.string.image_search_empty
+        // #859: branch codes of #823 (same texts as iOS)
+        "OUTLET_DEACTIVATED" -> R.string.api_error_outlet_deactivated
+        "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY" -> R.string.api_error_product_shared_fields_merchant_only
+        "PRODUCT_DELETE_MERCHANT_ONLY" -> R.string.api_error_product_delete_merchant_only
+        "PRODUCT_HELD_BY_OTHER_OUTLETS" -> R.string.api_error_product_held_by_other_outlets
+        "OUTLET_HAS_OPEN_ORDERS" -> R.string.api_error_outlet_has_open_orders
         // A subscription / plan code with no string of its own: a generic localized sentence,
         // never the API's English text (#758).
         else -> if (isSubscriptionFamily(code)) R.string.api_error_subscription_generic else 0
+    }
+
+    /** The sentence without names, used when the API sent no value for a placeholder (iOS `<CODE>_NO_PARAMS`) */
+    internal fun noParamsStringId(code: String?): Int = when (code?.uppercase()) {
+        "PRODUCT_HELD_BY_OTHER_OUTLETS" -> R.string.api_error_product_held_by_other_outlets_no_params
+        else -> 0
+    }
+
+    /**
+     * #859: `{name}` placeholders filled from `data.messageParams` (`{outlets}` → "Main (3), Kho (0)").
+     * A sentence still holding a placeholder uses [noParams] when there is one.
+     */
+    internal fun fillParams(text: String, params: Map<String, String>, noParams: String?): String {
+        var out = text
+        for ((name, value) in params) {
+            if (value.isNotEmpty()) out = out.replace("{$name}", value)
+        }
+        if (!PLACEHOLDER.containsMatchIn(out)) return out
+        return noParams ?: out
+    }
+
+    /** Toast when a 401 ends the session: another device, a branch turned off (#859), or a plain expiry */
+    fun sessionEndStringId(code: String?): Int = when (code?.uppercase()) {
+        "SESSION_REPLACED" -> R.string.api_error_session_replaced
+        "OUTLET_DEACTIVATED" -> R.string.api_error_outlet_deactivated
+        else -> R.string.api_error_session_expired
     }
 
     internal fun isSubscriptionFamily(code: String?): Boolean {
@@ -83,5 +119,6 @@ object ApiErrorMessages {
         return c.startsWith("SUBSCRIPTION_") || c.startsWith("PLAN_") || c.startsWith("TRIAL_")
     }
 
+    private val PLACEHOLDER = Regex("\\{[A-Za-z]+\\}")
     private val SNAKE_CODE = Regex("^[A-Z][A-Z0-9_]{3,}$")
 }

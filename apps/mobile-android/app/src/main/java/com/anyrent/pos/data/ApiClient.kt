@@ -1216,7 +1216,15 @@ class ApiClient(
                 ?: ""
         }
 
-        return ApiErrorMessages.resolve(AnyRentApp.instance, code, detail)
+        return ApiErrorMessages.resolve(AnyRentApp.instance, code, detail, messageParams())
+    }
+
+    /** #859: `data.messageParams` (e.g. `outlets` of 409 PRODUCT_HELD_BY_OTHER_OUTLETS), string values only */
+    private fun JSONObject.messageParams(): Map<String, String> {
+        val params = optJSONObject("data")?.optJSONObject("messageParams") ?: return emptyMap()
+        return params.keys().asSequence()
+            .mapNotNull { key -> (params.opt(key) as? String)?.let { key to it } }
+            .toMap()
     }
 
     private fun get(url: String, authed: Boolean = true): Request =

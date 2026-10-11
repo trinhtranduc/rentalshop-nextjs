@@ -56,6 +56,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.SessionStore
@@ -225,12 +226,8 @@ fun AnyRentNavHost(
             // so do not rebuild it (that would wipe the message and the typed email)
             val onNewLogin = rootNavController.currentDestination?.route == Routes.Login && isNewAuthOn()
             if (onNewLogin) return@collect
-            // Say why: another device signed in vs. the session simply ended (#344)
-            val reason = if (code == "SESSION_REPLACED") {
-                R.string.api_error_session_replaced
-            } else {
-                R.string.api_error_session_expired
-            }
+            // Say why: another device signed in, the branch was turned off (#859), or the session simply ended (#344)
+            val reason = ApiErrorMessages.sessionEndStringId(code)
             Toast.makeText(context, context.getString(reason), Toast.LENGTH_LONG).show()
             rootNavController.navigate(Routes.Login) {
                 popUpTo(rootNavController.graph.id) { inclusive = true }
