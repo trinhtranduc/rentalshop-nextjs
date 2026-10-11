@@ -35,6 +35,7 @@ export enum ErrorCode {
   // Business Logic Errors
   PLAN_LIMIT_EXCEEDED = 'PLAN_LIMIT_EXCEEDED',
   CANNOT_DELETE_ADDON_LIMIT_EXCEEDED = 'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED',
+  ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN = 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN',
   CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET = 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET',
   CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT = 'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT',
   CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET = 'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET',
@@ -128,6 +129,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   // Business Logic Errors
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 'Plan limit exceeded',
   [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 'Cannot delete addon: Current usage exceeds limits after deletion',
+  [ErrorCode.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN]: 'Only a multi-branch plan (Enterprise) can take a branch add-on',
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 'Cannot create order for other outlet. You can only create orders for your assigned outlet.',
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 'Cannot create order for outlet from different merchant.',
   [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
@@ -206,6 +208,7 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   // Business Logic Errors (4xx)
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 403,
   [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 422,
+  [ErrorCode.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN]: 422,
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 403,
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 403,
   [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 403,

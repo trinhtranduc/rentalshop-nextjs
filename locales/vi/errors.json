@@ -401,6 +401,7 @@
   "SUBSCRIPTION_CANNOT_RESUME": "Chỉ có thể tiếp tục gói đã huỷ hoặc đã tạm dừng.",
   "SUBSCRIPTION_EXPIRY_REMINDERS_PARTIAL_FAILURE": "Một số email nhắc hết hạn không gửi được.",
   "CANNOT_DELETE_ADDON_LIMIT_EXCEEDED": "Không thể xoá gói bổ sung vì mức đang dùng sẽ vượt giới hạn.",
+  "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "Chỉ gói nhiều chi nhánh (Enterprise) mới thêm được add-on chi nhánh.",
   "LEMON_SQUEEZY_NOT_CONFIGURED": "Thanh toán trực tuyến chưa được cấu hình. Vui lòng liên hệ hỗ trợ.",
   "LEMON_SQUEEZY_CHECKOUT_URL_MISSING": "Thiếu đường dẫn thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
   "LEMON_SQUEEZY_WEBHOOK_SIGNATURE_INVALID": "Chữ ký thông báo thanh toán không hợp lệ.",
