@@ -11,7 +11,8 @@ import {
   ResponseBuilder,
 } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
-import { checkAddonPurchase, routeId } from '../../../../../lib/merchant-addons';
+import { checkAddonPurchase, findShop, routeId } from '../../../../../lib/merchant-addons';
+import type { AddonPriceRowLike, ShopAddonItem } from '../../../../../lib/merchant-addons';
 
 /**
  * GET /api/merchants/[id]/addons — the shop's add-ons that still count, its limits (plan + add-ons = total, usage),
@@ -26,19 +27,19 @@ export async function GET(
     try {
       const merchantId = routeId(id);
       if (!merchantId) return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
-      const merchant: any = await db.merchants.findById(merchantId);
+      const merchant = await findShop(merchantId);
       if (!merchant) return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: 404 });
 
       const now = new Date();
       const subscription = merchant.subscription || null;
-      const items = await db.merchantAddons.listForMerchant(merchantId, now);
-      const priceIds = Array.from(new Set(items.map((i: any) => i.addonPriceId).filter((v: any) => v != null)));
-      const rows = priceIds.length ? await db.addonPrices.findManyByIds(priceIds as number[]) : [];
-      const catalog = new Map(rows.map((r: any) => [r.id, r]));
+      const items = (await db.merchantAddons.listForMerchant(merchantId, now)) as ShopAddonItem[];
+      const priceIds = Array.from(new Set(items.map((i) => i.addonPriceId).filter((v): v is number => v != null)));
+      const rows = (priceIds.length ? await db.addonPrices.findManyByIds(priceIds) : []) as AddonPriceRowLike[];
+      const catalog = new Map<number, AddonPriceRowLike>(rows.map((r) => [r.id, r] as [number, AddonPriceRowLike]));
       const { lines, monthlyTotal: renewalAddonMonthly } = addonRenewalLines(items, catalog, now);
       const lineById = new Map(lines.map((l) => [l.id, l]));
 
-      const addons = items.map((item: any) => {
+      const addons = items.map((item) => {
         const line = lineById.get(item.id);
         return {
           ...item,
@@ -53,7 +54,7 @@ export async function GET(
       let limits = null;
       if (subscription) {
         try {
-          const info: any = await getPlanLimitsInfo(merchantId);
+          const info = await getPlanLimitsInfo(merchantId);
           limits = { plan: info.basePlanLimits, addons: info.addonLimits, total: info.planLimits, usage: info.currentCounts };
         } catch {
           limits = null;
@@ -90,7 +91,7 @@ export async function GET(
             : null,
           multiBranchPlan: isMultiBranchPlan(subscription?.plan?.limits),
           addons,
-          monthlyTotal: addons.reduce((sum: number, a: any) => sum + a.monthlyAmount, 0),
+          monthlyTotal: addons.reduce((sum, a) => sum + a.monthlyAmount, 0),
           limits,
           renewal,
         })
@@ -112,7 +113,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const { id } = await Promise.resolve(params);
-  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }: any) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }: { user?: { id?: number; email?: string | null } }) => {
     try {
       const merchantId = routeId(id);
       if (!merchantId) return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });

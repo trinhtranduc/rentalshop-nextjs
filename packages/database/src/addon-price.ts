@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { prisma } from './client';
+import type { AddonPrice, Payment, PlanLimitAddon } from '@prisma/client';
 import type { AddonPriceCreateInput, AddonPriceUpdateInput, AddonQuote, AddonRenewalLine, LimitKind } from '@rentalshop/utils';
 import { addonColumnsFor } from '@rentalshop/utils';
 
@@ -107,7 +108,7 @@ export const simplifiedMerchantAddons = {
           unitPrice: addonPrice.monthlyPrice,
         },
       });
-      let payment = null;
+      let payment: Payment | null = null;
       if (quote.amountDue > 0) {
         payment = await tx.payment.create({
           data: {
@@ -137,10 +138,13 @@ export const simplifiedMerchantAddons = {
 
   /** Items a renewal looks at and the price-list rows they come from. */
   renewalItems: async (merchantId: number, now = new Date()) => {
-    const items = await simplifiedMerchantAddons.listForMerchant(merchantId, now);
+    const items: PlanLimitAddon[] = await prisma.planLimitAddon.findMany({
+      where: { merchantId, ...notEnded(now) },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
     const ids = Array.from(new Set(items.map((i) => i.addonPriceId).filter((v): v is number => v != null)));
-    const rows = await simplifiedAddonPrices.findManyByIds(ids);
-    const catalog = new Map(rows.map((r) => [r.id, r]));
+    const rows: AddonPrice[] = ids.length ? await prisma.addonPrice.findMany({ where: { id: { in: ids } } }) : [];
+    const catalog = new Map<number, AddonPrice>(rows.map((r) => [r.id, r] as [number, AddonPrice]));
     return { items, catalog };
   },
 

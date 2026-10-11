@@ -4,7 +4,8 @@ import { withAuthRoles } from '@rentalshop/auth/server';
 import { validateAddonDeletion } from '@rentalshop/utils/server';
 import { handleApiError, isAddonEnded, merchantAddonUpdateSchema, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
-import { routeId } from '../../../../../../lib/merchant-addons';
+import { findShop, routeId } from '../../../../../../lib/merchant-addons';
+import type { ShopAddonItem } from '../../../../../../lib/merchant-addons';
 
 /**
  * PATCH /api/merchants/[id]/addons/[addonId] { removeAtPeriodEnd } — remove at the end of the period, or undo (#850).
@@ -26,11 +27,11 @@ export async function PATCH(
       if (!parsed.success) {
         return NextResponse.json(ResponseBuilder.validationError(parsed.error.flatten()), { status: 400 });
       }
-      const item: any = await db.merchantAddons.findById(itemId);
+      const item = (await db.merchantAddons.findById(itemId)) as ShopAddonItem | null;
       if (!item || item.merchantId !== merchantId) {
         return NextResponse.json(ResponseBuilder.error('PLAN_LIMIT_ADDON_NOT_FOUND'), { status: 404 });
       }
-      const merchant: any = await db.merchants.findById(merchantId);
+      const merchant = await findShop(merchantId);
       const periodEnd: Date | null = merchant?.subscription?.currentPeriodEnd ? new Date(merchant.subscription.currentPeriodEnd) : null;
       const now = new Date();
 
@@ -41,7 +42,7 @@ export async function PATCH(
         if (item.removeAtPeriodEnd) {
           return NextResponse.json(ResponseBuilder.success('MERCHANT_ADDON_UPDATED', { addon: item }));
         }
-        const validation: any = await validateAddonDeletion(merchantId, {
+        const validation = await validateAddonDeletion(merchantId, {
           outlets: item.outlets,
           users: item.users,
           products: item.products,
@@ -49,8 +50,10 @@ export async function PATCH(
           orders: item.orders,
         });
         if (!validation.isValid && validation.exceededLimits) {
-          const body: any = ResponseBuilder.error('CANNOT_DELETE_ADDON_LIMIT_EXCEEDED');
-          body.error = { exceededLimits: validation.exceededLimits, currentCounts: validation.currentCounts, futureLimits: validation.futureLimits };
+          const body = {
+            ...ResponseBuilder.error('CANNOT_DELETE_ADDON_LIMIT_EXCEEDED'),
+            error: { exceededLimits: validation.exceededLimits, currentCounts: validation.currentCounts, futureLimits: validation.futureLimits },
+          };
           return NextResponse.json(body, { status: 422 });
         }
         const addon = await db.merchantAddons.setRemoveAtPeriodEnd(itemId, true, periodEnd ?? now);
