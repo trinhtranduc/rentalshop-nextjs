@@ -945,12 +945,13 @@ describeE2E('BF-CART create an order: how many are left, and what the cart is to
     });
   });
 
-  test('BF-CART-10 a product that is not stocked at the outlet answers PRODUCT_OUTLET_NOT_FOUND in the cart check, not a number', async () => {
+  test('BF-CART-10 a product added at another outlet has a 0-stock row here (#824): the cart check says 0, not an error', async () => {
     const p = await prod(2);
     const r = (await batch([{ productId: p.id, quantity: 1 }], futureWindow(1), { outletId: O })).results[0];
-    expect(r.error).toBe('PRODUCT_OUTLET_NOT_FOUND');
+    expect(r.error).toBeUndefined();
+    expect([r.isAvailable, r.availabilityByOutlet[0].effectivelyAvailable]).toEqual([false, 0]);
     const single = await s.get(`/api/products/${p.id}/availability?startDate=${new Date().toISOString()}&endDate=${new Date(Date.now() + 86400000).toISOString()}&outletId=${O}`);
-    expect([single.status, single.body.code]).toEqual([404, 'PRODUCT_OUTLET_NOT_FOUND']);
+    expect(single.status).toBe(200);
   });
 });
 

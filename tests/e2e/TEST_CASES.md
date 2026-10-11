@@ -641,7 +641,7 @@ Không tự động được: `SUBSCRIPTION_PERIOD_ENDED` / `SUBSCRIPTION_PERIOD
 | BF-CART-07 | `excludeOrderId` khi sửa | giữ đơn vị của chính đơn đó, không của đơn khác |
 | BF-CART-08 | Giỏ đơn bán | `orderType: SALE`, không ngày: qty ≤ tồn ok, +1 bị từ chối |
 | BF-CART-09 | Khác biệt trường (Q10) | `effectivelyAvailable` là 3 ở check lẻ và giỏ; `available`/`renting` là 3/2 ở check lẻ nhưng 5/0 ở giỏ và detail |
-| BF-CART-10 | Sản phẩm không có ở chi nhánh | giỏ `error: PRODUCT_OUTLET_NOT_FOUND`; check lẻ 404 |
+| BF-CART-10 | Sản phẩm tạo ở chi nhánh khác (từ #824 có dòng tồn 0 ở mọi chi nhánh) | giỏ báo còn 0 (`isAvailable: false`), không lỗi; check lẻ 200 |
 
 ## BF-DET — Chi tiết đơn hàng (`work-stock-calendar.e2e.test.js`)
 
@@ -728,7 +728,7 @@ cả câu trả lời của API và dòng dữ liệu (`Outlet`, `OutletStock` d
 | BF-BRANCH-40 | `outletIds` của shop khác / sai dạng | | 403 `CROSS_MERCHANT_ACCESS_DENIED` / 400 `INVALID_QUERY` |
 | BF-BRANCH-41 | Admin chi nhánh luôn bị khoá vào chi nhánh mình | OUTLET_ADMIN của A gửi `outletIds=B&byOutlet=1` | chỉ dòng A; tổng = A |
 | BF-BRANCH-42 | Đơn của chủ shop ở B dùng tồn B | tồn A 2, B 2; đơn thuê ở B; giao, trả (PUT gửi kèm `outletId` B) | `Order.outletId` = B; giao: A `2/2/0`, B `2/1/1`; trả: cả hai `2/2/0` |
-| BF-BRANCH-42b | Đổi trạng thái như app gửi (`{status}` thôi) — **known bug #851** | chủ shop (user có `outletId` = chi nhánh mặc định, như khi đăng ký) giao đơn của B | mong đợi: đơn vẫn ở B, B `2/1/1`. Hiện tại: đơn chuyển sang A, tồn trừ ở A |
+| BF-BRANCH-42b | Đổi trạng thái như app gửi (`{status}` thôi) — đã sửa #851 | chủ shop (user có `outletId` = chi nhánh mặc định, như khi đăng ký) giao đơn của B | đơn vẫn ở B, B `2/1/1`; A không đổi |
 | BF-BRANCH-43 | Vai trò chi nhánh không tạo đơn ở chi nhánh khác | staff A gửi `outletId=B` | 403 `CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET`; không có đơn ở B, tồn B không đổi |
 
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
@@ -948,10 +948,9 @@ Còn giữ bằng test:
 | #505 | gia hạn đơn đang thuê: tiền thuê thêm không được tính phải thu, đổi tiền ngày giao | BF-EDIT-11 (PR #764 chờ migration) |
 | #532, #533, #753, #754 | iOS: bảng đổi mật khẩu bị cắt, thông báo dài chạy tràn, Home và Tổng quan không nêu lý do khi gói bị chặn | điểm kiểm mềm trong `AnyRentE2ETests.swift` (PR đang được làm) |
 | #756, #757, #758 | mobile: thông báo gói bằng tiếng Anh trên Android, lý do bằng tiếng Việt ở app tiếng Anh, thêm sản phẩm khi gói bị chặn | ghi trong báo cáo Android |
-| #851 | chủ shop đổi trạng thái đơn của chi nhánh khác (app chỉ gửi `status`) làm đơn và tồn chuyển về chi nhánh mặc định | BF-BRANCH-42b |
 | #736 | nút Sửa và Thêm chi nhánh của staff và kho: đã ẩn (#746, #748), cần lật WEB-ROLE-10c/11c sau khi chạy lại | WEB-ROLE-10c, 11c |
 
-Đã sửa và đã vào `dev` (các ca là test thường): #504 (BF-QTY-04..12), #506 (BF-OVR-04), #707 (đơn huỷ hiện với giá trị 0, BF-STAT-01), #728 và #729 (BF-SUB-17..19, 48..50), #730 đến #732 (BF-ROLE-07..09), #733 đến #735, #737, #738, #740, #741, #744, #739, #742, #751.
+Đã sửa và đã vào `dev` (các ca là test thường): #504 (BF-QTY-04..12), #506 (BF-OVR-04), #707 (đơn huỷ hiện với giá trị 0, BF-STAT-01), #728 và #729 (BF-SUB-17..19, 48..50), #730 đến #732 (BF-ROLE-07..09), #733 đến #735, #737, #738, #740, #741, #744, #739, #742, #751, #851 (BF-BRANCH-42b).
 
 **Theo dõi chi nhánh (#745, PR #746):** web ẩn "Thêm chi nhánh" cho đến khi làm xong nhiều chi nhánh (`NEXT_PUBLIC_ENABLE_ADD_OUTLET=true` bật lại). WEB-SUB-24 (giới hạn gói chi nhánh qua giao diện) và WEB-UI-MAN (thêm chi nhánh) không còn nút để bấm: cần cập nhật theo.
 
