@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
+import { ApiError, ErrorCode, canChangePlan, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
