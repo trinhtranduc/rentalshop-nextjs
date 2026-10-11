@@ -1211,8 +1211,9 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
 
     const body = await request.json();
     
-    // ✅ Auto-fill outletId from userScope if not provided and user has outletId
-    if (!body.outletId && userScope.outletId) {
+    // ✅ Auto-fill outletId for outlet users only. A MERCHANT login carries the default outlet;
+    // filling it would move an order at another branch there (#851). Apps send only {status}.
+    if (!body.outletId && userScope.outletId && isOutletRole(user.role)) {
       console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
       body.outletId = userScope.outletId;
     }
