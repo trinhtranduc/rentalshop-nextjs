@@ -103,6 +103,8 @@ function oldShape(report: any) {
   const copy = JSON.parse(JSON.stringify(report));
   for (const p of copy.series) {
     delete p.expectedCollected;
+    delete p.expectedCash; // #710: derived from the same reserved-orders query as expectedCollected
+    delete p.cashCollected; // #711 / #721: additive per-day cash (collected + collateral in − out)
     delete p.newOrderValue;
   }
   delete copy.revenue.orderValueByType;
@@ -206,10 +208,10 @@ describe('old fields are untouched', () => {
   it('series points and revenue keep exactly the old keys plus the new ones', async () => {
     const report = await run({ startDate: '2026-10-04', endDate: '2026-10-09', groupBy: 'day' });
     expect(Object.keys(report.series[0]).sort()).toEqual(
-      ['collected', 'date', 'dateISO', 'dayNumber', 'expectedCollected', 'futureIncome', 'month', 'newOrderCount', 'newOrderValue', 'orderCount', 'realIncome', 'year'].sort()
+      ['cashCollected', 'collected', 'date', 'dateISO', 'dayNumber', 'expectedCash', 'expectedCollected', 'futureIncome', 'month', 'newOrderCount', 'newOrderValue', 'orderCount', 'realIncome', 'year'].sort()
     );
     expect(Object.keys(report.revenue).sort()).toEqual(
-      ['collateralFlow', 'collected', 'collectedBreakdown', 'orderValueByType', 'outstanding', 'outstandingBreakdown', 'totalActualRevenue', 'totalOrderValue', 'totalOrders', 'totalRevenue'].sort()
+      ['cashCollected', 'collateralFlow', 'collected', 'collectedBreakdown', 'orderValueByType', 'outstanding', 'outstandingBreakdown', 'totalActualRevenue', 'totalOrderValue', 'totalOrders', 'totalRevenue'].sort()
     );
   });
 });

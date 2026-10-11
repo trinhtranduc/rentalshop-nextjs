@@ -177,6 +177,8 @@ jest.mock('@rentalshop/database', () => ({
 }));
 
 jest.mock('@rentalshop/utils', () => ({
+  // #577: the order routes call normalizeLegacyPlanDays; the real helper, straight from source
+  ...jest.requireActual('../../packages/utils/src/core/legacy-plan-days'),
   orderCreateSchema: { safeParse: (body: any) => ({ success: true, data: { depositAmount: 0, ...body } }) },
   ordersQuerySchema: { safeParse: () => ({ success: false }) },
   orderUpdateSchema: { safeParse: () => ({ success: false }) },
