@@ -11,6 +11,8 @@ const LIST_LIMIT = 50;
 const orderRowSelect = {
   id: true,
   orderNumber: true,
+  // #852: the shop web shows the branch of each row
+  outletId: true,
   pickupPlanAt: true,
   returnPlanAt: true,
   totalAmount: true,

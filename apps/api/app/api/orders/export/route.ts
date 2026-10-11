@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
-import { prisma } from '@rentalshop/database';
+import { db, prisma } from '@rentalshop/database';
 import {
   handleApiError,
   ResponseBuilder,
@@ -14,6 +14,7 @@ import {
   type ExcelColumn,
 } from '@rentalshop/utils';
 import { API, ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constants';
+import { narrowOrderOutlets } from '../../../../lib/order-outlet-ids';
 
 /**
  * GET /api/orders/export
@@ -32,6 +33,7 @@ import { API, ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '@rentalshop/constan
  * - startDate / endDate: ISO string (required for custom period)
  * - status / orderType: optional filters
  * - dateField: 'createdAt' (default) | 'pickupPlanAt' | 'returnPlanAt'
+ * - outletIds (#852): `1,3`, MERCHANT only, some of its outlets (another shop's → 403)
  */
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -115,6 +117,13 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
     }
     if (userScope.outletId) {
       where.outletId = userScope.outletId;
+    } else {
+      // #852: a merchant exports the branches picked on the orders list
+      const narrowed = await narrowOrderOutlets(db, user.role, userScope.merchantId, searchParams.get('outletIds'));
+      if (!narrowed.ok) {
+        return NextResponse.json(ResponseBuilder.error(narrowed.code), { status: narrowed.status });
+      }
+      if (narrowed.outletIds) where.outletId = { in: narrowed.outletIds };
     }
 
     // Optional selection (#526): `orderIds` repeated, as the products / customers exports take
