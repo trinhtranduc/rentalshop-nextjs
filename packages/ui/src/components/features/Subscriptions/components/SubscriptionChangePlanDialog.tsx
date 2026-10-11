@@ -257,10 +257,10 @@ export function SubscriptionChangePlanDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
-        <DialogHeader className="px-6 py-4 border-b shrink-0 max-md:px-4 max-md:pr-12">
+      <DialogContent className="ar-dialog md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0 max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+        <DialogHeader className="px-6 py-4 border-b border-ar-line shrink-0 max-md:px-4 max-md:pr-12">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-action-primary" />
+            <ArrowRight className="h-5 w-5 text-ar-primary" />
             Change Subscription Plan
           </DialogTitle>
           <DialogDescription className="text-sm mt-1">
@@ -278,7 +278,7 @@ export function SubscriptionChangePlanDialog({
           )}
         </DialogHeader>
 
-        <div className="px-6 py-4 overflow-y-auto max-md:flex-1 max-md:min-h-0 max-md:px-4">
+        <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0 max-md:px-4">
           <div className="space-y-4 max-md:space-y-0 max-md:grid max-md:grid-cols-2 max-md:gap-3">
 
           {/* Billing Period & Plan Selection - Compact */}
@@ -514,7 +514,7 @@ export function SubscriptionChangePlanDialog({
 
           {/* Action Buttons */}
         <ResponsiveDialogFooter
-          className="md:px-6 md:py-4 md:border-t"
+          className="ar-dialog-footer md:px-6 md:py-4 md:border-t md:border-ar-line"
           summaryLabel="Total due"
           summaryAmount={planChange ? formatCurrency(planChange.totalDue, newCurrency) : undefined}
           secondary={

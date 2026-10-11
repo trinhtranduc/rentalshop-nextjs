@@ -6,10 +6,10 @@ import { PageWrapper,
   PageHeader,
   PageTitle,
   PageContent,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+
+
+
+
   Button,
   Input,
   Textarea,
@@ -17,7 +17,7 @@ import { PageWrapper,
   StatusBadge,
   useToast } from '@rentalshop/ui';
 import { merchantsApi, formatInShopZone } from '@rentalshop/utils';
-import { ArrowLeft, Save, Building2 } from 'lucide-react';
+import { ArrowLeft, Save, Building2, MapPin, FileText, Info } from 'lucide-react';
 import type { Merchant } from '@rentalshop/types';
 
 interface MerchantEditData {
@@ -195,18 +195,10 @@ export default function EditMerchantPage() {
       </PageHeader>
 
       <PageContent>
-        <div className="space-y-6 max-md:pb-24">
-          {/* Merchant Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Merchant Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4 max-md:pb-24">
+          <section className="ar-form-section" aria-label="Business">
+            <h3><Building2 className="w-4 h-4" /><span>Business</span></h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="name">Business Name *</Label>
                     <Input
@@ -262,6 +254,12 @@ export default function EditMerchantPage() {
                       placeholder="Enter website URL"
                     />
                   </div>
+            </div>
+          </section>
+
+          <section className="ar-form-section" aria-label="Address">
+            <h3><MapPin className="w-4 h-4" /><span>Address</span></h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <Label htmlFor="address">Business Address</Label>
                     <Input
@@ -307,6 +305,13 @@ export default function EditMerchantPage() {
                       placeholder="Enter country"
                     />
                   </div>
+            </div>
+          </section>
+
+          <section className="ar-form-section" aria-label="Description & status">
+            <h3><FileText className="w-4 h-4" /><span>Description & status</span></h3>
+            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
                   <div className="md:col-span-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea
@@ -316,8 +321,7 @@ export default function EditMerchantPage() {
                       placeholder="Enter description"
                     />
                   </div>
-                </div>
-                
+            </div>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <input
@@ -335,16 +339,13 @@ export default function EditMerchantPage() {
                     <StatusBadge status="inactive" variant="default" />
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {/* Current Information Display */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Information</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <section className="ar-form-section" aria-label="Current information">
+            <h3><Info className="w-4 h-4" /><span>Current Information</span></h3>
+            <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <Label className="text-gray-500">Created</Label>
@@ -353,11 +354,11 @@ export default function EditMerchantPage() {
 
 
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:z-20 max-md:space-x-0 max-md:gap-2 max-md:border-t max-md:bg-bg-card max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button:last-child]:flex-1">
+          <div className="ar-form-actions max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:m-0 max-md:z-20">
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>

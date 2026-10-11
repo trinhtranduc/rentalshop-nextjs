@@ -41,10 +41,10 @@ const formatAddonDate = (value: string | Date) =>
   `${formatInShopZone(value, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' })} ${formatInShopZone(value, 'vi', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
 
 // Create / edit dialog: full screen below 768 px with the fixed footer, unchanged from 768 px
-const PHONE_DIALOG = 'max-w-2xl max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:overflow-hidden max-md:flex max-md:flex-col max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5';
+const PHONE_DIALOG = 'ar-dialog md:max-w-lg max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:overflow-hidden max-md:flex max-md:flex-col max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5';
 const PHONE_FORM = 'space-y-4 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:space-y-0';
 const PHONE_FIELDS = 'space-y-4 max-md:[&_input:not([type=checkbox])]:min-h-11 max-md:[&_textarea]:min-h-11 max-md:[&_label:has(input)]:flex max-md:[&_label:has(input)]:min-h-11 max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:pb-4';
-const PHONE_FOOTER = 'flex justify-end gap-2 max-md:shrink-0 max-md:-mx-4 max-md:border-t max-md:bg-bg-card max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&_button]:min-h-11 max-md:[&>button:last-child]:flex-1';
+const PHONE_FOOTER = 'ar-dialog-footer flex justify-end gap-2 max-md:shrink-0 max-md:-mx-4 max-md:border-t max-md:bg-bg-card max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&_button]:min-h-11 max-md:[&>button:last-child]:flex-1';
 
 export default function MerchantPlanLimitAddonsPage() {
   const params = useParams();
@@ -268,7 +268,7 @@ export default function MerchantPlanLimitAddonsPage() {
             <CardTitle>Total Active Addons</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <div className="text-sm text-gray-500">Outlets</div>
                 <div className="text-2xl font-bold">{totals.outlets}</div>
@@ -414,7 +414,7 @@ export default function MerchantPlanLimitAddonsPage() {
           </DialogHeader>
           <div className={PHONE_FORM}>
             <div className={PHONE_FIELDS}>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium">Outlets</label>
                 <Input
@@ -506,7 +506,7 @@ export default function MerchantPlanLimitAddonsPage() {
           </DialogHeader>
           <div className={PHONE_FORM}>
             <div className={PHONE_FIELDS}>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium">Outlets</label>
                 <Input
