@@ -15,11 +15,24 @@ on our schedule. The API must keep serving them. Do this review for every API-af
 
 `.github/workflows/pr-governance.yml` fails a PR that touches API paths without that section and a LOG row.
 
+## 0. Compare against the release customers run
+
+Every deploy to `main-real` gets a tag `release-YYYY-MM-DD[.n]` (`.github/workflows/release-tag.yml`, #864).
+The latest tag is the code in production; compare against it and name it in the PR table.
+
+```bash
+git fetch origin --tags
+REL=$(git describe --tags --abbrev=0 --match 'release-*' origin/main-real)   # e.g. release-2026-10-11
+git log --oneline "$REL"..origin/main-real   # not empty: a deploy is not tagged yet, use origin/main-real
+```
+
+Older installed builds may come from earlier tags (`git tag -l 'release-*'`); when a field or route
+changed between releases, check the oldest release still in customers' hands too.
+
 ## 1. Find what changed
 
 ```bash
-git fetch origin
-git diff origin/main-real...HEAD --stat -- apps/api packages/database/src packages/utils/src \
+git diff "$REL"...HEAD --stat -- apps/api packages/database/src packages/utils/src \
   packages/constants/src packages/auth/src packages/validation prisma
 ```
 
@@ -31,7 +44,7 @@ List each route and each shared function whose behavior changed. Shared helpers 
 For each changed route, read how production code calls it:
 
 ```bash
-git grep -n "<route path or endpoint constant>" origin/main-real -- apps/mobile apps/mobile-android apps/client apps/admin
+git grep -n "<route path or endpoint constant>" "$REL" -- apps/mobile apps/mobile-android apps/client apps/admin
 ```
 
 - **iOS:** `Library/Services/APIEndpoint.swift`, the per-domain `*Service.swift`, and the `Codable` models.
@@ -67,14 +80,14 @@ old param, or put the new behavior behind a header or a new endpoint. "Users wil
 ## 6. Record it in the PR
 
 ```markdown
-## API compatibility (installed apps)
+## API compatibility (installed apps, compared with `release-YYYY-MM-DD`)
 
 | Route / area | Change | Old iOS | Old Android | Web | Risk |
 |---|---|---|---|---|---|
 | GET /api/… | added `foo` (optional) | ignores unknown keys | ignores | n/a | none |
 ```
 
-- Name the old-app code you read, as `file:line` on `origin/main-real`.
+- Name the release tag you compared with, and the old-app code you read, as `file:line` on that tag.
 - "Not verified" is allowed. Guessing is not.
 - High risk, auth, or migrations → human review (`review-pr`).
 - Never change the meaning of a field an old app reads (filling a field that was always 0, a new unit, a new
