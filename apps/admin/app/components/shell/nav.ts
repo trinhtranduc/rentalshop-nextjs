@@ -3,6 +3,7 @@
  * (`filterAdminMenuByRole` from @rentalshop/ui) is applied by the sidebar.
  */
 import type { ComponentType } from 'react';
+import type { NavGroup } from './nav-groups';
 import {
   Activity, Building2, Clock, CreditCard, DollarSign, FileText, FolderTree, Home, Image as ImageIcon,
   Package, RefreshCw, ScrollText, Settings, ShieldCheck, ShoppingCart, Tag, Trash2, TrendingUp, User,
@@ -14,34 +15,35 @@ export interface AdminNavItem {
   href: string;
   icon: ComponentType<{ className?: string }>;
   subItems?: AdminNavItem[];
+  /** Which of the six menu groups shows the item (#815); only top-level items carry it. */
+  group?: NavGroup;
+  /** Show the sub-items straight under the group heading instead of behind an expander (#815). */
+  inline?: boolean;
 }
 
 export const ADMIN_NAV: AdminNavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: Home },
-  { label: 'Merchants', href: '/merchants', icon: Building2 },
-  { label: 'Referrals', href: '/referrals', icon: UserPlus },
-  { label: 'Affiliate Stats', href: '/affiliate/stats', icon: TrendingUp },
+  { label: 'Dashboard', href: '/dashboard', icon: Home, group: 'Overview' },
+  { label: 'Merchants', href: '/merchants', icon: Building2, group: 'Merchants & Plans' },
   {
-    label: 'Subscription', href: '/subscriptions', icon: Clock,
+    label: 'Subscription', href: '/subscriptions', icon: Clock, group: 'Merchants & Plans', inline: true,
     subItems: [
       { label: 'Subscriptions', href: '/subscriptions', icon: Clock },
       { label: 'Payments', href: '/payments', icon: CreditCard },
     ],
   },
   {
-    label: 'Plans', href: '/plans', icon: Package,
+    label: 'Plans', href: '/plans', icon: Package, group: 'Merchants & Plans', inline: true,
     subItems: [
       { label: 'Plans', href: '/plans', icon: Package },
       { label: 'Stripe Billing', href: '/plans/billing', icon: DollarSign },
     ],
   },
-  { label: 'Orders', href: '/orders', icon: ShoppingCart },
-  { label: 'Customers', href: '/customers', icon: UserCircle },
-  { label: 'Products', href: '/products', icon: Package },
-  { label: 'Users', href: '/users', icon: Users },
-  { label: 'AnyRent Users', href: '/system-users', icon: ShieldCheck },
+  { label: 'Orders', href: '/orders', icon: ShoppingCart, group: 'Shop data' },
+  { label: 'Customers', href: '/customers', icon: UserCircle, group: 'Shop data' },
+  { label: 'Products', href: '/products', icon: Package, group: 'Shop data' },
+  { label: 'Users', href: '/users', icon: Users, group: 'Shop data' },
   {
-    label: 'Blog', href: '/posts', icon: FileText,
+    label: 'Blog', href: '/posts', icon: FileText, group: 'Content',
     subItems: [
       { label: 'Posts', href: '/posts', icon: FileText },
       { label: 'Categories', href: '/posts/categories', icon: FolderTree },
@@ -49,8 +51,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
       { label: 'Media', href: '/media', icon: ImageIcon },
     ],
   },
+  { label: 'Referrals', href: '/referrals', icon: UserPlus, group: 'Growth' },
+  { label: 'Affiliate Stats', href: '/affiliate/stats', icon: TrendingUp, group: 'Growth' },
+  { label: 'AnyRent Users', href: '/system-users', icon: ShieldCheck, group: 'System' },
   {
-    label: 'Settings', href: '/settings', icon: Settings,
+    label: 'Settings', href: '/settings', icon: Settings, group: 'System',
     subItems: [
       { label: 'Admin Info', href: '/settings/admin', icon: User },
       { label: 'Audit Logs', href: '/system/audit-logs', icon: ScrollText },
@@ -58,7 +63,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
       { label: 'Deleted Records', href: '/system/deleted-records', icon: Trash2 },
     ],
   },
-  { label: 'Data Sync', href: '/sync', icon: RefreshCw },
+  { label: 'Data Sync', href: '/sync', icon: RefreshCw, group: 'System' },
 ];
 
 /** `/merchants/2` keeps Merchants active; `/ordersx` does not. */
