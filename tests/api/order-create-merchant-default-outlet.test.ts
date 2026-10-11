@@ -16,6 +16,11 @@ jest.mock('@rentalshop/auth/server', () => ({
 // Outlets of the e2e-like fixture. Merchant 2 owns outlets 1 and 3; merchant 99 owns outlet 7.
 type OutletRow = { id: number; merchantId: number; isDefault: boolean; isActive: boolean; name: string };
 let outlets: OutletRow[] = [];
+// The merchant that owns the product of the order (#789: it must be the merchant of the outlet)
+let productMerchantId = 2;
+afterEach(() => {
+  productMerchantId = 2;
+});
 
 const mockDb: any = {
   outlets: {
@@ -29,7 +34,7 @@ const mockDb: any = {
   merchants: { findById: jest.fn(async (id: number) => ({ id, name: 'Shop', pricingConfig: null })) },
   products: {
     findById: jest.fn(async (id: number) => ({
-      id, name: 'Dress', pricingType: 'FIXED', pricingOptions: [], merchantId: 2, merchant: { id: 2 },
+      id, name: 'Dress', pricingType: 'FIXED', pricingOptions: [], merchantId: productMerchantId, merchant: { id: productMerchantId },
     })),
   },
   orders: {
@@ -70,6 +75,8 @@ const orderCreateSchema = {
   },
 };
 jest.mock('@rentalshop/utils', () => ({
+  // #577: the order routes call normalizeLegacyPlanDays; the real helper, straight from source
+  ...jest.requireActual('../../packages/utils/src/core/legacy-plan-days'),
   orderCreateSchema,
   ordersQuerySchema: { safeParse: () => ({ success: false }) },
   orderUpdateSchema: { safeParse: () => ({ success: false }) },
@@ -277,6 +284,7 @@ describe('POST /api/orders — merchant without an outlet (#398)', () => {
 
   it('ADMIN with an explicit outletId is unchanged', async () => {
     ctx = admin;
+    productMerchantId = 99; // outlet 7 belongs to merchant 99: its product does too
     const res: any = await POST(post(saleBody({ outletId: 7 })));
     expect(res.status).toBe(200);
     expect(createdOnOutlet()).toBe(7);

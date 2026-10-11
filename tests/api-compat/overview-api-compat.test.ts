@@ -52,6 +52,25 @@ function withoutAddedFields(value: any, prefix = ''): any {
   return out;
 }
 
+/**
+ * #506 changed on purpose what `topCustomers[].totalSpent` counts (collateral is no longer spending), so the
+ * amounts, the ranking and so the cut-off of the top list differ from the golden. What an installed app reads is
+ * still required: the same number of entries, each with the same fields and types. The new amounts are checked
+ * in the #506 tests.
+ */
+function topCustomersShape(value: any): any {
+  if (Array.isArray(value)) return value.map(topCustomersShape);
+  if (value === null || typeof value !== 'object') return value;
+  const out: Record<string, any> = {};
+  for (const [key, child] of Object.entries(value)) {
+    out[key] =
+      key === 'topCustomers' && Array.isArray(child)
+        ? child.map((c: any) => Object.fromEntries(Object.entries(c).map(([k, v]) => [k, typeof v])))
+        : topCustomersShape(child);
+  }
+  return out;
+}
+
 let now: Record<string, any>;
 const before = golden as Record<string, any>;
 
@@ -67,7 +86,9 @@ describe('every field an installed app reads is unchanged', () => {
   });
 
   it.each(Object.keys(golden))('%s: same fields, values and types as before #492', (scenario) => {
-    expect(withoutAddedFields(now[scenario], scenario)).toEqual(before[scenario]);
+    expect(topCustomersShape(withoutAddedFields(now[scenario], scenario))).toEqual(
+      topCustomersShape(before[scenario]),
+    );
   });
 
   it.each(Object.keys(golden))('%s: no field removed or renamed, only the listed fields added', (scenario) => {

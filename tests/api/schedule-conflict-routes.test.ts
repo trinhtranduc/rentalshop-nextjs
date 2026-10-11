@@ -60,8 +60,8 @@ const mockPrisma: any = {
 };
 
 const PRODUCTS: Record<number, any> = {
-  11: { id: 11, name: 'Áo dài đỏ', pricingType: 'FIXED', pricingOptions: [] },
-  12: { id: 12, name: 'Vest', pricingType: 'FIXED', pricingOptions: [] },
+  11: { id: 11, name: 'Áo dài đỏ', merchantId: 2, pricingType: 'FIXED', pricingOptions: [] },
+  12: { id: 12, name: 'Vest', merchantId: 2, pricingType: 'FIXED', pricingOptions: [] },
 };
 
 const mockDb: any = {
@@ -103,6 +103,8 @@ jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: mockRootPrisma })
 
 const passthrough = { safeParse: (body: any) => ({ success: true, data: { depositAmount: 0, ...body } }) };
 jest.mock('@rentalshop/utils', () => ({
+  // #577: the order routes call normalizeLegacyPlanDays; the real helper, straight from source
+  ...jest.requireActual('../../packages/utils/src/core/legacy-plan-days'),
   orderCreateSchema: passthrough,
   orderUpdateSchema: passthrough,
   ordersQuerySchema: { safeParse: () => ({ success: false }) },
