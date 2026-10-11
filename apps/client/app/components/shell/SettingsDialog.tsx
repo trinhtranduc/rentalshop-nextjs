@@ -10,7 +10,7 @@ import React, { useEffect, useId, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@rentalshop/hooks';
 import { SettingsPanel } from '../../settings/SettingsPanel';
-import { SETTINGS_PARAM, closeSettingsHref, resolveTab, settingsHref, type SettingsTab } from '../../settings/settings-model';
+import { SETTINGS_OUTLET_PARAM, SETTINGS_PARAM, closeSettingsHref, resolveTab, settingsHref, settingsOutletHref, type SettingsTab } from '../../settings/settings-model';
 
 export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
   const router = useRouter();
@@ -38,6 +38,8 @@ export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean
 
   const close = () => router.replace(closeSettingsHref(pathname, search), { scroll: false });
   const onTab = (next: SettingsTab) => router.replace(settingsHref(pathname, search, next), { scroll: false });
+  // #852: the owner's branch on the bank-accounts / receipt tabs
+  const onOutlet = (id: number) => router.replace(settingsOutletHref(pathname, search, id), { scroll: false });
 
   // Focus in on open, back to the opener on close; lock the page scroll behind the dialog.
   useEffect(() => {
@@ -75,7 +77,7 @@ export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean
         tabIndex={-1}
         className="relative flex h-full w-full flex-col overflow-hidden bg-ar-surface shadow-2xl outline-none lg:h-[min(720px,100%)] lg:w-[min(1040px,100%)] lg:rounded-2xl lg:border lg:border-ar-line"
       >
-        <SettingsPanel tab={tab} onTab={onTab} onClose={close} titleId={titleId} />
+        <SettingsPanel tab={tab} onTab={onTab} onClose={close} titleId={titleId} outletParam={searchParams.get(SETTINGS_OUTLET_PARAM)} onOutlet={onOutlet} />
       </div>
     </div>
   );

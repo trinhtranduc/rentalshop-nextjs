@@ -24,7 +24,8 @@ export interface SettingsTabDef {
 export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'merchant', group: 'shop', roles: ['MERCHANT'] },
   { id: 'outlet', group: 'shop', roles: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'] },
-  { id: 'bank-accounts', group: 'shop', roles: ['OUTLET_ADMIN'] },
+  /** #852: the owner sets bank accounts per branch here too (branch select on top) */
+  { id: 'bank-accounts', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
   /** Phiếu in (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
   { id: 'receipt', group: 'shop' },
   { id: 'subscription', group: 'shop', roles: ['MERCHANT'] },
@@ -184,10 +185,28 @@ export function settingsHref(pathname: string, search: string, tab: string = '')
   return withQuery(pathname, params);
 }
 
+/** #852: branch of the bank-accounts / receipt tabs for an owner with several branches: `?settingsOutlet=<id>`. */
+export const SETTINGS_OUTLET_PARAM = 'settingsOutlet';
+
+/** Current page, dialog still open, on branch `outletId`. */
+export function settingsOutletHref(pathname: string, search: string, outletId: number): string {
+  const params = new URLSearchParams(search);
+  params.set(SETTINGS_OUTLET_PARAM, String(outletId));
+  return withQuery(pathname, params);
+}
+
+/** Branch to show: the URL's when it is one of the shop's, else the default branch, else the first; none without branches. */
+export function settingsOutletChoice(options: Array<{ id: number; isDefault?: boolean }>, raw: string | null | undefined): number | null {
+  const wanted = raw && /^[1-9]\d*$/.test(raw) ? Number(raw) : null;
+  if (wanted !== null && options.some((o) => o.id === wanted)) return wanted;
+  return options.find((o) => o.isDefault)?.id ?? options[0]?.id ?? null;
+}
+
 /** Current page with the dialog closed. */
 export function closeSettingsHref(pathname: string, search: string): string {
   const params = new URLSearchParams(search);
   params.delete(SETTINGS_PARAM);
+  params.delete(SETTINGS_OUTLET_PARAM);
   for (const key of DIALOG_ONLY_PARAMS) params.delete(key);
   return withQuery(pathname, params);
 }
