@@ -33,9 +33,18 @@ import {
 } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { Plus, Edit, Trash2, X, Check } from 'lucide-react';
-import { planLimitAddonsApi, merchantsApi } from '@rentalshop/utils';
-import { useFormattedDateTime } from '@rentalshop/utils/client';
+import { planLimitAddonsApi, merchantsApi, formatInShopZone } from '@rentalshop/utils';
 import type { PlanLimitAddon, PlanLimitAddonCreateInput, PlanLimitAddonUpdateInput } from '@rentalshop/types';
+
+// dd/MM/yyyy HH:mm on the Vietnam day
+const formatAddonDate = (value: string | Date) =>
+  `${formatInShopZone(value, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' })} ${formatInShopZone(value, 'vi', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+
+// Create / edit dialog: full screen below 768 px with the fixed footer, unchanged from 768 px
+const PHONE_DIALOG = 'max-w-2xl max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:overflow-hidden max-md:flex max-md:flex-col max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5';
+const PHONE_FORM = 'space-y-4 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:space-y-0';
+const PHONE_FIELDS = 'space-y-4 max-md:[&_input:not([type=checkbox])]:min-h-11 max-md:[&_textarea]:min-h-11 max-md:[&_label:has(input)]:flex max-md:[&_label:has(input)]:min-h-11 max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:pb-4';
+const PHONE_FOOTER = 'flex justify-end gap-2 max-md:shrink-0 max-md:-mx-4 max-md:border-t max-md:bg-bg-card max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&_button]:min-h-11 max-md:[&>button:last-child]:flex-1';
 
 export default function MerchantPlanLimitAddonsPage() {
   const params = useParams();
@@ -235,11 +244,11 @@ export default function MerchantPlanLimitAddonsPage() {
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       
       <PageHeader className="mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 max-md:flex-wrap">
           <div>
             <PageTitle subtitle={`Manage plan limit addons for ${merchant?.merchant?.name || merchant?.name || 'merchant'}`}>
               Plan Limit Addons
@@ -259,7 +268,7 @@ export default function MerchantPlanLimitAddonsPage() {
             <CardTitle>Total Active Addons</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <div className="text-sm text-gray-500">Outlets</div>
                 <div className="text-2xl font-bold">{totals.outlets}</div>
@@ -298,7 +307,7 @@ export default function MerchantPlanLimitAddonsPage() {
               </div>
             ) : (
               <>
-                <Table>
+                <Table className="table-cards">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Limits</TableHead>
@@ -319,7 +328,7 @@ export default function MerchantPlanLimitAddonsPage() {
                       
                       return (
                         <TableRow key={addon.id}>
-                          <TableCell>
+                          <TableCell data-primary>
                             <div className="flex flex-wrap gap-2">
                               {limits.length > 0 ? (
                                 limits.map((limit, idx) => (
@@ -335,22 +344,22 @@ export default function MerchantPlanLimitAddonsPage() {
                               <p className="text-xs text-gray-500 mt-1">{addon.notes}</p>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell data-label="Status">
                             <Badge variant={addon.isActive ? 'default' : 'secondary'}>
                               {addon.isActive ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell data-label="Created At">
                             <span className="text-sm text-gray-600">
-                              {useFormattedDateTime(addon.createdAt)}
+                              {formatAddonDate(addon.createdAt)}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell data-label="Updated At">
                             <span className="text-sm text-gray-600">
-                              {useFormattedDateTime(addon.updatedAt)}
+                              {formatAddonDate(addon.updatedAt)}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell data-actions>
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="ghost"
@@ -396,15 +405,16 @@ export default function MerchantPlanLimitAddonsPage() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className={PHONE_DIALOG}>
+          <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle>Create Plan Limit Addon</DialogTitle>
             <DialogDescription>
               Add additional limits to this merchant's plan
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-5 gap-4">
+          <div className={PHONE_FORM}>
+            <div className={PHONE_FIELDS}>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <label className="text-sm font-medium">Outlets</label>
                 <Input
@@ -472,7 +482,8 @@ export default function MerchantPlanLimitAddonsPage() {
                 Active
               </label>
             </div>
-            <div className="flex justify-end gap-2">
+            </div>
+            <div className={PHONE_FOOTER}>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                 Cancel
               </Button>
@@ -486,15 +497,16 @@ export default function MerchantPlanLimitAddonsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className={PHONE_DIALOG}>
+          <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle>Edit Plan Limit Addon</DialogTitle>
             <DialogDescription>
               Update the limits for this addon
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-5 gap-4">
+          <div className={PHONE_FORM}>
+            <div className={PHONE_FIELDS}>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <label className="text-sm font-medium">Outlets</label>
                 <Input
@@ -562,7 +574,8 @@ export default function MerchantPlanLimitAddonsPage() {
                 Active
               </label>
             </div>
-            <div className="flex justify-end gap-2">
+            </div>
+            <div className={PHONE_FOOTER}>
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
