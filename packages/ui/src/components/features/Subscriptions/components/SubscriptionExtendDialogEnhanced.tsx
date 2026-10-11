@@ -378,6 +378,9 @@ export function SubscriptionExtendDialogEnhanced({
                 <div className="space-y-1.5 max-md:order-3">
                   <Label htmlFor="extensionPrice" className="text-xs font-medium">
                     Extension Price *
+                    {method !== 'PAYMENT_RECEIVED' && (
+                      <span className="ml-2 text-[10px] font-normal text-muted-foreground">Not charged</span>
+                    )}
                   </Label>
                   {calculating ? (
                     <div className="flex items-center gap-2 h-10 max-md:min-h-11 text-muted-foreground text-sm border border-border rounded-md px-3">
@@ -464,6 +467,9 @@ export function SubscriptionExtendDialogEnhanced({
               <div className="space-y-1.5">
                 <Label htmlFor="extensionPrice" className="text-xs font-medium">
                   Extension Price *
+                  {method !== 'PAYMENT_RECEIVED' && (
+                    <span className="ml-2 text-[10px] font-normal text-muted-foreground">Not charged</span>
+                  )}
                 </Label>
                 {calculating ? (
                   <div className="flex items-center gap-2 h-10 max-md:min-h-11 text-muted-foreground text-sm border border-border rounded-md px-3">
@@ -563,6 +569,9 @@ export function SubscriptionExtendDialogEnhanced({
                   </option>
                 ))}
               </select>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Only “Payment Received” records a payment. The other methods are free extensions.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="description" className="text-xs font-medium">Note (Optional)</Label>

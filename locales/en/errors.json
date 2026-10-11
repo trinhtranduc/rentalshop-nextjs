@@ -508,5 +508,7 @@
   "INVALID_PAYMENT_ORDER_REFS": "Some payments point to an order that does not exist.",
   "ZERO_AMOUNT_ORDERS_DETECTED": "Some orders have a zero amount.",
   "STATISTICS_FOUND": "Statistics found",
-  "INVALID_DURATION": "Renewal period must be 1, 3, 6 or 12 months"
+  "INVALID_DURATION": "Renewal period must be 1, 3, 6 or 12 months",
+  "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "The plan can only be changed in a new period",
+  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "A downgrade is only possible in a new period"
 }

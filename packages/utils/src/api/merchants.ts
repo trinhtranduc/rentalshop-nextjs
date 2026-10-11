@@ -191,6 +191,9 @@ export const merchantsApi = {
     duration?: number;
     discount?: number;
     totalPrice?: number;
+    method?: string;
+    transactionId?: string;
+    reference?: string;
   }): Promise<ApiResponse<any>> {
     const response = await authenticatedFetch(apiUrls.merchants.updatePlan(merchantId), {
       method: 'PUT',

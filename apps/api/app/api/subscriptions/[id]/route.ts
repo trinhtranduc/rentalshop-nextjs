@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { handleApiError } from '@rentalshop/utils';
-import { API, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
+import { ApiError, ErrorCode, handleApiError } from '@rentalshop/utils';
+import { API, PLATFORM_OPS_ROLES, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 
 /**
  * GET /api/subscriptions/[id]
@@ -24,8 +24,9 @@ export async function GET(
       }
 
       const subscription = await db.subscriptions.findById(subscriptionId);
-      if (!subscription) {
-        throw new Error('Subscription not found');
+      // A merchant reads only its own subscription; another shop's id answers like a missing one (#785)
+      if (!subscription || (user.role === 'MERCHANT' && subscription.merchantId !== userScope?.merchantId)) {
+        throw new ApiError(ErrorCode.SUBSCRIPTION_NOT_FOUND);
       }
 
       return NextResponse.json({ success: true, data: subscription });
@@ -51,7 +52,8 @@ export async function PUT(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  // Updating any field of a subscription is a platform action (#785: a MERCHANT used to be able to do it for any id)
+  return withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(subscriptionId)) {
@@ -79,11 +81,20 @@ export async function PUT(
         const updatedSubscription = await changePlan(
           subscriptionId,
           body.planId,
-          billingInterval as any
+          billingInterval as any,
+          {
+            actorRole: user.role,
+            payment: {
+              method: body.method,
+              transactionId: body.transactionId,
+              reference: body.reference,
+              description: body.description,
+            },
+          }
         );
         
         // Update other fields if provided (excluding planId and billingInterval which are handled by changePlan)
-        const { planId, billingInterval: _, interval, ...otherFields } = body;
+        const { planId, billingInterval: _, interval, method: _method, transactionId: _transactionId, reference: _reference, description: _description, ...otherFields } = body;
         if (Object.keys(otherFields).length > 0) {
           await db.subscriptions.update(subscriptionId, otherFields);
         }
@@ -119,7 +130,7 @@ export async function DELETE(
   const resolvedParams = await Promise.resolve(params);
   const subscriptionId = parseInt(resolvedParams.id);
   
-  return withAuthRoles(['ADMIN', 'MERCHANT'])(async (request, { user, userScope }) => {
+  return withAuthRoles([...PLATFORM_OPS_ROLES])(async (request, { user, userScope }) => {
     try {
       
       if (isNaN(subscriptionId)) {

@@ -27,5 +27,7 @@
   "INVALID_MIN_SIMILARITY": "最小類似度が無効です（0〜1の範囲で指定してください）",
   "NO_PRODUCTS_FOUND": "似ている商品が見つかりませんでした",
   "ROLE_NOT_AVAILABLE": "この役割はまだ割り当てられません",
-  "INVALID_DURATION": "更新期間は1、3、6、12か月のいずれかである必要があります"
+  "INVALID_DURATION": "更新期間は1、3、6、12か月のいずれかである必要があります",
+  "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "プランの変更は新しい期間にのみ可能です",
+  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "ダウングレードは新しい期間にのみ可能です"
 }

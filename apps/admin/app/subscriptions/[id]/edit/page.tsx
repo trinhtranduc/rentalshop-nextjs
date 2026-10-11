@@ -76,7 +76,7 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
         // Redirect to subscription detail page
         router.push(`/admin/subscriptions/${params.id}`);
       } else {
-        alert(`Error updating subscription: ${result.message}`);
+        alert(`Error updating subscription: ${result.message || (result as any).error || 'Request failed'}`);
       }
     } catch (error) {
       console.error('Error updating subscription:', error);
