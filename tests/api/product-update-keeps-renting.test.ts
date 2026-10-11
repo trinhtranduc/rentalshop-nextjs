@@ -75,7 +75,8 @@ describe('PUT /api/products/:id keeps rented stock (#359)', () => {
     jest.clearAllMocks();
     ctx = { user: { id: 2, role: 'MERCHANT', merchantId: 2, email: 'm@x' }, userScope: { merchantId: 2 } };
     mockDb.products.findById.mockResolvedValue(existingProduct);
-    mockDb.outlets.findById.mockImplementation(async (id: number) => ({ id, name: `Outlet ${id}` }));
+    // #825: stock is written only to outlets of the product's shop (merchant 2)
+    mockDb.outlets.findById.mockImplementation(async (id: number) => ({ id, name: `Outlet ${id}`, merchant: { id: 2, name: 'Shop' } }));
     mockDb.products.update.mockImplementation(async (id: number, data: any) => ({
       ...existingProduct,
       ...data,

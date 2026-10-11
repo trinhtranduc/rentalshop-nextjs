@@ -29,5 +29,7 @@
   "ROLE_NOT_AVAILABLE": "该角色暂时无法分配",
   "INVALID_DURATION": "续订期限必须为 1、3、6 或 12 个月",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "只能在新的周期更换套餐",
-  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "只能在新的周期降级"
+  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "只能在新的周期降级",
+  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "只有店主可以修改商品名称、价格、图片、分类等共享信息。您可以修改本门店的库存。",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "只有店主可以删除商品。"
 }

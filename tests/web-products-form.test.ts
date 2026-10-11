@@ -1,6 +1,6 @@
 /**
  * #547 shop web product form (create + edit): form state from a product, pricing options, validation,
- * create / update payload, photo checks. Pure module; runs under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
+ * create / update payload, photo checks; #825 branch roles send only their own stock. Pure module; runs under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
 import {
@@ -17,6 +17,8 @@ import {
   generateBarcode,
   imageSearchState,
   imagesOf,
+  isBranchRole,
+  roleMayCreateProducts,
   parseCount,
   removedAllSavedPhotos,
   rentalPricesOf,
@@ -287,5 +289,33 @@ describe('default price for new orders (#547 owner feedback: no either/or toggle
     expect(effectiveDefaultMode(0, 20000, 'FIXED')).toBe('DAILY');
     expect(effectiveDefaultMode(50000, 20000, 'DAILY')).toBe('DAILY');
     expect(effectiveDefaultMode(0, 0, 'FIXED')).toBe('FIXED');
+  });
+});
+
+describe('branch roles (#825)', () => {
+  it('OUTLET_ADMIN, OUTLET_STAFF and OUTLET_INVENTORY are branch roles; MERCHANT and ADMIN are not', () => {
+    expect(['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'].every(isBranchRole)).toBe(true);
+    expect(isBranchRole('MERCHANT')).toBe(false);
+    expect(isBranchRole('ADMIN')).toBe(false);
+    expect(isBranchRole(undefined)).toBe(false);
+  });
+
+  it('outlet staff do not add products; the other roles may (owner 2026-10-11)', () => {
+    expect(roleMayCreateProducts('OUTLET_STAFF')).toBe(false);
+    for (const role of ['MERCHANT', 'ADMIN', 'OUTLET_ADMIN', 'OUTLET_INVENTORY']) expect(roleMayCreateProducts(role)).toBe(true);
+  });
+
+  it('edit: only the id and the own branch stock, nothing shared', () => {
+    const f = setOutletStock(formFromProduct(product, outlets, categories), 3, 4);
+    expect(buildPayload(f, { canEditPricing: true, productId: 12, merchantId: 1, branchOutletId: 3 })).toEqual({
+      id: 12,
+      outletStock: [{ outletId: 3, stock: 4 }],
+    });
+  });
+
+  it('create: the full product with the own branch stock only (the API adds 0 at the other branches)', () => {
+    const p = buildPayload(valid(), { canEditPricing: true, branchOutletId: 1 });
+    expect(p.name).toBe('Vest');
+    expect(p.outletStock).toEqual([{ outletId: 1, stock: 2 }]);
   });
 });

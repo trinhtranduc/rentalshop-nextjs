@@ -8,6 +8,7 @@ import { compressImageTo1MB } from '../../../lib/image-compression';
 import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
+import { zeroStockRowsForOtherOutlets } from '../../../lib/product-branch-rules';
 import { z } from 'zod';
 import {
   batchTodayEffectiveAvailability,
@@ -505,7 +506,7 @@ async function validateOutletStock(
  * - Files (optional): File objects in 'images' field
  * REFACTORED: Now uses permission-based auth (reads from ROLE_PERMISSIONS)
  * 
- * Authorization: `products.manage` OR `products.create` (e.g. OUTLET_STAFF may create only)
+ * Authorization: `products.manage` OR `products.create`; never OUTLET_STAFF (#825, 403 INSUFFICIENT_PERMISSIONS)
  * Requires active subscription
  */
 export const POST = withPermissions(['products.manage', 'products.create'])(async (request, { user, userScope }) => {
@@ -528,6 +529,22 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       return NextResponse.json(
         ResponseBuilder.error('INVALID_JSON_DATA'),
         { status: 400 }
+      );
+    }
+
+    // #825 (owner 2026-10-11): outlet staff do not add products, even with a customised products.create
+    if (user.role === USER_ROLE.OUTLET_STAFF) {
+      return NextResponse.json(
+        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
+
+    // #825: a branch role always works in its outlet; without one the branch checks below cannot run
+    if (isOutletRole(user.role) && !userScope.outletId) {
+      return NextResponse.json(
+        ResponseBuilder.error('OUTLET_REQUIRED'),
+        { status: API.STATUS.FORBIDDEN }
       );
     }
 
@@ -610,6 +627,14 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     const outletStock = await validateOutletStock(outletStockData, merchantId);
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
 
+    // #825: the new product also gets a 0-stock row at every other active outlet of the shop,
+    // so every branch lists it (stock is entered per branch)
+    const activeOutlets = await prisma.outlet.findMany({
+      where: { merchantId, isActive: true },
+      select: { id: true },
+    });
+    const zeroStockRows = zeroStockRowsForOtherOutlets(outletStock, activeOutlets.map((o: { id: number }) => o.id));
+
     // Commit images to production
     // Use productData.images (after combine) instead of parsed.data.images
     // because Zod validation may transform/coerce the data
@@ -660,7 +685,7 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       ...(parsed.data.pricingOptions && parsed.data.pricingOptions.length > 0 && { pricingOptions: parsed.data.pricingOptions }),
       ...(parsed.data.categoryId && { category: { connect: { id: parsed.data.categoryId } } }),
       outletStock: {
-        create: outletStock.map(os => ({
+        create: [...outletStock, ...zeroStockRows].map(os => ({
           outlet: { connect: { id: os.outletId } },
           stock: os.stock,
           available: os.stock,
