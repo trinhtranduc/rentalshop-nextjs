@@ -84,7 +84,8 @@ export async function PUT(
       }
 
       const body = await request.json();
-      const parsed = planLimitAddonUpdateSchema.safeParse(body);
+      // The id comes from the URL; the schema asks for it, so it is added here and never written (#800)
+      const parsed = planLimitAddonUpdateSchema.safeParse({ ...body, id });
       if (!parsed.success) {
         return NextResponse.json(
           ResponseBuilder.validationError(parsed.error.flatten()),
@@ -92,7 +93,8 @@ export async function PUT(
         );
       }
 
-      const addon = await db.planLimitAddons.update(id, parsed.data);
+      const { id: _id, ...changes } = parsed.data;
+      const addon = await db.planLimitAddons.update(id, changes);
       
       // Send email notification (non-blocking) - TEMPORARILY DISABLED
       // if (addon.merchant?.email) {
