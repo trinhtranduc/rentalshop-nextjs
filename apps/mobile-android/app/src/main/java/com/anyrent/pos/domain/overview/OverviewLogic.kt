@@ -192,9 +192,10 @@ object OverviewLogic {
      * Report of a range of shop days; `timeZone` is the shop zone (#602, iOS `overviewReportParameters`).
      * [limit] sizes `topProducts` / `topCustomers` (#633).
      */
-    fun periodPath(range: DayRange, limit: Int = TOP_LIMIT): String =
+    fun periodPath(range: DayRange, limit: Int = TOP_LIMIT, outletId: Int? = null): String =
         "/api/analytics/period?startDate=${range.start}&endDate=${range.end}" +
-            "&groupBy=${groupBy(range)}&limit=$limit&timeZone=${ShopTime.timeZoneParam()}"
+            "&groupBy=${groupBy(range)}&limit=$limit&timeZone=${ShopTime.timeZoneParam()}" +
+            (outletId?.let { "&outletIds=$it" } ?: "")
 
     /** #633 Top sản phẩm: the API's order (largest revenue first), [limit] rows at most */
     fun topProductRows(products: List<OverviewReport.TopProduct>, limit: Int = TOP_LIMIT): List<OverviewTopRow> =
@@ -215,7 +216,9 @@ object OverviewLogic {
     }
 
     /** "Now" figures and today's work of the outlet for the shop today (#602, iOS `outletOperationsParameters`) */
-    fun outletOperationsPath(): String = "/api/analytics/outlet-operations?timeZone=${ShopTime.timeZoneParam()}"
+    /** #828: [outletId] narrows a merchant's figures to its chosen branch (`outletIds`; ignored for outlet users) */
+    fun outletOperationsPath(outletId: Int? = null): String =
+        "/api/analytics/outlet-operations?timeZone=${ShopTime.timeZoneParam()}" + (outletId?.let { "&outletIds=$it" } ?: "")
 
     fun dayMonth(date: LocalDate): String = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
 

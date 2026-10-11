@@ -58,12 +58,15 @@ data class CalendarDayRow(val kind: CalendarRowKind, val order: CalendarDayOrder
 /** Pure logic of the redesigned calendar; days are `yyyy-MM-dd` keys in the shop zone (#602) */
 object CalendarLogic {
     /** Month marks; `timeZone` is the shop zone, whatever the phone zone (#602, iOS `calendarMonthParameters`) */
-    fun monthCountPath(month: YearMonth): String =
-        "/api/calendar/orders/count?month=${month.monthValue}&year=${month.year}&timeZone=${ShopTime.timeZoneParam()}"
+    /** #828: [outletId] is a merchant's chosen branch (outlet users are scoped by the API) */
+    fun monthCountPath(month: YearMonth, outletId: Int? = null): String =
+        "/api/calendar/orders/count?month=${month.monthValue}&year=${month.year}&timeZone=${ShopTime.timeZoneParam()}" +
+            (outletId?.let { "&outletId=$it" } ?: "")
 
     /** Orders of one shop day; the caller adds `&status=RESERVED` or `&kind=return` */
-    fun dayPath(key: String): String =
-        "/api/calendar/orders/by-date?date=$key&timeZone=${ShopTime.timeZoneParam()}&limit=200"
+    fun dayPath(key: String, outletId: Int? = null): String =
+        "/api/calendar/orders/by-date?date=$key&timeZone=${ShopTime.timeZoneParam()}&limit=200" +
+            (outletId?.let { "&outletId=$it" } ?: "")
 
     /** Month grid, weeks starting on Monday, whole weeks only */
     fun monthGrid(month: YearMonth, todayKey: String): List<CalendarCell> {

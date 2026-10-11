@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.home.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -126,7 +127,7 @@ fun ProductCalendarScreen(
     suspend fun loadMonth(m: YearMonth) {
         if (m in loadedMonths) return
         val (from, to) = ProductCalendarLogic.monthKeys(m)
-        withContext(Dispatchers.IO) { ProductsV2Api.availabilityCalendar(productId, from, to, SessionStore.outletId) }
+        withContext(Dispatchers.IO) { ProductsV2Api.availabilityCalendar(productId, from, to, CurrentOutlet.id) }
             .onSuccess {
                 available.putAll(it.available)
                 it.stock?.let { s -> stock = s }
@@ -152,7 +153,7 @@ fun ProductCalendarScreen(
     }
 
     val current = product
-    val total = stock ?: current?.let { ProductStock.counts(it, SessionStore.outletId).total } ?: 0
+    val total = stock ?: current?.let { ProductStock.counts(it, CurrentOutlet.id).total } ?: 0
     val minAvailable = range.start?.let { start -> range.end?.let { end -> ProductCalendarLogic.minAvailable(start, end, available) } }
 
     Column(Modifier.fillMaxSize().background(Color.White)) {

@@ -1,5 +1,6 @@
 package com.anyrent.pos.data.repository
 
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.availability.AvailabilityConflict
@@ -21,7 +22,7 @@ import java.time.LocalDate
 
 class DefaultAvailabilityRepository(
     private val api: ApiClient = ApiClient.get(),
-    private val outletIdProvider: () -> Int? = { SessionStore.outletId },
+    private val outletIdProvider: () -> Int? = { CurrentOutlet.id },
     private val roleProvider: () -> String? = { SessionStore.role },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AvailabilityRepository {

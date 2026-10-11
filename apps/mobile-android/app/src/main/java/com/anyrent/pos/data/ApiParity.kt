@@ -399,7 +399,7 @@ object ApiParity {
         categoryId: Int?,
         imageFile: File?,
     ): Result<Product> = runCatching {
-        val outletId = SessionStore.outletId
+        val outletId = CurrentOutlet.id
         val data = JSONObject()
             .put("name", name)
             .put("rentPrice", rentPrice)
@@ -526,7 +526,7 @@ object ApiParity {
         categoryId: Int? = null,
         imageFile: File?,
     ): Result<Product> = runCatching {
-        val outletId = SessionStore.outletId
+        val outletId = CurrentOutlet.id
         val data = JSONObject()
             .put("name", name)
             .put("rentPrice", rentPrice)
@@ -594,7 +594,8 @@ object ApiParity {
 
     fun analyticsPeriod(startDate: String, endDate: String): Result<JSONObject> = runCatching {
         ApiClient.get().authedGet(
-            "/api/analytics/period?startDate=$startDate&endDate=$endDate&groupBy=day&limit=5"
+            "/api/analytics/period?startDate=$startDate&endDate=$endDate&groupBy=day&limit=5" +
+                (CurrentOutlet.merchantFilterId?.let { "&outletIds=$it" } ?: "")
         ).optJSONObject("data") ?: JSONObject()
     }
 }

@@ -24,7 +24,8 @@ object ProductsV2Api {
             add("sortBy=createdAt")
             add("sortOrder=desc")
             if (!q.isNullOrBlank()) add("q=" + URLEncoder.encode(q, "UTF-8"))
-            SessionStore.outletId?.let { add("outletId=$it") }
+            // #828: the branch in use (a merchant's chosen one) so the list gets that branch's stock
+            CurrentOutlet.id?.let { add("outletId=$it") }
         }.joinToString("&")
         val json = ApiClient.get().authedGet("/api/products?$query")
         val data = json.optJSONObject("data") ?: JSONObject()

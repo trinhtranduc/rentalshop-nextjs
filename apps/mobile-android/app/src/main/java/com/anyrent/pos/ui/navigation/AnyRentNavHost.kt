@@ -1,5 +1,8 @@
 package com.anyrent.pos.ui.navigation
 
+import com.anyrent.pos.data.CurrentOutlet
+import com.anyrent.pos.ui.home.v2.OutletFallbackDialog
+import kotlinx.coroutines.flow.drop
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -799,6 +802,13 @@ private fun MainTabs(
     }
 
     LaunchedOpenPendingOrder(rootNavController, startOrderId)
+
+    // #828: a merchant's active branches for the Home button; a remembered branch that was turned off falls back to
+    // the default and the merchant is told once. A branch change reloads every order and stock view, like an order
+    // change does (Orders, Calendar, Overview compare the same version when shown).
+    LaunchedEffect(Unit) { CurrentOutlet.refresh() }
+    LaunchedEffect(Unit) { CurrentOutlet.version.drop(1).collect { OrdersChanged.notifyChanged() } }
+    OutletFallbackDialog()
 
     LaunchedEffect(Unit) {
         MainTabRouter.selectTab.collect { route ->

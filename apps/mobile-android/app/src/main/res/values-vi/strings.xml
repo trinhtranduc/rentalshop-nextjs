@@ -1581,4 +1581,20 @@
     <string name="notifications_v2_delete_one_confirm">Xoá thông báo này? Không thể hoàn tác.</string>
     <string name="notifications_v2_mark_read">Đánh dấu đã đọc</string>
     <string name="notifications_v2_mark_unread">Đánh dấu chưa đọc</string>
+    <!-- #828 Chọn chi nhánh (nút trên tiêu đề, bảng chọn, xác nhận giỏ) -->
+    <string name="outlet_header_accessibility">Chi nhánh: %1$s</string>
+    <string name="outlet_header_hint">Đổi chi nhánh</string>
+    <string name="outlet_picker_title">Chọn chi nhánh</string>
+    <string name="outlet_picker_hint">Đơn, sản phẩm, tồn kho, lịch và Tổng quan sẽ theo chi nhánh bạn chọn.</string>
+    <string name="outlet_picker_default">mặc định</string>
+    <string name="outlet_picker_current">Đang chọn</string>
+    <string name="outlet_picker_use">Dùng %1$s</string>
+    <string name="outlet_switch_confirm_title">Đổi sang %1$s?</string>
+    <plurals name="outlet_switch_confirm_message">
+        <item quantity="other">Giỏ hàng đang có %1$d món của %2$s. Đổi chi nhánh sẽ xoá giỏ hàng.</item>
+    </plurals>
+    <string name="outlet_switch_confirm_cancel">Huỷ</string>
+    <string name="outlet_switch_confirm_ok">Xoá giỏ và đổi</string>
+    <string name="outlet_fallback_title">Đã về chi nhánh mặc định</string>
+    <string name="outlet_fallback_message">Chi nhánh bạn chọn không còn hoạt động. App đang dùng %1$s.</string>
 </resources>
