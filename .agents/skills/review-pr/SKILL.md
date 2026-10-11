@@ -25,7 +25,7 @@ Agent review is the first layer. A human still owns auth, payments, migrations, 
 - No CUID leaks, no new `PrismaClient`, no edited applied migration.
 - New strings exist in `en`, `vi`, `ja`, `ko`, `zh`.
 - iOS and Android updated together when the contract changed.
-- API, shared-package, rule, migration, or API env change → the PR has the `api-compat-review` table, with no unresolved high risk.
+- API, shared-package, rule, migration, or API env change → the PR has the `api-compat-review` table, with no unresolved high risk. The table names the release tag it compared with (latest `release-*`, #864).
 - `??` mixed with `||` is parenthesized.
 - Secrets and `.env*` are absent from the diff.
 

@@ -18,6 +18,7 @@ Rental-shop POS and management platform. Yarn 1 + Turborepo monorepo:
 - `apps/mobile` — iOS (Swift), `apps/mobile-android` — Android (Kotlin)
 
 `dev` deploys to dev-api.anyrent.shop. `main-real` is production (`main` is stale). Pull requests target `dev`.
+Every deploy to `main-real` is tagged `release-YYYY-MM-DD[.n]` (workflow `release-tag.yml`); the latest tag is what customers run, and impact reviews compare against it.
 
 ## SDLC (do not skip stages)
 
