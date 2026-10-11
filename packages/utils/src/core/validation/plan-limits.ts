@@ -87,9 +87,15 @@ export async function getPlanLimitsInfo(merchantId: number): Promise<PlanLimitsI
       ? -1  // Unlimited if missing, null, or 0
       : planLimits.orders;
     
+    // #824 (owner, #823 question 7): OUTLETS ONLY — a plan without an outlets limit, or with 0, allows 1 outlet;
+    // -1 stays unlimited. The other entities keep "missing = unlimited".
+    const outletsLimit = (planLimits.outlets === undefined || planLimits.outlets === null || planLimits.outlets === 0)
+      ? 1
+      : planLimits.outlets;
+
     // IMPORTANT: Build planLimits object WITHOUT spread to ensure ordersLimit is used correctly
     planLimits = {
-      outlets: planLimits.outlets !== undefined ? planLimits.outlets : -1,
+      outlets: outletsLimit,
       users: planLimits.users !== undefined ? planLimits.users : -1,
       products: planLimits.products !== undefined ? planLimits.products : -1,
       customers: planLimits.customers !== undefined ? planLimits.customers : -1,

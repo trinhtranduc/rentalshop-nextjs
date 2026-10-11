@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,13 +8,15 @@ import { useCommonTranslations } from '@rentalshop/hooks';
 import { SHELL_MAIN_NAV, SHELL_MANAGE_NAV, filterNavForRole, isNavActive, type ShellNavItem } from './nav';
 import { ICONS, ShellIcon } from './Icon';
 import { settingsHref } from '../../settings/settings-model';
+import { BRANCH_SELECTION_EVENT, readStoredBranchLabel, type BranchLabel } from '../../dashboard/branch-model';
 
 export interface ShopSidebarUser {
   firstName?: string;
   lastName?: string;
   name?: string;
   role?: string;
-  merchant?: { name?: string } | null;
+  merchant?: { id?: number; name?: string } | null;
+  merchantId?: number | null;
   outlet?: { name?: string } | null;
 }
 
@@ -49,7 +51,36 @@ export function ShopSidebar({ user, pathname, settingsOpen = false, onNavigate, 
   const manage = filterNavForRole(SHELL_MANAGE_NAV, role);
   const displayName = fullName(user);
   const shopName = user?.merchant?.name || 'AnyRent';
-  const outletName = user?.outlet?.name || t('shell.allOutlets');
+  // #827: label only — the branches picked on Tổng quan ("Tất cả chi nhánh (N)", one name, or "N chi nhánh")
+  const merchantId = user?.merchant?.id ?? user?.merchantId ?? null;
+  const [branch, setBranch] = useState<BranchLabel | null>(null);
+  useEffect(() => {
+    if (user?.outlet?.name || merchantId == null) return;
+    const read = () => {
+      let storage: Storage | null = null;
+      try {
+        storage = window.localStorage;
+      } catch {
+        storage = null;
+      }
+      setBranch(readStoredBranchLabel(storage, merchantId));
+    };
+    read();
+    window.addEventListener(BRANCH_SELECTION_EVENT, read);
+    window.addEventListener('storage', read);
+    return () => {
+      window.removeEventListener(BRANCH_SELECTION_EVENT, read);
+      window.removeEventListener('storage', read);
+    };
+  }, [user?.outlet?.name, merchantId]);
+  const branchText = !branch
+    ? t('shell.allOutlets')
+    : branch.kind === 'all'
+      ? t('shell.allOutletsCount', { count: branch.count })
+      : branch.kind === 'one'
+        ? branch.name
+        : t('shell.someOutlets', { count: branch.count });
+  const outletName = user?.outlet?.name || branchText;
 
   const itemClass = (active: boolean) =>
     `flex min-h-[40px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[15px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ar-primary ${

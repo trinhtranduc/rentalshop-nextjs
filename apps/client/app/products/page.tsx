@@ -35,7 +35,7 @@ import {
   type Selection,
   type SortKey,
 } from './list/list-model';
-import { isBranchRole, roleMayCreateProducts } from './form/form-model';
+import { sharedFieldsLockedFor, roleMayCreateProducts } from './form/form-model';
 
 /** Board icon paths that the shell icon set does not have. */
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
@@ -146,8 +146,8 @@ export default function ProductsPage() {
   const { user } = useAuth();
   const canExport = useCanExportData();
   const { canManageProducts, canCreateProducts, canUpdateProducts } = usePermissions();
-  // #825: only the shop owner deletes products (a product is shared by every branch)
-  const canDeleteProducts = canManageProducts && !isBranchRole((user as unknown as { role?: string } | null)?.role);
+  // #825: OUTLET_STAFF does not delete products (a product is shared by every branch)
+  const canDeleteProducts = canManageProducts && !sharedFieldsLockedFor((user as unknown as { role?: string } | null)?.role);
   const { outlets } = useOutletsData();
 
   const query = useMemo(() => parseListQuery((k) => searchParams.get(k)), [searchParams]);

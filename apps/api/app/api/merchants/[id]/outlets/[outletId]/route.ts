@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, outletUpdateSchema } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
+import { guardOutletStatusChange } from '../../../../../../lib/outlet-rules';
 
 function toOutletDetail(outlet: {
   id: number;
@@ -79,6 +80,8 @@ export async function GET(
 /**
  * PUT /api/merchants/[id]/outlets/[outletId]
  * Update an outlet from the admin merchant shop page.
+ * #824: changing isActive is MERCHANT / ADMIN only (403 FORBIDDEN); disabling is refused while the outlet has
+ * RESERVED / PICKUPED orders (409 OUTLET_HAS_OPEN_ORDERS); re-enabling checks the outlets plan limit.
  */
 export async function PUT(
   request: NextRequest,
@@ -107,6 +110,15 @@ export async function PUT(
           status: API.STATUS.BAD_REQUEST
         });
       }
+
+      const current = validation.outlet || (await db.outlets.findById(outletPublicId));
+      if (!current) {
+        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), {
+          status: API.STATUS.NOT_FOUND
+        });
+      }
+      const statusError = await guardOutletStatusChange(user, current, parsed.data.isActive);
+      if (statusError) return statusError;
 
       const { status, ...updateData } = parsed.data;
       const updated = await db.outlets.update(outletPublicId, updateData);

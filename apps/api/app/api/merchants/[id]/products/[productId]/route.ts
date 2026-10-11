@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { prisma } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess, hasPermission } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, isOutletRole } from '@rentalshop/constants';
 
 /**
  * GET /api/merchants/[id]/products/[productId]
@@ -127,8 +127,14 @@ export async function PUT(
       }
       const merchant = validation.merchant!;
 
+      // #825: branch roles edit products through PUT /api/products/[id] (branch rules, stock at their own outlet)
+      if (isOutletRole(user.role)) {
+        return NextResponse.json(ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'), { status: API.STATUS.FORBIDDEN });
+      }
+
       const existing = await db.products.findById(productPublicId);
-      if (!existing) {
+      // #825: the product must belong to the merchant in the URL (any product id was accepted before)
+      if (!existing || existing.merchant?.id !== merchant.id) {
         return NextResponse.json(ResponseBuilder.error('PRODUCT_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
@@ -158,6 +164,17 @@ export async function PUT(
       if (typeof categoryId === 'number') {
         const category = await db.categories.findById(categoryId);
         if (category) categoryCuid = category.id.toString();
+      }
+
+      // #825: stock only at outlets of this merchant; checked before anything is written
+      if (Array.isArray(outletStock)) {
+        for (const stock of outletStock) {
+          if (!stock?.outletId || typeof stock.stock !== 'number') continue;
+          const outlet = await db.outlets.findById(stock.outletId);
+          if (!outlet || outlet.merchant?.id !== merchant.id) {
+            return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
+          }
+        }
       }
 
       // Update main product fields

@@ -104,6 +104,11 @@ export async function POST(
       }
       const merchant = validation.merchant!;
 
+      // #825: branch roles add products through POST /api/products (stock at their own outlet, 0 at the others)
+      if (isOutletRole(user.role)) {
+        return NextResponse.json(ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'), { status: API.STATUS.FORBIDDEN });
+      }
+
       const body = await request.json();
       const {
         name,

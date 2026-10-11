@@ -4,6 +4,12 @@ import { db } from '@rentalshop/database';
 import { outletsQuerySchema, outletCreateSchema, outletUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
 import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import {
+  canChangeOutletLifecycle,
+  guardOutletStatusChange,
+  openOrdersBlockResponse,
+  outletForbiddenResponse,
+} from '../../../lib/outlet-rules';
 
 /**
  * GET /api/outlets
@@ -104,12 +110,17 @@ export const GET = withPermissions(['outlet.view'])(async (request, { user, user
 /**
  * POST /api/outlets
  * Create a new outlet using simplified database API
- * Authorization: Roles with 'outlet.manage' permission can create outlets
+ * Authorization: 'outlet.manage' AND MERCHANT / ADMIN only (#824: OUTLET_ADMIN cannot create, 403 FORBIDDEN).
+ * Checks the outlets plan limit. The new outlet gets a 0-stock row for every non-deleted product (db.outlets.create).
  */
 export const POST = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 POST /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
+    if (!canChangeOutletLifecycle(user.role)) {
+      return outletForbiddenResponse();
+    }
+
     const body = await request.json();
     const parsed = outletCreateSchema.safeParse(body);
     if (!parsed.success) {
@@ -216,7 +227,9 @@ export const POST = withPermissions(['outlet.manage'])(async (request, { user, u
 /**
  * PUT /api/outlets?id={id}
  * Update an outlet using simplified database API
- * Authorization: Roles with 'outlet.manage' permission can update outlets
+ * Authorization: Roles with 'outlet.manage' permission can update outlets.
+ * #824: changing isActive is MERCHANT / ADMIN only (403); disabling is refused while the outlet has RESERVED /
+ * PICKUPED orders (409 OUTLET_HAS_OPEN_ORDERS, data.openOrders); re-enabling checks the outlets plan limit.
  */
 export const PUT = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 PUT /api/outlets - User: ${user.email} (${user.role})`);
@@ -291,6 +304,9 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
       );
     }
 
+    const statusError = await guardOutletStatusChange(user, existingOutlet, parsed.data.isActive);
+    if (statusError) return statusError;
+
     // Check for duplicate outlet name if name is being updated
     if (parsed.data.name && parsed.data.name !== existingOutlet.name) {
       const duplicateOutlet = await db.outlets.findFirst({
@@ -357,12 +373,17 @@ export const PUT = withPermissions(['outlet.manage'])(async (request, { user, us
 /**
  * DELETE /api/outlets?id={id}
  * Delete an outlet (soft delete)
- * Authorization: Roles with 'outlet.manage' permission can delete outlets
+ * Authorization: 'outlet.manage' AND MERCHANT / ADMIN only (#824: OUTLET_ADMIN cannot delete, 403 FORBIDDEN).
+ * 409 OUTLET_HAS_OPEN_ORDERS (data.openOrders) while the outlet has RESERVED / PICKUPED orders.
  */
 export const DELETE = withPermissions(['outlet.manage'])(async (request, { user, userScope }) => {
   console.log(`🔍 DELETE /api/outlets - User: ${user.email} (${user.role})`);
   
   try {
+    if (!canChangeOutletLifecycle(user.role)) {
+      return outletForbiddenResponse();
+    }
+
     // Extract id from query params
     const { searchParams } = new URL(request.url);
     const id = parseInt(searchParams.get('id') || searchParams.get('outletId') || '0');
@@ -399,6 +420,9 @@ export const DELETE = withPermissions(['outlet.manage'])(async (request, { user,
         { status: 400 }
       );
     }
+
+    const openOrdersError = await openOrdersBlockResponse(existingOutlet.id);
+    if (openOrdersError) return openOrdersError;
 
     console.log('🔍 Soft deleting outlet:', id);
     

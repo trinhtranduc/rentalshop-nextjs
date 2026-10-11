@@ -13,6 +13,7 @@ import {
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange, widenCivilRange } from '../../../../../lib/analytics-days';
+import { narrowAnalyticsOutletFilter } from '../../../../../lib/analytics-outlets';
 
 const STATUS_VALUES = ['new', 'pickup', 'return', 'cancelled', 'all'] as const;
 type StatusFilter = (typeof STATUS_VALUES)[number];
@@ -87,6 +88,8 @@ function wasCancelledAtCreation(order: { status: string; createdAt?: Date | null
  * List orders in a period. `status`:
  * - new | pickup | return | cancelled → same buckets as Overview snapshot counts
  * - all → revenue events (plus expected pickup/return when plan=true); each event row has `collateral` (#721)
+ * `outletIds=1,3` (optional, #827): MERCHANT narrows every query to some of its outlets (another shop's → 403
+ * CROSS_MERCHANT_ACCESS_DENIED, malformed → 400 INVALID_QUERY); outlet roles keep their own outlet.
  */
 export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.revenue.daily'])(async (request, { user, userScope }) => {
   try {
@@ -136,14 +139,27 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
       return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: API.STATUS.BAD_REQUEST });
     }
 
-    const ordersWhereClause = buildOrdersWhereClause(status, queryStart, queryEnd);
+    // Role scope once for every query below; #827 `outletIds` narrows a merchant's outlets
+    let scopeOutletId: any;
     if (userScope.outletId) {
       const outletObj = await db.outlets.findById(userScope.outletId);
-      if (outletObj) ordersWhereClause.outletId = outletObj.id;
+      if (outletObj) scopeOutletId = outletObj.id;
     } else if (userScope.merchantId) {
       const merchant = await db.merchants.findById(userScope.merchantId);
-      if (merchant && merchant.outlets) ordersWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
+      if (merchant && merchant.outlets) scopeOutletId = { in: merchant.outlets.map((o: any) => o.id) };
     }
+    const scoped = narrowAnalyticsOutletFilter(
+      scopeOutletId !== undefined ? { outletId: scopeOutletId } : {},
+      user.role,
+      searchParams.get('outletIds')
+    );
+    if (!scoped.ok) {
+      return NextResponse.json(ResponseBuilder.error(scoped.code), { status: scoped.status });
+    }
+    if (scoped.filter?.outletId !== undefined) scopeOutletId = scoped.filter.outletId;
+
+    const ordersWhereClause = buildOrdersWhereClause(status, queryStart, queryEnd);
+    if (scopeOutletId !== undefined) ordersWhereClause.outletId = scopeOutletId;
 
     const allOrders = await prisma.order.findMany({
       where: ordersWhereClause,
@@ -315,13 +331,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         pickupPlanAt: { gte: filterStart, lte: filterEnd, not: null },
         deletedAt: null
       };
-      if (userScope.outletId) {
-        const outletObj = await db.outlets.findById(userScope.outletId);
-        if (outletObj) expectedPickupWhereClause.outletId = outletObj.id;
-      } else if (userScope.merchantId) {
-        const merchant = await db.merchants.findById(userScope.merchantId);
-        if (merchant && merchant.outlets) expectedPickupWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
-      }
+      if (scopeOutletId !== undefined) expectedPickupWhereClause.outletId = scopeOutletId;
       const expectedPickupOrders = await prisma.order.findMany({
         where: expectedPickupWhereClause,
         select: {
@@ -370,13 +380,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         returnPlanAt: { gte: filterStart, lte: filterEnd, not: null },
         deletedAt: null
       };
-      if (userScope.outletId) {
-        const outletObj = await db.outlets.findById(userScope.outletId);
-        if (outletObj) expectedReturnWhereClause.outletId = outletObj.id;
-      } else if (userScope.merchantId) {
-        const merchant = await db.merchants.findById(userScope.merchantId);
-        if (merchant && merchant.outlets) expectedReturnWhereClause.outletId = { in: merchant.outlets.map((o: any) => o.id) };
-      }
+      if (scopeOutletId !== undefined) expectedReturnWhereClause.outletId = scopeOutletId;
       const expectedReturnOrders = await prisma.order.findMany({
         where: expectedReturnWhereClause,
         select: {
