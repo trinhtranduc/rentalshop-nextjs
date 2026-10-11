@@ -3,7 +3,7 @@
 Model like Sapo: plans by tier, add-ons on top. **Plans: Basic, Pro, Enterprise** (Enterprise = multiple branches). On top of any plan the shop can have two kinds of items, **managed in one place** (one catalog, one list per shop), each priced in VND for the whole shop:
 - **Add-on** (`kind = quantity`): a number of branches or staff, e.g. "Thêm chi nhánh", "Thêm nhân viên".
 - **Module** (`kind = feature`): switches a feature on, e.g. **Loyalty**, **Payroll** (bảng lương).
-Step 1 builds the catalog, the shop list, pricing and renewal for both kinds and enforces the **add-ons**. Enforcing the feature modules is step 2 (Payroll waits for the owner's business logic).
+Step 1 builds the **catalog, per-item VND prices, the shop list, the mid-period quote and the renewal total for both kinds**: the admin can create and price Add-ons **and** Modules, attach either to a shop, and the shop's next renewal total = plan + every active item (a Module counts once). What step 1 enforces: **add-ons** (limits). What step 2 adds: the feature switch itself (API 403 and apps) for Modules. Until then a Module can be priced and charged but does not yet switch anything on, so the UI shows "Chưa bật tính năng" on it and the admin attaches Payroll only when the feature exists (Loyalty is already in the plans).
 
 ## Data (one additive migration)
 1. `BillingModule` (catalog, admin-defined): `id`, `name`, `kind` (`quantity` | `feature`), `featureKey` (only for `feature`: `loyalty`, `payroll`, …), `limits` (JSON per unit, only for `quantity`, any of `outlets`, `users`, `products`, `customers`, `orders`; e.g. "Thêm chi nhánh" = `{outlets:1, users:3}`, "Thêm nhân viên" = `{users:1}`), `monthlyPrice` (Float, VND per unit), `isActive`, `sortOrder`, timestamps.
@@ -31,8 +31,8 @@ Step 1 builds the catalog, the shop list, pricing and renewal for both kinds and
 13. Old `plan-limit-addons` routes: GET keeps working (reads the new table, same shape); POST / PUT / DELETE → 410 `ADDONS_REPLACED_BY_MODULES`.
 
 ## Admin UI
-14. `/billing-modules`: one table (name, type Add-on / Module, what it adds or enables, VND price, on / off), add and edit inline. In step 1 only the Add-on type can be created.
+14. `/billing-modules`: one table (name, type Add-on / Module, what it adds or enables, VND price, on / off), add and edit inline. Both types can be created and priced in step 1; a Module row shows "Chưa bật tính năng" until step 2.
 15. Merchant page, block "Gói & Module": the plan, the modules (quantity, price, ends with the period, marked for removal), "Thêm module" (pick the module, quantity, quote from the API, payment fields), "Bỏ cuối kỳ" / undo, and the next renewal total (plan + modules).
 
 ## Not in scope (step 1)
-Enforcing feature modules (Loyalty, Payroll: step 2), merchant self-purchase and Sepay (later), Lemon Squeezy, mobile apps.
+The feature switch for Modules (Loyalty, Payroll: step 2), merchant self-purchase and Sepay (later), Lemon Squeezy, mobile apps.
