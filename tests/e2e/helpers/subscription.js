@@ -172,19 +172,25 @@ function subscriptionRow(merchantId) {
   return sql(`SELECT status || '|' || "currentPeriodEnd" FROM "Subscription" WHERE "merchantId" = ${merchantId}`);
 }
 
-/** PlanLimitAddon (add-on that raises limits). Pass the amounts per entity. */
+/**
+ * An add-on that raises limits. Since #782 add-ons are `MerchantModule` rows (the old `PlanLimitAddon` rows were
+ * copied there at the same limits and are no longer read). Pass the amounts per entity: one row, quantity 1, price 0.
+ */
 function addAddon(merchantId, amounts = {}, { isActive = true } = {}) {
-  const a = { outlets: 0, users: 0, products: 0, customers: 0, orders: 0, ...amounts };
+  const limits = {};
+  for (const key of ['outlets', 'users', 'products', 'customers', 'orders']) {
+    if (Number(amounts[key]) > 0) limits[key] = Number(amounts[key]);
+  }
   return Number(
     sql(
-      `INSERT INTO "PlanLimitAddon"("merchantId", outlets, users, products, customers, orders, notes, "isActive", "updatedAt")
-       VALUES (${merchantId}, ${a.outlets}, ${a.users}, ${a.products}, ${a.customers}, ${a.orders}, 'e2e', ${isActive}, ${nowUtc}) RETURNING id`
+      `INSERT INTO "MerchantModule"("merchantId", name, kind, limits, quantity, "unitPrice", "isActive", "updatedAt")
+       VALUES (${merchantId}, 'Addon (e2e)', 'quantity', ${q(JSON.stringify(limits))}::jsonb, 1, 0, ${isActive}, ${nowUtc}) RETURNING id`
     )
   );
 }
 
 function deleteAddons(merchantId) {
-  sql(`DELETE FROM "PlanLimitAddon" WHERE "merchantId" = ${merchantId}`);
+  sql(`DELETE FROM "MerchantModule" WHERE "merchantId" = ${merchantId}`);
 }
 
 /** The counts the API compares with the limit (packages/utils/src/core/validation/entity-counts.ts, #729: a deleted
