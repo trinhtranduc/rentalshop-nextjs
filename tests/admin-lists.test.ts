@@ -10,6 +10,20 @@ const read = (p: string) => fs.readFileSync(path.resolve(__dirname, '..', p), 'u
 const css = read('apps/admin/app/lists.css');
 const PAGES = ['merchants', 'subscriptions', 'payments', 'products', 'customers', 'orders', 'users', 'plans'];
 
+/** Split a selector list on commas that are not inside (), so `:is(a, b)` stays one selector (#819). */
+function splitTopLevel(selector: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of selector) {
+    if (ch === '(' || ch === '[') depth++;
+    if (ch === ')' || ch === ']') depth--;
+    if (ch === ',' && depth === 0) { parts.push(current); current = ''; } else current += ch;
+  }
+  parts.push(current);
+  return parts;
+}
+
 describe('admin list pages (#805)', () => {
   it.each(PAGES)('%s page imports lists.css and wraps in .admin-list', (name) => {
     const src = read(`apps/admin/app/${name}/page.tsx`);
@@ -19,7 +33,7 @@ describe('admin list pages (#805)', () => {
 
   it('every rule is scoped to .admin-list (no global leak)', () => {
     const selectors = css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]+(?=\{)/g) || [];
-    const bad = selectors.map((s) => s.trim()).filter((s) => s && !/^@/.test(s) && !/^(from|to|\d+%)/.test(s) && !s.split(',').every((x) => x.trim().startsWith('.admin-list')));
+    const bad = selectors.map((s) => s.trim()).filter((s) => s && !/^@/.test(s) && !/^(from|to|\d+%)/.test(s) && !splitTopLevel(s).every((x) => x.trim().startsWith('.admin-list')));
     expect(bad).toEqual([]);
   });
 
