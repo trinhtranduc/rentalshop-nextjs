@@ -105,7 +105,7 @@ export function MerchantDetail({
   return (
     <div className="space-y-6">
       {/* Statistics Cards - Clickable to navigate */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card 
           className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
           onClick={() => navigateToPage('merchants/' + data.merchant.id + '/users')}
