@@ -1,5 +1,6 @@
 'use client';
 
+import '../lists.css';
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
@@ -372,7 +373,7 @@ export default function PlansPage() {
   });
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="admin-list h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
