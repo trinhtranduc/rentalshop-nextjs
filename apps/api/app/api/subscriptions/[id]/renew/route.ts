@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
@@ -58,23 +58,27 @@ export async function POST(
         return NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
-      // Calculate new period end based on duration (months)
-      const currentPeriodEnd = new Date(existing.currentPeriodEnd || new Date());
-      // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
-      const newPeriodEnd = addMonthsInTimeZone(currentPeriodEnd, duration);
+      // A merchant renews only its own subscription (#779; was: any id)
+      if (user.role === USER_ROLE.MERCHANT && existing.merchantId !== userScope.merchantId) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
 
-      // Calculate renewal amount with discount based on duration
-      // Apply discount: 1 month = 0%, 3 months = 5%, 6 months = 10%, 12 months = 20%
-      const getDiscountForDuration = (months: number): number => {
-        if (months >= 12) return 0.20;
-        if (months >= 6) return 0.10;
-        if (months >= 3) return 0.05;
-        return 0;
-      };
-      
-      const discount = getDiscountForDuration(duration);
-      const baseAmount = existing.amount * duration;
-      const renewalAmount = baseAmount * (1 - discount);
+      // 1 / 3 / 6 / 12 months = the four billing cycles (#779)
+      const interval = renewalIntervalForMonths(Number(duration));
+      if (!interval) {
+        return NextResponse.json(ResponseBuilder.error('INVALID_DURATION'), { status: 400 });
+      }
+
+      // Owner rules (#779): plan (+ addons) for the cycle with 0/0/5/10 %; expired → from now,
+      // not expired → from the current end; calendar months on the Vietnam day.
+      const existingPlan = (existing as { plan?: { basePrice?: number; currency?: string } }).plan;
+      const renewal = calculateRenewalTotal({
+        basePrice: existingPlan?.basePrice ?? 0,
+        interval,
+        currentPeriodEnd: existing.currentPeriodEnd,
+        now: new Date(),
+      });
+      const renewalAmount = renewal.totalDue;
 
       // Use database transaction to ensure atomicity
       const result = await prisma.$transaction(async (tx: any) => {
@@ -84,7 +88,7 @@ export async function POST(
             subscriptionId: subscriptionId,
             merchantId: existing.merchantId,
             amount: renewalAmount,
-            currency: existing.currency || 'USD',
+            currency: existing.currency || existingPlan?.currency || 'USD',
             method: method as any,
             type: PAYMENT_TYPE.SUBSCRIPTION_PAYMENT as any,
             status: method === PAYMENT_METHOD.STRIPE ? PAYMENT_STATUS.COMPLETED as any : PAYMENT_STATUS.PENDING as any,
@@ -100,8 +104,13 @@ export async function POST(
         const updatedSubscription = await tx.subscription.update({
           where: { id: subscriptionId },
           data: {
-            currentPeriodStart: currentPeriodEnd,
-            currentPeriodEnd: newPeriodEnd,
+            currentPeriodStart: renewal.periodStart,
+            currentPeriodEnd: renewal.periodEnd,
+            amount: renewal.totalDue,
+            interval: renewal.interval,
+            intervalCount: renewal.months,
+            period: renewal.months,
+            discount: renewal.discountPercent,
             status: SUBSCRIPTION_STATUS.ACTIVE as any,
             updatedAt: new Date()
           },
@@ -169,7 +178,8 @@ export async function POST(
       return NextResponse.json(
         ResponseBuilder.success('SUBSCRIPTION_RENEWED_SUCCESS', {
           subscription: result.updatedSubscription,
-          payment: result.payment
+          payment: result.payment,
+          renewal
         })
       );
     } catch (error) {

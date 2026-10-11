@@ -521,6 +521,8 @@ export default function SubscriptionPreviewPage({ params }: SubscriptionPreviewP
               merchantName: subscription.merchant?.name || '',
               planName: subscription.plan?.name || '',
               amount: subscription.amount,
+              // monthly plan price: the modal prices the renewal like the API (#779)
+              plan: { basePrice: subscription.plan?.basePrice },
               currency: subscription.currency || 'USD',
               currentPeriodEnd: new Date(subscription.currentPeriodEnd)
             }}

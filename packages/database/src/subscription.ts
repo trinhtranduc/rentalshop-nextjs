@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
+import { calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
   Subscription, 
@@ -507,32 +507,36 @@ export async function changePlan(
   const oldPlanName = subscription.plan?.name || 'Unknown Plan';
 
   const convertedPlan = convertPrismaPlanToPlan(plan);
-  const amount = calculateSubscriptionPrice(convertedPlan, billingInterval);
+  const breakdown = getPricingBreakdown(convertedPlan, billingInterval);
+  const amount = breakdown.finalPrice;
 
-  // Calculate new period dates based on billing interval
+  // Owner rule (#779): credit for the unused Vietnam civil days of the old period, new period from now,
+  // one cycle of calendar months (was now + 30/90/180/365 × 24h and no credit).
   const now = new Date();
-  const newPeriodStart = now;
-  
-  // Calculate period duration in days based on billing interval
-  const getPeriodDays = (interval: BillingInterval): number => {
-    switch (interval) {
-      case 'monthly': return 30;
-      case 'quarterly': return 90;
-      case 'semi_annual': return 180;
-      case 'annual': return 365;
-      default: return 30;
-    }
-  };
-  
-  const periodDays = getPeriodDays(billingInterval);
-  const newPeriodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
+  const planChange = calculatePlanChangeTotal({
+    subscription: {
+      currentPeriodStart: subscription.currentPeriodStart,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      billingInterval: storedBillingInterval(subscription.interval, subscription.intervalCount),
+      plan: { basePrice: subscription.plan?.basePrice ?? 0 },
+    } as any,
+    newPlan: { basePrice: plan.basePrice },
+    selectedInterval: billingInterval,
+    now,
+  });
+  const newPeriodStart = planChange.newPeriodStart;
+  const newPeriodEnd = planChange.newPeriodEnd;
 
   const updatedSubscription = await prisma.subscription.update({
     where: { merchantId: subscription.merchantId },
     data: {
       planId: plan.id,
       interval: billingInterval,
+      intervalCount: breakdown.totalMonths,
+      period: breakdown.totalMonths,
+      discount: breakdown.discount,
       amount: amount,
+      currency: plan.currency || subscription.currency,
       currentPeriodStart: newPeriodStart,
       currentPeriodEnd: newPeriodEnd,
       updatedAt: new Date()
@@ -610,8 +614,19 @@ export async function changePlan(
       isActive: updatedSubscription.status === SUBSCRIPTION_STATUS.ACTIVE, // ✅ Use enum constant
       daysRemaining: civilDaysBetween(new Date(), updatedSubscription.currentPeriodEnd), // VN civil days (#588)
       nextBillingDate: updatedSubscription.currentPeriodEnd
-    }
-  };
+    },
+    // What this change costs now: new cycle price minus the credit for unused days (#779, additive)
+    planChange: {
+      oldPlanPeriodPrice: planChange.oldPlanPeriodPrice,
+      oldPlanPeriodDays: planChange.oldPlanPeriodDays,
+      usedDays: planChange.usedDays,
+      remainingDays: planChange.remainingDays,
+      remainingCreditValue: planChange.remainingCreditValue,
+      newPlanPeriodPrice: planChange.newPlanPeriodPrice,
+      amountDue: planChange.totalDue,
+      currency: plan.currency || subscription.currency,
+    },
+  } as Subscription;
 }
 
 export async function pauseSubscription(subscriptionId: number): Promise<Subscription> {
@@ -1233,7 +1248,8 @@ export const simplifiedSubscriptions = {
       where: { id },
       include: {
         merchant: { select: { id: true, name: true, email: true } },
-        plan: { select: { id: true, name: true } },
+        // basePrice + currency: renew / extend price from the plan (#779; was 0); limits: allowWebAccess change on plan change
+        plan: { select: { id: true, name: true, basePrice: true, currency: true, limits: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 5

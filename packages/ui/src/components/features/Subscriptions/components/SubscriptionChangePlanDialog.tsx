@@ -20,8 +20,9 @@ import {
   Input,
   Textarea
 } from '@rentalshop/ui';
-import { formatDate, formatCurrency, Badge, Card, CardContent } from '@rentalshop/ui';
+import { formatCurrency, Badge, Card, CardContent } from '@rentalshop/ui';
 import { ArrowRight, Package } from 'lucide-react';
+import { calculatePlanChangeTotal, storedBillingInterval, formatInShopZone } from '@rentalshop/utils';
 import type { Subscription, Plan, BillingInterval, PlanLimitAddon } from '@rentalshop/types';
 
 import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
@@ -53,7 +54,6 @@ export function SubscriptionChangePlanDialog({
 }: SubscriptionChangePlanDialogProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [selectedInterval, setSelectedInterval] = useState<BillingInterval>('monthly');
-  const [startDate, setStartDate] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [sendEmail, setSendEmail] = useState<boolean>(true);
   const [addons, setAddons] = useState<PlanLimitAddon[]>([]);
@@ -64,16 +64,6 @@ export function SubscriptionChangePlanDialog({
     customers: 0,
     orders: 0
   });
-  const [manualPrice, setManualPrice] = useState<string>('');
-
-  // Initialize start date to today when dialog opens
-  React.useEffect(() => {
-    if (isOpen && !startDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      setStartDate(today.toISOString().slice(0, 16));
-    }
-  }, [isOpen, startDate]);
 
   // Fetch addons when dialog opens
   React.useEffect(() => {
@@ -115,14 +105,12 @@ export function SubscriptionChangePlanDialog({
 
   const handleSubmit = () => {
     if (!subscription || !selectedPlanId) return;
-    const effectiveStartDate = startDate ? new Date(startDate) : new Date();
-    const customPrice = manualPrice ? parseFloat(manualPrice) : undefined;
-    onConfirm(subscription, selectedPlanId, selectedInterval, effectiveStartDate, reason || undefined, sendEmail, customPrice);
+    // The API starts the new plan now and prices it from the plan (#779): no custom start date or price is sent.
+    onConfirm(subscription, selectedPlanId, selectedInterval, new Date(), reason || undefined, sendEmail, undefined);
   };
 
   const handleClose = () => {
     setSelectedPlanId(null);
-    setStartDate('');
     setReason('');
     setSendEmail(true);
     onClose();
@@ -185,119 +173,27 @@ export function SubscriptionChangePlanDialog({
     };
   };
 
-  // Calculate change plan price breakdown
-  const calculateChangePlanBreakdown = () => {
-    if (!subscription || !selectedPlan) return null;
-
-    const now = new Date();
-    const currentPeriodStart = subscription.currentPeriodStart 
-      ? new Date(subscription.currentPeriodStart)
-      : new Date();
-    const currentPeriodEnd = subscription.currentPeriodEnd 
-      ? new Date(subscription.currentPeriodEnd)
-      : new Date();
-
-    // Calculate old plan period
-    const oldPeriodDays = Math.ceil((currentPeriodEnd.getTime() - currentPeriodStart.getTime()) / (1000 * 60 * 60 * 24));
-    const usedDays = Math.max(0, Math.ceil((now.getTime() - currentPeriodStart.getTime()) / (1000 * 60 * 60 * 24)));
-    const remainingDays = Math.max(0, Math.ceil((currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-
-    // Calculate old plan price
-    const oldBillingInterval = subscription.billingInterval || 'monthly';
-    const oldMonthlyPrice = subscription.plan?.basePrice || 0;
-    const getOldPeriodPrice = (interval: string): number => {
-      switch (interval) {
-        case 'monthly': return oldMonthlyPrice;
-        case 'quarterly': return oldMonthlyPrice * 3;
-        case 'semi_annual': return oldMonthlyPrice * 6 * 0.95;
-        case 'annual': return oldMonthlyPrice * 12 * 0.90;
-        default: return oldMonthlyPrice;
-      }
-    };
-    const oldPeriodPrice = getOldPeriodPrice(oldBillingInterval);
-    const oldDailyPrice = oldPeriodPrice / oldPeriodDays;
-    const oldUsedValue = (usedDays / oldPeriodDays) * oldPeriodPrice;
-    const oldRemainingValue = remainingDays > 0 ? (remainingDays / oldPeriodDays) * oldPeriodPrice : 0;
-
-    // Calculate new plan price
-    const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
-    const newPlanPrice = newPricing.price;
-
-    // Total = New Plan Price - Remaining Credit from Old Plan
-    const totalPrice = Math.max(0, newPlanPrice - oldRemainingValue);
-
-    return {
-      oldPlan: {
-        name: subscription.plan?.name || 'Unknown',
-        periodStart: currentPeriodStart,
-        periodEnd: currentPeriodEnd,
-        periodDays: oldPeriodDays,
-        usedDays: usedDays,
-        remainingDays: remainingDays,
-        periodPrice: oldPeriodPrice,
-        usedValue: oldUsedValue,
-        remainingValue: oldRemainingValue,
-        dailyPrice: oldDailyPrice,
-        currency: subscription.plan?.currency || 'VND'
-      },
-      newPlan: {
-        name: selectedPlan.name,
-        periodPrice: newPlanPrice,
-        currency: selectedPlan.currency || 'VND',
-        interval: selectedInterval
-      },
-      total: totalPrice,
-      formula: {
-        step1: `Old Plan (${subscription.plan?.name || 'Unknown'}): ${usedDays} days used / ${oldPeriodDays} days = ${formatCurrency(oldUsedValue, (subscription.plan?.currency || 'VND') as any)} used, ${remainingDays} days remaining = ${formatCurrency(oldRemainingValue, (subscription.plan?.currency || 'VND') as any)} remaining`,
-        step2: `New Plan (${selectedPlan.name}): ${formatCurrency(newPlanPrice, (selectedPlan.currency || 'VND') as any)} for ${selectedInterval}`,
-        step3: `Total: New Plan Price (${formatCurrency(newPlanPrice, (selectedPlan.currency || 'VND') as any)}) - Remaining Credit (${formatCurrency(oldRemainingValue, (subscription.plan?.currency || 'VND') as any)}) = ${formatCurrency(totalPrice, (selectedPlan.currency || 'VND') as any)}`
-      }
-    };
-  };
-
-  // Calculate end date from start date and billing interval
-  // Handles edge cases like month boundaries (e.g., Jan 31 -> Feb 28/29)
-  const calculateEndDate = (startDateStr: string, interval: BillingInterval): Date | null => {
-    if (!startDateStr) return null;
-    const start = new Date(startDateStr);
-    const end = new Date(start);
-    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
-    if (!cycleConfig) return null;
-    
-    const originalDay = start.getDate();
-    
-    // Add months
-    end.setMonth(end.getMonth() + cycleConfig.months);
-    
-    // Handle month boundary issues (e.g., Jan 31 -> Feb doesn't exist, use last day of Feb)
-    if (end.getDate() !== originalDay) {
-      // Move to first day of next month, then back one day to get last day of target month
-      end.setDate(1);
-      end.setMonth(end.getMonth() + 1);
-      end.setDate(0);
-    }
-    
-    return end;
-  };
-
-  // Calculate duration in days and months
-  const calculateDuration = (startDateStr: string, interval: BillingInterval): { days: number; months: number } | null => {
-    const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === interval);
-    if (!cycleConfig) return null;
-    
-    const start = new Date(startDateStr);
-    const end = calculateEndDate(startDateStr, interval);
-    if (!end) return null;
-    
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    return {
-      days,
-      months: cycleConfig.months
-    };
-  };
-
-  const computedEndDate = calculateEndDate(startDate, selectedInterval);
-  const computedDuration = calculateDuration(startDate, selectedInterval);
+  // Same calculation as the API's changePlan (#779): credit for the unused Vietnam days of the current period,
+  // new cycle price from the new plan, new period starts now and runs one cycle of calendar months.
+  const oldInterval = storedBillingInterval(
+    (subscription as any).interval ?? subscription.billingInterval,
+    (subscription as any).intervalCount
+  );
+  const planChange = selectedPlan
+    ? calculatePlanChangeTotal({
+        subscription: {
+          currentPeriodStart: subscription.currentPeriodStart || new Date(),
+          currentPeriodEnd: subscription.currentPeriodEnd || new Date(),
+          billingInterval: oldInterval,
+          plan: { basePrice: subscription.plan?.basePrice || 0 },
+        },
+        newPlan: { basePrice: selectedPlan.basePrice || 0 },
+        selectedInterval,
+      })
+    : null;
+  const oldCurrency = (subscription.currency || subscription.plan?.currency || 'USD') as any;
+  const newCurrency = (selectedPlan?.currency || oldCurrency) as any;
+  const selectedCycle = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -339,38 +235,24 @@ export function SubscriptionChangePlanDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate.split('T')[0]}
-                onChange={(e) => setStartDate(e.target.value + 'T00:00:00')}
-                className="w-full text-sm"
-              />
+              <div className="h-9 flex items-center text-sm text-muted-foreground">
+                {planChange ? formatInShopZone(planChange.newPeriodStart) : 'Today'}
+              </div>
             </div>
           </div>
 
-          {/* End Date (computed) */}
+          {/* End Date (computed on the Vietnam day, same as the API) */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={computedEndDate ? computedEndDate.toISOString().split('T')[0] : ''}
-                readOnly
-                className="w-full text-sm bg-muted/30"
-              />
-              {computedDuration && (
+              <div className="h-9 flex items-center text-sm text-muted-foreground">
+                {planChange ? formatInShopZone(planChange.newPeriodEnd) : 'Select a plan to calculate the end date'}
+              </div>
+              {selectedCycle && (
                 <div className="text-[10px] text-muted-foreground">
-                  Duration: {computedDuration.months} month{computedDuration.months !== 1 ? 's' : ''} (~{computedDuration.days} days)
+                  Duration: {selectedCycle.months} month{selectedCycle.months !== 1 ? 's' : ''}
                 </div>
               )}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium"> </Label>
-              <div className="h-9 flex items-center text-xs text-muted-foreground">
-                {computedEndDate ? `Ends on ${formatDate(computedEndDate)}` : 'Select start date to calculate end date'}
-              </div>
             </div>
           </div>
 
@@ -419,7 +301,6 @@ export function SubscriptionChangePlanDialog({
               <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
               {(() => {
                 const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
-                const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
                 return (
                   <>
                     <div className="space-y-2">
@@ -427,51 +308,40 @@ export function SubscriptionChangePlanDialog({
                         <div>
                           <p className="text-xs text-muted-foreground">New Plan Price</p>
                           <p className="font-bold text-lg text-primary">
-                            {formatCurrency(newPricing.price, selectedPlan.currency as any)}
+                            {formatCurrency(planChange?.newPlanPeriodPrice ?? newPricing.price, newCurrency)}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground">Monthly</p>
                           <p className="font-semibold text-sm">
-                            {formatCurrency(newPricing.monthlyEquivalent, selectedPlan.currency as any)}/mo
+                            {formatCurrency(newPricing.monthlyEquivalent, newCurrency)}/mo
                           </p>
                         </div>
                       </div>
-                      
-                      {/* Editable Price */}
-                      <div className="space-y-1">
-                        <Label htmlFor="manualPrice" className="text-xs font-medium">
-                          Override Price (Optional)
-                        </Label>
-                        <Input
-                          id="manualPrice"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={manualPrice}
-                          onChange={(e) => setManualPrice(e.target.value)}
-                          placeholder={newPricing.price.toString()}
-                          className="w-full text-sm"
-                        />
-                        <div className="text-xs text-muted-foreground">
-                          Auto-calculated: {formatCurrency(newPricing.price, selectedPlan.currency as any)}
-                        </div>
-                      </div>
 
-                      {/* Calculation Breakdown */}
-                      {(() => {
-                        const breakdown = calculateChangePlanBreakdown();
-                        return breakdown ? (
-                          <div className="pt-2 border-t border-gray-200 space-y-1">
-                            <div className="text-xs font-semibold text-gray-700">Calculation Details:</div>
-                            <div className="text-[10px] text-gray-600 space-y-0.5">
-                              <div>1. {breakdown.formula.step1}</div>
-                              <div>2. {breakdown.formula.step2}</div>
-                              <div className="font-semibold text-gray-700">3. {breakdown.formula.step3}</div>
-                            </div>
+                      {/* Breakdown: what the API charges */}
+                      {planChange && (
+                        <div className="pt-2 border-t border-gray-200 space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>New cycle price ({selectedPlan.name}{selectedCycle ? `, ${selectedCycle.label}` : ''}):</span>
+                            <span className="font-medium">{formatCurrency(planChange.newPlanPeriodPrice, newCurrency)}</span>
                           </div>
-                        ) : null;
-                      })()}
+                          <div className="flex justify-between text-green-700">
+                            <span>
+                              Credit for {planChange.remainingDays} unused day{planChange.remainingDays !== 1 ? 's' : ''} of {planChange.oldPlanPeriodDays} ({currentPlan?.name || 'current plan'}):
+                            </span>
+                            <span className="font-medium">-{formatCurrency(planChange.remainingCreditValue, oldCurrency)}</span>
+                          </div>
+                          <div className="flex justify-between pt-1 border-t font-semibold text-sm">
+                            <span>Total due:</span>
+                            <span className="text-primary">{formatCurrency(planChange.totalDue, newCurrency)}</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>New period:</span>
+                            <span>{formatInShopZone(planChange.newPeriodStart)} - {formatInShopZone(planChange.newPeriodEnd)}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Active Addons - Compact */}

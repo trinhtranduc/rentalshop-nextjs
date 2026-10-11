@@ -35,6 +35,11 @@ async function handleChangePlan(
         return NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
       }
 
+      // A merchant changes only its own subscription (#779; was: any id)
+      if (user.role === USER_ROLE.MERCHANT && existing.merchantId !== userScope?.merchantId) {
+        return NextResponse.json(ResponseBuilder.error('FORBIDDEN'), { status: API.STATUS.FORBIDDEN });
+      }
+
       // Verify plan exists before updating
       const plan = await db.plans.findById(planId);
       if (!plan) {
@@ -60,6 +65,7 @@ async function handleChangePlan(
 
       // Change subscription plan using changePlan() function (includes email notification)
       const updatedSubscription = await changePlan(subscriptionId, planId, billingInterval as any);
+      const planChange = (updatedSubscription as { planChange?: Record<string, unknown> }).planChange;
       
       // Determine if we need to update status
       // If subscription is TRIAL and new plan is a paid plan (trialDays === 0 or null), change to ACTIVE
@@ -117,6 +123,7 @@ async function handleChangePlan(
           previousStatus: existing.status,
           newStatus: finalSubscription?.status || updatedSubscription.status,
           statusChanged: shouldActivate,
+          planChange,
           performedBy: {
             userId: user.userId || user.id,
             email: user.email,
@@ -131,7 +138,7 @@ async function handleChangePlan(
       });
 
     return NextResponse.json(
-      ResponseBuilder.success('PLAN_CHANGED_SUCCESS', finalSubscription || updatedSubscription)
+      ResponseBuilder.success('PLAN_CHANGED_SUCCESS', { ...(finalSubscription || updatedSubscription), planChange })
     );
     } catch (error) {
       console.error('Error changing subscription plan:', error);

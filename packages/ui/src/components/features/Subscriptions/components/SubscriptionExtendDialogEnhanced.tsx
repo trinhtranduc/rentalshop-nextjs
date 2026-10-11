@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -117,6 +117,12 @@ export function SubscriptionExtendDialogEnhanced({
     };
   } | null>(null);
   const [manualPrice, setManualPrice] = useState<string>('');
+  // True once the admin types a price; until then the input follows every recalculation (cycle / end date change, #779)
+  const priceEditedRef = useRef(false);
+  const editManualPrice = (value: string) => {
+    priceEditedRef.current = value.trim() !== '';
+    setManualPrice(value);
+  };
   const [addons, setAddons] = useState<PlanLimitAddon[]>([]);
   const [totalAddonLimits, setTotalAddonLimits] = useState({
     outlets: 0,
@@ -245,9 +251,9 @@ export function SubscriptionExtendDialogEnhanced({
             breakdown: result.data.breakdown,
             formula: formula
           });
-          // Auto-fill manual price with calculated total price
-          if (!manualPrice) {
-            setManualPrice(finalPrice.toString());
+          // Auto-fill the price with the calculated total unless the admin typed one
+          if (!priceEditedRef.current) {
+            setManualPrice(String(finalPrice ?? 0));
           }
         }
       } catch (error) {
@@ -261,7 +267,7 @@ export function SubscriptionExtendDialogEnhanced({
     // Debounce calculation
     const timeoutId = setTimeout(calculatePrice, 500);
     return () => clearTimeout(timeoutId);
-  }, [subscription, newEndDate, isOpen]);
+  }, [subscription, newEndDate, billingPeriod, isOpen]);
 
   const handleSubmit = () => {
     if (!subscription || !newEndDate || !calculation) return;
@@ -292,6 +298,7 @@ export function SubscriptionExtendDialogEnhanced({
     setSendEmail(true);
     setCalculation(null);
     setManualPrice('');
+    priceEditedRef.current = false;
     setAddons([]);
     setTotalAddonLimits({ outlets: 0, users: 0, products: 0, customers: 0, orders: 0 });
     onClose();
@@ -382,7 +389,7 @@ export function SubscriptionExtendDialogEnhanced({
                         step="0.01"
                         min="0"
                         value={manualPrice}
-                        onChange={(e) => setManualPrice(e.target.value)}
+                        onChange={(e) => editManualPrice(e.target.value)}
                         placeholder={(calculation.totalPrice || calculation.extensionPrice).toString()}
                         className="w-full text-sm"
                       />
@@ -467,7 +474,7 @@ export function SubscriptionExtendDialogEnhanced({
                       step="0.01"
                       min="0"
                       value={manualPrice}
-                      onChange={(e) => setManualPrice(e.target.value)}
+                      onChange={(e) => editManualPrice(e.target.value)}
                       placeholder={calculation.extensionPrice.toString()}
                       className="w-full text-sm"
                     />
