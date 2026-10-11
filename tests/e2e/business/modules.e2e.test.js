@@ -280,7 +280,7 @@ describeMod('BF-MOD rules: never below usage, branch add-on only on a multi-bran
     expect(yes.status).toBe(200);
   });
 
-  test('BF-MOD-14 changing to a one-branch plan is refused (422) while the shop has a branch add-on', async () => {
+  test('BF-MOD-14 in a new period, changing to a one-branch plan is refused (422 PLAN_HAS_BRANCH_MODULES) while the shop has a branch add-on', async () => {
     const branch = await createCatalog({ name: 'Thêm chi nhánh', limits: { outlets: 1, users: 3 }, monthlyPrice: BRANCH_PRICE });
     const multiPlan = pricedPlan('mod-keep3', { limits: { outlets: 3 } });
     const onePlan = pricedPlan('mod-one', { limits: { outlets: 1 } });
@@ -290,7 +290,15 @@ describeMod('BF-MOD rules: never below usage, branch add-on only on a multi-bran
     const a = await admin();
     expect((await a.post(`/api/merchants/${world.merchantId}/modules`, { moduleId: branch.id, quantity: 1, method: 'TRANSFER', transactionId: `E2E-${Date.now()}` })).status).toBe(200);
     const subId = Number(S.sql(`SELECT id FROM "Subscription" WHERE "merchantId" = ${world.merchantId}`));
-    const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: onePlan, billingInterval: 'monthly' });
+    const pay = { method: 'TRANSFER', transactionId: `E2E-P-${Date.now()}` };
+
+    // In the middle of a period a downgrade is refused first, by the plan rule (#785)
+    const mid = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: onePlan, billingInterval: 'monthly', ...pay });
+    expect(brief(mid)).toEqual({ status: 422, code: 'DOWNGRADE_ONLY_AT_NEW_PERIOD' });
+
+    // In a new period (the subscription has ended) the downgrade is allowed by the plan rule; the branch add-on stops it
+    setPeriod(world.merchantId, { start: new Date(Date.now() - 40 * DAY_MS), end: new Date(Date.now() - 10 * DAY_MS) });
+    const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: onePlan, billingInterval: 'monthly', ...pay });
     expect(brief(r)).toEqual({ status: 422, code: 'PLAN_HAS_BRANCH_MODULES' });
     expect(Number(S.sql(`SELECT "planId" FROM "Subscription" WHERE "merchantId" = ${world.merchantId}`))).toBe(multiPlan);
   });
