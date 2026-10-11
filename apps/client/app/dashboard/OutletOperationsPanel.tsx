@@ -27,7 +27,8 @@ export interface OutletOperationsState {
 }
 
 /** One request feeds the panel, the cash card, the "returns soon" card and the sparkline (#350). */
-export function useOutletOperations(outletIds?: number[]): OutletOperationsState {
+/** `enabled` false waits (#827: the dashboard knows the branches first) */
+export function useOutletOperations(outletIds?: number[], enabled = true): OutletOperationsState {
   const [data, setData] = useState<OutletOperations | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -48,8 +49,8 @@ export function useOutletOperations(outletIds?: number[]): OutletOperationsState
   }, [outletKey]);
 
   useEffect(() => {
-    reload();
-  }, [reload]);
+    if (enabled) reload();
+  }, [reload, enabled]);
 
   return { data, loading, failed, reload };
 }

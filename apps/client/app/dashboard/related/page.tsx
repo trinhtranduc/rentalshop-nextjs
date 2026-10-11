@@ -12,6 +12,7 @@ import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth, useDashboardTranslations } from '@rentalshop/hooks';
 import { apiUrls, authenticatedFetch, parseApiResponse } from '@rentalshop/utils';
 import { TILE_LABEL } from '../overview/sections';
+import { parseOutletIds } from '../branch-model';
 import {
   isDayKey,
   parseRelated,
@@ -38,10 +39,12 @@ interface IncomePage {
   pagination?: { hasMore?: boolean } | null;
 }
 
-async function loadBucket(bucket: string, from: string, to: string): Promise<IncomeOrderLike[]> {
+async function loadBucket(bucket: string, from: string, to: string, outlets: string | null): Promise<IncomeOrderLike[]> {
   const items: IncomeOrderLike[] = [];
   for (let page = 0; page < MAX_PAGES; page++) {
     const params = new URLSearchParams({ status: bucket, startDate: from, endDate: to, limit: String(PAGE), offset: String(page * PAGE), plan: 'false' });
+    // #827: the branches the card was computed for
+    if (outlets) params.set('outletIds', outlets);
     const res = await parseApiResponse<IncomePage>(await authenticatedFetch(`${apiUrls.analytics.income}/orders?${params}`));
     if (!res.success || !res.data) throw new Error('income orders failed');
     const rows = (res.data.days || []).flatMap((d) => d.orders || []);
@@ -59,6 +62,9 @@ function RelatedOrders() {
   const kind = parseRelated(params.get('kind'));
   const from = params.get('from');
   const to = params.get('to');
+  // #827: same branches as the dashboard cards (`?outlets=` written by the dashboard link)
+  const outletIds = parseOutletIds(params.get('outlets'));
+  const outlets = outletIds ? outletIds.join(',') : null;
   const [rows, setRows] = useState<RelatedRow[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -67,13 +73,13 @@ function RelatedOrders() {
     let alive = true;
     setRows(null);
     setFailed(false);
-    Promise.all(relatedBuckets(kind).map((b) => loadBucket(b, from, to).then((items) => relatedRows(kind, b, items))))
+    Promise.all(relatedBuckets(kind).map((b) => loadBucket(b, from, to, outlets).then((items) => relatedRows(kind, b, items))))
       .then((parts) => alive && setRows(parts.flat()))
       .catch(() => alive && setFailed(true));
     return () => {
       alive = false;
     };
-  }, [authLoading, user, kind, from, to]);
+  }, [authLoading, user, kind, from, to, outlets]);
 
   if (!kind || !isDayKey(from) || !isDayKey(to)) {
     return <p className="m-0 p-8 text-ar-muted">{t('home.related.failed')}</p>;
@@ -83,7 +89,7 @@ function RelatedOrders() {
   return (
     <div className="mx-auto box-border flex w-full max-w-[960px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
       <div className="flex flex-col gap-1">
-        <Link href={`/dashboard?period=custom&from=${from}&to=${to}`} className="text-sm text-ar-primary-ink no-underline hover:underline">
+        <Link href={`/dashboard?period=custom&from=${from}&to=${to}${outlets ? `&outlets=${outlets}` : ''}`} className="text-sm text-ar-primary-ink no-underline hover:underline">
           ← {t('home.related.back')}
         </Link>
         <h1 className="m-0 text-[24px] font-bold">

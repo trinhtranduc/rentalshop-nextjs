@@ -261,7 +261,9 @@
       "retry": "Try again",
       "loadMore": "Load more",
       "unreadCount": "{count} unread"
-    }
+    },
+    "allOutletsCount": "All branches ({count})",
+    "someOutlets": "{count} branches"
   },
   "dateRange": {
     "title": "Pick a date range",

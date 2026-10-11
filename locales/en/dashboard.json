@@ -220,6 +220,7 @@
       "today": "Today",
       "7d": "Last 7 days",
       "month": "This month",
+      "lastMonth": "Last month",
       "custom": "Custom…"
     },
     "custom": {
@@ -369,6 +370,28 @@
         "futureRefund": "Expected deposit refund at return",
         "futureNothing": "Nothing expected at return"
       }
+    },
+    "branches": {
+      "label": "Branches",
+      "prefix": "Branches: {label}",
+      "all": "All ({count})",
+      "some": "{count} branches",
+      "allBranches": "All branches",
+      "default": "default",
+      "inactive": "Turned off",
+      "sheetTitle": "Choose branches",
+      "apply": "Show {count} branches",
+      "close": "Close"
+    },
+    "compare": {
+      "title": "Branch comparison",
+      "branch": "Branch",
+      "newOrders": "New orders",
+      "held": "Collateral held",
+      "heldValue": "{count} orders",
+      "total": "Total {count} branches",
+      "sortBy": "Sort by {column}",
+      "onlyThis": "Show only {name}"
     }
   }
 }

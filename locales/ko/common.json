@@ -233,6 +233,8 @@
       "retry": "다시 시도",
       "loadMore": "더 보기",
       "unreadCount": "읽지 않음 {count}개"
-    }
+    },
+    "allOutletsCount": "전체 지점 ({count})",
+    "someOutlets": "{count}개 지점"
   }
 }
