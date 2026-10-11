@@ -1,0 +1,7 @@
+/* ===== admin shell (#804) ===== */
+/* Be Vietnam Pro inside the signed-in shell only; the login page keeps Inter. */
+.ar-theme {
+  font-family: var(--font-be-vietnam), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: rgb(var(--ar-ink));
+}
+
