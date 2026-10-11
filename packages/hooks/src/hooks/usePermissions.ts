@@ -174,7 +174,7 @@ export function usePermissions() {
    * Convenience methods for common permission checks
    */
   const canManageProducts = useMemo(() => hasPermission('products.manage'), [hasPermission]);
-  /** Create catalog items (manage OR create). OUTLET_STAFF may create but not update. */
+  /** Create catalog items (manage OR create). OUTLET_STAFF has neither by default (#825: staff do not add products). */
   const canCreateProducts = useMemo(
     () => hasPermission('products.manage') || hasPermission('products.create'),
     [hasPermission]

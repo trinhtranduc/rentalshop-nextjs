@@ -6,7 +6,8 @@ import {
   planLimitAddonsQuerySchema,
   handleApiError,
   ResponseBuilder,
-  sendPlanLimitAddonChangeEmail
+  sendPlanLimitAddonChangeEmail,
+  isMultiBranchPlan
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 
@@ -74,6 +75,14 @@ export const POST = withAuthRoles(['ADMIN'])(async (request: NextRequest) => {
       return NextResponse.json(
         ResponseBuilder.error('MERCHANT_NOT_FOUND'),
         { status: 404 }
+      );
+    }
+
+    // #826: a branch add-on is only for a multi-branch plan (limits.outlets > 1 or -1)
+    if (parsed.data.outlets > 0 && !isMultiBranchPlan(merchant.subscription?.plan?.limits)) {
+      return NextResponse.json(
+        ResponseBuilder.error('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN'),
+        { status: 422 }
       );
     }
 

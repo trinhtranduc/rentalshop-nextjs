@@ -36,6 +36,7 @@ import {
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { Plus, Edit, Trash2, X, Check } from 'lucide-react';
 import { planLimitAddonsApi, merchantsApi, formatInShopZone } from '@rentalshop/utils';
+import { useApiError } from '@rentalshop/hooks';
 import type { PlanLimitAddon, PlanLimitAddonCreateInput, PlanLimitAddonUpdateInput } from '@rentalshop/types';
 
 // dd/MM/yyyy HH:mm on the Vietnam day
@@ -53,6 +54,8 @@ export default function MerchantPlanLimitAddonsPage() {
   const router = useRouter();
   const merchantId = parseInt(params.id as string);
   const { toastSuccess, toastError } = useToast();
+  // #826: an API refusal (e.g. ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN) is shown in the admin's language
+  const { translateError } = useApiError();
 
   const [addons, setAddons] = useState<PlanLimitAddon[]>([]);
   const [merchant, setMerchant] = useState<any>(null);
@@ -155,7 +158,7 @@ export default function MerchantPlanLimitAddonsPage() {
         setShowCreateDialog(false);
         fetchData();
       } else {
-        toastError(response.message || 'Failed to create plan limit addon');
+        toastError(translateError(response));
       }
     } catch (error) {
       console.error('Error creating plan limit addon:', error);
@@ -188,7 +191,7 @@ export default function MerchantPlanLimitAddonsPage() {
         setSelectedAddon(null);
         fetchData();
       } else {
-        toastError(response.message || 'Failed to update plan limit addon');
+        toastError(translateError(response));
       }
     } catch (error) {
       console.error('Error updating plan limit addon:', error);
@@ -211,7 +214,7 @@ export default function MerchantPlanLimitAddonsPage() {
         setSelectedAddon(null);
         fetchData();
       } else {
-        toastError(response.message || 'Failed to delete plan limit addon');
+        toastError(translateError(response));
       }
     } catch (error) {
       console.error('Error deleting plan limit addon:', error);

@@ -22,6 +22,8 @@ import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
   buildPayload,
+  isBranchRole,
+  roleMayCreateProducts,
   checkPhotos,
   effectiveDefaultMode,
   emptyForm,
@@ -165,13 +167,14 @@ function AmountInput({ id, value, onChange, invalid }: { id: string; value: numb
   );
 }
 
-function CountInput({ id, value, onChange, invalid, label }: { id: string; value: number; onChange: (n: number) => void; invalid?: boolean; label?: string }) {
+function CountInput({ id, value, onChange, invalid, label, disabled }: { id: string; value: number; onChange: (n: number) => void; invalid?: boolean; label?: string; disabled?: boolean }) {
   return (
     <input
       id={id}
       inputMode="numeric"
       autoComplete="off"
       aria-label={label}
+      disabled={disabled}
       value={value ? String(value) : ''}
       placeholder="0"
       aria-invalid={invalid || undefined}
@@ -357,11 +360,14 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const { toastSuccess, toastError } = useToast();
   const { user } = useAuth();
   const { hasPermission, canCreateProducts, canUpdateProducts, canManageProducts } = usePermissions();
-  const typedUser = user as unknown as { role?: string; merchantId?: number; merchant?: { id?: number } } | null;
+  const typedUser = user as unknown as { role?: string; merchantId?: number; merchant?: { id?: number }; outletId?: number; outlet?: { id?: number } } | null;
   const merchantId = Number(typedUser?.merchant?.id || typedUser?.merchantId) || null;
   // Prices only with products.manage and never for OUTLET_STAFF (same as iOS ProductAccess.showsPriceFields, #460)
   const canEditPricing = hasPermission('products.manage') && typedUser?.role !== 'OUTLET_STAFF';
-  const allowed = isEdit ? canUpdateProducts : canCreateProducts;
+  const allowed = isEdit ? canUpdateProducts : canCreateProducts && roleMayCreateProducts(typedUser?.role);
+  // #825: a branch role saves only its own branch stock; on edit the shared fields are locked
+  const branchOutletId = isBranchRole(typedUser?.role) ? Number(typedUser?.outletId ?? typedUser?.outlet?.id) || undefined : undefined;
+  const locked = isEdit && isBranchRole(typedUser?.role);
 
   const [nonce, setNonce] = useState(0);
   const load = useFormData(allowed ? productId : null, allowed ? merchantId : null, nonce);
@@ -432,7 +438,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const multiOutlet = data.outlets.length > 1;
 
   const addFiles = (list: FileList | null) => {
-    if (!list) return;
+    if (!list || locked) return;
     const { accepted, rejected } = checkPhotos(form.keptImages.length + files.length, Array.from(list));
     setFiles((f) => [...f, ...accepted]);
     setProblems(rejected.map((r) => t(`form.photos.problem${r.problem[0].toUpperCase()}${r.problem.slice(1)}`, { name: r.name })));
@@ -451,7 +457,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setSaving(true);
     setFailed(false);
     try {
-      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined });
+      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId });
       const res = isEdit
         ? await productsApi.updateProduct(productId, payload as unknown as ProductUpdateInput, files)
         : await productsApi.createProduct(payload as unknown as ProductCreateInput, files);
@@ -498,6 +504,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-4">
+          {locked && <p className="m-0 rounded-xl border border-ar-line bg-ar-surface-muted px-4 py-3 text-sm text-ar-ink-2">{t('form.branchLocked')}</p>}
+          <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
           <Card title={t('form.sections.info')}>
             <Field id="pf-name" label={t('form.name')} required={t('form.required')} error={err('name')}>
               <input
@@ -572,6 +580,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
               </>
             )}
           </Card>
+          </fieldset>
 
           <Card title={t('form.sections.stock')} aside={multiOutlet ? <span className="text-sm font-semibold tabular-nums text-ar-ink-2">{t('form.sum', { count: form.totalStock })}</span> : undefined}>
             {multiOutlet ? (
@@ -593,6 +602,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                           label={t('form.quantityOf', { outlet: o.name })}
                           value={row?.stock ?? 0}
                           invalid={!!errors.totalStock}
+                          disabled={branchOutletId != null && o.id !== branchOutletId}
                           onChange={(n) => patch((f) => setOutletStock(f, o.id, n), ['totalStock', 'outletStock'])}
                         />
                       </li>
@@ -610,6 +620,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
+          <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
           <Card title={t('form.sections.organise')}>
             <Field id="pf-categoryId" label={t('form.category')} required={t('form.required')} error={err('categoryId')}>
               <select
@@ -643,6 +654,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
               </div>
             </Field>
           </Card>
+          </fieldset>
           {isEdit && canManageProducts && data.product && (
             <ImageSearchCard productId={data.product.id} initialIndexedAt={data.product.embeddingGeneratedAt} disabled={saving} t={t} />
           )}
