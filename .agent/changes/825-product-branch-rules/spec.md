@@ -20,10 +20,21 @@ chỉ ghi tồn ở chi nhánh mình. (PR #829 đã merge theo quyết định c
 - Giữ nguyên: role chi nhánh chỉ ghi tồn chi nhánh mình (`CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET`), `PRODUCT_NOT_AVAILABLE_AT_OUTLET`,
   user không có `products.manage` bị bỏ trường giá.
 
+## "Chi nhánh có sản phẩm" (`holdsStockAt`)
+- Từ #825 mọi sản phẩm có dòng tồn ở mọi chi nhánh active (0 nếu chi nhánh chưa nhập). Dòng 0 **không** tính là chi nhánh có
+  sản phẩm: OUTLET_ADMIN / kho chỉ sửa trường dùng chung và xóa sản phẩm mà chi nhánh mình có tồn (> 0) hoặc đang cho thuê;
+  không có → 403 `PRODUCT_NOT_AVAILABLE_AT_OUTLET` (như trước #825 khi chưa có dòng). Sửa tồn chi nhánh mình thì luôn được.
+- Web: form của OUTLET_ADMIN / kho với sản phẩm chi nhánh chưa có thì khóa trường dùng chung, có dòng giải thích.
+
+## GET /api/products (danh sách)
+- Role chi nhánh: số "còn hôm nay" / tồn của dòng luôn tính theo chi nhánh của mình, bỏ qua `outletId` của chi nhánh khác
+  trong query (trước đây đọc được số của chi nhánh khác khi sản phẩm có dòng ở cả hai). Sản phẩm của chi nhánh khác nay
+  hiện trong danh sách với số 0 (theo quyết định "mọi sản phẩm có ở mọi chi nhánh").
+
 ## DELETE /api/products/[id], POST /api/products/batch-delete
 - OUTLET_STAFF → 403 `PRODUCT_DELETE_MERCHANT_ONLY` (mặc định role này không có `products.manage` nên đã bị chặn).
-- OUTLET_ADMIN, OUTLET_INVENTORY: xóa được sản phẩm có dòng tồn ở chi nhánh mình (DELETE); không có → 403
-  `PRODUCT_NOT_AVAILABLE_AT_OUTLET` (như trước #825).
+- OUTLET_ADMIN, OUTLET_INVENTORY: xóa được sản phẩm chi nhánh mình có (`holdsStockAt`); không có → 403
+  `PRODUCT_NOT_AVAILABLE_AT_OUTLET`, cả DELETE và batch-delete (batch-delete trước đây không kiểm tra chi nhánh).
 
 ## Tạo sản phẩm (POST /api/products, POST /api/products/bulk-import)
 - Thêm dòng tồn 0 cho mọi chi nhánh active khác của shop (`zeroStockRowsForOtherOutlets`). Role chi nhánh vẫn chỉ nhập tồn chi nhánh mình.
