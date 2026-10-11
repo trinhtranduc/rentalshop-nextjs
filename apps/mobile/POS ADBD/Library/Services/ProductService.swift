@@ -249,7 +249,8 @@ class ProductService: BaseService, ProductServiceProtocol {
         let path = "\(APIEndpoint.Path.products)/\(productId)"
         performDELETE(
             path: path,
-            responseType: APIEmptyResponse.self,
+            // #859: the error model keeps `data.messageParams` (409 PRODUCT_HELD_BY_OTHER_OUTLETS names the branches)
+            responseType: APIErrorResponse.self,
             context: "ProductService.deleteProduct"
         ) { apiResponse, error in
             if let error = error {
@@ -267,15 +268,7 @@ class ProductService: BaseService, ProductServiceProtocol {
                 completion(nil)
             } else {
                 // Use error code model for localized messages
-                let nsError = self.createErrorFromResponse(
-                    success: apiResponse.success,
-                    code: apiResponse.code,
-                    message: apiResponse.message,
-                    error: apiResponse.error,
-                    httpStatusCode: nil,
-                    defaultMessage: "Delete failed"
-                )
-                completion(nsError)
+                completion(self.createErrorFromDecodedResponse(apiResponse))
             }
         }
     }
