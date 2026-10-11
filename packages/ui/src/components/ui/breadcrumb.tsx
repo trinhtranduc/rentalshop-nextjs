@@ -30,7 +30,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
 
   return (
     <nav aria-label="Breadcrumb" className={cn('flex items-center space-x-2 py-3', className)}>
-      <ol className="flex items-center space-x-2">
+      <ol className="flex items-center space-x-2 max-md:flex-wrap max-md:space-x-0 max-md:gap-x-2">
         {allItems.map((item, index) => {
           const isLast = index === allItems.length - 1;
 
@@ -46,7 +46,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-1.5 text-sm font-medium transition-colors',
+                    'flex items-center gap-1.5 text-sm font-medium transition-colors max-md:min-h-11',
                     'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100',
                     'hover:underline'
                   )}

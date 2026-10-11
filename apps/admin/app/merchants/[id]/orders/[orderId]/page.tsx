@@ -226,7 +226,7 @@ export default function MerchantOrderDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Order Details</PageTitle>
         </PageHeader>
@@ -247,7 +247,7 @@ export default function MerchantOrderDetailPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Order Details</PageTitle>
         </PageHeader>
@@ -273,7 +273,7 @@ export default function MerchantOrderDetailPage() {
 
   if (!order) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Order Details</PageTitle>
         </PageHeader>
@@ -307,7 +307,7 @@ export default function MerchantOrderDetailPage() {
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">

@@ -326,7 +326,7 @@ export default function MerchantOrdersPage() {
 
   if (error) {
     return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageWrapper spacing="none" className="admin-phone h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -350,15 +350,16 @@ export default function MerchantOrdersPage() {
   };
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="admin-phone h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
+        <div className="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
+          <div className="flex-1 min-w-0">
             <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
           <Button
             variant="default"
             size="sm"
+            className="max-md:w-full"
             onClick={() => router.push(`/merchants/${merchantId}/orders/create`)}
           >
             <Plus className="w-4 h-4 mr-2" />
