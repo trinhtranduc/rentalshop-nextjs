@@ -87,7 +87,11 @@ export enum ErrorCode {
   // File Upload Errors
   FILE_TOO_LARGE = 'FILE_TOO_LARGE',
   INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
-  UPLOAD_FAILED = 'UPLOAD_FAILED'
+  UPLOAD_FAILED = 'UPLOAD_FAILED',
+
+  // Outlet rules (#824)
+  OUTLET_HAS_OPEN_ORDERS = 'OUTLET_HAS_OPEN_ORDERS',
+  OUTLET_DEACTIVATED = 'OUTLET_DEACTIVATED'
 }
 
 // ============================================================================
@@ -183,7 +187,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   // File Upload Errors
   [ErrorCode.FILE_TOO_LARGE]: 'File size exceeds limit',
   [ErrorCode.INVALID_FILE_TYPE]: 'Invalid file type',
-  [ErrorCode.UPLOAD_FAILED]: 'File upload failed'
+  [ErrorCode.UPLOAD_FAILED]: 'File upload failed',
+
+  // Outlet rules (#824)
+  [ErrorCode.OUTLET_HAS_OPEN_ORDERS]: 'This branch still has reserved or rented orders. Complete or cancel them first.',
+  [ErrorCode.OUTLET_DEACTIVATED]: 'This branch has been deactivated. Please contact the shop owner.'
 };
 
 // ============================================================================
@@ -264,7 +272,11 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   // File Upload Errors (4xx)
   [ErrorCode.FILE_TOO_LARGE]: 413,
   [ErrorCode.INVALID_FILE_TYPE]: 400,
-  [ErrorCode.UPLOAD_FAILED]: 500
+  [ErrorCode.UPLOAD_FAILED]: 500,
+
+  // Outlet rules (#824)
+  [ErrorCode.OUTLET_HAS_OPEN_ORDERS]: 409,
+  [ErrorCode.OUTLET_DEACTIVATED]: 403
 };
 
 // ============================================================================

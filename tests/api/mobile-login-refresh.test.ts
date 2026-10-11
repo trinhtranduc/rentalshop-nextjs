@@ -29,7 +29,11 @@ const mockAuthServer = {
 jest.mock('@rentalshop/auth/server', () => mockAuthServer);
 jest.mock('@rentalshop/auth', () => ({ ROLE_PERMISSIONS: { ADMIN: ['orders.view'] } }));
 jest.mock('@rentalshop/utils', () => ({ ResponseBuilder: { error: (code: string) => ({ success: false, code }) } }));
-jest.mock('@rentalshop/constants', () => ({ USER_ROLE: { MERCHANT: 'MERCHANT' } }));
+jest.mock('@rentalshop/constants', () => ({
+  USER_ROLE: { MERCHANT: 'MERCHANT' },
+  // #824: login refuses users of a disabled outlet (real helper)
+  isOutletRole: jest.requireActual('../../packages/constants/src/status').isOutletRole,
+}));
 
 import { buildAuthLoginSuccessResponse } from '../../apps/api/lib/build-auth-login-response';
 
