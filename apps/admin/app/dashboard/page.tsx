@@ -26,6 +26,8 @@ import {
   MetricCard,
   ActivityFeed
 } from '@rentalshop/ui';
+import './dashboard.css';
+import { SegmentedControl, MetricTile, ChartCard } from './components/DashboardTiles';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi, formatInShopZone } from '@rentalshop/utils';
 import { getDashboardWindow, bucketByShopPeriod, groupCountsByShopPeriod, inDashboardWindow, type DashboardWindow } from './dashboard-buckets';
@@ -51,7 +53,8 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
 import {
   getAdminDashboardDateRange,
@@ -104,6 +107,13 @@ interface MerchantsRegistrationChartProps {
   loading?: boolean;
 }
 
+/** Today's bar keeps the full series colour, the others are softened (only when today is in the data). */
+const highlightFill = (period: string, rows: { period: string }[], token: string) => {
+  const today = formatInShopZone(new Date(), 'en', { month: 'short', day: 'numeric' });
+  const hasToday = rows.some((r) => r.period === today);
+  return `rgb(var(--ar-${token}) / ${!hasToday || period === today ? 1 : 0.45})`;
+};
+
 const SubscriptionRevenueChart: React.FC<SubscriptionRevenueChartProps> = ({ data, loading = false }) => {
   if (loading) {
     return (
@@ -136,28 +146,32 @@ const SubscriptionRevenueChart: React.FC<SubscriptionRevenueChartProps> = ({ dat
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart data={chartData} margin={{ top: 20, right: 16, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--ar-line))" />
         <XAxis 
           dataKey="period" 
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: 'rgb(var(--ar-muted))' }}
           angle={-45}
           textAnchor="end"
           height={80}
         />
         <YAxis 
           tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: 'rgb(var(--ar-muted))' }}
         />
         <Tooltip 
           formatter={formatTooltip}
-          labelStyle={{ color: '#374151' }}
+          labelStyle={{ color: 'rgb(var(--ar-ink-2))' }}
         />
         <Bar 
           dataKey="Subscription Revenue" 
-          fill="#10B981" 
+          fill="rgb(var(--ar-chart-blue))" 
           radius={[4, 4, 0, 0]}
           name="Subscription Revenue"
-        />
+        >
+          {chartData.map((row) => (
+            <Cell key={row.period} fill={highlightFill(row.period, chartData, 'chart-blue')} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
@@ -195,27 +209,31 @@ const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart data={chartData} margin={{ top: 20, right: 16, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--ar-line))" />
         <XAxis 
           dataKey="period" 
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: 'rgb(var(--ar-muted))' }}
           angle={-45}
           textAnchor="end"
           height={80}
         />
         <YAxis 
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: 'rgb(var(--ar-muted))' }}
         />
         <Tooltip 
           formatter={formatTooltip}
-          labelStyle={{ color: '#374151' }}
+          labelStyle={{ color: 'rgb(var(--ar-ink-2))' }}
         />
         <Bar 
           dataKey="Merchants Registered" 
-          fill="#3B82F6" 
+          fill="rgb(var(--ar-chart-violet))" 
           radius={[4, 4, 0, 0]}
           name="Merchants Registered"
-        />
+        >
+          {chartData.map((row) => (
+            <Cell key={row.period} fill={highlightFill(row.period, chartData, 'chart-violet')} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
@@ -574,162 +592,60 @@ export default function AdminDashboard() {
         {/* Page Loading Indicator - Floating, non-blocking */}
         <PageLoadingIndicator loading={loading} />
         
-        {/* Time Period Selector */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={period === 'today' ? 'default' : 'outline'}
-              onClick={() => updateTimePeriod('today')}
-              className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm"
+        {/* Title + period control */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl font-bold text-ar-ink">Dashboard</h1>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <SegmentedControl
+              ariaLabel="Period"
+              value={period as 'today' | 'month' | 'year'}
+              onChange={(v) => updateTimePeriod(v)}
+              options={[
+                { value: 'today', label: 'Today' },
+                { value: 'month', label: 'This Month' },
+                { value: 'year', label: 'This Year' },
+              ]}
+            />
+            <button
+              type="button"
+              className="ar-dash-refresh"
+              onClick={() => {
+                fetchSystemMetrics();
+                fetchRankings();
+              }}
+              disabled={loading}
             >
-              Today
-            </Button>
-            <Button
-              variant={period === 'month' ? 'default' : 'outline'}
-              onClick={() => updateTimePeriod('month')}
-              className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm"
-            >
-              This Month
-            </Button>
-            <Button
-              variant={period === 'year' ? 'default' : 'outline'}
-              onClick={() => updateTimePeriod('year')}
-              className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm"
-            >
-              This Year
-            </Button>
+              Refresh
+            </button>
           </div>
-          <Button
-            variant="default"
-            onClick={() => {
-              fetchSystemMetrics();
-              fetchRankings();
-            }}
-            disabled={loading}
-            className="min-h-[44px] sm:min-h-0 px-4 py-2 text-sm"
-          >
-            Refresh
-          </Button>
         </div>
 
-
         {/* Subscription Health Metrics - Clickable */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
-          <Card 
-            className="cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
-            onClick={() => router.push('/merchants')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600">Merchants</CardTitle>
-              <Building2 className="h-4 w-4 text-blue-700" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold text-blue-700">{metrics.totalMerchants}</div>
-              <p className="text-[10px] text-gray-500">Total merchants</p>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-md hover:border-sky-300 transition-all"
-            onClick={() => router.push('/subscriptions?status=TRIAL')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600">Trial</CardTitle>
-              <Clock className="h-4 w-4 text-sky-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold text-sky-600">{subscriptionStats.trial}</div>
-              <p className="text-[10px] text-gray-500">In trial period</p>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
-            onClick={() => router.push('/subscriptions?status=ACTIVE')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600">Active</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold text-green-600">{subscriptionStats.active}</div>
-              <p className="text-[10px] text-gray-500">Basic: {subscriptionStats.basic} | Pro: {subscriptionStats.pro}</p>
-            </CardContent>
-          </Card>
-          
-          <Card 
-            className="cursor-pointer hover:shadow-md hover:border-orange-300 transition-all"
-            onClick={() => router.push('/subscriptions')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600">Expiring Soon</CardTitle>
-              <Bell className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold text-orange-600">{subscriptionStats.expiring}</div>
-              <p className="text-[10px] text-gray-500">Within 7 days</p>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-md hover:border-red-300 transition-all"
-            onClick={() => router.push('/subscriptions')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600">Expired</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold text-red-500">{subscriptionStats.expired}</div>
-              <p className="text-[10px] text-gray-500">Period ended</p>
-            </CardContent>
-          </Card>
-          
-          <Card 
-            className="cursor-pointer hover:shadow-md hover:border-gray-400 transition-all"
-            onClick={() => router.push('/subscriptions?status=CANCELLED')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-gray-600">Cancelled</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xl font-bold text-red-600">{subscriptionStats.cancelled}</div>
-              <p className="text-[10px] text-gray-500">Churned</p>
-            </CardContent>
-          </Card>
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+          <MetricTile title="Merchants" value={metrics.totalMerchants} pill="Total merchants" tone="info" onClick={() => router.push('/merchants')} />
+          <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push('/subscriptions?status=TRIAL')} />
+          <MetricTile title="Active" value={subscriptionStats.active} pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro}`} tone="good" onClick={() => router.push('/subscriptions?status=ACTIVE')} />
+          <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push('/subscriptions')} />
+          <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push('/subscriptions')} />
+          <MetricTile title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push('/subscriptions?status=CANCELLED')} />
         </div>
 
         {/* Revenue & Orders Charts */}
         {user?.role !== 'OUTLET_STAFF' && user?.role !== 'OUTLET_INVENTORY' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm sm:text-base">
-                  Subscription Revenue by Creation Date
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <SubscriptionRevenueChart data={subscriptionRevenueData} loading={loading} />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm sm:text-base">
-                  Total Merchants Registered
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <MerchantsRegistrationChart data={merchantsRegistrationData} loading={loading} />
-              </CardContent>
-            </Card>
+            <ChartCard title="Subscription Revenue by Creation Date" legend={[{ label: 'Subscription Revenue', color: 'rgb(var(--ar-chart-blue))' }, { label: 'Today', color: 'rgb(var(--ar-chart-blue) / 0.45)' }]}>
+              <SubscriptionRevenueChart data={subscriptionRevenueData} loading={loading} />
+            </ChartCard>
+
+            <ChartCard title="Total Merchants Registered" legend={[{ label: 'Merchants Registered', color: 'rgb(var(--ar-chart-violet))' }]}>
+              <MerchantsRegistrationChart data={merchantsRegistrationData} loading={loading} />
+            </ChartCard>
           </div>
         )}
 
         {/* Top shops by revenue + top products per shop for the selected period */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
-          <Card>
+          <Card className="rounded-xl border-ar-line bg-ar-surface shadow-ar">
             <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Store className="w-5 h-5 text-blue-700" />
@@ -768,7 +684,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-xl border-ar-line bg-ar-surface shadow-ar">
             <CardHeader className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="flex items-center gap-2">
@@ -825,7 +741,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
           {/* New Merchants */}
           <div>
-            <Card>
+            <Card className="rounded-xl border-ar-line bg-ar-surface shadow-ar">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Store className="w-5 h-5 text-blue-700" />
