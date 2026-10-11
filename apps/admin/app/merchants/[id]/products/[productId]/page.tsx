@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
@@ -89,7 +91,7 @@ export default function ProductEditPage() {
 
   if (loading) {
     return (
-      <PageWrapper className="admin-phone">
+      <PageWrapper className="ar-detail admin-phone">
         <PageHeader>
           <PageTitle>Edit Product</PageTitle>
         </PageHeader>
@@ -102,7 +104,7 @@ export default function ProductEditPage() {
 
   if (error) {
     return (
-      <PageWrapper className="admin-phone">
+      <PageWrapper className="ar-detail admin-phone">
         <PageHeader>
           <PageTitle>Edit Product</PageTitle>
         </PageHeader>
@@ -115,7 +117,7 @@ export default function ProductEditPage() {
 
   if (!productData) {
     return (
-      <PageWrapper className="admin-phone">
+      <PageWrapper className="ar-detail admin-phone">
         <PageHeader>
           <PageTitle>Edit Product</PageTitle>
         </PageHeader>
@@ -127,7 +129,7 @@ export default function ProductEditPage() {
   }
 
   return (
-    <PageWrapper className="admin-phone">
+    <PageWrapper className="ar-detail admin-phone">
       <PageHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 max-md:flex-col max-md:items-start max-md:space-x-0 max-md:gap-2">

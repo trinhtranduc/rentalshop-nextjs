@@ -1,5 +1,8 @@
 'use client'
 
+import '../../details.css';
+import { DetailHeader } from '../../components/DetailHeader';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { subscriptionsApi, planLimitAddonsApi, formatInShopZone } from '@rentalshop/utils';
@@ -349,22 +352,21 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="ar-detail">
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-6" />
 
       <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Subscription #{subscription.id}
-          </h1>
-          <p className="text-gray-600">
-            {subscription.merchant?.name} - {subscription.plan?.name}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <DetailHeader
+        backHref="/subscriptions"
+        backLabel="Subscriptions"
+        title={`Subscription #${subscription.id}`}
+        subtitle={`${subscription.merchant?.name} - ${subscription.plan?.name}`}
+        status={String(subscription.status || '').toLowerCase() || undefined}
+        statusTone={isStatus('active') ? 'success' : isStatus('cancelled') ? 'danger' : 'warning'}
+        actions={
+          <>
           <Button
             variant="outline"
             onClick={() => router.push(`/subscriptions/${subscription.id}/edit`)}
@@ -415,8 +417,9 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Status Alert */}
       {(isExpiringSoon(subscription.currentPeriodEnd) || isExpired(subscription.currentPeriodEnd)) && (
