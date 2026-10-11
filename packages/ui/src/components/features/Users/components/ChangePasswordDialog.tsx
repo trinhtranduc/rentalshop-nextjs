@@ -125,7 +125,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-md:flex max-md:flex-col max-md:overflow-y-auto max-md:p-4 max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5 max-md:[&_input]:min-h-11 max-md:[&_textarea]:min-h-11 max-md:[&_button]:min-h-11 max-md:[&_[role=combobox]]:min-h-11">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             {t('dialogs.changePasswordTitle')}
@@ -135,8 +135,8 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="max-md:flex max-md:flex-1 max-md:flex-col">
+          <div className="mt-6 space-y-4 max-md:flex-1">
             {/* New Password */}
             <div className="space-y-2">
               <Label htmlFor="newPassword">{t('dialogs.newPassword')} *</Label>
@@ -154,7 +154,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   size="icon"
                   type="button"
                   onClick={() => togglePasswordVisibility('new')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 h-6 w-6 p-0"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 h-6 w-6 p-0 max-md:h-11 max-md:w-11 max-md:right-0"
                 >
                   {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -182,7 +182,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   size="icon"
                   type="button"
                   onClick={() => togglePasswordVisibility('confirm')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 h-6 w-6 p-0"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 h-6 w-6 p-0 max-md:h-11 max-md:w-11 max-md:right-0"
                 >
                   {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -193,7 +193,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="flex justify-end space-x-2 mt-6">
+          <DialogFooter className="flex justify-end space-x-2 mt-6 max-md:sticky max-md:bottom-0 max-md:-mx-4 max-md:-mb-4 max-md:flex-row max-md:space-x-0 max-md:gap-2 max-md:border-t max-md:bg-bg-card max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button]:flex-1">
             <Button
               type="button"
               variant="outline"

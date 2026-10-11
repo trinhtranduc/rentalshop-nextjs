@@ -180,7 +180,7 @@ export const AddOutletForm: React.FC<AddOutletFormProps> = ({
       </div>
 
           {/* Form Actions */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+      <div className="flex justify-end gap-3 mt-6 pt-4 border-t max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-bg-card max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button]:flex-1">
             <Button
               type="button"
               variant="outline"

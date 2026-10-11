@@ -237,7 +237,7 @@ export default function MerchantOutletsPage() {
 
   if (error) {
     return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageWrapper spacing="none" className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -255,9 +255,9 @@ export default function MerchantOutletsPage() {
   const filters = { search, status };
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <div className="flex justify-between items-center w-full">
+        <div className="flex justify-between items-center w-full gap-2 max-md:flex-wrap">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <Button
             onClick={() => setShowAddDialog(true)}
@@ -294,7 +294,7 @@ export default function MerchantOutletsPage() {
       {/* Bank Accounts Management Dialog */}
       {showBankAccountsDialog && selectedOutletId && (
         <Dialog open={showBankAccountsDialog} onOpenChange={setShowBankAccountsDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5 max-md:[&_input]:min-h-11 max-md:[&_textarea]:min-h-11 max-md:[&_button]:min-h-11 max-md:[&_[role=combobox]]:min-h-11">
             <DialogHeader>
               <DialogTitle>Manage Bank Accounts</DialogTitle>
             </DialogHeader>

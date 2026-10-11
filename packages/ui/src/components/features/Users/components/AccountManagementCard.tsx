@@ -30,9 +30,9 @@ export const AccountManagementCard: React.FC<AccountManagementCardProps> = ({
         <h2 className="text-lg font-medium text-gray-900">Account Management</h2>
       </div>
       
-      <div className="px-6 py-4 space-y-4">
+      <div className="px-6 max-md:px-4 py-4 space-y-4">
         {/* Status Toggle */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg max-md:flex-col max-md:items-stretch max-md:gap-3">
           <div>
             <h3 className="text-sm font-medium text-gray-900">Account Status</h3>
             <p className="text-sm text-gray-600">
@@ -43,7 +43,7 @@ export const AccountManagementCard: React.FC<AccountManagementCardProps> = ({
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-md:[&>button]:w-full">
             {user.isActive ? (
               <Button 
                 onClick={onDeactivate} 
@@ -69,7 +69,7 @@ export const AccountManagementCard: React.FC<AccountManagementCardProps> = ({
         </div>
 
         {/* Delete Account */}
-        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg max-md:flex-col max-md:items-stretch max-md:gap-3">
           <div>
             <h3 className="text-sm font-medium text-red-900">Delete Account</h3>
             <p className="text-sm text-red-700">

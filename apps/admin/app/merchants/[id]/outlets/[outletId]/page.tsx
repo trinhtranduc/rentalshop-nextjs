@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { merchantsApi, parseApiResponse } from '@rentalshop/utils';
+import { merchantsApi, parseApiResponse, formatInShopZone } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { PageWrapper,
   PageHeader,
@@ -177,13 +177,13 @@ export default function OutletDetailPage() {
   }
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center">
       <PageHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
+        <div className="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-2">
+          <div className="flex-1 min-w-0">
             <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 max-md:[&>button]:w-full">
             {!isEditing && (
               <Button
                 variant="outline"
@@ -242,7 +242,7 @@ export default function OutletDetailPage() {
                       onChange={(e) => handleInputChange('description', e.target.value)}
                     />
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 max-md:flex-col max-md:space-x-0 max-md:gap-2 [&>button]:max-md:w-full">
                     <Button onClick={handleSave}>Save Changes</Button>
                     <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                   </div>
@@ -374,11 +374,11 @@ export default function OutletDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Created</Label>
-                  <p className="text-lg">{new Date(outlet.createdAt).toLocaleString()}</p>
+                  <p className="text-lg">{formatInShopZone(outlet.createdAt, 'vi', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Last Updated</Label>
-                  <p className="text-lg">{new Date(outlet.updatedAt).toLocaleString()}</p>
+                  <p className="text-lg">{formatInShopZone(outlet.updatedAt, 'vi', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                 </div>
               </div>
             </CardContent>
