@@ -33,7 +33,7 @@ async function main() {
       name: 'Trial',
       description: 'Free trial plan for development/testing',
       basePrice: 0,
-      currency: 'USD',
+      currency: 'VND',
       trialDays: 14,
       limits: JSON.stringify({
         outlets: 2,
@@ -137,7 +137,7 @@ async function main() {
         trialEnd: trialEnd,
         cancelAtPeriodEnd: false,
         amount: 0,
-        currency: 'USD',
+        currency: 'VND',
         interval: 'month',
         intervalCount: 1,
         period: 1,

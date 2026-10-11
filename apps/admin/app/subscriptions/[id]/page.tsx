@@ -300,7 +300,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     });
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'VND') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -764,7 +764,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Base Price</Label>
                   <p className="font-medium">
-                    {formatCurrency(subscription.plan?.basePrice || 0, subscription.plan?.currency || 'USD')}
+                    {formatCurrency(subscription.plan?.basePrice || 0, subscription.plan?.currency || 'VND')}
                   </p>
                 </div>
                 <div>
@@ -789,7 +789,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           planName: subscription.plan?.name || '',
           amount: subscription.amount,
           plan: { basePrice: subscription.plan?.basePrice },
-          currency: subscription.currency || 'USD',
+          currency: subscription.currency || 'VND',
           currentPeriodEnd: new Date(subscription.currentPeriodEnd)
         }}
         onRenew={handleManualRenewal}

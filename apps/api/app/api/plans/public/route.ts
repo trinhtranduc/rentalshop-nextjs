@@ -65,7 +65,7 @@ function transformPlan(plan: any): Plan {
       name: plan.name,
       description: plan.description,
       basePrice: plan.basePrice,
-      currency: plan.currency || 'USD',
+      currency: plan.currency || 'VND',
       trialDays: plan.trialDays || 0,
       limits: parsedLimits,
       features: parsedFeatures,

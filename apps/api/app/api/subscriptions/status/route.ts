@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           trialStart: null,
           trialEnd: null,
           billingAmount: 0,
-          billingCurrency: 'USD',
+          billingCurrency: 'VND',
           billingInterval: null,
           billingIntervalCount: null,
           cancelAtPeriodEnd: false,
@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
         planName: plan?.name || 'Unknown Plan',
         planDescription: plan?.description || '',
         planPrice: plan?.basePrice || 0,
-        planCurrency: plan?.currency || 'USD',
+        planCurrency: plan?.currency || 'VND',
         planTrialDays: plan?.trialDays || 0,
         
         // ============================================================================

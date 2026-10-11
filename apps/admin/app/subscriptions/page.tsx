@@ -422,7 +422,7 @@ export default function SubscriptionsPage() {
         name: 'Unknown Plan',
         description: '',
         basePrice: apiSub.amount || 0,
-        currency: 'USD',
+        currency: 'VND',
         trialDays: 0,
         limits: { outlets: 0, users: 0, products: 0, customers: 0, orders: 0 },
         features: [],

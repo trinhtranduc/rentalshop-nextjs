@@ -43,7 +43,7 @@ async function getOrCreateTrialPlan(tx: any) {
         name: 'Trial',
         description: 'Free trial plan for new merchants',
         basePrice: 0,
-        currency: 'USD',
+        currency: 'VND',
         trialDays: 14,
         limits: JSON.stringify({
           outlets: 1,
@@ -368,7 +368,7 @@ export async function POST(request: NextRequest) {
             planId: trialPlan.id,
             status: SUBSCRIPTION_STATUS.TRIAL as any,
             amount: 0,
-            currency: 'USD',
+            currency: 'VND',
             currentPeriodStart: subscriptionStartDate,
             currentPeriodEnd: trialEndDate,
             trialStart: subscriptionStartDate,
