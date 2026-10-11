@@ -656,7 +656,7 @@ final class CartV2ViewController: BaseViewControler {
         }
         availabilityGeneration += 1
         let token = availabilityGeneration
-        let outletId = User.current()?.outlet?.id ?? User.current()?.outletId
+        let outletId = CurrentOutlet.shared.id
         let rent = isRent
         let names = Dictionary(cart.items.map { ($0.productId, $0.productName ?? "") }, uniquingKeysWith: { first, _ in first })
         OrderService.shared.loadBatchProductAvailability(products: requests, startDate: start, endDate: end,

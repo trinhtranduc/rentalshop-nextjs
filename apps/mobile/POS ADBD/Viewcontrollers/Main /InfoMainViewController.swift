@@ -1509,7 +1509,7 @@ class InfoMainViewController: BaseViewControler {
             endDate = today
         }
         
-        let outletId = User.current()?.outlet?.id ?? User.current()?.outletId
+        let outletId = CurrentOutlet.shared.id
         
         // When editing an existing order, exclude it from conflict check
         let excludeOrderId = CartStore.shared.cart.orderId
@@ -1650,7 +1650,7 @@ class InfoMainViewController: BaseViewControler {
         // }
         
         // Load availability for date range using new API
-        let outletId = User.current()?.outlet?.id ?? User.current()?.outletId
+        let outletId = CurrentOutlet.shared.id
         
         OrderService.shared.loadProductAvailabilityForDateRange(
                 productId: productId,

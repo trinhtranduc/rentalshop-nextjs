@@ -68,7 +68,7 @@ final class ProductFormViewController: BaseViewControler {
 
     private var outletsLoadError: String?
 
-    private var userOutletId: Int? { User.current()?.outlet?.id ?? User.current()?.outletId }
+    private var userOutletId: Int? { CurrentOutlet.shared.id }
 
     init(product: Product?) {
         self.product = product

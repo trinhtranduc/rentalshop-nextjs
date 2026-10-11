@@ -58,20 +58,20 @@ class CartViewModel: PreviewViewModelProtocol {
     // MARK: - Outlet & Staff Info
     var outletName: String {
         // Get from current user's outlet or default
-        if let user = User.account(), let outlet = user.outlet {
-            return outlet.name ?? "Default Outlet".localized()
+        if User.account() != nil, let name = CurrentOutlet.shared.name, !name.isEmpty {
+            return name
         }
         return "Default Outlet".localized()
     }
     
     var outletAddress: String? {
         guard let user = User.account() else { return nil }
-        return user.outlet?.address ?? user.merchant?.address
+        return CurrentOutlet.shared.outlet?.address ?? user.merchant?.address
     }
     
     var outletPhone: String? {
         guard let user = User.account() else { return nil }
-        return user.outlet?.phone ?? user.merchant?.phone
+        return CurrentOutlet.shared.outlet?.phone ?? user.merchant?.phone
     }
     
     var merchantName: String? {

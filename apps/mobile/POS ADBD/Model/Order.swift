@@ -1371,7 +1371,7 @@ extension Order {
             data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.left.rawValue))
             
             // Store details
-            let phone = user.outlet?.phone ?? user.merchant?.phone ?? ""
+            let phone = CurrentOutlet.shared.outlet?.phone ?? user.merchant?.phone ?? ""
             let address = user.address ?? ""
             data.append("\(("Phone".localized().formatStringOriginalCharacter())): \(phone.formatStringOriginalCharacter())\n".data(using: .utf8)!)
             data.append("\(("Address".localized().formatStringOriginalCharacter())): \(address.formatStringOriginalCharacter())\n".data(using: .utf8)!)

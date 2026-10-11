@@ -37,6 +37,12 @@ class TabbarViewController: UITabBarController {
         // created 5 VCs twice and called setViewControllers(animated: true) twice.
         // That made the tab bar feel laggy right after finishing onboarding.
         setupViewControllers()
+        // #828: a merchant's active branches for the header button; a remembered branch that was turned off falls
+        // back to the default and the merchant is told once
+        CurrentOutlet.shared.refresh(onFallback: { [weak self] name in
+            guard let self else { return }
+            OutletSwitcher.showFallback(name, from: self)
+        })
     }
     
     override func viewDidLayoutSubviews() {
