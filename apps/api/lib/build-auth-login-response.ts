@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { ROLE_PERMISSIONS } from '@rentalshop/auth';
 import { generateToken, generateMobileToken, generateRefreshableToken, getUserPermissions } from '@rentalshop/auth/server';
 import { ResponseBuilder } from '@rentalshop/utils';
-import { USER_ROLE } from '@rentalshop/constants';
+import { USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { detectPlatform } from './platform-detector';
 import { merchantTimeZoneField } from './shop-timezone';
 
@@ -27,6 +27,14 @@ export async function buildAuthLoginSuccessResponse(
   corsHeaders: Record<string, string>,
   options: LoginResponseOptions = {}
 ): Promise<NextResponse> {
+  // #824: a user of a disabled outlet cannot sign in (password, mobile and Google login all pass here)
+  if (isOutletRole(user.role) && (user as any).outlet?.isActive === false) {
+    return NextResponse.json(ResponseBuilder.error('OUTLET_DEACTIVATED'), {
+      status: 403,
+      headers: corsHeaders,
+    });
+  }
+
   const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
   const isMerchantUser = user.role === USER_ROLE.MERCHANT;
   if (emailVerificationEnabled && isMerchantUser && !user.emailVerified) {

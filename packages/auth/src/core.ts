@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isTokenExpired, verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
 import { PlanLimitError } from '@rentalshop/utils';
-import { API, SUBSCRIPTION_STATUS, USER_ROLE, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
+import { API, SUBSCRIPTION_STATUS, USER_ROLE, isOutletRole, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
 import type { ClientPlatform } from '@rentalshop/types';
 import type { Role, Permission, Resource } from './permissions';
@@ -474,6 +474,21 @@ export async function authenticateRequest(
             success: false, 
             code: 'ACCOUNT_DEACTIVATED', 
             message: 'Your account has been deactivated. Please contact an administrator.' 
+          },
+          { status: 401 }
+        )
+      };
+    }
+
+    // #824: users of a disabled outlet are signed out on their next request (the outlet comes with the row above)
+    if (isOutletRole(userRecord.role) && (userRecord as any).outlet?.isActive === false) {
+      return {
+        success: false,
+        response: NextResponse.json(
+          {
+            success: false,
+            code: 'OUTLET_DEACTIVATED',
+            message: 'This branch has been deactivated. Please contact the shop owner.'
           },
           { status: 401 }
         )
@@ -1391,7 +1406,7 @@ export async function validateMerchantAccess(
 
     // Validate outlet scope: OUTLET_ADMIN/OUTLET_STAFF can only access their assigned outlet
     const outletScopeCheck = validateScope(userScope, { outletId: outletPublicId });
-    if (!outletScopeCheck.valid && (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_STAFF)) {
+    if (!outletScopeCheck.valid && isOutletRole(user.role)) {
       // Return NOT_FOUND for security (don't reveal outlet exists)
       return {
         valid: false,

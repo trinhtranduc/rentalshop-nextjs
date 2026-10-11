@@ -138,12 +138,24 @@ export function outletUpdatePayload(id: number, form: OutletForm) {
 
 export type OutletAction = 'view' | 'edit' | 'bank' | 'disable' | 'enable';
 
-/** Row menu: the default outlet can never be paused (as before). */
-export function outletActions(o: Pick<OutletLike, 'isDefault' | 'isActive'>, canManage = true): OutletAction[] {
+/** #824: only the shop owner (and the platform admin) adds, pauses, reopens or deletes an outlet. */
+export function isOutletOwnerRole(role: string | null | undefined): boolean {
+  return role === 'MERCHANT' || role === 'ADMIN';
+}
+
+/**
+ * Row menu: the default outlet can never be paused (as before).
+ * `canManage` = outlet.manage (edit the info); `canChangeStatus` = owner only (#824: OUTLET_ADMIN edits, no pause).
+ */
+export function outletActions(
+  o: Pick<OutletLike, 'isDefault' | 'isActive'>,
+  canManage = true,
+  canChangeStatus = canManage,
+): OutletAction[] {
   // #736: a role without outlet.manage (OUTLET_STAFF, OUTLET_INVENTORY) only looks; the API rejects the rest
   if (!canManage) return ['view', 'bank'];
   const base: OutletAction[] = ['view', 'edit', 'bank'];
-  if (o.isDefault) return base;
+  if (o.isDefault || !canChangeStatus) return base;
   return [...base, o.isActive === false ? 'enable' : 'disable'];
 }
 

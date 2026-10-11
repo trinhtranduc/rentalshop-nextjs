@@ -87,7 +87,11 @@ export enum ErrorCode {
   // File Upload Errors
   FILE_TOO_LARGE = 'FILE_TOO_LARGE',
   INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
-  UPLOAD_FAILED = 'UPLOAD_FAILED'
+  UPLOAD_FAILED = 'UPLOAD_FAILED',
+
+  // Outlet rules (#824)
+  OUTLET_HAS_OPEN_ORDERS = 'OUTLET_HAS_OPEN_ORDERS',
+  OUTLET_DEACTIVATED = 'OUTLET_DEACTIVATED'
 }
 
 // ============================================================================
@@ -154,8 +158,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED]: 'Payment method and transaction ID are required',
   [ErrorCode.PLAN_CHANGE_ONLY_AT_NEW_PERIOD]: "The plan can only be changed in a new period",
   [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: "A downgrade is only possible in a new period",
-  [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 'Only the shop owner can change the name, prices, photos, category or other shared details of a product',
-  [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 'Only the shop owner can delete products',
+  [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 'Staff cannot change the name, prices, photos, category or other shared details of a product',
+  [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 'Staff cannot delete products',
   
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
@@ -183,7 +187,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   // File Upload Errors
   [ErrorCode.FILE_TOO_LARGE]: 'File size exceeds limit',
   [ErrorCode.INVALID_FILE_TYPE]: 'Invalid file type',
-  [ErrorCode.UPLOAD_FAILED]: 'File upload failed'
+  [ErrorCode.UPLOAD_FAILED]: 'File upload failed',
+
+  // Outlet rules (#824)
+  [ErrorCode.OUTLET_HAS_OPEN_ORDERS]: 'This branch still has reserved or rented orders. Complete or cancel them first.',
+  [ErrorCode.OUTLET_DEACTIVATED]: 'This branch has been deactivated. Please contact the shop owner.'
 };
 
 // ============================================================================
@@ -264,7 +272,11 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   // File Upload Errors (4xx)
   [ErrorCode.FILE_TOO_LARGE]: 413,
   [ErrorCode.INVALID_FILE_TYPE]: 400,
-  [ErrorCode.UPLOAD_FAILED]: 500
+  [ErrorCode.UPLOAD_FAILED]: 500,
+
+  // Outlet rules (#824)
+  [ErrorCode.OUTLET_HAS_OPEN_ORDERS]: 409,
+  [ErrorCode.OUTLET_DEACTIVATED]: 403
 };
 
 // ============================================================================

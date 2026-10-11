@@ -473,7 +473,8 @@ export const simplifiedUsers = {
         outletId: true,
         deletedAt: true,
         merchant: { select: { id: true, name: true } },
-        outlet: { select: { id: true, name: true } }
+        // #824: login refuses OUTLET_* users of a disabled outlet
+        outlet: { select: { id: true, name: true, isActive: true } }
       }
     });
   },

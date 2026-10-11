@@ -2,7 +2,7 @@
  * #389 — product soft delete.
  * - DELETE /api/products/:id sets `deletedAt` (and `isActive = false`); the row stays so orders keep the product.
  * - 409 PRODUCT_HAS_OPEN_ORDERS while the product is on a RESERVED or PICKUPED order; nothing changes.
- * - Another merchant's product → 403; a branch role → 403 (only the merchant deletes, #825); unknown or already deleted → 404.
+ * - Merchant / outlet scope unchanged (403), unknown or already deleted → 404.
  * - POST /api/products/batch-delete follows the same rule, reporting blocked products in `errors`.
  */
 jest.mock('next/server', () => ({
@@ -141,12 +141,11 @@ describe('product soft delete (#389)', () => {
       expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
     });
 
-    // #825: only the merchant deletes products; an outlet admin is refused whatever its outlet stocks
-    it('403 PRODUCT_DELETE_MERCHANT_ONLY for an outlet admin', async () => {
+    it('403 for an outlet admin whose outlet does not stock the product', async () => {
       ctx = outletAdmin;
       const res: any = await del();
       expect(res.status).toBe(403);
-      expect(res.body.code).toBe('PRODUCT_DELETE_MERCHANT_ONLY');
+      expect(res.body.code).toBe('PRODUCT_NOT_AVAILABLE_AT_OUTLET');
       expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
     });
 

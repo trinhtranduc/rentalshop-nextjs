@@ -193,7 +193,7 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect((await F.operations(r, { timeZone: null })).date).toBe(today);
       });
 
-      test(`BF-ROLE-06-${tag} another outlet: cannot create there, does not list its orders or products, cannot edit its order, nothing of it changes`, async () => {
+      test(`BF-ROLE-06-${tag} another outlet: cannot create there, does not list its orders, lists its products with own-outlet numbers only, nothing of it changes`, async () => {
         const pO = await product(3, O);
         const w = futureWindow(1);
         const theirs = track(await F.bookRent(s, { product: pO, quantity: 1, outletId: O, ...w }));
@@ -201,8 +201,12 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect([make.status, make.body.code]).toEqual([403, 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET']);
         expect((await r.listOrders({ search: theirs.orderNumber })).map((o) => o.id)).not.toContain(theirs.id);
         expect((await r.listOrders({ outletId: String(O) })).map((o) => o.id)).not.toContain(theirs.id);
-        expect(await F.productRow(r, pO, O)).toBeNull();
-        expect(await F.productRow(r, pO, M)).toBeNull();
+        // #825: every product has a row at every active outlet, so the branch lists pO too, with ITS numbers (0),
+        // never O's, whatever outletId it asks for (was: pO not listed)
+        for (const asked of [O, M]) {
+          const row = await F.productRow(r, pO, asked);
+          expect(row && [row.stock, row.available, row.effectiveAvailableToday]).toEqual([0, 0, 0]);
+        }
         // the order and the stock of that outlet are as the merchant left them
         const after = await s.getOrder(theirs.id);
         expect([after.outletId, after.status]).toEqual([O, 'RESERVED']);
@@ -320,22 +324,21 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
       expect((await read()).staff.grid).toEqual({ [w.from]: 0, [w.to]: 0 });
     });
 
-    test('BF-ROLE-14 products made by staff and by kho: both are stocked at the outlet and rent at once; the prices a staff form sends are saved (Q11)', async () => {
-      const mk = async (sess, extra) => {
-        const r = await sess.postForm('/api/products', { name: uniqueName('SP role'), totalStock: 3, outletStock: [{ outletId: M, stock: 3 }], ...extra });
-        expect(r.status).toBe(200);
-        return { ...r.body.data, outletId: M };
-      };
-      // the staff form sends no prices (rentPrice 0 is required by the schema)
-      const byStaff = await mk(staffS(), { rentPrice: 0 });
-      expect(await s.getProduct(byStaff.id)).toMatchObject({ rentPrice: 0, salePrice: 0 });
-      // a staff call that sends prices anyway keeps them: the API only refuses EDITING prices (BF-SCOPE-04); Q11
-      const priced = await mk(staffS(), { rentPrice: 500000, salePrice: 900000, costPrice: 100000 });
-      expect(await s.getProduct(priced.id)).toMatchObject({ rentPrice: 500000, salePrice: 900000 });
-      expect(await staffS().updateProduct(priced.id, { rentPrice: 1 })).toMatchObject({ status: 403 });
-      const byKho = await mk(khoS(), { rentPrice: 150000, salePrice: 900000, costPrice: 400000, pricingOptions: [{ type: 'FIXED', price: 150000, isDefault: true }] });
+    // #825 (owner 2026-10-11): staff no longer add products (was: staff and kho both created; Q11 staff prices kept)
+    test('BF-ROLE-14 products made by kho are stocked at its outlet (0 at the others) and rent at once; staff cannot create or reprice', async () => {
+      const staffMake = await staffS().postForm('/api/products', { name: uniqueName('SP role'), rentPrice: 0, totalStock: 3, outletStock: [{ outletId: M, stock: 3 }] });
+      expect([staffMake.status, staffMake.body?.code]).toEqual([403, 'INSUFFICIENT_PERMISSIONS']);
+      const r = await khoS().postForm('/api/products', {
+        name: uniqueName('SP role'), totalStock: 3, outletStock: [{ outletId: M, stock: 3 }],
+        rentPrice: 150000, salePrice: 900000, costPrice: 400000, pricingOptions: [{ type: 'FIXED', price: 150000, isDefault: true }]
+      });
+      expect(r.status).toBe(200);
+      const byKho = { ...r.body.data, outletId: M };
       expect(await s.getProduct(byKho.id)).toMatchObject({ rentPrice: 150000, salePrice: 900000, costPrice: 400000 });
-      for (const p of [byStaff, priced, byKho]) expect(await s.outletStock(p.id, M)).toEqual({ stock: 3, available: 3, renting: 0 });
+      expect(await s.outletStock(byKho.id, M)).toEqual({ stock: 3, available: 3, renting: 0 });
+      // #825: every other active outlet of the shop lists it with 0
+      expect(await s.outletStock(byKho.id, O)).toEqual({ stock: 0, available: 0, renting: 0 });
+      expect(await staffS().updateProduct(byKho.id, { rentPrice: 1 })).toMatchObject({ status: 403 });
       const w = futureWindow(1);
       const order = track(await F.bookRent(khoS(), { product: byKho, quantity: 2, outletId: M, ...w }));
       expect(order.totalAmount).toBe(300000);
@@ -351,8 +354,8 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
       // #825 (owner 2026-10-11): staff no longer creates products; kho does (stock at its own outlet)
       ['products.create POST /api/products', false, true,
         async (r) => ({ res: await r.postForm('/api/products', { name: uniqueName('SP mx'), rentPrice: 0, totalStock: 1, outletStock: [{ outletId: M, stock: 1 }] }) })],
-      // #825: changing the name is a shared field, merchant only; kho edits its own outlet stock only
-      ['products.update PUT /api/products/{id}', false, false,
+      // #825 (owner 2026-10-11): kho (and OUTLET_ADMIN) edit shared fields; staff does not
+      ['products.update PUT /api/products/{id}', false, true,
         async (r) => {
           const p = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2, outletId: M });
           return { p, res: await r.updateProduct(p.id, { name: `${p.name} mx`, totalStock: 5, outletStock: [{ outletId: M, stock: 5 }] }) };
@@ -361,8 +364,8 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
           const now = await s.getProduct(p.id);
           expect([now.name === `${p.name} mx`, (await s.outletStock(p.id, M)).stock]).toEqual(allowed ? [true, 5] : [false, 2]);
         }],
-      // #825: only the merchant deletes products
-      ['products.delete DELETE /api/products/{id}', false, false,
+      // #825: kho (and OUTLET_ADMIN) delete products stocked at their outlet; staff does not
+      ['products.delete DELETE /api/products/{id}', false, true,
         async (r) => {
           const p = await s.createProduct({ kind: 'FIXED', price: 100000, stock: 2, outletId: M });
           return { p, res: await del(r, `/api/products/${p.id}`) };

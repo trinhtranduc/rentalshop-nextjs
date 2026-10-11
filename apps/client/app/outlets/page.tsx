@@ -24,6 +24,7 @@ import {
   EMPTY_OUTLET_FORM,
   formatOutletDate,
   nextSort,
+  isOutletOwnerRole,
   outletActions,
   outletAddress,
   outletCreatePayload,
@@ -84,10 +85,12 @@ export default function OutletsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('outlets.web') as unknown as T;
-  // #745: multi-branch comes later, so the web does not offer "Thêm chi nhánh"
-  const canAdd = isAddOutletEnabled();
   const { user } = useAuth();
   const { canManageOutlets } = usePermissions();
+  // #824: only the shop owner adds, pauses or reopens an outlet; OUTLET_ADMIN edits its own outlet
+  const isOwner = isOutletOwnerRole(user?.role);
+  // #745: "Thêm chi nhánh" also needs NEXT_PUBLIC_ENABLE_ADD_OUTLET
+  const canAdd = isAddOutletEnabled() && isOwner;
   const { toastSuccess } = useToast();
 
   const { q, page, limit, sortBy, sortOrder } = parseOutletParams(searchParams);
@@ -208,7 +211,7 @@ export default function OutletsPage() {
     typeof row._count?.users === 'number' ? t('staffCount', { count: row._count.users }) : '';
 
   const actions = (row: OutletLike) => {
-    const allowed = outletActions(row, canManageOutlets);
+    const allowed = outletActions(row, canManageOutlets, isOwner);
     return (
       <span className="flex items-center justify-end gap-1">
         {allowed.includes('edit') && (
@@ -401,9 +404,11 @@ export default function OutletsPage() {
               <Link href={`/outlets/${view.id}/bank-accounts`} className={outlineBtn}>
                 {t('bankAccounts')}
               </Link>
-              <button type="button" onClick={() => setDialog({ kind: 'edit', row: view })} className={primaryBtn}>
-                {t('edit')}
-              </button>
+              {canManageOutlets && (
+                <button type="button" onClick={() => setDialog({ kind: 'edit', row: view })} className={primaryBtn}>
+                  {t('edit')}
+                </button>
+              )}
             </>
           ) : undefined
         }

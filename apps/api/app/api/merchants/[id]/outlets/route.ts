@@ -3,6 +3,8 @@ import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, isOutletRole } from '@rentalshop/constants';
+import { checkPlanLimitIfNeeded } from '@rentalshop/utils/server';
+import { canChangeOutletLifecycle, outletForbiddenResponse } from '../../../../../lib/outlet-rules';
 
 /**
  * GET /api/merchants/[id]/outlets
@@ -81,8 +83,9 @@ export async function GET(
  * POST /api/merchants/[id]/outlets
  * Create new outlet with role-based access control
  * 
- * Authorization: Roles with 'outlet.manage' permission can create outlets
+ * Authorization: 'outlet.manage' AND MERCHANT / ADMIN only (#824: OUTLET_ADMIN gets 403 FORBIDDEN)
  * Security: Validates merchant ownership before creating outlet
+ * Plan limit: same outlets check as POST /api/outlets (PLAN_LIMIT_EXCEEDED). The new outlet gets 0-stock rows.
  */
 export async function POST(
   request: NextRequest,
@@ -100,6 +103,13 @@ export async function POST(
         return validation.error!;
       }
       const merchant = validation.merchant!;
+
+      if (!canChangeOutletLifecycle(user.role)) {
+        return outletForbiddenResponse();
+      }
+
+      const planLimitError = await checkPlanLimitIfNeeded(user, merchant.id, 'outlets');
+      if (planLimitError) return planLimitError;
 
       const body = await request.json();
       const { name, address, phone, description } = body;

@@ -512,6 +512,10 @@
   "INVALID_DURATION": "Thời hạn gia hạn phải là 1, 3, 6 hoặc 12 tháng",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "Chỉ được đổi gói khi sang kỳ mới",
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "Chỉ được hạ cấp khi sang kỳ mới",
+  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Nhân viên không sửa được tên, giá, ảnh, danh mục và thông tin chung của sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho. Bạn chỉ sửa được tồn kho của chi nhánh mình.",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho."
   "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Chỉ chủ shop được sửa tên, giá, ảnh, danh mục và các thông tin chung của sản phẩm. Bạn chỉ sửa được tồn kho của chi nhánh mình.",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "Chỉ chủ shop được xóa sản phẩm."
+  "PRODUCT_DELETE_MERCHANT_ONLY": "Chỉ chủ shop được xóa sản phẩm.",
+  "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
+  "OUTLET_DEACTIVATED": "Chi nhánh đã ngừng hoạt động, liên hệ chủ shop."
 }
