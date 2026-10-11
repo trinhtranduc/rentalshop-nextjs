@@ -56,6 +56,8 @@ export function StockCell({ row, t }: { row: ProductRow; t: T }) {
         {s.out ? t('stock.out') : t('stock.left', { available: s.available, total: s.total })}
       </span>
       {s.renting > 0 && <span className="whitespace-nowrap text-sm text-ar-muted">{t('stock.renting', { count: s.renting })}</span>}
+      {/* #830: OUTLET_ADMIN / kho only (the API sends otherOutlets to those two roles), read only */}
+      {row.otherAvailable != null && <span className="whitespace-nowrap text-sm text-ar-muted">{t('stock.otherOutlets', { count: row.otherAvailable })}</span>}
     </span>
   );
 }
