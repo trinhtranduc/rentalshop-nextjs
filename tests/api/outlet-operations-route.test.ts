@@ -61,6 +61,19 @@ describe('GET /api/analytics/outlet-operations (#350)', () => {
     expect(mockDb.outletOperations.get).toHaveBeenCalledWith(expect.objectContaining({ outletIds: [1, 3] }));
   });
 
+  it('each row carries its outletId (#852, additive)', async () => {
+    ctx = { user: { id: 2, role: 'MERCHANT', merchantId: 2 }, userScope: { merchantId: 2 } };
+    mockHasPermission.mockResolvedValue(true);
+    const order = {
+      id: 5, orderNumber: '123456', outletId: 3, status: 'RESERVED', orderType: 'RENT',
+      pickupPlanAt: null, returnPlanAt: null, totalAmount: 100, depositAmount: 0, securityDeposit: 0,
+      isReadyToDeliver: true, payments: [], customer: null, orderItems: [],
+    };
+    mockDb.outletOperations.get.mockResolvedValue({ ...emptyOps, pickupsToday: { count: 1, orders: [order] } });
+    const res: any = await GET(req());
+    expect(res.body.data.pickupsToday.orders[0]).toEqual(expect.objectContaining({ id: 5, outletId: 3 }));
+  });
+
   it('merchant: narrowed to selected outlets', async () => {
     ctx = { user: { id: 2, role: 'MERCHANT', merchantId: 2 }, userScope: { merchantId: 2 } };
     mockHasPermission.mockResolvedValue(true);

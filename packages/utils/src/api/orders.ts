@@ -56,6 +56,7 @@ export const ordersApi = {
     }
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    if (filters.outletIds && filters.outletIds.length > 0) params.append('outletIds', filters.outletIds.join(','));
     if (filters.customerId) params.append('customerId', filters.customerId.toString());
     if (filters.productId) params.append('productId', filters.productId.toString());
     
@@ -245,6 +246,7 @@ export const ordersApi = {
     status?: string;
     orderType?: string;
     orderIds?: number[]; // Export specific orders by IDs
+    outletIds?: number[]; // #852: MERCHANT exports some of its outlets
   }): Promise<Blob> {
     const queryParams = new URLSearchParams();
     if (params.period) queryParams.append('period', params.period);
@@ -254,6 +256,7 @@ export const ordersApi = {
     if (params.dateField) queryParams.append('dateField', params.dateField);
     if (params.status) queryParams.append('status', params.status);
     if (params.orderType) queryParams.append('orderType', params.orderType);
+    if (params.outletIds && params.outletIds.length > 0) queryParams.append('outletIds', params.outletIds.join(','));
     
     // Add orderIds to query params if provided
     if (params.orderIds && params.orderIds.length > 0) {

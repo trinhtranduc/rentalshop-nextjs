@@ -218,3 +218,10 @@ export function cellLabel(cell: GridCell, count: DayCount | undefined, parts: { 
   if (count?.late) bits.push(`${parts.late} ${count.late}`);
   return bits.join(', ');
 }
+
+/** #852: `?outlet=` on Lịch giao trả: one known branch while the owner's picker is shown, else all (undefined). */
+export function calendarOutletId(raw: string | null | undefined, options: Array<{ id: number }>, picker: boolean): number | undefined {
+  if (!picker || !raw || !/^[1-9]\d*$/.test(raw)) return undefined;
+  const id = Number(raw);
+  return options.some((o) => o.id === id) ? id : undefined;
+}

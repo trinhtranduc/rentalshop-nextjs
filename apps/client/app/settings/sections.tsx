@@ -380,11 +380,24 @@ type NoteRow = { id: number; name: string; saved: string; draft: string; saving:
 /** Where "add a bank account" goes from the Phiếu in hint (#628): Cài đặt tab for an outlet admin, the outlet page for an owner. */
 export type BankLink = { kind: 'tab'; open: () => void } | { kind: 'page' } | null;
 
-export function ReceiptSection({ t, canEditNote, bankLink = null }: { t: T; canEditNote: boolean; bankLink?: BankLink }) {
+export function ReceiptSection({
+  t,
+  canEditNote,
+  bankLink = null,
+  outletId,
+}: {
+  t: T;
+  canEditNote: boolean;
+  bankLink?: BankLink;
+  /** #852: the owner's picked branch; only that branch's note, QR and preview */
+  outletId?: number | null;
+}) {
   const to = useTranslations('outlets');
   const ts = useTranslations('settings');
   const { toastSuccess, toastError } = useToast();
-  const { rows, loading, failed, retry } = useOutlets();
+  const all = useOutlets();
+  const { loading, failed, retry } = all;
+  const rows = useMemo(() => (outletId ? all.rows.filter((o) => o.id === outletId) : all.rows), [all.rows, outletId]);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   useEffect(() => {
     setNotes(rows.map((o) => ({ id: o.id, name: o.name, saved: o.printNote || '', draft: o.printNote || '', saving: false })));

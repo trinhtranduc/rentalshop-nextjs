@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth, useDashboardTranslations, usePermissions } from '@rentalshop/hooks';
-import { analyticsApi, getLocalDateKey, outletsApi } from '@rentalshop/utils';
+import { analyticsApi, getLocalDateKey } from '@rentalshop/utils';
 import { useShopToday } from '../hooks/useShopToday';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { useOutletOperations } from './OutletOperationsPanel';
@@ -52,13 +52,12 @@ import {
   resolveBranchSelection,
   selectionOutletIds,
   showsBranchPicker,
-  toBranchOptions,
   writeStoredBranches,
-  type BranchOption,
   type CompareSort,
   type StorageLike,
 } from './branch-model';
 import { TopDrawer } from './overview/TopDrawer';
+import { useBranchOptions } from './useBranchOptions';
 
 interface Loadable<V> {
   data: V | null;
@@ -75,29 +74,6 @@ function browserStorage(): StorageLike | null {
   }
 }
 
-/** #827: the merchant's branches (active and inactive) for the picker; null until loaded */
-function useBranchOptions(enabled: boolean): BranchOption[] | null {
-  const [options, setOptions] = useState<BranchOption[] | null>(enabled ? null : []);
-  useEffect(() => {
-    if (!enabled) {
-      setOptions([]);
-      return;
-    }
-    let cancelled = false;
-    outletsApi
-      .getOutlets({ isActive: 'all' as unknown as boolean, limit: 100 })
-      .then((res) => {
-        if (!cancelled) setOptions(res.success && res.data ? toBranchOptions(res.data.outlets as never) : []);
-      })
-      .catch(() => {
-        if (!cancelled) setOptions([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled]);
-  return options;
-}
 
 /**
  * One period report per range; `enabled` false keeps it idle (no revenue permission).

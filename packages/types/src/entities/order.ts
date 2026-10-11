@@ -517,6 +517,8 @@ export interface OrderFilters {
   orderType?: OrderType;
   merchantId?: number; // Add merchant filtering support
   outletId?: number;
+  /** #852: MERCHANT narrows the list to some of its outlets (`outletIds=1,3`) */
+  outletIds?: number[];
   customerId?: number;
   productId?: number;
   startDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)

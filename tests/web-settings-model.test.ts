@@ -162,7 +162,7 @@ describe('staff list (#528)', () => {
 
 describe('store settings (#528)', () => {
   it('shows the same tabs per role as the old settings menu', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance']);
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'bank-accounts', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance']);
     expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance']);
     expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language', 'appearance']);
   });
@@ -172,7 +172,9 @@ describe('store settings (#528)', () => {
     expect(resolveTab('subscription', 'MERCHANT')).toEqual({ tab: 'subscription' });
     expect(resolveTab('subscription', 'OUTLET_ADMIN')).toEqual({ tab: 'outlet' });
     expect(resolveTab('receipt', 'OUTLET_STAFF')).toEqual({ tab: 'receipt' });
-    expect(resolveTab('bank-accounts', 'MERCHANT')).toEqual({ tab: 'merchant' });
+    // #852: the owner sets bank accounts per branch in Cài đặt
+    expect(resolveTab('bank-accounts', 'MERCHANT')).toEqual({ tab: 'bank-accounts' });
+    expect(resolveTab('bank-accounts', 'OUTLET_STAFF')).toEqual({ tab: 'outlet' });
     expect(resolveTab('loyalty', 'MERCHANT')).toEqual({ tab: 'merchant', redirect: '/loyalty' });
     expect(resolveTab('profile', 'OUTLET_STAFF')).toEqual({ tab: 'profile' });
     expect(defaultTab('ADMIN')).toBe('profile');

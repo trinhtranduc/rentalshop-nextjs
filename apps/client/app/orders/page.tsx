@@ -3,20 +3,24 @@
 /**
  * Đơn hàng (#516). "Tất cả đơn" reads GET /api/orders; "Việc cần làm" and "Chưa lấy đồ" read
  * GET /api/analytics/outlet-operations. Row mapping lives in ./orders-model (unit-tested).
- * Every filter is kept in the URL.
+ * Every filter is kept in the URL. #852: an owner with 2+ branches filters by branch (`?outlets=`, the
+ * Tổng quan picker); every tab and count follows it and each row shows its branch.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
-import { useCanExportData } from '@rentalshop/hooks';
+import { useAuth, useCanExportData } from '@rentalshop/hooks';
 import { getLocalDateKey, ordersApi } from '@rentalshop/utils';
 import { useShopToday } from '../hooks/useShopToday';
 import type { OrderFilters } from '@rentalshop/types';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { useOutletOperations } from '../dashboard/OutletOperationsPanel';
+import { BranchPicker } from '../dashboard/overview/BranchControls';
+import { outletsParam, resolveBranchSelection, selectionOutletIds, showsBranchPicker } from '../dashboard/branch-model';
+import { useBranchOptions } from '../dashboard/useBranchOptions';
 import {
   CREATED_PRESETS,
   ORDER_STATUSES,
@@ -35,7 +39,9 @@ import {
   parseStatus,
   parseTab,
   parseType,
+  rowBranchName,
   type CreatedPreset,
+  type OrderRow,
   type OrderRowLike,
   type OrderTypeFilter,
   type SortKey,
@@ -115,6 +121,8 @@ export default function OrdersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('orders.web') as unknown as T;
+  const td = useTranslations('dashboard') as unknown as T;
+  const { user, loading: authLoading } = useAuth();
   const money = useFormatCurrency();
   const canExport = useCanExportData();
   const { toastSuccess, toastError } = useToast();
@@ -134,6 +142,25 @@ export default function OrdersPage() {
   const limit = parsePageSize(searchParams.get('limit'));
   const q = (searchParams.get('q') || '').trim();
   const range = useMemo(() => createdRange(preset, todayKey, { from, to }), [preset, todayKey, from, to]);
+
+  // #852: branch picker (MERCHANT with 2+ branches). "Tất cả" = active branches, sent as explicit ids.
+  const isMerchant = user?.role === 'MERCHANT';
+  const branchOptions = useBranchOptions(!authLoading && isMerchant);
+  const options = useMemo(() => branchOptions ?? [], [branchOptions]);
+  const picker = showsBranchPicker(user?.role, options);
+  const urlOutlets = searchParams.get('outlets');
+  const branchSelection = useMemo(() => (picker ? resolveBranchSelection(options, urlOutlets, null) : []), [picker, options, urlOutlets]);
+  const outletKey = selectionOutletIds(branchSelection, options, picker)?.join(',') ?? '';
+  const outletIds = useMemo(() => (outletKey ? outletKey.split(',').map(Number) : undefined), [outletKey]);
+  // Wait for the branch list (owner) so each list loads once, with the right branches
+  const branchesReady = !authLoading && !!user && (!isMerchant || branchOptions !== null);
+  const branchOf = useCallback(
+    (row: OrderRow) => {
+      const name = rowBranchName(row, options);
+      return name ? { name, color: options.find((o) => o.id === row.outletId)?.color ?? 'bg-ar-line-strong' } : null;
+    },
+    [options],
+  );
 
   const update = useCallback(
     (patch: Record<string, string | number | null>) => {
@@ -156,8 +183,9 @@ export default function OrdersPage() {
       orderType: (type || undefined) as OrderFilters['orderType'],
       startDate: range?.startDate,
       endDate: range?.endDate,
+      outletIds,
     }),
-    [q, type, range],
+    [q, type, range, outletIds],
   );
   const pageFilters: OrderFilters = useMemo(
     () => ({ ...base, status: (status || undefined) as OrderFilters['status'], page, limit, ...SORTS[sort] }),
@@ -166,9 +194,9 @@ export default function OrdersPage() {
 
   const [nonce, setNonce] = useState(0);
   const retry = useCallback(() => setNonce((n) => n + 1), []);
-  const list = useOrdersPage(tab === 'all' ? pageFilters : null, nonce);
-  const counts = useStatusCounts(tab === 'all' ? base : null, nonce);
-  const ops = useOutletOperations();
+  const list = useOrdersPage(tab === 'all' && branchesReady ? pageFilters : null, nonce);
+  const counts = useStatusCounts(tab === 'all' && branchesReady ? base : null, nonce);
+  const ops = useOutletOperations(outletIds, branchesReady);
   const badges = opsCounts(ops.data);
 
   const rows = useMemo(() => {
@@ -217,6 +245,7 @@ export default function OrdersPage() {
               ...(range ? { period: 'custom' as const, startDate: range.startDate, endDate: range.endDate } : { period: '1year' as const }),
               status: status || undefined,
               orderType: type || undefined,
+              outletIds,
             },
       );
       const url = window.URL.createObjectURL(blob);
@@ -258,6 +287,14 @@ export default function OrdersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="m-0 text-2xl font-bold text-ar-ink">{t('title')}</h1>
         <div className="flex flex-wrap gap-2">
+          {picker && (
+            <BranchPicker
+              options={options}
+              selection={branchSelection}
+              onChange={(ids) => update({ outlets: outletsParam(ids, options) })}
+              t={td}
+            />
+          )}
           {canExport && tab === 'all' && (
             <>
               {selected.size > 0 && (
@@ -381,7 +418,7 @@ export default function OrdersPage() {
 
         <OrdersTable
           rows={rows}
-          loading={tab === 'all' ? list.loading : ops.loading}
+          loading={!branchesReady || (tab === 'all' ? list.loading : ops.loading)}
           failed={tab === 'all' ? list.failed : ops.failed}
           onRetry={tab === 'all' ? retry : ops.reload}
           emptyText={t(`empty.${tab}`)}
@@ -390,6 +427,7 @@ export default function OrdersPage() {
           money={money}
           skeletonRows={tab === 'all' ? Math.min(limit, 10) : 4}
           selection={canExport && tab === 'all' ? selection : undefined}
+          branchOf={picker ? branchOf : undefined}
         />
 
         {tab === 'all' && list.total > 0 && (
