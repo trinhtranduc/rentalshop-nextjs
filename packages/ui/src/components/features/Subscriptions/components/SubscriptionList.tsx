@@ -115,10 +115,12 @@ export function SubscriptionList({
     });
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
+  // Money in the subscription's own currency; VND in the Vietnamese format, others in en-US (#779)
+  const formatCurrency = (amount: number, currency?: string | null) => {
+    const code = (currency || 'USD').toUpperCase();
+    return new Intl.NumberFormat(code === 'VND' ? 'vi-VN' : 'en-US', {
       style: 'currency',
-      currency: currency
+      currency: code
     }).format(amount);
   };
 
@@ -281,7 +283,7 @@ export function SubscriptionList({
                       <td className="px-6 py-4" data-label="Amount">
                         <div>
                           <div className="text-sm font-medium text-text-primary">
-                            {formatCurrency(subscription.amount, 'USD')}
+                            {formatCurrency(subscription.amount, subscription.currency)}
                           </div>
                         </div>
                       </td>
