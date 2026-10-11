@@ -20,10 +20,8 @@ jest.mock('@rentalshop/utils', () => {
   };
 });
 
-import {
-  buildAnalyticsPeriodReport,
-  narrowAnalyticsOutletFilter,
-} from '../../../packages/utils/src/analytics/period-report';
+import { buildAnalyticsPeriodReport } from '../../../packages/utils/src/analytics/period-report';
+import { narrowAnalyticsOutletFilter } from '../../../apps/api/lib/analytics-outlets';
 
 /** 6 Oct 2026, 12:00 in Vietnam */
 const NOW = new Date('2026-10-06T05:00:00.000Z');

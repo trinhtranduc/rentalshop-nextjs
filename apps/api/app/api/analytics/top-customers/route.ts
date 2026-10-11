@@ -6,6 +6,7 @@ import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole, isStaffLikeRole } fr
 import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollateral } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
+import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers
@@ -14,6 +15,8 @@ import { lastShopDays, readReportRange } from '../../../../lib/report-days';
  * - ADMIN, MERCHANT, OUTLET_ADMIN: Can view customer analytics
  * - OUTLET_STAFF: Cannot access (dashboard only)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
+ * - outletIds? (#827, `1,3`): MERCHANT narrows to some of its outlets (another shop's → 403
+ *   CROSS_MERCHANT_ACCESS_DENIED); ignored for outlet roles
  */
 export const GET = withPermissions(['analytics.view.customers'])(async (request, { user, userScope }) => {
   try {
@@ -72,6 +75,17 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       );
     }
     // ADMIN sees all data (no additional filtering)
+
+    // #827: optional outletIds narrows the merchant's outlets; outlet roles keep their own outlet
+    const scoped = narrowAnalyticsOutletFilter(
+      orderWhereClause.outletId !== undefined ? { outletId: orderWhereClause.outletId } : {},
+      user.role,
+      searchParams.get('outletIds')
+    );
+    if (!scoped.ok) {
+      return NextResponse.json(ResponseBuilder.error(scoped.code), { status: scoped.status });
+    }
+    if (scoped.filter?.outletId !== undefined) orderWhereClause.outletId = scoped.filter.outletId;
 
     // ✅ FIX: Get all orders and calculate revenue events within date range
     // We need to get ALL orders (not just created in date range) because revenue events

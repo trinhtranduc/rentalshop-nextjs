@@ -13,12 +13,14 @@ import {
   resolveAnalyticsOutletFilter
 } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
+import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
 
 /**
  * GET /api/analytics/top-products
  * Products ranked per shop by revenue or quantity in the date range.
  *
- * Query: startDate, endDate, sortBy=revenue|quantity, page, limit
+ * Query: startDate, endDate, sortBy=revenue|quantity, page, limit,
+ * outletIds? (#827, `1,3`: MERCHANT narrows to some of its outlets; another shop's → 403; ignored for outlet roles)
  */
 export const GET = withPermissions(['analytics.view.products'])(
   async (request, { user, userScope }) => {
@@ -42,7 +44,15 @@ export const GET = withPermissions(['analytics.view.products'])(
         });
       }
 
-      const outletFilter = await resolveAnalyticsOutletFilter(db, user, userScope);
+      const scoped = narrowAnalyticsOutletFilter(
+        await resolveAnalyticsOutletFilter(db, user, userScope),
+        user.role,
+        searchParams.get('outletIds')
+      );
+      if (!scoped.ok) {
+        return NextResponse.json(ResponseBuilder.error(scoped.code), { status: scoped.status });
+      }
+      const outletFilter = scoped.filter;
       if (outletFilter === null) {
         return NextResponse.json(
           ResponseBuilder.success('NO_DATA_AVAILABLE', {

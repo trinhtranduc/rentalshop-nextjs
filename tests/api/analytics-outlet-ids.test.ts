@@ -52,7 +52,6 @@ jest.mock('@rentalshop/utils/server', () => {
     buildAnalyticsPeriodReport: (...args: any[]) => mockBuildReport(...args),
     emptyAnalyticsPeriodReport: report.emptyAnalyticsPeriodReport,
     resolveAnalyticsOutletFilter: report.resolveAnalyticsOutletFilter,
-    narrowAnalyticsOutletFilter: report.narrowAnalyticsOutletFilter,
     computeTopProductsByShop: (...args: any[]) => mockTopProducts(...args),
     parseRankingQuery: report.parseRankingQuery,
   };
