@@ -233,6 +233,8 @@
       "retry": "重试",
       "loadMore": "加载更多",
       "unreadCount": "{count} 条未读"
-    }
+    },
+    "allOutletsCount": "全部门店 ({count})",
+    "someOutlets": "{count} 家门店"
   }
 }

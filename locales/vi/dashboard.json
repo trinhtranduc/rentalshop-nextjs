@@ -220,6 +220,7 @@
       "today": "Hôm nay",
       "7d": "7 ngày qua",
       "month": "Tháng này",
+      "lastMonth": "Tháng trước",
       "custom": "Tuỳ chọn…"
     },
     "custom": {
@@ -369,6 +370,28 @@
         "futureRefund": "Dự kiến hoàn tiền cọc khi trả hàng",
         "futureNothing": "Dự kiến không có phát sinh khi trả hàng"
       }
+    },
+    "branches": {
+      "label": "Chi nhánh",
+      "prefix": "Chi nhánh: {label}",
+      "all": "Tất cả ({count})",
+      "some": "{count} chi nhánh",
+      "allBranches": "Tất cả chi nhánh",
+      "default": "mặc định",
+      "inactive": "Đã tắt",
+      "sheetTitle": "Chọn chi nhánh",
+      "apply": "Xem {count} chi nhánh",
+      "close": "Đóng"
+    },
+    "compare": {
+      "title": "So sánh chi nhánh",
+      "branch": "Chi nhánh",
+      "newOrders": "Đơn mới",
+      "held": "Đang giữ thế chân",
+      "heldValue": "{count} đơn",
+      "total": "Tổng {count} chi nhánh",
+      "sortBy": "Sắp xếp theo {column}",
+      "onlyThis": "Chỉ xem {name}"
     }
   }
 }

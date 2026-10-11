@@ -9,6 +9,7 @@ import {
 } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
+import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
 
 /**
  * GET /api/analytics/period
@@ -20,6 +21,9 @@ import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics
  *   - endDate   (required, YYYY-MM-DD)
  *   - groupBy   (optional) `day` | `month` — chart granularity (default: day if range ≤ 45 days, else month)
  *   - limit     (optional) top products/customers count (default 3, max 50)
+ *   - outletIds (optional, #827) `1,3`: MERCHANT narrows to some of its outlets (another shop's → 403
+ *               CROSS_MERCHANT_ACCESS_DENIED, malformed → 400 INVALID_QUERY); ignored for outlet roles and ADMIN
+ *   - byOutlet  (optional, #827) `1`: adds `byOutlet` — one row per outlet in scope, the rows add up to `revenue`
  *   - timeZone  (optional) IANA zone of the days; default Asia/Ho_Chi_Minh. Days and months are civil days
  *               of that zone (#355): 2026-10-02 = 2026-10-01T17:00Z .. 2026-10-02T16:59:59.999Z in Vietnam.
  *
@@ -31,6 +35,8 @@ import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics
  *   - topProducts  — top products by revenue in the period
  *   - topCustomers — top customers by spend in the period
  *   - topOutlets   — shops (outlets) ranked by revenue in the period
+ *   - byOutlet     — (#827, only with byOutlet=1) per outlet: orderValue, collected, cashCollected, outstanding,
+ *                    newOrders, collateralHeldOrders
  */
 export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
   try {
@@ -69,7 +75,16 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           ? 'day'
           : 'month';
 
-    const outletFilter = await resolveAnalyticsOutletFilter(db, user, userScope);
+    const scoped = narrowAnalyticsOutletFilter(
+      await resolveAnalyticsOutletFilter(db, user, userScope),
+      user.role,
+      searchParams.get('outletIds')
+    );
+    if (!scoped.ok) {
+      return NextResponse.json(ResponseBuilder.error(scoped.code), { status: scoped.status });
+    }
+    const outletFilter = scoped.filter;
+    const byOutlet = ['1', 'true'].includes((searchParams.get('byOutlet') || '').toLowerCase());
     if (outletFilter === null) {
       return NextResponse.json(
         ResponseBuilder.success('ANALYTICS_PERIOD_SUCCESS', emptyAnalyticsPeriodReport(startDate, endDate, groupBy))
@@ -83,7 +98,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       limit,
       outletFilter,
       userRole: user.role,
-      timeZone
+      timeZone,
+      ...(byOutlet && scoped.outletIds ? { byOutletIds: scoped.outletIds } : {})
     });
 
     return NextResponse.json(ResponseBuilder.success('ANALYTICS_PERIOD_SUCCESS', report));

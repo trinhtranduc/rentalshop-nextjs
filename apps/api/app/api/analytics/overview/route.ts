@@ -9,6 +9,7 @@ import {
 } from '@rentalshop/utils/server';
 import { API, isOutletRole } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
+import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
 
 /**
  * GET /api/analytics/overview
@@ -16,7 +17,8 @@ import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics
  * Backward-compatible alias for GET /api/analytics/period with `groupBy=month`.
  * Prefer /api/analytics/period for new mobile/web clients (single duration API).
  *
- * Query params: startDate, endDate (required), limit? (top lists, default 3)
+ * Query params: startDate, endDate (required), limit? (top lists, default 3),
+ * outletIds? (#827, `1,3`: MERCHANT narrows to some of its outlets; another shop's → 403; ignored for outlet roles)
  */
 export const GET = withPermissions(['analytics.view.revenue'])(async (request, { user, userScope }) => {
   try {
@@ -39,7 +41,15 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       return NextResponse.json(ResponseBuilder.error('INVALID_QUERY'), { status: API.STATUS.BAD_REQUEST });
     }
 
-    const outletFilter = await resolveAnalyticsOutletFilter(db, user, userScope);
+    const scoped = narrowAnalyticsOutletFilter(
+      await resolveAnalyticsOutletFilter(db, user, userScope),
+      user.role,
+      searchParams.get('outletIds')
+    );
+    if (!scoped.ok) {
+      return NextResponse.json(ResponseBuilder.error(scoped.code), { status: scoped.status });
+    }
+    const outletFilter = scoped.filter;
 
     if (outletFilter === null) {
       const empty = emptyAnalyticsPeriodReport(startDate, endDate, 'month');

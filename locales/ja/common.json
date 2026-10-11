@@ -233,6 +233,8 @@
       "retry": "再試行",
       "loadMore": "さらに表示",
       "unreadCount": "未読 {count} 件"
-    }
+    },
+    "allOutletsCount": "全店舗 ({count})",
+    "someOutlets": "{count} 店舗"
   }
 }
