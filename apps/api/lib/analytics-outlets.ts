@@ -1,14 +1,17 @@
 import { USER_ROLE } from '@rentalshop/constants';
 
+/** Prisma `where` part with the role's outlet scope, e.g. `{}`, `{ outletId: 3 }`, `{ outletId: { in: [1, 2] } }` */
+export type OutletFilter = Record<string, unknown>;
+
 export type AnalyticsOutletNarrowing =
-  | { ok: true; filter: Record<string, any> | null; outletIds: number[] | null }
+  | { ok: true; filter: OutletFilter | null; outletIds: number[] | null }
   | { ok: false; status: 400 | 403; code: 'INVALID_QUERY' | 'CROSS_MERCHANT_ACCESS_DENIED' };
 
 const OUTLET_IDS_RE = /^[1-9]\d*(,[1-9]\d*)*$/;
 
 /** Outlet ids an outlet filter covers: `{ outletId: 3 }` → [3], `{ outletId: { in: [...] } }` → the list, else null */
-function outletIdsOfFilter(filter: Record<string, any> | null): number[] | null {
-  const value = filter?.outletId;
+function outletIdsOfFilter(filter: OutletFilter | null): number[] | null {
+  const value = filter?.outletId as number | { in?: unknown } | undefined;
   if (typeof value === 'number') return [value];
   if (value && Array.isArray(value.in)) return value.in.map(Number);
   return null;
@@ -22,7 +25,7 @@ function outletIdsOfFilter(filter: Record<string, any> | null): number[] | null 
  * `outletIds` = the outlets the result covers (null when unknown, e.g. ADMIN without a merchant).
  */
 export function narrowAnalyticsOutletFilter(
-  base: Record<string, any> | null,
+  base: OutletFilter | null,
   role: string | undefined,
   raw: string | null | undefined
 ): AnalyticsOutletNarrowing {
