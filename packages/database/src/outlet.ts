@@ -528,7 +528,9 @@ export const simplifiedOutlets = {
   },
 
   /**
-   * Create new outlet (simplified API)
+   * Create new outlet (simplified API).
+   * #824: in the same transaction, every non-deleted product of the merchant gets an OutletStock row at this outlet
+   * (stock 0 / available 0 / renting 0), so the new branch lists the shop's products with 0 in stock.
    */
   create: async (data: any) => {
     try {
@@ -549,11 +551,24 @@ export const simplifiedOutlets = {
         console.log('✅ Merchant found:', merchant);
       }
       
-      const outlet = await prisma.outlet.create({
-        data,
-        include: {
-          merchant: { select: { id: true, name: true, tenantKey: true } }
+      const outlet = await prisma.$transaction(async (tx) => {
+        const created = await tx.outlet.create({
+          data,
+          include: {
+            merchant: { select: { id: true, name: true, tenantKey: true } }
+          }
+        });
+        const products = await tx.product.findMany({
+          where: { merchantId: created.merchantId, deletedAt: null },
+          select: { id: true }
+        });
+        if (products.length > 0) {
+          await tx.outletStock.createMany({
+            data: products.map((p) => ({ productId: p.id, outletId: created.id, stock: 0, available: 0, renting: 0 })),
+            skipDuplicates: true
+          });
         }
+        return created;
       });
       
       console.log('✅ Outlet created successfully:', outlet);
