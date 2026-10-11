@@ -460,6 +460,15 @@ a {
    Opt-in: only a <table class="table-cards"> is affected, so apps/client (same components) is unchanged.
    td[data-label]: label left, value right. td[data-primary]: full-width card title. td[data-actions]: right edge. */
 @media (max-width: 767px) {
+  /* Pages are a fixed-height column with an inner scroll box for the table. On a phone the filters fill the
+     screen and leave the box a few dozen px, so let every wrapper of a card list grow and the page scroll. */
+  main div:has(table.table-cards) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
   table.table-cards,
   table.table-cards tbody {
     display: block;
