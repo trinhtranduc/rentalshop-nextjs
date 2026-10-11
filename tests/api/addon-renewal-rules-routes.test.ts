@@ -102,7 +102,7 @@ describe('packs of a shop item: more now (charged), fewer next period', () => {
     expect(input).toMatchObject({ itemId: 40, packs: 3, extraPacks: 1, method: 'TRANSFER', transactionId: 'T1' });
     expect(input.columns).toMatchObject({ users: 6 });
     expect(input.quote.monthlyAmount).toBe(40000);
-    expect(input.quote.amountDue).toBe(Math.round((40000 * input.quote.remainingDays) / input.quote.periodDays));
+    expect(input.quote.amountDue).toBe(Math.round((40000 / 30) * input.quote.remainingDays));
     expect(res.body.data.quote.amountDue).toBe(input.quote.amountDue);
   });
 
