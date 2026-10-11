@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { filterAdminMenuByRole } from '@rentalshop/ui';
+import { groupNavItems } from './nav-groups';
 import { ADMIN_NAV, createActionFor, isNavActive, isSubActive, type AdminNavItem } from './nav';
 import { ICONS, ShellIcon } from './Icon';
 
@@ -43,13 +44,30 @@ export function AdminSideNav({ user, pathname, onNavigate, onLogout }: AdminSide
 
   // The group that owns the current page opens by itself.
   useEffect(() => {
-    const owner = items.find((i) => i.subItems?.some((s) => isNavActive(pathname, s.href)));
+    const owner = items.find((i) => !i.inline && i.subItems?.some((s) => isNavActive(pathname, s.href)));
     if (owner) setOpen((prev) => (prev.includes(owner.href) ? prev : [...prev, owner.href]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const renderItem = (item: AdminNavItem) => {
     const Icon = item.icon;
+    if (item.subItems?.length && item.inline) {
+      // Sub-pages straight under the group heading (#815)
+      return (
+        <div key={item.href} className="flex flex-col gap-0.5">
+          {item.subItems.map((sub) => {
+            const SubIcon = sub.icon;
+            const active = isSubActive(pathname, item, sub);
+            return (
+              <Link key={sub.href} href={sub.href} onClick={onNavigate} aria-current={active ? 'page' : undefined} className={rowClass(active)}>
+                <SubIcon className="h-5 w-5 flex-none" />
+                <span className="flex-1">{sub.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      );
+    }
     if (item.subItems?.length) {
       const expanded = open.includes(item.href);
       const groupActive = item.subItems.some((s) => isNavActive(pathname, s.href));
@@ -111,7 +129,12 @@ export function AdminSideNav({ user, pathname, onNavigate, onLogout }: AdminSide
       </Link>
 
       <nav aria-label="Main menu" className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
-        {items.map(renderItem)}
+        {groupNavItems(items).map((group) => (
+          <div key={group.label} role="group" aria-label={group.label} className="flex flex-col gap-0.5">
+            <p className="m-0 px-2.5 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.06em] text-ar-faint">{group.label}</p>
+            {group.items.map(renderItem)}
+          </div>
+        ))}
       </nav>
 
       <div className="flex items-center gap-2.5 border-t border-ar-subtle px-2 pt-2.5">

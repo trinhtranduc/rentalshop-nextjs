@@ -36,8 +36,8 @@ describe('admin menu groups (#815)', () => {
     const top = nav.slice(nav.indexOf('export const ADMIN_NAV'), nav.indexOf('/** `/merchants/2` keeps'));
     const labels = [...top.matchAll(/^  \{\s*label: '([^']+)'/gm)].map((m) => m[1]);
     const withGroup = [...top.matchAll(/^  \{[^]*?group: '([^']+)'/gm)].map((m) => m[1]);
-    expect(labels.length).toBe(13);
-    expect(withGroup.length).toBe(13);
+    expect(labels.length).toBe(14);
+    expect(withGroup.length).toBe(14);
     withGroup.forEach((g) => expect(NAV_GROUPS as readonly string[]).toContain(g));
   });
 
