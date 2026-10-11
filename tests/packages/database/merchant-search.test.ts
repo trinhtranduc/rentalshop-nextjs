@@ -56,4 +56,14 @@ describe('buildMerchantSearchConditions (#817)', () => {
     const c = buildMerchantSearchConditions('abc', 'abc');
     expect(new Set(c.map((x) => JSON.stringify(x))).size).toBe(c.length);
   });
+
+  it('adds the ids found by a digits-only phone lookup (stored numbers with dashes or spaces)', () => {
+    const c = buildMerchantSearchConditions('5550200', '5550200', [2, 9]);
+    expect(c).toContainEqual({ id: { in: [2, 9] } });
+  });
+
+  it('adds no id condition when the lookup found nothing', () => {
+    expect(buildMerchantSearchConditions('abc', 'abc', [])).not.toContainEqual(expect.objectContaining({ id: expect.anything() }));
+    expect(buildMerchantSearchConditions('abc', 'abc')).not.toContainEqual(expect.objectContaining({ id: expect.anything() }));
+  });
 });
