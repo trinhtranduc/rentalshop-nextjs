@@ -65,7 +65,8 @@ describe('admin dialogs and forms (#807)', () => {
   });
 
   it('the add-on dialog uses the dialog surface and footer', () => {
-    const src = read('apps/admin/app/merchants/[id]/plan-limit-addons/page.tsx');
+    // #850: add-ons are priced on Plans → Add-on prices; the old free add-on page redirects to the shop's Add-on tab
+    const src = read('apps/admin/app/plans/addon-prices/page.tsx');
     expect(src).toMatch(/const PHONE_DIALOG = '[^']*\bar-dialog\b/);
     expect(src).toMatch(/const PHONE_FOOTER = '[^']*\bar-dialog-footer\b/);
   });

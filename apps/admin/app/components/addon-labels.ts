@@ -1,0 +1,35 @@
+/** #850: Vietnamese labels of the add-on screens (mockup PjnxEfi3tXwS8GWM775kZY). */
+import type { LimitKind } from '@rentalshop/utils';
+
+export const KIND_UNIT: Record<LimitKind, string> = {
+  outlets: 'chi nhánh',
+  users: 'user',
+  products: 'sản phẩm',
+  customers: 'khách hàng',
+  orders: 'đơn',
+};
+
+export const KIND_DEFAULT_NAME: Record<LimitKind, string> = {
+  outlets: 'Thêm chi nhánh',
+  users: 'Thêm nhân viên',
+  products: 'Thêm sản phẩm',
+  customers: 'Thêm khách hàng',
+  orders: 'Thêm đơn',
+};
+
+export const KINDS: LimitKind[] = ['users', 'outlets', 'products', 'customers', 'orders'];
+
+/** 30000 → "30.000 ₫" */
+export function formatVnd(amount: number | null | undefined): string {
+  return `${new Intl.NumberFormat('vi-VN').format(Math.round(Number(amount) || 0))} ₫`;
+}
+
+/** "+2 user" */
+export function plusLabel(kind: string | null | undefined, units: number | null | undefined): string {
+  const unit = kind && kind in KIND_UNIT ? KIND_UNIT[kind as LimitKind] : '';
+  return `+${new Intl.NumberFormat('vi-VN').format(Number(units) || 0)} ${unit}`.trim();
+}
+
+export function appliesTo(kind: string): string {
+  return kind === 'outlets' ? 'Chỉ gói nhiều chi nhánh (Enterprise)' : 'Mọi gói';
+}

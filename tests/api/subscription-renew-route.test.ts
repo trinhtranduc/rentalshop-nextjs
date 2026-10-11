@@ -17,7 +17,11 @@ const mockTx = {
   payment: { create: jest.fn() },
   subscription: { update: jest.fn() },
 };
-const mockDb = { subscriptions: { findById: jest.fn() } };
+const mockDb = {
+  subscriptions: { findById: jest.fn() },
+  // #850: shops without add-ons unless a test says otherwise
+  merchantAddons: { renewalItems: jest.fn(async () => ({ items: [], catalog: new Map() })), applyRenewal: jest.fn() },
+};
 jest.mock('@rentalshop/database', () => ({
   db: mockDb,
   prisma: { $transaction: (fn: any) => fn(mockTx) },
@@ -27,6 +31,7 @@ jest.mock('@rentalshop/database', () => ({
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/billing-dates'),
   ...jest.requireActual('../../packages/utils/src/core/subscription-billing-calculations'),
+  ...jest.requireActual('../../packages/utils/src/core/addon-pricing'),
   ResponseBuilder: {
     error: (code: string) => ({ success: false, code, message: code, error: code }),
     success: (code: string, data: any) => ({ success: true, code, data }),
@@ -142,6 +147,30 @@ describe('POST /api/subscriptions/[id]/renew (#779)', () => {
     ctx = merchant2;
     const res = await call({ ...base, duration: 1 });
     expect(res.status).toBe(200);
+  });
+
+  it('#850: renewal = plan + add-ons at today\'s list price; paused and marked items are not charged; amount stays the plan price', async () => {
+    givenSubscription({ currency: 'VND', interval: 'monthly', plan: { id: 3, name: 'Enterprise', basePrice: 399000, currency: 'VND' } });
+    mockDb.merchantAddons.renewalItems.mockResolvedValueOnce({
+      items: [
+        { id: 1, addonPriceId: 10, packs: 1, unitPrice: 40000, isActive: true, name: 'Gói 2 nhân viên', limitKind: 'users', packSize: 2 },
+        { id: 2, addonPriceId: 11, packs: 1, unitPrice: 150000, isActive: true, removeAtPeriodEnd: true, endsAt: new Date('2026-10-21T16:59:59.999Z') },
+        { id: 3, addonPriceId: 12, packs: 2, unitPrice: 20000, isActive: true },
+      ],
+      catalog: new Map([
+        [10, { id: 10, monthlyPrice: 45000, isActive: true }],
+        [11, { id: 11, monthlyPrice: 150000, isActive: true }],
+        [12, { id: 12, monthlyPrice: 20000, isActive: false }],
+      ]),
+    });
+    const res = await call({ ...base, duration: 1 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create.mock.calls[0][0].data.amount).toBe(399000 + 45000);
+    expect(mockTx.subscription.update.mock.calls[0][0].data.amount).toBe(399000);
+    expect(res.body.data.renewal).toMatchObject({ planPrice: 399000, addonPrice: 45000, totalDue: 444000 });
+    expect(res.body.data.addons).toEqual([expect.objectContaining({ id: 1, unitPrice: 45000, monthlyAmount: 45000 })]);
+    const lines = mockDb.merchantAddons.applyRenewal.mock.calls[0][1];
+    expect(lines.map((l: any) => [l.id, l.renew])).toEqual([[1, true], [2, false], [3, false]]);
   });
 
   it("a merchant cannot renew another merchant's subscription (403, nothing written)", async () => {

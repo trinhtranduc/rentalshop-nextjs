@@ -17,6 +17,7 @@ import { simplifiedSubscriptionActivities } from './subscription-activity';
 import { simplifiedSubscriptionExpiryReminders } from './subscription-expiry-reminder';
 import { simplifiedMerchants } from './merchant';
 import { simplifiedPlanLimitAddons } from './plan-limit-addon';
+import { simplifiedAddonPrices, simplifiedMerchantAddons } from './addon-price';
 import { simplifiedOrderNumbers } from './order-number-generator';
 import { simplifiedCategories } from './category';
 import { simplifiedAuditLogs } from './audit-logs';
@@ -169,6 +170,10 @@ const db = {
   // PLAN LIMIT ADDON OPERATIONS
   // ============================================================================
   planLimitAddons: simplifiedPlanLimitAddons,
+
+  // ADD-ON PRICES (#850): admin price list and priced add-ons of a shop
+  addonPrices: simplifiedAddonPrices,
+  merchantAddons: simplifiedMerchantAddons,
 
   // ============================================================================
   // SESSION OPERATIONS (Single Session Enforcement)

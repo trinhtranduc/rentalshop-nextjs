@@ -731,6 +731,28 @@ cả câu trả lời của API và dòng dữ liệu (`Outlet`, `OutletStock` d
 | BF-BRANCH-42b | Đổi trạng thái như app gửi (`{status}` thôi) — đã sửa #851 | chủ shop (user có `outletId` = chi nhánh mặc định, như khi đăng ký) giao đơn của B | đơn vẫn ở B, B `2/1/1`; A không đổi |
 | BF-BRANCH-43 | Vai trò chi nhánh không tạo đơn ở chi nhánh khác | staff A gửi `outletId=B` | 403 `CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET`; không có đơn ở B, tồn B không đổi |
 
+## BF-ADD — Giá add-on do admin quản lý (`addon-prices.e2e.test.js`, #850; chốt của chủ shop 2026-10-11)
+
+Mỗi nhóm tự tạo merchant và gói riêng (gói 399.000 ₫/tháng), và tạo dòng giá với tên riêng. Kỳ 1 tháng được đặt
+bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi do test tự tính theo ngày Việt Nam.
+
+| ID | Ca | Bước | Mong đợi |
+|---|---|---|---|
+| BF-ADD-01 | Tạo bảng giá | ADMIN `POST /api/addon-prices`: +1 user 30.000, +2 user 40.000; `GET` | 201; đúng loại, số lượng mỗi gói, giá, `VND`, đang bán; danh sách có `shopsUsing` 0 |
+| BF-ADD-02 | Merchant không đụng bảng giá | MERCHANT gọi `GET/POST/PUT /api/addon-prices`, `POST /api/merchants/[id]/addons`; ADMIN gửi loại lạ, gói 0, giá âm | 403; 400 |
+| BF-ADD-03 | Sửa giá, tạm tắt, số lượng mỗi gói | đổi giá + số lượng mỗi gói khi chưa ai dùng; shop mua; đổi số lượng mỗi gói; tạm tắt | 200; 422 `ADDON_PRICE_IN_USE`; 200 `isActive` false |
+| BF-ADD-04 | Báo giá giữa kỳ | `GET .../addons/quote?addonPriceId&packs=2` | `periodDays`, `remainingDays` theo ngày VN; `amountDue` = round(80.000 × còn ÷ kỳ) |
+| BF-ADD-05 | Mua để vượt giới hạn user | 3/3 user; thêm user; mua 1 gói +2 user; thêm 3 user | 422 `PLAN_LIMIT_EXCEEDED`; mua 201, Payment `PLAN_CHANGE` đúng số tiền; 2 user được, user thứ 3 bị 422; giới hạn 3 + 2 = 5 |
+| BF-ADD-06 | Giá trong body bị bỏ qua | gửi `unitPrice: 1` | item lưu giá 40.000 từ bảng giá |
+| BF-ADD-07 | Shop dùng thử | TRIAL mua | thu 0 (`reason: trial`), không có Payment mới |
+| BF-ADD-08 | Gói chi nhánh | dòng outlets cho gói 1 chi nhánh; cho gói 3 chi nhánh | 422 `ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN`; 201 và giới hạn outlets 4 |
+| BF-ADD-09 | Tạm tắt | shop A mua; tạm tắt; shop B mua | B 422 `ADDON_PRICE_NOT_ON_SALE`; A vẫn có giới hạn khách 3 + 50 |
+| BF-ADD-10 | Sửa giá không đổi item đã mua | mua ở 30.000; đổi giá 35.000; mua lại | item cũ 30.000, item mới 35.000 |
+| BF-ADD-11 | Gỡ cuối kỳ | đánh dấu gỡ; hoàn tác; đánh dấu lại; hết kỳ | `endsAt` = cuối kỳ, giới hạn vẫn 5; sau cuối kỳ giới hạn 3, item không còn trong danh sách, không hoàn tác được |
+| BF-ADD-12 | Không gỡ khi đang dùng vượt | 4/4 user (3 + 1 add-on); đánh dấu gỡ | 422 `CANNOT_DELETE_ADDON_LIMIT_EXCEEDED` |
+| BF-ADD-13 | Gia hạn | 3 add-on: 2 × user (giá lên 32.000), 1 sản phẩm đã đánh dấu gỡ, 1 khách mà dòng giá đã tạm tắt; xem trước; `POST /renew` 1 tháng | xem trước và gia hạn: gói 399.000 + add-on 64.000; Payment = 463.000; `subscription.amount` = 399.000; chỉ item user được gia hạn, giá mới 32.000; 2 item còn lại có `endsAt` |
+| BF-ADD-14 | Route cũ | `GET` plan-limit-addons; `PUT`/`DELETE` item có giá; `PUT` add-on cũ miễn phí | thấy trường mới; 422 `PRICED_ADDON_READ_ONLY`; add-on cũ vẫn sửa được |
+
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 
 Chạy: cần API cục bộ và client chạy từ thư mục `.next` RIÊNG (hai `next dev` trong cùng `apps/client` ghi đè bundle của nhau).
