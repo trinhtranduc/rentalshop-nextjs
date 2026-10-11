@@ -249,3 +249,24 @@ export function selectedCount(sel: Selection, total: number): number {
   return sel.all ? total : sel.ids.length;
 }
 
+
+/**
+ * #825: batch delete by OUTLET_ADMIN / kho reports products another branch still holds
+ * (`errors[].code = PRODUCT_HELD_BY_OTHER_OUTLETS`, `errors[].outlets`). Parameters for that error's sentence,
+ * "Main (3), Kho (0)" with the stock per branch summed over the products; null when there is none.
+ */
+export function heldElsewhereParams(
+  errors: Array<{ code?: string; outlets?: Array<{ id: number; name: string; stock: number }> }> | null | undefined
+): { outlets: string } | null {
+  const byId = new Map<number, { name: string; stock: number }>();
+  for (const e of errors || []) {
+    if (e?.code !== 'PRODUCT_HELD_BY_OTHER_OUTLETS') continue;
+    for (const o of e.outlets || []) {
+      const cur = byId.get(o.id) || { name: o.name, stock: 0 };
+      cur.stock += Number(o.stock) || 0;
+      byId.set(o.id, cur);
+    }
+  }
+  if (byId.size === 0) return null;
+  return { outlets: [...byId.values()].map((o) => `${o.name} (${o.stock})`).join(', ') };
+}

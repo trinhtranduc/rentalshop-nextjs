@@ -70,7 +70,8 @@ export function useGlobalErrorHandler() {
         code: errorCode,
         message: message || errorData,
         success: false,
-        error: errorData
+        error: errorData,
+        data: fullError?.data
       });
       
       const toastType = (errorCode === 'VALIDATION_ERROR' || errorCode?.includes('INVALID')) ? 'warning' : 'error';

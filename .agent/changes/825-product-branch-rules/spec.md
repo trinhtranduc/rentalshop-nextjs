@@ -36,6 +36,18 @@ chỉ ghi tồn ở chi nhánh mình. (PR #829 đã merge theo quyết định c
 - OUTLET_ADMIN, OUTLET_INVENTORY: xóa được sản phẩm chi nhánh mình có (`holdsStockAt`); không có → 403
   `PRODUCT_NOT_AVAILABLE_AT_OUTLET`, cả DELETE và batch-delete (batch-delete trước đây không kiểm tra chi nhánh).
 
+## Xóa khi chi nhánh khác còn giữ sản phẩm (chủ shop chốt, #823)
+- OUTLET_ADMIN / kho chỉ xóa được (DELETE và batch-delete) khi chi nhánh mình có sản phẩm **và** không chi nhánh nào khác
+  của shop còn giữ nó. Chi nhánh khác "còn giữ" khi tồn > 0, có hàng đang cho thuê, hoặc có đơn RESERVED/PICKUPED (chưa xóa)
+  có dòng sản phẩm đó (`otherOutletsHolding`, `openOrdersByProductAndOutlet`).
+- Còn giữ → 409 `PRODUCT_HELD_BY_OTHER_OUTLETS` (mã mới); `data.outlets` = `[{ id, name, stock, renting, openOrders }]`,
+  `data.messageParams.outlets` = "Chính (3), Kho (0)" cho câu thông báo: "{outlets} còn sản phẩm này; chỉ chủ shop xóa được.
+  Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0."
+- batch-delete: sản phẩm bị giữ ở chi nhánh khác nằm trong `errors` (code + `outlets`), không bị xóa; không xóa được gì và mọi
+  lỗi là do chi nhánh khác giữ → 409 `PRODUCT_HELD_BY_OTHER_OUTLETS` (có `messageParams`).
+- MERCHANT / ADMIN, OUTLET_STAFF: không đổi. Sửa trường dùng chung: không đổi (được khi chi nhánh mình có sản phẩm).
+- Web: thông báo lỗi dùng `data.messageParams` (`lookupErrorTranslation(t, code, values)`); xóa nhiều báo thêm các chi nhánh còn giữ.
+
 ## Tạo sản phẩm (POST /api/products, POST /api/products/bulk-import)
 - Thêm dòng tồn 0 cho mọi chi nhánh active khác của shop (`zeroStockRowsForOtherOutlets`). Role chi nhánh vẫn chỉ nhập tồn chi nhánh mình.
 - Role chi nhánh không có `outletId` → 403 `OUTLET_REQUIRED`.

@@ -558,3 +558,22 @@ describe('/api/merchants/:id/products (admin web routes) — same shop only, not
     expect(mockDb.products.create).not.toHaveBeenCalled();
   });
 });
+
+describe('PRODUCT_HELD_BY_OTHER_OUTLETS message (web)', () => {
+  // ICU formatting as next-intl does it (intl-messageformat), over the vi / en sentences the shop web loads
+  const { IntlMessageFormat } = require('../../node_modules/intl-messageformat');
+  const { lookupErrorTranslation } = require('../../packages/utils/src/core/error-display');
+  const translator = (locale: string, messages: Record<string, string>) => {
+    const t: any = (key: string, values?: Record<string, unknown>) => new IntlMessageFormat(messages[key], locale).format(values) as string;
+    t.has = (key: string) => key in messages;
+    return t;
+  };
+
+  it.each([
+    ['vi', 'Second (4) còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.'],
+    ['en', 'Second (4) still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.'],
+  ])('%s: the outlets the API sends in data.messageParams are in the sentence', (locale, text) => {
+    const t = translator(locale, require(`../../locales/${locale}/errors.json`));
+    expect(lookupErrorTranslation(t, 'PRODUCT_HELD_BY_OTHER_OUTLETS', { outlets: 'Second (4)' })).toBe(text);
+  });
+});

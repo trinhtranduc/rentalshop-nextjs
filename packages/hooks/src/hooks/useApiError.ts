@@ -58,7 +58,10 @@ export function useApiError() {
     // ✅ PRIORITY 1: Standard API error format
     // Format: { success: false, code: "PLAN_LIMIT_EXCEEDED", message: "...", error: "..." }
     if (response?.code && typeof response.code === 'string') {
-      return lookupErrorTranslation(t, response.code) ?? unknown(response.code);
+      // #825: some codes carry parameters for their sentence (PRODUCT_HELD_BY_OTHER_OUTLETS → { outlets })
+      const params = response?.data?.messageParams;
+      const values = params && typeof params === 'object' ? params : undefined;
+      return lookupErrorTranslation(t, response.code, values) ?? unknown(response.code);
     }
 
     // ✅ PRIORITY 2: Error object with code attached (from authenticatedFetch)

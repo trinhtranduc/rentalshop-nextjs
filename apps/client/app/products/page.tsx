@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ImageSearchDialog, useFormatCurrency, useToast } from '@rentalshop/ui';
-import { useAuth, useCanExportData, useOutletsData, usePermissions } from '@rentalshop/hooks';
+import { useApiError, useAuth, useCanExportData, useOutletsData, usePermissions } from '@rentalshop/hooks';
 import { categoriesApi, formatDateKeyInTimeZone, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import type { Product, ProductFilters } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
@@ -25,6 +25,7 @@ import {
   filterKey,
   pageCheckState,
   parseListQuery,
+  heldElsewhereParams,
   scopedOutletFor,
   selectedCount,
   toApiFilters,
@@ -143,6 +144,7 @@ export default function ProductsPage() {
   const t = useTranslations('products.web') as unknown as T;
   const money = useFormatCurrency();
   const { toastSuccess, toastError } = useToast();
+  const { translateError } = useApiError();
   const { user } = useAuth();
   const canExport = useCanExportData();
   const { canManageProducts, canCreateProducts, canUpdateProducts } = usePermissions();
@@ -269,6 +271,9 @@ export default function ProductsPage() {
         const { deleted, failed } = res.data;
         if (deleted === 0) throw new Error('delete');
         if (failed > 0) toastError(t('delete.partial', { deleted, failed }));
+        // #825: say which branches still hold the products that were not deleted
+        const held = heldElsewhereParams((res.data as { errors?: Parameters<typeof heldElsewhereParams>[0] }).errors);
+        if (held) toastError(translateError({ code: 'PRODUCT_HELD_BY_OTHER_OUTLETS', data: { messageParams: held } }));
         else toastSuccess(t('delete.done', { count: deleted }));
         setSelection(EMPTY_SELECTION);
       }
