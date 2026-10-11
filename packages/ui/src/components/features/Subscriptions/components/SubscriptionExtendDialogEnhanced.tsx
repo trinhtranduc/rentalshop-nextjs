@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
   Button,
   Input,
   Label,
@@ -19,6 +18,7 @@ import {
   SelectValue
 } from '@rentalshop/ui';
 import { formatDate, formatCurrency, Card, CardContent } from '@rentalshop/ui';
+import { ResponsiveDialogFooter, DetailsToggle } from './ResponsiveDialogFooter';
 import { Calendar, Loader2, Package } from 'lucide-react';
 import type { Subscription, BillingInterval, PlanLimitAddon } from '@rentalshop/types';
 import { subscriptionsApi } from '@rentalshop/utils';
@@ -71,6 +71,9 @@ export function SubscriptionExtendDialogEnhanced({
   loading = false
 }: SubscriptionExtendDialogEnhancedProps) {
   const [extensionMode, setExtensionMode] = useState<'period' | 'custom'>('period');
+  // Phone only: the calculation steps stay closed until asked for
+  const [showDetails, setShowDetails] = useState(false);
+  const detailsCls = showDetails ? '' : 'max-md:hidden';
   const [billingPeriod, setBillingPeriod] = useState<BillingInterval>('monthly');
   const [newEndDate, setNewEndDate] = useState('');
   const [method, setMethod] = useState('MANUAL_EXTENSION');
@@ -311,8 +314,8 @@ export function SubscriptionExtendDialogEnhanced({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-[calc(100vw-1rem)] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-[calc(100vw-1rem)] sm:max-w-4xl max-h-[90vh] overflow-y-auto max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-3 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+        <DialogHeader className="shrink-0 max-md:pr-10">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Calendar className="h-5 w-5 text-action-primary" />
             Extend Subscription
@@ -322,13 +325,13 @@ export function SubscriptionExtendDialogEnhanced({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-3 max-md:flex-1 max-md:min-h-0 max-md:overflow-y-auto">
           {/* Extension Mode Toggle */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setExtensionMode('period')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors max-md:min-h-11 max-md:flex-1 ${
                 extensionMode === 'period'
                   ? 'bg-action-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -339,7 +342,7 @@ export function SubscriptionExtendDialogEnhanced({
             <button
               type="button"
               onClick={() => setExtensionMode('custom')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors max-md:min-h-11 max-md:flex-1 ${
                 extensionMode === 'custom'
                   ? 'bg-action-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -351,14 +354,14 @@ export function SubscriptionExtendDialogEnhanced({
 
           {/* Billing Period or Custom Date */}
           {extensionMode === 'period' ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+            <div className="space-y-3 max-md:flex max-md:flex-col max-md:gap-3 max-md:space-y-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-md:contents">
+                <div className="space-y-1.5 max-md:order-1">
                   <Label htmlFor="billingPeriod" className="text-xs font-medium">
                     Billing Period *
                   </Label>
                   <Select value={billingPeriod} onValueChange={(value) => setBillingPeriod(value as BillingInterval)}>
-                    <SelectTrigger id="billingPeriod" className="w-full text-sm">
+                    <SelectTrigger id="billingPeriod" className="w-full text-sm max-md:min-h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -372,12 +375,12 @@ export function SubscriptionExtendDialogEnhanced({
                 </div>
                 
                 {/* Extension Price - Editable */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 max-md:order-3">
                   <Label htmlFor="extensionPrice" className="text-xs font-medium">
                     Extension Price *
                   </Label>
                   {calculating ? (
-                    <div className="flex items-center gap-2 h-10 text-muted-foreground text-sm border border-border rounded-md px-3">
+                    <div className="flex items-center gap-2 h-10 max-md:min-h-11 text-muted-foreground text-sm border border-border rounded-md px-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Calculating...</span>
                     </div>
@@ -391,7 +394,7 @@ export function SubscriptionExtendDialogEnhanced({
                         value={manualPrice}
                         onChange={(e) => editManualPrice(e.target.value)}
                         placeholder={(calculation.totalPrice || calculation.extensionPrice).toString()}
-                        className="w-full text-sm"
+                        className="w-full text-sm max-md:min-h-11"
                       />
                       <div className="space-y-1 text-xs">
                         <div className="flex items-center justify-between">
@@ -404,8 +407,8 @@ export function SubscriptionExtendDialogEnhanced({
                         </div>
                         {calculation.formula && (
                           <div className="pt-1 border-t border-gray-200 space-y-1">
-                            <div className="text-[10px] text-gray-600 font-medium">Calculation Details:</div>
-                            <div className="text-[10px] text-gray-500 space-y-0.5">
+                            <div className={`text-[10px] text-gray-600 font-medium ${detailsCls}`}>Calculation Details:</div>
+                            <div className={`text-[10px] text-gray-500 space-y-0.5 ${detailsCls}`}>
                               {calculation.formula.step1 && <div>1. {calculation.formula.step1}</div>}
                               {calculation.formula.step2 && <div>2. {calculation.formula.step2}</div>}
                               {calculation.formula.step3 && (
@@ -418,12 +421,13 @@ export function SubscriptionExtendDialogEnhanced({
                                 <div className="font-medium text-[10px]">{calculation.formula.withRemaining}</div>
                               )}
                             </div>
+                            <DetailsToggle open={showDetails} onToggle={() => setShowDetails(v => !v)} />
                           </div>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <div className="h-10 px-3 flex items-center text-sm text-muted-foreground border border-border rounded-md">
+                    <div className="h-10 max-md:min-h-11 px-3 flex items-center text-sm text-muted-foreground border border-border rounded-md">
                       Select period to calculate
                     </div>
                   )}
@@ -432,7 +436,7 @@ export function SubscriptionExtendDialogEnhanced({
               
               {/* Display Calculated End Date */}
               {newEndDate && (
-                <div className="p-2 bg-gray-50 border border-gray-200 rounded-md">
+                <div className="p-2 bg-gray-50 border border-gray-200 rounded-md max-md:order-2">
                   <div className="text-xs text-gray-600">New End Date:</div>
                   <div className="text-sm font-medium text-gray-900">
                     {formatDate(newEndDate)}
@@ -452,7 +456,7 @@ export function SubscriptionExtendDialogEnhanced({
                   value={newEndDate}
                   onChange={(e) => setNewEndDate(e.target.value)}
                   min={minEndKey}
-                  className="w-full text-sm"
+                  className="w-full text-sm max-md:min-h-11"
                 />
               </div>
               
@@ -462,7 +466,7 @@ export function SubscriptionExtendDialogEnhanced({
                   Extension Price *
                 </Label>
                 {calculating ? (
-                  <div className="flex items-center gap-2 h-10 text-muted-foreground text-sm border border-border rounded-md px-3">
+                  <div className="flex items-center gap-2 h-10 max-md:min-h-11 text-muted-foreground text-sm border border-border rounded-md px-3">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Calculating...</span>
                   </div>
@@ -476,7 +480,7 @@ export function SubscriptionExtendDialogEnhanced({
                       value={manualPrice}
                       onChange={(e) => editManualPrice(e.target.value)}
                       placeholder={calculation.extensionPrice.toString()}
-                      className="w-full text-sm"
+                      className="w-full text-sm max-md:min-h-11"
                     />
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center justify-between">
@@ -489,8 +493,8 @@ export function SubscriptionExtendDialogEnhanced({
                       </div>
                       {calculation.formula && (
                         <div className="pt-1 border-t border-gray-200 space-y-1">
-                          <div className="text-[10px] text-gray-600 font-medium">Calculation Details:</div>
-                          <div className="text-[10px] text-gray-500 space-y-0.5">
+                            <div className={`text-[10px] text-gray-600 font-medium ${detailsCls}`}>Calculation Details:</div>
+                          <div className={`text-[10px] text-gray-500 space-y-0.5 ${detailsCls}`}>
                             {calculation.formula.step1 && <div>1. {calculation.formula.step1}</div>}
                             {calculation.formula.step2 && <div>2. {calculation.formula.step2}</div>}
                             {calculation.formula.step3 && (
@@ -503,12 +507,13 @@ export function SubscriptionExtendDialogEnhanced({
                               <div className="font-medium">{calculation.formula.withRemaining}</div>
                             )}
                           </div>
+                          <DetailsToggle open={showDetails} onToggle={() => setShowDetails(v => !v)} />
                         </div>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="h-10 px-3 flex items-center text-sm text-muted-foreground border border-border rounded-md">
+                  <div className="h-10 max-md:min-h-11 px-3 flex items-center text-sm text-muted-foreground border border-border rounded-md">
                     Select date to calculate
                   </div>
                 )}
@@ -550,7 +555,7 @@ export function SubscriptionExtendDialogEnhanced({
                 id="method"
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
-                className="w-full p-2 text-sm border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
+                className="w-full p-2 text-sm max-md:min-h-11 border border-border rounded-md focus:ring-2 focus:ring-action-primary focus:border-transparent"
               >
                 {EXTENSION_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>
@@ -566,11 +571,11 @@ export function SubscriptionExtendDialogEnhanced({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Reason..."
-                className="w-full text-sm"
+                className="w-full text-sm max-md:min-h-11"
               />
             </div>
             <div className="flex items-end">
-              <div className="flex items-center space-x-2 w-full">
+              <Label htmlFor="sendEmail" className="flex items-center gap-2 w-full text-xs font-normal cursor-pointer max-md:min-h-11">
                 <input
                   type="checkbox"
                   id="sendEmail"
@@ -578,26 +583,35 @@ export function SubscriptionExtendDialogEnhanced({
                   onChange={(e) => setSendEmail(e.target.checked)}
                   className="h-4 w-4 text-action-primary focus:ring-action-primary border-border rounded"
                 />
-                <Label htmlFor="sendEmail" className="text-xs font-normal cursor-pointer">
-                  Send email notification
-                </Label>
-              </div>
+                Send email notification
+              </Label>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={loading || !newEndDate || !calculation || calculating || !manualPrice}
-          >
-            {loading ? 'Extending...' : 'Extend Subscription'}
-          </Button>
-        </DialogFooter>
+        <ResponsiveDialogFooter
+          className="max-md:-mx-4"
+          summaryLabel="Extension Price"
+          summaryAmount={
+            calculation && manualPrice && Number.isFinite(parseFloat(manualPrice))
+              ? formatCurrency(parseFloat(manualPrice), calculation.currency as any)
+              : undefined
+          }
+          secondary={
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancel
+            </Button>
+          }
+          primary={
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !newEndDate || !calculation || calculating || !manualPrice}
+            >
+              {loading ? 'Extending...' : 'Extend Subscription'}
+            </Button>
+          }
+        />
       </DialogContent>
     </Dialog>
   );

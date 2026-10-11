@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
   Button,
   Label,
   Alert,
@@ -21,6 +20,7 @@ import {
   Textarea
 } from '@rentalshop/ui';
 import { formatCurrency, Badge, Card, CardContent } from '@rentalshop/ui';
+import { ResponsiveDialogFooter, DetailsToggle } from './ResponsiveDialogFooter';
 import { ArrowRight, Package } from 'lucide-react';
 import { calculatePlanChangeTotal, storedBillingInterval, formatInShopZone } from '@rentalshop/utils';
 import type { Subscription, Plan, BillingInterval, PlanLimitAddon } from '@rentalshop/types';
@@ -52,6 +52,8 @@ export function SubscriptionChangePlanDialog({
   onConfirm,
   loading = false
 }: SubscriptionChangePlanDialogProps) {
+  // Phone only: the price breakdown stays closed until asked for
+  const [showDetails, setShowDetails] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [selectedInterval, setSelectedInterval] = useState<BillingInterval>('monthly');
   const [reason, setReason] = useState<string>('');
@@ -197,8 +199,8 @@ export function SubscriptionChangePlanDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+        <DialogHeader className="px-6 py-4 border-b shrink-0 max-md:px-4 max-md:pr-12">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-action-primary" />
             Change Subscription Plan
@@ -213,15 +215,15 @@ export function SubscriptionChangePlanDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 py-4 overflow-y-auto">
-          <div className="space-y-4">
+        <div className="px-6 py-4 overflow-y-auto max-md:flex-1 max-md:min-h-0 max-md:px-4">
+          <div className="space-y-4 max-md:space-y-0 max-md:grid max-md:grid-cols-2 max-md:gap-3">
 
           {/* Billing Period & Plan Selection - Compact */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-3 max-md:contents">
+            <div className="space-y-1.5 max-md:col-span-2 max-md:order-2">
               <Label className="text-xs font-medium">Billing Period</Label>
               <Select value={selectedInterval} onValueChange={(value) => setSelectedInterval(value as BillingInterval)}>
-                <SelectTrigger className="w-full text-sm">
+                <SelectTrigger className="w-full text-sm max-md:min-h-11">
                   <SelectValue placeholder="Select period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -233,19 +235,19 @@ export function SubscriptionChangePlanDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 max-md:order-3">
               <Label className="text-xs font-medium">Start Date</Label>
-              <div className="h-9 flex items-center text-sm text-muted-foreground">
+              <div className="h-9 max-md:h-auto max-md:min-h-9 flex items-center text-sm text-muted-foreground">
                 {planChange ? formatInShopZone(planChange.newPeriodStart) : 'Today'}
               </div>
             </div>
           </div>
 
           {/* End Date (computed on the Vietnam day, same as the API) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-3 max-md:contents">
+            <div className="space-y-1.5 max-md:order-4">
               <Label className="text-xs font-medium">End Date</Label>
-              <div className="h-9 flex items-center text-sm text-muted-foreground">
+              <div className="h-9 max-md:h-auto max-md:min-h-9 flex items-center text-sm text-muted-foreground">
                 {planChange ? formatInShopZone(planChange.newPeriodEnd) : 'Select a plan to calculate the end date'}
               </div>
               {selectedCycle && (
@@ -257,7 +259,7 @@ export function SubscriptionChangePlanDialog({
           </div>
 
             {/* Select New Plan */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 max-md:col-span-2 max-md:order-1">
             <Label className="text-xs font-medium">Select New Plan</Label>
             {plans.length === 0 && (
               <Alert>
@@ -270,7 +272,7 @@ export function SubscriptionChangePlanDialog({
                 value={selectedPlanId?.toString() || ''} 
                 onValueChange={(value) => setSelectedPlanId(parseInt(value))}
               >
-                <SelectTrigger className="w-full text-sm">
+                <SelectTrigger className="w-full text-sm max-md:min-h-11">
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -298,7 +300,7 @@ export function SubscriptionChangePlanDialog({
 
           {/* Summary - Show when plan is selected */}
           {selectedPlan && (
-              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-3 max-md:col-span-2 max-md:order-5">
               {(() => {
                 const newPricing = calculatePricingForInterval(selectedPlan, selectedInterval);
                 return (
@@ -321,7 +323,10 @@ export function SubscriptionChangePlanDialog({
 
                       {/* Breakdown: what the API charges */}
                       {planChange && (
-                        <div className="pt-2 border-t border-gray-200 space-y-1 text-xs">
+                        <DetailsToggle open={showDetails} onToggle={() => setShowDetails(v => !v)} />
+                      )}
+                      {planChange && (
+                        <div className={`pt-2 border-t border-gray-200 space-y-1 text-xs ${showDetails ? '' : 'max-md:hidden'}`}>
                           <div className="flex justify-between">
                             <span>New cycle price ({selectedPlan.name}{selectedCycle ? `, ${selectedCycle.label}` : ''}):</span>
                             <span className="font-medium">{formatCurrency(planChange.newPlanPeriodPrice, newCurrency)}</span>
@@ -367,7 +372,7 @@ export function SubscriptionChangePlanDialog({
                     )}
 
                     {/* Reason & Email - Compact */}
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t max-md:grid-cols-1">
                       <div className="space-y-1">
                         <Label htmlFor="reason" className="text-xs font-medium">Reason (Optional)</Label>
                         <Input
@@ -375,11 +380,11 @@ export function SubscriptionChangePlanDialog({
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
                           placeholder="Reason..."
-                          className="w-full text-sm"
+                          className="w-full text-sm max-md:min-h-11"
                         />
                       </div>
                       <div className="flex items-end">
-                        <div className="flex items-center space-x-2">
+                        <Label htmlFor="sendEmail" className="flex items-center gap-2 text-xs font-normal cursor-pointer max-md:min-h-11 max-md:w-full">
                           <input
                             type="checkbox"
                             id="sendEmail"
@@ -387,10 +392,8 @@ export function SubscriptionChangePlanDialog({
                             onChange={(e) => setSendEmail(e.target.checked)}
                             className="h-4 w-4 text-action-primary focus:ring-action-primary border-border rounded"
                           />
-                          <Label htmlFor="sendEmail" className="text-xs font-normal cursor-pointer">
-                            Send email notification
-                          </Label>
-                        </div>
+                          Send email notification
+                        </Label>
                       </div>
                     </div>
                           </>
@@ -402,17 +405,24 @@ export function SubscriptionChangePlanDialog({
         </div>
 
           {/* Action Buttons */}
-        <DialogFooter className="px-6 py-4 border-t">
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={loading || !selectedPlanId}
-          >
-            {loading ? 'Changing Plan...' : 'Change Plan'}
-          </Button>
-        </DialogFooter>
+        <ResponsiveDialogFooter
+          className="md:px-6 md:py-4 md:border-t"
+          summaryLabel="Total due"
+          summaryAmount={planChange ? formatCurrency(planChange.totalDue, newCurrency) : undefined}
+          secondary={
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancel
+            </Button>
+          }
+          primary={
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !selectedPlanId}
+            >
+              {loading ? 'Changing Plan...' : 'Change Plan'}
+            </Button>
+          }
+        />
       </DialogContent>
     </Dialog>
   );
