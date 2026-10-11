@@ -5,6 +5,7 @@
  * per Vietnam day, late returns for today); the day panel reads GET /api/calendar/orders/by-date
  * (hand-overs, and returns with `kind=return`) and, on today, the late returns of
  * GET /api/analytics/outlet-operations. Month and day are kept in the URL.
+ * #852: an owner with 2+ branches picks one branch or all (`?outlet=`); the routes keep it inside the shop.
  */
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -25,9 +26,12 @@ import { useShopToday } from '../hooks/useShopToday';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { formatDayLabel } from '../dashboard/overview-model';
+import { showsBranchPicker } from '../dashboard/branch-model';
+import { useBranchOptions } from '../dashboard/useBranchOptions';
 import { Skeleton, cardClass, outlineBtn, type Money, type T } from '../orders/list/parts';
 import {
   buildDayRow,
+  calendarOutletId,
   cellLabel,
   dayCounts,
   isDayKey,
@@ -116,7 +120,7 @@ function useDaySection(day: string, kind: DayRowKind, todayKey: string, outletId
 }
 
 /** Late returns (planned return before today) for today's panel. */
-function useLateReturns(enabled: boolean, todayKey: string, nonce: number): DayRow[] {
+function useLateReturns(enabled: boolean, todayKey: string, nonce: number, outletId?: number): DayRow[] {
   const [rows, setRows] = useState<DayRow[]>([]);
   useEffect(() => {
     if (!enabled) {
@@ -125,7 +129,7 @@ function useLateReturns(enabled: boolean, todayKey: string, nonce: number): DayR
     }
     let live = true;
     analyticsApi
-      .getOutletOperations()
+      .getOutletOperations(outletId ? [outletId] : undefined)
       .then((res) => {
         if (!live || !res.success || !res.data) return;
         setRows(res.data.overdueReturns.orders.map((o) => buildDayRow(o as DayOrderLike, 'return', todayKey, toDayKey)));
@@ -134,7 +138,7 @@ function useLateReturns(enabled: boolean, todayKey: string, nonce: number): DayR
     return () => {
       live = false;
     };
-  }, [enabled, todayKey, nonce]);
+  }, [enabled, todayKey, nonce, outletId]);
   return rows;
 }
 
@@ -145,7 +149,14 @@ function CalendarContent() {
   const t = useTranslations('calendar.web') as unknown as T;
   const money = useFormatCurrency() as Money;
   const { user, loading: authLoading } = useAuth();
-  const outletId = user?.outletId ?? undefined;
+  const td = useTranslations('dashboard') as unknown as T;
+  // #852: owner with 2+ branches: one branch (`?outlet=`) or all; outlet roles stay on their outlet
+  const isMerchant = user?.role === 'MERCHANT';
+  const branchOptions = useBranchOptions(!authLoading && isMerchant);
+  const options = useMemo(() => branchOptions ?? [], [branchOptions]);
+  const picker = showsBranchPicker(user?.role, options);
+  const outletId = isMerchant ? calendarOutletId(searchParams.get('outlet'), options, picker) : (user?.outletId ?? undefined);
+  const branchesReady = !isMerchant || branchOptions !== null;
 
   const todayKey = useShopToday();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
@@ -174,7 +185,7 @@ function CalendarContent() {
   const [countState, setCountState] = useState<{ loading: boolean; failed: boolean }>({ loading: true, failed: false });
   const [nonce, setNonce] = useState(0);
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !branchesReady) return;
     let live = true;
     setCountState({ loading: true, failed: false });
     calendarApi
@@ -189,12 +200,18 @@ function CalendarContent() {
     return () => {
       live = false;
     };
-  }, [authLoading, user, outletId, month.month, month.year, todayKey, nonce]);
+  }, [authLoading, user, branchesReady, outletId, month.month, month.year, todayKey, nonce]);
 
-  const ready = !authLoading && !!user;
+  const ready = !authLoading && !!user && branchesReady;
+  const setOutlet = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set('outlet', value);
+    else params.delete('outlet');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
   const pickups = useDaySection(selected, 'pickup', todayKey, outletId, ready, nonce);
   const returns = useDaySection(selected, 'return', todayKey, outletId, ready, nonce);
-  const lateRows = useLateReturns(ready && selected === todayKey, todayKey, nonce);
+  const lateRows = useLateReturns(ready && selected === todayKey, todayKey, nonce, outletId);
   const returnRows = selected === todayKey ? mergeReturns(returns.rows, lateRows) : returns.rows;
   const lateExtra = returnRows.length - returns.rows.length;
 
@@ -227,6 +244,22 @@ function CalendarContent() {
           <button type="button" onClick={() => setUrl(monthOfKey(todayKey), todayKey)} className={`${outlineBtn} h-9 text-sm`}>
             {t('today')}
           </button>
+          {picker && (
+            <select
+              data-calendar-branch
+              aria-label={td('home.branches.label')}
+              value={outletId ?? ''}
+              onChange={(e) => setOutlet(e.target.value)}
+              className="h-9 max-w-[260px] rounded-[10px] border border-ar-primary bg-ar-primary-soft px-2.5 text-sm font-semibold text-ar-primary-ink"
+            >
+              <option value="">{td('home.branches.allBranches')}</option>
+              {options.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.isActive ? o.name : `${o.name} (${td('home.branches.inactive')})`}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm text-ar-ink-2">
           <span className="flex items-center gap-1.5">
