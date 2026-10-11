@@ -203,7 +203,7 @@ export const OrderTable = React.memo(function OrderTable({
         </div>
       )}
       <div className="overflow-x-auto overflow-y-auto flex-1 h-full">
-        <table className="w-full min-w-[800px]">
+        <table className="table-cards w-full md:min-w-[800px]">
           {/* Table Header with Sorting - Sticky */}
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>
@@ -330,7 +330,7 @@ export const OrderTable = React.memo(function OrderTable({
                   </td>
                 )}
                 {/* Order Number + type (type had its own column; merged to keep the table within the page, #350) */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-primary>
                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
                     {order.orderNumber}
                     {((order as any).loyaltyPointsRedeemed > 0 || (order as any).loyaltyPointsEarned > 0) && (
@@ -342,12 +342,12 @@ export const OrderTable = React.memo(function OrderTable({
                 
                 
                 {/* Status */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-label={t('status.label')}>
                   {getStatusBadge(order.status)}
                 </td>
                 
                 {/* Customer */}
-                <td className="px-3 py-3 min-w-[160px] max-w-[220px]">
+                <td className="px-3 py-3 md:min-w-[160px] max-w-[220px]" data-label={t('customer.label')}>
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white truncate" title={order.customerName || undefined}>
                       {order.customerName || '—'}
@@ -372,7 +372,7 @@ export const OrderTable = React.memo(function OrderTable({
                 
                 {/* Merchant */}
                 {showMerchant && (
-                  <td className="px-3 py-3 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap" data-label="Merchant">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900 dark:text-white">
                         {order.merchantName || '—'}
@@ -385,7 +385,7 @@ export const OrderTable = React.memo(function OrderTable({
                 )}
                 
                 {/* Amount */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-label={t('amount.total')}>
                   <div className="text-sm">
                     <div className="font-medium text-gray-900 dark:text-white">{formatMoney(order.totalAmount)}</div>
                     {order.depositAmount > 0 && (
@@ -397,7 +397,7 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Pickup Date */}
-                <td className="px-3 py-3 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap" data-label={t('dates.pickupDate')}>
                   <div className="text-sm text-gray-900 dark:text-white">
                     {formatDate(order.pickupPlanAt)}
                   </div>
@@ -409,12 +409,12 @@ export const OrderTable = React.memo(function OrderTable({
                 </td>
                 
                 {/* Created Date */}
-                <td className="hidden min-[1400px]:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td className="hidden min-[1400px]:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" data-label={t('dates.createdDate')}>
                   {formatDateTime(order.createdAt)}
                 </td>
                 
                 {/* Actions - View & Edit outside (icon + label), Delete in dropdown */}
-                <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium" data-actions>
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       variant="ghost"
@@ -462,7 +462,7 @@ export const OrderTable = React.memo(function OrderTable({
                   </div>
                 </td>
               </tr>
-              <tr id={informationId} hidden={!isExpanded} className="bg-gray-50 dark:bg-gray-800/50">
+              <tr id={informationId} hidden={!isExpanded} className="bg-gray-50 dark:bg-gray-800/50 [&[hidden]]:hidden">
                 {isExpanded && (
                   <td colSpan={8 + (onSelectionChange ? 1 : 0) + (showMerchant ? 1 : 0)} className="px-6 py-5">
                     <div className="space-y-4">

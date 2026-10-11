@@ -482,6 +482,9 @@ a {
     border-radius: 0.75rem;
     background: var(--background-card);
   }
+  table.table-cards tr[hidden] {
+    display: none;
+  }
   table.table-cards tr:last-child {
     margin-bottom: 0;
   }
