@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-/** The menu's Settings item points here; Billing is the only settings page (#797). */
+/** The sidebar's Settings group links here; Admin Info is its first item (#797). */
 export default function SettingsPage() {
-  redirect('/settings/billing');
+  redirect('/settings/admin');
 }
