@@ -23,6 +23,7 @@ import {
   PHOTO_ACCEPT,
   buildPayload,
   isBranchRole,
+  sharedFieldsLockedFor,
   roleMayCreateProducts,
   checkPhotos,
   effectiveDefaultMode,
@@ -365,9 +366,9 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   // Prices only with products.manage and never for OUTLET_STAFF (same as iOS ProductAccess.showsPriceFields, #460)
   const canEditPricing = hasPermission('products.manage') && typedUser?.role !== 'OUTLET_STAFF';
   const allowed = isEdit ? canUpdateProducts : canCreateProducts && roleMayCreateProducts(typedUser?.role);
-  // #825: a branch role saves only its own branch stock; on edit the shared fields are locked
+  // #825: a branch role saves stock only at its own outlet; OUTLET_STAFF also cannot change the shared fields
   const branchOutletId = isBranchRole(typedUser?.role) ? Number(typedUser?.outletId ?? typedUser?.outlet?.id) || undefined : undefined;
-  const locked = isEdit && isBranchRole(typedUser?.role);
+  const locked = isEdit && sharedFieldsLockedFor(typedUser?.role);
 
   const [nonce, setNonce] = useState(0);
   const load = useFormData(allowed ? productId : null, allowed ? merchantId : null, nonce);
@@ -457,7 +458,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setSaving(true);
     setFailed(false);
     try {
-      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId });
+      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
       const res = isEdit
         ? await productsApi.updateProduct(productId, payload as unknown as ProductUpdateInput, files)
         : await productsApi.createProduct(payload as unknown as ProductCreateInput, files);

@@ -2,7 +2,9 @@
  * #825 — products across branches (outlets).
  *
  * Name, prices, photos, category, description and the other product fields are shared by every branch of a shop:
- * only the merchant (and ADMIN) changes them. A branch role (`isOutletRole`) edits its own branch stock only.
+ * the merchant (and ADMIN), OUTLET_ADMIN and OUTLET_INVENTORY change them and delete products (the branch roles only
+ * for products stocked at their outlet). OUTLET_STAFF does not (owner 2026-10-11): it creates nothing, and with a
+ * customised products.update it edits its own branch stock only. Every branch role writes stock only at its own outlet.
  * Installed apps and stale web tabs send the whole product on every save, so a field counts as changed only when its
  * value differs from the stored one. Pure functions (no imports) so they are unit-tested on their own.
  */
@@ -23,7 +25,15 @@ export interface StoredProduct {
   isActive?: boolean | null;
 }
 
-/** Fields shared by every branch (checked for branch roles). */
+/** Branch roles that may not change shared product fields or delete products. */
+export const SHARED_FIELDS_LOCKED_ROLES = ['OUTLET_STAFF'] as const;
+
+/** True when this role edits only its own branch stock: no shared field, no photo, no delete. */
+export function sharedFieldsLockedFor(role: string | null | undefined): boolean {
+  return (SHARED_FIELDS_LOCKED_ROLES as readonly string[]).includes(role ?? '');
+}
+
+/** Fields shared by every branch (checked for roles in SHARED_FIELDS_LOCKED_ROLES). */
 export const SHARED_PRODUCT_FIELDS = [
   'name',
   'description',

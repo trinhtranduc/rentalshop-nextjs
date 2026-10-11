@@ -76,13 +76,13 @@ describeE2E('BF-STAFF OUTLET_STAFF permissions', () => {
     expect(detail.body.data).not.toHaveProperty('costPrice');
   });
 
-  test('BF-STAFF-03 creates a product without price fields at its outlet', async () => {
-    // rentPrice is required by productCreateSchema; 0 is what a form without price fields sends.
+  // #825 (owner 2026-10-11): outlet staff no longer add products (was: creates one without price fields)
+  test('BF-STAFF-03 cannot create a product, even at its own outlet', async () => {
     const name = uniqueName('SP staff');
     const r = await staff.postForm('/api/products', { name, rentPrice: 0, totalStock: 2, outletStock: [{ outletId, stock: 2 }] });
-    expect({ status: r.status, code: r.body?.code, error: r.body?.error }).toMatchObject({ status: 200 });
-    const created = await s.getProduct(r.body.data.id);
-    expect(created).toMatchObject({ name, rentPrice: 0, salePrice: 0, totalStock: 2 });
+    expect([r.status, r.body?.code]).toEqual([403, 'INSUFFICIENT_PERMISSIONS']);
+    const found = await must(s.get(`/api/products?search=${encodeURIComponent(name)}`), 'search');
+    expect(listOf(found, 'products', 'items')).toEqual([]);
   });
 
   test('BF-STAFF-04 cannot edit a product (name, stock), on either update route', async () => {

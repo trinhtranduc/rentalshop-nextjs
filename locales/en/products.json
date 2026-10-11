@@ -534,7 +534,7 @@
       "costPrice": "Cost price",
       "costHint": "Only the owner and managers see this.",
       "staffPrices": "Rent and sale prices are set by the shop owner.",
-      "branchLocked": "Only the shop owner changes the name, photos, prices, category and code. You can update the stock of your branch.",
+      "branchLocked": "Staff cannot change the name, photos, prices, category or code. You can update the stock of your branch.",
       "quantity": "Quantity",
       "quantityAt": "At {outlet}",
       "perOutlet": "Quantity at each outlet",

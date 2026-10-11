@@ -18,6 +18,7 @@ import {
   imageSearchState,
   imagesOf,
   isBranchRole,
+  sharedFieldsLockedFor,
   roleMayCreateProducts,
   parseCount,
   removedAllSavedPhotos,
@@ -305,12 +306,24 @@ describe('branch roles (#825)', () => {
     for (const role of ['MERCHANT', 'ADMIN', 'OUTLET_ADMIN', 'OUTLET_INVENTORY']) expect(roleMayCreateProducts(role)).toBe(true);
   });
 
-  it('edit: only the id and the own branch stock, nothing shared', () => {
+  it('only OUTLET_STAFF has the shared fields locked (owner 2026-10-11)', () => {
+    expect(sharedFieldsLockedFor('OUTLET_STAFF')).toBe(true);
+    for (const role of ['MERCHANT', 'ADMIN', 'OUTLET_ADMIN', 'OUTLET_INVENTORY']) expect(sharedFieldsLockedFor(role)).toBe(false);
+  });
+
+  it('edit by OUTLET_STAFF (stockOnly): only the id and the own branch stock, nothing shared', () => {
     const f = setOutletStock(formFromProduct(product, outlets, categories), 3, 4);
-    expect(buildPayload(f, { canEditPricing: true, productId: 12, merchantId: 1, branchOutletId: 3 })).toEqual({
+    expect(buildPayload(f, { canEditPricing: false, productId: 12, merchantId: 1, branchOutletId: 3, stockOnly: true })).toEqual({
       id: 12,
       outletStock: [{ outletId: 3, stock: 4 }],
     });
+  });
+
+  it('edit by OUTLET_ADMIN / kho: the whole product with the own branch stock only', () => {
+    const f = { ...setOutletStock(formFromProduct(product, outlets, categories), 3, 4), name: 'Áo dài xanh' };
+    const p = buildPayload(f, { canEditPricing: true, productId: 12, merchantId: 1, branchOutletId: 3 });
+    expect(p).toMatchObject({ id: 12, name: 'Áo dài xanh', outletStock: [{ outletId: 3, stock: 4 }] });
+    expect(p).toHaveProperty('pricingOptions');
   });
 
   it('create: the full product with the own branch stock only (the API adds 0 at the other branches)', () => {
