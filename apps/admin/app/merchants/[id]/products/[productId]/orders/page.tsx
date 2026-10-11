@@ -128,13 +128,9 @@ export default function ProductOrdersPage() {
 
   // Order dates in Vietnam time, whatever the browser zone (#578 ADM-9)
   const formatDate = (date: Date | string) => {
-    return formatInShopZone(date, 'en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const day = formatInShopZone(date, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const time = formatInShopZone(date, 'vi', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${day} ${time}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -172,7 +168,7 @@ export default function ProductOrdersPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <div className="flex items-center space-x-4">
             <Button
@@ -198,7 +194,7 @@ export default function ProductOrdersPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <div className="flex items-center space-x-4">
             <Button
@@ -229,10 +225,10 @@ export default function ProductOrdersPage() {
 
   return (
     <>
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between max-md:flex-wrap max-md:gap-2">
+            <div className="flex items-center space-x-4 max-md:flex-col max-md:items-start max-md:space-x-0 max-md:gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -301,7 +297,7 @@ export default function ProductOrdersPage() {
               {orders.map((order) => (
                 <Card key={order.id} className="border border-border">
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between max-md:flex-wrap max-md:gap-2">
                       <CardTitle className="text-lg">
                         Order #{order.orderNumber}
                       </CardTitle>
@@ -373,7 +369,7 @@ export default function ProductOrdersPage() {
                         <h4 className="text-sm font-medium text-text-primary mb-2">Order Items:</h4>
                         <div className="space-y-2">
                           {(order as any).orderItems.map((item: any, index: number) => (
-                            <div key={index} className="flex items-center justify-between text-sm">
+                            <div key={index} className="flex items-center justify-between text-sm max-md:gap-2">
                               <div className="flex items-center gap-2">
                                 <Package className="w-3 h-3 text-text-tertiary" />
                                 <span className="text-text-primary">

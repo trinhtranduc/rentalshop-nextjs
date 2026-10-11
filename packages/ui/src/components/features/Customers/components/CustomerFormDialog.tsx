@@ -291,9 +291,9 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 gap-0">
+      <DialogContent className="max-w-2xl p-0 gap-0 admin-phone max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1 max-md:[&>button]:top-1 max-md:[&>button]:p-3.5 max-md:flex max-md:flex-col">
         {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b">
+        <DialogHeader className="px-6 py-4 border-b max-md:px-4 max-md:pr-12 max-md:shrink-0">
           <DialogTitle className="text-lg font-semibold">
             {dialogTitle}
           </DialogTitle>
@@ -301,7 +301,7 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
         </DialogHeader>
         
         {/* Form */}
-        <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto px-6 py-4">
+        <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto px-6 py-4 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:px-4 max-md:pb-0">
           {/* Error Message */}
           {errorMessage && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -355,7 +355,7 @@ export const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:mt-4 max-md:bg-bg-card max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button:last-child]:flex-1">
             <Button
               type="button"
               variant="outline"

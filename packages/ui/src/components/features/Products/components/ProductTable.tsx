@@ -122,7 +122,7 @@ export function ProductTable({
   const actionsMenu = (product: Product) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={t('list.moreActions', { name: product.name })}>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 max-md:w-11" aria-label={t('list.moreActions', { name: product.name })}>
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

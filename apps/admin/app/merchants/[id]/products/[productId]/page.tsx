@@ -89,7 +89,7 @@ export default function ProductEditPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Product</PageTitle>
         </PageHeader>
@@ -102,7 +102,7 @@ export default function ProductEditPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Product</PageTitle>
         </PageHeader>
@@ -115,7 +115,7 @@ export default function ProductEditPage() {
 
   if (!productData) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Product</PageTitle>
         </PageHeader>
@@ -127,10 +127,10 @@ export default function ProductEditPage() {
   }
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 max-md:flex-col max-md:items-start max-md:space-x-0 max-md:gap-2">
             <Button
               variant="outline"
               size="sm"

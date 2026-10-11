@@ -1,5 +1,6 @@
 'use client';
 
+import { formatInShopZone } from '@rentalshop/utils';
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@rentalshop/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@rentalshop/ui';
@@ -7,7 +8,6 @@ import { Badge } from '@rentalshop/ui';
 import type { CustomerWithMerchant } from '@rentalshop/types';
 import { Package, Calendar, DollarSign, User, MapPin, Clock, Medal, Award, Crown, Gem, Diamond, Star } from 'lucide-react';
 import { getOrderStatusClassName } from '@rentalshop/constants';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface CustomerOrdersDialogProps {
@@ -159,7 +159,8 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
   };
 
   // Use centralized date formatting hook (DRY principle)
-  const formatDate = useFormattedFullDate;
+  const formatDate = (value: string | Date) =>
+    formatInShopZone(value, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   const getDaysOverdue = (returnDate: Date | undefined) => {
     if (!returnDate) return 0;
@@ -173,8 +174,8 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0 gap-0 admin-phone max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1 max-md:[&>button]:top-1 max-md:[&>button]:p-3.5 max-md:grid-rows-[auto_minmax(0,1fr)]">
+        <DialogHeader className="px-6 py-4 border-b max-md:px-4 max-md:pr-12">
           <DialogTitle className="text-lg font-semibold">
               Customer Orders
             </DialogTitle>
@@ -183,7 +184,7 @@ export const CustomerOrdersDialog: React.FC<CustomerOrdersDialogProps> = ({
             </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 py-4 overflow-y-auto">
+        <div className="px-6 py-4 overflow-y-auto max-md:px-4">
           {/* Customer Summary */}
           <Card className="mb-6">
             <CardHeader className="pb-3">
