@@ -368,7 +368,8 @@
     "stock": {
       "left": "Còn {available}/{total}",
       "out": "Hết",
-      "renting": "{count} đang thuê"
+      "renting": "{count} đang thuê",
+      "otherOutlets": "Chi nhánh khác còn {count}"
     },
     "price": {
       "perHour": "{price}/giờ"
@@ -619,7 +620,9 @@
       "updated": "Cập nhật lúc",
       "notFound": "Không tìm thấy sản phẩm.",
       "loadFailed": "Không tải được sản phẩm.",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "otherOutletsTitle": "Tồn chi nhánh khác",
+      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê."
     },
     "orders": {
       "back": "Quay lại sản phẩm",

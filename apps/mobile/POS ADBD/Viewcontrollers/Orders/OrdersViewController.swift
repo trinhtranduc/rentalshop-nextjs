@@ -62,6 +62,12 @@ final class OrdersViewController: BaseViewControler {
         setupUI()
         viewModel.onChange = { [weak self] in self?.render() }
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        viewModel.reload()
+    }
+
+    /// #828: Việc cần làm, Tất cả đơn and Đơn bán of the branch chosen on Home
+    @objc private func outletChanged() {
         viewModel.reload()
     }
 

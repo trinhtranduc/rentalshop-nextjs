@@ -72,7 +72,7 @@ class OrderCheckViewController: BaseViewControler {
     private var occupancyLoadingMonthKey: String?
 
     private var currentOutletId: Int? {
-        User.current()?.outlet?.id ?? User.current()?.outletId
+        CurrentOutlet.shared.id
     }
 
     var delegate: OrderCheckViewControllerDelegate?

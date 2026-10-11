@@ -53,7 +53,7 @@ class MainViewModel {
         }
         
         // Get outletId from current user
-        let outletId = User.current()?.outlet?.id ?? User.current()?.outletId
+        let outletId = CurrentOutlet.shared.id
         
         ProductService.shared.loadProducts(
             keyword: currentSearchKeyword,

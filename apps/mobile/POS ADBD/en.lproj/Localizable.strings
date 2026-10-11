@@ -2455,3 +2455,19 @@
 "overview.related.event.futureDamageFee" = "Expected damage fee at return";
 "overview.related.event.futureRefund" = "Expected deposit refund at return";
 "overview.related.event.futureNothing" = "Nothing expected at return";
+
+/* #828 Branch picker (header button, sheet, cart confirm) */
+"outlet.header.accessibility" = "Branch: %@";
+"outlet.header.hint" = "Change branch";
+"outlet.picker.title" = "Choose a branch";
+"outlet.picker.hint" = "Orders, products, stock, calendar and Overview follow the branch you choose.";
+"outlet.picker.default" = "default";
+"outlet.picker.current" = "In use";
+"outlet.picker.use" = "Use %@";
+"outlet.switch.confirm.title" = "Switch to %@?";
+"outlet.switch.confirm.message" = "The cart has %d items from %@. Switching branch empties the cart.";
+"outlet.switch.confirm.message.one" = "The cart has %d item from %@. Switching branch empties the cart.";
+"outlet.switch.confirm.cancel" = "Cancel";
+"outlet.switch.confirm.ok" = "Empty cart and switch";
+"outlet.fallback.title" = "Back to the default branch";
+"outlet.fallback.message" = "The branch you chose is no longer active. The app now uses %@.";

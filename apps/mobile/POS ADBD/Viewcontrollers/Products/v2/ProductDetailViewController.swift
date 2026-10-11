@@ -283,7 +283,7 @@ final class ProductDetailViewController: BaseViewControler {
         tiles.isHidden = tiles.arrangedSubviews.isEmpty
 
         // Outlet users see their outlet; a merchant without an outlet sees the totals
-        let counts = ProductStock.counts(product, outletId: User.current()?.outlet?.id ?? User.current()?.outletId)
+        let counts = ProductStock.counts(product, outletId: CurrentOutlet.shared.id)
         stockLabel.text = String(format: "products.stock.summary".localized(), counts.rented, counts.free, counts.total)
         renderStrip()
 
@@ -524,7 +524,7 @@ final class ProductDetailViewController: BaseViewControler {
         let keys = ProductDetailV2Logic.weekKeys(from: todayKey)
         guard let from = keys.first, let to = keys.last else { return }
         var params: [String: Any] = ["from": from, "to": to]
-        if let outletId = User.current()?.outlet?.id ?? User.current()?.outletId { params["outletId"] = outletId }
+        if let outletId = CurrentOutlet.shared.id { params["outletId"] = outletId }
         OrderService.shared.performGET(path: "/api/products/\(productId)/availability-calendar", parameters: params,
                                        responseType: AvailabilityCalendarResponse.self,
                                        context: "ProductDetail.strip") { [weak self] response, _ in

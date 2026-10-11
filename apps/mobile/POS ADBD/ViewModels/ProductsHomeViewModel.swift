@@ -23,7 +23,7 @@ struct LiveProductsHomeDataSource: ProductsHomeDataSource {
                       completion: @escaping (ProductsPage?, NSError?) -> Void) {
         var params: [String: Any] = ["page": page, "limit": limit, "sortBy": "createdAt", "sortOrder": "desc"]
         if let query, !query.isEmpty { params["q"] = query }
-        if let outletId = User.current()?.outlet?.id ?? User.current()?.outletId { params["outletId"] = outletId }
+        if let outletId = CurrentOutlet.shared.id { params["outletId"] = outletId }
         ProductService.shared.performGET(path: APIEndpoint.Path.products, parameters: params,
                                          responseType: APIProductsResponse.self,
                                          context: "ProductsHome.loadProducts") { response, error in

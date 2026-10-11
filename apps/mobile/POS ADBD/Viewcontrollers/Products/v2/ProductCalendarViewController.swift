@@ -221,7 +221,7 @@ final class ProductCalendarViewController: BaseViewControler {
             thumb.contentMode = .center
             thumb.image = DS.symbol("tshirt", 26)
         }
-        let total = stock ?? ProductStock.counts(product, outletId: User.current()?.outlet?.id ?? User.current()?.outletId).total
+        let total = stock ?? ProductStock.counts(product, outletId: CurrentOutlet.shared.id).total
         let code = (product.barcode ?? "").trimmingCharacters(in: .whitespaces)
         let totalText = String(format: "products.calendar.total".localized(), total)
         subLabel.text = code.isEmpty ? totalText : "\(code) · \(totalText)"
@@ -437,7 +437,7 @@ final class ProductCalendarViewController: BaseViewControler {
     /// GET /api/products/{id}/availability-calendar?from&to (the detail strip's call), merged into `available`
     private func loadAvailability(from: String, to: String, done: @escaping (Bool) -> Void) {
         var params: [String: Any] = ["from": from, "to": to]
-        if let outletId = User.current()?.outlet?.id ?? User.current()?.outletId { params["outletId"] = outletId }
+        if let outletId = CurrentOutlet.shared.id { params["outletId"] = outletId }
         OrderService.shared.performGET(path: "/api/products/\(productId)/availability-calendar", parameters: params,
                                        responseType: AvailabilityCalendarResponse.self,
                                        context: "ProductCalendar.month") { [weak self] response, _ in

@@ -264,6 +264,11 @@ class OrderService: BaseService, OrderServiceProtocol {
         if let endDate = endDate, let endDateString = endDate.dateServerISOString() {
             params["endDate"] = endDateString
         }
+
+        // #828: a merchant's lists follow its chosen branch
+        if let outletId = CurrentOutlet.shared.merchantFilterId {
+            params["outletId"] = outletId
+        }
         
         performGET(
             path: path,
@@ -341,6 +346,10 @@ class OrderService: BaseService, OrderServiceProtocol {
         
         if let keyword = keyword, !keyword.isEmpty {
             params["q"] = keyword
+        }
+
+        if let outletId = CurrentOutlet.shared.merchantFilterId {
+            params["outletId"] = outletId
         }
         
         if let page = page {
@@ -420,6 +429,9 @@ class OrderService: BaseService, OrderServiceProtocol {
         var params: [String: Any] = [:]
         params["startDate"] = from?.dateServerInString() ?? Date().shopDateKeyString() // shop today (#596)
         params["endDate"] = to?.dateServerInString() ?? Date().shopDateKeyString()
+        if let outletId = CurrentOutlet.shared.merchantFilterId {
+            params["outletId"] = outletId
+        }
         
         performGET(
             path: path,
@@ -455,7 +467,8 @@ class OrderService: BaseService, OrderServiceProtocol {
     /// Create order from Cart model.
     /// `idempotencyKey`: one value per checkout, reused on retry, so the API never creates the order twice (#341).
     func createOrder(from cart: Cart, idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
-        let request = cart.toCreateOrderRequest()
+        var request = cart.toCreateOrderRequest()
+        request.outletId = CurrentOutlet.shared.merchantFilterId // #828: the merchant's chosen branch
         let validation = request.validate()
         if !validation.isValid {
             let errorMessage = validation.errors.joined(separator: "\n")
@@ -480,7 +493,8 @@ class OrderService: BaseService, OrderServiceProtocol {
     }
 
     func createOrder(from cart: Cart, notesImages: [Data], idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
-        let request = cart.toCreateOrderRequest()
+        var request = cart.toCreateOrderRequest()
+        request.outletId = CurrentOutlet.shared.merchantFilterId // #828: the merchant's chosen branch
         let validation = request.validate()
         if !validation.isValid {
             let errorMessage = validation.errors.joined(separator: "\n")

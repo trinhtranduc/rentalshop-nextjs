@@ -56,6 +56,13 @@ final class CalendarV2ViewController: BaseViewControler {
         super.viewDidLoad()
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        loadMonth()
+        loadDay()
+    }
+
+    /// #828: hand-overs and returns of the branch chosen on Home
+    @objc private func outletChanged() {
         loadMonth()
         loadDay()
     }
