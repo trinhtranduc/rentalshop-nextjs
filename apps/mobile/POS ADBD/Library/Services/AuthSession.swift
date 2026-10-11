@@ -69,7 +69,11 @@ enum AuthResponsePolicy {
 /// Which message to show when the app signs the user out.
 enum SessionEndReason {
     static func errorCode(forServerCode code: String?) -> APIErrorCode {
-        code == APIErrorCode.sessionReplaced.rawValue ? .sessionReplaced : .sessionExpired
+        switch code {
+        case APIErrorCode.sessionReplaced.rawValue: return .sessionReplaced
+        case APIErrorCode.outletDeactivated.rawValue: return .outletDeactivated // #859: the branch was turned off
+        default: return .sessionExpired
+        }
     }
 }
 
