@@ -48,7 +48,7 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 | Tạo đơn chỗ hết hàng, còn lại bao nhiêu | BF-CART-01..10, BF-DUP-01..10, BF-INV-13 | WEB-STOCK-04, -06 | `test7eOverlapSetting`, `test8cOverlapTagAndRoleSheet`, `test8dCartLines`; MOB-STOCK-05..08 | chưa chạy |
 | Báo cáo chuẩn chưa | BF-OVR-01..09, BF-STAT-01..04, BF-CASH-01..05, BF-OUT-01..03 | `dashboard-stats.web.js` (4 kỳ), WEB-DASH-01..05 | `test7kOverviewTiles`, `test7lOverviewSheets` + `overview-sheets-check.js` | `android-overview-api.js` + `android-overview.sh` |
 | Tài khoản hết hạn, hết gói, chạm giới hạn gói | BF-SUB-01..58 | WEB-SUB-01..27 | MOB-SUB-01..10 (đã viết, chưa chạy) | MOB-SUB: expired-trial, paused, past-due của owner chạy một phần |
-| Gia hạn, đổi gói: giá và ngày (#779) | BF-BILL-01..11 | — | — | — |
+| Gia hạn, đổi gói: giá và ngày (#779) | BF-BILL-01..12 | — | — | — |
 | Tài khoản staff | BF-STAFF-01..26, BF-ROLE (-staff), BF-SCOPE | WEB-ROLE (staff) | `test8StaffRestrictions`, `test8bStaffNoHistory`, `test8eRoleScreens` | chưa chạy |
 | Tài khoản kho | BF-INV-01..17, BF-ROLE (-kho) | WEB-ROLE (kho) | `test8bInventoryRole`, `test8eRoleScreens` | chưa chạy |
 | Không hiện mã lỗi thô | `tests/error-codes-translated.test.ts` (PR #743) | bộ dò khoá thô trong WEB-ROLE, WEB-SUB, WEB-UI | `rawKeys` trong `test8e`, `test10*` | quan sát tay (không thấy mã thô) |
@@ -427,6 +427,7 @@ Quy tắc chủ shop chốt 2026-10-11: giá = giá tháng của gói × số th
 | BF-BILL-09 | Basic 100.000 → Pro 300.000 giữa kỳ | Cần thu = 300.000 − ngày còn lại × 100.000 / số ngày kỳ; kỳ mới từ bây giờ + 1 tháng lịch |
 | BF-BILL-10 | Đổi gói theo quý | Kỳ 3 tháng lịch (không phải 90 × 24 giờ); lưu 3 tháng |
 | BF-BILL-11 | Merchant khác đổi gói | 403, không ghi gì |
+| BF-BILL-12 | Trang merchant của admin (`PUT /api/merchants/[id]/plan`) gửi `totalPrice: 1`, `discount: 50` | Server tự tính: lưu giá năm của Pro, chiết khấu 10 %; trả `planChange.amountDue` |
 
 ## BF-SUB — Tài khoản hết hạn, hết gói, chạm giới hạn gói (`subscription-plan.e2e.test.js`, #727)
 

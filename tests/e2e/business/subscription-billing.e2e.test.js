@@ -279,6 +279,24 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     expect(s.end).toBe(iso(addMonthsVn(s.start, 3)));
   });
 
+  test('BF-BILL-12 the admin merchant page (PUT /api/merchants/[id]/plan): the server prices it, a client total is ignored', async () => {
+    const now = Date.now();
+    const start = new Date(now - 9 * DAY_MS);
+    const end = new Date(now + 22 * DAY_MS);
+    setPeriod(world.merchantId, { start, end, planId: basic });
+    const a = await admin();
+    const before = Date.now();
+    const r = await a.put(`/api/merchants/${world.merchantId}/plan`, {
+      planId: pro, billingInterval: 'annual', totalPrice: 1, duration: 12, discount: 50
+    });
+    expect(r.status).toBe(200);
+    const s = row(world.merchantId);
+    expect(s).toMatchObject({ planId: pro, amount: MONTHLY * 3 * 12 * 0.9, discount: 10, interval: 'annual', intervalCount: 12, currency: 'VND' });
+    expect(s.end).toBe(iso(addMonthsVn(s.start, 12)));
+    const credit = (vnDaysBetween(new Date(before), end) / vnDaysBetween(start, end)) * MONTHLY;
+    expect(r.body.data.planChange.amountDue).toBeCloseTo(MONTHLY * 3 * 12 * 0.9 - credit, 2);
+  });
+
   test("BF-BILL-11 another merchant cannot change this subscription's plan: 403, nothing written", async () => {
     setPeriod(world.merchantId, { start: new Date(Date.now() - DAY_MS), end: new Date(Date.now() + 29 * DAY_MS), planId: basic });
     const other = S.createWorld('bill-change-other', { planId: pricedPlan('bill-change-other', MONTHLY) });
