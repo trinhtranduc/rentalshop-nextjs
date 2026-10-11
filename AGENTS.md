@@ -60,6 +60,8 @@ Never run `prisma migrate reset`, `db:reset-railway`, `*:prod`, or `railway … 
 without an explicit human go for that one command (`RELEASE_APPROVED=1`). The hook in
 `.claude/hooks/production-gate.sh` blocks these.
 
+**Every e2e run with a UI is visible to the owner**: headed Chrome with slow steps; `open -a Simulator` with the device in front; Android AVD with a window (never `-no-window`). Tell subagents the same. API-only runs (`scripts/e2e/business-e2e.sh`, Jest) run in the background; just report the numbers.
+
 ## Conventions
 
 - **API routes** (skill `api-route-standard`): `with*Auth` from `@rentalshop/auth/server`, zod, `ResponseBuilder`, `handleApiError`, data via `db` from `@rentalshop/database`.
