@@ -88,7 +88,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
         merchantName: merchant?.name || 'Unknown Merchant',
         planName: subscription?.planName || 'Manual Payment',
         amount: payment.amount,
-        currency: payment.currency || 'USD',
+        currency: payment.currency || 'VND',
         status: payment.status?.toLowerCase() || 'pending',
         paymentMethod: payment.method?.toLowerCase() || 'unknown',
         invoiceNumber: payment.invoiceNumber || payment.reference || `PAY-${payment.id}`,

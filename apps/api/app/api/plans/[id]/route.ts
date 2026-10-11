@@ -98,7 +98,7 @@ export async function GET(
         name: plan.name,
         description: plan.description,
         basePrice: plan.basePrice,
-        currency: plan.currency || 'USD',
+        currency: plan.currency || 'VND',
         trialDays: plan.trialDays || 0,
         limits: limits,
         features: features,

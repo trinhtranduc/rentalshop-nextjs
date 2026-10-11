@@ -167,7 +167,7 @@ function transformSubscriptionFromDb(sub: any): Subscription {
     trialStart: sub.trialStart,
     trialEnd: sub.trialEnd,
     amount: sub.amount,
-    currency: sub.currency || 'USD',
+    currency: sub.currency || 'VND',
     interval: sub.interval,
     intervalCount: sub.intervalCount || 1,
     period: sub.period || 1,
