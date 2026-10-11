@@ -22,11 +22,23 @@ Role chi nhánh = `isOutletRole` (OUTLET_ADMIN, OUTLET_STAFF, OUTLET_INVENTORY).
 - Thêm dòng tồn 0 cho mọi chi nhánh active khác của shop (`zeroStockRowsForOtherOutlets`). Role chi nhánh vẫn chỉ nhập tồn chi nhánh mình.
 - POST /api/products: role chi nhánh không có `outletId` → 403 `OUTLET_REQUIRED`.
 
+## OUTLET_STAFF không thêm sản phẩm (chủ shop chốt 2026-10-11)
+- `ROLE_PERMISSIONS` và `CRITICAL_PERMISSIONS` của OUTLET_STAFF bỏ `products.create`.
+- `POST /api/products` và `POST /api/products/bulk-import`: role OUTLET_STAFF → 403 `INSUFFICIENT_PERMISSIONS` (kể cả khi
+  shop tự thêm `products.create` cho role). OUTLET_ADMIN, OUTLET_INVENTORY vẫn tạo được (tồn chỉ ở chi nhánh mình).
+- Web: ẩn nút "Thêm sản phẩm" và trang /products/add với OUTLET_STAFF.
+
+## Ngoài phạm vi (chưa chốt)
+- OUTLET_ADMIN / Nhân viên kho xem tồn chi nhánh khác (chỉ đọc): giữ như hiện tại.
+- Bù dòng tồn 0 cho chi nhánh đã có (backfill một lần): PR riêng.
+
 ## Web shop
 - Sửa sản phẩm với role chi nhánh: các trường dùng chung (tên, mô tả, ảnh, giá, cọc, danh mục, mã) khóa, có dòng giải thích;
   chỉ sửa tồn chi nhánh mình; payload chỉ `{ id, outletStock: [chi nhánh mình] }`.
 - Nút xóa sản phẩm (chi tiết, danh sách, xóa nhiều) ẩn với role chi nhánh.
+- Tạo sản phẩm với role chi nhánh: chỉ gửi dòng tồn chi nhánh mình (API thêm 0 ở chi nhánh khác).
 
 ## Test
 - `tests/api/product-branch-rules.test.ts` (mới); `tests/api/product-update-keeps-renting.test.ts` (outlet mock có merchant);
-  `tests/api/product-soft-delete.test.ts` (outlet admin xóa → `PRODUCT_DELETE_MERCHANT_ONLY`); `tests/web-products-form.test.ts` (payload chỉ tồn).
+  `tests/api/product-soft-delete.test.ts` (outlet admin xóa → `PRODUCT_DELETE_MERCHANT_ONLY`); `tests/web-products-form.test.ts` (payload chỉ tồn, `roleMayCreateProducts`); `tests/packages/auth/inventory-role.test.ts`
+  (OUTLET_STAFF bớt `products.create`); `tests/e2e/business/roles-flows.e2e.test.js` (ma trận quyền, chưa chạy).

@@ -7,7 +7,21 @@
  * value differs from the stored one. Pure functions (no imports) so they are unit-tested on their own.
  */
 
-type Any = Record<string, any>;
+type PricingOptionLike = { type?: unknown; price?: unknown; isDefault?: unknown; isActive?: unknown };
+
+/** The PUT `data` JSON. */
+export type ProductBody = Record<string, unknown>;
+
+/** The stored product (`db.products.findById`). */
+export interface StoredProduct {
+  [field: string]: unknown;
+  category?: { id?: number } | null;
+  categoryId?: number | null;
+  merchant?: { id?: number } | null;
+  pricingOptions?: PricingOptionLike[] | null;
+  pricingType?: string | null;
+  isActive?: boolean | null;
+}
 
 /** Fields shared by every branch (checked for branch roles). */
 export const SHARED_PRODUCT_FIELDS = [
@@ -53,20 +67,20 @@ function storedImages(raw: unknown): string[] {
 
 /** Same filtering and default choice as the database layer (`normalizePricingOptions`). */
 function pricingKey(options: unknown): string {
-  const allowed = (Array.isArray(options) ? options : []).filter(
-    (o: Any) => o && (o.type === 'FIXED' || o.type === 'DAILY') && Number(o.price) > 0 && o.isActive !== false
+  const allowed = (Array.isArray(options) ? (options as PricingOptionLike[]) : []).filter(
+    (o) => o && (o.type === 'FIXED' || o.type === 'DAILY') && Number(o.price) > 0 && o.isActive !== false
   );
   if (allowed.length === 0) return '';
-  const def = allowed.find((o: Any) => o.isDefault) || allowed[0];
-  const prices = allowed.map((o: Any) => `${o.type}:${Number(o.price)}`).sort();
-  return `${prices.join(',')}|default=${def.type}`;
+  const def = allowed.find((o) => o.isDefault) || allowed[0];
+  const prices = allowed.map((o) => `${String(o.type)}:${Number(o.price)}`).sort();
+  return `${prices.join(',')}|default=${String(def.type)}`;
 }
 
 /**
  * Shared fields whose value in `body` (the PUT `data` JSON) differs from the stored `product` (`db.products.findById`).
  * A field left out of the body is unchanged. An empty `images` list means "keep the photos" (the route drops it).
  */
-export function changedSharedFields(body: Any, product: Any): string[] {
+export function changedSharedFields(body: ProductBody, product: StoredProduct): string[] {
   const changed: string[] = [];
   const has = (k: string) => body[k] !== undefined;
 
@@ -93,7 +107,7 @@ export function changedSharedFields(body: Any, product: Any): string[] {
     changed.push('pricingType');
   }
   if (has('pricingOptions') && body.pricingOptions != null) {
-    const stored = (product.pricingOptions || []).length > 0
+    const stored: PricingOptionLike[] = product.pricingOptions && product.pricingOptions.length > 0
       ? product.pricingOptions
       : [{ type: product.pricingType || 'FIXED', price: product.rentPrice, isDefault: true }];
     if (pricingKey(body.pricingOptions) !== pricingKey(stored)) changed.push('pricingOptions');

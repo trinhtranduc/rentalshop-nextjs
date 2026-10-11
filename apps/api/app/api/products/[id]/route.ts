@@ -392,23 +392,25 @@ export async function PUT(
           );
         }
 
-        const requestedStock: any[] = Array.isArray(productDataFromRequest.outletStock)
+        type StockRow = { outletId?: unknown } | null;
+        type StoredRow = { outlet?: { id?: number } | null };
+        const requestedStock: StockRow[] = Array.isArray(productDataFromRequest.outletStock)
           ? productDataFromRequest.outletStock
           : [];
 
         // Outlet-scoped users can only update products that already have stock at their outlet,
         // or that they are adding stock to at their outlet in this update
         const hasStockAtOutlet = existingProduct.outletStock?.some(
-          (os: any) => os.outlet?.id === userScope.outletId
+          (os: StoredRow) => os.outlet?.id === userScope.outletId
         );
         const isUpdatingOwnOutlet = requestedStock.some(
-          (os: any) => Number(os?.outletId) === userScope.outletId
+          (os) => Number(os?.outletId) === userScope.outletId
         );
         if (!hasStockAtOutlet && !isUpdatingOwnOutlet) {
           console.log('❌ Outlet user cannot update product without stock at their outlet:', {
             productId: productId,
             userOutletId: userScope.outletId,
-            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
+            availableOutlets: existingProduct.outletStock?.map((os: StoredRow) => os.outlet?.id) || []
           });
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
@@ -416,7 +418,7 @@ export async function PUT(
           );
         }
 
-        if (requestedStock.some((os: any) => Number(os?.outletId) !== userScope.outletId)) {
+        if (requestedStock.some((os) => Number(os?.outletId) !== userScope.outletId)) {
           return NextResponse.json(
             ResponseBuilder.error('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET'),
             { status: API.STATUS.FORBIDDEN }
@@ -614,7 +616,7 @@ export async function PUT(
           if (stock.outletId && typeof stock.stock === 'number') {
             const outlet = await db.outlets.findById(stock.outletId);
             // #825: stock only at outlets of the product's shop; unknown or another shop's outlet is refused
-            const outletMerchantId = (outlet as any)?.merchant?.id ?? (outlet as any)?.merchantId;
+            const outletMerchantId = outlet?.merchant?.id ?? outlet?.merchantId;
             if (!outlet || outletMerchantId == null || outletMerchantId !== productMerchantId) {
               console.log(`❌ Outlet ${stock.outletId} is not an outlet of product ${productId}'s shop`);
               return NextResponse.json(
