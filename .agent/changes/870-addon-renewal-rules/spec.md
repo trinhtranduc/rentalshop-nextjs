@@ -35,6 +35,12 @@
    Admin: a packs field and the charge line on each item of the shop's Add-on page.
 9. A smaller pack can leave a shop above a limit after renewal: nothing is deleted; the existing check blocks creating more.
 
+10. **Mid-period charge** (owner decision, later on 2026-10-11; replaces #869's "× days left ÷ days of the period"):
+    charge now = round(monthly price per pack after the cycle discount ÷ 30 × packs × Vietnam days left until
+    `currentPeriodEnd`), whole VND. The period length no longer matters (an extended or early-renewed period with ~60
+    days left charges ~2 months). Monthly: 40.000 ÷ 30 × 1 × 18 = 24.000 ₫. Trial / ended period: 0. One quote
+    function (`calculateAddonQuote`) serves a purchase and "more packs". The quote adds `discountedMonthlyPrice`.
+
 ## Stripe / Lemon Squeezy — not changed
 
 Both bill a fixed provider price (Stripe `price` id, Lemon `variant`); the code never computes the amount, and the
