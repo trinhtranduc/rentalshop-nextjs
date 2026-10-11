@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { subscriptionsApi } from '@rentalshop/utils';
+import { subscriptionsApi, plansApi, merchantsApi } from '@rentalshop/utils';
 import { 
   SubscriptionForm,
   PageWrapper,
@@ -44,13 +44,13 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
       }
 
       // Fetch plans
-      const plansResult = await subscriptionsApi.getPlans();
+      const plansResult = await plansApi.getPlans();
       if (plansResult.success && plansResult.data) {
         setPlans(plansResult.data.plans || []);
       }
 
       // Fetch merchants
-      const merchantsResult = await subscriptionsApi.getMerchants();
+      const merchantsResult = await merchantsApi.getMerchants();
       if (merchantsResult.success && merchantsResult.data) {
         setMerchants(merchantsResult.data.merchants || []);
       }
@@ -132,10 +132,9 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+    <PageWrapper>
+      <PageHeader>
+        <div className="flex flex-wrap items-center gap-4">
           <Button
             variant="outline"
             onClick={handleCancel}
@@ -144,26 +143,27 @@ export default function EditSubscriptionPage({ params }: EditSubscriptionPagePro
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Edit Subscription</h1>
+            <PageTitle>Edit Subscription</PageTitle>
             <p className="text-gray-600">Update subscription #{subscription.id}</p>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* Form */}
-      <div className="max-w-4xl">
-        <SubscriptionForm
-          initialData={initialData}
-          plans={plans}
-          merchants={merchants}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          loading={submitting}
-          mode="edit"
-          title="Edit Subscription"
-          submitText="Update Subscription"
-        />
-      </div>
-    </div>
+      <PageContent>
+        <div className="max-w-4xl">
+          <SubscriptionForm
+            initialData={initialData}
+            plans={plans}
+            merchants={merchants}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            loading={submitting}
+            mode="edit"
+            title="Edit Subscription"
+            submitText="Update Subscription"
+          />
+        </div>
+      </PageContent>
+    </PageWrapper>
   );
 }
