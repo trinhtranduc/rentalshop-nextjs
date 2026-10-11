@@ -251,7 +251,7 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     const periodDays = vnDaysBetween(start, end);
     const a = await admin();
     const before = Date.now();
-    const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'monthly' });
+    const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'monthly', method: 'TRANSFER', transactionId: 'FT-BILL-1' });
     expect({ status: r.status, code: r.body?.code }).toEqual({ status: 200, code: 'PLAN_CHANGED_SUCCESS' });
 
     const remaining = vnDaysBetween(new Date(before), end);
@@ -272,7 +272,7 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     const now = Date.now();
     setPeriod(world.merchantId, { start: new Date(now - 5 * DAY_MS), end: new Date(now + 25 * DAY_MS), planId: basic });
     const a = await admin();
-    const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'quarterly' });
+    const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'quarterly', method: 'TRANSFER', transactionId: 'FT-BILL-1' });
     expect(r.status).toBe(200);
     const s = row(world.merchantId);
     expect(s).toMatchObject({ interval: 'quarterly', intervalCount: 3, period: 3, amount: MONTHLY * 3 * 3 });
@@ -287,7 +287,7 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     const a = await admin();
     const before = Date.now();
     const r = await a.put(`/api/merchants/${world.merchantId}/plan`, {
-      planId: pro, billingInterval: 'annual', totalPrice: 1, duration: 12, discount: 50
+      planId: pro, billingInterval: 'annual', totalPrice: 1, duration: 12, discount: 50, method: 'TRANSFER', transactionId: 'FT-BILL-1'
     });
     expect(r.status).toBe(200);
     const s = row(world.merchantId);
@@ -302,7 +302,7 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     const other = S.createWorld('bill-change-other', { planId: pricedPlan('bill-change-other', MONTHLY) });
     const m = await S.login(other.merchant);
     const before = row(world.merchantId);
-    const r = await m.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'annual' });
+    const r = await m.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'annual', method: 'TRANSFER', transactionId: 'FT-BILL-1' });
     expect(r.status).toBe(403);
     expect(row(world.merchantId)).toEqual(before);
   });
