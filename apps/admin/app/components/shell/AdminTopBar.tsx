@@ -54,7 +54,7 @@ export function AdminTopBar({ pathname, onOpenMenu }: { pathname: string | null;
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search"
-            placeholder="Search merchants, orders, users..."
+            placeholder="Search..."
             className="min-w-0 flex-1 border-0 bg-transparent text-[15px] text-ar-ink outline-none placeholder:text-ar-muted"
           />
           <kbd className="hidden rounded-md border border-ar-line-strong px-1.5 text-xs font-normal text-ar-muted sm:inline">/</kbd>
