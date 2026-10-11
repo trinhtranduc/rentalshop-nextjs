@@ -1,5 +1,7 @@
 'use client';
 
+import '../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
@@ -336,7 +338,7 @@ export default function MerchantDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageContent>
           <div className="animate-pulse">
             <div className="h-8 bg-bg-tertiary rounded w-1/4 mb-6"></div>
@@ -354,7 +356,7 @@ export default function MerchantDetailPage() {
 
   if (error || !merchant) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageContent>
           <div className="text-center py-12">
             <div className="text-4xl mb-4">⚠️</div>
@@ -405,7 +407,7 @@ export default function MerchantDetailPage() {
   ];
 
   return (
-    <PageWrapper className="admin-phone">
+    <PageWrapper className="ar-detail admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageContent>
         <MerchantDetail

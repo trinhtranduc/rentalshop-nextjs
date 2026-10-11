@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { merchantsApi } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
@@ -214,7 +216,7 @@ export default function UserDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <PageTitle>User Details</PageTitle>
         </PageHeader>
@@ -227,7 +229,7 @@ export default function UserDetailPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <PageTitle>User Details</PageTitle>
         </PageHeader>
@@ -240,7 +242,7 @@ export default function UserDetailPage() {
 
   if (!userDetails) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <PageTitle>User Details</PageTitle>
         </PageHeader>
@@ -252,7 +254,7 @@ export default function UserDetailPage() {
   }
 
   return (
-    <PageWrapper className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center">
+    <PageWrapper className="ar-detail admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center">
       <PageHeader>
         <div className="flex items-center justify-between max-md:flex-wrap max-md:gap-2">
           <div className="flex items-center gap-4 max-md:flex-wrap max-md:gap-2">

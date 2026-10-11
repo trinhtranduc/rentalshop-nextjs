@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../../details.css';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { merchantsApi, parseApiResponse, formatInShopZone } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
@@ -139,7 +141,7 @@ export default function OutletDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -152,7 +154,7 @@ export default function OutletDetailPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -165,7 +167,7 @@ export default function OutletDetailPage() {
 
   if (!outlet) {
     return (
-      <PageWrapper>
+      <PageWrapper className="ar-detail">
         <PageHeader>
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -177,7 +179,7 @@ export default function OutletDetailPage() {
   }
 
   return (
-    <PageWrapper className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center">
+    <PageWrapper className="ar-detail admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center">
       <PageHeader>
         <div className="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-2">
           <div className="flex-1 min-w-0">

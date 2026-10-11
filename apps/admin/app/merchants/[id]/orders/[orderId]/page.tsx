@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../../details.css';
+
 import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '@rentalshop/utils';
 import { useParams, useRouter } from 'next/navigation';
@@ -226,7 +228,7 @@ export default function MerchantOrderDetailPage() {
 
   if (loading) {
     return (
-      <PageWrapper className="admin-phone">
+      <PageWrapper className="ar-detail admin-phone">
         <PageHeader>
           <PageTitle>Order Details</PageTitle>
         </PageHeader>
@@ -247,7 +249,7 @@ export default function MerchantOrderDetailPage() {
 
   if (error) {
     return (
-      <PageWrapper className="admin-phone">
+      <PageWrapper className="ar-detail admin-phone">
         <PageHeader>
           <PageTitle>Order Details</PageTitle>
         </PageHeader>
@@ -273,7 +275,7 @@ export default function MerchantOrderDetailPage() {
 
   if (!order) {
     return (
-      <PageWrapper className="admin-phone">
+      <PageWrapper className="ar-detail admin-phone">
         <PageHeader>
           <PageTitle>Order Details</PageTitle>
         </PageHeader>
@@ -307,7 +309,7 @@ export default function MerchantOrderDetailPage() {
   ];
 
   return (
-    <PageWrapper className="admin-phone">
+    <PageWrapper className="ar-detail admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">

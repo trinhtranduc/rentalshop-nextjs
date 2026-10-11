@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../details.css';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -244,7 +246,7 @@ export default function MerchantPlanLimitAddonsPage() {
   ];
 
   return (
-    <PageWrapper className="admin-phone">
+    <PageWrapper className="ar-detail admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       
       <PageHeader className="mb-6">

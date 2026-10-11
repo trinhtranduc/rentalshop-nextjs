@@ -1,5 +1,7 @@
 'use client';
 
+import '../../../details.css';
+
 import React, { useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
@@ -295,7 +297,7 @@ export default function MerchantProductsPage() {
   // ============================================================================
 
     return (
-      <PageWrapper spacing="none" className="admin-phone h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageWrapper spacing="none" className="ar-detail admin-phone h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
         <div className="flex items-center justify-between w-full max-md:flex-wrap max-md:gap-2 max-md:[&_ol]:flex-wrap max-md:[&_ol]:gap-y-1">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
