@@ -109,6 +109,16 @@ describe('PUT /api/orders/:id status changes (#361)', () => {
     expect(mockDb.orders.update).not.toHaveBeenCalled();
   });
 
+  it('#851: a merchant status change (apps send only {status}) keeps the order at its own branch', async () => {
+    // registration gives the merchant user the default outlet (1); the order lives at branch 3
+    ctx = { user: { ...merchant.user, outletId: 1 }, userScope: { merchantId: 2, outletId: 1 } };
+    givenOrder({ orderType: 'RENT', status: 'RESERVED', outletId: 3 });
+    const res: any = await PUT(put({ status: 'PICKUPED' }), { params: { orderId: '5' } });
+    expect(res.status).toBe(200);
+    const data = mockDb.orders.update.mock.calls[0][1];
+    expect(data.outletId === undefined || data.outletId === 3).toBe(true);
+  });
+
   it('#519: a pickup through PUT records a "Giao đồ" (ORDER_PICKED_UP) audit row with snapshots', async () => {
     givenOrder({ orderType: 'RENT', status: 'RESERVED' });
     mockDb.orders.findByIdDetail.mockImplementation(async () => ({
