@@ -19,6 +19,7 @@ import {
   toggleOne,
   togglePage,
   type ProductLike,
+  heldElsewhereParams,
 } from '../apps/client/app/products/list/list-model';
 import {
   MAX_IMPORT_ROWS,
@@ -275,5 +276,17 @@ describe('import: request and result', () => {
     expect(readOutcome({ imported: 3, skipped: 1, failed: 0, errors: [] }, [2, 3, 4, 5])).toEqual({ imported: 3, skipped: 1, failed: 0, errors: [] });
     expect(readOutcome(undefined, [])).toEqual({ imported: 0, skipped: 0, failed: 0, errors: [] });
     expect(readOutcome({ errors: [{ row: 9, error: 'x' }] }, [2]).errors[0].row).toBeNull();
+  });
+});
+
+describe('batch delete: branches that still hold products (#825)', () => {
+  it('sums the stock per branch over the refused products; null when none was refused for that reason', () => {
+    expect(heldElsewhereParams([
+      { code: 'PRODUCT_HELD_BY_OTHER_OUTLETS', outlets: [{ id: 3, name: 'Second', stock: 2 }] },
+      { code: 'PRODUCT_HAS_OPEN_ORDERS' },
+      { code: 'PRODUCT_HELD_BY_OTHER_OUTLETS', outlets: [{ id: 3, name: 'Second', stock: 1 }, { id: 4, name: 'Kho', stock: 0 }] },
+    ])).toEqual({ outlets: 'Second (3), Kho (0)' });
+    expect(heldElsewhereParams([{ code: 'PRODUCT_HAS_OPEN_ORDERS' }])).toBeNull();
+    expect(heldElsewhereParams(undefined)).toBeNull();
   });
 });

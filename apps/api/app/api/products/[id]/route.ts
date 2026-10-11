@@ -17,10 +17,10 @@ import {
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
-import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
+import { softDeleteProducts, openOrdersByProductAndOutlet, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
-import { changedSharedFields, holdsStockAt, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
+import { changedSharedFields, heldOutletsLabel, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 
 function buildImageUploadErrorResponse(detail?: string) {
   const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
@@ -878,7 +878,8 @@ export async function PUT(
  * - Response shape unchanged: { id, name, images }, code PRODUCT_DELETED_SUCCESS.
  *
  * Authorization: 'products.manage'; OUTLET_STAFF gets 403 PRODUCT_DELETE_MERCHANT_ONLY (#825); OUTLET_ADMIN and
- * OUTLET_INVENTORY only for a product stocked at their outlet (403 PRODUCT_NOT_AVAILABLE_AT_OUTLET otherwise)
+ * OUTLET_INVENTORY only for a product their outlet holds (403 PRODUCT_NOT_AVAILABLE_AT_OUTLET otherwise) and no other
+ * outlet holds (409 PRODUCT_HELD_BY_OTHER_OUTLETS, `data.outlets` lists them)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
@@ -955,6 +956,19 @@ export async function DELETE(
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
             { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        // #825 (owner 2026-10-11): and only when no other outlet still holds it (stock, units on rent, open order)
+        const openOrders = (await openOrdersByProductAndOutlet(prisma, [productId])).get(productId) || [];
+        const heldElsewhere = otherOutletsHolding(existingProduct.outletStock, userScope.outletId, openOrders);
+        if (heldElsewhere.length > 0) {
+          return NextResponse.json(
+            {
+              ...ResponseBuilder.error('PRODUCT_HELD_BY_OTHER_OUTLETS'),
+              data: { outlets: heldElsewhere, messageParams: { outlets: heldOutletsLabel(heldElsewhere) } },
+            },
+            { status: API.STATUS.CONFLICT }
           );
         }
       }

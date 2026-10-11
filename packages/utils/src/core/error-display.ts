@@ -71,16 +71,17 @@ export function getErrorDetails(error: any): string | undefined {
  *
  * @param t - the `useErrorTranslations()` function (or any next-intl translator)
  * @param code - the API error code
+ * @param values - message parameters the API sent in `data.messageParams` (e.g. `{ outlets }`, #825)
  */
-export function lookupErrorTranslation(t: any, code: unknown): string | null {
+export function lookupErrorTranslation(t: any, code: unknown, values?: Record<string, string | number>): string | null {
   if (typeof code !== 'string' || !code) return null;
   try {
     if (typeof t?.has === 'function') {
       if (!t.has(code)) return null;
-      const out = t(code);
+      const out = values ? t(code, values) : t(code);
       return typeof out === 'string' && out ? out : null;
     }
-    const out = t(code);
+    const out = values ? t(code, values) : t(code);
     if (typeof out !== 'string' || !out) return null;
     if (out === code || out.endsWith(`.${code}`)) return null;
     return out;

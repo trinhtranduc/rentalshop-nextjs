@@ -87,7 +87,7 @@ import { POST as batchDelete } from '../../apps/api/app/api/products/batch-delet
 import { POST as bulkImport } from '../../apps/api/app/api/products/bulk-import/route';
 import { PUT as merchantProductPut } from '../../apps/api/app/api/merchants/[id]/products/[productId]/route';
 import { POST as merchantProductPost } from '../../apps/api/app/api/merchants/[id]/products/route';
-import { changedSharedFields, holdsStockAt, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
+import { changedSharedFields, holdsStockAt, otherOutletsHolding, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
 import { resolveProductListAvailabilityOutletId } from '../../apps/api/lib/product-list-effective-availability';
 
 const merchant = { user: { id: 3, role: 'MERCHANT', email: 'm@x' }, userScope: { merchantId: 2 } };
@@ -195,6 +195,22 @@ describe('zeroStockRowsForOtherOutlets', () => {
       { outletId: 3, stock: 0 },
       { outletId: 5, stock: 0 },
     ]);
+  });
+});
+
+describe('otherOutletsHolding', () => {
+  it('lists the other outlets with stock, units on rent or open orders; own outlet and empty rows are left out', () => {
+    const rows = [
+      { outletId: 1, stock: 3, renting: 0, outlet: { id: 1, name: 'Main' } },
+      { outletId: 3, stock: 0, renting: 0, outlet: { id: 3, name: 'Second' } },
+      { outletId: 4, stock: 2, renting: 1, outlet: { id: 4, name: 'Kho' } },
+    ];
+    const open = [{ outletId: 3, name: 'Second', orders: 2 }, { outletId: 1, name: 'Main', orders: 1 }];
+    expect(otherOutletsHolding(rows, 1, open)).toEqual([
+      { id: 3, name: 'Second', stock: 0, renting: 0, openOrders: 2 },
+      { id: 4, name: 'Kho', stock: 2, renting: 1, openOrders: 0 },
+    ]);
+    expect(otherOutletsHolding(rows.slice(0, 2), 1, [])).toEqual([]);
   });
 });
 
@@ -335,17 +351,89 @@ describe('deleting products', () => {
     expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
   });
 
-  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('DELETE: %s deletes a product stocked at its outlet', async (_r, who) => {
+  /** Product 7 held only at outlet 1 (outlet 3 has its 0-stock row). */
+  const onlyHere = {
+    ...product,
+    outletStock: [
+      { outletId: 1, stock: 3, renting: 0, available: 3, outlet: { id: 1, name: 'Main' } },
+      { outletId: 3, stock: 0, renting: 0, available: 0, outlet: { id: 3, name: 'Second' } },
+    ],
+  };
+  /** An open (RESERVED / PICKUPED) order line of product 7 at outlet `outletId`. */
+  const openLine = (outletId: number, name: string) => ({ productId: 7, orderId: 900 + outletId, order: { outletId, outlet: { id: outletId, name } } });
+
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('DELETE: %s deletes a product only its outlet holds', async (_r, who) => {
     ctx = who;
+    mockDb.products.findById.mockResolvedValue(onlyHere);
     const res = await del();
     expect(res.status).toBe(200);
     expect(mockPrisma.product.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])(
+    'DELETE: %s gets 409 PRODUCT_HELD_BY_OTHER_OUTLETS when another outlet has stock, listing it',
+    async (_r, who) => {
+      ctx = who;
+      const res = await del(); // product: outlet 1 stock 3, outlet 3 stock 4
+      expect([res.status, res.body.code]).toEqual([409, 'PRODUCT_HELD_BY_OTHER_OUTLETS']);
+      expect(res.body.data.outlets).toEqual([{ id: 3, name: 'Second', stock: 4, renting: 0, openOrders: 0 }]);
+      expect(res.body.data.messageParams).toEqual({ outlets: 'Second (4)' });
+      expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
+    }
+  );
+
+  it('DELETE: units on rent or an open order at another outlet also hold the product there', async () => {
+    ctx = inventory;
+    mockDb.products.findById.mockResolvedValue({
+      ...onlyHere,
+      outletStock: [onlyHere.outletStock[0], { outletId: 3, stock: 0, renting: 1, available: 0, outlet: { id: 3, name: 'Second' } }],
+    });
+    const renting = await del();
+    expect([renting.status, renting.body.data?.outlets]).toEqual([409, [{ id: 3, name: 'Second', stock: 0, renting: 1, openOrders: 0 }]]);
+
+    mockDb.products.findById.mockResolvedValue(onlyHere);
+    mockPrisma.orderItem.findMany.mockResolvedValue([openLine(3, 'Second'), openLine(1, 'Main')]);
+    const ordered = await del();
+    expect([ordered.status, ordered.body.data?.outlets]).toEqual([409, [{ id: 3, name: 'Second', stock: 0, renting: 0, openOrders: 1 }]]);
+    expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('DELETE: MERCHANT still deletes a product held at several outlets', async () => {
+    ctx = merchant;
+    const res = await del();
+    expect(res.status).toBe(200);
   });
 
   it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('DELETE: %s cannot delete a product with no row at its outlet', async (_r, who) => {
     ctx = { ...who, userScope: { merchantId: 2, outletId: 5 } };
     const res = await del();
     expect([res.status, res.body.code]).toEqual([403, 'PRODUCT_NOT_AVAILABLE_AT_OUTLET']);
+    expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('batch-delete: OUTLET_ADMIN deletes what only its outlet holds and reports the rest per product', async () => {
+    ctx = outletAdmin;
+    mockPrisma.product.findMany.mockResolvedValue([
+      { id: 7, name: 'Vest đen', merchant: { id: 2 }, outletStock: [{ outletId: 1, stock: 3, renting: 0, outlet: { id: 1, name: 'Main' } }, { outletId: 3, stock: 0, renting: 0, outlet: { id: 3, name: 'Second' } }] },
+      { id: 8, name: 'Áo dài', merchant: { id: 2 }, outletStock: [{ outletId: 1, stock: 1, renting: 0, outlet: { id: 1, name: 'Main' } }, { outletId: 3, stock: 2, renting: 0, outlet: { id: 3, name: 'Second' } }] },
+    ]);
+    const res: any = await batchDelete({ json: async () => ({ productIds: [7, 8] }) } as any);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ deleted: 1, failed: 1, deletedProducts: [{ id: 7, name: 'Vest đen' }] });
+    expect(res.body.data.errors).toEqual([
+      { id: 8, name: 'Áo dài', error: 'PRODUCT_HELD_BY_OTHER_OUTLETS', code: 'PRODUCT_HELD_BY_OTHER_OUTLETS', outlets: [{ id: 3, name: 'Second', stock: 2, renting: 0, openOrders: 0 }] },
+    ]);
+    expect(mockPrisma.product.updateMany.mock.calls[0][0].where).toEqual({ id: { in: [7] }, deletedAt: null });
+  });
+
+  it('batch-delete: 409 PRODUCT_HELD_BY_OTHER_OUTLETS when every product is held elsewhere', async () => {
+    ctx = inventory;
+    mockPrisma.product.findMany.mockResolvedValue([
+      { id: 8, name: 'Áo dài', merchant: { id: 2 }, outletStock: [{ outletId: 1, stock: 1, renting: 0, outlet: { id: 1, name: 'Main' } }, { outletId: 3, stock: 2, renting: 0, outlet: { id: 3, name: 'Second' } }] },
+    ]);
+    const res: any = await batchDelete({ json: async () => ({ productIds: [8] }) } as any);
+    expect([res.status, res.body.code]).toEqual([409, 'PRODUCT_HELD_BY_OTHER_OUTLETS']);
+    expect(res.body.data.messageParams).toEqual({ outlets: 'Second (2)' });
     expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
   });
 
@@ -468,5 +556,24 @@ describe('/api/merchants/:id/products (admin web routes) — same shop only, not
     expect([post.status, post.body.code]).toEqual([403, 'INSUFFICIENT_PERMISSIONS']);
     expect(mockDb.products.update).not.toHaveBeenCalled();
     expect(mockDb.products.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('PRODUCT_HELD_BY_OTHER_OUTLETS message (web)', () => {
+  // ICU formatting as next-intl does it (intl-messageformat), over the vi / en sentences the shop web loads
+  const { IntlMessageFormat } = require('../../node_modules/intl-messageformat');
+  const { lookupErrorTranslation } = require('../../packages/utils/src/core/error-display');
+  const translator = (locale: string, messages: Record<string, string>) => {
+    const t: any = (key: string, values?: Record<string, unknown>) => new IntlMessageFormat(messages[key], locale).format(values) as string;
+    t.has = (key: string) => key in messages;
+    return t;
+  };
+
+  it.each([
+    ['vi', 'Second (4) còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.'],
+    ['en', 'Second (4) still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.'],
+  ])('%s: the outlets the API sends in data.messageParams are in the sentence', (locale, text) => {
+    const t = translator(locale, require(`../../locales/${locale}/errors.json`));
+    expect(lookupErrorTranslation(t, 'PRODUCT_HELD_BY_OTHER_OUTLETS', { outlets: 'Second (4)' })).toBe(text);
   });
 });

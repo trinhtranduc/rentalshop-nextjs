@@ -226,6 +226,23 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     expect(row === null || row.stock === 0).toBe(true);
   });
 
+  // #825 (owner 2026-10-11): kho deletes a product only when no other outlet holds it (stock, units on rent, open order)
+  test('BF-INV-18 cannot delete a product another outlet still holds; the 409 names that outlet; once it is 0 the delete passes', async () => {
+    const outlets = listOf(await must(s.get('/api/outlets?limit=50'), 'outlets'), 'outlets', 'items');
+    const other = outlets.find((o) => o.id !== outletId && o.isActive !== false);
+    if (!other) return;
+    const p = await inv.createProduct({ price: 100000, stock: 2, outletId });
+    expect((await s.updateProduct(p.id, { outletStock: [{ outletId: other.id, stock: 3 }] })).status).toBe(200);
+    const refused = await del(inv, `/api/products/${p.id}`);
+    expect([refused.status, refused.body?.code]).toEqual([409, 'PRODUCT_HELD_BY_OTHER_OUTLETS']);
+    expect(refused.body.data.outlets).toEqual([{ id: other.id, name: other.name, stock: 3, renting: 0, openOrders: 0 }]);
+    expect((await s.get(`/api/products/${p.id}`)).status).toBe(200);
+    // the other outlet sets its stock to 0: nothing holds it there any more
+    expect((await s.updateProduct(p.id, { outletStock: [{ outletId: other.id, stock: 0 }] })).status).toBe(200);
+    const removed = await del(inv, `/api/products/${p.id}`);
+    expect(removed.status).toBe(200);
+  });
+
   test('BF-INV-17 lowering stock below the units out on rent gives the same result for it as for the merchant', async () => {
     const lower = async (session) => {
       const p = await s.createProduct({ price: 100000, stock: 2, outletId });

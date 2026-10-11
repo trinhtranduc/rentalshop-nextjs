@@ -34,5 +34,6 @@
   "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "店员不能修改商品名称、价格、图片、分类等共享信息，请联系店主、门店管理员或仓库人员。您可以修改本门店的库存。",
   "PRODUCT_DELETE_MERCHANT_ONLY": "店员不能删除商品，请联系店主、门店管理员或仓库人员。",
   "OUTLET_HAS_OPEN_ORDERS": "该分店仍有已预订或租赁中的订单。请先完成或取消这些订单，再停用分店。",
-  "OUTLET_DEACTIVATED": "该分店已停用，请联系店主。"
+  "OUTLET_DEACTIVATED": "该分店已停用，请联系店主。",
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} 仍有此商品，只有店主可以删除。如需在本门店停止销售，请将库存设为 0。"
 }

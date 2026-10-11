@@ -32,6 +32,40 @@ export async function findProductIdsWithOpenOrders(
 }
 
 /**
+ * Open (RESERVED / PICKUPED, not deleted) orders per product and outlet, for the #825 delete rule.
+ * Returns productId -> [{ outletId, name, orders }]. One query.
+ */
+export async function openOrdersByProductAndOutlet(
+  client: Pick<ProductDeleteClient, 'orderItem'>,
+  productIds: number[]
+): Promise<Map<number, Array<{ outletId: number; name: string; orders: number }>>> {
+  const ids = [...new Set(productIds)];
+  const result = new Map<number, Array<{ outletId: number; name: string; orders: number }>>();
+  if (ids.length === 0) return result;
+  const rows = await client.orderItem.findMany({
+    where: {
+      productId: { in: ids },
+      order: { status: { in: OPEN_ORDER_STATUSES }, deletedAt: null },
+    },
+    select: { productId: true, orderId: true, order: { select: { outletId: true, outlet: { select: { id: true, name: true } } } } },
+  });
+  const seen = new Set<string>();
+  for (const row of rows as Array<{ productId: number | null; orderId: number; order?: { outletId?: number; outlet?: { id?: number; name?: string } | null } | null }>) {
+    const outletId = row.order?.outletId ?? row.order?.outlet?.id;
+    if (row.productId == null || outletId == null) continue;
+    const key = `${row.productId}:${row.orderId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const list = result.get(row.productId) || [];
+    const entry = list.find((e) => e.outletId === outletId);
+    if (entry) entry.orders += 1;
+    else list.push({ outletId, name: row.order?.outlet?.name || '', orders: 1 });
+    result.set(row.productId, list);
+  }
+  return result;
+}
+
+/**
  * Soft-deletes the products that have no open order. Callers check merchant / outlet scope first.
  * Returns which ids were deleted and which were blocked by an open order.
  */
