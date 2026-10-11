@@ -20,6 +20,7 @@ import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
+import { changedSharedFields } from '../../../../lib/product-branch-rules';
 
 function buildImageUploadErrorResponse(detail?: string) {
   const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
@@ -343,6 +344,85 @@ export async function PUT(
           typeof (entry as File).arrayBuffer === 'function'
       );
       let uploadedFiles: string[] = [];
+
+      // ============================================================================
+      // AUTHORIZATION (before any upload to S3): product, merchant and branch rules
+      // ============================================================================
+      const existingProduct = await db.products.findById(productId);
+      if (!existingProduct) {
+        throw new Error('Product not found');
+      }
+
+      // Verify product belongs to user's merchant (security check)
+      const productMerchantId = existingProduct.merchant?.id;
+      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
+        console.log('❌ Product does not belong to user\'s merchant:', {
+          productMerchantId: productMerchantId,
+          userMerchantId: userMerchantId
+        });
+        return NextResponse.json(
+          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+
+      const isBranchRole = isOutletRole(user.role);
+      if (isBranchRole) {
+        // #825: a branch role always has its outlet; without one the branch checks below cannot run
+        if (!userScope.outletId) {
+          return NextResponse.json(
+            ResponseBuilder.error('OUTLET_REQUIRED'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        // #825: name, prices, photos, category... are shared by every branch; only the merchant changes them.
+        // The same values sent again (whole payload from an app or a stale tab) are not a change.
+        const changed = changedSharedFields(productDataFromRequest, existingProduct);
+        if (imageFiles.length > 0 || changed.length > 0) {
+          console.log('❌ Branch role cannot change shared product fields:', {
+            productId,
+            role: user.role,
+            fields: changed,
+            imageFiles: imageFiles.length
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_SHARED_FIELDS_MERCHANT_ONLY'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        const requestedStock: any[] = Array.isArray(productDataFromRequest.outletStock)
+          ? productDataFromRequest.outletStock
+          : [];
+
+        // Outlet-scoped users can only update products that already have stock at their outlet,
+        // or that they are adding stock to at their outlet in this update
+        const hasStockAtOutlet = existingProduct.outletStock?.some(
+          (os: any) => os.outlet?.id === userScope.outletId
+        );
+        const isUpdatingOwnOutlet = requestedStock.some(
+          (os: any) => Number(os?.outletId) === userScope.outletId
+        );
+        if (!hasStockAtOutlet && !isUpdatingOwnOutlet) {
+          console.log('❌ Outlet user cannot update product without stock at their outlet:', {
+            productId: productId,
+            userOutletId: userScope.outletId,
+            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
+          });
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        if (requestedStock.some((os: any) => Number(os?.outletId) !== userScope.outletId)) {
+          return NextResponse.json(
+            ResponseBuilder.error('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+      }
       
       if (imageFiles.length > 0) {
         console.log(`🔍 Processing ${imageFiles.length} image file(s)`);
@@ -488,78 +568,6 @@ export async function PUT(
         productUpdateData.images = normalizeImagesInput(productUpdateData.images);
       }
 
-      // Check if product exists and user has access to it
-      const existingProduct = await db.products.findById(productId);
-      if (!existingProduct) {
-        throw new Error('Product not found');
-      }
-
-      // ============================================================================
-      // AUTHORIZATION: Check merchant and outlet scope
-      // ============================================================================
-      // Verify product belongs to user's merchant (security check)
-      // Use product.merchant.id (public ID) for comparison, not product.merchantId (CUID)
-      const productMerchantId = existingProduct.merchant?.id;
-      if (user.role !== USER_ROLE.ADMIN && productMerchantId !== userMerchantId) {
-        console.log('❌ Product does not belong to user\'s merchant:', {
-          productMerchantId: productMerchantId,
-          userMerchantId: userMerchantId
-        });
-        return NextResponse.json(
-          ResponseBuilder.error('PRODUCT_ACCESS_DENIED'),
-          { status: API.STATUS.FORBIDDEN }
-        );
-      }
-
-      // For OUTLET_ADMIN / OUTLET_STAFF: same outlet scope as create
-      if (
-        (isOutletRole(user.role)) &&
-        userScope.outletId
-      ) {
-        // Check if product currently has stock at user's outlet
-        const hasStockAtOutlet = existingProduct.outletStock?.some(
-          (os: any) => os.outlet?.id === userScope.outletId
-        );
-        
-        // Check if user is trying to add/update stock at their outlet
-        const isUpdatingOwnOutlet = outletStock && Array.isArray(outletStock) && outletStock.some(
-          (os: any) => os.outletId === userScope.outletId
-        );
-        
-        // Outlet-scoped users can only update products that:
-        // 1. Already have stock at their outlet, OR
-        // 2. They're adding stock to their outlet in this update
-        if (!hasStockAtOutlet && !isUpdatingOwnOutlet) {
-          console.log('❌ Outlet user cannot update product without stock at their outlet:', {
-            productId: productId,
-            userOutletId: userScope.outletId,
-            hasStockAtOutlet: hasStockAtOutlet,
-            isUpdatingOwnOutlet: isUpdatingOwnOutlet,
-            availableOutlets: existingProduct.outletStock?.map((os: any) => os.outlet?.id) || []
-          });
-          return NextResponse.json(
-            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
-            { status: API.STATUS.FORBIDDEN }
-          );
-        }
-      }
-
-      if (
-        outletStock &&
-        Array.isArray(outletStock) &&
-        outletStock.length > 0 &&
-        (isOutletRole(user.role)) &&
-        userScope.outletId
-      ) {
-        const wrongOutlet = outletStock.filter((os: any) => os.outletId !== userScope.outletId);
-        if (wrongOutlet.length > 0) {
-          return NextResponse.json(
-            ResponseBuilder.error('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET'),
-            { status: API.STATUS.FORBIDDEN }
-          );
-        }
-      }
-
       // Defense in depth: users with products.update but not products.manage must not
       // change pricing fields (rent/sale/cost/options). Default OUTLET_STAFF has no update.
       const canManagePricing = await hasPermission(user, 'products.manage');
@@ -588,8 +596,10 @@ export async function PUT(
         }
       }
 
-      // Prepare outletStock nested write if provided
-      let finalUpdateData: any = { ...productUpdateData };
+      // Prepare outletStock nested write if provided.
+      // #825: a branch role passed the shared-field check above, so its write is the stock only
+      // (totalStock is recomputed from the outlet rows below).
+      let finalUpdateData: any = isBranchRole ? {} : { ...productUpdateData };
       
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
         console.log('🔄 Preparing outlet stock nested write:', outletStock);
@@ -603,7 +613,16 @@ export async function PUT(
         for (const stock of outletStock) {
           if (stock.outletId && typeof stock.stock === 'number') {
             const outlet = await db.outlets.findById(stock.outletId);
-            if (outlet) {
+            // #825: stock only at outlets of the product's shop; unknown or another shop's outlet is refused
+            const outletMerchantId = (outlet as any)?.merchant?.id ?? (outlet as any)?.merchantId;
+            if (!outlet || outletMerchantId == null || outletMerchantId !== productMerchantId) {
+              console.log(`❌ Outlet ${stock.outletId} is not an outlet of product ${productId}'s shop`);
+              return NextResponse.json(
+                ResponseBuilder.error('OUTLET_NOT_FOUND'),
+                { status: API.STATUS.NOT_FOUND }
+              );
+            }
+            {
               const renting = rentingByOutlet.get(outlet.id) || 0;
               if (stock.stock < renting) {
                 return NextResponse.json(
@@ -616,8 +635,6 @@ export async function PUT(
                 update: { stock: stock.stock, available: stock.stock - renting },
                 create: { outletId: outlet.id, stock: stock.stock, available: stock.stock, renting: 0 }
               });
-            } else {
-              console.log(`❌ Outlet not found for ID: ${stock.outletId}`);
             }
           } else {
             console.log(`❌ Invalid outletStock entry:`, stock);
