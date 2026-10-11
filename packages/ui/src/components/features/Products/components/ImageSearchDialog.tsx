@@ -194,7 +194,7 @@ export function ImageSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[90vw] max-w-5xl h-[85vh] max-h-[800px] flex flex-col">
+      <DialogContent className="w-[90vw] max-w-5xl h-[85vh] max-h-[800px] flex flex-col admin-phone max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1 max-md:[&>button]:top-1 max-md:[&>button]:p-3.5">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5" />

@@ -62,7 +62,7 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
             {t('detailInfo.customer')}
           </p>
           {customerId ? (
-            <Link href={`/customers/${customerId}`} className="block truncate text-base font-semibold text-slate-900 hover:text-blue-700 hover:underline">
+            <Link href={`/customers/${customerId}`} className="block truncate text-base font-semibold text-slate-900 hover:text-blue-700 hover:underline max-md:py-2.5">
               {name}
             </Link>
           ) : (
@@ -70,7 +70,7 @@ export const OrderInformation: React.FC<OrderInformationProps> = ({ order }) => 
           )}
           {phone && (
             <div className="flex items-center gap-1">
-              <a href={`tel:${phone}`} className="inline-flex min-h-[28px] items-center gap-1.5 text-sm text-blue-700 hover:underline">
+              <a href={`tel:${phone}`} className="inline-flex min-h-[28px] items-center gap-1.5 text-sm text-blue-700 hover:underline max-md:min-h-11">
                 <Phone className="h-3.5 w-3.5" aria-hidden="true" />
                 {formatPhoneNumber(phone)}
               </a>

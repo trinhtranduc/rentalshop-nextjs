@@ -72,7 +72,7 @@ export default function MerchantCreateOrderPage() {
 
         if (customersRes.success && customersRes.data) {
           if (isMounted) {
-            setCustomers(customersRes.data);
+            setCustomers(Array.isArray(customersRes.data) ? customersRes.data : ((customersRes.data as any).customers ?? []));
           }
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
@@ -80,7 +80,7 @@ export default function MerchantCreateOrderPage() {
 
         if (productsRes.success && productsRes.data) {
           if (isMounted) {
-            setProducts(productsRes.data);
+            setProducts(Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any).products ?? []));
           }
         } else {
           console.error('Failed to fetch products:', productsRes.error);
@@ -163,7 +163,7 @@ export default function MerchantCreateOrderPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Create New Order</PageTitle>
         </PageHeader>
@@ -180,7 +180,7 @@ export default function MerchantCreateOrderPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Create New Order</PageTitle>
         </PageHeader>
@@ -213,7 +213,7 @@ export default function MerchantCreateOrderPage() {
   }
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <PageHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">

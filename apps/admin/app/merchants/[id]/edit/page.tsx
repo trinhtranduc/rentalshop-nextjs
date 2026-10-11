@@ -16,7 +16,7 @@ import { PageWrapper,
   Label,
   StatusBadge,
   useToast } from '@rentalshop/ui';
-import { merchantsApi } from '@rentalshop/utils';
+import { merchantsApi, formatInShopZone } from '@rentalshop/utils';
 import { ArrowLeft, Save, Building2 } from 'lucide-react';
 import type { Merchant } from '@rentalshop/types';
 
@@ -139,7 +139,7 @@ export default function EditMerchantPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Merchant</PageTitle>
         </PageHeader>
@@ -152,7 +152,7 @@ export default function EditMerchantPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Merchant</PageTitle>
         </PageHeader>
@@ -165,7 +165,7 @@ export default function EditMerchantPage() {
 
   if (!merchant) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Merchant</PageTitle>
         </PageHeader>
@@ -177,10 +177,10 @@ export default function EditMerchantPage() {
   }
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <PageHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 max-md:flex-wrap max-md:space-x-0 max-md:gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -195,7 +195,7 @@ export default function EditMerchantPage() {
       </PageHeader>
 
       <PageContent>
-        <div className="space-y-6">
+        <div className="space-y-6 max-md:pb-24">
           {/* Merchant Information */}
           <Card>
             <CardHeader>
@@ -348,7 +348,7 @@ export default function EditMerchantPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <Label className="text-gray-500">Created</Label>
-                  <p>{new Date(merchant.createdAt).toLocaleString()}</p>
+                  <p>{formatInShopZone(merchant.createdAt, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' })} {formatInShopZone(merchant.createdAt, 'vi', { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                 </div>
 
 
@@ -357,7 +357,7 @@ export default function EditMerchantPage() {
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-4 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:z-20 max-md:space-x-0 max-md:gap-2 max-md:border-t max-md:bg-bg-card max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button:last-child]:flex-1">
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>

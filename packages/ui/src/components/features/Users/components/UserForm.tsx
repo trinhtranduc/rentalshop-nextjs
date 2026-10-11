@@ -659,7 +659,7 @@ export const UserForm: React.FC<UserFormProps> = ({
         className={
           isPage
             ? 'sticky bottom-0 z-20 flex flex-wrap items-center justify-end gap-3 rounded-xl border border-gray-200 bg-white/95 px-4 py-3 backdrop-blur'
-            : 'flex justify-end gap-3 mt-6 pt-4 border-t'
+            : 'flex justify-end gap-3 mt-6 pt-4 border-t max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-bg-card max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:[&>button]:flex-1'
         }
       >
         <Button

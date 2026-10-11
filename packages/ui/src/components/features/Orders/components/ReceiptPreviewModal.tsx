@@ -176,16 +176,16 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="p-6 border-b border-gray-200">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+        <DialogHeader className="p-6 border-b border-gray-200 max-md:p-4 max-md:pr-12">
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {t('receipt.previewTitle')}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex h-[calc(90vh-140px)]">
+        <div className="flex h-[calc(90vh-140px)] max-md:h-auto max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:overflow-y-auto">
           {/* Preview Section */}
-          <div className={`flex-1 p-6 overflow-auto flex flex-col ${!isPreviewMode ? 'border-r border-gray-200' : ''}`}>
+          <div className={`flex-1 p-6 overflow-auto flex flex-col max-md:p-4 max-md:overflow-visible ${!isPreviewMode ? 'border-r border-gray-200 max-md:border-r-0' : ''}`}>
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex justify-center flex-1">
               <div 
                 ref={receiptContentRef}
@@ -216,7 +216,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
 
           {/* Print Options Section - Only show when NOT in preview mode */}
           {!isPreviewMode && (
-            <div className="w-80 p-6 bg-gray-50">
+            <div className="w-80 p-6 bg-gray-50 max-md:w-full max-md:p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   {t('receipt.printOptions')}
@@ -228,7 +228,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
                 <Button
                   onClick={handlePrint}
                   disabled={isPrinting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-3 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-3 max-md:min-h-11 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Printer className="w-5 h-5" />
                   <div className="text-left">

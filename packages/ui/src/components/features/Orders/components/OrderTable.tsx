@@ -14,7 +14,7 @@ import {
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useOrderTranslations, useTableSelection } from '@rentalshop/hooks';
 import { useLocale } from 'next-intl';
-import { formatPhoneNumber, formatFullDateByLocale, formatDateTimeByLocale } from '@rentalshop/utils';
+import { formatPhoneNumber, formatFullDateByLocale, formatDateTimeByLocale, formatInShopZone } from '@rentalshop/utils';
 import { ChevronDown, Copy, Gift } from 'lucide-react';
 import { getOrderStatusClassName, ORDER_TYPE_COLORS } from '@rentalshop/constants';
 import { Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
@@ -32,6 +32,9 @@ interface OrderTableProps {
   userRole?: 'ADMIN' | 'MERCHANT' | 'OUTLET_ADMIN' | 'OUTLET_STAFF' | 'OUTLET_INVENTORY'; // ⭐ User role for permission checks
   hideCopyPhone?: boolean; // ⭐ Hide copy phone button
 }
+
+const VN_DAY: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+const VN_TIME: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
 
 export const OrderTable = React.memo(function OrderTable({ 
   orders, 
@@ -151,13 +154,24 @@ export const OrderTable = React.memo(function OrderTable({
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return '—';
     // Use the new date utility for consistent formatting (date only for pickup/return dates)
-    return formatFullDateByLocale(dateString, locale);
+    // On a phone (< 768 px) show the Vietnam day as dd/MM/yyyy; from 768 px the locale format is unchanged
+    return (
+      <>
+        <span className="md:hidden">{formatInShopZone(dateString, 'vi', VN_DAY)}</span>
+        <span className="max-md:hidden">{formatFullDateByLocale(dateString, locale)}</span>
+      </>
+    );
   };
   
   // Format date with time for createdAt
   const formatDateTime = (dateString: string | Date | undefined) => {
     if (!dateString) return '—';
-    return formatDateTimeByLocale(dateString, locale);
+    return (
+      <>
+        <span className="md:hidden">{formatInShopZone(dateString, 'vi', VN_DAY)} {formatInShopZone(dateString, 'vi', VN_TIME)}</span>
+        <span className="max-md:hidden">{formatDateTimeByLocale(dateString, locale)}</span>
+      </>
+    );
   };
 
   const getOrderIcon = () => {
@@ -213,7 +227,8 @@ export const OrderTable = React.memo(function OrderTable({
               {/* Select All Checkbox */}
               {onSelectionChange && (
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">
-                  <input
+                  <label className="md:contents">
+                    <input
                     type="checkbox"
                     checked={allSelected}
                     ref={(input) => {
@@ -223,6 +238,7 @@ export const OrderTable = React.memo(function OrderTable({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                     title={allSelected ? t('actions.deselectAll') || 'Deselect all' : t('actions.selectAll') || 'Select all'}
                   />
+                  </label>
                 </th>
               )}
               <th 
@@ -321,12 +337,14 @@ export const OrderTable = React.memo(function OrderTable({
                 {/* Checkbox */}
                 {onSelectionChange && (
                   <td className="px-3 py-3 whitespace-nowrap">
-                    <input
+                    <label className="md:contents">
+                      <input
                       type="checkbox"
                       checked={orderIsSelected}
                       onChange={() => handleToggleSelect(order.id)}
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
+                    </label>
                   </td>
                 )}
                 {/* Order Number + type (type had its own column; merged to keep the table within the page, #350) */}
@@ -483,7 +501,7 @@ export const OrderTable = React.memo(function OrderTable({
                           ] : []),
                           [t('dates.createdDate'), formatDateTime(order.createdAt)],
                         ].map(([label, value]) => (
-                          <div key={label} className="min-w-0">
+                          <div key={String(label)} className="min-w-0">
                             <dt className="text-xs text-gray-500 dark:text-gray-400">{label}</dt>
                             <dd className="mt-1 break-words text-sm font-medium text-gray-900 dark:text-white">{value}</dd>
                           </div>

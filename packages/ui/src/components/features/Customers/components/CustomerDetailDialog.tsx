@@ -17,8 +17,7 @@ import { Trash2, History } from 'lucide-react';
 import type { Customer } from '@rentalshop/types';
 import type { LoyaltyCustomerSummary } from '@rentalshop/types';
 import { useCustomerTranslations, useCommonTranslations } from '@rentalshop/hooks';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
-import { loyaltyApi } from '@rentalshop/utils';
+import { loyaltyApi, formatInShopZone } from '@rentalshop/utils';
 
 interface CustomerDetailDialogProps {
   open: boolean;
@@ -43,7 +42,8 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
   // Use centralized date formatting hook (DRY principle)
-  const formatDate = useFormattedFullDate;
+  const formatDate = (value: string | Date) =>
+    formatInShopZone(value, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   useEffect(() => {
     let cancelled = false;
@@ -132,9 +132,9 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 admin-phone max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1 max-md:[&>button]:top-1 max-md:[&>button]:p-3.5 max-md:grid-rows-[auto_minmax(0,1fr)_auto]">
           {/* Header */}
-          <DialogHeader className="px-6 py-4 border-b">
+          <DialogHeader className="px-6 py-4 border-b max-md:px-4 max-md:pr-12">
             <DialogTitle className="text-lg font-semibold">
               {t('customerDetails')}
             </DialogTitle>
@@ -144,7 +144,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
           </DialogHeader>
 
           {/* Content */}
-          <div className="px-6 py-4 overflow-y-auto">
+          <div className="px-6 py-4 overflow-y-auto max-md:px-4">
             {/* Basic Information */}
             <div className="space-y-4">
               {/* Loyalty Summary */}
@@ -235,7 +235,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                 </Card>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.fullName')}</label>
                   <p className="text-sm font-semibold">{[customer.firstName, customer.lastName].filter(Boolean).join(' ').trim() || 'N/A'}</p>
@@ -246,7 +246,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.email')}</label>
-                  <p className="text-sm">{customer.email || <span className="text-muted-foreground italic">{t('fields.notProvided')}</span>}</p>
+                  <p className="text-sm break-words">{customer.email || <span className="text-muted-foreground italic">{t('fields.notProvided')}</span>}</p>
                 </div>
                 {customer.dateOfBirth && (
                   <div>
@@ -268,7 +268,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
               {(customer.address || customer.city || customer.state || customer.zipCode) && (
                 <div className="border-t pt-4 mt-4">
                   <h3 className="text-xs font-semibold text-muted-foreground mb-4">{t('addressInformation')}</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
                     {customer.address && (
                       <div className="col-span-2">
                         <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('fields.streetAddress')}</label>
@@ -299,7 +299,7 @@ export const CustomerDetailDialog: React.FC<CustomerDetailDialogProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t flex justify-between">
+          <DialogFooter className="px-6 py-4 border-t flex justify-between max-md:sticky max-md:bottom-0 max-md:z-10 max-md:bg-bg-card max-md:flex-wrap max-md:gap-2 max-md:px-4 max-md:pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="flex space-x-2">
               {onViewHistory && (
                 <Button

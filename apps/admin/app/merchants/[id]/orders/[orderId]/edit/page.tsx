@@ -136,7 +136,7 @@ export default function MerchantOrderEditPage() {
 
         if (customersRes.success && customersRes.data) {
           if (isMounted) {
-            setCustomers(customersRes.data);
+            setCustomers(Array.isArray(customersRes.data) ? customersRes.data : ((customersRes.data as any).customers ?? []));
           }
         } else {
           console.error('Failed to fetch customers:', customersRes.error);
@@ -144,7 +144,7 @@ export default function MerchantOrderEditPage() {
 
         if (productsRes.success && productsRes.data) {
           if (isMounted) {
-            setProducts(productsRes.data);
+            setProducts(Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any).products ?? []));
           }
         } else {
           console.error('Failed to fetch products:', productsRes.error);
@@ -233,7 +233,7 @@ export default function MerchantOrderEditPage() {
 
   if (loading) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Order</PageTitle>
         </PageHeader>
@@ -250,7 +250,7 @@ export default function MerchantOrderEditPage() {
 
   if (error) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Order</PageTitle>
         </PageHeader>
@@ -284,7 +284,7 @@ export default function MerchantOrderEditPage() {
 
   if (!order) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Order</PageTitle>
         </PageHeader>
@@ -316,7 +316,7 @@ export default function MerchantOrderEditPage() {
   
   if (!hasMinimalData) {
     return (
-      <PageWrapper>
+      <PageWrapper className="admin-phone">
         <PageHeader>
           <PageTitle>Edit Order</PageTitle>
         </PageHeader>
@@ -357,7 +357,7 @@ export default function MerchantOrderEditPage() {
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageHeader>
         <div className="flex items-center justify-between">

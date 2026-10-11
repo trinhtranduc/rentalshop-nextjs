@@ -114,7 +114,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
   if (!qrCodeString) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:gap-0 max-md:overflow-y-auto max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
           <DialogHeader>
             <DialogTitle>{t('payment.qrCodeTitle')}</DialogTitle>
           </DialogHeader>
@@ -142,7 +142,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:gap-0 max-md:overflow-y-auto max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
         <DialogHeader>
           <DialogTitle>{t('payment.qrCodeTitle')}</DialogTitle>
         </DialogHeader>
@@ -173,7 +173,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5"
+                  className="h-5 w-5 max-md:h-11 max-md:w-11"
                   onClick={() => handleCopy(bankAccount.bankName, t('payment.bankName'))}
                 >
                   <Copy className="w-3 h-3" />
@@ -191,7 +191,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5"
+                  className="h-5 w-5 max-md:h-11 max-md:w-11"
                   onClick={() => handleCopy(bankAccount.accountNumber, t('payment.accountNumber'))}
                 >
                   <Copy className="w-3 h-3" />
@@ -209,7 +209,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 flex-shrink-0"
+                  className="h-5 w-5 flex-shrink-0 max-md:h-11 max-md:w-11"
                   onClick={() => handleCopy(bankAccount.accountHolderName, t('payment.accountHolderName'))}
                 >
                   <Copy className="w-3 h-3" />
@@ -230,7 +230,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5"
+                    className="h-5 w-5 max-md:h-11 max-md:w-11"
                     onClick={() => handleCopy(amount.toString(), t('payment.amount'))}
                   >
                     <Copy className="w-3 h-3" />
@@ -252,7 +252,7 @@ export const PaymentQRCodeDialog: React.FC<PaymentQRCodeDialogProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 flex-shrink-0"
+                    className="h-5 w-5 flex-shrink-0 max-md:h-11 max-md:w-11"
                     onClick={() => handleCopy(transferDescription, t('payment.content'))}
                   >
                     <Copy className="w-3 h-3" />

@@ -397,7 +397,7 @@ export default function MerchantUsersPage() {
 
   if (error) {
     return (
-      <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+      <PageWrapper spacing="none" className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
         <PageHeader className="flex-shrink-0">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
         </PageHeader>
@@ -425,9 +425,9 @@ export default function MerchantUsersPage() {
   });
 
   return (
-    <PageWrapper spacing="none" className="h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
+    <PageWrapper spacing="none" className="admin-phone [&_nav_a]:max-md:inline-flex [&_nav_a]:max-md:min-h-11 [&_nav_a]:max-md:items-center h-full flex flex-col px-4 pt-4 pb-0 min-h-0">
       <PageHeader className="flex-shrink-0">
-        <div className="flex justify-between items-center w-full">
+        <div className="flex justify-between items-center w-full gap-2 max-md:flex-wrap">
           <Breadcrumb items={breadcrumbItems} homeHref="/dashboard" />
           <Button
             onClick={() => setShowAddDialog(true)}

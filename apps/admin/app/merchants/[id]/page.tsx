@@ -405,7 +405,7 @@ export default function MerchantDetailPage() {
   ];
 
   return (
-    <PageWrapper>
+    <PageWrapper className="admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
       <PageContent>
         <MerchantDetail

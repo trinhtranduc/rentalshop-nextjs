@@ -68,8 +68,8 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 admin-phone max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1 max-md:[&>button]:top-1 max-md:[&>button]:p-3.5 max-md:grid-rows-[auto_minmax(0,1fr)]">
+        <DialogHeader className="px-6 py-4 border-b max-md:px-4 max-md:pr-12">
           <DialogTitle className="text-lg font-semibold">
             {t('dialogs.addProductTitle') || 'Add New Product'}
           </DialogTitle>
@@ -78,7 +78,7 @@ export const ProductAddDialog: React.FC<ProductAddDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="px-6 py-4 overflow-y-auto">
+        <div className="px-6 py-4 overflow-y-auto max-md:px-4">
           <ProductAddForm
             categories={categories}
             outlets={outlets}

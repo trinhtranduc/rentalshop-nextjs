@@ -528,3 +528,54 @@ a {
     min-width: 44px;
   }
 }
+
+/* #787 — wrapper for admin pages that must work on a phone. Only admin defines it, so components shared with
+   apps/client are unchanged when they sit inside it. Apply `className="admin-phone"` to a page's wrapper. */
+@media (max-width: 767px) {
+  .admin-phone {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .admin-phone button,
+  .admin-phone [role='button'],
+  .admin-phone [role='tab'],
+  .admin-phone [role='combobox'],
+  .admin-phone select,
+  .admin-phone textarea,
+  .admin-phone input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']) {
+    min-height: 44px;
+  }
+  .admin-phone input[type='checkbox'],
+  .admin-phone input[type='radio'] {
+    width: 20px;
+    height: 20px;
+  }
+  /* a checkbox or radio with its label is one 44 px tap row */
+  .admin-phone label:has(> input[type='checkbox']),
+  .admin-phone label:has(> input[type='radio']) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+  }
+  /* a wide table that was not turned into cards scrolls inside its own box instead of widening the page */
+  .admin-phone table:not(.table-cards) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .admin-phone img,
+  .admin-phone video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+/* menus and dialogs open in a portal outside the page wrapper: give their items a 44 px row */
+@media (max-width: 767px) {
+  [data-radix-popper-content-wrapper] [role='menuitem'],
+  [data-radix-popper-content-wrapper] [role='option'] {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}

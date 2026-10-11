@@ -108,7 +108,7 @@ export function MerchantDetail({
   return (
     <div className="space-y-6">
       {/* Statistics Cards - Clickable to navigate */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card 
           className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
           onClick={() => navigateToPage('merchants/' + data.merchant.id + '/users')}
@@ -169,12 +169,12 @@ export function MerchantDetail({
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <CardTitle>Basic Information</CardTitle>
-              <DropdownMenu>
+              <DropdownMenu className="max-md:w-full">
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="w-auto justify-between"
+                    className="w-auto justify-between max-md:w-full max-md:min-h-11"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                   >
                     <span>Quick Actions</span>
@@ -183,41 +183,41 @@ export function MerchantDetail({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
                   align="end" 
-                  className="w-56"
+                  className="w-56 max-md:w-full"
                   open={dropdownOpen}
                   onOpenChange={setDropdownOpen}
                 >
                   <DropdownMenuItem
                     onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/outlets')}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <Building2 className="mr-2 h-4 w-4 text-blue-700" />
                     <span>Manage Outlets</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/products')}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <Package className="mr-2 h-4 w-4 text-green-600" />
                     <span>Manage Products</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/users')}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <Users className="mr-2 h-4 w-4 text-purple-600" />
                     <span>Manage Users</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/orders')}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <ShoppingCart className="mr-2 h-4 w-4 text-orange-600" />
                     <span>Manage Orders</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/customers')}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <UserCircle className="mr-2 h-4 w-4 text-teal-600" />
                     <span>Manage Customers</span>
@@ -225,14 +225,14 @@ export function MerchantDetail({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/plan-limit-addons')}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
                     <span>Plan Limit Addons</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onMerchantAction('edit', data.merchant.id)}
-                    className="cursor-pointer"
+                    className="cursor-pointer max-md:min-h-11"
                   >
                     <PlusCircle className="mr-2 h-4 w-4 text-gray-600" />
                     <span>Edit Merchant</span>

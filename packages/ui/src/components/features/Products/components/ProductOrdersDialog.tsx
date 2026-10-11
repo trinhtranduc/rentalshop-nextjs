@@ -15,7 +15,7 @@ import {
   Badge,
   EmptyState
 } from '@rentalshop/ui';
-import { formatPhoneNumber } from '@rentalshop/utils';
+import { formatPhoneNumber, formatInShopZone } from '@rentalshop/utils';
 import { Copy } from 'lucide-react';
 import { 
   ShoppingCart, 
@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import type { Product, OrderWithDetails } from '@rentalshop/types';
 import { ordersApi } from '@rentalshop/utils';
-import { useFormattedFullDate } from '@rentalshop/utils/client';
 import { useOrderTranslations } from '@rentalshop/hooks';
 
 interface ProductOrdersDialogProps {
@@ -87,7 +86,8 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
   };
 
   // Use centralized date formatting hook (DRY principle)
-  const formatDate = useFormattedFullDate;
+  const formatDate = (value: string | Date) =>
+    formatInShopZone(value, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -126,8 +126,8 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 admin-phone max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1 max-md:[&>button]:top-1 max-md:[&>button]:p-3.5 max-md:grid-rows-[auto_minmax(0,1fr)]">
+        <DialogHeader className="px-6 py-4 border-b max-md:px-4 max-md:pr-12">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5" />
                 Orders for {product.name}
@@ -137,7 +137,7 @@ export function ProductOrdersDialog({ open, onOpenChange, product }: ProductOrde
               </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 py-4 overflow-y-auto">
+        <div className="px-6 py-4 overflow-y-auto max-md:px-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-action-primary"></div>

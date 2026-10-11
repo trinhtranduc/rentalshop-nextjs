@@ -98,6 +98,7 @@ export function MerchantLoyaltySection({
               type="button"
               variant="outline"
               size="sm"
+              className="max-md:w-full max-md:min-h-11"
               disabled={!isActive || busy}
               onClick={() => {
                 void onSyncHistory();
