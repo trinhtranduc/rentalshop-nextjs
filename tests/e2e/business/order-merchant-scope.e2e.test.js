@@ -54,13 +54,14 @@ describeE2E('BF-ORD-MERCHANT orders stay inside one merchant', () => {
 
   test('BF-ORD-MERCHANT-01 the admin lists of one merchant (products, customers, outlets) hold only that merchant', async () => {
     const mid = m2.user.merchantId;
-    const products = listOf((await admin.get(`/api/products?merchantId=${mid}&limit=200`)).body.data, 'products', 'items');
-    const customers = listOf((await admin.get(`/api/customers?merchantId=${mid}&limit=200`)).body.data, 'customers', 'items');
+    // Other suites leave hundreds of rows: look the unique names up instead of reading the first page.
+    const find = async (path, name) => listOf((await admin.get(`${path}${path.includes('?') ? '&' : '?'}merchantId=${mid}&search=${encodeURIComponent(name)}&limit=50`)).body.data, 'products', 'customers', 'items');
+    const custName = (c) => c.firstName ?? c.name;
+    expect((await find('/api/products', product2.name)).map((p) => p.id)).toContain(product2.id);
+    expect((await find('/api/products', product1.name)).map((p) => p.id)).not.toContain(product1.id);
+    expect((await find('/api/customers', custName(customer2))).map((c) => c.id)).toContain(customer2.id);
+    expect((await find('/api/customers', custName(customer1))).map((c) => c.id)).not.toContain(customer1.id);
     const outlets = listOf((await admin.get(`/api/outlets?merchantId=${mid}&limit=50`)).body.data, 'outlets', 'items');
-    expect(products.map((p) => p.id)).toContain(product2.id);
-    expect(products.map((p) => p.id)).not.toContain(product1.id);
-    expect(customers.map((c) => c.id)).toContain(customer2.id);
-    expect(customers.map((c) => c.id)).not.toContain(customer1.id);
     expect(outlets.map((o) => o.id)).toContain(outlet2);
     expect(outlets.map((o) => o.id)).not.toContain(outlet1);
   });
