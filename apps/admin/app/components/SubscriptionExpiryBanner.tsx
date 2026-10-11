@@ -59,7 +59,7 @@ export default function SubscriptionExpiryBanner() {
 
   return (
     <div className="bg-orange-50 border-b border-orange-200 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="flex items-center gap-3 flex-1">
           <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
           <div className="flex-1">
@@ -75,11 +75,11 @@ export default function SubscriptionExpiryBanner() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:flex-shrink-0">
           <Button
             onClick={handleExtend}
             size="sm"
-            className="bg-orange-600 hover:bg-orange-700 text-white"
+            className="min-h-[44px] sm:min-h-0 bg-orange-600 hover:bg-orange-700 text-white"
           >
             Gia hạn ngay
           </Button>
@@ -87,7 +87,7 @@ export default function SubscriptionExpiryBanner() {
             variant="ghost"
             size="icon"
             onClick={handleDismiss}
-            className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
+            className="h-11 w-11 sm:h-10 sm:w-10 text-orange-600 hover:text-orange-700 hover:bg-orange-100"
             title="Đóng"
           >
             <X className="h-4 w-4" />

@@ -16,13 +16,13 @@ export function RankingPeriodButtons({
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant={period === 'today' ? 'default' : 'outline'} onClick={() => onChange('today')} className="px-3 sm:px-4 py-2 text-sm">
+      <Button variant={period === 'today' ? 'default' : 'outline'} onClick={() => onChange('today')} className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm">
         Today
       </Button>
-      <Button variant={period === 'month' ? 'default' : 'outline'} onClick={() => onChange('month')} className="px-3 sm:px-4 py-2 text-sm">
+      <Button variant={period === 'month' ? 'default' : 'outline'} onClick={() => onChange('month')} className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm">
         This Month
       </Button>
-      <Button variant={period === 'year' ? 'default' : 'outline'} onClick={() => onChange('year')} className="px-3 sm:px-4 py-2 text-sm">
+      <Button variant={period === 'year' ? 'default' : 'outline'} onClick={() => onChange('year')} className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm">
         This Year
       </Button>
     </div>
@@ -39,10 +39,10 @@ export function RankingSortButtons({
   const tDashboard = useDashboardTranslations();
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant={sortBy === 'revenue' ? 'default' : 'outline'} onClick={() => onChange('revenue')} className="px-3 py-2 text-sm">
+      <Button variant={sortBy === 'revenue' ? 'default' : 'outline'} onClick={() => onChange('revenue')} className="min-h-[44px] sm:min-h-0 px-3 py-2 text-sm">
         {tDashboard('charts.sortByRevenue')}
       </Button>
-      <Button variant={sortBy === 'quantity' ? 'default' : 'outline'} onClick={() => onChange('quantity')} className="px-3 py-2 text-sm">
+      <Button variant={sortBy === 'quantity' ? 'default' : 'outline'} onClick={() => onChange('quantity')} className="min-h-[44px] sm:min-h-0 px-3 py-2 text-sm">
         {tDashboard('charts.sortByQuantity')}
       </Button>
     </div>
