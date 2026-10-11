@@ -17,6 +17,7 @@ import { uploadToS3, commitStagingFiles, createAuditHelper } from '@rentalshop/u
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, noteImageCount } from '../../../../lib/image-compression';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
+import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
 import {
   findEditScheduleConflicts,
   scheduleConflictBody,
@@ -754,6 +755,20 @@ export const PUT = async (
 
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
+
+      // The products and the customer of the edited order belong to the merchant of its outlet (#789)
+      if (merchantId != null) {
+        const refsCheck = await checkOrderRefsInMerchant({
+          merchantId,
+          productIds: Array.isArray(validUpdateData.orderItems)
+            ? validUpdateData.orderItems.map((item: any) => item.productId)
+            : [],
+          customerId: 'customerId' in validUpdateData ? (validUpdateData as any).customerId : undefined,
+        });
+        if (!refsCheck.ok) {
+          return NextResponse.json(ResponseBuilder.error(refsCheck.code), { status: 404 });
+        }
+      }
 
       // #518: shop setting "Cho tạo đơn khi trùng lịch" OFF → refuse an edit that over-books (new dates,
       // outlet, or more units). Runs before any write (loyalty below). Default ON queries nothing extra.

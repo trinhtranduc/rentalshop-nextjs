@@ -2,6 +2,9 @@ import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
 import type { Outlet, OutletCreateInput, OutletUpdateInput, OutletFilters } from '@rentalshop/types';
+import { listQuery } from './list-query';
+
+
 
 export interface OutletsResponse {
   outlets: Outlet[];
@@ -18,8 +21,14 @@ export const outletsApi = {
   /**
    * Get all outlets
    */
-  async getOutlets(): Promise<ApiResponse<OutletsResponse>> {
-    const response = await authenticatedFetch(apiUrls.outlets.list);
+  async getOutlets(filters?: {
+    merchantId?: number;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<OutletsResponse>> {
+    const response = await authenticatedFetch(`${apiUrls.outlets.list}${listQuery(filters)}`);
     const result = await parseApiResponse<OutletsResponse>(response);
     return result;
   },
