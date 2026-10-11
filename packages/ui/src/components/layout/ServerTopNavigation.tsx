@@ -55,6 +55,7 @@ export function ServerTopNavigation({
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/merchants', label: 'Merchants', icon: Store },
     { href: '/plans', label: 'Plans', icon: Package },
+    { href: '/billing-modules', label: 'Module', icon: Package },
     { href: '/subscriptions', label: 'Subscriptions', icon: Clock },
     { href: '/payments', label: 'Payments', icon: CreditCard },
     { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },

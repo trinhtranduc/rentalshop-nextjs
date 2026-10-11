@@ -28,6 +28,7 @@ export * from './components/features/Availability';
 export * from './components/features/Posts';
 export * from './components/features/Plans';
 export * from './components/features/BillingCycles';
+export * from './components/features/BillingModules';
 export * from './components/features/Payments';
 export * from './components/features/Subscriptions';
 export * from './components/features/ExportDialog';

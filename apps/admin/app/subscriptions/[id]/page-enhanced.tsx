@@ -15,7 +15,7 @@ import { Card,
   UpgradeTrialModal,
   useToast } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
-import { subscriptionsApi, plansApi, formatInShopZone } from '@rentalshop/utils';
+import { subscriptionsApi, plansApi, billingModulesApi, formatInShopZone } from '@rentalshop/utils';
 import { 
   ArrowLeft,
   Edit,
@@ -55,6 +55,8 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [renewalLoading, setRenewalLoading] = useState(false);
+  // Monthly total of the shop's add-ons / modules, counted into the renewal total (#782)
+  const [addonMonthlyTotal, setAddonMonthlyTotal] = useState(0);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   // Toast management
@@ -73,6 +75,15 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
       const subResult = await subscriptionsApi.getById(subscriptionId);
       if (subResult.success && subResult.data) {
         setSubscription(subResult.data);
+        const mId = Number((subResult.data as any).merchantId);
+        if (mId) {
+          try {
+            const modulesResult = await billingModulesApi.listForMerchant(mId);
+            setAddonMonthlyTotal(modulesResult.success && modulesResult.data ? modulesResult.data.monthlyTotal || 0 : 0);
+          } catch {
+            setAddonMonthlyTotal(0);
+          }
+        }
       }
 
       // Fetch payment history
@@ -465,6 +476,7 @@ export default function SubscriptionDetailPageEnhanced({ params }: SubscriptionD
             }}
             onRenew={handleManualRenewal}
             loading={renewalLoading}
+            addonMonthlyTotal={addonMonthlyTotal}
           />
 
           {subscription.status === 'trial' && (

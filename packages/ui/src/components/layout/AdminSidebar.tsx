@@ -8,6 +8,7 @@ import { useOptimisticNavigation, useCommonTranslations } from '@rentalshop/hook
 import { formatRoleDisplayName } from '../../utils/role-utils';
 import { filterAdminMenuByRole } from '../../utils/admin-menu-filter';
 import { 
+  Boxes,
   ChevronLeft, 
   ChevronRight, 
   Home, 
@@ -112,6 +113,11 @@ const adminMenuItems: MenuItem[] = [
         icon: DollarSign,
       },
     ],
+  },
+  {
+    label: 'Module',
+    href: '/billing-modules',
+    icon: Boxes,
   },
   {
     label: 'Orders',

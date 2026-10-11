@@ -497,10 +497,10 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/admin/merchants/${subscription.merchantId}/plan-limit-addons`)}
+                    onClick={() => router.push(`/merchants/${subscription.merchantId}#merchant-modules`)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Manage Addons
+                    Gói & Module
                   </Button>
                 )}
               </CardTitle>

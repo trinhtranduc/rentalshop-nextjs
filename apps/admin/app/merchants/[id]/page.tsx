@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   MerchantDetail,
+  MerchantModulesSection,
   Breadcrumb,
   PageWrapper,
   PageHeader,
@@ -423,6 +424,13 @@ export default function MerchantDetailPage() {
           onSuspend={handleSuspend}
           onReactivate={handleReactivate}
         />
+        <div className="mt-6">
+          <MerchantModulesSection
+            merchantId={Number(merchantId)}
+            planName={merchant.subscription?.plan?.name}
+            planPrice={merchant.subscription?.plan?.basePrice}
+          />
+        </div>
       </PageContent>
     </PageWrapper>
   );

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@rentalshop/ui';
 import { 
+  Boxes,
   Users, 
   Building2, 
   CreditCard, 
@@ -52,6 +53,12 @@ export default function AdminNavigation({ user, onLogout }: AdminNavigationProps
       href: '/plans',
       icon: Package,
       current: pathname.startsWith('/plans')
+    },
+    {
+      name: 'Module',
+      href: '/billing-modules',
+      icon: Boxes,
+      current: pathname.startsWith('/billing-modules')
     },
     {
       name: 'Payments',

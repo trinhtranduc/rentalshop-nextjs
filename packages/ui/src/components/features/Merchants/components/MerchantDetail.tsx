@@ -221,11 +221,14 @@ export function MerchantDetail({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/plan-limit-addons')}
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      document.getElementById('merchant-modules')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
                     className="cursor-pointer"
                   >
                     <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
-                    <span>Plan Limit Addons</span>
+                    <span>Gói & Module</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onMerchantAction('edit', data.merchant.id)}

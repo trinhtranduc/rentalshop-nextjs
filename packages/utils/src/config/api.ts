@@ -269,6 +269,15 @@ export interface ApiUrls {
       delete: (merchantId: number, addonId: number) => string;
     };
   };
+  billingModules: {
+    list: string;
+    create: string;
+    update: (id: number) => string;
+    merchantList: (merchantId: number) => string;
+    merchantQuote: (merchantId: number) => string;
+    merchantAdd: (merchantId: number) => string;
+    merchantUpdate: (merchantId: number, rowId: number) => string;
+  };
   planLimitAddons: {
     list: string;
     get: (id: number) => string;
@@ -832,6 +841,15 @@ function createApiUrls(): ApiUrls {
         update: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
         delete: (merchantId: number, addonId: number) => `${base}/api/plan-limit-addons/${addonId}`,
       },
+    },
+    billingModules: {
+      list: `${base}/api/billing-modules`,
+      create: `${base}/api/billing-modules`,
+      update: (id: number) => `${base}/api/billing-modules/${id}`,
+      merchantList: (merchantId: number) => `${base}/api/merchants/${merchantId}/modules`,
+      merchantQuote: (merchantId: number) => `${base}/api/merchants/${merchantId}/modules/quote`,
+      merchantAdd: (merchantId: number) => `${base}/api/merchants/${merchantId}/modules`,
+      merchantUpdate: (merchantId: number, rowId: number) => `${base}/api/merchants/${merchantId}/modules/${rowId}`,
     },
     planLimitAddons: {
       list: `${base}/api/plan-limit-addons`,
