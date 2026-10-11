@@ -20,20 +20,27 @@ const NOW = new Date('2026-10-06T17:30:00.000Z'); // 7 Oct 00:30 VN
 
 describe('subscription extension', () => {
   it('base day is the Vietnam day of the current end (or Vietnam today)', () => {
-    expect(extensionBaseKey('2026-10-06T16:59:59.999Z', NOW)).toBe('2026-10-06');
-    expect(extensionBaseKey('2026-10-06T17:00:00.000Z', NOW)).toBe('2026-10-07');
+    expect(extensionBaseKey('2026-10-20T16:59:59.999Z', NOW)).toBe('2026-10-20');
+    expect(extensionBaseKey('2026-10-20T17:00:00.000Z', NOW)).toBe('2026-10-21');
     expect(extensionBaseKey(null, NOW)).toBe('2026-10-07');
   });
 
+  it('#779: an end that has passed counts from today, not from the old end (owner rule)', () => {
+    // ended 6 Oct 23:59 VN, extended at 7 Oct 00:30 VN
+    expect(extensionBaseKey('2026-10-06T16:59:59.999Z', NOW)).toBe('2026-10-07');
+    // ended 30 Jun, extended 7 Oct + 1 month → 7 Nov (was 30 Jul, already in the past)
+    expect(extensionEndKeyForMonths('2026-06-30T16:59:59.999Z', 1, NOW)).toBe('2026-11-07');
+  });
+
   it('adds billing months with the end-of-month clamp', () => {
-    // ends 31 Jan (VN) → 28 Feb
-    expect(extensionEndKeyForMonths('2026-01-31T16:59:59.999Z', 1, NOW)).toBe('2026-02-28');
+    // ends 31 Jan (VN) → 28 Feb (ends in the future: since #779 a past end counts from today)
+    expect(extensionEndKeyForMonths('2027-01-31T16:59:59.999Z', 1, NOW)).toBe('2027-02-28');
     expect(extensionEndKeyForMonths('2028-01-31T16:59:59.999Z', 1, NOW)).toBe('2028-02-29');
     // stored as VN midnight of 31 Jan
-    expect(extensionEndKeyForMonths('2026-01-30T17:00:00.000Z', 1, NOW)).toBe('2026-02-28');
+    expect(extensionEndKeyForMonths('2027-01-30T17:00:00.000Z', 1, NOW)).toBe('2027-02-28');
     expect(extensionEndKeyForMonths('2026-11-30T16:59:59.999Z', 3, NOW)).toBe('2027-02-28');
-    expect(extensionEndKeyForMonths('2026-10-06T16:59:59.999Z', 12, NOW)).toBe('2027-10-06');
-    expect(defaultCustomExtensionKey('2026-10-06T16:59:59.999Z', NOW)).toBe('2026-11-05');
+    expect(extensionEndKeyForMonths('2026-10-20T16:59:59.999Z', 12, NOW)).toBe('2027-10-20');
+    expect(defaultCustomExtensionKey('2026-10-20T16:59:59.999Z', NOW)).toBe('2026-11-19');
   });
 
   it('the new end is 23:59:59.999 Vietnam time of the chosen day', () => {

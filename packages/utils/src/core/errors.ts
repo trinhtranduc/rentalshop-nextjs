@@ -53,6 +53,7 @@ export enum ErrorCode {
   ORDER_SCHEDULE_CONFLICT = 'ORDER_SCHEDULE_CONFLICT',
   PAYMENT_FAILED = 'PAYMENT_FAILED',
   INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
+  INVALID_DURATION = 'INVALID_DURATION',
   
   // Resource Specific Errors
   EMAIL_EXISTS = 'EMAIL_EXISTS',
@@ -142,6 +143,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.ORDER_SCHEDULE_CONFLICT]: 'This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.',
   [ErrorCode.PAYMENT_FAILED]: 'Payment processing failed',
   [ErrorCode.INVALID_PAYMENT_METHOD]: 'Invalid payment method',
+  [ErrorCode.INVALID_DURATION]: 'Renewal period must be 1, 3, 6 or 12 months',
   
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
@@ -216,6 +218,7 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.ORDER_SCHEDULE_CONFLICT]: 409,
   [ErrorCode.PAYMENT_FAILED]: 402,
   [ErrorCode.INVALID_PAYMENT_METHOD]: 400,
+  [ErrorCode.INVALID_DURATION]: 400,
   
   // Resource Specific Errors (4xx)
   [ErrorCode.EMAIL_EXISTS]: 409,

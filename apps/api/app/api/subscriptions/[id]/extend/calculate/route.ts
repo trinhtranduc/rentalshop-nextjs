@@ -93,9 +93,10 @@ async function handleCalculateExtensionPrice(
     const totalAddonLimits = await db.planLimitAddons.calculateTotal(subscription.merchantId);
 
     // Calculate extension duration in days
-    const oldEndDate = subscription.currentPeriodEnd 
-      ? new Date(subscription.currentPeriodEnd) 
-      : new Date();
+    // An expired subscription is extended from now, not from its old end (#779, owner rule).
+    const nowForBase = new Date();
+    const storedEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+    const oldEndDate = storedEnd && storedEnd.getTime() > nowForBase.getTime() ? storedEnd : nowForBase;
     // Vietnam civil days (#588); a new end after the old end stays valid as before.
     const extensionDays = Math.max(0, civilDaysBetween(oldEndDate, newEndDate));
 

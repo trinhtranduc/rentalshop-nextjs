@@ -1,5 +1,5 @@
 import type { BillingInterval, Plan, Subscription } from '@rentalshop/types';
-import { calculateSubscriptionPrice } from './pricing-calculator';
+import { calculateSubscriptionPrice, getPricingBreakdown } from './pricing-calculator';
 import { normalizeBillingInterval } from './billing-interval';
 import { addMonthsInTimeZone, civilDaysBetween } from './billing-dates';
 
@@ -10,6 +10,23 @@ export interface PlanChangeCalculation {
   remainingDays: number;
   remainingCreditValue: number;
   newPlanPeriodPrice: number;
+  totalDue: number;
+  /** New period: starts now, one cycle of calendar months on the Vietnam day (#779). */
+  newPeriodStart: Date;
+  newPeriodEnd: Date;
+}
+
+export interface RenewalCalculation {
+  interval: BillingInterval;
+  months: number;
+  /** Cycle discount in percent (monthly 0, quarterly 0, semi-annual 5, annual 10). */
+  discountPercent: number;
+  /** The current period had ended (or had no end) at `now`. */
+  expired: boolean;
+  periodStart: Date;
+  periodEnd: Date;
+  planPrice: number;
+  addonPrice: number;
   totalDue: number;
 }
 
@@ -80,6 +97,60 @@ export function calculatePlanChangeTotal(params: {
     remainingCreditValue,
     newPlanPeriodPrice,
     totalDue,
+    newPeriodStart: now,
+    newPeriodEnd: addMonthsInTimeZone(now, intervalMonths(selectedInterval)),
+  };
+}
+
+const RENEWAL_INTERVALS: Record<number, BillingInterval> = {
+  1: 'monthly',
+  3: 'quarterly',
+  6: 'semi_annual',
+  12: 'annual',
+};
+
+/** Renewal durations the API accepts (1, 3, 6, 12 months) as billing cycles; anything else is null (#779). */
+export function renewalIntervalForMonths(months: number): BillingInterval | null {
+  return RENEWAL_INTERVALS[months] ?? null;
+}
+
+/**
+ * Price and new period of a renewal (owner rules, #779):
+ * - price = plan + addons for the chosen cycle, with the cycle discount (0 / 0 / 5 / 10 %);
+ * - expired (end <= now, or no end): the new period starts now;
+ * - not expired: it continues from the current end, so the days left are kept;
+ * - the end is one cycle of calendar months on the Vietnam day (31 Jan + 1 = 28 Feb).
+ * `basePrice` and `addonMonthlyTotal` are monthly prices.
+ */
+export function calculateRenewalTotal(params: {
+  basePrice: number;
+  addonMonthlyTotal?: number;
+  interval: BillingInterval | string;
+  currentPeriodEnd: Date | string | null | undefined;
+  now?: Date;
+}): RenewalCalculation {
+  const now = params.now ?? new Date();
+  const interval = normalizeBillingInterval(params.interval);
+  const months = intervalMonths(interval);
+
+  const end = params.currentPeriodEnd ? new Date(params.currentPeriodEnd as any) : null;
+  const expired = !end || Number.isNaN(end.getTime()) || end.getTime() <= now.getTime();
+  const periodStart = expired ? now : (end as Date);
+  const periodEnd = addMonthsInTimeZone(periodStart, months);
+
+  const plan = getPricingBreakdown({ basePrice: params.basePrice || 0 } as Plan, interval);
+  const addonPrice = calculateSubscriptionPrice({ basePrice: params.addonMonthlyTotal || 0 } as Plan, interval);
+
+  return {
+    interval,
+    months,
+    discountPercent: plan.discount,
+    expired,
+    periodStart,
+    periodEnd,
+    planPrice: plan.finalPrice,
+    addonPrice,
+    totalDue: plan.finalPrice + addonPrice,
   };
 }
 

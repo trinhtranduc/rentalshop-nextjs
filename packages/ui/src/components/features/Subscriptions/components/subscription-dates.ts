@@ -28,10 +28,13 @@ export function addMonthsClamped(key: string, months: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(Math.min(d, lastDay)).padStart(2, '0')}`;
 }
 
-/** Vietnam day of the current period end, or the Vietnam today when there is none. */
+/**
+ * Vietnam day an extension counts from: the current period end, or today when there is none or it has
+ * already passed (an expired subscription is extended from now, not from the old end; #779).
+ */
 export function extensionBaseKey(currentPeriodEnd: DateInput, now: Date = new Date()): string {
   const end = toInstant(currentPeriodEnd);
-  return end ? shopDateKey(end) : todayShopKey(now);
+  return end && end.getTime() > now.getTime() ? shopDateKey(end) : todayShopKey(now);
 }
 
 /** New end day = base day + `months` calendar months (end-of-month clamp). */

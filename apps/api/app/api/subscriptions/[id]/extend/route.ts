@@ -96,7 +96,10 @@ async function handleExtendSubscription(
     const planAny = subscriptionAny.plan as { basePrice?: number } | undefined;
 
     // Calculate extension duration
-    const oldEndDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
+    // An expired subscription is extended from now, not from its old end (#779, owner rule).
+    const nowForBase = new Date();
+    const storedEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+    const oldEndDate = storedEnd && storedEnd.getTime() > nowForBase.getTime() ? storedEnd : nowForBase;
     // Vietnam civil days from the old end day to the new end day (#588). Acceptance stays on the
     // instants as before: any new end after the old end is valid (a same-day move counts 0 days).
     const extensionDays = Math.max(0, civilDaysBetween(oldEndDate, endDate));

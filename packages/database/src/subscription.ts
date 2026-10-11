@@ -1233,7 +1233,8 @@ export const simplifiedSubscriptions = {
       where: { id },
       include: {
         merchant: { select: { id: true, name: true, email: true } },
-        plan: { select: { id: true, name: true } },
+        // basePrice + currency: renew / extend price from the plan (#779; was 0)
+        plan: { select: { id: true, name: true, basePrice: true, currency: true } },
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 5
