@@ -1,5 +1,11 @@
 # Spec #802
 
+## Mục tiêu (chủ shop, 2026-10-11)
+Admin **dễ quản lý trên cả điện thoại và web**. Một bộ giao diện, hai cỡ màn hình, không làm hai bản. Tiêu chí cho mọi PR của #802:
+- Ở 390px: không tràn ngang, mọi thao tác chính với tới bằng một ngón tay (nút và ô nhập cao tối thiểu 44px, nút hành động chính cố định ở đáy dialog và form), danh sách thành thẻ, menu mở dạng ngăn kéo.
+- Ở 1280px: cùng nội dung và cùng nút, bố cục rộng (sidebar cố định, bảng có tiêu đề cố định).
+- Cùng một bộ component và token cho hai cỡ; ảnh trước/sau của mỗi PR chụp cả hai cỡ.
+
 ## Phong cách (đổi 2026-10-11: theo web portal, không theo mockup add-on)
 Chủ shop thích style của web portal (`apps/client`, `ShopShell`) và muốn admin theo đó. Portal dùng bộ token `--ar-*` (RGB, nền trang `#f3f4f6`, chữ `#0f172a`, chữ phụ `#475569`, nhấn xanh dương `#1d4ed8`, nền nhấn nhạt `#eff6ff`, viền `#e2e8f0`), màu Tailwind `ar-*`, chế độ tối qua `.ar-theme` + `data-ar-theme`, sidebar trắng với mục đang chọn nền xanh nhạt, thanh tìm kiếm trên cùng, nút xanh bo tròn, thẻ có viền, chip lọc, bảng có tiêu đề cố định, pill trạng thái, font Be Vietnam Pro.
 
