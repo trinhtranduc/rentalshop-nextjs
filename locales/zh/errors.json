@@ -32,9 +32,7 @@
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "只能在新的周期降级",
   "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "只有多分店套餐（Enterprise）才能添加分店附加包。",
   "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "店员不能修改商品名称、价格、图片、分类等共享信息，请联系店主、门店管理员或仓库人员。您可以修改本门店的库存。",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "店员不能删除商品，请联系店主、门店管理员或仓库人员。"
-  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "只有店主可以修改商品名称、价格、图片、分类等共享信息。您可以修改本门店的库存。",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "只有店主可以删除商品。",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "店员不能删除商品，请联系店主、门店管理员或仓库人员。",
   "OUTLET_HAS_OPEN_ORDERS": "该分店仍有已预订或租赁中的订单。请先完成或取消这些订单，再停用分店。",
   "OUTLET_DEACTIVATED": "该分店已停用，请联系店主。"
 }

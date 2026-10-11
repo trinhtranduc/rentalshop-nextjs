@@ -32,9 +32,7 @@
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "다운그레이드는 새로운 기간에만 가능합니다",
   "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "지점 추가 애드온은 다지점 요금제(Enterprise)에서만 사용할 수 있습니다.",
   "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "직원은 상품 이름, 가격, 사진, 카테고리 등 공통 정보를 변경할 수 없습니다. 매장 주인, 지점 관리자 또는 창고 직원에게 요청하세요. 내 지점의 재고는 수정할 수 있습니다.",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "직원은 상품을 삭제할 수 없습니다. 매장 주인, 지점 관리자 또는 창고 직원에게 요청하세요."
-  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "상품 이름, 가격, 사진, 카테고리 등 공통 정보는 매장 주인만 변경할 수 있습니다. 내 지점의 재고는 수정할 수 있습니다.",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "상품은 매장 주인만 삭제할 수 있습니다.",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "직원은 상품을 삭제할 수 없습니다. 매장 주인, 지점 관리자 또는 창고 직원에게 요청하세요.",
   "OUTLET_HAS_OPEN_ORDERS": "이 지점에 예약되었거나 대여 중인 주문이 남아 있습니다. 지점을 중지하기 전에 해당 주문을 완료하거나 취소하세요.",
   "OUTLET_DEACTIVATED": "이 지점은 운영이 중지되었습니다. 매장 주인에게 문의하세요."
 }
