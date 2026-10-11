@@ -225,3 +225,25 @@ export function calendarOutletId(raw: string | null | undefined, options: Array<
   const id = Number(raw);
   return options.some((o) => o.id === id) ? id : undefined;
 }
+
+/** #849: answer of GET /api/subscriptions/status as the page sees it (parseApiResponse). */
+export interface SubscriptionStatusLike {
+  success?: boolean;
+  code?: string;
+  data?: { status?: string | null } | null;
+}
+
+const BLOCKED_STATUSES = new Set(['EXPIRED', 'CANCELED', 'CANCELLED', 'PAUSED', 'PAST_DUE']);
+const BLOCKED_CODES = new Set(['SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_PAST_DUE', 'TRIAL_EXPIRED']);
+
+/**
+ * #849: the shop's subscription blocks the calendar (expired, cancelled, paused, past due). The calendar routes
+ * stay open to such shops (installed apps), so the web shows its retry cards like the other pages. The status route
+ * answers 403 with the subscription code on builds before #728. Any other answer (active, trial, none, a failed
+ * read) does not block.
+ */
+export function subscriptionBlocked(res: SubscriptionStatusLike | null | undefined): boolean {
+  if (!res) return false;
+  if (res.success) return BLOCKED_STATUSES.has(String(res.data?.status ?? '').toUpperCase());
+  return BLOCKED_CODES.has(String(res.code ?? ''));
+}
