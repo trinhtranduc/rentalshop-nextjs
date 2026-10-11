@@ -6,7 +6,7 @@ Issue: #782. Requirements and owner decisions: #780 (comments of 2026-10-11). Bu
 Today's `PlanLimitAddon` raises limits for free, forever, with no price or dates. The owner wants paid modules, managed as one system with addons, priced in VND.
 
 ## Owner decisions used here
-- One VND price per module for every plan; plans never include modules; admin defines modules and prices. Plans are Basic, Pro, Enterprise (Enterprise = multiple branches); add-ons are quantities (branches, staff); features live in the plan tiers.
+- One VND price per module for every plan; plans never include modules; admin defines modules and prices. Plans are Basic, Pro, Enterprise (Enterprise = multiple branches); add-ons are quantities (branches, staff); modules are features (Loyalty, Payroll). Add-ons and modules are managed together in one catalog (step 1: add-ons enforced, step 2: modules).
 - Mid-period purchase: charged for the remaining Vietnam civil days of the subscription period.
 - Renewal: plan + modules for the cycle, same 0/0/5/10 % discount.
 - Removal at the end of the period, no refund, never below current usage.
