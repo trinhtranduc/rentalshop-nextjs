@@ -314,10 +314,10 @@ export function SubscriptionExtendDialogEnhanced({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-[calc(100vw-1rem)] sm:max-w-4xl max-h-[90vh] overflow-y-auto max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-3 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+      <DialogContent className="ar-dialog w-full max-w-[calc(100vw-1rem)] md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-3 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
         <DialogHeader className="shrink-0 max-md:pr-10">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-action-primary" />
+            <Calendar className="h-5 w-5 text-ar-primary" />
             Extend Subscription
           </DialogTitle>
           <DialogDescription className="text-sm">
@@ -325,7 +325,7 @@ export function SubscriptionExtendDialogEnhanced({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 max-md:flex-1 max-md:min-h-0 max-md:overflow-y-auto">
+        <div className="space-y-3 flex-1 min-h-0 overflow-y-auto">
           {/* Extension Mode Toggle */}
           <div className="flex items-center gap-2">
             <button
@@ -554,7 +554,7 @@ export function SubscriptionExtendDialogEnhanced({
           )}
 
           {/* Method, Note & Send Email - Compact Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="method" className="text-xs font-medium">Method</Label>
               <select
@@ -600,7 +600,7 @@ export function SubscriptionExtendDialogEnhanced({
 
         {/* Action Buttons */}
         <ResponsiveDialogFooter
-          className="max-md:-mx-4"
+          className="ar-dialog-footer md:border-t md:border-ar-line md:pt-3 max-md:-mx-4"
           summaryLabel="Extension Price"
           summaryAmount={
             calculation && manualPrice && Number.isFinite(parseFloat(manualPrice))

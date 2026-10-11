@@ -126,10 +126,10 @@ export function ManualRenewalModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+      <DialogContent className="ar-dialog md:max-w-lg max-h-[90vh] overflow-hidden flex flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
         <DialogHeader className="flex-shrink-0 max-md:pr-10 max-md:pb-3">
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-green-500" />
+            <CreditCard className="h-5 w-5 text-ar-primary" />
             Renew Subscription
           </DialogTitle>
           <DialogDescription>
@@ -139,15 +139,15 @@ export function ManualRenewalModal({
 
         <div className="space-y-6 overflow-y-auto flex-1 pr-2 max-md:min-h-0 max-md:space-y-4 max-md:pr-0">
           {/* Current Plan Display */}
-          <div className="p-4 bg-gray-50 border rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Current Plan</p>
+          <div className="p-4 bg-ar-surface-muted border border-ar-line rounded-xl">
+            <p className="text-sm text-ar-muted mb-1">Current Plan</p>
             <div className="flex items-center justify-between">
               <p className="font-semibold text-lg">{subscription.planName}</p>
               {hasPrice && (
                 <p className="font-semibold text-lg">{formatCurrency(monthlyPrice as number, subscription.currency as any)}/month</p>
               )}
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-ar-muted mt-2">
               Expires: {formatInShopZone(subscription.currentPeriodEnd)}
             </p>
           </div>
@@ -181,7 +181,7 @@ export function ManualRenewalModal({
                             </span>
                           )}
                         </div>
-                        <span className={`text-xs text-gray-500 mt-0.5 ${detailsCls}`}>
+                        <span className={`text-xs text-ar-muted mt-0.5 ${detailsCls}`}>
                           Period: {formatInShopZone(optionRenewal.periodStart, 'en', { month: 'short', day: 'numeric' })} - {formatInShopZone(optionRenewal.periodEnd)}
                         </span>
                       </div>
@@ -190,30 +190,30 @@ export function ManualRenewalModal({
                 })}
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-ar-muted mt-1">
               Longer renewal periods offer better discounts
             </p>
           </div>
 
           {/* Renewal Period Display */}
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="font-medium text-green-900 mb-2">Renewal Period</p>
+          <div className="p-4 bg-ar-surface-muted border border-ar-line rounded-xl">
+            <p className="font-semibold text-ar-ink mb-2">Renewal Period</p>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Start Date:</span>
-                <span className="font-medium text-green-900">
+                <span className="text-ar-muted">Start Date:</span>
+                <span className="font-medium text-ar-ink">
                   {formatInShopZone(nextPeriodStart)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">End Date:</span>
-                <span className="font-medium text-green-900">
+                <span className="text-ar-muted">End Date:</span>
+                <span className="font-medium text-ar-ink">
                   {formatInShopZone(nextPeriodEnd)}
                 </span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-green-300">
-                <span className="text-gray-600">Duration:</span>
-                <span className="font-semibold text-green-900">
+              <div className="flex justify-between pt-1 border-t border-ar-line">
+                <span className="text-ar-muted">Duration:</span>
+                <span className="font-semibold text-ar-ink">
                   {RENEWAL_DURATIONS.find(d => d.months === duration)?.name}
                 </span>
               </div>
@@ -221,9 +221,9 @@ export function ManualRenewalModal({
           </div>
 
           {/* Pricing Summary */}
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-4 bg-ar-primary-soft border border-ar-line rounded-xl">
             <div className="flex items-center justify-between mb-2">
-              <p className="font-medium text-blue-900">Pricing Summary</p>
+              <p className="font-semibold text-ar-ink">Pricing Summary</p>
               {hasPrice && <DetailsToggle open={showDetails} onToggle={() => setShowDetails(v => !v)} />}
             </div>
             {hasPrice ? (
@@ -244,15 +244,15 @@ export function ManualRenewalModal({
                 )}
                 <div className="flex justify-between pt-2 border-t text-base">
                   <span className="font-semibold">Total:</span>
-                  <span className="font-bold text-blue-900">{formatCurrency(renewal.totalDue, subscription.currency as any)}</span>
+                  <span className="font-bold text-ar-primary-ink">{formatCurrency(renewal.totalDue, subscription.currency as any)}</span>
                 </div>
-                <div className={`flex justify-between text-xs text-gray-600 ${detailsCls}`}>
+                <div className={`flex justify-between text-xs text-ar-muted ${detailsCls}`}>
                   <span>New period:</span>
                   <span>{formatInShopZone(nextPeriodStart)} - {formatInShopZone(nextPeriodEnd)}</span>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-600 flex items-center gap-1">
+              <p className="text-sm text-ar-muted flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 Plan price unavailable. The server calculates the amount from the plan when the renewal is processed.
               </p>
@@ -267,14 +267,14 @@ export function ManualRenewalModal({
                 variant="outline"
                 type="button"
                 onClick={() => setMethod('TRANSFER')}
-                className={`p-3 border-2 rounded-lg text-left transition-all justify-start h-auto max-md:min-h-11 ${
+                className={`p-3 border-2 rounded-xl text-left transition-all justify-start h-auto max-md:min-h-11 ${
                   method === 'TRANSFER' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-ar-primary bg-ar-primary-soft' 
+                    : 'border-ar-line hover:border-ar-line-strong'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-gray-600" />
+                  <Building2 className="w-5 h-5 text-ar-muted" />
                   <span className="font-medium">Bank Transfer</span>
                 </div>
               </Button>
@@ -282,14 +282,14 @@ export function ManualRenewalModal({
                 variant="outline"
                 type="button"
                 onClick={() => setMethod('STRIPE')}
-                className={`p-3 border-2 rounded-lg text-left transition-all justify-start h-auto max-md:min-h-11 ${
+                className={`p-3 border-2 rounded-xl text-left transition-all justify-start h-auto max-md:min-h-11 ${
                   method === 'STRIPE' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-ar-primary bg-ar-primary-soft' 
+                    : 'border-ar-line hover:border-ar-line-strong'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-gray-600" />
+                  <CreditCard className="w-5 h-5 text-ar-muted" />
                   <span className="font-medium">Stripe</span>
                 </div>
               </Button>
@@ -300,7 +300,7 @@ export function ManualRenewalModal({
           <div>
             <Label htmlFor="transactionId">
               Transaction ID *
-              <span className="text-gray-500 text-sm font-normal ml-2">
+              <span className="text-ar-muted text-sm font-normal ml-2">
                 {method === 'STRIPE' ? '(e.g., txn_1234567890)' : '(Bank reference number)'}
               </span>
             </Label>
@@ -330,7 +330,7 @@ export function ManualRenewalModal({
               max={todayShopKey()}
               className="max-md:min-h-11"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-ar-muted mt-1">
               Default: Today ({formatInShopZone(new Date())})
             </p>
           </div>
@@ -357,14 +357,14 @@ export function ManualRenewalModal({
               placeholder={`${duration} month${duration > 1 ? 's' : ''} subscription renewal - ${formatInShopZone(new Date(), 'en', { month: 'long', year: 'numeric' })}`}
               rows={3}
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-ar-muted mt-1">
               Add any additional notes or context for this renewal
             </p>
           </div>
         </div>
 
         <ResponsiveDialogFooter
-          className="md:border-t md:pt-4 md:mt-4 max-md:-mx-4"
+          className="ar-dialog-footer md:border-t md:border-ar-line md:pt-4 md:mt-4 max-md:-mx-4"
           summaryLabel="Total"
           summaryAmount={hasPrice ? formatCurrency(renewal.totalDue, subscription.currency as any) : undefined}
           secondary={

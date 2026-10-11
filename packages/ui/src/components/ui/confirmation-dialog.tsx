@@ -98,7 +98,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md admin-phone">
+      <DialogContent className="max-w-md admin-phone ar-confirm" data-confirm-type={type}>
         <DialogHeader>
           <div className="flex items-center gap-3">
             <IconComponent className={`h-6 w-6 ${config.iconColor}`} />
