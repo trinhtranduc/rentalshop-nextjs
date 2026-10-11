@@ -136,3 +136,21 @@ describe('calculatePlanChangeTotal: upgrade credit and new period', () => {
     expect(r.totalDue).toBeCloseTo(30, 2);
   });
 });
+
+describe('storedBillingInterval (older rows keep unit + count)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { storedBillingInterval } = require('../../../packages/utils/src/core/billing-interval');
+
+  it.each([
+    ['month', 1, 'monthly'],
+    ['month', 3, 'quarterly'],
+    ['month', 6, 'semi_annual'],
+    ['month', 12, 'annual'],
+    ['year', 1, 'annual'],
+    ['quarterly', 3, 'quarterly'],
+    ['annual', 3, 'annual'],
+    [null, null, 'monthly'],
+  ])('%s × %s → %s', (interval, count, expected) => {
+    expect(storedBillingInterval(interval, count)).toBe(expected);
+  });
+});
