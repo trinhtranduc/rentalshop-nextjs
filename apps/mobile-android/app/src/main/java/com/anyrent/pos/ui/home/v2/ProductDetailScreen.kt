@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.home.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -151,7 +152,7 @@ fun ProductDetailScreen(
             .onFailure { if (product == null) error = it.message }
         val todayKey = dayKey(Instant.now())
         val keys = ProductDetailLogic.weekKeys(todayKey, ProductDetailLogic.DETAIL_STRIP_DAYS)
-        withContext(Dispatchers.IO) { ProductsV2Api.availabilityCalendar(productId, keys.first(), keys.last(), SessionStore.outletId) }
+        withContext(Dispatchers.IO) { ProductsV2Api.availabilityCalendar(productId, keys.first(), keys.last(), CurrentOutlet.id) }
             .onSuccess {
                 strip = ProductDetailLogic.strip(todayKey, it.available, ProductDetailLogic.DETAIL_STRIP_DAYS)
                 stripStock = it.stock
@@ -254,7 +255,7 @@ fun ProductDetailScreen(
                     }
                 }
                 if (strip.isEmpty()) {
-                    val counts = ProductStock.counts(current, SessionStore.outletId)
+                    val counts = ProductStock.counts(current, CurrentOutlet.id)
                     Text(
                         stringResource(R.string.v2_stock_summary, counts.rented, counts.free, counts.total),
                         fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 4.dp),

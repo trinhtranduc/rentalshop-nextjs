@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.orders
 
+import com.anyrent.pos.data.CurrentOutlet
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -33,12 +34,12 @@ internal fun Context.shareIsVietnamese(): Boolean =
 
 /** Shop, outlet and address of the signed-in user, as the bill header reads them */
 internal fun shareShop(outletName: String? = null): ShareShop {
-    val outlet = outletName?.takeIf { it.isNotBlank() } ?: SessionStore.outletName
+    val outlet = outletName?.takeIf { it.isNotBlank() } ?: CurrentOutlet.name
     return ShareShop(
         name = SessionStore.merchantName?.takeIf { it.isNotBlank() } ?: outlet.orEmpty(),
         outletName = outlet,
-        outletPhone = SessionStore.storePhone,
-        address = SessionStore.storeAddress,
+        outletPhone = CurrentOutlet.storePhone,
+        address = CurrentOutlet.storeAddress,
     )
 }
 

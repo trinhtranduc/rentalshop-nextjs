@@ -1607,4 +1607,21 @@
     <string name="notifications_v2_delete_one_confirm">Delete this notification? This cannot be undone.</string>
     <string name="notifications_v2_mark_read">Mark read</string>
     <string name="notifications_v2_mark_unread">Mark unread</string>
+    <!-- #828 Branch picker (header button, sheet, cart confirm) -->
+    <string name="outlet_header_accessibility">Branch: %1$s</string>
+    <string name="outlet_header_hint">Change branch</string>
+    <string name="outlet_picker_title">Choose a branch</string>
+    <string name="outlet_picker_hint">Orders, products, stock, calendar and Overview follow the branch you choose.</string>
+    <string name="outlet_picker_default">default</string>
+    <string name="outlet_picker_current">In use</string>
+    <string name="outlet_picker_use">Use %1$s</string>
+    <string name="outlet_switch_confirm_title">Switch to %1$s?</string>
+    <plurals name="outlet_switch_confirm_message">
+        <item quantity="one">The cart has %1$d item from %2$s. Switching branch empties the cart.</item>
+        <item quantity="other">The cart has %1$d items from %2$s. Switching branch empties the cart.</item>
+    </plurals>
+    <string name="outlet_switch_confirm_cancel">Cancel</string>
+    <string name="outlet_switch_confirm_ok">Empty cart and switch</string>
+    <string name="outlet_fallback_title">Back to the default branch</string>
+    <string name="outlet_fallback_message">The branch you chose is no longer active. The app now uses %1$s.</string>
 </resources>

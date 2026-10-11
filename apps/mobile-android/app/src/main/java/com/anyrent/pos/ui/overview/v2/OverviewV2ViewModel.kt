@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.overview.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -102,20 +103,20 @@ class OverviewV2ViewModel(
                     val report = async {
                         if (!snapshot.showsRevenue) null
                         else runCatching {
-                            val json = fetch(OverviewLogic.periodPath(range))
+                            val json = fetch(OverviewLogic.periodPath(range, outletId = CurrentOutlet.merchantFilterId))
                             OverviewLogic.reportFromJson(json.optJSONObject("data") ?: JSONObject())
                         }
                     }
                     val chart = async {
                         if (!snapshot.showsRevenue || chartRange == range) null
                         else runCatching {
-                            OverviewLogic.reportFromJson(fetch(OverviewLogic.periodPath(chartRange)).optJSONObject("data") ?: JSONObject())
+                            OverviewLogic.reportFromJson(fetch(OverviewLogic.periodPath(chartRange, outletId = CurrentOutlet.merchantFilterId)).optJSONObject("data") ?: JSONObject())
                         }.getOrNull()
                     }
                     val now = async {
                         if (!snapshot.showsOperations) null
                         else runCatching {
-                            OverviewLogic.nowFromJson(fetch(OverviewLogic.outletOperationsPath()).optJSONObject("data") ?: JSONObject())
+                            OverviewLogic.nowFromJson(fetch(OverviewLogic.outletOperationsPath(CurrentOutlet.merchantFilterId)).optJSONObject("data") ?: JSONObject())
                         }.getOrNull()
                     }
                     Triple(report.await(), chart.await(), now.await())

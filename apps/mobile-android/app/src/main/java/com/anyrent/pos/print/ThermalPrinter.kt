@@ -1,5 +1,6 @@
 package com.anyrent.pos.print
 
+import com.anyrent.pos.data.CurrentOutlet
 import android.content.SharedPreferences
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.OrderDetail
@@ -95,7 +96,7 @@ object ThermalPrinter {
         order: OrderDetail,
         lookup: (Int) -> OutletBankAccount? = BankAccountRepository::printAccount,
     ): OutletBankAccount? {
-        val outletId = order.outletId ?: runCatching { SessionStore.outletId }.getOrNull() ?: return null
+        val outletId = order.outletId ?: runCatching { CurrentOutlet.id }.getOrNull() ?: return null
         val executor = Executors.newSingleThreadExecutor()
         return try {
             runCatching { executor.submit<OutletBankAccount?> { lookup(outletId) }.get(5, TimeUnit.SECONDS) }.getOrNull()
@@ -145,7 +146,7 @@ object ThermalPrinter {
     internal fun buildOrderReceipt(config: Config, order: OrderDetail, bankAccount: OutletBankAccount? = null): ByteArray {
         val summary = order.summary
         val isRent = summary.orderType.equals("RENT", ignoreCase = true)
-        val store = (runCatching { SessionStore.outletName ?: SessionStore.merchantName }.getOrNull() ?: "AnyRent")
+        val store = (runCatching { CurrentOutlet.name ?: SessionStore.merchantName }.getOrNull() ?: "AnyRent")
             .uppercase(Locale.getDefault())
         val chars = if (config.paperWidthMm <= 58) 32 else 42
         val divider = "-".repeat(chars.coerceAtMost(48))

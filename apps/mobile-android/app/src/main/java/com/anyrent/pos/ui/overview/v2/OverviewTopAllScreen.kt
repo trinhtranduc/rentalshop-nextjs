@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.overview.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +51,7 @@ import org.json.JSONObject
 
 /** #633 the period's ranking, up to [OverviewLogic.TOP_ALL_LIMIT] rows, from `GET /api/analytics/period` */
 private fun loadTopAll(kind: OverviewTopKind, range: DayRange): List<OverviewTopRow> {
-    val json = ApiClient.get().authedGet(OverviewLogic.periodPath(range, OverviewLogic.TOP_ALL_LIMIT))
+    val json = ApiClient.get().authedGet(OverviewLogic.periodPath(range, OverviewLogic.TOP_ALL_LIMIT, CurrentOutlet.merchantFilterId))
     val report = OverviewLogic.reportFromJson(json.optJSONObject("data") ?: JSONObject())
     return OverviewLogic.topRows(report, kind, OverviewLogic.TOP_ALL_LIMIT)
 }

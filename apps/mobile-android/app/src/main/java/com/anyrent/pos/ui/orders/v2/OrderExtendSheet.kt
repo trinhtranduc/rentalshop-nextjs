@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.orders.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
@@ -157,7 +158,7 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
                     scope.launch {
                         val outcome = runCatching {
                             // The order's own outlet; the session outlet when the detail has none
-                            val repository = DefaultAvailabilityRepository(outletIdProvider = { detail.outletId ?: SessionStore.outletId })
+                            val repository = DefaultAvailabilityRepository(outletIdProvider = { detail.outletId ?: CurrentOutlet.id })
                             val blocked = ValidateRentalCartAvailability(repository)(RentalExtension.lines(detail.items), days.first, days.second)
                             if (blocked.isNotEmpty()) {
                                 unavailableTemplate.format(blocked.joinToString(", ") { it.productName })
