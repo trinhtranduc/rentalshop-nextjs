@@ -21,7 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { describeE2E, knownBug, uniqueName, rentBody, saleBody, futureWindow, vnDateKey } = require('../helpers/api');
+const { describeE2E, uniqueName, rentBody, saleBody, futureWindow, vnDateKey } = require('../helpers/api');
 const S = require('../helpers/subscription');
 
 const describeBranch = S.hasDb ? describeE2E : describe.skip;
@@ -821,8 +821,8 @@ describeBranch('BF-BRANCH orders per outlet', () => {
   });
 
   // A registered MERCHANT user has outletId = the default outlet (registration.ts); the apps change status with
-  // { status } only, and PUT /api/orders fills outletId from the user, so the order moves to the default outlet.
-  knownBug('#851', 'BF-BRANCH-42b status change by the apps ({ status } only) keeps the order and its stock at B', async () => {
+  // { status } only. PUT /api/orders used to fill outletId from the user and move the order there (#851, fixed).
+  test('BF-BRANCH-42b status change by the apps ({ status } only) keeps the order and its stock at B', async () => {
     const w = world('orders-move', { outlets: -1 });
     const m = await login(w.merchant);
     const b = await outlet(m);
