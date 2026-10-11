@@ -56,10 +56,13 @@ export async function getPlanLimitAddonsByMerchant(merchantId: number) {
  * These are the addons that contribute to the total limits
  */
 export async function getActivePlanLimitAddonsByMerchant(merchantId: number) {
+  // #850: an item marked for removal (or not renewed) counts until its end (`endsAt`)
+  const now = new Date();
   return await prisma.planLimitAddon.findMany({
     where: { 
       merchantId,
-      isActive: true 
+      isActive: true,
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
     },
     orderBy: { createdAt: 'desc' },
   });

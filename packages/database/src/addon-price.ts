@@ -1,0 +1,170 @@
+// ============================================================================
+// ADD-ON PRICES (#850): the admin's price list and the priced add-ons of a shop.
+// A shop's add-on is a PlanLimitAddon row: its kind's column holds packSize × packs, so the limit check
+// (`planLimitAddons.calculateTotal`) keeps summing the five columns.
+// ============================================================================
+
+import { prisma } from './client';
+import type { AddonPriceCreateInput, AddonPriceUpdateInput, AddonQuote, AddonRenewalLine, LimitKind } from '@rentalshop/utils';
+import { addonColumnsFor } from '@rentalshop/utils';
+
+/** Items that still count: switched on and not past their end. */
+const notEnded = (now: Date) => ({ isActive: true, OR: [{ endsAt: null }, { endsAt: { gt: now } }] });
+
+async function shopsUsingByRow(now = new Date()): Promise<Map<number, number>> {
+  const rows = await prisma.planLimitAddon.findMany({
+    where: { addonPriceId: { not: null }, ...notEnded(now) },
+    select: { addonPriceId: true, merchantId: true },
+    distinct: ['addonPriceId', 'merchantId'],
+  });
+  const counts = new Map<number, number>();
+  for (const r of rows) counts.set(r.addonPriceId as number, (counts.get(r.addonPriceId as number) || 0) + 1);
+  return counts;
+}
+
+export const simplifiedAddonPrices = {
+  /** Every row of the price list with `shopsUsing` (shops with an item of that row that has not ended). */
+  list: async () => {
+    const [rows, counts] = await Promise.all([
+      prisma.addonPrice.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] }),
+      shopsUsingByRow(),
+    ]);
+    return rows.map((row) => ({ ...row, shopsUsing: counts.get(row.id) || 0 }));
+  },
+
+  findById: async (id: number) => prisma.addonPrice.findUnique({ where: { id } }),
+
+  findManyByIds: async (ids: number[]) =>
+    ids.length ? prisma.addonPrice.findMany({ where: { id: { in: ids } } }) : [],
+
+  create: async (data: AddonPriceCreateInput) =>
+    prisma.addonPrice.create({
+      data: {
+        name: data.name,
+        limitKind: data.limitKind,
+        packSize: data.packSize,
+        monthlyPrice: data.monthlyPrice,
+        isActive: data.isActive ?? true,
+        sortOrder: data.sortOrder ?? 0,
+      },
+    }),
+
+  update: async (id: number, data: AddonPriceUpdateInput) => prisma.addonPrice.update({ where: { id }, data }),
+
+  /** Shops holding an item of this row that has not ended. */
+  countShopsUsing: async (id: number) => {
+    const rows = await prisma.planLimitAddon.findMany({
+      where: { addonPriceId: id, ...notEnded(new Date()) },
+      select: { merchantId: true },
+      distinct: ['merchantId'],
+    });
+    return rows.length;
+  },
+};
+
+export interface AddMerchantAddonInput {
+  merchantId: number;
+  subscriptionId: number | null;
+  addonPrice: { id: number; name: string; limitKind: string; packSize: number; monthlyPrice: number };
+  packs: number;
+  quote: AddonQuote;
+  method?: 'TRANSFER' | 'STRIPE';
+  transactionId?: string;
+  reference?: string;
+  createdBy?: string;
+}
+
+export const simplifiedMerchantAddons = {
+  /** The shop's add-ons that still count, oldest first. */
+  listForMerchant: async (merchantId: number, now = new Date()) =>
+    prisma.planLimitAddon.findMany({
+      where: { merchantId, ...notEnded(now) },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+
+  findById: async (id: number) => prisma.planLimitAddon.findUnique({ where: { id } }),
+
+  /**
+   * Buy `packs` packs of a price-list row: one PlanLimitAddon with the price captured now, and a payment when
+   * something is charged now (type PLAN_CHANGE, as an in-period change; method / status as in renew).
+   */
+  add: async (input: AddMerchantAddonInput) => {
+    const { addonPrice, packs, quote } = input;
+    const columns = addonColumnsFor(addonPrice.limitKind as LimitKind, addonPrice.packSize, packs);
+    const method = input.method || 'TRANSFER';
+    return prisma.$transaction(async (tx) => {
+      const addon = await tx.planLimitAddon.create({
+        data: {
+          merchantId: input.merchantId,
+          ...columns,
+          notes: `${addonPrice.name} × ${packs}`,
+          isActive: true,
+          addonPriceId: addonPrice.id,
+          name: addonPrice.name,
+          limitKind: addonPrice.limitKind,
+          packSize: addonPrice.packSize,
+          packs,
+          unitPrice: addonPrice.monthlyPrice,
+        },
+      });
+      let payment = null;
+      if (quote.amountDue > 0) {
+        payment = await tx.payment.create({
+          data: {
+            merchantId: input.merchantId,
+            subscriptionId: input.subscriptionId ?? undefined,
+            amount: quote.amountDue,
+            currency: 'VND',
+            method: method as any,
+            type: 'PLAN_CHANGE' as any,
+            status: (method === 'STRIPE' ? 'COMPLETED' : 'PENDING') as any,
+            transactionId: input.transactionId || undefined,
+            reference: input.reference || undefined,
+            description: `Add-on: ${addonPrice.name} × ${packs} (+${packs * addonPrice.packSize} ${addonPrice.limitKind}), ${quote.remainingDays}/${quote.periodDays} ngày`,
+            metadata: JSON.stringify({ addonId: addon.id, addonPriceId: addonPrice.id, packs, unitPrice: addonPrice.monthlyPrice, ...quote }),
+            processedAt: method === 'STRIPE' ? new Date() : null,
+            processedBy: input.createdBy,
+          },
+        });
+      }
+      return { addon, payment };
+    });
+  },
+
+  /** Mark (endsAt = the period end) or unmark (endsAt null) an item for removal at the end of the period. */
+  setRemoveAtPeriodEnd: async (id: number, removeAtPeriodEnd: boolean, endsAt: Date | null) =>
+    prisma.planLimitAddon.update({ where: { id }, data: { removeAtPeriodEnd, endsAt } }),
+
+  /** Items a renewal looks at and the price-list rows they come from. */
+  renewalItems: async (merchantId: number, now = new Date()) => {
+    const items = await simplifiedMerchantAddons.listForMerchant(merchantId, now);
+    const ids = Array.from(new Set(items.map((i) => i.addonPriceId).filter((v): v is number => v != null)));
+    const rows = await simplifiedAddonPrices.findManyByIds(ids);
+    const catalog = new Map(rows.map((r) => [r.id, r]));
+    return { items, catalog };
+  },
+
+  /**
+   * Inside the renewal transaction: renewed items take today's list price; the others end at the old period end
+   * (still counting until then).
+   */
+  applyRenewal: async (tx: any, lines: AddonRenewalLine[], oldPeriodEnd: Date | null, now = new Date()) => {
+    for (const line of lines) {
+      if (line.renew) {
+        await tx.planLimitAddon.update({ where: { id: line.id }, data: { unitPrice: line.unitPrice } });
+        continue;
+      }
+      const item = await tx.planLimitAddon.findUnique({ where: { id: line.id }, select: { endsAt: true } });
+      const endsAt = item?.endsAt ?? oldPeriodEnd ?? now;
+      await tx.planLimitAddon.update({
+        where: { id: line.id },
+        data: {
+          removeAtPeriodEnd: true,
+          endsAt,
+          endedAt: endsAt,
+          ...(new Date(endsAt).getTime() <= now.getTime() ? { isActive: false } : {}),
+        },
+      });
+    }
+  },
+};

@@ -30,6 +30,7 @@ export * from './sepay';
 export * from './plan-stripe-prices';
 export * from './plan-lemon-squeezy-variants';
 export * from './plan-limit-addons';
+export * from './addon-prices';
 export * from './system';
 export * from './calendar';
 export * from './upload';
