@@ -186,14 +186,12 @@ export default function MerchantAddonsPage() {
                       <span className="num">{formatVnd(quote.addonPrice.monthlyPrice)} / gói / tháng</span>
                       <span>Kỳ này còn</span>
                       <span className="num">
-                        {quote.remainingDays} / {quote.periodDays} ngày
+                        {quote.remainingDays} ngày
                       </span>
                       {quote.reason === 'prorated' && (
                         <>
                           <span>
-                            {quote.monthlyAmount === quote.cyclePrice
-                              ? `${quote.packs} × ${new Intl.NumberFormat('vi-VN').format(quote.addonPrice.monthlyPrice)} × ${quote.remainingDays} ÷ ${quote.periodDays}`
-                              : `${new Intl.NumberFormat('vi-VN').format(quote.cyclePrice)} (cả kỳ) × ${quote.remainingDays} ÷ ${quote.periodDays}`}
+                            {`${new Intl.NumberFormat('vi-VN').format(Math.round(quote.discountedMonthlyPrice))} ÷ 30 × ${quote.packs} × ${quote.remainingDays} ngày`}
                           </span>
                           <span className="num">{formatVnd(quote.amountDue)}</span>
                         </>

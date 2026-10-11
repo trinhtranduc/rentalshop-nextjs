@@ -63,25 +63,33 @@ describe('calculateAddonQuote (monthly period)', () => {
   });
 });
 
-describe('calculateAddonQuote (longer periods: the cycle price, with the renewal discount)', () => {
-  it('annual (10 % off): 30,000 × 12 × 0.9 × days left / days', () => {
+describe('calculateAddonQuote (#870: monthly price after the cycle discount ÷ 30 × packs × days left)', () => {
+  it('a period longer than one cycle (extended / renewed early): 60 days left → 80,000 for a 40,000 pack', () => {
+    const longEnd = new Date('2026-12-22T17:00:00Z'); // 23 Dec VN
+    const q = calculateAddonQuote({ monthlyPrice: 40000, packs: 1, periodStart: start, periodEnd: longEnd, interval: 'month', intervalCount: 1, status: 'ACTIVE', now: new Date('2026-10-24T03:00:00Z') });
+    expect(q.remainingDays).toBe(60);
+    expect(q.amountDue).toBe(80000);
+  });
+
+  it('annual (10 % off): 30,000 × 0.9 ÷ 30 × days left', () => {
     const yStart = new Date('2026-09-30T17:00:00Z'); // 1 Oct 2026 VN
     const yEnd = new Date('2027-09-30T17:00:00Z'); // 1 Oct 2027 VN = 365 days
     const q = calculateAddonQuote({ monthlyPrice: 30000, packs: 1, periodStart: yStart, periodEnd: yEnd, interval: 'month', intervalCount: 12, status: 'ACTIVE', now: new Date('2027-03-31T03:00:00Z') });
     expect(q.periodDays).toBe(365);
     expect(q.remainingDays).toBe(184);
     expect(q.cyclePrice).toBe(324000);
-    expect(q.amountDue).toBe(Math.round((324000 * 184) / 365));
+    expect(q.discountedMonthlyPrice).toBe(27000);
+    expect(q.amountDue).toBe(Math.round((27000 / 30) * 184)); // 165,600
   });
 
-  it('quarterly (no discount): 3 months of price prorated', () => {
+  it('quarterly (no discount): 20,000 ÷ 30 × 2 packs × days left', () => {
     const qStart = new Date('2026-09-30T17:00:00Z'); // 1 Oct VN
     const qEnd = new Date('2026-12-31T17:00:00Z'); // 1 Jan VN = 92 days
     const q = calculateAddonQuote({ monthlyPrice: 20000, packs: 2, periodStart: qStart, periodEnd: qEnd, interval: 'quarterly', status: 'ACTIVE', now: new Date('2026-11-01T03:00:00Z') });
     expect(q.periodDays).toBe(92);
     expect(q.remainingDays).toBe(61);
     expect(q.cyclePrice).toBe(120000);
-    expect(q.amountDue).toBe(Math.round((120000 * 61) / 92));
+    expect(q.amountDue).toBe(Math.round((20000 / 30) * 2 * 61)); // 81,333
   });
 });
 

@@ -137,7 +137,7 @@ describe('POST /api/merchants/[id]/addons (#850)', () => {
     expect(input).toMatchObject({ merchantId: 7, packs: 1 });
     expect(input.addonPrice).toMatchObject({ id: 2, monthlyPrice: 40000, packSize: 2 });
     expect(input.quote.monthlyAmount).toBe(40000);
-    expect(input.quote.amountDue).toBe(Math.round((40000 * input.quote.remainingDays) / input.quote.periodDays));
+    expect(input.quote.amountDue).toBe(Math.round((40000 / 30) * input.quote.remainingDays));
   });
 
   it('a paused row is not sold (422 ADDON_PRICE_NOT_ON_SALE)', async () => {

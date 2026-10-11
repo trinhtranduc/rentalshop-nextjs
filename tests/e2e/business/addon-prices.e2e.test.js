@@ -3,7 +3,8 @@
  *
  * - Plans → Add-on prices: each row = one limit kind + pack size + VND price per pack per month. ADMIN edits.
  * - Merchants → shop → Add-on: pick a row + number of packs; the price comes from the list, never typed.
- *   Charged now = price × packs × days left ÷ days of the period (Vietnam days, whole VND). The limit rises at once.
+ *   Charged now = monthly price after the cycle discount ÷ 30 × packs × Vietnam days left (#870), whole VND. The limit
+ *   rises at once.
  * - Price edits apply to new purchases and later renewals; a bought item keeps its price for the paid period.
  * - "Tạm tắt" = no new sales; items already bought keep running until the end of the period, then are not renewed.
  * - Removal takes effect at the end of the period; renewal total = plan + add-ons still renewed.
@@ -156,7 +157,7 @@ describeAdd('BF-ADD buy mid-period: price × packs × days left ÷ days, the lim
     const periodDays = vnDaysBetween(start, end);
     const remainingDays = vnDaysBetween(before, end);
     expect(r.body.data).toMatchObject({ periodDays, remainingDays, monthlyAmount: 80000, currency: 'VND' });
-    expect(r.body.data.amountDue).toBe(Math.round((80000 * remainingDays) / periodDays));
+    expect(r.body.data.amountDue).toBe(Math.round((40000 / 30) * 2 * remainingDays)); // #870: ÷ 30 per day
   });
 
   test('BF-ADD-05 at 3 of 3 users a 4th is refused; buying 1 pack of +2 users charges the quote and allows 2 more', async () => {
@@ -167,7 +168,7 @@ describeAdd('BF-ADD buy mid-period: price × packs × days left ÷ days, the lim
     const payments = paymentCount(world.merchantId);
     const r = await buy(world.merchantId, twoUsers.id, 1);
     expect(created(r)).toBe(true);
-    const expected = Math.round((40000 * vnDaysBetween(before, end)) / vnDaysBetween(start, end));
+    const expected = Math.round((40000 / 30) * vnDaysBetween(before, end));
     expect(r.body.data.quote.amountDue).toBe(expected);
     expect(r.body.data.addon).toMatchObject({ limitKind: 'users', packSize: 2, packs: 1, unitPrice: 40000, users: 2 });
     expect(paymentCount(world.merchantId)).toBe(payments + 1);
@@ -457,6 +458,22 @@ describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and
     expect(subRow(world.merchantId).status).toBe('ACTIVE');
   });
 
+  test('BF-ADD-21 a period longer than one cycle (extended): the charge counts every day left, 60 days → 80,000', async () => {
+    const row = await createRow({ name: 'Gói 2 nhân viên', limitKind: 'users', packSize: 2, monthlyPrice: 40000 });
+    const world = S.createWorld('add-21', { planId: pricedPlan('add-21', { users: 3 }) });
+    // a monthly subscription extended by a month: started 9 days ago, ends in 60 days
+    const { end } = setPeriod(world.merchantId, { end: new Date(Date.now() + 60 * DAY_MS) });
+    const before = new Date();
+    const r = await buy(world.merchantId, row.id, 1);
+    expect(created(r)).toBe(true);
+    const days = vnDaysBetween(before, end);
+    expect(days).toBeGreaterThanOrEqual(59);
+    expect(r.body.data.quote.remainingDays).toBe(days);
+    expect(r.body.data.quote.amountDue).toBe(Math.round((40000 / 30) * days));
+    if (days === 60) expect(r.body.data.quote.amountDue).toBe(80000);
+    expect(lastPayment(world.merchantId)).toMatchObject({ amount: Math.round((40000 / 30) * days), type: 'PLAN_CHANGE' });
+  });
+
   test('BF-ADD-20 more packs apply now and charge the extra packs; fewer packs wait for the renewal, no refund', async () => {
     const row = await createRow({ name: 'Gói 2 nhân viên', limitKind: 'users', packSize: 2, monthlyPrice: 40000 });
     const world = S.createWorld('add-20', { planId: pricedPlan('add-20', { users: 3 }) });
@@ -469,7 +486,7 @@ describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and
     const payments = paymentCount(world.merchantId);
     const up = await a.patch(url, { packs: 3, method: 'TRANSFER', transactionId: `E2E-20-${Date.now()}` });
     expect(up.status).toBe(200);
-    const expected = Math.round((40000 * 2 * vnDaysBetween(before, end)) / vnDaysBetween(start, end));
+    const expected = Math.round((40000 / 30) * 2 * vnDaysBetween(before, end));
     expect(up.body.data.quote.amountDue).toBe(expected);
     expect(paymentCount(world.merchantId)).toBe(payments + 1);
     expect(lastPayment(world.merchantId)).toMatchObject({ amount: expected, type: 'PLAN_CHANGE' });

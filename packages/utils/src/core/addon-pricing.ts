@@ -63,12 +63,14 @@ export function sumAddonLimits(items: AddonItemLike[], now: Date = new Date()): 
 export interface AddonQuote {
   /** Vietnam civil days of the current subscription period (≥ 1). */
   periodDays: number;
-  /** Vietnam civil days from today to the end of the period (0..periodDays). */
+  /** Vietnam civil days from today to the end of the period (0 when ended; not capped: an extended period counts all). */
   remainingDays: number;
   /** monthlyPrice × packs. */
   monthlyAmount: number;
   /** monthlyAmount for the subscription's cycle, with the cycle discount (same as renewal). */
   cyclePrice: number;
+  /** Price per pack per month after the cycle discount (cycle price of one pack ÷ months of the cycle). */
+  discountedMonthlyPrice: number;
   /** Whole VND charged now. */
   amountDue: number;
   /** `prorated`, or why nothing is charged now. */
@@ -77,9 +79,10 @@ export interface AddonQuote {
 }
 
 /**
- * Price of buying `packs` packs now: cyclePrice × days left ÷ days of the period, whole VND. For a monthly period
- * this is price × packs × days left ÷ days in period (owner rule). A trial shop or an ended period pays 0 now; the item
- * is charged from the next renewal.
+ * Price of buying `packs` packs now (owner decision 2026-10-11, #870): monthly price per pack after the cycle discount
+ * ÷ 30 × packs × Vietnam days left until the period end, whole VND. The length of the period does not matter, so an
+ * extended or early-renewed period with ~60 days left charges ~2 months. Monthly: 40,000 ÷ 30 × 1 × 18 = 24,000.
+ * A trial shop or an ended period pays 0 now; the item is charged from the next renewal.
  */
 export function calculateAddonQuote(params: {
   monthlyPrice: number;
@@ -95,15 +98,20 @@ export function calculateAddonQuote(params: {
   const periodDays = Math.max(1, civilDaysBetween(new Date(params.periodStart), new Date(params.periodEnd)));
   const left = civilDaysBetween(now, new Date(params.periodEnd));
   const ended = new Date(params.periodEnd).getTime() <= now.getTime();
-  const remainingDays = ended ? 0 : Math.max(0, Math.min(periodDays, left));
+  const remainingDays = ended ? 0 : Math.max(0, left);
   const monthlyAmount = Math.max(0, Math.round(params.monthlyPrice)) * Math.max(0, Math.floor(params.packs));
   const cycle = storedBillingInterval(params.interval ?? 'month', params.intervalCount ?? 1);
   const cyclePrice = Math.round(calculateSubscriptionPrice({ basePrice: monthlyAmount } as any, cycle));
+  const months = CYCLE_MONTHS[cycle] ?? 1;
+  const discountedMonthlyPrice = calculateSubscriptionPrice({ basePrice: Math.max(0, Math.round(params.monthlyPrice)) } as any, cycle) / months;
+  const packs = Math.max(0, Math.floor(params.packs));
   const trial = String(params.status || '').toUpperCase() === 'TRIAL';
   const reason: AddonQuote['reason'] = trial ? 'trial' : remainingDays === 0 ? 'ended' : 'prorated';
-  const amountDue = reason === 'prorated' ? Math.round((cyclePrice * remainingDays) / periodDays) : 0;
-  return { periodDays, remainingDays, monthlyAmount, cyclePrice, amountDue, reason, currency: 'VND' };
+  const amountDue = reason === 'prorated' ? Math.round((discountedMonthlyPrice / 30) * packs * remainingDays) : 0;
+  return { periodDays, remainingDays, monthlyAmount, cyclePrice, discountedMonthlyPrice, amountDue, reason, currency: 'VND' };
 }
+
+const CYCLE_MONTHS: Record<string, number> = { monthly: 1, quarterly: 3, semi_annual: 6, annual: 12 };
 
 export interface AddonPriceLike {
   id: number;
