@@ -368,7 +368,8 @@
     "stock": {
       "left": "{available}/{total} free",
       "out": "None free",
-      "renting": "{count} rented out"
+      "renting": "{count} rented out",
+      "otherOutlets": "Other outlets: {count} free"
     },
     "price": {
       "perHour": "{price}/hour"
@@ -619,7 +620,9 @@
       "updated": "Updated",
       "notFound": "Product not found.",
       "loadFailed": "Could not load the product.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "otherOutletsTitle": "Stock at other outlets",
+      "otherOutletsHint": "View only. Available = total minus rented out."
     },
     "orders": {
       "back": "Back to product",

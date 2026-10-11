@@ -97,6 +97,15 @@ export interface OutletStockLike {
   outlet?: { id?: number | null; name?: string | null } | null;
 }
 
+/** #830: another active outlet of the shop, sent to OUTLET_ADMIN / OUTLET_INVENTORY only (read only). */
+export interface OtherOutletLike {
+  outletId: number;
+  outletName?: string | null;
+  stock?: Num;
+  available?: Num;
+  renting?: Num;
+}
+
 export interface ProductLike {
   id: number;
   name?: string | null;
@@ -112,6 +121,7 @@ export interface ProductLike {
   renting?: Num;
   available?: Num;
   outletStock?: OutletStockLike[] | null;
+  otherOutlets?: OtherOutletLike[] | null;
   isActive?: boolean | null;
 }
 
@@ -198,6 +208,30 @@ export interface ProductRow {
   image: string | null;
   prices: ProductPrices;
   stock: StockView;
+  /** #830: units free at the other outlets of the shop; null when the API sends none (staff, merchant). */
+  otherAvailable: number | null;
+}
+
+/** Sum of `available` over `otherOutlets`, or null when the field is missing or empty. */
+export function otherOutletsAvailable(p: ProductLike): number | null {
+  const rows = Array.isArray(p.otherOutlets) ? p.otherOutlets.filter(Boolean) : [];
+  if (rows.length === 0) return null;
+  return rows.reduce((sum, r) => sum + Math.max(0, toNum(r.available)), 0);
+}
+
+const BRANCH_ROLES = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
+
+/**
+ * Rows of the detail page's stock table: a branch user sees only its own outlet (other outlets come from
+ * `otherOutlets`, for OUTLET_ADMIN / kho only); a merchant sees every outlet.
+ */
+export function ownStockRows<R extends OutletStockLike>(
+  rows: Array<R | null | undefined> | null | undefined,
+  user: { role?: string | null; outletId?: number | null } | null | undefined
+): R[] {
+  const list = (rows || []).filter((r): r is R => Boolean(r));
+  if (!user || !BRANCH_ROLES.includes(user.role || '') || typeof user.outletId !== 'number') return list;
+  return list.filter((r) => r.outlet?.id === user.outletId);
 }
 
 export function buildRow(p: ProductLike, scopedOutletId?: number): ProductRow {
@@ -209,6 +243,7 @@ export function buildRow(p: ProductLike, scopedOutletId?: number): ProductRow {
     image: firstImage(p.images),
     prices: productPrices(p),
     stock: stockView(p, scopedOutletId),
+    otherAvailable: otherOutletsAvailable(p),
   };
 }
 

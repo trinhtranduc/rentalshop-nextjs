@@ -16,7 +16,7 @@ import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../order
 import { Modal } from '../../orders/create/parts';
 import { PRODUCT_ICON } from '../list/parts';
 import { BARCODE_ICON } from '../labels/LabelSheet';
-import { productPrices, type ProductLike } from '../list/list-model';
+import { ownStockRows, productPrices, type ProductLike } from '../list/list-model';
 import { defaultModeOf, imagesOf, sharedFieldsLockedFor, type ProductSource } from '../form/form-model';
 
 const CHECK_ICON = 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11';
@@ -162,7 +162,10 @@ export default function ProductDetailPage() {
   const mode = defaultModeOf(p);
   const both = prices.once != null && prices.day != null;
   const images = imagesOf(p.images).slice(0, 3);
-  const rows = (p.outletStock || []).filter(Boolean);
+  // #830: a branch user's table shows its own outlet; OUTLET_ADMIN / kho get the others below (otherOutlets)
+  const typedUser = user as unknown as { role?: string; outletId?: number; outlet?: { id?: number } } | null;
+  const rows = ownStockRows(p.outletStock, typedUser ? { role: typedUser.role, outletId: typedUser.outletId ?? typedUser.outlet?.id } : null);
+  const others = (p.otherOutlets || []).filter(Boolean);
   const sum = rows.reduce<{ stock: number; available: number; renting: number }>(
     (acc, r) => ({ stock: acc.stock + (Number(r.stock) || 0), available: acc.available + (Number(r.available) || 0), renting: acc.renting + (Number(r.renting) || 0) }),
     { stock: 0, available: 0, renting: 0 },
@@ -307,6 +310,35 @@ export default function ProductDetailPage() {
               </div>
             )}
           </section>
+
+          {others.length > 0 && (
+            <section className={`${cardClass} overflow-hidden`} aria-labelledby="other-outlets-title">
+              <h2 id="other-outlets-title" className="m-0 px-5 pt-[18px] text-lg font-bold text-ar-ink">{t('detail.otherOutletsTitle')}</h2>
+              <p className="m-0 px-5 pb-2 pt-1 text-sm text-ar-muted">{t('detail.otherOutletsHint')}</p>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-[15px]">
+                  <thead>
+                    <tr className="bg-ar-surface-muted text-left">
+                      <th scope="col" className={`${th} pl-5`}>{t('detail.outlet')}</th>
+                      <th scope="col" className={`${th} text-right`}>{t('detail.total')}</th>
+                      <th scope="col" className={`${th} text-right`}>{t('detail.available')}</th>
+                      <th scope="col" className={`${th} pr-5 text-right`}>{t('detail.renting')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {others.map((o) => (
+                      <tr key={o.outletId} className="border-t border-ar-subtle">
+                        <td className="py-2.5 pl-5 pr-2 text-ar-ink">{o.outletName || '—'}</td>
+                        <td className="px-2 py-2.5 text-right tabular-nums text-ar-ink">{Number(o.stock) || 0}</td>
+                        <td className="px-2 py-2.5 text-right font-semibold tabular-nums text-ar-done">{Number(o.available) || 0}</td>
+                        <td className="py-2.5 pl-2 pr-5 text-right tabular-nums text-ar-ink-2">{Number(o.renting) || 0}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </div>
 
         <Card title={t('detail.organise')}>

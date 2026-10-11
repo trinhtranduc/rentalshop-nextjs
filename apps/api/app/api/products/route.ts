@@ -9,6 +9,7 @@ import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeli
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
 import { zeroStockRowsForOtherOutlets } from '../../../lib/product-branch-rules';
+import { otherActiveOutletsFor, otherOutletStock } from '../../../lib/other-outlet-stock';
 import { z } from 'zod';
 import {
   batchTodayEffectiveAvailability,
@@ -176,6 +177,10 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
           )
         : new Map<number, number>();
 
+    // #830: OUTLET_ADMIN / OUTLET_INVENTORY also see the other active outlets' stock (read only). One query.
+    const otherOutlets =
+      result.data?.length ? await otherActiveOutletsFor(user, userScope) : null;
+
     // Process product images and filter outletStock based on queryOutletId
     // For MERCHANT role: queryOutletId is only for viewing stock at specific outlet, NOT filtering products
     const processedProducts = result.data?.map((product: any) => {
@@ -237,6 +242,9 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         effectiveAvailableToday: effectiveAvailableToday ?? available,
         outletStock,
       };
+      if (otherOutlets && userScope.outletId) {
+        productData.otherOutlets = otherOutletStock(product.outletStock, userScope.outletId, otherOutlets);
+      }
 
       // Mobile list shows product.totalStock / renting — align with scoped outlet when known.
       if (scopedOutletStock && effectiveAvailableToday !== undefined) {

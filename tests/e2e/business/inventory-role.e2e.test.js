@@ -243,6 +243,34 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     expect(removed.status).toBe(200);
   });
 
+  // #830 (owner 2026-10-11): kho and OUTLET_ADMIN see the other active outlets' stock, read only; staff and merchant get no field
+  test('BF-INV-19 sees the other outlets\' stock on the detail and the list (otherOutlets); staff and merchant do not', async () => {
+    const outlets = listOf(await must(s.get('/api/outlets?limit=50'), 'outlets'), 'outlets', 'items');
+    const other = outlets.find((o) => o.id !== outletId && o.isActive !== false);
+    if (!other) return;
+    const activeOthers = outlets.filter((o) => o.id !== outletId && o.isActive !== false).map((o) => o.id).sort((a, b) => a - b);
+    const p = await inv.createProduct({ price: 100000, stock: 2, outletId });
+    expect((await s.updateProduct(p.id, { outletStock: [{ outletId: other.id, stock: 3 }] })).status).toBe(200);
+    const expected = { outletId: other.id, outletName: other.name, stock: 3, available: 3, renting: 0 };
+
+    const mine = await inv.getProduct(p.id);
+    expect(mine.otherOutlets.map((o) => o.outletId)).toEqual(activeOthers);
+    expect(mine.otherOutlets.find((o) => o.outletId === other.id)).toEqual(expected);
+    // existing fields unchanged: its own outlet's row is still in outletStock
+    expect(mine.outletStock.find((r) => r.outletId === outletId)).toMatchObject({ stock: 2, available: 2, renting: 0 });
+
+    const row = await listRow(inv, p);
+    expect(row.otherOutlets.find((o) => o.outletId === other.id)).toEqual(expected);
+    // "available today" on the list stays its own outlet (#837)
+    expect(row.effectiveAvailableToday).toBe(2);
+
+    const staff = await Session.login('staff');
+    expect(await staff.getProduct(p.id)).not.toHaveProperty('otherOutlets');
+    expect(await listRow(staff, p)).not.toHaveProperty('otherOutlets');
+    expect(await s.getProduct(p.id)).not.toHaveProperty('otherOutlets');
+    expect(await listRow(s, p)).not.toHaveProperty('otherOutlets');
+  });
+
   test('BF-INV-17 lowering stock below the units out on rent gives the same result for it as for the merchant', async () => {
     const lower = async (session) => {
       const p = await s.createProduct({ price: 100000, stock: 2, outletId });

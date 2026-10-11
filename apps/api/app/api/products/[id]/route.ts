@@ -20,6 +20,7 @@ import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { softDeleteProducts, openOrdersByProductAndOutlet, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
+import { otherActiveOutletsFor, otherOutletStock } from '../../../../lib/other-outlet-stock';
 import { changedSharedFields, heldOutletsLabel, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 
 function buildImageUploadErrorResponse(detail?: string) {
@@ -231,11 +232,18 @@ export async function GET(
         updatedAt: product.updatedAt?.toISOString() || null
       };
 
-      console.log('✅ Transformed product data:', transformedProduct);
+      // #830: OUTLET_ADMIN / OUTLET_INVENTORY also see the other active outlets' stock (read only)
+      const otherOutlets = await otherActiveOutletsFor(user, userScope);
+      const responseProduct =
+        otherOutlets && userScope.outletId
+          ? { ...transformedProduct, otherOutlets: otherOutletStock(product.outletStock, userScope.outletId, otherOutlets) }
+          : transformedProduct;
+
+      console.log('✅ Transformed product data:', responseProduct);
 
       return NextResponse.json({
         success: true,
-        data: transformedProduct,
+        data: responseProduct,
         code: 'PRODUCT_RETRIEVED_SUCCESS',
         message: 'Product retrieved successfully'
       });
