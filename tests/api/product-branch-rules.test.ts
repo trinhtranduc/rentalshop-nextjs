@@ -1,13 +1,13 @@
 /**
- * #825 — products across branches.
+ * #825 — products across branches (owner decisions 2026-10-11).
  * - PUT /api/products/:id writes stock only to outlets of the product's shop (another shop's outlet was written before).
- * - A branch role (OUTLET_ADMIN, OUTLET_STAFF, OUTLET_INVENTORY) edits only its own branch stock: a changed shared
- *   field (name, prices, photos, category, ...) or an attached photo is refused before any upload; the same values
- *   sent again (whole payload from an app or a stale tab) pass and only the stock is written.
- * - A branch role without an outlet is refused instead of skipping the branch checks.
- * - Only the merchant deletes products (DELETE and batch-delete).
+ * - Every branch role (OUTLET_ADMIN, OUTLET_STAFF, OUTLET_INVENTORY) writes stock only at its own outlet, and a branch
+ *   role without an outlet is refused instead of skipping the branch checks.
+ * - OUTLET_ADMIN and OUTLET_INVENTORY edit shared fields (name, prices, photos, category, ...) and delete products
+ *   stocked at their outlet. OUTLET_STAFF does not: a changed shared field or an attached photo is refused before any
+ *   upload (the same values sent again pass and only the stock is written), and delete is refused.
  * - A new product (form or Excel import) gets a 0-stock row at every other active outlet of the shop.
- * - Outlet staff do not add products (owner 2026-10-11), even with a customised products.create.
+ * - Outlet staff do not add products, even with a customised products.create.
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -18,6 +18,7 @@ let ctx: any;
 jest.mock('@rentalshop/auth/server', () => ({
   withPermissions: () => (handler: any) => (request: any) => handler(request, ctx),
   hasPermission: jest.fn().mockResolvedValue(true),
+  validateMerchantAccess: async (id: number) => ({ valid: true, merchant: { id } }),
 }));
 jest.mock('@rentalshop/middleware', () => ({ searchRateLimiter: () => null }));
 
@@ -32,6 +33,7 @@ const mockPrisma: any = {
   outlet: { findMany: jest.fn() },
   orderItem: { findMany: jest.fn() },
   product: { updateMany: jest.fn(), findMany: jest.fn(), findFirst: jest.fn() },
+  outletStock: { deleteMany: jest.fn(), create: jest.fn() },
   $transaction: jest.fn(),
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: mockPrisma, syncProductTotalStock: jest.fn() }));
@@ -83,7 +85,10 @@ import { PUT, DELETE } from '../../apps/api/app/api/products/[id]/route';
 import { POST as createProduct } from '../../apps/api/app/api/products/route';
 import { POST as batchDelete } from '../../apps/api/app/api/products/batch-delete/route';
 import { POST as bulkImport } from '../../apps/api/app/api/products/bulk-import/route';
-import { changedSharedFields, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
+import { PUT as merchantProductPut } from '../../apps/api/app/api/merchants/[id]/products/[productId]/route';
+import { POST as merchantProductPost } from '../../apps/api/app/api/merchants/[id]/products/route';
+import { changedSharedFields, holdsStockAt, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
+import { resolveProductListAvailabilityOutletId } from '../../apps/api/lib/product-list-effective-availability';
 
 const merchant = { user: { id: 3, role: 'MERCHANT', email: 'm@x' }, userScope: { merchantId: 2 } };
 const outletAdmin = { user: { id: 8, role: 'OUTLET_ADMIN', email: 'a@x' }, userScope: { merchantId: 2, outletId: 1 } };
@@ -193,6 +198,23 @@ describe('zeroStockRowsForOtherOutlets', () => {
   });
 });
 
+describe('holdsStockAt / list availability outlet', () => {
+  it('a 0-stock row (added for every outlet since #825) is not holding the product', () => {
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 0, renting: 0 }], 1)).toBe(false);
+    expect(holdsStockAt([{ outletId: 1, stock: 0, renting: 1 }], 1)).toBe(true);
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 2 }], 1)).toBe(true);
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 2 }], 3)).toBe(false);
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 2 }], undefined)).toBe(false);
+  });
+
+  it("a branch role's list counts its own outlet, not the outletId it asks for (BF-ROLE-06)", () => {
+    for (const role of ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']) {
+      expect(resolveProductListAvailabilityOutletId({ role, userOutletId: 1, queryOutletId: 3, filterOutletId: 1 })).toBe(1);
+    }
+    expect(resolveProductListAvailabilityOutletId({ role: 'MERCHANT', queryOutletId: 3 })).toBe(3);
+  });
+});
+
 describe('PUT /api/products/:id — stock only at outlets of the same shop', () => {
   it("refuses another shop's outlet with OUTLET_NOT_FOUND and writes nothing", async () => {
     const res = await put({ outletStock: [{ outletId: 1, stock: 5 }, { outletId: 50, stock: 9 }] });
@@ -216,29 +238,60 @@ describe('PUT /api/products/:id — stock only at outlets of the same shop', () 
   });
 });
 
-describe('PUT /api/products/:id — branch roles edit only their own stock', () => {
+describe('PUT /api/products/:id — branch roles', () => {
   it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])(
-    '%s: the whole payload with unchanged values passes and writes only the stock',
+    '%s edits shared fields and its own outlet stock (owner 2026-10-11)',
     async (_role, who) => {
       ctx = who;
-      const res = await put({ ...wholePayload, outletStock: [{ outletId: 1, stock: 8 }] });
+      const res = await put({ ...wholePayload, name: 'Vest xanh', rentPrice: 250000, outletStock: [{ outletId: 1, stock: 8 }] });
       expect(res.status).toBe(200);
       const data = mockDb.products.update.mock.calls[0][1];
-      expect(Object.keys(data)).toEqual(['outletStock']);
+      expect(data).toMatchObject({ name: 'Vest xanh', rentPrice: 250000 });
       expect(data.outletStock.upsert).toHaveLength(1);
     }
   );
 
-  it('refuses a changed shared field with PRODUCT_SHARED_FIELDS_MERCHANT_ONLY', async () => {
-    ctx = outletAdmin;
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])(
+    '%s cannot change shared fields of a product its outlet only has a 0-stock row for',
+    async (_role, who) => {
+      ctx = who;
+      mockDb.products.findById.mockResolvedValue({
+        ...product,
+        outletStock: [
+          { outletId: 1, stock: 0, renting: 0, available: 0, outlet: { id: 1, name: 'Main' } },
+          { outletId: 3, stock: 4, renting: 0, available: 4, outlet: { id: 3, name: 'Second' } },
+        ],
+      });
+      const rename = await put({ name: 'Vest xanh' });
+      expect([rename.status, rename.body.code]).toEqual([403, 'PRODUCT_NOT_AVAILABLE_AT_OUTLET']);
+      // its own stock it still sets
+      const stock = await put({ ...wholePayload, outletStock: [{ outletId: 1, stock: 2 }] });
+      expect(stock.status).toBe(200);
+      const del: any = await DELETE({ url: 'x', headers: { get: () => null } } as any, { params: { id: '7' } });
+      expect([del.status, del.body.code]).toEqual([403, 'PRODUCT_NOT_AVAILABLE_AT_OUTLET']);
+    }
+  );
+
+  // OUTLET_STAFF has no products.update by default; these cover a shop that customised the role to have it
+  it('OUTLET_STAFF: the whole payload with unchanged values passes and writes only the stock', async () => {
+    ctx = staff;
+    const res = await put({ ...wholePayload, outletStock: [{ outletId: 1, stock: 8 }] });
+    expect(res.status).toBe(200);
+    const data = mockDb.products.update.mock.calls[0][1];
+    expect(Object.keys(data)).toEqual(['outletStock']);
+    expect(data.outletStock.upsert).toHaveLength(1);
+  });
+
+  it('OUTLET_STAFF: a changed shared field is refused with PRODUCT_SHARED_FIELDS_MERCHANT_ONLY', async () => {
+    ctx = staff;
     const res = await put({ ...wholePayload, rentPrice: 1, outletStock: [{ outletId: 1, stock: 8 }] });
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('PRODUCT_SHARED_FIELDS_MERCHANT_ONLY');
     expect(mockDb.products.update).not.toHaveBeenCalled();
   });
 
-  it('refuses an attached photo before uploading it', async () => {
-    ctx = inventory;
+  it('OUTLET_STAFF: an attached photo is refused before uploading it', async () => {
+    ctx = staff;
     const res = await put({ outletStock: [{ outletId: 1, stock: 8 }] }, [photo()]);
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('PRODUCT_SHARED_FIELDS_MERCHANT_ONLY');
@@ -246,12 +299,16 @@ describe('PUT /api/products/:id — branch roles edit only their own stock', () 
     expect(mockDb.products.update).not.toHaveBeenCalled();
   });
 
-  it('still refuses stock at another branch of the same shop', async () => {
-    ctx = outletAdmin;
-    const res = await put({ outletStock: [{ outletId: 3, stock: 8 }] });
-    expect(res.status).toBe(403);
-    expect(res.body.code).toBe('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET');
-  });
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory], ['OUTLET_STAFF', staff]])(
+    '%s: stock at another branch of the same shop is still refused',
+    async (_role, who) => {
+      ctx = who;
+      const res = await put({ outletStock: [{ outletId: 3, stock: 8 }] });
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET');
+      expect(mockDb.products.update).not.toHaveBeenCalled();
+    }
+  );
 
   it('a branch role without an outlet is refused (the branch checks were skipped before)', async () => {
     ctx = outletAdminNoOutlet;
@@ -262,22 +319,40 @@ describe('PUT /api/products/:id — branch roles edit only their own stock', () 
   });
 });
 
-describe('only the merchant deletes products', () => {
+describe('deleting products', () => {
   const delReq = (): any => ({ url: 'http://localhost/api/products/7', headers: { get: () => null } });
+  const del = () => DELETE(delReq(), { params: { id: '7' } }) as Promise<any>;
 
-  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('DELETE: %s gets 403 PRODUCT_DELETE_MERCHANT_ONLY', async (_r, who) => {
-    ctx = who;
-    const res: any = await DELETE(delReq(), { params: { id: '7' } });
-    expect(res.status).toBe(403);
-    expect(res.body.code).toBe('PRODUCT_DELETE_MERCHANT_ONLY');
+  beforeEach(() => {
+    mockPrisma.orderItem.findMany.mockResolvedValue([]);
+    mockPrisma.product.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it('DELETE: OUTLET_STAFF gets 403 PRODUCT_DELETE_MERCHANT_ONLY', async () => {
+    ctx = staff;
+    const res = await del();
+    expect([res.status, res.body.code]).toEqual([403, 'PRODUCT_DELETE_MERCHANT_ONLY']);
     expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
   });
 
-  it('batch-delete: a branch role gets 403 PRODUCT_DELETE_MERCHANT_ONLY', async () => {
-    ctx = outletAdmin;
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('DELETE: %s deletes a product stocked at its outlet', async (_r, who) => {
+    ctx = who;
+    const res = await del();
+    expect(res.status).toBe(200);
+    expect(mockPrisma.product.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('DELETE: %s cannot delete a product with no row at its outlet', async (_r, who) => {
+    ctx = { ...who, userScope: { merchantId: 2, outletId: 5 } };
+    const res = await del();
+    expect([res.status, res.body.code]).toEqual([403, 'PRODUCT_NOT_AVAILABLE_AT_OUTLET']);
+    expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('batch-delete: OUTLET_STAFF gets 403 PRODUCT_DELETE_MERCHANT_ONLY', async () => {
+    ctx = staff;
     const res: any = await batchDelete({ json: async () => ({ productIds: [7] }) } as any);
-    expect(res.status).toBe(403);
-    expect(res.body.code).toBe('PRODUCT_DELETE_MERCHANT_ONLY');
+    expect([res.status, res.body.code]).toEqual([403, 'PRODUCT_DELETE_MERCHANT_ONLY']);
     expect(mockPrisma.product.updateMany).not.toHaveBeenCalled();
   });
 });
@@ -365,5 +440,33 @@ describe('POST /api/products/bulk-import — imported products have a row at eve
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('OUTLET_REQUIRED');
     expect(txCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe('/api/merchants/:id/products (admin web routes) — same shop only, not for branch roles', () => {
+  const putReq = (body: any): any => ({ url: 'http://localhost/api/merchants/2/products/7', headers: { get: () => null }, json: async () => body });
+  const mput = (body: any, merchantId = '2') => merchantProductPut(putReq(body), { params: { id: merchantId, productId: '7' } }) as Promise<any>;
+
+  it("refuses a product of another merchant with PRODUCT_NOT_FOUND and writes nothing (any id was accepted before)", async () => {
+    const res = await mput({ name: 'x' }, '99');
+    expect([res.status, res.body.code]).toEqual([404, 'PRODUCT_NOT_FOUND']);
+    expect(mockDb.products.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses another shop's outlet with OUTLET_NOT_FOUND before writing anything", async () => {
+    const res = await mput({ name: 'Vest đen', outletStock: [{ outletId: 50, stock: 3 }] });
+    expect([res.status, res.body.code]).toEqual([404, 'OUTLET_NOT_FOUND']);
+    expect(mockDb.products.update).not.toHaveBeenCalled();
+    expect(mockPrisma.outletStock.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])('%s is sent to /api/products (403 on PUT and POST)', async (_r, who) => {
+    ctx = who;
+    const res = await mput({ name: 'x' });
+    expect([res.status, res.body.code]).toEqual([403, 'INSUFFICIENT_PERMISSIONS']);
+    const post: any = await merchantProductPost({ json: async () => ({ name: 'x' }) } as any, { params: { id: '2' } });
+    expect([post.status, post.body.code]).toEqual([403, 'INSUFFICIENT_PERMISSIONS']);
+    expect(mockDb.products.update).not.toHaveBeenCalled();
+    expect(mockDb.products.create).not.toHaveBeenCalled();
   });
 });

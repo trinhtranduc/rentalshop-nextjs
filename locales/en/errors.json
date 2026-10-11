@@ -512,6 +512,8 @@
   "INVALID_DURATION": "Renewal period must be 1, 3, 6 or 12 months",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "The plan can only be changed in a new period",
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "A downgrade is only possible in a new period",
+  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Staff cannot change the name, prices, photos, category or other shared details of a product; ask the shop owner, the branch manager or the warehouse staff. You can update your branch's stock.",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "Staff cannot delete products; ask the shop owner, the branch manager or the warehouse staff."
   "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Only the shop owner can change the name, prices, photos, category or other shared details of a product. You can update your branch's stock.",
   "PRODUCT_DELETE_MERCHANT_ONLY": "Only the shop owner can delete products.",
   "OUTLET_HAS_OPEN_ORDERS": "This branch still has orders that are reserved or being rented. Complete or cancel them before turning the branch off.",

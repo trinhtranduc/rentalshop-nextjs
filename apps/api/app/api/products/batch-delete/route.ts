@@ -3,7 +3,8 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
-import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
+import { holdsStockAt, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -22,14 +23,14 @@ const batchDeleteSchema = z.object({
  * - a product on a RESERVED or PICKUPED order is not deleted and is reported in `errors`
  *   (`code: PRODUCT_HAS_OPEN_ORDERS`); 409 when that is every product.
  *
- * Authorization: 'products.manage', and not a branch role (#825: 403 PRODUCT_DELETE_MERCHANT_ONLY)
+ * Authorization: 'products.manage'; OUTLET_STAFF gets 403 PRODUCT_DELETE_MERCHANT_ONLY (#825)
  */
 export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
   try {
     console.log(`🔍 POST /api/products/batch-delete - User: ${user.email} (${user.role})`);
 
-    // #825: only the merchant (and ADMIN) deletes products; a product is shared by every branch
-    if (isOutletRole(user.role)) {
+    // #825: a product is shared by every branch; OUTLET_STAFF does not delete it
+    if (sharedFieldsLockedFor(user.role)) {
       return NextResponse.json(
         ResponseBuilder.error('PRODUCT_DELETE_MERCHANT_ONLY'),
         { status: API.STATUS.FORBIDDEN }
@@ -75,6 +76,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             id: true, // Merchant.id is also Int (public ID)
           },
         },
+        outletStock: { select: { outletId: true, stock: true, renting: true } },
       },
     });
 
@@ -106,6 +108,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             name: product.name,
           });
         }
+      }
+    }
+
+    // #825: OUTLET_ADMIN and Nhân viên kho delete only products their outlet holds (same rule as DELETE)
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) {
+      const notHeld = products.filter((p) => !holdsStockAt(p.outletStock, userScope.outletId));
+      if (notHeld.length > 0) {
+        return NextResponse.json(
+          {
+            ...ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            data: { productIds: notHeld.map((p) => p.id) },
+          },
+          { status: API.STATUS.FORBIDDEN }
+        );
       }
     }
 

@@ -221,7 +221,9 @@ describeE2E('BF-INV OUTLET_INVENTORY permissions', () => {
     expect(r.status).toBe(403);
     const u = await inv.updateProduct(p.id, { outletStock: [{ outletId, stock: 1 }, { outletId: other.id, stock: 5 }] });
     expect(u.status).toBe(403);
-    expect(await s.outletStock(p.id, other.id)).toBeNull();
+    // #825: a new product has a 0-stock row at every other active outlet; it stays 0 (was: no row at all)
+    const row = await s.outletStock(p.id, other.id);
+    expect(row === null || row.stock === 0).toBe(true);
   });
 
   test('BF-INV-17 lowering stock below the units out on rent gives the same result for it as for the merchant', async () => {
