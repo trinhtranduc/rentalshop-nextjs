@@ -453,6 +453,20 @@ Quy tắc chủ shop chốt 2026-10-11: gói chỉ đổi ở **kỳ mới** (su
 | BF-PLAN-16 | Merchant hủy subscription theo id | 403, không ghi gì |
 | BF-PLAN-17 | Admin sửa subscription; đổi gói qua route này | Sửa được; hạ cấp giữa kỳ 422 `DOWNGRADE_ONLY_AT_NEW_PERIOD` |
 
+## BF-ORD-MERCHANT — Đơn chỉ chứa sản phẩm và khách của merchant sở hữu outlet (`order-merchant-scope.e2e.test.js`, #789)
+
+Trước đây API không kiểm tra sản phẩm của đơn thuộc merchant nào (mọi vai trò), và kiểm tra khách hàng bỏ qua ADMIN; sửa đơn không kiểm tra cả hai. Tham chiếu sang merchant khác trả 404 như không tồn tại (không lộ sự tồn tại).
+
+| ID | Ca | Mong đợi |
+|---|---|---|
+| BF-ORD-MERCHANT-01 | Admin liệt kê sản phẩm, khách, outlet theo `merchantId` | Chỉ có dữ liệu của merchant đó |
+| BF-ORD-MERCHANT-02 | Đơn với sản phẩm và khách của chính merchant | Tạo được |
+| BF-ORD-MERCHANT-03 | Merchant dùng sản phẩm của merchant khác | 404 `PRODUCT_NOT_FOUND`, không tạo đơn |
+| BF-ORD-MERCHANT-04 | Admin dùng khách của merchant khác cho outlet | 404 `CUSTOMER_NOT_FOUND` |
+| BF-ORD-MERCHANT-05 | Admin dùng sản phẩm của merchant khác cho outlet | 404 `PRODUCT_NOT_FOUND` |
+| BF-ORD-MERCHANT-06 | Sửa đơn sang khách của merchant khác | 404 `CUSTOMER_NOT_FOUND`, đơn giữ nguyên |
+| BF-ORD-MERCHANT-07 | Sửa các dòng sang sản phẩm của merchant khác | 404 `PRODUCT_NOT_FOUND`, các dòng giữ nguyên |
+
 ## BF-SUB — Tài khoản hết hạn, hết gói, chạm giới hạn gói (`subscription-plan.e2e.test.js`, #727)
 
 Mỗi nhóm tạo riêng gói (Plan), cửa hàng, MERCHANT, OUTLET_STAFF và OUTLET_INVENTORY (kho) bằng psql; không dùng cửa hàng seed. Helper `tests/e2e/helpers/subscription.js` từ chối `E2E_DATABASE_URL` không phải 127.0.0.1/localhost; không có `E2E_DATABASE_URL` thì các nhóm này bị bỏ qua. Login dùng `x-forwarded-for` riêng cho mỗi lần (rate limiter theo header) và header `X-Client-Platform: mobile` như app.

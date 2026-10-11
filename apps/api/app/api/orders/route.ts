@@ -25,6 +25,7 @@ import {
   normalizeLegacyPlanDays
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
+import { checkOrderRefsInMerchant } from '../../../lib/order-scope';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
@@ -687,13 +688,22 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           { status: 404 }
         );
       }
-      // Non-admin: check customer belongs to same merchant
-      if (user.role !== USER_ROLE.ADMIN && customer.merchantId !== outlet.merchantId) {
+      // The customer belongs to the merchant of the outlet, for every role (#789: an admin was skipped)
+      if (customer.merchantId !== outlet.merchantId) {
         return NextResponse.json(
           ResponseBuilder.error('CUSTOMER_NOT_FOUND'), // Don't reveal customer exists for another merchant
           { status: 404 }
         );
       }
+    }
+
+    // The products of the order belong to the merchant of the outlet too (#789: never checked)
+    const refsCheck = await checkOrderRefsInMerchant({
+      merchantId: outlet.merchantId,
+      productIds: parsed.data.orderItems?.map((item) => item.productId),
+    });
+    if (!refsCheck.ok) {
+      return NextResponse.json(ResponseBuilder.error(refsCheck.code), { status: 404 });
     }
 
     // Generate order number: 6-digit random number (e.g., 123456, 789012)

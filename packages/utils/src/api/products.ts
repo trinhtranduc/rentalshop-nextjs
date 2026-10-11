@@ -2,6 +2,9 @@ import { authenticatedFetch, parseApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { ApiResponse } from '../core';
 import type { Product, ProductWithStock, ProductCreateInput, ProductUpdateInput, ProductFilters } from '@rentalshop/types';
+import { listQuery } from './list-query';
+
+
 
 export interface ProductsResponse {
   products: Product[];
@@ -120,8 +123,16 @@ export const productsApi = {
   /**
    * Get all products
    */
-  async getProducts(): Promise<ApiResponse<Product[]>> {
-    const response = await authenticatedFetch(apiUrls.products.list);
+  async getProducts(filters?: {
+    merchantId?: number;
+    outletId?: number;
+    categoryId?: number;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<Product[]>> {
+    const response = await authenticatedFetch(`${apiUrls.products.list}${listQuery(filters)}`);
     const result = await parseApiResponse<Product[]>(response);
     return result;
   },
