@@ -1,32 +1,29 @@
-# Spec (step 1)
+# Spec (step 1, simplified; owner 2026-10-11)
+
+Model like Sapo: plans by tier, quantity add-ons on top. **Plans: Basic, Pro, Enterprise** (Enterprise = multiple branches). **Add-ons are quantities** (more branches, more staff), priced in VND, for the whole shop. Features (Loyalty, payroll, mobile / web) belong to the plan tiers, not to modules.
 
 ## Data (one additive migration)
-1. `BillingModule` (catalog): `id`, `name`, `kind` (`quantity` | `feature`), `limitKey` (`outlets` | `users` | `products` | `customers` | `orders`, only for `quantity`), `featureKey` (`loyalty`, `payroll`, … text, only for `feature`; no value is used in step 1), `monthlyPrice` (Float, VND, set per module by the admin), `currency` (default `VND`), `isActive`, `sortOrder`, timestamps. Both kinds exist from the first migration so step 2 needs no new table; step 1 only enforces `quantity`.
-2. `MerchantModule` (what a shop has): `id`, `merchantId`, `moduleId`, `quantity` (Int ≥ 1), `unitPrice` (VND per unit per month at purchase), `removeAtPeriodEnd` (Bool), `isActive`, `endedAt?`, timestamps.
-3. Data migration: no feature module is created yet (Loyalty and Payroll come in step 2, Payroll after the owner settles its business logic); one `quantity` `BillingModule` per limit key at price 0 ("Thêm chi nhánh", "Thêm người dùng", "Thêm sản phẩm", "Thêm khách hàng", "Thêm đơn hàng"); every active `PlanLimitAddon` becomes one `MerchantModule` per non-zero column, `unitPrice 0`. `PlanLimitAddon` stays (history), no longer written.
-
-## Plans vs modules (owner, 2026-10-11)
-- **Multiple branches is a separate plan**, not a module: a plan with a higher `outlets` limit and its own price. Changing to it is the normal plan change of #779. Extra branches beyond the plan are still the `outlets` quantity module.
-- **Modules** are sold on top of any plan: Loyalty and Payroll (`feature`, step 2), and the quantity modules (today's addons). Each module has its own price, set by the admin in the catalog.
-- Each time an admin adds something to a shop they **pick the module (its type)** from the catalog; the price shown is the catalog price at that moment and is copied into `unitPrice`.
-- Loyalty is in every plan's `features` today. It stays that way until the owner removes it from the plans; the migration then grants the Loyalty module at price 0 to shops that use it, so nobody loses it (step 2).
+1. `BillingModule` (catalog, admin-defined): `id`, `name`, `limits` (JSON per unit, any of `outlets`, `users`, `products`, `customers`, `orders`; e.g. "Thêm chi nhánh" = `{outlets:1, users:3}`, "Thêm nhân viên" = `{users:1}`), `monthlyPrice` (Float, VND per unit), `isActive`, `sortOrder`, timestamps.
+2. `MerchantModule` (what a shop bought): `id`, `merchantId`, `moduleId` (null for migrated addons), `name` (snapshot), `limits` (JSON per unit, snapshot), `quantity` (Int ≥ 1), `unitPrice` (VND per unit per month), `removeAtPeriodEnd` (Bool), `isActive`, `endedAt?`, timestamps. The snapshot means a later catalog edit never changes a period already paid.
+3. Data migration: every active `PlanLimitAddon` becomes one `MerchantModule` (`moduleId` null, name "Addon (cũ)", `limits` = its non-zero columns, `quantity` 1, `unitPrice` 0). The catalog starts empty: the admin creates the two real modules and sets their prices. `PlanLimitAddon` stays for history and is no longer written.
 
 ## Rules
-4. Effective limit = plan limit + Σ `quantity` of active `MerchantModule` with that `limitKey` (`planLimitAddons.calculateTotal` reads the new table; same return shape, so every limit check keeps working). After the migration every merchant's limits equal today's.
-5. Add a module mid-period (admin): `amountDue = unitPrice × quantity × remainingDays / periodDays` (Vietnam civil days of the current subscription period; 0 if expired). Records a `Payment` (`type PLAN_CHANGE`, method + transaction id like renew). Unit price = catalog price at purchase.
-6. Renewal (`/renew`): `addonMonthlyTotal = Σ catalog price × quantity` of active modules not marked for removal; marked ones end (`isActive false`, `endedAt`). Renewal response and payment description list the modules.
-7. Remove at period end (admin): sets `removeAtPeriodEnd`; refused (422 `CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED`) when current usage > limit without it. Undo allowed before the period ends.
-8. Quantity can only go up mid-period (a new purchase line); lowering = remove at period end.
-9. Catalog price change: affects new purchases and the next renewal only.
+4. Effective limit per entity = plan limit + Σ `quantity × limits[entity]` of active modules. `planLimitAddons.calculateTotal` reads the new table with the same return shape, so the 6 create checks do not change. After the migration every shop's limits equal today's.
+5. **Branch modules only on a multi-branch plan:** a module whose `limits.outlets > 0` can be added only when the shop's plan has `outlets > 1` (Enterprise). Otherwise 422 `MODULE_NOT_AVAILABLE_FOR_PLAN`. Changing to a plan with `outlets` ≤ 1 is refused (422) while the shop still has branch modules; the admin removes them first (rule 8).
+6. **Add mid-period (admin):** `amountDue = unitPrice × quantity × remainingDays / periodDays` (Vietnam civil days of the current subscription period; 0 when expired). Records a `Payment` (type `PLAN_CHANGE`, method and transaction id like renew). `unitPrice` = catalog price at that moment.
+7. **Renewal (`/renew`):** `addonMonthlyTotal = Σ catalog price × quantity` of active modules not marked for removal (a migrated addon uses its own `unitPrice`, 0); the rows get the new `unitPrice`. Marked modules end (`isActive false`, `endedAt`). The response and the payment description list the modules.
+8. **Remove at period end:** sets `removeAtPeriodEnd`; refused (422 `CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED`) when current usage would exceed the limit without it. Undo allowed until the period ends. No refund, no mid-period change; to buy more, add another line.
+9. A catalog price change affects new purchases and the next renewal only.
+10. Over the limit after a module ends or the plan expires: existing branches / users stay, creating new ones is blocked, nothing is deleted.
 
-## API (admin only: ADMIN / OPS)
-10. `GET/POST /api/billing-modules`, `PUT /api/billing-modules/[id]` (no delete: hide with `isActive`).
-11. `GET /api/merchants/[id]/modules` (MERCHANT may read its own), `GET .../modules/quote?moduleId&quantity` (amount due now), `POST .../modules` (add + payment), `PATCH .../modules/[moduleId]` (`removeAtPeriodEnd` true/false).
-12. Old `plan-limit-addons` routes: GET keeps working (reads the new table, same shape); POST/PUT/DELETE → 410 `ADDONS_REPLACED_BY_MODULES`.
+## API (ADMIN / OPS)
+11. `GET/POST /api/billing-modules`, `PUT /api/billing-modules/[id]` (hide with `isActive`, no delete).
+12. `GET /api/merchants/[id]/modules` (the MERCHANT may read its own), `GET .../modules/quote?moduleId&quantity` (amount due now), `POST .../modules` (add + payment), `PATCH .../modules/[id]` (`removeAtPeriodEnd` true / false).
+13. Old `plan-limit-addons` routes: GET keeps working (reads the new table, same shape); POST / PUT / DELETE → 410 `ADDONS_REPLACED_BY_MODULES`.
 
-## UI (admin)
-13. Catalog page `/billing-modules`: list, add (name, kind, limit or feature, price), edit price / active.
-14. Merchant page: "Module" section replaces the addon link: list (module, quantity, price, ends with the period, marked for removal), add dialog (pick the module, quantity, price and quote from the API, payment fields), remove at period end / undo.
+## Admin UI
+14. `/billing-modules`: one table (name, adds per unit, VND price, on / off), add and edit inline.
+15. Merchant page, block "Gói & Module": the plan, the modules (quantity, price, ends with the period, marked for removal), "Thêm module" (pick the module, quantity, quote from the API, payment fields), "Bỏ cuối kỳ" / undo, and the next renewal total (plan + modules).
 
 ## Not in scope
-Feature modules (step 2), merchant self-purchase and Sepay (step 3), Lemon Squeezy, mobile changes.
+Feature modules and payroll (features live in plan tiers), merchant self-purchase and Sepay (later), Lemon Squeezy, mobile apps.
