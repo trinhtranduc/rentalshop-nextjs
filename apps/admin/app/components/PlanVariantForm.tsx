@@ -57,7 +57,7 @@ export default function PlanVariantForm({
     discount: 0,
     interval: 'month' as any,
     intervalCount: 1,
-    currency: 'USD'
+    currency: 'VND'
   });
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [calculatedSavings, setCalculatedSavings] = useState(0);
@@ -85,7 +85,7 @@ export default function PlanVariantForm({
         discount: 0,
         interval: 'month' as any,
         intervalCount: 1,
-        currency: 'USD'
+        currency: 'VND'
       });
     }
   }, [variant, isOpen]);
@@ -316,6 +316,7 @@ export default function PlanVariantForm({
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="VND">VND</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
                   <SelectItem value="GBP">GBP</SelectItem>

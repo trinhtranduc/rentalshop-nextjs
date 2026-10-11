@@ -21,7 +21,7 @@ describe('billing currency is VND (#821)', () => {
     });
 
     it.each(['Plan', 'Subscription', 'Payment'])('%s: USD rows with VND-scale amounts become VND, USD-scale rows stay', (table) => {
-      const amount = table === 'Plan' ? '"basePrice"' : 'amount';
+      const amount = table === 'Plan' ? '"?basePrice"?' : '"?amount"?';
       const re = new RegExp(`UPDATE\\s+"(public"\\.")?${table}"\\s+SET\\s+"?currency"?\\s*=\\s*'VND'\\s+WHERE\\s+"?currency"?\\s*=\\s*'USD'[^;]*${amount}\\s*(=\\s*0|>=\\s*1000)`, 'i');
       expect(sql()).toMatch(re);
     });

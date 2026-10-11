@@ -103,7 +103,7 @@ export function SubscriptionForm({
     trialStart: initialData?.trialStart,
     trialEnd: initialData?.trialEnd,
     amount: initialData?.amount || 0,
-    currency: initialData?.currency || 'USD',
+    currency: initialData?.currency || 'VND',
     interval: initialData?.interval || 'month',
     intervalCount: initialData?.intervalCount || 1,
     period: initialData?.period || 1,
@@ -303,7 +303,7 @@ export function SubscriptionForm({
     return <StatusBadge status={mappedStatus} />;
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'VND') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -554,6 +554,7 @@ export function SubscriptionForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="VND">VND</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
                   <SelectItem value="GBP">GBP</SelectItem>

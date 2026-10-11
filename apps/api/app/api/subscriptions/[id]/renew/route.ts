@@ -88,7 +88,7 @@ export async function POST(
             subscriptionId: subscriptionId,
             merchantId: existing.merchantId,
             amount: renewalAmount,
-            currency: existing.currency || existingPlan?.currency || 'USD',
+            currency: existing.currency || existingPlan?.currency || 'VND',
             method: method as any,
             type: PAYMENT_TYPE.SUBSCRIPTION_PAYMENT as any,
             status: method === PAYMENT_METHOD.STRIPE ? PAYMENT_STATUS.COMPLETED as any : PAYMENT_STATUS.PENDING as any,
