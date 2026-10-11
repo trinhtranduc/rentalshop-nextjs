@@ -79,6 +79,8 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [renewalLoading, setRenewalLoading] = useState(false);
+  // #850: monthly VND of the add-ons the next renewal charges (same number as POST /renew)
+  const [addonMonthlyTotal, setAddonMonthlyTotal] = useState(0);
 
   // Toast management
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -98,7 +100,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     try {
       setLoading(true);
       
-      const { subscriptionsApi, planLimitAddonsApi } = await import('@rentalshop/utils');
+      const { subscriptionsApi, planLimitAddonsApi, addonPricesApi } = await import('@rentalshop/utils');
       const result = await subscriptionsApi.getById(parseInt(params.id));
       
       if (result.success && result.data) {
@@ -107,6 +109,12 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         
         // Fetch addons for this merchant
         if (result.data.merchantId) {
+          try {
+            const priced = await addonPricesApi.listForMerchant(result.data.merchantId);
+            setAddonMonthlyTotal(priced.success && priced.data?.renewal ? priced.data.renewal.addonMonthlyTotal || 0 : 0);
+          } catch {
+            setAddonMonthlyTotal(0);
+          }
           try {
             const addonsResult = await planLimitAddonsApi.getMerchantPlanLimitAddons(
               result.data.merchantId,
@@ -572,10 +580,10 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/merchants/${subscription.merchantId}/plan-limit-addons`)}
+                    onClick={() => router.push(`/merchants/${subscription.merchantId}/addons`)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Manage Addons
+                    Add-on
                   </Button>
                 )}
               </CardTitle>
@@ -834,6 +842,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         }}
         onRenew={handleManualRenewal}
         loading={renewalLoading}
+        addonMonthlyTotal={addonMonthlyTotal}
       />
 
       {/* Extend Modal - Enhanced with Auto-calculation */}

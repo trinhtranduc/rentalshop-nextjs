@@ -83,7 +83,7 @@ Old routes stay. `GET /api/plan-limit-addons*` returns the same shape plus the n
 `PUT` / `DELETE` on a **priced** row (`addonPriceId` set) → 422 `PRICED_ADDON_READ_ONLY`, so its columns cannot drift
 from packs × pack size. Old rows behave as before.
 
-New error codes (5 locales, `ErrorCode`, iOS `ErrorCodes.swift` table): `ADDON_PRICE_NOT_FOUND` 404,
+New error codes (5 locales, `ErrorCode`; admin-only routes, so the POS apps never receive them): `ADDON_PRICE_NOT_FOUND` 404,
 `ADDON_PRICE_NOT_ON_SALE` 422, `ADDON_PRICE_IN_USE` 422, `ADDON_ALREADY_ENDED` 422, `PRICED_ADDON_READ_ONLY` 422.
 
 ## Admin UI (mockup)

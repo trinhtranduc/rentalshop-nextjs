@@ -169,6 +169,18 @@ export function MerchantDetail({
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <CardTitle>Basic Information</CardTitle>
+              <div className="flex flex-wrap gap-2 max-md:w-full">
+              {/* #850: the shop's priced add-ons (pack, number of packs, removal at period end) */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="max-md:flex-1 max-md:min-h-11"
+                data-testid="merchant-addon-tab"
+                onClick={() => navigateToPage('merchants/' + data.merchant.id + '/addons')}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add-on
+              </Button>
               <DropdownMenu className="max-md:w-full">
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -224,11 +236,11 @@ export function MerchantDetail({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/plan-limit-addons')}
+                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/addons')}
                     className="cursor-pointer max-md:min-h-11"
                   >
                     <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
-                    <span>Plan Limit Addons</span>
+                    <span>Add-on</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onMerchantAction('edit', data.merchant.id)}
@@ -239,6 +251,7 @@ export function MerchantDetail({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

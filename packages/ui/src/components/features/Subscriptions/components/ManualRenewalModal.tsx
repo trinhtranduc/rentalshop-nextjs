@@ -41,6 +41,8 @@ interface ManualRenewalModalProps {
   };
   onRenew: (data: RenewalData) => Promise<void>;
   loading?: boolean;
+  /** Monthly VND of the shop's add-ons that a renewal charges (GET /api/merchants/[id]/addons, #850). */
+  addonMonthlyTotal?: number;
 }
 
 type RenewalMonths = 1 | 3 | 6 | 12;
@@ -59,7 +61,8 @@ export function ManualRenewalModal({
   onClose,
   subscription,
   onRenew,
-  loading = false
+  loading = false,
+  addonMonthlyTotal = 0
 }: ManualRenewalModalProps) {
   const [method, setMethod] = useState<'STRIPE' | 'TRANSFER'>('TRANSFER');
   const [duration, setDuration] = useState<RenewalMonths>(1);
@@ -80,6 +83,7 @@ export function ManualRenewalModal({
   const renewalFor = (months: number) =>
     calculateRenewalTotal({
       basePrice: hasPrice ? (monthlyPrice as number) : 0,
+      addonMonthlyTotal: Number.isFinite(addonMonthlyTotal) && addonMonthlyTotal > 0 ? addonMonthlyTotal : 0,
       interval: renewalIntervalForMonths(months) ?? 'monthly',
       currentPeriodEnd: subscription.currentPeriodEnd,
     });
@@ -240,6 +244,12 @@ export function ManualRenewalModal({
                   <div className={`flex justify-between text-green-700 ${detailsCls}`}>
                     <span>Discount ({renewal.discountPercent}%):</span>
                     <span className="font-medium">-{formatCurrency(savings, subscription.currency as any)}</span>
+                  </div>
+                )}
+                {renewal.addonPrice > 0 && (
+                  <div className="flex justify-between">
+                    <span>Add-on:</span>
+                    <span className="font-medium">{formatCurrency(renewal.addonPrice, subscription.currency as any)}</span>
                   </div>
                 )}
                 <div className="flex justify-between pt-2 border-t text-base">

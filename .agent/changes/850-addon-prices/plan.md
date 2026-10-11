@@ -11,7 +11,7 @@
    new table, new columns, split + backfill SQL; checked on a local DB with rows before/after (sums equal).
 3. `packages/utils/src/core/addon-pricing.ts` (from #782 `module-pricing.ts`): `LIMIT_KINDS`, `calculateAddonQuote`,
    `addonRenewalMonthlyTotal`, `isAddonEnded`; zod schemas in `validation-schemas.ts`; `ErrorCode` + 5 locales
-   (skill `i18n-keys`); iOS `ErrorCodes.swift` entries.
+   (skill `i18n-keys`).
 4. `packages/database/src/addon-price.ts`: catalog CRUD + `shopsUsing`, per-shop list / add (transaction with
    payment) / mark, `renewalItems`, `applyRenewal`; `plan-limit-addon.ts` "not ended" filter.
 5. API routes (skill `api-route-standard`): `/api/addon-prices`, `/api/addon-prices/[id]`,
