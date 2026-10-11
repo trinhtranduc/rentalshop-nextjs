@@ -107,6 +107,16 @@ export const subscriptionsApi = {
   },
 
   /**
+   * Delete subscription (admin): DELETE /api/subscriptions/[id]
+   */
+  async delete(id: number): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.subscriptions.delete(id), {
+      method: 'DELETE',
+    });
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
    * Change subscription plan
    */
   async changePlan(

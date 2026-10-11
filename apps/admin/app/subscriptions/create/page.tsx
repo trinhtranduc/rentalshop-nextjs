@@ -84,7 +84,7 @@ export default function CreateSubscriptionPage() {
   };
 
   const handleCancel = () => {
-    router.push('/admin/subscriptions');
+    router.push('/subscriptions');
   };
 
   if (loading) {
