@@ -43,7 +43,8 @@ class ProductRulesTest {
     fun `outlet staff sees no price fields and cannot edit`() {
         assertFalse(ProductAccess.showsPriceFields(UserRole.OUTLET_STAFF))
         assertFalse(ProductAccess.canEdit(UserRole.OUTLET_STAFF))
-        assertTrue(ProductAccess.canCreate(UserRole.OUTLET_STAFF))
+        // #863: staff lost `products.create` (#825); iOS hides the Home "+" for them
+        assertFalse(ProductAccess.canCreate(UserRole.OUTLET_STAFF))
     }
 
     @Test
@@ -51,6 +52,7 @@ class ProductRulesTest {
         for (role in listOf(UserRole.MERCHANT, UserRole.OUTLET_ADMIN, UserRole.ADMIN)) {
             assertTrue(ProductAccess.showsPriceFields(role))
             assertTrue(ProductAccess.canEdit(role))
+            assertTrue(ProductAccess.canCreate(role))
         }
         assertFalse(ProductAccess.canCreate(UserRole.UNKNOWN))
     }
