@@ -265,3 +265,60 @@ describePlan('BF-PLAN extend: moves the end date only; a Payment only when the p
     expect(subRow(w.merchantId)).toMatchObject({ interval: 'annual', intervalCount: 12, amount: BASIC * 12 * 0.9 });
   });
 });
+
+// ============================================================================================================
+// D. Access to /api/subscriptions/[id] (BF-PLAN-14 .. 17)
+// ============================================================================================================
+
+describePlan('BF-PLAN access: a merchant cannot read another shop\'s subscription, nor update or cancel any subscription', () => {
+  let basic;
+  beforeAll(() => {
+    basic = pricedPlan('plan-acc', BASIC);
+  });
+
+  test('BF-PLAN-14 a merchant reads its own subscription; another shop\'s id answers 404', async () => {
+    const mine = S.createWorld('plan-14a', { planId: basic });
+    const other = S.createWorld('plan-14b', { planId: basic });
+    const m = await S.login(mine.merchant);
+    expect((await m.get(`/api/subscriptions/${subRow(mine.merchantId).id}`)).status).toBe(200);
+    const r = await m.get(`/api/subscriptions/${subRow(other.merchantId).id}`);
+    expect(brief(r)).toEqual({ status: 404, code: 'SUBSCRIPTION_NOT_FOUND' });
+  });
+
+  test('BF-PLAN-15 a merchant cannot update a subscription by id (own or other): 403, nothing written', async () => {
+    const mine = S.createWorld('plan-15a', { planId: basic });
+    const other = S.createWorld('plan-15b', { planId: basic });
+    setPeriod(mine.merchantId, { ...midPeriod(), planId: basic });
+    setPeriod(other.merchantId, { ...midPeriod(), planId: basic });
+    const m = await S.login(mine.merchant);
+    const beforeMine = subRow(mine.merchantId);
+    const beforeOther = subRow(other.merchantId);
+    const farEnd = iso(new Date(Date.now() + 3650 * DAY_MS));
+    for (const w of [mine, other]) {
+      const r = await m.put(`/api/subscriptions/${subRow(w.merchantId).id}`, { currentPeriodEnd: farEnd, amount: 1, status: 'ACTIVE' });
+      expect(r.status).toBe(403);
+    }
+    expect(subRow(mine.merchantId)).toEqual(beforeMine);
+    expect(subRow(other.merchantId)).toEqual(beforeOther);
+  });
+
+  test('BF-PLAN-16 a merchant cannot cancel a subscription by id: 403, nothing written', async () => {
+    const mine = S.createWorld('plan-16', { planId: basic });
+    const m = await S.login(mine.merchant);
+    const before = subRow(mine.merchantId);
+    expect((await m.delete(`/api/subscriptions/${before.id}`)).status).toBe(403);
+    expect(subRow(mine.merchantId)).toEqual(before);
+  });
+
+  test('BF-PLAN-17 the admin still updates a subscription, and a plan change through it follows the plan rules', async () => {
+    const pro = pricedPlan('plan-acc-pro', PRO);
+    const w = S.createWorld('plan-17', { planId: pro });
+    setPeriod(w.merchantId, { ...midPeriod(), planId: pro, amount: PRO });
+    const a = await admin();
+    const id = subRow(w.merchantId).id;
+    expect((await a.put(`/api/subscriptions/${id}`, { cancelAtPeriodEnd: true })).status).toBe(200);
+    const down = await a.put(`/api/subscriptions/${id}`, { planId: basic, billingInterval: 'monthly', ...payBody });
+    expect(brief(down)).toEqual({ status: 422, code: 'DOWNGRADE_ONLY_AT_NEW_PERIOD' });
+    expect(subRow(w.merchantId).planId).toBe(pro);
+  });
+});

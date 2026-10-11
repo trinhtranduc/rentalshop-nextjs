@@ -29,5 +29,13 @@
 16. `MerchantPlanManagement` passes the payment fields through to `PUT /api/merchants/[id]/plan`.
 17. Errors: the three new codes in `errors.ts` and `locales/{en,vi,ja,ko,zh}/errors.json`.
 
+## Access to `/api/subscriptions/[id]` (found while tracing the plan change; the review had not seen it)
+18. `GET`: a MERCHANT reads only its own subscription; another shop's id answers 404 `SUBSCRIPTION_NOT_FOUND` (it never reveals the subscription). ADMIN / OPS read any.
+19. `PUT` (update any field) and `DELETE` (cancel): **ADMIN / OPS only**. A MERCHANT gets 403 and nothing is written. Before, a MERCHANT could update or cancel **any** subscription by id (dates, amount, status). Only the admin web calls these routes (installed apps: 0 callers on `main-real`).
+20. `PUT` with a `planId` goes through `changePlan` like the other plan routes: same rule (3, 4), same payment fields (9).
+
+## Where the rule lives
+21. `changePlan` takes `options.actorRole` (required) and applies `canChangePlan` itself, so no caller can skip it; the routes only pass the role and the payment fields.
+
 ## Not changed
 Renew (already pays and prices, #779), add-ons and modules (#782), Lemon Squeezy and Sepay amounts.
