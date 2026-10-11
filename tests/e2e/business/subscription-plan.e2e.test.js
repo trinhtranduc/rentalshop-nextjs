@@ -507,8 +507,10 @@ describeSub('BF-SUB plan limits per entity', () => {
     await fillAndOverflow('customers', [customerBy('merchant'), customerBy('staff')]);
   });
 
-  test('BF-SUB-35 products: merchant, staff and kho are all stopped at the limit', async () => {
-    await fillAndOverflow('products', [productBy('merchant'), productBy('staff'), productBy('kho')], 3);
+  // #825 (owner 2026-10-11): OUTLET_STAFF does not create products at all (403, BF-BRANCH-23); merchant and kho do
+  test('BF-SUB-35 products: merchant and kho are stopped at the limit; staff never creates (403)', async () => {
+    await fillAndOverflow('products', [productBy('merchant'), productBy('kho')], 3);
+    expect(outcome(await productBy('staff')())).toBe('403 INSUFFICIENT_PERMISSIONS');
   });
 
   test('BF-SUB-36 orders: staff, kho and merchant are stopped at the limit; stock does not move', async () => {
