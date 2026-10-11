@@ -42,9 +42,22 @@ export interface AddModuleInput {
 
 const ZERO_LIMITS = { outlets: 0, users: 0, products: 0, customers: 0, orders: 0 };
 
+/** Plan limits are stored as a JSON object or as a JSON string (older rows): read both. */
+function readPlanLimits(limits: unknown): Record<string, unknown> {
+  if (typeof limits === 'string') {
+    try {
+      const parsed = JSON.parse(limits);
+      return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+    } catch {
+      return {};
+    }
+  }
+  return limits && typeof limits === 'object' ? (limits as Record<string, unknown>) : {};
+}
+
 /** Plan allows more than one branch (limit above 1, or unlimited). */
-function planAllowsBranches(planLimits: unknown): boolean {
-  const outlets = Number((planLimits as { outlets?: unknown } | null)?.outlets);
+export function planAllowsBranches(planLimits: unknown): boolean {
+  const outlets = Number(readPlanLimits(planLimits).outlets);
   return outlets === -1 || outlets > 1;
 }
 
@@ -283,4 +296,5 @@ export const simplifiedBillingModules = {
   applyRenewal,
   hasBranchModules,
   limitsOfRow,
+  planAllowsBranches,
 };

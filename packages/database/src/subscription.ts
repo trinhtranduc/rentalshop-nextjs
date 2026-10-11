@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
-import { hasBranchModules } from './billing-module';
+import { hasBranchModules, planAllowsBranches } from './billing-module';
 import { ApiError, ErrorCode, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
 import type { 
@@ -508,8 +508,7 @@ export async function changePlan(
   const oldPlanName = subscription.plan?.name || 'Unknown Plan';
 
   // #782: a branch add-on needs a plan with more than one branch; the admin removes it first
-  const newPlanOutlets = Number((plan.limits as { outlets?: unknown } | null)?.outlets);
-  if (!(newPlanOutlets === -1 || newPlanOutlets > 1) && (await hasBranchModules(subscription.merchantId))) {
+  if (!planAllowsBranches(plan.limits) && (await hasBranchModules(subscription.merchantId))) {
     throw new ApiError(ErrorCode.PLAN_HAS_BRANCH_MODULES);
   }
 

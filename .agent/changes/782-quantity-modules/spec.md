@@ -27,7 +27,7 @@ Step 1 builds the **catalog, per-item VND prices, the shop list, the mid-period 
 
 ## API (ADMIN / OPS)
 11. `GET/POST /api/billing-modules`, `PUT /api/billing-modules/[id]` (hide with `isActive`, no delete).
-12. `GET /api/merchants/[id]/modules` (the MERCHANT may read its own), `GET .../modules/quote?moduleId&quantity` (amount due now), `POST .../modules` (add + payment), `PATCH .../modules/[id]` (`removeAtPeriodEnd` true / false).
+12. `GET /api/merchants/[id]/modules` (the MERCHANT may read its own; another shop's id answers 404, like every merchant route), `GET .../modules/quote?moduleId&quantity` (amount due now), `POST .../modules` (add + payment), `PATCH .../modules/[id]` (`removeAtPeriodEnd` true / false).
 13. Old `plan-limit-addons` routes: GET keeps working (reads the new table, same shape); POST / PUT / DELETE → 410 `ADDONS_REPLACED_BY_MODULES`.
 
 ## Admin UI

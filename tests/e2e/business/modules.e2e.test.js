@@ -21,6 +21,8 @@ const vnDaysBetween = (a, b) => Math.round((Date.parse(`${vnKey(b)}T00:00:00Z`) 
 const iso = (d) => new Date(d).toISOString();
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
 const brief = (r) => ({ status: r.status, code: r.body?.code });
+/** Creating a user answers 201 Created. */
+const created = (r) => r.status === 200 || r.status === 201;
 
 const MONTHLY = 100000;
 const STAFF_PRICE = 30000;
@@ -149,18 +151,19 @@ describeMod('BF-MOD buy mid-period: charged for the remaining days, raises the l
     expect(rows(mid())).toBe(`${staff.name}|2|${STAFF_PRICE}|true|false`);
     expect(lastPaymentAmount(mid())).toBeCloseTo(buy.body.data.quote.amountDue, 0);
 
-    expect((await m.post('/api/users', userBody(world))).status).toBe(200);
-    expect((await m.post('/api/users', userBody(world))).status).toBe(200);
+    expect(created(await m.post('/api/users', userBody(world)))).toBe(true);
+    expect(created(await m.post('/api/users', userBody(world)))).toBe(true);
     expect(brief(await m.post('/api/users', userBody(world)))).toEqual({ status: 422, code: 'PLAN_LIMIT_EXCEEDED' });
   });
 
-  test('BF-MOD-06 the shop sees its own items; another merchant is refused (403)', async () => {
+  test('BF-MOD-06 the shop sees its own items; another merchant gets 404 (never reveals the shop)', async () => {
     const own = await m.get(`/api/merchants/${mid()}/modules`);
     expect(own.status).toBe(200);
     expect((own.body.data.modules || []).length).toBe(1);
     const other = S.createWorld('mod-other', { planId: pricedPlan('mod-other') });
     const o = await S.login(other.merchant);
-    expect((await o.get(`/api/merchants/${mid()}/modules`)).status).toBe(403);
+    // like every merchant route: another shop's id answers 404, so it never reveals that the shop exists
+    expect((await o.get(`/api/merchants/${mid()}/modules`)).status).toBe(404);
   });
 
   test('BF-MOD-07 the price is taken when bought: a later catalog price change does not touch the row', async () => {
@@ -230,7 +233,7 @@ describeMod('BF-MOD renewal adds the items; removal waits for the end of the per
 
     // still counted until the period ends: 3 users + 2 staff = room for 2 more
     const m = await S.login(world.merchant);
-    expect((await m.post('/api/users', userBody(world))).status).toBe(200);
+    expect(created(await m.post('/api/users', userBody(world)))).toBe(true);
 
     const subId = Number(S.sql(`SELECT id FROM "Subscription" WHERE "merchantId" = ${mid()}`));
     const r = await a.post(`/api/subscriptions/${subId}/renew`, { method: 'TRANSFER', transactionId: `E2E-R-${Date.now()}`, duration: 1 });
@@ -254,7 +257,7 @@ describeMod('BF-MOD rules: never below usage, branch add-on only on a multi-bran
     const buy = await a.post(`/api/merchants/${world.merchantId}/modules`, { moduleId: staff.id, quantity: 1, method: 'TRANSFER', transactionId: `E2E-${Date.now()}` });
     expect(buy.status).toBe(200);
     const m = await S.login(world.merchant);
-    expect((await m.post('/api/users', userBody(world))).status).toBe(200); // 4 of 4 now
+    expect(created(await m.post('/api/users', userBody(world)))).toBe(true); // 4 of 4 now
     const row = (await a.get(`/api/merchants/${world.merchantId}/modules`)).body.data.modules[0];
     const r = await a.patch(`/api/merchants/${world.merchantId}/modules/${row.id}`, { removeAtPeriodEnd: true });
     expect(brief(r)).toEqual({ status: 422, code: 'CANNOT_REMOVE_MODULE_LIMIT_EXCEEDED' });
