@@ -29,5 +29,7 @@
   "ROLE_NOT_AVAILABLE": "この役割はまだ割り当てられません",
   "INVALID_DURATION": "更新期間は1、3、6、12か月のいずれかである必要があります",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "プランの変更は新しい期間にのみ可能です",
-  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "ダウングレードは新しい期間にのみ可能です"
+  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "ダウングレードは新しい期間にのみ可能です",
+  "OUTLET_HAS_OPEN_ORDERS": "この支店には予約済みまたはレンタル中の注文が残っています。支店を停止する前に、それらの注文を完了またはキャンセルしてください。",
+  "OUTLET_DEACTIVATED": "この支店は停止されています。店舗オーナーにお問い合わせください。"
 }
