@@ -1,15 +1,25 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Be_Vietnam_Pro } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import AdminLayout from './components/AdminLayout'
 // AuthProvider removed - using centralized useAuth hook from @rentalshop/hooks
 import { ToastProvider } from './providers/ToastProvider'
 import './globals.css'
+import './shell.css'
+import { themeBootScript } from './components/shell/theme'
 
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
+})
+
+// Shell font (#804), same as the shop portal; applied inside `.ar-theme` (shell.css).
+const beVietnam = Be_Vietnam_Pro({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-be-vietnam',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -59,8 +69,11 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans`}>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
+      <body className={`${inter.variable} ${beVietnam.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
           <ToastProvider>
             <AdminLayout>

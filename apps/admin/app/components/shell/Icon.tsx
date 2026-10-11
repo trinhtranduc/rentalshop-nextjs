@@ -1,0 +1,22 @@
+import React from 'react';
+
+/** 24x24 stroke icon from a path `d`, same as the shop shell. */
+export function ShellIcon({ d, size = 20, className }: { d: string; size?: number; className?: string }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+export const ICONS = {
+  plus: 'M12 5v14M5 12h14',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5',
+  logout: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  close: 'M6 6l12 12M18 6L6 18',
+  moon: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z',
+  sun: 'M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  chevronRight: 'M9 18l6-6-6-6',
+} as const;
