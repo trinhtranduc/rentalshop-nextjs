@@ -107,10 +107,21 @@ export async function PUT(
           billingInterval: normalizedBillingInterval
         });
         
+        // The rules (who, when) and the Payment of the amount due are applied inside changePlan (#785)
         const updatedSubscription = await changePlan(
           merchant.subscription.id,
           planId,
-          normalizedBillingInterval as any
+          normalizedBillingInterval as any,
+          {
+            actorRole: user.role,
+            payment: {
+              method: body.method,
+              transactionId: body.transactionId,
+              reference: body.reference,
+              description: body.description,
+              paymentDate: body.paymentDate ? new Date(body.paymentDate) : undefined,
+            },
+          }
         );
 
         // The server prices the change (#779): changePlan() stores the cycle price, discount % and currency.

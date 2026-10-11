@@ -472,10 +472,23 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
 // SUBSCRIPTION ACTIONS
 // ============================================================================
 
+/** Who changes the plan and how the shop paid. `actorRole` is required: the plan rules are applied here, for every caller. */
+export interface ChangePlanOptions {
+  actorRole: string;
+  payment?: {
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+    description?: string;
+    paymentDate?: Date;
+  };
+}
+
 export async function changePlan(
   subscriptionId: number, 
   newPlanId: number, 
-  billingInterval: BillingInterval = 'monthly'
+  billingInterval: BillingInterval = 'monthly',
+  options: ChangePlanOptions
 ): Promise<Subscription> {
   const subscription = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
@@ -503,6 +516,21 @@ export async function changePlan(
     throw new Error('Plan not found');
   }
 
+  // #785: a plan is changed only in a new period; a merchant never changes it in the middle of a period, an
+  // admin only upgrades there. Applied here so no route can skip it.
+  const decision = canChangePlan({
+    role: options.actorRole,
+    status: subscription.status,
+    currentPeriodEnd: subscription.currentPeriodEnd,
+    currentPlanId: subscription.planId,
+    currentBasePrice: subscription.plan?.basePrice ?? 0,
+    newPlanId: plan.id,
+    newBasePrice: plan.basePrice,
+  });
+  if (!decision.allowed) {
+    throw new ApiError(ErrorCode[decision.code as keyof typeof ErrorCode]);
+  }
+
   // Get old plan name for email
   const oldPlanName = subscription.plan?.name || 'Unknown Plan';
 
@@ -527,30 +555,64 @@ export async function changePlan(
   const newPeriodStart = planChange.newPeriodStart;
   const newPeriodEnd = planChange.newPeriodEnd;
 
-  const updatedSubscription = await prisma.subscription.update({
-    where: { merchantId: subscription.merchantId },
-    data: {
-      planId: plan.id,
-      interval: billingInterval,
-      intervalCount: breakdown.totalMonths,
-      period: breakdown.totalMonths,
-      discount: breakdown.discount,
-      amount: amount,
-      currency: plan.currency || subscription.currency,
-      currentPeriodStart: newPeriodStart,
-      currentPeriodEnd: newPeriodEnd,
-      updatedAt: new Date()
-    },
-    include: {
-      merchant: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        }
+  // What the shop pays now: the new cycle price minus the credit for the unused days (#779). VND has no decimals.
+  const currency = plan.currency || subscription.currency;
+  const amountDue = currency === 'VND' ? Math.round(planChange.totalDue) : Math.round(planChange.totalDue * 100) / 100;
+  const pay = options.payment ?? {};
+  if (amountDue > 0) {
+    if (!pay.method || !pay.transactionId) throw new ApiError(ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED);
+    if (!['STRIPE', 'TRANSFER', 'MANUAL'].includes(pay.method)) throw new ApiError(ErrorCode.INVALID_PAYMENT_METHOD);
+  }
+  // A trial turned into a paid plan is ACTIVE from now (it used to stay TRIAL: the route tested `trialDays > 0`).
+  const trialBecomesPaid = String(subscription.status).toUpperCase() === 'TRIAL' && plan.basePrice > 0;
+
+  const updatedSubscription = await prisma.$transaction(async (tx) => {
+    const updated = await tx.subscription.update({
+      where: { merchantId: subscription.merchantId },
+      data: {
+        planId: plan.id,
+        interval: billingInterval,
+        intervalCount: breakdown.totalMonths,
+        period: breakdown.totalMonths,
+        discount: breakdown.discount,
+        amount: amount,
+        currency,
+        currentPeriodStart: newPeriodStart,
+        currentPeriodEnd: newPeriodEnd,
+        ...(trialBecomesPaid ? { status: SUBSCRIPTION_STATUS.ACTIVE } : {}),
+        updatedAt: new Date()
       },
-      plan: true
+      include: {
+        merchant: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        },
+        plan: true
+      }
+    });
+    if (amountDue > 0) {
+      const paid = pay.method === PAYMENT_METHOD.STRIPE;
+      await tx.payment.create({
+        data: {
+          subscriptionId: subscription.id,
+          merchantId: subscription.merchantId,
+          amount: amountDue,
+          currency,
+          method: pay.method as any,
+          type: PAYMENT_TYPE.PLAN_CHANGE as any,
+          status: (paid ? PAYMENT_STATUS.COMPLETED : PAYMENT_STATUS.PENDING) as any,
+          transactionId: pay.transactionId,
+          reference: pay.reference || undefined,
+          description: pay.description || `${oldPlanName} → ${plan.name} (${billingInterval})`,
+          processedAt: paid ? new Date() : pay.paymentDate ?? null,
+          createdAt: pay.paymentDate ?? new Date(),
+        },
+      });
     }
+    return updated;
   });
 
   // No need to update merchant - subscription.status is the single source of truth
@@ -624,6 +686,8 @@ export async function changePlan(
       remainingCreditValue: planChange.remainingCreditValue,
       newPlanPeriodPrice: planChange.newPlanPeriodPrice,
       amountDue: planChange.totalDue,
+      /** What was recorded as the Payment (whole VND), 0 when nothing was due */
+      amountDueRounded: amountDue,
       currency: plan.currency || subscription.currency,
     },
   } as Subscription;

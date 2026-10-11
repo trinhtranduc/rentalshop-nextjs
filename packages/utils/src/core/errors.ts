@@ -54,6 +54,9 @@ export enum ErrorCode {
   PAYMENT_FAILED = 'PAYMENT_FAILED',
   INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
   INVALID_DURATION = 'INVALID_DURATION',
+  PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED = 'PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED',
+  PLAN_CHANGE_ONLY_AT_NEW_PERIOD = 'PLAN_CHANGE_ONLY_AT_NEW_PERIOD',
+  DOWNGRADE_ONLY_AT_NEW_PERIOD = 'DOWNGRADE_ONLY_AT_NEW_PERIOD',
   
   // Resource Specific Errors
   EMAIL_EXISTS = 'EMAIL_EXISTS',
@@ -144,6 +147,9 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.PAYMENT_FAILED]: 'Payment processing failed',
   [ErrorCode.INVALID_PAYMENT_METHOD]: 'Invalid payment method',
   [ErrorCode.INVALID_DURATION]: 'Renewal period must be 1, 3, 6 or 12 months',
+  [ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED]: 'Payment method and transaction ID are required',
+  [ErrorCode.PLAN_CHANGE_ONLY_AT_NEW_PERIOD]: "The plan can only be changed in a new period",
+  [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: "A downgrade is only possible in a new period",
   
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
@@ -219,6 +225,9 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.PAYMENT_FAILED]: 402,
   [ErrorCode.INVALID_PAYMENT_METHOD]: 400,
   [ErrorCode.INVALID_DURATION]: 400,
+  [ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED]: 400,
+  [ErrorCode.PLAN_CHANGE_ONLY_AT_NEW_PERIOD]: 403,
+  [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: 422,
   
   // Resource Specific Errors (4xx)
   [ErrorCode.EMAIL_EXISTS]: 409,

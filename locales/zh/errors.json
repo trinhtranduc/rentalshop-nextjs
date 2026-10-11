@@ -27,5 +27,7 @@
   "INVALID_MIN_SIMILARITY": "最小相似度无效（必须在 0 到 1 之间）",
   "NO_PRODUCTS_FOUND": "未找到相似的商品",
   "ROLE_NOT_AVAILABLE": "该角色暂时无法分配",
-  "INVALID_DURATION": "续订期限必须为 1、3、6 或 12 个月"
+  "INVALID_DURATION": "续订期限必须为 1、3、6 或 12 个月",
+  "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "只能在新的周期更换套餐",
+  "DOWNGRADE_ONLY_AT_NEW_PERIOD": "只能在新的周期降级"
 }
