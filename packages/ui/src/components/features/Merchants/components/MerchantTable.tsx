@@ -87,7 +87,7 @@ export function MerchantTable({
       <CardContent className="p-0 flex-1 overflow-hidden">
         {/* Table with scroll - flex layout */}
         <div className="flex-1 overflow-x-auto overflow-y-auto h-full">
-          <table className="w-full min-w-[800px]">
+          <table className="table-cards w-full md:min-w-[800px]">
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
                 {onSelectionChange && (
@@ -150,7 +150,7 @@ export function MerchantTable({
                     </td>
                   )}
                   {/* Merchant Name */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-primary>
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
                         <span className="text-white font-semibold text-sm">
@@ -176,7 +176,7 @@ export function MerchantTable({
                   </td>
 
                   {/* Plan & Status */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Plan & Status">
                     <div className="flex flex-col gap-1">
                       <div className="text-sm font-medium text-text-primary">
                         {merchant.subscription?.plan?.name || 'No Plan'}
@@ -186,14 +186,14 @@ export function MerchantTable({
                   </td>
 
                   {/* Created At */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Created At">
                     <div className="text-sm text-text-primary">
                       {formatDateTime(merchant.createdAt)}
                     </div>
                   </td>
 
                   {/* Start Date */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Start Date">
                     <div className="text-sm text-text-primary">
                       {merchant.subscription?.currentPeriodStart 
                         ? formatDateTime(merchant.subscription.currentPeriodStart)
@@ -202,7 +202,7 @@ export function MerchantTable({
                   </td>
 
                   {/* End Date */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="End Date">
                     <div className="text-sm text-text-primary">
                       {merchant.subscription?.currentPeriodEnd 
                         ? formatDateTime(merchant.subscription.currentPeriodEnd)
@@ -213,7 +213,7 @@ export function MerchantTable({
                   </td>
 
                   {/* Actions */}
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" data-actions>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 

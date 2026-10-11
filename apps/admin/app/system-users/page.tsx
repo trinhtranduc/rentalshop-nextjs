@@ -342,7 +342,7 @@ export default function SystemUsersPage() {
   return (
     <PageWrapper>
       <PageHeader>
-        <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
           <div>
             <PageTitle>AnyRent Users</PageTitle>
             <p className="text-sm text-gray-500 mt-1">
@@ -359,7 +359,7 @@ export default function SystemUsersPage() {
       <PageContent>
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 min-w-0 max-w-sm w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="Tìm kiếm theo tên, email..."
@@ -404,7 +404,7 @@ export default function SystemUsersPage() {
               </Button>
             </div>
           ) : (
-            <table className="w-full">
+            <table className="table-cards w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Tên</th>
@@ -418,26 +418,26 @@ export default function SystemUsersPage() {
               <tbody className="divide-y divide-gray-100">
                 {users.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-primary>
                       <div className="font-medium text-gray-900">
                         {u.firstName} {u.lastName}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{u.email}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-sm text-gray-600" data-label="Email">{u.email}</td>
+                    <td className="px-4 py-3" data-label="Role">
                       <Badge variant="outline" className="text-xs">
                         {getRoleLabel(u.role)}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-label="Trạng thái">
                       <Badge variant={u.isActive ? 'default' : 'secondary'}>
                         {u.isActive ? 'Hoạt động' : 'Vô hiệu'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-gray-500" data-label="Ngày tạo">
                       {formatInShopZone(u.createdAt, 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-actions>
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(u)} title="Chỉnh sửa">
                           <Pencil className="w-4 h-4" />

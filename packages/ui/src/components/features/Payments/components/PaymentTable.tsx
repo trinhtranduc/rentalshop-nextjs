@@ -157,7 +157,7 @@ export function PaymentTable({
       <CardContent className="p-0 flex-1 overflow-hidden">
         {/* Table with scroll - flex layout */}
         <div className="flex-1 overflow-auto h-full">
-          <table className="w-full">
+          <table className="table-cards w-full">
             {/* Table Header - Sticky */}
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
@@ -189,7 +189,7 @@ export function PaymentTable({
               {payments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-bg-secondary transition-colors">
                   {/* Merchant with Icon */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-primary>
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-action-primary to-brand-primary flex items-center justify-center">
                         <CreditCard className="w-5 h-5 text-white" />
@@ -208,40 +208,40 @@ export function PaymentTable({
                   </td>
                   
                   {/* Plan */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Plan">
                     <div className="text-sm text-text-primary">
                       {payment.subscription?.plan?.name || 'Unknown Plan'}
                     </div>
                   </td>
                   
                   {/* Amount */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Amount">
                     <div className="text-sm font-medium text-text-primary">
                       {formatCurrency(payment.amount, payment.currency)}
                     </div>
                   </td>
                   
                   {/* Payment Method */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Method">
                     <div className="text-sm text-text-primary">
                       {getPaymentMethodText(payment.method)}
                     </div>
                   </td>
                   
                   {/* Status */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Status">
                     {getStatusBadge(payment.status)}
                   </td>
                   
                   {/* Date */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4" data-label="Date">
                     <div className="text-sm text-text-primary">
                       {formatDate(payment.createdAt)}
                     </div>
                   </td>
                   
                   {/* Actions - Dropdown Menu */}
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" data-actions>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 

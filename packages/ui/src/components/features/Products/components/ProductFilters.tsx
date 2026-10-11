@@ -226,18 +226,18 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
               options={merchantOptions}
               placeholder={loadingMerchants ? 'Loading...' : 'All Merchants'}
               searchPlaceholder="Search merchants..."
-              className="w-[200px]"
+              className="w-full sm:w-[200px]"
               emptyText="No merchants found"
               disabled={loadingMerchants}
             />
           )}
           {merchantOptions.length === 0 && !loadingMerchants && (
-            <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+            <div className="w-full sm:w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
               No merchants available
             </div>
           )}
           {loadingMerchants && (
-            <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+            <div className="w-full sm:w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
               Loading...
             </div>
           )}
@@ -252,18 +252,18 @@ export function ProductFilters({ filters, onFiltersChange, onSearchChange, onCle
           options={categoryOptions}
           placeholder={loadingCategories ? (t('filters.loading') || 'Loading...') : t('filters.allCategories')}
           searchPlaceholder="Search categories..."
-          className="w-[200px]"
+          className="w-full sm:w-[200px]"
           emptyText="No categories found"
         disabled={loadingCategories}
         />
       )}
       {categoryOptions.length === 0 && !loadingCategories && (
-        <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+        <div className="w-full sm:w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
           No categories available
         </div>
       )}
       {loadingCategories && (
-        <div className="w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
+        <div className="w-full sm:w-[200px] h-10 flex items-center px-3 text-sm text-gray-500">
           {t('filters.loading') || 'Loading...'}
         </div>
       )}

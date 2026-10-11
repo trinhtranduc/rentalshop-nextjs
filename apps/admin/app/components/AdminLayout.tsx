@@ -24,6 +24,11 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  // Close the mobile drawer after navigation
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const isLoginPage = pathname === '/login';
   const isPublicPage = isLoginPage || pathname === '/';
   const showSidebar = Boolean(user) && !isPublicPage;
@@ -116,7 +121,8 @@ export default function AdminLayout({
               variant="ghost"
               size="icon"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden"
+              className="h-11 w-11 lg:hidden"
+              aria-label="Menu"
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -128,7 +134,7 @@ export default function AdminLayout({
               <span className="font-semibold text-text-primary">AnyRent Admin</span>
             </div>
 
-            <div className="w-8" /> {/* Spacer for centering */}
+            <div className="w-11" /> {/* Spacer for centering */}
           </div>
         )}
 
@@ -136,7 +142,7 @@ export default function AdminLayout({
         {showSidebar && <SubscriptionExpiryBanner />}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-bg-primary">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-bg-primary">
           {children}
         </main>
       </div>

@@ -331,7 +331,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
       <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             Subscription #{subscription.id}
@@ -340,7 +340,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             {subscription.merchant?.name} - {subscription.plan?.name}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/subscriptions/${subscription.id}/edit`)}
@@ -420,7 +420,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Status</Label>
                   <div className="mt-1">
@@ -488,7 +488,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           {/* Plan Limits & Addons */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center space-x-2">
                   <Package className="h-5 w-5" />
                   <span>Plan Limits & Addons</span>
@@ -509,7 +509,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               {/* Plan Base Limits */}
               <div>
                 <Label className="text-sm font-semibold text-gray-700 mb-3 block">Base Plan Limits</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span className="text-sm text-gray-600">Outlets</span>
                     <span className="font-semibold">
@@ -556,7 +556,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   {/* Total Limits with Addons */}
                   <div className="mb-3">
                     <Label className="text-xs text-gray-500 mb-2 block">Total Limits (Plan + Addons)</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {Object.entries(totalAddonLimits).map(([key, value]) => {
                         if (value === 0) return null;
                         const baseLimit = (subscription.plan?.limits?.[key as keyof typeof subscription.plan.limits] as number) || 0;
@@ -630,7 +630,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
           {/* Payment History */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center space-x-2">
                   <CreditCard className="h-5 w-5" />
                   <span>Payment History</span>
@@ -647,7 +647,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   No payment records found
                 </div>
               ) : (
-                <Table>
+                <Table className="table-cards">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
@@ -660,13 +660,13 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <TableBody>
                     {payments.map((payment) => (
                       <TableRow key={payment.id}>
-                        <TableCell>{formatDate(payment.createdAt)}</TableCell>
-                        <TableCell>{formatCurrency(payment.amount, payment.currency)}</TableCell>
-                        <TableCell>{payment.method}</TableCell>
-                        <TableCell>
+                        <TableCell data-primary>{formatDate(payment.createdAt)}</TableCell>
+                        <TableCell data-label="Amount">{formatCurrency(payment.amount, payment.currency)}</TableCell>
+                        <TableCell data-label="Method">{payment.method}</TableCell>
+                        <TableCell data-label="Status">
                           <StatusBadge status={payment.status} />
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="font-mono text-sm" data-label="Reference">
                           {payment.reference || 'N/A'}
                         </TableCell>
                       </TableRow>

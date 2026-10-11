@@ -393,7 +393,7 @@ export default function AdminOrdersPage() {
             <PageTitle>All Orders</PageTitle>
             <p className="text-sm text-gray-600">View and manage all orders from all merchants</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {canExport && (
               <Button
                 onClick={() => setShowExportDialog(true)}

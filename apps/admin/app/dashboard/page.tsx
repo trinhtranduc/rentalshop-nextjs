@@ -134,8 +134,8 @@ const SubscriptionRevenueChart: React.FC<SubscriptionRevenueChartProps> = ({ dat
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+    <ResponsiveContainer width="100%" height={320}>
+      <BarChart data={chartData} margin={{ top: 20, right: 16, left: 0, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
           dataKey="period" 
@@ -193,8 +193,8 @@ const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+    <ResponsiveContainer width="100%" height={320}>
+      <BarChart data={chartData} margin={{ top: 20, right: 16, left: 0, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
           dataKey="period" 
@@ -580,21 +580,21 @@ export default function AdminDashboard() {
             <Button
               variant={period === 'today' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('today')}
-              className="px-3 sm:px-4 py-2 text-sm"
+              className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm"
             >
               Today
             </Button>
             <Button
               variant={period === 'month' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('month')}
-              className="px-3 sm:px-4 py-2 text-sm"
+              className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm"
             >
               This Month
             </Button>
             <Button
               variant={period === 'year' ? 'default' : 'outline'}
               onClick={() => updateTimePeriod('year')}
-              className="px-3 sm:px-4 py-2 text-sm"
+              className="min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 text-sm"
             >
               This Year
             </Button>
@@ -606,7 +606,7 @@ export default function AdminDashboard() {
               fetchRankings();
             }}
             disabled={loading}
-            className="px-4 py-2 text-sm"
+            className="min-h-[44px] sm:min-h-0 px-4 py-2 text-sm"
           >
             Refresh
           </Button>
@@ -756,7 +756,7 @@ export default function AdminDashboard() {
                   ))}
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full min-h-[44px] sm:min-h-0"
                     onClick={() => router.push(`/dashboard/top-shops?period=${period}`)}
                   >
                     {tCommon('buttons.viewAll')}
@@ -808,7 +808,7 @@ export default function AdminDashboard() {
                   ))}
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full min-h-[44px] sm:min-h-0"
                     onClick={() => router.push(`/dashboard/top-products?period=${period}&sortBy=${productSortBy}`)}
                   >
                     {tCommon('buttons.viewAll')}

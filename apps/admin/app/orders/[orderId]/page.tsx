@@ -354,7 +354,7 @@ export default function AdminOrderDetailPage() {
     <PageWrapper>
       <PageHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Button variant="ghost" onClick={handleBackToOrders}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back

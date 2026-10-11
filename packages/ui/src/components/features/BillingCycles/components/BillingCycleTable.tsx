@@ -93,7 +93,7 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
       <CardContent className="p-0 flex-1 overflow-hidden">
         {/* Table with scroll - flex layout */}
         <div className="flex-1 overflow-auto h-full">
-          <table className="w-full">
+          <table className="table-cards w-full">
             <thead className="bg-bg-secondary border-b border-border sticky top-0 z-10">
               <tr>
                 <th 
@@ -149,15 +149,15 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
             <tbody>
               {billingCycles.map((cycle) => (
                 <tr key={cycle.id} className="border-b border-border hover:bg-bg-secondary">
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-primary>
                     <div className="font-medium text-text-primary">{cycle.name}</div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-label="Value">
                     <Badge variant="outline" className="font-mono">
                       {cycle.value}
                     </Badge>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-label="Months">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-text-tertiary" />
                       <span className="font-medium">{cycle.months}</span>
@@ -166,7 +166,7 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
                       </span>
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-label="Discount">
                     <div className="flex items-center gap-2">
                       {cycle.discount > 0 ? (
                         <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
@@ -177,22 +177,22 @@ export const BillingCycleTable: React.FC<BillingCycleTableProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-label="Description">
                     <div className="text-sm text-text-secondary max-w-xs truncate">
                       {cycle.description || 'No description'}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-label="Status">
                     <div className="flex items-center gap-2">
                       <StatusBadge 
                         status={cycle.isActive ? 'active' : 'inactive'}
                       />
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-sm text-text-secondary">
+                  <td className="py-4 px-4 text-sm text-text-secondary" data-label="Created">
                     {formatDate(cycle.createdAt)}
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4" data-actions>
                     <div className="flex items-center justify-end gap-2">
                       {onView && (
                         <Button
