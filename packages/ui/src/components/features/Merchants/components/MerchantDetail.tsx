@@ -51,7 +51,10 @@ interface MerchantDetailProps {
     duration?: number;
     discount?: number;
     totalPrice?: number;
-  }) => Promise<void>;
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+  }) => Promise<void | { success?: boolean; message?: string }>;
   onExtend?: (extendData: { subscription: Subscription; duration: number; billingInterval: string; discount: number; totalPrice: number; }) => Promise<void>;
   onCancel?: (subscription: Subscription, reason: string, cancelType: 'immediate' | 'end_of_period') => Promise<void>;
   onSuspend?: (subscription: Subscription, reason: string) => Promise<void>;

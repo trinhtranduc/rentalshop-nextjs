@@ -51,7 +51,16 @@ interface SubscriptionListProps {
   onCancel?: (subscription: Subscription, reason: string) => void;
   onSuspend?: (subscription: Subscription, reason: string) => void;
   onReactivate?: (subscription: Subscription) => void;
-  onChangePlan?: (subscription: Subscription, newPlanId: number, interval: BillingInterval) => void;
+  onChangePlan?: (
+    subscription: Subscription,
+    newPlanId: number,
+    interval: BillingInterval,
+    startDate?: Date,
+    reason?: string,
+    sendEmail?: boolean,
+    customPrice?: number,
+    payment?: { method: string; transactionId: string; reference?: string }
+  ) => void | { success?: boolean; message?: string } | Promise<void | { success?: boolean; message?: string }>;
   loading?: boolean;
   total?: number;
   limit?: number;
@@ -182,8 +191,19 @@ export function SubscriptionList({
     setSelectedSubscription(null);
   };
 
-  const handleChangePlanConfirm = (subscription: Subscription, newPlanId: number, interval: BillingInterval) => {
-    onChangePlan?.(subscription, newPlanId, interval);
+  const handleChangePlanConfirm = async (
+    subscription: Subscription,
+    newPlanId: number,
+    interval: BillingInterval,
+    startDate?: Date,
+    reason?: string,
+    sendEmail?: boolean,
+    customPrice?: number,
+    payment?: { method: string; transactionId: string; reference?: string }
+  ) => {
+    const result = await onChangePlan?.(subscription, newPlanId, interval, startDate, reason, sendEmail, customPrice, payment);
+    // An API error keeps the dialog open; the dialog shows the message
+    if (result && result.success === false) return result;
     setShowChangePlanDialog(false);
     setShowViewDialog(false); // Close the view dialog
     setSelectedSubscription(null);

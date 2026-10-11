@@ -22,7 +22,7 @@ import {
 import { formatCurrency, Badge, Card, CardContent } from '@rentalshop/ui';
 import { ResponsiveDialogFooter, DetailsToggle } from './ResponsiveDialogFooter';
 import { ArrowRight, Package } from 'lucide-react';
-import { calculatePlanChangeTotal, storedBillingInterval, formatInShopZone } from '@rentalshop/utils';
+import { calculatePlanChangeTotal, storedBillingInterval, formatInShopZone, canChangePlan, isNewPeriod } from '@rentalshop/utils';
 import type { Subscription, Plan, BillingInterval, PlanLimitAddon } from '@rentalshop/types';
 
 import { BILLING_CYCLES_ARRAY } from '@rentalshop/constants';
@@ -35,12 +35,26 @@ type BillingCycleConfig = {
   description: string;
 };
 
+export interface PlanChangePayment {
+  method: string;
+  transactionId: string;
+  reference?: string;
+}
+
+export type PlanChangeConfirmResult = void | { success?: boolean; message?: string };
+
+const PAYMENT_METHODS = [
+  { value: 'TRANSFER', label: 'Bank transfer' },
+  { value: 'STRIPE', label: 'Stripe' },
+  { value: 'MANUAL', label: 'Manual' },
+];
+
 interface SubscriptionChangePlanDialogProps {
   subscription: Subscription | null;
   plans: Plan[];
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (subscription: Subscription, newPlanId: number, interval: BillingInterval, startDate?: Date, reason?: string, sendEmail?: boolean, customPrice?: number) => void;
+  onConfirm: (subscription: Subscription, newPlanId: number, interval: BillingInterval, startDate?: Date, reason?: string, sendEmail?: boolean, customPrice?: number, payment?: PlanChangePayment) => PlanChangeConfirmResult | Promise<PlanChangeConfirmResult>;
   loading?: boolean;
 }
 
@@ -58,6 +72,10 @@ export function SubscriptionChangePlanDialog({
   const [selectedInterval, setSelectedInterval] = useState<BillingInterval>('monthly');
   const [reason, setReason] = useState<string>('');
   const [sendEmail, setSendEmail] = useState<boolean>(true);
+  const [payMethod, setPayMethod] = useState<string>('');
+  const [transactionId, setTransactionId] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [addons, setAddons] = useState<PlanLimitAddon[]>([]);
   const [totalAddonLimits, setTotalAddonLimits] = useState({
     outlets: 0,
@@ -105,16 +123,33 @@ export function SubscriptionChangePlanDialog({
   }, [isOpen, subscription?.merchantId]);
 
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!subscription || !selectedPlanId) return;
-    // The API starts the new plan now and prices it from the plan (#779): no custom start date or price is sent.
-    onConfirm(subscription, selectedPlanId, selectedInterval, new Date(), reason || undefined, sendEmail, undefined);
+    setErrorMessage('');
+    setSubmitting(true);
+    try {
+      // The API starts the new plan now and prices it from the plan (#779): no custom start date or price is sent.
+      const payment: PlanChangePayment | undefined = amountDue > 0
+        ? { method: payMethod, transactionId: transactionId.trim() }
+        : undefined;
+      const result = await onConfirm(subscription, selectedPlanId, selectedInterval, new Date(), reason || undefined, sendEmail, undefined, payment);
+      if (result && result.success === false) {
+        setErrorMessage(result.message || 'The plan could not be changed.');
+      }
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'The plan could not be changed.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
     setSelectedPlanId(null);
     setReason('');
     setSendEmail(true);
+    setPayMethod('');
+    setTransactionId('');
+    setErrorMessage('');
     onClose();
   };
 
@@ -197,6 +232,29 @@ export function SubscriptionChangePlanDialog({
   const newCurrency = (selectedPlan?.currency || oldCurrency) as any;
   const selectedCycle = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
 
+  // Plan rules (#785), same helper as the API: admin may change only in a new period, mid-period only upgrade.
+  const currentPlanId = (subscription as any).planId ?? subscription.plan?.id ?? null;
+  const currentBasePrice = subscription.plan?.basePrice || 0;
+  const newPeriod = isNewPeriod({ status: subscription.status as any, currentPeriodEnd: subscription.currentPeriodEnd as any });
+  const planRefusal = (plan: Plan): string | null => {
+    const decision = canChangePlan({
+      role: 'ADMIN',
+      status: subscription.status as any,
+      currentPlanId,
+      currentPeriodEnd: subscription.currentPeriodEnd as any,
+      currentBasePrice,
+      newPlanId: plan.id,
+      newBasePrice: plan.basePrice || 0,
+    });
+    if (decision.allowed) return null;
+    if (currentPlanId != null && plan.id === currentPlanId) return 'Current plan';
+    return 'Downgrade only in a new period';
+  };
+  const anyPlanSelectable = plans.some(p => planRefusal(p) === null);
+  const amountDue = planChange?.totalDue ?? 0;
+  const needsPayment = amountDue > 0;
+  const paymentReady = !needsPayment || (payMethod !== '' && transactionId.trim() !== '');
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
@@ -213,6 +271,11 @@ export function SubscriptionChangePlanDialog({
               </span>
             )}
           </DialogDescription>
+          {!newPeriod && (
+            <p className="text-xs text-muted-foreground mt-1" data-testid="mid-period-info">
+              Mid-period: upgrades only. A downgrade is possible in a new period.
+            </p>
+          )}
         </DialogHeader>
 
         <div className="px-6 py-4 overflow-y-auto max-md:flex-1 max-md:min-h-0 max-md:px-4">
@@ -261,6 +324,9 @@ export function SubscriptionChangePlanDialog({
             {/* Select New Plan */}
           <div className="space-y-1.5 max-md:col-span-2 max-md:order-1">
             <Label className="text-xs font-medium">Select New Plan</Label>
+            {plans.length > 0 && !anyPlanSelectable && (
+              <p className="text-xs text-action-warning" data-testid="no-plan-selectable">No plan can be chosen now.</p>
+            )}
             {plans.length === 0 && (
               <Alert>
                 <AlertDescription className="text-action-warning text-sm">
@@ -280,10 +346,14 @@ export function SubscriptionChangePlanDialog({
                 const periodPricing = calculatePricingForInterval(plan, selectedInterval);
                     const cycleConfig = BILLING_CYCLES_ARRAY.find((c: BillingCycleConfig) => c.value === selectedInterval);
                 
+                const refusal = planRefusal(plan);
                 return (
-                      <SelectItem key={plan.id} value={plan.id.toString()}>
+                      <SelectItem key={plan.id} value={plan.id.toString()} disabled={refusal !== null}>
                         <div className="flex items-center justify-between w-full">
-                          <span className="font-medium text-sm">{plan.name}</span>
+                          <span className="font-medium text-sm">
+                            {plan.name}
+                            {refusal && <span className="block text-[11px] font-normal text-muted-foreground">{refusal}</span>}
+                          </span>
                           <span className="ml-4 text-xs text-muted-foreground">
                             {formatCurrency(periodPricing.price, plan.currency as any)}
                             {cycleConfig && cycleConfig.months > 1 && ` (${cycleConfig.months}m)`}
@@ -401,6 +471,44 @@ export function SubscriptionChangePlanDialog({
                       })()}
                     </div>
           )}
+
+          {/* Payment: only when something is due (#785) */}
+          {selectedPlan && needsPayment && (
+            <div className="p-3 border rounded-lg space-y-3 max-md:col-span-2 max-md:order-6" data-testid="payment-block">
+              <p className="text-xs font-semibold">Payment</p>
+              <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Payment method *</Label>
+                  <Select value={payMethod} onValueChange={setPayMethod}>
+                    <SelectTrigger className="w-full text-sm max-md:min-h-11" data-testid="payment-method">
+                      <SelectValue placeholder="Select a method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map(m => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="transactionId" className="text-xs font-medium">Transaction ID / reference *</Label>
+                  <Input
+                    id="transactionId"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="e.g. FT-123456"
+                    className="w-full text-sm max-md:min-h-11"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {errorMessage && (
+            <Alert variant="destructive" className="max-md:col-span-2 max-md:order-7" data-testid="change-plan-error">
+              <AlertDescription className="text-sm">{errorMessage}</AlertDescription>
+            </Alert>
+          )}
           </div>
         </div>
 
@@ -417,9 +525,9 @@ export function SubscriptionChangePlanDialog({
           primary={
             <Button
               onClick={handleSubmit}
-              disabled={loading || !selectedPlanId}
+              disabled={loading || submitting || !selectedPlanId || !paymentReady}
             >
-              {loading ? 'Changing Plan...' : 'Change Plan'}
+              {loading || submitting ? 'Changing Plan...' : 'Change Plan'}
             </Button>
           }
         />

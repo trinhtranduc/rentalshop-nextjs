@@ -81,7 +81,10 @@ interface MerchantPlanManagementProps {
     duration?: number;
     discount?: number;
     totalPrice?: number;
-  }) => Promise<void>;
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+  }) => Promise<void | { success?: boolean; message?: string }>;
   onExtend?: (extendData: {
     subscription: Subscription;
     duration: number;
@@ -166,13 +169,15 @@ export function MerchantPlanManagement({
   };
 
   // Adapter function to convert SubscriptionChangePlanDialog callback to onPlanChange format
-  const handleChangePlanConfirm = (
+  const handleChangePlanConfirm = async (
     subscription: Subscription,
     newPlanId: number,
     interval: BillingInterval,
     startDate?: Date,
     reason?: string,
-    sendEmail?: boolean
+    sendEmail?: boolean,
+    customPrice?: number,
+    payment?: { method: string; transactionId: string; reference?: string }
   ) => {
     const selectedPlan = plans.find(p => p.id === newPlanId);
     if (!selectedPlan) return;
@@ -196,10 +201,16 @@ export function MerchantPlanManagement({
       billingInterval: interval, // Use BillingInterval directly, no conversion
       duration: cycleConfig.months,
       discount: cycleConfig.discount,
-      totalPrice
+      totalPrice,
+      method: payment?.method,
+      transactionId: payment?.transactionId,
+      reference: payment?.reference
     };
 
-    onPlanChange(planChangeData);
+    const result = await onPlanChange(planChangeData);
+    // An API error keeps the dialog open; the dialog shows the message
+    if (result && result.success === false) return result;
+    setShowChangeDialog(false);
   };
 
   // Adapter function to convert SubscriptionExtendDialogEnhanced callback to onExtend format

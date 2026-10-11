@@ -178,7 +178,10 @@ export default function MerchantDetailPage() {
     duration?: number;
     discount?: number;
     totalPrice?: number;
-  }) => {
+    method?: string;
+    transactionId?: string;
+    reference?: string;
+  }): Promise<{ success: boolean; message?: string }> => {
     try {
       console.log('🔍 Admin: Plan change data received:', planData);
       
@@ -190,18 +193,23 @@ export default function MerchantDetailPage() {
         billingInterval: planData.billingInterval,
         duration: planData.duration,
         discount: planData.discount,
-        totalPrice: planData.totalPrice
+        totalPrice: planData.totalPrice,
+        method: planData.method,
+        transactionId: planData.transactionId,
+        reference: planData.reference
       });
 
       if (response.success) {
         console.log('Plan changed successfully');
         // Refresh merchant data
         fetchMerchantDetails();
-      } else {
-        console.error('Failed to change plan:', response.message);
+        return { success: true };
       }
-    } catch (error) {
+      console.error('Failed to change plan:', response.message);
+      return { success: false, message: response.message || (response as any).error || 'The plan could not be changed.' };
+    } catch (error: any) {
       console.error('Error changing plan:', error);
+      return { success: false, message: error?.message || 'The plan could not be changed.' };
     }
   };
 

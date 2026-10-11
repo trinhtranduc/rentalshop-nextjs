@@ -118,9 +118,15 @@ export const subscriptionsApi = {
       reason?: string;
       sendEmail?: boolean;
       customPrice?: number;
+      method?: string;
+      transactionId?: string;
+      reference?: string;
     }
   ): Promise<ApiResponse<Subscription>> {
     const payload: any = { newPlanId };
+    if (options?.method) payload.method = options.method;
+    if (options?.transactionId) payload.transactionId = options.transactionId;
+    if (options?.reference) payload.reference = options.reference;
 
     if (options?.billingInterval) payload.billingInterval = options.billingInterval;
     if (options?.startDate) {

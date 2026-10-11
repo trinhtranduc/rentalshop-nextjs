@@ -209,14 +209,36 @@ export default function SubscriptionsPage() {
     });
   }, []);
 
-  const handleChangePlan = useCallback((subscription: Subscription, newPlanId: number, interval: BillingInterval) => {
-    setConfirmationDialog({
-      open: true,
-      type: 'changePlan',
-      subscription,
-      data: { newPlanId, interval }
-    });
-  }, []);
+  // The change-plan dialog already collects reason and payment; the API answer (or its error) goes back to the dialog.
+  const handleChangePlan = useCallback(async (
+    subscription: Subscription,
+    newPlanId: number,
+    interval: BillingInterval,
+    _startDate?: Date,
+    reason?: string,
+    sendEmail?: boolean,
+    _customPrice?: number,
+    payment?: { method: string; transactionId: string; reference?: string }
+  ): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const result = await subscriptionsApi.changePlan(subscription.id, newPlanId, {
+        billingInterval: interval,
+        reason,
+        sendEmail,
+        method: payment?.method,
+        transactionId: payment?.transactionId,
+        reference: payment?.reference,
+      });
+      if (result.success) {
+        await refetch();
+        toastSuccess('Operation Successful', 'Subscription plan changed successfully');
+        return { success: true };
+      }
+      return { success: false, message: result.message || (result as any).error || 'The plan could not be changed.' };
+    } catch (error: any) {
+      return { success: false, message: error?.message || 'The plan could not be changed.' };
+    }
+  }, [refetch, toastSuccess]);
 
   const handleConfirmationConfirm = useCallback(async (reason: string) => {
     const { type, subscription, data: confirmData } = confirmationDialog;
