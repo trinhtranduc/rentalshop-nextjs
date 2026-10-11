@@ -115,7 +115,14 @@ export async function searchPlanLimitAddons(filters: PlanLimitAddonsQuery) {
   }
   
   if (isActive !== undefined) {
-    where.isActive = isActive;
+    // #850: "active" = still counting; an item past its end (removed at period end) is listed as inactive
+    const now = new Date();
+    if (isActive) {
+      where.isActive = true;
+      where.OR = [{ endsAt: null }, { endsAt: { gt: now } }];
+    } else {
+      where.OR = [{ isActive: false }, { endsAt: { lte: now } }];
+    }
   }
 
   // Calculate pagination
