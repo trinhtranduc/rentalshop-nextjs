@@ -130,8 +130,7 @@ export const CRITICAL_PERMISSIONS: Record<Role, Permission[]> = {
   'OUTLET_STAFF': [
     'outlet.view',          // Must view own outlet
     'products.view',        // Must view products to check availability
-    'products.create',      // May add products at outlet (no update / delete / import)
-    // ❌ NO products.update — staff cannot edit existing products
+    // ❌ NO products.create (#825, owner 2026-10-11), NO products.update — staff cannot add or edit products
     'orders.view',          // Must view orders to process them
     'customers.view',       // Must view customers for order management
   ],
@@ -240,7 +239,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   'OUTLET_STAFF': [
     'outlet.view',
     'products.view', // ❌ NO products.export
-    'products.create', // May create; ❌ NO products.update (cannot edit existing products)
+    // ❌ NO products.create (#825, owner 2026-10-11), NO products.update: staff cannot add or edit products
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
     'customers.view', 'customers.manage', // ❌ NO customers.export
     'analytics.view.dashboard',          // ✅ Daily/today-metrics (dashboard only)
