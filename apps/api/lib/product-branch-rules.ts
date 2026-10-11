@@ -128,6 +128,20 @@ export function changedSharedFields(body: ProductBody, product: StoredProduct): 
   return changed;
 }
 
+type OutletRowLike = { outletId?: number | null; outlet?: { id?: number } | null; stock?: number | null; renting?: number | null };
+
+/**
+ * Whether the product is really held at this outlet: its row there has units on the shelf or out on rent.
+ * Since #825 every product has a row at every active outlet (0 where the branch never stocked it), so a row alone
+ * no longer means the branch holds it. OUTLET_ADMIN / OUTLET_INVENTORY change shared fields and delete only
+ * products their outlet holds.
+ */
+export function holdsStockAt(outletStock: OutletRowLike[] | null | undefined, outletId: number | null | undefined): boolean {
+  if (!outletId) return false;
+  const row = (outletStock || []).find((r) => (r.outlet?.id ?? r.outletId) === outletId);
+  return !!row && ((row.stock ?? 0) > 0 || (row.renting ?? 0) > 0);
+}
+
 /** Stock rows a new product gets: the given ones, plus 0 at every other active outlet of the shop. */
 export function zeroStockRowsForOtherOutlets(
   given: Array<{ outletId: number }>,

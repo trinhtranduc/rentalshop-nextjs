@@ -19,6 +19,7 @@ import {
   imagesOf,
   isBranchRole,
   sharedFieldsLockedFor,
+  branchHoldsProduct,
   roleMayCreateProducts,
   parseCount,
   removedAllSavedPhotos,
@@ -304,6 +305,13 @@ describe('branch roles (#825)', () => {
   it('outlet staff do not add products; the other roles may (owner 2026-10-11)', () => {
     expect(roleMayCreateProducts('OUTLET_STAFF')).toBe(false);
     for (const role of ['MERCHANT', 'ADMIN', 'OUTLET_ADMIN', 'OUTLET_INVENTORY']) expect(roleMayCreateProducts(role)).toBe(true);
+  });
+
+  it('a branch holds a product when its row there has stock or rented units (a 0 row from #825 is not holding)', () => {
+    expect(branchHoldsProduct({ outletStock: [{ outlet: { id: 1 }, stock: 2 }] }, 1)).toBe(true);
+    expect(branchHoldsProduct({ outletStock: [{ outletId: 1, stock: 0 }] }, 1)).toBe(false);
+    expect(branchHoldsProduct({ outletStock: [{ outletId: 1, stock: 0, renting: 1 }] }, 1)).toBe(true);
+    expect(branchHoldsProduct({ outletStock: [{ outletId: 3, stock: 2 }] }, 1)).toBe(false);
   });
 
   it('only OUTLET_STAFF has the shared fields locked (owner 2026-10-11)', () => {

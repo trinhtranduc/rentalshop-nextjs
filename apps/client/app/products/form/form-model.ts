@@ -289,6 +289,16 @@ export function roleMayCreateProducts(role: string | null | undefined): boolean 
   return role !== 'OUTLET_STAFF';
 }
 
+/**
+ * #825: whether a branch holds the product (units on the shelf or out on rent there). Every product has a row at every
+ * outlet, 0 where the branch never stocked it; OUTLET_ADMIN / kho change shared fields only of products they hold.
+ */
+export function branchHoldsProduct(p: Pick<ProductSource, 'outletStock'> & { outletStock?: Array<{ renting?: Num }> | null }, outletId: number | undefined): boolean {
+  if (!outletId) return false;
+  const row = (p.outletStock || []).find((r) => (r?.outlet?.id ?? r?.outletId) === outletId) as { stock?: Num; renting?: Num } | undefined;
+  return !!row && (num(row.stock) > 0 || num(row.renting) > 0);
+}
+
 export interface PayloadOptions {
   canEditPricing: boolean;
   /** #825: the branch of a branch-role user. Its stock row is the only one sent. */

@@ -24,6 +24,7 @@ import {
   buildPayload,
   isBranchRole,
   sharedFieldsLockedFor,
+  branchHoldsProduct,
   roleMayCreateProducts,
   checkPhotos,
   effectiveDefaultMode,
@@ -368,7 +369,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const allowed = isEdit ? canUpdateProducts : canCreateProducts && roleMayCreateProducts(typedUser?.role);
   // #825: a branch role saves stock only at its own outlet; OUTLET_STAFF also cannot change the shared fields
   const branchOutletId = isBranchRole(typedUser?.role) ? Number(typedUser?.outletId ?? typedUser?.outlet?.id) || undefined : undefined;
-  const locked = isEdit && sharedFieldsLockedFor(typedUser?.role);
+  const sharedLocked = isEdit && sharedFieldsLockedFor(typedUser?.role);
 
   const [nonce, setNonce] = useState(0);
   const load = useFormData(allowed ? productId : null, allowed ? merchantId : null, nonce);
@@ -437,6 +438,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
   const multiOutlet = data.outlets.length > 1;
+  // #825: OUTLET_ADMIN / kho change shared fields only of a product their outlet holds (the API refuses the others)
+  const locked = sharedLocked || (isEdit && branchOutletId != null && !!data.product && !branchHoldsProduct(data.product, branchOutletId));
 
   const addFiles = (list: FileList | null) => {
     if (!list || locked) return;
@@ -505,7 +508,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-4">
-          {locked && <p className="m-0 rounded-xl border border-ar-line bg-ar-surface-muted px-4 py-3 text-sm text-ar-ink-2">{t('form.branchLocked')}</p>}
+          {locked && <p className="m-0 rounded-xl border border-ar-line bg-ar-surface-muted px-4 py-3 text-sm text-ar-ink-2">{t(sharedLocked ? 'form.branchLocked' : 'form.branchNotHeld')}</p>}
           <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
           <Card title={t('form.sections.info')}>
             <Field id="pf-name" label={t('form.name')} required={t('form.required')} error={err('name')}>

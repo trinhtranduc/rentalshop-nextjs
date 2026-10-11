@@ -193,7 +193,7 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect((await F.operations(r, { timeZone: null })).date).toBe(today);
       });
 
-      test(`BF-ROLE-06-${tag} another outlet: cannot create there, does not list its orders or products, cannot edit its order, nothing of it changes`, async () => {
+      test(`BF-ROLE-06-${tag} another outlet: cannot create there, does not list its orders, lists its products with own-outlet numbers only, nothing of it changes`, async () => {
         const pO = await product(3, O);
         const w = futureWindow(1);
         const theirs = track(await F.bookRent(s, { product: pO, quantity: 1, outletId: O, ...w }));
@@ -201,8 +201,12 @@ describeE2E('BF-ROLE staff and kho: same numbers as the merchant for their outle
         expect([make.status, make.body.code]).toEqual([403, 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET']);
         expect((await r.listOrders({ search: theirs.orderNumber })).map((o) => o.id)).not.toContain(theirs.id);
         expect((await r.listOrders({ outletId: String(O) })).map((o) => o.id)).not.toContain(theirs.id);
-        expect(await F.productRow(r, pO, O)).toBeNull();
-        expect(await F.productRow(r, pO, M)).toBeNull();
+        // #825: every product has a row at every active outlet, so the branch lists pO too, with ITS numbers (0),
+        // never O's, whatever outletId it asks for (was: pO not listed)
+        for (const asked of [O, M]) {
+          const row = await F.productRow(r, pO, asked);
+          expect(row && [row.stock, row.available, row.effectiveAvailableToday]).toEqual([0, 0, 0]);
+        }
         // the order and the stock of that outlet are as the merchant left them
         const after = await s.getOrder(theirs.id);
         expect([after.outletId, after.status]).toEqual([O, 'RESERVED']);

@@ -20,7 +20,7 @@ import { compressImageTo1MB } from '../../../../lib/image-compression';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
-import { changedSharedFields, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
+import { changedSharedFields, holdsStockAt, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 
 function buildImageUploadErrorResponse(detail?: string) {
   const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
@@ -380,8 +380,9 @@ export async function PUT(
 
         // #825: name, prices, photos, category... are shared by every branch; OUTLET_STAFF does not change them.
         // The same values sent again (whole payload from an app or a stale tab) are not a change.
-        const changed = sharedLocked ? changedSharedFields(productDataFromRequest, existingProduct) : [];
-        if (sharedLocked && (imageFiles.length > 0 || changed.length > 0)) {
+        const changed = changedSharedFields(productDataFromRequest, existingProduct);
+        const changesShared = imageFiles.length > 0 || changed.length > 0;
+        if (sharedLocked && changesShared) {
           console.log('❌ Branch role cannot change shared product fields:', {
             productId,
             role: user.role,
@@ -390,6 +391,15 @@ export async function PUT(
           });
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_SHARED_FIELDS_MERCHANT_ONLY'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        // OUTLET_ADMIN / OUTLET_INVENTORY change shared fields only of a product their outlet holds (a 0-stock row
+        // from #825 does not count): a branch must not rename or reprice what only another branch stocks
+        if (!sharedLocked && changesShared && !holdsStockAt(existingProduct.outletStock, userScope.outletId)) {
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
             { status: API.STATUS.FORBIDDEN }
           );
         }
@@ -939,12 +949,9 @@ export async function DELETE(
         );
       }
 
-      // OUTLET_ADMIN and Nhân viên kho (#682) delete only products stocked at their outlet
+      // OUTLET_ADMIN and Nhân viên kho (#682) delete only products their outlet holds (a 0-stock row does not count)
       if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) {
-        const hasStockAtOutlet = !!userScope.outletId && existingProduct.outletStock?.some(
-          (os: { outlet?: { id?: number } | null }) => os.outlet?.id === userScope.outletId
-        );
-        if (!hasStockAtOutlet) {
+        if (!holdsStockAt(existingProduct.outletStock, userScope.outletId)) {
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
             { status: API.STATUS.FORBIDDEN }

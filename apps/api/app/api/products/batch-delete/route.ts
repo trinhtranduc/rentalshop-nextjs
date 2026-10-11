@@ -4,7 +4,7 @@ import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { API, USER_ROLE } from '@rentalshop/constants';
-import { sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
+import { holdsStockAt, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -76,6 +76,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             id: true, // Merchant.id is also Int (public ID)
           },
         },
+        outletStock: { select: { outletId: true, stock: true, renting: true } },
       },
     });
 
@@ -107,6 +108,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             name: product.name,
           });
         }
+      }
+    }
+
+    // #825: OUTLET_ADMIN and Nhân viên kho delete only products their outlet holds (same rule as DELETE)
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) {
+      const notHeld = products.filter((p) => !holdsStockAt(p.outletStock, userScope.outletId));
+      if (notHeld.length > 0) {
+        return NextResponse.json(
+          {
+            ...ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            data: { productIds: notHeld.map((p) => p.id) },
+          },
+          { status: API.STATUS.FORBIDDEN }
+        );
       }
     }
 

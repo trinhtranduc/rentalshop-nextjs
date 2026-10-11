@@ -1,5 +1,5 @@
 import { db } from '@rentalshop/database';
-import { ORDER_TYPE, ORDER_STATUS } from '@rentalshop/constants';
+import { ORDER_TYPE, ORDER_STATUS, OUTLET_USER_ROLES } from '@rentalshop/constants';
 import {
   calendarDayAvailability,
   getAvailabilityCivilDayBounds,
@@ -169,7 +169,13 @@ export function resolveProductListAvailabilityOutletId(input: {
   /** Backend outlet filter (OUTLET_* roles always have this). */
   filterOutletId?: number;
 }): number | undefined {
-  const { userOutletId, queryOutletId, filterOutletId } = input;
+  const { role, userOutletId, queryOutletId, filterOutletId } = input;
+
+  // #825: a branch role counts its own outlet only. Since every product has a row at every outlet, an
+  // `outletId` of another branch in the query would otherwise show that branch's free units (BF-ROLE-06/09).
+  if ((OUTLET_USER_ROLES as readonly string[]).includes(role) && userOutletId && userOutletId > 0) {
+    return userOutletId;
+  }
 
   if (queryOutletId && queryOutletId > 0) {
     return queryOutletId;

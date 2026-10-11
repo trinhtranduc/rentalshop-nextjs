@@ -87,7 +87,8 @@ import { POST as batchDelete } from '../../apps/api/app/api/products/batch-delet
 import { POST as bulkImport } from '../../apps/api/app/api/products/bulk-import/route';
 import { PUT as merchantProductPut } from '../../apps/api/app/api/merchants/[id]/products/[productId]/route';
 import { POST as merchantProductPost } from '../../apps/api/app/api/merchants/[id]/products/route';
-import { changedSharedFields, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
+import { changedSharedFields, holdsStockAt, zeroStockRowsForOtherOutlets } from '../../apps/api/lib/product-branch-rules';
+import { resolveProductListAvailabilityOutletId } from '../../apps/api/lib/product-list-effective-availability';
 
 const merchant = { user: { id: 3, role: 'MERCHANT', email: 'm@x' }, userScope: { merchantId: 2 } };
 const outletAdmin = { user: { id: 8, role: 'OUTLET_ADMIN', email: 'a@x' }, userScope: { merchantId: 2, outletId: 1 } };
@@ -197,6 +198,23 @@ describe('zeroStockRowsForOtherOutlets', () => {
   });
 });
 
+describe('holdsStockAt / list availability outlet', () => {
+  it('a 0-stock row (added for every outlet since #825) is not holding the product', () => {
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 0, renting: 0 }], 1)).toBe(false);
+    expect(holdsStockAt([{ outletId: 1, stock: 0, renting: 1 }], 1)).toBe(true);
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 2 }], 1)).toBe(true);
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 2 }], 3)).toBe(false);
+    expect(holdsStockAt([{ outlet: { id: 1 }, stock: 2 }], undefined)).toBe(false);
+  });
+
+  it("a branch role's list counts its own outlet, not the outletId it asks for (BF-ROLE-06)", () => {
+    for (const role of ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']) {
+      expect(resolveProductListAvailabilityOutletId({ role, userOutletId: 1, queryOutletId: 3, filterOutletId: 1 })).toBe(1);
+    }
+    expect(resolveProductListAvailabilityOutletId({ role: 'MERCHANT', queryOutletId: 3 })).toBe(3);
+  });
+});
+
 describe('PUT /api/products/:id — stock only at outlets of the same shop', () => {
   it("refuses another shop's outlet with OUTLET_NOT_FOUND and writes nothing", async () => {
     const res = await put({ outletStock: [{ outletId: 1, stock: 5 }, { outletId: 50, stock: 9 }] });
@@ -230,6 +248,27 @@ describe('PUT /api/products/:id — branch roles', () => {
       const data = mockDb.products.update.mock.calls[0][1];
       expect(data).toMatchObject({ name: 'Vest xanh', rentPrice: 250000 });
       expect(data.outletStock.upsert).toHaveLength(1);
+    }
+  );
+
+  it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])(
+    '%s cannot change shared fields of a product its outlet only has a 0-stock row for',
+    async (_role, who) => {
+      ctx = who;
+      mockDb.products.findById.mockResolvedValue({
+        ...product,
+        outletStock: [
+          { outletId: 1, stock: 0, renting: 0, available: 0, outlet: { id: 1, name: 'Main' } },
+          { outletId: 3, stock: 4, renting: 0, available: 4, outlet: { id: 3, name: 'Second' } },
+        ],
+      });
+      const rename = await put({ name: 'Vest xanh' });
+      expect([rename.status, rename.body.code]).toEqual([403, 'PRODUCT_NOT_AVAILABLE_AT_OUTLET']);
+      // its own stock it still sets
+      const stock = await put({ ...wholePayload, outletStock: [{ outletId: 1, stock: 2 }] });
+      expect(stock.status).toBe(200);
+      const del: any = await DELETE({ url: 'x', headers: { get: () => null } } as any, { params: { id: '7' } });
+      expect([del.status, del.body.code]).toEqual([403, 'PRODUCT_NOT_AVAILABLE_AT_OUTLET']);
     }
   );
 
