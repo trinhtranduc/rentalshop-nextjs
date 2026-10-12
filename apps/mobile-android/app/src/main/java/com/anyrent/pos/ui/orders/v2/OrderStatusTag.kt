@@ -19,6 +19,11 @@ object OrderStatusTag {
         else -> R.string.orders_v2_status_cancelled
     }
 
+    /** #891 (owner): THE status badge of an order, identical in the list rows and the order detail header */
+    internal data class Badge(@StringRes val labelRes: Int, val colors: DS.Pill, val style: RowTagStyle = RowTagStyle.STATUS)
+
+    internal fun badge(status: String): Badge = Badge(labelRes(status), colors(status))
+
     /** #888 (owner): every status badge uses the old app's solid colour with white text (iOS `OrderStatusBadge`) */
     fun colors(status: String): DS.Pill = when (OrdersBoardLogic.statusTag(status)) {
         RowTag.RESERVED -> DS.Pill(Color.White, Color(0xFFEF4444))
