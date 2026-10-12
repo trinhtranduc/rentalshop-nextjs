@@ -820,7 +820,7 @@
     <string name="calendar_v2_legend_late">Trễ hạn trả</string>
     <string name="calendar_v2_today">Hôm nay</string>
     <string name="calendar_v2_late_count">%1$d trễ</string>
-    <string name="calendar_v2_day_counts">giao %1$d · trả %2$d</string>
+    <string name="calendar_v2_day_counts">lấy %1$d · trả %2$d</string>
     <string name="calendar_v2_tag_return">Trả</string>
     <string name="calendar_v2_empty">Không có đơn giao hay trả trong ngày này</string>
     <string name="calendar_v2_error">Đã có lỗi xảy ra</string>
@@ -945,7 +945,7 @@
     <plurals name="orders_v2_count">
         <item quantity="other">%1$d đơn</item>
     </plurals>
-    <string name="orders_v2_band_work">giao %1$d · trả %2$d</string>
+    <string name="orders_v2_band_work">lấy %1$d · trả %2$d</string>
     <string name="orders_v2_yesterday">Hôm qua</string>
     <string name="orders_v2_tag_hand_over">Cần giao</string>
     <string name="orders_v2_tag_take_back">Cần trả</string>

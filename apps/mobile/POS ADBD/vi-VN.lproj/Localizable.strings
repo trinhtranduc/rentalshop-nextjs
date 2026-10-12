@@ -1760,7 +1760,7 @@
 "calendar.v2.legend.late" = "Trễ hạn trả";
 "calendar.v2.today" = "Hôm nay";
 "calendar.v2.lateCount" = "%d trễ";
-"calendar.v2.dayCounts" = "giao %1$d · trả %2$d";
+"calendar.v2.dayCounts" = "lấy %1$d · trả %2$d";
 "calendar.v2.tag.return" = "Trả";
 "calendar.v2.empty" = "Không có đơn giao hay trả trong ngày này";
 "overview.v2.title" = "Tổng quan";
@@ -1918,7 +1918,7 @@
 "orders.v2.search.summary.one" = "%d đơn khớp “%@” · tìm trong mọi trạng thái, cả tên đồ";
 "orders.v2.count" = "%d đơn";
 "orders.v2.count.one" = "%d đơn";
-"orders.v2.band.work" = "giao %d · trả %d";
+"orders.v2.band.work" = "lấy %d · trả %d";
 "orders.v2.yesterday" = "Hôm qua";
 "orders.v2.tag.handOver" = "Cần giao";
 "orders.v2.tag.takeBack" = "Cần trả";
