@@ -548,6 +548,43 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(copy("order.header.step.handedOver"), "Đã lấy")
     }
 
+    // MARK: #888 — status badge colours (owner: old app colours by default)
+
+    private func hex(_ color: UIColor) -> String {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255)))
+    }
+
+    func testBoldPaletteIsTheOldAppAndTheDefault() {
+        let defaults = UserDefaults(suiteName: "test888")!
+        defaults.removePersistentDomain(forName: "test888")
+        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .bold, "default is Đậm (như app cũ)")
+        let bold: [(OrderStatus, String)] = [(.reserved, "EF4444"), (.pickuped, "F19920"), (.returned, "16A34A"),
+                                             (.completed, "16A34A"), (.cancelled, "991B1B")]
+        for (status, fill) in bold {
+            let pill = OrderStatusPalette.bold.pill(for: status)
+            XCTAssertEqual(hex(pill.fill), fill, "\(status)")
+            XCTAssertEqual(hex(pill.text), "FFFFFF", "white text on \(status)")
+        }
+        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .reserved).fill), hex(DS.Status.handOver.fill))
+        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .pickuped).fill), hex(DS.Status.returning.fill))
+        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .returned).fill), hex(DS.Status.done.fill))
+        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .cancelled).fill), hex(DS.Status.cancelled.fill))
+
+        OrderStatusPalette.light.save(to: defaults)
+        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .light)
+        OrderStatusPalette.bold.save(to: defaults)
+        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .bold)
+        defaults.set("garbage", forKey: OrderStatusPalette.key)
+        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .bold)
+    }
+
+    func testStatusTagUsesTheChosenPalette() {
+        XCTAssertEqual(hex(OrdersHomeLogic.statusTag(.reserved, palette: .bold).colors.fill), "EF4444")
+        XCTAssertEqual(hex(OrdersHomeLogic.statusTag(.reserved, palette: .light).colors.fill), hex(DS.Status.handOver.fill))
+    }
+
     // MARK: #674 — segment cache, dirty flag, quiet refresh
 
     private final class Clock {

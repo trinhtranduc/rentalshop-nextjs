@@ -581,11 +581,11 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
         XCTAssertEqual(merchant[0].items, [.storeInfo, .receiptNote, .printer, .bankAccounts])
         XCTAssertEqual(merchant[1].items, [.categories, .users, .export])
-        XCTAssertEqual(merchant[2].items, [.plan, .language, .password, .appInfo, .deleteAccount])
+        XCTAssertEqual(merchant[2].items, [.plan, .language, .statusColors, .password, .appInfo, .deleteAccount])
 
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
         XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])
-        XCTAssertEqual(outletAdmin[2].items, [.language, .password, .appInfo, .deleteAccount])
+        XCTAssertEqual(outletAdmin[2].items, [.language, .statusColors, .password, .appInfo, .deleteAccount])
 
         // Staff: no users, no export (even with an export right), so no QUẢN LÝ group at all
         let staff = SettingsV2Logic.sections(role: .outletStaff, permissions: staffPerms + ["orders.export"], hasPlan: true)
