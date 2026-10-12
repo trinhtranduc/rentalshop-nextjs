@@ -429,6 +429,16 @@ class OrdersHomeTest {
         assertEquals(androidx.compose.ui.graphics.Color(0xFF5B21B6), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).text)
     }
 
+    /** #893 (owner on device): the sorted chip reads clearly bold, the other regular; Home cart bar blue, no add toast (iOS) */
+    @Test
+    fun `sorted chip weight, home cart bar and add toast`() {
+        assertEquals(FontWeight.Bold, com.anyrent.pos.ui.orders.v2.DateChipText.sortedWeight)
+        assertEquals(FontWeight.Normal, com.anyrent.pos.ui.orders.v2.DateChipText.otherWeight)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF1D4ED8), com.anyrent.pos.ui.home.v2.HomeCartBarStyle.fill)
+        assertEquals(androidx.compose.ui.graphics.Color.White, com.anyrent.pos.ui.home.v2.HomeCartBarStyle.text)
+        assertEquals(false, com.anyrent.pos.ui.home.v2.HomeCartBarStyle.showsAddedToast)
+    }
+
     /** #888: dd/mm/yy in the Vietnam day, whatever the device zone */
     @Test
     fun `day month year is the vietnam day`() {
