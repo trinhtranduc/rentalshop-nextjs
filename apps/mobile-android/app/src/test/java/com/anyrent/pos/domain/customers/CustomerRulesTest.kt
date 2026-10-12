@@ -139,7 +139,7 @@ class CustomerRulesTest {
         assertEquals("Vest đen slim fit, Cà vạt lụa +1", CustomerRules.itemsTitle(rows[0]))
         assertEquals("Áo dài cách tân xanh ×2", CustomerRules.itemsTitle(rows[1]))
         assertNull("older API without names: the caller shows the item count", CustomerRules.itemsTitle(rows[2]))
-        assertEquals(1, rows[1].itemCount, "count falls back to the items")
+        assertEquals("count falls back to the items", 1, rows[1].itemCount)
     }
 
     @Test
