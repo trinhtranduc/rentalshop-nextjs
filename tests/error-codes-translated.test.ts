@@ -9,7 +9,7 @@
 import { describe, expect, it } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
-import { looksLikeErrorCode, lookupErrorTranslation } from '../packages/utils/src/core/error-display';
+import { looksLikeErrorCode, lookupErrorTranslation, translateErrorCode } from '../packages/utils/src/core/error-display';
 
 const ROOT = path.resolve(__dirname, '..');
 const SOURCE_DIRS = [
@@ -125,5 +125,29 @@ describe('lookupErrorTranslation (#740)', () => {
   it('looksLikeErrorCode tells a code or key from a sentence', () => {
     for (const code of ['PLAN_LIMIT_EXCEEDED', 'errors.PLAN_UPGRADE_REQUIRED', 'NO_SUBSCRIPTION']) expect(looksLikeErrorCode(code)).toBe(true);
     for (const text of ['Plan limit exceeded', 'Vượt quá giới hạn gói', '', 'OK', 'Not Found']) expect(looksLikeErrorCode(text)).toBe(false);
+  });
+});
+
+describe('#918 a code with names uses its <CODE>_NAMED sentence', () => {
+  const messages: Record<string, string> = {
+    SHIFT_LOCKED: 'Không đổi được ngày đã qua hoặc ngày đã chấm công.',
+    SHIFT_LOCKED_NAMED: '{names} đã chấm công hôm nay',
+  };
+  const t = Object.assign((key: string, values?: Record<string, string>) => (messages[key] ?? `errors.${key}`).replace('{names}', values?.names ?? '{names}'), {
+    has: (key: string) => key in messages,
+  });
+
+  it('names → the _NAMED sentence; no names or no _NAMED key → the plain sentence', () => {
+    expect(translateErrorCode(t, 'SHIFT_LOCKED', { names: 'Lan, Hoa' })).toBe('Lan, Hoa đã chấm công hôm nay');
+    expect(translateErrorCode(t, 'SHIFT_LOCKED')).toBe('Không đổi được ngày đã qua hoặc ngày đã chấm công.');
+    expect(translateErrorCode(t, 'SHIFT_LOCKED', { names: '' })).toBe('Không đổi được ngày đã qua hoặc ngày đã chấm công.');
+    expect(translateErrorCode(t, 'MISSING_CODE', { names: 'Lan' })).toBeNull();
+  });
+
+  it('every locale has SHIFT_LOCKED_NAMED with {names}', () => {
+    for (const l of ['en', 'vi', 'ja', 'ko', 'zh']) {
+      const json = JSON.parse(fs.readFileSync(path.join(ROOT, 'locales', l, 'errors.json'), 'utf8'));
+      expect(json.SHIFT_LOCKED_NAMED).toContain('{names}');
+    }
   });
 });

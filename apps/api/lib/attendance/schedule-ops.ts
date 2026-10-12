@@ -7,6 +7,7 @@ import { AttendanceHttpError } from './http';
 import { notifyShiftChanges, noticeWindow, type ScheduleData } from './notify';
 import { addDaysToDateKey, vnToday } from './rules';
 import { rulesOverlap, type ScheduleTemplate } from './schedule';
+import { fullName } from './timesheet';
 
 export interface ScheduleChangeScope {
   merchantId: number;
@@ -21,11 +22,21 @@ export async function todayAndWorked(userIds: number[], now: Date = new Date()) 
   return { today, worked };
 }
 
-/** 409 SHIFT_LOCKED when `date` is before today, or is today and one of the users already worked today. */
-export function assertDayOpen(date: string, today: string, userIds: number[], worked: Set<string>) {
-  if (date < today || (date === today && userIds.some((id) => worked.has(`${id}:${today}`)))) {
-    throw new AttendanceHttpError('SHIFT_LOCKED', 409);
+/**
+ * 409 SHIFT_LOCKED when `date` is before today, or is today and one of the users already worked today.
+ * #918 `data` says who (additive): `users` = every given user for a past day, else those who worked today;
+ * `dates` = [date]; `messageParams.names` for the web sentence when `users` is not empty.
+ */
+export async function assertDayOpen(date: string, today: string, userIds: number[], worked: Set<string>, merchantId: number) {
+  const blocked = date < today ? userIds : date === today ? userIds.filter((id) => worked.has(`${id}:${today}`)) : [];
+  if (date >= today && blocked.length === 0) return;
+  const users: Array<{ id: number; name: string }> = [];
+  for (const id of blocked) {
+    const u = await db.attendance.getUserInMerchant(id, merchantId);
+    users.push({ id, name: fullName(u) || `#${id}` });
   }
+  const names = users.map((u) => u.name).join(', ');
+  throw new AttendanceHttpError('SHIFT_LOCKED', 409, { users, dates: [date], ...(names ? { messageParams: { names } } : {}) });
 }
 
 async function snapshot(scope: ScheduleChangeScope, today: string): Promise<ScheduleData> {

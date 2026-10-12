@@ -202,7 +202,8 @@
       "weekdays": "Các thứ",
       "from": "Từ",
       "to": "Đến"
-    }
+    },
+    "lockedToday": "Đã vào ca hôm nay"
   },
   "day": {
     "lockedBody": "🔒 Ca này đã vào ca hoặc ngày đã qua nên không sửa được. Muốn sửa giờ công thì vào Bảng công.",

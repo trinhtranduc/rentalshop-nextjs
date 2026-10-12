@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '@rentalshop/database';
 import { ATTENDANCE_MANAGER_ROLES, attendanceRoute, resolveOutlet } from '../../../../../lib/attendance/context';
 import { validationFailed } from '../../../../../lib/attendance/http';
+import { scanKindLabel, scanResultLabel } from '../../../../../lib/attendance/export-labels';
 import { getUtcRangeForDateKeys } from '../../../../../lib/attendance/rules';
 import { listDateKeys } from '../../../../../lib/attendance/schedule';
 import { monthSchema, queryIdSchema, queryOf } from '../../../../../lib/attendance/schemas';
@@ -53,8 +54,8 @@ export const GET = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { u
     const rows = scans.map((s) => [
       fullName(s.user) || names.get(s.userId) || String(s.userId),
       vnTime(s.at),
-      s.action ?? '',
-      s.result,
+      scanKindLabel(s.action),
+      scanResultLabel(s.result),
       s.distanceM ?? '',
       Math.round(s.accuracy),
       s.latitude,

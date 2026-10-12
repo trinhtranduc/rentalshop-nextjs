@@ -9,7 +9,7 @@ import {
   resolveOutletUser,
 } from '../../../../../../lib/attendance/context';
 import { AttendanceHttpError, attendanceOk, validationFailed } from '../../../../../../lib/attendance/http';
-import { getUtcRangeForDateKeys, monthRange } from '../../../../../../lib/attendance/rules';
+import { getUtcRangeForDateKeys, monthRange, vnDateKey } from '../../../../../../lib/attendance/rules';
 import { monthSchema, paramId, queryIdSchema, queryOf } from '../../../../../../lib/attendance/schemas';
 import { daysOfUser, fullName, recordStats, round2 } from '../../../../../../lib/attendance/timesheet';
 import { shiftOfRecord, type RecordRow } from '../../../../../../lib/attendance/views';
@@ -20,6 +20,8 @@ type Params = { params: Promise<{ userId: string }> | { userId: string } };
  * GET /api/attendance/people/[userId]/month?outletId&month — #907 rule 28. Managers for their scope; staff for
  * themselves only ("Ca và công của tôi"). Summary and every row in time order: scans (rejected ones and
  * coordinates included), auto-closes and edits. Indexed: AttendanceScan(userId, at).
+ * #918: every row has `dateKey` (YYYY-MM-DD), the work day it belongs to: the record's day for its scans, its
+ * auto-close and its edits (an edit's `at` stays the edit time); other scans use the VN day of `at`.
  */
 export async function GET(request: NextRequest, { params }: Params) {
   return attendanceRoute(ATTENDANCE_ROLES, async (req, { user }) => {
@@ -50,6 +52,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       const stats = rec ? recordStats(rec) : null;
       rows.push({
         at: s.at,
+        dateKey: s.recordId && byId.has(s.recordId) ? byId.get(s.recordId)!.dateKey : vnDateKey(new Date(s.at)),
         kind,
         result: accepted ? 'ACCEPTED' : 'REJECTED',
         ...(accepted ? {} : { errorCode: s.result }),
@@ -71,11 +74,21 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
     for (const r of records as RecordRow[]) {
       if (r.autoClosedAt) {
-        rows.push({ at: r.autoClosedAt, kind: 'OUT', result: 'AUTO_CLOSED', recordId: r.id, shift: shiftOfRecord(r) });
+        rows.push({ at: r.autoClosedAt, dateKey: r.dateKey, kind: 'OUT', result: 'AUTO_CLOSED', recordId: r.id, shift: shiftOfRecord(r) });
       }
     }
     for (const e of edits) {
-      rows.push({ at: e.createdAt, kind: 'EDIT', result: 'EDITED', note: e.reason, recordId: e.recordId, before: e.before, after: e.after });
+      const rec = byId.get(e.recordId);
+      rows.push({
+        at: e.createdAt,
+        dateKey: rec ? rec.dateKey : vnDateKey(new Date(e.createdAt)),
+        kind: 'EDIT',
+        result: 'EDITED',
+        note: e.reason,
+        recordId: e.recordId,
+        before: e.before,
+        after: e.after,
+      });
     }
     rows.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 

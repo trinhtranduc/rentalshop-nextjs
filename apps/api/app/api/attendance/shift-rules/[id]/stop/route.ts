@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     const { today, worked } = await todayAndWorked([rule.userId]);
     // lastDate = today keeps today; only days after it change, so a worked today does not lock it
-    assertDayOpen(lastDate, today, [], worked);
+    await assertDayOpen(lastDate, today, [], worked, user.merchantId);
     const scope = { merchantId: user.merchantId, outletId: rule.outletId, userIds: [rule.userId] };
     if (lastDate < rule.startDate) {
       await withScheduleNotice(scope, today, worked, () => db.attendance.deleteRule(rule.id));

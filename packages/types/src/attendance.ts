@@ -183,8 +183,18 @@ export interface AttendancePersonRow {
   suspectReasons?: string[] | null;
   note?: string | null;
   recordId?: number | null;
-  /** Record day when the API sends it (edits are grouped under the record's day). */
+  /** #918 Work day (YYYY-MM-DD) of the row: its record's day, else the VN day of `at`. Every row has it. */
   dateKey?: string | null;
+  /** EDIT rows: the record before / after the edit (ISO instants). */
+  before?: AttendanceRecordAudit | null;
+  after?: AttendanceRecordAudit | null;
+}
+
+export interface AttendanceRecordAudit {
+  checkInAt?: string | null;
+  checkOutAt?: string | null;
+  status?: string;
+  dateKey?: string;
 }
 
 export interface AttendancePersonSummary {

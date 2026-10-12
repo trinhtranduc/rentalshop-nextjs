@@ -13,6 +13,7 @@ import {
   addMonths,
   canEditPerson,
   dayOf,
+  editButtonRecords,
   filterRows,
   formatHours,
   groupRowsByDay,
@@ -344,12 +345,13 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
                   {groups.map((g) => {
                     const dayHours = person?.days[g.day]?.hours;
                     const shift = g.rows.map((r) => shiftText(r.shift)).find(Boolean) || '';
+                    // #918: one "Sửa" per record (normal, manual or auto-closed), on its first row of the day
+                    const editIds = editButtonRecords(g.rows);
                     return g.rows.map((r, i) => {
                       const sameDay = dayOf(r.at) === g.day;
                       const timeLabel = sameDay ? timeOf(r.at, true) : `${shortDate(dayOf(r.at)).slice(0, 5)} ${timeOf(r.at)}`;
                       const hasCoords = r.latitude != null && r.longitude != null;
-                      // Mockup: "Sửa" sits on the forgotten clock-out (auto-closed) row
-                      const editable = canEdit && r.recordId != null && r.result === 'AUTO_CLOSED';
+                      const editId = canEdit ? editIds[i] : null;
                       return (
                         <tr key={`${g.day}-${i}`} id={i === 0 ? `day-${g.day}` : undefined} className={focusDay === g.day ? 'bg-ar-primary-soft' : undefined}>
                           {i === 0 && (
@@ -384,8 +386,8 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
                                   {t('person.map')}
                                 </button>
                               )}
-                              {editable && (
-                                <button type="button" className={smallBtn} onClick={() => setDialog({ kind: 'edit', recordId: r.recordId as number })}>
+                              {editId != null && (
+                                <button type="button" className={smallBtn} onClick={() => setDialog({ kind: 'edit', recordId: editId })}>
                                   {t('person.edit')}
                                 </button>
                               )}
