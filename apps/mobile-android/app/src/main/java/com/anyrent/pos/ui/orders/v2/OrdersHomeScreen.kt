@@ -653,7 +653,7 @@ private fun WorkRow(
     val tagColors = if (handOver) DS.Status.HandOver else DS.Status.Return
     val (pickupLabel, returnLabel) = chipLabels()
     val notPrepared = stringResource(R.string.orders_v2_not_prepared)
-    val amount = OrdersBoardLogic.workAmount(work)
+    val due = OrdersBoardLogic.workDue(work)
     val phone = OrdersBoardLogic.workCallPhone(work, isLate)
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
@@ -689,15 +689,18 @@ private fun WorkRow(
                             )
                         }
                     }
-                    when (amount) {
-                        is OrdersBoardLogic.WorkAmount.Due -> Text(
-                            stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(amount.amount)),
-                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Status.Waiting.text, maxLines = 1,
-                        )
-                        is OrdersBoardLogic.WorkAmount.Total -> Text(
-                            formatMoneyVnd(amount.amount), fontSize = DS.TextSize.Name, fontWeight = RowMoneyText.totalWeight,
+                    // Owner: the total (bold) always; "còn thu N" smaller under it when something is due
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            formatMoneyVnd(work.totalAmount), fontSize = DS.TextSize.Name, fontWeight = RowMoneyText.totalWeight,
                             color = DS.Colors.Text, maxLines = 1,
                         )
+                        due?.let {
+                            Text(
+                                stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(it)),
+                                fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = DS.Status.Waiting.text, maxLines = 1,
+                            )
+                        }
                     }
                 }
             }
