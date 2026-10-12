@@ -55,7 +55,7 @@ export const POST = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { 
   const template = await pickableTemplate(user.merchantId, outlet.id, body.templateId);
 
   const { today, worked } = await todayAndWorked(userIds);
-  assertDayOpen(body.startDate, today, userIds, worked);
+  await assertDayOpen(body.startDate, today, userIds, worked, user.merchantId);
 
   const rows = userIds.map((userId) => ({
     merchantId: user.merchantId,

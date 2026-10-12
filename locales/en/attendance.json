@@ -202,7 +202,8 @@
       "weekdays": "Weekdays",
       "from": "From",
       "to": "To"
-    }
+    },
+    "lockedToday": "Already clocked in today"
   },
   "day": {
     "lockedBody": "🔒 This shift has started or the day is past, so it cannot be changed. To fix worked hours, use the Timesheet.",

@@ -31,7 +31,7 @@ export const PUT = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { u
   const outlet = await resolveOutlet(user, body.outletId);
   await resolveOutletUser(user, body.userId, outlet.id);
   const { today, worked } = await todayAndWorked([body.userId]);
-  assertDayOpen(body.date, today, [body.userId], worked);
+  await assertDayOpen(body.date, today, [body.userId], worked, user.merchantId);
   if (body.templateId !== undefined) await pickableTemplate(user.merchantId, outlet.id, body.templateId);
 
   const saved = await withScheduleNotice({ merchantId: user.merchantId, outletId: outlet.id, userIds: [body.userId] }, today, worked, () =>
@@ -70,7 +70,7 @@ export const DELETE = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, 
   const outlet = await resolveOutlet(user, outletId);
   await resolveOutletUser(user, userId, outlet.id);
   const { today, worked } = await todayAndWorked([userId]);
-  assertDayOpen(date, today, [userId], worked);
+  await assertDayOpen(date, today, [userId], worked, user.merchantId);
   const removed = await withScheduleNotice({ merchantId: user.merchantId, outletId: outlet.id, userIds: [userId] }, today, worked, () =>
     db.attendance.deleteDayChange(userId, date)
   );

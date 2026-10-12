@@ -7,8 +7,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@rentalshop/ui';
 import { addDaysToDateKey, attendanceApi, usersApi } from '@rentalshop/utils';
-import type { EffectiveSchedule, EffectiveShift, ShiftRule, ShiftTemplate } from '@rentalshop/types';
+import type { AttendanceTimesheet, EffectiveSchedule, EffectiveShift, ShiftRule, ShiftTemplate } from '@rentalshop/types';
 import {
+  assignStartDefault,
   chipClass,
   isDayKey,
   isRuleCurrent,
@@ -27,6 +28,7 @@ import {
   weekDays,
   weekStart,
   weekdaysLabel,
+  workedUserIds,
 } from '../attendance-model';
 import {
   AttendanceFrame,
@@ -218,14 +220,15 @@ function AssignDialog({
   const [templateId, setTemplateId] = useState<number | null>(null);
   const [users, setUsers] = useState<number[]>([]);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [from, setFrom] = useState(today);
+  const [from, setFrom] = useState(() => assignStartDefault(today));
   const [to, setTo] = useState('');
   useEffect(() => {
     if (!open) return;
     setTemplateId(active[0] ? Number(active[0].id) : null);
     setUsers([]);
     setDays([1, 2, 3, 4, 5]);
-    setFrom(today);
+    // #918: tomorrow, so someone who already worked today does not block the whole save
+    setFrom(assignStartDefault(today));
     setTo('');
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   const tpl = active.find((x) => Number(x.id) === templateId) || null;
@@ -458,6 +461,10 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
   const templates = useLoad<ShiftTemplate[]>(async () => listOf<ShiftTemplate>(await must(attendanceApi.listTemplates(outlet.id)), 'templates'), [outlet.id]);
   const rules = useLoad<ShiftRule[]>(async () => listOf<ShiftRule>(await must(attendanceApi.listRules(outlet.id)), 'rules'), [outlet.id]);
   const week = useLoad<EffectiveSchedule>(() => must(attendanceApi.listShifts(outlet.id, days[0], days[6])), [outlet.id, start]);
+  // #918: who already has a record today (no shift needed) → today's cell is locked, no "+"
+  const showsToday = days.includes(today);
+  const sheet = useLoad<AttendanceTimesheet>(showsToday ? () => must(attendanceApi.timesheet(outlet.id, monthOf(today))) : null, [outlet.id, showsToday]);
+  const workedToday = useMemo(() => workedUserIds(sheet.data?.users, today), [sheet.data, today]);
 
   const cells = useMemo(() => {
     const map = new Map<string, { shifts: EffectiveShift[]; locked: boolean }>();
@@ -474,6 +481,7 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
   const reload = () => {
     week.reload();
     rules.reload();
+    if (showsToday) sheet.reload();
   };
 
   return (
@@ -531,7 +539,7 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
                   {days.map((d) => {
                     const cell = cells.get(`${p.id}|${d}`);
                     const shifts = cell?.shifts || [];
-                    const base = weekCellState(d, today, shifts);
+                    const base = weekCellState(d, today, shifts, d === today && workedToday.has(p.id));
                     const state = cell?.locked ? { ...base, locked: true, canAdd: false } : base;
                     return (
                       <td key={d} className={`${tdClass} min-w-[96px]`}>
@@ -548,6 +556,17 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
                               {s.source === 'DAY' ? ' ✎' : ''}
                             </button>
                           ))}
+                          {shifts.length === 0 && state.locked && !state.past && (
+                            <button
+                              type="button"
+                              aria-label={`${t('shifts.lockedToday')} · ${p.name} · ${shortDayLabel(d, labels)}`}
+                              title={t('shifts.lockedToday')}
+                              onClick={() => setDialog({ kind: 'day', user: p, date: d, shifts: [], locked: true })}
+                              className="px-1 text-sm opacity-70"
+                            >
+                              🔒
+                            </button>
+                          )}
                           {state.canAdd && (
                             <button
                               type="button"

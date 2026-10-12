@@ -12,7 +12,7 @@ import { useAuth } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import { Modal } from '../orders/create/parts';
 import { cardClass, outlineBtn, primaryBtn } from '../orders/list/parts';
-import { canUseAttendanceWeb, hasAttendance, isOwnerRole, monthLabel } from './attendance-model';
+import { canUseAttendanceWeb, defaultOutlet, hasAttendance, isOwnerRole, monthLabel } from './attendance-model';
 import { useMerchantModules } from './useMerchantModules';
 
 export type AttT = (key: string, values?: Record<string, string | number>) => string;
@@ -198,6 +198,7 @@ export async function must<R>(promise: Promise<{ success: boolean; data?: R }>):
 export interface OutletOption {
   id: number;
   name: string;
+  isDefault?: boolean;
   address?: string | null;
   phone?: string | null;
 }
@@ -236,6 +237,7 @@ export function useOutlets(enabled: boolean) {
           const list = ((res?.data as unknown as { outlets?: OutletOption[] })?.outlets || []).map((o) => ({
             id: Number(o.id),
             name: o.name,
+            isDefault: !!(o as { isDefault?: boolean }).isDefault,
             address: (o as { address?: string | null }).address ?? null,
             phone: o.phone ?? null,
           }));
@@ -270,8 +272,8 @@ export function useQueryState() {
 
 export function useSelectedOutlet(outlets: OutletOption[]) {
   const { params, set } = useQueryState();
-  const raw = Number(params.get('outletId'));
-  const selected = outlets.find((o) => o.id === raw) || outlets[0] || null;
+  // #918: no outlet in the URL → the shop's default outlet, not the first of the list
+  const selected = defaultOutlet(outlets, Number(params.get('outletId')) || null);
   return { outlet: selected, setOutlet: (id: number) => set({ outletId: id }) };
 }
 

@@ -314,11 +314,36 @@ export function recurringPreview(input: {
   };
 }
 
-/** A week-grid cell: locked shifts cannot change; empty past days cannot get one (#907 rule 22). */
-export function weekCellState(date: string, today: string, shifts: EffectiveShift[]): { past: boolean; locked: boolean; canAdd: boolean } {
+/**
+ * A week-grid cell: locked shifts cannot change; empty past days cannot get one (#907 rule 22).
+ * #918: `worked` = the person already has a record on that day (today) → locked, no "+".
+ */
+export function weekCellState(
+  date: string,
+  today: string,
+  shifts: EffectiveShift[],
+  worked = false,
+): { past: boolean; locked: boolean; canAdd: boolean } {
   const past = date < today;
-  const locked = past || shifts.some((s) => s.locked);
-  return { past, locked, canAdd: !past && shifts.length === 0 };
+  const locked = past || worked || shifts.some((s) => s.locked);
+  return { past, locked, canAdd: !past && !worked && shifts.length === 0 };
+}
+
+/** #918 Users with a timesheet cell on `day` (any record that day, an open one included). */
+export function workedUserIds(users: TimesheetUser[] | null | undefined, day: string): Set<number> {
+  const ids = new Set<number>();
+  for (const u of users || []) if (normalizeDays(u.days)[day]) ids.add(personId(u));
+  return ids;
+}
+
+/** #918 "Gán ca" starts tomorrow: today is often already worked (SHIFT_LOCKED). */
+export function assignStartDefault(today: string): string {
+  return addDaysToDateKey(today, 1);
+}
+
+/** #918 The outlet in the URL, else the shop's default outlet, else the first. */
+export function defaultOutlet<T extends { id: number; isDefault?: boolean | null }>(outlets: T[], urlId: number | null | undefined): T | null {
+  return outlets.find((o) => urlId != null && o.id === urlId) || outlets.find((o) => !!o.isDefault) || outlets[0] || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -398,11 +423,29 @@ export function shiftText(shift: AttendancePersonRow['shift']): string {
   return `${shift.name} ${shiftRange(shift.start, shift.end, true)}`;
 }
 
-/** The record a "Sửa" button edits: in / out times and day from its rows. */
+/**
+ * The record a "Sửa" button edits: day and current in / out. #918: the latest edit's `after` is the record as it
+ * is now (a manual record has only edit rows); else its IN / OUT scans.
+ */
 export function recordTimes(rows: AttendancePersonRow[], recordId: number): { day: string; checkIn: string; checkOut: string } {
-  const own = rows.filter((r) => r.recordId === recordId && r.kind !== 'EDIT' && r.result !== 'REJECTED');
+  const all = rows.filter((r) => r.recordId === recordId && r.result !== 'REJECTED');
+  const own = all.filter((r) => r.kind !== 'EDIT');
   const inRow = own.find((r) => r.kind === 'IN');
   const outRow = own.find((r) => r.kind === 'OUT' && r.result !== 'AUTO_CLOSED');
-  const day = inRow?.dateKey || dayOf(inRow?.at) || dayOf(own[0]?.at);
+  const lastEdit = all
+    .filter((r) => r.kind === 'EDIT' && r.after && r.after.checkInAt)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())[0];
+  const day = all.find((r) => r.dateKey)?.dateKey || dayOf(inRow?.at) || dayOf(lastEdit?.after?.checkInAt) || dayOf(all[0]?.at);
+  if (lastEdit?.after) return { day, checkIn: timeOf(lastEdit.after.checkInAt), checkOut: timeOf(lastEdit.after.checkOutAt) };
   return { day, checkIn: timeOf(inRow?.at), checkOut: timeOf(outRow?.at) };
+}
+
+/** #918 One "Sửa" per record: the record id on the first row of each record (in order), else null. */
+export function editButtonRecords(rows: AttendancePersonRow[]): Array<number | null> {
+  const seen = new Set<number>();
+  return rows.map((r) => {
+    if (r.recordId == null || r.result === 'REJECTED' || seen.has(r.recordId)) return null;
+    seen.add(r.recordId);
+    return r.recordId;
+  });
 }

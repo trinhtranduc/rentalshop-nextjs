@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     if (rule.endDate && body.effectiveFrom > rule.endDate) return attendanceError('INVALID_PAYLOAD', 400);
 
     const { today, worked } = await todayAndWorked([rule.userId]);
-    assertDayOpen(body.effectiveFrom, today, [rule.userId], worked);
+    await assertDayOpen(body.effectiveFrom, today, [rule.userId], worked, user.merchantId);
     const template = await pickableTemplate(user.merchantId, rule.outletId, body.templateId ?? rule.templateId);
     const next = {
       merchantId: user.merchantId,

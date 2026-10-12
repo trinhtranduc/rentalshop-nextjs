@@ -90,6 +90,19 @@ export function lookupErrorTranslation(t: any, code: unknown, values?: Record<st
   }
 }
 
+/**
+ * #918 Like `lookupErrorTranslation`, but a code sent with `names` (the API's `data.messageParams.names`) uses its
+ * `<CODE>_NAMED` sentence when one exists (SHIFT_LOCKED → "Lan đã chấm công hôm nay …"); else the plain one.
+ */
+export function translateErrorCode(t: any, code: unknown, values?: Record<string, string | number>): string | null {
+  const names = values?.names;
+  if (typeof code === 'string' && code && typeof names === 'string' && names.trim()) {
+    const named = lookupErrorTranslation(t, `${code}_NAMED`, values);
+    if (named) return named;
+  }
+  return lookupErrorTranslation(t, code, values);
+}
+
 /** True for text that is an API error code or a message key (`errors.X`, `SOME_CODE`) and not a sentence */
 export function looksLikeErrorCode(text: unknown): boolean {
   return typeof text === 'string' && /^([a-z][A-Za-z]*\.)?[A-Z][A-Z0-9_]{2,}$/.test(text.trim());

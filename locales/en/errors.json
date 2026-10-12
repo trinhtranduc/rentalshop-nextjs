@@ -532,6 +532,7 @@
   "ATTENDANCE_NOT_CONFIGURED": "Attendance is not set up for this branch yet (location or QR code missing).",
   "SHIFT_OVERLAP": "This shift overlaps another shift of the same employee.",
   "SHIFT_LOCKED": "Past days and days already worked cannot be changed.",
+  "SHIFT_LOCKED_NAMED": "{names} already clocked in today, so today's shift cannot change. Start from tomorrow.",
   "SHIFT_TEMPLATE_IN_USE": "This shift is in use. Hide it instead of deleting it.",
   "MONTH_LOCKED": "This month is locked. Ask the shop owner to unlock it."
 }
