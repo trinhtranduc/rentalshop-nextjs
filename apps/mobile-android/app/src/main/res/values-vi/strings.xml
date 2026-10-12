@@ -622,6 +622,8 @@
     <string name="v2_form_sale_price">Giá bán</string>
     <string name="v2_form_not_for_sale">Không bán</string>
     <string name="v2_form_deposit">Cọc mỗi món</string>
+    <string name="v2_form_cost_price">Giá vốn</string>
+    <string name="v2_form_cost_placeholder">Nhập giá vốn</string>
     <string name="v2_form_stock">Kho</string>
     <string name="v2_form_quantity">Số lượng</string>
     <string name="v2_form_stock_note">Đang cho thuê %1$d · còn trống %2$d</string>

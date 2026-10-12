@@ -66,6 +66,8 @@ data class Product(
     val outletStock: List<ProductOutletStock> = emptyList(),
     /** Free today at the user's outlet when the list was asked with `outletId` (#373) */
     val effectiveAvailableToday: Int? = null,
+    /** Giá vốn (#887); the API sends it only with `products.manage`, null otherwise */
+    val costPrice: Double? = null,
 )
 
 /** Stock of a product at one outlet */

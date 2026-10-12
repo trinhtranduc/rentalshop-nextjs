@@ -176,7 +176,14 @@ data class ProductRowSubtitle(val code: String?, val free: Int)
  * The Home row's price line (#681, iOS `ProductRowPrice`): the default rent option first, the other one muted after it.
  * `mainMode == null` means a sale-only product, shown as "bán <price>".
  */
-data class ProductRowPrice(val main: Double, val mainMode: PricingMode?, val second: Double? = null, val secondMode: PricingMode? = null)
+/** `sale` (#887): the sale price of a product that also rents, shown last as "· bán <price>" (board SP-dong, iOS) */
+data class ProductRowPrice(
+    val main: Double,
+    val mainMode: PricingMode?,
+    val second: Double? = null,
+    val secondMode: PricingMode? = null,
+    val sale: Double? = null,
+)
 
 object ProductRowLogic {
     /** Units of this product already in the cart */
@@ -189,15 +196,16 @@ object ProductRowLogic {
     fun price(product: Product): ProductRowPrice? {
         val rental = ProductPricing.perRental(product)
         val day = ProductPricing.perDay(product)
+        val sale = ProductPricing.sale(product)
         return when {
             rental != null && day != null ->
                 if (ProductPricing.defaultMode(product) == PricingMode.PER_DAY) {
-                    ProductRowPrice(day, PricingMode.PER_DAY, rental, PricingMode.PER_RENTAL)
+                    ProductRowPrice(day, PricingMode.PER_DAY, rental, PricingMode.PER_RENTAL, sale)
                 } else {
-                    ProductRowPrice(rental, PricingMode.PER_RENTAL, day, PricingMode.PER_DAY)
+                    ProductRowPrice(rental, PricingMode.PER_RENTAL, day, PricingMode.PER_DAY, sale)
                 }
-            rental != null -> ProductRowPrice(rental, PricingMode.PER_RENTAL)
-            day != null -> ProductRowPrice(day, PricingMode.PER_DAY)
+            rental != null -> ProductRowPrice(rental, PricingMode.PER_RENTAL, sale = sale)
+            day != null -> ProductRowPrice(day, PricingMode.PER_DAY, sale = sale)
             else -> ProductPricing.sale(product)?.let { ProductRowPrice(it, null) }
         }
     }
@@ -292,6 +300,20 @@ object ProductFormValidator {
         if (input.photoCount > MAX_PHOTOS) issues += ProductFormIssue.TooManyPhotos(MAX_PHOTOS)
         return issues
     }
+}
+
+/** Giá vốn (#887, iOS `ProductCostPrice`): shown and saved only for roles that may see prices */
+object ProductCostPrice {
+    /** The cost on product detail: > 0 and the role may see prices */
+    fun shown(product: Product, showsPrices: Boolean): Double? =
+        product.costPrice?.takeIf { showsPrices && it > 0 }
+
+    /**
+     * The cost sent on save: the typed value; an empty field sends 0 only when the product had a cost (cleared on
+     * purpose), else nothing, so a product read without `costPrice` (list payload) keeps its cost
+     */
+    fun toSend(typed: Double?, original: Double?): Double? =
+        typed ?: if ((original ?: 0.0) > 0) 0.0 else null
 }
 
 object MoneyInput {

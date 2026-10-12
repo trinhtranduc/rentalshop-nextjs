@@ -267,6 +267,11 @@ final class ProductDetailViewController: BaseViewControler {
         if let deposit = product.deposit, deposit > 0 {
             meta.append(String(format: "products.detail.deposit".localized(), MoneyFormatter.format(deposit)))
         }
+        // #887: Giá vốn for roles that may see prices (never OUTLET_STAFF)
+        let showsPrices = ProductAccess.showsPriceFields(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
+        if let cost = ProductCostPrice.shown(product, showsPrices: showsPrices) {
+            meta.append("product.form.costPrice".localized() + " " + MoneyFormatter.format(cost))
+        }
         metaLabel.text = meta.joined(separator: " · ")
         metaLabel.isHidden = meta.isEmpty
 

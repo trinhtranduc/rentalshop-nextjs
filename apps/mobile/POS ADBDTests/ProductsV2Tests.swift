@@ -546,7 +546,7 @@ final class ProductFormKeyboardTests: XCTestCase {
 
     func testEveryPriceFieldHasADoneBar() throws {
         let numeric = fields(try merchantForm().view).filter { $0.keyboardType == .numberPad }
-        XCTAssertEqual(numeric.count, 4, "per rental, per day, sale, deposit")
+        XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
         numeric.forEach { assertDoneBar($0) }
     }
 
