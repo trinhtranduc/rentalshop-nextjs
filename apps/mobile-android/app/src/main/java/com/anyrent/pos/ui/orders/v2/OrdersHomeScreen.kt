@@ -910,18 +910,26 @@ internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         chips.forEach { chip ->
             val colors = OrdersBoardLogic.chipColors(chip.kind)
+            // #893 (owner on device): the sorted chip is bold (label and date), the other regular
+            val weight = if (chip.bold) DateChipText.sortedWeight else DateChipText.otherWeight
             Text(
                 buildAnnotatedString {
                     append(chip.label + " ")
-                    pushStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = if (chip.bold) FontWeight.Bold else FontWeight.Medium))
+                    pushStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = weight))
                     append(chip.date)
                     pop()
                 },
-                fontSize = DS.TextSize.Secondary, color = colors.text, maxLines = 1,
+                fontSize = DS.TextSize.Secondary, fontWeight = weight, color = colors.text, maxLines = 1,
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
     }
+}
+
+/** #893: weights of the date chips (iOS DateChipStack) */
+internal object DateChipText {
+    val sortedWeight = FontWeight.Bold
+    val otherWeight = FontWeight.Normal
 }
 
 /** Chip labels in the app language */
