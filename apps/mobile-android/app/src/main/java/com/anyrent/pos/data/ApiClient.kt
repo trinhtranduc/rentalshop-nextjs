@@ -1309,6 +1309,7 @@ class ApiClient(
         barcode = o.optString("barcode").takeIf { it.isNotBlank() },
         rentPrice = o.optDouble("rentPrice", o.optDouble("price", 0.0)),
         salePrice = o.optDouble("salePrice").takeIf { o.has("salePrice") },
+        costPrice = o.optDouble("costPrice").takeIf { o.has("costPrice") && !o.isNull("costPrice") && !it.isNaN() },
         stock = o.optInt("stock", o.optInt("totalStock")),
         available = o.optInt("available", o.optInt("stock")),
         renting = o.optInt("renting"),

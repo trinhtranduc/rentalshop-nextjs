@@ -84,6 +84,7 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
+import com.anyrent.pos.domain.products.ProductCostPrice
 import com.anyrent.pos.domain.products.PricingMode
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductFormInput
@@ -144,6 +145,8 @@ fun ProductFormV2Screen(
     var defaultMode by remember { mutableStateOf(initial?.let { ProductPricing.defaultMode(it) } ?: PricingMode.PER_RENTAL) }
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
+    // #887: Giá vốn (optional, prices only)
+    var cost by remember { mutableStateOf(MoneyInput.display(initial?.costPrice?.takeIf { it > 0 })) }
     var merchantOutlets by remember { mutableStateOf<List<Pair<Int, Boolean>>>(emptyList()) }
     var outletsError by remember { mutableStateOf<String?>(null) }
     val outletId = ProductStock.outletFor(CurrentOutlet.id, initial, merchantOutlets)
@@ -245,6 +248,10 @@ fun ProductFormV2Screen(
                                 options = ProductPricing.options(input.perRental, input.perDay, input.defaultMode),
                                 salePrice = input.salePrice,
                                 deposit = input.deposit,
+                                // #887: a create sends the typed cost; an update only a typed or cleared one
+                                costPrice = MoneyInput.parse(cost).let { typed ->
+                                    if (initial == null) typed else ProductCostPrice.toSend(typed, initial.costPrice)
+                                },
                             )
                         } else null,
                         outletId = target,
@@ -362,6 +369,8 @@ fun ProductFormV2Screen(
                     FormField(stringResource(R.string.v2_form_deposit), value = deposit, onChange = { deposit = MoneyInput.display(MoneyInput.parse(it)) },
                         placeholder = "0", numeric = true, modifier = Modifier.weight(1f), start = 6.dp)
                 }
+                FormField(stringResource(R.string.v2_form_cost_price), value = cost, onChange = { cost = MoneyInput.display(MoneyInput.parse(it)) },
+                    placeholder = stringResource(R.string.v2_form_cost_placeholder), numeric = true, modifier = Modifier.fillMaxWidth())
             }
 
             SectionBand(stringResource(R.string.v2_form_stock))

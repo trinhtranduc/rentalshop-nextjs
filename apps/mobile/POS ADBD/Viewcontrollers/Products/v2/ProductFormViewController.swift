@@ -41,6 +41,8 @@ final class ProductFormViewController: BaseViewControler {
     private let perDayField = UITextField()
     private let saleField = UITextField()
     private let depositField = UITextField()
+    /// #887: Giá vốn (optional, prices only)
+    private let costField = UITextField()
     private let defaultToggle = V2Segmented(titles: ["products.price.perRental".localized(), "products.price.perDay".localized()])
     private let quantityStepper = V2Stepper()
     private let stockNote = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
@@ -223,6 +225,8 @@ final class ProductFormViewController: BaseViewControler {
             configure(depositField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
                                          field(title: "products.form.deposit".localized(), required: false, input: depositField)))
+            configure(costField, placeholder: "product.form.costPrice.placeholder".localized(), numeric: true)
+            form.addArrangedSubview(field(title: "product.form.costPrice".localized(), required: false, input: costField))
         }
 
         // Stock
@@ -317,6 +321,7 @@ final class ProductFormViewController: BaseViewControler {
         perDayField.text = MoneyInput.display(ProductPricing.perDay(product))
         saleField.text = MoneyInput.display(ProductPricing.sale(product))
         if let deposit = product.deposit, deposit > 0 { depositField.text = MoneyInput.display(deposit) }
+        if let cost = product.costPrice, cost > 0 { costField.text = MoneyInput.display(cost) }
         defaultMode = ProductPricing.defaultMode(product)
         defaultToggle.select(defaultMode == .perDay ? 1 : 0)
         photos = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 })
@@ -428,7 +433,7 @@ final class ProductFormViewController: BaseViewControler {
     }
 
     private func revealFocusedField() {
-        guard let field = [nameField, barcodeField, perRentalField, perDayField, saleField, depositField].first(where: { $0.isFirstResponder }),
+        guard let field = [nameField, barcodeField, perRentalField, perDayField, saleField, depositField, costField].first(where: { $0.isFirstResponder }),
               let box = field.superview?.superview else { return }
         scroll.scrollRectToVisible(box.convert(box.bounds, to: scroll).insetBy(dx: 0, dy: -12), animated: true)
     }
@@ -590,7 +595,8 @@ final class ProductFormViewController: BaseViewControler {
                 barcode: barcode.isEmpty ? nil : barcode,
                 rentPrice: showsPrices ? (options?.first(where: { $0.isDefault })?.price ?? 0) : nil,
                 salePrice: showsPrices ? (input.salePrice ?? 0) : nil,
-                costPrice: nil,
+                // #887: only a typed or cleared cost; nil keeps the stored one
+                costPrice: showsPrices ? ProductCostPrice.toSend(typed: MoneyInput.parse(costField.text), original: product.costPrice) : nil,
                 deposit: showsPrices ? (input.deposit ?? 0) : nil,
                 totalStock: nil,
                 categoryId: categoryId,
@@ -609,6 +615,7 @@ final class ProductFormViewController: BaseViewControler {
                 barcode: barcode.isEmpty ? nil : barcode,
                 rentPrice: showsPrices ? (options?.first(where: { $0.isDefault })?.price ?? 0) : 0,
                 salePrice: showsPrices ? input.salePrice : nil,
+                costPrice: showsPrices ? MoneyInput.parse(costField.text) : nil,
                 deposit: showsPrices ? input.deposit : nil,
                 totalStock: input.quantity,
                 categoryId: categoryId,

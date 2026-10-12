@@ -204,11 +204,13 @@ struct ProductRowSubtitle: Equatable {
 
 /// The Home row's price line (#681): the default rent option first, the other one muted after it.
 /// `mainMode == nil` means a sale-only product, shown as "bán <price>".
+/// `sale` (#887): the sale price of a product that also rents, shown last as "· bán <price>" (board SP-dong).
 struct ProductRowPrice: Equatable {
     let main: Double
     let mainMode: ProductPricingMode?
     let second: Double?
     let secondMode: ProductPricingMode?
+    var sale: Double? = nil
 }
 
 enum ProductRowLogic {
@@ -231,16 +233,17 @@ enum ProductRowLogic {
     static func price(_ product: Product) -> ProductRowPrice? {
         let perRental = ProductPricing.perRental(product)
         let perDay = ProductPricing.perDay(product)
+        let sale = ProductPricing.sale(product)
         switch (perRental, perDay) {
         case let (rental?, day?):
             if ProductPricing.defaultMode(product) == .perDay {
-                return ProductRowPrice(main: day, mainMode: .perDay, second: rental, secondMode: .perRental)
+                return ProductRowPrice(main: day, mainMode: .perDay, second: rental, secondMode: .perRental, sale: sale)
             }
-            return ProductRowPrice(main: rental, mainMode: .perRental, second: day, secondMode: .perDay)
+            return ProductRowPrice(main: rental, mainMode: .perRental, second: day, secondMode: .perDay, sale: sale)
         case let (rental?, nil):
-            return ProductRowPrice(main: rental, mainMode: .perRental, second: nil, secondMode: nil)
+            return ProductRowPrice(main: rental, mainMode: .perRental, second: nil, secondMode: nil, sale: sale)
         case let (nil, day?):
-            return ProductRowPrice(main: day, mainMode: .perDay, second: nil, secondMode: nil)
+            return ProductRowPrice(main: day, mainMode: .perDay, second: nil, secondMode: nil, sale: sale)
         case (nil, nil):
             guard let sale = ProductPricing.sale(product) else { return nil }
             return ProductRowPrice(main: sale, mainMode: nil, second: nil, secondMode: nil)
@@ -899,6 +902,22 @@ enum MoneyInput {
     static func display(_ value: Double?) -> String {
         guard let value else { return "" }
         return MoneyFormatter.format(value)
+    }
+}
+
+/// Giá vốn (#887): shown and saved only for roles that may see prices (the API returns it only with products.manage)
+enum ProductCostPrice {
+    /// The cost on product detail: > 0 and the role may see prices
+    static func shown(_ product: Product, showsPrices: Bool) -> Double? {
+        guard showsPrices, let cost = product.costPrice, cost > 0 else { return nil }
+        return cost
+    }
+
+    /// The cost sent on save: the typed value; an empty field sends 0 only when the product had a cost (cleared on
+    /// purpose), else nothing, so a product read without `costPrice` (list payload) keeps its cost
+    static func toSend(typed: Double?, original: Double?) -> Double? {
+        if let typed { return typed }
+        return (original ?? 0) > 0 ? 0 : nil
     }
 }
 

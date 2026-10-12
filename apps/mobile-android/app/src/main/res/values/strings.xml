@@ -623,6 +623,8 @@
     <string name="v2_form_sale_price">Sale price</string>
     <string name="v2_form_not_for_sale">Not for sale</string>
     <string name="v2_form_deposit">Deposit per item</string>
+    <string name="v2_form_cost_price">Cost price</string>
+    <string name="v2_form_cost_placeholder">Enter cost price</string>
     <string name="v2_form_stock">Stock</string>
     <string name="v2_form_quantity">Quantity</string>
     <string name="v2_form_stock_note">On rent %1$d · free %2$d</string>

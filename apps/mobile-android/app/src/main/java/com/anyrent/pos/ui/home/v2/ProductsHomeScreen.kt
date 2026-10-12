@@ -422,6 +422,8 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
                         if (second != null && secondMode != null) {
                             withStyle(muted) { append(" · " + formatMoneyVnd(second) + unit(secondMode)) }
                         }
+                        // #887: a product that also sells keeps its sale price last (board SP-dong, iOS)
+                        price.sale?.let { sale -> withStyle(muted) { append(" · " + saleShort.format(formatMoneyVnd(sale))) } }
                     } else if (price != null) {
                         withStyle(muted) { append(saleShort.format(formatMoneyVnd(price.main))) }
                     }

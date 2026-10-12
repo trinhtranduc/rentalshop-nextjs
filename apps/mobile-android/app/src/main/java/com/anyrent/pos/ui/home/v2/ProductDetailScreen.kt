@@ -78,6 +78,7 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.domain.products.FreeStripDay
 import com.anyrent.pos.domain.products.ProductAccess
+import com.anyrent.pos.domain.products.ProductCostPrice
 import com.anyrent.pos.domain.products.ProductDetailLogic
 import com.anyrent.pos.domain.products.ProductImageViewerRequest
 import com.anyrent.pos.domain.products.ProductImages
@@ -242,6 +243,10 @@ fun ProductDetailScreen(
                 val meta = listOfNotNull(
                     current.categoryName, current.barcodeText,
                     current.deposit.takeIf { it > 0 }?.let { stringResource(R.string.v2_detail_deposit, formatMoneyVnd(it)) },
+                    // #887: Giá vốn for roles that may see prices (never OUTLET_STAFF)
+                    ProductCostPrice.shown(current, ProductAccess.showsPriceFields(PermissionManager.role))
+                        // Non-breaking spaces: "Giá vốn 700.000" wraps as one piece
+                        ?.let { (stringResource(R.string.v2_form_cost_price) + " " + formatMoneyVnd(it)).replace(' ', '\u00A0') },
                 ).filter { it.isNotBlank() }
                 if (meta.isNotEmpty()) Text(meta.joinToString(" · "), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 val tiles = listOfNotNull(

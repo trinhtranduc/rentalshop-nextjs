@@ -608,6 +608,10 @@ final class ProductRowV2Cell: UITableViewCell {
                 if let second = price.second, let secondMode = price.secondMode {
                     text.append(NSAttributedString(string: " · " + MoneyFormatter.format(second) + unit(secondMode), attributes: muted))
                 }
+                // #887: a product that also sells keeps its sale price last (board SP-dong)
+                if let sale = price.sale {
+                    text.append(NSAttributedString(string: " · " + String(format: "products.price.saleShort".localized(), MoneyFormatter.format(sale)), attributes: muted))
+                }
             } else {
                 text.append(NSAttributedString(string: String(format: "products.price.saleShort".localized(), MoneyFormatter.format(price.main)), attributes: muted))
             }
