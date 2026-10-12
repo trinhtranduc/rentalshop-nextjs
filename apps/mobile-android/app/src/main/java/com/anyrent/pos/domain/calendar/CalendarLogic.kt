@@ -104,24 +104,14 @@ object CalendarLogic {
             returns.map { CalendarDayRow(CalendarRowKind.TAKE_BACK, it, late) }
     }
 
-    /** Day selected when a month opens: today in its own month, else the first day */
-    /** Late days first (with the fee), then what to give back, then what is still to collect; else nothing */
+    /** Owner rule (#893): only a late order gets a note ("Trễ N ngày", plus the stored fee unless money is hidden); never "còn thu" or a refund note */
     fun note(row: CalendarDayRow, hidesMoney: Boolean = false): CalendarNote {
-        val order = row.order
-        if (row.lateDays > 0) {
-            val fee = order.lateFee?.takeIf { it > 0 && !hidesMoney }
-            return CalendarNote.Late(row.lateDays, fee)
-        }
-        if (hidesMoney) return CalendarNote.None
-        val refund = order.refundDue ?: 0.0
-        val due = order.amountDue ?: 0.0
-        return when {
-            refund > 0 -> CalendarNote.Refund(refund)
-            due > 0 -> CalendarNote.Due(due)
-            else -> CalendarNote.None
-        }
+        if (row.lateDays <= 0) return CalendarNote.None
+        val fee = row.order.lateFee?.takeIf { it > 0 && !hidesMoney }
+        return CalendarNote.Late(row.lateDays, fee)
     }
 
+    /** Day selected when a month opens: today in its own month, else the first day */
     fun defaultSelection(month: YearMonth, todayKey: String): String =
         if (YearMonth.from(LocalDate.parse(todayKey)) == month) todayKey else month.atDay(1).toString()
 
