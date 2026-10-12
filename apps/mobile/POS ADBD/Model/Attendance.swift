@@ -307,14 +307,21 @@ struct AttendanceMonthRow: Decodable, Equatable {
     var recordId: Int?
     var lateMinutes: Int?
     var shift: AttendanceShift?
+    /// Shop day of the record the row belongs to (#918); older APIs leave it out
+    var dateKey: String?
+    /// EDIT rows: the record after the edit (`checkInAt`, `checkOutAt`, `status`, `dateKey` on a manual add)
+    var after: AttendanceRecord?
 
-    init(at: Date?, kind: String?, result: String?, recordId: Int?, lateMinutes: Int? = nil, shift: AttendanceShift? = nil) {
+    init(at: Date?, kind: String?, result: String?, recordId: Int?, lateMinutes: Int? = nil, shift: AttendanceShift? = nil,
+         dateKey: String? = nil, after: AttendanceRecord? = nil) {
         self.at = at
         self.kind = kind
         self.result = result
         self.recordId = recordId
         self.lateMinutes = lateMinutes
         self.shift = shift
+        self.dateKey = dateKey
+        self.after = after
     }
 
     init(from decoder: Decoder) throws {
@@ -329,6 +336,8 @@ struct AttendanceMonthRow: Decodable, Equatable {
         } else if let name = c.string("shift") {
             shift = AttendanceShift(name: name, start: nil, end: nil)
         }
+        dateKey = c.string("dateKey")
+        after = c.object(AttendanceRecord.self, "after")
     }
 }
 
@@ -623,29 +632,45 @@ enum AttendanceLogic {
 
     // MARK: Ca và công của tôi
 
-    /// IN / OUT pairs of accepted scans, by record (an IN without OUT stays open)
+    /// IN / OUT pairs by record: accepted scans, then the last EDIT of a record (a manager's change, or a record
+    /// added by hand on the web with no scans, #916) sets its times. Day: the rows' `dateKey` (#918), else the
+    /// EDIT's `after.dateKey`, else the shop day of the check-in. An IN without OUT stays open.
     static func pairs(_ rows: [AttendanceMonthRow]) -> [AttendancePair] {
         var ins: [Int: AttendanceMonthRow] = [:]
         var outs: [Int: AttendanceMonthRow] = [:]
+        var edits: [Int: AttendanceRecord] = [:]
+        var dayKeys: [Int: String] = [:]
         var order: [Int] = []
         for row in rows {
             guard let id = row.recordId, row.at != nil else { continue }
             let result = (row.result ?? "").uppercased()
+            let kind = (row.kind ?? "").uppercased()
+            if kind == "EDIT" {
+                guard let after = row.after, after.checkInAt != nil else { continue }
+                if ins[id] == nil && edits[id] == nil { order.append(id) }
+                edits[id] = after
+                if let key = row.dateKey ?? after.dateKey, !key.isEmpty { dayKeys[id] = key }
+                continue
+            }
             guard result == "ACCEPTED" || result == "EDITED" || result.isEmpty else { continue }
-            switch (row.kind ?? "").uppercased() {
+            switch kind {
             case "IN":
-                if ins[id] == nil { order.append(id) }
+                if ins[id] == nil && edits[id] == nil { order.append(id) }
                 ins[id] = row
             case "OUT":
                 outs[id] = row
             default:
                 continue
             }
+            if let key = row.dateKey, !key.isEmpty { dayKeys[id] = key }
         }
         return order.compactMap { id in
-            guard let inRow = ins[id], let at = inRow.at else { return nil }
-            return AttendancePair(dayKey: dayKey(at), checkInAt: at, checkOutAt: outs[id]?.at,
-                                  lateMinutes: inRow.lateMinutes ?? 0, breakMinutes: inRow.shift?.breakMinutes ?? 0)
+            let inRow = ins[id]
+            let edit = edits[id]
+            guard let checkIn = edit?.checkInAt ?? inRow?.at else { return nil }
+            let checkOut = edit != nil ? edit?.checkOutAt : outs[id]?.at
+            return AttendancePair(dayKey: dayKeys[id] ?? dayKey(checkIn), checkInAt: checkIn, checkOutAt: checkOut,
+                                  lateMinutes: inRow?.lateMinutes ?? 0, breakMinutes: inRow?.shift?.breakMinutes ?? 0)
         }.sorted { $0.checkInAt < $1.checkInAt }
     }
 

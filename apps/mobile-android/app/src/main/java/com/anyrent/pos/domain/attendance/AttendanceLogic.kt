@@ -266,11 +266,19 @@ object AttendanceLogic {
     }
 
     /**
-     * Worked pairs from the rows of `people/{id}/month` (`{ at, kind: IN|OUT|EDIT, result, recordId, lateMinutes }`):
-     * accepted IN and OUT rows joined by `recordId`; an auto-closed record has no OUT ("missing out").
+     * Worked pairs from the rows of `people/{id}/month` (`{ at, kind: IN|OUT|EDIT, result, recordId, lateMinutes, dateKey? }`):
+     * accepted IN and OUT rows joined by `recordId`; an auto-closed record has no OUT ("missing out"). The last EDIT of a
+     * record (`after.checkInAt` / `after.checkOutAt`) sets its times, so a record a manager added by hand on the web
+     * (no scans) or edited shows its real times (#916). Day: the rows' `dateKey` (#918), else the EDIT's
+     * `after.dateKey`, else the shop day of the check-in.
      */
     fun pairs(rows: JSONArray?, zone: ZoneId = ShopTime.zone): Map<LocalDate, List<WorkedPair>> {
-        data class Acc(var inAt: Instant? = null, var outAt: Instant? = null, var late: Int? = null, var missing: Boolean = false, var brk: Int? = null)
+        data class Acc(
+            var inAt: Instant? = null, var outAt: Instant? = null, var late: Int? = null, var missing: Boolean = false,
+            var brk: Int? = null, var edited: Boolean = false, var editIn: Instant? = null, var editOut: Instant? = null,
+            var day: LocalDate? = null,
+        )
+        fun day(value: Any?): LocalDate? = (value as? String)?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
         val byRecord = linkedMapOf<Int, Acc>()
         for (i in 0 until (rows?.length() ?: 0)) {
             val row = rows?.optJSONObject(i) ?: continue
@@ -278,7 +286,18 @@ object AttendanceLogic {
             val result = (row.opt("result") as? String)?.uppercase()
             val kind = (row.opt("kind") as? String)?.uppercase()
             val at = instant(row.opt("at")) ?: continue
+            if (kind == "EDIT") {
+                val after = row.optJSONObject("after") ?: continue
+                val editIn = instant(after.opt("checkInAt")) ?: continue
+                val acc = byRecord.getOrPut(recordId) { Acc() }
+                acc.edited = true
+                acc.editIn = editIn
+                acc.editOut = instant(after.opt("checkOutAt"))
+                (day(row.opt("dateKey")) ?: day(after.opt("dateKey")))?.let { acc.day = it }
+                continue
+            }
             val acc = byRecord.getOrPut(recordId) { Acc() }
+            day(row.opt("dateKey"))?.let { acc.day = it }
             when {
                 result == "AUTO_CLOSED" -> acc.missing = true
                 result != "ACCEPTED" -> Unit
@@ -290,9 +309,13 @@ object AttendanceLogic {
                 kind == "OUT" -> acc.outAt = at
             }
         }
-        return byRecord.values.mapNotNull { a -> a.inAt?.let { WorkedPair(it, a.outAt, a.missing && a.outAt == null, a.late, a.brk) } }
-            .sortedBy { it.inAt }
-            .groupBy { it.inAt.atZone(zone).toLocalDate() }
+        return byRecord.values.mapNotNull { a ->
+            val inAt = (if (a.edited) a.editIn else a.inAt) ?: return@mapNotNull null
+            val outAt = if (a.edited) a.editOut else a.outAt
+            (a.day ?: inAt.atZone(zone).toLocalDate()) to WorkedPair(inAt, outAt, a.missing && outAt == null, a.late, a.brk)
+        }
+            .sortedBy { it.second.inAt }
+            .groupBy({ it.first }, { it.second })
     }
 
     fun monthSummary(data: JSONObject?): MonthSummary {
