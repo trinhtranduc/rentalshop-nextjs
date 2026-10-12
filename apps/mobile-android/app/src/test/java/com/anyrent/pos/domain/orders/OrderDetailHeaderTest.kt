@@ -36,6 +36,14 @@ class OrderDetailHeaderTest {
     /** 2026-10-05 10:00 in Vietnam */
     private val oct5 = Instant.parse("2026-10-05T03:00:00Z")
 
+    /** #891 (owner): the detail header hides the "lấy sau N ngày" countdown; other notes stay (iOS headerSummary) */
+    @Test
+    fun handOverCountdownIsHidden() {
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverIn(2)))
+        assertEquals(OrderDetailHeader.Due.HandOverToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverToday))
+        assertEquals(OrderDetailHeader.Due.ReturnIn(3), OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnIn(3)))
+    }
+
     @Test
     fun pickedUpNoteCountsRentalDaysAndDaysToReturn() {
         assertEquals(Note(7, Due.ReturnIn(2)), OrderDetailHeader.note(order("PICKUPED"), oct5, vn))

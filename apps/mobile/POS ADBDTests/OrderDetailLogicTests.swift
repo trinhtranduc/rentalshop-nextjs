@@ -286,8 +286,8 @@ final class OrderDetailLogicTests: XCTestCase {
                        days7 + " · " + PluralText.format("order.header.returnIn", count: 2, 2))
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnToday),
                        days7 + " · " + "order.header.returnToday".localized())
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)),
-                       days7 + " · " + PluralText.format("order.header.handOverIn", count: 1, 1))
+        // #891 (owner): no "lấy sau N ngày" countdown in the detail header
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverToday),
                        days7 + " · " + "order.header.handOverToday".localized())
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)),
