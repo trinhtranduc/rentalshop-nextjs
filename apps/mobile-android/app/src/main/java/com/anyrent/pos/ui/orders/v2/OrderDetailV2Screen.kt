@@ -529,7 +529,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 )
             }
         }
-        if (lateDays > 0) {
+        if (OrderDetailHeader.showsLateBanner && lateDays > 0) {
             val returning = status == "PICKUPED"
             Row(
                 Modifier

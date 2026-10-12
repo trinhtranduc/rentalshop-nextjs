@@ -81,7 +81,10 @@ object OrderDetailHeader {
     fun creatorName(summary: OrderSummary): String? = summary.createdByName?.trim()?.takeIf { it.isNotEmpty() }
 
     /** #891 (owner): the header hides the "lấy sau N ngày" / "trả sau N ngày" countdowns; late and today notes stay */
-    fun shownDue(due: Due?): Due? = due.takeUnless { it is Due.HandOverIn || it is Due.ReturnIn }
+    fun shownDue(due: Due?): Due? = due.takeUnless { it is Due.HandOverIn || it is Due.ReturnIn || it is Due.PastPickup }
+
+    /** #893 (owner): the detail shows no overdue banner (late pickup or late return); Việc cần làm shows lateness */
+    const val showsLateBanner = false
 
     /** Note of a rent ("7 ngày · trả sau 2 ngày"); a sale or a cancelled rent has none beyond the day count */
     fun note(summary: OrderSummary, now: Instant = Instant.now(), zone: ZoneId = shopZone): Note {
