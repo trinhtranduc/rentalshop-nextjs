@@ -270,7 +270,8 @@ final class ProductDetailViewController: BaseViewControler {
         // #887: Giá vốn for roles that may see prices (never OUTLET_STAFF)
         let showsPrices = ProductAccess.showsPriceFields(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
         if let cost = ProductCostPrice.shown(product, showsPrices: showsPrices) {
-            meta.append("product.form.costPrice".localized() + " " + MoneyFormatter.format(cost))
+            // Non-breaking spaces: "Giá vốn 700.000" wraps as one piece
+            meta.append(("product.form.costPrice".localized() + " " + MoneyFormatter.format(cost)).replacingOccurrences(of: " ", with: "\u{00A0}"))
         }
         metaLabel.text = meta.joined(separator: " · ")
         metaLabel.isHidden = meta.isEmpty
