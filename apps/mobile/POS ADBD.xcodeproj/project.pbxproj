@@ -2397,7 +2397,7 @@
 					"$(PROJECT_DIR)/POS\\ ADBD/PrintSDK",
 					"\"$(PROJECT_DIR)/POS\\\\ ADBD/Library/Printer\"",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2478,7 +2478,7 @@
 					"$(PROJECT_DIR)/POS\\ ADBD/PrintSDK",
 					"$(PROJECT_DIR)/POS\\ ADBD/Library/Printer",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2528,7 +2528,7 @@
 				DEVELOPMENT_TEAM = 2K6L2KZC9A;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MACH_O_TYPE = staticlib;
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_MODULE_NAME = DraftOrderActivity;
 				PRODUCT_NAME = DraftOrderActivity;
@@ -2550,7 +2550,7 @@
 				DEVELOPMENT_TEAM = 2K6L2KZC9A;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MACH_O_TYPE = staticlib;
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_MODULE_NAME = DraftOrderActivity;
 				PRODUCT_NAME = DraftOrderActivity;
@@ -2576,7 +2576,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent.debug.liveactivity;
 				PRODUCT_BUNDLE_PACKAGE_TYPE = "XPC!";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2602,7 +2602,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent.liveactivity;
 				PRODUCT_BUNDLE_PACKAGE_TYPE = "XPC!";
 				PRODUCT_NAME = "$(TARGET_NAME)";
