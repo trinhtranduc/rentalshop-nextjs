@@ -119,6 +119,12 @@ final class PushNotificationManager: NSObject {
             return
         }
 
+        // #909 "Lịch ca thay đổi" → Ca và công của tôi
+        if AttendanceNotification.isShiftChanged(userInfo["type"] as? String) {
+            openMyShifts()
+            return
+        }
+
         let orderIdString =
             (userInfo["orderId"] as? String)
             ?? (userInfo["order_id"] as? String)
@@ -150,6 +156,27 @@ final class PushNotificationManager: NSObject {
 
             self.pushPreview(orderId: orderId)
         }
+    }
+
+    /// #909: Ca và công của tôi on the selected tab (the main UI once it shows)
+    func openMyShifts() {
+        DispatchQueue.main.async {
+            guard User.account() != nil, let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
+            if !(appDelegate.window?.rootViewController is TabbarViewController) {
+                appDelegate.loadMainUserView(forceMain: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.pushMyShifts() }
+                return
+            }
+            self.pushMyShifts()
+        }
+    }
+
+    private func pushMyShifts() {
+        guard let tabBar = (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController as? TabbarViewController,
+              let nav = (tabBar.selectedViewController as? UINavigationController)
+                ?? (tabBar.viewControllers?.first as? UINavigationController) else { return }
+        if nav.topViewController is MyShiftsViewController { return }
+        nav.pushViewController(MyShiftsViewController(), animated: true)
     }
 
     func consumePendingOrderIfNeeded() {
