@@ -203,7 +203,8 @@ object CustomerRules {
                 pickupPlanAt = instant(o.str("pickupPlanAt")),
                 returnPlanAt = instant(o.str("returnPlanAt")),
                 createdAt = instant(o.str("createdAt")),
-                items = o.optJSONArray("orderItems")?.let { list ->
+                // #893: the API sends `itemNames` [{productName, quantity}]; `orderItems` kept as a fallback
+                items = (o.optJSONArray("itemNames") ?: o.optJSONArray("orderItems"))?.let { list ->
                     (0 until list.length()).mapNotNull { j ->
                         val item = list.optJSONObject(j) ?: return@mapNotNull null
                         val name = item.str("productName")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null

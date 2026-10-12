@@ -140,6 +140,9 @@ class CustomerRulesTest {
         assertEquals("Áo dài cách tân xanh ×2", CustomerRules.itemsTitle(rows[1]))
         assertNull("older API without names: the caller shows the item count", CustomerRules.itemsTitle(rows[2]))
         assertEquals("count falls back to the items", 1, rows[1].itemCount)
+        // #893: the API field is `itemNames`
+        val named = CustomerRules.parseOrders(JSONObject("""{"orders":[{"id":8,"orderNumber":"1","itemNames":[{"productName":"Áo dài","quantity":2},{"productName":null,"quantity":1}]}]}""")).orders[0]
+        assertEquals("Áo dài ×2", CustomerRules.itemsTitle(named))
     }
 
     @Test
