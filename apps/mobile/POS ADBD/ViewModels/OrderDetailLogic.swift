@@ -334,7 +334,7 @@ enum OrderDetailLogic {
         var parts: [String] = []
         if let days { parts.append(PluralText.format("%d days", count: days, days)) }
         switch remainder {
-        case .returnIn(let k): parts.append(PluralText.format("order.header.returnIn", count: k, k))
+        case .returnIn: break // #891 (owner): no "trả sau N ngày" countdown
         case .returnToday: parts.append("order.header.returnToday".localized())
         case .handOverIn: break // #891 (owner): no "lấy sau N ngày" countdown
         case .handOverToday: parts.append("order.header.handOverToday".localized())
