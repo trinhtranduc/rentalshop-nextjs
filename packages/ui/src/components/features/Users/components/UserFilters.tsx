@@ -152,7 +152,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
             placeholder={loadingMerchants ? 'Loading...' : 'All Merchants'}
             searchPlaceholder="Search merchants..."
             emptyText="No merchants found"
-            className="w-full sm:w-[200px]"
+            className="w-full sm:w-[180px]"
           />
 
           {/* Outlet Filter — waits for a merchant */}
@@ -164,7 +164,7 @@ export function UserFilters({ filters, onFiltersChange, onSearchChange, onClearF
             placeholder={!merchantId ? 'Select merchant first' : loadingOutlets ? 'Loading...' : 'All Outlets'}
             searchPlaceholder="Search outlets..."
             emptyText="No outlets found"
-            className="w-full sm:w-[200px]"
+            className="w-full sm:w-[180px]"
             disabled={!filters.merchantId || loadingOutlets}
           />
         </>

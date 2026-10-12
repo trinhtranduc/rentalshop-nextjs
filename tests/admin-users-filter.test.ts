@@ -69,4 +69,9 @@ describe('wiring', () => {
     expect(filters).toMatch(/disabled=\{!filters\.merchantId/);
     expect(filters).toMatch(/Select merchant first/);
   });
+
+  it('on a phone the select list is not clipped by the scrolling chip row', () => {
+    const css = read('apps/admin/app/lists.css');
+    expect(css).toMatch(/\.flex-wrap \.absolute\.z-\\\[9999\\\] \{\s*position: fixed;/);
+  });
 });

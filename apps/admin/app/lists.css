@@ -116,6 +116,14 @@
     width: auto;
     min-width: 150px;
   }
+  /* #884: a searchable select's list would be clipped by the scrolling chip row; pin it to the viewport
+     (top stays where it opens, under its field) */
+  .admin-list .rounded-lg.border:not(:has(table)) .flex-wrap .absolute.z-\[9999\] {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
 
   /* cards: the primary text first, ~8px between lines, key values labelled */
   .admin-list table.table-cards tr {
