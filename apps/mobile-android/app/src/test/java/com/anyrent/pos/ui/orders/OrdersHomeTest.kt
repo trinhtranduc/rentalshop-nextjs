@@ -439,6 +439,28 @@ class OrdersHomeTest {
         assertEquals(false, com.anyrent.pos.ui.home.v2.HomeCartBarStyle.showsAddedToast)
     }
 
+    /** #893 (owner): lean Việc cần làm rows: the task's own date chip, "Trễ N ngày", "Chưa soạn đồ" (hand-overs only) */
+    @Test
+    fun `work row chips and amount`() {
+        val pickup = Instant.parse("2026-10-13T17:30:00Z") // 14/10 in Vietnam
+        val back = Instant.parse("2026-10-16T02:00:00Z")
+        val handOver = TodayWorkRow(id = 1, orderNumber = "ORD-1-0063", pickupPlanAt = pickup, returnPlanAt = back,
+            isReadyToDeliver = false, totalAmount = 300_000.0, amountDue = 200_000.0, lateDays = 2)
+        val chips = OrdersBoardLogic.workChips(handOver, WorkKind.HAND_OVER)
+        assertEquals(listOf(OrdersBoardLogic.WorkChipKind.PICKUP, OrdersBoardLogic.WorkChipKind.LATE, OrdersBoardLogic.WorkChipKind.NOT_PREPARED), chips.map { it.kind })
+        assertEquals("14/10/26", chips[0].date)
+        assertEquals(2, chips[1].days)
+        val takeBack = handOver.copy(isReadyToDeliver = false, lateDays = 0, amountDue = 0.0)
+        val returnChips = OrdersBoardLogic.workChips(takeBack, WorkKind.TAKE_BACK)
+        assertEquals("only the return date; never not-prepared on a return", listOf(OrdersBoardLogic.WorkChipKind.RETURN), returnChips.map { it.kind })
+        assertEquals("16/10/26", returnChips[0].date)
+        assertEquals(OrdersBoardLogic.WorkAmount.Due(200_000.0), OrdersBoardLogic.workAmount(handOver))
+        assertEquals(OrdersBoardLogic.WorkAmount.Total(300_000.0), OrdersBoardLogic.workAmount(takeBack))
+        assertEquals(true, OrdersBoardLogic.notPreparedApplies(WorkKind.HAND_OVER, isReadyToDeliver = false))
+        assertEquals(false, OrdersBoardLogic.notPreparedApplies(WorkKind.TAKE_BACK, isReadyToDeliver = false))
+        assertEquals(false, OrdersBoardLogic.notPreparedApplies(WorkKind.HAND_OVER, isReadyToDeliver = true))
+    }
+
     /** #888: dd/mm/yy in the Vietnam day, whatever the device zone */
     @Test
     fun `day month year is the vietnam day`() {
