@@ -18,6 +18,28 @@ struct InboxNotificationPayload: Codable {
     let previousStatus: String?
 }
 
+extension InboxNotificationPayload {
+    enum CodingKeys: String, CodingKey { case type, orderId, orderNumber, status, outletId, orderType, previousStatus }
+
+    /// #909: every field may be a string or a number (a `SHIFT_CHANGED` row carries `{ outletId, dates }`); one odd
+    /// field never fails the whole inbox
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        func text(_ key: CodingKeys) -> String? {
+            if let value = ((try? c.decodeIfPresent(String.self, forKey: key)) ?? nil) { return value }
+            if let value = ((try? c.decodeIfPresent(Int.self, forKey: key)) ?? nil) { return String(value) }
+            return nil
+        }
+        type = text(.type)
+        orderId = text(.orderId)
+        orderNumber = text(.orderNumber)
+        status = text(.status)
+        outletId = text(.outletId)
+        orderType = text(.orderType)
+        previousStatus = text(.previousStatus)
+    }
+}
+
 struct InboxNotification: Codable {
     let id: Int
     let type: String
@@ -28,6 +50,9 @@ struct InboxNotification: Codable {
     let readAt: String?
     let createdAt: String
     let data: InboxNotificationPayload?
+
+    /// #909 "Lịch ca thay đổi": opens Ca và công của tôi
+    var isShiftChanged: Bool { AttendanceNotification.isShiftChanged(type) || AttendanceNotification.isShiftChanged(data?.type) }
 
     var displayBody: String {
         if let message, !message.isEmpty { return message }

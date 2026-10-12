@@ -11,6 +11,7 @@ export type ShellNavKey =
   | 'products'
   | 'customers'
   | 'staff'
+  | 'attendance'
   | 'outlets'
   | 'categories'
   | 'loyalty'
@@ -24,6 +25,10 @@ export interface ShellNavItem {
   roles?: string[];
   /** Roles that never see the item. */
   hiddenFor?: string[];
+  /** Only shown when the merchant has this module on (`merchant.modules`, #908). */
+  module?: string;
+  /** Roles shown the item, despite `hiddenFor`, while this module is on (#908: outlet admin → Chi nhánh). */
+  alsoWithModule?: { module: string; roles: string[] };
 }
 
 export const SHELL_MAIN_NAV: ShellNavItem[] = [
@@ -37,19 +42,24 @@ export const SHELL_MAIN_NAV: ShellNavItem[] = [
 
 export const SHELL_MANAGE_NAV: ShellNavItem[] = [
   { key: 'staff', href: '/users', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', hiddenFor: ['OUTLET_STAFF', 'OUTLET_INVENTORY'] },
-  { key: 'outlets', href: '/outlets', icon: 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6', hiddenFor: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'] },
+  { key: 'attendance', href: '/attendance', icon: 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l2.5 2.5M10 2h4', roles: ['MERCHANT', 'OUTLET_ADMIN'], module: 'attendance' },
+  { key: 'outlets', href: '/outlets', icon: 'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6', hiddenFor: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'], alsoWithModule: { module: 'attendance', roles: ['OUTLET_ADMIN'] } },
   { key: 'categories', href: '/categories', icon: 'M3 12l9-9h7a2 2 0 0 1 2 2v7l-9 9zM16 8h.01' },
   { key: 'loyalty', href: '/loyalty', icon: 'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 0 1 0-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 0 0 0-5c-3 0-4 5-4 5z', roles: ['MERCHANT'] },
   { key: 'settings', href: '/settings', icon: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 4v4M10 10v4M18 16v4' },
 ];
 
-/** Same visibility rules as the previous ClientSidebar. */
-export function filterNavForRole(items: ShellNavItem[], role?: string | null): ShellNavItem[] {
-  if (!role) return items.filter((item) => !item.roles);
+/** Same visibility rules as the previous ClientSidebar; module items need the merchant's module (#908). */
+export function filterNavForRole(items: ShellNavItem[], role?: string | null, modules: string[] = []): ShellNavItem[] {
+  const withModule = items.filter((item) => !item.module || modules.includes(item.module));
+  if (!role) return withModule.filter((item) => !item.roles);
   const r = role.trim().toUpperCase();
-  return items.filter(
-    (item) => (!item.roles || item.roles.includes(r)) && !(item.hiddenFor || []).includes(r)
-  );
+  return withModule.filter((item) => {
+    if (item.roles && !item.roles.includes(r)) return false;
+    if (!(item.hiddenFor || []).includes(r)) return true;
+    const extra = item.alsoWithModule;
+    return !!extra && modules.includes(extra.module) && extra.roles.includes(r);
+  });
 }
 
 /** `/orders/123` keeps Đơn hàng active; `/ordersx` does not. */

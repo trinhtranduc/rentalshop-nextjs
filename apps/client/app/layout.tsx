@@ -28,6 +28,7 @@ import enBankAccounts from '../../../locales/en/bankAccounts.json';
 import enFeatures from '../../../locales/en/features.json';
 import enAffiliate from '../../../locales/en/affiliate.json';
 import enAvailability from '../../../locales/en/availability.json';
+import enAttendance from '../../../locales/en/attendance.json';
 
 import viCommon from '../../../locales/vi/common.json';
 import viAuth from '../../../locales/vi/auth.json';
@@ -49,22 +50,26 @@ import viBankAccounts from '../../../locales/vi/bankAccounts.json';
 import viFeatures from '../../../locales/vi/features.json';
 import viAffiliate from '../../../locales/vi/affiliate.json';
 import viAvailability from '../../../locales/vi/availability.json';
+import viAttendance from '../../../locales/vi/attendance.json';
 
 // Import new locale files (Chinese, Korean, Japanese)
 import zhCommon from '../../../locales/zh/common.json';
 import zhAuth from '../../../locales/zh/auth.json';
 import zhLanding from '../../../locales/zh/landing.json';
 import zhPlans from '../../../locales/zh/plans.json';
+import zhAttendance from '../../../locales/zh/attendance.json';
 import zhFeatures from '../../../locales/zh/features.json';
 import koCommon from '../../../locales/ko/common.json';
 import koAuth from '../../../locales/ko/auth.json';
 import koLanding from '../../../locales/ko/landing.json';
 import koPlans from '../../../locales/ko/plans.json';
+import koAttendance from '../../../locales/ko/attendance.json';
 import koFeatures from '../../../locales/ko/features.json';
 import jaCommon from '../../../locales/ja/common.json';
 import jaAuth from '../../../locales/ja/auth.json';
 import jaLanding from '../../../locales/ja/landing.json';
 import jaPlans from '../../../locales/ja/plans.json';
+import jaAttendance from '../../../locales/ja/attendance.json';
 import jaFeatures from '../../../locales/ja/features.json';
 
 const inter = Inter({ 
@@ -651,6 +656,7 @@ const messages = {
     features: enFeatures,
     affiliate: enAffiliate,
     availability: enAvailability,
+    attendance: enAttendance,
   },
   vi: {
     common: viCommon,
@@ -673,6 +679,7 @@ const messages = {
     features: viFeatures,
     affiliate: viAffiliate,
     availability: viAvailability,
+    attendance: viAttendance,
   },
   // Chinese (Simplified) - Landing page only
   zh: {
@@ -696,6 +703,7 @@ const messages = {
     subscription: enSubscription,
     bankAccounts: enBankAccounts,
     availability: enAvailability,
+    attendance: zhAttendance,
   },
   // Korean - Landing page only
   ko: {
@@ -719,6 +727,7 @@ const messages = {
     subscription: enSubscription,
     bankAccounts: enBankAccounts,
     availability: enAvailability,
+    attendance: koAttendance,
   },
   // Japanese - Landing page only
   ja: {
@@ -742,6 +751,7 @@ const messages = {
     subscription: enSubscription,
     bankAccounts: enBankAccounts,
     availability: enAvailability,
+    attendance: jaAttendance,
   },
 };
 

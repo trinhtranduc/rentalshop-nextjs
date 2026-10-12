@@ -39,5 +39,7 @@ struct Merchant: Codable {
     let pricingConfig: String?
     /// #518 "Cho tạo đơn khi trùng lịch". Missing (older API or cached login) means ON, as before.
     var allowOverlappingOrders: Bool? = nil
+    /// #907 active paid modules (`attendance`). Missing (older API or cached login) means none.
+    var modules: [String]? = nil
 }
 

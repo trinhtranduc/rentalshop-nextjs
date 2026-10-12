@@ -58,3 +58,7 @@ export * from './platform';
 // export * from './merchants'; // DEPRECATED: Use entities/merchant instead
 // export * from './product-view'; // DEPRECATED: Use entities/product instead
 // export * from './order-detail'; // DEPRECATED: Use entities/order instead
+// ============================================================================
+// ATTENDANCE MODULE (#907 API, #908 web)
+// ============================================================================
+export * from './attendance';

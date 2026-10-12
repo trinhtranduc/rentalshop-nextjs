@@ -78,6 +78,11 @@ export function isPublicRoute(pathname: string): boolean {
   if (pathname.startsWith('/affiliate')) {
     return true;
   }
+
+  // Attendance counter screen (#908): opened by a kiosk token, no login
+  if (pathname.startsWith('/kiosk/')) {
+    return true;
+  }
   
   // Check public product pages (e.g., /tenant-key/products)
   // Pattern: /[tenantKey]/products

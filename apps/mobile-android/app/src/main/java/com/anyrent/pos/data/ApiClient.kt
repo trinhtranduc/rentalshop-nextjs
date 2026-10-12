@@ -112,6 +112,7 @@ class ApiClient(
         SessionStore.outletPhone = profile.outletPhone
         SessionStore.outletAddress = profile.outletAddress
         SessionStore.allowOverlappingOrders = profile.allowOverlappingOrders
+        SessionStore.modules = profile.modules
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
@@ -123,9 +124,25 @@ class ApiClient(
      */
     fun refreshAllowOverlappingOrders(): Result<Boolean> = runCatching {
         val json = execute(get("$baseUrl/api/users/profile"))
+        // #910: the same read refreshes the shop's modules (an answer without a merchant keeps them)
+        modulesFromProfile(json)?.let { SessionStore.modules = it }
         val value = OverlapSetting.fromResponse(json) ?: SessionStore.allowOverlappingOrders
         SessionStore.allowOverlappingOrders = value
         value
+    }
+
+    /** #910: re-reads `merchant.modules` from GET /api/users/profile (Cài đặt shows the Chấm công row from it) */
+    fun refreshModules(): Result<Set<String>> = runCatching {
+        val json = execute(get("$baseUrl/api/users/profile"))
+        val modules = modulesFromProfile(json) ?: SessionStore.modules
+        SessionStore.modules = modules
+        modules
+    }
+
+    private fun modulesFromProfile(json: JSONObject): Set<String>? {
+        val data = json.optJSONObject("data") ?: return null
+        val merchant = data.optJSONObject("merchant") ?: data.optJSONObject("user")?.optJSONObject("merchant") ?: return null
+        return com.anyrent.pos.domain.attendance.AttendanceLogic.modules(merchant)
     }
 
     /** #518: PUT /api/settings/merchant with only the setting (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
@@ -1116,6 +1133,7 @@ class ApiClient(
                         response.code,
                         json.errorMessage().ifBlank { "HTTP ${response.code}" },
                         json.errorCode(),
+                        json.optJSONObject("data"),
                     )
                 }
                 if (json.has("success") && !json.optBoolean("success")) {
@@ -1284,6 +1302,7 @@ class ApiClient(
             outletPhone = outlet?.optString("phone")?.takeIf { it.isNotBlank() },
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
             allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
+            modules = com.anyrent.pos.domain.attendance.AttendanceLogic.modules(merchant),
         )
     }
 

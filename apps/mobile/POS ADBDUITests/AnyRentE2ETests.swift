@@ -935,6 +935,67 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
+    /// #909 Chấm công: Cài đặt → "⏱ Chấm công" → Vào ca (Debug "Nhập mã" with E2E_ATTENDANCE_CODE) → Ra ca, a
+    /// refused code (E2E_ATTENDANCE_BAD_CODE, default an expired one) → Ca và công của tôi. Needs the #907 API with the
+    /// module on for this merchant and an outlet whose coordinates match the Simulator location. Grant location first
+    /// (`xcrun simctl privacy <udid> grant location <bundle id>`): the shared alert helper taps "Don't Allow".
+    func test9AttendanceClockInOut() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let code = env["E2E_ATTENDANCE_CODE"], !code.isEmpty else { throw XCTSkip("E2E_ATTENDANCE_CODE is not set") }
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let row = app.descendants(matching: .any)["settings.attendance"]
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "Settings shows ⏱ Chấm công when the module is on")
+        sleep(2)
+        e2e.shot("9a-attendance-settings")
+        row.tap()
+
+        let punch = app.buttons["attendance.punch"]
+        XCTAssertTrue(punch.waitForExistence(timeout: 10), "Chấm công opens with one button")
+        sleep(2)
+        e2e.shot("9b-attendance-before")
+
+        func scan(_ value: String) {
+            punch.tap()
+            let manual = app.buttons["attendance.manualCode"]
+            XCTAssertTrue(manual.waitForExistence(timeout: 10), "Scanner opens (Debug: Nhập mã)")
+            e2e.shot("9c-attendance-scanner", attachOnly: true)
+            manual.tap()
+            let field = app.alerts.textFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 5), "Manual code field")
+            field.tap()
+            field.typeText(value)
+            app.alerts.buttons["OK"].tap()
+        }
+
+        let result = app.descendants(matching: .any)["attendance.result"]
+        let wasIn = punch.label.contains("Ra ca") || punch.label.contains("Clock out")
+        scan(code)
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "A result box after the punch")
+        sleep(1)
+        e2e.note("first punch: \(result.label)")
+        e2e.shot(wasIn ? "9e-attendance-out" : "9d-attendance-in")
+
+        scan(code)
+        sleep(4)
+        e2e.note("second punch: \(result.label)")
+        e2e.shot(wasIn ? "9d-attendance-in" : "9e-attendance-out")
+
+        scan(env["E2E_ATTENDANCE_BAD_CODE"] ?? "a1.1.1.D.2020-01-01.AAAAAAAAAAAAAAAAAAAAAA")
+        sleep(4)
+        e2e.note("refused: \(result.label)")
+        e2e.shot("9f-attendance-refused")
+
+        let mine = app.descendants(matching: .any)["attendance.mine"]
+        if mine.waitForExistence(timeout: 5) {
+            mine.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["attendance.mine.screen"].waitForExistence(timeout: 10), "Ca và công của tôi opens")
+            sleep(4)
+            e2e.shot("9g-attendance-mine")
+        }
+    }
+
     func test8StaffRestrictions() throws {
         try e2e.requireRole("staff")
         try e2e.requireFlag("newProducts")

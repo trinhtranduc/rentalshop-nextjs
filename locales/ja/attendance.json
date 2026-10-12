@@ -1,0 +1,398 @@
+{
+  "title": "勤怠",
+  "tabs": {
+    "timesheet": "勤務表",
+    "person": "スタッフ別",
+    "shifts": "シフト",
+    "templates": "シフトテンプレート"
+  },
+  "weekday": {
+    "1": "月",
+    "2": "火",
+    "3": "水",
+    "4": "木",
+    "5": "金",
+    "6": "土",
+    "7": "日"
+  },
+  "common": {
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "save": "保存",
+    "working": "保存中…",
+    "loading": "読み込み中…",
+    "loadFailed": "データを読み込めませんでした。",
+    "retry": "再試行",
+    "outlet": "店舗",
+    "prevMonth": "前月",
+    "nextMonth": "翌月",
+    "month": "{month}月",
+    "hours": "{hours} 時間",
+    "exportXlsx": "Excel出力",
+    "notAvailable": "このショップでは勤怠モジュールが有効になっていません。AnyRentにお問い合わせください。",
+    "noAccess": "この画面はオーナーと店舗管理者のみ使用できます。",
+    "noOutlet": "店舗がまだありません。"
+  },
+  "timesheet": {
+    "title": "勤務表 · {month}月",
+    "subtitle": "スタッフ {count} 名 · {lock}",
+    "unlocked": "未締め",
+    "locked": "締め済み",
+    "lock": "月を締める",
+    "unlock": "締めを解除",
+    "absent": "欠勤",
+    "empty": "この店舗には今月のスタッフや打刻がありません。",
+    "kpi": {
+      "totalHours": "合計時間",
+      "pairs": "出退勤回数",
+      "missingOut": "退勤漏れ",
+      "suspected": "不正の疑い"
+    },
+    "col": {
+      "staff": "スタッフ",
+      "hours": "時間",
+      "days": "日数"
+    },
+    "legend": {
+      "ok": "定時",
+      "late": "遅刻 / 早退",
+      "ot": "残業",
+      "miss": "退勤漏れ",
+      "fake": "不正の疑い",
+      "absent": "シフトあり・未出勤",
+      "sunday": "日曜日",
+      "hint": "名前をクリック → 月の詳細 · セルをクリック → その日の詳細"
+    }
+  },
+  "export": {
+    "title": "勤務表をExcelに出力",
+    "month": "月",
+    "parts": "含める内容",
+    "grid": "月の表（日ごとの時間、合計時間、日数）",
+    "scans": "全打刻の詳細（時刻、結果、距離、座標）",
+    "edits": "修正履歴",
+    "download": ".xlsx をダウンロード",
+    "failed": "Excelファイルを出力できませんでした。"
+  },
+  "lock": {
+    "title": "{month}月を締めますか？",
+    "body": "締めると店舗管理者はこの月を修正できなくなります。解除できるのはオーナーのみです（履歴に記録）。今後の給与モジュールは締め済みの月を使用します。",
+    "confirm": "月を締める",
+    "locked": "{month}月を締めました",
+    "unlockTitle": "{month}月の締めを解除しますか？",
+    "unlockBody": "解除するとこの月を再び修正できます。履歴に記録されます。",
+    "unlockConfirm": "解除",
+    "unlocked": "{month}月の締めを解除しました"
+  },
+  "person": {
+    "back": "‹ {month}月の勤務表",
+    "title": "スタッフ別の勤怠詳細",
+    "pick": "スタッフを選択",
+    "add": "+ 打刻を追加",
+    "map": "地図",
+    "edit": "修正",
+    "empty": "打刻はありません。",
+    "noStaff": "この店舗にはスタッフがいません。",
+    "forgotOut": "退勤打刻忘れ",
+    "suspected": "不正の疑い",
+    "late": "遅刻 {n}′",
+    "early": "早退 {n}′",
+    "overtime": "残業 {n}′",
+    "filter": {
+      "label": "打刻を絞り込む",
+      "all": "すべての打刻",
+      "rejected": "拒否",
+      "suspected": "不正の疑い"
+    },
+    "kpi": {
+      "days": "出勤日数",
+      "hours": "合計時間",
+      "lateEarly": "遅刻 / 早退",
+      "overtime": "残業",
+      "missingOut": "退勤漏れ",
+      "suspected": "不正の疑い"
+    },
+    "col": {
+      "day": "日付",
+      "time": "打刻時刻",
+      "kind": "種類",
+      "result": "結果",
+      "distance": "店舗からの距離",
+      "gps": "GPS",
+      "coords": "座標",
+      "shift": "シフト",
+      "note": "メモ"
+    },
+    "kind": {
+      "IN": "出勤",
+      "OUT": "退勤",
+      "EDIT": "修正"
+    },
+    "result": {
+      "ACCEPTED": "記録済み",
+      "REJECTED": "拒否",
+      "AUTO_CLOSED": "自動終了",
+      "EDITED": "修正済み"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "前回と同じ座標",
+      "SPEED": "異常に速い移動"
+    },
+    "error": {
+      "OUT_OF_RANGE": "{radius} m の範囲外",
+      "GPS_INACCURATE": "GPSが不正確",
+      "MOCK_LOCATION": "偽の位置情報",
+      "QR_EXPIRED": "QRコードの期限切れ",
+      "QR_WRONG_OUTLET": "別の店舗のQRコード",
+      "ATTENDANCE_NOT_CONFIGURED": "店舗の位置が未設定",
+      "other": "拒否"
+    }
+  },
+  "edit": {
+    "title": "勤怠を修正 · {name} · {date}",
+    "current": "現在の記録: 出勤 {in}、{out}",
+    "outAt": "退勤 {time}",
+    "noOut": "退勤なし（日の終わりに自動終了）",
+    "checkIn": "出勤時刻",
+    "checkOut": "退勤時刻",
+    "reason": "理由（必須）",
+    "reasonPlaceholder": "退勤打刻忘れ、管理者が確認",
+    "note": "誰が・何を・いつ修正したか履歴に残ります。締め済みの月は修正できません。",
+    "addOther": "+ 別の打刻を追加",
+    "saved": "勤怠を修正しました"
+  },
+  "add": {
+    "title": "打刻を追加 · {name}",
+    "sub": "勤務したが打刻できなかった場合に使います。",
+    "date": "日付",
+    "reasonPlaceholder": "スマホの電池切れ",
+    "confirm": "打刻を追加",
+    "added": "打刻を追加しました"
+  },
+  "map": {
+    "title": "打刻時の位置 · {name} · {when}",
+    "label": "打刻位置と勤怠エリアの地図",
+    "distance": "店舗から {m} m",
+    "gps": "GPS ±{m} m",
+    "accepted": "記録済み",
+    "rejected": "拒否: {reason}"
+  },
+  "shifts": {
+    "title": "シフト",
+    "subtitle": "{from} – {to} の週 · 今日 {today}",
+    "prevWeek": "‹ 前の週",
+    "nextWeek": "次の週 ›",
+    "assign": "シフトを割り当て",
+    "addShift": "シフトを追加",
+    "legendRepeat": "↻ 毎週自動で繰り返し",
+    "legendLock": "🔒 出勤済み / 過去の日: 変更不可",
+    "legendEdited": "✎ その日だけ変更",
+    "empty": "この店舗にはスタッフがいません。",
+    "rules": "適用中の週間スケジュール",
+    "rulesHint": "修正 / 停止 / 削除は未勤務の日にのみ反映",
+    "rulesEmpty": "週間スケジュールはまだありません。",
+    "noEnd": "終了なし",
+    "edit": "修正",
+    "stop": "停止…",
+    "delete": "削除",
+    "col": {
+      "staff": "スタッフ",
+      "shift": "シフト",
+      "weekdays": "曜日",
+      "from": "開始",
+      "to": "終了"
+    }
+  },
+  "day": {
+    "lockedBody": "🔒 このシフトは出勤済みか過去の日のため変更できません。勤務時間の修正は勤務表から行ってください。",
+    "current": "現在: {shift}（{source}）",
+    "sourceRule": "週間スケジュール",
+    "sourceDay": "この日だけ変更",
+    "none": "シフトなし",
+    "editable": "未出勤、変更できます",
+    "pick": "この日のシフト",
+    "custom": "個別の時間",
+    "customStart": "個別の時間: 開始",
+    "customEnd": "終了",
+    "note": "この日だけ変更します。翌週以降は週間スケジュールのままです。アプリで{name}に通知されます。",
+    "clear": "この日のシフトを削除",
+    "saved": "{date} のシフトを変更しました"
+  },
+  "assign": {
+    "title": "シフトを割り当て（毎週）",
+    "sub": "一度割り当てると、変更するまで毎週繰り返します。",
+    "shift": "1. シフト",
+    "staff": "2. スタッフ",
+    "weekdays": "3. 曜日",
+    "from": "開始日",
+    "to": "終了日（任意）",
+    "toPlaceholder": "終了なし",
+    "preview": "↻ 毎週繰り返し",
+    "previewLine": "{names} · {shift} · {days} · {from} から",
+    "previewTo": " {to} まで",
+    "conflict": "{name} には {days} に {shift} のスケジュールがあります。",
+    "keep": "勤務済みの日とその日だけの変更はそのままです。",
+    "confirm": "割り当て · スタッフに通知",
+    "noTemplates": "シフトテンプレートがありません。先にシフトテンプレートのタブで作成してください。",
+    "saved": "シフトを割り当てました"
+  },
+  "ruleEdit": {
+    "title": "週間スケジュールを修正 · {name}",
+    "shift": "シフト",
+    "weekdays": "曜日",
+    "from": "適用開始日",
+    "note": "勤務済みや過去の日はそのままです。",
+    "saved": "週間スケジュールを修正しました"
+  },
+  "ruleStop": {
+    "title": "週間スケジュールを停止 · {name}",
+    "last": "この日の後に停止",
+    "note": "{next} から {name} には {shift} のシフトがなくなります。退職やスケジュール変更のときに使います。",
+    "confirm": "停止",
+    "saved": "週間スケジュールを停止しました"
+  },
+  "ruleDelete": {
+    "title": "週間スケジュールを削除しますか · {name}？",
+    "note": "未勤務の日から {shift} のシフトがなくなります。勤務済みの日は勤務表に残ります。",
+    "confirm": "削除",
+    "saved": "週間スケジュールを削除しました"
+  },
+  "templates": {
+    "title": "シフトテンプレート",
+    "subtitle": "{outlet} · シフト割り当てに使用",
+    "add": "+ 新しいテンプレート",
+    "minutes": "{n} 分",
+    "used": "あり",
+    "unused": "なし",
+    "hidden": "非表示",
+    "edit": "修正",
+    "hide": "非表示にする",
+    "delete": "削除",
+    "show": "再表示",
+    "shown": "テンプレートを再表示しました",
+    "empty": "シフトテンプレートはまだありません。",
+    "hint": "使用済みのテンプレートは非表示のみ可能（履歴を保持）。未使用のものは削除できます。時間の変更は未勤務の日にのみ反映されます。",
+    "col": {
+      "shift": "シフト",
+      "time": "時間",
+      "break": "休憩",
+      "used": "使用中"
+    }
+  },
+  "templateForm": {
+    "newTitle": "新しいシフトテンプレート",
+    "editTitle": "シフトテンプレートを修正",
+    "name": "シフト名",
+    "start": "開始",
+    "end": "終了",
+    "break": "休憩（分）",
+    "color": "色",
+    "colors": {
+      "blue": "青",
+      "purple": "紫",
+      "green": "緑",
+      "orange": "オレンジ"
+    },
+    "overnight": "終了が開始より前（例 22:00–02:00）は夜勤で、開始日に計上されます。",
+    "editNote": "時間の変更は未勤務の日にのみ反映され、過去の日は元の時間のままです。",
+    "create": "テンプレートを作成",
+    "saved": "シフトテンプレートを保存しました"
+  },
+  "templateHide": {
+    "title": "テンプレート「{name}」を非表示にしますか？",
+    "sub": "このシフトは使用済みのため削除できません。",
+    "note": "非表示にすると割り当て時に選べなくなります。このシフトを使う週間スケジュールは継続し、勤務済みの日はそのままです。",
+    "confirm": "非表示にする",
+    "saved": "テンプレートを非表示にしました"
+  },
+  "templateDelete": {
+    "title": "テンプレート「{name}」を削除しますか？",
+    "sub": "このシフトは一度も使われていません。",
+    "confirm": "削除",
+    "saved": "テンプレートを削除しました"
+  },
+  "outlets": {
+    "col": "勤怠",
+    "qrDaily": "QRあり · 毎日変更",
+    "qrFixed": "QRあり · 固定",
+    "noQr": "未作成",
+    "open": "開く ›"
+  },
+  "outlet": {
+    "back": "‹ 店舗",
+    "notFound": "この店舗を開けませんでした。",
+    "section": "⏱ 勤怠",
+    "location": "勤怠の位置",
+    "noLocation": "位置未設定",
+    "current": "📍 現在地",
+    "pick": "地図で選択",
+    "picking": "地図をクリックして店舗の位置を設定してください。",
+    "geoFailed": "現在地を取得できませんでした。ブラウザの位置情報の許可を確認してください。",
+    "ownerOnly": "位置と半径はオーナーのみ変更できます。",
+    "radius": "許可する半径:",
+    "radiusHint": "50–500 m。屋内のGPSは10–50 mずれることがあります。",
+    "checks": "打刻時の確認: この店舗の有効なコード · 半径内 · GPS ≤ 100 m · 偽の位置をブロック · サーバー時刻。退勤忘れ: 日の終わりに自動終了、管理者が修正するまで0時間。",
+    "qrTitle": "{name} のQRコード",
+    "qrMode": "コードの種類",
+    "daily": "毎日変更（推奨）",
+    "fixed": "固定",
+    "dailyHint": "ベトナム時間00:00に新しいコード。カウンター画面に表示するか毎朝印刷してください。",
+    "fixedHint": "一度印刷して壁に貼ります。写真でも使えるため、GPSと偽位置の確認のみで保護されます。",
+    "todayCaption": "今日のコード · {date} · 00:00に変更",
+    "fixedCaption": "固定コード · {date} 作成",
+    "noQr": "この店舗にはまだQRコードがありません。",
+    "createQr": "QRコードを作成",
+    "qrCreated": "QRコードを作成しました",
+    "print": "QRを印刷",
+    "kiosk": "カウンター画面のリンク",
+    "newCode": "新しいコード",
+    "modeSaved": "コードの種類を変更しました",
+    "saved": "勤怠の位置を保存しました",
+    "saveRadiusTitle": "半径を変更しますか？",
+    "saveRadiusSub": "{from} m から {to} m へ",
+    "saveLocationTitle": "勤怠の位置を変更しますか？",
+    "saveLocationSub": "新しい座標: {coords}",
+    "saveNote": "次の打刻からすぐに適用されます。"
+  },
+  "newCode": {
+    "title": "新しいQRコードを作成しますか？",
+    "body": "使用中のコードはすぐに無効になります。固定コードの店舗は新しいコードを印刷して貼り直してください。カウンター画面は自動で切り替わります。",
+    "confirm": "新しいコードを作成",
+    "done": "新しいコードを作成しました。古いコードは無効です"
+  },
+  "print": {
+    "title": "QRコードを印刷 · {name}",
+    "body": "A5サイズ、店舗名と案内「AnyRentアプリ → 設定 → 勤怠 → コードをスキャン」入り。",
+    "dailyNote": "毎日変更: 印刷したものは {date} のみ有効です。",
+    "confirm": "印刷",
+    "howTo": "AnyRentアプリ → 設定 → 勤怠 → コードをスキャン",
+    "validOn": "{date} のみ有効"
+  },
+  "kioskLink": {
+    "title": "カウンター画面のリンク",
+    "none": "この店舗にはカウンター画面のリンクがまだありません。",
+    "note": "カウンターのタブレットや古いスマホでこのリンクを開きます。ログイン不要で、誰のアカウントにも影響しません。画面は00:00にコードを変更します。",
+    "copy": "コピー",
+    "copied": "リンクをコピーしました",
+    "copyFailed": "コピーできませんでした。リンクを選択してコピーしてください。",
+    "newLink": "新しいリンク",
+    "create": "リンクを作成",
+    "created": "新しいリンクを作成しました。古いリンクは無効です"
+  },
+  "kiosk": {
+    "title": "勤怠",
+    "help": "AnyRentアプリ → 設定 → 勤怠 → このコードをスキャン",
+    "daily": "今日のコード · 00:00に変更",
+    "fixed": "固定コード",
+    "recent": "最新",
+    "none": "今日はまだ誰も打刻していません。",
+    "in": "出勤",
+    "out": "退勤",
+    "loading": "読み込み中…",
+    "invalid": "このカウンターのリンクは無効です。オーナーに新しいリンクを依頼してください。",
+    "moduleOff": "このショップでは勤怠モジュールが有効になっていません。",
+    "notConfigured": "この店舗は位置またはQRコードが未設定です。",
+    "failed": "コードを読み込めません。再試行中…"
+  }
+}

@@ -43,3 +43,5 @@ export * from './response-builder';
 export * from './referrals';
 export * from './posts';
 export * from './loyalty';
+export * from './attendance';
+

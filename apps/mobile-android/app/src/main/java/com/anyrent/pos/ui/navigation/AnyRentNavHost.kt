@@ -158,6 +158,9 @@ object Routes {
     const val Printer = "printer"
     const val BankAccounts = "bank-accounts"
     const val AppInfo = "app-info"
+    // #910 attendance: "Chấm công" and "Ca và công của tôi"
+    const val Attendance = "attendance"
+    const val MyShifts = "my-shifts"
     const val Subscription = "subscription"
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
@@ -287,11 +290,13 @@ fun AnyRentNavHost(
                 InboxV2Screen(
                     onBack = { rootNavController.popBackStack() },
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                    onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                 )
             } else {
                 InboxScreen(
                     onBack = { rootNavController.popBackStack() },
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                    onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                 )
             }
         }
@@ -743,6 +748,15 @@ fun AnyRentNavHost(
         composable(Routes.BankAccounts) {
             BankAccountsScreen(onBack = { rootNavController.popBackStack() })
         }
+        composable(Routes.Attendance) {
+            com.anyrent.pos.ui.attendance.AttendanceScreen(
+                onBack = { rootNavController.popBackStack() },
+                onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+            )
+        }
+        composable(Routes.MyShifts) {
+            com.anyrent.pos.ui.attendance.MyShiftsScreen(onBack = { rootNavController.popBackStack() })
+        }
         composable(Routes.AppInfo) {
             val features by FeatureFlags.enabled.collectAsState()
             AppInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
@@ -750,6 +764,21 @@ fun AnyRentNavHost(
     }
 
     LaunchedOpenDraftCart(rootNavController)
+    LaunchedOpenMyShifts(rootNavController)
+}
+
+/** #910: a tapped `SHIFT_CHANGED` push opens "Ca và công của tôi" once the user is signed in and past login */
+@Composable
+private fun LaunchedOpenMyShifts(navController: NavHostController) {
+    val pending by com.anyrent.pos.push.AttendancePush.pendingOpenMyShifts.collectAsState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pending, currentRoute) {
+        if (!pending || !SessionStore.isLoggedIn) return@LaunchedEffect
+        val dest = currentRoute ?: return@LaunchedEffect
+        if (dest != Routes.Main && dest != Routes.Inbox && dest != Routes.Attendance) return@LaunchedEffect
+        if (!com.anyrent.pos.push.AttendancePush.consume()) return@LaunchedEffect
+        navController.navigate(Routes.MyShifts) { launchSingleTop = true }
+    }
 }
 
 /**
@@ -961,6 +990,7 @@ private fun MainTabs(
                         onOpenExport = { rootNavController.navigate(Routes.Export) },
                         onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
+                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) },
                         onLoggedOut = {
                             rootNavController.navigate(Routes.Login) {
                                 popUpTo(Routes.Main) { inclusive = true }
@@ -979,6 +1009,7 @@ private fun MainTabs(
                     onOpenSubscription = { rootNavController.navigate(Routes.Subscription) },
                     onOpenNotifications = { rootNavController.navigate(Routes.Inbox) },
                     onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
+                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) },
                     onLoggedOut = {
                         rootNavController.navigate(Routes.Login) {
                             popUpTo(Routes.Main) { inclusive = true }
