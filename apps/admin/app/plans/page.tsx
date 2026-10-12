@@ -1,6 +1,7 @@
 'use client';
 
 import '../lists.css';
+import '../details.css';
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
@@ -21,12 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
   ConfirmationDialog,
-  Badge,
   Pagination,
   useToast
 } from '@rentalshop/ui';
 import { PlanTable, PlanDialog } from '@rentalshop/ui';
-import { Plus, Search } from 'lucide-react';
+import { Check, Plus, Search } from 'lucide-react';
 import { usePlansData } from '@rentalshop/hooks';
 import type { Plan, PlanCreateInput, PlanUpdateInput } from '@rentalshop/types';
 import type { PlanBillingInterval } from '@rentalshop/utils';
@@ -463,13 +463,17 @@ export default function PlansPage() {
         onCancel={() => setDeletingPlan(null)}
       />
 
-      {/* View Plan Dialog */}
+      {/* View Plan Dialog (plan detail, #882 portal style) */}
       {selectedPlan && (
         <Dialog open={showViewDialog} onOpenChange={handleCloseViewDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">
+          <DialogContent className="ar-dialog w-full md:max-w-lg max-h-[90vh] overflow-y-auto max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:content-start">
+            <DialogHeader className="max-md:pr-10">
+              <DialogTitle className="flex flex-wrap items-center gap-2 text-xl">
                 {selectedPlan.name}
+                <span className={`ar-pill ar-pill-${selectedPlan.isActive ? 'success' : 'neutral'}`}>
+                  {selectedPlan.isActive ? 'Active' : 'Inactive'}
+                </span>
+                {selectedPlan.isPopular && <span className="ar-pill ar-pill-warning">Popular</span>}
               </DialogTitle>
             </DialogHeader>
 
@@ -481,67 +485,43 @@ export default function PlansPage() {
                 </div>
               </div>
             ) : (
-            <div className="mt-6 space-y-6">
+            <div className="space-y-5">
               {/* Plan Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Description</label>
-                  <p className="mt-1 text-sm">{selectedPlan.description || 'N/A'}</p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div className="col-span-2">
+                  <dt className="text-sm font-medium text-ar-muted">Description</dt>
+                  <dd className="mt-1 text-sm text-ar-ink">{selectedPlan.description || 'N/A'}</dd>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
-                  <p className="mt-1 text-sm">
-                    <Badge variant={selectedPlan.isActive ? 'default' : 'secondary'} className={selectedPlan.isActive ? 'bg-green-100 text-green-800' : ''}>
-                      {selectedPlan.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Base Price</label>
-                  <p className="mt-1 text-sm font-semibold">
+                  <dt className="text-sm font-medium text-ar-muted">Base Price</dt>
+                  <dd className="mt-1 text-sm font-semibold text-ar-ink tabular-nums">
                     {selectedPlan.currency} {selectedPlan.basePrice}
-                  </p>
+                  </dd>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Trial Days</label>
-                  <p className="mt-1 text-sm">{selectedPlan.trialDays} days</p>
+                  <dt className="text-sm font-medium text-ar-muted">Trial Days</dt>
+                  <dd className="mt-1 text-sm text-ar-ink">{selectedPlan.trialDays} days</dd>
                 </div>
-                {selectedPlan.isPopular && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Popular</label>
-                    <p className="mt-1 text-sm">
-                      <Badge variant="default" className="bg-yellow-100 text-yellow-800">Yes</Badge>
-                    </p>
-                  </div>
-                )}
-              </div>
+              </dl>
 
               {/* Limits */}
-              <div>
-                <h4 className="text-lg font-semibold mb-3">Limits</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Outlets</label>
-                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.outlets || 'Unlimited'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Users</label>
-                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.users || 'Unlimited'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Products</label>
-                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.products || 'Unlimited'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Customers</label>
-                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.customers || 'Unlimited'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Orders</label>
-                    <p className="mt-1 text-sm font-semibold">{selectedPlan.limits?.orders || 'Unlimited'}</p>
-                  </div>
-                </div>
-              </div>
+              <section className="border-t border-ar-line pt-4">
+                <h4 className="text-base font-semibold text-ar-ink mb-3">Limits</h4>
+                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {([
+                    ['Outlets', selectedPlan.limits?.outlets],
+                    ['Users', selectedPlan.limits?.users],
+                    ['Products', selectedPlan.limits?.products],
+                    ['Customers', selectedPlan.limits?.customers],
+                    ['Orders', selectedPlan.limits?.orders],
+                  ] as Array<[string, number | undefined]>).map(([label, value]) => (
+                    <div key={label} className="rounded-lg border border-ar-line bg-ar-surface-muted px-3 py-2">
+                      <dt className="text-xs font-medium text-ar-muted">{label}</dt>
+                      <dd className="text-sm font-semibold text-ar-ink tabular-nums">{value || 'Unlimited'}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
 
               {/* Features */}
               {(() => {
@@ -560,21 +540,21 @@ export default function PlansPage() {
                 }
                 
                 return features.length > 0 && (
-                  <div>
-                    <h4 className="text-lg font-semibold mb-3">Features</h4>
+                  <section className="border-t border-ar-line pt-4">
+                    <h4 className="text-base font-semibold text-ar-ink mb-3">Features</h4>
                     <ul className="space-y-2">
                       {features.map((feature, idx) => (
-                        <li key={idx} className="flex items-center text-sm">
-                          <span className="mr-2">✓</span>
+                        <li key={idx} className="flex items-start gap-2 text-sm text-ar-ink-2">
+                          <Check className="mt-0.5 h-4 w-4 flex-none text-ar-primary" aria-hidden />
                           {feature}
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </section>
                 );
               })()}
 
-            <div className="mt-6 flex justify-end gap-2">
+            <div className="ar-dialog-footer flex flex-wrap justify-end gap-2 border-t border-ar-line pt-4 max-md:[&>button]:flex-1">
               <Button variant="outline" onClick={handleCloseViewDialog}>
                 Close
               </Button>
@@ -601,8 +581,8 @@ export default function PlansPage() {
       {/* Stripe Prices Dialog */}
       {selectedPlan && (
         <Dialog open={showStripePricesDialog} onOpenChange={setShowStripePricesDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="ar-dialog w-full md:max-w-lg max-h-[90vh] overflow-y-auto max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:content-start">
+            <DialogHeader className="max-md:pr-10">
               <DialogTitle>Stripe Prices</DialogTitle>
             </DialogHeader>
 
@@ -610,23 +590,22 @@ export default function PlansPage() {
               <div className="py-8 text-sm text-text-secondary">Loading...</div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-end gap-3">
                   <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-500">Currency (optional)</label>
+                    <label className="text-sm font-medium">Currency (optional)</label>
                     <Input
                       value={stripePricesCurrency}
                       onChange={(e) => setStripePricesCurrency(e.target.value)}
                       placeholder="VND / USD"
                     />
                   </div>
-                  <div className="pt-6">
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open('https://dashboard.stripe.com/test/prices', '_blank')}
-                    >
-                      Open Stripe
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="min-h-11"
+                    onClick={() => window.open('https://dashboard.stripe.com/test/prices', '_blank')}
+                  >
+                    Open Stripe
+                  </Button>
                 </div>
 
                 {([
@@ -636,7 +615,7 @@ export default function PlansPage() {
                   ['annual', 'Annual (12 months)'],
                 ] as Array<[PlanBillingInterval, string]>).map(([key, label]) => (
                   <div key={key}>
-                    <label className="text-sm font-medium text-gray-500">{label}</label>
+                    <label className="text-sm font-medium">{label}</label>
                     <Input
                       value={stripePrices[key] || ''}
                       onChange={(e) => setStripePrices((prev) => ({ ...prev, [key]: e.target.value }))}
@@ -645,7 +624,7 @@ export default function PlansPage() {
                   </div>
                 ))}
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="ar-dialog-footer flex justify-end gap-2 border-t border-ar-line pt-4 max-md:[&>button]:flex-1">
                   <Button variant="outline" onClick={() => setShowStripePricesDialog(false)}>
                     Cancel
                   </Button>

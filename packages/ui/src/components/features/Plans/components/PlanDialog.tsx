@@ -242,8 +242,8 @@ export const PlanDialog: React.FC<PlanDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="ar-dialog max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b border-ar-line">
           <DialogTitle className="text-lg font-semibold">{getDialogTitle()}</DialogTitle>
           <DialogDescription className="mt-1">
             {getDialogDescription()}

@@ -34,28 +34,21 @@ export function MerchantLoyaltySection({
   const busy = loading || saving || syncing;
 
   return (
-    <Card className="shadow-sm border-gray-200 dark:border-gray-700">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
-            <Medal className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <Medal className="h-5 w-5 flex-shrink-0" />
             <div className="min-w-0">
-              <CardTitle className="text-base">Loyalty Program</CardTitle>
+              <CardTitle>Loyalty Program</CardTitle>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                 {programName || 'Chương trình khách hàng thân thiết'}
               </p>
             </div>
           </div>
-          <Badge
-            variant={isActive ? 'secondary' : 'outline'}
-            className={
-              isActive
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-gray-200 bg-gray-50 text-gray-600'
-            }
-          >
+          <span className={`ar-pill flex-none ar-pill-${isActive ? 'success' : 'neutral'}`}>
             {loading ? 'Loading...' : saving ? 'Saving...' : isActive ? 'Enabled' : 'Disabled'}
-          </Badge>
+          </span>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -79,13 +72,13 @@ export function MerchantLoyaltySection({
         </div>
 
         {onSyncHistory && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-ar-line pt-4">
             <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Import order history
                 </p>
-                <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                <Badge variant="outline" className="ar-pill ar-pill-info">
                   One-time backfill
                 </Badge>
               </div>
