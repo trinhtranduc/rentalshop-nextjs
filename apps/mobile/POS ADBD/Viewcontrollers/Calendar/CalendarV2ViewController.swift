@@ -570,7 +570,7 @@ final class CalendarDayRowCell: UITableViewCell {
                                    width: UIScreen.main.bounds.width - 2 * DS.Spacing.lg - max(amountWidth, 110) - DS.Spacing.md)
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
-        // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
+        // Board Lich: late days (+ stored fee) only; no còn thu / refund note (#893)
         switch CalendarV2Logic.note(row, hidesMoney: hidesMoney) {
         case .late(let days, let fee):
             let late = LateText.days(days)
