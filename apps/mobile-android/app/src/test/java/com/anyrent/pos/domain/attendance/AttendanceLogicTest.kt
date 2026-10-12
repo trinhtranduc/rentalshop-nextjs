@@ -40,6 +40,9 @@ class AttendanceLogicTest {
         val yesterday = AttendanceLogic.me(JSONObject("""{"lastAction":{"action":"OUT","at":"2026-10-11T16:59:00Z"}}"""))
         assertEquals(AttendanceStatus.NOT_IN, yesterday.status(now))
         assertEquals(AttendanceStatus.NOT_IN, AttendanceLogic.me(null).status(now))
+        // #907 sends today.status; it wins over the derivation
+        assertEquals(AttendanceStatus.DONE, AttendanceLogic.me(JSONObject("""{"today":{"date":"2026-10-12","shifts":[],"status":"DONE"}}""")).status(now))
+        assertEquals(AttendanceStatus.NOT_IN, AttendanceLogic.me(JSONObject("""{"today":{"status":"NOT_STARTED"},"lastAction":{"action":"OUT","at":"2026-10-12T05:01:00Z"}}""")).status(now))
     }
 
     @Test

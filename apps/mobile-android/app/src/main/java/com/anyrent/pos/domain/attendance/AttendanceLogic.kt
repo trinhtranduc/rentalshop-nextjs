@@ -37,9 +37,15 @@ data class AttendanceMe(
     val todayShifts: List<AttendanceShift>,
     val lastAction: String?,
     val lastActionAt: Instant?,
+    /** `today.status` of the API: IN_SHIFT | DONE | NOT_STARTED */
+    val apiStatus: String? = null,
 ) {
-    /** "đang trong ca" with an open record, "đã xong" after an OUT today, else "chưa vào ca" */
+    /** The API's `today.status`; without it: open record = in shift, an OUT today = done, else not in */
     fun status(now: Instant = Instant.now(), zone: ZoneId = ShopTime.zone): AttendanceStatus = when {
+        openRecord != null -> AttendanceStatus.IN_SHIFT
+        apiStatus.equals("IN_SHIFT", ignoreCase = true) -> AttendanceStatus.IN_SHIFT
+        apiStatus.equals("DONE", ignoreCase = true) -> AttendanceStatus.DONE
+        apiStatus.equals("NOT_STARTED", ignoreCase = true) -> AttendanceStatus.NOT_IN
         openRecord != null -> AttendanceStatus.IN_SHIFT
         lastAction.equals("OUT", ignoreCase = true) &&
             lastActionAt?.atZone(zone)?.toLocalDate() == now.atZone(zone).toLocalDate() -> AttendanceStatus.DONE
@@ -139,6 +145,7 @@ object AttendanceLogic {
             todayShifts = shifts(today?.optJSONArray("shifts")),
             lastAction = last?.str("action", "kind") ?: (data?.opt("lastAction") as? String),
             lastActionAt = instant(last?.opt("at")) ?: instant(last?.opt("createdAt")),
+            apiStatus = today?.str("status"),
         )
     }
 

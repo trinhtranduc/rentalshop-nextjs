@@ -152,6 +152,7 @@ fun AttendanceScreen(onBack: () -> Unit, onOpenMyShifts: () -> Unit) {
                         openRecord = if (outcome.result.isIn) outcome.result.record else null,
                         lastAction = outcome.result.action,
                         lastActionAt = outcome.result.record?.checkOutAt ?: outcome.result.record?.checkInAt,
+                        apiStatus = if (outcome.result.isIn) "IN_SHIFT" else "DONE",
                     )
                     reload()
                 }
