@@ -1689,12 +1689,12 @@
     <string name="attendance_err_gps">Location not precise yet</string>
     <string name="attendance_err_gps_msg">GPS ±%1$d m. Move near the door and try again.</string>
     <string name="attendance_err_gps_msg_plain">Move near the door and try again.</string>
-    <string name="attendance_err_not_configured">Attendance is not set up for this branch</string>
-    <string name="attendance_err_not_configured_msg">Ask the shop owner to set the branch location and create the QR code.</string>
+    <string name="attendance_err_not_configured">Attendance is not set up for this outlet</string>
+    <string name="attendance_err_not_configured_msg">Ask the shop owner to set the outlet location and QR code.</string>
     <string name="attendance_err_module_off">Attendance is not turned on</string>
-    <string name="attendance_err_module_off_msg">Contact the shop owner.</string>
-    <string name="attendance_err_no_location">Could not get your location</string>
-    <string name="attendance_err_no_location_msg">Turn location on and try again.</string>
+    <string name="attendance_err_module_off_msg">Ask the shop owner to turn on Attendance.</string>
+    <string name="attendance_err_no_location">Location not precise yet</string>
+    <string name="attendance_err_no_location_msg">Could not get your location. Move near the door and try again.</string>
     <string name="attendance_err_other">Could not clock in</string>
     <string name="attendance_perm_title">Camera and location</string>
     <string name="attendance_perm_message">AnyRent uses the camera to scan the QR code at the counter and your precise location to confirm you are at the branch.</string>

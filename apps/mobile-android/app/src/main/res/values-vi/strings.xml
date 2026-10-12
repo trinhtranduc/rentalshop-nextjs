@@ -1663,11 +1663,11 @@
     <string name="attendance_err_gps_msg">GPS ±%1$d m. Ra gần cửa rồi thử lại.</string>
     <string name="attendance_err_gps_msg_plain">Ra gần cửa rồi thử lại.</string>
     <string name="attendance_err_not_configured">Chi nhánh chưa cài chấm công</string>
-    <string name="attendance_err_not_configured_msg">Nhờ chủ shop đặt vị trí và tạo mã QR.</string>
-    <string name="attendance_err_module_off">Cửa hàng chưa bật chấm công</string>
-    <string name="attendance_err_module_off_msg">Liên hệ chủ shop.</string>
-    <string name="attendance_err_no_location">Chưa lấy được vị trí</string>
-    <string name="attendance_err_no_location_msg">Bật vị trí rồi thử lại.</string>
+    <string name="attendance_err_not_configured_msg">Nhờ chủ shop cài vị trí và mã QR cho chi nhánh.</string>
+    <string name="attendance_err_module_off">Shop chưa bật Chấm công</string>
+    <string name="attendance_err_module_off_msg">Liên hệ chủ shop để bật Chấm công.</string>
+    <string name="attendance_err_no_location">Chưa định vị chính xác</string>
+    <string name="attendance_err_no_location_msg">Không lấy được vị trí. Ra gần cửa rồi thử lại.</string>
     <string name="attendance_err_other">Chưa chấm công được</string>
     <string name="attendance_perm_title">Cần camera và vị trí</string>
     <string name="attendance_perm_message">AnyRent dùng camera để quét mã QR ở quầy và vị trí chính xác để xác nhận bạn đang ở chi nhánh.</string>
