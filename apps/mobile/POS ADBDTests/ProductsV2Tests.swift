@@ -36,13 +36,74 @@ final class ProductsV2Tests: XCTestCase {
 
     func testRowPriceWithOneOptionHasNoSecondAndSaleOnlyHasNoMode() throws {
         let rentalOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":900000}"#)
-        XCTAssertEqual(ProductRowLogic.price(rentalOnly), ProductRowPrice(main: 300_000, mainMode: .perRental, second: nil, secondMode: nil))
+        XCTAssertEqual(ProductRowLogic.price(rentalOnly), ProductRowPrice(main: 300_000, mainMode: .perRental, second: nil, secondMode: nil, sale: 900_000))
         let dayOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
         XCTAssertEqual(ProductRowLogic.price(dayOnly), ProductRowPrice(main: 120_000, mainMode: .perDay, second: nil, secondMode: nil))
         let saleOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":0,"salePrice":900000}"#)
         XCTAssertEqual(ProductRowLogic.price(saleOnly), ProductRowPrice(main: 900_000, mainMode: nil, second: nil, secondMode: nil))
         let none = try product(#"{"id":1,"name":"Áo dài","rentPrice":0}"#)
         XCTAssertNil(ProductRowLogic.price(none))
+    }
+
+    /// #887: a product that is rented and sold keeps "· bán <price>" after its rent prices (board SP-dong)
+    func testRowPriceKeepsTheSalePriceNextToRentPrices() throws {
+        let both = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":1800000,"pricingOptions":[{"id":1,"type":"FIXED","price":300000,"isDefault":true},{"id":2,"type":"DAILY","price":120000,"isDefault":false}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(both),
+                       ProductRowPrice(main: 300_000, mainMode: .perRental, second: 120_000, secondMode: .perDay, sale: 1_800_000))
+        let dayOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":120000,"salePrice":1800000,"pricingOptions":[{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(dayOnly)?.sale, 1_800_000)
+        // Legacy `sale_price` (older payloads) counts too
+        let legacy = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"sale_price":1800000}"#)
+        XCTAssertEqual(ProductRowLogic.price(legacy)?.sale, 1_800_000)
+        // No sale price, or zero: nothing after the rent prices
+        let noSale = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":null}"#)
+        XCTAssertNil(ProductRowLogic.price(noSale)?.sale)
+        let zeroSale = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":0}"#)
+        XCTAssertNil(ProductRowLogic.price(zeroSale)?.sale)
+        // A sale-only product keeps today's "bán <price>" as the main text, not twice
+        let saleOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":0,"salePrice":900000}"#)
+        XCTAssertNil(ProductRowLogic.price(saleOnly)?.sale)
+    }
+
+    /// #887: the edit form fills the sale field from `salePrice` or legacy `sale_price`, so a save that leaves
+    /// the field alone sends the same price back (the update sends `salePrice: input ?? 0`)
+    func testEditFormSaleFieldIsFilledFromSalePriceOrLegacySale() throws {
+        let modern = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":1800000}"#)
+        XCTAssertEqual(MoneyInput.parse(MoneyInput.display(ProductPricing.sale(modern))), 1_800_000)
+        let legacy = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"sale_price":1800000}"#)
+        XCTAssertEqual(MoneyInput.parse(MoneyInput.display(ProductPricing.sale(legacy))), 1_800_000)
+        let nullModern = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":null,"sale_price":1800000}"#)
+        XCTAssertEqual(MoneyInput.parse(MoneyInput.display(ProductPricing.sale(nullModern))), 1_800_000)
+    }
+
+    /// #887: "Giá vốn" on detail only when > 0 and the role may see prices (never OUTLET_STAFF)
+    func testCostPriceShownOnlyWhenSetAndPricesAreVisible() throws {
+        let withCost = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":700000}"#)
+        XCTAssertEqual(ProductCostPrice.shown(withCost, showsPrices: true), 700_000)
+        XCTAssertNil(ProductCostPrice.shown(withCost, showsPrices: false))
+        let zero = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":0}"#)
+        XCTAssertNil(ProductCostPrice.shown(zero, showsPrices: true))
+        let none = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":null}"#)
+        XCTAssertNil(ProductCostPrice.shown(none, showsPrices: true))
+    }
+
+    /// #887: the form sends the typed cost; an empty field sends 0 only when the product had a cost (the user cleared
+    /// it), so a product read without `costPrice` (list payload) never loses its cost on save
+    func testCostPriceSentOnSaveNeverWipesAnUnknownCost() {
+        XCTAssertEqual(ProductCostPrice.toSend(typed: 650_000, original: 700_000), 650_000)
+        XCTAssertEqual(ProductCostPrice.toSend(typed: 700_000, original: nil), 700_000)
+        XCTAssertEqual(ProductCostPrice.toSend(typed: nil, original: 700_000), 0)
+        XCTAssertNil(ProductCostPrice.toSend(typed: nil, original: nil))
+        XCTAssertNil(ProductCostPrice.toSend(typed: nil, original: 0))
+    }
+
+    /// #887: an update without a cost leaves `costPrice` out of the form data, so the API keeps the stored value
+    func testUpdateWithoutCostDoesNotSendCostPrice() {
+        let request = UpdateProductRequest(name: "Áo dài", description: nil, barcode: nil, rentPrice: 300_000, salePrice: 1_800_000,
+                                           costPrice: nil, deposit: 0, totalStock: nil, categoryId: nil, merchantId: nil,
+                                           outletStock: nil, images: nil, isActive: nil)
+        XCTAssertNil(request.toFormData()["costPrice"])
+        XCTAssertEqual(request.toFormData()["salePrice"] as? Double, 1_800_000)
     }
 
     // MARK: - Full-screen photos (#472)
