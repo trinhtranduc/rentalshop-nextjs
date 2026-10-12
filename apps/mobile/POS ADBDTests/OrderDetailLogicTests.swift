@@ -282,8 +282,8 @@ final class OrderDetailLogicTests: XCTestCase {
 
     func testSummaryJoinsDaysAndRemainder() {
         let days7 = PluralText.format("%d days", count: 7, 7)
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)),
-                       days7 + " · " + PluralText.format("order.header.returnIn", count: 2, 2))
+        // #891 (owner): no "trả sau N ngày" countdown either
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnToday),
                        days7 + " · " + "order.header.returnToday".localized())
         // #891 (owner): no "lấy sau N ngày" countdown in the detail header

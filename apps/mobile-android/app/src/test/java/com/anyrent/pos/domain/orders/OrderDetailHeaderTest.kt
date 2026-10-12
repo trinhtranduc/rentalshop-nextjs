@@ -41,7 +41,10 @@ class OrderDetailHeaderTest {
     fun handOverCountdownIsHidden() {
         assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverIn(2)))
         assertEquals(OrderDetailHeader.Due.HandOverToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverToday))
-        assertEquals(OrderDetailHeader.Due.ReturnIn(3), OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnIn(3)))
+        // #891 (owner): no "trả sau N ngày" countdown either; late states stay
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnIn(3)))
+        assertEquals(OrderDetailHeader.Due.PastPickup(2), OrderDetailHeader.shownDue(OrderDetailHeader.Due.PastPickup(2)))
+        assertEquals(OrderDetailHeader.Due.ReturnToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnToday))
     }
 
     @Test
