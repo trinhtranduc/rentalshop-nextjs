@@ -1,0 +1,398 @@
+{
+  "title": "考勤",
+  "tabs": {
+    "timesheet": "考勤表",
+    "person": "按员工",
+    "shifts": "排班",
+    "templates": "班次模板"
+  },
+  "weekday": {
+    "1": "周一",
+    "2": "周二",
+    "3": "周三",
+    "4": "周四",
+    "5": "周五",
+    "6": "周六",
+    "7": "周日"
+  },
+  "common": {
+    "cancel": "取消",
+    "close": "关闭",
+    "save": "保存",
+    "working": "保存中…",
+    "loading": "加载中…",
+    "loadFailed": "无法加载数据。",
+    "retry": "重试",
+    "outlet": "门店",
+    "prevMonth": "上个月",
+    "nextMonth": "下个月",
+    "month": "{month} 月",
+    "hours": "{hours} 小时",
+    "exportXlsx": "导出 Excel",
+    "notAvailable": "本店尚未开通考勤模块。请联系 AnyRent 开通。",
+    "noAccess": "只有店主和门店管理员可以使用此页面。",
+    "noOutlet": "还没有门店。"
+  },
+  "timesheet": {
+    "title": "考勤表 · {month} 月",
+    "subtitle": "{count} 名员工 · {lock}",
+    "unlocked": "本月未锁定",
+    "locked": "本月已锁定",
+    "lock": "锁定月份",
+    "unlock": "解锁月份",
+    "absent": "缺勤",
+    "empty": "本月该门店没有员工或考勤记录。",
+    "kpi": {
+      "totalHours": "总工时",
+      "pairs": "上下班次数",
+      "missingOut": "缺少下班打卡",
+      "suspected": "疑似作弊"
+    },
+    "col": {
+      "staff": "员工",
+      "hours": "工时",
+      "days": "天数"
+    },
+    "legend": {
+      "ok": "准时",
+      "late": "迟到 / 早退",
+      "ot": "加班",
+      "miss": "缺少下班打卡",
+      "fake": "疑似作弊",
+      "absent": "有班次未到",
+      "sunday": "周日",
+      "hint": "点击姓名 → 整月详情 · 点击格子 → 当天详情"
+    }
+  },
+  "export": {
+    "title": "导出考勤表到 Excel",
+    "month": "月份",
+    "parts": "包含",
+    "grid": "月表（每日工时、总工时、天数）",
+    "scans": "每次扫码详情（时间、结果、距离、坐标）",
+    "edits": "修改记录",
+    "download": "下载 .xlsx",
+    "failed": "无法导出 Excel 文件。"
+  },
+  "lock": {
+    "title": "锁定 {month} 月？",
+    "body": "锁定后，门店管理员不能再修改本月考勤。只有店主可以解锁（有记录）。以后的工资模块将使用已锁定的月份。",
+    "confirm": "锁定月份",
+    "locked": "已锁定 {month} 月",
+    "unlockTitle": "解锁 {month} 月？",
+    "unlockBody": "解锁后，本月考勤可以再次修改。会留下记录。",
+    "unlockConfirm": "解锁",
+    "unlocked": "已解锁 {month} 月"
+  },
+  "person": {
+    "back": "‹ {month} 月考勤表",
+    "title": "按员工查看考勤详情",
+    "pick": "选择员工",
+    "add": "+ 添加记录",
+    "map": "地图",
+    "edit": "修改",
+    "empty": "没有扫码记录。",
+    "noStaff": "该门店没有员工。",
+    "forgotOut": "忘记下班打卡",
+    "suspected": "疑似作弊",
+    "late": "迟到 {n}′",
+    "early": "早退 {n}′",
+    "overtime": "加班 {n}′",
+    "filter": {
+      "label": "筛选扫码",
+      "all": "全部扫码",
+      "rejected": "被拒绝",
+      "suspected": "疑似作弊"
+    },
+    "kpi": {
+      "days": "出勤天数",
+      "hours": "总工时",
+      "lateEarly": "迟到 / 早退",
+      "overtime": "加班",
+      "missingOut": "缺少下班打卡",
+      "suspected": "疑似作弊"
+    },
+    "col": {
+      "day": "日期",
+      "time": "扫码时间",
+      "kind": "类型",
+      "result": "结果",
+      "distance": "距门店",
+      "gps": "GPS",
+      "coords": "坐标",
+      "shift": "班次",
+      "note": "备注"
+    },
+    "kind": {
+      "IN": "上班",
+      "OUT": "下班",
+      "EDIT": "修改"
+    },
+    "result": {
+      "ACCEPTED": "已记录",
+      "REJECTED": "已拒绝",
+      "AUTO_CLOSED": "自动关闭",
+      "EDITED": "已修改"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "与上次坐标完全相同",
+      "SPEED": "移动速度异常"
+    },
+    "error": {
+      "OUT_OF_RANGE": "超出 {radius} m 范围",
+      "GPS_INACCURATE": "GPS 不准确",
+      "MOCK_LOCATION": "虚拟定位",
+      "QR_EXPIRED": "二维码已失效",
+      "QR_WRONG_OUTLET": "其他门店的二维码",
+      "ATTENDANCE_NOT_CONFIGURED": "门店未设置位置",
+      "other": "已拒绝"
+    }
+  },
+  "edit": {
+    "title": "修改考勤 · {name} · {date}",
+    "current": "当前记录：上班 {in}，{out}",
+    "outAt": "下班 {time}",
+    "noOut": "没有下班时间（当天结束自动关闭）",
+    "checkIn": "上班时间",
+    "checkOut": "下班时间",
+    "reason": "原因（必填）",
+    "reasonPlaceholder": "忘记下班打卡，经理已确认",
+    "note": "保留记录：谁修改、改了什么、何时修改。已锁定的月份不能修改。",
+    "addOther": "+ 添加其他记录",
+    "saved": "考勤已修改"
+  },
+  "add": {
+    "title": "添加考勤记录 · {name}",
+    "sub": "用于员工有上班但无法扫码的情况。",
+    "date": "日期",
+    "reasonPlaceholder": "手机没电",
+    "confirm": "添加记录",
+    "added": "已添加考勤记录"
+  },
+  "map": {
+    "title": "扫码位置 · {name} · {when}",
+    "label": "扫码位置与考勤范围地图",
+    "distance": "距门店 {m} m",
+    "gps": "GPS ±{m} m",
+    "accepted": "已记录",
+    "rejected": "已拒绝：{reason}"
+  },
+  "shifts": {
+    "title": "排班",
+    "subtitle": "{from} – {to} 周 · 今天 {today}",
+    "prevWeek": "‹ 上一周",
+    "nextWeek": "下一周 ›",
+    "assign": "分配班次",
+    "addShift": "添加班次",
+    "legendRepeat": "↻ 每周自动重复",
+    "legendLock": "🔒 已上班 / 已过日期：不可修改",
+    "legendEdited": "✎ 仅当天修改",
+    "empty": "该门店没有员工。",
+    "rules": "正在使用的每周排班",
+    "rulesHint": "修改 / 停止 / 删除只影响未上班的日期",
+    "rulesEmpty": "还没有每周排班。",
+    "noEnd": "不结束",
+    "edit": "修改",
+    "stop": "停止于…",
+    "delete": "删除",
+    "col": {
+      "staff": "员工",
+      "shift": "班次",
+      "weekdays": "星期",
+      "from": "开始",
+      "to": "结束"
+    }
+  },
+  "day": {
+    "lockedBody": "🔒 该班次已上班或日期已过，无法修改。要修改工时请到考勤表。",
+    "current": "当前：{shift}（{source}）",
+    "sourceRule": "每周排班",
+    "sourceDay": "当天单独修改",
+    "none": "没有班次",
+    "editable": "尚未上班，可修改",
+    "pick": "当天班次",
+    "custom": "自定义时间",
+    "customStart": "自定义时间：开始",
+    "customEnd": "结束",
+    "note": "只修改这一天。以后几周仍按每周排班。App 会通知 {name}。",
+    "clear": "删除当天班次",
+    "saved": "已修改 {date} 的班次"
+  },
+  "assign": {
+    "title": "分配班次（每周重复）",
+    "sub": "分配一次，每周自动重复，直到修改。",
+    "shift": "1. 班次",
+    "staff": "2. 员工",
+    "weekdays": "3. 星期",
+    "from": "开始日期",
+    "to": "结束日期（可选）",
+    "toPlaceholder": "不结束",
+    "preview": "↻ 每周重复",
+    "previewLine": "{names} · {shift} · {days} · 从 {from}",
+    "previewTo": " 到 {to}",
+    "conflict": "{name} 已有 {days} 的 {shift} 排班。",
+    "keep": "已上班的日期和单独修改的日期保持不变。",
+    "confirm": "分配 · 通知员工",
+    "noTemplates": "还没有班次模板。请先在班次模板标签中创建。",
+    "saved": "已分配班次"
+  },
+  "ruleEdit": {
+    "title": "修改每周排班 · {name}",
+    "shift": "班次",
+    "weekdays": "星期",
+    "from": "生效日期",
+    "note": "已上班或已过的日期保持不变。",
+    "saved": "已修改每周排班"
+  },
+  "ruleStop": {
+    "title": "停止每周排班 · {name}",
+    "last": "在此日期后停止",
+    "note": "从 {next} 起，{name} 不再有 {shift} 班次。适用于员工离职或调整排班。",
+    "confirm": "停止排班",
+    "saved": "已停止每周排班"
+  },
+  "ruleDelete": {
+    "title": "删除每周排班 · {name}？",
+    "note": "未上班的日期将不再有 {shift} 班次。已上班的日期仍保留在考勤表中。",
+    "confirm": "删除排班",
+    "saved": "已删除每周排班"
+  },
+  "templates": {
+    "title": "班次模板",
+    "subtitle": "{outlet} · 分配班次时使用",
+    "add": "+ 新建模板",
+    "minutes": "{n} 分钟",
+    "used": "是",
+    "unused": "否",
+    "hidden": "已隐藏",
+    "edit": "修改",
+    "hide": "隐藏",
+    "delete": "删除",
+    "show": "重新显示",
+    "shown": "已重新显示模板",
+    "empty": "还没有班次模板。",
+    "hint": "已使用的模板只能隐藏（保留记录）；未使用的模板可以删除。修改时间只影响未上班的日期。",
+    "col": {
+      "shift": "班次",
+      "time": "时间",
+      "break": "休息",
+      "used": "使用中"
+    }
+  },
+  "templateForm": {
+    "newTitle": "新建班次模板",
+    "editTitle": "修改班次模板",
+    "name": "班次名称",
+    "start": "开始",
+    "end": "结束",
+    "break": "休息（分钟）",
+    "color": "颜色",
+    "colors": {
+      "blue": "蓝",
+      "purple": "紫",
+      "green": "绿",
+      "orange": "橙"
+    },
+    "overnight": "结束早于开始（例如 22:00–02:00）为跨夜班，计入开始日。",
+    "editNote": "修改时间只影响未上班的日期；已过日期保留原时间。",
+    "create": "创建模板",
+    "saved": "已保存班次模板"
+  },
+  "templateHide": {
+    "title": "隐藏模板“{name}”？",
+    "sub": "该班次已被使用，无法删除。",
+    "note": "隐藏后分配班次时不能再选择。使用该班次的每周排班继续有效；已上班的日期保持不变。",
+    "confirm": "隐藏模板",
+    "saved": "已隐藏模板"
+  },
+  "templateDelete": {
+    "title": "删除模板“{name}”？",
+    "sub": "该班次从未被使用。",
+    "confirm": "删除",
+    "saved": "已删除模板"
+  },
+  "outlets": {
+    "col": "考勤",
+    "qrDaily": "有二维码 · 每天更换",
+    "qrFixed": "有二维码 · 固定",
+    "noQr": "未生成",
+    "open": "打开 ›"
+  },
+  "outlet": {
+    "back": "‹ 门店",
+    "notFound": "无法打开该门店。",
+    "section": "⏱ 考勤",
+    "location": "考勤位置",
+    "noLocation": "未设置位置",
+    "current": "📍 当前位置",
+    "pick": "在地图上选择",
+    "picking": "点击地图设置门店位置。",
+    "geoFailed": "无法获取当前位置。请检查浏览器的定位权限。",
+    "ownerOnly": "只有店主可以修改位置和半径。",
+    "radius": "允许半径：",
+    "radiusHint": "50–500 m。室内 GPS 通常偏差 10–50 m。",
+    "checks": "扫码时检查：本门店有效的二维码 · 在半径内 · GPS ≤ 100 m · 拦截虚拟定位 · 服务器时间。忘记下班：当天结束自动关闭，管理员修改前计 0 小时。",
+    "qrTitle": "{name} 的二维码",
+    "qrMode": "二维码类型",
+    "daily": "每天更换（推荐）",
+    "fixed": "固定",
+    "dailyHint": "越南时间 00:00 生成新码。显示在柜台屏幕上或每天早上重新打印。",
+    "fixedHint": "打印一次贴在墙上。照片也能重复使用；只靠 GPS 和拦截虚拟定位保护。",
+    "todayCaption": "今日二维码 · {date} · 00:00 更换",
+    "fixedCaption": "固定二维码 · 创建于 {date}",
+    "noQr": "该门店还没有二维码。",
+    "createQr": "生成二维码",
+    "qrCreated": "已生成二维码",
+    "print": "打印二维码",
+    "kiosk": "柜台屏幕链接",
+    "newCode": "生成新码",
+    "modeSaved": "已更改二维码类型",
+    "saved": "已保存考勤位置",
+    "saveRadiusTitle": "更改半径？",
+    "saveRadiusSub": "从 {from} m 改为 {to} m",
+    "saveLocationTitle": "更改考勤位置？",
+    "saveLocationSub": "新坐标：{coords}",
+    "saveNote": "立即对之后的扫码生效。"
+  },
+  "newCode": {
+    "title": "生成新的二维码？",
+    "body": "当前二维码立即失效。如果门店使用固定二维码，需要重新打印并张贴。柜台屏幕会自动更新。",
+    "confirm": "生成新码",
+    "done": "已生成新码，旧码已失效"
+  },
+  "print": {
+    "title": "打印二维码 · {name}",
+    "body": "A5 纸，含门店名称和说明“打开 AnyRent App → 设置 → 考勤 → 扫码”。",
+    "dailyNote": "每天更换：打印件仅在 {date} 当天有效。",
+    "confirm": "打印",
+    "howTo": "打开 AnyRent App → 设置 → 考勤 → 扫码",
+    "validOn": "仅 {date} 当天有效"
+  },
+  "kioskLink": {
+    "title": "柜台屏幕链接",
+    "none": "该门店还没有柜台屏幕链接。",
+    "note": "在柜台的平板或旧手机上打开此链接。无需登录，不影响任何人的账户。屏幕会在 00:00 更换二维码。",
+    "copy": "复制",
+    "copied": "已复制链接",
+    "copyFailed": "无法复制。请选中链接后复制。",
+    "newLink": "生成新链接",
+    "create": "生成链接",
+    "created": "已生成新链接；旧链接已失效"
+  },
+  "kiosk": {
+    "title": "考勤",
+    "help": "打开 AnyRent App → 设置 → 考勤 → 扫描此码",
+    "daily": "今日二维码 · 00:00 更换",
+    "fixed": "固定二维码",
+    "recent": "最近",
+    "none": "今天还没有人打卡。",
+    "in": "上班",
+    "out": "下班",
+    "loading": "加载中…",
+    "invalid": "该柜台链接已失效。请向店主索取新链接。",
+    "moduleOff": "本店尚未开通考勤模块。",
+    "notConfigured": "该门店还没有设置位置或二维码。",
+    "failed": "无法加载二维码。正在重试…"
+  }
+}
