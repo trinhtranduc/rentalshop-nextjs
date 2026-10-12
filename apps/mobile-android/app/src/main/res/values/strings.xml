@@ -1650,4 +1650,8 @@
     <string name="v2_cart_total_cost">Total cost</string>
     <string name="v2_cart_profit">Expected profit</string>
     <string name="detail_created_by">Created by: %1$s</string>
+    <string name="orders_chip_pickup">Pickup</string>
+    <string name="orders_chip_return">Return</string>
+    <string name="cart_swipe_delete">Delete</string>
+    <string name="calendar_v2_ready">Ready</string>
 </resources>

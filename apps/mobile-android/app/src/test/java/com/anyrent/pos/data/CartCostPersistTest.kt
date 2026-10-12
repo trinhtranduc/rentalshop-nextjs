@@ -32,4 +32,17 @@ class CartCostPersistTest {
         assertEquals(800_000.0, lines.getValue(1).product.costPrice!!, 0.0)
         assertNull(lines.getValue(2).product.costPrice)
     }
+
+    /** #893 (owner): swiping a cart line removes it; the draft and totals follow */
+    @Test
+    fun `removing a line updates the lines and the saved draft`() {
+        CartStore.addProduct(product(1, 800_000.0))
+        CartStore.addProduct(product(2, null))
+        CartStore.remove(1)
+        assertEquals(listOf(2), CartStore.lines.value.map { it.product.id })
+        val saved = CartStore.draftJson()
+        CartStore.clear(persistToDisk = false)
+        CartStore.applyDraftJson(saved)
+        assertEquals(listOf(2), CartStore.lines.value.map { it.product.id })
+    }
 }

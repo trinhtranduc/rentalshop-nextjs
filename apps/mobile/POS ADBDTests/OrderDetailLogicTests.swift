@@ -290,8 +290,9 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverToday),
                        days7 + " · " + "order.header.handOverToday".localized())
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)),
-                       days7 + " · " + PluralText.format("order.header.pickupOverdue", count: 3, 3))
+        // #893 (owner): no overdue text in the detail; lateness shows only in Việc cần làm
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)), days7)
+        XCTAssertFalse(OrderDetailLogic.showsLateBanner, "no overdue banner in the detail")
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returned),
                        days7 + " · " + "order.header.returned".localized())
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .none), days7)

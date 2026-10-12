@@ -51,7 +51,9 @@ class OrderDetailHeaderTest {
         assertEquals(OrderDetailHeader.Due.HandOverToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverToday))
         // #891 (owner): no "trả sau N ngày" countdown either; late states stay
         assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnIn(3)))
-        assertEquals(OrderDetailHeader.Due.PastPickup(2), OrderDetailHeader.shownDue(OrderDetailHeader.Due.PastPickup(2)))
+        // #893 (owner): no overdue text or banner in the detail; Việc cần làm shows lateness
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.PastPickup(2)))
+        assertEquals(false, OrderDetailHeader.showsLateBanner)
         assertEquals(OrderDetailHeader.Due.ReturnToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnToday))
     }
 

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.key
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -460,8 +461,9 @@ fun CartV2Screen(
                         )
                         Text(
                             CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
-                            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
-                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 3.dp),
+                            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF), maxLines = 1,
+                            // #893 (owner): room inside the pill (10 left/right, 4 top/bottom), one line
+                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 4.dp),
                         )
                     }
                 }
@@ -478,6 +480,9 @@ fun CartV2Screen(
                 Text(stringResource(R.string.v2_cart_empty), color = DS.Colors.TextMuted, modifier = Modifier.padding(16.dp))
             }
             lines.forEach { line ->
+              // #893 (owner): swipe end-to-start reveals a red "Xoá"; a full swipe removes the line
+              key(line.product.id) {
+               SwipeToDeleteLine(onDelete = { CartStore.remove(line.product.id) }) {
                 ItemRow(
                     line = line,
                     isSale = isSale,
@@ -491,6 +496,8 @@ fun CartV2Screen(
                     onOpenPricing = { pricingLineId = line.product.id },
                     onOpenNote = { noteLineId = line.product.id },
                 )
+               }
+              }
             }
 
             SectionBand(stringResource(R.string.v2_cart_money))
@@ -915,8 +922,6 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
-                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món"
-                ItemNoteEntry(line.product.name, line.note, onOpenNote)
                 if (isSale && available != null) {
                     Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
@@ -930,6 +935,9 @@ private fun ItemRow(
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
                 }
+                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món".
+                // #891 (owner): the note is the last line of the item
+                ItemNoteEntry(line.product.name, line.note, onOpenNote)
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
@@ -1184,5 +1192,28 @@ private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () 
                 }
             }
         }
+    }
+}
+
+/** #893 (owner): a cart line that swipes end-to-start onto a red "Xoá"; past the threshold it is removed (iOS SwipeDeleteRow) */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToDeleteLine(onDelete: () -> Unit, content: @Composable () -> Unit) {
+    val state = androidx.compose.material3.rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == androidx.compose.material3.SwipeToDismissBoxValue.EndToStart) { onDelete(); true } else false
+        },
+        positionalThreshold = { total -> total * 0.5f },
+    )
+    androidx.compose.material3.SwipeToDismissBox(
+        state = state,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(Modifier.fillMaxSize().background(Color(0xFFDC2626)).padding(end = 24.dp), contentAlignment = Alignment.CenterEnd) {
+                Text(stringResource(R.string.cart_swipe_delete), color = Color.White, fontWeight = FontWeight.Bold, fontSize = DS.TextSize.Body)
+            }
+        },
+    ) {
+        Box(Modifier.background(DS.Colors.Surface)) { content() }
     }
 }

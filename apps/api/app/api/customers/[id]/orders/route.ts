@@ -94,6 +94,8 @@ export async function GET(
         limit,
         sortBy,
         sortOrder,
+        // #893: item names and quantities for the order rows (same page, same `limit`)
+        includeItemNames: true,
         ...(rangeStart ? { startDate: rangeStart } : {}),
         ...(rangeEnd ? { endDate: rangeEnd } : {}),
       };
@@ -178,8 +180,14 @@ export async function GET(
       });
 
       // Normalize date fields in order list to UTC ISO strings using toISOString()
-      const normalizedOrders = (orders.data || []).map(order => ({
+      // #893 (additive): `itemNames` [{ productName, quantity }] for the apps' order rows. The raw `orderItems`
+      // of the name-only select is dropped: old iOS decodes `orderItems` as full OrderItems (required id/prices).
+      const normalizedOrders = (orders.data || []).map(({ orderItems, ...order }: any) => ({
         ...order,
+        itemNames: (orderItems || []).map((item: any) => ({
+          productName: item.product?.name ?? null,
+          quantity: item.quantity ?? 1,
+        })),
         createdAt: order.createdAt?.toISOString() || null,
         updatedAt: order.updatedAt?.toISOString() || null,
         pickupPlanAt: order.pickupPlanAt?.toISOString() || null,

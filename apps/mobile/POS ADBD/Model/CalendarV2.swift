@@ -71,10 +71,12 @@ struct CalendarDayOrder: Decodable, Equatable {
     let createdAt: Date?
     let pickupPlanAt: Date?
     let returnPlanAt: Date?
+    /// #893: "Sẵn sàng giao" on a hand-over row; nil on an older API (treated as not prepared)
+    var isReadyToDeliver: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, status, orderType, totalAmount, orderItems, amountDue, refundDue, lateFee
-        case createdAt, pickupPlanAt, returnPlanAt
+        case createdAt, pickupPlanAt, returnPlanAt, isReadyToDeliver
     }
 
     init(id: Int, orderNumber: String, customerName: String?, status: String?, orderType: String?,
@@ -110,6 +112,7 @@ struct CalendarDayOrder: Decodable, Equatable {
         createdAt = (try? c.decodeIfPresent(Date.self, forKey: .createdAt)) ?? nil
         pickupPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .pickupPlanAt)) ?? nil
         returnPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .returnPlanAt)) ?? nil
+        isReadyToDeliver = (try? c.decodeIfPresent(Bool.self, forKey: .isReadyToDeliver)) ?? nil
     }
 }
 
