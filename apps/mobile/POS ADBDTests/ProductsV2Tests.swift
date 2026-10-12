@@ -87,6 +87,47 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(ProductCostPrice.shown(none, showsPrices: true))
     }
 
+    // MARK: - Home cart bar and add feedback (#893)
+
+    /// #893 (owner): the Home cart bar is the board's primary blue with white text; "+" shows no success toast
+    func testHomeCartBarIsBlueAndAddShowsNoToast() {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        HomeCartBarStyle.fill.getRed(&r, green: &g, blue: &b, alpha: &a)
+        XCTAssertEqual(String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255))), "1D4ED8")
+        XCTAssertEqual(HomeCartBarStyle.text, UIColor.white)
+        XCTAssertFalse(HomeCartBarStyle.showsAddedToast)
+    }
+
+    // MARK: - Cart swipe to delete (#893)
+
+    /// #893 (owner): swiping a cart line right-to-left reveals a red "Xoá"; a full swipe deletes at once
+    func testSwipeDeleteOutcome() {
+        let width: CGFloat = 375
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -10, width: width, velocity: 0), .close)
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -60, width: width, velocity: 0), .open)
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -240, width: width, velocity: 0), .delete, "past 60% of the width")
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -100, width: width, velocity: -1600), .delete, "a fast fling deletes")
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: 20, width: width, velocity: 0), .close, "left to right never deletes")
+        XCTAssertEqual(SwipeDeleteLogic.clamped(-500, width: width), -width)
+        XCTAssertEqual(SwipeDeleteLogic.clamped(30, width: width), 0)
+        let vi = Bundle(for: OrderRowCell.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "cart.swipe.delete", value: nil, table: nil), "Xoá")
+    }
+
+    /// #893: removing a line updates the item count and the totals
+    func testCartRemoveLineUpdatesTotals() {
+        let cart = Cart()
+        cart.addItem(CartItem(productId: 1, productName: "Áo dài", barcode: nil, quantity: 1, price: 300_000, deposit: 0,
+                              originalRentPrice: 300_000, originalSalePrice: 0))
+        cart.addItem(CartItem(productId: 2, productName: "Vest", barcode: nil, quantity: 2, price: 100_000, deposit: 0,
+                              originalRentPrice: 100_000, originalSalePrice: 0))
+        let before = cart.subtotalAmount
+        cart.removeItem(at: 0)
+        XCTAssertEqual(cart.items.map(\.productId), [2])
+        XCTAssertEqual(cart.itemCount, 2)
+        XCTAssertLessThan(cart.subtotalAmount, before)
+    }
+
     // MARK: - Product orders × qty (#891)
 
     func testProductQuantityInAnOrder() throws {

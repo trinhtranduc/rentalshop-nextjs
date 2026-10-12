@@ -346,6 +346,31 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #893: swiping a cart line right-to-left removes it (red "Xoá" when the swipe stops halfway)
+    func test8gCartSwipeDelete() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.emptyCart()
+        guard addFromHome("Product 1 - Electronics"), addFromHome("Product 2 - Tools") else {
+            return XCTFail("could not add two products")
+        }
+        guard openCart() else { return XCTFail("cart did not open") }
+        let line = app.staticTexts["Product 1 - Electronics"]
+        XCTAssertTrue(line.waitForExistence(timeout: 5))
+        e2e.shot("8g-10-cart-before")
+        line.swipeLeft()
+        sleep(1)
+        e2e.shot("8g-11-cart-swiped")
+        let delete = app.buttons.matching(identifier: "cart.swipe.delete").firstMatch
+        e2e.note("delete button exists=\(delete.exists) hittable=\(delete.exists && delete.isHittable) frame=\(delete.frame)")
+        if app.staticTexts["Product 1 - Electronics"].exists && delete.exists { delete.tap(); sleep(1) }
+        XCTAssertFalse(app.staticTexts["Product 1 - Electronics"].waitForExistence(timeout: 2), "the swiped line is gone")
+        XCTAssertTrue(app.staticTexts["Product 2 - Tools"].exists, "the other line stays")
+        e2e.shot("8g-12-cart-after")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     /// #888: cart lines show "Giá vốn" and the money part "Tổng giá vốn" (rent and sale) and "Lãi dự kiến" (sale) for
     /// roles that may see prices; staff never see them. Product 1 and Product 2 have a cost in the e2e DB.
     func test8fCartCost() throws {

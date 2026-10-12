@@ -2498,3 +2498,5 @@
 "order.detail.createdBy" = "Created by: %@";
 "orders.chip.pickup" = "Pickup";
 "orders.chip.return" = "Return";
+"cart.swipe.delete" = "Delete";
+"calendar.v2.ready" = "Ready";

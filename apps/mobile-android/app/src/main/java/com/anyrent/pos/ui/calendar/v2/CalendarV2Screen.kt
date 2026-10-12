@@ -67,7 +67,7 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.navigation.OrdersChanged
-import com.anyrent.pos.ui.orders.v2.OrderRowDateLines
+import com.anyrent.pos.ui.orders.v2.OrderRowMetaColor
 import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
 import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.ui.theme.DS
@@ -267,59 +267,67 @@ private fun DayHeader(selectedKey: String, todayKey: String, counts: com.anyrent
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
-    // #888: the same solid colours as the status badges (hand-over = booked, return = renting)
-    val pill = com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors(if (row.kind == CalendarRowKind.HAND_OVER) "RESERVED" else "PICKUPED")
+    // #891 (owner): the day-task tag keeps its light colours (a task, not an order status)
+    val pill = if (row.kind == CalendarRowKind.HAND_OVER) DS.Status.HandOver else DS.Status.Return
     val tag = stringResource(if (row.kind == CalendarRowKind.HAND_OVER) R.string.orders_hand_over else R.string.calendar_v2_tag_return)
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = DS.TouchTarget).padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    val (pickupLabel, returnLabel) = com.anyrent.pos.ui.orders.v2.chipLabels()
+    val ready = stringResource(R.string.calendar_v2_ready)
+    val notPrepared = stringResource(R.string.orders_v2_not_prepared)
+    // #893 (owner, mockup "Lịch"): lean row like Việc cần làm: line 1 name + the tag; line 2 the day task's date chip
+    // and, on hand-overs, "Sẵn sàng giao" / "Chưa soạn đồ"; right the total and the note under it. No "#code · tạo".
+    Column(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = DS.TouchTarget).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine),
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    tag, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = pill.text,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(pill.fill).padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-                Text(
-                    row.order.customerName?.takeIf { it.isNotBlank() } ?: row.order.orderNumber,
-                    fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
-            // #496: no product line; "#code · tạo …" then the task of the row
-            OrderRowDateLines(
-                OrderRowDates.lines(
-                    OrderRowDates.Input(
-                        code = OrdersBoardLogic.shortNumber(row.order.orderNumber),
-                        orderType = "RENT",
-                        status = if (row.kind == CalendarRowKind.HAND_OVER) "RESERVED" else "PICKUPED",
-                        createdAt = row.order.createdAt,
-                        pickupPlanAt = row.order.pickupPlanAt,
-                        returnPlanAt = row.order.returnPlanAt,
-                        late = row.lateDays > 0,
-                    ),
-                    orderRowTexts(),
-                ),
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                row.order.customerName?.takeIf { it.isNotBlank() } ?: row.order.orderNumber,
+                fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1,
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            )
+            Text(
+                tag, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = pill.text,
+                modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(pill.fill).padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(formatMoneyVnd(row.order.totalAmount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-            // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
-            val note = when (val n = CalendarLogic.note(row)) {
-                is CalendarNote.Late -> {
-                    val late = pluralStringResource(R.plurals.orders_late_days, n.days, n.days)
-                    (n.fee?.let { "$late · ${stringResource(R.string.calendar_v2_fee, formatMoneyVnd(it))}" } ?: late) to V2Colors.Danger
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                CalendarLogic.rowChips(row).forEach { chip ->
+                    val (text, colors) = when (chip.kind) {
+                        CalendarLogic.RowChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
+                        CalendarLogic.RowChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                        CalendarLogic.RowChipKind.READY -> ready to DS.Status.Done
+                        CalendarLogic.RowChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
+                    }
+                    Text(
+                        text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
                 }
-                is CalendarNote.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(n.amount)) to DS.Status.Return.text
-                is CalendarNote.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(n.amount)) to DS.Status.Waiting.text
-                CalendarNote.None -> null
             }
-            note?.let { (text, color) ->
-                Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(formatMoneyVnd(row.order.totalAmount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
+                val note = when (val n = CalendarLogic.note(row)) {
+                    is CalendarNote.Late -> {
+                        val late = pluralStringResource(R.plurals.orders_late_days, n.days, n.days)
+                        (n.fee?.let { "$late · ${stringResource(R.string.calendar_v2_fee, formatMoneyVnd(it))}" } ?: late) to V2Colors.Danger
+                    }
+                    is CalendarNote.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(n.amount)) to DS.Status.Return.text
+                    is CalendarNote.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(n.amount)) to DS.Status.Waiting.text
+                    CalendarNote.None -> null
+                }
+                note?.let { (text, color) ->
+                    Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
+                }
             }
         }
-        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = OtherMonth, modifier = Modifier.size(DS.Icon.Sm))
     }
 }

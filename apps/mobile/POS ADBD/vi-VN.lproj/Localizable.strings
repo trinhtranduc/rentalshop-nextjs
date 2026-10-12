@@ -2496,3 +2496,5 @@
 "order.detail.createdBy" = "Người tạo: %@";
 "orders.chip.pickup" = "Lấy";
 "orders.chip.return" = "Trả";
+"cart.swipe.delete" = "Xoá";
+"calendar.v2.ready" = "Sẵn sàng giao";

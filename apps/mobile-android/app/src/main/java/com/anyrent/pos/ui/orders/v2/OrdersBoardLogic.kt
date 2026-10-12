@@ -128,6 +128,46 @@ object OrdersBoardLogic {
         late = lateDays > 0,
     )
 
+    /** #893 (owner): kinds of the chips on line 2 of a lean Việc cần làm row */
+    enum class WorkChipKind { PICKUP, RETURN, LATE, NOT_PREPARED }
+
+    /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE */
+    data class WorkChip(val kind: WorkChipKind, val date: String? = null, val days: Int = 0)
+
+
+    /** #893 (owner): the task's own date (Lấy for a hand-over, Trả for a take-back), "Trễ N ngày", "Chưa soạn đồ" */
+    fun workChips(work: TodayWorkRow, kind: WorkKind, zone: java.time.ZoneId = ShopTime.zone): List<WorkChip> = buildList {
+        val handOver = kind == WorkKind.HAND_OVER
+        (if (handOver) work.pickupPlanAt else work.returnPlanAt)?.let {
+            add(WorkChip(if (handOver) WorkChipKind.PICKUP else WorkChipKind.RETURN, date = OrderRowDates.dmy(it, zone)))
+        }
+        if (work.lateDays > 0) add(WorkChip(WorkChipKind.LATE, days = work.lateDays))
+        if (notPreparedApplies(kind, work.isReadyToDeliver)) add(WorkChip(WorkChipKind.NOT_PREPARED))
+    }
+
+    /** #893 (owner): "Chưa soạn đồ" only on a hand-over (RESERVED, waiting to be picked up) not prepared */
+    fun notPreparedApplies(kind: WorkKind, isReadyToDeliver: Boolean): Boolean = kind == WorkKind.HAND_OVER && !isReadyToDeliver
+
+    /** #893 (owner): "còn thu N" under the total of a Việc cần làm row; null when nothing is due */
+    fun workDue(work: TodayWorkRow): Double? = work.amountDue.takeIf { it > 0 }
+
+    /** #891 (option C): the chips of a rent row; [sortedBy] (Tất cả đơn only) makes that date bold */
+    fun dateChips(order: OrderSummary, sortedBy: SortDate?, pickupLabel: String = "Lấy", returnLabel: String = "Trả"): List<OrderRowDates.DateChip> =
+        OrderRowDates.chips(
+            OrdersHomeLogic.parseInstant(order.pickupPlanAt), OrdersHomeLogic.parseInstant(order.returnPlanAt),
+            boldPickup = sortedBy == SortDate.PICKUP, boldReturn = sortedBy == SortDate.RETURN,
+            pickupLabel = pickupLabel, returnLabel = returnLabel,
+        )
+
+    /** #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" is bold dark text (no background) */
+    fun metaIsBold(sortedBy: SortDate?): Boolean = sortedBy == SortDate.CREATED
+
+    /** #891 (option C): light blue "Lấy", light purple "Trả" (iOS DateChip.Kind.colors) */
+    fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill = when (kind) {
+        OrderRowDates.ChipKind.PICKUP -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEFF6FF))
+        OrderRowDates.ChipKind.RETURN -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF5B21B6), androidx.compose.ui.graphics.Color(0xFFF5F3FF))
+    }
+
     /** #888 line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was) */
     fun rentRowMeta(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String =
         OrderRowDates.lines(rowDates(order, 0), texts).meta

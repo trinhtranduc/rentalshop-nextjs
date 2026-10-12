@@ -339,6 +339,9 @@ enum OrderDetailLogic {
     }
 
     /// "7 ngày · trả sau 2 ngày"; "7 ngày" alone when nothing remains to say
+    /// #893 (owner): the detail shows no overdue banner (late pickup or late return); Việc cần làm shows lateness
+    static let showsLateBanner = false
+
     static func headerSummary(days: Int?, remainder: OrderHeaderRemainder) -> String? {
         var parts: [String] = []
         if let days { parts.append(PluralText.format("%d days", count: days, days)) }
@@ -347,7 +350,7 @@ enum OrderDetailLogic {
         case .returnToday: parts.append("order.header.returnToday".localized())
         case .handOverIn: break // #891 (owner): no "lấy sau N ngày" countdown
         case .handOverToday: parts.append("order.header.handOverToday".localized())
-        case .pickupOverdue(let k): parts.append(PluralText.format("order.header.pickupOverdue", count: k, k))
+        case .pickupOverdue: break // #893 (owner): no overdue text in the detail; Việc cần làm shows lateness
         case .returned: parts.append("order.header.returned".localized())
         case .none: break
         }

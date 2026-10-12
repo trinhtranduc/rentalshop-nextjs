@@ -860,6 +860,70 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertFalse(visibleTexts(cell).contains("× 2"), "reused cell drops the quantity")
     }
 
+    /// #893 (owner on device): the sorted chip must read clearly bold; the other chip regular; a sort change updates it
+    func testSortChangeUpdatesChipEmphasis() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        func dateFont(_ cell: OrderRowCell, prefix: String) -> UIFont? {
+            guard let label = views(cell.contentView).compactMap({ $0 as? InsetLabel })
+                .first(where: { $0.attributedText?.string.hasPrefix(prefix) == true }),
+                  let text = label.attributedText else { return nil }
+            return text.attribute(.font, at: text.length - 1, effectiveRange: nil) as? UIFont
+        }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: "")
+        let pickup = "orders.chip.pickup".localized(), back = "orders.chip.return".localized()
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .returnDate), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.boldFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .created), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+    }
+
+    // MARK: #893 — lean Việc cần làm rows
+
+    /// Line 2 of a Việc cần làm row: the task's own date chip, then "Trễ N ngày", then "Chưa soạn đồ"
+    func testWorkRowChips() {
+        let pickup = iso.date(from: "2026-10-13T17:30:00Z")! // 14/10 in Vietnam
+        let back = iso.date(from: "2026-10-16T02:00:00Z")!
+        let handOver = TodayWorkRow(id: 1, orderNumber: "ORD-1-0063", pickupPlanAt: pickup, returnPlanAt: back,
+                                    isReadyToDeliver: false, totalAmount: 300_000, amountDue: 200_000, lateDays: 2)
+        let chips = OrdersHomeLogic.workChips(handOver, kind: .handOver, timeZone: vietnam)
+        XCTAssertEqual(chips.map(\.text), ["orders.chip.pickup".localized() + " 14/10/26", LateText.days(2),
+                                           "orders.v2.notPrepared".localized()])
+        XCTAssertEqual(hex(chips[0].colors.fill), "EFF6FF")
+        XCTAssertEqual(hex(chips[1].colors.fill), hex(DS.Status.late.fill))
+        XCTAssertEqual(hex(chips[2].colors.fill), hex(DS.Status.waiting.fill))
+        let takeBack = TodayWorkRow(id: 2, orderNumber: "2", pickupPlanAt: pickup, returnPlanAt: back, isReadyToDeliver: true,
+                                    totalAmount: 300_000)
+        XCTAssertEqual(OrdersHomeLogic.workChips(takeBack, kind: .takeBack, timeZone: vietnam).map(\.text),
+                       ["orders.chip.return".localized() + " 16/10/26"], "only the return date; ready, not late")
+        // #893 (owner): "Chưa soạn đồ" only on hand-over rows, never on a return row
+        let notReadyReturn = TodayWorkRow(id: 3, orderNumber: "3", pickupPlanAt: pickup, returnPlanAt: back, isReadyToDeliver: false)
+        XCTAssertFalse(OrdersHomeLogic.workChips(notReadyReturn, kind: .takeBack, timeZone: vietnam).map(\.text)
+            .contains("orders.v2.notPrepared".localized()))
+        // Right side: always the total; "còn thu N" under it only when something is due
+        XCTAssertEqual(OrdersHomeLogic.workDue(handOver), 200_000)
+        XCTAssertNil(OrdersHomeLogic.workDue(takeBack))
+    }
+
+    func testWorkRowIsLean() {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0063", customerName: "Huy",
+                               pickupPlanAt: iso.date(from: "2026-10-13T17:30:00Z"), returnPlanAt: iso.date(from: "2026-10-16T02:00:00Z"),
+                               isReadyToDeliver: true, totalAmount: 300_000, amountDue: 200_000)
+        cell.configure(.work(row, kind: .handOver), context: .work(isLate: false), hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo line: \(texts)")
+        XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
+        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"))
+        XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200_000))))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(300_000)), "the total always shows (owner)")
+    }
+
     func testCustomerOrderRowShowsItemNamesAsTitle() {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
         let row = CustomerOrderRow(id: 1, orderNumber: "0062", orderType: .rent, status: .reserved, totalAmount: 380000,
@@ -883,8 +947,37 @@ final class OrdersHomeTests: XCTestCase {
         cell.configure(CalendarDayRow(kind: .handOver, order: order, lateDays: 0), hidesMoney: false)
         let texts = visibleTexts(cell)
         XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"), "\(texts)")
-        XCTAssertTrue(texts.contains("orders.chip.return".localized() + " 16/10/26"), "\(texts)")
-        XCTAssertFalse(texts.contains { $0.contains(" · ") && $0.contains("16/10/26") }, "no single text line any more")
+        XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "#893 lean row: only the task's own date")
+    }
+
+    /// #893 (owner, calendar lean rows): the day task's date chip, then "Sẵn sàng giao" or "Chưa soạn đồ" (hand-overs only)
+    func testCalendarRowChips() throws {
+        func order(ready: String) throws -> CalendarDayOrder {
+            let json = #"{"id":3,"orderNumber":"ORD-1-0063","customerName":"Huy","status":"RESERVED","orderType":"RENT","totalAmount":300000,"amountDue":200000,"orderItems":[],"createdAt":"2026-10-05T07:30:00.000Z","pickupPlanAt":"2026-10-13T17:30:00.000Z","returnPlanAt":"2026-10-16T02:00:00.000Z"\#(ready)}"#
+            return try JSONDecoder.shared.decode(CalendarDayOrder.self, from: Data(json.utf8))
+        }
+        let ready = try order(ready: #","isReadyToDeliver":true"#)
+        let notReady = try order(ready: #","isReadyToDeliver":false"#)
+        let older = try order(ready: "")
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), timeZone: vietnam).map(\.text),
+                       ["orders.chip.pickup".localized() + " 14/10/26", "calendar.v2.ready".localized()])
+        let readyChip = OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), timeZone: vietnam)[1]
+        XCTAssertEqual(hex(readyChip.colors.fill), "D1FAE5")
+        XCTAssertEqual(hex(readyChip.colors.text), "047857")
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: notReady, lateDays: 0), timeZone: vietnam).map(\.text),
+                       ["orders.chip.pickup".localized() + " 14/10/26", "orders.v2.notPrepared".localized()])
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: older, lateDays: 0), timeZone: vietnam).count, 2,
+                       "an older API without the flag counts as not prepared")
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .takeBack, order: notReady, lateDays: 0), timeZone: vietnam).map(\.text),
+                       ["orders.chip.return".localized() + " 16/10/26"], "a return row: only its date, no prepared chip")
+
+        let cell = CalendarDayRowCell(style: .default, reuseIdentifier: nil)
+        cell.configure(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo: \(texts)")
+        XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(300000)))
+        XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200000))))
     }
 
     /// #891 (owner): order rows have no ">" chevron
@@ -961,7 +1054,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(status.layer.cornerRadius, 7)
         XCTAssertEqual(status.intrinsicContentSize.width,
                        (status.text! as NSString).size(withAttributes: [.font: status.font!]).width + 16, accuracy: 1)
-        // Money column: total bold, pay line ("còn thu N") regular
+        // #893 (lean Việc cần làm row): the total bold, "còn thu N" smaller under it; the notes are chips on line 2
         func labels(_ view: UIView) -> [UILabel] {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
@@ -969,17 +1062,13 @@ final class OrdersHomeTests: XCTestCase {
         cell.configure(.work(due, kind: .takeBack), context: .work(isLate: false), hidesMoney: false)
         let money = labels(cell.contentView)
         let pay = try XCTUnwrap(money.first { $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000)) })
-        XCTAssertEqual(pay.font, Utils.regularFont(size: DS.TextSize.secondary))
+        XCTAssertEqual(pay.font, Utils.mediumFont(size: DS.TextSize.secondary))
         let total = try XCTUnwrap(money.first { $0.text == MoneyFormatter.format(300000) })
         XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
         cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
-
-        let notes = tags(cell.contentView).filter { $0 !== status }
-        XCTAssertEqual(notes.count, 2, "not prepared + late")
-        for note in notes {
-            XCTAssertEqual(note.font, Utils.regularFont(size: DS.TextSize.pill), note.text ?? "")
-            XCTAssertEqual(note.layer.cornerRadius, DS.Radius.chip)
-        }
+        let chips = labels(cell.contentView).compactMap { $0 as? InsetLabel }.filter { !($0.superview?.isHidden ?? true) }
+            .compactMap(\.text)
+        XCTAssertEqual(Set(chips), [LateText.days(2), "orders.v2.notPrepared".localized()], "late + not prepared")
     }
 }
 

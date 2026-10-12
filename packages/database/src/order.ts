@@ -1312,7 +1312,7 @@ export const simplifiedOrders = {
             }
           },
           ...(includeItemNames
-            ? { orderItems: { select: { product: { select: { name: true } } } } }
+            ? { orderItems: { select: { quantity: true, product: { select: { name: true } } } } }
             : {})
         },
         orderBy, // ✅ Dynamic sorting

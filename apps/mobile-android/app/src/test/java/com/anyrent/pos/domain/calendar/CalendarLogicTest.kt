@@ -115,4 +115,30 @@ class CalendarLogicTest {
         assertEquals(0, CalendarLogic.lateDays("2026-10-05", "2026-10-03"))
         assertEquals(1, CalendarLogic.lateDays("2026-09-30", "2026-10-01"))
     }
+
+    /** #893 (owner, calendar lean rows): the day task's date chip; hand-overs add "Sẵn sàng giao" or "Chưa soạn đồ" (iOS) */
+    @Test
+    fun `calendar row chips`() {
+        val orders = CalendarLogic.dayOrdersFromJson(
+            JSONObject(
+                """{"orders":[
+                {"id":1,"orderNumber":"1","totalAmount":1,"pickupPlanAt":"2026-10-13T17:30:00Z","returnPlanAt":"2026-10-16T02:00:00Z","isReadyToDeliver":true},
+                {"id":2,"orderNumber":"2","totalAmount":1,"pickupPlanAt":"2026-10-13T17:30:00Z","returnPlanAt":"2026-10-16T02:00:00Z","isReadyToDeliver":false},
+                {"id":3,"orderNumber":"3","totalAmount":1,"pickupPlanAt":"2026-10-13T17:30:00Z","returnPlanAt":"2026-10-16T02:00:00Z"}]}""",
+            ),
+        )
+        assertEquals(true, orders[0].isReadyToDeliver)
+        assertEquals(false, orders[1].isReadyToDeliver)
+        assertNull(orders[2].isReadyToDeliver)
+        val ready = CalendarLogic.rowChips(CalendarDayRow(CalendarRowKind.HAND_OVER, orders[0], 0))
+        assertEquals(listOf(CalendarLogic.RowChipKind.PICKUP, CalendarLogic.RowChipKind.READY), ready.map { it.kind })
+        assertEquals("14/10/26", ready[0].date)
+        assertEquals(listOf(CalendarLogic.RowChipKind.PICKUP, CalendarLogic.RowChipKind.NOT_PREPARED),
+            CalendarLogic.rowChips(CalendarDayRow(CalendarRowKind.HAND_OVER, orders[1], 0)).map { it.kind })
+        assertEquals("older API without the flag: not prepared", listOf(CalendarLogic.RowChipKind.PICKUP, CalendarLogic.RowChipKind.NOT_PREPARED),
+            CalendarLogic.rowChips(CalendarDayRow(CalendarRowKind.HAND_OVER, orders[2], 0)).map { it.kind })
+        val back = CalendarLogic.rowChips(CalendarDayRow(CalendarRowKind.TAKE_BACK, orders[1], 0))
+        assertEquals("a return row: only its date", listOf(CalendarLogic.RowChipKind.RETURN), back.map { it.kind })
+        assertEquals("16/10/26", back[0].date)
+    }
 }

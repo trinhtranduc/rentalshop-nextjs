@@ -495,10 +495,8 @@ final class CalendarDayRowCell: UITableViewCell {
     private let tagLabel = PaddedLabel()
     private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     /// #496: "#0053 · tạo T7 03/10" and the status line, as on the order list rows
-    private let metaLabel = V2.label(size: 13, color: OrderRowCell.metaColor)
-    private let taskLabel = V2.label(size: DS.TextSize.body, weight: .medium, lines: 2)
-    /// #891 (owner): pickup and return as the light chips of Tất cả đơn (no emphasis)
-    private let chipStack = DateChipStack()
+    /// #893 (owner, lean row): the day task's date chip and "Sẵn sàng giao" / "Chưa soạn đồ", wrapping
+    private let chipLines = UIStackView()
     private let totalLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     private let noteLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: V2.danger)
 
@@ -523,7 +521,10 @@ final class CalendarDayRowCell: UITableViewCell {
         let nameRow = UIStackView(arrangedSubviews: [nameLabel, tagLabel])
         nameRow.spacing = DS.Spacing.sm
         nameRow.alignment = .center
-        let left = UIStackView(arrangedSubviews: [metaLabel, taskLabel, chipStack])
+        chipLines.axis = .vertical
+        chipLines.alignment = .leading
+        chipLines.spacing = 6
+        let left = UIStackView(arrangedSubviews: [chipLines])
         left.axis = .vertical
         left.spacing = DS.Gap.orderRowLine
         left.alignment = .leading
@@ -562,22 +563,11 @@ final class CalendarDayRowCell: UITableViewCell {
         let name = row.order.customerName?.trimmingCharacters(in: .whitespaces) ?? ""
         nameLabel.text = name.isEmpty ? row.order.orderNumber : name
         let order = row.order
-        let status = OrderStatus.from(apiString: order.status) ?? (row.kind == .handOver ? .reserved : .pickuped)
-        let lines = OrdersHomeLogic.rowLines(
-            code: OrdersHomeLogic.shortNumber(order.orderNumber),
-            orderType: (order.orderType ?? "").uppercased() == "SALE" ? .sale : .rent, status: status,
-            createdAt: order.createdAt, pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
-            returnedAt: nil, updatedAt: nil, isLate: row.lateDays > 0)
-        metaLabel.text = lines.meta
-        taskLabel.text = lines.task
-        taskLabel.isHidden = lines.task.isEmpty
-        if (order.orderType ?? "").uppercased() != "SALE" {
-            let chips = OrdersHomeLogic.dateChips(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: nil)
-            chipStack.show(chips)
-            if !chips.isEmpty { taskLabel.isHidden = true }
-        } else {
-            chipStack.show([])
-        }
+        // #893 (owner, lean row): no "#code · tạo", no other date; the day task's chip and ready / not prepared
+        let amountWidth = ((MoneyFormatter.format(order.totalAmount)) as NSString)
+            .size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
+        OrderRowCell.fillChipLines(chipLines, chips: OrdersHomeLogic.calendarChips(row),
+                                   width: UIScreen.main.bounds.width - 2 * DS.Spacing.lg - max(amountWidth, 110) - DS.Spacing.md)
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
         // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)

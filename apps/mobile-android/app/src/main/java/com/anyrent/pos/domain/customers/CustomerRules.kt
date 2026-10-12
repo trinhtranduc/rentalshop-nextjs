@@ -40,7 +40,11 @@ data class CustomerOrderRow(
     val returnPlanAt: Instant?,
     val createdAt: Instant?,
     val itemCount: Int,
+    /** #891: item names and quantities from the list payload's `orderItems`; empty on an older API */
+    val items: List<CustomerOrderItem> = emptyList(),
 )
+
+data class CustomerOrderItem(val name: String, val quantity: Int)
 
 data class CustomerOrders(
     val orders: List<CustomerOrderRow>,
@@ -135,6 +139,14 @@ object CustomerRules {
     )
 
     /** "#148148 · 2 món" ([items] is the localized item count) */
+    /** #891 (owner): line 1 of a customer's order row: "Vest đen slim fit, Cà vạt lụa +1", "Áo dài ×2"; null without names */
+    fun itemsTitle(row: CustomerOrderRow, shown: Int = 2): String? {
+        val names = row.items.map { if (it.quantity > 1) "${it.name} ×${it.quantity}" else it.name }
+        if (names.isEmpty()) return null
+        val head = names.take(shown).joinToString(", ")
+        return if (names.size > shown) "$head +${names.size - shown}" else head
+    }
+
     fun orderTitle(row: CustomerOrderRow, items: String): String = "#${row.orderNumber} · $items"
 
     /** Rent: "T7 03/10 → T2 05/10" (one day when both fall on the same civil day); sale: the created day */
@@ -191,7 +203,16 @@ object CustomerRules {
                 pickupPlanAt = instant(o.str("pickupPlanAt")),
                 returnPlanAt = instant(o.str("returnPlanAt")),
                 createdAt = instant(o.str("createdAt")),
-                itemCount = o.optJSONObject("_count")?.optInt("orderItems") ?: 0,
+                // #893: the API sends `itemNames` [{productName, quantity}]; `orderItems` kept as a fallback
+                items = (o.optJSONArray("itemNames") ?: o.optJSONArray("orderItems"))?.let { list ->
+                    (0 until list.length()).mapNotNull { j ->
+                        val item = list.optJSONObject(j) ?: return@mapNotNull null
+                        val name = item.str("productName")?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                        CustomerOrderItem(name, item.optInt("quantity", 1).coerceAtLeast(1))
+                    }
+                } ?: emptyList(),
+                itemCount = o.optJSONObject("_count")?.optInt("orderItems")
+                    ?: o.optJSONArray("orderItems")?.length() ?: 0,
             )
         }
         val summary = data.optJSONObject("summary")

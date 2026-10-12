@@ -59,7 +59,7 @@ struct CustomerOrderRow: Decodable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case id, orderNumber, orderType, status, totalAmount, pickupPlanAt, returnPlanAt, createdAt
         case count = "_count"
-        case orderItems
+        case orderItems, itemNames
     }
 
     private struct Count: Decodable { let orderItems: Int? }
@@ -90,7 +90,9 @@ struct CustomerOrderRow: Decodable, Equatable {
         pickupPlanAt = CustomersV2Logic.date(((try? c.decodeIfPresent(String.self, forKey: .pickupPlanAt)) ?? nil))
         returnPlanAt = CustomersV2Logic.date(((try? c.decodeIfPresent(String.self, forKey: .returnPlanAt)) ?? nil))
         createdAt = CustomersV2Logic.date(((try? c.decodeIfPresent(String.self, forKey: .createdAt)) ?? nil))
-        items = ((try? c.decodeIfPresent([Item].self, forKey: .orderItems)) ?? nil) ?? []
+        // #893: the API sends `itemNames` [{productName, quantity}]; `orderItems` kept as a fallback
+        items = ((try? c.decodeIfPresent([Item].self, forKey: .itemNames)) ?? nil)
+            ?? ((try? c.decodeIfPresent([Item].self, forKey: .orderItems)) ?? nil) ?? []
         itemCount = (((try? c.decodeIfPresent(Count.self, forKey: .count)) ?? nil)?.orderItems) ?? items.count
     }
 }

@@ -236,7 +236,7 @@ final class OrderDetailViewController: BaseViewControler {
         stack.spacing = DS.Spacing.md
 
         let late = lateDays(for: detail)
-        if late > 0 {
+        if OrderDetailLogic.showsLateBanner && late > 0 {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
         stack.addArrangedSubview(statusBox(detail))
