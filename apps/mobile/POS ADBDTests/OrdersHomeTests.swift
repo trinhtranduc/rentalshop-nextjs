@@ -860,6 +860,29 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertFalse(visibleTexts(cell).contains("× 2"), "reused cell drops the quantity")
     }
 
+    /// #893 (owner on device): the sorted chip must read clearly bold; the other chip regular; a sort change updates it
+    func testSortChangeUpdatesChipEmphasis() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        func dateFont(_ cell: OrderRowCell, prefix: String) -> UIFont? {
+            guard let label = views(cell.contentView).compactMap({ $0 as? InsetLabel })
+                .first(where: { $0.attributedText?.string.hasPrefix(prefix) == true }),
+                  let text = label.attributedText else { return nil }
+            return text.attribute(.font, at: text.length - 1, effectiveRange: nil) as? UIFont
+        }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: "")
+        let pickup = "orders.chip.pickup".localized(), back = "orders.chip.return".localized()
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .returnDate), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.boldFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .created), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+    }
+
     func testCustomerOrderRowShowsItemNamesAsTitle() {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
         let row = CustomerOrderRow(id: 1, orderNumber: "0062", orderType: .rent, status: .reserved, totalAmount: 380000,
