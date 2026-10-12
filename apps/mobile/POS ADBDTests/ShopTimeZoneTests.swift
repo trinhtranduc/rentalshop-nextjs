@@ -282,7 +282,10 @@ final class ShopTimeZoneTests: XCTestCase {
             let pickup = at("2026-10-09T17:00:00Z")
             let after = RentalExtension.updateRequest(pickup: pickup, newDay: newDay, oldTotal: 1, extra: nil)
             let before = RentalExtension.updateRequest(pickup: pickup, newDay: newDay, oldTotal: 1, extra: nil, timeZone: .current)
-            XCTAssertEqual(try JSONEncoder().encode(after), try JSONEncoder().encode(before))
+            // #923: fixed key order, or two equal bodies can encode to different bytes
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .sortedKeys
+            XCTAssertEqual(try encoder.encode(after), try encoder.encode(before))
 
             // Rent list: before = device zone
             for range: RentOrdersFilter.DateRange in [.today, .next7Days, .thisMonth,

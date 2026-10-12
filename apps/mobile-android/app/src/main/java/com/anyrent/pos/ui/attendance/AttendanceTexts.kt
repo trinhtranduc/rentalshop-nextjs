@@ -21,10 +21,9 @@ object AttendanceTexts {
         },
     )
 
-    /** Second line of the Cài đặt row: "Ca sáng 08:00–12:00 · chưa vào ca" */
+    /** Second line of the Cài đặt row: "Ca sáng 08:00–12:00 · chưa vào ca", "Chưa vào ca" with no shift (as iOS) */
     fun settingsSubtitle(context: Context, me: AttendanceMe): String =
-        listOfNotNull(me.todayShifts.firstOrNull()?.let { AttendanceLogic.shiftLine(it) }, status(context, me.status()))
-            .joinToString(" · ")
+        AttendanceLogic.settingsLine(me.todayShifts.firstOrNull(), status(context, me.status()))
 
     /** Title and message of the one red card */
     fun rejection(context: Context, r: PunchRejection): Pair<String, String> = when (r.kind) {

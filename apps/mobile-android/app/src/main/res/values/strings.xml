@@ -1685,7 +1685,7 @@
     <string name="attendance_err_qr_expired_msg">Scan the code posted / shown at the counter today.</string>
     <string name="attendance_err_wrong_outlet">QR code of another branch</string>
     <string name="attendance_err_wrong_outlet_msg">You belong to %1$s.</string>
-    <string name="attendance_err_wrong_outlet_msg_plain">Scan the code of the branch you work at.</string>
+    <string name="attendance_err_wrong_outlet_msg_plain">Scan the code of the outlet you work at.</string>
     <string name="attendance_err_gps">Location not precise yet</string>
     <string name="attendance_err_gps_msg">GPS ±%1$d m. Move near the door and try again.</string>
     <string name="attendance_err_gps_msg_plain">Move near the door and try again.</string>
@@ -1695,13 +1695,13 @@
     <string name="attendance_err_module_off_msg">Ask the shop owner to turn on Attendance.</string>
     <string name="attendance_err_no_location">Location not precise yet</string>
     <string name="attendance_err_no_location_msg">Could not get your location. Move near the door and try again.</string>
-    <string name="attendance_err_other">Could not clock in</string>
+    <string name="attendance_err_other">Could not clock in / out</string>
     <string name="attendance_perm_title">Camera and location</string>
     <string name="attendance_perm_message">AnyRent uses the camera to scan the QR code at the counter and your precise location to confirm you are at the branch.</string>
     <string name="attendance_perm_continue">Continue</string>
     <string name="attendance_perm_denied_title">Permission needed</string>
     <string name="attendance_perm_denied_message">To clock in, allow Camera and precise Location for AnyRent in Settings.</string>
-    <string name="attendance_open_settings">Open settings</string>
+    <string name="attendance_open_settings">Open Settings</string>
     <string name="attendance_week">THIS WEEK</string>
     <string name="attendance_month_title">MONTH %1$s</string>
     <string name="attendance_total_hours">Total hours</string>
@@ -1709,6 +1709,6 @@
     <string name="attendance_hours_short">%1$s h</string>
     <string name="attendance_late">late %1$d′</string>
     <string name="attendance_days_worked">Days worked</string>
-    <string name="attendance_week_empty">No shifts this week.</string>
+    <string name="attendance_week_empty">No shifts this week</string>
     <string name="attendance_load_failed">Could not load. Try again.</string>
 </resources>
