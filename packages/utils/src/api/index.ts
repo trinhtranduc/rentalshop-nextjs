@@ -12,6 +12,7 @@ export * from './orders';
 export * from './outlets';
 export * from './bank-accounts';
 export * from './merchants';
+export * from './merchant-modules';
 export * from './analytics';
 export * from './categories';
 export * from './notifications';
