@@ -947,8 +947,37 @@ final class OrdersHomeTests: XCTestCase {
         cell.configure(CalendarDayRow(kind: .handOver, order: order, lateDays: 0), hidesMoney: false)
         let texts = visibleTexts(cell)
         XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"), "\(texts)")
-        XCTAssertTrue(texts.contains("orders.chip.return".localized() + " 16/10/26"), "\(texts)")
-        XCTAssertFalse(texts.contains { $0.contains(" · ") && $0.contains("16/10/26") }, "no single text line any more")
+        XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "#893 lean row: only the task's own date")
+    }
+
+    /// #893 (owner, calendar lean rows): the day task's date chip, then "Sẵn sàng giao" or "Chưa soạn đồ" (hand-overs only)
+    func testCalendarRowChips() throws {
+        func order(ready: String) throws -> CalendarDayOrder {
+            let json = #"{"id":3,"orderNumber":"ORD-1-0063","customerName":"Huy","status":"RESERVED","orderType":"RENT","totalAmount":300000,"amountDue":200000,"orderItems":[],"createdAt":"2026-10-05T07:30:00.000Z","pickupPlanAt":"2026-10-13T17:30:00.000Z","returnPlanAt":"2026-10-16T02:00:00.000Z"\#(ready)}"#
+            return try JSONDecoder.shared.decode(CalendarDayOrder.self, from: Data(json.utf8))
+        }
+        let ready = try order(ready: #","isReadyToDeliver":true"#)
+        let notReady = try order(ready: #","isReadyToDeliver":false"#)
+        let older = try order(ready: "")
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), timeZone: vietnam).map(\.text),
+                       ["orders.chip.pickup".localized() + " 14/10/26", "calendar.v2.ready".localized()])
+        let readyChip = OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), timeZone: vietnam)[1]
+        XCTAssertEqual(hex(readyChip.colors.fill), "D1FAE5")
+        XCTAssertEqual(hex(readyChip.colors.text), "047857")
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: notReady, lateDays: 0), timeZone: vietnam).map(\.text),
+                       ["orders.chip.pickup".localized() + " 14/10/26", "orders.v2.notPrepared".localized()])
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: older, lateDays: 0), timeZone: vietnam).count, 2,
+                       "an older API without the flag counts as not prepared")
+        XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .takeBack, order: notReady, lateDays: 0), timeZone: vietnam).map(\.text),
+                       ["orders.chip.return".localized() + " 16/10/26"], "a return row: only its date, no prepared chip")
+
+        let cell = CalendarDayRowCell(style: .default, reuseIdentifier: nil)
+        cell.configure(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo: \(texts)")
+        XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(300000)))
+        XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200000))))
     }
 
     /// #891 (owner): order rows have no ">" chevron
