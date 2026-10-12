@@ -240,6 +240,8 @@ export function chipClass(color: string | null | undefined): string {
       return 'bg-[#ECFDF5] text-[#047857]';
     case 'orange':
       return 'bg-[#FFF7ED] text-[#9A3412]';
+    case 'gray':
+      return 'bg-[#F1F5F9] text-[#475569]';
     default:
       return 'bg-[#EFF6FF] text-[#1E40AF]';
   }
@@ -369,16 +371,19 @@ export function filterRows(rows: AttendancePersonRow[], filter: RowFilter): Atte
   return rows;
 }
 
-/** Rows grouped by day in time order; an edit row sits under its record's day when the API says so. */
+/**
+ * Rows grouped by day in time order. A row of a record (its OUT, auto-close or edit) sits under the day of the
+ * record's IN, so a cross-midnight OUT or a later edit stays with its shift; other rows use their own VN day.
+ */
 export function groupRowsByDay(rows: AttendancePersonRow[]): Array<{ day: string; rows: AttendancePersonRow[] }> {
   const recordDay = new Map<number, string>();
   for (const r of rows) {
-    if (r.recordId != null && r.kind !== 'EDIT' && !recordDay.has(r.recordId)) recordDay.set(r.recordId, r.dateKey || dayOf(r.at));
+    if (r.recordId != null && r.kind === 'IN' && r.result === 'ACCEPTED' && !recordDay.has(r.recordId)) recordDay.set(r.recordId, r.dateKey || dayOf(r.at));
   }
   const groups = new Map<string, AttendancePersonRow[]>();
-  const sorted = [...rows].sort((a, b) => a.at.localeCompare(b.at));
+  const sorted = [...rows].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   for (const r of sorted) {
-    const day = r.dateKey || (r.kind === 'EDIT' && r.recordId != null && recordDay.get(r.recordId)) || dayOf(r.at);
+    const day = r.dateKey || (r.recordId != null && recordDay.get(r.recordId)) || dayOf(r.at);
     if (!groups.has(day)) groups.set(day, []);
     groups.get(day)!.push(r);
   }

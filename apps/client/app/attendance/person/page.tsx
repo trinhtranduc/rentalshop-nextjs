@@ -317,8 +317,8 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-6">
             <Kpi label={t('person.kpi.days')} value={s?.days ?? '–'} />
             <Kpi label={t('person.kpi.hours')} value={s ? formatHours(s.hours) : '–'} />
-            <Kpi label={t('person.kpi.lateEarly')} value={s ? (s.lateEarly ?? (s.late || 0) + (s.early || 0)) : '–'} tone="amber" />
-            <Kpi label={t('person.kpi.overtime')} value={s?.overtime ?? '–'} tone="violet" />
+            <Kpi label={t('person.kpi.lateEarly')} value={s ? (s.lateCount || 0) + (s.earlyCount || 0) : '–'} tone="amber" />
+            <Kpi label={t('person.kpi.overtime')} value={s?.overtimeCount ?? '–'} tone="violet" />
             <Kpi label={t('person.kpi.missingOut')} value={s?.missingOut ?? '–'} tone="red" />
             <Kpi label={t('person.kpi.suspected')} value={s?.suspected ?? '–'} tone="red" />
           </div>

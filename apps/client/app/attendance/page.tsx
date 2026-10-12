@@ -15,7 +15,6 @@ import {
   formatHours,
   isMonthKey,
   lastDayOfMonth,
-  listOf,
   lockDisplay,
   monthDays,
   monthLabel,
@@ -99,7 +98,7 @@ function Timesheet({ outlet, outlets, role }: { outlet: OutletOption; outlets: O
   const shiftTo = lastDayOfMonth(month) < today ? lastDayOfMonth(month) : today;
   const shifts = useLoad<EffectiveShiftDay[]>(
     `${month}-01` < today
-      ? async () => listOf<EffectiveShiftDay>(await must(attendanceApi.listShifts(outlet.id, `${month}-01`, shiftTo)), 'days')
+      ? async () => (await must(attendanceApi.listShifts(outlet.id, `${month}-01`, shiftTo))).items || []
       : null,
     [outlet.id, month, shiftTo],
   );

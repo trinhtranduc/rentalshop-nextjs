@@ -212,4 +212,19 @@ describe('record times in the shop zone', () => {
     expect(groups[1].rows.map((r) => r.kind)).toEqual(['IN', 'OUT', 'EDIT']);
     expect(recordTimes(rows, 7)).toEqual({ day: '2026-10-15', checkIn: '13:00', checkOut: '' });
   });
+
+  it('an auto-close stamped on a later read and a cross-midnight OUT stay on the IN day', () => {
+    const rows = [
+      { at: '2026-10-20T15:00:00Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 9 },
+      { at: '2026-10-20T19:00:00Z', kind: 'OUT' as const, result: 'ACCEPTED' as const, recordId: 9 },
+      { at: '2026-10-21T01:00:00Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 10 },
+      { at: '2026-10-23T02:00:00Z', kind: 'OUT' as const, result: 'AUTO_CLOSED' as const, recordId: 10 },
+    ];
+    const groups = groupRowsByDay(rows);
+    expect(groups.map((g) => [g.day, g.rows.length])).toEqual([
+      ['2026-10-20', 2],
+      ['2026-10-21', 2],
+    ]);
+    expect(recordTimes(rows, 9)).toEqual({ day: '2026-10-20', checkIn: '22:00', checkOut: '02:00' });
+  });
 });

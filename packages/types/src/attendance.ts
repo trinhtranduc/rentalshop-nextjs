@@ -113,6 +113,18 @@ export interface EffectiveShiftDay {
   userId: number;
   date: string;
   shifts: EffectiveShift[];
+  /** A one-day change to "no shift". */
+  off?: boolean;
+  locked?: boolean;
+}
+
+/** Rule 23 response: the outlet's users and one item per user-day with shifts (or an "off" change). */
+export interface EffectiveSchedule {
+  outletId: number;
+  from: string;
+  to: string;
+  users: Array<{ id: number; name: string }>;
+  items: EffectiveShiftDay[];
 }
 
 /** Rule 26. */
@@ -164,7 +176,7 @@ export interface AttendancePersonRow {
   accuracyM?: number | null;
   latitude?: number | null;
   longitude?: number | null;
-  shift?: { name: string; start: string; end: string } | string | null;
+  shift?: { templateId?: number | null; name: string; start: string; end: string; breakMinutes?: number } | string | null;
   lateMinutes?: number | null;
   earlyMinutes?: number | null;
   overtimeMinutes?: number | null;
@@ -178,10 +190,9 @@ export interface AttendancePersonRow {
 export interface AttendancePersonSummary {
   days: number;
   hours: number;
-  lateEarly?: number;
-  late?: number;
-  early?: number;
-  overtime: number;
+  lateCount: number;
+  earlyCount: number;
+  overtimeCount: number;
   missingOut: number;
   suspected: number;
 }

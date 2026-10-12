@@ -15,7 +15,7 @@ import type {
   AttendanceSettings,
   AttendanceSettingsUpdate,
   AttendanceTimesheet,
-  EffectiveShiftDay,
+  EffectiveSchedule,
   ShiftDayChange,
   ShiftRule,
   ShiftRuleCreate,
@@ -88,8 +88,7 @@ export const attendanceApi = {
   deleteRule: (id: number) => send<unknown>(`${BASE}/shift-rules/${id}`, 'DELETE'),
 
   // Effective schedule and one-day changes (rules 21, 23)
-  listShifts: (outletId: number, from: string, to: string) =>
-    get<EffectiveShiftDay[] | { days: EffectiveShiftDay[] }>(`${BASE}/shifts${qs({ outletId, from, to })}`),
+  listShifts: (outletId: number, from: string, to: string) => get<EffectiveSchedule>(`${BASE}/shifts${qs({ outletId, from, to })}`),
   setDay: (body: ShiftDayChange) => send<unknown>(`${BASE}/shifts/day`, 'PUT', body),
   clearDay: (outletId: number, userId: number, date: string) =>
     send<unknown>(`${BASE}/shifts/day${qs({ outletId, userId, date })}`, 'DELETE'),

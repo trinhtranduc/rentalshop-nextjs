@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@rentalshop/ui';
 import { addDaysToDateKey, attendanceApi, usersApi } from '@rentalshop/utils';
-import type { EffectiveShift, EffectiveShiftDay, ShiftRule, ShiftTemplate } from '@rentalshop/types';
+import type { EffectiveSchedule, EffectiveShift, ShiftRule, ShiftTemplate } from '@rentalshop/types';
 import {
   chipClass,
   isDayKey,
@@ -448,22 +448,26 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
   const days = weekDays(start);
   const [dialog, setDialog] = useState<DialogState>(null);
 
-  const staff = useLoad<Staff[]>(async () => {
-    const data = await must(usersApi.searchUsers({ outletId: outlet.id, isActive: true, limit: 100 }));
-    return listOf<{ id: number; firstName?: string; lastName?: string; name?: string; role?: string }>(data, 'users')
-      .filter((u) => u.role !== 'MERCHANT')
-      .map((u) => ({ id: Number(u.id), name: personName(u), role: u.role }));
+  // Role labels only; the rows are the outlet users the schedule API returns
+  const roles = useLoad<Record<number, string>>(async () => {
+    const data = await must(usersApi.searchUsers({ outletId: outlet.id, limit: 100 }));
+    const map: Record<number, string> = {};
+    for (const u of listOf<{ id: number; role?: string }>(data, 'users')) if (u.role) map[Number(u.id)] = u.role;
+    return map;
   }, [outlet.id]);
   const templates = useLoad<ShiftTemplate[]>(async () => listOf<ShiftTemplate>(await must(attendanceApi.listTemplates(outlet.id)), 'templates'), [outlet.id]);
   const rules = useLoad<ShiftRule[]>(async () => listOf<ShiftRule>(await must(attendanceApi.listRules(outlet.id)), 'rules'), [outlet.id]);
-  const week = useLoad<EffectiveShiftDay[]>(async () => listOf<EffectiveShiftDay>(await must(attendanceApi.listShifts(outlet.id, days[0], days[6])), 'days'), [outlet.id, start]);
+  const week = useLoad<EffectiveSchedule>(() => must(attendanceApi.listShifts(outlet.id, days[0], days[6])), [outlet.id, start]);
 
   const cells = useMemo(() => {
-    const map = new Map<string, EffectiveShift[]>();
-    for (const d of week.data || []) map.set(`${d.userId}|${d.date}`, d.shifts || []);
+    const map = new Map<string, { shifts: EffectiveShift[]; locked: boolean }>();
+    for (const d of week.data?.items || []) map.set(`${d.userId}|${d.date}`, { shifts: d.shifts || [], locked: !!d.locked });
     return map;
   }, [week.data]);
-  const people = staff.data || [];
+  const people: Staff[] = useMemo(
+    () => (week.data?.users || []).map((u) => ({ id: Number(u.id), name: u.name || personName(u), role: roles.data?.[Number(u.id)] })),
+    [week.data, roles.data],
+  );
   const staffName = (id: number) => people.find((p) => p.id === id)?.name || `#${id}`;
   const tplName = (id: number) => (templates.data || []).find((x) => Number(x.id) === Number(id))?.name || '';
   const current = (rules.data || []).filter((r) => isRuleCurrent(r, today));
@@ -496,8 +500,8 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
       </div>
 
       <div className={`${cardClass} overflow-x-auto p-0`}>
-        {!staff.data || !week.data ? (
-          <p className="m-0 px-5 py-6 text-ar-muted">{staff.error || week.error ? t('common.loadFailed') : t('common.loading')}</p>
+        {!week.data ? (
+          <p className="m-0 px-5 py-6 text-ar-muted">{week.error ? t('common.loadFailed') : t('common.loading')}</p>
         ) : people.length === 0 ? (
           <p className="m-0 px-5 py-8 text-center text-ar-muted">{t('shifts.empty')}</p>
         ) : (
@@ -525,8 +529,10 @@ function Shifts({ outlet, outlets }: { outlet: OutletOption; outlets: OutletOpti
                     )}
                   </td>
                   {days.map((d) => {
-                    const shifts = cells.get(`${p.id}|${d}`) || [];
-                    const state = weekCellState(d, today, shifts);
+                    const cell = cells.get(`${p.id}|${d}`);
+                    const shifts = cell?.shifts || [];
+                    const base = weekCellState(d, today, shifts);
+                    const state = cell?.locked ? { ...base, locked: true, canAdd: false } : base;
                     return (
                       <td key={d} className={`${tdClass} min-w-[96px]`}>
                         <span className="flex flex-col items-start gap-1">
