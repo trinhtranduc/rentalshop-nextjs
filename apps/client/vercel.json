@@ -1,7 +1,7 @@
 {
   "buildCommand": "cd ../.. && npx prisma generate --schema=./prisma/schema.prisma && SKIP_ENV_VALIDATION=true npx turbo run build --filter=@rentalshop/client",
   "devCommand": "yarn workspace @rentalshop/client dev",
-  "installCommand": "cd ../.. && yarn install --production=false",
+  "installCommand": "cd ../.. && rm -rf packages/*/node_modules/@rentalshop apps/*/node_modules/@rentalshop && yarn install --production=false --check-files",
   "framework": "nextjs",
   "rewrites": [],
   "headers": [
