@@ -503,8 +503,6 @@ final class CartV2ViewController: BaseViewControler {
         column.spacing = 6
         column.alignment = .fill
 
-        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet
-        column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
 
         if isRent, let conflict = conflicts[item.productId] {
             let tag = UIButton(type: .system)
@@ -556,6 +554,10 @@ final class CartV2ViewController: BaseViewControler {
         bottom.spacing = 8
         column.setCustomSpacing(10, after: column.arrangedSubviews.last ?? link)
         column.addArrangedSubview(bottom)
+        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet.
+        // #891 (owner): the note is the last line of the item
+        column.setCustomSpacing(8, after: bottom)
+        column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
 
         row.addSubview(thumb)
         row.addSubview(column)

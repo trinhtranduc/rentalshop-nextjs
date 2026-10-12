@@ -497,9 +497,6 @@ final class OrderDetailViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [name, calc])
         texts.axis = .vertical
         texts.spacing = 4
-        if let note = CartV2Logic.noteText(item.notes) {
-            texts.addArrangedSubview(noteBox(note))
-        }
 
         let qty = UILabel()
         qty.font = Utils.regularFont(size: DS.TextSize.secondary)
@@ -516,6 +513,11 @@ final class OrderDetailViewController: BaseViewControler {
         bottom.alignment = .firstBaseline
         texts.addArrangedSubview(bottom)
         texts.setCustomSpacing(6, after: texts.arrangedSubviews[texts.arrangedSubviews.count - 2])
+        // #891 (owner): the item note is the last line of the item
+        if let note = CartV2Logic.noteText(item.notes) {
+            texts.setCustomSpacing(8, after: bottom)
+            texts.addArrangedSubview(noteBox(note))
+        }
 
         let row = UIStackView(arrangedSubviews: [image, texts])
         row.axis = .horizontal

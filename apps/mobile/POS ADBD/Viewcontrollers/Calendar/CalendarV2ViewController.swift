@@ -510,31 +510,37 @@ final class CalendarDayRowCell: UITableViewCell {
         tagLabel.setContentHuggingPriority(.required, for: .horizontal)
         tagLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         nameLabel.lineBreakMode = .byTruncatingTail
+        nameLabel.numberOfLines = 1
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         totalLabel.textAlignment = .right
         noteLabel.textAlignment = .right
         totalLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         noteLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let nameRow = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
-        nameRow.spacing = 6
+        // #891 (owner, mockup "Lịch"): line 1 name (one line, full width) + the day-task tag right;
+        // then "#code · tạo …" and the Lấy / Trả chips on the left, total and "còn thu" on the right
+        let nameRow = UIStackView(arrangedSubviews: [nameLabel, tagLabel])
+        nameRow.spacing = DS.Spacing.sm
         nameRow.alignment = .center
-        let left = UIStackView(arrangedSubviews: [nameRow, metaLabel, taskLabel, chipStack])
+        let left = UIStackView(arrangedSubviews: [metaLabel, taskLabel, chipStack])
         left.axis = .vertical
-        left.spacing = DS.Gap.lineTight
+        left.spacing = DS.Gap.orderRowLine
         left.alignment = .leading
         let right = UIStackView(arrangedSubviews: [totalLabel, noteLabel])
         right.axis = .vertical
         right.alignment = .trailing
-        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
-        chevron.tintColor = UIColor(hexString: "94A3B8")
-        chevron.contentMode = .center
-        chevron.snp.makeConstraints { make in make.width.height.equalTo(DS.Icon.sm) }
-        let row = UIStackView(arrangedSubviews: [left, right, chevron])
-        row.spacing = DS.Spacing.md
-        row.alignment = .center
-        contentView.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg))
+        right.spacing = 4
+        right.setContentHuggingPriority(.required, for: .horizontal)
+        let mid = UIStackView(arrangedSubviews: [left, UIView(), right])
+        mid.spacing = DS.Spacing.md
+        mid.alignment = .top
+        let column = UIStackView(arrangedSubviews: [nameRow, mid])
+        column.axis = .vertical
+        column.spacing = DS.Gap.orderRowLine
+        contentView.addSubview(column)
+        column.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: DS.Spacing.lg, bottom: 12, right: DS.Spacing.lg))
             make.height.greaterThanOrEqualTo(DS.touchTarget)
         }
         let line = V2.divider()
@@ -548,8 +554,8 @@ final class CalendarDayRowCell: UITableViewCell {
     }
 
     func configure(_ row: CalendarDayRow, hidesMoney: Bool) {
-        // #888: same palette as the status badges (hand-over = booked, return = renting)
-        let pill = OrderStatusBadge.pill(for: row.kind == .handOver ? .reserved : .pickuped)
+        // #891 (owner): the day-task tag keeps its light colours (a task, not an order status)
+        let pill = row.kind == .handOver ? DS.Status.handOver : DS.Status.returning
         tagLabel.text = row.kind == .handOver ? "Hand over".localized() : "calendar.v2.tag.return".localized()
         tagLabel.textColor = pill.text
         tagLabel.backgroundColor = pill.fill

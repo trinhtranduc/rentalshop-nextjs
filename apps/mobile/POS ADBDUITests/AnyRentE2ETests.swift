@@ -635,8 +635,9 @@ final class AnyRentE2ETests: XCTestCase {
 
         let todayKey = E2E.dayMonth(Date())
         let tomorrowKey = E2E.dayMonth(Date().addingTimeInterval(86_400))
-        let today = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + todayKey)).firstMatch
-        let tomorrow = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + tomorrowKey)).firstMatch
+        // #888: day cells read "12/10/26" (dd/mm/yy), older builds "T2 12/10"
+        let today = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ OR label ENDSWITH %@", todayKey + "/", " " + todayKey)).firstMatch
+        let tomorrow = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ OR label ENDSWITH %@", tomorrowKey + "/", " " + tomorrowKey)).firstMatch
         if tomorrow.exists { tomorrow.tap(); sleep(2) }
         XCTAssertTrue(today.waitForExistence(timeout: 5), "Today's cell (\(todayKey)) is on the month grid")
         today.tap()
