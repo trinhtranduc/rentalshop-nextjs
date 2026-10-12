@@ -68,9 +68,10 @@ object OrderDetailHeader {
         runCatching { Instant.parse(value) }.getOrNull()
             ?: runCatching { java.time.OffsetDateTime.parse(value).toInstant() }.getOrNull()
 
-    /** "T4 01/10" in the shop zone; "—" without a date */
+    /** "01/10/26" (dd/mm/yy, #888) in the shop zone; "—" without a date. [weekdays] is kept for callers, unused */
+    @Suppress("UNUSED_PARAMETER")
     fun dayLabel(value: String?, weekdays: List<String> = OrderRowDates.Texts().weekdays, zone: ZoneId = shopZone): String =
-        dayOf(value, zone)?.let { OrderRowDates.day(it, weekdays) } ?: "—"
+        value?.let { parse(it) }?.let { OrderRowDates.dmy(it, zone) } ?: "—"
 
     /** Note of a rent ("7 ngày · trả sau 2 ngày"); a sale or a cancelled rent has none beyond the day count */
     fun note(summary: OrderSummary, now: Instant = Instant.now(), zone: ZoneId = shopZone): Note {

@@ -6,7 +6,7 @@ import java.time.ZoneId
 
 /**
  * #496 the two lines under the customer name of an order list row (boards Main, VL-*, DT-*, Lich):
- * line 1 (muted) "#0053 · tạo T2 05/10", line 2 (by status) "Giao T2 05/10 · trả T4 07/10".
+ * line 1 (muted) "#0053 · tạo 05/10/26", line 2 (by status) "Lấy 05/10/26 · trả 07/10/26" (dd/mm/yy since #888).
  * Every day is a Vietnam civil day ([shopZone]), whatever the device zone (timezone-dates). Pure and unit tested.
  */
 object OrderRowDates {
@@ -18,7 +18,7 @@ object OrderRowDates {
         /** Monday first: T2 … T7, CN */
         val weekdays: List<String> = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN"),
         val created: String = "tạo %s",
-        val handOver: String = "Giao %s",
+        val handOver: String = "Lấy %s",
         val handOverReturn: String = "trả %s",
         val returns: String = "Trả %s",
         val returnDue: String = "Hạn trả %s",
@@ -55,8 +55,26 @@ object OrderRowDates {
         return if (weekday.isEmpty()) dayMonth else "$weekday $dayMonth"
     }
 
+    /** #888 "05/10/26": dd/mm/yy of the Vietnam civil day, whatever the device zone */
+    fun dmy(instant: Instant, zone: ZoneId = shopZone): String {
+        val date = instant.atZone(zone).toLocalDate()
+        return "%02d/%02d/%02d".format(date.dayOfMonth, date.monthValue, date.year % 100)
+    }
+
+    /** #888 one date of a "Tất cả đơn" row, [marked] when the list is sorted by it */
+    data class Part(val text: String, val marked: Boolean)
+
+    /** #888 "Lấy 14/10/26", "Trả 16/10/26"; a missing day is left out */
+    fun rentPlan(
+        pickupPlanAt: Instant?, returnPlanAt: Instant?, markPickup: Boolean, markReturn: Boolean,
+        texts: Texts = Texts(), zone: ZoneId = shopZone,
+    ): List<Part> = listOfNotNull(
+        pickupPlanAt?.let { Part(texts.handOver.format(dmy(it, zone)), markPickup) },
+        returnPlanAt?.let { Part(texts.returns.format(dmy(it, zone)), markReturn) },
+    )
+
     fun lines(input: Input, texts: Texts = Texts(), zone: ZoneId = shopZone): Lines {
-        fun fmt(instant: Instant) = day(instant, zone, texts.weekdays)
+        fun fmt(instant: Instant) = dmy(instant, zone)
         val meta = listOfNotNull("#${input.code}", input.createdAt?.let { texts.created.format(fmt(it)) }).joinToString(" · ")
         val status = input.status.orEmpty().uppercase()
         val isRent = input.orderType.equals("RENT", ignoreCase = true)

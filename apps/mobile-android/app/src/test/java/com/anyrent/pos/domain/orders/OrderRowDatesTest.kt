@@ -50,32 +50,32 @@ class OrderRowDatesTest {
     @Test
     fun reserved() {
         val lines = OrderRowDates.lines(input("RESERVED"))
-        assertEquals("#0053 · tạo T6 02/10", lines.meta)
-        assertEquals("Giao T2 05/10 · trả T4 07/10", lines.task)
+        assertEquals("#0053 · tạo 02/10/26", lines.meta)
+        assertEquals("Lấy 05/10/26 · trả 07/10/26", lines.task)
     }
 
     @Test
     fun pickedUpOnTimeAndLate() {
-        assertEquals("Trả T4 07/10", OrderRowDates.lines(input("PICKUPED")).task)
-        assertEquals("Hạn trả T4 07/10", OrderRowDates.lines(input("PICKUPED", late = true)).task)
+        assertEquals("Trả 07/10/26", OrderRowDates.lines(input("PICKUPED")).task)
+        assertEquals("Hạn trả 07/10/26", OrderRowDates.lines(input("PICKUPED", late = true)).task)
         // Late never changes a reserved line (the no-show chip says it)
-        assertEquals("Giao T2 05/10 · trả T4 07/10", OrderRowDates.lines(input("RESERVED", late = true)).task)
+        assertEquals("Lấy 05/10/26 · trả 07/10/26", OrderRowDates.lines(input("RESERVED", late = true)).task)
     }
 
     @Test
     fun returnedSaleAndCancelled() {
-        assertEquals("Đã trả T7 10/10", OrderRowDates.lines(input("RETURNED", returned = "2026-10-10T09:00:00Z")).task)
-        assertEquals("Bán T6 02/10", OrderRowDates.lines(input("COMPLETED", type = "SALE", pickup = null, returns = null)).task)
-        assertEquals("Huỷ T3 29/09", OrderRowDates.lines(input("CANCELLED", updated = "2026-09-29T04:00:00Z")).task)
+        assertEquals("Đã trả 10/10/26", OrderRowDates.lines(input("RETURNED", returned = "2026-10-10T09:00:00Z")).task)
+        assertEquals("Bán 02/10/26", OrderRowDates.lines(input("COMPLETED", type = "SALE", pickup = null, returns = null)).task)
+        assertEquals("Huỷ 29/09/26", OrderRowDates.lines(input("CANCELLED", updated = "2026-09-29T04:00:00Z")).task)
         // A cancelled sale says "Huỷ", not "Bán"
-        assertEquals("Huỷ T3 29/09", OrderRowDates.lines(input("CANCELLED", type = "SALE", updated = "2026-09-29T04:00:00Z")).task)
+        assertEquals("Huỷ 29/09/26", OrderRowDates.lines(input("CANCELLED", type = "SALE", updated = "2026-09-29T04:00:00Z")).task)
     }
 
     @Test
     fun missingDatesAreLeftOut() {
         assertEquals("#0053", OrderRowDates.lines(input("RESERVED", created = null)).meta)
-        assertEquals("Giao T2 05/10", OrderRowDates.lines(input("RESERVED", returns = null)).task)
-        assertEquals("Trả T4 07/10", OrderRowDates.lines(input("RESERVED", pickup = null)).task)
+        assertEquals("Lấy 05/10/26", OrderRowDates.lines(input("RESERVED", returns = null)).task)
+        assertEquals("Trả 07/10/26", OrderRowDates.lines(input("RESERVED", pickup = null)).task)
         assertNull(OrderRowDates.lines(input("RESERVED", pickup = null, returns = null)).task)
         assertNull(OrderRowDates.lines(input("PICKUPED", returns = null)).task)
         assertNull(OrderRowDates.lines(input("RETURNED")).task)
@@ -90,7 +90,7 @@ class OrderRowDatesTest {
             created = "created %s", handOver = "Hand over %s", handOverReturn = "return %s",
         )
         val lines = OrderRowDates.lines(input("RESERVED"), en)
-        assertEquals("#0053 · created Fri 02/10", lines.meta)
-        assertEquals("Hand over Mon 05/10 · return Wed 07/10", lines.task)
+        assertEquals("#0053 · created 02/10/26", lines.meta)
+        assertEquals("Hand over 05/10/26 · return 07/10/26", lines.task)
     }
 }

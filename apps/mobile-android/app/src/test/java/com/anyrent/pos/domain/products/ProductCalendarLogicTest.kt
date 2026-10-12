@@ -132,7 +132,7 @@ class ProductCalendarLogicTest {
         assertEquals(listOf(3), ProductCalendarLogic.ordersCovering(d(10), orders, vietnam).map { it.id })
         assertEquals(emptyList<Int>(), ProductCalendarLogic.ordersCovering(d(11), orders, vietnam).map { it.id })
 
-        assertEquals("Giao T4 07/10 · trả T6 09/10", ProductCalendarLogic.orderDates(orders[0], zone = vietnam))
+        assertEquals("Lấy T4 07/10 · trả T6 09/10", ProductCalendarLogic.orderDates(orders[0], zone = vietnam))
         assertEquals(2, ProductCalendarLogic.quantity(orders[0], 5))
         assertEquals(1, ProductCalendarLogic.quantity(orders[1], 5))
     }

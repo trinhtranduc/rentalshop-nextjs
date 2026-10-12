@@ -76,7 +76,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
@@ -301,6 +303,8 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                                         else -> RowContext.LIST
                                     },
                                     texts = texts,
+                                    // #888 "Tất cả đơn": Lấy · Trả with the sorted date marked
+                                    rentSortedBy = state.filter.sortDate.takeIf { !state.isSearching && state.segment == OrdersSegment.RENT },
                                     onClick = { onOpenOrder(row.orderId) },
                                 )
                             }
@@ -508,7 +512,8 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
             Modifier.defaultMinSize(minHeight = 36.dp).clickable(onClick = onSort),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(sortLabel(state.filter.sort)), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+            // #888: always says how the list is sorted: "Xếp theo ngày lấy · gần nhất trước ▾"
+            Text(sortBarText(state.filter), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
             Spacer(Modifier.size(4.dp))
             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
         }
@@ -528,12 +533,28 @@ private fun chipLabel(status: String?): Int = when (status) {
     else -> R.string.orders_v2_status_all
 }
 
-private fun sortLabel(sort: OrdersSort): Int = when (sort) {
-    OrdersSort.NEAREST_TASK -> R.string.orders_v2_sort_nearest
-    OrdersSort.CREATED -> R.string.orders_v2_sort_created
-    OrdersSort.PICKUP -> R.string.orders_v2_sort_pickup
-    OrdersSort.RETURN -> R.string.orders_v2_sort_return
+/** #888 "Ngày lấy", "Ngày trả", "Ngày tạo" (iOS `sortDateTitle`) */
+internal fun sortDateLabel(date: SortDate): Int = when (date) {
+    SortDate.PICKUP -> R.string.orders_v2_sort_date_pickup
+    SortDate.RETURN -> R.string.orders_v2_sort_date_return
+    SortDate.CREATED -> R.string.orders_v2_sort_date_created
 }
+
+/** #888 "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước" (iOS `directionTitle`) */
+internal fun directionLabel(date: SortDate, direction: SortDirection): Int = when {
+    date == SortDate.CREATED && direction == SortDirection.NEAREST_FIRST -> R.string.orders_v2_direction_newest
+    date == SortDate.CREATED -> R.string.orders_v2_direction_oldest
+    direction == SortDirection.NEAREST_FIRST -> R.string.orders_v2_direction_nearest
+    else -> R.string.orders_v2_direction_farthest
+}
+
+/** #888 "Xếp theo ngày lấy · gần nhất trước" */
+@Composable
+private fun sortBarText(filter: RentOrdersFilter): String = stringResource(
+    R.string.orders_v2_sort_bar,
+    stringResource(sortDateLabel(filter.sortDate)).lowercase(),
+    stringResource(directionLabel(filter.sortDate, filter.direction)).lowercase(),
+)
 
 @Composable
 private fun Chip(text: String, selected: Boolean, height: Int, fontSize: TextUnit, onClick: () -> Unit, icon: ImageVector? = null) {
@@ -657,13 +678,13 @@ private fun WorkRow(
  */
 @Composable
 internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.SEARCH, orderRowTexts(), onClick)
+    OrderRow(row, RowContext.SEARCH, orderRowTexts(), onClick = onClick)
 }
 
 /** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
 @Composable
 internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick)
+    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick = onClick)
 }
 
 /**
@@ -695,7 +716,13 @@ internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick:
 private val DueAmber = Color(0xFFB45309)
 
 @Composable
-private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrderRowDates.Texts, onClick: () -> Unit) {
+private fun OrderRow(
+    row: OrdersRow.Order,
+    context: RowContext,
+    texts: OrderRowDates.Texts,
+    rentSortedBy: SortDate? = null,
+    onClick: () -> Unit,
+) {
     val order = row.order
     val tagKind = OrdersBoardLogic.statusTag(order.status)
     // #482: same tag as the order detail header
@@ -708,8 +735,13 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrderRowD
     BoardRow(
         tag = tagText to colors,
         name = order.customerName,
-        // #496: no product line; the same two date lines in every context
-        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
+        // #496: no product line; the same two date lines in every context; #888 "Tất cả đơn": "#code" + Lấy · Trả
+        lines = if (rentSortedBy != null) {
+            OrderRowDates.Lines("#${OrdersBoardLogic.shortNumber(order.orderNumber)}", null)
+        } else {
+            OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts)
+        },
+        rentDates = rentSortedBy?.let { OrdersBoardLogic.rentRowDates(order, it, texts) },
         pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
@@ -732,6 +764,8 @@ private fun BoardRow(
     tag: Pair<String, DS.Pill>,
     name: String?,
     lines: OrderRowDates.Lines,
+    /** #888 "Tất cả đơn": the Lấy · Trả line in place of the task line */
+    rentDates: List<OrderRowDates.Part>? = null,
     pills: List<Pair<String, DS.Pill>>,
     total: String,
     struck: Boolean,
@@ -761,6 +795,7 @@ private fun BoardRow(
                     )
                 }
                 OrderRowDateLines(lines)
+                rentDates?.takeIf { it.isNotEmpty() }?.let { RentDatesLine(it) }
                 if (pills.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
                         pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
@@ -809,6 +844,26 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
     Text(lines.meta, fontSize = 13.sp, color = OrderRowMetaColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
     lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
+
+/** #888 (mockup): muted "Lấy 14/10/26   Trả 16/10/26"; the sorted date bold on a light blue chip (iOS `setRentDates`) */
+@Composable
+private fun RentDatesLine(parts: List<OrderRowDates.Part>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        parts.forEach { part ->
+            if (part.marked) {
+                Text(
+                    part.text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(RentDateMark).padding(horizontal = 4.dp),
+                )
+            } else {
+                Text(part.text, fontSize = DS.TextSize.Secondary, color = OrderRowMetaColor, maxLines = 1)
+            }
+        }
+    }
+}
+
+/** #888 the chip behind the date the list is sorted by */
+private val RentDateMark = Color(0xFFEFF6FF)
 
 /** #496 line 1 of an order row */
 internal val OrderRowMetaColor = Color(0xFF64748B)
@@ -906,54 +961,22 @@ private fun FilterSheet(
                     Text(stringResource(R.string.reset), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                 }
             }
+            // #888: one date for the order and the range (Ngày lấy / Ngày trả / Ngày tạo)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SheetLabel(stringResource(R.string.orders_v2_filter_sort))
-                Spacer(Modifier.height(0.dp))
-                OrdersSort.entries.chunked(2).forEach { line ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        line.forEach { sort ->
-                            SortOption(stringResource(sortLabel(sort)), filter.sort == sort, Modifier.weight(1f)) {
-                                filter = filter.copy(sort = sort)
-                            }
-                        }
-                        if (line.size < 2) Spacer(Modifier.weight(1f))
-                    }
+                SheetLabel(stringResource(R.string.orders_v2_filter_sort_by).uppercase())
+                SegmentTrack(SortDate.entries.map { stringResource(sortDateLabel(it)) }, SortDate.entries.indexOf(filter.sortDate)) {
+                    filter = filter.copy(sortDate = SortDate.entries[it])
                 }
-                Text(stringResource(R.string.orders_v2_sort_nearest_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SheetLabel(stringResource(R.string.orders_v2_filter_range))
-                Spacer(Modifier.height(0.dp))
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(BoardColors.Track).padding(4.dp)) {
-                    DateBasis.entries.forEach { basis ->
-                        val selected = filter.basis == basis
-                        val shape = RoundedCornerShape(9.dp)
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .height(36.dp)
-                                .then(if (selected) Modifier.shadow(1.dp, shape) else Modifier)
-                                .clip(shape)
-                                .background(if (selected) DS.Colors.Surface else Color.Transparent)
-                                .clickable { filter = filter.copy(basis = basis) }
-                                .semantics { this.selected = selected; role = Role.RadioButton },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                stringResource(
-                                    when (basis) {
-                                        DateBasis.CREATED -> R.string.orders_v2_basis_created
-                                        DateBasis.PICKUP_PLAN -> R.string.orders_v2_basis_pickup
-                                        DateBasis.RETURN_PLAN -> R.string.orders_v2_basis_return
-                                    },
-                                ),
-                                fontSize = DS.TextSize.Secondary,
-                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
-                            )
-                        }
-                    }
+                SheetLabel(stringResource(R.string.orders_v2_filter_order).uppercase())
+                SegmentTrack(SortDirection.entries.map { stringResource(directionLabel(filter.sortDate, it)) }, SortDirection.entries.indexOf(filter.direction)) {
+                    filter = filter.copy(direction = SortDirection.entries[it])
                 }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val dateName = stringResource(sortDateLabel(filter.sortDate)).lowercase()
+                SheetLabel(stringResource(R.string.orders_v2_filter_range_of, dateName).uppercase())
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
                         DateRangeChoice.Any to R.string.orders_v2_range_any,
@@ -974,6 +997,17 @@ private fun FilterSheet(
                         onClick = { pickDates = true },
                     )
                 }
+                // Board: "Sắp xếp và khoảng ngày cùng tính theo **ngày lấy**."
+                val hint = stringResource(R.string.orders_v2_filter_same_date, dateName)
+                val at = hint.lastIndexOf(dateName)
+                Text(
+                    buildAnnotatedString {
+                        append(hint)
+                        if (at >= 0) addStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text), at, at + dateName.length)
+                    },
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                )
             }
             Surface(
                 onClick = { onApply(filter) },
@@ -1010,30 +1044,38 @@ private fun FilterSheet(
     }
 }
 
+/** #888 a segmented track (board Loc): grey track, the selected segment white with a light shadow */
+@Composable
+private fun SegmentTrack(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(BoardColors.Track).padding(4.dp)) {
+        labels.forEachIndexed { index, label ->
+            val selected = index == selectedIndex
+            val shape = RoundedCornerShape(9.dp)
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .then(if (selected) Modifier.shadow(1.dp, shape) else Modifier)
+                    .clip(shape)
+                    .background(if (selected) DS.Colors.Surface else Color.Transparent)
+                    .clickable { onSelect(index) }
+                    .semantics { this.selected = selected; role = Role.RadioButton },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    fontSize = DS.TextSize.Body,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SheetLabel(text: String) {
     Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = DS.Colors.TextMuted)
 }
 
-@Composable
-private fun SortOption(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(12.dp)
-    Box(
-        modifier
-            .height(44.dp)
-            .clip(shape)
-            .background(if (selected) BoardColors.SelectedFill else DS.Colors.Surface)
-            .border(if (selected) 2.dp else 1.dp, if (selected) DS.Colors.Primary else BoardColors.Outline, shape)
-            .clickable(onClick = onClick)
-            .semantics { this.selected = selected; role = Role.RadioButton },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            fontSize = DS.TextSize.Body,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) BoardColors.SelectedText else DS.Colors.Text,
-            maxLines = 1,
-        )
-    }
-}

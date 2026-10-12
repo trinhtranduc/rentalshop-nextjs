@@ -230,8 +230,8 @@ class ShopTimeZoneTest(private val phoneZone: String) {
 
     @Test
     fun `order detail schedule days and day count in Vietnam days`() {
-        assertEquals("10/10", shortDay("2026-10-09T17:00:00.000Z"))
-        assertEquals("09/10", shortDay("2026-10-09T16:59:59.000Z"))
+        assertEquals("10/10/26", shortDay("2026-10-09T17:00:00.000Z"))
+        assertEquals("09/10/26", shortDay("2026-10-09T16:59:59.000Z"))
         assertEquals(1, OrderDetailLogic.rentalDays("2026-10-09T17:00:00.000Z", "2026-10-10T16:59:59.000Z"))
         assertEquals(3, OrderDetailLogic.rentalDays("2026-10-09T17:00:00.000Z", "2026-10-12T16:59:59.000Z"))
     }

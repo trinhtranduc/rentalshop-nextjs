@@ -199,21 +199,21 @@ class OrderDetailLogicTest {
         val days = OrderDetailLogic.progressDays(
             rent("RETURNED", pickedUpAt = "2026-10-03T16:59:59.000Z", returnedAt = "2026-10-04T18:30:00.000Z"),
         )
-        assertEquals("05/10", shortDay(days.returned, vietnam))
-        assertEquals("03/10", shortDay(days.handOver, vietnam))
-        assertEquals("01/10", shortDay(days.booked, vietnam))
+        assertEquals("05/10/26", shortDay(days.returned, vietnam))
+        assertEquals("03/10/26", shortDay(days.handOver, vietnam))
+        assertEquals("01/10/26", shortDay(days.booked, vietnam))
     }
 
     @Test
     fun `step bar falls back to the plan before hand-over and return`() {
         val vietnam = ZoneId.of("Asia/Ho_Chi_Minh")
         val reserved = OrderDetailLogic.progressDays(rent("RESERVED"))
-        assertEquals("03/10", shortDay(reserved.handOver, vietnam))
-        assertEquals("08/10", shortDay(reserved.returned, vietnam))
+        assertEquals("03/10/26", shortDay(reserved.handOver, vietnam))
+        assertEquals("08/10/26", shortDay(reserved.returned, vietnam))
         val out = OrderDetailLogic.progressDays(rent("PICKUPED", pickedUpAt = "2026-10-02T17:00:00.000Z"))
-        assertEquals("03/10", shortDay(out.handOver, vietnam))
-        assertEquals("08/10", shortDay(out.returned, vietnam))
+        assertEquals("03/10/26", shortDay(out.handOver, vietnam))
+        assertEquals("08/10/26", shortDay(out.returned, vietnam))
         val early = OrderDetailLogic.progressDays(rent("PICKUPED", pickedUpAt = "2026-10-01T16:00:00.000Z"))
-        assertEquals("01/10", shortDay(early.handOver, vietnam))
+        assertEquals("01/10/26", shortDay(early.handOver, vietnam))
     }
 }
