@@ -883,6 +883,43 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
     }
 
+    // MARK: #893 — lean Việc cần làm rows
+
+    /// Line 2 of a Việc cần làm row: the task's own date chip, then "Trễ N ngày", then "Chưa soạn đồ"
+    func testWorkRowChips() {
+        let pickup = iso.date(from: "2026-10-13T17:30:00Z")! // 14/10 in Vietnam
+        let back = iso.date(from: "2026-10-16T02:00:00Z")!
+        let handOver = TodayWorkRow(id: 1, orderNumber: "ORD-1-0063", pickupPlanAt: pickup, returnPlanAt: back,
+                                    isReadyToDeliver: false, totalAmount: 300_000, amountDue: 200_000, lateDays: 2)
+        let chips = OrdersHomeLogic.workChips(handOver, kind: .handOver, timeZone: vietnam)
+        XCTAssertEqual(chips.map(\.text), ["orders.chip.pickup".localized() + " 14/10/26", LateText.days(2),
+                                           "orders.v2.notPrepared".localized()])
+        XCTAssertEqual(hex(chips[0].colors.fill), "EFF6FF")
+        XCTAssertEqual(hex(chips[1].colors.fill), hex(DS.Status.late.fill))
+        XCTAssertEqual(hex(chips[2].colors.fill), hex(DS.Status.waiting.fill))
+        let takeBack = TodayWorkRow(id: 2, orderNumber: "2", pickupPlanAt: pickup, returnPlanAt: back, isReadyToDeliver: true,
+                                    totalAmount: 300_000)
+        XCTAssertEqual(OrdersHomeLogic.workChips(takeBack, kind: .takeBack, timeZone: vietnam).map(\.text),
+                       ["orders.chip.return".localized() + " 16/10/26"], "only the return date; ready, not late")
+        // Right side: "còn thu N" when something is due, else the total
+        XCTAssertEqual(OrdersHomeLogic.workAmount(handOver), .due(200_000))
+        XCTAssertEqual(OrdersHomeLogic.workAmount(takeBack), .total(300_000))
+    }
+
+    func testWorkRowIsLean() {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let row = TodayWorkRow(id: 1, orderNumber: "ORD-1-0063", customerName: "Huy",
+                               pickupPlanAt: iso.date(from: "2026-10-13T17:30:00Z"), returnPlanAt: iso.date(from: "2026-10-16T02:00:00Z"),
+                               isReadyToDeliver: true, totalAmount: 300_000, amountDue: 200_000)
+        cell.configure(.work(row, kind: .handOver), context: .work(isLate: false), hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo line: \(texts)")
+        XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
+        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"))
+        XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200_000))))
+        XCTAssertFalse(texts.contains(MoneyFormatter.format(300_000)), "no separate total when còn thu shows")
+    }
+
     func testCustomerOrderRowShowsItemNamesAsTitle() {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
         let row = CustomerOrderRow(id: 1, orderNumber: "0062", orderType: .rent, status: .reserved, totalAmount: 380000,
