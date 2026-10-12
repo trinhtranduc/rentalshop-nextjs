@@ -1626,4 +1626,5 @@
     <string name="orders_chip_pickup">Lấy</string>
     <string name="orders_chip_return">Trả</string>
     <string name="cart_swipe_delete">Xoá</string>
+    <string name="calendar_v2_ready">Sẵn sàng giao</string>
 </resources>

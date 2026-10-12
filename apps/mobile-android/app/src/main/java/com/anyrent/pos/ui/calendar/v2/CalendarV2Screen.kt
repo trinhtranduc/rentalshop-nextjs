@@ -267,27 +267,17 @@ private fun DayHeader(selectedKey: String, todayKey: String, counts: com.anyrent
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
     // #891 (owner): the day-task tag keeps its light colours (a task, not an order status)
     val pill = if (row.kind == CalendarRowKind.HAND_OVER) DS.Status.HandOver else DS.Status.Return
     val tag = stringResource(if (row.kind == CalendarRowKind.HAND_OVER) R.string.orders_hand_over else R.string.calendar_v2_tag_return)
-    val lines = OrderRowDates.lines(
-        OrderRowDates.Input(
-            code = OrdersBoardLogic.shortNumber(row.order.orderNumber),
-            orderType = "RENT",
-            status = if (row.kind == CalendarRowKind.HAND_OVER) "RESERVED" else "PICKUPED",
-            createdAt = row.order.createdAt,
-            pickupPlanAt = row.order.pickupPlanAt,
-            returnPlanAt = row.order.returnPlanAt,
-            late = row.lateDays > 0,
-        ),
-        orderRowTexts(),
-    )
     val (pickupLabel, returnLabel) = com.anyrent.pos.ui.orders.v2.chipLabels()
-    val chips = OrderRowDates.chips(row.order.pickupPlanAt, row.order.returnPlanAt, false, false, pickupLabel, returnLabel)
-    // #891 (owner, mockup "Lịch"): line 1 name (one line, full width) + the tag right; then "#code · tạo …" and the
-    // Lấy / Trả chips left, total and "còn thu" right; no chevron
+    val ready = stringResource(R.string.calendar_v2_ready)
+    val notPrepared = stringResource(R.string.orders_v2_not_prepared)
+    // #893 (owner, mockup "Lịch"): lean row like Việc cần làm: line 1 name + the tag; line 2 the day task's date chip
+    // and, on hand-overs, "Sẵn sàng giao" / "Chưa soạn đồ"; right the total and the note under it. No "#code · tạo".
     Column(
         Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = DS.TouchTarget).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine),
@@ -304,10 +294,23 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine)) {
-                Text(lines.meta, fontSize = 13.sp, color = OrderRowMetaColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (chips.isNotEmpty()) com.anyrent.pos.ui.orders.v2.DateChipsRow(chips)
-                else lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1) }
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                CalendarLogic.rowChips(row).forEach { chip ->
+                    val (text, colors) = when (chip.kind) {
+                        CalendarLogic.RowChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
+                        CalendarLogic.RowChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                        CalendarLogic.RowChipKind.READY -> ready to DS.Status.Done
+                        CalendarLogic.RowChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
+                    }
+                    Text(
+                        text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(formatMoneyVnd(row.order.totalAmount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)

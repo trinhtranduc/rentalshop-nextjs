@@ -1653,4 +1653,5 @@
     <string name="orders_chip_pickup">Pickup</string>
     <string name="orders_chip_return">Return</string>
     <string name="cart_swipe_delete">Delete</string>
+    <string name="calendar_v2_ready">Ready</string>
 </resources>
