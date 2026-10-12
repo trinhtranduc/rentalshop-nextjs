@@ -40,8 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import com.anyrent.pos.ui.orders.v2.OrderStatusColors
-import com.anyrent.pos.ui.orders.v2.OrderStatusPalette
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -107,7 +105,6 @@ fun SettingsV2Screen(
     var confirmDelete by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
-    var showStatusColors by remember { mutableStateOf(false) }
     var showCategories by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var passwordDone by remember { mutableStateOf(false) }
@@ -199,7 +196,6 @@ fun SettingsV2Screen(
                     SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
-                    SettingsItem.STATUS_COLORS -> stringResource(paletteLabel(OrderStatusColors.palette))
                     else -> null
                 }
                 SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN) {
@@ -215,7 +211,6 @@ fun SettingsV2Screen(
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
-                        SettingsItem.STATUS_COLORS -> showStatusColors = true
                         SettingsItem.PASSWORD -> showPassword = true
                         SettingsItem.APP_INFO -> onOpenAppInfo()
                         SettingsItem.DELETE_ACCOUNT -> confirmDelete = true
@@ -281,7 +276,6 @@ fun SettingsV2Screen(
             },
         )
     }
-    if (showStatusColors) StatusColorsDialog(onDismiss = { showStatusColors = false })
     if (showPassword) {
         // #482 (board DMK-doi-mat-khau): a bottom sheet over Cài đặt; same call and validation as before
         PasswordSheet(
@@ -375,43 +369,11 @@ private fun itemTitle(item: SettingsItem): String = stringResource(
         SettingsItem.EXPORT -> R.string.export_data
         SettingsItem.PLAN -> R.string.settings_v2_plan
         SettingsItem.LANGUAGE -> R.string.settings_v2_language
-        SettingsItem.STATUS_COLORS -> R.string.settings_v2_status_colors
         SettingsItem.PASSWORD -> R.string.change_password
         SettingsItem.APP_INFO -> R.string.app_info
         SettingsItem.DELETE_ACCOUNT -> R.string.delete_account
     },
 )
-
-/** #888 "Đậm (như app cũ)" / "Nhạt" */
-private fun paletteLabel(palette: OrderStatusPalette): Int = when (palette) {
-    OrderStatusPalette.BOLD -> R.string.settings_v2_status_colors_bold
-    OrderStatusPalette.LIGHT -> R.string.settings_v2_status_colors_light
-}
-
-/** #888 "Màu trạng thái đơn": pick Đậm / Nhạt; stored on this device (iOS action sheet) */
-@Composable
-private fun StatusColorsDialog(onDismiss: () -> Unit) {
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_v2_status_colors)) },
-        text = {
-            androidx.compose.foundation.layout.Column {
-                OrderStatusPalette.entries.forEach { palette ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { OrderStatusColors.choose(palette); onDismiss() }.padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        androidx.compose.material3.RadioButton(selected = OrderStatusColors.palette == palette, onClick = null)
-                        Spacer(Modifier.size(12.dp))
-                        Text(stringResource(paletteLabel(palette)), fontSize = DS.TextSize.Body)
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
 
 @Composable
 private fun SettingRow(title: String, value: String?, chevron: Boolean, onClick: () -> Unit) {

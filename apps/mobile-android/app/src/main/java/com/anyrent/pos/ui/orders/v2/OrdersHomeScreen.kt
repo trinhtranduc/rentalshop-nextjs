@@ -659,7 +659,8 @@ private fun WorkRow(
     }
     BoardRow(
         tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
-            (if (handOver) DS.Status.HandOver else DS.Status.Return),
+            // #888: the same solid colours as the status badges (hand-over = booked, take-back = renting)
+            OrderStatusTag.colors(if (handOver) "RESERVED" else "PICKUPED"),
         name = work.customerName,
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(work, kind, isLate), texts),
         pills = pills,
@@ -742,7 +743,8 @@ private fun OrderRow(
             OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts)
         },
         rentDates = rentSortedBy?.let { OrdersBoardLogic.rentRowDates(order, it, texts) },
-        pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
+        // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
+        pills = if (row.lateDays > 0 && rentSortedBy == null) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
@@ -767,52 +769,62 @@ private fun BoardRow(
     /** #888 "Tất cả đơn": the Lấy · Trả line in place of the task line */
     rentDates: List<OrderRowDates.Part>? = null,
     pills: List<Pair<String, DS.Pill>>,
-    total: String,
+    /** Null hides the money (staff with "hide financial data") */
+    total: String?,
     struck: Boolean,
     pay: Pair<String, Color>?,
     phone: String?,
     onClick: () -> Unit,
     onCall: (String) -> Unit,
 ) {
+    // #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
+    // line 3 dates / task + total right; line 4 notes + pay line right. 8dp between lines, 16dp top/bottom.
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowVertical),
+            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Tag(tag.first, tag.second, RowTagStyle.STATUS)
-                    Spacer(Modifier.size(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         name?.takeIf { it.isNotBlank() } ?: "N/A",
                         fontSize = DS.TextSize.Name,
                         fontWeight = FontWeight.Bold,
                         color = DS.Colors.Text,
-                        // #424: a long name wraps to a second line (tag stays centred) instead of being cut
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
+                    Tag(tag.first, tag.second, RowTagStyle.STATUS)
                 }
-                OrderRowDateLines(lines)
-                rentDates?.takeIf { it.isNotEmpty() }?.let { RentDatesLine(it) }
-                if (pills.isNotEmpty()) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
-                        pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
+                Text(lines.meta, fontSize = 13.sp, color = OrderRowMetaColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f)) {
+                        when {
+                            rentDates != null -> RentDatesLine(rentDates)
+                            lines.task != null -> Text(lines.task, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    if (total != null) {
+                        Text(
+                            total,
+                            fontSize = DS.TextSize.Name,
+                            fontWeight = RowMoneyText.totalWeight,
+                            color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
+                            textDecoration = if (struck) TextDecoration.LineThrough else null,
+                            maxLines = 1,
+                        )
                     }
                 }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    total,
-                    fontSize = DS.TextSize.Name,
-                    fontWeight = RowMoneyText.totalWeight,
-                    color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
-                    textDecoration = if (struck) TextDecoration.LineThrough else null,
-                    maxLines = 1,
-                )
-                if (pay != null) {
-                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = pay.second, maxLines = 1)
+                val payShown = pay?.takeIf { total != null }
+                if (pills.isNotEmpty() || payShown != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                            pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
+                        }
+                        payShown?.let { Text(it.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = it.second, maxLines = 1) }
+                    }
                 }
             }
             if (phone != null) {

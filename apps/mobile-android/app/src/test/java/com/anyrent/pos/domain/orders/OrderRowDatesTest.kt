@@ -50,7 +50,7 @@ class OrderRowDatesTest {
     @Test
     fun reserved() {
         val lines = OrderRowDates.lines(input("RESERVED"))
-        assertEquals("#0053 · tạo 02/10/26", lines.meta)
+        assertEquals("#0053 · tạo 02/10/26 10:00", lines.meta)
         assertEquals("Lấy 05/10/26 · trả 07/10/26", lines.task)
     }
 
@@ -90,7 +90,7 @@ class OrderRowDatesTest {
             created = "created %s", handOver = "Hand over %s", handOverReturn = "return %s",
         )
         val lines = OrderRowDates.lines(input("RESERVED"), en)
-        assertEquals("#0053 · created 02/10/26", lines.meta)
+        assertEquals("#0053 · created 02/10/26 10:00", lines.meta)
         assertEquals("Hand over 05/10/26 · return 07/10/26", lines.task)
     }
 }

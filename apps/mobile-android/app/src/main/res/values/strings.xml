@@ -1649,7 +1649,4 @@
     <string name="v2_cart_cost">Cost</string>
     <string name="v2_cart_total_cost">Total cost</string>
     <string name="v2_cart_profit">Expected profit</string>
-    <string name="settings_v2_status_colors">Order status colours</string>
-    <string name="settings_v2_status_colors_bold">Bold (like the old app)</string>
-    <string name="settings_v2_status_colors_light">Light</string>
 </resources>

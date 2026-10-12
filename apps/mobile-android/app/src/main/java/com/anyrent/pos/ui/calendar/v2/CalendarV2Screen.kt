@@ -269,7 +269,8 @@ private fun DayHeader(selectedKey: String, todayKey: String, counts: com.anyrent
 
 @Composable
 private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
-    val pill = if (row.kind == CalendarRowKind.HAND_OVER) DS.Status.HandOver else DS.Status.Return
+    // #888: the same solid colours as the status badges (hand-over = booked, return = renting)
+    val pill = com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors(if (row.kind == CalendarRowKind.HAND_OVER) "RESERVED" else "PICKUPED")
     val tag = stringResource(if (row.kind == CalendarRowKind.HAND_OVER) R.string.orders_hand_over else R.string.calendar_v2_tag_return)
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = DS.TouchTarget).padding(horizontal = 16.dp, vertical = 10.dp),

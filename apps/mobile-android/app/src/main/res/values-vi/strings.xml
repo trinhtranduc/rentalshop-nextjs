@@ -1622,7 +1622,4 @@
     <string name="v2_cart_cost">Giá vốn</string>
     <string name="v2_cart_total_cost">Tổng giá vốn</string>
     <string name="v2_cart_profit">Lãi dự kiến</string>
-    <string name="settings_v2_status_colors">Màu trạng thái đơn</string>
-    <string name="settings_v2_status_colors_bold">Đậm (như app cũ)</string>
-    <string name="settings_v2_status_colors_light">Nhạt</string>
 </resources>

@@ -19,12 +19,12 @@ object OrderStatusStyle {
         else -> null
     }
 
-    /** Badge colors used by the current screens (unchanged look) */
+    /** #888: the same solid colours as every status badge (`OrderStatusTag.colors`, iOS `OrderStatusBadge`) */
     fun badgeColor(status: String): Color = when (status.uppercase()) {
-        "RESERVED" -> Color(0xFFE83F48)
-        "PICKUPED", "PICKED_UP" -> Color(0xFFE88A19)
-        "RETURNED", "COMPLETED" -> Color(0xFF23844A)
-        "CANCELLED" -> Color(0xFF8E2930)
+        "RESERVED" -> Color(0xFFEF4444)
+        "PICKUPED", "PICKED_UP" -> Color(0xFFF19920)
+        "RETURNED", "COMPLETED" -> Color(0xFF16A34A)
+        "CANCELLED" -> Color(0xFF991B1B)
         else -> UnknownStatusColor
     }
 

@@ -353,19 +353,19 @@ class OrdersHomeTest {
     @Test
     fun `list row date lines`() {
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Lấy 04/10/26 · trả 05/10/26"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26 10:00", "Lấy 04/10/26 · trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("RESERVED"), 0)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Hạn trả 05/10/26"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26 10:00", "Hạn trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("PICKUPED"), 2)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Bán 02/10/26"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26 10:00", "Bán 02/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("COMPLETED", type = "SALE"), 0)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Huỷ 03/10/26"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26 10:00", "Huỷ 03/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("CANCELLED", updated = "2026-10-03T03:00:00Z"), 0)),
         )
         assertEquals(RowTag.RENTING, OrdersBoardLogic.statusTag("PICKUPED"))
@@ -426,8 +426,8 @@ class OrdersHomeTest {
         assertEquals(listOf(false, false),
             OrdersBoardLogic.rentRowDates(listOrder("RETURNED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z"), SortDate.CREATED).map { it.marked })
         assertEquals(listOf(OrderRowDates.Part("Trả 16/10/26", marked = false)), OrderRowDates.rentPlan(null, back, markPickup = true, markReturn = false))
-        // Owner (#888): the created day stays on the meta line, "#0062 · tạo 02/10/26"
-        assertEquals("#0062 · tạo 02/10/26", OrdersBoardLogic.rentRowMeta(listOrder("RESERVED")))
+        // Owner (#888): the created day stays on the meta line, "#0062 · tạo 02/10/26 10:00"
+        assertEquals("#0062 · tạo 02/10/26 10:00", OrdersBoardLogic.rentRowMeta(listOrder("RESERVED")))
     }
 
     @Test

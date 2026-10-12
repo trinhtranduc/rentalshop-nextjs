@@ -70,7 +70,8 @@ object OrderRowDates {
 
     fun lines(input: Input, texts: Texts = Texts(), zone: ZoneId = shopZone): Lines {
         fun fmt(instant: Instant) = dmy(instant, zone)
-        val meta = listOfNotNull("#${input.code}", input.createdAt?.let { texts.created.format(fmt(it)) }).joinToString(" · ")
+        // #888 (owner): the created day carries its time, "tạo 05/10/26 14:30" (Vietnam clock)
+        val meta = listOfNotNull("#${input.code}", input.createdAt?.let { texts.created.format(com.anyrent.pos.domain.DayText.dmyTime(it, zone)) }).joinToString(" · ")
         val status = input.status.orEmpty().uppercase()
         val isRent = input.orderType.equals("RENT", ignoreCase = true)
         val task = when {

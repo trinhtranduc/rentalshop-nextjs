@@ -74,7 +74,7 @@ class OrderDetailHeaderTest {
         val sale = order("COMPLETED", type = "SALE")
         assertTrue(OrderDetailHeader.note(sale, oct5, vn).isEmpty)
         assertTrue(OrderDetailHeader.steps(sale, zone = vn).isEmpty())
-        assertEquals("14/09/26", OrderDetailHeader.saleDay(sale, zone = vn))
+        assertEquals("14/09/26 14:33", OrderDetailHeader.saleDay(sale, zone = vn))
     }
 
     @Test
@@ -87,7 +87,7 @@ class OrderDetailHeaderTest {
         val steps = OrderDetailHeader.steps(order("PICKUPED", pickedUpAt = "2026-09-30T18:00:00.000Z"), zone = vn)
         assertEquals(
             listOf(
-                Step(StepTitle.BOOKED, "14/09/26", done = true, accent = false),
+                Step(StepTitle.BOOKED, "14/09/26 14:33", done = true, accent = false),
                 Step(StepTitle.HANDED_OVER, "01/10/26", done = true, accent = true),
                 Step(StepTitle.RETURN, "07/10/26", done = false, accent = false),
             ),
@@ -99,7 +99,7 @@ class OrderDetailHeaderTest {
     fun reservedStepsArePendingWithPlannedDays() {
         val steps = OrderDetailHeader.steps(order("RESERVED"), zone = vn)
         assertEquals(listOf(StepTitle.BOOKED, StepTitle.HAND_OVER, StepTitle.RETURN), steps.map { it.title })
-        assertEquals(listOf("14/09/26", "01/10/26", "07/10/26"), steps.map { it.day })
+        assertEquals(listOf("14/09/26 14:33", "01/10/26", "07/10/26"), steps.map { it.day })
         assertEquals(listOf(true, false, false), steps.map { it.done })
     }
 
