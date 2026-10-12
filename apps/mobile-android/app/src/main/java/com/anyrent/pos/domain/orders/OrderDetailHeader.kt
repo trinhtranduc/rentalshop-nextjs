@@ -77,8 +77,8 @@ object OrderDetailHeader {
     fun dayLabel(value: String?, weekdays: List<String> = OrderRowDates.Texts().weekdays, zone: ZoneId = shopZone): String =
         value?.let { parse(it) }?.let { OrderRowDates.dmy(it, zone) } ?: "—"
 
-    /** #891 (owner): the header hides the "lấy sau N ngày" countdown; other notes stay */
-    fun shownDue(due: Due?): Due? = due.takeUnless { it is Due.HandOverIn }
+    /** #891 (owner): the header hides the "lấy sau N ngày" / "trả sau N ngày" countdowns; late and today notes stay */
+    fun shownDue(due: Due?): Due? = due.takeUnless { it is Due.HandOverIn || it is Due.ReturnIn }
 
     /** Note of a rent ("7 ngày · trả sau 2 ngày"); a sale or a cancelled rent has none beyond the day count */
     fun note(summary: OrderSummary, now: Instant = Instant.now(), zone: ZoneId = shopZone): Note {
