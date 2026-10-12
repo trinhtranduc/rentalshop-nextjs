@@ -956,11 +956,16 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("9b-attendance-before")
 
+        var scannerShot = false
         func scan(_ value: String) {
             punch.tap()
             let manual = app.buttons["attendance.manualCode"]
             XCTAssertTrue(manual.waitForExistence(timeout: 10), "Scanner opens (Debug: Nhập mã)")
-            e2e.shot("9c-attendance-scanner", attachOnly: true)
+            if !scannerShot {
+                scannerShot = true
+                sleep(2)
+                e2e.shot("9c-attendance-scanner")
+            }
             manual.tap()
             let field = app.alerts.textFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 5), "Manual code field")
@@ -977,13 +982,23 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("first punch: \(result.label)")
         e2e.shot(wasIn ? "9e-attendance-out" : "9d-attendance-in")
 
+        // The scanner may wait up to 10 s for a fresh GPS fix: wait for the box to change
+        func waitForNewResult(after previous: String) {
+            let deadline = Date().addingTimeInterval(20)
+            while Date() < deadline {
+                if result.exists && result.label != previous { break }
+                sleep(1)
+            }
+        }
+        var previous = result.label
         scan(code)
-        sleep(4)
+        waitForNewResult(after: previous)
         e2e.note("second punch: \(result.label)")
         e2e.shot(wasIn ? "9d-attendance-in" : "9e-attendance-out")
 
+        previous = result.label
         scan(env["E2E_ATTENDANCE_BAD_CODE"] ?? "a1.1.1.D.2020-01-01.AAAAAAAAAAAAAAAAAAAAAA")
-        sleep(4)
+        waitForNewResult(after: previous)
         e2e.note("refused: \(result.label)")
         e2e.shot("9f-attendance-refused")
 

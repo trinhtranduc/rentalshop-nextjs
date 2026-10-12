@@ -180,6 +180,11 @@ final class MyShiftsViewController: BaseViewControler {
             shift.isHidden = row.shift.isEmpty
             let worked = V2.label(row.worked, size: DS.TextSize.body, color: row.isLate ? UIColor(hexString: "92400E") : DS.Color.text, lines: 0)
             worked.textAlignment = .right
+            // e2e #909: the day and its shift ("Tối 21–23:30") stay on one line each; the times wrap instead
+            [day, shift].forEach { $0.setContentCompressionResistancePriority(.required, for: .horizontal) }
+            left.setContentCompressionResistancePriority(.required, for: .horizontal)
+            left.setContentHuggingPriority(.required, for: .horizontal)
+            worked.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             let view = line(left: left, right: worked)
             view.isAccessibilityElement = true
             view.accessibilityLabel = [row.day, row.shift, row.worked].filter { !$0.isEmpty }.joined(separator: ", ")
