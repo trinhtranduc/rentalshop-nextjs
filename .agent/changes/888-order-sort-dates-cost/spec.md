@@ -1,6 +1,6 @@
 # Spec
 
-Status: in-progress
+Status: done
 
 **Rent list "Tất cả đơn"**
 - Row: tag + name, `#code`, then `Lấy dd/mm/yy   Trả dd/mm/yy` (planned days, Vietnam civil day). The date the list
@@ -27,5 +27,15 @@ Status: in-progress
   `Lãi dự kiến` = total (after discount) − total cost, green (red when negative).
 - Cost comes from the product the line was added from (`costPrice`, only sent to `products.manage`); a line without
   it shows no cost. Staff: never shown.
+
+**Owner additions (2026-10-12, same issue)**
+- Tất cả đơn rows keep "#code · tạo dd/mm/yy" (created day where it was) above "Lấy … · Trả …".
+- dd/mm/yy app-wide: every single day (rows, detail incl. created/handed-over, cart, customer orders, product
+  orders/history, notifications, overview lists and ranges, today-work, conflict tags, share image); a day with a time
+  "05/10/26 14:30". One formatter per platform (iOS `DayFormatter`, Android `DayText`). Calendar month headers and
+  the 7-day chart weekday axis stay.
+- Status badges default to the old app colours (solid, white text: Đã đặt #EF4444, Đang thuê #F19920, Đã trả
+  #16A34A, Đã huỷ #991B1B); Cài đặt row "Màu trạng thái đơn: Đậm (như app cũ) / Nhạt", stored on the device.
+  Trễ hạn / Chưa soạn đồ chips unchanged. Mockup https://claude.ai/artifact/Vn6J2UEc6v2XLGoqf2dWEc.
 
 **API compatibility:** none — no API, shared package, schema or env change.

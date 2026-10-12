@@ -1,6 +1,6 @@
 # #888 — clearer order sort, dd/mm/yy dates, cost price in the cart
 
-Status: in-progress
+Status: done
 
 **What:** customers (via the owner, 2026-10-12) cannot tell whether "Tất cả đơn" is sorted by created, pickup or
 return date; the "Lọc & sắp xếp" sheet has a sort choice and a separate date choice for the range. Dates read
