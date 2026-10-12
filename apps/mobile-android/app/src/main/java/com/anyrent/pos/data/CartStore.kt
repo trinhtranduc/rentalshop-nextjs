@@ -485,6 +485,12 @@ object CartStore {
         editor.putString(key, toJson().toString()).commit()
     }
 
+    /** #888 the saved draft, for tests */
+    internal fun draftJson(): JSONObject = toJson()
+
+    /** #888 restore a saved draft, for tests */
+    internal fun applyDraftJson(json: JSONObject) = applyJson(json)
+
     private fun toJson(): JSONObject {
         val customer = _customer.value
         val customerJson = customer?.let {
@@ -521,6 +527,8 @@ object CartStore {
                 .put("categoryName", line.product.categoryName ?: JSONObject.NULL)
                 .put("imageUrl", line.product.imageUrl ?: JSONObject.NULL)
                 .put("deposit", line.product.deposit)
+                // #888: Giá vốn of the line survives a relaunch (iOS CartItem.costPrice)
+                .put("costPrice", line.product.costPrice ?: JSONObject.NULL)
                 .put("pricingType", line.product.pricingType)
                 .put("note", line.product.note ?: JSONObject.NULL)
                 .put("pricingOptions", options)
@@ -610,6 +618,7 @@ object CartStore {
                 deposit = productJson.optDouble("deposit", 0.0),
                 pricingType = PricingTypes.normalize(productJson.optString("pricingType")),
                 pricingOptions = options,
+                costPrice = if (!productJson.has("costPrice") || productJson.isNull("costPrice")) null else productJson.optDouble("costPrice"),
                 note = productJson.optString("note").takeIf { it.isNotBlank() && it != "null" },
             )
             val override = if (line.isNull("unitPriceOverride")) null else line.optDouble("unitPriceOverride")
