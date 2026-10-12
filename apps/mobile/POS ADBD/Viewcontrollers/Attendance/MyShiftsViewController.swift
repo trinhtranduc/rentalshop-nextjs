@@ -116,8 +116,10 @@ final class MyShiftsViewController: BaseViewControler {
         let months = Array(Set([String(first.prefix(7)), String(last.prefix(7)), AttendanceLogic.monthKey(now)])).sorted()
         if schedule.isEmpty && rowsByMonth.isEmpty { spinner.startAnimating() }
         pending = 1 + months.count
+        // Both routes need an outlet: the user's own, or a shop owner's chosen branch
+        let outletId = user.outletId ?? CurrentOutlet.shared.merchantFilterId
 
-        AttendanceService.shared.shifts(outletId: user.outletId, from: first, to: last) { [weak self] result in
+        AttendanceService.shared.shifts(outletId: outletId, from: first, to: last) { [weak self] result in
             if case .success(let body) = result {
                 var days: [String: [AttendanceShift]] = [:]
                 for day in body.days where day.userId == nil || day.userId == user.id {
@@ -129,7 +131,7 @@ final class MyShiftsViewController: BaseViewControler {
             self?.done()
         }
         for month in months {
-            AttendanceService.shared.month(userId: user.id, outletId: user.outletId, month: month) { [weak self] result in
+            AttendanceService.shared.month(userId: user.id, outletId: outletId, month: month) { [weak self] result in
                 guard let self else { return }
                 if case .success(let body) = result {
                     self.rowsByMonth[month] = body.rows
