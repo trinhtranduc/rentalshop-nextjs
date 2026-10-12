@@ -2,7 +2,7 @@
 /**
  * WEB-STOCK / WEB-CAL / WEB-TODO (#727): stock, calendar, order detail and "việc cần làm" on the shop web.
  *
- * One DEDICATED merchant (registered through the real endpoint, sample order removed, own staff and kho unused here).
+ * One DEDICATED merchant (registered through the real endpoint, no orders, own staff and kho unused here).
  * Orders are created through the web Tạo đơn flow where the case is about that flow (stock after a sale / a rent,
  * the picker, the cart flags) and through the API call the page makes for the many orders of the calendar and
  * "việc cần làm" cases. Every number on screen is compared with the API the page calls

@@ -90,7 +90,7 @@ function counts(merchantId) {
   };
 }
 
-/** Remove the sample order(s) a registration creates: the merchant has NO orders afterwards */
+/** Remove every order of the merchant: it has NO orders afterwards (sign-up creates none since #895; kept as a guard) */
 function deleteAllOrders(merchantId) {
   sql(`delete from "Payment" where "orderId" in (select o.id from "Order" o join "Outlet" t on t.id=o."outletId" where t."merchantId"=${merchantId})`);
   sql(`delete from "OrderItem" where "orderId" in (select o.id from "Order" o join "Outlet" t on t.id=o."outletId" where t."merchantId"=${merchantId})`);
