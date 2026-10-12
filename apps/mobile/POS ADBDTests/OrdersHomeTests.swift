@@ -820,6 +820,61 @@ final class OrdersHomeTests: XCTestCase {
         }
     }
 
+    // MARK: #891 — date chips (option C), product and customer order rows
+
+    func testDateChipsEmphasiseOnlyTheSortedDateByWeight() {
+        let pickup = iso.date(from: "2026-10-13T17:30:00Z")! // 14/10 in Vietnam
+        let back = iso.date(from: "2026-10-16T02:00:00Z")!
+        let byPickup = OrdersHomeLogic.dateChips(pickupPlanAt: pickup, returnPlanAt: back, sortedBy: .pickup, timeZone: vietnam)
+        XCTAssertEqual(byPickup, [DateChip(kind: .pickup, label: "orders.chip.pickup".localized(), date: "14/10/26", bold: true),
+                                  DateChip(kind: .return, label: "orders.chip.return".localized(), date: "16/10/26", bold: false)])
+        XCTAssertEqual(OrdersHomeLogic.dateChips(pickupPlanAt: pickup, returnPlanAt: back, sortedBy: .returnDate, timeZone: vietnam).map(\.bold),
+                       [false, true])
+        XCTAssertEqual(OrdersHomeLogic.dateChips(pickupPlanAt: pickup, returnPlanAt: back, sortedBy: nil, timeZone: vietnam).map(\.bold),
+                       [false, false], "other lists: no emphasis")
+        XCTAssertEqual(OrdersHomeLogic.dateChips(pickupPlanAt: nil, returnPlanAt: back, sortedBy: .pickup, timeZone: vietnam).map(\.kind), [.return])
+        XCTAssertTrue(OrdersHomeLogic.metaIsBold(sortedBy: .created))
+        XCTAssertFalse(OrdersHomeLogic.metaIsBold(sortedBy: .pickup))
+        XCTAssertFalse(OrdersHomeLogic.metaIsBold(sortedBy: nil))
+        // Chip colours from the mockup: Lấy blue, Trả purple
+        XCTAssertEqual(hex(DateChip.Kind.pickup.colors.fill), "EFF6FF")
+        XCTAssertEqual(hex(DateChip.Kind.pickup.colors.text), "1E40AF")
+        XCTAssertEqual(hex(DateChip.Kind.return.colors.fill), "F5F3FF")
+        XCTAssertEqual(hex(DateChip.Kind.return.colors.text), "5B21B6")
+    }
+
+    func testRowCellShowsChipsQuantityAndBoldCreatedDay() throws {
+        func labels(_ view: UIView) -> [UILabel] { (view as? UILabel).map { [$0] } ?? [] + view.subviews.flatMap(labels) }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: "")
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .created), hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 01/10/26"), "\(texts)")
+        let meta = labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }
+        XCTAssertEqual(meta?.font, Utils.boldFont(size: 13), "sorted by created: the created day is bold")
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
+        XCTAssertEqual(labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }?.font, Utils.regularFont(size: 13))
+        cell.configure(.order(order, lateDays: 0), context: .productOrders(quantity: 2), hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains("× 2"))
+        cell.configure(.order(order, lateDays: 0), context: .search, hidesMoney: false)
+        XCTAssertFalse(visibleTexts(cell).contains("× 2"), "reused cell drops the quantity")
+    }
+
+    func testCustomerOrderRowShowsItemNamesAsTitle() {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let row = CustomerOrderRow(id: 1, orderNumber: "0062", orderType: .rent, status: .reserved, totalAmount: 380000,
+                                   pickupPlanAt: iso.date(from: "2026-10-14T02:00:00Z"), returnPlanAt: iso.date(from: "2026-10-15T02:00:00Z"),
+                                   createdAt: iso.date(from: "2026-10-02T02:12:00Z"), itemCount: 1,
+                                   items: [CustomerOrderRow.Item(productName: "Vest đen slim fit", quantity: 1)])
+        cell.configure(customerOrder: row, hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertTrue(texts.contains("Vest đen slim fit"), "\(texts)")
+        XCTAssertTrue(texts.contains("#0062 · " + String(format: "orders.row.created".localized(), "02/10/26 09:12")))
+        XCTAssertTrue(texts.contains("orders.chip.return".localized() + " 15/10/26"))
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(380000)))
+        XCTAssertTrue(texts.contains(OrdersHomeLogic.statusTag(.reserved).text))
+    }
+
     /// #891 (owner): order rows have no ">" chevron
     func testOrderRowHasNoChevron() throws {
         func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
