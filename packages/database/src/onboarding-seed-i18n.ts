@@ -5,8 +5,6 @@
 
 export type OnboardingLocale = 'en' | 'vi';
 
-export type OnboardingBusinessType = 'CLOTHING' | 'VEHICLE' | 'EQUIPMENT' | 'GENERAL';
-
 export function resolveOnboardingLocale(input?: string | null): OnboardingLocale {
   if (!input) return 'vi';
   const normalized = input.toLowerCase().trim();
@@ -55,66 +53,12 @@ type CategoryCopy = {
   description: string;
 };
 
-export type SampleCopy = {
-  productName: string;
-  productDescription: string;
-  customerFirstName: string;
-  customerLastName: string;
-  customerAddress: string;
-  customerCity: string;
-  customerNotes: string;
-  orderNotes: string;
-  orderItemNotes: string;
-};
-
 type LocaleBundle = {
   outlet: OutletCopy;
   category: CategoryCopy;
-  samples: Record<OnboardingBusinessType, SampleCopy>;
 };
 
 /** Same generic demo copy for every business type — niche-agnostic onboarding. */
-const EN_SAMPLE: SampleCopy = {
-  productName: 'Sample Product',
-  productDescription:
-    'This is a sample product so you can try inventory and orders. You can edit or delete it anytime.',
-  customerFirstName: 'Sample',
-  customerLastName: 'Customer',
-  customerAddress: '123 Sample Street',
-  customerCity: 'Sample City',
-  customerNotes: 'Sample customer for exploring the system. You can edit or delete it anytime.',
-  orderNotes: 'Sample Order — you can edit or delete it after exploring the system.',
-  orderItemNotes: 'Sample order item',
-};
-
-const VI_SAMPLE: SampleCopy = {
-  productName: 'Sản phẩm mẫu',
-  productDescription:
-    'Đây là sản phẩm mẫu để bạn làm quen quản lý kho và đơn hàng. Bạn có thể sửa hoặc xóa bất cứ lúc nào.',
-  customerFirstName: 'Khách hàng',
-  customerLastName: 'Mẫu',
-  customerAddress: '123 Đường Mẫu',
-  customerCity: 'Thành phố mẫu',
-  customerNotes: 'Khách hàng mẫu để bạn làm quen hệ thống. Bạn có thể sửa hoặc xóa bất cứ lúc nào.',
-  orderNotes: 'Đơn hàng mẫu — bạn có thể sửa hoặc xóa sau khi làm quen hệ thống.',
-  orderItemNotes: 'Chi tiết đơn hàng mẫu',
-};
-
-const EN_SAMPLES: Record<OnboardingBusinessType, SampleCopy> = {
-  CLOTHING: EN_SAMPLE,
-  VEHICLE: EN_SAMPLE,
-  EQUIPMENT: EN_SAMPLE,
-  GENERAL: EN_SAMPLE,
-};
-
-const VI_SAMPLES: Record<OnboardingBusinessType, SampleCopy> = {
-  CLOTHING: VI_SAMPLE,
-  VEHICLE: VI_SAMPLE,
-  EQUIPMENT: VI_SAMPLE,
-  GENERAL: VI_SAMPLE,
-};
-
-
 const BUNDLES: Record<OnboardingLocale, LocaleBundle> = {
   en: {
     outlet: {
@@ -126,7 +70,6 @@ const BUNDLES: Record<OnboardingLocale, LocaleBundle> = {
       name: 'General',
       description: 'Default category for general products',
     },
-    samples: EN_SAMPLES,
   },
   vi: {
     outlet: {
@@ -138,7 +81,6 @@ const BUNDLES: Record<OnboardingLocale, LocaleBundle> = {
       name: 'Chung',
       description: 'Danh mục mặc định cho sản phẩm chung',
     },
-    samples: VI_SAMPLES,
   },
 };
 
@@ -160,14 +102,8 @@ export function getDefaultOutletName(
   return `${name} - ${outlet.nameSuffix}`;
 }
 
-export function getSampleCopy(
-  businessType: string | null | undefined,
-  localeInput?: string | null,
-): SampleCopy {
-  const { samples } = getOnboardingCopy(localeInput);
-  const key = (businessType || 'GENERAL').toUpperCase() as OnboardingBusinessType;
-  return samples[key] ?? samples.GENERAL;
-}
-
-/** Marker embedded in demo notes/descriptions so we can detect / clean sample rows. */
+/**
+ * Marker in the notes / descriptions of the demo rows older accounts got at sign-up (no longer created, #895).
+ * Kept so those rows can still be found.
+ */
 export const ONBOARDING_SAMPLE_MARKER = '[DU_LIEU_MAU_HE_THONG_V1]';

@@ -3,11 +3,8 @@ import {
   db,
   createEmailVerification,
   getLocalizedRegistrationDefaults,
-  getSampleCopy,
-  ONBOARDING_SAMPLE_MARKER,
   resolveOnboardingLocaleFromContext,
 } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
 import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '@rentalshop/utils';
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
@@ -107,106 +104,6 @@ function buildPricingConfig(businessType?: string, pricingType?: string): string
   }
   
   return JSON.stringify(getDefaultPricingConfig((businessType as BusinessType) || 'GENERAL'));
-}
-
-/**
- * Seed demo data for new merchant account (localized).
- * Creates: 1 product, 1 customer, 1 order (RESERVED)
- */
-async function seedDemoData(
-  merchantId: number,
-  outletId: number,
-  categoryId: number,
-  userId: number,
-  opts: { locale?: string | null; businessType?: string | null } = {},
-) {
-  const sample = getSampleCopy(opts.businessType, opts.locale);
-  const marker = ONBOARDING_SAMPLE_MARKER;
-
-  // 1. Create demo product
-  const product = await prisma.product.create({
-    data: {
-      name: sample.productName,
-      description: `${marker} ${sample.productDescription}`,
-      barcode: `DEMO-${merchantId}-001`,
-      totalStock: 2,
-      rentPrice: 500000,
-      salePrice: 3000000,
-      deposit: 200000,
-      isActive: true,
-      merchantId,
-      categoryId,
-      pricingType: 'FIXED',
-    }
-  });
-
-  // 2. Create outlet stock for the product
-  await prisma.outletStock.create({
-    data: {
-      productId: product.id,
-      outletId,
-      stock: 2,
-      available: 2,
-      renting: 0,
-    }
-  });
-
-  // 3. Create demo customer
-  const customer = await prisma.customer.create({
-    data: {
-      firstName: sample.customerFirstName,
-      lastName: sample.customerLastName,
-      phone: '0901000000',
-      email: 'demo@example.com',
-      address: sample.customerAddress,
-      city: sample.customerCity,
-      notes: `${marker} ${sample.customerNotes}`,
-      merchantId,
-    }
-  });
-
-  // 4. Create demo order (RESERVED)
-  const orderNumber = `DEMO${String(merchantId).padStart(4, '0')}`;
-  const pickupDate = new Date();
-  pickupDate.setDate(pickupDate.getDate() + 7);
-  const returnDate = new Date(pickupDate);
-  returnDate.setDate(returnDate.getDate() + 3);
-
-  await prisma.order.create({
-    data: {
-      orderNumber,
-      orderType: 'RENT',
-      status: 'RESERVED',
-      totalAmount: 500000,
-      depositAmount: 200000,
-      pickupPlanAt: pickupDate,
-      returnPlanAt: returnDate,
-      rentalDuration: 3,
-      notes: `${marker} ${sample.orderNotes}`,
-      outletId,
-      customerId: customer.id,
-      createdById: userId,
-      orderItems: {
-        create: {
-          productId: product.id,
-          quantity: 1,
-          unitPrice: 500000,
-          totalPrice: 500000,
-          deposit: 200000,
-          rentalDays: 3,
-          notes: `${marker} ${sample.orderItemNotes}`,
-          productName: product.name,
-          productBarcode: product.barcode,
-        }
-      }
-    }
-  });
-
-  // Update outlet stock renting count
-  await prisma.outletStock.updateMany({
-    where: { productId: product.id, outletId },
-    data: { available: 1, renting: 0 }
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -378,23 +275,6 @@ export async function POST(request: NextRequest) {
         
         return { merchant, outlet, category, user, subscription, trialPlan, trialEndDate };
       });
-      
-      // Seed demo data for new merchant (non-blocking, localized)
-      try {
-        await seedDemoData(
-          result.merchant.id,
-          result.outlet.id,
-          result.category.id,
-          result.user.id,
-          {
-            locale: onboardingLocale,
-            businessType: result.merchant.businessType,
-          },
-        );
-        console.log('✅ Demo data seeded for new merchant:', result.merchant.id, `(locale=${onboardingLocale})`);
-      } catch (seedError) {
-        console.error('⚠️ Failed to seed demo data (non-critical):', seedError);
-      }
       
       // Send verification email (outside transaction)
       await sendVerificationEmailSafe(

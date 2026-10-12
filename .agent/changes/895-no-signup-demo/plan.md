@@ -1,6 +1,6 @@
 # Plan
 
-Status: in progress
+Status: done
 
 1. Failing test `tests/api/register-no-demo-data.test.ts` (register creates no product/customer/order), commit.
 2. Remove the seeding in the register route and `registration.ts`; drop the dead helpers; fix test mocks and e2e comments.

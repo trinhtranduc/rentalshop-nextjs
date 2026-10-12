@@ -1,6 +1,6 @@
 # Spec
 
-Status: in progress
+Status: done
 
 - `POST /api/auth/register` (merchant): creates merchant, default outlet, default category, MERCHANT user, trial subscription. No product, outlet stock, customer or order. Response unchanged.
 - `registerUser` / `registerMerchantWithTrial` (`packages/database/src/registration.ts`): same, no onboarding sample rows.

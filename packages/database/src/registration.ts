@@ -8,10 +8,7 @@ import { createSubscription } from './subscription';
 import { hashPassword } from '@rentalshop/auth/server';
 import { generateUniqueTenantKey } from '@rentalshop/utils';
 import type { UserCreateInput } from '@rentalshop/types';
-import {
-  createMerchantOnboardingSampleData,
-  getLocalizedRegistrationDefaults,
-} from './onboarding-sample';
+import { getLocalizedRegistrationDefaults } from './onboarding-sample';
 import { resolveOnboardingLocaleFromContext } from './onboarding-seed-i18n';
 import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
@@ -265,27 +262,11 @@ async function registerMerchant(tx: any, data: RegistrationInput) {
     }
   });
 
-  // 8. Seed tiny onboarding sample data (dev + staging only, idempotent)
-  // NOTE: No try/catch here so registration + onboarding data remain atomic in one transaction.
-  const sampleResult = await createMerchantOnboardingSampleData(tx, {
-    merchantId: merchant.id,
-    outletId: outlet.id,
-    categoryId: defaultCategory.id,
-    createdByUserId: user.id,
-    locale: onboardingLocale,
-    businessType: data.businessType || merchant.businessType,
-  });
-  if (sampleResult.created) {
-    console.log(`✅ Onboarding sample data created for merchant ${merchant.id}`);
-  } else {
-    console.log(`ℹ️ Onboarding sample skipped for merchant ${merchant.id}: ${sampleResult.reason}`);
-  }
-
-  // 9. Provision default inactive loyalty program (Super Admin enables later)
+  // 8. Provision default inactive loyalty program (Super Admin enables later)
   await provisionDefaultLoyaltyProgram(tx, merchant.id);
   console.log(`✅ Default loyalty program provisioned (inactive) for merchant ${merchant.id}`);
 
-  // 10. Create trial subscription
+  // 9. Create trial subscription
   const subscriptionStartDate = new Date();
   const endDate = new Date(subscriptionStartDate.getTime() + (trialPlan.trialDays * 24 * 60 * 60 * 1000));
   const subscription = await tx.subscription.create({

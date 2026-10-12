@@ -23,12 +23,8 @@ const mockDb: any = {
 };
 jest.mock('@rentalshop/database', () => ({
   db: mockDb,
-  // demo data seeding is non-critical: make it fail fast without a database
-  prisma: new Proxy({}, { get: () => ({ create: async () => { throw new Error('no db'); }, updateMany: async () => undefined }) }),
   createEmailVerification: jest.fn(async () => ({ token: 't' })),
   getLocalizedRegistrationDefaults: () => ({ outletName: 'Main', outletDescription: '', categoryName: 'General', categoryDescription: '' }),
-  getSampleCopy: () => ({}),
-  ONBOARDING_SAMPLE_MARKER: '[sample]',
   resolveOnboardingLocaleFromContext: () => 'vi',
 }));
 jest.mock('@rentalshop/utils', () => ({

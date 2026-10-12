@@ -34,8 +34,6 @@ jest.mock('@rentalshop/database', () => ({
   prisma: mockSampleTables,
   createEmailVerification: jest.fn(async () => ({ token: 't' })),
   getLocalizedRegistrationDefaults: () => ({ outletName: 'Main', outletDescription: '', categoryName: 'General', categoryDescription: '' }),
-  getSampleCopy: () => ({}),
-  ONBOARDING_SAMPLE_MARKER: '[sample]',
   resolveOnboardingLocaleFromContext: () => 'vi',
 }));
 jest.mock('@rentalshop/utils', () => ({
