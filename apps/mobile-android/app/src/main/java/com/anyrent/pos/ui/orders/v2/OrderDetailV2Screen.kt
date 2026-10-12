@@ -622,6 +622,16 @@ private fun DetailHeader(detail: OrderDetail) {
                     }
                 }
             }
+            // #891 (owner): who created the order, next to the created step; no line without a name
+            OrderDetailHeader.creatorName(summary)?.let { creator ->
+                Text(
+                    stringResource(R.string.detail_created_by, creator),
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 }

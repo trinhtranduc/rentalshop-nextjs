@@ -77,6 +77,9 @@ object OrderDetailHeader {
     fun dayLabel(value: String?, weekdays: List<String> = OrderRowDates.Texts().weekdays, zone: ZoneId = shopZone): String =
         value?.let { parse(it) }?.let { OrderRowDates.dmy(it, zone) } ?: "—"
 
+    /** #891 (owner): "Người tạo" of the detail; null (no line) when the name is empty */
+    fun creatorName(summary: OrderSummary): String? = summary.createdByName?.trim()?.takeIf { it.isNotEmpty() }
+
     /** #891 (owner): the header hides the "lấy sau N ngày" / "trả sau N ngày" countdowns; late and today notes stay */
     fun shownDue(due: Due?): Due? = due.takeUnless { it is Due.HandOverIn || it is Due.ReturnIn }
 

@@ -1622,4 +1622,5 @@
     <string name="v2_cart_cost">Giá vốn</string>
     <string name="v2_cart_total_cost">Tổng giá vốn</string>
     <string name="v2_cart_profit">Lãi dự kiến</string>
+    <string name="detail_created_by">Người tạo: %1$s</string>
 </resources>
