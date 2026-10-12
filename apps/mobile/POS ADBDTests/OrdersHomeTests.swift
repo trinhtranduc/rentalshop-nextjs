@@ -504,7 +504,9 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.rentRowDates(booked, sortedBy: .returnDate, timeZone: vietnam),
                        [RowDatePart(text: pickup, marked: false), RowDatePart(text: back, marked: true)])
         XCTAssertEqual(OrdersHomeLogic.rentRowDates(booked, sortedBy: .created, timeZone: vietnam).map(\.marked), [false, false],
-                       "the created day is not on the row")
+                       "the created day is on the meta line, not marked")
+        // Owner (#888): the created day stays where it was, "#0062 · tạo 02/10/26"
+        XCTAssertEqual(OrdersHomeLogic.rentRowMeta(booked, timeZone: vietnam), "#0062 · " + text("orders.row.created", "02/10/26"))
         // Same dates whatever the status (returned rows too); a missing date is left out
         let returned = try order(status: "RETURNED", pickup: "2026-09-30T02:00:00.000Z", returns: "2026-10-02T02:00:00.000Z")
         XCTAssertEqual(OrdersHomeLogic.rentRowDates(returned, sortedBy: .pickup, timeZone: vietnam).map(\.text),

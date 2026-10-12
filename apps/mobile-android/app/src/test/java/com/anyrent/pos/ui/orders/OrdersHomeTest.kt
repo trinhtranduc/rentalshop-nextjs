@@ -426,6 +426,8 @@ class OrdersHomeTest {
         assertEquals(listOf(false, false),
             OrdersBoardLogic.rentRowDates(listOrder("RETURNED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z"), SortDate.CREATED).map { it.marked })
         assertEquals(listOf(OrderRowDates.Part("Trả 16/10/26", marked = false)), OrderRowDates.rentPlan(null, back, markPickup = true, markReturn = false))
+        // Owner (#888): the created day stays on the meta line, "#0062 · tạo 02/10/26"
+        assertEquals("#0062 · tạo 02/10/26", OrdersBoardLogic.rentRowMeta(listOrder("RESERVED")))
     }
 
     @Test
