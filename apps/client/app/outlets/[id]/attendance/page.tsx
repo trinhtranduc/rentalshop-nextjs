@@ -64,14 +64,18 @@ export default function OutletAttendancePage() {
   const [picking, setPicking] = useState(false);
 
   const enabled = access.allowed && outletId > 0;
+  // There is no GET /api/outlets/:id: read the outlet from the caller's list (scoped by the API)
+  const merchantId = access.user?.merchant?.id || access.user?.merchantId;
   const outlet = useLoad<OutletLike>(
-    enabled
+    enabled && merchantId
       ? async () => {
-          const data = await must(outletsApi.getOutlet(outletId));
-          return ((data as unknown as { outlet?: OutletLike }).outlet || data) as unknown as OutletLike;
+          const data = await must(outletsApi.getOutlets({ merchantId: Number(merchantId), limit: 100 }));
+          const found = ((data as unknown as { outlets?: OutletLike[] }).outlets || []).find((o) => Number(o.id) === outletId);
+          if (!found) throw new Error('outlet not found');
+          return found;
         }
       : null,
-    [enabled, outletId],
+    [enabled, merchantId, outletId],
   );
   const settings = useLoad<AttendanceSettings>(enabled ? () => must(attendanceApi.getSettings(outletId)) : null, [enabled, outletId]);
   const s = settings.data;

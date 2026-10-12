@@ -348,7 +348,8 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
                       const sameDay = dayOf(r.at) === g.day;
                       const timeLabel = sameDay ? timeOf(r.at, true) : `${shortDate(dayOf(r.at)).slice(0, 5)} ${timeOf(r.at)}`;
                       const hasCoords = r.latitude != null && r.longitude != null;
-                      const editable = canEdit && r.recordId != null && r.kind !== 'EDIT' && (r.result === 'AUTO_CLOSED' || (r.kind === 'OUT' && r.result !== 'REJECTED'));
+                      // Mockup: "Sửa" sits on the forgotten clock-out (auto-closed) row
+                      const editable = canEdit && r.recordId != null && r.result === 'AUTO_CLOSED';
                       return (
                         <tr key={`${g.day}-${i}`} id={i === 0 ? `day-${g.day}` : undefined} className={focusDay === g.day ? 'bg-ar-primary-soft' : undefined}>
                           {i === 0 && (

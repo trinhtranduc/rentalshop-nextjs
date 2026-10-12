@@ -357,7 +357,7 @@ export default function OutletsPage() {
             <table className="hidden w-full table-fixed border-collapse text-[15px] lg:table">
               <thead>
                 <tr className="bg-ar-surface-muted">
-                  {sortHeader('name', t('cols.name'), 'w-[32%] pl-4')}
+                  {sortHeader('name', t('cols.name'), `${attendanceOn ? 'w-[24%]' : 'w-[32%]'} pl-4`)}
                   <th scope="col" className={th}>
                     {t('cols.address')}
                   </th>
@@ -368,12 +368,12 @@ export default function OutletsPage() {
                     {t('cols.status')}
                   </th>
                   {attendanceOn && (
-                    <th scope="col" className={`${th} w-[190px]`}>
+                    <th scope="col" className={`${th} w-[170px]`}>
                       {ta('outlets.col')}
                     </th>
                   )}
                   {sortHeader('createdAt', t('cols.createdAt'), 'w-[120px]')}
-                  <th scope="col" className={`${th} ${attendanceOn ? 'w-[180px]' : 'w-[120px]'} pr-4`}>
+                  <th scope="col" className={`${th} ${attendanceOn ? 'w-[160px]' : 'w-[120px]'} pr-4`}>
                     <span className="sr-only">{t('cols.actions')}</span>
                   </th>
                 </tr>
