@@ -33,6 +33,7 @@ export function buildCorsHeaders(request: NextRequest): Record<string, string> {
       'X-App-Version',
       'X-Device-Type',
       'X-Request-ID',
+      'X-Kiosk-Token', // #907 counter (kiosk) QR screen
       'X-Correlation-ID',
     ].join(', '),
     'Access-Control-Allow-Credentials': 'true',

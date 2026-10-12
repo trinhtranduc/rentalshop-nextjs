@@ -31,6 +31,7 @@ export * from './pricing';
 export * from './countries';
 export * from './currency';
 export * from './brand';
+export * from './modules';
 
 // Explicit exports for status constants
 export { 

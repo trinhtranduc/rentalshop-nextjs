@@ -23,6 +23,7 @@ import {
 } from '@rentalshop/utils';
 import { useApiError, useAuth } from '@rentalshop/hooks';
 import type { Merchant } from '@rentalshop/types';
+import { MerchantModulesCard } from './MerchantModulesCard';
 
 export default function MerchantDetailPage() {
   const params = useParams();
@@ -446,6 +447,12 @@ export default function MerchantDetailPage() {
           onCancel={handleCancel}
           onSuspend={handleSuspend}
           onReactivate={handleReactivate}
+        />
+        {/* #907 feature modules (ADMIN switches, OPS reads) */}
+        <MerchantModulesCard
+          merchantId={Number(merchantId)}
+          merchantName={merchantName}
+          canEdit={user?.role === 'ADMIN'}
         />
       </PageContent>
     </PageWrapper>

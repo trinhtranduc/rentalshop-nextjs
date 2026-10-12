@@ -85,9 +85,20 @@ export async function findActivePushTokensForOutlet(outletId: number): Promise<
   });
 }
 
+/** #907 Active push tokens of the given active users (e.g. a SHIFT_CHANGED push to one employee). */
+export async function findActivePushTokensForUsers(userIds: number[]): Promise<Array<{ userId: number; pushToken: string }>> {
+  const ids = [...new Set(userIds.filter((id) => Number.isFinite(id) && id > 0))];
+  if (ids.length === 0) return [];
+  return prisma.deviceToken.findMany({
+    where: { isActive: true, userId: { in: ids }, user: { isActive: true, deletedAt: null } },
+    select: { userId: true, pushToken: true },
+  });
+}
+
 export const deviceTokens = {
   upsert: upsertDeviceToken,
   deactivate: deactivateDeviceToken,
   deactivateByPushToken: deactivateTokensByPushToken,
   findActiveForOutlet: findActivePushTokensForOutlet,
+  findActiveForUsers: findActivePushTokensForUsers,
 };

@@ -41,5 +41,16 @@
   "PRODUCT_DELETE_MERCHANT_ONLY": "店员不能删除商品，请联系店主、门店管理员或仓库人员。",
   "OUTLET_HAS_OPEN_ORDERS": "该分店仍有已预订或租赁中的订单。请先完成或取消这些订单，再停用分店。",
   "OUTLET_DEACTIVATED": "该分店已停用，请联系店主。",
-  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} 仍有此商品，只有店主可以删除。如需在本门店停止销售，请将库存设为 0。"
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} 仍有此商品，只有店主可以删除。如需在本门店停止销售，请将库存设为 0。",
+  "MODULE_NOT_ENABLED": "您的店铺尚未开通此功能。",
+  "QR_EXPIRED": "此二维码已失效，请扫描今天柜台展示的二维码。",
+  "QR_WRONG_OUTLET": "这是其他分店的二维码。",
+  "OUT_OF_RANGE": "您离分店太远，请靠近后重试。",
+  "GPS_INACCURATE": "定位不够精确，请到门口或窗边后重试。",
+  "MOCK_LOCATION": "检测到虚拟定位，请关闭虚拟定位应用后重试。",
+  "ATTENDANCE_NOT_CONFIGURED": "该分店尚未设置考勤（缺少位置或二维码）。",
+  "SHIFT_OVERLAP": "该班次与该员工的其他班次时间重叠。",
+  "SHIFT_LOCKED": "已过去或已打卡的日期不能修改。",
+  "SHIFT_TEMPLATE_IN_USE": "该班次正在使用中，请隐藏而不是删除。",
+  "MONTH_LOCKED": "本月已锁定，请让店主解锁。"
 }

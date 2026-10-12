@@ -6,6 +6,7 @@ import {
   db,
   deactivateTokensByPushToken,
   findActivePushTokensForOutlet,
+  findActivePushTokensForUsers,
   findActiveUserIdsForOutlet,
 } from '@rentalshop/database';
 import { formatFullName } from '@rentalshop/utils';
@@ -399,4 +400,42 @@ export function notifyOutletOrderEvent(
     .catch((error) => {
       console.error('❌ notifyOutletOrderEvent failed:', error);
     });
+}
+
+/**
+ * #907 Push one message to some users' active devices (no inbox row; the caller writes it).
+ * Every data value is a string (FCM requirement; old iOS decodes inbox `data.*` as String?).
+ * Android posts on the existing `order_updates` channel, which every installed build creates.
+ * Fail-open: never throws.
+ */
+export async function sendPushToUsers(
+  userIds: number[],
+  message: { title: string; body: string; data: Record<string, string> }
+): Promise<{ sent: number; failed: number }> {
+  try {
+    const app = getFirebaseApp();
+    if (!app) return { sent: 0, failed: 0 };
+    const devices = await findActivePushTokensForUsers(userIds);
+    const tokens = [...new Set(devices.map((d) => d.pushToken).filter(Boolean))];
+    if (tokens.length === 0) return { sent: 0, failed: 0 };
+    const response = await getMessaging(app).sendEachForMulticast({
+      tokens,
+      notification: { title: message.title, body: message.body },
+      data: message.data,
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high', notification: { sound: 'default', channelId: 'order_updates' } },
+    });
+    const invalid = response.responses
+      .map((r, i) => (!r.success &&
+        (r.error?.code === 'messaging/registration-token-not-registered' ||
+          r.error?.code === 'messaging/invalid-registration-token')
+        ? tokens[i]
+        : null))
+      .filter((t): t is string => !!t);
+    if (invalid.length > 0) await deactivateTokensByPushToken(invalid).catch(() => undefined);
+    return { sent: response.successCount, failed: response.failureCount };
+  } catch (error) {
+    console.error('❌ sendPushToUsers failed:', error);
+    return { sent: 0, failed: userIds.length };
+  }
 }

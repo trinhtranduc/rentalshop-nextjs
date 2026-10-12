@@ -27,6 +27,8 @@ import { outletOperations } from './outlet-operations';
 import { refreshTokens } from './refresh-tokens';
 import { deviceTokens } from './device-tokens';
 import { notifications } from './notifications';
+import { merchantModules } from './merchant-module';
+import { attendance } from './attendance';
 import { simplifiedSync } from './sync';
 import { simplifiedPosts } from './post';
 import { simplifiedPostCategories } from './post-category';
@@ -199,6 +201,12 @@ const db = {
   notifications,
 
   // ============================================================================
+  // FEATURE MODULES + ATTENDANCE (#907)
+  // ============================================================================
+  merchantModules,
+  attendance,
+
+  // ============================================================================
   // SYNC OPERATIONS (Temporary - for sync-standalone endpoint)
   // ============================================================================
   sync: simplifiedSync,
@@ -306,7 +314,13 @@ export {
   deactivateDeviceToken,
   deactivateTokensByPushToken,
   findActivePushTokensForOutlet,
+  findActivePushTokensForUsers,
 } from './device-tokens';
+
+// #907 feature modules and attendance
+export { merchantModules, getActiveMerchantModuleKeys, isMerchantModuleActive } from './merchant-module';
+export { attendance } from './attendance';
+export type { AttendanceScanInput, PunchInput, PunchPlanIn, AttendanceEditInput, ShiftRuleInput } from './attendance';
 export type { DevicePlatform, UpsertDeviceTokenInput } from './device-tokens';
 
 // Export in-app notification inbox functions

@@ -44,6 +44,10 @@ model User {
   refreshTokens          RefreshToken[]
   deviceTokens           DeviceToken[]
   notifications          Notification[]
+  shiftRules             ShiftRule[]
+  shiftDays              ShiftDay[]
+  attendanceRecords      AttendanceRecord[]
+  attendanceScans        AttendanceScan[]
 
   @@unique([merchantId, email])
   @@unique([merchantId, phone])
@@ -190,6 +194,7 @@ model Merchant {
   loyaltyProgram       LoyaltyProgram?
   customerLoyalty      CustomerLoyalty[]
   loyaltyTransactions  LoyaltyTransaction[]
+  modules              MerchantModule[]
 
   @@index([name])
   @@index([email])
@@ -223,6 +228,8 @@ model Outlet {
   merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products     OutletStock[]
   users        User[]
+  attendanceSetting AttendanceSetting?
+  shiftTemplates    ShiftTemplate[]
 
   @@index([merchantId])
   @@index([name])
@@ -1126,4 +1133,208 @@ model LoyaltyPointLot {
   @@index([customerLoyaltyId, expiresAt])
   @@index([earnTransactionId])
   @@index([expiresAt, remainingPoints])
+}
+
+// ============================================================================
+// #907 Feature modules (per merchant) and the attendance module (Chấm công)
+// Day keys are Vietnam civil days `YYYY-MM-DD` stored as text (never @db.Date).
+// ============================================================================
+
+/// One paid feature module of a merchant. Active = enabled and (endsAt null or endsAt > now).
+model MerchantModule {
+  id          Int       @id @default(autoincrement())
+  merchantId  Int
+  /// Catalog key from @rentalshop/constants MODULES, e.g. "attendance"
+  key         String
+  enabled     Boolean   @default(false)
+  /// Inclusive end date stored as the end of that VN day (23:59:59.999 +07)
+  endsAt      DateTime?
+  updatedById Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, key])
+}
+
+/// Per-outlet attendance location, radius, QR code state and kiosk link.
+model AttendanceSetting {
+  id           Int       @id @default(autoincrement())
+  outletId     Int       @unique
+  merchantId   Int
+  latitude     Float?
+  longitude    Float?
+  radiusM      Int       @default(100)
+  /// DAILY (changes at 00:00 VN) | FIXED
+  qrMode       String    @default("DAILY")
+  /// 0 = no QR made yet; every "new code" increments it and kills the older codes
+  qrVersion    Int       @default(0)
+  qrCreatedAt  DateTime?
+  /// 256-bit random token of the counter (kiosk) link; stored so the link can be copied again
+  kioskToken   String?   @unique
+  kioskTokenAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  outlet       Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+}
+
+/// Shift template of an outlet ("Ca sáng 08:00–12:00"). endTime <= startTime = crosses midnight.
+model ShiftTemplate {
+  id           Int      @id @default(autoincrement())
+  merchantId   Int
+  outletId     Int
+  name         String
+  /// HH:mm VN wall time
+  startTime    String
+  endTime      String
+  breakMinutes Int      @default(0)
+  /// blue | purple | green | orange
+  color        String   @default("blue")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  outlet       Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([outletId])
+}
+
+/// Weekly repeating assignment of one user to one template ("gán một lần, lặp hằng tuần").
+model ShiftRule {
+  id          Int      @id @default(autoincrement())
+  merchantId  Int
+  outletId    Int
+  userId      Int
+  templateId  Int
+  /// 1 = Monday … 7 = Sunday (VN day)
+  weekdays    Int[]
+  /// VN day keys YYYY-MM-DD, endDate inclusive
+  startDate   String
+  endDate     String?
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([outletId])
+  @@index([userId])
+  @@index([templateId])
+}
+
+/// One-day change of a user's shifts (another template, custom hours, or off).
+model ShiftDay {
+  id           Int      @id @default(autoincrement())
+  merchantId   Int
+  outletId     Int
+  userId       Int
+  dateKey      String
+  off          Boolean  @default(false)
+  templateId   Int?
+  startTime    String?
+  endTime      String?
+  breakMinutes Int?
+  createdById  Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([outletId, dateKey])
+  @@index([templateId])
+}
+
+/// One IN/OUT pair. Shift fields are a snapshot taken at IN, so template edits never change worked days.
+model AttendanceRecord {
+  id              Int              @id @default(autoincrement())
+  merchantId      Int
+  outletId        Int
+  userId          Int
+  /// VN day key of the shift (or of the IN instant when there is no shift)
+  dateKey         String
+  shiftTemplateId Int?
+  shiftName       String?
+  shiftStart      String?
+  shiftEnd        String?
+  shiftBreak      Int?
+  checkInAt       DateTime
+  checkOutAt      DateTime?
+  /// OPEN | DONE | MISSING_OUT
+  status          String           @default("OPEN")
+  /// When an OPEN record becomes MISSING_OUT (end of its VN day, or cross-midnight shift end + 4 h)
+  closeAt         DateTime?
+  inLatitude      Float?
+  inLongitude     Float?
+  inAccuracy      Float?
+  inDistanceM     Int?
+  outLatitude     Float?
+  outLongitude    Float?
+  outAccuracy     Float?
+  outDistanceM    Int?
+  suspectedFake   Boolean          @default(false)
+  /// ZERO_ACCURACY | SAME_COORDS | SPEED
+  suspectReasons  String[]
+  /// PUNCH | MANUAL
+  source          String           @default("PUNCH")
+  autoClosedAt    DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  edits           AttendanceEdit[]
+
+  @@index([userId, status])
+  @@index([outletId, dateKey])
+  @@index([userId, dateKey])
+  @@index([status, closeAt])
+  @@index([shiftTemplateId])
+}
+
+/// Every punch that reached the location / QR checks, accepted or rejected (with coordinates).
+model AttendanceScan {
+  id         Int      @id @default(autoincrement())
+  merchantId Int
+  outletId   Int?
+  userId     Int
+  at         DateTime @default(now())
+  /// IN | OUT (intended action)
+  action     String?
+  /// ACCEPTED or the error code
+  result     String
+  latitude   Float
+  longitude  Float
+  accuracy   Float
+  distanceM  Int?
+  recordId   Int?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, at])
+  @@index([outletId, at])
+}
+
+/// Manual change of a record (before / after / reason / editor).
+model AttendanceEdit {
+  id         Int              @id @default(autoincrement())
+  recordId   Int
+  editedById Int
+  before     Json?
+  after      Json
+  reason     String
+  createdAt  DateTime         @default(now())
+  record     AttendanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  @@index([recordId])
+}
+
+/// A locked month of an outlet: no more record edits until the owner unlocks it.
+model AttendanceMonthLock {
+  id         Int      @id @default(autoincrement())
+  outletId   Int
+  /// YYYY-MM
+  month      String
+  lockedById Int
+  lockedAt   DateTime @default(now())
+
+  @@unique([outletId, month])
 }
