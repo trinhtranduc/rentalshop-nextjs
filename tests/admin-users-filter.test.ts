@@ -37,6 +37,10 @@ describe('userFilterUrlUpdates', () => {
     expect(userFilterUrlUpdates({ outletId: 7 })).toEqual({ page: 1, outletId: '7' });
     expect(userFilterUrlUpdates({ outletId: undefined })).toEqual({ page: 1, outletId: undefined });
   });
+  it('a role change that carries the unchanged merchant and outlet keeps them', () => {
+    expect(userFilterUrlUpdates({ role: 'OUTLET_STAFF' as any, merchantId: 2, outletId: 3 }, { merchantId: 2, outletId: 3 }))
+      .toEqual({ page: 1, role: 'OUTLET_STAFF' });
+  });
   it('role and status pass through as before', () => {
     expect(userFilterUrlUpdates({ role: 'MERCHANT' as any, status: 'active' })).toEqual({ page: 1, role: 'MERCHANT', status: 'active' });
   });

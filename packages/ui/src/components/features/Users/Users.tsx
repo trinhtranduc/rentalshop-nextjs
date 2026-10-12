@@ -54,6 +54,8 @@ export interface UsersProps {
   onExport?: () => void;
   onAdd?: () => void;
   className?: string;
+  /** #884: admin Users page — merchant and outlet selects in the filter bar. */
+  showMerchantOutletFilters?: boolean;
 }
 
 /**
@@ -88,7 +90,8 @@ export const Users: React.FC<UsersProps> = ({
   currentUser,
   onExport,
   onAdd,
-  className = ""
+  className = "",
+  showMerchantOutletFilters = false
 }) => {
   
   // User role check for permissions
@@ -171,6 +174,7 @@ export const Users: React.FC<UsersProps> = ({
                 onFiltersChange={memoizedOnFiltersChange}
                 onSearchChange={memoizedOnSearchChange}
                 onClearFilters={memoizedOnClearFilters}
+                showMerchantOutletFilters={showMerchantOutletFilters}
               />
             </div>
           </CardContent>

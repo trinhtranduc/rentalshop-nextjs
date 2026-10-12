@@ -20,6 +20,7 @@ import { PAGINATION } from '@rentalshop/constants';
 import type { UserFilters, User, UserCreateInput, UserUpdateInput } from '@rentalshop/types';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { usersApi, authApi, getShopTodayKey } from '@rentalshop/utils';
+import { readUserListFilters, userFilterUrlUpdates } from './users-filter-url';
 
 /**
  * ✅ MODERN USERS PAGE (URL State Pattern)
@@ -59,6 +60,8 @@ export default function UsersPage() {
   const limit = parseInt(searchParams.get('limit') || String(PAGINATION.DEFAULT_PAGE_SIZE));
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+  // #884: merchant, then outlet of that merchant
+  const { merchantId, outletId } = readUserListFilters(searchParams);
 
   // ============================================================================
   // DATA FETCHING - Clean & Simple with Deduplication
@@ -73,8 +76,10 @@ export default function UsersPage() {
     page,
     limit,
     sortBy,
-    sortOrder
-  }), [search, role, status, page, limit, sortBy, sortOrder]);
+    sortOrder,
+    merchantId,
+    outletId
+  }), [search, role, status, page, limit, sortBy, sortOrder, merchantId, outletId]);
 
   const { data, loading, error, refetch } = useUsersData({ filters });
   
@@ -122,17 +127,9 @@ export default function UsersPage() {
   }, [updateURL]);
 
   const handleFiltersChange = useCallback((newFilters: UserFilters) => {
-    const updates: Record<string, string | number | undefined> = { page: 1 }; // Reset page
-    
-    if ('role' in newFilters) {
-      updates.role = newFilters.role as any;
-    }
-    if ('status' in newFilters) {
-      updates.status = newFilters.status as any;
-    }
-    
-    updateURL(updates);
-  }, [updateURL]);
+    // Reset page; a new merchant drops the outlet (#884)
+    updateURL(userFilterUrlUpdates(newFilters, { merchantId, outletId }));
+  }, [updateURL, merchantId, outletId]);
 
   const handleClearFilters = useCallback(() => {
     console.log('🔧 Page: Clear all filters');
@@ -300,6 +297,7 @@ export default function UsersPage() {
           exportButtonText={`Export (${selectedUserIds.length})`}
           showStats={true}
           currentUser={currentUser}
+          showMerchantOutletFilters={true}
         />
       </div>
 
