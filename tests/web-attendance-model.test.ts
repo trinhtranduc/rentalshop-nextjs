@@ -12,6 +12,10 @@ jest.mock('@rentalshop/utils', () => ({
 }));
 import {
   addMonths,
+  assignStartDefault,
+  defaultOutlet,
+  editButtonRecords,
+  workedUserIds,
   canEditPerson,
   canUseAttendanceWeb,
   cellKind,
@@ -226,5 +230,72 @@ describe('record times in the shop zone', () => {
       ['2026-10-21', 2],
     ]);
     expect(recordTimes(rows, 9)).toEqual({ day: '2026-10-20', checkIn: '22:00', checkOut: '02:00' });
+  });
+});
+
+describe('#918 rows by work day, edit any record, assign / lock, default outlet', () => {
+  const manual = [
+    // a manual record of 05/10 added on 12/10: only its EDIT row, with the API dateKey
+    {
+      at: '2026-10-12T03:00:00Z', kind: 'EDIT' as const, result: 'EDITED' as const, recordId: 3, dateKey: '2026-10-05',
+      after: { checkInAt: '2026-10-05T01:00:00.000Z', checkOutAt: '2026-10-05T10:30:00.000Z', status: 'DONE' },
+    },
+  ];
+
+  it('a manual record sits under its work day and its times come from the edit', () => {
+    expect(groupRowsByDay(manual).map((g) => g.day)).toEqual(['2026-10-05']);
+    expect(recordTimes(manual, 3)).toEqual({ day: '2026-10-05', checkIn: '08:00', checkOut: '17:30' });
+  });
+
+  it('the latest edit wins over the scans', () => {
+    const rows = [
+      { at: '2026-10-15T01:00:00Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 7, dateKey: '2026-10-15' },
+      { at: '2026-10-15T10:00:00Z', kind: 'OUT' as const, result: 'ACCEPTED' as const, recordId: 7, dateKey: '2026-10-15' },
+      { at: '2026-10-16T02:00:00Z', kind: 'EDIT' as const, result: 'EDITED' as const, recordId: 7, dateKey: '2026-10-15', after: { checkInAt: '2026-10-15T00:30:00Z', checkOutAt: '2026-10-15T10:00:00Z', status: 'DONE' } },
+      { at: '2026-10-17T02:00:00Z', kind: 'EDIT' as const, result: 'EDITED' as const, recordId: 7, dateKey: '2026-10-15', after: { checkInAt: '2026-10-15T00:45:00Z', checkOutAt: '2026-10-15T11:00:00Z', status: 'DONE' } },
+    ];
+    expect(recordTimes(rows, 7)).toEqual({ day: '2026-10-15', checkIn: '07:45', checkOut: '18:00' });
+  });
+
+  it('one Sửa per record: on its first row, never on a rejected scan', () => {
+    const rows = [
+      { at: '2026-10-15T00:59:00Z', kind: 'IN' as const, result: 'REJECTED' as const, dateKey: '2026-10-15' },
+      { at: '2026-10-15T01:00:00Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 7, dateKey: '2026-10-15' },
+      { at: '2026-10-15T05:00:00Z', kind: 'OUT' as const, result: 'ACCEPTED' as const, recordId: 7, dateKey: '2026-10-15' },
+      { at: '2026-10-15T06:00:00Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 8, dateKey: '2026-10-15' },
+      { at: '2026-10-15T16:59:59Z', kind: 'OUT' as const, result: 'AUTO_CLOSED' as const, recordId: 8, dateKey: '2026-10-15' },
+    ];
+    expect(editButtonRecords(rows)).toEqual([null, 7, null, 8, null]);
+    expect(editButtonRecords(manual)).toEqual([3]);
+  });
+
+  it("today's cell of someone who already worked is locked, no +", () => {
+    expect(weekCellState('2026-10-12', '2026-10-12', [], true)).toEqual({ past: false, locked: true, canAdd: false });
+    expect(weekCellState('2026-10-12', '2026-10-12', [], false)).toEqual({ past: false, locked: false, canAdd: true });
+    expect(weekCellState('2026-10-13', '2026-10-12', [], false)).toEqual({ past: false, locked: false, canAdd: true });
+  });
+
+  it('who worked on a day: a timesheet cell exists for that day (an open record counts)', () => {
+    const users = [
+      { userId: 7, days: { '2026-10-12': { hours: 0, dayCredit: 0 } } },
+      { userId: 8, days: { '2026-10-11': { hours: 8, dayCredit: 1 } } },
+      { id: 9, days: [{ date: '2026-10-12', hours: 4, dayCredit: 1 }] },
+    ] as any;
+    expect([...workedUserIds(users, '2026-10-12')].sort()).toEqual([7, 9]);
+    expect(workedUserIds(null, '2026-10-12').size).toBe(0);
+  });
+
+  it('Gán ca starts tomorrow (VN day key)', () => {
+    expect(assignStartDefault('2026-10-12')).toBe('2026-10-13');
+    expect(assignStartDefault('2026-10-31')).toBe('2026-11-01');
+  });
+
+  it('outlet: the one in the URL, else the default outlet, else the first', () => {
+    const outlets = [{ id: 2, name: 'Outlet 2' }, { id: 1, name: 'Main', isDefault: true }];
+    expect(defaultOutlet(outlets, 2)?.id).toBe(2);
+    expect(defaultOutlet(outlets, null)?.id).toBe(1);
+    expect(defaultOutlet(outlets, 99)?.id).toBe(1);
+    expect(defaultOutlet([{ id: 5, name: 'A' }, { id: 6, name: 'B' }], 0)?.id).toBe(5);
+    expect(defaultOutlet([], 1)).toBeNull();
   });
 });

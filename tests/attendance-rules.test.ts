@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from '@jest/globals';
 import { haversineMeters } from '../apps/api/lib/attendance/geo';
+import { scanKindLabel, scanResultLabel } from '../apps/api/lib/attendance/export-labels';
 import {
   buildAttendanceQrCode,
   parseAttendanceQrCode,
@@ -312,5 +313,21 @@ describe('weekly schedule: rules + one-day changes (#907 rules 20-23)', () => {
     ]);
     expect(diff[0].before.map((s) => s.name)).toEqual(['Ca sáng']);
     expect(diff[0].after.map((s) => s.name)).toEqual(['Ca chiều']);
+  });
+});
+
+describe('#918 Excel "Chi tiết" labels are Vietnamese', () => {
+  it('kind and result', () => {
+    expect(scanKindLabel('IN')).toBe('Vào');
+    expect(scanKindLabel('OUT')).toBe('Ra');
+    expect(scanKindLabel(null)).toBe('');
+    expect(scanResultLabel('ACCEPTED')).toBe('Ghi nhận');
+    expect(scanResultLabel('OUT_OF_RANGE')).toBe('Từ chối · Ngoài vùng');
+    expect(scanResultLabel('GPS_INACCURATE')).toBe('Từ chối · GPS chưa chính xác');
+    expect(scanResultLabel('MOCK_LOCATION')).toBe('Từ chối · Vị trí giả');
+    expect(scanResultLabel('QR_EXPIRED')).toBe('Từ chối · Mã QR hết hiệu lực');
+    expect(scanResultLabel('QR_WRONG_OUTLET')).toBe('Từ chối · Mã QR của chi nhánh khác');
+    expect(scanResultLabel('ATTENDANCE_NOT_CONFIGURED')).toBe('Từ chối · Chi nhánh chưa cài vị trí');
+    expect(scanResultLabel('SOMETHING_NEW')).toBe('Từ chối · SOMETHING_NEW');
   });
 });

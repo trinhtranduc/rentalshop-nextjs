@@ -314,6 +314,46 @@ describe('timesheet and person month (#907 rules 26-28, 33)', () => {
     );
   });
 
+  it('#918 every row has dateKey: the record day for its scans, auto-close and edits; else the VN day of at', async () => {
+    setCaller('MERCHANT');
+    const manual = {
+      id: 3, userId: 7, outletId: 1, dateKey: '2026-10-05', status: 'DONE', source: 'MANUAL', shiftName: null, shiftStart: null, shiftEnd: null,
+      shiftBreak: null, checkInAt: new Date('2026-10-05T01:00:00Z'), checkOutAt: new Date('2026-10-05T10:00:00Z'), suspectedFake: false,
+      suspectReasons: null, autoClosedAt: null,
+    };
+    const night = {
+      id: 4, userId: 7, outletId: 1, dateKey: '2026-10-20', status: 'DONE', shiftName: null, shiftStart: null, shiftEnd: null, shiftBreak: null,
+      checkInAt: new Date('2026-10-20T15:00:00Z'), checkOutAt: new Date('2026-10-20T19:00:00Z'), suspectedFake: false, suspectReasons: null,
+      autoClosedAt: null,
+    };
+    mockDb.attendance.listRecords.mockResolvedValue([...recs, manual, night]);
+    mockDb.attendance.listScans.mockResolvedValue([
+      { id: 1, at: new Date('2026-10-12T01:10:00Z'), action: 'IN', result: 'ACCEPTED', latitude: 10.7, longitude: 106.7, accuracy: 8, distanceM: 12, recordId: 1 },
+      // 00:30 on 13/10 in Vietnam, still 12/10 in UTC
+      { id: 5, at: new Date('2026-10-12T17:30:00Z'), action: 'IN', result: 'OUT_OF_RANGE', latitude: 10.8, longitude: 106.7, accuracy: 8, distanceM: 350, recordId: null },
+      { id: 6, at: new Date('2026-10-20T15:00:00Z'), action: 'IN', result: 'ACCEPTED', latitude: 10.7, longitude: 106.7, accuracy: 8, distanceM: 5, recordId: 4 },
+      // cross-midnight OUT: 02:00 on 21/10 (VN) belongs to the record of 20/10
+      { id: 7, at: new Date('2026-10-20T19:00:00Z'), action: 'OUT', result: 'ACCEPTED', latitude: 10.7, longitude: 106.7, accuracy: 8, distanceM: 5, recordId: 4 },
+      // linked to a record outside the month → VN day of at
+      { id: 8, at: new Date('2026-10-01T00:30:00Z'), action: 'OUT', result: 'ACCEPTED', latitude: 10.7, longitude: 106.7, accuracy: 8, distanceM: 5, recordId: 99 },
+    ]);
+    mockDb.attendance.listEdits.mockResolvedValue([
+      // a manual record of 05/10 added on 12/10
+      { id: 1, recordId: 3, createdAt: new Date('2026-10-12T03:00:00Z'), reason: 'Quên quét', before: null, after: { checkInAt: '2026-10-05T01:00:00.000Z', checkOutAt: '2026-10-05T10:00:00.000Z', status: 'DONE' }, editedById: 2 },
+    ]);
+    const res: any = await personMonth(req('/api/attendance/people/7/month?outletId=1&month=2026-10'), params({ userId: '7' }));
+    expect(res.status).toBe(200);
+    const rows = res.body.data.rows;
+    for (const r of rows) expect(r.dateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const pick = (fn: (r: any) => boolean) => rows.find(fn);
+    expect(pick((r) => r.kind === 'EDIT' && r.recordId === 3)).toEqual(expect.objectContaining({ dateKey: '2026-10-05', at: new Date('2026-10-12T03:00:00Z') }));
+    expect(pick((r) => r.result === 'REJECTED').dateKey).toBe('2026-10-13');
+    expect(pick((r) => r.kind === 'OUT' && r.recordId === 4).dateKey).toBe('2026-10-20');
+    expect(pick((r) => r.result === 'AUTO_CLOSED').dateKey).toBe('2026-10-13');
+    expect(pick((r) => r.kind === 'IN' && r.recordId === 1).dateKey).toBe('2026-10-12');
+    expect(pick((r) => r.recordId === 99).dateKey).toBe('2026-10-01');
+  });
+
   it('a user of another merchant → 404', async () => {
     setCaller('MERCHANT');
     const res: any = await personMonth(req('/api/attendance/people/99/month?outletId=1&month=2026-10'), params({ userId: '99' }));

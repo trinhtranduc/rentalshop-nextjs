@@ -112,6 +112,31 @@ describe('weekly rules (#907 rules 20, 22, 24)', () => {
     expect(mockDb.attendance.createRules).not.toHaveBeenCalled();
   });
 
+  it('#918 SHIFT_LOCKED says who: users who already worked today, with names; a past day lists every user', async () => {
+    mockDb.attendance.workedDays.mockResolvedValue([`7:${today}`]);
+    const res: any = await createRules(req('/api/attendance/shift-rules', ruleBody({ userIds: [7, 8] })));
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('SHIFT_LOCKED');
+    expect(res.body.data).toEqual({ users: [{ id: 7, name: 'U 7' }], dates: [today], messageParams: { names: 'U 7' } });
+    expect(mockDb.attendance.createRules).not.toHaveBeenCalled();
+
+    mockDb.attendance.workedDays.mockResolvedValue([]);
+    const past: any = await createRules(req('/api/attendance/shift-rules', ruleBody({ userIds: [7, 8], startDate: yesterday })));
+    expect(past.status).toBe(409);
+    expect(past.body.data).toEqual({
+      users: [{ id: 7, name: 'U 7' }, { id: 8, name: 'U 8' }],
+      dates: [yesterday],
+      messageParams: { names: 'U 7, U 8' },
+    });
+  });
+
+  it('#918 SHIFT_LOCKED on a one-day change carries the user too', async () => {
+    mockDb.attendance.workedDays.mockResolvedValue([`7:${today}`]);
+    const res: any = await putDay(req('/api/attendance/shifts/day', { outletId: 1, userId: 7, date: today, templateId: 1 }));
+    expect(res.status).toBe(409);
+    expect(res.body.data).toEqual({ users: [{ id: 7, name: 'U 7' }], dates: [today], messageParams: { names: 'U 7' } });
+  });
+
   it('overlapping times with another rule of the same user on a shared weekday → 409 SHIFT_OVERLAP', async () => {
     mockDb.attendance.listRules.mockResolvedValue([
       { id: 50, userId: 7, outletId: 1, templateId: 1, weekdays: [3], startDate: '2026-01-01', endDate: null },
