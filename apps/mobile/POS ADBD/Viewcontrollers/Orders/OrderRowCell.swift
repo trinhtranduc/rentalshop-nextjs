@@ -45,13 +45,14 @@ final class DateChipStack: UIStackView {
             label.layer.cornerRadius = 8
             label.layer.masksToBounds = true
             label.backgroundColor = chip.kind.colors.fill
+            // #893 (owner on device): medium vs bold read the same; the sorted chip is bold (label and date),
+            // the other one regular
             let text = NSMutableAttributedString(string: chip.label + " ", attributes: [
-                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary),
                 NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
             ])
-            // The sorted date is only bolder text (no other change)
             text.append(NSAttributedString(string: chip.date, attributes: [
-                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.body) : Utils.mediumFont(size: DS.TextSize.body),
+                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body),
                 NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
             ]))
             label.attributedText = text

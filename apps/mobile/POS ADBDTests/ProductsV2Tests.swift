@@ -87,6 +87,17 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(ProductCostPrice.shown(none, showsPrices: true))
     }
 
+    // MARK: - Home cart bar and add feedback (#893)
+
+    /// #893 (owner): the Home cart bar is the board's primary blue with white text; "+" shows no success toast
+    func testHomeCartBarIsBlueAndAddShowsNoToast() {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        HomeCartBarStyle.fill.getRed(&r, green: &g, blue: &b, alpha: &a)
+        XCTAssertEqual(String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255))), "1D4ED8")
+        XCTAssertEqual(HomeCartBarStyle.text, UIColor.white)
+        XCTAssertFalse(HomeCartBarStyle.showsAddedToast)
+    }
+
     // MARK: - Product orders × qty (#891)
 
     func testProductQuantityInAnOrder() throws {
