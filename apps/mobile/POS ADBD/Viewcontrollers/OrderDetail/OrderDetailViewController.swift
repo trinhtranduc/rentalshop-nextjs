@@ -251,9 +251,9 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     private func statusBox(_ detail: OrderDetail) -> UIView {
-        let tag = RowTagLabel(style: .status)
-        let status = OrdersHomeLogic.statusTag(detail.status)
-        tag.apply(status.text, status.colors)
+        // #891: the same badge as the order list rows (one style, solid old-app colours)
+        let tag = RowTagLabel.statusBadge(OrdersHomeLogic.statusTag(detail.status))
+        tag.setContentHuggingPriority(.required, for: .vertical)
         let summary = UILabel()
         summary.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.secondary) ?? Utils.boldFont(size: DS.TextSize.secondary)
         summary.textColor = DS.Color.text
@@ -285,6 +285,13 @@ final class OrderDetailViewController: BaseViewControler {
         box.layer.cornerRadius = DS.Radius.card
         if OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
             box.addArrangedSubview(progressView(detail))
+        }
+        // #891 (owner): who created the order, next to the created step; no line without a name
+        if let creator = OrderDetailLogic.creatorName(detail) {
+            let label = V2.label(String(format: "order.detail.createdBy".localized(), creator), size: DS.TextSize.secondary,
+                                 color: DS.Color.textMuted, lines: 1)
+            label.accessibilityIdentifier = "order.detail.createdBy"
+            box.addArrangedSubview(label)
         }
         return box
     }
@@ -490,9 +497,6 @@ final class OrderDetailViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [name, calc])
         texts.axis = .vertical
         texts.spacing = 4
-        if let note = CartV2Logic.noteText(item.notes) {
-            texts.addArrangedSubview(noteBox(note))
-        }
 
         let qty = UILabel()
         qty.font = Utils.regularFont(size: DS.TextSize.secondary)
@@ -509,6 +513,11 @@ final class OrderDetailViewController: BaseViewControler {
         bottom.alignment = .firstBaseline
         texts.addArrangedSubview(bottom)
         texts.setCustomSpacing(6, after: texts.arrangedSubviews[texts.arrangedSubviews.count - 2])
+        // #891 (owner): the item note is the last line of the item
+        if let note = CartV2Logic.noteText(item.notes) {
+            texts.setCustomSpacing(8, after: bottom)
+            texts.addArrangedSubview(noteBox(note))
+        }
 
         let row = UIStackView(arrangedSubviews: [image, texts])
         row.axis = .horizontal

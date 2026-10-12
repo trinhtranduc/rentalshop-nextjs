@@ -1649,4 +1649,5 @@
     <string name="v2_cart_cost">Cost</string>
     <string name="v2_cart_total_cost">Total cost</string>
     <string name="v2_cart_profit">Expected profit</string>
+    <string name="detail_created_by">Created by: %1$s</string>
 </resources>

@@ -639,6 +639,8 @@ struct OrderDetail: Codable {
     let customer: CustomerDetail
     let outlet: OutletDetail
     let createdBy: UserDetail?
+    /// Flat creator name some detail payloads send (#891); optional, older servers leave it out
+    var createdByName: String? = nil
     let orderItems: [OrderItem]
     let payments: [Payment]
     

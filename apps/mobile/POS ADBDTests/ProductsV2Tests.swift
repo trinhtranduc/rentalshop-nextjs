@@ -87,6 +87,16 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(ProductCostPrice.shown(none, showsPrices: true))
     }
 
+    // MARK: - Product orders × qty (#891)
+
+    func testProductQuantityInAnOrder() throws {
+        let json = #"{"id":1,"orderNumber":"9","orderType":"RENT","status":"RESERVED","createdAt":"2026-10-01T03:00:00.000Z","updatedAt":"2026-10-01T03:00:00.000Z","customerName":"Huy","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":1,"orderItems":[{"id":1,"quantity":2,"unitPrice":1,"totalPrice":2,"productId":7,"productName":"Vest"},{"id":2,"quantity":1,"unitPrice":1,"totalPrice":1,"productId":8,"productName":"Cà vạt"},{"id":3,"quantity":1,"unitPrice":1,"totalPrice":1,"productId":7,"productName":"Vest"}]}"#
+        let order = try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 7, in: order), 3)
+        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 8, in: order), 1)
+        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 99, in: order), 1, "list without the item: 1")
+    }
+
     // MARK: - Cart cost (#888)
 
     private func costLine(_ cost: Double?, qty: Int = 1, price: Double = 300_000) -> CartItem {

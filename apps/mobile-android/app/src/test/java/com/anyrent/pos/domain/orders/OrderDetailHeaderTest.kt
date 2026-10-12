@@ -36,6 +36,25 @@ class OrderDetailHeaderTest {
     /** 2026-10-05 10:00 in Vietnam */
     private val oct5 = Instant.parse("2026-10-05T03:00:00Z")
 
+    /** #891 (owner): order detail shows "Người tạo: <name>"; no line when the name is empty (iOS creatorName) */
+    @Test
+    fun creatorName() {
+        assertEquals("Merchant 1", OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = " Merchant 1 ")))
+        assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = "  ")))
+        assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = null)))
+    }
+
+    /** #891 (owner): the detail header hides the "lấy sau N ngày" countdown; other notes stay (iOS headerSummary) */
+    @Test
+    fun handOverCountdownIsHidden() {
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverIn(2)))
+        assertEquals(OrderDetailHeader.Due.HandOverToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverToday))
+        // #891 (owner): no "trả sau N ngày" countdown either; late states stay
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnIn(3)))
+        assertEquals(OrderDetailHeader.Due.PastPickup(2), OrderDetailHeader.shownDue(OrderDetailHeader.Due.PastPickup(2)))
+        assertEquals(OrderDetailHeader.Due.ReturnToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnToday))
+    }
+
     @Test
     fun pickedUpNoteCountsRentalDaysAndDaysToReturn() {
         assertEquals(Note(7, Due.ReturnIn(2)), OrderDetailHeader.note(order("PICKUPED"), oct5, vn))

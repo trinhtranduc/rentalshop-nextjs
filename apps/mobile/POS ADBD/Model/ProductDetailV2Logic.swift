@@ -96,6 +96,12 @@ enum ProductDetailV2Logic {
             .map { $0 }
     }
 
+    /// #891 (owner): how many of this product the order holds ("× 2" on the product's order rows); 1 when unknown
+    static func quantity(of productId: Int, in order: Order) -> Int {
+        let total = order.orderItems.filter { $0.productId == productId }.reduce(0) { $0 + $1.quantity }
+        return total > 0 ? total : 1
+    }
+
     /// #496: "#ORD-1-0057 · trả T2 05/10" (no quantity); just "#ORD-1-0057" without a return day
     static func meta(_ order: Order, timeZone: TimeZone = Date.shopTimeZone,
                      locale: Locale = OrdersHomeLogic.appLocale) -> String {

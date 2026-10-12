@@ -282,12 +282,12 @@ final class OrderDetailLogicTests: XCTestCase {
 
     func testSummaryJoinsDaysAndRemainder() {
         let days7 = PluralText.format("%d days", count: 7, 7)
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)),
-                       days7 + " · " + PluralText.format("order.header.returnIn", count: 2, 2))
+        // #891 (owner): no "trả sau N ngày" countdown either
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnToday),
                        days7 + " · " + "order.header.returnToday".localized())
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)),
-                       days7 + " · " + PluralText.format("order.header.handOverIn", count: 1, 1))
+        // #891 (owner): no "lấy sau N ngày" countdown in the detail header
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverToday),
                        days7 + " · " + "order.header.handOverToday".localized())
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)),
@@ -331,5 +331,20 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         let order = Order.from(detail: detail)
         XCTAssertEqual(order.createdById, 0, "list model keeps 0 for no creator, as its own decoder does")
         XCTAssertEqual(order.createdByName, "")
+        XCTAssertNil(OrderDetailLogic.creatorName(detail), "#891: no creator → no Người tạo line")
+    }
+
+    /// #891 (owner): order detail shows "Người tạo: <name>" from the nested `createdBy` or the flat `createdByName`
+    func testCreatorName() throws {
+        func detail(_ creator: String) throws -> OrderDetail {
+            let json = payload.replacingOccurrences(of: #""createdBy":null"#, with: creator)
+            return try XCTUnwrap(JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(json.utf8)).data)
+        }
+        XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":"Merchant","lastName":"1"}"#)), "Merchant 1")
+        XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"Lan Nguyễn""#)), "Lan Nguyễn")
+        XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":" ","lastName":""}"#)))
+        XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"  ""#)))
+        let vi = Bundle(for: OrderRowCell.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "order.detail.createdBy", value: nil, table: nil), "Người tạo: %@")
     }
 }

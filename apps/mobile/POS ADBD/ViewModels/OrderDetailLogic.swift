@@ -243,6 +243,15 @@ enum OrderDetailLogic {
         return StatusErrorOutcome(message: message, reload: isClientError)
     }
 
+    /// #891 (owner): "Người tạo" of the detail: the flat `createdByName`, else the nested creator; nil when empty
+    static func creatorName(_ detail: OrderDetail) -> String? {
+        let flat = detail.createdByName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !flat.isEmpty { return flat }
+        let nested = [detail.createdBy?.firstName, detail.createdBy?.lastName]
+            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
+        return nested.isEmpty ? nil : nested
+    }
+
     /// `dd/MM/yy` civil day (#888)
     static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         DayFormatter.dmy(date, timeZone: timeZone)
@@ -334,9 +343,9 @@ enum OrderDetailLogic {
         var parts: [String] = []
         if let days { parts.append(PluralText.format("%d days", count: days, days)) }
         switch remainder {
-        case .returnIn(let k): parts.append(PluralText.format("order.header.returnIn", count: k, k))
+        case .returnIn: break // #891 (owner): no "trả sau N ngày" countdown
         case .returnToday: parts.append("order.header.returnToday".localized())
-        case .handOverIn(let k): parts.append(PluralText.format("order.header.handOverIn", count: k, k))
+        case .handOverIn: break // #891 (owner): no "lấy sau N ngày" countdown
         case .handOverToday: parts.append("order.header.handOverToday".localized())
         case .pickupOverdue(let k): parts.append(PluralText.format("order.header.pickupOverdue", count: k, k))
         case .returned: parts.append("order.header.returned".localized())

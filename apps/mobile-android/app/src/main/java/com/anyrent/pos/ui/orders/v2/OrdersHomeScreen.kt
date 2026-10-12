@@ -34,7 +34,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -727,8 +726,10 @@ private fun OrderRow(
     val order = row.order
     val tagKind = OrdersBoardLogic.statusTag(order.status)
     // #482: same tag as the order detail header
-    val tagRes = OrderStatusTag.labelRes(order.status)
-    val colors = OrderStatusTag.colors(order.status)
+    // #891: the same badge as the order detail header
+    val badge = OrderStatusTag.badge(order.status)
+    val tagRes = badge.labelRes
+    val colors = badge.colors
     val isSale = !order.orderType.equals("RENT", ignoreCase = true)
     val tagText = stringResource(tagRes).let {
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
@@ -748,7 +749,8 @@ private fun OrderRow(
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
-        pay = when (val pay = OrdersBoardLogic.listPayLine(order)) {
+        // #891 (owner): no pay line on Tất cả đơn rows
+        pay = when (val pay = OrdersBoardLogic.rowPayLine(order, rentList = rentSortedBy != null)) {
             is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(pay.amount)) to DS.Status.Return.text
             is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(pay.amount)) to DS.Status.Waiting.text
             null -> null
@@ -839,12 +841,7 @@ private fun BoardRow(
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Sm)) }
             }
-            Icon(
-                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = BoardColors.Chevron,
-                modifier = Modifier.size(DS.Icon.Sm),
-            )
+            // #891 (owner): no ">" chevron; the whole row stays tappable and the content takes the width
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }

@@ -90,6 +90,9 @@ object OrdersBoardLogic {
         return payLine(order.amountDue ?: 0.0, order.refundDue ?: 0.0)
     }
 
+    /** #891 (owner): the pay line of a list row; none on Tất cả đơn rows ([rentList]) */
+    fun rowPayLine(order: OrderSummary, rentList: Boolean): PayLine? = if (rentList) null else listPayLine(order)
+
     /** "giao N · trả M" of a band: hand-over count to take-back count */
     fun bandCounts(rows: List<OrdersRow>): Pair<Int, Int> {
         val work = rows.filterIsInstance<OrdersRow.Work>()

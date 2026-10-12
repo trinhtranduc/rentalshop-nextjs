@@ -33,6 +33,7 @@ class Issue888ResourcesTest {
         "v2_cart_cost" to "Giá vốn",
         "v2_cart_total_cost" to "Tổng giá vốn",
         "v2_cart_profit" to "Lãi dự kiến",
+        "detail_created_by" to "Người tạo: %1\$s",
     )
 
     @Test

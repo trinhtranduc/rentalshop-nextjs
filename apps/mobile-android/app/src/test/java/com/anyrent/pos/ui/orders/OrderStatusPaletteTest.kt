@@ -20,4 +20,15 @@ class OrderStatusPaletteTest {
             assertEquals("old-screen badge $status", fill, OrderStatusStyle.badgeColor(status))
         }
     }
+
+    /** #891 (owner): the detail header badge is the list badge (label, colours, size, radius, padding) */
+    @Test
+    fun `detail badge is the list badge`() {
+        listOf("RESERVED", "PICKUPED", "RETURNED", "COMPLETED", "CANCELLED").forEach { status ->
+            val badge = OrderStatusTag.badge(status)
+            assertEquals(status, OrderStatusTag.labelRes(status), badge.labelRes)
+            assertEquals(status, OrderStatusTag.colors(status), badge.colors)
+            assertEquals(status, com.anyrent.pos.ui.orders.v2.RowTagStyle.STATUS, badge.style)
+        }
+    }
 }
