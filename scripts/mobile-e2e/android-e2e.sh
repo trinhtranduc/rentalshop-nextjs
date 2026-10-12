@@ -155,7 +155,7 @@ ui back || true
 first_of "Đơn hàng" "Orders" || echo "MISS  orders tab"
 step 30-orders-todo
 step 31-orders-all first_of "Tất cả đơn" "All orders"
-step 32-orders-filter first_of "Mới tạo nhất" "Newest first" "Bộ lọc đơn hàng" "Order Filter"
+step 32-orders-filter first_of "~Xếp theo" "~Sorted by" "Bộ lọc đơn hàng" "Order Filter"   # #888 sort bar
 ui back || true
 step 33-orders-sale first_of "Đơn bán" "Sales" "Sale"
 step 34-order-detail first_of "~#"   # order numbers are ORD-… (seed) or 6 digits (new)

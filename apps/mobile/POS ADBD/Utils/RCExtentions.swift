@@ -1033,7 +1033,7 @@ extension Date {
     func fullDateInString() -> String?{
         
         let formatter = DateFormatter()
-        formatter.dateFormat = "H:mm dd/MM/yyyy"
+        formatter.dateFormat = "dd/MM/yy HH:mm" // #888
         formatter.locale = Locale(identifier: "vi_VN")
         return formatter.string(from: self)
         

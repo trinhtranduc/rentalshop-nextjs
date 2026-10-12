@@ -1698,13 +1698,13 @@
 "Due back %@" = "Hạn trả %@";
 "Hand-over late %d days" = "Trễ giao %d ngày";
 "Hand-over late %d days.one" = "Trễ giao %d ngày";
-"Planned hand-over %@" = "Hẹn giao %@";
+"Planned hand-over %@" = "Hẹn lấy %@";
 "Booked" = "Đã đặt";
 "Return step" = "Trả";
 "Rental dates" = "Lịch thuê";
 "%d days" = "%d ngày";
 "%d days.one" = "%d ngày";
-"Handed over" = "Đã giao";
+"Handed over" = "Đã lấy";
 "Collateral" = "Thế chân";
 "Sale date" = "Ngày bán";
 "Sale price %@" = "Giá bán %@";
@@ -1733,7 +1733,7 @@
 "Late fee (%d days).one" = "Phí trễ (%d ngày)";
 "Keep collateral: %@" = "Giữ thế chân: %@";
 "Collect now" = "Thu bây giờ";
-"Handed over · collect %@" = "Đã giao · thu %@";
+"Handed over · collect %@" = "Đã lấy · thu %@";
 "Late + damage fees" = "Phí trễ + hư hỏng";
 "Collateral money held" = "Thế chân đang giữ";
 "Already settled" = "Đã thanh toán trước";
@@ -1760,7 +1760,7 @@
 "calendar.v2.legend.late" = "Trễ hạn trả";
 "calendar.v2.today" = "Hôm nay";
 "calendar.v2.lateCount" = "%d trễ";
-"calendar.v2.dayCounts" = "giao %1$d · trả %2$d";
+"calendar.v2.dayCounts" = "lấy %1$d · trả %2$d";
 "calendar.v2.tag.return" = "Trả";
 "calendar.v2.empty" = "Không có đơn giao hay trả trong ngày này";
 "overview.v2.title" = "Tổng quan";
@@ -1918,7 +1918,7 @@
 "orders.v2.search.summary.one" = "%d đơn khớp “%@” · tìm trong mọi trạng thái, cả tên đồ";
 "orders.v2.count" = "%d đơn";
 "orders.v2.count.one" = "%d đơn";
-"orders.v2.band.work" = "giao %d · trả %d";
+"orders.v2.band.work" = "lấy %d · trả %d";
 "orders.v2.yesterday" = "Hôm qua";
 "orders.v2.tag.handOver" = "Cần giao";
 "orders.v2.tag.takeBack" = "Cần trả";
@@ -1934,7 +1934,7 @@
 "orders.v2.pay.due" = "còn thu %@";
 "orders.v2.pay.refund" = "trả cọc %@";
 "orders.row.created" = "tạo %@";
-"orders.row.pickup" = "Giao %@";
+"orders.row.pickup" = "Lấy %@";
 "orders.row.returnAfter" = "trả %@";
 "orders.row.return" = "Trả %@";
 "orders.row.dueBack" = "Hạn trả %@";
@@ -2327,17 +2327,17 @@
 "order.header.walkIn" = "Khách lẻ";
 "order.header.call" = "Gọi khách";
 "order.header.step.booked" = "Đặt";
-"order.header.step.handOver" = "Giao";
-"order.header.step.handedOver" = "Đã giao";
+"order.header.step.handOver" = "Lấy";
+"order.header.step.handedOver" = "Đã lấy";
 "order.header.step.return" = "Trả";
 "order.header.step.returned" = "Đã trả";
 "order.header.returnIn" = "trả sau %d ngày";
 "order.header.returnIn.one" = "trả sau %d ngày";
 "order.header.returnToday" = "trả hôm nay";
 "order.header.returned" = "đã trả";
-"order.header.handOverIn" = "giao sau %d ngày";
-"order.header.handOverIn.one" = "giao sau %d ngày";
-"order.header.handOverToday" = "giao hôm nay";
+"order.header.handOverIn" = "lấy sau %d ngày";
+"order.header.handOverIn.one" = "lấy sau %d ngày";
+"order.header.handOverToday" = "lấy hôm nay";
 "order.header.pickupOverdue" = "quá ngày lấy %d ngày";
 "order.header.pickupOverdue.one" = "quá ngày lấy %d ngày";
 /* #642 Lịch trống của sản phẩm */
@@ -2351,7 +2351,7 @@
 "products.calendar.legend.selected" = "Ngày chọn";
 "products.calendar.dayOrders" = "%d đơn đang giữ đồ";
 "products.calendar.noOrders" = "Không có đơn nào giữ đồ ngày này";
-"products.calendar.orderDays" = "Giao %1$@ · trả %2$@";
+"products.calendar.orderDays" = "Lấy %1$@ · trả %2$@";
 "products.calendar.qty" = "%d cái";
 "products.calendar.days" = "%d ngày";
 "products.calendar.days.one" = "%d ngày";
@@ -2477,3 +2477,19 @@
 "PRODUCT_HELD_BY_OTHER_OUTLETS" = "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.";
 "PRODUCT_HELD_BY_OTHER_OUTLETS_NO_PARAMS" = "Chi nhánh khác còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.";
 "OUTLET_HAS_OPEN_ORDERS" = "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.";
+/* #888 one sort date, cart cost */
+"orders.v2.sortDate.pickup" = "Ngày lấy";
+"orders.v2.sortDate.return" = "Ngày trả";
+"orders.v2.sortDate.created" = "Ngày tạo";
+"orders.v2.direction.nearest" = "Gần nhất trước";
+"orders.v2.direction.farthest" = "Xa nhất trước";
+"orders.v2.direction.newest" = "Mới nhất trước";
+"orders.v2.direction.oldest" = "Cũ nhất trước";
+"orders.v2.sortBar" = "Xếp theo %1$@ · %2$@";
+"orders.v2.filter.sortBy" = "Xếp theo";
+"orders.v2.filter.order" = "Thứ tự";
+"orders.v2.filter.rangeOf" = "Khoảng %@";
+"orders.v2.filter.sameDate" = "Sắp xếp và khoảng ngày cùng tính theo %@.";
+"products.cart.cost" = "Giá vốn";
+"products.cart.totalCost" = "Tổng giá vốn";
+"products.cart.profit" = "Lãi dự kiến";

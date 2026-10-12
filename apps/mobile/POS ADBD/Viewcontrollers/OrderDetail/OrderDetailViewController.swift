@@ -263,7 +263,7 @@ final class OrderDetailViewController: BaseViewControler {
         summary.minimumScaleFactor = 0.8
         summary.accessibilityIdentifier = "order.detail.summary"
         if detail.orderType == .sale {
-            summary.text = DayFormatter.short(detail.createdAt)
+            summary.text = DayFormatter.dmyTime(detail.createdAt) // #888 created with its time
         } else {
             let days = detail.rentalDuration
                 ?? OrderDetailLogic.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt)
@@ -322,7 +322,7 @@ final class OrderDetailViewController: BaseViewControler {
         return row
     }
 
-    /// Three steps, each a bar and a two-line label: "Đặt / T2 14/09", "Đã giao / T4 01/10", "Trả / T3 07/10" (no time)
+    /// Three steps, each a bar and a two-line label: "Đặt / 14/09/26", "Đã lấy / 01/10/26", "Trả / 07/10/26" (no time, #888)
     private func progressView(_ detail: OrderDetail) -> UIView {
         let steps = OrderDetailLogic.headerSteps(status: detail.status, createdAt: detail.createdAt,
                                                  pickupPlanAt: detail.pickupPlanAt, pickedUpAt: detail.pickedUpAt,
@@ -345,7 +345,8 @@ final class OrderDetailViewController: BaseViewControler {
             day.font = Utils.boldFont(size: DS.TextSize.body)
             // The accent marks a hand-over or return that happened; the booked day stays plain
             day.textColor = step.done && step.kind != .booked ? DS.Color.primary : DS.Color.text
-            day.text = step.date.map { DayFormatter.short($0) } ?? "—"
+            // #888: the booked (created) step carries its time; pickup and return stay date-only
+            day.text = step.date.map { step.kind == .booked ? DayFormatter.dmyTime($0) : DayFormatter.dmy($0) } ?? "—"
             day.adjustsFontSizeToFitWidth = true
             day.minimumScaleFactor = 0.8
             let column = UIStackView(arrangedSubviews: [bar, label, day])
@@ -376,7 +377,7 @@ final class OrderDetailViewController: BaseViewControler {
                 stack.addArrangedSubview(readyToDeliverRow(detail))
             }
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
-                stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.short(picked)))
+                stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.dmy(picked)))
             }
             if let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
                 stack.addArrangedSubview(keyValue("Collateral".localized(), papers))

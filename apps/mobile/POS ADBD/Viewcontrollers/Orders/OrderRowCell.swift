@@ -14,6 +14,8 @@ import SnapKit
 enum OrderRowContext {
     case work(isLate: Bool)
     case list
+    /// #888 "Tất cả đơn": "#code", then "Lấy dd/mm/yy  Trả dd/mm/yy" with the sorted date marked
+    case rentList(sortedBy: RentOrdersFilter.SortDate)
     case sale
     case search
     /// #496 "Chưa lấy đồ": overdue rows get "Quá x ngày · nên gọi khách", the right side "còn thu" in orange
@@ -77,6 +79,8 @@ final class OrderRowCell: UITableViewCell {
 
     /// #496: the "#code · tạo …" line
     static let metaColor = UIColor(hexString: "64748B")
+    /// #888: the chip behind the date the list is sorted by
+    static let markFill = UIColor(hexString: "EFF6FF")
     /// #496: "còn thu" on the "Chưa lấy đồ" list (Còn phải thu colour)
     static let dueColor = UIColor(hexString: "B45309")
     private static let callBorder = UIColor(hexString: "CBD5E1")
@@ -90,6 +94,7 @@ final class OrderRowCell: UITableViewCell {
     private let totalLabel = UILabel()
     private let payLabel = UILabel()
     private let moneyStack = UIStackView()
+    private var pillLine: UIStackView?
     private let callButton = UIButton(type: .system)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
 
@@ -109,16 +114,19 @@ final class OrderRowCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
+    /// line 3 dates / task + total right; line 4 notes (late, not prepared) + pay line right. 8pt between lines.
     private func buildLayout() {
         nameLabel.font = Utils.boldFont(size: DS.TextSize.name)
         nameLabel.textColor = DS.Color.text
-        // #424: a long name wraps to a second line (the tag stays centred beside it) instead of being cut
-        nameLabel.numberOfLines = 2
+        nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
-        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column
-        nameLabel.setContentCompressionResistancePriority(.defaultHigh - 1, for: .horizontal)
-        let firstLine = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
-        firstLine.spacing = 6
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        tagLabel.setContentHuggingPriority(.required, for: .horizontal)
+        tagLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let firstLine = UIStackView(arrangedSubviews: [nameLabel, tagLabel])
+        firstLine.spacing = DS.Spacing.sm
         firstLine.alignment = .center
 
         metaLabel.font = Utils.regularFont(size: 13)
@@ -126,32 +134,36 @@ final class OrderRowCell: UITableViewCell {
         metaLabel.lineBreakMode = .byTruncatingTail
         taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
         taskLabel.textColor = DS.Color.text
-        taskLabel.numberOfLines = 2
-        pillStack.spacing = 6
-        pillStack.alignment = .leading
-        let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView()])
-
-        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, taskLabel, pillLine])
-        left.axis = .vertical
-        left.spacing = DS.Gap.line
-        left.alignment = .fill
-        left.setCustomSpacing(2, after: metaLabel)
+        taskLabel.numberOfLines = 1
+        taskLabel.lineBreakMode = .byTruncatingTail
+        taskLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        taskLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
         // #468: the pay line is regular weight (colour carries the meaning); the total stays bold
         payLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
-        moneyStack.axis = .vertical
-        moneyStack.alignment = .trailing
-        moneyStack.addArrangedSubview(totalLabel)
-        moneyStack.addArrangedSubview(payLabel)
-        moneyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-        moneyStack.setContentHuggingPriority(.required, for: .horizontal)
         [totalLabel, payLabel].forEach {
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.textAlignment = .right
         }
+        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, totalLabel])
+        thirdLine.spacing = DS.Spacing.sm
+        thirdLine.alignment = .center
+        moneyStack.isHidden = true // kept for the money switch; the amounts now sit in lines 3 and 4
+
+        pillStack.spacing = 6
+        pillStack.alignment = .leading
+        let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView(), payLabel])
+        pillLine.alignment = .center
+        pillLine.spacing = DS.Spacing.sm
+        self.pillLine = pillLine
+
+        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, thirdLine, pillLine])
+        left.axis = .vertical
+        left.spacing = DS.Gap.orderRowLine // #888 owner: ~8pt between lines
+        left.alignment = .fill
 
         callButton.setImage(DS.symbol("phone", DS.Icon.sm), for: .normal)
         callButton.tintColor = DS.Color.text
@@ -166,12 +178,12 @@ final class OrderRowCell: UITableViewCell {
         chevron.contentMode = .center
         chevron.snp.makeConstraints { make in make.size.equalTo(DS.Icon.sm) }
 
-        let row = UIStackView(arrangedSubviews: [left, moneyStack, callButton, chevron])
+        let row = UIStackView(arrangedSubviews: [left, callButton, chevron])
         row.spacing = DS.Spacing.md
         row.alignment = .center
         contentView.addSubview(row)
         row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowVertical)
+            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowPadding) // #888 owner: 16pt
             make.leading.trailing.equalToSuperview().inset(DS.Gap.rowHorizontal)
         }
 
@@ -202,15 +214,18 @@ final class OrderRowCell: UITableViewCell {
         case .order(let order, let lateDays):
             bindOrder(order, lateDays: lateDays, context: context, hidesMoney: hidesMoney)
         }
-        pillStack.superview?.isHidden = pillStack.arrangedSubviews.isEmpty
-        moneyStack.isHidden = hidesMoney
+        totalLabel.isHidden = hidesMoney
+        if hidesMoney { payLabel.isHidden = true }
+        pillStack.isHidden = pillStack.arrangedSubviews.isEmpty
+        pillLine?.isHidden = pillStack.arrangedSubviews.isEmpty && payLabel.isHidden
     }
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, isLate: Bool, hidesMoney: Bool) {
+        // #888: same palette as the status badges (hand-over = booked, take-back = renting)
         if kind == .handOver {
-            tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
+            tagLabel.apply("orders.v2.tag.handOver".localized(), OrderStatusBadge.pill(for: .reserved))
         } else {
-            tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
+            tagLabel.apply("orders.v2.tag.takeBack".localized(), OrderStatusBadge.pill(for: .pickuped))
         }
         setName(work.customerName)
         // #496: hand-overs are reserved rentals, take-backs rented out; the API sends no created day for these rows
@@ -236,7 +251,12 @@ final class OrderRowCell: UITableViewCell {
         let tag = OrdersHomeLogic.statusTag(order, inSearch: { if case .search = context { return true }; return false }())
         tagLabel.apply(tag.text, tag.colors)
         setName(order.customerName)
-        setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
+        if case .rentList(let sortedBy) = context {
+            setRentDates(meta: OrdersHomeLogic.rentRowMeta(order),
+                         parts: OrdersHomeLogic.rentRowDates(order, sortedBy: sortedBy))
+        } else {
+            setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
+        }
         setTotal(order.totalAmount, struck: order.status == .cancelled)
         if case .notPickedUp = context {
             if lateDays > 0 {
@@ -250,7 +270,9 @@ final class OrderRowCell: UITableViewCell {
                 setPay(nil)
             }
         } else {
-            if lateDays > 0 {
+            // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
+            let isRentList: Bool = { if case .rentList = context { return true }; return false }()
+            if lateDays > 0 && !isRentList {
                 addPill(LateText.days(lateDays), DS.Status.late)
             }
             // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
@@ -266,8 +288,38 @@ final class OrderRowCell: UITableViewCell {
 
     private func setLines(_ lines: OrderRowLines) {
         metaLabel.text = lines.meta
+        taskLabel.attributedText = nil
+        taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
+        taskLabel.textColor = DS.Color.text
         taskLabel.text = lines.task
+        taskLabel.accessibilityLabel = nil
         taskLabel.isHidden = lines.task.isEmpty
+    }
+
+    /// #888: "#0063 · tạo 05/10/26", then muted "Lấy 14/10/26 · Trả 16/10/26"; the sorted date bold on a light blue chip
+    private func setRentDates(meta: String, parts: [RowDatePart]) {
+        metaLabel.text = meta
+        let font = Utils.regularFont(size: DS.TextSize.secondary)
+        let text = NSMutableAttributedString()
+        for (index, part) in parts.enumerated() {
+            if index > 0 {
+                text.append(NSAttributedString(string: " · ", attributes: [NSAttributedString.Key.font: font,
+                                                                         NSAttributedString.Key.foregroundColor: Self.metaColor]))
+            }
+            var attributes: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: font,
+                                                             NSAttributedString.Key.foregroundColor: Self.metaColor]
+            var shown = part.text
+            if part.marked {
+                shown = "\u{2009}\(part.text)\u{2009}"
+                attributes[NSAttributedString.Key.font] = Utils.boldFont(size: DS.TextSize.secondary)
+                attributes[NSAttributedString.Key.foregroundColor] = DS.Color.text
+                attributes[NSAttributedString.Key.backgroundColor] = Self.markFill
+            }
+            text.append(NSAttributedString(string: shown, attributes: attributes))
+        }
+        taskLabel.attributedText = text
+        taskLabel.isHidden = parts.isEmpty
+        taskLabel.accessibilityLabel = parts.map(\.text).joined(separator: ", ")
     }
 
     private func setTotal(_ amount: Double, struck: Bool) {

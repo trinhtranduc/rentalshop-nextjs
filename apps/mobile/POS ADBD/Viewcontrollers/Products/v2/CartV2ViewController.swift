@@ -12,6 +12,12 @@ import UIKit
 import SnapKit
 
 final class CartV2ViewController: BaseViewControler {
+    /// #888: cost lines only for roles that may see prices (products.manage, never OUTLET_STAFF)
+    private var showsPrices: Bool {
+        ProductAccess.showsPriceFields(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
+    }
+    private static let costColor = UIColor(hexString: "334155")
+
     private let typeToggle = V2Segmented(titles: ["products.cart.rent".localized(), "products.cart.sale".localized()], compact: false)
     private let scroll = UIScrollView()
     private let content = UIStackView()
@@ -299,6 +305,25 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(total)
         content.addArrangedSubview(V2.divider())
 
+        // #888: "Tổng giá vốn", and "Lãi dự kiến" in a sale cart; only for roles that may see prices
+        if let costs = CartCostLogic.summary(cart.items, total: cart.totalAmount, orderType: cart.orderType, showsPrices: showsPrices) {
+            let totalCost = V2ValueRow(title: "products.cart.totalCost".localized(), chevron: false)
+            totalCost.valueLabel.text = MoneyFormatter.format(costs.totalCost)
+            totalCost.valueLabel.textColor = DS.Color.text
+            totalCost.isUserInteractionEnabled = false
+            content.addArrangedSubview(totalCost)
+            content.addArrangedSubview(V2.divider())
+            if let profit = costs.profit {
+                let row = V2ValueRow(title: "products.cart.profit".localized(), chevron: false)
+                row.valueLabel.text = MoneyFormatter.format(profit)
+                row.valueLabel.font = Utils.boldFont(size: DS.TextSize.name)
+                row.valueLabel.textColor = profit < 0 ? UIColor(hexString: "B91C1C") : V2.ok
+                row.isUserInteractionEnabled = false
+                content.addArrangedSubview(row)
+                content.addArrangedSubview(V2.divider())
+            }
+        }
+
         if isRent {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized())
             deposit.valueLabel.text = MoneyFormatter.format(cart.depositAmount)
@@ -411,7 +436,7 @@ final class CartV2ViewController: BaseViewControler {
         let text: String
         var days: Int?
         if let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt {
-            text = DayFormatter.short(pickup) + " → " + DayFormatter.short(ret)
+            text = DayFormatter.dmy(pickup) + " → " + DayFormatter.dmy(ret) // #888 dd/mm/yy
             days = CartV2Logic.rentalDays(pickup: pickup, return: ret)
         } else {
             text = "products.cart.pickDates".localized()
@@ -514,6 +539,17 @@ final class CartV2ViewController: BaseViewControler {
         if !isRent, let available = item.availabilityStatus?.available {
             column.addArrangedSubview(V2.label(String(format: "products.cart.inStock".localized(), available),
                                                size: DS.TextSize.secondary, color: DS.Color.textMuted))
+        }
+        // #888: "Giá vốn <cost × qty>" when the product has a cost and the role may see prices (never staff)
+        if let cost = CartCostLogic.lineCost(item, showsPrices: showsPrices) {
+            let title = V2.label("products.cart.cost".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            let value = V2.label(MoneyFormatter.format(cost), size: DS.TextSize.secondary, weight: .bold, color: Self.costColor)
+            value.setContentCompressionResistancePriority(.required, for: .horizontal)
+            let costRow = UIStackView(arrangedSubviews: [title, UIView(), value])
+            costRow.alignment = .center
+            costRow.isAccessibilityElement = true
+            costRow.accessibilityLabel = "\(title.text ?? "") \(value.text ?? "")"
+            column.addArrangedSubview(costRow)
         }
         let bottom = UIStackView(arrangedSubviews: [total, UIView(), stepper])
         bottom.alignment = .center

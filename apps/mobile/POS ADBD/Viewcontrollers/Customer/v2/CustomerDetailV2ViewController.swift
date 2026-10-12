@@ -266,14 +266,8 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         texts.isUserInteractionEnabled = false
         let pill = OrderStatusPillLabel()
         pill.apply(status: row.status)
-        // Board pill colors: reserved blue, out purple, done green, cancelled grey
-        let colors: DS.Pill
-        switch row.status {
-        case .reserved, .draft: colors = DS.Status.handOver
-        case .pickuped: colors = DS.Status.returning
-        case .returned, .completed: colors = DS.Status.done
-        case .cancelled, .unknown: colors = DS.Status.cancelled
-        }
+        // #888: the chosen status palette (Đậm = old app colours, default)
+        let colors = OrderStatusBadge.pill(for: row.status)
         pill.textColor = colors.text
         pill.backgroundColor = colors.fill
         pill.font = Utils.boldFont(size: DS.TextSize.pill)

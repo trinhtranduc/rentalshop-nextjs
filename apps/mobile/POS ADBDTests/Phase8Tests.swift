@@ -39,29 +39,35 @@ final class Phase8Tests: XCTestCase {
 
     // MARK: 2. Filter sheet
 
-    func testNearestTaskSortAndPlannedBasis() {
-        XCTAssertEqual(RentOrdersFilter.Sort.allCases.first, .nearestTask)
+    /// #888: one date for sort and range; default Ngày lấy, gần nhất trước; "Việc gần nhất" left the sheet
+    func testOneDateForSortAndRange() {
+        XCTAssertEqual(RentOrdersFilter.SortDate.allCases, [.pickup, .returnDate, .created])
         var filter = RentOrdersFilter()
-        XCTAssertEqual(filter.sort, .createdDate)
+        XCTAssertEqual(filter.sortDate, .pickup)
+        XCTAssertEqual(filter.direction, .nearestFirst)
         XCTAssertTrue(filter.isDefault)
-        filter.sort = .nearestTask
-        XCTAssertEqual(filter.sortBy, "nearestTask")
+        filter.direction = .farthestFirst
         XCTAssertFalse(filter.isDefault)
-        XCTAssertEqual(RentOrdersFilter.DateBasis.allCases.map { basis -> String in
+        XCTAssertEqual(RentOrdersFilter.SortDate.allCases.map { date -> [String] in
             var f = RentOrdersFilter()
-            f.dateBasis = basis
-            return f.dateField
-        }, ["createdAt", "pickupPlanAt", "returnPlanAt"])
+            f.sortDate = date
+            return [f.sortBy, f.dateField]
+        }, [["pickupPlanAt", "pickupPlanAt"], ["returnPlanAt", "returnPlanAt"], ["createdAt", "createdAt"]])
+        XCTAssertEqual(RentOrdersFilter.Direction.allCases.map { direction -> String in
+            var f = RentOrdersFilter()
+            f.direction = direction
+            return f.sortOrder
+        }, ["desc", "asc"])
     }
 
     func testPlannedRangeQueryUsesDeviceDays() throws {
         let now = iso.date(from: "2026-10-03T18:30:00.000Z")! // 04/10 01:30 in Vietnam
         var filter = RentOrdersFilter()
-        filter.sort = .nearestTask
-        filter.dateBasis = .pickupPlan
+        filter.sortDate = .pickup
         filter.dateRange = .next7Days
         let query = OrdersHomeLogic.rentQuery(filter, now: now, timeZone: vietnam)
-        XCTAssertEqual(query.sortBy, "nearestTask")
+        XCTAssertEqual(query.sortBy, "pickupPlanAt")
+        XCTAssertEqual(query.sortOrder, "desc")
         XCTAssertEqual(query.dateField, "pickupPlanAt")
         XCTAssertEqual(query.startDate.map { iso.string(from: $0) }, "2026-10-03T17:00:00.000Z")
         XCTAssertEqual(query.endDate.map { iso.string(from: $0) }, "2026-10-09T17:00:00.000Z")

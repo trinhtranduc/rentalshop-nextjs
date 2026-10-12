@@ -32,7 +32,7 @@ class Issue496ResourcesTest {
     private val boardVietnamese = mapOf(
         "order_row_weekdays" to "T2,T3,T4,T5,T6,T7,CN",
         "order_row_created" to "tạo %1\$s",
-        "order_row_hand_over" to "Giao %1\$s",
+        "order_row_hand_over" to "Lấy %1\$s",
         "order_row_hand_over_return" to "trả %1\$s",
         "order_row_returns" to "Trả %1\$s",
         "order_row_return_due" to "Hạn trả %1\$s",

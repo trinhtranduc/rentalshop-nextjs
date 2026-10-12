@@ -3,6 +3,7 @@
 //  POS ADBD
 //
 //  "Lọc & sắp xếp" of the rent list (board Loc, #401): sort, date range and "Xem N đơn".
+//  #888: one "Xếp theo" date (Ngày lấy / Ngày trả / Ngày tạo) for both the order and the range.
 //  The status is chosen with the chips on the list itself.
 //
 
@@ -21,11 +22,13 @@ final class OrdersFilterSheet: UIViewController {
     private static let trackFill = UIColor(hexString: "F1F5F9")
 
     private var filter: RentOrdersFilter
-    private let sorts = RentOrdersFilter.Sort.allCases
-    private let bases = RentOrdersFilter.DateBasis.allCases
+    private let dates = RentOrdersFilter.SortDate.allCases
+    private let directions = RentOrdersFilter.Direction.allCases
     private let presets: [RentOrdersFilter.DateRange] = [.any, .today, .next7Days, .thisMonth]
-    private var sortButtons: [UIButton] = []
-    private var basisButtons: [UIButton] = []
+    private var dateButtons: [UIButton] = []
+    private var directionButtons: [UIButton] = []
+    private let rangeLabel = UILabel()
+    private let sameDateHint = UILabel()
     private var presetButtons: [UIButton] = []
     private let customButton = UIButton(type: .system)
     private let applyButton = V2.primaryButton("")
@@ -66,17 +69,11 @@ final class OrdersFilterSheet: UIViewController {
         let titleRow = UIStackView(arrangedSubviews: [title, UIView(), reset])
         titleRow.alignment = .center
 
-        sortButtons = sorts.enumerated().map { index, sort in
-            let button = makeButton(Self.sortTitle(sort), size: DS.TextSize.body, tag: index, action: #selector(sortTapped(_:)))
-            button.layer.cornerRadius = 12
-            button.snp.makeConstraints { make in make.height.equalTo(44) }
-            return button
+        dateButtons = dates.enumerated().map { index, date in
+            makeButton(OrdersHomeLogic.sortDateTitle(date), size: DS.TextSize.body, tag: index, action: #selector(dateTapped(_:)))
         }
-        basisButtons = bases.enumerated().map { index, basis in
-            let button = makeButton(Self.basisTitle(basis), size: DS.TextSize.secondary, tag: index, action: #selector(basisTapped(_:)))
-            button.layer.cornerRadius = 9
-            button.snp.makeConstraints { make in make.height.equalTo(36) }
-            return button
+        directionButtons = directions.enumerated().map { index, _ in
+            makeButton("", size: DS.TextSize.body, tag: index, action: #selector(directionTapped(_:)))
         }
         presetButtons = presets.enumerated().map { index, preset in
             let button = makeButton(Self.presetTitle(preset), size: DS.TextSize.body, tag: index, action: #selector(presetTapped(_:)))
@@ -90,43 +87,22 @@ final class OrdersFilterSheet: UIViewController {
         customButton.addTarget(self, action: #selector(customTapped), for: .touchUpInside)
         stylePill(customButton)
 
-        let sortGrid = UIStackView()
-        sortGrid.axis = .vertical
-        sortGrid.spacing = DS.Spacing.sm
-        stride(from: 0, to: sortButtons.count, by: 2).forEach { start in
-            var line: [UIView] = Array(sortButtons[start..<min(start + 2, sortButtons.count)])
-            if line.count < 2 { line.append(UIView()) }
-            let row = UIStackView(arrangedSubviews: line)
-            row.spacing = DS.Spacing.sm
-            row.distribution = .fillEqually
-            sortGrid.addArrangedSubview(row)
-        }
-
-        let track = UIStackView(arrangedSubviews: basisButtons)
-        track.distribution = .fillEqually
-        track.backgroundColor = Self.trackFill
-        track.layer.cornerRadius = 12
-        track.isLayoutMarginsRelativeArrangement = true
-        track.layoutMargins = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
-
         let presetLines = wrap(presetButtons + [customButton], width: UIScreen.main.bounds.width - 2 * DS.Spacing.lg)
 
         applyButton.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
 
-        // Board Loc: what "Việc gần nhất" means, under the options (#390)
-        let sortHint = V2.label("orders.v2.sort.nearestHint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        sortHint.numberOfLines = 0
-        let sortSection = UIStackView(arrangedSubviews: [sectionLabel("orders.v2.filter.sort".localized()), sortGrid, sortHint])
-        sortSection.axis = .vertical
-        sortSection.spacing = 16
-        sortSection.setCustomSpacing(DS.Spacing.sm, after: sortGrid)
-        let rangeSection = UIStackView(arrangedSubviews: [sectionLabel("orders.v2.filter.range".localized()), track, presetLines])
-        rangeSection.axis = .vertical
-        rangeSection.spacing = DS.Spacing.sm
-        rangeSection.setCustomSpacing(16, after: rangeSection.arrangedSubviews[0])
+        rangeLabel.font = Utils.boldFont(size: DS.TextSize.secondary)
+        rangeLabel.textColor = DS.Color.textMuted
+        sameDateHint.font = Utils.regularFont(size: DS.TextSize.secondary)
+        sameDateHint.textColor = DS.Color.textMuted
+        sameDateHint.numberOfLines = 0
+        let sortSection = section(sectionLabel("orders.v2.filter.sortBy".localized()), track(dateButtons))
+        let orderSection = section(sectionLabel("orders.v2.filter.order".localized()), track(directionButtons))
+        let rangeSection = section(rangeLabel, presetLines)
+        rangeSection.addArrangedSubview(sameDateHint)
 
         let stack = contentStack
-        [titleRow, sortSection, rangeSection, applyButton].forEach { stack.addArrangedSubview($0) }
+        [titleRow, sortSection, orderSection, rangeSection, applyButton].forEach { stack.addArrangedSubview($0) }
         stack.axis = .vertical
         stack.spacing = DS.Spacing.lg
         view.addSubview(stack)
@@ -149,23 +125,6 @@ final class OrdersFilterSheet: UIViewController {
 
     // MARK: - Texts
 
-    static func sortTitle(_ sort: RentOrdersFilter.Sort) -> String {
-        switch sort {
-        case .nearestTask: return "orders.v2.sort.nearest".localized()
-        case .createdDate: return "orders.v2.sort.created".localized()
-        case .pickupDate: return "orders.v2.sort.pickup".localized()
-        case .returnDate: return "orders.v2.sort.return".localized()
-        }
-    }
-
-    private static func basisTitle(_ basis: RentOrdersFilter.DateBasis) -> String {
-        switch basis {
-        case .created: return "orders.v2.basis.created".localized()
-        case .pickupPlan: return "orders.v2.basis.pickup".localized()
-        case .returnPlan: return "orders.v2.basis.return".localized()
-        }
-    }
-
     private static func presetTitle(_ range: RentOrdersFilter.DateRange) -> String {
         switch range {
         case .any: return "orders.v2.range.any".localized()
@@ -181,8 +140,45 @@ final class OrdersFilterSheet: UIViewController {
 
     private func sectionLabel(_ text: String) -> UILabel {
         let label = V2.label(nil, size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
-        label.attributedText = NSAttributedString(string: text, attributes: [NSAttributedString.Key.kern: 0.5])
+        setSectionText(label, text)
         return label
+    }
+
+    private func setSectionText(_ label: UILabel, _ text: String) {
+        label.attributedText = NSAttributedString(string: text.uppercased(), attributes: [NSAttributedString.Key.kern: 0.5])
+    }
+
+    private func section(_ label: UIView, _ body: UIView) -> UIStackView {
+        let stack = UIStackView(arrangedSubviews: [label, body])
+        stack.axis = .vertical
+        stack.spacing = DS.Spacing.sm
+        return stack
+    }
+
+    /// A segmented track (board Loc): grey rounded track, the selected segment white with a light shadow
+    private func track(_ buttons: [UIButton]) -> UIStackView {
+        buttons.forEach { button in
+            button.layer.cornerRadius = 9
+            button.snp.makeConstraints { make in make.height.equalTo(40) }
+        }
+        let track = UIStackView(arrangedSubviews: buttons)
+        track.distribution = .fillEqually
+        track.backgroundColor = Self.trackFill
+        track.layer.cornerRadius = 12
+        track.isLayoutMarginsRelativeArrangement = true
+        track.layoutMargins = UIEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
+        return track
+    }
+
+    private func styleSegment(_ button: UIButton, selected: Bool) {
+        button.backgroundColor = selected ? DS.Color.surface : .clear
+        button.setTitleColor(selected ? DS.Color.text : DS.Color.textMuted, for: .normal)
+        button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body)
+        button.layer.shadowColor = DS.Color.text.cgColor
+        button.layer.shadowOpacity = selected ? 0.08 : 0
+        button.layer.shadowRadius = 1
+        button.layer.shadowOffset = CGSize(width: 0, height: 1)
+        button.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
     }
 
     private func makeButton(_ title: String, size: CGFloat, tag: Int, action: Selector) -> UIButton {
@@ -227,26 +223,23 @@ final class OrdersFilterSheet: UIViewController {
     // MARK: - State
 
     private func refresh() {
-        for (index, button) in sortButtons.enumerated() {
-            let selected = sorts[index] == filter.sort
-            button.layer.borderWidth = selected ? 2 : 1
-            button.layer.borderColor = (selected ? DS.Color.primary : Self.outline).cgColor
-            button.backgroundColor = selected ? Self.selectedFill : DS.Color.surface
-            button.setTitleColor(selected ? Self.selectedText : DS.Color.text, for: .normal)
-            button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body)
-            button.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
+        for (index, button) in dateButtons.enumerated() {
+            styleSegment(button, selected: dates[index] == filter.sortDate)
         }
-        for (index, button) in basisButtons.enumerated() {
-            let selected = bases[index] == filter.dateBasis
-            button.backgroundColor = selected ? DS.Color.surface : .clear
-            button.setTitleColor(selected ? DS.Color.text : DS.Color.textMuted, for: .normal)
-            button.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
-            button.layer.shadowColor = DS.Color.text.cgColor
-            button.layer.shadowOpacity = selected ? 0.08 : 0
-            button.layer.shadowRadius = 1
-            button.layer.shadowOffset = CGSize(width: 0, height: 1)
-            button.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
+        for (index, button) in directionButtons.enumerated() {
+            button.setTitle(OrdersHomeLogic.directionTitle(filter.sortDate, directions[index]), for: .normal)
+            styleSegment(button, selected: directions[index] == filter.direction)
         }
+        let dateName = OrdersHomeLogic.sortDateTitle(filter.sortDate).lowercased()
+        setSectionText(rangeLabel, String(format: "orders.v2.filter.rangeOf".localized(), dateName))
+        // Board: "Sắp xếp và khoảng ngày cùng tính theo **ngày lấy**."
+        let hint = String(format: "orders.v2.filter.sameDate".localized(), dateName)
+        let attributed = NSMutableAttributedString(string: hint)
+        if let range = hint.range(of: dateName, options: .backwards) {
+            attributed.addAttribute(.font, value: Utils.boldFont(size: DS.TextSize.secondary), range: NSRange(range, in: hint))
+            attributed.addAttribute(.foregroundColor, value: DS.Color.text, range: NSRange(range, in: hint))
+        }
+        sameDateHint.attributedText = attributed
         var customSelected = false
         if case .custom = filter.dateRange { customSelected = true }
         for (index, button) in presetButtons.enumerated() {
@@ -280,13 +273,13 @@ final class OrdersFilterSheet: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func sortTapped(_ sender: UIButton) {
-        filter.sort = sorts[sender.tag]
+    @objc private func dateTapped(_ sender: UIButton) {
+        filter.sortDate = dates[sender.tag]
         refresh()
     }
 
-    @objc private func basisTapped(_ sender: UIButton) {
-        filter.dateBasis = bases[sender.tag]
+    @objc private func directionTapped(_ sender: UIButton) {
+        filter.direction = directions[sender.tag]
         refresh()
     }
 

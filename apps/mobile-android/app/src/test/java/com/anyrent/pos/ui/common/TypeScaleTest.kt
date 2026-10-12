@@ -37,6 +37,8 @@ class TypeScaleTest {
         assertEquals(5.dp, DS.Gap.Line)
         assertEquals(4.dp, DS.Gap.LineTight)
         assertEquals(15.dp, DS.Gap.OrderRowVertical)
+        assertEquals("#888 owner: ~8dp between order row lines", 8.dp, DS.Gap.OrderRowLine)
+        assertEquals("#888 owner: 16dp row padding", 16.dp, DS.Gap.OrderRowPadding)
         assertEquals(16.dp, DS.Gap.RowHorizontal)
         assertEquals(14.dp, DS.Gap.ProductRow)
         assertEquals(96.dp, DS.Gap.ProductRowMinHeight)

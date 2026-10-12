@@ -137,21 +137,16 @@ enum ScheduleConflictLogic {
 
     // MARK: Texts
 
-    /// "03–05/10", "03/10", "30/09–02/10" (first and last short day)
+    /// "03/10/26", "03/10/26–05/10/26" (#888 dd/mm/yy: first and last day)
     static func dayRange(_ keys: [String]) -> String {
-        func parts(_ key: String) -> (day: String, month: String)? {
+        func dmy(_ key: String) -> String? {
             let bits = key.split(separator: "-")
-            guard bits.count == 3 else { return nil }
-            return (String(bits[2]), String(bits[1]))
+            guard bits.count == 3, let year = Int(bits[0]) else { return nil }
+            return "\(bits[2])/\(bits[1])/" + String(format: "%02d", year % 100)
         }
-        guard let firstKey = keys.first, let first = parts(firstKey) else { return "" }
-        guard let lastKey = keys.last, lastKey != firstKey, let last = parts(lastKey) else {
-            return "\(first.day)/\(first.month)"
-        }
-        if first.month == last.month {
-            return "\(first.day)–\(last.day)/\(last.month)"
-        }
-        return "\(first.day)/\(first.month)–\(last.day)/\(last.month)"
+        guard let firstKey = keys.first, let first = dmy(firstKey) else { return "" }
+        guard let lastKey = keys.last, lastKey != firstKey, let last = dmy(lastKey) else { return first }
+        return "\(first)–\(last)"
     }
 
     /// "#482113, #0057"

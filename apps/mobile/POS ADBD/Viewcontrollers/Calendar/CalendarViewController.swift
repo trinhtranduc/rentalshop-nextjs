@@ -224,14 +224,14 @@ class CalendarViewController: BaseViewControler {
     private lazy var selectedDateValueFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale.langCode == LangCode.vi.rawValue ? Locale(identifier: "vi_VN") : Locale(identifier: "en_US")
-        formatter.dateFormat = Locale.langCode == LangCode.vi.rawValue ? "d 'Th' M" : "MMM d"
+        formatter.dateFormat = "dd/MM/yy" // #888
         return formatter
     }()
 
     private lazy var selectedDateMetaFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale.langCode == LangCode.vi.rawValue ? Locale(identifier: "vi_VN") : Locale(identifier: "en_US")
-        formatter.dateFormat = Locale.langCode == LangCode.vi.rawValue ? "EEEE, dd/MM/yyyy" : "EEEE, MMM d, yyyy"
+        formatter.dateFormat = "dd/MM/yy" // #888
         return formatter
     }()
 

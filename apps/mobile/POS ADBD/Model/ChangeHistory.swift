@@ -601,7 +601,7 @@ enum ChangeHistoryLogic {
         if DayFormatter.key(latest, timeZone: timeZone) == DayFormatter.key(now, timeZone: timeZone) {
             when = String(format: "history.summary.today".localized(), clock(latest, timeZone: timeZone))
         } else {
-            when = clock(latest, timeZone: timeZone) + " " + CreateOrderSheetLogic.dayMonth(latest, timeZone: timeZone)
+            when = DayFormatter.dmyTime(latest, timeZone: timeZone) // #888 "05/10/26 14:30"
         }
         return PluralText.format("history.summary", count: total, total, when)
     }

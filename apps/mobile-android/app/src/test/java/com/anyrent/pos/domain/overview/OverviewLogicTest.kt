@@ -59,8 +59,8 @@ class OverviewLogicTest {
 
     @Test
     fun labelsGroupingAndChange() {
-        assertEquals("27/09 – 03/10", OverviewLogic.shortRange(r("2026-09-27", "2026-10-03")))
-        assertEquals("03/10", OverviewLogic.shortRange(r("2026-10-03", "2026-10-03")))
+        assertEquals("27/09/26 – 03/10/26", OverviewLogic.shortRange(r("2026-09-27", "2026-10-03")))
+        assertEquals("03/10/26", OverviewLogic.shortRange(r("2026-10-03", "2026-10-03")))
         assertEquals("day", OverviewLogic.groupBy(r("2026-09-27", "2026-10-03")))
         assertEquals("month", OverviewLogic.groupBy(r("2026-01-01", "2026-03-31")))
         assertEquals("▲ 8%", OverviewLogic.changeText(8.0))

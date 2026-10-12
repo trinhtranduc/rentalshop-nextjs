@@ -78,6 +78,7 @@ import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.DetailPrimary
 import com.anyrent.pos.domain.orders.OrderActionSheet
 import com.anyrent.pos.domain.orders.OrderDetailHeader
@@ -115,10 +116,9 @@ private enum class DetailSheet { HAND_OVER, RETURN, NOTES }
 internal fun OrderDetail.balancePayments(): List<BalancePayment> =
     payments.map { BalancePayment(it.amount, it.status, it.notes) }
 
-/** `03/10` — shop civil day (#602) */
+/** `03/10/26` — shop civil day (#602), dd/mm/yy since #888 */
 internal fun shortDay(value: String?, zone: ZoneId = ShopTime.zone): String =
-    OrdersHomeLogic.parseInstant(value)?.atZone(zone)?.toLocalDate()
-        ?.let { "%02d/%02d".format(it.dayOfMonth, it.monthValue) } ?: "—"
+    OrdersHomeLogic.parseInstant(value)?.let { OrderRowDates.dmy(it, zone) } ?: "—"
 
 /**
  * Redesigned order detail behind `newOrderDetail` (#372, boards CT-gon, CT-qua-han, CT-ban):

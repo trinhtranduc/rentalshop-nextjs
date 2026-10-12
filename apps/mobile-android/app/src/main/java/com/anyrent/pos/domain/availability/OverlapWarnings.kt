@@ -77,14 +77,7 @@ object OverlapWarnings {
         allowOverlapping && conflicts.isNotEmpty()
 
     /** "03–05/10", "28/09–02/10" across months, "03/10" for one day */
-    fun dayRange(from: LocalDate, to: LocalDate): String {
-        fun ddmm(d: LocalDate) = "%02d/%02d".format(d.dayOfMonth, d.monthValue)
-        return when {
-            from == to -> ddmm(from)
-            from.monthValue == to.monthValue && from.year == to.year -> "%02d–%s".format(from.dayOfMonth, ddmm(to))
-            else -> "${ddmm(from)}–${ddmm(to)}"
-        }
-    }
+    fun dayRange(from: LocalDate, to: LocalDate): String = com.anyrent.pos.domain.DayText.range(from, to) // #888
 
     /** "#482113", "#482113, #482114", "#482113, #482114 +1" */
     fun orderRefs(numbers: List<String>, max: Int = 2): String {

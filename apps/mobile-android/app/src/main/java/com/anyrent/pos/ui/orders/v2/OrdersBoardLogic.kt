@@ -10,15 +10,13 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 /**
- * Rent list sort of the "Lọc & sắp xếp" sheet (board Loc). `nearestTask` (#389): late tasks first, then the nearest
- * planned hand-over or return, then closed orders.
+ * #888: the one date of the "Lọc & sắp xếp" sheet (board Loc): the list order and the range both use it.
+ * "Việc gần nhất" left the sheet; the "Việc cần làm" tab keeps that order. Same as iOS `RentOrdersFilter.SortDate`.
  */
-enum class OrdersSort(val apiField: String) {
-    NEAREST_TASK("nearestTask"), CREATED("createdAt"), PICKUP("pickupPlanAt"), RETURN("returnPlanAt")
-}
+enum class SortDate(val apiField: String) { PICKUP("pickupPlanAt"), RETURN("returnPlanAt"), CREATED("createdAt") }
 
-/** Which date the range applies to: created, or the planned hand-over / return day (#389, Vietnam days in the API) */
-enum class DateBasis(val apiField: String) { CREATED("createdAt"), PICKUP_PLAN("pickupPlanAt"), RETURN_PLAN("returnPlanAt") }
+/** `NEAREST_FIRST` = latest date first (`desc`), the meaning "Ngày giao gần nhất" had before #888 */
+enum class SortDirection(val apiOrder: String) { NEAREST_FIRST("desc"), FARTHEST_FIRST("asc") }
 
 sealed interface DateRangeChoice {
     data object Any : DateRangeChoice
@@ -31,12 +29,12 @@ sealed interface DateRangeChoice {
 /** Rent list query: the status chips plus the sheet */
 data class RentOrdersFilter(
     val status: String? = null,
-    val sort: OrdersSort = OrdersSort.CREATED,
-    val basis: DateBasis = DateBasis.CREATED,
+    val sortDate: SortDate = SortDate.PICKUP,
+    val direction: SortDirection = SortDirection.NEAREST_FIRST,
     val range: DateRangeChoice = DateRangeChoice.Any,
 ) {
     /** The sheet part (sort and dates) is untouched */
-    val isDefault get() = sort == OrdersSort.CREATED && range == DateRangeChoice.Any
+    val isDefault get() = sortDate == SortDate.PICKUP && direction == SortDirection.NEAREST_FIRST && range == DateRangeChoice.Any
 }
 
 /** One `GET /api/orders` request of the tab */
@@ -45,6 +43,7 @@ data class OrdersQuery(
     val orderType: String? = null,
     val status: String? = null,
     val sortBy: String = "createdAt",
+    val sortOrder: String = "desc",
     val startDate: String? = null,
     val endDate: String? = null,
     val dateField: String? = null,
@@ -126,6 +125,20 @@ object OrdersBoardLogic {
         late = lateDays > 0,
     )
 
+    /** #888 line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was) */
+    fun rentRowMeta(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String =
+        OrderRowDates.lines(rowDates(order, 0), texts).meta
+
+    /** #888 "Tất cả đơn" row: "Lấy 14/10/26", "Trả 16/10/26" (planned days, any status); the sorted date marked */
+    fun rentRowDates(order: OrderSummary, sortedBy: SortDate, texts: OrderRowDates.Texts = OrderRowDates.Texts()): List<OrderRowDates.Part> =
+        OrderRowDates.rentPlan(
+            OrdersHomeLogic.parseInstant(order.pickupPlanAt),
+            OrdersHomeLogic.parseInstant(order.returnPlanAt),
+            markPickup = sortedBy == SortDate.PICKUP,
+            markReturn = sortedBy == SortDate.RETURN,
+            texts = texts,
+        )
+
     /**
      * #496 the date lines of a "Việc cần làm" row: a hand-over is a RESERVED rent, a take-back a rented-out one.
      * The operations rows carry no created day, so line 1 is the code alone.
@@ -176,10 +189,12 @@ object OrdersBoardLogic {
         return OrdersQuery(
             orderType = "RENT",
             status = filter.status,
-            sortBy = filter.sort.apiField,
+            sortBy = filter.sortDate.apiField,
+            sortOrder = filter.direction.apiOrder,
             startDate = bounds?.first?.toString(),
             endDate = bounds?.second?.toString(),
-            dateField = bounds?.let { filter.basis.apiField },
+            // #888: the range uses the sort date
+            dateField = bounds?.let { filter.sortDate.apiField },
             page = page,
         )
     }

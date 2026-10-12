@@ -68,9 +68,14 @@ object OrderDetailHeader {
         runCatching { Instant.parse(value) }.getOrNull()
             ?: runCatching { java.time.OffsetDateTime.parse(value).toInstant() }.getOrNull()
 
-    /** "T4 01/10" in the shop zone; "—" without a date */
+    /** "01/10/26 14:30" (#888: the created day with its time) in the shop zone; "—" without a date */
+    fun dayTimeLabel(value: String?, zone: ZoneId = shopZone): String =
+        value?.let { parse(it) }?.let { com.anyrent.pos.domain.DayText.dmyTime(it, zone) } ?: "—"
+
+    /** "01/10/26" (dd/mm/yy, #888) in the shop zone; "—" without a date. [weekdays] is kept for callers, unused */
+    @Suppress("UNUSED_PARAMETER")
     fun dayLabel(value: String?, weekdays: List<String> = OrderRowDates.Texts().weekdays, zone: ZoneId = shopZone): String =
-        dayOf(value, zone)?.let { OrderRowDates.day(it, weekdays) } ?: "—"
+        value?.let { parse(it) }?.let { OrderRowDates.dmy(it, zone) } ?: "—"
 
     /** Note of a rent ("7 ngày · trả sau 2 ngày"); a sale or a cancelled rent has none beyond the day count */
     fun note(summary: OrderSummary, now: Instant = Instant.now(), zone: ZoneId = shopZone): Note {
@@ -121,7 +126,8 @@ object OrderDetailHeader {
         val handedOver = reached >= 2
         val returned = reached >= 3
         return listOf(
-            Step(StepTitle.BOOKED, dayLabel(days.booked, weekdays, zone), done = reached >= 1, accent = false),
+            // #888: the booked (created) step carries its time; pickup and return stay date-only
+            Step(StepTitle.BOOKED, dayTimeLabel(days.booked, zone), done = reached >= 1, accent = false),
             Step(
                 if (handedOver) StepTitle.HANDED_OVER else StepTitle.HAND_OVER,
                 dayLabel(days.handOver, weekdays, zone),
@@ -139,5 +145,5 @@ object OrderDetailHeader {
 
     /** Right of the pill on a sale: the sale day "T4 01/10" */
     fun saleDay(summary: OrderSummary, weekdays: List<String> = OrderRowDates.Texts().weekdays, zone: ZoneId = shopZone): String =
-        dayLabel(summary.createdAt, weekdays, zone)
+        dayTimeLabel(summary.createdAt, zone)
 }

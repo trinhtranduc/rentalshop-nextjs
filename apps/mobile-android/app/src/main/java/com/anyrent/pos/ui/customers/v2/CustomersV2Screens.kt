@@ -708,10 +708,8 @@ private fun OrderRowItem(order: CustomerOrderRow, onClick: () -> Unit) {
 @Composable
 private fun StatusPill(status: String) {
     val colors = when (status.uppercase()) {
-        "RESERVED" -> DS.Status.HandOver
-        "PICKUPED", "PICKED_UP" -> DS.Status.Return
-        "RETURNED", "COMPLETED" -> DS.Status.Done
-        else -> DS.Status.Cancelled
+        // #888: the chosen status palette (Đậm = old app colours, default)
+        else -> com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors(status)
     }
     val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
     Text(
