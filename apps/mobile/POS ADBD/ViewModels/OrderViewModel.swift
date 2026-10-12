@@ -125,13 +125,13 @@ class OrderViewModel: PreviewViewModelProtocol {
     var outletAddress: String? {
         // Store address: prefer outlet, fallback to merchant (consistent with User.address)
         guard let user = User.account() else { return nil }
-        return user.outlet?.address ?? user.merchant?.address
+        return CurrentOutlet.shared.outlet?.address ?? user.merchant?.address
     }
     
     var outletPhone: String? {
         // Store phone: prefer outlet, fallback to merchant (same as Order thermal print)
         guard let user = User.account() else { return nil }
-        return user.outlet?.phone ?? user.merchant?.phone
+        return CurrentOutlet.shared.outlet?.phone ?? user.merchant?.phone
     }
     
     var merchantName: String? {

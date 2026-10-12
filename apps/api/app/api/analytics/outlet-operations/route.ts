@@ -54,6 +54,7 @@ function resolveDays(timeZone: string | undefined, now = new Date()) {
 type OperationsRow = {
   id: number;
   orderNumber: string;
+  outletId?: number | null;
   pickupPlanAt: Date | null;
   returnPlanAt: Date | null;
   totalAmount: number;
@@ -78,6 +79,8 @@ function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) =>
   return {
     id: order.id,
     orderNumber: order.orderNumber,
+    // #852: additive, the shop web labels each row with its branch
+    outletId: order.outletId ?? null,
     customerName: customerName || null,
     customerPhone: order.customer?.phone || null,
     pickupPlanAt: order.pickupPlanAt,

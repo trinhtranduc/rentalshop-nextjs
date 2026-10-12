@@ -539,6 +539,13 @@
     <string name="api_error_plan_limit_exceeded">Đã vượt giới hạn gói. Nâng cấp gói để thêm nữa.</string>
     <string name="api_error_product_name_exists">Đã có sản phẩm cùng tên. Vui lòng chọn tên khác.</string>
     <string name="api_error_product_has_open_orders">Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá.</string>
+    <!-- #859: branch error codes of #823 (texts of iOS / locales/*/errors.json) -->
+    <string name="api_error_outlet_deactivated">Chi nhánh đã ngừng hoạt động, liên hệ chủ shop.</string>
+    <string name="api_error_product_shared_fields_merchant_only">Nhân viên không sửa được tên, giá, ảnh, danh mục và thông tin chung của sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho. Bạn chỉ sửa được tồn kho của chi nhánh mình.</string>
+    <string name="api_error_product_delete_merchant_only">Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho.</string>
+    <string name="api_error_product_held_by_other_outlets">{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.</string>
+    <string name="api_error_product_held_by_other_outlets_no_params">Chi nhánh khác còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.</string>
+    <string name="api_error_outlet_has_open_orders">Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.</string>
     <string name="api_error_customer_duplicate">Khách hàng với email hoặc số điện thoại này đã tồn tại.</string>
     <string name="api_error_email_exists">Email này đã được đăng ký.</string>
     <string name="api_error_phone_exists">Số điện thoại này đã được đăng ký.</string>
@@ -1581,4 +1588,20 @@
     <string name="notifications_v2_delete_one_confirm">Xoá thông báo này? Không thể hoàn tác.</string>
     <string name="notifications_v2_mark_read">Đánh dấu đã đọc</string>
     <string name="notifications_v2_mark_unread">Đánh dấu chưa đọc</string>
+    <!-- #828 Chọn chi nhánh (nút trên tiêu đề, bảng chọn, xác nhận giỏ) -->
+    <string name="outlet_header_accessibility">Chi nhánh: %1$s</string>
+    <string name="outlet_header_hint">Đổi chi nhánh</string>
+    <string name="outlet_picker_title">Chọn chi nhánh</string>
+    <string name="outlet_picker_hint">Đơn, sản phẩm, tồn kho, lịch và Tổng quan sẽ theo chi nhánh bạn chọn.</string>
+    <string name="outlet_picker_default">mặc định</string>
+    <string name="outlet_picker_current">Đang chọn</string>
+    <string name="outlet_picker_use">Dùng %1$s</string>
+    <string name="outlet_switch_confirm_title">Đổi sang %1$s?</string>
+    <plurals name="outlet_switch_confirm_message">
+        <item quantity="other">Giỏ hàng đang có %1$d món của %2$s. Đổi chi nhánh sẽ xoá giỏ hàng.</item>
+    </plurals>
+    <string name="outlet_switch_confirm_cancel">Huỷ</string>
+    <string name="outlet_switch_confirm_ok">Xoá giỏ và đổi</string>
+    <string name="outlet_fallback_title">Đã về chi nhánh mặc định</string>
+    <string name="outlet_fallback_message">Chi nhánh bạn chọn không còn hoạt động. App đang dùng %1$s.</string>
 </resources>

@@ -36,6 +36,12 @@ export enum ErrorCode {
   PLAN_LIMIT_EXCEEDED = 'PLAN_LIMIT_EXCEEDED',
   CANNOT_DELETE_ADDON_LIMIT_EXCEEDED = 'CANNOT_DELETE_ADDON_LIMIT_EXCEEDED',
   ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN = 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN',
+  ADDON_PRICE_NOT_FOUND = 'ADDON_PRICE_NOT_FOUND',
+  ADDON_PRICE_NOT_ON_SALE = 'ADDON_PRICE_NOT_ON_SALE',
+  ADDON_PRICE_IN_USE = 'ADDON_PRICE_IN_USE',
+  PLAN_CHANGE_REMOVE_OUTLET_ADDONS = 'PLAN_CHANGE_REMOVE_OUTLET_ADDONS',
+  ADDON_ALREADY_ENDED = 'ADDON_ALREADY_ENDED',
+  PRICED_ADDON_READ_ONLY = 'PRICED_ADDON_READ_ONLY',
   CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET = 'CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET',
   CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT = 'CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT',
   CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET = 'CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET',
@@ -60,6 +66,7 @@ export enum ErrorCode {
   DOWNGRADE_ONLY_AT_NEW_PERIOD = 'DOWNGRADE_ONLY_AT_NEW_PERIOD',
   PRODUCT_SHARED_FIELDS_MERCHANT_ONLY = 'PRODUCT_SHARED_FIELDS_MERCHANT_ONLY',
   PRODUCT_DELETE_MERCHANT_ONLY = 'PRODUCT_DELETE_MERCHANT_ONLY',
+  PRODUCT_HELD_BY_OTHER_OUTLETS = 'PRODUCT_HELD_BY_OTHER_OUTLETS',
   
   // Resource Specific Errors
   EMAIL_EXISTS = 'EMAIL_EXISTS',
@@ -87,7 +94,11 @@ export enum ErrorCode {
   // File Upload Errors
   FILE_TOO_LARGE = 'FILE_TOO_LARGE',
   INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
-  UPLOAD_FAILED = 'UPLOAD_FAILED'
+  UPLOAD_FAILED = 'UPLOAD_FAILED',
+
+  // Outlet rules (#824)
+  OUTLET_HAS_OPEN_ORDERS = 'OUTLET_HAS_OPEN_ORDERS',
+  OUTLET_DEACTIVATED = 'OUTLET_DEACTIVATED'
 }
 
 // ============================================================================
@@ -132,6 +143,12 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 'Plan limit exceeded',
   [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 'Cannot delete addon: Current usage exceeds limits after deletion',
   [ErrorCode.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN]: 'Only a multi-branch plan (Enterprise) can take a branch add-on',
+  [ErrorCode.ADDON_PRICE_NOT_FOUND]: "Add-on price not found",
+  [ErrorCode.ADDON_PRICE_NOT_ON_SALE]: "This add-on is paused and cannot be sold",
+  [ErrorCode.ADDON_PRICE_IN_USE]: "Shops use this add-on: its pack size cannot change. Add a new row instead",
+  [ErrorCode.PLAN_CHANGE_REMOVE_OUTLET_ADDONS]: "This shop still has branch add-ons. Remove them first, then switch to a plan without multiple branches",
+  [ErrorCode.ADDON_ALREADY_ENDED]: "This add-on has already ended",
+  [ErrorCode.PRICED_ADDON_READ_ONLY]: "A priced add-on is changed from the shop's Add-on tab",
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 'Cannot create order for other outlet. You can only create orders for your assigned outlet.',
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 'Cannot create order for outlet from different merchant.',
   [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 'Cannot update order from other outlet. You can only update orders from your assigned outlet.',
@@ -154,8 +171,9 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED]: 'Payment method and transaction ID are required',
   [ErrorCode.PLAN_CHANGE_ONLY_AT_NEW_PERIOD]: "The plan can only be changed in a new period",
   [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: "A downgrade is only possible in a new period",
-  [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 'Only the shop owner can change the name, prices, photos, category or other shared details of a product',
-  [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 'Only the shop owner can delete products',
+  [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 'Staff cannot change the name, prices, photos, category or other shared details of a product',
+  [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 'Staff cannot delete products',
+  [ErrorCode.PRODUCT_HELD_BY_OTHER_OUTLETS]: 'Other branches still hold this product; only the shop owner can delete it',
   
   // Resource Specific Errors
   [ErrorCode.EMAIL_EXISTS]: 'Email address is already registered',
@@ -183,7 +201,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   // File Upload Errors
   [ErrorCode.FILE_TOO_LARGE]: 'File size exceeds limit',
   [ErrorCode.INVALID_FILE_TYPE]: 'Invalid file type',
-  [ErrorCode.UPLOAD_FAILED]: 'File upload failed'
+  [ErrorCode.UPLOAD_FAILED]: 'File upload failed',
+
+  // Outlet rules (#824)
+  [ErrorCode.OUTLET_HAS_OPEN_ORDERS]: 'This branch still has reserved or rented orders. Complete or cancel them first.',
+  [ErrorCode.OUTLET_DEACTIVATED]: 'This branch has been deactivated. Please contact the shop owner.'
 };
 
 // ============================================================================
@@ -213,6 +235,12 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.PLAN_LIMIT_EXCEEDED]: 403,
   [ErrorCode.CANNOT_DELETE_ADDON_LIMIT_EXCEEDED]: 422,
   [ErrorCode.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN]: 422,
+  [ErrorCode.ADDON_PRICE_NOT_FOUND]: 404,
+  [ErrorCode.ADDON_PRICE_NOT_ON_SALE]: 422,
+  [ErrorCode.ADDON_PRICE_IN_USE]: 422,
+  [ErrorCode.PLAN_CHANGE_REMOVE_OUTLET_ADDONS]: 422,
+  [ErrorCode.ADDON_ALREADY_ENDED]: 422,
+  [ErrorCode.PRICED_ADDON_READ_ONLY]: 422,
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET]: 403,
   [ErrorCode.CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT]: 403,
   [ErrorCode.CANNOT_UPDATE_ORDER_FROM_OTHER_OUTLET]: 403,
@@ -237,6 +265,7 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.DOWNGRADE_ONLY_AT_NEW_PERIOD]: 422,
   [ErrorCode.PRODUCT_SHARED_FIELDS_MERCHANT_ONLY]: 403,
   [ErrorCode.PRODUCT_DELETE_MERCHANT_ONLY]: 403,
+  [ErrorCode.PRODUCT_HELD_BY_OTHER_OUTLETS]: 409,
   
   // Resource Specific Errors (4xx)
   [ErrorCode.EMAIL_EXISTS]: 409,
@@ -264,7 +293,11 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   // File Upload Errors (4xx)
   [ErrorCode.FILE_TOO_LARGE]: 413,
   [ErrorCode.INVALID_FILE_TYPE]: 400,
-  [ErrorCode.UPLOAD_FAILED]: 500
+  [ErrorCode.UPLOAD_FAILED]: 500,
+
+  // Outlet rules (#824)
+  [ErrorCode.OUTLET_HAS_OPEN_ORDERS]: 409,
+  [ErrorCode.OUTLET_DEACTIVATED]: 403
 };
 
 // ============================================================================

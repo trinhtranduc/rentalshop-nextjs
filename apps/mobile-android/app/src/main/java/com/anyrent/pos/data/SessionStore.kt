@@ -49,6 +49,9 @@ object SessionStore {
         get() = prefs.getString(KEY_APP_CONFIG, null)
         set(value) { prefs.edit().putString(KEY_APP_CONFIG, value).apply() }
 
+    /** False in plain unit tests (no Context): readers that may run there check it first */
+    val isReady: Boolean get() = ::prefs.isInitialized
+
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         _allowOverlappingOrders.value = prefs.getBoolean(KEY_ALLOW_OVERLAP, true)
@@ -195,6 +198,8 @@ object SessionStore {
     fun clearAuth() {
         // Keep lastLoginEmail so login screen can prefill like iOS.
         val rememberedEmail = email?.takeIf { it.isNotBlank() } ?: lastLoginEmail
+        // #828: logout or a kicked session forgets the merchant's chosen branch (back to the default next time)
+        CurrentOutlet.forget(userId)
         prefs.edit()
             .remove(KEY_TOKEN)
             .remove(KEY_REFRESH_TOKEN)

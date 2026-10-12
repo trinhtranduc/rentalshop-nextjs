@@ -261,7 +261,9 @@
       "retry": "Thử lại",
       "loadMore": "Xem thêm",
       "unreadCount": "{count} chưa đọc"
-    }
+    },
+    "allOutletsCount": "Tất cả chi nhánh ({count})",
+    "someOutlets": "{count} chi nhánh"
   },
   "dateRange": {
     "title": "Chọn khoảng ngày",

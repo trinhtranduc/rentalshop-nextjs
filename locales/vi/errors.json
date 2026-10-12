@@ -402,6 +402,12 @@
   "SUBSCRIPTION_EXPIRY_REMINDERS_PARTIAL_FAILURE": "Một số email nhắc hết hạn không gửi được.",
   "CANNOT_DELETE_ADDON_LIMIT_EXCEEDED": "Không thể xoá gói bổ sung vì mức đang dùng sẽ vượt giới hạn.",
   "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "Chỉ gói nhiều chi nhánh (Enterprise) mới thêm được add-on chi nhánh.",
+  "ADDON_PRICE_NOT_FOUND": "Không tìm thấy dòng giá add-on.",
+  "ADDON_PRICE_NOT_ON_SALE": "Add-on này đang tạm tắt, không bán mới.",
+  "ADDON_PRICE_IN_USE": "Đang có shop dùng add-on này nên không đổi được số lượng mỗi gói. Hãy tạo dòng mới.",
+  "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "Shop còn add-on chi nhánh. Hãy gỡ add-on chi nhánh trước rồi mới đổi sang gói không có nhiều chi nhánh.",
+  "ADDON_ALREADY_ENDED": "Add-on này đã hết hiệu lực.",
+  "PRICED_ADDON_READ_ONLY": "Add-on có giá được thay đổi ở tab Add-on của shop.",
   "LEMON_SQUEEZY_NOT_CONFIGURED": "Thanh toán trực tuyến chưa được cấu hình. Vui lòng liên hệ hỗ trợ.",
   "LEMON_SQUEEZY_CHECKOUT_URL_MISSING": "Thiếu đường dẫn thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
   "LEMON_SQUEEZY_WEBHOOK_SIGNATURE_INVALID": "Chữ ký thông báo thanh toán không hợp lệ.",
@@ -512,6 +518,9 @@
   "INVALID_DURATION": "Thời hạn gia hạn phải là 1, 3, 6 hoặc 12 tháng",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "Chỉ được đổi gói khi sang kỳ mới",
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "Chỉ được hạ cấp khi sang kỳ mới",
-  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Chỉ chủ shop được sửa tên, giá, ảnh, danh mục và các thông tin chung của sản phẩm. Bạn chỉ sửa được tồn kho của chi nhánh mình.",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "Chỉ chủ shop được xóa sản phẩm."
+  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Nhân viên không sửa được tên, giá, ảnh, danh mục và thông tin chung của sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho. Bạn chỉ sửa được tồn kho của chi nhánh mình.",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho.",
+  "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
+  "OUTLET_DEACTIVATED": "Chi nhánh đã ngừng hoạt động, liên hệ chủ shop.",
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0."
 }

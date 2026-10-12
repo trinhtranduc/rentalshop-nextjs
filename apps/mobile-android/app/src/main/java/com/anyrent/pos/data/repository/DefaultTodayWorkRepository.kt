@@ -1,5 +1,6 @@
 package com.anyrent.pos.data.repository
 
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRepository
@@ -14,7 +15,7 @@ import java.time.Instant
 /** Today's work of the outlet team for the shop day (#371, #602) */
 class DefaultTodayWorkRepository(
     private val fetch: () -> JSONObject = {
-        ApiClient.get().authedGet(OverviewLogic.outletOperationsPath())
+        ApiClient.get().authedGet(OverviewLogic.outletOperationsPath(CurrentOutlet.merchantFilterId))
     },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : TodayWorkRepository {

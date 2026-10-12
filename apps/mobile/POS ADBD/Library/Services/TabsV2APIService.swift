@@ -57,8 +57,12 @@ final class TabsV2APIService: BaseService {
     }
 
     /// `timeZone` is the shop zone, so counts and lists are shop days whatever the phone zone (#596)
-    static func calendarMonthParameters(year: Int, month: Int) -> [String: Any] {
-        ["month": month, "year": year, "timeZone": Date.shopTimeZone.identifier]
+    /// #828: `outletId` is a merchant's chosen branch (outlet users are scoped by the API)
+    static func calendarMonthParameters(year: Int, month: Int,
+                                        outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
+        var params: [String: Any] = ["month": month, "year": year, "timeZone": Date.shopTimeZone.identifier]
+        if let outletId { params["outletId"] = outletId }
+        return params
     }
 
     /// Hand-overs (`RESERVED` by pickup plan) or returns (`kind=return`) of one day
@@ -71,8 +75,10 @@ final class TabsV2APIService: BaseService {
         }
     }
 
-    static func calendarDayParameters(_ dayKey: String, returns: Bool) -> [String: Any] {
+    static func calendarDayParameters(_ dayKey: String, returns: Bool,
+                                      outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
         var params: [String: Any] = ["date": dayKey, "timeZone": Date.shopTimeZone.identifier, "limit": 200]
+        if let outletId { params["outletId"] = outletId }
         if returns {
             params["kind"] = "return"
         } else {
@@ -89,11 +95,16 @@ final class TabsV2APIService: BaseService {
         request(APIEndpoint.Path.analyticsPeriod, parameters: Self.overviewReportParameters(range, limit: limit), completion: completion)
     }
 
-    static func overviewReportParameters(_ range: DayKeyRange, limit: Int = OverviewDashLogic.topLimit) -> [String: Any] {
+    /// #828: `outletIds` narrows a merchant's figures to its chosen branch. The API reads it once #827 is merged;
+    /// until then it ignores the parameter and the figures stay shop-wide.
+    static func overviewReportParameters(_ range: DayKeyRange, limit: Int = OverviewDashLogic.topLimit,
+                                         outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
         // #620: `limit` sizes topProducts / topCustomers (API default 3, max 50); the overview shows five, as web;
         // "Xem tất cả" (#633) asks for `topAllLimit`
-        ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range), "limit": limit,
-         "timeZone": Date.shopTimeZone.identifier]
+        var params: [String: Any] = ["startDate": range.start, "endDate": range.end, "groupBy": OverviewLogic.groupBy(range),
+                                     "limit": limit, "timeZone": Date.shopTimeZone.identifier]
+        if let outletId { params["outletIds"] = String(outletId) }
+        return params
     }
 
     @discardableResult
@@ -102,8 +113,11 @@ final class TabsV2APIService: BaseService {
     }
 
     /// Today's work and the overview "now" block for the shop day (also `AnalyticsAPIService.loadOutletOperations`)
-    static func outletOperationsParameters() -> [String: Any] {
-        ["timeZone": Date.shopTimeZone.identifier]
+    /// #828: a merchant's chosen branch as `outletIds` (the API ignores it for outlet users)
+    static func outletOperationsParameters(outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
+        var params: [String: Any] = ["timeZone": Date.shopTimeZone.identifier]
+        if let outletId { params["outletIds"] = String(outletId) }
+        return params
     }
 
     // MARK: - Settings

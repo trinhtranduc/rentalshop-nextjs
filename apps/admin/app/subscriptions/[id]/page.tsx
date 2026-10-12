@@ -2,6 +2,7 @@
 
 import '../../details.css';
 import { DetailHeader } from '../../components/DetailHeader';
+import { subscriptionActions } from './subscription-actions';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,6 +52,7 @@ import {
   RefreshCw,
   X,
   Package,
+  Play,
   Plus
 } from 'lucide-react';
 import type { Subscription, Plan, Merchant, Payment } from '@rentalshop/types';
@@ -77,6 +79,8 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [renewalLoading, setRenewalLoading] = useState(false);
+  // #850: monthly VND of the add-ons the next renewal charges (same number as POST /renew)
+  const [addonMonthlyTotal, setAddonMonthlyTotal] = useState(0);
 
   // Toast management
   const { toastSuccess, toastError, removeToast } = useToast();
@@ -84,7 +88,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
   // Confirmation dialog state
   const [confirmationDialog, setConfirmationDialog] = useState<{
     open: boolean;
-    type: 'delete' | 'pause' | 'cancel';
+    type: 'delete' | 'pause' | 'cancel' | 'resume';
     data?: any;
   }>({
     open: false,
@@ -96,7 +100,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
     try {
       setLoading(true);
       
-      const { subscriptionsApi, planLimitAddonsApi } = await import('@rentalshop/utils');
+      const { subscriptionsApi, planLimitAddonsApi, addonPricesApi } = await import('@rentalshop/utils');
       const result = await subscriptionsApi.getById(parseInt(params.id));
       
       if (result.success && result.data) {
@@ -105,6 +109,12 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         
         // Fetch addons for this merchant
         if (result.data.merchantId) {
+          try {
+            const priced = await addonPricesApi.listForMerchant(result.data.merchantId);
+            setAddonMonthlyTotal(priced.success && priced.data?.renewal ? priced.data.renewal.addonMonthlyTotal || 0 : 0);
+          } catch {
+            setAddonMonthlyTotal(0);
+          }
           try {
             const addonsResult = await planLimitAddonsApi.getMerchantPlanLimitAddons(
               result.data.merchantId,
@@ -186,6 +196,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
 
   // The API returns the status upper-case (ACTIVE); compare without case.
   const isStatus = (status: string) => String(subscription?.status ?? '').toLowerCase() === status;
+  const actions = subscriptionActions(subscription?.status);
 
   const handleManualRenewal = async (data: Parameters<typeof subscriptionsApi.renew>[1]) => {
     try {
@@ -256,6 +267,33 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       toastError('Suspension Failed', 'Error suspending subscription. Please try again.');
     } finally {
       setConfirmationDialog({ open: false, type: 'pause' });
+    }
+  };
+
+  const handleResume = () => {
+    setConfirmationDialog({
+      open: true,
+      type: 'resume'
+    });
+  };
+
+  const handleResumeConfirm = async () => {
+    try {
+      const result = await subscriptionsApi.resume(parseInt(params.id), {
+        reason: 'Admin resumed subscription'
+      });
+
+      if (result.success) {
+        await fetchSubscription(); // Refresh data
+        toastSuccess('Subscription Resumed', 'Subscription is active again');
+      } else {
+        toastError('Resume Failed', result.message || 'Failed to resume subscription');
+      }
+    } catch (error) {
+      console.error('Error resuming subscription:', error);
+      toastError('Resume Failed', 'Error resuming subscription. Please try again.');
+    } finally {
+      setConfirmationDialog({ open: false, type: 'resume' });
     }
   };
 
@@ -389,7 +427,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             <CreditCard className="h-4 w-4 mr-2" />
             Extend
           </Button>
-          {isStatus('active') && (
+          {actions.canSuspend && (
             <Button
               variant="outline"
               onClick={handlePause}
@@ -399,7 +437,17 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
               Suspend
             </Button>
           )}
-          {isStatus('active') && (
+          {actions.canResume && (
+            <Button
+              variant="outline"
+              onClick={handleResume}
+              className="text-green-600 hover:text-green-700"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Resume
+            </Button>
+          )}
+          {actions.canCancel && (
             <Button
               variant="outline"
               onClick={handleCancel}
@@ -532,10 +580,10 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/merchants/${subscription.merchantId}/plan-limit-addons`)}
+                    onClick={() => router.push(`/merchants/${subscription.merchantId}/addons`)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Manage Addons
+                    Add-on
                   </Button>
                 )}
               </CardTitle>
@@ -794,6 +842,7 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
         }}
         onRenew={handleManualRenewal}
         loading={renewalLoading}
+        addonMonthlyTotal={addonMonthlyTotal}
       />
 
       {/* Extend Modal - Enhanced with Auto-calculation */}
@@ -809,10 +858,11 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
       <ConfirmationDialog
         open={confirmationDialog.open}
         onOpenChange={(open) => setConfirmationDialog(prev => ({ ...prev, open }))}
-        type={confirmationDialog.type === 'delete' ? 'danger' : confirmationDialog.type === 'cancel' ? 'warning' : 'warning'}
+        type={confirmationDialog.type === 'delete' ? 'danger' : confirmationDialog.type === 'resume' ? 'info' : 'warning'}
         title={
           confirmationDialog.type === 'pause' ? 'Suspend Subscription' :
           confirmationDialog.type === 'cancel' ? 'Cancel Subscription' :
+          confirmationDialog.type === 'resume' ? 'Resume Subscription' :
           'Delete Subscription'
         }
         description={
@@ -820,16 +870,20 @@ export default function SubscriptionDetailPage({ params }: SubscriptionDetailPag
             `Are you sure you want to suspend this subscription for ${subscription?.merchant?.name || 'this merchant'}? The subscription will be paused and billing will stop immediately. You can reactivate it later if needed.` :
           confirmationDialog.type === 'cancel' ?
             `Are you sure you want to cancel this subscription for ${subscription?.merchant?.name || 'this merchant'}? This will stop billing and the subscription will end at the current period. This action cannot be undone.` :
+          confirmationDialog.type === 'resume' ?
+            `Resume this subscription for ${subscription?.merchant?.name || 'this merchant'}? It becomes active again and the merchant can use the shop.` :
             `Are you sure you want to permanently delete this subscription for ${subscription?.merchant?.name || 'this merchant'}? This action cannot be undone and will permanently remove all subscription data.`
         }
         confirmText={
           confirmationDialog.type === 'pause' ? 'Suspend Subscription' :
           confirmationDialog.type === 'cancel' ? 'Cancel Subscription' :
+          confirmationDialog.type === 'resume' ? 'Resume Subscription' :
           'Delete Subscription'
         }
         onConfirm={
           confirmationDialog.type === 'pause' ? handlePauseConfirm :
           confirmationDialog.type === 'cancel' ? handleCancelConfirm :
+          confirmationDialog.type === 'resume' ? handleResumeConfirm :
           handleDeleteConfirm
         }
         onCancel={() => setConfirmationDialog({ open: false, type: 'delete' })}

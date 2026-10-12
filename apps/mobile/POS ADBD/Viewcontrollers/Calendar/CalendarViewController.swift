@@ -464,7 +464,7 @@ class CalendarViewController: BaseViewControler {
 
         showProgressText(text: "Loading...".localized())
 
-        let outletId = User.account()?.outletId
+        let outletId = CurrentOutlet.shared.id
 
         OrderService.shared.loadCalendarOrdersCount(
             month: month,
@@ -522,7 +522,7 @@ class CalendarViewController: BaseViewControler {
             return
         }
 
-        let outletId = User.account()?.outletId
+        let outletId = CurrentOutlet.shared.id
         showProgressText(text: "Loading orders...".localized())
 
         OrderService.shared.loadCalendarOrdersByDate(

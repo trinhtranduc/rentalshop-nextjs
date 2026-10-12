@@ -263,6 +263,8 @@ class ApiClient(
         sortBy: String? = null,
         sortOrder: String? = null,
         dateField: String? = null,
+        /** #828: a merchant's lists follow the branch chosen on Home; null for outlet users (the API scopes them) */
+        outletId: Int? = CurrentOutlet.merchantFilterId,
     ): Result<PageResult<OrderSummary>> = runCatching {
         val url = "$baseUrl/api/orders".toHttpUrl().newBuilder()
             .addQueryParameter("page", page.toString())
@@ -278,6 +280,7 @@ class ApiClient(
                 if (!sortBy.isNullOrBlank()) addQueryParameter("sortBy", sortBy)
                 if (!sortOrder.isNullOrBlank()) addQueryParameter("sortOrder", sortOrder)
                 if (!dateField.isNullOrBlank()) addQueryParameter("dateField", dateField)
+                outletId?.let { addQueryParameter("outletId", it.toString()) }
             }
             .build()
         parseOrdersPage(execute(get(url.toString())))
@@ -455,6 +458,8 @@ class ApiClient(
         idempotencyKey: String? = null,
         /** #480: cart note photos (JPEG ~180KB); empty = the same JSON request as before */
         noteImages: List<ByteArray> = emptyList(),
+        /** #828: the merchant's chosen branch; null keeps the API default (outlet users: their own outlet) */
+        outletId: Int? = CurrentOutlet.merchantFilterId,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEach { (productId, qty, unitPrice) ->
@@ -484,6 +489,7 @@ class ApiClient(
             .put("orderItems", items)
             .put("isReadyToDeliver", false)
             .apply {
+                if (outletId != null) put("outletId", outletId)
                 if (customerId != null) put("customerId", customerId)
                 if (!notes.isNullOrBlank()) put("notes", notes)
                 if (orderType == "RENT") {
@@ -713,7 +719,7 @@ class ApiClient(
 
     fun createProduct(name: String, rentPrice: Double, stock: Int, salePrice: Double? = null): Result<Product> =
         runCatching {
-            val outletId = SessionStore.outletId
+            val outletId = CurrentOutlet.id
             val body = JSONObject()
                 .put("name", name)
                 .put("rentPrice", rentPrice)
@@ -902,6 +908,7 @@ class ApiClient(
             .addQueryParameter("month", month.toString())
             .addQueryParameter("year", year.toString())
             .addQueryParameter("status", "RESERVED")
+            .apply { CurrentOutlet.merchantFilterId?.let { addQueryParameter("outletId", it.toString()) } }
             .build()
         val json = execute(get(url.toString()))
         requireSuccess(json)
@@ -930,6 +937,7 @@ class ApiClient(
             .addQueryParameter("date", date)
             .addQueryParameter("status", status)
             .addQueryParameter("limit", "100")
+            .apply { CurrentOutlet.merchantFilterId?.let { addQueryParameter("outletId", it.toString()) } }
             .build()
         val json = execute(get(url.toString()))
         requireSuccess(json)
@@ -946,6 +954,7 @@ class ApiClient(
         val url = "$baseUrl/api/calendar/orders".toHttpUrl().newBuilder()
             .addQueryParameter("month", month.toString())
             .addQueryParameter("year", year.toString())
+            .apply { CurrentOutlet.merchantFilterId?.let { addQueryParameter("outletId", it.toString()) } }
             .build()
         val json = execute(get(url.toString()))
         requireSuccess(json)
@@ -1207,7 +1216,15 @@ class ApiClient(
                 ?: ""
         }
 
-        return ApiErrorMessages.resolve(AnyRentApp.instance, code, detail)
+        return ApiErrorMessages.resolve(AnyRentApp.instance, code, detail, messageParams())
+    }
+
+    /** #859: `data.messageParams` (e.g. `outlets` of 409 PRODUCT_HELD_BY_OTHER_OUTLETS), string values only */
+    private fun JSONObject.messageParams(): Map<String, String> {
+        val params = optJSONObject("data")?.optJSONObject("messageParams") ?: return emptyMap()
+        return params.keys().asSequence()
+            .mapNotNull { key -> (params.opt(key) as? String)?.let { key to it } }
+            .toMap()
     }
 
     private fun get(url: String, authed: Boolean = true): Request =

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
+import { addonRenewalLines, calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
 
 /**
@@ -72,8 +72,20 @@ export async function POST(
       // Owner rules (#779): plan (+ addons) for the cycle with 0/0/5/10 %; expired → from now,
       // not expired → from the current end; calendar months on the Vietnam day.
       const existingPlan = (existing as { plan?: { basePrice?: number; currency?: string } }).plan;
+      // #850/#870: add-ons renewed at today's list price and pack size (paused rows and items marked for removal are not renewed)
+      const renewNow = new Date();
+      const { items: addonItems, catalog: addonCatalog } = await db.merchantAddons.renewalItems(existing.merchantId, renewNow);
+      const addonRenewal = addonRenewalLines(addonItems, addonCatalog, renewNow);
+      const renewedAddons = addonRenewal.lines
+        .filter((line) => line.renew && line.monthlyAmount > 0)
+        .map((line) => {
+          const item: any = addonItems.find((i: any) => i.id === line.id) || {};
+          // #870: the pack size and packs of the new period (current catalog pack size, pending reduction)
+          return { id: line.id, name: item.name ?? null, limitKind: line.limitKind ?? item.limitKind ?? null, packSize: line.packSize ?? item.packSize ?? null, packs: line.packs, unitPrice: line.unitPrice, monthlyAmount: line.monthlyAmount };
+        });
       const renewal = calculateRenewalTotal({
         basePrice: existingPlan?.basePrice ?? 0,
+        addonMonthlyTotal: addonRenewal.monthlyTotal,
         interval,
         currentPeriodEnd: existing.currentPeriodEnd,
         now: new Date(),
@@ -94,11 +106,14 @@ export async function POST(
             status: method === PAYMENT_METHOD.STRIPE ? PAYMENT_STATUS.COMPLETED as any : PAYMENT_STATUS.PENDING as any,
             transactionId: transactionId,
             reference: reference || undefined,
-            description: description || `${duration} month${duration > 1 ? 's' : ''} subscription renewal`,
+            description: description || `${duration} month${duration > 1 ? 's' : ''} subscription renewal${renewedAddons.length ? ` + ${renewedAddons.length} add-on` : ''}`,
             processedAt: method === PAYMENT_METHOD.STRIPE ? new Date() : (paymentDate ? new Date(paymentDate) : null),
             createdAt: paymentDate ? new Date(paymentDate) : new Date()
           }
         });
+
+        // #850: renewed add-ons take today's list price; the others end at the old period end
+        await db.merchantAddons.applyRenewal(tx, addonRenewal.lines, existing.currentPeriodEnd ? new Date(existing.currentPeriodEnd) : null, renewNow);
 
         // Update subscription period
         const updatedSubscription = await tx.subscription.update({
@@ -106,7 +121,8 @@ export async function POST(
           data: {
             currentPeriodStart: renewal.periodStart,
             currentPeriodEnd: renewal.periodEnd,
-            amount: renewal.totalDue,
+            // the plan price of the cycle, as before #850 (add-ons are in the payment, not in this field)
+            amount: renewal.planPrice,
             interval: renewal.interval,
             intervalCount: renewal.months,
             period: renewal.months,
@@ -179,7 +195,8 @@ export async function POST(
         ResponseBuilder.success('SUBSCRIPTION_RENEWED_SUCCESS', {
           subscription: result.updatedSubscription,
           payment: result.payment,
-          renewal
+          renewal,
+          addons: renewedAddons
         })
       );
     } catch (error) {

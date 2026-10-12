@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A828B0000000000000000001 /* CurrentOutlet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000001 /* CurrentOutlet.swift */; };
+		A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000002 /* OutletHeaderButton.swift */; };
+		A828B0000000000000000003 /* OutletPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000003 /* OutletPickerSheet.swift */; };
 		884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */; };
 		A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000003 /* OrderShareImageTests.swift */; };
 		5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */; };
@@ -390,6 +393,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A828F0000000000000000001 /* CurrentOutlet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentOutlet.swift; sourceTree = "<group>"; };
+		A828F0000000000000000002 /* OutletHeaderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletHeaderButton.swift; sourceTree = "<group>"; };
+		A828F0000000000000000003 /* OutletPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletPickerSheet.swift; sourceTree = "<group>"; };
 		6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryTests.swift; sourceTree = "<group>"; };
 		A640F0000000000000000003 /* OrderShareImageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareImageTests.swift; sourceTree = "<group>"; };
 		D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflictTests.swift; sourceTree = "<group>"; };
@@ -811,6 +817,7 @@
 		041CBA1A2D8E6FFC00C117DF /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				A828F0000000000000000001 /* CurrentOutlet.swift */,
 				040085072F00DDC500DF5C81 /* RatingManager.swift */,
 				041CBA222D901DCF00C117DF /* AnalyticsService.swift */,
 				041CBA202D8EFC1800C117DF /* PrinterCommand.swift */,
@@ -874,6 +881,7 @@
 		048838F12D780AEC00069256 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				A828F0000000000000000002 /* OutletHeaderButton.swift */,
 				88FFF5CD2F2DA33B00FD0A26 /* ToastView.swift */,
 				04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */,
 				04FBE0CD2EDE8DF90057EDF8 /* RCPrimaryButton.swift */,
@@ -1003,6 +1011,7 @@
 		5A275EEE1EF93C18AFC5F00F /* v2 */ = {
 			isa = PBXGroup;
 			children = (
+				A828F0000000000000000003 /* OutletPickerSheet.swift */,
 				652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */,
 				B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */,
 				A47201AA0000000000000002 /* ImageViewerViewController.swift */,
@@ -1874,6 +1883,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A828B0000000000000000001 /* CurrentOutlet.swift in Sources */,
+				A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */,
+				A828B0000000000000000003 /* OutletPickerSheet.swift in Sources */,
 				886B188321AE39620029CFB1 /* CalendarViewController.swift in Sources */,
 				043F06452D854E670047DC11 /* HapticFeedback.swift in Sources */,
 				8864537421B0F29D002AE29C /* LargeValueFormatter.swift in Sources */,

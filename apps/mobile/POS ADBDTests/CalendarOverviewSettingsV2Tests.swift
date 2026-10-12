@@ -653,3 +653,85 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertEqual(submitted?.1, "abcdef")
     }
 }
+
+/// #828 — merchant branch picker: which branches, which one is in use, what the header shows, what the API gets
+final class CurrentOutletLogicTests: XCTestCase {
+
+    private func outlet(_ id: Int, _ name: String, isDefault: Bool = false, isActive: Bool? = true) -> Outlet {
+        Outlet(id: id, name: name, address: nil, description: nil, isActive: isActive, isDefault: isDefault,
+               createdAt: nil, updatedAt: nil, merchantId: 1, phone: nil, city: nil, country: nil, state: nil, zipCode: nil)
+    }
+
+    func testOnlyActiveBranchesDefaultFirst() {
+        let list = [outlet(3, "Quận 3"), outlet(1, "Chính", isDefault: true), outlet(4, "Đóng", isActive: false),
+                    outlet(5, "Thủ Đức", isActive: nil)]
+        XCTAssertEqual(CurrentOutletLogic.activeOutlets(list).map(\.id), [1, 3, 5])
+    }
+
+    func testRememberedBranchWinsWhileActive() {
+        let active = [outlet(1, "Chính", isDefault: true), outlet(3, "Quận 3")]
+        let result = CurrentOutletLogic.resolve(remembered: 3, active: active)
+        XCTAssertEqual(result.outlet?.id, 3)
+        XCTAssertFalse(result.fellBack)
+    }
+
+    func testNoChoiceUsesTheDefaultWithoutNotice() {
+        let active = [outlet(3, "Quận 3"), outlet(1, "Chính", isDefault: true)]
+        let result = CurrentOutletLogic.resolve(remembered: nil, active: active)
+        XCTAssertEqual(result.outlet?.id, 1)
+        XCTAssertFalse(result.fellBack)
+    }
+
+    func testTurnedOffBranchFallsBackToDefaultAndTells() {
+        let active = [outlet(1, "Chính", isDefault: true)]
+        let result = CurrentOutletLogic.resolve(remembered: 3, active: active)
+        XCTAssertEqual(result.outlet?.id, 1)
+        XCTAssertTrue(result.fellBack)
+        XCTAssertFalse(CurrentOutletLogic.resolve(remembered: 3, active: []).fellBack, "nothing loaded is not a fallback")
+    }
+
+    func testOnlyMerchantWithTwoActiveBranchesSwitches() {
+        XCTAssertTrue(CurrentOutletLogic.canSwitch(role: .merchant, activeCount: 2))
+        XCTAssertFalse(CurrentOutletLogic.canSwitch(role: .merchant, activeCount: 1))
+        for role in [Role.outletAdmin, .outletStaff, .outletInventory, .admin] {
+            XCTAssertFalse(CurrentOutletLogic.canSwitch(role: role, activeCount: 3), role.rawValue)
+        }
+    }
+
+    func testHeaderModes() {
+        XCTAssertEqual(CurrentOutletLogic.headerMode(role: .merchant, activeCount: 2, name: "Chính", isDefault: true),
+                       .button("Chính", highlighted: false))
+        XCTAssertEqual(CurrentOutletLogic.headerMode(role: .merchant, activeCount: 2, name: "Quận 3", isDefault: false),
+                       .button("Quận 3", highlighted: true))
+        XCTAssertEqual(CurrentOutletLogic.headerMode(role: .merchant, activeCount: 1, name: "Chính", isDefault: true),
+                       .plain("Chính"))
+        XCTAssertEqual(CurrentOutletLogic.headerMode(role: .outletStaff, activeCount: 0, name: "Quận 3", isDefault: true),
+                       .plain("Quận 3"))
+        XCTAssertEqual(CurrentOutletLogic.headerMode(role: .merchant, activeCount: 2, name: nil, isDefault: true), .hidden)
+    }
+
+    func testCartConfirmOnlyWithLines() {
+        XCTAssertFalse(CurrentOutletLogic.needsCartConfirm(itemCount: 0))
+        XCTAssertTrue(CurrentOutletLogic.needsCartConfirm(itemCount: 3))
+    }
+
+    func testRequestsCarryTheChosenBranch() {
+        let range = DayKeyRange(start: "2026-10-01", end: "2026-10-11")
+        XCTAssertEqual(TabsV2APIService.calendarMonthParameters(year: 2026, month: 10, outletId: 3)["outletId"] as? Int, 3)
+        XCTAssertEqual(TabsV2APIService.calendarDayParameters("2026-10-11", returns: true, outletId: 3)["outletId"] as? Int, 3)
+        XCTAssertEqual(TabsV2APIService.overviewReportParameters(range, outletId: 3)["outletIds"] as? String, "3")
+        XCTAssertEqual(TabsV2APIService.outletOperationsParameters(outletId: 3)["outletIds"] as? String, "3")
+        XCTAssertNil(TabsV2APIService.calendarMonthParameters(year: 2026, month: 10, outletId: nil)["outletId"])
+        XCTAssertNil(TabsV2APIService.overviewReportParameters(range, outletId: nil)["outletIds"])
+        XCTAssertNil(TabsV2APIService.outletOperationsParameters(outletId: nil)["outletIds"])
+    }
+
+    func testCreateOrderSendsOutletOnlyWhenSet() throws {
+        var request = Cart().toCreateOrderRequest()
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any]
+        XCTAssertNil(json?["outletId"])
+        request.outletId = 3
+        json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any]
+        XCTAssertEqual(json?["outletId"] as? Int, 3)
+    }
+}

@@ -12,6 +12,7 @@ import {
   sendSubscriptionExtensionEmail,
   normalizeBillingInterval,
   calculateExtensionTotal,
+  addonRenewalLines,
   civilDaysBetween,
   formatDateKeyInTimeZone,
   SHOP_TIMEZONE,
@@ -111,6 +112,12 @@ async function handleExtendSubscription(
       );
     }
 
+    // #870: the shop's add-ons that continue (today's price and pack size), charged for the extra days like the plan
+    const addonNow = new Date();
+    const { items: addonItems, catalog: addonCatalog } = await db.merchantAddons.renewalItems(subscription.merchantId, addonNow);
+    const addonRenewal = addonRenewalLines(addonItems, addonCatalog, addonNow);
+    let addonPrice = 0;
+
     // Auto-calculate amount if not provided
     let calculatedAmount = amount;
     if (calculatedAmount === undefined || calculatedAmount === null) {
@@ -128,9 +135,11 @@ async function handleExtendSubscription(
           oldEndDate,
           newEndDate: endDate,
           plan: { basePrice: planAny?.basePrice || 0 },
+          addonMonthlyTotal: addonRenewal.monthlyTotal,
           selectedInterval,
         });
 
+        addonPrice = extensionCalc.addonPrice;
         calculatedAmount = extensionCalc.totalDue;
       } catch {
         const monthlyPrice = planAny?.basePrice || 0;
@@ -168,6 +177,8 @@ async function handleExtendSubscription(
     const paymentReceived = method === 'PAYMENT_RECEIVED' && calculatedAmount > 0;
     await prisma.$transaction(async (tx) => {
       await tx.subscription.update({ where: { id: subscriptionId }, data: updateData });
+      // #870: continuing add-ons take today's price and pack size; marked / paused ones end at the old end
+      await db.merchantAddons.applyRenewal(tx, addonRenewal.lines, storedEnd, addonNow);
       if (paymentReceived) {
         await tx.payment.create({
           data: {
@@ -272,6 +283,9 @@ async function handleExtendSubscription(
         extensionDetails: {
           extensionDays,
           calculatedAmount,
+          // #870 (additive): the add-on part of the auto-calculated amount and the add-ons' monthly total
+          addonPrice: Math.round(addonPrice * 100) / 100,
+          addonMonthlyTotal: addonRenewal.monthlyTotal,
           oldEndDate: oldEndDate.toISOString(),
           newEndDate: endDate.toISOString(),
           addons: {

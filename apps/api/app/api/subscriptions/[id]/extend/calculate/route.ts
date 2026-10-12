@@ -12,6 +12,7 @@ import {
   normalizeBillingInterval,
   calculateSubscriptionPrice,
   calculateExtensionTotal,
+  addonRenewalLines,
   civilDaysBetween,
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
@@ -129,11 +130,16 @@ async function handleCalculateExtensionPrice(
     const usedDays = Math.max(0, civilDaysBetween(currentPeriodStart, now));
     const remainingDays = Math.max(0, civilDaysBetween(now, oldEndDate));
     
+    // #870: the add-ons that continue (today's price and pack size), same helper as renew / extend / change-plan
+    const { items: addonItems, catalog: addonCatalog } = await db.merchantAddons.renewalItems(subscription.merchantId, now);
+    const addonRenewal = addonRenewalLines(addonItems, addonCatalog, now);
+
     // Shared pure logic (no API call): keep extension proration consistent everywhere.
     const extensionCalc = calculateExtensionTotal({
       oldEndDate,
       newEndDate,
       plan: { basePrice: plan.basePrice || 0 },
+      addonMonthlyTotal: addonRenewal.monthlyTotal,
       selectedInterval: billingInterval,
     });
 
@@ -157,8 +163,9 @@ async function handleCalculateExtensionPrice(
     // Formula: (Extension Days / Selected Interval Days) * Selected Interval Price
     const extensionPrice = extensionCalc.extensionPrice;
     
-    // Total price = extension price only (remaining value is still being used)
-    const totalPrice = extensionPrice;
+    // Total price = extension price (plan) + add-ons for the same days (#870); the remaining value is still being used
+    const addonPrice = extensionCalc.addonPrice;
+    const totalPrice = extensionCalc.totalDue;
 
     // Return calculation result
     return NextResponse.json(
@@ -180,6 +187,9 @@ async function handleCalculateExtensionPrice(
         usedValue: Math.round(usedValue * 100) / 100,
         remainingValue: Math.round(remainingValue * 100) / 100,
         extensionPrice: Math.round(extensionPrice * 100) / 100,
+        // #870 (additive): the add-on part and the add-ons' monthly total
+        addonMonthlyTotal: addonRenewal.monthlyTotal,
+        addonPrice: Math.round(addonPrice * 100) / 100,
         totalPrice: Math.round(totalPrice * 100) / 100,
         currency: plan.currency || 'VND',
         breakdown: {
@@ -204,7 +214,7 @@ async function handleCalculateExtensionPrice(
         formula: {
           step1: `Current Plan (${plan.name}): ${usedDays} days used / ${currentPeriodDays} days = ${formatCurrency(usedValue, (plan.currency || 'VND') as never)} used, ${remainingDays} days remaining = ${formatCurrency(remainingValue, (plan.currency || 'VND') as never)} remaining (still in use)`,
           step2: `Extension: ${extensionDays} days / ${selectedPeriodDays} days × ${formatCurrency(periodPrice, (plan.currency || 'VND') as never)} = ${formatCurrency(extensionPrice, (plan.currency || 'VND') as never)}`,
-          step3: `Total: Extension Price = ${formatCurrency(extensionPrice, (plan.currency || 'VND') as never)} (Remaining value ${formatCurrency(remainingValue, (plan.currency || 'VND') as never)} continues to be used)`
+          step3: `Total: Extension Price = ${formatCurrency(extensionPrice, (plan.currency || 'VND') as never)}${addonPrice > 0 ? ` + add-ons ${formatCurrency(addonPrice, (plan.currency || 'VND') as never)} = ${formatCurrency(totalPrice, (plan.currency || 'VND') as never)}` : ''} (Remaining value ${formatCurrency(remainingValue, (plan.currency || 'VND') as never)} continues to be used)`
         },
         addons: {
           count: addons.length,

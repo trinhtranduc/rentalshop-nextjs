@@ -11,6 +11,7 @@ export interface AdminMenuItemLike {
 const BLOG_PREFIX = '/posts';
 const MEDIA_PATH = '/media';
 const SYSTEM_USERS_PATH = '/system-users';
+const ADDON_PRICES_PATH = '/plans/addon-prices';
 
 function isBlogPath(href: string): boolean {
   return href === BLOG_PREFIX || href.startsWith(`${BLOG_PREFIX}/`) || href === MEDIA_PATH;
@@ -44,6 +45,12 @@ export function filterAdminMenuByRole<T extends AdminMenuItemLike>(
       MEDIA_PATH,
     ]);
     return items
+      // #850: OPS reads the add-on prices (ADMIN edits), so Plans keeps only that sub-item for OPS
+      .map((item) =>
+        item.href === '/plans' && item.subItems?.some((sub) => sub.href === ADDON_PRICES_PATH)
+          ? { ...item, href: ADDON_PRICES_PATH, subItems: item.subItems.filter((sub) => sub.href === ADDON_PRICES_PATH) }
+          : item
+      )
       .filter((item) => !hidden.has(item.href) && !isBlogPath(item.href))
       .map((item) => {
         if (item.href !== '/settings' || !item.subItems) {

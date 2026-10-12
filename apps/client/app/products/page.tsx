@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ImageSearchDialog, useFormatCurrency, useToast } from '@rentalshop/ui';
-import { useAuth, useCanExportData, useOutletsData, usePermissions } from '@rentalshop/hooks';
+import { useApiError, useAuth, useCanExportData, useOutletsData, usePermissions } from '@rentalshop/hooks';
 import { categoriesApi, formatDateKeyInTimeZone, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import type { Product, ProductFilters } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
@@ -25,6 +25,7 @@ import {
   filterKey,
   pageCheckState,
   parseListQuery,
+  heldElsewhereParams,
   scopedOutletFor,
   selectedCount,
   toApiFilters,
@@ -35,7 +36,7 @@ import {
   type Selection,
   type SortKey,
 } from './list/list-model';
-import { isBranchRole, roleMayCreateProducts } from './form/form-model';
+import { sharedFieldsLockedFor, roleMayCreateProducts } from './form/form-model';
 
 /** Board icon paths that the shell icon set does not have. */
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
@@ -143,11 +144,12 @@ export default function ProductsPage() {
   const t = useTranslations('products.web') as unknown as T;
   const money = useFormatCurrency();
   const { toastSuccess, toastError } = useToast();
+  const { translateError } = useApiError();
   const { user } = useAuth();
   const canExport = useCanExportData();
   const { canManageProducts, canCreateProducts, canUpdateProducts } = usePermissions();
-  // #825: only the shop owner deletes products (a product is shared by every branch)
-  const canDeleteProducts = canManageProducts && !isBranchRole((user as unknown as { role?: string } | null)?.role);
+  // #825: OUTLET_STAFF does not delete products (a product is shared by every branch)
+  const canDeleteProducts = canManageProducts && !sharedFieldsLockedFor((user as unknown as { role?: string } | null)?.role);
   const { outlets } = useOutletsData();
 
   const query = useMemo(() => parseListQuery((k) => searchParams.get(k)), [searchParams]);
@@ -269,6 +271,9 @@ export default function ProductsPage() {
         const { deleted, failed } = res.data;
         if (deleted === 0) throw new Error('delete');
         if (failed > 0) toastError(t('delete.partial', { deleted, failed }));
+        // #825: say which branches still hold the products that were not deleted
+        const held = heldElsewhereParams((res.data as { errors?: Parameters<typeof heldElsewhereParams>[0] }).errors);
+        if (held) toastError(translateError({ code: 'PRODUCT_HELD_BY_OTHER_OUTLETS', data: { messageParams: held } }));
         else toastSuccess(t('delete.done', { count: deleted }));
         setSelection(EMPTY_SELECTION);
       }

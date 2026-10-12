@@ -5,6 +5,9 @@
  * per Vietnam day, late returns for today); the day panel reads GET /api/calendar/orders/by-date
  * (hand-overs, and returns with `kind=return`) and, on today, the late returns of
  * GET /api/analytics/outlet-operations. Month and day are kept in the URL.
+ * #852: an owner with 2+ branches picks one branch or all (`?outlet=`); the routes keep it inside the shop.
+ * #849: the calendar routes stay open to an expired / paused / cancelled / past-due shop, so the page reads the
+ * subscription status and shows its retry cards, like the other pages.
  */
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -19,15 +22,19 @@ import {
   calendarApi,
   getLocalDateKey,
   parseApiResponse,
+  subscriptionsApi,
   type CalendarOrderSummary,
 } from '@rentalshop/utils';
 import { useShopToday } from '../hooks/useShopToday';
 import { ORDER_STATUS } from '@rentalshop/constants';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { formatDayLabel } from '../dashboard/overview-model';
+import { showsBranchPicker } from '../dashboard/branch-model';
+import { useBranchOptions } from '../dashboard/useBranchOptions';
 import { Skeleton, cardClass, outlineBtn, type Money, type T } from '../orders/list/parts';
 import {
   buildDayRow,
+  calendarOutletId,
   cellLabel,
   dayCounts,
   isDayKey,
@@ -37,6 +44,7 @@ import {
   mondayFirst,
   parseMonth,
   shiftMonth,
+  subscriptionBlocked,
   type CountResponseLike,
   type DayCount,
   type DayOrderLike,
@@ -116,7 +124,7 @@ function useDaySection(day: string, kind: DayRowKind, todayKey: string, outletId
 }
 
 /** Late returns (planned return before today) for today's panel. */
-function useLateReturns(enabled: boolean, todayKey: string, nonce: number): DayRow[] {
+function useLateReturns(enabled: boolean, todayKey: string, nonce: number, outletId?: number): DayRow[] {
   const [rows, setRows] = useState<DayRow[]>([]);
   useEffect(() => {
     if (!enabled) {
@@ -125,7 +133,7 @@ function useLateReturns(enabled: boolean, todayKey: string, nonce: number): DayR
     }
     let live = true;
     analyticsApi
-      .getOutletOperations()
+      .getOutletOperations(outletId ? [outletId] : undefined)
       .then((res) => {
         if (!live || !res.success || !res.data) return;
         setRows(res.data.overdueReturns.orders.map((o) => buildDayRow(o as DayOrderLike, 'return', todayKey, toDayKey)));
@@ -134,7 +142,7 @@ function useLateReturns(enabled: boolean, todayKey: string, nonce: number): DayR
     return () => {
       live = false;
     };
-  }, [enabled, todayKey, nonce]);
+  }, [enabled, todayKey, nonce, outletId]);
   return rows;
 }
 
@@ -145,7 +153,14 @@ function CalendarContent() {
   const t = useTranslations('calendar.web') as unknown as T;
   const money = useFormatCurrency() as Money;
   const { user, loading: authLoading } = useAuth();
-  const outletId = user?.outletId ?? undefined;
+  const td = useTranslations('dashboard') as unknown as T;
+  // #852: owner with 2+ branches: one branch (`?outlet=`) or all; outlet roles stay on their outlet
+  const isMerchant = user?.role === 'MERCHANT';
+  const branchOptions = useBranchOptions(!authLoading && isMerchant);
+  const options = useMemo(() => branchOptions ?? [], [branchOptions]);
+  const picker = showsBranchPicker(user?.role, options);
+  const outletId = isMerchant ? calendarOutletId(searchParams.get('outlet'), options, picker) : (user?.outletId ?? undefined);
+  const branchesReady = !isMerchant || branchOptions !== null;
 
   const todayKey = useShopToday();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
@@ -174,7 +189,7 @@ function CalendarContent() {
   const [countState, setCountState] = useState<{ loading: boolean; failed: boolean }>({ loading: true, failed: false });
   const [nonce, setNonce] = useState(0);
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !branchesReady) return;
     let live = true;
     setCountState({ loading: true, failed: false });
     calendarApi
@@ -189,12 +204,33 @@ function CalendarContent() {
     return () => {
       live = false;
     };
-  }, [authLoading, user, outletId, month.month, month.year, todayKey, nonce]);
+  }, [authLoading, user, branchesReady, outletId, month.month, month.year, todayKey, nonce]);
 
-  const ready = !authLoading && !!user;
+  // #849: blocked subscription -> the month and day retry cards; Thử lại reads the status again (nonce)
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let live = true;
+    subscriptionsApi
+      .getCurrentUserSubscriptionStatus()
+      .then((res) => live && setBlocked(subscriptionBlocked(res)))
+      .catch(() => live && setBlocked(false));
+    return () => {
+      live = false;
+    };
+  }, [authLoading, user, nonce]);
+  const retryAll = () => setNonce((n) => n + 1);
+
+  const ready = !authLoading && !!user && branchesReady;
+  const setOutlet = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set('outlet', value);
+    else params.delete('outlet');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
   const pickups = useDaySection(selected, 'pickup', todayKey, outletId, ready, nonce);
   const returns = useDaySection(selected, 'return', todayKey, outletId, ready, nonce);
-  const lateRows = useLateReturns(ready && selected === todayKey, todayKey, nonce);
+  const lateRows = useLateReturns(ready && selected === todayKey, todayKey, nonce, outletId);
   const returnRows = selected === todayKey ? mergeReturns(returns.rows, lateRows) : returns.rows;
   const lateExtra = returnRows.length - returns.rows.length;
 
@@ -227,6 +263,22 @@ function CalendarContent() {
           <button type="button" onClick={() => setUrl(monthOfKey(todayKey), todayKey)} className={`${outlineBtn} h-9 text-sm`}>
             {t('today')}
           </button>
+          {picker && (
+            <select
+              data-calendar-branch
+              aria-label={td('home.branches.label')}
+              value={outletId ?? ''}
+              onChange={(e) => setOutlet(e.target.value)}
+              className="h-9 max-w-[260px] rounded-[10px] border border-ar-primary bg-ar-primary-soft px-2.5 text-sm font-semibold text-ar-primary-ink"
+            >
+              <option value="">{td('home.branches.allBranches')}</option>
+              {options.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.isActive ? o.name : `${o.name} (${td('home.branches.inactive')})`}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm text-ar-ink-2">
           <span className="flex items-center gap-1.5">
@@ -253,17 +305,17 @@ function CalendarContent() {
               </span>
             ))}
           </div>
-          {countState.failed && (
+          {(countState.failed || blocked) && (
             <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-ar-subtle px-4 py-3 text-sm text-ar-muted">
               <span>{t('loadFailed')}</span>
-              <button type="button" onClick={() => setNonce((n) => n + 1)} className="h-8 rounded-[10px] border border-ar-line px-3 text-sm font-semibold text-ar-ink hover:bg-ar-subtle">
+              <button type="button" onClick={retryAll} className="h-8 rounded-[10px] border border-ar-line px-3 text-sm font-semibold text-ar-ink hover:bg-ar-subtle">
                 {t('retry')}
               </button>
             </div>
           )}
           <div className="grid grid-cols-7" aria-busy={countState.loading || undefined}>
             {cells.map((c) => {
-              const count = c.inMonth ? counts.get(c.key) : undefined;
+              const count = c.inMonth && !blocked ? counts.get(c.key) : undefined;
               const isSel = c.key === selected;
               return (
                 <button
@@ -305,9 +357,9 @@ function CalendarContent() {
           </div>
           <DaySection
             kind="pickup"
-            heading={t('sections.pickups', { count: pickups.total })}
-            rows={pickups.rows}
-            state={pickups}
+            heading={t('sections.pickups', { count: blocked ? 0 : pickups.total })}
+            rows={blocked ? [] : pickups.rows}
+            state={{ ...pickups, failed: pickups.failed || blocked, hasMore: pickups.hasMore && !blocked, retry: blocked ? retryAll : pickups.retry }}
             empty={t('emptyPickups')}
             weekdays={weekdays}
             t={t}
@@ -315,9 +367,9 @@ function CalendarContent() {
           />
           <DaySection
             kind="return"
-            heading={t('sections.returns', { count: returns.total + lateExtra })}
-            rows={returnRows}
-            state={returns}
+            heading={t('sections.returns', { count: blocked ? 0 : returns.total + lateExtra })}
+            rows={blocked ? [] : returnRows}
+            state={{ ...returns, failed: returns.failed || blocked, hasMore: returns.hasMore && !blocked, retry: blocked ? retryAll : returns.retry }}
             empty={t('emptyReturns')}
             weekdays={weekdays}
             t={t}

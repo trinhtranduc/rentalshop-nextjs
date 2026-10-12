@@ -368,7 +368,8 @@
     "stock": {
       "left": "Còn {available}/{total}",
       "out": "Hết",
-      "renting": "{count} đang thuê"
+      "renting": "{count} đang thuê",
+      "otherOutlets": "Chi nhánh khác còn {count}"
     },
     "price": {
       "perHour": "{price}/giờ"
@@ -534,7 +535,8 @@
       "costPrice": "Giá vốn",
       "costHint": "Chỉ chủ cửa hàng và quản lý thấy.",
       "staffPrices": "Giá thuê và giá bán do chủ cửa hàng đặt.",
-      "branchLocked": "Tên, ảnh, giá, danh mục và mã do chủ shop sửa. Bạn chỉ cập nhật số lượng của chi nhánh mình.",
+      "branchLocked": "Nhân viên không sửa được tên, ảnh, giá, danh mục và mã. Bạn chỉ cập nhật số lượng của chi nhánh mình.",
+      "branchNotHeld": "Chi nhánh của bạn chưa có sản phẩm này, nên ở đây chỉ sửa được số lượng tại chi nhánh mình.",
       "quantity": "Số lượng",
       "quantityAt": "Tại {outlet}",
       "perOutlet": "Số lượng ở mỗi chi nhánh",
@@ -618,7 +620,9 @@
       "updated": "Cập nhật lúc",
       "notFound": "Không tìm thấy sản phẩm.",
       "loadFailed": "Không tải được sản phẩm.",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "otherOutletsTitle": "Tồn chi nhánh khác",
+      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê."
     },
     "orders": {
       "back": "Quay lại sản phẩm",

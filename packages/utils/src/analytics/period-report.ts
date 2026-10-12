@@ -138,6 +138,26 @@ export interface AnalyticsPeriodReport {
   topProducts: any[];
   topCustomers: any[];
   topOutlets: TopOutletRank[];
+  /** #827: one row per outlet in scope, only with `byOutlet=1`; the rows add up to `revenue` */
+  byOutlet?: AnalyticsOutletRow[];
+}
+
+/** #827: one outlet's share of the period, same rules as the totals (cancelled left out, civil days) */
+export interface AnalyticsOutletRow {
+  outletId: number;
+  outletName: string;
+  /** Σ = `revenue.totalOrderValue` */
+  orderValue: number;
+  /** Σ = `revenue.collected` (no collateral) */
+  collected: number;
+  /** Σ = `revenue.cashCollected` (collateral included; the Thực thu card) */
+  cashCollected: number;
+  /** Σ = `revenue.outstanding` */
+  outstanding: number;
+  /** Orders created in the period, not cancelled; Σ = `orderValueByType.rent.orders + sale.orders` */
+  newOrders: number;
+  /** RENT orders handed over and not back yet (now), same rule as outlet-operations `cash.depositsHeld.orders` */
+  collateralHeldOrders: number;
 }
 
 type DbApi = {
@@ -558,6 +578,76 @@ export interface BuildAnalyticsPeriodReportParams {
   userRole: string;
   /** IANA zone whose civil days and months the report uses (default Vietnam, #355) */
   timeZone?: string;
+  /** #827: outlets to break the period down by (`byOutlet`); omitted → no `byOutlet` */
+  byOutletIds?: number[];
+}
+
+/**
+ * #827: the period per outlet with the functions behind the totals: `summarizeOrderValue` /
+ * `splitOrderValueByType` on the orders created in the range, `computeIncomePeriodSummary` per outlet for the
+ * money collected, and RENT orders PICKUPED now for the collateral held. Rows follow `outletIds`.
+ */
+export async function computePeriodByOutlet(
+  prisma: PrismaClient,
+  params: { startDate: string; endDate: string; outletIds: number[]; timeZone?: string }
+): Promise<AnalyticsOutletRow[]> {
+  const { startDate, endDate, outletIds, timeZone = SHOP_TIMEZONE } = params;
+  if (outletIds.length === 0) return [];
+  const startKey = toDateKeyInTimeZone(startDate, timeZone);
+  const endKey = toDateKeyInTimeZone(endDate, timeZone);
+  if (!startKey || !endKey) throw new Error(`Invalid period: ${startDate}..${endDate}`);
+  const { start, end } = getUtcRangeForDateKeys({ from: startKey, to: endKey }, timeZone);
+
+  const [outlets, created, summaries, held] = await Promise.all([
+    prisma.outlet.findMany({ where: { id: { in: outletIds } }, select: { id: true, name: true } }),
+    prisma.order.findMany({
+      where: {
+        outletId: { in: outletIds },
+        deletedAt: null,
+        createdAt: { gte: start, lte: end },
+        status: { not: ORDER_STATUS.CANCELLED as any }
+      } as any,
+      select: { outletId: true, orderType: true, status: true, totalAmount: true, depositAmount: true },
+      take: 10000
+    }),
+    Promise.all(
+      outletIds.map((outletId) =>
+        computeIncomePeriodSummary(prisma, {
+          startDate,
+          endDate,
+          outletFilter: { outletId },
+          includeDailyPeriods: false,
+          timeZone
+        })
+      )
+    ),
+    Promise.all(
+      outletIds.map((outletId) =>
+        prisma.order.count({
+          where: { outletId, orderType: ORDER_TYPE.RENT as any, status: ORDER_STATUS.PICKUPED as any, deletedAt: null } as any
+        })
+      )
+    )
+  ]);
+
+  const nameOf = new Map(outlets.map((o: { id: number; name: string }) => [o.id, o.name]));
+  return outletIds.map((outletId, i) => {
+    const mine = created.filter((o: any) => o.outletId === outletId);
+    const value = summarizeOrderValue(mine);
+    const byType = splitOrderValueByType(mine);
+    const summary = summaries[i].summary;
+    const flow = summary.collateralFlow;
+    return {
+      outletId,
+      outletName: nameOf.get(outletId) ?? '',
+      orderValue: value.totalOrderValue,
+      collected: summary.totalCollected,
+      cashCollected: summary.totalCollected + (flow?.received || 0) - (flow?.returned || 0),
+      outstanding: value.outstanding,
+      newOrders: byType.rent.orders + byType.sale.orders,
+      collateralHeldOrders: held[i]
+    };
+  });
 }
 
 /**
@@ -568,7 +658,7 @@ export async function buildAnalyticsPeriodReport(
   db: DbApi,
   params: BuildAnalyticsPeriodReportParams
 ): Promise<AnalyticsPeriodReport> {
-  const { startDate, endDate, groupBy, limit, outletFilter, userRole, timeZone = SHOP_TIMEZONE } = params;
+  const { startDate, endDate, groupBy, limit, outletFilter, userRole, timeZone = SHOP_TIMEZONE, byOutletIds } = params;
   // Civil days of `timeZone` (#355): 2026-10-02 in Vietnam is 2026-10-01T17:00Z .. 2026-10-02T16:59:59.999Z
   const startKey = toDateKeyInTimeZone(startDate, timeZone);
   const endKey = toDateKeyInTimeZone(endDate, timeZone);
@@ -994,7 +1084,8 @@ export async function buildAnalyticsPeriodReport(
     computeOrderValue(),
     computeExpectedCollected(),
     computeExpectedCash(),
-    computeSeriesCollateral()
+    computeSeriesCollateral(),
+    byOutletIds ? computePeriodByOutlet(prisma, { startDate, endDate, outletIds: byOutletIds, timeZone }) : Promise.resolve(null)
   ]);
 
   const valueOr = <T>(result: PromiseSettledResult<T>, fallback: T, label: string): T => {
@@ -1072,6 +1163,8 @@ export async function buildAnalyticsPeriodReport(
     }
   }
 
+  const byOutletRows = valueOr<AnalyticsOutletRow[] | null>(settled[10] as PromiseSettledResult<AnalyticsOutletRow[] | null>, null, 'byOutlet');
+
   const totalOrdersFromOps =
     operational?.orderCounts != null
       ? operational.orderCounts.new +
@@ -1117,6 +1210,8 @@ export async function buildAnalyticsPeriodReport(
     series,
     topProducts: valueOr(settled[3], [], 'topProducts'),
     topCustomers: valueOr(settled[4], [], 'topCustomers'),
-    topOutlets: valueOr(settled[5], paginateRanked([], 1, limit), 'topOutlets').items
+    topOutlets: valueOr(settled[5], paginateRanked([], 1, limit), 'topOutlets').items,
+    // #827: left out when not asked for or when it failed; nothing else changes
+    ...(byOutletRows ? { byOutlet: byOutletRows } : {})
   };
 }

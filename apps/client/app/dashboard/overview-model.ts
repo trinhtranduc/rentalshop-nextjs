@@ -4,8 +4,9 @@
  * `toDayKey` for ISO instants, so the logic is the same under any machine TZ.
  */
 
-export type OverviewPeriod = 'today' | '7d' | 'month' | 'custom';
-export const OVERVIEW_PERIODS: OverviewPeriod[] = ['today', '7d', 'month', 'custom'];
+export type OverviewPeriod = 'today' | '7d' | 'month' | 'lastMonth' | 'custom';
+/** #827: "Tháng trước" = the previous calendar month of the shop's day */
+export const OVERVIEW_PERIODS: OverviewPeriod[] = ['today', '7d', 'month', 'lastMonth', 'custom'];
 
 export interface DayRange {
   startDate: string;
@@ -51,6 +52,10 @@ export function periodRange(period: OverviewPeriod, todayKey: string, custom?: {
       const startDate = `${todayKey.slice(0, 7)}-01`;
       const nextMonth = `${addDays(startDate, 31).slice(0, 7)}-01`;
       return { startDate, endDate: addDays(nextMonth, -1) };
+    }
+    case 'lastMonth': {
+      const endDate = addDays(`${todayKey.slice(0, 7)}-01`, -1);
+      return { startDate: `${endDate.slice(0, 7)}-01`, endDate };
     }
     case 'custom': {
       const from = isDayKey(custom?.from) ? custom!.from! : null;

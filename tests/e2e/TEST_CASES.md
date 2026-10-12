@@ -50,7 +50,8 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 | Tài khoản hết hạn, hết gói, chạm giới hạn gói | BF-SUB-01..58 | WEB-SUB-01..27 | MOB-SUB-01..10 (đã viết, chưa chạy) | MOB-SUB: expired-trial, paused, past-due của owner chạy một phần |
 | Gia hạn, đổi gói: giá và ngày (#779) | BF-BILL-01..12, BF-PLAN-01..17 | — | — | — |
 | Tài khoản staff | BF-STAFF-01..26, BF-ROLE (-staff), BF-SCOPE | WEB-ROLE (staff) | `test8StaffRestrictions`, `test8bStaffNoHistory`, `test8eRoleScreens` | chưa chạy |
-| Tài khoản kho | BF-INV-01..17, BF-ROLE (-kho) | WEB-ROLE (kho) | `test8bInventoryRole`, `test8eRoleScreens` | chưa chạy |
+| Tài khoản kho | BF-INV-01..18, BF-ROLE (-kho) | WEB-ROLE (kho) | `test8bInventoryRole`, `test8eRoleScreens` | chưa chạy |
+| Nhiều chi nhánh: ai quản lý chi nhánh, giới hạn gói, tồn từng chi nhánh, xóa sản phẩm, Tổng quan theo chi nhánh | BF-BRANCH-01..43 | — | — | — |
 | Không hiện mã lỗi thô | `tests/error-codes-translated.test.ts` (PR #743) | bộ dò khoá thô trong WEB-ROLE, WEB-SUB, WEB-UI | `rawKeys` trong `test8e`, `test10*` | quan sát tay (không thấy mã thô) |
 | Mọi tính năng giao diện web | — | WEB-UI | — | — |
 
@@ -535,7 +536,7 @@ Mỗi nhóm tạo riêng gói (Plan), cửa hàng, MERCHANT, OUTLET_STAFF và OU
 | ID | Case | Expected |
 |---|---|---|
 | BF-SUB-34 | Khách hàng: merchant và staff dùng chung giới hạn | tạo đến giới hạn được; thêm 1 → 422 `PLAN_LIMIT_EXCEEDED` (body `{success:false, code, error}`), không ghi dòng |
-| BF-SUB-35 | Sản phẩm: merchant, staff, kho | như trên |
+| BF-SUB-35 | Sản phẩm: merchant, kho (staff không tạo sản phẩm từ #825: 403 `INSUFFICIENT_PERMISSIONS`) | như trên |
 | BF-SUB-36 | Đơn: staff, kho, merchant | như trên; tồn chi nhánh không đổi |
 | BF-SUB-37 | Chi nhánh | merchant POST `/api/outlets`: như trên |
 | BF-SUB-38 | Người dùng: hai route dùng chung giới hạn | `POST /api/users` và `/api/merchants/{id}/users`: như trên |
@@ -640,7 +641,7 @@ Không tự động được: `SUBSCRIPTION_PERIOD_ENDED` / `SUBSCRIPTION_PERIOD
 | BF-CART-07 | `excludeOrderId` khi sửa | giữ đơn vị của chính đơn đó, không của đơn khác |
 | BF-CART-08 | Giỏ đơn bán | `orderType: SALE`, không ngày: qty ≤ tồn ok, +1 bị từ chối |
 | BF-CART-09 | Khác biệt trường (Q10) | `effectivelyAvailable` là 3 ở check lẻ và giỏ; `available`/`renting` là 3/2 ở check lẻ nhưng 5/0 ở giỏ và detail |
-| BF-CART-10 | Sản phẩm không có ở chi nhánh | giỏ `error: PRODUCT_OUTLET_NOT_FOUND`; check lẻ 404 |
+| BF-CART-10 | Sản phẩm tạo ở chi nhánh khác (từ #824 có dòng tồn 0 ở mọi chi nhánh) | giỏ báo còn 0 (`isAvailable: false`), không lỗi; check lẻ 200 |
 
 ## BF-DET — Chi tiết đơn hàng (`work-stock-calendar.e2e.test.js`)
 
@@ -676,6 +677,88 @@ Không tự động được: `SUBSCRIPTION_PERIOD_ENDED` / `SUBSCRIPTION_PERIOD
 BF-INV-09 đã sửa: kiểm vai trò chạy trước kiểm gói, nên gói đã đầy trả 422 `PLAN_LIMIT_EXCEEDED` và test khẳng định đúng điều đó; nếu người dùng được tạo, test xoá nó.
 Kết quả: 133 ca mới mỗi múi giờ (54 + 79); 3 file (work-stock, roles-flows, inventory-role) 144 đạt, 0 lỗi, 6 known-bug; cả bộ business (655 ca) lượt hai: 583 đạt, 0 lỗi, 71 known-bug, ở cả UTC và Asia/Ho_Chi_Minh.
 Không tự động được ở mức API: giao một phần của đơn (không có API; chỉ có sửa số lượng trước khi giao, BF-DET-02); thanh toán đơn (Q5); chữ "N / M" và màu trên màn hình (chỉ chứng minh được bộ đếm và danh sách app đọc); qua nửa đêm thật (dùng 00:30 và 23:30 hai bên); đăng nhập staff / kho của chi nhánh khác (đăng nhập bị giới hạn 10 lần / 15 phút / IP).
+
+## BF-BRANCH — Nhiều chi nhánh (`branches.e2e.test.js`, #844; luật của #823: #834, #829/#837, #831, #840)
+
+Mỗi nhóm tự tạo merchant, gói, chi nhánh và user riêng (`helpers/subscription.js`), không dùng shop seed. Mỗi ca kiểm
+cả câu trả lời của API và dòng dữ liệu (`Outlet`, `OutletStock` dạng `tồn/còn/đang thuê`, `Product`, `Order`,
+`PlanLimitAddon`). A = chi nhánh mặc định, B = chi nhánh thứ hai.
+
+| ID | Ca | Bước | Mong đợi |
+|---|---|---|---|
+| BF-BRANCH-01 | Chủ shop thêm chi nhánh | MERCHANT `POST /api/outlets` | 200 `OUTLET_CREATED_SUCCESS`; dòng Outlet đúng tên/địa chỉ/sđt, đang hoạt động, `isDefault` false, đúng merchant |
+| BF-BRANCH-02 | Chủ shop tắt, bật lại, xóa chi nhánh | `PUT ?id {isActive:false}`, `{isActive:true}`, `DELETE ?id` | 200 mỗi bước; `isActive` false → true → false; danh sách chi nhánh theo đúng |
+| BF-BRANCH-03 | Thêm qua route merchant | `POST /api/merchants/[id]/outlets` | 200, dòng mới hoạt động |
+| BF-BRANCH-04 | Admin chi nhánh không thêm chi nhánh | OUTLET_ADMIN gọi cả 2 route tạo | 403 `FORBIDDEN`; số dòng Outlet không đổi |
+| BF-BRANCH-05 | Admin chi nhánh không tắt / xóa chi nhánh mình | `PUT isActive:false` (2 route), `DELETE` | 403 `FORBIDDEN`; chi nhánh vẫn hoạt động |
+| BF-BRANCH-06 | Admin chi nhánh sửa thông tin chi nhánh mình | `PUT` tên, địa chỉ, sđt (+ gửi lại `isActive:true`); route merchant sửa địa chỉ | 200; dòng Outlet đổi đúng |
+| BF-BRANCH-07 | Admin chi nhánh không sửa chi nhánh khác | `PUT /api/outlets?id=A`, `PUT /api/merchants/[id]/outlets/A` | 403 `FORBIDDEN` / 404 `OUTLET_NOT_FOUND`; dòng A không đổi |
+| BF-BRANCH-08 | Staff và kho không quản lý chi nhánh | tạo, sửa tên, tắt, xóa | 403 hết; Outlet không đổi |
+| BF-BRANCH-09 | Kho chỉ đọc chi nhánh mình | `GET /api/merchants/[id]/outlets/A` và `/B`, danh sách 2 route | A 200 `OUTLET_FOUND`; B 404 `OUTLET_NOT_FOUND`; danh sách chỉ có A |
+| BF-BRANCH-10 | Vượt giới hạn gói khi thêm | gói 2 chi nhánh, đã có 2; thêm qua 2 route | 422 `PLAN_LIMIT_EXCEEDED` cả hai; không thêm dòng |
+| BF-BRANCH-11 | Bật lại khi đã đủ giới hạn | gói 2: tạo B, tắt B, tạo C, bật B (2 route) | 422 `PLAN_LIMIT_EXCEEDED`; B vẫn tắt; 2 chi nhánh hoạt động |
+| BF-BRANCH-12 | Gói không ghi / ghi 0 chi nhánh = 1 | gói thiếu `outlets`; gói `outlets: 0`; thêm chi nhánh thứ 2 | 422 `PLAN_LIMIT_EXCEEDED`; vẫn 1 chi nhánh |
+| BF-BRANCH-13 | -1 không giới hạn | gói -1, thêm 4 | 5 chi nhánh hoạt động |
+| BF-BRANCH-14 | Add-on chi nhánh với gói 1 chi nhánh | ADMIN `POST /api/plan-limit-addons` và `/api/merchants/[id]/plan-limit-addons` với `outlets > 0`; rồi add-on `users: 2` | 422 `ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN`, không có dòng add-on; add-on user được (`0:2:true`); vẫn không thêm được chi nhánh |
+| BF-BRANCH-15 | Add-on chi nhánh với gói nhiều chi nhánh | gói 2, đủ 2; add-on `outlets: 1` | add-on được (`1:0:true`); thêm được chi nhánh thứ 3; thứ 4 → 422 |
+| BF-BRANCH-16 | Còn đơn đặt (RESERVED) thì không tắt / xóa | đơn RESERVED ở B; `PUT isActive:false` (2 route), `DELETE` | 409 `OUTLET_HAS_OPEN_ORDERS`, `data.openOrders` 1; B vẫn hoạt động, đơn RESERVED, tồn B `2/2/0` |
+| BF-BRANCH-17 | Đặt + đang thuê, rồi trả và huỷ | 1 RESERVED + 1 PICKUPED | xóa: 409, `openOrders` 2; trả đơn thuê: 409, 1; huỷ đơn đặt: tắt được 200 |
+| BF-BRANCH-18 | Còn tồn vẫn xóa được | B tồn 5, không đơn | 200 `OUTLET_DELETED_SUCCESS`; dòng tồn B giữ `5/5/0` |
+| BF-BRANCH-19 | User chi nhánh đã tắt | admin, staff, kho của B có phiên đang mở; chủ shop tắt B; rồi bật lại | phiên mở: 401 `OUTLET_DEACTIVATED`; đăng nhập: 403 `OUTLET_DEACTIVATED`; chủ shop và staff chi nhánh A vẫn dùng được; bật lại thì đăng nhập 200 |
+| BF-BRANCH-20 | Chi nhánh mới có tồn 0 | P1 tồn 3 ở A, P2 đã xóa; tạo C (`/api/outlets`) và D (route merchant) | P1: C và D `0/0/0`; P2 không có dòng ở C, D |
+| BF-BRANCH-21 | Sản phẩm mới có tồn 0 ở chi nhánh khác | B hoạt động, D đã tắt; tạo sản phẩm tồn 4 ở A | A `4/4/0`, B `0/0/0`, D không có dòng; số dòng = số chi nhánh hoạt động |
+| BF-BRANCH-22 | Migration bổ sung tồn 0 (`20261011120000_backfill_outlet_stock_zero`) | xóa vài dòng 0 bằng SQL; chạy file migration 2 lần trong một transaction rồi ROLLBACK | thêm `0/0/0` cho dòng thiếu; tồn đang có không đổi; không thêm cho sản phẩm đã xóa và chi nhánh đã tắt; lần 2 thêm 0 dòng; sau rollback DB như cũ |
+| BF-BRANCH-23 | Staff không tạo sản phẩm | OUTLET_STAFF `POST /api/products` | 403 `INSUFFICIENT_PERMISSIONS`; không có dòng Product |
+| BF-BRANCH-24 | Staff không sửa, không xóa | đổi tên/giá; `DELETE` sản phẩm chi nhánh mình có | 403 `INSUFFICIENT_PERMISSIONS`; tên, giá, tồn, `deletedAt` không đổi |
+| BF-BRANCH-25 | Admin chi nhánh và kho tạo sản phẩm | tồn ở A; tồn ở B; tồn A + B | A: 200, dòng A `3/3/0`, B `0/0/0`; có B: 403 `CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET`, không có dòng |
+| BF-BRANCH-26 | Sửa tên, giá khi chi nhánh mình có hàng | sản phẩm tồn ở A; sản phẩm chỉ B có | A: 200, tên/giá đổi; B: 403 `PRODUCT_NOT_AVAILABLE_AT_OUTLET`, không đổi |
+| BF-BRANCH-27 | Xóa khi chi nhánh mình có hàng | như trên với `DELETE` | A: 200, `deletedAt` có; B: 403 `PRODUCT_NOT_AVAILABLE_AT_OUTLET`, không xóa |
+| BF-BRANCH-28 | Tồn chỉ ghi ở chi nhánh mình | sản phẩm chỉ B có; ghi tồn B; ghi tồn A = 6 | B: 403 `CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET`, không đổi; A: 200, `6/6/0`, B giữ `4/4/0` |
+| BF-BRANCH-29 | Chi nhánh của shop khác trong `outletStock` | MERCHANT `PUT /api/products/[id]`; ADMIN `PUT /api/merchants/[id]/products/[pid]` | 404 `OUTLET_NOT_FOUND` cả hai; tên, giá, mọi dòng tồn giữ nguyên; không có dòng ở chi nhánh lạ |
+| BF-BRANCH-30 | Vai trò chi nhánh chưa gán chi nhánh | OUTLET_ADMIN `outletId` null tạo / sửa | 403 `OUTLET_REQUIRED`; không ghi gì |
+| BF-BRANCH-31 | Danh sách: thấy mọi sản phẩm, số của chi nhánh mình | staff, admin chi nhánh, kho; có / không `outletId=B` | thấy cả 2 sản phẩm; `totalStock`, `available` là của A (2 và 0) dù gửi `outletId=B` |
+| BF-BRANCH-32 | Shop một chi nhánh: admin chi nhánh và kho xóa được | sản phẩm chi nhánh mình có | 200 `PRODUCT_DELETED_SUCCESS`, `deletedAt` có |
+| BF-BRANCH-33 | Đang có đơn đặt / đang thuê thì không ai xóa được | 1 RESERVED + 1 PICKUPED; chủ shop, admin chi nhánh, kho xóa; trả, huỷ rồi xóa | 409 `PRODUCT_HAS_OPEN_ORDERS` cho mọi vai trò khi còn đơn mở; xong thì 200 |
+| BF-BRANCH-34 | Chi nhánh khác còn tồn: admin chi nhánh không xóa được (#847) | tồn A 1, B 2; OUTLET_ADMIN của A xóa; chủ shop đặt tồn B = 0; xóa lại | 409 `PRODUCT_HELD_BY_OTHER_OUTLETS`, `data.outlets` = `[{id B, tên B, stock 2, renting 0, openOrders 0}]`; không xóa, tồn giữ; sau khi B = 0: 200, đã xóa. (Kho: BF-INV-18) |
+| BF-BRANCH-35 | Đơn đặt ở chi nhánh khác cũng giữ hàng | tồn A 1, B 1, đơn RESERVED ở B; OUTLET_ADMIN của A xóa | 409, `data.outlets` = `[{B, stock 1, renting 0, openOrders 1}]`; không xóa, đơn vẫn RESERVED |
+| BF-BRANCH-36 | Chủ shop xóa sản phẩm nhiều chi nhánh có | | 200, `deletedAt` có |
+| BF-BRANCH-37 | Xóa nhiều (batch) bởi admin chi nhánh | `POST /api/products/batch-delete` [chỉ A có, A + B có]; rồi chỉ [A + B có] | 200 `PRODUCTS_BATCH_DELETED_SUCCESS` deleted 1 / failed 1, lỗi từng sản phẩm `PRODUCT_HELD_BY_OTHER_OUTLETS` kèm `outlets`; sản phẩm thứ nhất xóa, thứ hai không; chỉ sản phẩm bị giữ: 409 `PRODUCT_HELD_BY_OTHER_OUTLETS` |
+| BF-BRANCH-38 | Tổng quan từng chi nhánh (`byOutlet=1`) | A: thuê 300.000 cọc 100.000; B: bán 200.000, thuê 150.000 cọc 50.000 rồi huỷ | dòng A `{300.000, 100.000, 100.000, 200.000, 1}`, B `{200.000, 200.000, 200.000, 0, 1}` (orderValue, collected, cashCollected, outstanding, newOrders); tổng các dòng = `revenue` (newOrders = `orderValueByType` rent + sale); đơn huỷ không tính |
+| BF-BRANCH-39 | Chọn một chi nhánh (`outletIds=B`) | | chỉ dòng B; tổng = B |
+| BF-BRANCH-40 | `outletIds` của shop khác / sai dạng | | 403 `CROSS_MERCHANT_ACCESS_DENIED` / 400 `INVALID_QUERY` |
+| BF-BRANCH-41 | Admin chi nhánh luôn bị khoá vào chi nhánh mình | OUTLET_ADMIN của A gửi `outletIds=B&byOutlet=1` | chỉ dòng A; tổng = A |
+| BF-BRANCH-42 | Đơn của chủ shop ở B dùng tồn B | tồn A 2, B 2; đơn thuê ở B; giao, trả (PUT gửi kèm `outletId` B) | `Order.outletId` = B; giao: A `2/2/0`, B `2/1/1`; trả: cả hai `2/2/0` |
+| BF-BRANCH-42b | Đổi trạng thái như app gửi (`{status}` thôi) — đã sửa #851 | chủ shop (user có `outletId` = chi nhánh mặc định, như khi đăng ký) giao đơn của B | đơn vẫn ở B, B `2/1/1`; A không đổi |
+| BF-BRANCH-43 | Vai trò chi nhánh không tạo đơn ở chi nhánh khác | staff A gửi `outletId=B` | 403 `CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET`; không có đơn ở B, tồn B không đổi |
+
+## BF-ADD — Giá add-on do admin quản lý (`addon-prices.e2e.test.js`, #850; chốt của chủ shop 2026-10-11)
+
+Mỗi nhóm tự tạo merchant và gói riêng (gói 399.000 ₫/tháng), và tạo dòng giá với tên riêng. Kỳ 1 tháng được đặt
+bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi do test tự tính theo ngày Việt Nam.
+
+| ID | Ca | Bước | Mong đợi |
+|---|---|---|---|
+| BF-ADD-01 | Tạo bảng giá | ADMIN `POST /api/addon-prices`: +1 user 30.000, +2 user 40.000; `GET` | 201; đúng loại, số lượng mỗi gói, giá, `VND`, đang bán; danh sách có `shopsUsing` 0 |
+| BF-ADD-02 | Merchant không đụng bảng giá | MERCHANT gọi `GET/POST/PUT /api/addon-prices`, `POST /api/merchants/[id]/addons`; ADMIN gửi loại lạ, gói 0, giá âm | 403; 400 |
+| BF-ADD-03 | Sửa giá, tạm tắt, số lượng mỗi gói | đổi giá + số lượng mỗi gói khi chưa ai dùng; shop mua; đổi số lượng mỗi gói; tạm tắt | 200; 200 (đổi được cả khi đã có shop dùng, #870); 200 `isActive` false |
+| BF-ADD-04 | Báo giá giữa kỳ | `GET .../addons/quote?addonPriceId&packs=2` | `remainingDays` theo ngày VN; `amountDue` = round(40.000 ÷ 30 × 2 × ngày còn) (#870) |
+| BF-ADD-05 | Mua để vượt giới hạn user | 3/3 user; thêm user; mua 1 gói +2 user; thêm 3 user | 422 `PLAN_LIMIT_EXCEEDED`; mua 201, Payment `PLAN_CHANGE` đúng số tiền; 2 user được, user thứ 3 bị 422; giới hạn 3 + 2 = 5 |
+| BF-ADD-06 | Giá trong body bị bỏ qua | gửi `unitPrice: 1` | item lưu giá 40.000 từ bảng giá |
+| BF-ADD-07 | Shop dùng thử | TRIAL mua | thu 0 (`reason: trial`), không có Payment mới |
+| BF-ADD-08 | Gói chi nhánh | dòng outlets cho gói 1 chi nhánh; cho gói 3 chi nhánh | 422 `ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN`; 201 và giới hạn outlets 4 |
+| BF-ADD-09 | Tạm tắt | shop A mua; tạm tắt; shop B mua | B 422 `ADDON_PRICE_NOT_ON_SALE`; A vẫn có giới hạn khách 3 + 50 |
+| BF-ADD-10 | Sửa giá không đổi item đã mua | mua ở 30.000; đổi giá 35.000; mua lại | item cũ 30.000, item mới 35.000 |
+| BF-ADD-11 | Gỡ cuối kỳ | đánh dấu gỡ; hoàn tác; đánh dấu lại; hết kỳ | `endsAt` = cuối kỳ, giới hạn vẫn 5; sau cuối kỳ giới hạn 3, item không còn trong danh sách, không hoàn tác được |
+| BF-ADD-12 | Không gỡ khi đang dùng vượt | 4/4 user (3 + 1 add-on); đánh dấu gỡ | 422 `CANNOT_DELETE_ADDON_LIMIT_EXCEEDED` |
+| BF-ADD-13 | Gia hạn | 3 add-on: 2 × user (giá lên 32.000), 1 sản phẩm đã đánh dấu gỡ, 1 khách mà dòng giá đã tạm tắt; xem trước; `POST /renew` 1 tháng | xem trước và gia hạn: gói 399.000 + add-on 64.000; Payment = 463.000; `subscription.amount` = 399.000; chỉ item user được gia hạn, giá mới 32.000; 2 item còn lại có `endsAt` |
+| BF-ADD-14 | Route cũ | `GET` plan-limit-addons; `PUT`/`DELETE` item có giá; `PUT` add-on cũ miễn phí | thấy trường mới; 422 `PRICED_ADDON_READ_ONLY`; add-on cũ vẫn sửa được |
+| BF-ADD-15 | Dùng thử rồi gia hạn (#870) | TRIAL mua 1 gói +2 user 40.000; `POST /renew` 1 tháng | mua thu 0; Payment gia hạn = 399.000 + 40.000; ACTIVE |
+| BF-ADD-16 | Gia hạn thêm ngày có add-on (#870) | 2 × user 30.000; `extend/calculate` +10 ngày; `POST /extend` `PAYMENT_RECEIVED` không gửi `amount` | `addonMonthlyTotal` 60.000; `totalPrice` = phần gói + phần add-on (ngày ÷ ngày kỳ); Payment `PLAN_EXTENSION` = `totalPrice` |
+| BF-ADD-17 | Đổi số lượng mỗi gói khi đang dùng (#870) | shop mua gói +2 user; sửa dòng thành +3; gia hạn | 200; trước gia hạn giới hạn 3 + 2; sau gia hạn item `packSize` 3, cột users 3, giới hạn 3 + 3 |
+| BF-ADD-18 | Đổi sang gói 1 chi nhánh khi còn add-on chi nhánh (#870) | gói 3 chi nhánh + add-on chi nhánh, kỳ đã hết; đổi sang gói 1 chi nhánh; gỡ add-on; đổi lại | 422 `PLAN_CHANGE_REMOVE_OUTLET_ADDONS`, không có Payment, gói không đổi; sau khi gỡ: 200, Payment 399.000 |
+| BF-ADD-19 | Đổi gói từ dùng thử (#870) | TRIAL gói 0 ₫ + add-on user 30.000; đổi sang gói 399.000 | `addonPeriodPrice` 30.000, `addonCreditValue` 0; Payment `PLAN_CHANGE` 429.000; ACTIVE |
+| BF-ADD-20 | Tăng / giảm số gói (#870) | 1 gói +2 user; `PATCH packs: 3`; `PATCH packs: 1`; gia hạn | tăng: thu ngay round(40.000 ÷ 30 × 2 × ngày còn), cột users 6, giới hạn 9; giảm: không thu, `nextPacks` 1, giới hạn vẫn 9, xem trước gia hạn add-on 40.000; sau gia hạn packs 1, users 2, giới hạn 5 |
+| BF-ADD-21 | Kỳ dài hơn một chu kỳ (#870) | kỳ tháng đã gia hạn thêm, còn 60 ngày; mua 1 gói 40.000 | thu round(40.000 ÷ 30 × ngày còn) = 80.000 khi còn 60 ngày; Payment `PLAN_CHANGE` đúng số đó |
 
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 
@@ -896,7 +979,7 @@ Còn giữ bằng test:
 | #756, #757, #758 | mobile: thông báo gói bằng tiếng Anh trên Android, lý do bằng tiếng Việt ở app tiếng Anh, thêm sản phẩm khi gói bị chặn | ghi trong báo cáo Android |
 | #736 | nút Sửa và Thêm chi nhánh của staff và kho: đã ẩn (#746, #748), cần lật WEB-ROLE-10c/11c sau khi chạy lại | WEB-ROLE-10c, 11c |
 
-Đã sửa và đã vào `dev` (các ca là test thường): #504 (BF-QTY-04..12), #506 (BF-OVR-04), #707 (đơn huỷ hiện với giá trị 0, BF-STAT-01), #728 và #729 (BF-SUB-17..19, 48..50), #730 đến #732 (BF-ROLE-07..09), #733 đến #735, #737, #738, #740, #741, #744, #739, #742, #751.
+Đã sửa và đã vào `dev` (các ca là test thường): #504 (BF-QTY-04..12), #506 (BF-OVR-04), #707 (đơn huỷ hiện với giá trị 0, BF-STAT-01), #728 và #729 (BF-SUB-17..19, 48..50), #730 đến #732 (BF-ROLE-07..09), #733 đến #735, #737, #738, #740, #741, #744, #739, #742, #751, #851 (BF-BRANCH-42b).
 
 **Theo dõi chi nhánh (#745, PR #746):** web ẩn "Thêm chi nhánh" cho đến khi làm xong nhiều chi nhánh (`NEXT_PUBLIC_ENABLE_ADD_OUTLET=true` bật lại). WEB-SUB-24 (giới hạn gói chi nhánh qua giao diện) và WEB-UI-MAN (thêm chi nhánh) không còn nút để bấm: cần cập nhật theo.
 

@@ -56,10 +56,13 @@ export async function getPlanLimitAddonsByMerchant(merchantId: number) {
  * These are the addons that contribute to the total limits
  */
 export async function getActivePlanLimitAddonsByMerchant(merchantId: number) {
+  // #850: an item marked for removal (or not renewed) counts until its end (`endsAt`)
+  const now = new Date();
   return await prisma.planLimitAddon.findMany({
     where: { 
       merchantId,
-      isActive: true 
+      isActive: true,
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -112,7 +115,14 @@ export async function searchPlanLimitAddons(filters: PlanLimitAddonsQuery) {
   }
   
   if (isActive !== undefined) {
-    where.isActive = isActive;
+    // #850: "active" = still counting; an item past its end (removed at period end) is listed as inactive
+    const now = new Date();
+    if (isActive) {
+      where.isActive = true;
+      where.OR = [{ endsAt: null }, { endsAt: { gt: now } }];
+    } else {
+      where.OR = [{ isActive: false }, { endsAt: { lte: now } }];
+    }
   }
 
   // Calculate pagination

@@ -38,6 +38,7 @@ import {
   merchantHasLoyaltyFeature,
 } from '@rentalshop/loyalty';
 import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
+import { narrowOrderOutlets } from '../../../lib/order-outlet-ids';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
@@ -178,6 +179,14 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     if (user.role === USER_ROLE.MERCHANT) {
       // Merchants can see all outlets unless specifically filtering by outlet
       searchFilters.outletId = queryOutletId;
+      // #852: or by some of their outlets (`outletIds=1,3`, each checked); a single outletId wins
+      if (!queryOutletId) {
+        const narrowed = await narrowOrderOutlets(db, user.role, userScope.merchantId, searchParams.get('outletIds'));
+        if (!narrowed.ok) {
+          return NextResponse.json(ResponseBuilder.error(narrowed.code), { status: narrowed.status });
+        }
+        if (narrowed.outletIds) searchFilters.outletId = { in: narrowed.outletIds };
+      }
     } else if (isOutletRole(user.role)) {
       // Outlet users can only see orders from their assigned outlet
       searchFilters.outletId = userScope.outletId;
@@ -1211,8 +1220,9 @@ export const PUT = withPermissions(['orders.update'])(async (request, { user, us
 
     const body = await request.json();
     
-    // ✅ Auto-fill outletId from userScope if not provided and user has outletId
-    if (!body.outletId && userScope.outletId) {
+    // ✅ Auto-fill outletId for outlet users only. A MERCHANT login carries the default outlet;
+    // filling it would move an order at another branch there (#851). Apps send only {status}.
+    if (!body.outletId && userScope.outletId && isOutletRole(user.role)) {
       console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
       body.outletId = userScope.outletId;
     }

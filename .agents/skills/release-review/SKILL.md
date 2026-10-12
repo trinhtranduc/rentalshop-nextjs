@@ -19,7 +19,10 @@ merges, and watches the deploy. Never push to `main-real`, merge, or run a produ
 ```bash
 git fetch origin main-real dev
 git rev-parse --is-shallow-repository   # true → git fetch --unshallow origin
+git fetch origin --tags
+REL=$(git describe --tags --abbrev=0 --match 'release-*' origin/main-real)   # last production deploy (#864)
 BASE=origin/main-real HEAD_REF=origin/dev   # or the release PR head
+git log --oneline "$REL"..$BASE   # empty, or a hotfix deploy whose tag is missing: tag it first
 git log --oneline --no-merges $BASE..$HEAD_REF | wc -l
 git diff --stat $BASE...$HEAD_REF | tail -1
 ```
@@ -194,6 +197,7 @@ Golden tests: <files> green
 - [ ] Old iOS and Android builds from the stores: log in, list orders, create a rental, pick up, return, Overview
 - [ ] Web: log in, create an order, print a receipt
 - [ ] Rollback: revert this merge on main-real; schema stays (additive)
+- [ ] Release tag: the `Release tag` workflow ran and `release-YYYY-MM-DD[.n]` points at the merge (`git tag --points-at origin/main-real`); the GitHub Release lists the PRs
 
 ## Review
 

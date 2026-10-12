@@ -25,6 +25,20 @@ enum APIErrorText {
         if isSubscriptionFamily(key) { return lookup("SUBSCRIPTION_GENERIC") }
         return nil
     }
+
+    /// #859: the sentence with its `{name}` placeholders filled from `data.messageParams`
+    /// (e.g. `{outlets}` → "Main (3), Kho (0)"). A sentence left with a placeholder uses `<CODE>_NO_PARAMS`.
+    static func message(forCode code: String, params: [String: String],
+                        lookup: (String) -> String = { $0.localized() }) -> String? {
+        guard var text = message(forCode: code, lookup: lookup) else { return nil }
+        for (name, value) in params where !value.isEmpty {
+            text = text.replacingOccurrences(of: "{\(name)}", with: value)
+        }
+        guard text.range(of: "\\{[A-Za-z]+\\}", options: .regularExpression) != nil else { return text }
+        let fallbackKey = code.uppercased() + "_NO_PARAMS"
+        let fallback = lookup(fallbackKey)
+        return fallback == fallbackKey ? text : fallback
+    }
 }
 
 /// API Error Codes - Matches backend ErrorCode enum
@@ -144,6 +158,12 @@ enum APIErrorCode: String, Codable, CaseIterable {
     case outletNotFound = "OUTLET_NOT_FOUND"
     case productNotFound = "PRODUCT_NOT_FOUND"
     case productHasOpenOrders = "PRODUCT_HAS_OPEN_ORDERS"
+    // #859: multi-branch codes (#823)
+    case outletDeactivated = "OUTLET_DEACTIVATED"
+    case productSharedFieldsMerchantOnly = "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY"
+    case productDeleteMerchantOnly = "PRODUCT_DELETE_MERCHANT_ONLY"
+    case productHeldByOtherOutlets = "PRODUCT_HELD_BY_OTHER_OUTLETS"
+    case outletHasOpenOrders = "OUTLET_HAS_OPEN_ORDERS"
     case stockBelowRented = "STOCK_BELOW_RENTED"
     case orderNotFound = "ORDER_NOT_FOUND"
     case customerNotFound = "CUSTOMER_NOT_FOUND"
@@ -539,7 +559,7 @@ enum APIErrorCode: String, Codable, CaseIterable {
     var defaultMessage: String {
         // Try to get from Localizable.strings first (using error code as key)
         let localizedKey = self.rawValue
-        let localizedMessage = APIErrorText.message(forCode: localizedKey) ?? localizedKey
+        let localizedMessage = APIErrorText.message(forCode: localizedKey, params: [:]) ?? localizedKey
 
         // If localization returns the key itself (not found), use fallback
         if localizedMessage == localizedKey {
@@ -734,6 +754,11 @@ struct APIErrorMessages {
         .outletNotFound: "Outlet not found",
         .productNotFound: "Product not found",
         .productHasOpenOrders: "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.",
+        .outletDeactivated: "This branch has been deactivated. Please contact the shop owner.",
+        .productSharedFieldsMerchantOnly: "Staff cannot change the name, prices, photos, category or other shared details of a product; ask the shop owner, the branch manager or the warehouse staff. You can update your branch's stock.",
+        .productDeleteMerchantOnly: "Staff cannot delete products; ask the shop owner, the branch manager or the warehouse staff.",
+        .productHeldByOtherOutlets: "Another branch still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.",
+        .outletHasOpenOrders: "This branch still has orders that are reserved or being rented. Complete or cancel them before turning the branch off.",
         .stockBelowRented: "Quantity cannot be lower than the units out on rent.",
         .orderNotFound: "Order not found",
         .customerNotFound: "Customer not found",
@@ -1096,6 +1121,11 @@ struct APIErrorStatusCodes {
         .outletNotFound: 404,
         .productNotFound: 404,
         .productHasOpenOrders: 409,
+        .outletDeactivated: 403,
+        .productSharedFieldsMerchantOnly: 403,
+        .productDeleteMerchantOnly: 403,
+        .productHeldByOtherOutlets: 409,
+        .outletHasOpenOrders: 409,
         .stockBelowRented: 400,
         .orderNotFound: 404,
         .customerNotFound: 404,
@@ -1348,12 +1378,19 @@ struct APIErrorResponse: Codable {
     let code: String?
     let message: String?
     let error: String?
+    /// #859: `data.messageParams` of the error body (string values only), for `{name}` placeholders.
+    var messageParams: [String: String] = [:]
     
     enum CodingKeys: String, CodingKey {
         case success
         case code
         case message
         case error
+        case data
+    }
+
+    private struct ErrorData: Codable {
+        let messageParams: [String: String]?
     }
     
     /// Get error code enum from response
@@ -1366,7 +1403,7 @@ struct APIErrorResponse: Codable {
     var localizedMessage: String {
         // #758: a code the app has a sentence for (or a subscription / plan code it does not know)
         // never shows the API's English text
-        if let code = code, !code.isEmpty, let text = APIErrorText.message(forCode: code) {
+        if let code = code, !code.isEmpty, let text = APIErrorText.message(forCode: code, params: messageParams) {
             return text
         }
         if let errorCode = errorCode {
@@ -1398,6 +1435,28 @@ struct APIErrorResponse: Codable {
     /// Get HTTP status code (backward compatibility)
     var statusCode: Int {
         return httpStatusCode
+    }
+}
+
+extension APIErrorResponse {
+    /// `data` may be anything (an object without params, null, an array): it never fails the decode.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = try container.decode(Bool.self, forKey: .success)
+        code = try container.decodeIfPresent(String.self, forKey: .code)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+        let data = try? container.decodeIfPresent(ErrorData.self, forKey: .data)
+        messageParams = (data ?? nil)?.messageParams ?? [:]
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(success, forKey: .success)
+        try container.encodeIfPresent(code, forKey: .code)
+        try container.encodeIfPresent(message, forKey: .message)
+        try container.encodeIfPresent(error, forKey: .error)
+        if !messageParams.isEmpty { try container.encode(ErrorData(messageParams: messageParams), forKey: .data) }
     }
 }
 

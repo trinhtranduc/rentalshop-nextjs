@@ -30,7 +30,16 @@
   "INVALID_DURATION": "更新期間は1、3、6、12か月のいずれかである必要があります",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "プランの変更は新しい期間にのみ可能です",
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "ダウングレードは新しい期間にのみ可能です",
-  "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "店舗追加のアドオンは複数店舗プラン（Enterprise）でのみ利用できます。"
-  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "商品名・価格・写真・カテゴリなどの共通情報はショップオーナーのみ変更できます。自店舗の在庫は変更できます。",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "商品を削除できるのはショップオーナーのみです。"
+  "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "店舗追加のアドオンは複数店舗プラン（Enterprise）でのみ利用できます。",
+  "ADDON_PRICE_NOT_FOUND": "アドオン価格が見つかりません。",
+  "ADDON_PRICE_NOT_ON_SALE": "このアドオンは一時停止中のため販売できません。",
+  "ADDON_PRICE_IN_USE": "このアドオンは利用中のためパックの数量を変更できません。新しい行を追加してください。",
+  "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "このショップには店舗追加のアドオンがあります。先に店舗アドオンを外してから、複数店舗なしのプランに変更してください。",
+  "ADDON_ALREADY_ENDED": "このアドオンはすでに終了しています。",
+  "PRICED_ADDON_READ_ONLY": "有料アドオンはショップの「Add-on」タブで変更してください。",
+  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "スタッフは商品名・価格・写真・カテゴリなどの共通情報を変更できません。ショップオーナー、店舗管理者、または倉庫スタッフに依頼してください。自店舗の在庫は変更できます。",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "スタッフは商品を削除できません。ショップオーナー、店舗管理者、または倉庫スタッフに依頼してください。",
+  "OUTLET_HAS_OPEN_ORDERS": "この支店には予約済みまたはレンタル中の注文が残っています。支店を停止する前に、それらの注文を完了またはキャンセルしてください。",
+  "OUTLET_DEACTIVATED": "この支店は停止されています。店舗オーナーにお問い合わせください。",
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} にまだこの商品があります。削除できるのはショップオーナーのみです。自店舗での販売をやめる場合は、在庫を0にしてください。"
 }

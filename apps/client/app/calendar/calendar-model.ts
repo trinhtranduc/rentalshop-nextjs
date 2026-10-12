@@ -218,3 +218,45 @@ export function cellLabel(cell: GridCell, count: DayCount | undefined, parts: { 
   if (count?.late) bits.push(`${parts.late} ${count.late}`);
   return bits.join(', ');
 }
+
+/** #852: `?outlet=` on Lịch giao trả: one known branch while the owner's picker is shown, else all (undefined). */
+export function calendarOutletId(raw: string | null | undefined, options: Array<{ id: number }>, picker: boolean): number | undefined {
+  if (!picker || !raw || !/^[1-9]\d*$/.test(raw)) return undefined;
+  const id = Number(raw);
+  return options.some((o) => o.id === id) ? id : undefined;
+}
+
+/** #849: answer of GET /api/subscriptions/status as the page sees it (parseApiResponse). */
+export interface SubscriptionStatusLike {
+  success?: boolean;
+  code?: string;
+  data?: { status?: string | null; dbStatus?: string | null } | null;
+}
+
+const BLOCKED_STATUSES = new Set(['EXPIRED', 'CANCELED', 'CANCELLED', 'PAUSED', 'PAST_DUE']);
+// `status` is computed from the period end only (ACTIVE while it runs); the API gate also blocks these stored statuses
+const BLOCKED_DB_STATUSES = new Set(['PAUSED', 'PAST_DUE']);
+const BLOCKED_CODES = new Set([
+  'SUBSCRIPTION_EXPIRED',
+  'SUBSCRIPTION_CANCELLED',
+  'SUBSCRIPTION_PAUSED',
+  'SUBSCRIPTION_PAST_DUE',
+  'SUBSCRIPTION_PERIOD_ENDED',
+  'TRIAL_EXPIRED',
+]);
+
+/**
+ * #849: the shop's subscription blocks the calendar (period ended, paused, past due), as the API gate does. The calendar routes
+ * stay open to such shops (installed apps), so the web shows its retry cards like the other pages. The status route
+ * answers 403 with the subscription code on builds before #728. Any other answer (active, trial, none, a failed
+ * read) does not block.
+ */
+export function subscriptionBlocked(res: SubscriptionStatusLike | null | undefined): boolean {
+  if (!res) return false;
+  if (res.success) {
+    const status = String(res.data?.status ?? '').toUpperCase();
+    const dbStatus = String(res.data?.dbStatus ?? '').toUpperCase();
+    return BLOCKED_STATUSES.has(status) || BLOCKED_DB_STATUSES.has(dbStatus);
+  }
+  return BLOCKED_CODES.has(String(res.code ?? ''));
+}

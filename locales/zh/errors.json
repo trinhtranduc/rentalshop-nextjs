@@ -30,7 +30,16 @@
   "INVALID_DURATION": "续订期限必须为 1、3、6 或 12 个月",
   "PLAN_CHANGE_ONLY_AT_NEW_PERIOD": "只能在新的周期更换套餐",
   "DOWNGRADE_ONLY_AT_NEW_PERIOD": "只能在新的周期降级",
-  "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "只有多分店套餐（Enterprise）才能添加分店附加包。"
-  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "只有店主可以修改商品名称、价格、图片、分类等共享信息。您可以修改本门店的库存。",
-  "PRODUCT_DELETE_MERCHANT_ONLY": "只有店主可以删除商品。"
+  "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "只有多分店套餐（Enterprise）才能添加分店附加包。",
+  "ADDON_PRICE_NOT_FOUND": "未找到附加包价格。",
+  "ADDON_PRICE_NOT_ON_SALE": "该附加包已暂停，不能再售。",
+  "ADDON_PRICE_IN_USE": "已有店铺在使用该附加包，不能修改每包数量。请新增一行。",
+  "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "该店铺仍有分店附加包。请先移除分店附加包，再切换到不含多分店的套餐。",
+  "ADDON_ALREADY_ENDED": "该附加包已结束。",
+  "PRICED_ADDON_READ_ONLY": "付费附加包请在店铺的 Add-on 页签中修改。",
+  "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "店员不能修改商品名称、价格、图片、分类等共享信息，请联系店主、门店管理员或仓库人员。您可以修改本门店的库存。",
+  "PRODUCT_DELETE_MERCHANT_ONLY": "店员不能删除商品，请联系店主、门店管理员或仓库人员。",
+  "OUTLET_HAS_OPEN_ORDERS": "该分店仍有已预订或租赁中的订单。请先完成或取消这些订单，再停用分店。",
+  "OUTLET_DEACTIVATED": "该分店已停用，请联系店主。",
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} 仍有此商品，只有店主可以删除。如需在本门店停止销售，请将库存设为 0。"
 }

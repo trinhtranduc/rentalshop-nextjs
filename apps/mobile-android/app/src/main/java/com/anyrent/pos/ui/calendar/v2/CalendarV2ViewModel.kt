@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.calendar.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -90,7 +91,7 @@ class CalendarV2ViewModel(
         monthJob = viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val json = fetch(CalendarLogic.monthCountPath(month))
+                    val json = fetch(CalendarLogic.monthCountPath(month, CurrentOutlet.merchantFilterId))
                     CalendarLogic.countsFromJson(json.optJSONObject("data") ?: org.json.JSONObject())
                 }
             }
@@ -110,7 +111,7 @@ class CalendarV2ViewModel(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     coroutineScope {
-                        val base = CalendarLogic.dayPath(key)
+                        val base = CalendarLogic.dayPath(key, CurrentOutlet.merchantFilterId)
                         val pickups = async { orders(fetch("$base&status=RESERVED")) }
                         val returns = async { orders(fetch("$base&kind=return")) }
                         CalendarLogic.rows(key, todayKey, pickups.await(), returns.await())

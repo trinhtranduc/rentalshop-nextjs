@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import com.anyrent.pos.billing.PurchasesManager
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.di.AppContainer
 import com.anyrent.pos.push.PushRegistrar
@@ -19,6 +20,7 @@ class AnyRentApp : Application() {
         super.onCreate()
         instance = this
         SessionStore.init(this)
+        CurrentOutlet.init(this)
         CartStore.init(this)
         CartStore.restoreFromDisk()
         createNotificationChannels()

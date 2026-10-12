@@ -18,6 +18,7 @@ Rental-shop POS and management platform. Yarn 1 + Turborepo monorepo:
 - `apps/mobile` — iOS (Swift), `apps/mobile-android` — Android (Kotlin)
 
 `dev` deploys to dev-api.anyrent.shop. `main-real` is production (`main` is stale). Pull requests target `dev`.
+Every deploy to `main-real` is tagged `release-YYYY-MM-DD[.n]` (workflow `release-tag.yml`); the latest tag is what customers run, and impact reviews compare against it.
 
 ## SDLC (do not skip stages)
 
@@ -59,6 +60,8 @@ Run the relevant commands before calling work done, and show the output.
 Never run `prisma migrate reset`, `db:reset-railway`, `*:prod`, or `railway … --environment production`
 without an explicit human go for that one command (`RELEASE_APPROVED=1`). The hook in
 `.claude/hooks/production-gate.sh` blocks these.
+
+**Every e2e run with a UI is visible to the owner**: headed Chrome with slow steps; `open -a Simulator` with the device in front; Android AVD with a window (never `-no-window`). Tell subagents the same. API-only runs (`scripts/e2e/business-e2e.sh`, Jest) run in the background; just report the numbers.
 
 ## Conventions
 
@@ -126,3 +129,4 @@ Domain (`.claude/skills/`):
 - Opening a PR that does not name the issue it closes.
 - Changing an API without checking the installed apps on `main-real` (`api-compat-review`), or without a row in `.agent/api-changes/LOG.md`.
 - Filling or redefining an existing response field for a new screen (e.g. daily `futureIncome`, which old Android adds to revenue). Add a new field.
+- Two PRs that both append keys to `locales/*/errors.json` can merge into invalid JSON or a key listed twice (the last, older text wins). After merging `dev`, run `cd tests && npx jest locales-valid-json`.

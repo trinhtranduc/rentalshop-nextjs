@@ -633,23 +633,63 @@ model SubscriptionActivity {
 }
 
 model PlanLimitAddon {
-  id         Int      @id @default(autoincrement())
-  merchantId Int
-  outlets    Int      @default(0)
-  users      Int      @default(0)
-  products   Int      @default(0)
-  customers  Int      @default(0)
-  orders     Int      @default(0)
-  notes      String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  id                Int         @id @default(autoincrement())
+  merchantId        Int
+  outlets           Int         @default(0)
+  users             Int         @default(0)
+  products          Int         @default(0)
+  customers         Int         @default(0)
+  orders            Int         @default(0)
+  notes             String?
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  /// #850 priced add-on: the price-list row it was bought from (NULL = old free add-on)
+  addonPriceId      Int?
+  /// #850 snapshots at purchase: row name, limit kind, units per pack, number of packs.
+  /// The kind's column above holds packSize × packs, so the limit check still sums the five columns.
+  name              String?
+  limitKind         String?
+  packSize          Int?
+  packs             Int?
+  /// #870 fewer packs from the next renewal (NULL = no pending change); more packs apply at once
+  nextPacks         Int?
+  /// #850 VND per pack per month captured at purchase (renewal sets today's list price). NULL = old free add-on
+  unitPrice         Int?
+  /// #850 removal takes effect at the end of the period: the item counts until `endsAt`
+  removeAtPeriodEnd Boolean     @default(false)
+  endsAt            DateTime?
+  endedAt           DateTime?
+  merchant          Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  addonPrice        AddonPrice? @relation(fields: [addonPriceId], references: [id], onDelete: SetNull)
 
   @@index([merchantId])
   @@index([isActive])
   @@index([merchantId, isActive])
   @@index([createdAt])
+  @@index([addonPriceId])
+}
+
+/// #850 Add-on price list (admin: Plans → Add-on prices). One row = one limit kind + pack size + VND price per pack
+/// per month. Several rows may share a kind (+1 user, +2 users). Never deleted; isActive false = "Tạm tắt".
+model AddonPrice {
+  id              Int              @id @default(autoincrement())
+  name            String
+  /// outlets | users | products | customers | orders
+  limitKind       String
+  /// Units one pack adds ("mỗi gói cộng thêm N")
+  packSize        Int
+  /// VND per pack per month
+  monthlyPrice    Int
+  currency        String           @default("VND")
+  isActive        Boolean          @default(true)
+  sortOrder       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  planLimitAddons PlanLimitAddon[]
+
+  @@index([isActive, sortOrder])
+  @@index([limitKind])
 }
 
 model AuditLog {

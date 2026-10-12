@@ -271,12 +271,17 @@ export function firstError(errors: Partial<Record<FieldKey, ErrorCode>>): FieldK
 /** Branch roles (same list as `isOutletRole` in @rentalshop/constants; this module imports no @rentalshop/*). */
 const BRANCH_ROLES = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
 
-/**
- * #825: name, prices, photos, category, code and description are shared by every branch; only the shop owner changes
- * them. A branch role edits its own branch stock only, and does not delete products.
- */
+/** #825: a branch role saves stock only at its own outlet. */
 export function isBranchRole(role: string | null | undefined): boolean {
   return BRANCH_ROLES.includes(role ?? '');
+}
+
+/**
+ * #825 (owner 2026-10-11): name, prices, photos, category, code and description are shared by every branch. The owner,
+ * OUTLET_ADMIN and OUTLET_INVENTORY change them and delete products; OUTLET_STAFF edits its own branch stock only.
+ */
+export function sharedFieldsLockedFor(role: string | null | undefined): boolean {
+  return role === 'OUTLET_STAFF';
 }
 
 /** #825 (owner 2026-10-11): outlet staff do not add products (the API refuses it). */
@@ -284,10 +289,22 @@ export function roleMayCreateProducts(role: string | null | undefined): boolean 
   return role !== 'OUTLET_STAFF';
 }
 
+/**
+ * #825: whether a branch holds the product (units on the shelf or out on rent there). Every product has a row at every
+ * outlet, 0 where the branch never stocked it; OUTLET_ADMIN / kho change shared fields only of products they hold.
+ */
+export function branchHoldsProduct(p: Pick<ProductSource, 'outletStock'> & { outletStock?: Array<{ renting?: Num }> | null }, outletId: number | undefined): boolean {
+  if (!outletId) return false;
+  const row = (p.outletStock || []).find((r) => (r?.outlet?.id ?? r?.outletId) === outletId) as { stock?: Num; renting?: Num } | undefined;
+  return !!row && (num(row.stock) > 0 || num(row.renting) > 0);
+}
+
 export interface PayloadOptions {
   canEditPricing: boolean;
-  /** #825: the branch of a branch-role user. Its stock row is the only one sent; on edit nothing else is sent. */
+  /** #825: the branch of a branch-role user. Its stock row is the only one sent. */
   branchOutletId?: number;
+  /** #825: edit by a role that may not change shared fields: only the id and the stock are sent. */
+  stockOnly?: boolean;
   /** Edit only */
   productId?: number;
   merchantId?: number;
@@ -303,8 +320,8 @@ export function buildPayload(form: FormState, opts: PayloadOptions): Record<stri
   const stockRows = form.outletStock
     .filter((r) => branch == null || r.outletId === branch)
     .map((r) => ({ outletId: r.outletId, stock: r.stock }));
-  // #825: a branch role saves only its own stock on edit (the API refuses a changed shared field)
-  if (branch != null && opts.productId != null) return { id: opts.productId, outletStock: stockRows };
+  // #825: OUTLET_STAFF saves only its own stock on edit (the API refuses a changed shared field)
+  if (opts.stockOnly && opts.productId != null) return { id: opts.productId, outletStock: stockRows };
   const pricing: Record<string, unknown> = {};
   if (opts.canEditPricing) {
     const pricingOptions = buildPricingOptions(form.perRental, form.perDay, form.defaultMode);

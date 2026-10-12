@@ -189,6 +189,8 @@ object AuthErrorMapping {
     fun messageRes(code: String?, status: Int? = null): Int? = when (code?.uppercase()) {
         "INVALID_CREDENTIALS" -> R.string.api_error_invalid_credentials
         "ACCOUNT_DEACTIVATED" -> R.string.authv2_error_account_deactivated
+        // #859: 403 at login when the user's branch was turned off
+        "OUTLET_DEACTIVATED" -> R.string.api_error_outlet_deactivated
         "EMAIL_EXISTS" -> R.string.api_error_email_exists
         "MERCHANT_DUPLICATE" -> R.string.authv2_error_merchant_duplicate
         "RATE_LIMIT_EXCEEDED" -> R.string.authv2_error_rate_limited

@@ -90,7 +90,7 @@ describeE2E('BF-DAY Vietnam day boundaries', () => {
     await s.setStatus(o.id, 'PICKUPED');
     expect(await byDate(w.to, '&kind=return')).toContain(o.id);
     expect(await byDate(addDays(w.to, 1), '&kind=return')).not.toContain(o.id);
-    const [y, m] = w.from.split('-').map(Number);
+    const [y, m] = w.to.split('-').map(Number); // the month of the return day (the window can cross a month end)
     const count = await s.get(`/api/calendar/orders/count?month=${m}&year=${y}&timeZone=Asia/Ho_Chi_Minh`);
     expect(count.status).toBe(200);
     expect(count.body.data.byDate[w.to]?.returns || 0).toBeGreaterThanOrEqual(1);

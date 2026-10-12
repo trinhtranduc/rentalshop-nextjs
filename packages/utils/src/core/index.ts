@@ -169,6 +169,7 @@ export * from './subscription-billing-calculations';
 export * from './billing-dates';
 export * from './plan-change-rules';
 export * from './plan-addon-rules';
+export * from './addon-pricing';
 
 // Order utilities
 // MOVED to server.ts - imports @rentalshop/database (server-only)

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
-import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
-import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { softDeleteProducts, openOrdersByProductAndOutlet, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
+import { API, USER_ROLE } from '@rentalshop/constants';
+import { heldOutletsLabel, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor, type OtherOutletHold } from '../../../../lib/product-branch-rules';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -22,14 +23,14 @@ const batchDeleteSchema = z.object({
  * - a product on a RESERVED or PICKUPED order is not deleted and is reported in `errors`
  *   (`code: PRODUCT_HAS_OPEN_ORDERS`); 409 when that is every product.
  *
- * Authorization: 'products.manage', and not a branch role (#825: 403 PRODUCT_DELETE_MERCHANT_ONLY)
+ * Authorization: 'products.manage'; OUTLET_STAFF gets 403 PRODUCT_DELETE_MERCHANT_ONLY (#825)
  */
 export const POST = withPermissions(['products.manage'])(async (request, { user, userScope }) => {
   try {
     console.log(`🔍 POST /api/products/batch-delete - User: ${user.email} (${user.role})`);
 
-    // #825: only the merchant (and ADMIN) deletes products; a product is shared by every branch
-    if (isOutletRole(user.role)) {
+    // #825: a product is shared by every branch; OUTLET_STAFF does not delete it
+    if (sharedFieldsLockedFor(user.role)) {
       return NextResponse.json(
         ResponseBuilder.error('PRODUCT_DELETE_MERCHANT_ONLY'),
         { status: API.STATUS.FORBIDDEN }
@@ -75,6 +76,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             id: true, // Merchant.id is also Int (public ID)
           },
         },
+        outletStock: { select: { outletId: true, stock: true, renting: true, outlet: { select: { id: true, name: true } } } },
       },
     });
 
@@ -109,6 +111,20 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       }
     }
 
+    // #825: OUTLET_ADMIN and Nhân viên kho delete only products their outlet holds (same rule as DELETE)
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) {
+      const notHeld = products.filter((p) => !holdsStockAt(p.outletStock, userScope.outletId));
+      if (notHeld.length > 0) {
+        return NextResponse.json(
+          {
+            ...ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            data: { productIds: notHeld.map((p) => p.id) },
+          },
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
     if (unauthorizedProducts.length > 0) {
       const errorResponse = ResponseBuilder.error('UNAUTHORIZED_TO_DELETE_SOME_PRODUCTS');
       return NextResponse.json(
@@ -121,16 +137,39 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       );
     }
 
+    // #825 (owner 2026-10-11): OUTLET_ADMIN / kho do not delete a product another outlet still holds
+    // (stock, units on rent, open order); those are reported per product and not deleted
+    const heldById = new Map<number, OtherOutletHold[]>();
+    if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) {
+      const openOrders = await openOrdersByProductAndOutlet(prisma, products.map((p) => p.id));
+      for (const p of products) {
+        const held = otherOutletsHolding(p.outletStock, userScope.outletId, openOrders.get(p.id) || []);
+        if (held.length > 0) heldById.set(p.id, held);
+      }
+    }
+
     // All validations passed - soft delete the products that are not on an open order (#389)
-    const { deletedIds, blockedIds } = await softDeleteProducts(prisma, products.map((p) => p.id));
+    const { deletedIds, blockedIds } = await softDeleteProducts(
+      prisma,
+      products.map((p) => p.id).filter((id) => !heldById.has(id))
+    );
     const nameById = new Map(products.map((p) => [p.id, p.name]));
     const deletedProducts = deletedIds.map((id) => ({ id, name: nameById.get(id) || '' }));
-    const errors: Array<{ id: number; name: string; error: string; code?: string }> = blockedIds.map((id) => ({
-      id,
-      name: nameById.get(id) || '',
-      error: PRODUCT_HAS_OPEN_ORDERS,
-      code: PRODUCT_HAS_OPEN_ORDERS,
-    }));
+    const errors: Array<{ id: number; name: string; error: string; code?: string; outlets?: OtherOutletHold[] }> = [
+      ...[...heldById].map(([id, outlets]) => ({
+        id,
+        name: nameById.get(id) || '',
+        error: 'PRODUCT_HELD_BY_OTHER_OUTLETS',
+        code: 'PRODUCT_HELD_BY_OTHER_OUTLETS',
+        outlets,
+      })),
+      ...blockedIds.map((id) => ({
+        id,
+        name: nameById.get(id) || '',
+        error: PRODUCT_HAS_OPEN_ORDERS,
+        code: PRODUCT_HAS_OPEN_ORDERS,
+      })),
+    ];
 
     // Image search must not find them any more; images stay in S3 for the orders that show them
     if (deletedIds.length > 0) {
@@ -149,8 +188,26 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     console.log(`✅ Batch deleted ${deletedProducts.length} products successfully (${errors.length} failed)`);
 
-    // Every product is on an open order: nothing was deleted
+    // Nothing was deleted: every product is held by another outlet (#825) or on an open order
     if (deletedProducts.length === 0 && errors.length > 0) {
+      if (blockedIds.length === 0) {
+        const holds = [...heldById.values()].flat();
+        const byOutlet = new Map<number, OtherOutletHold>();
+        for (const h of holds) {
+          const sum = byOutlet.get(h.id) || { ...h, stock: 0, renting: 0, openOrders: 0 };
+          sum.stock += h.stock;
+          sum.renting += h.renting;
+          sum.openOrders += h.openOrders;
+          byOutlet.set(h.id, sum);
+        }
+        return NextResponse.json(
+          {
+            ...ResponseBuilder.error('PRODUCT_HELD_BY_OTHER_OUTLETS'),
+            data: { errors, messageParams: { outlets: heldOutletsLabel([...byOutlet.values()]) } },
+          },
+          { status: API.STATUS.CONFLICT }
+        );
+      }
       return NextResponse.json(
         { ...ResponseBuilder.error(PRODUCT_HAS_OPEN_ORDERS), data: { errors } },
         { status: API.STATUS.CONFLICT }

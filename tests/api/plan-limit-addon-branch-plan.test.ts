@@ -162,16 +162,16 @@ describe('PUT /api/plan-limit-addons/[id] (#826)', () => {
 });
 
 describe('admin add-on dialog shows the translated refusal (#826)', () => {
+  // #850: add-ons are bought on the shop's Add-on tab (the old free add-on page redirects there)
   const page = fs.readFileSync(
-    path.resolve(__dirname, '../../apps/admin/app/merchants/[id]/plan-limit-addons/page.tsx'),
+    path.resolve(__dirname, '../../apps/admin/app/merchants/[id]/addons/page.tsx'),
     'utf8'
   );
 
-  it('translates the API error code on create and on update (not the English API message)', () => {
+  it('translates the API error code on add and on remove (not the English API message)', () => {
     expect(page).toMatch(/useApiError\(\)/);
-    expect(page).not.toMatch(/toastError\(response\.message \|\| 'Failed to create plan limit addon'\)/);
-    expect(page).not.toMatch(/toastError\(response\.message \|\| 'Failed to update plan limit addon'\)/);
-    expect((page.match(/toastError\(translateError\(response\)\)/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect(page).not.toMatch(/toastError\(res\.message/);
+    expect((page.match(/toastError\(translateError\(res\)\)/g) || []).length).toBeGreaterThanOrEqual(2);
   });
 
   it('the new code is translated in the five locales', () => {

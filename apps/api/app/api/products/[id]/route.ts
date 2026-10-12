@@ -17,10 +17,11 @@ import {
 } from '@rentalshop/utils';
 import { uploadToS3, commitStagingFiles, deleteFromS3, getBucketName, extractS3KeyFromUrl, createAuditHelper } from '@rentalshop/utils/server';
 import { compressImageTo1MB } from '../../../../lib/image-compression';
-import { softDeleteProducts, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
+import { softDeleteProducts, openOrdersByProductAndOutlet, PRODUCT_HAS_OPEN_ORDERS } from '../../../../lib/product-soft-delete';
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
-import { changedSharedFields } from '../../../../lib/product-branch-rules';
+import { otherActiveOutletsFor, otherOutletStock } from '../../../../lib/other-outlet-stock';
+import { changedSharedFields, heldOutletsLabel, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 
 function buildImageUploadErrorResponse(detail?: string) {
   const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
@@ -231,11 +232,18 @@ export async function GET(
         updatedAt: product.updatedAt?.toISOString() || null
       };
 
-      console.log('✅ Transformed product data:', transformedProduct);
+      // #830: OUTLET_ADMIN / OUTLET_INVENTORY also see the other active outlets' stock (read only)
+      const otherOutlets = await otherActiveOutletsFor(user, userScope);
+      const responseProduct =
+        otherOutlets && userScope.outletId
+          ? { ...transformedProduct, otherOutlets: otherOutletStock(product.outletStock, userScope.outletId, otherOutlets) }
+          : transformedProduct;
+
+      console.log('✅ Transformed product data:', responseProduct);
 
       return NextResponse.json({
         success: true,
-        data: transformedProduct,
+        data: responseProduct,
         code: 'PRODUCT_RETRIEVED_SUCCESS',
         message: 'Product retrieved successfully'
       });
@@ -367,6 +375,8 @@ export async function PUT(
       }
 
       const isBranchRole = isOutletRole(user.role);
+      // #825: OUTLET_STAFF edits only its own branch stock; OUTLET_ADMIN / OUTLET_INVENTORY may change shared fields
+      const sharedLocked = sharedFieldsLockedFor(user.role);
       if (isBranchRole) {
         // #825: a branch role always has its outlet; without one the branch checks below cannot run
         if (!userScope.outletId) {
@@ -376,10 +386,11 @@ export async function PUT(
           );
         }
 
-        // #825: name, prices, photos, category... are shared by every branch; only the merchant changes them.
+        // #825: name, prices, photos, category... are shared by every branch; OUTLET_STAFF does not change them.
         // The same values sent again (whole payload from an app or a stale tab) are not a change.
         const changed = changedSharedFields(productDataFromRequest, existingProduct);
-        if (imageFiles.length > 0 || changed.length > 0) {
+        const changesShared = imageFiles.length > 0 || changed.length > 0;
+        if (sharedLocked && changesShared) {
           console.log('❌ Branch role cannot change shared product fields:', {
             productId,
             role: user.role,
@@ -388,6 +399,15 @@ export async function PUT(
           });
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_SHARED_FIELDS_MERCHANT_ONLY'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        // OUTLET_ADMIN / OUTLET_INVENTORY change shared fields only of a product their outlet holds (a 0-stock row
+        // from #825 does not count): a branch must not rename or reprice what only another branch stocks
+        if (!sharedLocked && changesShared && !holdsStockAt(existingProduct.outletStock, userScope.outletId)) {
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
             { status: API.STATUS.FORBIDDEN }
           );
         }
@@ -599,9 +619,9 @@ export async function PUT(
       }
 
       // Prepare outletStock nested write if provided.
-      // #825: a branch role passed the shared-field check above, so its write is the stock only
+      // #825: OUTLET_STAFF passed the shared-field check above, so its write is the stock only
       // (totalStock is recomputed from the outlet rows below).
-      let finalUpdateData: any = isBranchRole ? {} : { ...productUpdateData };
+      let finalUpdateData: any = sharedLocked ? {} : { ...productUpdateData };
       
       if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
         console.log('🔄 Preparing outlet stock nested write:', outletStock);
@@ -683,8 +703,8 @@ export async function PUT(
 
       // Cleanup old images that are no longer in the new images list
       // IMPORTANT: This ensures orphaned images are deleted from S3 when updating product images
-      // #825: a branch role never writes images, so it never removes any
-      if (!isBranchRole && productUpdateData.images !== undefined) {
+      // #825: OUTLET_STAFF never writes images, so it never removes any
+      if (!sharedLocked && productUpdateData.images !== undefined) {
         try {
           // Parse existing images before update
           const existingImageUrls = parseProductImages(existingProduct.images);
@@ -865,8 +885,9 @@ export async function PUT(
  * - 409 PRODUCT_HAS_OPEN_ORDERS while the product is on a RESERVED or PICKUPED order (nothing changes).
  * - Response shape unchanged: { id, name, images }, code PRODUCT_DELETED_SUCCESS.
  *
- * Authorization: 'products.manage', and not a branch role (#825: OUTLET_ADMIN / OUTLET_INVENTORY get 403
- * PRODUCT_DELETE_MERCHANT_ONLY; the product is shared by every branch)
+ * Authorization: 'products.manage'; OUTLET_STAFF gets 403 PRODUCT_DELETE_MERCHANT_ONLY (#825); OUTLET_ADMIN and
+ * OUTLET_INVENTORY only for a product their outlet holds (403 PRODUCT_NOT_AVAILABLE_AT_OUTLET otherwise) and no other
+ * outlet holds (409 PRODUCT_HELD_BY_OTHER_OUTLETS, `data.outlets` lists them)
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export async function DELETE(
@@ -929,12 +950,35 @@ export async function DELETE(
         );
       }
 
-      // #825: only the merchant (and ADMIN) deletes products; a product is shared by every branch
-      if (isOutletRole(user.role)) {
+      // #825: a product is shared by every branch; OUTLET_STAFF does not delete it
+      if (sharedFieldsLockedFor(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('PRODUCT_DELETE_MERCHANT_ONLY'),
           { status: API.STATUS.FORBIDDEN }
         );
+      }
+
+      // OUTLET_ADMIN and Nhân viên kho (#682) delete only products their outlet holds (a 0-stock row does not count)
+      if (user.role === USER_ROLE.OUTLET_ADMIN || user.role === USER_ROLE.OUTLET_INVENTORY) {
+        if (!holdsStockAt(existingProduct.outletStock, userScope.outletId)) {
+          return NextResponse.json(
+            ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
+            { status: API.STATUS.FORBIDDEN }
+          );
+        }
+
+        // #825 (owner 2026-10-11): and only when no other outlet still holds it (stock, units on rent, open order)
+        const openOrders = (await openOrdersByProductAndOutlet(prisma, [productId])).get(productId) || [];
+        const heldElsewhere = otherOutletsHolding(existingProduct.outletStock, userScope.outletId, openOrders);
+        if (heldElsewhere.length > 0) {
+          return NextResponse.json(
+            {
+              ...ResponseBuilder.error('PRODUCT_HELD_BY_OTHER_OUTLETS'),
+              data: { outlets: heldElsewhere, messageParams: { outlets: heldOutletsLabel(heldElsewhere) } },
+            },
+            { status: API.STATUS.CONFLICT }
+          );
+        }
       }
 
       // ============================================================================

@@ -35,6 +35,8 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: 'Plans', href: '/plans', icon: Package, group: 'Merchants & Plans', inline: true,
     subItems: [
       { label: 'Plans', href: '/plans', icon: Package },
+      // #850: price list of the add-ons (ADMIN edits, OPS reads)
+      { label: 'Add-on prices', href: '/plans/addon-prices', icon: Tag },
       { label: 'Stripe Billing', href: '/plans/billing', icon: DollarSign },
     ],
   },

@@ -2,7 +2,9 @@
  * #825 — products across branches (outlets).
  *
  * Name, prices, photos, category, description and the other product fields are shared by every branch of a shop:
- * only the merchant (and ADMIN) changes them. A branch role (`isOutletRole`) edits its own branch stock only.
+ * the merchant (and ADMIN), OUTLET_ADMIN and OUTLET_INVENTORY change them and delete products (the branch roles only
+ * for products stocked at their outlet). OUTLET_STAFF does not (owner 2026-10-11): it creates nothing, and with a
+ * customised products.update it edits its own branch stock only. Every branch role writes stock only at its own outlet.
  * Installed apps and stale web tabs send the whole product on every save, so a field counts as changed only when its
  * value differs from the stored one. Pure functions (no imports) so they are unit-tested on their own.
  */
@@ -23,7 +25,15 @@ export interface StoredProduct {
   isActive?: boolean | null;
 }
 
-/** Fields shared by every branch (checked for branch roles). */
+/** Branch roles that may not change shared product fields or delete products. */
+export const SHARED_FIELDS_LOCKED_ROLES = ['OUTLET_STAFF'] as const;
+
+/** True when this role edits only its own branch stock: no shared field, no photo, no delete. */
+export function sharedFieldsLockedFor(role: string | null | undefined): boolean {
+  return (SHARED_FIELDS_LOCKED_ROLES as readonly string[]).includes(role ?? '');
+}
+
+/** Fields shared by every branch (checked for roles in SHARED_FIELDS_LOCKED_ROLES). */
 export const SHARED_PRODUCT_FIELDS = [
   'name',
   'description',
@@ -116,6 +126,63 @@ export function changedSharedFields(body: ProductBody, product: StoredProduct): 
     changed.push('merchantId');
   }
   return changed;
+}
+
+type OutletRowLike = { outletId?: number | null; outlet?: { id?: number; name?: string | null } | null; stock?: number | null; renting?: number | null };
+
+/**
+ * Whether the product is really held at this outlet: its row there has units on the shelf or out on rent.
+ * Since #825 every product has a row at every active outlet (0 where the branch never stocked it), so a row alone
+ * no longer means the branch holds it. OUTLET_ADMIN / OUTLET_INVENTORY change shared fields and delete only
+ * products their outlet holds.
+ */
+export function holdsStockAt(outletStock: OutletRowLike[] | null | undefined, outletId: number | null | undefined): boolean {
+  if (!outletId) return false;
+  const row = (outletStock || []).find((r) => (r.outlet?.id ?? r.outletId) === outletId);
+  return !!row && ((row.stock ?? 0) > 0 || (row.renting ?? 0) > 0);
+}
+
+/** Another outlet that still holds a product (#825 delete rule). */
+export interface OtherOutletHold {
+  id: number;
+  name: string;
+  stock: number;
+  renting: number;
+  /** RESERVED / PICKUPED (not deleted) orders of that outlet with a line of the product */
+  openOrders: number;
+}
+
+/**
+ * Outlets other than `ownOutletId` that hold the product: stock > 0, units on rent, or an open order there.
+ * An OUTLET_ADMIN / OUTLET_INVENTORY deletes a product only when this is empty (owner 2026-10-11, #823).
+ * `openOrders`: open order counts per outlet for this product.
+ */
+export function otherOutletsHolding(
+  outletStock: OutletRowLike[] | null | undefined,
+  ownOutletId: number | null | undefined,
+  openOrders: Array<{ outletId: number; name: string; orders: number }>
+): OtherOutletHold[] {
+  const byId = new Map<number, OtherOutletHold>();
+  for (const row of outletStock || []) {
+    const id = row.outlet?.id ?? row.outletId;
+    if (id == null || id === ownOutletId) continue;
+    byId.set(id, { id, name: row.outlet?.name || '', stock: row.stock ?? 0, renting: row.renting ?? 0, openOrders: 0 });
+  }
+  for (const o of openOrders) {
+    if (o.outletId === ownOutletId) continue;
+    const hold = byId.get(o.outletId) || { id: o.outletId, name: o.name, stock: 0, renting: 0, openOrders: 0 };
+    hold.openOrders += o.orders;
+    if (!hold.name) hold.name = o.name;
+    byId.set(o.outletId, hold);
+  }
+  return [...byId.values()]
+    .filter((h) => h.stock > 0 || h.renting > 0 || h.openOrders > 0)
+    .sort((a, b) => a.id - b.id);
+}
+
+/** Message parameter for PRODUCT_HELD_BY_OTHER_OUTLETS: "Main (3), Kho (0)" (name and stock on the shelf). */
+export function heldOutletsLabel(holds: OtherOutletHold[]): string {
+  return holds.map((h) => `${h.name} (${h.stock})`).join(', ');
 }
 
 /** Stock rows a new product gets: the given ones, plus 0 at every other active outlet of the shop. */

@@ -1,0 +1,50 @@
+# #864: every deploy to production (a push to main-real) gets a release tag and a GitHub Release.
+# Tag: release-YYYY-MM-DD (Vietnam day), release-YYYY-MM-DD.2 for a second deploy that day.
+# Reviews compare a change against the latest tag = the code customers run (skill api-compat-review).
+name: Release tag
+
+on:
+  push:
+    branches: [main-real]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag and publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+          sha=$(git rev-parse HEAD)
+          if git tag --points-at "$sha" | grep -q '^release-'; then
+            echo "Already tagged: $(git tag --points-at "$sha" | grep '^release-')"
+            exit 0
+          fi
+          prev=$(git describe --tags --abbrev=0 --match 'release-*' "$sha" 2>/dev/null || true)
+          day=$(TZ=Asia/Ho_Chi_Minh date +%F)
+          name="release-$day"; n=1
+          while git rev-parse -q --verify "refs/tags/$name" >/dev/null; do
+            n=$((n + 1)); name="release-$day.$n"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$name" "$sha" -m "Production deploy $name ($(git log -1 --format=%s "$sha"))"
+          git push origin "$name"
+          args=(--title "$name" --target "$sha" --generate-notes)
+          if [ -n "$prev" ]; then args+=(--notes-start-tag "$prev"); fi
+          gh release create "$name" "${args[@]}"
+          echo "Tagged $name (previous: ${prev:-none})"

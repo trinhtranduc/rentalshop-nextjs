@@ -157,6 +157,9 @@ export interface OrderRowLike {
   refundDue?: Num;
   isReadyToDeliver?: boolean | null;
   productNames?: string | null;
+  /** #852: branch of the order (GET /api/orders rows carry `outlet`, outlet-operations rows `outletId`) */
+  outletId?: number | null;
+  outlet?: { id?: number | null; name?: string | null } | null;
 }
 
 export type Schedule =
@@ -193,6 +196,15 @@ export interface OrderRow {
   total: number;
   cancelled: boolean;
   pay: RowPay | null;
+  /** #852: branch id and the name the row came with */
+  outletId: number | null;
+  outletName: string | null;
+}
+
+/** #852: the branch name shown on a row: the branch list's name, else the row's own, else none */
+export function rowBranchName(row: Pick<OrderRow, 'outletId' | 'outletName'>, options: Array<{ id: number; name: string }>): string | null {
+  if (row.outletId == null) return null;
+  return options.find((o) => o.id === row.outletId)?.name || row.outletName || null;
 }
 
 export function customerNameOf(row: Pick<OrderRowLike, 'customerName' | 'customer'>): string {
@@ -254,6 +266,8 @@ export function buildOrderRow(o: OrderRowLike, todayKey: string, toDayKey: ToDay
     total: pos(o.totalAmount),
     cancelled: status === 'CANCELLED',
     pay,
+    outletId: typeof o.outletId === 'number' ? o.outletId : typeof o.outlet?.id === 'number' ? o.outlet.id : null,
+    outletName: (o.outlet?.name || '').trim() || null,
   };
 }
 

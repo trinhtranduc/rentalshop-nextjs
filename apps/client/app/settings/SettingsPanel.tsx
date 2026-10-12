@@ -30,7 +30,9 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { currencyForLocale, tabsForRole, type SettingsTab } from './settings-model';
+import { currencyForLocale, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
+import { useBranchOptions } from '../dashboard/useBranchOptions';
+import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
 import type { SubscriptionStatus } from './subscription-model';
 
@@ -71,11 +73,35 @@ interface SettingsPanelProps {
   onClose: () => void;
   /** id for the dialog title, so the dialog can point aria-labelledby at it. */
   titleId: string;
+  /** #852: `?settingsOutlet=` — the owner's branch on the bank-accounts / receipt tabs */
+  outletParam?: string | null;
+  onOutlet?: (outletId: number) => void;
 }
 
-export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelProps) {
+/** #852: "Chi nhánh" select on top of the per-branch tabs (owner with 2+ active branches) */
+function BranchSelect({ options, value, onChange, t }: { options: BranchOption[]; value: number; onChange: (id: number) => void; t: T }) {
+  return (
+    <label data-settings-branch className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-ar-primary bg-ar-primary-soft px-4 py-3 text-sm font-semibold text-ar-primary-ink">
+      {t('home.branches.label')}
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-10 min-w-0 flex-1 rounded-[10px] border border-ar-line bg-ar-surface px-3 text-[15px] font-normal text-ar-ink sm:max-w-[320px]"
+      >
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.isDefault ? `${o.name} (${t('home.branches.default')})` : o.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null, onOutlet }: SettingsPanelProps) {
   const locale = useLocale();
   const t = useTranslations('settings.web') as unknown as T;
+  const td = useTranslations('dashboard') as unknown as T;
   const ts = useTranslations('settings');
   const tu = useTranslations('users');
   const { user: authUser, logout, refreshUser } = useAuth();
@@ -87,6 +113,16 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
 
   const { enabled: themeSwitch, choice: themeChoice } = useTheme();
   const tabs = useMemo(() => tabsForRole(role, { themeSwitch }), [role, themeSwitch]);
+
+  // #852: the owner sets bank accounts and the receipt per branch (active branches; default first)
+  const perBranch = role === 'MERCHANT' && (tab === 'bank-accounts' || tab === 'receipt');
+  const allBranches = useBranchOptions(perBranch);
+  const branchOptions = useMemo(() => (allBranches ?? []).filter((o) => o.isActive), [allBranches]);
+  const branchId = perBranch ? settingsOutletChoice(branchOptions, outletParam) : null;
+  const branchSelect =
+    perBranch && branchId !== null && branchOptions.length >= 2 ? (
+      <BranchSelect options={branchOptions} value={branchId} onChange={(id) => onOutlet?.(id)} t={td} />
+    ) : null;
 
   // ---------------------------------------------------------------- merchant
   const [fetchedMerchant, setFetchedMerchant] = useState<Record<string, string> | null>(null);
@@ -323,18 +359,38 @@ export function SettingsPanel({ tab, onTab, onClose, titleId }: SettingsPanelPro
           </>
         );
       case 'bank-accounts':
+        if (role === 'MERCHANT') {
+          // The owner has no outlet of its own: the shared panel reads the picked branch
+          if (allBranches === null) return <Skeleton className="h-[320px] w-full" />;
+          return (
+            <>
+              {branchSelect}
+              <LegacyPanel title={t('bank.title')}>
+                <BankAccountSection
+                  key={branchId ?? 'none'}
+                  user={{ ...(authUser as object), outletId: branchId ?? undefined, outlet: branchId ? { id: branchId } : null }}
+                />
+              </LegacyPanel>
+            </>
+          );
+        }
         return (
           <LegacyPanel title={t('bank.title')}>
             <BankAccountSection user={authUser} />
           </LegacyPanel>
         );
       case 'receipt':
+        if (role === 'MERCHANT' && allBranches === null) return <Skeleton className="h-[420px] w-full" />;
         return (
-          <ReceiptSection
-            t={t}
-            canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
-            bankLink={role === 'OUTLET_ADMIN' ? { kind: 'tab', open: () => onTab('bank-accounts') } : role === 'MERCHANT' ? { kind: 'page' } : null}
-          />
+          <>
+            {branchSelect}
+            <ReceiptSection
+              t={t}
+              canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
+              outletId={role === 'MERCHANT' ? branchId : undefined}
+              bankLink={role === 'OUTLET_ADMIN' || role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('bank-accounts') } : null}
+            />
+          </>
         );
       case 'subscription':
         return (

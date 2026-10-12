@@ -384,12 +384,14 @@ struct ShareShop: Equatable {
     var outletId: Int?
 
     static func current() -> ShareShop {
+        // #828: the branch in use (a merchant's chosen branch, an outlet user's own)
         let user = User.account()
-        let outletName = user?.outlet?.name ?? ""
+        let outlet = CurrentOutlet.shared.outlet
+        let outletName = outlet?.name ?? ""
         return ShareShop(name: user?.merchant?.name ?? outletName, outletName: outletName,
-                         phone: user?.outlet?.phone ?? user?.merchant?.phone,
-                         address: user?.outlet?.address ?? user?.merchant?.address,
-                         outletId: user?.outlet?.id ?? user?.outletId)
+                         phone: outlet?.phone ?? user?.merchant?.phone,
+                         address: outlet?.address ?? user?.merchant?.address,
+                         outletId: CurrentOutlet.shared.id)
     }
 }
 

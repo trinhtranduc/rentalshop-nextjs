@@ -1,5 +1,8 @@
 package com.anyrent.pos.ui.navigation
 
+import com.anyrent.pos.data.CurrentOutlet
+import com.anyrent.pos.ui.home.v2.OutletFallbackDialog
+import kotlinx.coroutines.flow.drop
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -53,6 +56,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.SessionStore
@@ -222,12 +226,8 @@ fun AnyRentNavHost(
             // so do not rebuild it (that would wipe the message and the typed email)
             val onNewLogin = rootNavController.currentDestination?.route == Routes.Login && isNewAuthOn()
             if (onNewLogin) return@collect
-            // Say why: another device signed in vs. the session simply ended (#344)
-            val reason = if (code == "SESSION_REPLACED") {
-                R.string.api_error_session_replaced
-            } else {
-                R.string.api_error_session_expired
-            }
+            // Say why: another device signed in, the branch was turned off (#859), or the session simply ended (#344)
+            val reason = ApiErrorMessages.sessionEndStringId(code)
             Toast.makeText(context, context.getString(reason), Toast.LENGTH_LONG).show()
             rootNavController.navigate(Routes.Login) {
                 popUpTo(rootNavController.graph.id) { inclusive = true }
@@ -799,6 +799,13 @@ private fun MainTabs(
     }
 
     LaunchedOpenPendingOrder(rootNavController, startOrderId)
+
+    // #828: a merchant's active branches for the Home button; a remembered branch that was turned off falls back to
+    // the default and the merchant is told once. A branch change reloads every order and stock view, like an order
+    // change does (Orders, Calendar, Overview compare the same version when shown).
+    LaunchedEffect(Unit) { CurrentOutlet.refresh() }
+    LaunchedEffect(Unit) { CurrentOutlet.version.drop(1).collect { OrdersChanged.notifyChanged() } }
+    OutletFallbackDialog()
 
     LaunchedEffect(Unit) {
         MainTabRouter.selectTab.collect { route ->

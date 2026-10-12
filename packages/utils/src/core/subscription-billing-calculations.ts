@@ -10,6 +10,10 @@ export interface PlanChangeCalculation {
   remainingDays: number;
   remainingCreditValue: number;
   newPlanPeriodPrice: number;
+  /** #870: the shop's renewed add-ons for the new cycle (cycle discount), 0 without add-ons. */
+  addonPeriodPrice: number;
+  /** #870: unused paid add-on days of the old period (0 for a trial: nothing was paid). */
+  addonCreditValue: number;
   totalDue: number;
   /** New period: starts now, one cycle of calendar months on the Vietnam day (#779). */
   newPeriodStart: Date;
@@ -34,7 +38,11 @@ export interface ExtensionCalculation {
   extensionDays: number;
   selectedIntervalDays: number;
   selectedIntervalPrice: number;
+  /** The plan part (unchanged meaning). */
   extensionPrice: number;
+  /** #870: the add-on part, same formula on the add-on monthly total. */
+  addonPrice: number;
+  /** extensionPrice + addonPrice. */
   totalDue: number;
 }
 
@@ -60,12 +68,16 @@ function intervalMonths(interval: BillingInterval): number {
 
 /**
  * Calculate total due for changing plan, using the same credit logic as UI:
- * totalDue = max(0, newPlanPriceForSelectedInterval - remainingCreditFromOldPeriod)
+ * totalDue = max(0, newPlanPriceForSelectedInterval + addonPeriodPrice - remainingCreditFromOldPeriod - addonCredit)
+ * #870: `addonMonthlyTotal` = the shop's renewed add-ons per month (today's price); `paidAddonMonthlyTotal` = what the
+ * current period's add-ons were bought at (credited for the days left, not for a trial).
  */
 export function calculatePlanChangeTotal(params: {
-  subscription: Pick<Subscription, 'currentPeriodStart' | 'currentPeriodEnd' | 'billingInterval'> & { plan: Pick<Plan, 'basePrice'> };
+  subscription: Pick<Subscription, 'currentPeriodStart' | 'currentPeriodEnd' | 'billingInterval'> & { plan: Pick<Plan, 'basePrice'>; status?: string | null };
   newPlan: Pick<Plan, 'basePrice'>;
   selectedInterval: BillingInterval | string;
+  addonMonthlyTotal?: number;
+  paidAddonMonthlyTotal?: number;
   now?: Date;
 }): PlanChangeCalculation {
   const now = params.now ?? new Date();
@@ -87,7 +99,15 @@ export function calculatePlanChangeTotal(params: {
     remainingDays > 0 ? (remainingDays / oldPlanPeriodDays) * oldPlanPeriodPrice : 0;
 
   const newPlanPeriodPrice = calculateSubscriptionPrice(newPlan as any, selectedInterval as any);
-  const totalDue = Math.max(0, newPlanPeriodPrice - remainingCreditValue);
+  const addonMonthly = Math.max(0, Number(params.addonMonthlyTotal) || 0);
+  const paidAddonMonthly = Math.max(0, Number(params.paidAddonMonthlyTotal) || 0);
+  const addonPeriodPrice = addonMonthly > 0 ? calculateSubscriptionPrice({ basePrice: addonMonthly } as any, selectedInterval as any) : 0;
+  const trial = String(params.subscription.status ?? '').toUpperCase() === 'TRIAL';
+  const addonCreditValue =
+    !trial && remainingDays > 0 && paidAddonMonthly > 0
+      ? (remainingDays / oldPlanPeriodDays) * calculateSubscriptionPrice({ basePrice: paidAddonMonthly } as any, oldInterval as any)
+      : 0;
+  const totalDue = Math.max(0, newPlanPeriodPrice + addonPeriodPrice - remainingCreditValue - addonCreditValue);
 
   return {
     oldPlanPeriodPrice,
@@ -96,6 +116,8 @@ export function calculatePlanChangeTotal(params: {
     remainingDays,
     remainingCreditValue,
     newPlanPeriodPrice,
+    addonPeriodPrice,
+    addonCreditValue,
     totalDue,
     newPeriodStart: now,
     newPeriodEnd: addMonthsInTimeZone(now, intervalMonths(selectedInterval)),
@@ -163,6 +185,8 @@ export function calculateExtensionTotal(params: {
   oldEndDate: Date;
   newEndDate: Date;
   plan: Pick<Plan, 'basePrice'>;
+  /** #870: the shop's renewed add-ons per month; charged for the extra days by the same formula. */
+  addonMonthlyTotal?: number;
   selectedInterval: BillingInterval | string;
 }): ExtensionCalculation {
   const selectedInterval = normalizeBillingInterval(params.selectedInterval);
@@ -175,13 +199,19 @@ export function calculateExtensionTotal(params: {
   const selectedIntervalPrice = calculateSubscriptionPrice(plan as any, selectedInterval as any);
 
   const extensionPrice = (extensionDays / selectedIntervalDays) * selectedIntervalPrice;
-  const totalDue = extensionPrice;
+  const addonMonthly = Math.max(0, Number(params.addonMonthlyTotal) || 0);
+  const addonPrice =
+    addonMonthly > 0
+      ? (extensionDays / selectedIntervalDays) * calculateSubscriptionPrice({ basePrice: addonMonthly } as any, selectedInterval as any)
+      : 0;
+  const totalDue = extensionPrice + addonPrice;
 
   return {
     extensionDays,
     selectedIntervalDays,
     selectedIntervalPrice,
     extensionPrice,
+    addonPrice,
     totalDue,
   };
 }

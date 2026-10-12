@@ -580,8 +580,9 @@ export const PUT = async (
       
       console.log('🔍 PUT /api/orders/[orderId] - Update request body:', body);
 
-      // ✅ Auto-fill outletId from userScope if not provided
-      if (!body.outletId && userScope.outletId) {
+      // ✅ Auto-fill outletId for outlet users only. A MERCHANT login carries the default outlet;
+      // filling it would move an order at another branch there (#851). Apps send only {status}.
+      if (!body.outletId && userScope.outletId && isOutletRole(user.role)) {
         console.log(`✅ Auto-filling outletId from userScope: ${userScope.outletId}`);
         body.outletId = userScope.outletId;
       }

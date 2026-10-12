@@ -400,11 +400,14 @@ export const analyticsApi = {
    * Canonical Overview report — revenue, growth, series, operational snapshot, rankings.
    * Prefer this over separate growth/top-products/top-customers calls.
    */
-  async getPeriodReport(filters: AnalyticsFilters & { limit?: number } = {}): Promise<ApiResponse<any>> {
+  async getPeriodReport(filters: AnalyticsFilters & { limit?: number; byOutlet?: boolean } = {}): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
+    // #827: some of the merchant's outlets, and the per-outlet rows
+    if (filters.outletIds && filters.outletIds.length > 0) params.append('outletIds', filters.outletIds.join(','));
+    if (filters.byOutlet) params.append('byOutlet', '1');
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.groupBy) params.append('groupBy', filters.groupBy);
     if (filters.limit) params.append('limit', filters.limit.toString());

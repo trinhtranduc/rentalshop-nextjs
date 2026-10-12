@@ -41,7 +41,23 @@ import {
 } from './overview-model';
 import { CollectedChart, KpiTiles, TodayCard, TodayOrders, TopCustomers, TopProducts, type T } from './overview/sections';
 import { DetailDrawer } from './overview/DetailDrawer';
+import { BranchPicker, PeriodMenu } from './overview/BranchControls';
+import { BranchCompare } from './overview/BranchCompare';
+import {
+  BRANCH_SELECTION_EVENT,
+  branchLabel,
+  compareBranches,
+  outletsParam,
+  readStoredBranches,
+  resolveBranchSelection,
+  selectionOutletIds,
+  showsBranchPicker,
+  writeStoredBranches,
+  type CompareSort,
+  type StorageLike,
+} from './branch-model';
 import { TopDrawer } from './overview/TopDrawer';
+import { useBranchOptions } from './useBranchOptions';
 
 interface Loadable<V> {
   data: V | null;
@@ -49,11 +65,32 @@ interface Loadable<V> {
   failed: boolean;
 }
 
-/** One period report per range; `enabled` false keeps it idle (no revenue permission). */
-function usePeriodReport(range: DayRange | null, limit: number, enabled: boolean, nonce: number): Loadable<PeriodReportLike> {
+/** localStorage, or null where the browser blocks it */
+function browserStorage(): StorageLike | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+
+/**
+ * One period report per range; `enabled` false keeps it idle (no revenue permission).
+ * #827: `outletIds` narrows it to some branches; `byOutlet` adds the per-branch rows.
+ */
+function usePeriodReport(
+  range: DayRange | null,
+  limit: number,
+  enabled: boolean,
+  nonce: number,
+  outletIds?: number[],
+  byOutlet = false,
+): Loadable<PeriodReportLike> {
   const [state, setState] = useState<Loadable<PeriodReportLike>>({ data: null, loading: enabled, failed: false });
   const start = range?.startDate;
   const end = range?.endDate;
+  const outletKey = outletIds?.join(',') ?? '';
   useEffect(() => {
     if (!enabled || !start || !end) {
       setState({ data: null, loading: false, failed: false });
@@ -62,7 +99,13 @@ function usePeriodReport(range: DayRange | null, limit: number, enabled: boolean
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, failed: false }));
     analyticsApi
-      .getPeriodReport({ startDate: start, endDate: end, limit })
+      .getPeriodReport({
+        startDate: start,
+        endDate: end,
+        limit,
+        ...(outletKey ? { outletIds: outletKey.split(',').map(Number) } : {}),
+        ...(byOutlet ? { byOutlet: true } : {}),
+      })
       .then((res) => {
         if (cancelled) return;
         if (res.success && res.data) setState({ data: res.data as PeriodReportLike, loading: false, failed: false });
@@ -74,7 +117,7 @@ function usePeriodReport(range: DayRange | null, limit: number, enabled: boolean
     return () => {
       cancelled = true;
     };
-  }, [start, end, limit, enabled, nonce]);
+  }, [start, end, limit, enabled, nonce, outletKey, byOutlet]);
   return state;
 }
 
@@ -105,14 +148,50 @@ export default function DashboardPage() {
   const todayWork = showsTodayWork(period);
   const sameRange = chart.startDate === range.startDate && chart.endDate === range.endDate;
 
+  // #827: branch picker (MERCHANT with 2+ branches). "Tất cả" = active branches, sent as explicit ids.
+  const isMerchant = user?.role === 'MERCHANT';
+  const merchantId = (user as { merchant?: { id?: number } | null; merchantId?: number } | null)?.merchant?.id ?? (user as { merchantId?: number } | null)?.merchantId ?? null;
+  const branchOptions = useBranchOptions(ready && isMerchant);
+  const [stored, setStored] = useState<number[] | null | undefined>(undefined);
+  useEffect(() => {
+    if (!ready) return;
+    setStored(readStoredBranches(browserStorage(), merchantId));
+  }, [ready, merchantId]);
+  const options = useMemo(() => branchOptions ?? [], [branchOptions]);
+  const picker = showsBranchPicker(user?.role, options);
+  const urlOutlets = searchParams.get('outlets');
+  const selection = useMemo(
+    () => (picker && stored !== undefined ? resolveBranchSelection(options, urlOutlets, stored) : []),
+    [picker, options, urlOutlets, stored],
+  );
+  const selectionKey = selection.join(',');
+  const outletIds = useMemo(
+    () => selectionOutletIds(selectionKey ? selectionKey.split(',').map(Number) : [], options, picker),
+    [selectionKey, options, picker],
+  );
+  // Wait for the branch list (merchant) so the page loads once, with the right branches
+  const branchesReady = ready && (!isMerchant || (branchOptions !== null && stored !== undefined));
+  const comparing = picker && selection.length >= 2;
+  // Remember the selection in this browser and tell the sidebar (label only)
+  useEffect(() => {
+    if (!picker || !selectionKey) return;
+    const ids = selectionKey.split(',').map(Number);
+    writeStoredBranches(browserStorage(), merchantId, ids, branchLabel(ids, options));
+    try {
+      window.dispatchEvent(new Event(BRANCH_SELECTION_EVENT));
+    } catch {
+      // old browsers: the sidebar reads the label on the next load
+    }
+  }, [picker, selectionKey, options, merchantId]);
+
   const [nonce, setNonce] = useState(0);
   const retry = useCallback(() => setNonce((n) => n + 1), []);
-  const report = usePeriodReport(range, 5, ready && canViewRevenue, nonce);
-  const chartReport = usePeriodReport(sameRange ? null : chart, 1, ready && canViewRevenue && !sameRange, nonce);
+  const report = usePeriodReport(range, 5, branchesReady && canViewRevenue, nonce, outletIds, comparing);
+  const chartReport = usePeriodReport(sameRange ? null : chart, 1, branchesReady && canViewRevenue && !sameRange, nonce, outletIds);
   const series = (sameRange ? report.data : chartReport.data)?.series ?? null;
   const chartState = sameRange ? report : chartReport;
 
-  const ops = useOutletOperations();
+  const ops = useOutletOperations(outletIds, branchesReady);
   // "Việc hôm nay" is the API's day: load it again when the Vietnam day turns with the tab open (#589)
   const opsDay = useRef(todayKey);
   const reloadOps = ops.reload;
@@ -162,7 +241,7 @@ export default function DashboardPage() {
   );
   // "Xem tất cả" of a top list lives in the URL too (?top=); the full ranking loads only when open (#620)
   const top = canViewRevenue ? parseTop(searchParams.get('top')) : null;
-  const topReport = usePeriodReport(range, TOP_ALL_LIMIT, ready && top !== null, nonce);
+  const topReport = usePeriodReport(range, TOP_ALL_LIMIT, branchesReady && top !== null, nonce, outletIds);
   const setTop = useCallback(
     (kind: TopKind | null) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -175,7 +254,9 @@ export default function DashboardPage() {
   );
   const periodLabel = period === 'custom' ? formatRangeLabel(range, weekdays) : t(`home.periods.${period}`);
   // #708: each tile lists the rows behind its number, with their total (= the tile)
-  const related = (kind: DetailKind) => `/dashboard/related?kind=${kind}&from=${range.startDate}&to=${range.endDate}`;
+  // #827: the related list reads the same branches as the cards
+  const related = (kind: DetailKind) =>
+    `/dashboard/related?kind=${kind}&from=${range.startDate}&to=${range.endDate}${outletIds ? `&outlets=${outletIds.join(',')}` : ''}`;
   const ordersHref: Record<DetailKind, string> = {
     orderValue: related('orderValue'),
     collected: related('collected'),
@@ -210,33 +291,37 @@ export default function DashboardPage() {
 
   const periods = canViewRevenue ? OVERVIEW_PERIODS : (['today'] as OverviewPeriod[]);
   const activeTab: OverviewPeriod = customOpen ? 'custom' : period;
+  const rangeLabel = formatRangeLabel(range, weekdays);
+  const periodName = period === 'custom' ? rangeLabel : t(`home.periods.${period}`);
+  const periodButtonLabel = period === 'custom' ? rangeLabel : `${periodName} · ${rangeLabel}`;
+
+  // #827: a new selection goes to the URL (?outlets=, left out for "Tất cả"); the effect above remembers it
+  const setSelection = (ids: number[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const value = outletsParam(ids, options);
+    if (value) params.set('outlets', value);
+    else params.delete('outlets');
+    params.delete('detail');
+    params.delete('top');
+    const qs = params.toString();
+    router.push(qs ? `/dashboard?${qs}` : '/dashboard', { scroll: false });
+  };
+  const [compareSort, setCompareSort] = useState<CompareSort>({ key: 'orderValue', dir: 'desc' });
+  const comparison = useMemo(
+    () => compareBranches((report.data as { byOutlet?: never[] } | null)?.byOutlet ?? [], options, compareSort),
+    [report.data, options, compareSort],
+  );
 
   return (
     <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-5 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-          <h1 className="m-0 text-[26px] font-bold text-ar-ink">{t('home.title')}</h1>
-          <span className="text-[15px] text-ar-muted">
-            {formatRangeLabel(range, weekdays)}
-            {canViewRevenue && range.startDate !== range.endDate ? ` · ${t('home.comparedToPrevious')}` : ''}
-          </span>
-        </div>
-        {periods.length > 1 && (
-          <div role="tablist" aria-label={t('home.periods.label')} className="flex flex-wrap gap-1 rounded-[10px] bg-ar-line p-[3px]">
-            {periods.map((p) => (
-              <button
-                key={p}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === p}
-                onClick={() => selectPeriod(p)}
-                className={`h-[34px] rounded-lg px-3.5 text-sm ${
-                  activeTab === p ? 'bg-ar-surface font-semibold text-ar-ink shadow-ar' : 'text-ar-ink-2 hover:text-ar-ink'
-                }`}
-              >
-                {t(`home.periods.${p}`)}
-              </button>
-            ))}
+        <h1 className="m-0 text-[26px] font-bold text-ar-ink">{t('home.title')}</h1>
+        {(picker || periods.length > 1) && (
+          <div data-overview-controls className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            {picker && <BranchPicker options={options} selection={selection} onChange={setSelection} t={t} />}
+            {periods.length > 1 && (
+              <PeriodMenu periods={periods} active={activeTab} label={periodButtonLabel} shortLabel={periodName} onSelect={selectPeriod} t={t} />
+            )}
           </div>
         )}
       </div>
@@ -268,10 +353,24 @@ export default function DashboardPage() {
           spark={spark}
           forecast={forecast}
           todayKey={todayKey}
-          loading={!ready || report.loading}
+          loading={!branchesReady || report.loading}
           t={t}
           money={money}
           onOpen={setDetail}
+        />
+      )}
+
+      {canViewRevenue && comparing && (report.loading || comparison.rows.length > 0) && (
+        <BranchCompare
+          rows={comparison.rows}
+          total={comparison.total}
+          loading={!ready || report.loading}
+          sort={compareSort}
+          onSort={setCompareSort}
+          onPick={(id) => setSelection([id])}
+          periodLabel={periodButtonLabel}
+          t={t}
+          money={money}
         />
       )}
 

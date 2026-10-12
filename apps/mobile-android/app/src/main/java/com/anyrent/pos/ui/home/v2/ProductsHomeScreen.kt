@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.home.v2
 
+import com.anyrent.pos.data.CurrentOutlet
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,7 +82,6 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.ProductsV2Api
-import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.AddButtonState
 import com.anyrent.pos.domain.products.BarcodeMatch
@@ -106,6 +106,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.withContext
 
 /**
@@ -148,6 +149,8 @@ fun ProductsHomeScreen(
     // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
     // The view model keeps the version it reflects, so a change made while this screen was away counts too.
     LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
+    // #828: products and stock of the branch now in use
+    LaunchedEffect(Unit) { CurrentOutlet.version.drop(1).collect { viewModel.reload() } }
     val deleted by DeletedProducts.ids.collectAsState()
     LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
     LaunchedEffect(Unit) {
@@ -185,11 +188,9 @@ fun ProductsHomeScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        val shop = listOfNotNull(SessionStore.merchantName, SessionStore.outletName)
-                            .filter { it.isNotBlank() }.joinToString(" · ")
-                        if (shop.isNotBlank()) {
-                            Text(shop, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
+                        // #828: "🏬 <branch> ▾" for a merchant with several branches, else the branch name
+                        // (replaces "shop · branch"); the 44 dp button sits right above the title (board SP-dong)
+                        OutletHeaderButton()
                         Text(stringResource(R.string.v2_home_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
                     }
                     if (ProductAccess.canCreate(PermissionManager.role)) {
@@ -246,7 +247,10 @@ fun ProductsHomeScreen(
 
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
-                onRefresh = { viewModel.reload(fromPull = true) },
+                onRefresh = {
+                    viewModel.reload(fromPull = true)
+                    scope.launch { CurrentOutlet.refresh() }
+                },
                 modifier = Modifier.fillMaxSize(),
             ) {
                 when {

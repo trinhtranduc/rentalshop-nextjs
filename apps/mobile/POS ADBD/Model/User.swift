@@ -271,6 +271,8 @@ class User: NSObject, Codable {
     // MARK: - UserDefaults Storage Methods
     
     class func reset() {
+        // #828: logout or a kicked session forgets the merchant's chosen branch (back to the default next time)
+        CurrentOutlet.shared.forget(userId: current()?.id)
         AuthTokenStore.clear()
         UserDefaults.standard.removeObject(forKey: userKey)
         UserDefaults.standard.synchronize()

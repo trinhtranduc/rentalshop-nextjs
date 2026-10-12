@@ -20,9 +20,7 @@ const F = require('./web-fixtures');
 
 /** Checks that fail on purpose until the named issue is fixed: id -> '#N' (a pass is reported "fixed?") */
 const KNOWN = {
-  // #728: GET /api/subscriptions/status and /api/plans answer 403 to an expired / cancelled / paused / past-due merchant,
-  // so Cài đặt > Gói dịch vụ cannot load and the web has no renew path
-  ...Object.fromEntries(['01', '02', '03', '04', '05'].flatMap((n) => [[`WEB-SUB-${n}-merchant-c`, '#728'], [`WEB-SUB-${n}-merchant-d`, '#728']])),
+  // #728 fixed: WEB-SUB-01..05 merchant-c/d are plain checks now (they passed in the #849 run)
   'WEB-SUB-08': '#738' // plan without web access: raw key errors.PLATFORM_ACCESS_DENIED
 };
 

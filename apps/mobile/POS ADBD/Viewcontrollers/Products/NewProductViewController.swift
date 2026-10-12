@@ -1166,7 +1166,7 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
         }
         
         // Get outlet ID: prefer outlet.id, then outletId property, fallback to 1
-        let outletId = user.outlet?.id ?? user.outletId ?? 1
+        let outletId = CurrentOutlet.shared.id ?? user.outlet?.id ?? user.outletId ?? 1
         let merchantId = user.merchant?.id ?? user.merchantId
         
         print("📋 Update Product - Using outlet ID: \(outletId), merchant ID: \(merchantId ?? 0)")
@@ -1232,7 +1232,7 @@ product: Product, image: UIImage?, sale: String, costPrice: String, deposit: Str
         }
         
         // Get outlet ID: prefer outlet.id, then outletId property, fallback to 1
-        let outletId = user.outlet?.id ?? user.outletId ?? 1
+        let outletId = CurrentOutlet.shared.id ?? user.outlet?.id ?? user.outletId ?? 1
         let merchantId = user.merchant?.id ?? user.merchantId
         
         print("📋 Create Product - Using outlet ID: \(outletId), merchant ID: \(merchantId ?? 0)")

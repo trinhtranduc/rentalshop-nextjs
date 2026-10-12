@@ -13,8 +13,12 @@ import java.time.temporal.ChronoUnit
 
 /** Product rights by role. The API is the real gate; these only decide which controls are shown. */
 object ProductAccess {
-    /** MERCHANT / OUTLET_ADMIN have `products.manage`; OUTLET_STAFF only `products.create` */
-    fun canCreate(role: UserRole): Boolean = role != UserRole.UNKNOWN
+    /**
+     * Roles with `products.manage` (MERCHANT, OUTLET_ADMIN, Nhân viên kho). OUTLET_STAFF lost `products.create`
+     * in #825, so iOS hides the Home "+"; Android does the same (#863).
+     */
+    fun canCreate(role: UserRole): Boolean =
+        role == UserRole.ADMIN || role == UserRole.MERCHANT || role == UserRole.OUTLET_ADMIN || role == UserRole.OUTLET_INVENTORY
 
     /** OUTLET_STAFF has no `products.update`; Nhân viên kho has `products.manage` (#682) */
     fun canEdit(role: UserRole): Boolean =
