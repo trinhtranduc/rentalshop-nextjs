@@ -409,6 +409,26 @@ class OrdersHomeTest {
         assertEquals(PayLine.Due(120000.0), OrdersBoardLogic.rowPayLine(due, rentList = false))
     }
 
+    /** #891 (option C): light Lấy / Trả chips; the sorted date only bolder; a created-date sort makes "tạo …" bold (iOS) */
+    @Test
+    fun `date chips emphasise only the sorted date`() {
+        val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
+        assertEquals(
+            listOf(OrderRowDates.DateChip(OrderRowDates.ChipKind.PICKUP, "Lấy", "14/10/26", bold = true),
+                OrderRowDates.DateChip(OrderRowDates.ChipKind.RETURN, "Trả", "16/10/26", bold = false)),
+            OrdersBoardLogic.dateChips(order, SortDate.PICKUP),
+        )
+        assertEquals(listOf(false, true), OrdersBoardLogic.dateChips(order, SortDate.RETURN).map { it.bold })
+        assertEquals(listOf(false, false), OrdersBoardLogic.dateChips(order, null).map { it.bold })
+        assertEquals(true, OrdersBoardLogic.metaIsBold(SortDate.CREATED))
+        assertEquals(false, OrdersBoardLogic.metaIsBold(SortDate.PICKUP))
+        assertEquals(false, OrdersBoardLogic.metaIsBold(null))
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFEFF6FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).fill)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF1E40AF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).text)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF5F3FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).fill)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF5B21B6), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).text)
+    }
+
     /** #888: dd/mm/yy in the Vietnam day, whatever the device zone */
     @Test
     fun `day month year is the vietnam day`() {
