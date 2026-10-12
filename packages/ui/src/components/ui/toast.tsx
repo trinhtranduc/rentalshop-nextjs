@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from './button';
+import { toastDurationFor } from './toast-policy';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -43,21 +44,23 @@ export const Toast: React.FC<ToastProps> = ({
   type,
   title,
   message,
-  duration = 5000,
+  duration,
   onClose,
 }) => {
   const [isVisible, setIsVisible] = useState(true);
+  // #919: an error toast always hides by itself (6 s); others keep 5 s or the caller's value
+  const visibleMs = toastDurationFor(type, duration);
 
   useEffect(() => {
-    if (duration > 0) {
+    if (visibleMs > 0) {
       const timer = setTimeout(() => {
         setIsVisible(false);
         setTimeout(() => onClose(id), 300);
-      }, duration);
+      }, visibleMs);
 
       return () => clearTimeout(timer);
     }
-  }, [duration, id, onClose]);
+  }, [visibleMs, id, onClose]);
 
   const Icon = toastIcons[type];
 
@@ -69,13 +72,14 @@ export const Toast: React.FC<ToastProps> = ({
   return (
     <div
       className={cn(
-        'w-full transition-all duration-300 ease-in-out pointer-events-auto',
-        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        'w-full transition-all duration-300 ease-in-out',
+        // #919: a fading toast no longer takes clicks
+        isVisible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
       )}
     >
       <div
         className={cn(
-          'border rounded-lg shadow-lg p-4 flex items-start space-x-3 pointer-events-auto',
+          'border rounded-lg shadow-lg p-4 flex items-start space-x-3',
           toastStyles[type]
         )}
       >
@@ -125,7 +129,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose 
       {toasts?.map((toast, index) => (
         <div 
           key={toast.id} 
-          className="animate-slide-in-from-right pointer-events-auto"
+          className="animate-slide-in-from-right"
           style={{ 
             animationDelay: `${index * 100}ms`,
             transform: `translateY(${index * 8}px)`
@@ -153,7 +157,12 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
-  const addToast = (type: ToastType, title: string, message?: string, duration?: number) => {
+  // Stable, so a toast's hide timer is not restarted every time the list changes (#919)
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
+  const addToast = useCallback((type: ToastType, title: string, message?: string, duration?: number) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast: ToastProps = {
       id,
@@ -166,11 +175,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setToasts(prev => [...prev, newToast]);
     return id;
-  };
-
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
+  }, [removeToast]);
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
@@ -194,7 +199,7 @@ export const useToast = () => {
   const { addToast, removeToast } = useToasts();
   
   const toastSuccess = (title: string, message?: string) => addToast('success', title, message);
-  const toastError = (title: string, message?: string) => addToast('error', title, message, 0); // No auto-hide for errors
+  const toastError = (title: string, message?: string) => addToast('error', title, message); // #919: hides after 6 s
   const toastWarning = (title: string, message?: string) => addToast('warning', title, message);
   const toastInfo = (title: string, message?: string) => addToast('info', title, message);
   

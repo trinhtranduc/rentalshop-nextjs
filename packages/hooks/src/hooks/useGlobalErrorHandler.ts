@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useToasts } from '@rentalshop/ui';
 import { useApiError } from './useApiError';
 import { useSubscriptionError } from './useSubscriptionError';
+import { useCommonTranslations } from './useTranslation';
+import { apiErrorToast } from './apiErrorToast';
 
 // Simple debounce: Track last shown error
 let lastErrorCode: string | null = null;
@@ -24,18 +26,21 @@ export function useGlobalErrorHandler() {
   const { addToast } = useToasts();
   const { translateError } = useApiError();
   const subscriptionErrorHook = useSubscriptionError();
+  const tc = useCommonTranslations();
   
   // Store stable references
   const addToastRef = useRef(addToast);
   const translateErrorRef = useRef(translateError);
   const subscriptionErrorHookRef = useRef(subscriptionErrorHook);
+  const tcRef = useRef(tc);
   
   // Update refs when values change
   useEffect(() => {
     addToastRef.current = addToast;
     translateErrorRef.current = translateError;
     subscriptionErrorHookRef.current = subscriptionErrorHook;
-  }, [addToast, translateError, subscriptionErrorHook]);
+    tcRef.current = tc;
+  }, [addToast, translateError, subscriptionErrorHook, tc]);
 
   useEffect(() => {
     const handleApiError = (event: CustomEvent) => {
@@ -74,8 +79,9 @@ export function useGlobalErrorHandler() {
         data: fullError?.data
       });
       
-      const toastType = (errorCode === 'VALIDATION_ERROR' || errorCode?.includes('INVALID')) ? 'warning' : 'error';
-      addToastRef.current(toastType, 'Error', translatedMessage, 0);
+      // #919: title in the user's language; the toast hides by itself (error: 6 s, see toast-policy)
+      const { type, titleKey } = apiErrorToast(errorCode);
+      addToastRef.current(type, tcRef.current(titleKey), translatedMessage);
     };
     
     window.addEventListener('api-error', handleApiError as EventListener);
