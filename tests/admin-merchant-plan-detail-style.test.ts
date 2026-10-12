@@ -30,7 +30,7 @@ describe('admin merchant detail and plan detail style (#882)', () => {
     expect(src).toMatch(/data-testid="merchant-addon-tab"/);
     // other callers keep the actions inside the card
     expect(src).toMatch(/showActions = true/);
-    expect(read(MERCHANTS + 'index.ts')).toMatch(/MerchantQuickActions/);
+    expect(read('packages/ui/src/components/features/Merchants/index.ts')).toMatch(/MerchantQuickActions/);
   });
 
   it('merchant cards, statuses and the plan card use ar tokens and pills, no rainbow boxes', () => {

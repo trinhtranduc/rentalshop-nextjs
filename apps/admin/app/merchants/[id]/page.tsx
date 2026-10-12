@@ -1,15 +1,15 @@
 'use client';
 
 import '../../details.css';
+import { DetailHeader } from '../../components/DetailHeader';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   MerchantDetail,
+  MerchantQuickActions,
   Breadcrumb,
   PageWrapper,
-  PageHeader,
-  PageTitle,
   PageContent,
   Button
 } from '@rentalshop/ui';
@@ -401,22 +401,34 @@ export default function MerchantDetailPage() {
     }
   };
 
+  const merchantName: string = merchant?.merchant?.name || merchant?.name || 'Merchant';
+
   // Breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Merchants', href: '/merchants' },
-    { label: merchant?.merchant?.name || merchant?.name || 'Merchant' }
+    { label: merchantName }
   ];
 
   return (
     <PageWrapper className="ar-detail admin-phone">
       <Breadcrumb items={breadcrumbItems} showHome={false} homeHref="/dashboard" className="mb-4" />
+      <DetailHeader
+        backHref="/merchants"
+        backLabel="Merchants"
+        title={merchantName}
+        subtitle={[`Merchant #${merchant.id}`, merchant.email].filter(Boolean).join(' · ')}
+        status={merchant.isActive ? 'Enabled' : 'Disabled'}
+        statusTone={merchant.isActive ? 'success' : 'danger'}
+        actions={<MerchantQuickActions merchantId={merchant.id} onMerchantAction={handleMerchantAction} />}
+      />
       <PageContent>
         <MerchantDetail
           data={merchantData}
           plans={plans}
           addonCount={addonCount}
           currentUserRole={user?.role}
+          showActions={false}
           loyaltyActive={loyaltyActive}
           loyaltyProgramName={loyaltyProgramName}
           loyaltyLoading={loyaltyLoading}
