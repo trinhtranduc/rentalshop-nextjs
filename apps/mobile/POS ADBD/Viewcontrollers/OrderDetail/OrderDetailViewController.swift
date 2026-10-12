@@ -286,6 +286,13 @@ final class OrderDetailViewController: BaseViewControler {
         if OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
             box.addArrangedSubview(progressView(detail))
         }
+        // #891 (owner): who created the order, next to the created step; no line without a name
+        if let creator = OrderDetailLogic.creatorName(detail) {
+            let label = V2.label(String(format: "order.detail.createdBy".localized(), creator), size: DS.TextSize.secondary,
+                                 color: DS.Color.textMuted, lines: 1)
+            label.accessibilityIdentifier = "order.detail.createdBy"
+            box.addArrangedSubview(label)
+        }
         return box
     }
 

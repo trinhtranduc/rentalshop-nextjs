@@ -344,7 +344,7 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"Lan Nguyễn""#)), "Lan Nguyễn")
         XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":" ","lastName":""}"#)))
         XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"  ""#)))
-        let vi = Bundle(for: Self.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        let vi = Bundle(for: OrderRowCell.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
         XCTAssertEqual(vi?.localizedString(forKey: "order.detail.createdBy", value: nil, table: nil), "Người tạo: %@")
     }
 }

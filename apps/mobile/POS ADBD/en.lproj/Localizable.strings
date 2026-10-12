@@ -2495,3 +2495,4 @@
 "products.cart.cost" = "Cost";
 "products.cart.totalCost" = "Total cost";
 "products.cart.profit" = "Expected profit";
+"order.detail.createdBy" = "Created by: %@";

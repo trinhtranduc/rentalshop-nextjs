@@ -243,6 +243,15 @@ enum OrderDetailLogic {
         return StatusErrorOutcome(message: message, reload: isClientError)
     }
 
+    /// #891 (owner): "Người tạo" of the detail: the flat `createdByName`, else the nested creator; nil when empty
+    static func creatorName(_ detail: OrderDetail) -> String? {
+        let flat = detail.createdByName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !flat.isEmpty { return flat }
+        let nested = [detail.createdBy?.firstName, detail.createdBy?.lastName]
+            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
+        return nested.isEmpty ? nil : nested
+    }
+
     /// `dd/MM/yy` civil day (#888)
     static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         DayFormatter.dmy(date, timeZone: timeZone)
