@@ -611,12 +611,12 @@ private fun DetailHeader(detail: OrderDetail) {
                                 color = DS.Colors.TextMuted,
                                 maxLines = 1,
                             )
-                            Text(
+                            // #891: "25/09/26 22:48" shrinks to fit one line (iOS adjustsFontSizeToFitWidth, 0.8)
+                            FitOneLineText(
                                 step.day,
                                 fontSize = DS.TextSize.Body,
                                 fontWeight = FontWeight.Bold,
                                 color = if (step.accent) DS.Colors.Primary else DS.Colors.Text,
-                                maxLines = 1,
                             )
                         }
                     }
@@ -1025,3 +1025,19 @@ internal fun Thumb(model: Any?, size: Dp, onClick: (() -> Unit)? = null) {
     }
 }
 
+/** One line that shrinks (down to 70%) instead of wrapping or clipping, like iOS `adjustsFontSizeToFitWidth` */
+@Composable
+private fun FitOneLineText(text: String, fontSize: androidx.compose.ui.unit.TextUnit, fontWeight: FontWeight, color: Color) {
+    var size by remember(text) { mutableStateOf(fontSize) }
+    Text(
+        text,
+        fontSize = size,
+        fontWeight = fontWeight,
+        color = color,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { layout ->
+            if (layout.didOverflowWidth && size.value > fontSize.value * 0.7f) size = (size.value * 0.92f).sp
+        },
+    )
+}

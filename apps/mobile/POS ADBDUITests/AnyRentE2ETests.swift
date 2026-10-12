@@ -310,6 +310,42 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #891: list badge vs detail badge for one order of each status (Đã đặt, Đang thuê, Đã trả, Đã huỷ, Hoàn thành)
+    func test4cBadgeListVsDetail() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.start()
+        guard openAllOrders() else { return XCTFail("Tất cả đơn did not list rows") }
+        let chips: [([String], String)] = [(["Booked", "Đã đặt"], "reserved"), (["Renting", "Đang thuê"], "renting"),
+                                           (["Returned", "Đã trả"], "returned"), (["Cancelled", "Đã huỷ"], "cancelled")]
+        for (labels, name) in chips {
+            let chip = app.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+            guard chip.waitForExistence(timeout: 5) else { e2e.note("chip \(name) missing"); continue }
+            chip.tap()
+            sleep(2)
+            e2e.shot("4c-\(name)-list")
+            if let row = app.cells.allElementsBoundByIndex.first(where: { $0.isHittable }) {
+                e2e.tapRow(row)
+                sleep(2)
+                e2e.shot("4c-\(name)-detail")
+                e2e.goBackOnce()
+                sleep(1)
+            }
+        }
+        e2e.tapIfExists(app.buttons.matching(NSPredicate(format: "label IN %@", ["All", "Tất cả"])).firstMatch)
+        let sale = e2e.saleModeButton
+        if sale.waitForExistence(timeout: 5) {
+            sale.tap()
+            sleep(2)
+            e2e.shot("4c-completed-list")
+            if let row = app.cells.allElementsBoundByIndex.first(where: { $0.isHittable && $0.label.contains("Hoàn") || $0.staticTexts["Hoàn thành"].exists }) {
+                e2e.tapRow(row)
+                sleep(2)
+                e2e.shot("4c-completed-detail")
+                e2e.goBackOnce()
+            }
+        }
+    }
+
     /// #888: cart lines show "Giá vốn" and the money part "Tổng giá vốn" (rent and sale) and "Lãi dự kiến" (sale) for
     /// roles that may see prices; staff never see them. Product 1 and Product 2 have a cost in the e2e DB.
     func test8fCartCost() throws {
