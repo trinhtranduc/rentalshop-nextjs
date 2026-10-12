@@ -401,6 +401,14 @@ class OrdersHomeTest {
         )
     }
 
+    /** #891 (owner): Tất cả đơn rows have no pay line; search and the other lists keep it (iOS) */
+    @Test
+    fun `rent list rows have no pay line`() {
+        val due = listOrder("PICKUPED").copy(amountDue = 120000.0, refundDue = 0.0)
+        assertNull(OrdersBoardLogic.rowPayLine(due, rentList = true))
+        assertEquals(PayLine.Due(120000.0), OrdersBoardLogic.rowPayLine(due, rentList = false))
+    }
+
     /** #888: dd/mm/yy in the Vietnam day, whatever the device zone */
     @Test
     fun `day month year is the vietnam day`() {

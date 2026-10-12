@@ -800,6 +800,18 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(name?.numberOfLines, 1)
     }
 
+    /// #891 (owner): Tất cả đơn rows have no pay line ("còn thu N"); search and the other lists keep it
+    func testRentListRowHasNoPayLine() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let due = try listOrder(1, status: "PICKUPED", balances: #","amountDue":120000,"refundDue":0"#)
+        let payText = String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000))
+        cell.configure(.order(due, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
+        XCTAssertFalse(visibleTexts(cell).contains(payText))
+        XCTAssertTrue(visibleTexts(cell).contains(MoneyFormatter.format(300000)), "the total stays")
+        cell.configure(.order(due, lateDays: 0), context: .search, hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains(payText))
+    }
+
     /// #496 "Chưa lấy đồ": overdue chip instead of "Trễ N ngày", "còn thu" in the Còn phải thu orange, no item line
     func testNotPickedUpRowChipAndDueColour() throws {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
