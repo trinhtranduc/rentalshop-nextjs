@@ -163,4 +163,34 @@ final class AttendanceTests: XCTestCase {
         XCTAssertEqual(result[2].worked, "—")
         XCTAssertEqual(result[2].shift, "Chiều 13–17:30")
     }
+
+    /// #916 A record the manager added on the web ("+ Thêm lượt") has only an EDIT row, and an edited record keeps
+    /// its scans: the week shows the times of the last EDIT
+    func testWeekRowsShowManualAndEditedRecords() throws {
+        let month = try decode(AttendanceMonth.self, """
+        {"summary":{"hours":12,"days":3},"rows":[
+          {"at":"2026-10-12T00:58:00Z","kind":"IN","result":"ACCEPTED","recordId":1,"lateMinutes":0},
+          {"at":"2026-10-12T05:01:00Z","kind":"OUT","result":"ACCEPTED","recordId":1},
+          {"at":"2026-10-13T09:00:00Z","kind":"EDIT","result":"EDITED","recordId":1,"note":"Quên quẹt",
+           "before":{"checkInAt":"2026-10-12T00:58:00.000Z","checkOutAt":"2026-10-12T05:01:00.000Z","status":"DONE"},
+           "after":{"checkInAt":"2026-10-12T01:00:00.000Z","checkOutAt":"2026-10-12T06:00:00.000Z","status":"DONE"}},
+          {"at":"2026-10-14T10:00:00Z","kind":"EDIT","result":"EDITED","recordId":5,"note":"Quên điện thoại","before":null,
+           "after":{"checkInAt":"2026-10-14T01:00:00.000Z","checkOutAt":"2026-10-14T05:00:00.000Z","status":"DONE",
+                    "dateKey":"2026-10-14","id":5}},
+          {"at":"2026-10-15T17:30:00Z","kind":"IN","result":"ACCEPTED","recordId":7,"dateKey":"2026-10-15"},
+          {"at":"2026-10-15T21:30:00Z","kind":"OUT","result":"ACCEPTED","recordId":7,"dateKey":"2026-10-15"}
+        ]}
+        """)
+        let pairs = AttendanceLogic.pairs(month.rows)
+        XCTAssertEqual(pairs.count, 3)
+        let week = AttendanceLogic.weekDayKeys(containing: at("2026-10-14T03:00:00Z"), timeZone: vn)
+        let result = AttendanceLogic.weekRows(dayKeys: week, schedule: [:], pairs: pairs)
+        // The row's own `dateKey` (#918) wins: a night shift that starts after midnight stays on its shift day
+        XCTAssertEqual(result.map { $0.dayKey }, ["2026-10-12", "2026-10-14", "2026-10-15"])
+        guard result.count == 3 else { return }
+        XCTAssertTrue(result[0].worked.hasPrefix("08:00–13:00 · "), result[0].worked)
+        XCTAssertTrue(result[1].worked.hasPrefix("08:00–12:00 · "), result[1].worked)
+        XCTAssertTrue(result[1].worked.contains("4"), result[1].worked)
+        XCTAssertTrue(result[2].worked.hasPrefix("00:30–04:30 · "), result[2].worked)
+    }
 }

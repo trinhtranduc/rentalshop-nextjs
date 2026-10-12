@@ -134,4 +134,33 @@ class AttendanceLogicTest {
         assertEquals(22, summary.days)
         assertNull(AttendanceLogic.monthSummary(null).hours)
     }
+
+    /** #916 A manager-added record ("+ Thêm lượt") has only an EDIT row; an edited record shows the EDIT times */
+    @Test
+    fun my_week_shows_manual_and_edited_records() {
+        val pairs = AttendanceLogic.pairs(JSONArray("""[
+            {"at":"2026-10-12T00:58:00Z","kind":"IN","result":"ACCEPTED","recordId":1},
+            {"at":"2026-10-12T05:01:00Z","kind":"OUT","result":"ACCEPTED","recordId":1},
+            {"at":"2026-10-13T01:00:00Z","kind":"IN","result":"ACCEPTED","recordId":3},
+            {"at":"2026-10-13T17:00:00Z","kind":"OUT","result":"AUTO_CLOSED","recordId":3},
+            {"at":"2026-10-13T09:00:00Z","kind":"EDIT","result":"EDITED","recordId":1,"note":"Quên quẹt",
+             "before":{"checkInAt":"2026-10-12T00:58:00.000Z","checkOutAt":"2026-10-12T05:01:00.000Z","status":"DONE"},
+             "after":{"checkInAt":"2026-10-12T01:00:00.000Z","checkOutAt":"2026-10-12T06:00:00.000Z","status":"DONE"}},
+            {"at":"2026-10-14T09:00:00Z","kind":"EDIT","result":"EDITED","recordId":3,"note":"Quên ra ca",
+             "before":{"checkInAt":"2026-10-13T01:00:00.000Z","checkOutAt":null,"status":"MISSING_OUT"},
+             "after":{"checkInAt":"2026-10-13T01:00:00.000Z","checkOutAt":"2026-10-13T05:00:00.000Z","status":"DONE"}},
+            {"at":"2026-10-14T10:00:00Z","kind":"EDIT","result":"EDITED","recordId":5,"note":"Quên điện thoại","before":null,
+             "after":{"checkInAt":"2026-10-14T01:00:00.000Z","checkOutAt":"2026-10-14T05:00:00.000Z","status":"DONE","dateKey":"2026-10-14","id":5}},
+            {"at":"2026-10-15T17:30:00Z","kind":"IN","result":"ACCEPTED","recordId":7,"dateKey":"2026-10-15"},
+            {"at":"2026-10-15T21:30:00Z","kind":"OUT","result":"ACCEPTED","recordId":7,"dateKey":"2026-10-15"}
+        ]"""))
+        val rows = AttendanceLogic.weekRows(AttendanceLogic.week(LocalDate.parse("2026-10-12")), emptyMap(), pairs)
+        // The row's own `dateKey` (#918) wins: a night shift that starts after midnight stays on its shift day
+        assertEquals(listOf("2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"), rows.map { it.date.toString() })
+        assertEquals("08:00–13:00", AttendanceLogic.pairTimes(rows[0].pairs))
+        assertEquals("08:00–12:00", AttendanceLogic.pairTimes(rows[1].pairs))
+        assertEquals("08:00–12:00", AttendanceLogic.pairTimes(rows[2].pairs))
+        assertEquals(4.0, AttendanceLogic.pairHours(rows[2].pairs), 0.001)
+        assertEquals("00:30–04:30", AttendanceLogic.pairTimes(rows[3].pairs))
+    }
 }
