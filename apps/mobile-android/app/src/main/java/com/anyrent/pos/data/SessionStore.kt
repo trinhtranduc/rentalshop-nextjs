@@ -38,6 +38,8 @@ object SessionStore {
     private const val KEY_APP_CONFIG = "appConfig"
     /** #518 shop setting "Cho tạo đơn khi trùng lịch"; absent = ON */
     private const val KEY_ALLOW_OVERLAP = "allowOverlappingOrders"
+    /** #910 active module keys of the shop (`merchant.modules`, #907) */
+    private const val KEY_MODULES = "merchantModules"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -55,7 +57,20 @@ object SessionStore {
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         _allowOverlappingOrders.value = prefs.getBoolean(KEY_ALLOW_OVERLAP, true)
+        _modules.value = prefs.getStringSet(KEY_MODULES, emptySet()).orEmpty().toSet()
     }
+
+    private val _modules = MutableStateFlow<Set<String>>(emptySet())
+
+    /** #910 active modules of the user's shop (login / profile `merchant.modules`); empty when the API sends none */
+    val modulesFlow: StateFlow<Set<String>> = _modules.asStateFlow()
+
+    var modules: Set<String>
+        get() = _modules.value
+        set(value) {
+            _modules.value = value
+            if (isReady) prefs.edit().putStringSet(KEY_MODULES, value).apply()
+        }
 
     private val _allowOverlappingOrders = MutableStateFlow(true)
 
@@ -216,8 +231,10 @@ object SessionStore {
             .remove(KEY_MERCHANT_PHONE)
             .remove(KEY_MERCHANT_ADDRESS)
             .remove(KEY_ALLOW_OVERLAP)
+            .remove(KEY_MODULES)
             .apply()
         _allowOverlappingOrders.value = true
+        _modules.value = emptySet()
         if (!rememberedEmail.isNullOrBlank()) {
             lastLoginEmail = rememberedEmail
         }

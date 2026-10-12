@@ -1,0 +1,318 @@
+package com.anyrent.pos.domain.attendance
+
+import com.anyrent.pos.domain.ShopTime
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.DayOfWeek
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
+import java.util.Locale
+
+/** Key of the attendance module in `merchant.modules` (#907) */
+const val ATTENDANCE_MODULE = "attendance"
+
+/** One shift of a day: "Ca sáng" 08:00–12:00 (times are the shop's HH:mm) */
+data class AttendanceShift(val name: String?, val start: String?, val end: String?)
+
+/** A clock-in record (#907 `AttendanceRecord`); every field may be missing */
+data class AttendanceRecord(
+    val id: Int?,
+    val checkInAt: Instant?,
+    val checkOutAt: Instant?,
+    val status: String?,
+    val hours: Double?,
+    val breakMinutes: Int?,
+)
+
+enum class AttendanceStatus { NOT_IN, IN_SHIFT, DONE }
+
+/** `GET /api/attendance/me` */
+data class AttendanceMe(
+    val openRecord: AttendanceRecord?,
+    val todayShifts: List<AttendanceShift>,
+    val lastAction: String?,
+    val lastActionAt: Instant?,
+) {
+    /** "đang trong ca" with an open record, "đã xong" after an OUT today, else "chưa vào ca" */
+    fun status(now: Instant = Instant.now(), zone: ZoneId = ShopTime.zone): AttendanceStatus = when {
+        openRecord != null -> AttendanceStatus.IN_SHIFT
+        lastAction.equals("OUT", ignoreCase = true) &&
+            lastActionAt?.atZone(zone)?.toLocalDate() == now.atZone(zone).toLocalDate() -> AttendanceStatus.DONE
+        else -> AttendanceStatus.NOT_IN
+    }
+}
+
+/** `POST /api/attendance/punch` success */
+data class PunchResult(
+    val action: String,
+    val record: AttendanceRecord?,
+    val distanceM: Int?,
+    val accuracyM: Int?,
+) {
+    val isIn: Boolean get() = !action.equals("OUT", ignoreCase = true)
+}
+
+/** Why a punch was refused; one shows at a time (mockup screen 6) */
+enum class PunchRejectionKind {
+    OUT_OF_RANGE, MOCK_LOCATION, QR_EXPIRED, QR_WRONG_OUTLET, GPS_INACCURATE,
+    NOT_CONFIGURED, MODULE_OFF, NO_LOCATION, OTHER,
+}
+
+data class PunchRejection(
+    val kind: PunchRejectionKind,
+    val distanceM: Int? = null,
+    val radiusM: Int? = null,
+    val accuracyM: Int? = null,
+    /** API text for [PunchRejectionKind.OTHER] */
+    val message: String? = null,
+)
+
+/** One day of "Ca và công của tôi": the shifts and the worked pairs */
+data class WorkedPair(val inAt: Instant, val outAt: Instant?, val missingOut: Boolean, val lateMinutes: Int?, val breakMinutes: Int? = null)
+
+data class MyShiftDay(val date: LocalDate, val shifts: List<AttendanceShift>, val pairs: List<WorkedPair>) {
+    val lateMinutes: Int get() = pairs.sumOf { it.lateMinutes ?: 0 }
+}
+
+data class MonthSummary(val hours: Double?, val days: Int?)
+
+object AttendanceLogic {
+    // ---- parsing (nullable-safe: a missing or wrong-typed field reads as null) ----
+
+    /** `merchant.modules` of login / profile; missing or not an array = none */
+    fun modules(merchant: JSONObject?): Set<String> {
+        val array = merchant?.optJSONArray("modules") ?: return emptySet()
+        return (0 until array.length()).mapNotNull { i -> (array.opt(i) as? String)?.trim()?.takeIf { it.isNotEmpty() } }.toSet()
+    }
+
+    fun hasAttendance(modules: Set<String>): Boolean = ATTENDANCE_MODULE in modules
+
+    fun instant(value: Any?): Instant? = (value as? String)?.let {
+        runCatching { OffsetDateTime.parse(it).toInstant() }.getOrNull() ?: runCatching { Instant.parse(it) }.getOrNull()
+    }
+
+    private fun JSONObject.str(vararg keys: String): String? =
+        keys.firstNotNullOfOrNull { k -> (opt(k) as? String)?.trim()?.takeIf { it.isNotEmpty() } }
+
+    private fun JSONObject.int(vararg keys: String): Int? =
+        keys.firstNotNullOfOrNull { k -> (opt(k) as? Number)?.let { Math.round(it.toDouble()).toInt() } }
+
+    private fun JSONObject.dbl(vararg keys: String): Double? =
+        keys.firstNotNullOfOrNull { k -> (opt(k) as? Number)?.toDouble() }
+
+    fun shift(o: JSONObject?): AttendanceShift? {
+        if (o == null) return null
+        val s = AttendanceShift(
+            name = o.str("name", "shiftName"),
+            start = o.str("start", "startTime", "shiftStart"),
+            end = o.str("end", "endTime", "shiftEnd"),
+        )
+        return s.takeIf { it.name != null || it.start != null }
+    }
+
+    fun shifts(array: JSONArray?): List<AttendanceShift> =
+        (0 until (array?.length() ?: 0)).mapNotNull { shift(array?.optJSONObject(it)) }
+
+    fun record(o: JSONObject?): AttendanceRecord? {
+        if (o == null) return null
+        val snapshot = o.optJSONObject("shift")
+        return AttendanceRecord(
+            id = o.int("id"),
+            checkInAt = instant(o.opt("checkInAt")),
+            checkOutAt = instant(o.opt("checkOutAt")),
+            status = o.str("status"),
+            hours = o.dbl("hours"),
+            breakMinutes = o.int("shiftBreakMinutes", "breakMinutes") ?: snapshot?.int("breakMinutes"),
+        )
+    }
+
+    fun me(data: JSONObject?): AttendanceMe {
+        val today = data?.optJSONObject("today")
+        val last = data?.optJSONObject("lastAction")
+        return AttendanceMe(
+            openRecord = record(data?.optJSONObject("openRecord")),
+            todayShifts = shifts(today?.optJSONArray("shifts")),
+            lastAction = last?.str("action", "kind") ?: (data?.opt("lastAction") as? String),
+            lastActionAt = instant(last?.opt("at")) ?: instant(last?.opt("createdAt")),
+        )
+    }
+
+    fun punch(data: JSONObject?): PunchResult = PunchResult(
+        action = data?.str("action") ?: "IN",
+        record = record(data?.optJSONObject("record")),
+        distanceM = data?.int("distanceM"),
+        accuracyM = data?.int("accuracyM"),
+    )
+
+    /** API error code (+ its `data`) → the one rejection shown */
+    fun rejection(code: String?, data: JSONObject?, message: String?): PunchRejection = when (code?.uppercase()) {
+        "OUT_OF_RANGE" -> PunchRejection(PunchRejectionKind.OUT_OF_RANGE, distanceM = data?.int("distanceM"), radiusM = data?.int("radiusM"))
+        "MOCK_LOCATION" -> PunchRejection(PunchRejectionKind.MOCK_LOCATION)
+        "QR_EXPIRED" -> PunchRejection(PunchRejectionKind.QR_EXPIRED)
+        "QR_WRONG_OUTLET" -> PunchRejection(PunchRejectionKind.QR_WRONG_OUTLET)
+        "GPS_INACCURATE" -> PunchRejection(PunchRejectionKind.GPS_INACCURATE, accuracyM = data?.int("accuracyM"))
+        "ATTENDANCE_NOT_CONFIGURED" -> PunchRejection(PunchRejectionKind.NOT_CONFIGURED)
+        "MODULE_NOT_ENABLED" -> PunchRejection(PunchRejectionKind.MODULE_OFF)
+        else -> PunchRejection(PunchRejectionKind.OTHER, message = message)
+    }
+
+    /** `isMock`: `Location.isMock` on API 31+, `isFromMockProvider` before */
+    fun isMock(sdkInt: Int, isMockApi31: () -> Boolean, isFromMockProvider: () -> Boolean): Boolean =
+        if (sdkInt >= 31) isMockApi31() else isFromMockProvider()
+
+    // ---- hours and texts ----
+
+    /** Record hours: the API's `hours`, else (OUT − IN) − break, floor 0; no OUT = null */
+    fun hours(record: AttendanceRecord?): Double? {
+        if (record == null) return null
+        record.hours?.let { return it }
+        val inAt = record.checkInAt ?: return null
+        val outAt = record.checkOutAt ?: return null
+        val minutes = Duration.between(inAt, outAt).toMinutes() - (record.breakMinutes ?: 0)
+        return minutes.coerceAtLeast(0) / 60.0
+    }
+
+    /** "4,0" in Vietnamese, "4.0" in English */
+    fun oneDecimal(value: Double, locale: Locale = Locale.getDefault()): String = String.format(locale, "%.1f", value)
+
+    fun hhmm(instant: Instant?, zone: ZoneId = ShopTime.zone): String {
+        val t = instant?.atZone(zone) ?: return "--:--"
+        return "%02d:%02d".format(t.hour, t.minute)
+    }
+
+    /** "08:00–12:00" or "08:00 – 12:00" ([spaced]) */
+    fun shiftTimes(shift: AttendanceShift, spaced: Boolean = false): String {
+        val dash = if (spaced) " – " else "–"
+        return listOfNotNull(shift.start, shift.end).joinToString(dash)
+    }
+
+    /** "Ca sáng 08:00–12:00" */
+    fun shiftLine(shift: AttendanceShift, spaced: Boolean = false): String =
+        listOfNotNull(shift.name, shiftTimes(shift, spaced).takeIf { it.isNotEmpty() }).joinToString(" ")
+
+    /** "Sáng 08–12": "Ca " dropped, ":00" dropped (week rows of "Ca và công của tôi") */
+    fun shortShift(shift: AttendanceShift): String {
+        val name = shift.name?.removePrefix("Ca ")?.removePrefix("ca ")?.replaceFirstChar { it.titlecase() }
+        fun short(t: String?) = t?.removeSuffix(":00")
+        val times = listOfNotNull(short(shift.start), short(shift.end)).joinToString("–")
+        return listOfNotNull(name, times.takeIf { it.isNotEmpty() }).joinToString(" ")
+    }
+
+    private fun vietnamese(): Boolean = Locale.getDefault().language == "vi"
+
+    /** "T2" … "CN" in Vietnamese (as iOS and the web), "Mon" … "Sun" otherwise */
+    fun weekdayShort(day: DayOfWeek, vietnamese: Boolean = vietnamese()): String = when {
+        !vietnamese -> day.getDisplayName(java.time.format.TextStyle.SHORT, Locale.ENGLISH)
+        day == DayOfWeek.SUNDAY -> "CN"
+        else -> "T${day.value + 1}"
+    }
+
+    /** "T2 12/10/26" */
+    fun dayLong(date: LocalDate, vietnamese: Boolean = vietnamese()): String =
+        "${weekdayShort(date.dayOfWeek, vietnamese)} %02d/%02d/%02d".format(date.dayOfMonth, date.monthValue, date.year % 100)
+
+    /** "T2 12/10" */
+    fun dayShort(date: LocalDate, vietnamese: Boolean = vietnamese()): String =
+        "${weekdayShort(date.dayOfWeek, vietnamese)} %02d/%02d".format(date.dayOfMonth, date.monthValue)
+
+    /** "10/2026" */
+    fun monthText(month: YearMonth): String = "%02d/%d".format(month.monthValue, month.year)
+
+    // ---- my shifts ----
+
+    /** Monday … Sunday of the Vietnam week holding [today] */
+    fun week(today: LocalDate): List<LocalDate> {
+        val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        return (0L until 7L).map { monday.plusDays(it) }
+    }
+
+    /** Months the week touches (one or two), for `people/{id}/month` */
+    fun months(days: List<LocalDate>): List<YearMonth> = days.map { YearMonth.from(it) }.distinct()
+
+    fun monthKey(month: YearMonth): String = "%04d-%02d".format(month.year, month.monthValue)
+
+    /**
+     * `GET /api/attendance/shifts` → shifts per day of [userId]. The answer is a list of
+     * `{ userId, date, shifts: [...] }` (in `data` or `data.items` / `data.days`).
+     */
+    fun scheduleFor(data: Any?, userId: Int?): Map<LocalDate, List<AttendanceShift>> {
+        val rows = when (data) {
+            is JSONArray -> data
+            is JSONObject -> data.optJSONArray("items") ?: data.optJSONArray("days") ?: data.optJSONArray("rows")
+            else -> null
+        } ?: return emptyMap()
+        val out = linkedMapOf<LocalDate, List<AttendanceShift>>()
+        for (i in 0 until rows.length()) {
+            val row = rows.optJSONObject(i) ?: continue
+            val rowUser = (row.opt("userId") as? Number)?.toInt()
+            if (userId != null && rowUser != null && rowUser != userId) continue
+            val date = (row.opt("date") as? String)?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() } ?: continue
+            val shifts = shifts(row.optJSONArray("shifts"))
+            if (shifts.isNotEmpty()) out[date] = (out[date].orEmpty() + shifts)
+        }
+        return out
+    }
+
+    /**
+     * Worked pairs from the rows of `people/{id}/month` (`{ at, kind: IN|OUT|EDIT, result, recordId, lateMinutes }`):
+     * accepted IN and OUT rows joined by `recordId`; an auto-closed record has no OUT ("missing out").
+     */
+    fun pairs(rows: JSONArray?, zone: ZoneId = ShopTime.zone): Map<LocalDate, List<WorkedPair>> {
+        data class Acc(var inAt: Instant? = null, var outAt: Instant? = null, var late: Int? = null, var missing: Boolean = false, var brk: Int? = null)
+        val byRecord = linkedMapOf<Int, Acc>()
+        for (i in 0 until (rows?.length() ?: 0)) {
+            val row = rows?.optJSONObject(i) ?: continue
+            val recordId = (row.opt("recordId") as? Number)?.toInt() ?: continue
+            val result = (row.opt("result") as? String)?.uppercase()
+            val kind = (row.opt("kind") as? String)?.uppercase()
+            val at = instant(row.opt("at")) ?: continue
+            val acc = byRecord.getOrPut(recordId) { Acc() }
+            when {
+                result == "AUTO_CLOSED" -> acc.missing = true
+                result != "ACCEPTED" -> Unit
+                kind == "IN" -> {
+                    acc.inAt = at
+                    acc.late = (row.opt("lateMinutes") as? Number)?.toInt()?.takeIf { it > 0 }
+                    acc.brk = (row.optJSONObject("shift")?.opt("breakMinutes") as? Number)?.toInt()
+                }
+                kind == "OUT" -> acc.outAt = at
+            }
+        }
+        return byRecord.values.mapNotNull { a -> a.inAt?.let { WorkedPair(it, a.outAt, a.missing && a.outAt == null, a.late, a.brk) } }
+            .sortedBy { it.inAt }
+            .groupBy { it.inAt.atZone(zone).toLocalDate() }
+    }
+
+    fun monthSummary(data: JSONObject?): MonthSummary {
+        val s = data?.optJSONObject("summary") ?: data
+        return MonthSummary(hours = s?.dbl("hours", "totalHours"), days = s?.int("days", "dayCredits", "workedDays"))
+    }
+
+    /** Rows of "TUẦN NÀY": days with a shift or a worked pair, in order */
+    fun weekRows(week: List<LocalDate>, schedule: Map<LocalDate, List<AttendanceShift>>, pairs: Map<LocalDate, List<WorkedPair>>): List<MyShiftDay> =
+        week.mapNotNull { d ->
+            val shifts = schedule[d].orEmpty()
+            val worked = pairs[d].orEmpty()
+            if (shifts.isEmpty() && worked.isEmpty()) null else MyShiftDay(d, shifts, worked)
+        }
+
+    /** "07:58–12:01" per pair (open = "07:58–…", missing out = "07:58–?") joined by ", " */
+    fun pairTimes(pairs: List<WorkedPair>, zone: ZoneId = ShopTime.zone): String = pairs.joinToString(", ") { p ->
+        val out = when {
+            p.outAt != null -> hhmm(p.outAt, zone)
+            p.missingOut -> "?"
+            else -> "…"
+        }
+        "${hhmm(p.inAt, zone)}–$out"
+    }
+
+    /** Hours of the closed pairs of a day, each minus its shift break (floor 0), as the API counts them */
+    fun pairHours(pairs: List<WorkedPair>): Double =
+        pairs.filter { it.outAt != null }
+            .sumOf { (Duration.between(it.inAt, it.outAt).toMinutes() - (it.breakMinutes ?: 0)).coerceAtLeast(0) } / 60.0
+}
