@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
             SessionStore.pendingOrderId = launchOrderId
         }
         consumeOpenCartIntent(intent)
+        consumeOpenMyShiftsIntent(intent)
         requestNotificationPermissionIfNeeded()
         if (SessionStore.isLoggedIn) {
             PushRegistrar.refreshTokenIfLoggedIn()
@@ -96,6 +97,14 @@ class MainActivity : ComponentActivity() {
             SessionStore.pendingOrderId = orderId
         }
         consumeOpenCartIntent(intent)
+        consumeOpenMyShiftsIntent(intent)
+    }
+
+    private fun consumeOpenMyShiftsIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(com.anyrent.pos.push.AttendancePush.EXTRA_OPEN_MY_SHIFTS, false) == true) {
+            intent.removeExtra(com.anyrent.pos.push.AttendancePush.EXTRA_OPEN_MY_SHIFTS)
+            com.anyrent.pos.push.AttendancePush.requestOpenMyShifts()
+        }
     }
 
     private fun consumeOpenCartIntent(intent: Intent?) {

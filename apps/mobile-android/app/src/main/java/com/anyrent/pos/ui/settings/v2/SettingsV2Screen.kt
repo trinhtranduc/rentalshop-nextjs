@@ -93,6 +93,7 @@ fun SettingsV2Screen(
     onOpenAppInfo: () -> Unit,
     onLoggedOut: () -> Unit,
     onOpenBankAccounts: () -> Unit = {},
+    onOpenAttendance: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -156,6 +157,11 @@ fun SettingsV2Screen(
                 stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
             )
+        }
+        // #910: "⏱ Chấm công" first, only when the shop has the attendance module
+        item(key = "attendance") {
+            com.anyrent.pos.ui.attendance.RefreshModulesOnShow()
+            com.anyrent.pos.ui.attendance.AttendanceSettingsRow(onClick = onOpenAttendance)
         }
         item(key = "profile") {
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))

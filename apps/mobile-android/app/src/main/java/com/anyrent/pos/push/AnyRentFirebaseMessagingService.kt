@@ -26,7 +26,9 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
         val body = message.notification?.body
             ?: message.data["body"]
             ?: ""
-        val orderId = message.data["orderId"]?.toIntOrNull()
+        // #910: a schedule change opens "Ca và công của tôi", never an order
+        val shiftChanged = AttendancePush.isShiftChanged(message.data["type"])
+        val orderId = if (shiftChanged) null else message.data["orderId"]?.toIntOrNull()
         InboxUnread.invalidate() // #674: the home badge asks the server again (the row is already saved)
         if (orderId != null) {
             SessionStore.pendingOrderId = orderId
@@ -35,10 +37,11 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (orderId != null) putExtra(MainActivity.EXTRA_ORDER_ID, orderId)
+            if (shiftChanged) putExtra(AttendancePush.EXTRA_OPEN_MY_SHIFTS, true)
         }
         val pending = PendingIntent.getActivity(
             this,
-            orderId ?: 0,
+            orderId ?: if (shiftChanged) SHIFT_CHANGED_REQUEST else 0,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -61,5 +64,6 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "AnyRentFCM"
+        private const val SHIFT_CHANGED_REQUEST = 910
     }
 }
