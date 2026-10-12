@@ -105,18 +105,15 @@ class Phase8LogicTest {
             late,
         )
 
+    /** Owner rule (#893): under the total only "Trễ N ngày" for a late order; never "còn thu" or a refund note */
     @Test
     fun `calendar note`() {
-        assertEquals(CalendarNote.Late(2, 150000.0), CalendarLogic.note(calendarRow(CalendarRowKind.TAKE_BACK, 2, lateFee = 150000.0)))
+        assertEquals(CalendarNote.Late(2, 150000.0), CalendarLogic.note(calendarRow(CalendarRowKind.TAKE_BACK, 2, amountDue = 150000.0, lateFee = 150000.0)))
         assertEquals(CalendarNote.Late(1, null), CalendarLogic.note(calendarRow(CalendarRowKind.TAKE_BACK, 1, lateFee = 0.0)))
-        assertEquals(CalendarNote.Due(700000.0), CalendarLogic.note(calendarRow(CalendarRowKind.HAND_OVER, 0, amountDue = 700000.0, refundDue = 0.0)))
-        assertEquals(CalendarNote.Refund(500000.0), CalendarLogic.note(calendarRow(CalendarRowKind.TAKE_BACK, 0, amountDue = 0.0, refundDue = 500000.0)))
-        assertEquals(CalendarNote.None, CalendarLogic.note(calendarRow(CalendarRowKind.HAND_OVER, 0, amountDue = 0.0, refundDue = 0.0)))
-        // Older API: no money fields
-        assertEquals(CalendarNote.None, CalendarLogic.note(calendarRow(CalendarRowKind.HAND_OVER, 0)))
-        // Hidden money keeps the late days only
         assertEquals(CalendarNote.Late(2, null), CalendarLogic.note(calendarRow(CalendarRowKind.TAKE_BACK, 2, lateFee = 9.0), hidesMoney = true))
-        assertEquals(CalendarNote.None, CalendarLogic.note(calendarRow(CalendarRowKind.HAND_OVER, 0, amountDue = 9.0), hidesMoney = true))
+        assertEquals(CalendarNote.None, CalendarLogic.note(calendarRow(CalendarRowKind.HAND_OVER, 0, amountDue = 700000.0, refundDue = 0.0)))
+        assertEquals(CalendarNote.None, CalendarLogic.note(calendarRow(CalendarRowKind.TAKE_BACK, 0, amountDue = 0.0, refundDue = 500000.0)))
+        assertEquals(CalendarNote.None, CalendarLogic.note(calendarRow(CalendarRowKind.HAND_OVER, 0)))
     }
 
     @Test
