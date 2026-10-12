@@ -137,9 +137,8 @@ final class OrderRowCell: UITableViewCell {
 
         let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, taskLabel, pillLine])
         left.axis = .vertical
-        left.spacing = DS.Gap.line
+        left.spacing = DS.Gap.orderRowLine // #888 owner: ~8pt between lines
         left.alignment = .fill
-        left.setCustomSpacing(2, after: metaLabel)
 
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text

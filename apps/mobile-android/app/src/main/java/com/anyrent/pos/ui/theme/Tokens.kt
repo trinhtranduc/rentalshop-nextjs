@@ -76,6 +76,8 @@ object DS {
         val LineTight = 4.dp
         /** Order list row: 15 top/bottom, 16 left/right */
         val OrderRowVertical = 15.dp
+        /** #888 (owner): ~8dp between the text lines of an order row (as on the Home list) */
+        val OrderRowLine = 8.dp
         val RowHorizontal = 16.dp
         /** Product list row: 14 padding, 96 min height */
         val ProductRow = 14.dp

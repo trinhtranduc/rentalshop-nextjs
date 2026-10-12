@@ -76,6 +76,8 @@ enum DS {
         static let lineTight: CGFloat = 4
         /// Order list row: 15 top/bottom, 16 left/right
         static let orderRowVertical: CGFloat = 15
+        /// #888 (owner): ~8pt between the text lines of an order row (as on the Home list)
+        static let orderRowLine: CGFloat = 8
         static let rowHorizontal: CGFloat = 16
         /// Product list row: 14 padding, 96 min height
         static let productRow: CGFloat = 14

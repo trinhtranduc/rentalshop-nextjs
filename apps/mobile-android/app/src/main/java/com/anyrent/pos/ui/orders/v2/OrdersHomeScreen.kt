@@ -780,7 +780,7 @@ private fun BoardRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Tag(tag.first, tag.second, RowTagStyle.STATUS)
                     Spacer(Modifier.size(6.dp))

@@ -25,6 +25,7 @@ final class TypeScaleTests: XCTestCase {
         XCTAssertEqual(DS.Gap.line, 5)
         XCTAssertEqual(DS.Gap.lineTight, 4)
         XCTAssertEqual(DS.Gap.orderRowVertical, 15)
+        XCTAssertEqual(DS.Gap.orderRowLine, 8, "#888 owner: ~8pt between order row lines")
         XCTAssertEqual(DS.Gap.rowHorizontal, 16)
         XCTAssertEqual(DS.Gap.productRow, 14)
         XCTAssertEqual(DS.Gap.productRowMinHeight, 96)
