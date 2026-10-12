@@ -131,6 +131,14 @@ enum DayFormatter {
         return "\(weekday) \(dayMonth)"
     }
 
+    /// `05/10/26` (dd/mm/yy, #888): a civil day of the shop zone, whatever the device zone
+    static func dmy(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%02d/%02d/%02d", parts.day ?? 0, parts.month ?? 0, (parts.year ?? 0) % 100)
+    }
+
     /// `yyyy-MM-dd` civil day
     static func key(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
         var calendar = Calendar(identifier: .gregorian)

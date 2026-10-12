@@ -410,6 +410,30 @@ struct CartLineCalc: Equatable {
     }
 }
 
+/// "Tổng giá vốn" and, in a sale cart, "Lãi dự kiến" (#888)
+struct CartCostSummary: Equatable {
+    let totalCost: Double
+    /// Sale cart only: total (after discount) − total cost; negative is a loss
+    let profit: Double?
+}
+
+/// Cost lines of the cart (#888): only for roles that may see prices (never OUTLET_STAFF), only lines with a cost
+enum CartCostLogic {
+    /// "Giá vốn" of a line: cost × quantity; nil when hidden or the product has no cost
+    static func lineCost(_ item: CartItem, showsPrices: Bool) -> Double? {
+        guard showsPrices, let cost = item.costPrice, cost > 0 else { return nil }
+        return cost * Double(item.quantity)
+    }
+
+    /// Nil when hidden or no line has a cost
+    static func summary(_ items: [CartItem], total: Double, orderType: OrderType, showsPrices: Bool) -> CartCostSummary? {
+        let costs = items.compactMap { lineCost($0, showsPrices: showsPrices) }
+        guard !costs.isEmpty else { return nil }
+        let totalCost = costs.reduce(0, +)
+        return CartCostSummary(totalCost: totalCost, profit: orderType == .sale ? total - totalCost : nil)
+    }
+}
+
 enum CartV2Logic {
     static func calc(_ item: CartItem, orderType: OrderType) -> CartLineCalc {
         let unit: CartLineCalc.Unit

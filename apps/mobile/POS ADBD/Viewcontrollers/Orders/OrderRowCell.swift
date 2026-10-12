@@ -14,6 +14,8 @@ import SnapKit
 enum OrderRowContext {
     case work(isLate: Bool)
     case list
+    /// #888 "Tất cả đơn": "#code", then "Lấy dd/mm/yy  Trả dd/mm/yy" with the sorted date marked
+    case rentList(sortedBy: RentOrdersFilter.SortDate)
     case sale
     case search
     /// #496 "Chưa lấy đồ": overdue rows get "Quá x ngày · nên gọi khách", the right side "còn thu" in orange
@@ -77,6 +79,8 @@ final class OrderRowCell: UITableViewCell {
 
     /// #496: the "#code · tạo …" line
     static let metaColor = UIColor(hexString: "64748B")
+    /// #888: the chip behind the date the list is sorted by
+    static let markFill = UIColor(hexString: "EFF6FF")
     /// #496: "còn thu" on the "Chưa lấy đồ" list (Còn phải thu colour)
     static let dueColor = UIColor(hexString: "B45309")
     private static let callBorder = UIColor(hexString: "CBD5E1")
@@ -236,7 +240,12 @@ final class OrderRowCell: UITableViewCell {
         let tag = OrdersHomeLogic.statusTag(order, inSearch: { if case .search = context { return true }; return false }())
         tagLabel.apply(tag.text, tag.colors)
         setName(order.customerName)
-        setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
+        if case .rentList(let sortedBy) = context {
+            setRentDates(code: OrdersHomeLogic.shortNumber(order.orderNumber),
+                         parts: OrdersHomeLogic.rentRowDates(order, sortedBy: sortedBy))
+        } else {
+            setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
+        }
         setTotal(order.totalAmount, struck: order.status == .cancelled)
         if case .notPickedUp = context {
             if lateDays > 0 {
@@ -266,8 +275,37 @@ final class OrderRowCell: UITableViewCell {
 
     private func setLines(_ lines: OrderRowLines) {
         metaLabel.text = lines.meta
+        taskLabel.attributedText = nil
+        taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
+        taskLabel.textColor = DS.Color.text
         taskLabel.text = lines.task
+        taskLabel.accessibilityLabel = nil
         taskLabel.isHidden = lines.task.isEmpty
+    }
+
+    /// #888 (mockup): muted "Lấy 14/10/26   Trả 16/10/26"; the sorted date bold on a light blue chip
+    private func setRentDates(code: String, parts: [RowDatePart]) {
+        metaLabel.text = "#\(code)"
+        let font = Utils.regularFont(size: DS.TextSize.secondary)
+        let text = NSMutableAttributedString()
+        for (index, part) in parts.enumerated() {
+            if index > 0 {
+                text.append(NSAttributedString(string: "   ", attributes: [NSAttributedString.Key.font: font]))
+            }
+            var attributes: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: font,
+                                                             NSAttributedString.Key.foregroundColor: Self.metaColor]
+            var shown = part.text
+            if part.marked {
+                shown = "\u{2009}\(part.text)\u{2009}"
+                attributes[NSAttributedString.Key.font] = Utils.boldFont(size: DS.TextSize.secondary)
+                attributes[NSAttributedString.Key.foregroundColor] = DS.Color.text
+                attributes[NSAttributedString.Key.backgroundColor] = Self.markFill
+            }
+            text.append(NSAttributedString(string: shown, attributes: attributes))
+        }
+        taskLabel.attributedText = text
+        taskLabel.isHidden = parts.isEmpty
+        taskLabel.accessibilityLabel = parts.map(\.text).joined(separator: ", ")
     }
 
     private func setTotal(_ amount: Double, struck: Bool) {

@@ -243,12 +243,9 @@ enum OrderDetailLogic {
         return StatusErrorOutcome(message: message, reload: isClientError)
     }
 
-    /// `dd/MM` civil day
+    /// `dd/MM/yy` civil day (#888)
     static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let parts = calendar.dateComponents([.day, .month], from: date)
-        return String(format: "%02d/%02d", parts.day ?? 0, parts.month ?? 0)
+        DayFormatter.dmy(date, timeZone: timeZone)
     }
 
     /// #482 step "Đã đặt": "14:32 28/09" in the shop zone; "14:32 28/12/25" when not the current year

@@ -146,9 +146,9 @@ final class OrderDetailLogicTests: XCTestCase {
         let to = iso.date(from: "2026-10-05T16:30:00Z")!
         XCTAssertEqual(OrderDetailLogic.rentalDays(pickup: from, return: to, timeZone: vietnam), 3)
         XCTAssertEqual(OrderDetailLogic.rentalDays(pickup: from, return: from, timeZone: vietnam), 1)
-        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: vietnam), "05/10")
-        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: TimeZone(identifier: "UTC")!), "05/10")
-        XCTAssertEqual(OrderDetailLogic.dayMonth(iso.date(from: "2026-10-05T17:30:00Z")!, timeZone: vietnam), "06/10")
+        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: vietnam), "05/10/26")
+        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: TimeZone(identifier: "UTC")!), "05/10/26")
+        XCTAssertEqual(OrderDetailLogic.dayMonth(iso.date(from: "2026-10-05T17:30:00Z")!, timeZone: vietnam), "06/10/26")
     }
 
     // MARK: Created time (#482)

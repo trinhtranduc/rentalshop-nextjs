@@ -41,41 +41,44 @@ struct OrdersSection {
     var style: Style { kind == .late ? .late : .normal }
 }
 
-/// Rent list query: the status chips plus the "Lọc & sắp xếp" sheet (board Loc)
+/// Rent list query: the status chips plus the "Lọc & sắp xếp" sheet (board Loc).
+/// #888: one date (Ngày lấy / Ngày trả / Ngày tạo) for both the order and the range; "Việc gần nhất" left the sheet
+/// (the "Việc cần làm" tab keeps that order).
 struct RentOrdersFilter: Equatable {
-    /// `nearestTask` (#389): late tasks first, then the nearest planned hand-over or return, then closed orders
-    enum Sort: CaseIterable { case nearestTask, createdDate, pickupDate, returnDate }
-    /// Which date the range applies to: created, or the planned hand-over / return day (#389)
-    enum DateBasis: CaseIterable { case created, pickupPlan, returnPlan }
+    enum SortDate: CaseIterable { case pickup, returnDate, created }
+    /// `nearestFirst` = latest date first (`desc`), the meaning "Ngày giao gần nhất" had before #888
+    enum Direction: CaseIterable { case nearestFirst, farthestFirst }
     enum DateRange: Equatable {
         case any, today, next7Days, thisMonth
         case custom(from: Date, to: Date)
     }
 
     var status: OrderStatus?
-    var sort: Sort = .createdDate
-    var dateBasis: DateBasis = .created
+    var sortDate: SortDate = .pickup
+    var direction: Direction = .nearestFirst
     var dateRange: DateRange = .any
 
     /// The sheet part (sort and dates) is untouched
-    var isDefault: Bool { sort == .createdDate && dateRange == .any }
+    var isDefault: Bool { sortDate == .pickup && direction == .nearestFirst && dateRange == .any }
 
     var sortBy: String {
-        switch sort {
-        case .nearestTask: return "nearestTask"
-        case .createdDate: return "createdAt"
-        case .pickupDate: return "pickupPlanAt"
+        switch sortDate {
+        case .pickup: return "pickupPlanAt"
         case .returnDate: return "returnPlanAt"
+        case .created: return "createdAt"
         }
     }
 
-    var dateField: String {
-        switch dateBasis {
-        case .created: return "createdAt"
-        case .pickupPlan: return "pickupPlanAt"
-        case .returnPlan: return "returnPlanAt"
-        }
-    }
+    var sortOrder: String { direction == .nearestFirst ? "desc" : "asc" }
+
+    /// The range uses the sort date (#888)
+    var dateField: String { sortBy }
+}
+
+/// One date of a "Tất cả đơn" row (#888): "Lấy 14/10/26", marked when the list is sorted by it
+struct RowDatePart: Equatable {
+    let text: String
+    let marked: Bool
 }
 
 /// One `GET /api/orders` request of the tab
@@ -84,6 +87,7 @@ struct OrdersQuery: Equatable {
     var orderType: OrderType?
     var status: OrderStatus?
     var sortBy = "createdAt"
+    var sortOrder = "desc"
     var startDate: Date?
     var endDate: Date?
     var dateField: String?
@@ -262,14 +266,15 @@ enum OrdersHomeLogic {
         DayFormatter.short(date, timeZone: timeZone, locale: locale)
     }
 
-    /// The two lines under the customer name of every order row (#496):
-    /// `meta` "#0053 · tạo T7 03/10" (muted) and `task` by status: "Giao T2 05/10 · trả T4 07/10" (reserved),
-    /// "Trả T4 07/10" / "Hạn trả T5 01/10" (rented out, late), "Đã trả T7 28/09", "Bán T6 02/10" (sale),
-    /// "Huỷ T3 29/09". A missing date leaves its part out; `task` is empty when nothing is left.
+    /// The two lines under the customer name of every order row (#496, dd/mm/yy since #888):
+    /// `meta` "#0053 · tạo 03/10/26" (muted) and `task` by status: "Lấy 05/10/26 · trả 07/10/26" (reserved),
+    /// "Trả 07/10/26" / "Hạn trả 01/10/26" (rented out, late), "Đã trả 28/09/26", "Bán 02/10/26" (sale),
+    /// "Huỷ 29/09/26". A missing date leaves its part out; `task` is empty when nothing is left.
     static func rowLines(code: String, orderType: OrderType, status: OrderStatus, createdAt: Date?,
                          pickupPlanAt: Date?, returnPlanAt: Date?, returnedAt: Date?, updatedAt: Date?,
                          isLate: Bool, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = appLocale) -> OrderRowLines {
-        let day: (Date) -> String = { rowDay($0, timeZone: timeZone, locale: locale) }
+        // #888: dd/mm/yy (05/10/26), the Vietnam civil day
+        let day: (Date) -> String = { DayFormatter.dmy($0, timeZone: timeZone) }
         let text: (String, Date?) -> String? = { key, date in date.map { String(format: key.localized(), day($0)) } }
 
         var meta = "#\(code)"
@@ -304,6 +309,51 @@ enum OrdersHomeLogic {
                  createdAt: order.createdAt, pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
                  returnedAt: order.returnedAt, updatedAt: order.updatedAt, isLate: lateDays > 0,
                  timeZone: timeZone, locale: locale)
+    }
+
+    // MARK: "Tất cả đơn" (#888)
+
+    /// "Lấy 14/10/26", "Trả 16/10/26" of a rent list row (planned days, any status); the sorted date is marked.
+    /// Sorted by created date: nothing is marked (the created day is only in order detail).
+    static func rentRowDates(pickupPlanAt: Date?, returnPlanAt: Date?, sortedBy: RentOrdersFilter.SortDate,
+                             timeZone: TimeZone = Date.shopTimeZone) -> [RowDatePart] {
+        let part: (String, Date?, Bool) -> RowDatePart? = { key, date, marked in
+            date.map { RowDatePart(text: String(format: key.localized(), DayFormatter.dmy($0, timeZone: timeZone)), marked: marked) }
+        }
+        return [part("orders.row.pickup", pickupPlanAt, sortedBy == .pickup),
+                part("orders.row.return", returnPlanAt, sortedBy == .returnDate)].compactMap { $0 }
+    }
+
+    static func rentRowDates(_ order: Order, sortedBy: RentOrdersFilter.SortDate,
+                             timeZone: TimeZone = Date.shopTimeZone) -> [RowDatePart] {
+        rentRowDates(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy, timeZone: timeZone)
+    }
+
+    /// "Ngày lấy", "Ngày trả", "Ngày tạo"
+    static func sortDateTitle(_ date: RentOrdersFilter.SortDate) -> String {
+        switch date {
+        case .pickup: return "orders.v2.sortDate.pickup".localized()
+        case .returnDate: return "orders.v2.sortDate.return".localized()
+        case .created: return "orders.v2.sortDate.created".localized()
+        }
+    }
+
+    /// "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước"
+    static func directionTitle(_ date: RentOrdersFilter.SortDate, _ direction: RentOrdersFilter.Direction) -> String {
+        let key: String
+        switch (date, direction) {
+        case (.created, .nearestFirst): key = "orders.v2.direction.newest"
+        case (.created, .farthestFirst): key = "orders.v2.direction.oldest"
+        case (_, .nearestFirst): key = "orders.v2.direction.nearest"
+        case (_, .farthestFirst): key = "orders.v2.direction.farthest"
+        }
+        return key.localized()
+    }
+
+    /// The bar above the list: "Xếp theo ngày lấy · gần nhất trước"
+    static func sortBarText(_ filter: RentOrdersFilter) -> String {
+        String(format: "orders.v2.sortBar".localized(), sortDateTitle(filter.sortDate).lowercased(),
+               directionTitle(filter.sortDate, filter.direction).lowercased())
     }
 
     /// Status tag in the board colours; a sale in search reads "Bán · Hoàn thành"
@@ -379,7 +429,8 @@ enum OrdersHomeLogic {
 
     /// The rent list request for a filter
     static func rentQuery(_ filter: RentOrdersFilter, page: Int = 1, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> OrdersQuery {
-        var query = OrdersQuery(keyword: nil, orderType: .rent, status: filter.status, sortBy: filter.sortBy, page: page)
+        var query = OrdersQuery(keyword: nil, orderType: .rent, status: filter.status, sortBy: filter.sortBy,
+                                sortOrder: filter.sortOrder, page: page)
         if let bounds = dayBounds(filter.dateRange, now: now, timeZone: timeZone) {
             query.startDate = bounds.start
             query.endDate = bounds.end
@@ -409,7 +460,7 @@ struct LiveOrdersHomeDataSource: OrdersHomeDataSource {
     func loadOrders(_ query: OrdersQuery, completion: @escaping (OrdersData?, NSError?) -> Void) {
         OrderService.shared.loadOrders(productIds: nil, startDate: query.startDate, endDate: query.endDate,
                                        keyword: query.keyword, page: query.page, limit: query.limit,
-                                       orderType: query.orderType, sortBy: query.sortBy, sortOrder: "desc",
+                                       orderType: query.orderType, sortBy: query.sortBy, sortOrder: query.sortOrder,
                                        status: query.status, dateField: query.dateField) { response, error in
             if let data = response?.data {
                 completion(data, nil)
