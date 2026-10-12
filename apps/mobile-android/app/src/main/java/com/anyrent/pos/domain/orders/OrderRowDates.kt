@@ -45,21 +45,16 @@ object OrderRowDates {
     /** [task] is null when nothing can be said (no date for the status) */
     data class Lines(val meta: String, val task: String?)
 
-    /** "T2 05/10" in [zone]; [weekdays] Monday first */
+    /** "05/10/26" in [zone] (#888) */
     fun day(instant: Instant, zone: ZoneId = shopZone, weekdays: List<String> = Texts().weekdays): String =
         day(instant.atZone(zone).toLocalDate(), weekdays)
 
-    fun day(date: LocalDate, weekdays: List<String> = Texts().weekdays): String {
-        val weekday = weekdays.getOrNull(date.dayOfWeek.value - 1).orEmpty()
-        val dayMonth = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
-        return if (weekday.isEmpty()) dayMonth else "$weekday $dayMonth"
-    }
+    /** #888: dd/mm/yy everywhere ([weekdays] kept for callers, unused) */
+    @Suppress("UNUSED_PARAMETER")
+    fun day(date: LocalDate, weekdays: List<String> = Texts().weekdays): String = com.anyrent.pos.domain.DayText.dmy(date)
 
     /** #888 "05/10/26": dd/mm/yy of the Vietnam civil day, whatever the device zone */
-    fun dmy(instant: Instant, zone: ZoneId = shopZone): String {
-        val date = instant.atZone(zone).toLocalDate()
-        return "%02d/%02d/%02d".format(date.dayOfMonth, date.monthValue, date.year % 100)
-    }
+    fun dmy(instant: Instant, zone: ZoneId = shopZone): String = com.anyrent.pos.domain.DayText.dmy(instant, zone)
 
     /** #888 one date of a "Tất cả đơn" row, [marked] when the list is sorted by it */
     data class Part(val text: String, val marked: Boolean)

@@ -108,8 +108,8 @@ final class ShopTimeZoneTests: XCTestCase {
         inEachZone { zone in
             XCTAssertEqual(DayFormatter.key(at("2026-10-09T16:59:59Z")), "2026-10-09", zone)
             XCTAssertEqual(DayFormatter.key(at("2026-10-09T17:00:00Z")), "2026-10-10", zone)
-            XCTAssertEqual(DayFormatter.short(at("2026-10-09T17:00:00Z"), locale: vi), "T7 10/10", zone)
-            XCTAssertEqual(DayFormatter.short(at("2026-10-09T16:59:59Z"), locale: vi), "T6 09/10", zone)
+            XCTAssertEqual(DayFormatter.short(at("2026-10-09T17:00:00Z"), locale: vi), "10/10/26", zone)
+            XCTAssertEqual(DayFormatter.short(at("2026-10-09T16:59:59Z"), locale: vi), "09/10/26", zone)
             XCTAssertEqual(DayFormatter.key(at("2026-12-31T17:00:00Z")), "2027-01-01", zone)
         }
     }
@@ -164,7 +164,7 @@ final class ShopTimeZoneTests: XCTestCase {
             XCTAssertEqual(CartV2Logic.rentalDays(pickup: pickup, return: sameDay), 1, zone)
             XCTAssertEqual(OrderDetailLogic.rentalDays(pickup: pickup, return: sameDay), 1, zone)
             XCTAssertEqual(CartV2Logic.rentalDays(pickup: pickup, return: at("2026-10-12T16:59:59Z")), 3, zone)
-            XCTAssertEqual(CreateOrderSheetLogic.dayMonth(pickup), "10/10", zone)
+            XCTAssertEqual(CreateOrderSheetLogic.dayMonth(pickup), "10/10/26", zone)
             XCTAssertEqual(OrderDetailLogic.dayMonth(sameDay), "10/10/26", zone)
         }
     }
@@ -228,7 +228,7 @@ final class ShopTimeZoneTests: XCTestCase {
             XCTAssertEqual(groups.map(\.key), ["2026-10-10", "2026-10-09"], zone)
             let title = OrdersHomeLogic.sectionTitle(OrdersSection(kind: .day(at("2026-10-09T16:59:59Z")), rows: []),
                                                      now: now, locale: vi)
-            XCTAssertEqual(title, "\("orders.v2.yesterday".localized()) · T6 09/10".uppercased(with: vi), zone)
+            XCTAssertEqual(title, "\("orders.v2.yesterday".localized()) · 09/10/26".uppercased(with: vi), zone)
             XCTAssertEqual(OverviewLateFilter.page([], hasMore: false, now: now).orders.count, 0, zone)
         }
     }
@@ -251,7 +251,7 @@ final class ShopTimeZoneTests: XCTestCase {
             // A key reads back as the same shop day
             let noon = OverviewLogic.date(of: "2026-10-10")!
             XCTAssertEqual(DayFormatter.key(noon), "2026-10-10", zone)
-            XCTAssertEqual(OverviewLogic.longRange(DayKeyRange(start: "2026-10-10", end: "2026-10-10"), locale: vi), "T7 10/10", zone)
+            XCTAssertEqual(OverviewLogic.longRange(DayKeyRange(start: "2026-10-10", end: "2026-10-10"), locale: vi), "10/10/26", zone)
         }
     }
 
@@ -260,7 +260,7 @@ final class ShopTimeZoneTests: XCTestCase {
                                    pickupPlanAt: at("2026-10-09T17:00:00Z"), returnPlanAt: at("2026-10-10T16:59:59Z"),
                                    createdAt: nil, itemCount: 1)
         inEachZone { zone in
-            XCTAssertTrue(CustomersV2Logic.orderDates(row).hasSuffix("10/10"), zone)
+            XCTAssertTrue(CustomersV2Logic.orderDates(row).hasSuffix("10/10/26"), zone)
             XCTAssertFalse(CustomersV2Logic.orderDates(row).contains("→"), zone)
         }
     }

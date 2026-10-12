@@ -26,9 +26,9 @@ class OrderRowDatesTest {
     private fun input(
         status: String,
         type: String = "RENT",
-        created: String? = "2026-10-02T03:00:00Z", // Fri 02/10
-        pickup: String? = "2026-10-04T17:30:00Z", // Mon 05/10 00:30 in Vietnam, still Sun 04/10 in UTC
-        returns: String? = "2026-10-07T02:00:00Z", // Wed 07/10
+        created: String? = "2026-10-02T03:00:00Z", // 02/10/26
+        pickup: String? = "2026-10-04T17:30:00Z", // 05/10/26 00:30 in Vietnam, still 04/10/26 in UTC
+        returns: String? = "2026-10-07T02:00:00Z", // 07/10/26
         returned: String? = null,
         updated: String? = null,
         late: Boolean = false,
@@ -39,12 +39,12 @@ class OrderRowDatesTest {
     )
 
     @Test
-    fun weekdayShortNamesMondayToSunday() {
+    fun daysAreDayMonthYearWithoutWeekday() {
         val week = (5..11).map { OrderRowDates.day(LocalDate.of(2026, 10, it)) }
-        assertEquals(listOf("T2 05/10", "T3 06/10", "T4 07/10", "T5 08/10", "T6 09/10", "T7 10/10", "CN 11/10"), week)
-        // 17:00 UTC on Sat 10/10 is already Sun 11/10 in Vietnam
-        assertEquals("CN 11/10", OrderRowDates.day(i("2026-10-10T17:00:00Z")))
-        assertEquals("Sun 11/10", OrderRowDates.day(i("2026-10-10T17:00:00Z"), weekdays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))
+        assertEquals(listOf("05/10/26", "06/10/26", "07/10/26", "08/10/26", "09/10/26", "10/10/26", "11/10/26"), week)
+        // 17:00 UTC on 10/10/26 is already 11/10/26 in Vietnam
+        assertEquals("11/10/26", OrderRowDates.day(i("2026-10-10T17:00:00Z")))
+        assertEquals("11/10/26", OrderRowDates.day(i("2026-10-10T17:00:00Z"), weekdays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")))
     }
 
     @Test

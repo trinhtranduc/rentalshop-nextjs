@@ -67,7 +67,7 @@ fun AppDateRangePickerSheet(
             BoundedSelectableDates(minDate, maxDate)
         },
     )
-    val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/yy") } // #888
     val canConfirm = rangeState.selectedStartDateMillis != null &&
         rangeState.selectedEndDateMillis != null
 

@@ -270,7 +270,7 @@ fun AvailabilityScreen(
                         AvailabilitySummary(
                             result = result,
                             dateLabel = state.selectedDate.format(
-                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yy"),
                             ),
                         )
                     }
@@ -361,7 +361,7 @@ fun AvailabilityScreen(
             AvailabilityOrdersBottomSheet(
                 orders = result.orders,
                 dateLabel = state.selectedDate.format(
-                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yy"),
                 ),
                 effectiveAvailable = result.effectivelyAvailable,
                 onDismiss = { showHistorySheet = false },

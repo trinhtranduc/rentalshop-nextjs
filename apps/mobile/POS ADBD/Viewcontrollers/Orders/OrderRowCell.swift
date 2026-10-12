@@ -241,7 +241,7 @@ final class OrderRowCell: UITableViewCell {
         tagLabel.apply(tag.text, tag.colors)
         setName(order.customerName)
         if case .rentList(let sortedBy) = context {
-            setRentDates(code: OrdersHomeLogic.shortNumber(order.orderNumber),
+            setRentDates(meta: OrdersHomeLogic.rentRowMeta(order),
                          parts: OrdersHomeLogic.rentRowDates(order, sortedBy: sortedBy))
         } else {
             setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
@@ -283,14 +283,15 @@ final class OrderRowCell: UITableViewCell {
         taskLabel.isHidden = lines.task.isEmpty
     }
 
-    /// #888 (mockup): muted "Lấy 14/10/26   Trả 16/10/26"; the sorted date bold on a light blue chip
-    private func setRentDates(code: String, parts: [RowDatePart]) {
-        metaLabel.text = "#\(code)"
+    /// #888: "#0063 · tạo 05/10/26", then muted "Lấy 14/10/26 · Trả 16/10/26"; the sorted date bold on a light blue chip
+    private func setRentDates(meta: String, parts: [RowDatePart]) {
+        metaLabel.text = meta
         let font = Utils.regularFont(size: DS.TextSize.secondary)
         let text = NSMutableAttributedString()
         for (index, part) in parts.enumerated() {
             if index > 0 {
-                text.append(NSAttributedString(string: "   ", attributes: [NSAttributedString.Key.font: font]))
+                text.append(NSAttributedString(string: " · ", attributes: [NSAttributedString.Key.font: font,
+                                                                         NSAttributedString.Key.foregroundColor: Self.metaColor]))
             }
             var attributes: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: font,
                                                              NSAttributedString.Key.foregroundColor: Self.metaColor]

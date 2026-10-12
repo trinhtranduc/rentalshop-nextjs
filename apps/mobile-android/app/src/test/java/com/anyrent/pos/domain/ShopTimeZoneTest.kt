@@ -240,9 +240,9 @@ class ShopTimeZoneTest(private val phoneZone: String) {
 
     @Test
     fun `day labels and keys are Vietnam days`() {
-        assertEquals("T7 10/10", formatDayShort(AT_MIDNIGHT, locale = VI))
-        assertEquals("T6 09/10", formatDayShort(BEFORE_MIDNIGHT, locale = VI))
-        assertEquals("T7 10/10", formatDayShort(LocalDate.of(2026, 10, 10), locale = VI))
+        assertEquals("10/10/26", formatDayShort(AT_MIDNIGHT, locale = VI))
+        assertEquals("09/10/26", formatDayShort(BEFORE_MIDNIGHT, locale = VI))
+        assertEquals("10/10/26", formatDayShort(LocalDate.of(2026, 10, 10), locale = VI))
         assertEquals("2026-10-10", dayKey(AT_MIDNIGHT))
         assertEquals("2026-10-09", dayKey(BEFORE_MIDNIGHT))
         assertEquals("10/10/26", formatDisplayDate("2026-10-09T17:00:00Z"))
@@ -266,7 +266,7 @@ class ShopTimeZoneTest(private val phoneZone: String) {
             pickupPlanAt = Instant.parse("2026-10-09T17:00:00Z"), returnPlanAt = Instant.parse("2026-10-10T16:59:59Z"),
             createdAt = null, itemCount = 1,
         )
-        assertEquals("T7 10/10", CustomerRules.orderDates(row) { formatDayShort(it, locale = VI) })
+        assertEquals("10/10/26", CustomerRules.orderDates(row) { formatDayShort(it, locale = VI) })
     }
 
     // AND-9 cart default day

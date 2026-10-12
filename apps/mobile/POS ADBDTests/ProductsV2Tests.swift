@@ -895,7 +895,7 @@ extension ProductsV2Tests {
                              originalRentPrice: 300_000, originalSalePrice: 0)
         cart.addItem(vest)
         cart.addItem(aoDai)
-        // T7 03/10 → T2 05/10 in Vietnam
+        // 03/10/26 → 05/10/26 in Vietnam
         cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")
         cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")
         return cart
@@ -906,7 +906,7 @@ extension ProductsV2Tests {
         let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
         XCTAssertFalse(confirm.isSale)
         XCTAssertEqual(confirm.customer, "Trần Văn Minh")
-        XCTAssertEqual(confirm.range, "03/10 → 05/10")
+        XCTAssertEqual(confirm.range, "03/10/26 → 05/10/26")
         XCTAssertEqual(confirm.days, 3)
         XCTAssertEqual(confirm.items, "Vest đen slim fit, Áo dài lụa đỏ ×2")
         XCTAssertEqual(confirm.total, cart.totalAmount)
@@ -932,7 +932,7 @@ extension ProductsV2Tests {
         let confirm = CreateOrderSheetLogic.confirm(try rentCart(), timeZone: vn)
         let created = CreateOrderSheetLogic.created(orderNumber: "ORD-17-0063", confirm: confirm)
         XCTAssertEqual(created.shortNumber, "0063")
-        XCTAssertEqual(created.subtitle, "Trần Văn Minh · 03/10 → 05/10")
+        XCTAssertEqual(created.subtitle, "Trần Văn Minh · 03/10/26 → 05/10/26")
         XCTAssertEqual(created.paid, confirm.collect)
         XCTAssertEqual(created.paidKey, "products.cart.created.paidDeposit")
 
@@ -1058,7 +1058,7 @@ extension ProductsV2Tests {
         let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
         XCTAssertEqual(confirm.number, "482913")
         XCTAssertFalse(confirm.isSale)
-        XCTAssertEqual(confirm.range, "03/10 → 05/10", "same date format as the create sheet")
+        XCTAssertEqual(confirm.range, "03/10/26 → 05/10/26", "same date format as the create sheet")
         XCTAssertEqual(confirm.days, 3)
         XCTAssertEqual(confirm.itemCount, 3)
         XCTAssertEqual(confirm.total, cart.totalAmount)
@@ -1072,7 +1072,7 @@ extension ProductsV2Tests {
 
     func testNewDatesTagTheDatesRowOnly() throws {
         let cart = try editCart()
-        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-06T16:59:59Z") // T3 06/10
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-06T16:59:59Z") // 06/10/26
         let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
         XCTAssertTrue(confirm.datesChanged)
         XCTAssertFalse(confirm.itemsChanged)

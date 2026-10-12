@@ -310,7 +310,7 @@ private fun androidx.compose.foundation.layout.RowScope.Tile(
     val forecastText = forecast?.let {
         val amount = OverviewDashLogic.compact(it.forecast, vietnamese)
         if (it.until == today.toString()) stringResource(R.string.overview_dash_forecast_today, amount)
-        else stringResource(R.string.overview_dash_forecast_until, amount, OverviewLogic.dayMonth(LocalDate.parse(it.until)))
+        else stringResource(R.string.overview_dash_forecast_until, amount, com.anyrent.pos.domain.DayText.dmy(LocalDate.parse(it.until)))
     }
     val pills = listOfNotNull(tile.chip, tile.count).map { chipText(it) to it.tone }
     val description = listOfNotNull(title, value.takeIf { !loading }, forecastText, *pills.map { it.first }.toTypedArray(), stringResource(R.string.overview_dash_open_detail))

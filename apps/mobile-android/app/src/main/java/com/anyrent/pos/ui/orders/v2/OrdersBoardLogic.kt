@@ -125,6 +125,10 @@ object OrdersBoardLogic {
         late = lateDays > 0,
     )
 
+    /** #888 line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was) */
+    fun rentRowMeta(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String =
+        OrderRowDates.lines(rowDates(order, 0), texts).meta
+
     /** #888 "Tất cả đơn" row: "Lấy 14/10/26", "Trả 16/10/26" (planned days, any status); the sorted date marked */
     fun rentRowDates(order: OrderSummary, sortedBy: SortDate, texts: OrderRowDates.Texts = OrderRowDates.Texts()): List<OrderRowDates.Part> =
         OrderRowDates.rentPlan(

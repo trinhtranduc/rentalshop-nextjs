@@ -271,14 +271,8 @@ data class OrderShareModel(
         private fun minus(amount: Double): String = "− " + money(amount)
 
         /** `T4 07/10` (vi) / `Wed 07/10` (en) of a shop civil day */
-        fun dayLabel(day: LocalDate, vi: Boolean): String {
-            val weekday = if (vi) {
-                if (day.dayOfWeek == DayOfWeek.SUNDAY) "CN" else "T${day.dayOfWeek.value + 1}"
-            } else {
-                day.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)
-            }
-            return "%s %02d/%02d".format(weekday, day.dayOfMonth, day.monthValue)
-        }
+        @Suppress("UNUSED_PARAMETER")
+        fun dayLabel(day: LocalDate, vi: Boolean): String = com.anyrent.pos.domain.DayText.dmy(day) // #888
 
         private fun collateral(details: String?, money: Double): String? {
             val parts = listOfNotNull(details?.trim()?.takeIf { it.isNotEmpty() }, money.takeIf { it > 0 }?.let { money(it) })

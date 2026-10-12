@@ -18,19 +18,19 @@ class OrderDetailLogicTest {
 
     /** #482 step "Đã đặt": shop time and day, the year only when not the current year (iOS parity) */
     @Test
-    fun `created stamp shows shop time and the year only when not this year`() {
+    fun `created stamp is day month year and time in shop time`() {
         val vietnam = ZoneId.of("Asia/Ho_Chi_Minh")
         val now = java.time.Instant.parse("2026-10-05T03:00:00Z")
-        assertEquals("14:32 28/09", OrderDetailLogic.createdStamp("2026-09-28T07:32:00Z", now, vietnam))
-        assertEquals("14:32 28/12/25", OrderDetailLogic.createdStamp("2025-12-28T07:32:00Z", now, vietnam))
-        assertEquals("23:59 28/09", OrderDetailLogic.createdStamp("2026-09-28T16:59:59Z", now, vietnam))
-        assertEquals("00:00 29/09", OrderDetailLogic.createdStamp("2026-09-28T17:00:00Z", now, vietnam))
+        assertEquals("28/09/26 14:32", OrderDetailLogic.createdStamp("2026-09-28T07:32:00Z", now, vietnam))
+        assertEquals("28/12/25 14:32", OrderDetailLogic.createdStamp("2025-12-28T07:32:00Z", now, vietnam))
+        assertEquals("28/09/26 23:59", OrderDetailLogic.createdStamp("2026-09-28T16:59:59Z", now, vietnam))
+        assertEquals("29/09/26 00:00", OrderDetailLogic.createdStamp("2026-09-28T17:00:00Z", now, vietnam))
         assertEquals(
-            "00:30 01/01",
+            "01/01/26 00:30",
             OrderDetailLogic.createdStamp("2025-12-31T17:30:00Z", java.time.Instant.parse("2026-01-02T03:00:00Z"), vietnam),
         )
         // Default zone is the shop zone, whatever the device zone
-        assertEquals("14:32 28/09", OrderDetailLogic.createdStamp("2026-09-28T07:32:00Z", now))
+        assertEquals("28/09/26 14:32", OrderDetailLogic.createdStamp("2026-09-28T07:32:00Z", now))
         assertEquals("—", OrderDetailLogic.createdStamp(null, now))
     }
 

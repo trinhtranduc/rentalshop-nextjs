@@ -266,8 +266,8 @@ final class AnyRentE2ETests: XCTestCase {
         let dmy = "[0-9]{2}/[0-9]{2}/[0-9]{2}"
         let dateLine = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "(Lấy|Pickup) \(dmy).*(Trả|Return) \(dmy).*")).firstMatch
         e2e.soft(dateLine.waitForExistence(timeout: 3), "a row reads Lấy dd/mm/yy … Trả dd/mm/yy")
-        e2e.soft(!app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'tạo ' OR label CONTAINS 'created '")).firstMatch.exists,
-                 "no created day on Tất cả đơn rows")
+        e2e.soft(app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "#.* · (tạo|created) \(dmy)")).firstMatch.exists,
+                 "Tất cả đơn rows keep #code · tạo dd/mm/yy (owner)")
 
         let steps: [(date: [String], range: [String]?, farthest: Bool, shot: String, bar: [String])] = [
             (["Return date", "Ngày trả"], nil, false, "4b-10-return", ["Sorted by return date", "Xếp theo ngày trả"]),

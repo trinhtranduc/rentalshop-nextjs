@@ -222,9 +222,9 @@ object OverviewLogic {
 
     fun dayMonth(date: LocalDate): String = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
 
-    /** "27/09 – 03/10", or one day "03/10" */
-    fun shortRange(range: DayRange): String =
-        if (range.start == range.end) dayMonth(range.start) else "${dayMonth(range.start)} – ${dayMonth(range.end)}"
+    /** "27/09/26 – 03/10/26", or one day "03/10/26" (#888); the chart axis keeps [dayMonth] */
+    fun shortRange(range: DayRange): String = if (range.start == range.end) com.anyrent.pos.domain.DayText.dmy(range.start)
+        else "${com.anyrent.pos.domain.DayText.dmy(range.start)} – ${com.anyrent.pos.domain.DayText.dmy(range.end)}"
 
     /** The value of one point for [chart]; a missing `newOrderCount` (older API) is 0 */
     fun pointValue(point: OverviewReport.Point, chart: OverviewChart): Double = when (chart) {

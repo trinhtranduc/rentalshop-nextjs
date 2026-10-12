@@ -235,7 +235,7 @@ enum OrdersHomeLogic {
     }
 
     static func dayMonth(_ date: Date, timeZone: TimeZone) -> String {
-        String(DayFormatter.short(date, timeZone: timeZone, locale: Locale(identifier: "vi")).suffix(5))
+        DayFormatter.dmy(date, timeZone: timeZone) // #888 dd/mm/yy
     }
 
     private static func calendar(_ timeZone: TimeZone) -> Calendar {
@@ -327,6 +327,11 @@ enum OrdersHomeLogic {
     static func rentRowDates(_ order: Order, sortedBy: RentOrdersFilter.SortDate,
                              timeZone: TimeZone = Date.shopTimeZone) -> [RowDatePart] {
         rentRowDates(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy, timeZone: timeZone)
+    }
+
+    /// Line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was)
+    static func rentRowMeta(_ order: Order, timeZone: TimeZone = Date.shopTimeZone) -> String {
+        rowLines(order, lateDays: 0, timeZone: timeZone).meta
     }
 
     /// "Ngày lấy", "Ngày trả", "Ngày tạo"

@@ -136,8 +136,8 @@ final class ChangeHistoryTests: XCTestCase {
 
     func testDateValuesUseTheVietnamDay() {
         // 17:30Z on 06/10 is 00:30 on 07/10 in Vietnam
-        XCTAssertEqual(ChangeHistoryLogic.value("returnPlanAt", .text("2026-10-06T17:30:00.000Z"), timeZone: vn), "07/10")
-        XCTAssertEqual(ChangeHistoryLogic.value("returnPlanAt", .text("2026-10-06T17:30:00.000Z"), timeZone: utc), "06/10")
+        XCTAssertEqual(ChangeHistoryLogic.value("returnPlanAt", .text("2026-10-06T17:30:00.000Z"), timeZone: vn), "07/10/26")
+        XCTAssertEqual(ChangeHistoryLogic.value("returnPlanAt", .text("2026-10-06T17:30:00.000Z"), timeZone: utc), "06/10/26")
         XCTAssertEqual(ChangeHistoryLogic.value("pickupPlanAt", .text("garbage"), timeZone: vn), "garbage")
     }
 
@@ -164,7 +164,7 @@ final class ChangeHistoryTests: XCTestCase {
     func testFieldLines() throws {
         let entry = try page(orderPayload).entries[0]
         XCTAssertEqual(ChangeHistoryLogic.lines(entry, timeZone: vn), [
-            ChangeLine(label: "history.field.returnPlanAt".localized(), from: "05/10", to: "07/10"),
+            ChangeLine(label: "history.field.returnPlanAt".localized(), from: "05/10/26", to: "07/10/26"),
             ChangeLine(label: "history.field.depositAmount".localized(), from: "500.000đ", to: "1.000.000đ"),
             ChangeLine(label: "history.field.isReadyToDeliver".localized(), from: "history.value.no".localized(),
                        to: "history.value.yes".localized()),
@@ -339,8 +339,8 @@ final class ChangeHistoryTests: XCTestCase {
         let days = ChangeHistoryLogic.days(entries, now: at("2026-10-06T10:00:00Z"), timeZone: vn, locale: vi)
 
         XCTAssertEqual(days.map(\.key), ["2026-10-06", "2026-10-05", "—"])
-        XCTAssertEqual(days[0].title, "\("Today section".localized()) · T3 06/10".uppercased(with: vi))
-        XCTAssertEqual(days[1].title, "T2 05/10")
+        XCTAssertEqual(days[0].title, "\("Today section".localized()) · 06/10/26".uppercased(with: vi))
+        XCTAssertEqual(days[1].title, "05/10/26")
         XCTAssertEqual(days[1].rows.map(\.id), [4, 2])
         XCTAssertEqual(days[2].title, "—")
         XCTAssertEqual(days[2].rows.map(\.id), [1])
@@ -353,7 +353,7 @@ final class ChangeHistoryTests: XCTestCase {
         ]
         let days = ChangeHistoryLogic.days(entries, now: at("2026-10-06T10:00:00Z"), timeZone: vn, locale: vi)
         XCTAssertEqual(days.map(\.key), ["2026-10-01", "—"])
-        XCTAssertEqual(days[0].title, "T5 01/10")
+        XCTAssertEqual(days[0].title, "01/10/26")
     }
 
     // MARK: Paging
@@ -379,7 +379,7 @@ final class ChangeHistoryTests: XCTestCase {
         XCTAssertEqual(ChangeHistoryLogic.summary(total: 6, latestAt: "2026-10-06T08:10:00.000Z", now: now, timeZone: vn),
                        PluralText.format("history.summary", count: 6, 6, String(format: "history.summary.today".localized(), "15:10")))
         XCTAssertEqual(ChangeHistoryLogic.summary(total: 1, latestAt: "2026-10-05T09:00:00Z", now: now, timeZone: vn),
-                       PluralText.format("history.summary", count: 1, 1, "16:00 05/10"))
+                       PluralText.format("history.summary", count: 1, 1, "05/10/26 16:00"))
         XCTAssertEqual(ChangeHistoryLogic.summary(total: 4, latestAt: nil, now: now, timeZone: vn),
                        PluralText.format("history.summary.count", count: 4, 4))
     }

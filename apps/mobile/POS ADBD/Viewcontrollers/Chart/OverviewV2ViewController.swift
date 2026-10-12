@@ -298,7 +298,7 @@ final class OverviewV2ViewController: BaseViewControler {
                 let amount = OverviewDashLogic.compact(forecast.forecast, vietnamese: vietnamese)
                 forecastText = forecast.until == todayKey
                     ? String(format: "overview.dash.forecast.today".localized(), amount)
-                    : String(format: "overview.dash.forecast.until".localized(), amount, OverviewLogic.dayMonth(forecast.until))
+                    : String(format: "overview.dash.forecast.until".localized(), amount, OverviewLogic.dayMonthYear(forecast.until))
             }
             let view = OverviewTileView(tile: tile, valueText: OverviewDashLogic.tileText(tile, vietnamese: vietnamese),
                                         forecast: tile.kind == .collected ? forecast : nil, forecastText: forecastText,

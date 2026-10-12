@@ -880,12 +880,9 @@ enum CreateOrderSheetLogic {
         )
     }
 
-    /// `03/10`, the civil day in `timeZone`
+    /// `03/10/26`, the civil day in `timeZone` (#888 dd/mm/yy)
     static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let parts = calendar.dateComponents([.day, .month], from: date)
-        return String(format: "%02d/%02d", parts.day ?? 0, parts.month ?? 0)
+        DayFormatter.dmy(date, timeZone: timeZone)
     }
 }
 

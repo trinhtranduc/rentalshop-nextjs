@@ -111,24 +111,10 @@ enum DS {
 
 /// Day labels and keys of the redesign, in the shop zone (`Date.shopTimeZone`) unless told otherwise (#596)
 enum DayFormatter {
-    /// `T7 03/10` in Vietnamese, `Sat 03/10` otherwise
+    /// A single day anywhere in the app: `05/10/26` (dd/mm/yy, #888 owner: no weekday, any language).
+    /// `locale` is kept for callers and unused.
     static func short(_ date: Date, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = .current) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let parts = calendar.dateComponents([.weekday, .day, .month], from: date)
-        let dayMonth = String(format: "%02d/%02d", parts.day ?? 0, parts.month ?? 0)
-        let weekday: String
-        if locale.languageCode == "vi" {
-            // Calendar weekday: 1 = Sunday … 7 = Saturday → CN, T2 … T7
-            weekday = parts.weekday == 1 ? "CN" : "T\(parts.weekday ?? 0)"
-        } else {
-            let formatter = DateFormatter()
-            formatter.locale = locale
-            formatter.timeZone = timeZone
-            formatter.dateFormat = "EEE"
-            weekday = formatter.string(from: date)
-        }
-        return "\(weekday) \(dayMonth)"
+        dmy(date, timeZone: timeZone)
     }
 
     /// `05/10/26` (dd/mm/yy, #888): a civil day of the shop zone, whatever the device zone
@@ -137,6 +123,27 @@ enum DayFormatter {
         calendar.timeZone = timeZone
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%02d/%02d/%02d", parts.day ?? 0, parts.month ?? 0, (parts.year ?? 0) % 100)
+    }
+
+    /// Weekday name only, for the 7-bar chart axis: `T7` in Vietnamese, `Sat` otherwise (never a day label)
+    static func weekday(_ date: Date, timeZone: TimeZone = Date.shopTimeZone, locale: Locale = .current) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let weekday = calendar.component(.weekday, from: date)
+        if locale.languageCode == "vi" { return weekday == 1 ? "CN" : "T\(weekday)" }
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: date)
+    }
+
+    /// A day with a time: `05/10/26 14:30` (#888), the shop zone's day and clock
+    static func dmyTime(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        return dmy(date, timeZone: timeZone) + String(format: " %02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
     }
 
     /// `yyyy-MM-dd` civil day

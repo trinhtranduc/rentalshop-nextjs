@@ -185,11 +185,7 @@ final class DraftOrderReminder {
     }
 
     private func shortDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.timeZone = Date.shopTimeZone
-        formatter.dateFormat = Locale.current.languageCode?.hasPrefix("vi") == true ? "dd/MM" : "d MMM"
-        return formatter.string(from: date)
+        DayFormatter.dmy(date) // #888 dd/mm/yy everywhere
     }
 
     private func body(for cart: Cart) -> String {

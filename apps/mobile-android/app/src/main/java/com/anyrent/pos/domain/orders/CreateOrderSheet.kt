@@ -66,7 +66,7 @@ object CreateOrderSheet {
         isSale = confirm.isSale,
     )
 
-    fun dayMonth(day: LocalDate): String = "%02d/%02d".format(day.dayOfMonth, day.monthValue)
+    fun dayMonth(day: LocalDate): String = com.anyrent.pos.domain.DayText.dmy(day) // #888 dd/mm/yy
 }
 
 /** One create at a time, one Idempotency-Key per checkout, reused when staff retry after an error (#341) */

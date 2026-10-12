@@ -62,7 +62,7 @@ class EditOrderSheetTest {
         assertEquals("482913", confirm.number)
         assertFalse(confirm.isSale)
         assertEquals("Trần Văn Minh", confirm.customer)
-        assertEquals("same date format as the create sheet", "03/10 → 05/10", confirm.range)
+        assertEquals("same date format as the create sheet", "03/10/26 → 05/10/26", confirm.range)
         assertEquals(3, confirm.days)
         assertEquals(3, confirm.itemCount)
         assertEquals(750_000.0, confirm.total, 0.0)

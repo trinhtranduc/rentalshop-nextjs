@@ -737,7 +737,7 @@ private fun OrderRow(
         name = order.customerName,
         // #496: no product line; the same two date lines in every context; #888 "Tất cả đơn": "#code" + Lấy · Trả
         lines = if (rentSortedBy != null) {
-            OrderRowDates.Lines("#${OrdersBoardLogic.shortNumber(order.orderNumber)}", null)
+            OrderRowDates.Lines(OrdersBoardLogic.rentRowMeta(order, texts), null)
         } else {
             OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts)
         },
@@ -848,8 +848,9 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
 /** #888 (mockup): muted "Lấy 14/10/26   Trả 16/10/26"; the sorted date bold on a light blue chip (iOS `setRentDates`) */
 @Composable
 private fun RentDatesLine(parts: List<OrderRowDates.Part>) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        parts.forEach { part ->
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        parts.forEachIndexed { index, part ->
+            if (index > 0) Text("·", fontSize = DS.TextSize.Secondary, color = OrderRowMetaColor)
             if (part.marked) {
                 Text(
                     part.text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,

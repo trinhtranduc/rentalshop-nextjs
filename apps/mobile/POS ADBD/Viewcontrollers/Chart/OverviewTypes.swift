@@ -119,7 +119,8 @@ enum ReportPeriod: Int, CaseIterable {
     ) -> String {
         let range = dateRange(todayDate: todayDate, year: year, customStart: customStart, customEnd: customEnd)
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
+        formatter.dateFormat = "dd/MM/yy" // #888
+        formatter.timeZone = Date.shopTimeZone
 
         switch self {
         case .today:

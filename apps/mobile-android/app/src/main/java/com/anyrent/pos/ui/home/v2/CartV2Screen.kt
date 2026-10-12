@@ -846,8 +846,7 @@ fun CartV2Screen(
 }
 
 /** #888 dd/mm/yy (the cart keeps shop civil days as `LocalDate`) */
-private fun formatDay(date: LocalDate): String =
-    "%02d/%02d/%02d".format(date.dayOfMonth, date.monthValue, date.year % 100)
+private fun formatDay(date: LocalDate): String = com.anyrent.pos.domain.DayText.dmy(date)
 
 @Composable
 private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {

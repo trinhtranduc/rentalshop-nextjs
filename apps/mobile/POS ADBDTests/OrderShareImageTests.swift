@@ -87,9 +87,9 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertEqual(rent.outletLine, "Chi nhánh Quận 3 · 0901 234 567")
         XCTAssertEqual(rent.kindLine, "Đơn thuê")
         XCTAssertEqual(rent.title, "#482113")
-        XCTAssertEqual(model(Self.sale()).kindLine, "Đơn bán · T4 07/10")
+        XCTAssertEqual(model(Self.sale()).kindLine, "Đơn bán · 07/10/26")
         let draft = model(Self.draft())
-        XCTAssertEqual(draft.kindLine, "Đơn thuê · lập T4 07/10")
+        XCTAssertEqual(draft.kindLine, "Đơn thuê · lập 07/10/26")
         XCTAssertEqual(draft.title, "Đơn nháp")
     }
 
@@ -116,13 +116,13 @@ final class OrderShareImageTests: XCTestCase {
 
     func testDayStripInVietnamCivilDays() {
         let strip = model(Self.rent()).strip
-        XCTAssertEqual(strip, OrderShareModel.Strip(pickupLabel: "Nhận đồ", pickupDay: "T4 07/10", days: "10 ngày",
-                                                    returnLabel: "Trả đồ", returnDay: "T6 16/10"))
+        XCTAssertEqual(strip, OrderShareModel.Strip(pickupLabel: "Nhận đồ", pickupDay: "07/10/26", days: "10 ngày",
+                                                    returnLabel: "Trả đồ", returnDay: "16/10/26"))
         // 00:30 on 07/10 in Vietnam is still 06/10 in UTC: the strip shows the Vietnam day
         var early = Self.rent()
         early.pickup = Self.day("2026-10-07", hour: 0).addingTimeInterval(30 * 60)
         early.returnDate = Self.day("2026-10-07", hour: 23)
-        XCTAssertEqual(model(early).strip?.pickupDay, "T4 07/10")
+        XCTAssertEqual(model(early).strip?.pickupDay, "07/10/26")
         XCTAssertEqual(model(early).strip?.days, "1 ngày", "a same-day rental is one day")
         XCTAssertEqual(model(early, en).strip?.days, "1 day")
         // The order's own duration wins, as on the detail screen
@@ -133,7 +133,7 @@ final class OrderShareImageTests: XCTestCase {
     }
 
     func testOrdersCountCivilDaysNotTheStoredBillingDuration() {
-        // Store run: T7 10/10 → T2 12/10 with rentalDuration 2 printed "2 ngày" on iOS, "3 days" on Android
+        // Store run: 10/10/26 → 12/10/26 with rentalDuration 2 printed "2 ngày" on iOS, "3 days" on Android
         let pickup = Self.day("2026-10-10", hour: 9)
         let back = Self.day("2026-10-12", hour: 18)
         XCTAssertEqual(OrderShareSource.rentalDays(pickup: pickup, return: back, stored: 2), 3)
@@ -284,13 +284,13 @@ final class OrderShareImageTests: XCTestCase {
         let rent = model(Self.rent(), en, qr: true)
         XCTAssertEqual(rent.kindLine, "Rental order")
         XCTAssertEqual(rent.pill, "Awaiting pickup")
-        XCTAssertEqual(rent.strip?.pickupDay, "Wed 07/10")
-        XCTAssertEqual(rent.strip?.returnDay, "Fri 16/10")
+        XCTAssertEqual(rent.strip?.pickupDay, "07/10/26")
+        XCTAssertEqual(rent.strip?.returnDay, "16/10/26")
         XCTAssertEqual(rent.strip?.days, "10 days")
         XCTAssertEqual(rent.highlightLabel, "Amount due")
         XCTAssertEqual(rent.customerLabel, "Customer")
         XCTAssertEqual(rent.qr?.content, "Reference: DH482113")
-        XCTAssertEqual(model(Self.draft(), en).kindLine, "Rental order · made Wed 07/10")
+        XCTAssertEqual(model(Self.draft(), en).kindLine, "Rental order · made 07/10/26")
         let labels = [rent.kindLine, rent.pill ?? "", rent.customerLabel, rent.itemsHeader, rent.highlightLabel,
                       rent.thanks, rent.madeWith, rent.qr?.title ?? ""] + rent.rows.map(\.label)
         let vietnameseMarks = CharacterSet(charactersIn: "ăâđêôơưĂÂĐÊÔƠƯàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ")

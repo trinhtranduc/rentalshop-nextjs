@@ -218,10 +218,7 @@ object OrderDetailLogic {
         val instant = createdAt?.let { runCatching { java.time.Instant.parse(it) }.getOrNull() }
             ?: createdAt?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant() }.getOrNull() }
             ?: return "—"
-        val local = instant.atZone(zone)
-        var text = "%02d:%02d %02d/%02d".format(local.hour, local.minute, local.dayOfMonth, local.monthValue)
-        if (local.year != now.atZone(zone).year) text += "/%02d".format(local.year % 100)
-        return text
+        return com.anyrent.pos.domain.DayText.dmyTime(instant, zone) // #888 "28/09/26 14:32"
     }
 
     /**

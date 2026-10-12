@@ -81,7 +81,7 @@ class OrderShareModelTest {
         assertEquals(ShareText.Plain("#482113"), m.title)
         assertEquals(ShareText.Plain("Nguyễn Thị Mai"), m.customerName)
         assertEquals("0912 345 678", m.customerPhone)
-        assertEquals(ShareDayStrip("T4 07/10", "T6 16/10", 10), m.dayStrip)
+        assertEquals(ShareDayStrip("07/10/26", "16/10/26", 10), m.dayStrip)
         assertEquals(ShareText.Res(R.string.share_items_rent, listOf(3)), m.itemsTitle)
         assertEquals(ShareLine("Vương miện ngọc trai", "2 × 75.000đ", "150.000đ"), m.lines[2])
         assertEquals(ShareText.Res(R.string.share_thanks, listOf("Lan Anh Bridal")), m.thanks)
@@ -92,7 +92,7 @@ class OrderShareModelTest {
     @Test
     fun englishDaysAndWalkIn() {
         val m = OrderShareModel.from(order(customer = null), shop, vi = false, zone = vn)
-        assertEquals(ShareDayStrip("Wed 07/10", "Fri 16/10", 10), m.dayStrip)
+        assertEquals(ShareDayStrip("07/10/26", "16/10/26", 10), m.dayStrip)
         assertEquals(R.string.share_walk_in, res(m.customerName))
         assertNull(m.customerPhone)
     }
@@ -217,10 +217,10 @@ class OrderShareModelTest {
     @Test
     fun draftHeaderTotalsAndNoQr() {
         val m = draft()
-        assertEquals(ShareText.Res(R.string.share_kind_draft, listOf(ShareText.Res(R.string.share_kind_rent), "T4 07/10")), m.kind)
+        assertEquals(ShareText.Res(R.string.share_kind_draft, listOf(ShareText.Res(R.string.share_kind_rent), "07/10/26")), m.kind)
         assertEquals(R.string.share_draft_title, res(m.title))
         assertEquals(ShareText.Plain("Nguyễn Thị Mai"), m.customerName)
-        assertEquals(ShareDayStrip("T4 07/10", "T6 16/10", 10), m.dayStrip)
+        assertEquals(ShareDayStrip("07/10/26", "16/10/26", 10), m.dayStrip)
         assertEquals(
             listOf(
                 ShareRow(ShareText.Res(R.string.share_draft_deposit), "300.000đ"),
@@ -257,9 +257,9 @@ class OrderShareModelTest {
 
     @Test
     fun dayLabels() {
-        assertEquals("CN 11/10", OrderShareModel.dayLabel(LocalDate.of(2026, 10, 11), vi = true))
-        assertEquals("T2 12/10", OrderShareModel.dayLabel(LocalDate.of(2026, 10, 12), vi = true))
-        assertEquals("Sun 11/10", OrderShareModel.dayLabel(LocalDate.of(2026, 10, 11), vi = false))
+        assertEquals("11/10/26", OrderShareModel.dayLabel(LocalDate.of(2026, 10, 11), vi = true))
+        assertEquals("12/10/26", OrderShareModel.dayLabel(LocalDate.of(2026, 10, 12), vi = true))
+        assertEquals("11/10/26", OrderShareModel.dayLabel(LocalDate.of(2026, 10, 11), vi = false))
     }
 
     @Test

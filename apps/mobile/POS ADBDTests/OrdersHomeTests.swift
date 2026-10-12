@@ -353,7 +353,7 @@ final class OrdersHomeTests: XCTestCase {
         // Monday 28/09 … Sunday 04/10 (noon in Vietnam)
         let days = (0..<7).map { iso.date(from: "2026-09-28T05:00:00Z")!.addingTimeInterval(Double($0) * 86_400) }
         XCTAssertEqual(days.map { OrdersHomeLogic.rowDay($0, timeZone: vietnam, locale: vi) },
-                       ["T2 28/09", "T3 29/09", "T4 30/09", "T5 01/10", "T6 02/10", "T7 03/10", "CN 04/10"])
+                       ["28/09/26", "29/09/26", "30/09/26", "01/10/26", "02/10/26", "03/10/26", "04/10/26"])
     }
 
     func testRowLineCopyInVietnamese() {
@@ -443,10 +443,10 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.sectionTitle(late, now: now, timeZone: vietnam, locale: vi),
                        "\("Late section".localized()) · 2".uppercased(with: vi))
         XCTAssertEqual(OrdersHomeLogic.sectionTitle(OrdersSection(kind: .tomorrow, rows: []), now: now, timeZone: vietnam, locale: vi),
-                       "\("Tomorrow section".localized()) · CN 04/10".uppercased(with: vi))
+                       "\("Tomorrow section".localized()) · 04/10/26".uppercased(with: vi))
         let yesterday = OrdersSection(kind: .day(iso.date(from: "2026-10-02T05:00:00Z")!), rows: [])
         XCTAssertEqual(OrdersHomeLogic.sectionTitle(yesterday, now: now, timeZone: vietnam, locale: vi),
-                       "\("orders.v2.yesterday".localized()) · T6 02/10".uppercased(with: vi))
+                       "\("orders.v2.yesterday".localized()) · 02/10/26".uppercased(with: vi))
         XCTAssertNil(OrdersHomeLogic.sectionTitle(OrdersSection(kind: .plain, rows: [])))
 
         let rows: [OrdersRow] = [.order(try order(status: "COMPLETED", type: "SALE"), lateDays: 0),
