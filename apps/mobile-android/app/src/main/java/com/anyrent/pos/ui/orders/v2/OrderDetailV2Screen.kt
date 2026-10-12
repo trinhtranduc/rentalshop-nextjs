@@ -981,7 +981,6 @@ private fun ItemRow(item: OrderItem, orderType: String) {
                 fontSize = DS.TextSize.Body,
                 color = Color(0xFF475569),
             )
-            CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
@@ -991,6 +990,8 @@ private fun ItemRow(item: OrderItem, orderType: String) {
                 )
                 Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
+            // #891 (owner): the item note is the last line of the item
+            CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
         }
     }
     HorizontalDivider(color = DS.Colors.Divider)

@@ -634,7 +634,7 @@ private fun SectionBand(section: OrdersSection) {
     }
 }
 
-private enum class RowContext { LIST, SALE, SEARCH }
+private enum class RowContext { LIST, SALE, SEARCH, PRODUCT }
 
 @Composable
 private fun WorkRow(
@@ -662,6 +662,8 @@ private fun WorkRow(
             OrderStatusTag.colors(if (handOver) "RESERVED" else "PICKUPED"),
         name = work.customerName,
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(work, kind, isLate), texts),
+        // #891 (option C): rent dates as chips, no emphasis
+        chips = chipLabels().let { (p, r) -> OrderRowDates.chips(work.pickupPlanAt, work.returnPlanAt, false, false, p, r) },
         pills = pills,
         total = formatMoneyVnd(work.totalAmount),
         struck = false,
@@ -687,6 +689,40 @@ internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
     OrderRow(row, RowContext.LIST, orderRowTexts(), onClick = onClick)
 }
 
+/** #891 (owner): product detail → its orders: the order row plus "× qty" of this product; no pay line, no late chip */
+@Composable
+internal fun ProductOrderRow(order: OrderSummary, qty: Int, onClick: () -> Unit) {
+    OrderRow(OrdersRow.Order(order, 0), RowContext.PRODUCT, orderRowTexts(), qty = qty, onClick = onClick)
+}
+
+/** #891 (owner): customer detail → its orders: the order row with the item names as line 1 (iOS configure(customerOrder:)) */
+@Composable
+internal fun CustomerOrderListRow(row: com.anyrent.pos.domain.customers.CustomerOrderRow, onClick: () -> Unit) {
+    val isRent = row.orderType.equals("RENT", ignoreCase = true)
+    val texts = orderRowTexts()
+    val lines = OrderRowDates.lines(
+        OrderRowDates.Input(
+            code = OrdersBoardLogic.shortNumber(row.orderNumber), orderType = row.orderType, status = row.status,
+            createdAt = row.createdAt, pickupPlanAt = row.pickupPlanAt, returnPlanAt = row.returnPlanAt, updatedAt = row.createdAt,
+        ),
+        texts,
+    )
+    BoardRow(
+        tag = stringResource(OrderStatusTag.labelRes(row.status)) to OrderStatusTag.colors(row.status),
+        name = com.anyrent.pos.domain.customers.CustomerRules.itemsTitle(row)
+            ?: pluralStringResource(R.plurals.customers_v2_items, row.itemCount, row.itemCount),
+        lines = lines,
+        chips = if (isRent) chipLabels().let { (p, r) -> OrderRowDates.chips(row.pickupPlanAt, row.returnPlanAt, false, false, p, r) } else null,
+        pills = emptyList(),
+        total = formatMoneyVnd(row.totalAmount),
+        struck = row.status.equals("CANCELLED", ignoreCase = true),
+        pay = null,
+        phone = null,
+        onClick = onClick,
+        onCall = {},
+    )
+}
+
 /**
  * #496 a "Chưa lấy đồ" row (board DT-chua-lay): the list row, with "Quá x ngày · nên gọi khách" when the pickup day
  * has passed ([overdueDays] > 0) and "còn thu N" in amber under the total when something is due.
@@ -698,6 +734,7 @@ internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick:
         tag = stringResource(OrderStatusTag.labelRes(order.status)) to OrderStatusTag.colors(order.status),
         name = order.customerName,
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, 0), orderRowTexts()),
+        chips = chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, null, p, r) },
         pills = if (overdueDays > 0) {
             listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to DS.Status.Late)
         } else {
@@ -721,6 +758,7 @@ private fun OrderRow(
     context: RowContext,
     texts: OrderRowDates.Texts,
     rentSortedBy: SortDate? = null,
+    qty: Int? = null,
     onClick: () -> Unit,
 ) {
     val order = row.order
@@ -737,20 +775,18 @@ private fun OrderRow(
     BoardRow(
         tag = tagText to colors,
         name = order.customerName,
-        // #496: no product line; the same two date lines in every context; #888 "Tất cả đơn": "#code" + Lấy · Trả
-        lines = if (rentSortedBy != null) {
-            OrderRowDates.Lines(OrdersBoardLogic.rentRowMeta(order, texts), null)
-        } else {
-            OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts)
-        },
-        rentDates = rentSortedBy?.let { OrdersBoardLogic.rentRowDates(order, it, texts) },
+        // #496: no product line; #891 (option C): a rent order shows the Lấy / Trả chips in place of the task line
+        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
+        chips = if (isSale) null else chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, rentSortedBy, p, r) },
+        metaBold = OrdersBoardLogic.metaIsBold(rentSortedBy),
+        qty = qty,
         // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
-        pills = if (row.lateDays > 0 && rentSortedBy == null) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
+        pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
         // #891 (owner): no pay line on Tất cả đơn rows
-        pay = when (val pay = OrdersBoardLogic.rowPayLine(order, rentList = rentSortedBy != null)) {
+        pay = when (val pay = OrdersBoardLogic.rowPayLine(order, rentList = rentSortedBy != null || context == RowContext.PRODUCT)) {
             is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(pay.amount)) to DS.Status.Return.text
             is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(pay.amount)) to DS.Status.Waiting.text
             null -> null
@@ -768,8 +804,12 @@ private fun BoardRow(
     tag: Pair<String, DS.Pill>,
     name: String?,
     lines: OrderRowDates.Lines,
-    /** #888 "Tất cả đơn": the Lấy · Trả line in place of the task line */
-    rentDates: List<OrderRowDates.Part>? = null,
+    /** #891 (option C): the Lấy / Trả chips in place of the task line (rent orders) */
+    chips: List<OrderRowDates.DateChip>? = null,
+    /** #891: sorted by created date, "tạo …" is bold dark text */
+    metaBold: Boolean = false,
+    /** #891: product detail → its orders: "× qty" of the product before the total */
+    qty: Int? = null,
     pills: List<Pair<String, DS.Pill>>,
     /** Null hides the money (staff with "hide financial data") */
     total: String?,
@@ -800,13 +840,23 @@ private fun BoardRow(
                     )
                     Tag(tag.first, tag.second, RowTagStyle.STATUS)
                 }
-                Text(lines.meta, fontSize = 13.sp, color = OrderRowMetaColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    lines.meta, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    color = if (metaBold) DS.Colors.Text else OrderRowMetaColor,
+                    fontWeight = if (metaBold) FontWeight.Bold else FontWeight.Normal,
+                )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) {
                         when {
-                            rentDates != null -> RentDatesLine(rentDates)
+                            !chips.isNullOrEmpty() -> DateChipsRow(chips)
                             lines.task != null -> Text(lines.task, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
+                    }
+                    if (qty != null) {
+                        Text(
+                            "× $qty", fontSize = DS.TextSize.Secondary, color = Color(0xFF334155), maxLines = 1,
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFF1F5F9)).padding(horizontal = 7.dp, vertical = 2.dp),
+                        )
                     }
                     if (total != null) {
                         Text(
@@ -854,26 +904,30 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
     lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
-/** #888 (mockup): muted "Lấy 14/10/26   Trả 16/10/26"; the sorted date bold on a light blue chip (iOS `setRentDates`) */
+/** #891 (option C): light "Lấy dd/mm/yy" (blue) and "Trả dd/mm/yy" (purple) chips; the sorted date only bolder (iOS DateChipStack) */
 @Composable
-private fun RentDatesLine(parts: List<OrderRowDates.Part>) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        parts.forEachIndexed { index, part ->
-            if (index > 0) Text("·", fontSize = DS.TextSize.Secondary, color = OrderRowMetaColor)
-            if (part.marked) {
-                Text(
-                    part.text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.Text, maxLines = 1,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(RentDateMark).padding(horizontal = 4.dp),
-                )
-            } else {
-                Text(part.text, fontSize = DS.TextSize.Secondary, color = OrderRowMetaColor, maxLines = 1)
-            }
+internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        chips.forEach { chip ->
+            val colors = OrdersBoardLogic.chipColors(chip.kind)
+            Text(
+                buildAnnotatedString {
+                    append(chip.label + " ")
+                    pushStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = if (chip.bold) FontWeight.Bold else FontWeight.Medium))
+                    append(chip.date)
+                    pop()
+                },
+                fontSize = DS.TextSize.Secondary, color = colors.text, maxLines = 1,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
+            )
         }
     }
 }
 
-/** #888 the chip behind the date the list is sorted by */
-private val RentDateMark = Color(0xFFEFF6FF)
+/** Chip labels in the app language */
+@Composable
+internal fun chipLabels(): Pair<String, String> = stringResource(R.string.orders_chip_pickup) to stringResource(R.string.orders_chip_return)
+
 
 /** #496 line 1 of an order row */
 internal val OrderRowMetaColor = Color(0xFF64748B)

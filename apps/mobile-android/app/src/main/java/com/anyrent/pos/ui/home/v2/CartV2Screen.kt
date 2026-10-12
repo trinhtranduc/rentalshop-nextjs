@@ -915,8 +915,6 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
-                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món"
-                ItemNoteEntry(line.product.name, line.note, onOpenNote)
                 if (isSale && available != null) {
                     Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
@@ -930,6 +928,9 @@ private fun ItemRow(
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
                 }
+                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món".
+                // #891 (owner): the note is the last line of the item
+                ItemNoteEntry(line.product.name, line.note, onOpenNote)
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)

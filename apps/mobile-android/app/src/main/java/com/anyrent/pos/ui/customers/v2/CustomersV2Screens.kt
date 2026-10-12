@@ -663,7 +663,10 @@ fun CustomerDetailV2Screen(
                 }
                 error != null && list.isEmpty() -> item { Message(error!!) }
                 list.isEmpty() -> item { Message(stringResource(R.string.customers_v2_no_orders)) }
-                else -> items(list, key = { it.id }) { order -> OrderRowItem(order, onClick = { onOpenOrder(order.id) }) }
+                // #891 (owner): the order list row with the item names as line 1
+                else -> items(list, key = { it.id }) { order ->
+                    com.anyrent.pos.ui.orders.v2.CustomerOrderListRow(order, onClick = { onOpenOrder(order.id) })
+                }
             }
         }
         Column(Modifier.fillMaxWidth().background(DS.Colors.Surface)) {
