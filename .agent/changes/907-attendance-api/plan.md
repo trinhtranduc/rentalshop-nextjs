@@ -1,6 +1,6 @@
 # Plan — Attendance module (1/4)
 
-Issue: #907 · Status: ready (mockup approved 2026-10-12) · Spec: ./spec.md
+Issue: #907 · Status: in review (steps 1-11 done) · Spec: ./spec.md
 
 ## Steps
 

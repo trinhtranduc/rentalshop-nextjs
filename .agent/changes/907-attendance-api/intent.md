@@ -1,6 +1,6 @@
 # Attendance module (1/4): data, API and per-shop module switch
 
-Issue: #907 (part of #906) · Author: Trinh Tran (agent draft) · Status: approved (mockup 2026-10-12) · Created: 2026-10-12
+Issue: #907 (part of #906) · Author: Trinh Tran (agent draft) · Status: in review (PR open, go 2026-10-12) · Created: 2026-10-12
 
 ## Problem
 
@@ -54,3 +54,15 @@ infrastructure yet, so a shop cannot be given (or sold) one feature on its own.
   `SHIFT_LOCKED`); templates hide, delete only if never used; no shift swaps; staff notified on schedule
   change; timesheet and report merged; per-person month table with every scan and coordinates; month lock;
   app entry is the first row of Cài đặt. (owner, #906)
+- 2026-10-12 — Owner go; defaults accepted: kiosk token stored (link can be copied again), OUTLET_ADMIN does not
+  edit their own records, "Vắng" has no API state. (owner via coordinator)
+- 2026-10-12 — SHIFT_CHANGED: old apps on `release-2026-10-12.2` list an unknown type with a neutral icon and open
+  nothing on tap (iOS `InboxNotification.swift:11-30` all `String?`, `NotificationsViewController.swift:426`;
+  Android `ApiClient.kt:1290-1304`, `InboxScreen.kt:175`). Decision: keep the inbox row + push, every `data` value a
+  string (`dates` comma-joined), title / body non-empty. Announced window: the next 14 days, worked days skipped.
+  (implementation, PR)
+- 2026-10-12 — Contract details the spec left open: `/shifts` answers `{ outletId, from, to, users, items }`, items
+  only for days with shifts plus `off: true` days; `/timesheet` answers `{ outletId, month, locked, users[{ userId,
+  name, role, days, totals }], summary }`; `/people/[userId]/month` adds `user`, `outletId`, `month`; DELETE of a
+  running rule ends it today instead of yesterday when today is already worked; a rule / day change starting today
+  is SHIFT_LOCKED when the user already worked today. (implementation, PR)

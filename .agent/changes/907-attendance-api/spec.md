@@ -1,6 +1,6 @@
 # Spec — Attendance module (1/4): data, API and per-shop module switch
 
-Issue: #907 · Status: approved mockup 2026-10-12 · Intent: ./intent.md · Product: #906
+Issue: #907 · Status: in review (implemented; owner go 2026-10-12) · Intent: ./intent.md · Product: #906
 Mockup (approved): ./mockup.html (copy of https://claude.ai/artifact/MikH31P6eVqyzbnj6BoWzf)
 
 All ids on the wire are the numeric `id` the API already exposes for users / outlets / merchants.
