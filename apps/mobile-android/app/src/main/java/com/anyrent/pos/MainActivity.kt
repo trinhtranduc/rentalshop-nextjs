@@ -101,8 +101,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun consumeOpenMyShiftsIntent(intent: Intent?) {
-        if (intent?.getBooleanExtra(com.anyrent.pos.push.AttendancePush.EXTRA_OPEN_MY_SHIFTS, false) == true) {
+        if (intent == null) return
+        // Foreground push: our own extra. Background push (tray): FCM puts the data keys as string extras.
+        val ours = intent.getBooleanExtra(com.anyrent.pos.push.AttendancePush.EXTRA_OPEN_MY_SHIFTS, false)
+        val tray = com.anyrent.pos.push.AttendancePush.isShiftChanged(intent.getStringExtra("type"))
+        if (ours || tray) {
             intent.removeExtra(com.anyrent.pos.push.AttendancePush.EXTRA_OPEN_MY_SHIFTS)
+            intent.removeExtra("type")
             com.anyrent.pos.push.AttendancePush.requestOpenMyShifts()
         }
     }
