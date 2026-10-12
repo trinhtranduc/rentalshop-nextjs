@@ -160,6 +160,9 @@ final class OrderRowCell: UITableViewCell {
     private let payLabel = UILabel()
     private let moneyStack = UIStackView()
     private var pillLine: UIStackView?
+    private var thirdLine: UIStackView?
+    /// #893 (owner): line 2 of a lean Việc cần làm row: the task date chip, "Trễ N ngày", "Chưa soạn đồ"; wraps
+    private let workChipLines = UIStackView()
     private let callButton = UIButton(type: .system)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
 
@@ -223,9 +226,14 @@ final class OrderRowCell: UITableViewCell {
         qtyLabel.setContentHuggingPriority(.required, for: .horizontal)
         let spacer = UIView()
         spacer.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
-        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, chipStack, spacer, qtyLabel, totalLabel])
+        workChipLines.axis = .vertical
+        workChipLines.alignment = .leading
+        workChipLines.spacing = 6
+        workChipLines.isHidden = true
+        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, chipStack, workChipLines, spacer, qtyLabel, totalLabel])
         thirdLine.spacing = DS.Spacing.sm
         thirdLine.alignment = .center
+        self.thirdLine = thirdLine
         moneyStack.isHidden = true // kept for the money switch; the amounts now sit in lines 3 and 4
 
         pillStack.spacing = 6
@@ -302,6 +310,39 @@ final class OrderRowCell: UITableViewCell {
         qtyLabel.isHidden = true
         metaLabel.font = Utils.regularFont(size: 13)
         metaLabel.textColor = Self.metaColor
+        metaLabel.isHidden = false
+        workChipLines.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        workChipLines.isHidden = true
+        thirdLine?.alignment = .center
+        totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
+    }
+
+    /// #893 (owner): lays the chips out in lines that fit `width` (wrap only when they do not fit)
+    private func setWorkChips(_ chips: [OrdersHomeLogic.WorkChip], width: CGFloat) {
+        workChipLines.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var line = UIStackView()
+        var used: CGFloat = 0
+        for chip in chips {
+            let label = InsetLabel()
+            label.insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            label.font = Utils.mediumFont(size: DS.TextSize.secondary)
+            label.text = chip.text
+            label.textColor = chip.colors.text
+            label.backgroundColor = chip.colors.fill
+            label.layer.cornerRadius = 8
+            label.layer.masksToBounds = true
+            let size = label.intrinsicContentSize.width
+            if used > 0 && used + 6 + size > width {
+                workChipLines.addArrangedSubview(line)
+                line = UIStackView()
+                used = 0
+            }
+            line.spacing = 6
+            line.addArrangedSubview(label)
+            used += (used > 0 ? 6 : 0) + size
+        }
+        if !line.arrangedSubviews.isEmpty { workChipLines.addArrangedSubview(line) }
+        workChipLines.isHidden = chips.isEmpty
     }
 
     /// #891 (owner): a customer's order (customer detail): the same row with the item names in place of the name
@@ -338,29 +379,34 @@ final class OrderRowCell: UITableViewCell {
     }
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, isLate: Bool, hidesMoney: Bool) {
-        // #888: same palette as the status badges (hand-over = booked, take-back = renting)
+        // #893 (owner): the task tag in its light colours (a task, not an order status)
         if kind == .handOver {
-            tagLabel.apply("orders.v2.tag.handOver".localized(), OrderStatusBadge.pill(for: .reserved))
+            tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
         } else {
-            tagLabel.apply("orders.v2.tag.takeBack".localized(), OrderStatusBadge.pill(for: .pickuped))
+            tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
         }
         setName(work.customerName)
-        // #496: hand-overs are reserved rentals, take-backs rented out; the API sends no created day for these rows
-        setLines(OrdersHomeLogic.rowLines(code: OrdersHomeLogic.shortNumber(work.orderNumber), orderType: .rent,
-                                          status: kind == .handOver ? .reserved : .pickuped, createdAt: nil,
-                                          pickupPlanAt: work.pickupPlanAt, returnPlanAt: work.returnPlanAt,
-                                          returnedAt: nil, updatedAt: nil, isLate: isLate || work.lateDays > 0))
-        // #891 (option C): rent dates as chips, no emphasis
-        setChips(OrdersHomeLogic.dateChips(pickupPlanAt: work.pickupPlanAt, returnPlanAt: work.returnPlanAt, sortedBy: nil))
-        if kind == .handOver && !work.isReadyToDeliver {
-            addPill("orders.v2.notPrepared".localized(), DS.Status.waiting)
+        // #893 (owner, lean row): no "#code · tạo", no other date, no notes line; line 2 = the task's date chip,
+        // "Trễ N ngày", "Chưa soạn đồ" (wrapping), and on the right "còn thu N" (else the total)
+        metaLabel.isHidden = true
+        taskLabel.isHidden = true
+        chipStack.show([])
+        thirdLine?.alignment = .top
+        let amount = OrdersHomeLogic.workAmount(work)
+        var amountText = ""
+        switch amount {
+        case .due(let due): amountText = String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(due))
+        case .total(let total): amountText = MoneyFormatter.format(total)
         }
-        if work.lateDays > 0 {
-            addPill(LateText.days(work.lateDays), DS.Status.late)
-        }
-
+        let amountFont: UIFont = { if case .due = amount { return Utils.boldFont(size: DS.TextSize.body) }; return Utils.boldFont(size: DS.TextSize.name) }()
+        let amountWidth = (amountText as NSString).size(withAttributes: [NSAttributedString.Key.font: amountFont]).width
+        let available = UIScreen.main.bounds.width - 2 * DS.Gap.rowHorizontal - amountWidth - DS.Spacing.sm
+        setWorkChips(OrdersHomeLogic.workChips(work, kind: kind), width: available)
         setTotal(work.totalAmount, struck: false)
-        setPay(OrdersHomeLogic.payLine(amountDue: work.amountDue, refundDue: work.refundDue))
+        totalLabel.text = amountText
+        totalLabel.font = amountFont
+        if case .due = amount { totalLabel.textColor = DS.Status.waiting.text }
+        setPay(nil)
 
         phone = OrdersHomeLogic.workCallPhone(work, isLate: isLate)
         callButton.isHidden = phone == nil

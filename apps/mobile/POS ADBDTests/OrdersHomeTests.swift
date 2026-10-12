@@ -901,6 +901,10 @@ final class OrdersHomeTests: XCTestCase {
                                     totalAmount: 300_000)
         XCTAssertEqual(OrdersHomeLogic.workChips(takeBack, kind: .takeBack, timeZone: vietnam).map(\.text),
                        ["orders.chip.return".localized() + " 16/10/26"], "only the return date; ready, not late")
+        // #893 (owner): "Chưa soạn đồ" only on hand-over rows, never on a return row
+        let notReadyReturn = TodayWorkRow(id: 3, orderNumber: "3", pickupPlanAt: pickup, returnPlanAt: back, isReadyToDeliver: false)
+        XCTAssertFalse(OrdersHomeLogic.workChips(notReadyReturn, kind: .takeBack, timeZone: vietnam).map(\.text)
+            .contains("orders.v2.notPrepared".localized()))
         // Right side: "còn thu N" when something is due, else the total
         XCTAssertEqual(OrdersHomeLogic.workAmount(handOver), .due(200_000))
         XCTAssertEqual(OrdersHomeLogic.workAmount(takeBack), .total(300_000))
@@ -1021,7 +1025,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(status.layer.cornerRadius, 7)
         XCTAssertEqual(status.intrinsicContentSize.width,
                        (status.text! as NSString).size(withAttributes: [.font: status.font!]).width + 16, accuracy: 1)
-        // Money column: total bold, pay line ("còn thu N") regular
+        // #893 (lean Việc cần làm row): "còn thu N" bold in place of the total; the notes are chips on line 2
         func labels(_ view: UIView) -> [UILabel] {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
@@ -1029,17 +1033,12 @@ final class OrdersHomeTests: XCTestCase {
         cell.configure(.work(due, kind: .takeBack), context: .work(isLate: false), hidesMoney: false)
         let money = labels(cell.contentView)
         let pay = try XCTUnwrap(money.first { $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000)) })
-        XCTAssertEqual(pay.font, Utils.regularFont(size: DS.TextSize.secondary))
-        let total = try XCTUnwrap(money.first { $0.text == MoneyFormatter.format(300000) })
-        XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
+        XCTAssertEqual(pay.font, Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertNil(money.first { $0.text == MoneyFormatter.format(300000) && !$0.isHidden })
         cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
-
-        let notes = tags(cell.contentView).filter { $0 !== status }
-        XCTAssertEqual(notes.count, 2, "not prepared + late")
-        for note in notes {
-            XCTAssertEqual(note.font, Utils.regularFont(size: DS.TextSize.pill), note.text ?? "")
-            XCTAssertEqual(note.layer.cornerRadius, DS.Radius.chip)
-        }
+        let chips = labels(cell.contentView).compactMap { $0 as? InsetLabel }.filter { !($0.superview?.isHidden ?? true) }
+            .compactMap(\.text)
+        XCTAssertEqual(Set(chips), [LateText.days(2), "orders.v2.notPrepared".localized()], "late + not prepared")
     }
 }
 

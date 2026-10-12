@@ -355,6 +355,42 @@ enum OrdersHomeLogic {
         rentRowDates(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy, timeZone: timeZone)
     }
 
+    /// #893 (owner): one chip on line 2 of a lean Việc cần làm row
+    struct WorkChip: Equatable {
+        let text: String
+        let colors: DS.Pill
+        static func == (lhs: WorkChip, rhs: WorkChip) -> Bool { lhs.text == rhs.text }
+    }
+
+    /// #893 (owner): the right side of a lean Việc cần làm row
+    enum WorkAmount: Equatable { case due(Double), total(Double) }
+
+    /// #893 (owner): Việc cần làm line 2: the task's own date (Lấy for a hand-over, Trả for a take-back), then
+    /// "Trễ N ngày", then "Chưa soạn đồ" (hand-over rows only, never a return)
+    static func workChips(_ work: TodayWorkRow, kind: WorkKind, timeZone: TimeZone = Date.shopTimeZone) -> [WorkChip] {
+        var chips: [WorkChip] = []
+        let date = kind == .handOver ? work.pickupPlanAt : work.returnPlanAt
+        let chipKind: DateChip.Kind = kind == .handOver ? .pickup : .return
+        if let date {
+            let label = (kind == .handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
+            chips.append(WorkChip(text: label + " " + DayFormatter.dmy(date, timeZone: timeZone), colors: chipKind.colors))
+        }
+        if work.lateDays > 0 { chips.append(WorkChip(text: LateText.days(work.lateDays), colors: DS.Status.late)) }
+        if notPreparedApplies(kind: kind, isReadyToDeliver: work.isReadyToDeliver) {
+            chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: DS.Status.waiting))
+        }
+        return chips
+    }
+
+    /// #893 (owner): "Chưa soạn đồ" only on a hand-over (a RESERVED order waiting to be picked up) not prepared
+    static func notPreparedApplies(kind: WorkKind, isReadyToDeliver: Bool) -> Bool {
+        kind == .handOver && !isReadyToDeliver
+    }
+
+    static func workAmount(_ work: TodayWorkRow) -> WorkAmount {
+        work.amountDue > 0 ? .due(work.amountDue) : .total(work.totalAmount)
+    }
+
     /// #891 (option C): the date chips of a rent row; `sortedBy` (Tất cả đơn only) makes that date bold
     static func dateChips(pickupPlanAt: Date?, returnPlanAt: Date?, sortedBy: RentOrdersFilter.SortDate?,
                           timeZone: TimeZone = Date.shopTimeZone) -> [DateChip] {
