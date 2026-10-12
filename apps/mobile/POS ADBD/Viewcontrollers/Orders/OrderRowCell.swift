@@ -94,6 +94,7 @@ final class OrderRowCell: UITableViewCell {
     private let totalLabel = UILabel()
     private let payLabel = UILabel()
     private let moneyStack = UIStackView()
+    private var pillLine: UIStackView?
     private let callButton = UIButton(type: .system)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
 
@@ -113,16 +114,19 @@ final class OrderRowCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
+    /// line 3 dates / task + total right; line 4 notes (late, not prepared) + pay line right. 8pt between lines.
     private func buildLayout() {
         nameLabel.font = Utils.boldFont(size: DS.TextSize.name)
         nameLabel.textColor = DS.Color.text
-        // #424: a long name wraps to a second line (the tag stays centred beside it) instead of being cut
-        nameLabel.numberOfLines = 2
+        nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
-        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column
-        nameLabel.setContentCompressionResistancePriority(.defaultHigh - 1, for: .horizontal)
-        let firstLine = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
-        firstLine.spacing = 6
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        tagLabel.setContentHuggingPriority(.required, for: .horizontal)
+        tagLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let firstLine = UIStackView(arrangedSubviews: [nameLabel, tagLabel])
+        firstLine.spacing = DS.Spacing.sm
         firstLine.alignment = .center
 
         metaLabel.font = Utils.regularFont(size: 13)
@@ -130,31 +134,36 @@ final class OrderRowCell: UITableViewCell {
         metaLabel.lineBreakMode = .byTruncatingTail
         taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
         taskLabel.textColor = DS.Color.text
-        taskLabel.numberOfLines = 2
-        pillStack.spacing = 6
-        pillStack.alignment = .leading
-        let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView()])
-
-        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, taskLabel, pillLine])
-        left.axis = .vertical
-        left.spacing = DS.Gap.orderRowLine // #888 owner: ~8pt between lines
-        left.alignment = .fill
+        taskLabel.numberOfLines = 1
+        taskLabel.lineBreakMode = .byTruncatingTail
+        taskLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        taskLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
         // #468: the pay line is regular weight (colour carries the meaning); the total stays bold
         payLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
-        moneyStack.axis = .vertical
-        moneyStack.alignment = .trailing
-        moneyStack.addArrangedSubview(totalLabel)
-        moneyStack.addArrangedSubview(payLabel)
-        moneyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-        moneyStack.setContentHuggingPriority(.required, for: .horizontal)
         [totalLabel, payLabel].forEach {
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.textAlignment = .right
         }
+        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, totalLabel])
+        thirdLine.spacing = DS.Spacing.sm
+        thirdLine.alignment = .center
+        moneyStack.isHidden = true // kept for the money switch; the amounts now sit in lines 3 and 4
+
+        pillStack.spacing = 6
+        pillStack.alignment = .leading
+        let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView(), payLabel])
+        pillLine.alignment = .center
+        pillLine.spacing = DS.Spacing.sm
+        self.pillLine = pillLine
+
+        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, thirdLine, pillLine])
+        left.axis = .vertical
+        left.spacing = DS.Gap.orderRowLine // #888 owner: ~8pt between lines
+        left.alignment = .fill
 
         callButton.setImage(DS.symbol("phone", DS.Icon.sm), for: .normal)
         callButton.tintColor = DS.Color.text
@@ -169,12 +178,12 @@ final class OrderRowCell: UITableViewCell {
         chevron.contentMode = .center
         chevron.snp.makeConstraints { make in make.size.equalTo(DS.Icon.sm) }
 
-        let row = UIStackView(arrangedSubviews: [left, moneyStack, callButton, chevron])
+        let row = UIStackView(arrangedSubviews: [left, callButton, chevron])
         row.spacing = DS.Spacing.md
         row.alignment = .center
         contentView.addSubview(row)
         row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowVertical)
+            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowPadding) // #888 owner: 16pt
             make.leading.trailing.equalToSuperview().inset(DS.Gap.rowHorizontal)
         }
 
@@ -205,15 +214,18 @@ final class OrderRowCell: UITableViewCell {
         case .order(let order, let lateDays):
             bindOrder(order, lateDays: lateDays, context: context, hidesMoney: hidesMoney)
         }
-        pillStack.superview?.isHidden = pillStack.arrangedSubviews.isEmpty
-        moneyStack.isHidden = hidesMoney
+        totalLabel.isHidden = hidesMoney
+        if hidesMoney { payLabel.isHidden = true }
+        pillStack.isHidden = pillStack.arrangedSubviews.isEmpty
+        pillLine?.isHidden = pillStack.arrangedSubviews.isEmpty && payLabel.isHidden
     }
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, isLate: Bool, hidesMoney: Bool) {
+        // #888: same palette as the status badges (hand-over = booked, take-back = renting)
         if kind == .handOver {
-            tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
+            tagLabel.apply("orders.v2.tag.handOver".localized(), OrderStatusBadge.pill(for: .reserved))
         } else {
-            tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
+            tagLabel.apply("orders.v2.tag.takeBack".localized(), OrderStatusBadge.pill(for: .pickuped))
         }
         setName(work.customerName)
         // #496: hand-overs are reserved rentals, take-backs rented out; the API sends no created day for these rows
@@ -258,7 +270,9 @@ final class OrderRowCell: UITableViewCell {
                 setPay(nil)
             }
         } else {
-            if lateDays > 0 {
+            // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
+            let isRentList: Bool = { if case .rentList = context { return true }; return false }()
+            if lateDays > 0 && !isRentList {
                 addPill(LateText.days(lateDays), DS.Status.late)
             }
             // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)

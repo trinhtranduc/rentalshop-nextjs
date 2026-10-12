@@ -228,8 +228,10 @@ final class OrderStatusPillLabel: UILabel {
     func apply(status: OrderStatus, isRegularWidth: Bool = false) {
         OrderStatusBadgeMetrics.applyBaseAppearance(to: self, isRegularWidth: isRegularWidth)
         text = status.filterChipTitle
-        backgroundColor = status.badgeColor
-        textColor = status.badgeTextColor
+        // #888: every status badge uses the chosen palette (Đậm = old app colours, default)
+        let pill = OrderStatusBadge.pill(for: status)
+        backgroundColor = pill.fill
+        textColor = pill.text
     }
 
     func apply(status: OrderStatus?, isRegularWidth: Bool = false) {

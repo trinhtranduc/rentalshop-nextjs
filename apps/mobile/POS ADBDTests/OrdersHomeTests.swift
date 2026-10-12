@@ -274,7 +274,7 @@ final class OrdersHomeTests: XCTestCase {
     func testStatusTags() throws {
         let booked = try order(status: "RESERVED")
         XCTAssertEqual(OrdersHomeLogic.statusTag(booked), RowTag(text: "orders.v2.status.reserved".localized(),
-                                                             colors: OrderStatusPalette.current.pill(for: .reserved)))
+                                                             colors: OrderStatusBadge.pill(for: .reserved)))
         let sale = try order(status: "COMPLETED", type: "SALE")
         XCTAssertEqual(OrdersHomeLogic.statusTag(sale, inSearch: true).text,
                        String(format: "orders.v2.tag.sale".localized(), "orders.v2.status.completed".localized()))
@@ -294,7 +294,7 @@ final class OrdersHomeTests: XCTestCase {
         // created 02/10 (Fri), pickup 04/10 (Sun), return 05/10 (Mon), Vietnam days
         let booked = try order(status: "RESERVED")
         XCTAssertEqual(lines(booked), OrderRowLines(
-            meta: "#0062 · " + text("orders.row.created", "02/10/26"),
+            meta: "#0062 · " + text("orders.row.created", "02/10/26 10:00"),
             task: text("orders.row.pickup", "04/10/26") + " · " + text("orders.row.returnAfter", "05/10/26")))
 
         let out = try order(status: "PICKUPED")
@@ -316,7 +316,7 @@ final class OrdersHomeTests: XCTestCase {
                                                 pickupPlanAt: nil, returnPlanAt: nil,
                                                 returnedAt: iso.date(from: "2026-09-28T03:00:00Z"), updatedAt: nil,
                                                 isLate: false, timeZone: vietnam, locale: vi)
-        XCTAssertEqual(returned, OrderRowLines(meta: "#0062 · " + text("orders.row.created", "25/09/26"),
+        XCTAssertEqual(returned, OrderRowLines(meta: "#0062 · " + text("orders.row.created", "25/09/26 10:00"),
                                                task: text("orders.row.returned", "28/09/26")))
     }
 
@@ -343,11 +343,11 @@ final class OrdersHomeTests: XCTestCase {
     func testRowLinesUseTheVietnamDay() throws {
         // 03/10 18:00 UTC is Sunday 04/10 01:00 in Vietnam
         let late = try order(status: "RESERVED", created: "2026-10-03T18:00:00.000Z")
-        XCTAssertEqual(lines(late).meta, "#0062 · " + text("orders.row.created", "04/10/26"))
-        XCTAssertEqual(lines(late, timeZone: utc).meta, "#0062 · " + text("orders.row.created", "03/10/26"))
+        XCTAssertEqual(lines(late).meta, "#0062 · " + text("orders.row.created", "04/10/26 01:00"))
+        XCTAssertEqual(lines(late, timeZone: utc).meta, "#0062 · " + text("orders.row.created", "03/10/26 18:00"))
         // The default zone is the shop's, not the device's
         XCTAssertEqual(OrdersHomeLogic.rowLines(late, lateDays: 0, locale: vi).meta,
-                       "#0062 · " + text("orders.row.created", "04/10/26"))
+                       "#0062 · " + text("orders.row.created", "04/10/26 01:00"))
     }
 
     func testRowDayWeekdayNames() {
@@ -507,7 +507,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.rentRowDates(booked, sortedBy: .created, timeZone: vietnam).map(\.marked), [false, false],
                        "the created day is on the meta line, not marked")
         // Owner (#888): the created day stays where it was, "#0062 · tạo 02/10/26"
-        XCTAssertEqual(OrdersHomeLogic.rentRowMeta(booked, timeZone: vietnam), "#0062 · " + text("orders.row.created", "02/10/26"))
+        XCTAssertEqual(OrdersHomeLogic.rentRowMeta(booked, timeZone: vietnam), "#0062 · " + text("orders.row.created", "02/10/26 10:00"))
         // Same dates whatever the status (returned rows too); a missing date is left out
         let returned = try order(status: "RETURNED", pickup: "2026-09-30T02:00:00.000Z", returns: "2026-10-02T02:00:00.000Z")
         XCTAssertEqual(OrdersHomeLogic.rentRowDates(returned, sortedBy: .pickup, timeZone: vietnam).map(\.text),
@@ -557,33 +557,16 @@ final class OrdersHomeTests: XCTestCase {
         return String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255)))
     }
 
-    func testBoldPaletteIsTheOldAppAndTheDefault() {
-        let defaults = UserDefaults(suiteName: "test888")!
-        defaults.removePersistentDomain(forName: "test888")
-        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .bold, "default is Đậm (như app cũ)")
-        let bold: [(OrderStatus, String)] = [(.reserved, "EF4444"), (.pickuped, "F19920"), (.returned, "16A34A"),
-                                             (.completed, "16A34A"), (.cancelled, "991B1B")]
-        for (status, fill) in bold {
-            let pill = OrderStatusPalette.bold.pill(for: status)
+    /// #888 (owner): every status badge is the old app's solid colour with white text; no other palette
+    func testStatusBadgesAreTheOldAppSolidColours() {
+        let solid: [(OrderStatus, String)] = [(.reserved, "EF4444"), (.pickuped, "F19920"), (.returned, "16A34A"),
+                                              (.completed, "16A34A"), (.cancelled, "991B1B")]
+        for (status, fill) in solid {
+            let pill = OrderStatusBadge.pill(for: status)
             XCTAssertEqual(hex(pill.fill), fill, "\(status)")
             XCTAssertEqual(hex(pill.text), "FFFFFF", "white text on \(status)")
+            XCTAssertEqual(hex(OrdersHomeLogic.statusTag(status).colors.fill), fill, "row tag \(status)")
         }
-        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .reserved).fill), hex(DS.Status.handOver.fill))
-        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .pickuped).fill), hex(DS.Status.returning.fill))
-        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .returned).fill), hex(DS.Status.done.fill))
-        XCTAssertEqual(hex(OrderStatusPalette.light.pill(for: .cancelled).fill), hex(DS.Status.cancelled.fill))
-
-        OrderStatusPalette.light.save(to: defaults)
-        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .light)
-        OrderStatusPalette.bold.save(to: defaults)
-        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .bold)
-        defaults.set("garbage", forKey: OrderStatusPalette.key)
-        XCTAssertEqual(OrderStatusPalette.load(from: defaults), .bold)
-    }
-
-    func testStatusTagUsesTheChosenPalette() {
-        XCTAssertEqual(hex(OrdersHomeLogic.statusTag(.reserved, palette: .bold).colors.fill), "EF4444")
-        XCTAssertEqual(hex(OrdersHomeLogic.statusTag(.reserved, palette: .light).colors.fill), hex(DS.Status.handOver.fill))
     }
 
     // MARK: #674 — segment cache, dirty flag, quiet refresh
@@ -802,6 +785,19 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(paidTexts.count, dueTexts.count - 1, "fully paid: the total only, no second line")
         XCTAssertFalse(paidTexts.contains { $0.contains("✓") })
         XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
+    }
+
+    /// #888 (owner): Tất cả đơn rows have no "Trễ N ngày" chip; other lists keep it; the name stays on one line
+    func testRentListRowHasNoLateChip() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let late = try listOrder(1, status: "PICKUPED", balances: "")
+        cell.configure(.order(late, lateDays: 3), context: .rentList(sortedBy: .returnDate), hidesMoney: false)
+        XCTAssertFalse(visibleTexts(cell).contains(LateText.days(3)))
+        cell.configure(.order(late, lateDays: 3), context: .search, hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains(LateText.days(3)))
+        func labels(_ view: UIView) -> [UILabel] { (view as? UILabel).map { [$0] } ?? [] + view.subviews.flatMap(labels) }
+        let name = labels(cell.contentView).first { $0.text == late.customerName }
+        XCTAssertEqual(name?.numberOfLines, 1)
     }
 
     /// #496 "Chưa lấy đồ": overdue chip instead of "Trễ N ngày", "còn thu" in the Còn phải thu orange, no item line

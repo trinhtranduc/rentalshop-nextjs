@@ -78,6 +78,8 @@ enum DS {
         static let orderRowVertical: CGFloat = 15
         /// #888 (owner): ~8pt between the text lines of an order row (as on the Home list)
         static let orderRowLine: CGFloat = 8
+        /// #888 (owner, mockup v5): 16pt above and below an order row's content
+        static let orderRowPadding: CGFloat = 16
         static let rowHorizontal: CGFloat = 16
         /// Product list row: 14 padding, 96 min height
         static let productRow: CGFloat = 14
@@ -111,42 +113,15 @@ enum DS {
     }
 }
 
-/// #888 (owner): colours of the order status badges. `bold` (default) = the old app: solid fill, white text;
-/// `light` = the pastel set of the redesign. Chosen in Cài đặt, stored on this device.
-enum OrderStatusPalette: String, CaseIterable {
-    case bold, light
-
-    static let key = "orderStatusPalette"
-    /// Posted when the choice changes, so lists redraw their badges
-    static let changed = Notification.Name("OrderStatusPaletteChanged")
-
-    static func load(from defaults: UserDefaults = .standard) -> OrderStatusPalette {
-        defaults.string(forKey: key).flatMap(OrderStatusPalette.init(rawValue:)) ?? .bold
-    }
-
-    func save(to defaults: UserDefaults = .standard) {
-        defaults.set(rawValue, forKey: Self.key)
-    }
-
-    static var current: OrderStatusPalette { load() }
-
-    func pill(for status: OrderStatus) -> DS.Pill {
-        switch self {
-        case .bold:
-            let white = UIColor.white
-            switch status {
-            case .reserved, .draft: return DS.Pill(text: white, fill: UIColor(hexString: "EF4444"))
-            case .pickuped: return DS.Pill(text: white, fill: UIColor.accentOrange)
-            case .returned, .completed: return DS.Pill(text: white, fill: UIColor(hexString: "16A34A"))
-            default: return DS.Pill(text: white, fill: UIColor(hexString: "991B1B"))
-            }
-        case .light:
-            switch status {
-            case .reserved, .draft: return DS.Status.handOver
-            case .pickuped: return DS.Status.returning
-            case .returned, .completed: return DS.Status.done
-            default: return DS.Status.cancelled
-            }
+/// #888 (owner): every order status badge in the app uses the old app colours: solid fill, white text.
+enum OrderStatusBadge {
+    static func pill(for status: OrderStatus) -> DS.Pill {
+        let white = UIColor.white
+        switch status {
+        case .reserved, .draft: return DS.Pill(text: white, fill: UIColor(hexString: "EF4444"))
+        case .pickuped: return DS.Pill(text: white, fill: UIColor.accentOrange)
+        case .returned, .completed: return DS.Pill(text: white, fill: UIColor(hexString: "16A34A"))
+        default: return DS.Pill(text: white, fill: UIColor(hexString: "991B1B"))
         }
     }
 }

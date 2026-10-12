@@ -546,7 +546,8 @@ final class CalendarDayRowCell: UITableViewCell {
     }
 
     func configure(_ row: CalendarDayRow, hidesMoney: Bool) {
-        let pill = row.kind == .handOver ? DS.Status.handOver : DS.Status.returning
+        // #888: same palette as the status badges (hand-over = booked, return = renting)
+        let pill = OrderStatusBadge.pill(for: row.kind == .handOver ? .reserved : .pickuped)
         tagLabel.text = row.kind == .handOver ? "Hand over".localized() : "calendar.v2.tag.return".localized()
         tagLabel.textColor = pill.text
         tagLabel.backgroundColor = pill.fill

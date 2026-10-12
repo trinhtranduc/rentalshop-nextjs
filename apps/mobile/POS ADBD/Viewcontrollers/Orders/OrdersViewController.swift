@@ -63,16 +63,10 @@ final class OrdersViewController: BaseViewControler {
         viewModel.onChange = { [weak self] in self?.render() }
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
-        // #888: badges redraw in the new status palette
-        NotificationCenter.default.addObserver(self, selector: #selector(paletteChanged), name: OrderStatusPalette.changed, object: nil)
         viewModel.reload()
     }
 
     /// #828: Việc cần làm, Tất cả đơn and Đơn bán of the branch chosen on Home
-    @objc private func paletteChanged() {
-        listView.reloadData()
-    }
-
     @objc private func outletChanged() {
         viewModel.reload()
     }

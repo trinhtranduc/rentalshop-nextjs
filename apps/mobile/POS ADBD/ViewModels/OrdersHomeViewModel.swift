@@ -278,7 +278,8 @@ enum OrdersHomeLogic {
         let text: (String, Date?) -> String? = { key, date in date.map { String(format: key.localized(), day($0)) } }
 
         var meta = "#\(code)"
-        if let created = text("orders.row.created", createdAt) { meta += " · " + created }
+        // #888 (owner): the created day carries its time, "tạo 05/10/26 14:30" (Vietnam clock)
+        if let createdAt { meta += " · " + String(format: "orders.row.created".localized(), DayFormatter.dmyTime(createdAt, timeZone: timeZone)) }
 
         let task: String?
         if status == .cancelled {
@@ -369,9 +370,9 @@ enum OrdersHomeLogic {
     }
 
     /// Status text and colours of a status: the list row tag and the order detail header tag (#482)
-    static func statusTag(_ status: OrderStatus, palette: OrderStatusPalette = .current) -> RowTag {
-        // #888: colours from the chosen palette (Đậm = old app, default)
-        let colors = palette.pill(for: status)
+    static func statusTag(_ status: OrderStatus) -> RowTag {
+        // #888 (owner): solid old-app colours for every status badge
+        let colors = OrderStatusBadge.pill(for: status)
         switch status {
         case .reserved: return RowTag(text: "orders.v2.status.reserved".localized(), colors: colors)
         case .pickuped: return RowTag(text: "orders.v2.status.renting".localized(), colors: colors)

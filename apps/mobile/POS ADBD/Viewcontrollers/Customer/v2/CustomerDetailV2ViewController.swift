@@ -267,7 +267,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         let pill = OrderStatusPillLabel()
         pill.apply(status: row.status)
         // #888: the chosen status palette (Đậm = old app colours, default)
-        let colors = OrderStatusPalette.current.pill(for: row.status)
+        let colors = OrderStatusBadge.pill(for: row.status)
         pill.textColor = colors.text
         pill.backgroundColor = colors.fill
         pill.font = Utils.boldFont(size: DS.TextSize.pill)

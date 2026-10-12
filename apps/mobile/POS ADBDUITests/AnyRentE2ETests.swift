@@ -310,31 +310,6 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
-    /// #888: Cài đặt → "Màu trạng thái đơn" Đậm (default, old app colours) / Nhạt; Tất cả đơn badges follow it
-    func test9bStatusColors() throws {
-        try e2e.requireFlag("newSettings")
-        try e2e.start()
-        guard openAllOrders() else { return XCTFail("Tất cả đơn did not list rows") }
-        e2e.shot("9b-10-orders-bold")
-        e2e.tapTab(["Settings", "Cài đặt"], index: 4)
-        let row = e2e.element(labelBeginsWith: ["Order status colours", "Màu trạng thái đơn"])
-        guard e2e.scrollTo(row) else { return XCTFail("status colours row") }
-        e2e.shot("9b-20-settings-row")
-        row.tap()
-        sleep(1)
-        e2e.shot("9b-21-settings-choice")
-        e2e.tapIfExists(e2e.element(labelBeginsWith: ["Light", "Nhạt"], type: .button), timeout: 3)
-        sleep(1)
-        guard openAllOrders() else { return XCTFail("Tất cả đơn did not list rows") }
-        e2e.shot("9b-30-orders-light")
-        e2e.tapTab(["Settings", "Cài đặt"], index: 4)
-        if e2e.scrollTo(row) {
-            row.tap()
-            sleep(1)
-            e2e.tapIfExists(e2e.element(labelBeginsWith: ["Bold", "Đậm"], type: .button), timeout: 3)
-        }
-    }
-
     /// #888: cart lines show "Giá vốn" and the money part "Tổng giá vốn" (rent and sale) and "Lãi dự kiến" (sale) for
     /// roles that may see prices; staff never see them. Product 1 and Product 2 have a cost in the e2e DB.
     func test8fCartCost() throws {

@@ -263,7 +263,7 @@ final class OrderDetailViewController: BaseViewControler {
         summary.minimumScaleFactor = 0.8
         summary.accessibilityIdentifier = "order.detail.summary"
         if detail.orderType == .sale {
-            summary.text = DayFormatter.dmy(detail.createdAt)
+            summary.text = DayFormatter.dmyTime(detail.createdAt) // #888 created with its time
         } else {
             let days = detail.rentalDuration
                 ?? OrderDetailLogic.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt)
@@ -345,7 +345,8 @@ final class OrderDetailViewController: BaseViewControler {
             day.font = Utils.boldFont(size: DS.TextSize.body)
             // The accent marks a hand-over or return that happened; the booked day stays plain
             day.textColor = step.done && step.kind != .booked ? DS.Color.primary : DS.Color.text
-            day.text = step.date.map { DayFormatter.dmy($0) } ?? "—"
+            // #888: the booked (created) step carries its time; pickup and return stay date-only
+            day.text = step.date.map { step.kind == .booked ? DayFormatter.dmyTime($0) : DayFormatter.dmy($0) } ?? "—"
             day.adjustsFontSizeToFitWidth = true
             day.minimumScaleFactor = 0.8
             let column = UIStackView(arrangedSubviews: [bar, label, day])

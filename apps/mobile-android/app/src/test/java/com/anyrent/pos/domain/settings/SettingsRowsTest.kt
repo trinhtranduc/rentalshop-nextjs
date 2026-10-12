@@ -20,7 +20,7 @@ class SettingsRowsTest {
         )
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
         assertEquals(
-            listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.STATUS_COLORS, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT),
+            listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT),
             merchant[2].items,
         )
 
