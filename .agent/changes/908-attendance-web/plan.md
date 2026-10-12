@@ -1,6 +1,6 @@
 # Plan — Attendance web screens (#908)
 
-Issue: #908 · Status: in-progress · Spec: ./spec.md · Needs #907 (API) for the e2e walk.
+Issue: #908 · Status: in review (PR #913) · Spec: ./spec.md · Needs #907 (API) for the e2e walk.
 
 ## Steps
 

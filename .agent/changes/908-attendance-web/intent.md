@@ -1,6 +1,6 @@
 # Attendance module (2/4): shop web screens
 
-Issue: #908 (part of #906) · Author: Trinh Tran (agent draft) · Status: in-progress · Created: 2026-10-12
+Issue: #908 (part of #906) · Author: Trinh Tran (agent draft) · Status: in review (PR #913) · Created: 2026-10-12
 
 ## Problem
 
