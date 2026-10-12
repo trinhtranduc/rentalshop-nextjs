@@ -336,7 +336,7 @@ enum OrderDetailLogic {
         switch remainder {
         case .returnIn(let k): parts.append(PluralText.format("order.header.returnIn", count: k, k))
         case .returnToday: parts.append("order.header.returnToday".localized())
-        case .handOverIn(let k): parts.append(PluralText.format("order.header.handOverIn", count: k, k))
+        case .handOverIn: break // #891 (owner): no "lấy sau N ngày" countdown
         case .handOverToday: parts.append("order.header.handOverToday".localized())
         case .pickupOverdue(let k): parts.append(PluralText.format("order.header.pickupOverdue", count: k, k))
         case .returned: parts.append("order.header.returned".localized())

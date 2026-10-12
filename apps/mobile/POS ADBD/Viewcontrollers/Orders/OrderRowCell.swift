@@ -31,7 +31,14 @@ final class RowTagLabel: UILabel {
         case note
     }
 
-    private let insets: UIEdgeInsets
+    let insets: UIEdgeInsets
+
+    /// #891 (owner): THE status badge of an order, the same in the list rows and the order detail header
+    static func statusBadge(_ tag: RowTag) -> RowTagLabel {
+        let label = RowTagLabel(style: .status)
+        label.apply(tag.text, tag.colors)
+        return label
+    }
 
     init(style: Style) {
         switch style {
@@ -86,7 +93,7 @@ final class OrderRowCell: UITableViewCell {
     private static let callBorder = UIColor(hexString: "CBD5E1")
     private static let chevronColor = UIColor(hexString: "94A3B8")
 
-    private let tagLabel = RowTagLabel(style: .status)
+    private let tagLabel = RowTagLabel.statusBadge(RowTag(text: "", colors: OrderStatusBadge.pill(for: .reserved)))
     private let nameLabel = UILabel()
     private let metaLabel = UILabel()
     private let taskLabel = UILabel()
@@ -178,7 +185,8 @@ final class OrderRowCell: UITableViewCell {
         chevron.contentMode = .center
         chevron.snp.makeConstraints { make in make.size.equalTo(DS.Icon.sm) }
 
-        let row = UIStackView(arrangedSubviews: [left, callButton, chevron])
+        // #891 (owner): no ">" chevron; the whole row stays tappable and the content takes the width
+        let row = UIStackView(arrangedSubviews: [left, callButton])
         row.spacing = DS.Spacing.md
         row.alignment = .center
         contentView.addSubview(row)
@@ -276,7 +284,8 @@ final class OrderRowCell: UITableViewCell {
                 addPill(LateText.days(lateDays), DS.Status.late)
             }
             // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
-            setPay(OrdersHomeLogic.listPayLine(order))
+            // #891 (owner): Tất cả đơn rows show no pay line; the other lists keep it
+            setPay(isRentList ? nil : OrdersHomeLogic.listPayLine(order))
         }
         phone = nil
     }

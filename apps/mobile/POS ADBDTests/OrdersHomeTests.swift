@@ -800,6 +800,36 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(name?.numberOfLines, 1)
     }
 
+    /// #891 (owner): the order detail badge is the list badge: same fill, text colour, font, radius and padding
+    func testDetailBadgeMatchesTheListBadge() throws {
+        func labels(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(labels) }
+        for status in ["RESERVED", "PICKUPED", "RETURNED", "COMPLETED", "CANCELLED"] {
+            let order = try listOrder(1, status: status, balances: "")
+            let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+            cell.configure(.order(order, lateDays: 0), context: .list, hidesMoney: false)
+            guard let row = labels(cell.contentView).compactMap({ $0 as? RowTagLabel })
+                .first(where: { $0.text == OrdersHomeLogic.statusTag(order).text }) else { return XCTFail(status) }
+            let detail = RowTagLabel.statusBadge(OrdersHomeLogic.statusTag(order.status))
+            XCTAssertEqual(row.text, detail.text, status)
+            XCTAssertEqual(hex(row.backgroundColor!), hex(detail.backgroundColor!), status)
+            XCTAssertEqual(hex(row.textColor), hex(detail.textColor), status)
+            XCTAssertEqual(hex(detail.textColor), "FFFFFF", status)
+            XCTAssertEqual(row.font, detail.font, status)
+            XCTAssertEqual(row.layer.cornerRadius, detail.layer.cornerRadius, status)
+            XCTAssertEqual(row.insets, detail.insets, status)
+        }
+    }
+
+    /// #891 (owner): order rows have no ">" chevron
+    func testOrderRowHasNoChevron() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        cell.configure(.order(try listOrder(1, status: "RESERVED", balances: ""), lateDays: 0), context: .list, hidesMoney: false)
+        let chevrons = views(cell.contentView).compactMap { $0 as? UIImageView }.filter { $0.window == nil && $0.superview != nil && !$0.isHidden }
+        XCTAssertTrue(chevrons.isEmpty, "no chevron image in the row")
+        XCTAssertEqual(cell.accessoryType, .none)
+    }
+
     /// #891 (owner): Tất cả đơn rows have no pay line ("còn thu N"); search and the other lists keep it
     func testRentListRowHasNoPayLine() throws {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)

@@ -251,9 +251,9 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     private func statusBox(_ detail: OrderDetail) -> UIView {
-        let tag = RowTagLabel(style: .status)
-        let status = OrdersHomeLogic.statusTag(detail.status)
-        tag.apply(status.text, status.colors)
+        // #891: the same badge as the order list rows (one style, solid old-app colours)
+        let tag = RowTagLabel.statusBadge(OrdersHomeLogic.statusTag(detail.status))
+        tag.setContentHuggingPriority(.required, for: .vertical)
         let summary = UILabel()
         summary.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.secondary) ?? Utils.boldFont(size: DS.TextSize.secondary)
         summary.textColor = DS.Color.text
