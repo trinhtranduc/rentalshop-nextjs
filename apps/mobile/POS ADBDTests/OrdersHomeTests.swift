@@ -977,7 +977,8 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo: \(texts)")
         XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
         XCTAssertTrue(texts.contains(MoneyFormatter.format(300000)))
-        XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200000))))
+        XCTAssertFalse(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200000))),
+                       "#893 owner: no còn thu under the calendar total: \(texts)")
     }
 
     /// #891 (owner): order rows have no ">" chevron
