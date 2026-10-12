@@ -522,5 +522,16 @@
   "PRODUCT_DELETE_MERCHANT_ONLY": "Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho.",
   "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
   "OUTLET_DEACTIVATED": "Chi nhánh đã ngừng hoạt động, liên hệ chủ shop.",
-  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0."
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.",
+  "MODULE_NOT_ENABLED": "Cửa hàng chưa bật tính năng này.",
+  "QR_EXPIRED": "Mã QR không còn hiệu lực. Quét mã đang dán hoặc hiện ở quầy hôm nay.",
+  "QR_WRONG_OUTLET": "Mã QR của chi nhánh khác.",
+  "OUT_OF_RANGE": "Bạn đang ở xa chi nhánh. Lại gần rồi thử lại.",
+  "GPS_INACCURATE": "Chưa định vị chính xác. Ra gần cửa rồi thử lại.",
+  "MOCK_LOCATION": "Phát hiện vị trí giả. Tắt ứng dụng giả lập vị trí rồi thử lại.",
+  "ATTENDANCE_NOT_CONFIGURED": "Chi nhánh chưa cài đặt chấm công (thiếu vị trí hoặc mã QR).",
+  "SHIFT_OVERLAP": "Ca này trùng giờ với ca khác của nhân viên.",
+  "SHIFT_LOCKED": "Không đổi được ngày đã qua hoặc ngày đã chấm công.",
+  "SHIFT_TEMPLATE_IN_USE": "Ca này đang được dùng. Hãy ẩn thay vì xoá.",
+  "MONTH_LOCKED": "Tháng này đã khoá. Nhờ chủ shop mở khoá."
 }

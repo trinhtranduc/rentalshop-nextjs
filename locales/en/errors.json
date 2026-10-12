@@ -522,5 +522,16 @@
   "PRODUCT_DELETE_MERCHANT_ONLY": "Staff cannot delete products; ask the shop owner, the branch manager or the warehouse staff.",
   "OUTLET_HAS_OPEN_ORDERS": "This branch still has orders that are reserved or being rented. Complete or cancel them before turning the branch off.",
   "OUTLET_DEACTIVATED": "This branch has been deactivated. Please contact the shop owner.",
-  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0."
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.",
+  "MODULE_NOT_ENABLED": "This feature is not turned on for your shop.",
+  "QR_EXPIRED": "This QR code is no longer valid. Scan the code shown at the counter today.",
+  "QR_WRONG_OUTLET": "This QR code belongs to another branch.",
+  "OUT_OF_RANGE": "You are too far from the branch. Move closer and try again.",
+  "GPS_INACCURATE": "Your location is not accurate enough. Move near a door or window and try again.",
+  "MOCK_LOCATION": "A fake location was detected. Turn off the location spoofing app and try again.",
+  "ATTENDANCE_NOT_CONFIGURED": "Attendance is not set up for this branch yet (location or QR code missing).",
+  "SHIFT_OVERLAP": "This shift overlaps another shift of the same employee.",
+  "SHIFT_LOCKED": "Past days and days already worked cannot be changed.",
+  "SHIFT_TEMPLATE_IN_USE": "This shift is in use. Hide it instead of deleting it.",
+  "MONTH_LOCKED": "This month is locked. Ask the shop owner to unlock it."
 }
