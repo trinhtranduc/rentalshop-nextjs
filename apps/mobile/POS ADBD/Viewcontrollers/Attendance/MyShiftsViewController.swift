@@ -20,6 +20,7 @@ final class MyShiftsViewController: BaseViewControler {
     private var schedule: [String: [AttendanceShift]] = [:]
     private var rowsByMonth: [String: [AttendanceMonthRow]] = [:]
     private var pending = 0
+    private var outletsAsked = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -110,13 +111,20 @@ final class MyShiftsViewController: BaseViewControler {
 
     private func load() {
         guard let user = User.account(), pending == 0 else { return }
+        // A shop owner who never picked a branch on this device: load the outlets first, then the default one is used
+        if user.outletId == nil, user.role == .merchant, CurrentOutlet.shared.merchantFilterId == nil, !outletsAsked {
+            outletsAsked = true
+            spinner.startAnimating()
+            CurrentOutlet.shared.refresh { [weak self] in self?.load() }
+            return
+        }
         let now = Date()
         let week = AttendanceLogic.weekDayKeys(containing: now)
         guard let first = week.first, let last = week.last else { return }
         let months = Array(Set([String(first.prefix(7)), String(last.prefix(7)), AttendanceLogic.monthKey(now)])).sorted()
         if schedule.isEmpty && rowsByMonth.isEmpty { spinner.startAnimating() }
         pending = 1 + months.count
-        // Both routes need an outlet: the user's own, or a shop owner's chosen branch
+        // Both routes need an outlet: the user's own, or a shop owner's chosen branch (default first, #828)
         let outletId = user.outletId ?? CurrentOutlet.shared.merchantFilterId
 
         AttendanceService.shared.shifts(outletId: outletId, from: first, to: last) { [weak self] result in
