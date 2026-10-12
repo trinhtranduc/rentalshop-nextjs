@@ -49,7 +49,7 @@ final class NotificationsNotesV2Tests: XCTestCase {
     }
 
     func testTodayYesterdayAndOlderTitles() {
-        let now = date("2026-10-05T03:00:00Z") // Mon 05/10 10:00 in Vietnam
+        let now = date("2026-10-05T03:00:00Z") // 05/10/26 10:00 in Vietnam
         let items = [
             item(3, "2026-10-05T02:12:00Z"),
             item(2, "2026-10-04T11:30:00Z"),
@@ -58,7 +58,7 @@ final class NotificationsNotesV2Tests: XCTestCase {
         let titles = NotificationsLogic.groups(items, now: now, locale: vi).map { $0.title }
         let today = "notifications.v2.today".localized().uppercased(with: vi)
         let yesterday = "notifications.v2.yesterday".localized().uppercased(with: vi)
-        XCTAssertEqual(titles, ["\(today) · T2 05/10", "\(yesterday) · CN 04/10", "T6 02/10"])
+        XCTAssertEqual(titles, ["\(today) · 05/10/26", "\(yesterday) · 04/10/26", "02/10/26"])
     }
 
     func testTodayFollowsVietnamDayNotUTC() {

@@ -28,7 +28,7 @@ extension UnixTime {
     }
     
     var toDay: String {
-        return formatType(form: "dd/MM/yyyy").string(from: dateFull)
+        return formatType(form: "dd/MM/yy").string(from: dateFull) // #888
     }
     
     var toDayHour: String {

@@ -238,8 +238,7 @@ object ChangeHistory {
     /** "HÔM NAY · T3 06/10" for today, "T2 05/10" otherwise; "" for no day */
     fun dayHeader(day: LocalDate?, today: LocalDate, texts: Texts = Texts()): String {
         if (day == null) return ""
-        val weekday = texts.weekdays.getOrNull(day.dayOfWeek.value - 1).orEmpty()
-        val label = listOf(weekday, ddmm(day)).filter { it.isNotEmpty() }.joinToString(" ")
+        val label = ddmm(day) // #888 dd/mm/yy, no weekday
         return if (day == today) texts.todayHeader.format(label) else label
     }
 
@@ -410,11 +409,11 @@ object ChangeHistory {
         if (total <= 0) return null
         val latest = latestAt ?: return texts.countOnly.format(total)
         val day = latest.atZone(zone).toLocalDate()
-        val whenText = if (day == now.atZone(zone).toLocalDate()) texts.latestToday.format(hhmm(latest, zone)) else ddmm(day)
+        val whenText = if (day == now.atZone(zone).toLocalDate()) texts.latestToday.format(hhmm(latest, zone)) else com.anyrent.pos.domain.DayText.dmyTime(latest, zone)
         return texts.countSummary.format(total, whenText)
     }
 
-    fun ddmm(day: LocalDate): String = "%02d/%02d".format(day.dayOfMonth, day.monthValue)
+    fun ddmm(day: LocalDate): String = com.anyrent.pos.domain.DayText.dmy(day) // #888 dd/mm/yy
 
     fun hhmm(instant: Instant, zone: ZoneId = shopZone): String {
         val t = instant.atZone(zone)

@@ -86,6 +86,8 @@ object ProductsV2Api {
         val options: List<PricingOptionInput>,
         val salePrice: Double?,
         val deposit: Double?,
+        /** Giá vốn (#887); null = not sent, the API keeps the stored cost */
+        val costPrice: Double? = null,
     )
 
     /**
@@ -108,6 +110,7 @@ object ProductsV2Api {
             data.put("rentPrice", default?.price ?: 0.0)
             data.put("salePrice", prices.salePrice ?: 0.0)
             data.put("deposit", prices.deposit ?: 0.0)
+            prices.costPrice?.let { data.put("costPrice", it) }
             data.put("pricingOptions", JSONArray(prices.options.map {
                 JSONObject().put("type", it.type).put("price", it.price).put("isDefault", it.isDefault)
             }))

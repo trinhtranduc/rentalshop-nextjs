@@ -108,7 +108,7 @@ private enum class OverviewPeriod {
     TODAY, D7, D30, D90, D180, ALL, CUSTOM
 }
 
-private val OverviewDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+private val OverviewDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy") // #888
 
 private fun OverviewPeriod.range(customStart: LocalDate?, customEnd: LocalDate?): Pair<LocalDate, LocalDate> {
     val end = ShopTime.today()

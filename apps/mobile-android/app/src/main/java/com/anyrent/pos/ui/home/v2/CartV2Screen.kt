@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.key
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -74,7 +75,10 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.orders.EditOrderSheet
+import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.domain.products.CartCostLogic
 import com.anyrent.pos.domain.products.CartLineCalc
+import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.ui.common.AppAlertConfirm
@@ -84,7 +88,6 @@ import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppFormSheet
 import com.anyrent.pos.ui.common.AppNumericPadSheet
 import com.anyrent.pos.ui.common.AppPrimaryButton
-import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.common.formatQuantity
 import com.anyrent.pos.ui.customers.CustomersScreen
@@ -148,6 +151,8 @@ fun CartV2Screen(
     val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
     val app = LocalContext.current.applicationContext as AnyRentApp
+    // #888: cost lines only for roles that may see prices (never OUTLET_STAFF)
+    val showsPrices = ProductAccess.showsPriceFields(PermissionManager.role)
 
     // Same money as the old cart: computed from the collected lines so every change redraws
     val subtotal = lines.sumOf { it.lineTotal }
@@ -456,8 +461,9 @@ fun CartV2Screen(
                         )
                         Text(
                             CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
-                            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF),
-                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 3.dp),
+                            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF), maxLines = 1,
+                            // #893 (owner): room inside the pill (10 left/right, 4 top/bottom), one line
+                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 4.dp),
                         )
                     }
                 }
@@ -474,10 +480,14 @@ fun CartV2Screen(
                 Text(stringResource(R.string.v2_cart_empty), color = DS.Colors.TextMuted, modifier = Modifier.padding(16.dp))
             }
             lines.forEach { line ->
+              // #893 (owner): swipe end-to-start reveals a red "Xoá"; a full swipe removes the line
+              key(line.product.id) {
+               SwipeToDeleteLine(onDelete = { CartStore.remove(line.product.id) }) {
                 ItemRow(
                     line = line,
                     isSale = isSale,
                     available = available[line.product.id],
+                    cost = CartCostLogic.lineCost(line, showsPrices),
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
@@ -486,6 +496,8 @@ fun CartV2Screen(
                     onOpenPricing = { pricingLineId = line.product.id },
                     onOpenNote = { noteLineId = line.product.id },
                 )
+               }
+              }
             }
 
             SectionBand(stringResource(R.string.v2_cart_money))
@@ -500,6 +512,18 @@ fun CartV2Screen(
             ThinDivider()
             V2ValueRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(total), valueColor = DS.Colors.Text, bold = true)
             ThinDivider()
+            // #888: "Tổng giá vốn", and "Lãi dự kiến" in a sale cart; only for roles that may see prices
+            CartCostLogic.summary(lines, total, isSale, showsPrices)?.let { costs ->
+                V2ValueRow(stringResource(R.string.v2_cart_total_cost), formatMoneyVnd(costs.totalCost), valueColor = DS.Colors.Text)
+                ThinDivider()
+                costs.profit?.let { profit ->
+                    V2ValueRow(
+                        stringResource(R.string.v2_cart_profit), formatMoneyVnd(profit),
+                        valueColor = if (profit < 0) Color(0xFFB91C1C) else V2Colors.Ok, bold = true,
+                    )
+                    ThinDivider()
+                }
+            }
             if (!isSale) {
                 V2ValueRow(
                     stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
@@ -828,8 +852,8 @@ fun CartV2Screen(
     error?.let { AppAlertError(message = it, onDismiss = { error = null }) }
 }
 
-private fun formatDay(date: LocalDate): String =
-    formatDayShort(date)
+/** #888 dd/mm/yy (the cart keeps shop civil days as `LocalDate`) */
+private fun formatDay(date: LocalDate): String = com.anyrent.pos.domain.DayText.dmy(date)
 
 @Composable
 private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
@@ -861,6 +885,8 @@ private fun ItemRow(
     line: CartLine,
     isSale: Boolean,
     available: Int?,
+    /** #888 "Giá vốn" of the line (cost × quantity); null hides the row */
+    cost: Double? = null,
     /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
     overlapText: String? = null,
     /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
@@ -896,15 +922,22 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
-                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món"
-                ItemNoteEntry(line.product.name, line.note, onOpenNote)
                 if (isSale && available != null) {
                     Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                }
+                cost?.let {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.v2_cart_cost), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
+                        Text(formatMoneyVnd(it), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = Color(0xFF334155), maxLines = 1)
+                    }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
                 }
+                // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món".
+                // #891 (owner): the note is the last line of the item
+                ItemNoteEntry(line.product.name, line.note, onOpenNote)
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
@@ -1159,5 +1192,28 @@ private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () 
                 }
             }
         }
+    }
+}
+
+/** #893 (owner): a cart line that swipes end-to-start onto a red "Xoá"; past the threshold it is removed (iOS SwipeDeleteRow) */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToDeleteLine(onDelete: () -> Unit, content: @Composable () -> Unit) {
+    val state = androidx.compose.material3.rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == androidx.compose.material3.SwipeToDismissBoxValue.EndToStart) { onDelete(); true } else false
+        },
+        positionalThreshold = { total -> total * 0.5f },
+    )
+    androidx.compose.material3.SwipeToDismissBox(
+        state = state,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(Modifier.fillMaxSize().background(Color(0xFFDC2626)).padding(end = 24.dp), contentAlignment = Alignment.CenterEnd) {
+                Text(stringResource(R.string.cart_swipe_delete), color = Color.White, fontWeight = FontWeight.Bold, fontSize = DS.TextSize.Body)
+            }
+        },
+    ) {
+        Box(Modifier.background(DS.Colors.Surface)) { content() }
     }
 }

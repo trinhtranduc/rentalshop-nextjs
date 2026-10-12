@@ -32,6 +32,8 @@ data class CalendarDayOrder(
     val createdAt: Instant? = null,
     val pickupPlanAt: Instant? = null,
     val returnPlanAt: Instant? = null,
+    /** #893: "Sẵn sàng giao" on a hand-over row; null on an older API (treated as not prepared) */
+    val isReadyToDeliver: Boolean? = null,
 )
 
 /** Note under a day row's total (board Lich, #390) */
@@ -102,24 +104,14 @@ object CalendarLogic {
             returns.map { CalendarDayRow(CalendarRowKind.TAKE_BACK, it, late) }
     }
 
-    /** Day selected when a month opens: today in its own month, else the first day */
-    /** Late days first (with the fee), then what to give back, then what is still to collect; else nothing */
+    /** Owner rule (#893): only a late order gets a note ("Trễ N ngày", plus the stored fee unless money is hidden); never "còn thu" or a refund note */
     fun note(row: CalendarDayRow, hidesMoney: Boolean = false): CalendarNote {
-        val order = row.order
-        if (row.lateDays > 0) {
-            val fee = order.lateFee?.takeIf { it > 0 && !hidesMoney }
-            return CalendarNote.Late(row.lateDays, fee)
-        }
-        if (hidesMoney) return CalendarNote.None
-        val refund = order.refundDue ?: 0.0
-        val due = order.amountDue ?: 0.0
-        return when {
-            refund > 0 -> CalendarNote.Refund(refund)
-            due > 0 -> CalendarNote.Due(due)
-            else -> CalendarNote.None
-        }
+        if (row.lateDays <= 0) return CalendarNote.None
+        val fee = row.order.lateFee?.takeIf { it > 0 && !hidesMoney }
+        return CalendarNote.Late(row.lateDays, fee)
     }
 
+    /** Day selected when a month opens: today in its own month, else the first day */
     fun defaultSelection(month: YearMonth, todayKey: String): String =
         if (YearMonth.from(LocalDate.parse(todayKey)) == month) todayKey else month.atDay(1).toString()
 
@@ -132,6 +124,20 @@ object CalendarLogic {
             }
         }
         return CalendarMonthCounts(byDate, data.optInt("lateReturns", 0))
+    }
+
+    /** #893 (owner, calendar lean row): kinds of the chips on line 2 */
+    enum class RowChipKind { PICKUP, RETURN, READY, NOT_PREPARED }
+
+    data class RowChip(val kind: RowChipKind, val date: String? = null)
+
+    /** #893: the day task's date chip; a hand-over adds "Sẵn sàng giao" (ready) or "Chưa soạn đồ" (iOS calendarChips) */
+    fun rowChips(row: CalendarDayRow, zone: java.time.ZoneId = com.anyrent.pos.domain.ShopTime.zone): List<RowChip> = buildList {
+        val handOver = row.kind == CalendarRowKind.HAND_OVER
+        (if (handOver) row.order.pickupPlanAt else row.order.returnPlanAt)?.let {
+            add(RowChip(if (handOver) RowChipKind.PICKUP else RowChipKind.RETURN, com.anyrent.pos.domain.DayText.dmy(it, zone)))
+        }
+        if (handOver) add(RowChip(if (row.order.isReadyToDeliver == true) RowChipKind.READY else RowChipKind.NOT_PREPARED))
     }
 
     private fun instant(value: String?): Instant? = value?.let { runCatching { Instant.parse(it) }.getOrNull() }
@@ -164,6 +170,7 @@ object CalendarLogic {
                 createdAt = instant(text("createdAt")),
                 pickupPlanAt = instant(text("pickupPlanAt")),
                 returnPlanAt = instant(text("returnPlanAt")),
+                isReadyToDeliver = if (o.has("isReadyToDeliver") && !o.isNull("isReadyToDeliver")) o.optBoolean("isReadyToDeliver") else null,
             )
         }
     }

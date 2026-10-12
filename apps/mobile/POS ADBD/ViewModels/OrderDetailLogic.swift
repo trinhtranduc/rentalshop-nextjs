@@ -243,24 +243,23 @@ enum OrderDetailLogic {
         return StatusErrorOutcome(message: message, reload: isClientError)
     }
 
-    /// `dd/MM` civil day
+    /// #891 (owner): "Người tạo" of the detail: the flat `createdByName`, else the nested creator; nil when empty
+    static func creatorName(_ detail: OrderDetail) -> String? {
+        let flat = detail.createdByName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !flat.isEmpty { return flat }
+        let nested = [detail.createdBy?.firstName, detail.createdBy?.lastName]
+            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
+        return nested.isEmpty ? nil : nested
+    }
+
+    /// `dd/MM/yy` civil day (#888)
     static func dayMonth(_ date: Date, timeZone: TimeZone = Date.shopTimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let parts = calendar.dateComponents([.day, .month], from: date)
-        return String(format: "%02d/%02d", parts.day ?? 0, parts.month ?? 0)
+        DayFormatter.dmy(date, timeZone: timeZone)
     }
 
     /// #482 step "Đã đặt": "14:32 28/09" in the shop zone; "14:32 28/12/25" when not the current year
     static func createdStamp(_ date: Date, now: Date = Date(), timeZone: TimeZone = Date.shopTimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        var text = String(format: "%02d:%02d %02d/%02d", parts.hour ?? 0, parts.minute ?? 0, parts.day ?? 0, parts.month ?? 0)
-        if let year = parts.year, year != calendar.component(.year, from: now) {
-            text += String(format: "/%02d", year % 100)
-        }
-        return text
+        DayFormatter.dmyTime(date, timeZone: timeZone) // #888: "28/09/26 14:32"
     }
 
     /// Whole civil days from pickup to return (a same-day rental is 1 day)
@@ -340,15 +339,18 @@ enum OrderDetailLogic {
     }
 
     /// "7 ngày · trả sau 2 ngày"; "7 ngày" alone when nothing remains to say
+    /// #893 (owner): the detail shows no overdue banner (late pickup or late return); Việc cần làm shows lateness
+    static let showsLateBanner = false
+
     static func headerSummary(days: Int?, remainder: OrderHeaderRemainder) -> String? {
         var parts: [String] = []
         if let days { parts.append(PluralText.format("%d days", count: days, days)) }
         switch remainder {
-        case .returnIn(let k): parts.append(PluralText.format("order.header.returnIn", count: k, k))
+        case .returnIn: break // #891 (owner): no "trả sau N ngày" countdown
         case .returnToday: parts.append("order.header.returnToday".localized())
-        case .handOverIn(let k): parts.append(PluralText.format("order.header.handOverIn", count: k, k))
+        case .handOverIn: break // #891 (owner): no "lấy sau N ngày" countdown
         case .handOverToday: parts.append("order.header.handOverToday".localized())
-        case .pickupOverdue(let k): parts.append(PluralText.format("order.header.pickupOverdue", count: k, k))
+        case .pickupOverdue: break // #893 (owner): no overdue text in the detail; Việc cần làm shows lateness
         case .returned: parts.append("order.header.returned".localized())
         case .none: break
         }

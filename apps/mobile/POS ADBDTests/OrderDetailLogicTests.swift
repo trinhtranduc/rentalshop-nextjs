@@ -146,9 +146,9 @@ final class OrderDetailLogicTests: XCTestCase {
         let to = iso.date(from: "2026-10-05T16:30:00Z")!
         XCTAssertEqual(OrderDetailLogic.rentalDays(pickup: from, return: to, timeZone: vietnam), 3)
         XCTAssertEqual(OrderDetailLogic.rentalDays(pickup: from, return: from, timeZone: vietnam), 1)
-        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: vietnam), "05/10")
-        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: TimeZone(identifier: "UTC")!), "05/10")
-        XCTAssertEqual(OrderDetailLogic.dayMonth(iso.date(from: "2026-10-05T17:30:00Z")!, timeZone: vietnam), "06/10")
+        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: vietnam), "05/10/26")
+        XCTAssertEqual(OrderDetailLogic.dayMonth(to, timeZone: TimeZone(identifier: "UTC")!), "05/10/26")
+        XCTAssertEqual(OrderDetailLogic.dayMonth(iso.date(from: "2026-10-05T17:30:00Z")!, timeZone: vietnam), "06/10/26")
     }
 
     // MARK: Created time (#482)
@@ -157,16 +157,16 @@ final class OrderDetailLogicTests: XCTestCase {
         let vietnam = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
         let iso = ISO8601DateFormatter()
         let now = iso.date(from: "2026-10-05T03:00:00Z")!
-        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T07:32:00Z")!, now: now, timeZone: vietnam), "14:32 28/09")
-        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2025-12-28T07:32:00Z")!, now: now, timeZone: vietnam), "14:32 28/12/25")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T07:32:00Z")!, now: now, timeZone: vietnam), "28/09/26 14:32")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2025-12-28T07:32:00Z")!, now: now, timeZone: vietnam), "28/12/25 14:32")
         // Vietnam midnight boundary: 16:59:59Z is still 28/09, 17:00Z is 29/09 00:00
-        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T16:59:59Z")!, now: now, timeZone: vietnam), "23:59 28/09")
-        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T17:00:00Z")!, now: now, timeZone: vietnam), "00:00 29/09")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T16:59:59Z")!, now: now, timeZone: vietnam), "28/09/26 23:59")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T17:00:00Z")!, now: now, timeZone: vietnam), "29/09/26 00:00")
         // New year in Vietnam while UTC is still in the old year
         let newYear = iso.date(from: "2025-12-31T17:30:00Z")!
-        XCTAssertEqual(OrderDetailLogic.createdStamp(newYear, now: iso.date(from: "2026-01-02T03:00:00Z")!, timeZone: vietnam), "00:30 01/01")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(newYear, now: iso.date(from: "2026-01-02T03:00:00Z")!, timeZone: vietnam), "01/01/26 00:30")
         // Default zone is the shop zone, whatever the device zone
-        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T07:32:00Z")!, now: now), "14:32 28/09")
+        XCTAssertEqual(OrderDetailLogic.createdStamp(iso.date(from: "2026-09-28T07:32:00Z")!, now: now), "28/09/26 14:32")
     }
 
     // MARK: Sẵn sàng giao (#470)
@@ -245,7 +245,7 @@ final class OrderDetailLogicTests: XCTestCase {
     func testStepDayLabelsUseVietnamDayWithWeekdayAndNoTime() {
         // 2026-09-30 18:00 UTC is Thursday 01/10 01:00 in Vietnam
         let label = DayFormatter.short(at("2026-09-30T18:00:00Z"), timeZone: vn, locale: Locale(identifier: "vi_VN"))
-        XCTAssertEqual(label, "T5 01/10")
+        XCTAssertEqual(label, "01/10/26")
     }
 
     private func remainder(_ status: OrderStatus, now: String, pickup: Date? = nil, ret: Date? = nil) -> OrderHeaderRemainder {
@@ -282,16 +282,17 @@ final class OrderDetailLogicTests: XCTestCase {
 
     func testSummaryJoinsDaysAndRemainder() {
         let days7 = PluralText.format("%d days", count: 7, 7)
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)),
-                       days7 + " · " + PluralText.format("order.header.returnIn", count: 2, 2))
+        // #891 (owner): no "trả sau N ngày" countdown either
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnIn(2)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returnToday),
                        days7 + " · " + "order.header.returnToday".localized())
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)),
-                       days7 + " · " + PluralText.format("order.header.handOverIn", count: 1, 1))
+        // #891 (owner): no "lấy sau N ngày" countdown in the detail header
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverIn(1)), days7)
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .handOverToday),
                        days7 + " · " + "order.header.handOverToday".localized())
-        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)),
-                       days7 + " · " + PluralText.format("order.header.pickupOverdue", count: 3, 3))
+        // #893 (owner): no overdue text in the detail; lateness shows only in Việc cần làm
+        XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .pickupOverdue(3)), days7)
+        XCTAssertFalse(OrderDetailLogic.showsLateBanner, "no overdue banner in the detail")
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .returned),
                        days7 + " · " + "order.header.returned".localized())
         XCTAssertEqual(OrderDetailLogic.headerSummary(days: 7, remainder: .none), days7)
@@ -331,5 +332,20 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         let order = Order.from(detail: detail)
         XCTAssertEqual(order.createdById, 0, "list model keeps 0 for no creator, as its own decoder does")
         XCTAssertEqual(order.createdByName, "")
+        XCTAssertNil(OrderDetailLogic.creatorName(detail), "#891: no creator → no Người tạo line")
+    }
+
+    /// #891 (owner): order detail shows "Người tạo: <name>" from the nested `createdBy` or the flat `createdByName`
+    func testCreatorName() throws {
+        func detail(_ creator: String) throws -> OrderDetail {
+            let json = payload.replacingOccurrences(of: #""createdBy":null"#, with: creator)
+            return try XCTUnwrap(JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(json.utf8)).data)
+        }
+        XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":"Merchant","lastName":"1"}"#)), "Merchant 1")
+        XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"Lan Nguyễn""#)), "Lan Nguyễn")
+        XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":" ","lastName":""}"#)))
+        XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"  ""#)))
+        let vi = Bundle(for: OrderRowCell.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "order.detail.createdBy", value: nil, table: nil), "Người tạo: %@")
     }
 }

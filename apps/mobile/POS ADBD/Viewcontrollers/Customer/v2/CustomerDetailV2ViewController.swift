@@ -254,54 +254,19 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         }
     }
 
+    /// #891 (owner): the order list row with the item names in place of the customer name
     private func orderRow(_ row: CustomerOrderRow, index: Int) -> UIView {
         let control = UIControl()
         control.tag = index
         control.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
-        let title = V2.label(CustomersV2Logic.orderTitle(row), size: DS.TextSize.name, weight: .bold)
-        let dates = V2.label(CustomersV2Logic.orderDates(row), size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        let texts = UIStackView(arrangedSubviews: [title, dates])
-        texts.axis = .vertical
-        texts.spacing = DS.Gap.lineTight
-        texts.isUserInteractionEnabled = false
-        let pill = OrderStatusPillLabel()
-        pill.apply(status: row.status)
-        // Board pill colors: reserved blue, out purple, done green, cancelled grey
-        let colors: DS.Pill
-        switch row.status {
-        case .reserved, .draft: colors = DS.Status.handOver
-        case .pickuped: colors = DS.Status.returning
-        case .returned, .completed: colors = DS.Status.done
-        case .cancelled, .unknown: colors = DS.Status.cancelled
-        }
-        pill.textColor = colors.text
-        pill.backgroundColor = colors.fill
-        pill.font = Utils.boldFont(size: DS.TextSize.pill)
-        // Sentence case as on the board ("Đang thuê", not "ĐANG THUÊ")
-        let lower = (pill.text ?? "").lowercased()
-        pill.text = lower.prefix(1).uppercased() + lower.dropFirst()
-        let amount = V2.label(hidesMoney ? nil : MoneyFormatter.format(row.totalAmount), size: DS.TextSize.body, weight: .bold)
-        let right = UIStackView(arrangedSubviews: [pill, amount])
-        right.axis = .vertical
-        right.alignment = .trailing
-        right.spacing = 4
-        right.isUserInteractionEnabled = false
-        let line = V2.divider()
-        [texts, right, line].forEach(control.addSubview)
-        texts.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-            make.trailing.lessThanOrEqualTo(right.snp.leading).offset(-12)
-        }
-        right.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-        }
-        line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
-        control.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(64) }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: nil)
+        cell.configure(customerOrder: row, hidesMoney: hidesMoney)
+        cell.isUserInteractionEnabled = false
+        control.addSubview(cell)
+        cell.snp.makeConstraints { make in make.edges.equalToSuperview() }
         control.isAccessibilityElement = true
         control.accessibilityTraits = UIAccessibilityTraitButton
-        control.accessibilityLabel = [title.text, dates.text, pill.text, amount.text].compactMap { $0 }.joined(separator: ", ")
+        control.accessibilityLabel = [CustomersV2Logic.itemsTitle(row), "#\(row.orderNumber)"].joined(separator: ", ")
         return control
     }
 

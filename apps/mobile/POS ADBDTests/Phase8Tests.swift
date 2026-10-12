@@ -39,29 +39,35 @@ final class Phase8Tests: XCTestCase {
 
     // MARK: 2. Filter sheet
 
-    func testNearestTaskSortAndPlannedBasis() {
-        XCTAssertEqual(RentOrdersFilter.Sort.allCases.first, .nearestTask)
+    /// #888: one date for sort and range; default Ngày lấy, gần nhất trước; "Việc gần nhất" left the sheet
+    func testOneDateForSortAndRange() {
+        XCTAssertEqual(RentOrdersFilter.SortDate.allCases, [.pickup, .returnDate, .created])
         var filter = RentOrdersFilter()
-        XCTAssertEqual(filter.sort, .createdDate)
+        XCTAssertEqual(filter.sortDate, .pickup)
+        XCTAssertEqual(filter.direction, .nearestFirst)
         XCTAssertTrue(filter.isDefault)
-        filter.sort = .nearestTask
-        XCTAssertEqual(filter.sortBy, "nearestTask")
+        filter.direction = .farthestFirst
         XCTAssertFalse(filter.isDefault)
-        XCTAssertEqual(RentOrdersFilter.DateBasis.allCases.map { basis -> String in
+        XCTAssertEqual(RentOrdersFilter.SortDate.allCases.map { date -> [String] in
             var f = RentOrdersFilter()
-            f.dateBasis = basis
-            return f.dateField
-        }, ["createdAt", "pickupPlanAt", "returnPlanAt"])
+            f.sortDate = date
+            return [f.sortBy, f.dateField]
+        }, [["pickupPlanAt", "pickupPlanAt"], ["returnPlanAt", "returnPlanAt"], ["createdAt", "createdAt"]])
+        XCTAssertEqual(RentOrdersFilter.Direction.allCases.map { direction -> String in
+            var f = RentOrdersFilter()
+            f.direction = direction
+            return f.sortOrder
+        }, ["desc", "asc"])
     }
 
     func testPlannedRangeQueryUsesDeviceDays() throws {
         let now = iso.date(from: "2026-10-03T18:30:00.000Z")! // 04/10 01:30 in Vietnam
         var filter = RentOrdersFilter()
-        filter.sort = .nearestTask
-        filter.dateBasis = .pickupPlan
+        filter.sortDate = .pickup
         filter.dateRange = .next7Days
         let query = OrdersHomeLogic.rentQuery(filter, now: now, timeZone: vietnam)
-        XCTAssertEqual(query.sortBy, "nearestTask")
+        XCTAssertEqual(query.sortBy, "pickupPlanAt")
+        XCTAssertEqual(query.sortOrder, "desc")
         XCTAssertEqual(query.dateField, "pickupPlanAt")
         XCTAssertEqual(query.startDate.map { iso.string(from: $0) }, "2026-10-03T17:00:00.000Z")
         XCTAssertEqual(query.endDate.map { iso.string(from: $0) }, "2026-10-09T17:00:00.000Z")
@@ -74,22 +80,18 @@ final class Phase8Tests: XCTestCase {
         return try JSONDecoder().decode(CalendarDayOrder.self, from: Data(json.utf8))
     }
 
+    /// Owner rule (#893): under the total only "Trễ N ngày" for a late order; never "còn thu" or a refund note.
     func testCalendarNote() throws {
-        let late = CalendarDayRow(kind: .takeBack, order: try dayOrder(#","lateFee":150000"#), lateDays: 2)
-        XCTAssertEqual(CalendarV2Logic.note(late, hidesMoney: false), .late(days: 2, fee: 150000))
+        let late = CalendarDayRow(kind: .takeBack, order: try dayOrder(#","lateFee":150000,"amountDue":150000"#), lateDays: 2)
+        XCTAssertEqual(CalendarV2Logic.note(late, hidesMoney: false), .late(days: 2, fee: 150000), "late wins over money due")
         XCTAssertEqual(CalendarV2Logic.note(late, hidesMoney: true), .late(days: 2, fee: nil))
         let lateNoFee = CalendarDayRow(kind: .takeBack, order: try dayOrder(#","lateFee":0"#), lateDays: 1)
         XCTAssertEqual(CalendarV2Logic.note(lateNoFee, hidesMoney: false), .late(days: 1, fee: nil))
         let due = CalendarDayRow(kind: .handOver, order: try dayOrder(#","amountDue":700000,"refundDue":0"#), lateDays: 0)
-        XCTAssertEqual(CalendarV2Logic.note(due, hidesMoney: false), .due(700000))
-        XCTAssertEqual(CalendarV2Logic.note(due, hidesMoney: true), CalendarNote.none)
+        XCTAssertEqual(CalendarV2Logic.note(due, hidesMoney: false), CalendarNote.none, "no còn thu")
         let refund = CalendarDayRow(kind: .takeBack, order: try dayOrder(#","amountDue":0,"refundDue":500000"#), lateDays: 0)
-        XCTAssertEqual(CalendarV2Logic.note(refund, hidesMoney: false), .refund(500000))
-        let paid = CalendarDayRow(kind: .handOver, order: try dayOrder(#","amountDue":0,"refundDue":0"#), lateDays: 0)
-        XCTAssertEqual(CalendarV2Logic.note(paid, hidesMoney: false), CalendarNote.none)
-        // Older API: no money fields
+        XCTAssertEqual(CalendarV2Logic.note(refund, hidesMoney: false), CalendarNote.none)
         let old = CalendarDayRow(kind: .handOver, order: try dayOrder(), lateDays: 0)
-        XCTAssertNil(old.order.amountDue)
         XCTAssertEqual(CalendarV2Logic.note(old, hidesMoney: false), CalendarNote.none)
     }
 

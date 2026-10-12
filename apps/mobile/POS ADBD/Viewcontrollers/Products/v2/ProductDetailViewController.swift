@@ -267,6 +267,12 @@ final class ProductDetailViewController: BaseViewControler {
         if let deposit = product.deposit, deposit > 0 {
             meta.append(String(format: "products.detail.deposit".localized(), MoneyFormatter.format(deposit)))
         }
+        // #887: Giá vốn for roles that may see prices (never OUTLET_STAFF)
+        let showsPrices = ProductAccess.showsPriceFields(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
+        if let cost = ProductCostPrice.shown(product, showsPrices: showsPrices) {
+            // Non-breaking spaces: "Giá vốn 700.000" wraps as one piece
+            meta.append(("product.form.costPrice".localized() + " " + MoneyFormatter.format(cost)).replacingOccurrences(of: " ", with: "\u{00A0}"))
+        }
         metaLabel.text = meta.joined(separator: " · ")
         metaLabel.isHidden = meta.isEmpty
 
@@ -414,55 +420,23 @@ final class ProductDetailViewController: BaseViewControler {
         renderChips()
     }
 
+    /// #891 (owner): the order list row, plus "× qty" of this product before the total
     private func orderRow(_ order: Order, index: Int) -> UIView {
         let row = UIControl()
         row.tag = index
         row.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
-        let name = V2.label(order.customerName, size: DS.TextSize.name, weight: .bold)
-        let meta = V2.label(ProductDetailV2Logic.meta(order), size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        let texts = UIStackView(arrangedSubviews: [name, meta])
-        texts.axis = .vertical
-        texts.spacing = DS.Gap.lineTight
-        texts.isUserInteractionEnabled = false
-        let state = stateView(for: order)
-        state.setContentCompressionResistancePriority(.required, for: .horizontal)
-        state.setContentHuggingPriority(.required, for: .horizontal)
-        [texts, state].forEach(row.addSubview)
-        texts.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(DS.Spacing.lg)
-            make.top.bottom.equalToSuperview().inset(10)
-            make.trailing.lessThanOrEqualTo(state.snp.leading).offset(-8)
-        }
-        state.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-        }
-        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(64) }
-        let line = V2.divider()
-        row.addSubview(line)
-        line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: nil)
+        cell.configure(.order(order, lateDays: 0),
+                       context: .productOrders(quantity: ProductDetailV2Logic.quantity(of: productId, in: order)),
+                       hidesMoney: OrdersHomeLogic.hidesMoney(role: User.current()?.role,
+                                                               hideForStaff: Utils.shouldHideFinancialDataForStaff()))
+        cell.isUserInteractionEnabled = false
+        row.addSubview(cell)
+        cell.snp.makeConstraints { make in make.edges.equalToSuperview() }
         row.isAccessibilityElement = true
         row.accessibilityTraits = UIAccessibilityTraitButton
-        row.accessibilityLabel = [order.customerName, meta.text, (state as? UILabel)?.text].compactMap { $0 }.joined(separator: ", ")
+        row.accessibilityLabel = [order.customerName, "#\(order.orderNumber)"].compactMap { $0 }.joined(separator: ", ")
         return row
-    }
-
-    /// "Giao hôm nay" / "Trả 05/10" / "Trễ 2 ngày", or the status pill for Đã xong
-    private func stateView(for order: Order) -> UILabel {
-        let text: String
-        let color: UIColor
-        switch ProductDetailV2Logic.rowState(order, chip: chip) {
-        case .pickupToday: (text, color) = ("products.detail.state.pickupToday".localized(), DS.Status.handOver.text)
-        case .pickupOn(let day): (text, color) = (String(format: "products.detail.state.pickupOn".localized(), day), DS.Color.textMuted)
-        case .late(let days): (text, color) = (LateText.days(days), V2.danger)
-        case .returnToday: (text, color) = ("products.detail.state.returnToday".localized(), DS.Status.handOver.text)
-        case .returnOn(let day): (text, color) = (String(format: "products.detail.state.returnOn".localized(), day), DS.Color.textMuted)
-        case .status:
-            let pill = OrderStatusPillLabel()
-            pill.apply(status: order.status); pill.font = Utils.boldFont(size: DS.TextSize.pill)
-            return pill
-        }
-        return V2.label(text, size: DS.TextSize.secondary, weight: .bold, color: color)
     }
 
     // MARK: - Data

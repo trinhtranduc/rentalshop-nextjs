@@ -78,6 +78,7 @@ import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.BalancePayment
+import com.anyrent.pos.domain.orders.OrderRowDates
 import com.anyrent.pos.domain.orders.DetailPrimary
 import com.anyrent.pos.domain.orders.OrderActionSheet
 import com.anyrent.pos.domain.orders.OrderDetailHeader
@@ -115,10 +116,9 @@ private enum class DetailSheet { HAND_OVER, RETURN, NOTES }
 internal fun OrderDetail.balancePayments(): List<BalancePayment> =
     payments.map { BalancePayment(it.amount, it.status, it.notes) }
 
-/** `03/10` — shop civil day (#602) */
+/** `03/10/26` — shop civil day (#602), dd/mm/yy since #888 */
 internal fun shortDay(value: String?, zone: ZoneId = ShopTime.zone): String =
-    OrdersHomeLogic.parseInstant(value)?.atZone(zone)?.toLocalDate()
-        ?.let { "%02d/%02d".format(it.dayOfMonth, it.monthValue) } ?: "—"
+    OrdersHomeLogic.parseInstant(value)?.let { OrderRowDates.dmy(it, zone) } ?: "—"
 
 /**
  * Redesigned order detail behind `newOrderDetail` (#372, boards CT-gon, CT-qua-han, CT-ban):
@@ -529,7 +529,7 @@ private fun DetailHeader(detail: OrderDetail) {
                 )
             }
         }
-        if (lateDays > 0) {
+        if (OrderDetailHeader.showsLateBanner && lateDays > 0) {
             val returning = status == "PICKUPED"
             Row(
                 Modifier
@@ -569,7 +569,9 @@ private fun DetailHeader(detail: OrderDetail) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Tag(stringResource(OrderStatusTag.labelRes(summary.status)), OrderStatusTag.colors(summary.status), RowTagStyle.STATUS)
+                // #891: the same badge as the order list rows
+                val badge = OrderStatusTag.badge(summary.status)
+                Tag(stringResource(badge.labelRes), badge.colors, badge.style)
                 Spacer(Modifier.weight(1f))
                 val note = if (isRent) OrderDetailHeader.note(summary) else null
                 val text = if (isRent) note?.let { headerNoteText(it) }.orEmpty() else OrderDetailHeader.saleDay(summary, weekdays)
@@ -609,16 +611,26 @@ private fun DetailHeader(detail: OrderDetail) {
                                 color = DS.Colors.TextMuted,
                                 maxLines = 1,
                             )
-                            Text(
+                            // #891: "25/09/26 22:48" shrinks to fit one line (iOS adjustsFontSizeToFitWidth, 0.8)
+                            FitOneLineText(
                                 step.day,
                                 fontSize = DS.TextSize.Body,
                                 fontWeight = FontWeight.Bold,
                                 color = if (step.accent) DS.Colors.Primary else DS.Colors.Text,
-                                maxLines = 1,
                             )
                         }
                     }
                 }
+            }
+            // #891 (owner): who created the order, next to the created step; no line without a name
+            OrderDetailHeader.creatorName(summary)?.let { creator ->
+                Text(
+                    stringResource(R.string.detail_created_by, creator),
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
@@ -628,7 +640,7 @@ private fun DetailHeader(detail: OrderDetail) {
 @Composable
 private fun headerNoteText(note: OrderDetailHeader.Note): String {
     val days = note.rentalDays?.let { pluralStringResource(R.plurals.detail_note_days, it, it) }
-    val due = when (val d = note.due) {
+    val due = when (val d = OrderDetailHeader.shownDue(note.due)) {
         is OrderDetailHeader.Due.ReturnIn -> pluralStringResource(R.plurals.detail_note_return_in, d.days, d.days)
         OrderDetailHeader.Due.ReturnToday -> stringResource(R.string.detail_note_return_today)
         is OrderDetailHeader.Due.HandOverIn -> pluralStringResource(R.plurals.detail_note_hand_over_in, d.days, d.days)
@@ -969,7 +981,6 @@ private fun ItemRow(item: OrderItem, orderType: String) {
                 fontSize = DS.TextSize.Body,
                 color = Color(0xFF475569),
             )
-            CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
@@ -979,6 +990,8 @@ private fun ItemRow(item: OrderItem, orderType: String) {
                 )
                 Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
+            // #891 (owner): the item note is the last line of the item
+            CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
         }
     }
     HorizontalDivider(color = DS.Colors.Divider)
@@ -1023,3 +1036,19 @@ internal fun Thumb(model: Any?, size: Dp, onClick: (() -> Unit)? = null) {
     }
 }
 
+/** One line that shrinks (down to 70%) instead of wrapping or clipping, like iOS `adjustsFontSizeToFitWidth` */
+@Composable
+private fun FitOneLineText(text: String, fontSize: androidx.compose.ui.unit.TextUnit, fontWeight: FontWeight, color: Color) {
+    var size by remember(text) { mutableStateOf(fontSize) }
+    Text(
+        text,
+        fontSize = size,
+        fontWeight = fontWeight,
+        color = color,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { layout ->
+            if (layout.didOverflowWidth && size.value > fontSize.value * 0.7f) size = (size.value * 0.92f).sp
+        },
+    )
+}

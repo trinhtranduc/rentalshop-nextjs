@@ -69,6 +69,14 @@ class CartNullPricingTest {
         assertEquals("FIXED", api().parseProduct(productJson("")).pricingType)
     }
 
+    /** #887: `costPrice` (giá vốn) is read from the product; a JSON null or a missing key is no cost */
+    @Test
+    fun `cost price is read and a null cost is none`() {
+        assertEquals(700_000.0, api().parseProduct(productJson(null).put("costPrice", 700000)).costPrice)
+        assertEquals(null, api().parseProduct(productJson(null).put("costPrice", JSONObject.NULL)).costPrice)
+        assertEquals(null, api().parseProduct(productJson(null)).costPrice)
+    }
+
     @Test
     fun `an unknown pricing type is read as FIXED and known ones are kept`() {
         assertEquals("FIXED", api().parseProduct(productJson("BLOCK")).pricingType)

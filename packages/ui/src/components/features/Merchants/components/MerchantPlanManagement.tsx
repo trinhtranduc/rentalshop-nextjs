@@ -372,12 +372,12 @@ export function MerchantPlanManagement({
           {currentSubscription ? (
             <div className="space-y-4">
               {/* Plan Name, Price & Status */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold text-ar-ink">
                     {currentSubscription?.plan?.name || 'No plan assigned'}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-ar-muted">
                     {currentSubscription ? 
                         formatPrice(currentSubscription.amount, (currentSubscription as any).currency || 'USD') + '/month' :
                         'No pricing available'
@@ -386,22 +386,21 @@ export function MerchantPlanManagement({
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   {/* Subscription Status - Highlighted */}
-                  <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${
-                    subscriptionStatus === SUBSCRIPTION_STATUS.ACTIVE ? 'bg-green-100 text-green-800' :
-                    subscriptionStatus === SUBSCRIPTION_STATUS.TRIAL ? 'bg-blue-100 text-blue-800' :
-                    subscriptionStatus === SUBSCRIPTION_STATUS.PAUSED ? 'bg-orange-100 text-orange-800' :
-                    subscriptionStatus === SUBSCRIPTION_STATUS.CANCELLED ? 'bg-red-100 text-red-800' :
-                    subscriptionStatus === SUBSCRIPTION_STATUS.EXPIRED ? 'bg-gray-100 text-gray-800' :
-                    'bg-gray-100 text-gray-800'
+                  <span className={`ar-pill ar-pill-${
+                    subscriptionStatus === SUBSCRIPTION_STATUS.ACTIVE ? 'success' :
+                    subscriptionStatus === SUBSCRIPTION_STATUS.TRIAL ? 'info' :
+                    subscriptionStatus === SUBSCRIPTION_STATUS.PAUSED ? 'warning' :
+                    subscriptionStatus === SUBSCRIPTION_STATUS.CANCELLED ? 'danger' :
+                    'neutral'
                   }`}>
                     {getStatusLabel(subscriptionStatus || 'UNKNOWN', 'subscription')}
-                  </div>
+                  </span>
                 </div>
               </div>
 
               {/* Subscription Period - Simplified */}
               {currentSubscription && (
-                <div className="p-4 bg-gray-50 border rounded-lg space-y-2">
+                <div className="p-4 bg-ar-surface-muted border border-ar-line rounded-lg space-y-2">
                   <div className="flex items-center justify-between text-sm max-md:flex-col max-md:items-start max-md:gap-1">
                     <span className="text-gray-600">Period:</span>
                     <span className="font-medium">
@@ -627,10 +626,10 @@ export function MerchantPlanManagement({
 
       {/* Cancel Plan Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className={`max-w-md max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
+        <DialogContent className={`ar-dialog w-full md:max-w-lg max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
           <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <X className="h-5 w-5 text-red-500" />
+              <X className="h-5 w-5 text-ar-danger" />
               Cancel Plan
             </DialogTitle>
             <DialogDescription>
@@ -639,10 +638,10 @@ export function MerchantPlanManagement({
           </DialogHeader>
 
           <div className={`space-y-4 ${phoneBody}`}>
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-ar-danger-soft/40 border border-ar-line rounded-lg">
               <div className="flex items-center gap-2">
-                <X className="h-5 w-5 text-red-500" />
-                <p className="text-sm text-red-700 font-medium">
+                <X className="h-5 w-5 text-ar-danger flex-none" />
+                <p className="text-sm text-ar-danger font-medium">
                   Warning: This will permanently cancel the subscription
                 </p>
               </div>
@@ -681,7 +680,7 @@ export function MerchantPlanManagement({
           </div>
 
           <ResponsiveDialogFooter
-            className="max-md:-mx-4"
+            className="ar-dialog-footer ar-dialog-footer-danger md:border-t md:border-ar-line md:pt-3 max-md:-mx-4"
             secondary={
               <Button
               variant="outline"
@@ -706,10 +705,10 @@ export function MerchantPlanManagement({
 
       {/* Pause Plan Dialog */}
       <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-        <DialogContent className={`max-w-md max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
+        <DialogContent className={`ar-dialog w-full md:max-w-lg max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
           <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <Pause className="h-5 w-5 text-orange-500" />
+              <Pause className="h-5 w-5 text-ar-muted" />
               Pause Plan
             </DialogTitle>
             <DialogDescription>
@@ -718,10 +717,10 @@ export function MerchantPlanManagement({
           </DialogHeader>
 
           <div className={`space-y-4 ${phoneBody}`}>
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="p-4 bg-ar-surface-muted border border-ar-line rounded-lg">
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-orange-500" />
-                <p className="text-sm text-orange-700 font-medium">
+                <Clock className="h-5 w-5 text-ar-muted flex-none" />
+                <p className="text-sm text-ar-ink-2 font-medium">
                   Pausing preserves subscription history and makes reactivation easier
                 </p>
               </div>
@@ -741,7 +740,7 @@ export function MerchantPlanManagement({
           </div>
 
           <ResponsiveDialogFooter
-            className="max-md:-mx-4"
+            className="ar-dialog-footer ar-dialog-footer-danger md:border-t md:border-ar-line md:pt-3 max-md:-mx-4"
             secondary={
               <Button
               variant="outline"
@@ -766,10 +765,10 @@ export function MerchantPlanManagement({
 
       {/* Resume Plan Dialog */}
       <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-        <DialogContent className={`max-w-md max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
+        <DialogContent className={`ar-dialog w-full md:max-w-lg max-h-[90vh] overflow-y-auto flex flex-col ${phoneDialog}`}>
           <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <Play className="h-5 w-5 text-green-500" />
+              <Play className="h-5 w-5 text-ar-primary" />
               Resume Subscription
             </DialogTitle>
             <DialogDescription>
@@ -778,9 +777,9 @@ export function MerchantPlanManagement({
           </DialogHeader>
 
           <div className={`space-y-4 flex-1 overflow-y-auto ${phoneBody}`}>
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h4 className="font-semibold text-green-900 mb-2">Resuming Subscription</h4>
-              <ul className="text-sm text-green-800 space-y-1">
+            <div className="p-4 bg-ar-surface-muted border border-ar-line rounded-lg">
+              <h4 className="font-semibold text-ar-ink mb-2">Resuming Subscription</h4>
+              <ul className="text-sm text-ar-ink-2 space-y-1">
                 <li>✓ Your subscription will be reactivated immediately</li>
                 <li>✓ You will regain full access to all features</li>
                 <li>✓ Billing will resume according to your current plan</li>
@@ -789,7 +788,7 @@ export function MerchantPlanManagement({
             </div>
 
             {currentSubscription && (
-              <div className="p-4 bg-gray-50 border rounded-lg space-y-2 text-sm">
+              <div className="p-4 bg-ar-surface-muted border border-ar-line rounded-lg space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Plan:</span>
                   <span className="font-medium">{currentSubscription.plan?.name}</span>
@@ -803,7 +802,7 @@ export function MerchantPlanManagement({
           </div>
 
           <ResponsiveDialogFooter
-            className="max-md:-mx-4"
+            className="ar-dialog-footer md:border-t md:border-ar-line md:pt-3 max-md:-mx-4"
             secondary={
               <Button
               variant="outline"
@@ -818,7 +817,6 @@ export function MerchantPlanManagement({
               variant="default"
               onClick={handleReactivate}
               disabled={isSubmitting}
-              className="bg-green-600 hover:bg-green-700"
             >
               {isSubmitting ? 'Resuming...' : 'Resume Subscription'}
             </Button>
@@ -829,10 +827,10 @@ export function MerchantPlanManagement({
 
       {/* Subscription History Dialog */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-        <DialogContent className={`max-w-4xl max-h-[90vh] overflow-y-auto max-md:flex max-md:flex-col ${phoneDialog}`}>
+        <DialogContent className={`ar-dialog max-w-4xl max-h-[90vh] overflow-y-auto max-md:flex max-md:flex-col ${phoneDialog}`}>
           <DialogHeader className="max-md:pr-10 max-md:pb-3 max-md:shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <History className="h-5 w-5 text-blue-500" />
+              <History className="h-5 w-5 text-ar-primary" />
               Subscription Activity & Payment History
             </DialogTitle>
             <DialogDescription>
@@ -848,7 +846,7 @@ export function MerchantPlanManagement({
           </div>
 
           <ResponsiveDialogFooter
-            className="max-md:-mx-4"
+            className="md:border-t md:border-ar-line md:pt-3 max-md:-mx-4"
             secondary={
               null
             }

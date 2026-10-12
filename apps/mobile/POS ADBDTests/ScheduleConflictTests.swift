@@ -202,9 +202,9 @@ final class ScheduleConflictTests: XCTestCase {
     // MARK: Texts
 
     func testDayRangeTexts() {
-        XCTAssertEqual(ScheduleConflictLogic.dayRange(["2026-10-03", "2026-10-04", "2026-10-05"]), "03–05/10")
-        XCTAssertEqual(ScheduleConflictLogic.dayRange(["2026-10-03"]), "03/10")
-        XCTAssertEqual(ScheduleConflictLogic.dayRange(["2026-09-30", "2026-10-01", "2026-10-02"]), "30/09–02/10")
+        XCTAssertEqual(ScheduleConflictLogic.dayRange(["2026-10-03", "2026-10-04", "2026-10-05"]), "03/10/26–05/10/26")
+        XCTAssertEqual(ScheduleConflictLogic.dayRange(["2026-10-03"]), "03/10/26")
+        XCTAssertEqual(ScheduleConflictLogic.dayRange(["2026-09-30", "2026-10-01", "2026-10-02"]), "30/09/26–02/10/26")
         XCTAssertEqual(ScheduleConflictLogic.dayRange([]), "")
     }
 
@@ -212,16 +212,16 @@ final class ScheduleConflictTests: XCTestCase {
         let withOrder = CartScheduleConflict(productId: 1, productName: "Vest", shortBy: 1,
                                              dayKeys: ["2026-10-03", "2026-10-05"], orderNumbers: ["482113"])
         // #684: the tag shows only the days; the orders are one tap away (Lịch trống on the first day)
-        XCTAssertEqual(ScheduleConflictLogic.tagText(withOrder), String(format: "cart.overlap.tagRange".localized(), "03/10", "05/10"))
+        XCTAssertEqual(ScheduleConflictLogic.tagText(withOrder), String(format: "cart.overlap.tagRange".localized(), "03/10/26", "05/10/26"))
         XCTAssertEqual(ScheduleConflictLogic.focusDay(withOrder), "2026-10-03")
         XCTAssertEqual(ScheduleConflictLogic.warningLine(withOrder),
-                       String(format: "cart.overlap.line".localized(), "Vest", 1, "03–05/10", "#482113"))
+                       String(format: "cart.overlap.line".localized(), "Vest", 1, "03/10/26–05/10/26", "#482113"))
 
         let noOrder = CartScheduleConflict(productId: 1, productName: "Vest", shortBy: 2,
                                            dayKeys: ["2026-10-03"], orderNumbers: [])
-        XCTAssertEqual(ScheduleConflictLogic.tagText(noOrder), String(format: "cart.overlap.tagOneDay".localized(), "03/10"))
+        XCTAssertEqual(ScheduleConflictLogic.tagText(noOrder), String(format: "cart.overlap.tagOneDay".localized(), "03/10/26"))
         XCTAssertEqual(ScheduleConflictLogic.warningLine(noOrder),
-                       String(format: "cart.overlap.line.noOrders".localized(), "Vest", 2, "03/10"))
+                       String(format: "cart.overlap.line.noOrders".localized(), "Vest", 2, "03/10/26"))
         XCTAssertEqual(ScheduleConflictLogic.orderList(["482113", "0057"]), "#482113, #0057")
     }
 

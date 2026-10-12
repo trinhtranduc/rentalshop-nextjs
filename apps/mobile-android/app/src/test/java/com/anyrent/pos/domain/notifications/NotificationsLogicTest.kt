@@ -49,7 +49,7 @@ class NotificationsLogicTest {
         val labels = groups.map { g ->
             formatDayShort(g.day!!.atTime(12, 0).atZone(NotificationsLogic.zone).toInstant(), NotificationsLogic.zone, Locale.forLanguageTag("vi"))
         }
-        assertEquals(listOf("T2 05/10", "CN 04/10", "T6 02/10"), labels)
+        assertEquals(listOf("05/10/26", "04/10/26", "02/10/26"), labels)
     }
 
     @Test fun todayFollowsVietnamDayNotUtc() {

@@ -6,7 +6,7 @@ import java.time.ZoneId
 
 /**
  * #496 the two lines under the customer name of an order list row (boards Main, VL-*, DT-*, Lich):
- * line 1 (muted) "#0053 · tạo T2 05/10", line 2 (by status) "Giao T2 05/10 · trả T4 07/10".
+ * line 1 (muted) "#0053 · tạo 05/10/26", line 2 (by status) "Lấy 05/10/26 · trả 07/10/26" (dd/mm/yy since #888).
  * Every day is a Vietnam civil day ([shopZone]), whatever the device zone (timezone-dates). Pure and unit tested.
  */
 object OrderRowDates {
@@ -18,7 +18,7 @@ object OrderRowDates {
         /** Monday first: T2 … T7, CN */
         val weekdays: List<String> = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN"),
         val created: String = "tạo %s",
-        val handOver: String = "Giao %s",
+        val handOver: String = "Lấy %s",
         val handOverReturn: String = "trả %s",
         val returns: String = "Trả %s",
         val returnDue: String = "Hạn trả %s",
@@ -45,19 +45,48 @@ object OrderRowDates {
     /** [task] is null when nothing can be said (no date for the status) */
     data class Lines(val meta: String, val task: String?)
 
-    /** "T2 05/10" in [zone]; [weekdays] Monday first */
+    /** "05/10/26" in [zone] (#888) */
     fun day(instant: Instant, zone: ZoneId = shopZone, weekdays: List<String> = Texts().weekdays): String =
         day(instant.atZone(zone).toLocalDate(), weekdays)
 
-    fun day(date: LocalDate, weekdays: List<String> = Texts().weekdays): String {
-        val weekday = weekdays.getOrNull(date.dayOfWeek.value - 1).orEmpty()
-        val dayMonth = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
-        return if (weekday.isEmpty()) dayMonth else "$weekday $dayMonth"
-    }
+    /** #888: dd/mm/yy everywhere ([weekdays] kept for callers, unused) */
+    @Suppress("UNUSED_PARAMETER")
+    fun day(date: LocalDate, weekdays: List<String> = Texts().weekdays): String = com.anyrent.pos.domain.DayText.dmy(date)
+
+    /** #888 "05/10/26": dd/mm/yy of the Vietnam civil day, whatever the device zone */
+    fun dmy(instant: Instant, zone: ZoneId = shopZone): String = com.anyrent.pos.domain.DayText.dmy(instant, zone)
+
+    /** #891 (option C): which chip — "Lấy" (light blue) or "Trả" (light purple) */
+    enum class ChipKind { PICKUP, RETURN }
+
+    /** #891 (option C): one light date chip of an order row; [bold] = the date the list is sorted by */
+    data class DateChip(val kind: ChipKind, val label: String, val date: String, val bold: Boolean)
+
+    /** #891 (option C): the pickup and return chips; a missing day is left out */
+    fun chips(
+        pickupPlanAt: Instant?, returnPlanAt: Instant?, boldPickup: Boolean, boldReturn: Boolean,
+        pickupLabel: String = "Lấy", returnLabel: String = "Trả", zone: ZoneId = shopZone,
+    ): List<DateChip> = listOfNotNull(
+        pickupPlanAt?.let { DateChip(ChipKind.PICKUP, pickupLabel, dmy(it, zone), boldPickup) },
+        returnPlanAt?.let { DateChip(ChipKind.RETURN, returnLabel, dmy(it, zone), boldReturn) },
+    )
+
+    /** #888 one date of a "Tất cả đơn" row, [marked] when the list is sorted by it */
+    data class Part(val text: String, val marked: Boolean)
+
+    /** #888 "Lấy 14/10/26", "Trả 16/10/26"; a missing day is left out */
+    fun rentPlan(
+        pickupPlanAt: Instant?, returnPlanAt: Instant?, markPickup: Boolean, markReturn: Boolean,
+        texts: Texts = Texts(), zone: ZoneId = shopZone,
+    ): List<Part> = listOfNotNull(
+        pickupPlanAt?.let { Part(texts.handOver.format(dmy(it, zone)), markPickup) },
+        returnPlanAt?.let { Part(texts.returns.format(dmy(it, zone)), markReturn) },
+    )
 
     fun lines(input: Input, texts: Texts = Texts(), zone: ZoneId = shopZone): Lines {
-        fun fmt(instant: Instant) = day(instant, zone, texts.weekdays)
-        val meta = listOfNotNull("#${input.code}", input.createdAt?.let { texts.created.format(fmt(it)) }).joinToString(" · ")
+        fun fmt(instant: Instant) = dmy(instant, zone)
+        // #888 (owner): the created day carries its time, "tạo 05/10/26 14:30" (Vietnam clock)
+        val meta = listOfNotNull("#${input.code}", input.createdAt?.let { texts.created.format(com.anyrent.pos.domain.DayText.dmyTime(it, zone)) }).joinToString(" · ")
         val status = input.status.orEmpty().uppercase()
         val isRent = input.orderType.equals("RENT", ignoreCase = true)
         val task = when {

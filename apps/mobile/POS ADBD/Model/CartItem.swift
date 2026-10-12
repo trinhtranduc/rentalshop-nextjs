@@ -26,6 +26,9 @@ struct CartItem: Codable {
     var deposit: Double
     var note: String?
     var imageUrl: String?
+    /// #888: the product's cost (giá vốn) when the line was added; the API sends it only to `products.manage` roles.
+    /// Optional, so a cart saved before #888 still decodes.
+    var costPrice: Double?
     
     // Store original prices from product when added to cart
     let originalRentPrice: Double
@@ -88,6 +91,7 @@ struct CartItem: Codable {
 
     mutating func refreshPricing(from product: Product) {
         adoptPricingOptions(product.pricingOptions)
+        if let cost = product.costPrice { costPrice = cost }
     }
 
     /// Switch to a different pricing option (updates price + pricingType)
@@ -205,6 +209,7 @@ struct CartItem: Codable {
         // description/note metadata should not prefill an editable order note.
         self.note = nil
         self.imageUrl = product.image_url ?? product.images?.first
+        self.costPrice = product.costPrice
         
         // Store original prices from product
         self.originalRentPrice = product.rentPrice ?? product.rent

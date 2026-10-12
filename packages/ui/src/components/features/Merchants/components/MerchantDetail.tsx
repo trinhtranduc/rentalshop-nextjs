@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from '../../../ui';
-import { Building2, Users, Package, ShoppingCart, PlusCircle, MoreVertical, ChevronDown, UserCircle } from 'lucide-react';
+import { Building2, Users, Package, ShoppingCart, PlusCircle, ChevronDown, UserCircle, Pencil } from 'lucide-react';
 import type { MerchantDetailData, Plan, Subscription } from '@rentalshop/types';
 import { BUSINESS_TAG_OPTIONS, SUBSCRIPTION_STATUS, normalizeSubscriptionStatus, getStatusLabel } from '@rentalshop/constants';
 import type { SubscriptionStatus } from '@rentalshop/constants';
@@ -29,6 +29,8 @@ interface MerchantDetailProps {
   plans?: Plan[];
   addonCount?: number; // Number of active addons
   currentUserRole?: string;
+  /** false: the page shows MerchantQuickActions itself (admin header, #882). */
+  showActions?: boolean;
   loyaltyActive?: boolean;
   loyaltyProgramName?: string | null;
   loyaltyLoading?: boolean;
@@ -61,11 +63,104 @@ interface MerchantDetailProps {
   onReactivate?: (subscription: Subscription) => Promise<void>;
 }
 
+const MERCHANT_MENU_ITEM = 'cursor-pointer max-md:min-h-11';
+
+interface MerchantQuickActionsProps {
+  merchantId: number;
+  onMerchantAction: (action: string, merchantId: number) => void;
+}
+
+/** Add-on button and the Quick Actions menu (#882: admin shows them in the page header). */
+export function MerchantQuickActions({ merchantId, onMerchantAction }: MerchantQuickActionsProps) {
+  const router = useRouter();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const go = (page: string) => {
+    router.push(`/merchants/${merchantId}/${page}`);
+    setDropdownOpen(false);
+  };
+
+  return (
+    <>
+      {/* #850: the shop's priced add-ons (pack, number of packs, removal at period end) */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="max-md:flex-1 max-md:min-h-11"
+        data-testid="merchant-addon-tab"
+        onClick={() => go('addons')}
+      >
+        <PlusCircle className="h-4 w-4 mr-2" />
+        Add-on
+      </Button>
+      <DropdownMenu className="max-md:flex-[1_1_calc(50%-8px)]">
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-auto justify-between max-md:w-full max-md:min-h-11"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            <span>Quick Actions</span>
+            <ChevronDown className="h-4 w-4 ml-2" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56" open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <DropdownMenuItem onClick={() => go('outlets')} className={MERCHANT_MENU_ITEM}>
+            <Building2 className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Manage Outlets</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go('products')} className={MERCHANT_MENU_ITEM}>
+            <Package className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Manage Products</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go('users')} className={MERCHANT_MENU_ITEM}>
+            <Users className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Manage Users</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go('orders')} className={MERCHANT_MENU_ITEM}>
+            <ShoppingCart className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Manage Orders</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => go('customers')} className={MERCHANT_MENU_ITEM}>
+            <UserCircle className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Manage Customers</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => go('addons')} className={MERCHANT_MENU_ITEM}>
+            <PlusCircle className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Add-on</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setDropdownOpen(false);
+              onMerchantAction('edit', merchantId);
+            }}
+            className={MERCHANT_MENU_ITEM}
+          >
+            <Pencil className="mr-2 h-4 w-4 text-ar-muted" />
+            <span>Edit Merchant</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+}
+
+const subscriptionTone = (status?: string | null): string => {
+  const s = normalizeSubscriptionStatus(status);
+  if (s === SUBSCRIPTION_STATUS.ACTIVE) return 'success';
+  if (s === SUBSCRIPTION_STATUS.TRIAL) return 'info';
+  if (s === SUBSCRIPTION_STATUS.PAUSED) return 'warning';
+  if (s === SUBSCRIPTION_STATUS.CANCELLED) return 'danger';
+  return 'neutral';
+};
+
 export function MerchantDetail({
   data,
   plans = [],
   addonCount = 0,
   currentUserRole,
+  showActions = true,
   loyaltyActive = false,
   loyaltyProgramName,
   loyaltyLoading = false,
@@ -85,7 +180,6 @@ export function MerchantDetail({
   onReactivate
 }: MerchantDetailProps) {
   const router = useRouter();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const businessTags = Array.isArray(data.merchant.businessTags)
     ? data.merchant.businessTags.filter((tag): tag is string => typeof tag === 'string' && tag.length > 0)
@@ -94,253 +188,132 @@ export function MerchantDetail({
   const getBusinessTagLabel = (tag: string): string =>
     BUSINESS_TAG_OPTIONS.find((option) => option.value === tag)?.label ?? tag;
 
-  const navigateToPage = (page: string, id?: number) => {
-    // Navigate within the admin app
-    const url = id ? `/${page}/${id}` : `/${page}`;
-    router.push(url);
-  };
+  const navigateToPage = (page: string) => router.push(`/${page}`);
 
-  const handleNavigateToAdmin = (page: string, id?: number) => {
-    navigateToPage(page, id);
-    setDropdownOpen(false);
-  };
+  const stats = [
+    { label: 'Total Users', value: data.stats.totalUsers, icon: Users, page: 'users' },
+    { label: 'Total Products', value: data.stats.totalProducts, icon: Package, page: 'products' },
+    { label: 'Total Orders', value: data.stats.totalOrders, icon: ShoppingCart, page: 'orders' },
+    { label: 'Total Customers', value: data.stats.totalCustomers || 0, icon: UserCircle, page: 'customers' },
+  ];
+
+  const subscription = data.merchant.subscription;
+  const subscriptionStatus = subscription
+    ? normalizeSubscriptionStatus(subscription.status) || subscription.status
+    : null;
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards - Clickable to navigate */}
+      {/* Statistics - each one opens its list */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card 
-          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
-          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/users')}
-        >
-          <CardContent className="p-4 sm:p-6">
-            <div className="text-center">
-              <Users className="w-6 h-6 text-blue-700 mx-auto mb-2" />
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Users</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalUsers}</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
-          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/products')}
-        >
-          <CardContent className="p-4 sm:p-6">
-            <div className="text-center">
-              <Package className="w-6 h-6 text-green-600 mx-auto mb-2" />
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Products</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalProducts}</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all"
-          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/orders')}
-        >
-          <CardContent className="p-4 sm:p-6">
-            <div className="text-center">
-              <ShoppingCart className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalOrders}</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="shadow-sm border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all"
-          onClick={() => navigateToPage('merchants/' + data.merchant.id + '/customers')}
-        >
-          <CardContent className="p-4 sm:p-6">
-            <div className="text-center">
-              <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{data.stats.totalCustomers || 0}</p>
-            </div>
-          </CardContent>
-        </Card>
+        {stats.map(({ label, value, icon: Icon, page }) => (
+          <button
+            key={page}
+            type="button"
+            className="rounded-lg border border-ar-line bg-ar-surface p-4 text-left shadow-ar transition-colors hover:border-ar-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ar-primary"
+            onClick={() => navigateToPage('merchants/' + data.merchant.id + '/' + page)}
+          >
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-ar-muted">{label}</span>
+              <Icon className="h-4 w-4 text-ar-primary" aria-hidden />
+            </span>
+            <span className="mt-1 block text-2xl font-bold text-ar-ink">{value}</span>
+          </button>
+        ))}
       </div>
 
       {/* Merchant Information */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Basic Info */}
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <CardTitle>Basic Information</CardTitle>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Basic Information
+            </CardTitle>
+            {showActions && (
               <div className="flex flex-wrap gap-2 max-md:w-full">
-              {/* #850: the shop's priced add-ons (pack, number of packs, removal at period end) */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="max-md:flex-1 max-md:min-h-11"
-                data-testid="merchant-addon-tab"
-                onClick={() => navigateToPage('merchants/' + data.merchant.id + '/addons')}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add-on
-              </Button>
-              <DropdownMenu className="max-md:w-full">
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-auto justify-between max-md:w-full max-md:min-h-11"
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                  >
-                    <span>Quick Actions</span>
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 max-md:w-full"
-                  open={dropdownOpen}
-                  onOpenChange={setDropdownOpen}
-                >
-                  <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/outlets')}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <Building2 className="mr-2 h-4 w-4 text-blue-700" />
-                    <span>Manage Outlets</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/products')}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <Package className="mr-2 h-4 w-4 text-green-600" />
-                    <span>Manage Products</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/users')}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <Users className="mr-2 h-4 w-4 text-purple-600" />
-                    <span>Manage Users</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/orders')}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4 text-orange-600" />
-                    <span>Manage Orders</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/customers')}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <UserCircle className="mr-2 h-4 w-4 text-teal-600" />
-                    <span>Manage Customers</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleNavigateToAdmin('merchants/' + data.merchant.id + '/addons')}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4 text-indigo-600" />
-                    <span>Add-on</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onMerchantAction('edit', data.merchant.id)}
-                    className="cursor-pointer max-md:min-h-11"
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4 text-gray-600" />
-                    <span>Edit Merchant</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                <MerchantQuickActions merchantId={data.merchant.id} onMerchantAction={onMerchantAction} />
               </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm font-medium text-ar-muted">Name</dt>
+              <dd className="mt-1 text-sm text-ar-ink">{data.merchant.name}</dd>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name</label>
-                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.name}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Merchant Code</label>
-                <p className="text-sm text-gray-900 dark:text-white font-mono">{data.merchant.id}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Email</label>
-                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.email}</p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Phone</label>
-                <p className="text-sm text-gray-900 dark:text-white">{data.merchant.phone || 'Not provided'}</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Address</label>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {[data.merchant.address, data.merchant.city, data.merchant.state, data.merchant.zipCode, data.merchant.country]
-                    .filter(Boolean)
-                    .join(', ') || '—'}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Business Type</label>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {data.merchant.businessType || '—'}
-                </p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Business Tags</label>
-                {businessTags.length > 0 ? (
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {businessTags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="font-normal">
-                        {getBusinessTagLabel(tag)}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-900 dark:text-white">—</p>
-                )}
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Account status</label>
-                <p className={`text-sm ${data.merchant.isActive ? 'text-green-600' : 'text-red-600'}`}>
+            <div>
+              <dt className="text-sm font-medium text-ar-muted">Merchant Code</dt>
+              <dd className="mt-1 text-sm text-ar-ink font-mono">{data.merchant.id}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-ar-muted">Email</dt>
+              <dd className="mt-1 text-sm text-ar-ink">{data.merchant.email}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-ar-muted">Phone</dt>
+              <dd className="mt-1 text-sm text-ar-ink">{data.merchant.phone || 'Not provided'}</dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-sm font-medium text-ar-muted">Address</dt>
+              <dd className="mt-1 text-sm text-ar-ink">
+                {[data.merchant.address, data.merchant.city, data.merchant.state, data.merchant.zipCode, data.merchant.country]
+                  .filter(Boolean)
+                  .join(', ') || '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-ar-muted">Business Type</dt>
+              <dd className="mt-1 text-sm text-ar-ink">{data.merchant.businessType || '—'}</dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-sm font-medium text-ar-muted">Business Tags</dt>
+              {businessTags.length > 0 ? (
+                <dd className="mt-1 flex flex-wrap gap-2">
+                  {businessTags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="font-normal">
+                      {getBusinessTagLabel(tag)}
+                    </Badge>
+                  ))}
+                </dd>
+              ) : (
+                <dd className="mt-1 text-sm text-ar-ink">—</dd>
+              )}
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-ar-muted">Account status</dt>
+              <dd className="mt-1">
+                <span className={`ar-pill ar-pill-${data.merchant.isActive ? 'success' : 'danger'}`}>
                   {data.merchant.isActive ? 'Enabled' : 'Disabled'}
-                </p>
-              </div>
-              {data.merchant.subscription && (
-                <>
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Plan</label>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {data.merchant.subscription.plan?.name || 'No plan'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Billing status</label>
-                    <p className={`text-sm ${
-                      normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.ACTIVE ? 'text-green-600' :
-                      normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.TRIAL ? 'text-blue-600' :
-                      normalizeSubscriptionStatus(data.merchant.subscription.status) === SUBSCRIPTION_STATUS.PAUSED ? 'text-orange-600' :
-                      'text-gray-600'
-                    }`}>
-                      {getStatusLabel(
-                        normalizeSubscriptionStatus(data.merchant.subscription.status) || data.merchant.subscription.status,
-                        'subscription'
-                      )}
-                    </p>
-                  </div>
-                </>
-              )}
-              {data.merchant.description && (
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
-                  <p className="text-sm text-gray-900 dark:text-white">{data.merchant.description}</p>
-                </div>
-              )}
+                </span>
+              </dd>
             </div>
-          </CardContent>
-        </Card>
-
-      </div>
+            {subscription && (
+              <>
+                <div>
+                  <dt className="text-sm font-medium text-ar-muted">Plan</dt>
+                  <dd className="mt-1 text-sm text-ar-ink">{subscription.plan?.name || 'No plan'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-ar-muted">Billing status</dt>
+                  <dd className="mt-1">
+                    <span className={`ar-pill ar-pill-${subscriptionTone(subscription.status)}`}>
+                      {getStatusLabel(subscriptionStatus as string, 'subscription')}
+                    </span>
+                  </dd>
+                </div>
+              </>
+            )}
+            {data.merchant.description && (
+              <div className="md:col-span-2">
+                <dt className="text-sm font-medium text-ar-muted">Description</dt>
+                <dd className="mt-1 text-sm text-ar-ink">{data.merchant.description}</dd>
+              </div>
+            )}
+          </dl>
+        </CardContent>
+      </Card>
 
       {onLoyaltyToggle && (
         <MerchantLoyaltySection

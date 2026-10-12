@@ -44,18 +44,18 @@ class ChangeHistoryTest {
         ]}}
     """.trimIndent()
 
-    private val now = i("2026-10-06T09:00:00Z") // Tue 06/10 16:00 in Vietnam
+    private val now = i("2026-10-06T09:00:00Z") // 06/10/26 16:00 in Vietnam
 
     @Test fun boardOrderTimeline() {
         val page = ChangeHistory.parsePage(JSONObject(boardJson))
         assertEquals(6, page.total)
         assertEquals(i("2026-10-06T08:10:00Z"), page.latestAt)
         val sections = ChangeHistory.sections(page.entries, now)
-        assertEquals(listOf("HÔM NAY · T3 06/10", "T2 05/10"), sections.map { it.header })
+        assertEquals(listOf("HÔM NAY · 06/10/26", "05/10/26"), sections.map { it.header })
         val today = sections[0].rows
         assertEquals(listOf("Sửa đơn", "Sửa món", "Sửa giá trong đơn"), today.map { it.title })
         assertEquals(
-            listOf(ChangeHistory.Line("Ngày trả", "05/10", "07/10"), ChangeHistory.Line("Tổng đơn", "1.000.000đ", "1.300.000đ")),
+            listOf(ChangeHistory.Line("Ngày trả", "05/10/26", "07/10/26"), ChangeHistory.Line("Tổng đơn", "1.000.000đ", "1.300.000đ")),
             today[0].lines,
         )
         assertEquals("bởi Nguyễn An (nhân viên) · 15:10", today[0].footer)
@@ -91,7 +91,7 @@ class ChangeHistoryTest {
             """.trimIndent(),
         )
         val sections = ChangeHistory.sections(ChangeHistory.parsePage(json).entries, now)
-        assertEquals(listOf("HÔM NAY · T3 06/10", "T6 02/10", "T2 28/09"), sections.map { it.header })
+        assertEquals(listOf("HÔM NAY · 06/10/26", "02/10/26", "28/09/26"), sections.map { it.header })
         assertEquals(
             listOf(ChangeHistory.Line("Thuê theo ngày", "150.000đ", "130.000đ"), ChangeHistory.Line("Thuê theo lần", "350.000đ", "300.000đ")),
             sections[0].rows[0].lines,
@@ -111,20 +111,20 @@ class ChangeHistoryTest {
 
     @Test fun vietnamMidnightDecidesTheDay() {
         val entries = listOf(
-            ChangeHistory.Entry(1, i("2026-10-05T16:59:59Z"), "ORDER_EDITED", null), // Mon 05/10 23:59:59 VN
-            ChangeHistory.Entry(2, i("2026-10-05T17:00:00Z"), "ORDER_EDITED", null), // Tue 06/10 00:00 VN
+            ChangeHistory.Entry(1, i("2026-10-05T16:59:59Z"), "ORDER_EDITED", null), // 05/10/26 23:59:59 VN
+            ChangeHistory.Entry(2, i("2026-10-05T17:00:00Z"), "ORDER_EDITED", null), // 06/10/26 00:00 VN
         )
         val sections = ChangeHistory.sections(entries, now)
-        assertEquals(listOf("HÔM NAY · T3 06/10", "T2 05/10"), sections.map { it.header })
+        assertEquals(listOf("HÔM NAY · 06/10/26", "05/10/26"), sections.map { it.header })
         assertEquals("00:00", sections[0].rows[0].footer)
         assertEquals("23:59", sections[1].rows[0].footer)
     }
 
     @Test fun headersAcrossMonthAndYear() {
         val today = LocalDate.of(2027, 1, 1)
-        assertEquals("T5 31/12", ChangeHistory.dayHeader(LocalDate.of(2026, 12, 31), today))
-        assertEquals("HÔM NAY · T6 01/01", ChangeHistory.dayHeader(today, today))
-        assertEquals("CN 01/11", ChangeHistory.dayHeader(LocalDate.of(2026, 11, 1), today))
+        assertEquals("31/12/26", ChangeHistory.dayHeader(LocalDate.of(2026, 12, 31), today))
+        assertEquals("HÔM NAY · 01/01/27", ChangeHistory.dayHeader(today, today))
+        assertEquals("01/11/26", ChangeHistory.dayHeader(LocalDate.of(2026, 11, 1), today))
     }
 
     @Test fun lenientValuesNeverCrash() {
@@ -170,7 +170,7 @@ class ChangeHistoryTest {
         assertEquals(listOf(ChangeHistory.Line("Đã hoàn", null, "200.000đ"), ChangeHistory.Line("Hình thức", null, "Tiền mặt")), refund.lines)
         // An entry without a time goes last, under no header
         val sections = ChangeHistory.sections(page.entries, now)
-        assertEquals(listOf("HÔM NAY · T3 06/10", ""), sections.map { it.header })
+        assertEquals(listOf("HÔM NAY · 06/10/26", ""), sections.map { it.header })
     }
 
     @Test fun emptyOrMissingPage() {
@@ -239,7 +239,7 @@ class ChangeHistoryTest {
 
     @Test fun countSummaryOfTheSheetRow() {
         assertEquals("6 lần thay đổi · gần nhất 15:10 hôm nay", ChangeHistory.countSummary(6, i("2026-10-06T08:10:00Z"), now))
-        assertEquals("2 lần thay đổi · gần nhất 05/10", ChangeHistory.countSummary(2, i("2026-10-05T16:59:59Z"), now))
+        assertEquals("2 lần thay đổi · gần nhất 05/10/26 23:59", ChangeHistory.countSummary(2, i("2026-10-05T16:59:59Z"), now))
         // 17:00Z on 05/10 is already 06/10 in Vietnam
         assertEquals("1 lần thay đổi · gần nhất 00:00 hôm nay", ChangeHistory.countSummary(1, i("2026-10-05T17:00:00Z"), now))
         assertEquals("3 lần thay đổi", ChangeHistory.countSummary(3, null, now))

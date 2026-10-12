@@ -623,6 +623,8 @@
     <string name="v2_form_sale_price">Sale price</string>
     <string name="v2_form_not_for_sale">Not for sale</string>
     <string name="v2_form_deposit">Deposit per item</string>
+    <string name="v2_form_cost_price">Cost price</string>
+    <string name="v2_form_cost_placeholder">Enter cost price</string>
     <string name="v2_form_stock">Stock</string>
     <string name="v2_form_quantity">Quantity</string>
     <string name="v2_form_stock_note">On rent %1$d · free %2$d</string>
@@ -755,8 +757,8 @@
     <string name="detail_walk_in">Walk-in customer</string>
     <string name="detail_call_customer">Call customer</string>
     <string name="detail_step_booked">Booked</string>
-    <string name="detail_step_hand_over">Hand over</string>
-    <string name="detail_step_handed_over">Handed over</string>
+    <string name="detail_step_hand_over">Pickup</string>
+    <string name="detail_step_handed_over">Picked up</string>
     <string name="detail_step_return">Return</string>
     <string name="detail_step_returned">Returned</string>
     <plurals name="detail_note_days">
@@ -769,10 +771,10 @@
     </plurals>
     <string name="detail_note_return_today">return today</string>
     <plurals name="detail_note_hand_over_in">
-        <item quantity="one">hand over in %1$d day</item>
-        <item quantity="other">hand over in %1$d days</item>
+        <item quantity="one">pickup in %1$d day</item>
+        <item quantity="other">pickup in %1$d days</item>
     </plurals>
-    <string name="detail_note_hand_over_today">hand over today</string>
+    <string name="detail_note_hand_over_today">pickup today</string>
     <plurals name="detail_note_past_pickup">
         <item quantity="one">%1$d day past pickup</item>
         <item quantity="other">%1$d days past pickup</item>
@@ -800,8 +802,8 @@
     <string name="detail_take_return">Take return</string>
     <string name="detail_paid_before">Already paid</string>
     <string name="detail_collect_now">Collect now</string>
-    <string name="detail_handed_over">Handed over</string>
-    <string name="detail_handed_over_collect">Handed over · collect %1$s</string>
+    <string name="detail_handed_over">Picked up</string>
+    <string name="detail_handed_over_collect">Picked up · collect %1$s</string>
     <string name="detail_fees">Late + damage fees</string>
     <string name="detail_collateral_held">Collateral held</string>
     <string name="detail_settled_before">Already settled</string>
@@ -1212,7 +1214,7 @@
     <!-- #496 order list rows: "#0053 · created Mon 05/10", then the task of the status -->
     <string name="order_row_weekdays">Mon,Tue,Wed,Thu,Fri,Sat,Sun</string>
     <string name="order_row_created">created %1$s</string>
-    <string name="order_row_hand_over">Hand over %1$s</string>
+    <string name="order_row_hand_over">Pickup %1$s</string>
     <string name="order_row_hand_over_return">return %1$s</string>
     <string name="order_row_returns">Return %1$s</string>
     <string name="order_row_return_due">Due back %1$s</string>
@@ -1631,4 +1633,25 @@
     <string name="outlet_switch_confirm_ok">Empty cart and switch</string>
     <string name="outlet_fallback_title">Back to the default branch</string>
     <string name="outlet_fallback_message">The branch you chose is no longer active. The app now uses %1$s.</string>
+    <!-- #888 one sort date, cart cost -->
+    <string name="orders_v2_sort_date_pickup">Pickup date</string>
+    <string name="orders_v2_sort_date_return">Return date</string>
+    <string name="orders_v2_sort_date_created">Created date</string>
+    <string name="orders_v2_direction_nearest">Latest first</string>
+    <string name="orders_v2_direction_farthest">Earliest first</string>
+    <string name="orders_v2_direction_newest">Newest first</string>
+    <string name="orders_v2_direction_oldest">Oldest first</string>
+    <string name="orders_v2_sort_bar">Sorted by %1$s · %2$s</string>
+    <string name="orders_v2_filter_sort_by">Sort by</string>
+    <string name="orders_v2_filter_order">Order</string>
+    <string name="orders_v2_filter_range_of">%1$s range</string>
+    <string name="orders_v2_filter_same_date">Sorting and the date range both use the %1$s.</string>
+    <string name="v2_cart_cost">Cost</string>
+    <string name="v2_cart_total_cost">Total cost</string>
+    <string name="v2_cart_profit">Expected profit</string>
+    <string name="detail_created_by">Created by: %1$s</string>
+    <string name="orders_chip_pickup">Pickup</string>
+    <string name="orders_chip_return">Return</string>
+    <string name="cart_swipe_delete">Delete</string>
+    <string name="calendar_v2_ready">Ready</string>
 </resources>

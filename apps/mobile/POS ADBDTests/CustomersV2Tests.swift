@@ -297,4 +297,23 @@ final class CustomersV2Tests: XCTestCase {
             completion(nil)
         }
     }
+
+    // MARK: - #891 customer orders show the item names
+
+    func testCustomerOrderRowItemNames() throws {
+        let json = #"{"id":5,"orderNumber":"0062","orderType":"RENT","status":"RESERVED","totalAmount":380000,"createdAt":"2026-10-02T02:12:00.000Z","pickupPlanAt":"2026-10-14T02:00:00.000Z","returnPlanAt":"2026-10-15T02:00:00.000Z","orderItems":[{"productName":"Vest đen slim fit","quantity":1},{"productName":"Cà vạt lụa","quantity":1},{"productName":"Áo sơ mi","quantity":1}],"_count":{"orderItems":3}}"#
+        let row = try JSONDecoder.shared.decode(CustomerOrderRow.self, from: Data(json.utf8))
+        XCTAssertEqual(CustomersV2Logic.itemsTitle(row), "Vest đen slim fit, Cà vạt lụa +1")
+        // #893: the API field is `itemNames`
+        let named = try JSONDecoder.shared.decode(CustomerOrderRow.self, from: Data(#"{"id":6,"orderNumber":"0063","orderType":"RENT","status":"RESERVED","totalAmount":1,"itemNames":[{"productName":"Áo dài","quantity":2},{"productName":null,"quantity":1}],"_count":{"orderItems":2}}"#.utf8))
+        XCTAssertEqual(CustomersV2Logic.itemsTitle(named), "Áo dài ×2")
+        let one = CustomerOrderRow(id: 1, orderNumber: "1", orderType: .rent, status: .reserved, totalAmount: 0, pickupPlanAt: nil,
+                                   returnPlanAt: nil, createdAt: nil, itemCount: 1,
+                                   items: [CustomerOrderRow.Item(productName: "Áo dài cách tân xanh", quantity: 2)])
+        XCTAssertEqual(CustomersV2Logic.itemsTitle(one), "Áo dài cách tân xanh ×2")
+        let none = CustomerOrderRow(id: 1, orderNumber: "0055", orderType: .rent, status: .reserved, totalAmount: 0, pickupPlanAt: nil,
+                                    returnPlanAt: nil, createdAt: nil, itemCount: 2)
+        XCTAssertEqual(CustomersV2Logic.itemsTitle(none), String(format: "customers.v2.items".localized(), 2),
+                       "older API without item names: the item count")
+    }
 }

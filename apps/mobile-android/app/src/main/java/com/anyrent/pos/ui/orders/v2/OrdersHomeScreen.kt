@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +35,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -76,7 +76,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
@@ -301,6 +303,8 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                                         else -> RowContext.LIST
                                     },
                                     texts = texts,
+                                    // #888 "Tất cả đơn": Lấy · Trả with the sorted date marked
+                                    rentSortedBy = state.filter.sortDate.takeIf { !state.isSearching && state.segment == OrdersSegment.RENT },
                                     onClick = { onOpenOrder(row.orderId) },
                                 )
                             }
@@ -508,7 +512,8 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
             Modifier.defaultMinSize(minHeight = 36.dp).clickable(onClick = onSort),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(sortLabel(state.filter.sort)), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+            // #888: always says how the list is sorted: "Xếp theo ngày lấy · gần nhất trước ▾"
+            Text(sortBarText(state.filter), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
             Spacer(Modifier.size(4.dp))
             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
         }
@@ -528,12 +533,28 @@ private fun chipLabel(status: String?): Int = when (status) {
     else -> R.string.orders_v2_status_all
 }
 
-private fun sortLabel(sort: OrdersSort): Int = when (sort) {
-    OrdersSort.NEAREST_TASK -> R.string.orders_v2_sort_nearest
-    OrdersSort.CREATED -> R.string.orders_v2_sort_created
-    OrdersSort.PICKUP -> R.string.orders_v2_sort_pickup
-    OrdersSort.RETURN -> R.string.orders_v2_sort_return
+/** #888 "Ngày lấy", "Ngày trả", "Ngày tạo" (iOS `sortDateTitle`) */
+internal fun sortDateLabel(date: SortDate): Int = when (date) {
+    SortDate.PICKUP -> R.string.orders_v2_sort_date_pickup
+    SortDate.RETURN -> R.string.orders_v2_sort_date_return
+    SortDate.CREATED -> R.string.orders_v2_sort_date_created
 }
+
+/** #888 "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước" (iOS `directionTitle`) */
+internal fun directionLabel(date: SortDate, direction: SortDirection): Int = when {
+    date == SortDate.CREATED && direction == SortDirection.NEAREST_FIRST -> R.string.orders_v2_direction_newest
+    date == SortDate.CREATED -> R.string.orders_v2_direction_oldest
+    direction == SortDirection.NEAREST_FIRST -> R.string.orders_v2_direction_nearest
+    else -> R.string.orders_v2_direction_farthest
+}
+
+/** #888 "Xếp theo ngày lấy · gần nhất trước" */
+@Composable
+private fun sortBarText(filter: RentOrdersFilter): String = stringResource(
+    R.string.orders_v2_sort_bar,
+    stringResource(sortDateLabel(filter.sortDate)).lowercase(),
+    stringResource(directionLabel(filter.sortDate, filter.direction)).lowercase(),
+)
 
 @Composable
 private fun Chip(text: String, selected: Boolean, height: Int, fontSize: TextUnit, onClick: () -> Unit, icon: ImageVector? = null) {
@@ -614,8 +635,9 @@ private fun SectionBand(section: OrdersSection) {
     }
 }
 
-private enum class RowContext { LIST, SALE, SEARCH }
+private enum class RowContext { LIST, SALE, SEARCH, PRODUCT }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WorkRow(
     work: TodayWorkRow,
@@ -625,30 +647,69 @@ private fun WorkRow(
     onClick: () -> Unit,
     onCall: (String) -> Unit,
 ) {
+    // #893 (owner, lean row): line 1 name + the light task tag; line 2 the task's date chip, "Trễ N ngày",
+    // "Chưa soạn đồ" (wrap only when they do not fit), right "còn thu N" (bold) or the total
     val handOver = kind == WorkKind.HAND_OVER
-    val pills = buildList {
-        if (handOver && !work.isReadyToDeliver) add(stringResource(R.string.orders_v2_not_prepared) to DS.Status.Waiting)
-        if (work.lateDays > 0) add(pluralStringResource(R.plurals.orders_late_days, work.lateDays, work.lateDays) to DS.Status.Late)
+    val tagColors = if (handOver) DS.Status.HandOver else DS.Status.Return
+    val (pickupLabel, returnLabel) = chipLabels()
+    val notPrepared = stringResource(R.string.orders_v2_not_prepared)
+    val due = OrdersBoardLogic.workDue(work)
+    val phone = OrdersBoardLogic.workCallPhone(work, isLate)
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        work.customerName?.takeIf { it.isNotBlank() } ?: "N/A",
+                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                    )
+                    Tag(stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back), tagColors, RowTagStyle.STATUS)
+                }
+                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        OrdersBoardLogic.workChips(work, kind).forEach { chip ->
+                            val (text, colors) = when (chip.kind) {
+                                OrdersBoardLogic.WorkChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
+                                OrdersBoardLogic.WorkChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                                OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to DS.Status.Late
+                                OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
+                            }
+                            Text(
+                                text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                    // Owner: the total (bold) always; "còn thu N" smaller under it when something is due
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            formatMoneyVnd(work.totalAmount), fontSize = DS.TextSize.Name, fontWeight = RowMoneyText.totalWeight,
+                            color = DS.Colors.Text, maxLines = 1,
+                        )
+                        due?.let {
+                            Text(
+                                stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(it)),
+                                fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = DS.Status.Waiting.text, maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
+            if (phone != null) {
+                IconButton(onClick = { onCall(phone) }) { Icon(Icons.Outlined.Phone, contentDescription = stringResource(R.string.call_customer)) }
+            }
+        }
+        HorizontalDivider(color = DS.Colors.Divider)
     }
-    val pay = when (val line = OrdersBoardLogic.payLine(work.amountDue, work.refundDue)) {
-        is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(line.amount)) to DS.Status.Return.text
-        is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(line.amount)) to DS.Status.Waiting.text
-        // #458: fully paid → the total only
-        null -> null
-    }
-    BoardRow(
-        tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
-            (if (handOver) DS.Status.HandOver else DS.Status.Return),
-        name = work.customerName,
-        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(work, kind, isLate), texts),
-        pills = pills,
-        total = formatMoneyVnd(work.totalAmount),
-        struck = false,
-        pay = pay,
-        phone = OrdersBoardLogic.workCallPhone(work, isLate),
-        onClick = onClick,
-        onCall = onCall,
-    )
 }
 
 /**
@@ -657,13 +718,47 @@ private fun WorkRow(
  */
 @Composable
 internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.SEARCH, orderRowTexts(), onClick)
+    OrderRow(row, RowContext.SEARCH, orderRowTexts(), onClick = onClick)
 }
 
 /** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
 @Composable
 internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick)
+    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick = onClick)
+}
+
+/** #891 (owner): product detail → its orders: the order row plus "× qty" of this product; no pay line, no late chip */
+@Composable
+internal fun ProductOrderRow(order: OrderSummary, qty: Int, onClick: () -> Unit) {
+    OrderRow(OrdersRow.Order(order, 0), RowContext.PRODUCT, orderRowTexts(), qty = qty, onClick = onClick)
+}
+
+/** #891 (owner): customer detail → its orders: the order row with the item names as line 1 (iOS configure(customerOrder:)) */
+@Composable
+internal fun CustomerOrderListRow(row: com.anyrent.pos.domain.customers.CustomerOrderRow, onClick: () -> Unit) {
+    val isRent = row.orderType.equals("RENT", ignoreCase = true)
+    val texts = orderRowTexts()
+    val lines = OrderRowDates.lines(
+        OrderRowDates.Input(
+            code = OrdersBoardLogic.shortNumber(row.orderNumber), orderType = row.orderType, status = row.status,
+            createdAt = row.createdAt, pickupPlanAt = row.pickupPlanAt, returnPlanAt = row.returnPlanAt, updatedAt = row.createdAt,
+        ),
+        texts,
+    )
+    BoardRow(
+        tag = stringResource(OrderStatusTag.labelRes(row.status)) to OrderStatusTag.colors(row.status),
+        name = com.anyrent.pos.domain.customers.CustomerRules.itemsTitle(row)
+            ?: pluralStringResource(R.plurals.customers_v2_items, row.itemCount, row.itemCount),
+        lines = lines,
+        chips = if (isRent) chipLabels().let { (p, r) -> OrderRowDates.chips(row.pickupPlanAt, row.returnPlanAt, false, false, p, r) } else null,
+        pills = emptyList(),
+        total = formatMoneyVnd(row.totalAmount),
+        struck = row.status.equals("CANCELLED", ignoreCase = true),
+        pay = null,
+        phone = null,
+        onClick = onClick,
+        onCall = {},
+    )
 }
 
 /**
@@ -677,6 +772,7 @@ internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick:
         tag = stringResource(OrderStatusTag.labelRes(order.status)) to OrderStatusTag.colors(order.status),
         name = order.customerName,
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, 0), orderRowTexts()),
+        chips = chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, null, p, r) },
         pills = if (overdueDays > 0) {
             listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to DS.Status.Late)
         } else {
@@ -695,12 +791,21 @@ internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick:
 private val DueAmber = Color(0xFFB45309)
 
 @Composable
-private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrderRowDates.Texts, onClick: () -> Unit) {
+private fun OrderRow(
+    row: OrdersRow.Order,
+    context: RowContext,
+    texts: OrderRowDates.Texts,
+    rentSortedBy: SortDate? = null,
+    qty: Int? = null,
+    onClick: () -> Unit,
+) {
     val order = row.order
     val tagKind = OrdersBoardLogic.statusTag(order.status)
     // #482: same tag as the order detail header
-    val tagRes = OrderStatusTag.labelRes(order.status)
-    val colors = OrderStatusTag.colors(order.status)
+    // #891: the same badge as the order detail header
+    val badge = OrderStatusTag.badge(order.status)
+    val tagRes = badge.labelRes
+    val colors = badge.colors
     val isSale = !order.orderType.equals("RENT", ignoreCase = true)
     val tagText = stringResource(tagRes).let {
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
@@ -708,13 +813,18 @@ private fun OrderRow(row: OrdersRow.Order, context: RowContext, texts: OrderRowD
     BoardRow(
         tag = tagText to colors,
         name = order.customerName,
-        // #496: no product line; the same two date lines in every context
+        // #496: no product line; #891 (option C): a rent order shows the Lấy / Trả chips in place of the task line
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
-        pills = if (row.lateDays > 0) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
+        chips = if (isSale) null else chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, rentSortedBy, p, r) },
+        metaBold = OrdersBoardLogic.metaIsBold(rentSortedBy),
+        qty = qty,
+        // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
+        pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
-        pay = when (val pay = OrdersBoardLogic.listPayLine(order)) {
+        // #891 (owner): no pay line on Tất cả đơn rows
+        pay = when (val pay = OrdersBoardLogic.rowPayLine(order, rentList = rentSortedBy != null || context == RowContext.PRODUCT)) {
             is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(pay.amount)) to DS.Status.Return.text
             is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(pay.amount)) to DS.Status.Waiting.text
             null -> null
@@ -732,52 +842,79 @@ private fun BoardRow(
     tag: Pair<String, DS.Pill>,
     name: String?,
     lines: OrderRowDates.Lines,
+    /** #891 (option C): the Lấy / Trả chips in place of the task line (rent orders) */
+    chips: List<OrderRowDates.DateChip>? = null,
+    /** #891: sorted by created date, "tạo …" is bold dark text */
+    metaBold: Boolean = false,
+    /** #891: product detail → its orders: "× qty" of the product before the total */
+    qty: Int? = null,
     pills: List<Pair<String, DS.Pill>>,
-    total: String,
+    /** Null hides the money (staff with "hide financial data") */
+    total: String?,
     struck: Boolean,
     pay: Pair<String, Color>?,
     phone: String?,
     onClick: () -> Unit,
     onCall: (String) -> Unit,
 ) {
+    // #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
+    // line 3 dates / task + total right; line 4 notes + pay line right. 8dp between lines, 16dp top/bottom.
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowVertical),
+            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.Line)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Tag(tag.first, tag.second, RowTagStyle.STATUS)
-                    Spacer(Modifier.size(6.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         name?.takeIf { it.isNotBlank() } ?: "N/A",
                         fontSize = DS.TextSize.Name,
                         fontWeight = FontWeight.Bold,
                         color = DS.Colors.Text,
-                        // #424: a long name wraps to a second line (tag stays centred) instead of being cut
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
+                    Tag(tag.first, tag.second, RowTagStyle.STATUS)
                 }
-                OrderRowDateLines(lines)
-                if (pills.isNotEmpty()) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
-                        pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
+                Text(
+                    lines.meta, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    color = if (metaBold) DS.Colors.Text else OrderRowMetaColor,
+                    fontWeight = if (metaBold) FontWeight.Bold else FontWeight.Normal,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f)) {
+                        when {
+                            !chips.isNullOrEmpty() -> DateChipsRow(chips)
+                            lines.task != null -> Text(lines.task, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    if (qty != null) {
+                        Text(
+                            "× $qty", fontSize = DS.TextSize.Secondary, color = Color(0xFF334155), maxLines = 1,
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFF1F5F9)).padding(horizontal = 7.dp, vertical = 2.dp),
+                        )
+                    }
+                    if (total != null) {
+                        Text(
+                            total,
+                            fontSize = DS.TextSize.Name,
+                            fontWeight = RowMoneyText.totalWeight,
+                            color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
+                            textDecoration = if (struck) TextDecoration.LineThrough else null,
+                            maxLines = 1,
+                        )
                     }
                 }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    total,
-                    fontSize = DS.TextSize.Name,
-                    fontWeight = RowMoneyText.totalWeight,
-                    color = if (struck) DS.Colors.TextMuted else DS.Colors.Text,
-                    textDecoration = if (struck) TextDecoration.LineThrough else null,
-                    maxLines = 1,
-                )
-                if (pay != null) {
-                    Text(pay.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = pay.second, maxLines = 1)
+                val payShown = pay?.takeIf { total != null }
+                if (pills.isNotEmpty() || payShown != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                            pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
+                        }
+                        payShown?.let { Text(it.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = it.second, maxLines = 1) }
+                    }
                 }
             }
             if (phone != null) {
@@ -792,12 +929,7 @@ private fun BoardRow(
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Outlined.Phone, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Sm)) }
             }
-            Icon(
-                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = BoardColors.Chevron,
-                modifier = Modifier.size(DS.Icon.Sm),
-            )
+            // #891 (owner): no ">" chevron; the whole row stays tappable and the content takes the width
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
@@ -809,6 +941,39 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
     Text(lines.meta, fontSize = 13.sp, color = OrderRowMetaColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
     lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
+
+/** #891 (option C): light "Lấy dd/mm/yy" (blue) and "Trả dd/mm/yy" (purple) chips; the sorted date only bolder (iOS DateChipStack) */
+@Composable
+internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        chips.forEach { chip ->
+            val colors = OrdersBoardLogic.chipColors(chip.kind)
+            // #893 (owner on device): the sorted chip is bold (label and date), the other regular
+            val weight = if (chip.bold) DateChipText.sortedWeight else DateChipText.otherWeight
+            Text(
+                buildAnnotatedString {
+                    append(chip.label + " ")
+                    pushStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = weight))
+                    append(chip.date)
+                    pop()
+                },
+                fontSize = DS.TextSize.Secondary, fontWeight = weight, color = colors.text, maxLines = 1,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/** #893: weights of the date chips (iOS DateChipStack) */
+internal object DateChipText {
+    val sortedWeight = FontWeight.Bold
+    val otherWeight = FontWeight.Normal
+}
+
+/** Chip labels in the app language */
+@Composable
+internal fun chipLabels(): Pair<String, String> = stringResource(R.string.orders_chip_pickup) to stringResource(R.string.orders_chip_return)
+
 
 /** #496 line 1 of an order row */
 internal val OrderRowMetaColor = Color(0xFF64748B)
@@ -906,54 +1071,22 @@ private fun FilterSheet(
                     Text(stringResource(R.string.reset), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
                 }
             }
+            // #888: one date for the order and the range (Ngày lấy / Ngày trả / Ngày tạo)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SheetLabel(stringResource(R.string.orders_v2_filter_sort))
-                Spacer(Modifier.height(0.dp))
-                OrdersSort.entries.chunked(2).forEach { line ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        line.forEach { sort ->
-                            SortOption(stringResource(sortLabel(sort)), filter.sort == sort, Modifier.weight(1f)) {
-                                filter = filter.copy(sort = sort)
-                            }
-                        }
-                        if (line.size < 2) Spacer(Modifier.weight(1f))
-                    }
+                SheetLabel(stringResource(R.string.orders_v2_filter_sort_by).uppercase())
+                SegmentTrack(SortDate.entries.map { stringResource(sortDateLabel(it)) }, SortDate.entries.indexOf(filter.sortDate)) {
+                    filter = filter.copy(sortDate = SortDate.entries[it])
                 }
-                Text(stringResource(R.string.orders_v2_sort_nearest_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SheetLabel(stringResource(R.string.orders_v2_filter_range))
-                Spacer(Modifier.height(0.dp))
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(BoardColors.Track).padding(4.dp)) {
-                    DateBasis.entries.forEach { basis ->
-                        val selected = filter.basis == basis
-                        val shape = RoundedCornerShape(9.dp)
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .height(36.dp)
-                                .then(if (selected) Modifier.shadow(1.dp, shape) else Modifier)
-                                .clip(shape)
-                                .background(if (selected) DS.Colors.Surface else Color.Transparent)
-                                .clickable { filter = filter.copy(basis = basis) }
-                                .semantics { this.selected = selected; role = Role.RadioButton },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                stringResource(
-                                    when (basis) {
-                                        DateBasis.CREATED -> R.string.orders_v2_basis_created
-                                        DateBasis.PICKUP_PLAN -> R.string.orders_v2_basis_pickup
-                                        DateBasis.RETURN_PLAN -> R.string.orders_v2_basis_return
-                                    },
-                                ),
-                                fontSize = DS.TextSize.Secondary,
-                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
-                            )
-                        }
-                    }
+                SheetLabel(stringResource(R.string.orders_v2_filter_order).uppercase())
+                SegmentTrack(SortDirection.entries.map { stringResource(directionLabel(filter.sortDate, it)) }, SortDirection.entries.indexOf(filter.direction)) {
+                    filter = filter.copy(direction = SortDirection.entries[it])
                 }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val dateName = stringResource(sortDateLabel(filter.sortDate)).lowercase()
+                SheetLabel(stringResource(R.string.orders_v2_filter_range_of, dateName).uppercase())
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
                         DateRangeChoice.Any to R.string.orders_v2_range_any,
@@ -974,6 +1107,17 @@ private fun FilterSheet(
                         onClick = { pickDates = true },
                     )
                 }
+                // Board: "Sắp xếp và khoảng ngày cùng tính theo **ngày lấy**."
+                val hint = stringResource(R.string.orders_v2_filter_same_date, dateName)
+                val at = hint.lastIndexOf(dateName)
+                Text(
+                    buildAnnotatedString {
+                        append(hint)
+                        if (at >= 0) addStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text), at, at + dateName.length)
+                    },
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                )
             }
             Surface(
                 onClick = { onApply(filter) },
@@ -1010,30 +1154,38 @@ private fun FilterSheet(
     }
 }
 
+/** #888 a segmented track (board Loc): grey track, the selected segment white with a light shadow */
+@Composable
+private fun SegmentTrack(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(BoardColors.Track).padding(4.dp)) {
+        labels.forEachIndexed { index, label ->
+            val selected = index == selectedIndex
+            val shape = RoundedCornerShape(9.dp)
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .then(if (selected) Modifier.shadow(1.dp, shape) else Modifier)
+                    .clip(shape)
+                    .background(if (selected) DS.Colors.Surface else Color.Transparent)
+                    .clickable { onSelect(index) }
+                    .semantics { this.selected = selected; role = Role.RadioButton },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    fontSize = DS.TextSize.Body,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selected) DS.Colors.Text else DS.Colors.TextMuted,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SheetLabel(text: String) {
     Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = DS.Colors.TextMuted)
 }
 
-@Composable
-private fun SortOption(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(12.dp)
-    Box(
-        modifier
-            .height(44.dp)
-            .clip(shape)
-            .background(if (selected) BoardColors.SelectedFill else DS.Colors.Surface)
-            .border(if (selected) 2.dp else 1.dp, if (selected) DS.Colors.Primary else BoardColors.Outline, shape)
-            .clickable(onClick = onClick)
-            .semantics { this.selected = selected; role = Role.RadioButton },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            fontSize = DS.TextSize.Body,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) BoardColors.SelectedText else DS.Colors.Text,
-            maxLines = 1,
-        )
-    }
-}

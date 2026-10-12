@@ -163,7 +163,7 @@ val LiveOrdersPageLoader = OrdersPageLoader { query ->
             startDate = query.startDate,
             endDate = query.endDate,
             sortBy = query.sortBy,
-            sortOrder = "desc",
+            sortOrder = query.sortOrder,
             dateField = query.dateField,
         )
     }

@@ -350,7 +350,8 @@ final class OrdersViewController: BaseViewControler {
             chip.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             chip.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
         }
-        sortButton.setTitle(OrdersFilterSheet.sortTitle(viewModel.filter.sort), for: .normal)
+        // #888: always says how the list is sorted: "Xếp theo ngày lấy · gần nhất trước ▾"
+        sortButton.setTitle(OrdersHomeLogic.sortBarText(viewModel.filter), for: .normal)
         countLabel.text = viewModel.total.map { PluralText.format("orders.v2.count", count: $0, $0) }
         if let total = viewModel.total {
             searchSummaryLabel.text = PluralText.format("orders.v2.search.summary", count: total, total, viewModel.searchText)
@@ -511,7 +512,8 @@ final class OrdersViewController: BaseViewControler {
         case .late: return .work(isLate: true)
         case .today, .tomorrow: return .work(isLate: false)
         case .day: return .sale
-        case .plain: return .list
+        // #888: "Tất cả đơn" rows show Lấy · Trả with the sorted date marked
+        case .plain: return viewModel.segment == .rent ? .rentList(sortedBy: viewModel.filter.sortDate) : .list
         }
     }
 

@@ -236,7 +236,7 @@ final class OrderDetailViewController: BaseViewControler {
         stack.spacing = DS.Spacing.md
 
         let late = lateDays(for: detail)
-        if late > 0 {
+        if OrderDetailLogic.showsLateBanner && late > 0 {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
         stack.addArrangedSubview(statusBox(detail))
@@ -251,9 +251,9 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     private func statusBox(_ detail: OrderDetail) -> UIView {
-        let tag = RowTagLabel(style: .status)
-        let status = OrdersHomeLogic.statusTag(detail.status)
-        tag.apply(status.text, status.colors)
+        // #891: the same badge as the order list rows (one style, solid old-app colours)
+        let tag = RowTagLabel.statusBadge(OrdersHomeLogic.statusTag(detail.status))
+        tag.setContentHuggingPriority(.required, for: .vertical)
         let summary = UILabel()
         summary.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.secondary) ?? Utils.boldFont(size: DS.TextSize.secondary)
         summary.textColor = DS.Color.text
@@ -263,7 +263,7 @@ final class OrderDetailViewController: BaseViewControler {
         summary.minimumScaleFactor = 0.8
         summary.accessibilityIdentifier = "order.detail.summary"
         if detail.orderType == .sale {
-            summary.text = DayFormatter.short(detail.createdAt)
+            summary.text = DayFormatter.dmyTime(detail.createdAt) // #888 created with its time
         } else {
             let days = detail.rentalDuration
                 ?? OrderDetailLogic.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt)
@@ -285,6 +285,13 @@ final class OrderDetailViewController: BaseViewControler {
         box.layer.cornerRadius = DS.Radius.card
         if OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
             box.addArrangedSubview(progressView(detail))
+        }
+        // #891 (owner): who created the order, next to the created step; no line without a name
+        if let creator = OrderDetailLogic.creatorName(detail) {
+            let label = V2.label(String(format: "order.detail.createdBy".localized(), creator), size: DS.TextSize.secondary,
+                                 color: DS.Color.textMuted, lines: 1)
+            label.accessibilityIdentifier = "order.detail.createdBy"
+            box.addArrangedSubview(label)
         }
         return box
     }
@@ -322,7 +329,7 @@ final class OrderDetailViewController: BaseViewControler {
         return row
     }
 
-    /// Three steps, each a bar and a two-line label: "Đặt / T2 14/09", "Đã giao / T4 01/10", "Trả / T3 07/10" (no time)
+    /// Three steps, each a bar and a two-line label: "Đặt / 14/09/26", "Đã lấy / 01/10/26", "Trả / 07/10/26" (no time, #888)
     private func progressView(_ detail: OrderDetail) -> UIView {
         let steps = OrderDetailLogic.headerSteps(status: detail.status, createdAt: detail.createdAt,
                                                  pickupPlanAt: detail.pickupPlanAt, pickedUpAt: detail.pickedUpAt,
@@ -345,7 +352,8 @@ final class OrderDetailViewController: BaseViewControler {
             day.font = Utils.boldFont(size: DS.TextSize.body)
             // The accent marks a hand-over or return that happened; the booked day stays plain
             day.textColor = step.done && step.kind != .booked ? DS.Color.primary : DS.Color.text
-            day.text = step.date.map { DayFormatter.short($0) } ?? "—"
+            // #888: the booked (created) step carries its time; pickup and return stay date-only
+            day.text = step.date.map { step.kind == .booked ? DayFormatter.dmyTime($0) : DayFormatter.dmy($0) } ?? "—"
             day.adjustsFontSizeToFitWidth = true
             day.minimumScaleFactor = 0.8
             let column = UIStackView(arrangedSubviews: [bar, label, day])
@@ -376,7 +384,7 @@ final class OrderDetailViewController: BaseViewControler {
                 stack.addArrangedSubview(readyToDeliverRow(detail))
             }
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
-                stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.short(picked)))
+                stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.dmy(picked)))
             }
             if let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
                 stack.addArrangedSubview(keyValue("Collateral".localized(), papers))
@@ -489,9 +497,6 @@ final class OrderDetailViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [name, calc])
         texts.axis = .vertical
         texts.spacing = 4
-        if let note = CartV2Logic.noteText(item.notes) {
-            texts.addArrangedSubview(noteBox(note))
-        }
 
         let qty = UILabel()
         qty.font = Utils.regularFont(size: DS.TextSize.secondary)
@@ -508,6 +513,11 @@ final class OrderDetailViewController: BaseViewControler {
         bottom.alignment = .firstBaseline
         texts.addArrangedSubview(bottom)
         texts.setCustomSpacing(6, after: texts.arrangedSubviews[texts.arrangedSubviews.count - 2])
+        // #891 (owner): the item note is the last line of the item
+        if let note = CartV2Logic.noteText(item.notes) {
+            texts.setCustomSpacing(8, after: bottom)
+            texts.addArrangedSubview(noteBox(note))
+        }
 
         let row = UIStackView(arrangedSubviews: [image, texts])
         row.axis = .horizontal

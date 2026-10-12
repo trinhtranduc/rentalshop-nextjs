@@ -163,9 +163,7 @@ final class OverviewDateRangeSheetViewController: UIViewController {
 
     private func formatted(_ date: Date?) -> String? {
         guard let date else { return nil }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
-        return formatter.string(from: date)
+        return DayFormatter.dmy(date) // #888 dd/mm/yy
     }
 
     @objc private func presetTapped(_ sender: UIButton) {

@@ -62,22 +62,82 @@ class ProductRulesTest {
     @Test
     fun `row price shows the default option first and the other second`() {
         assertEquals(
-            ProductRowPrice(300_000.0, PricingMode.PER_RENTAL, 120_000.0, PricingMode.PER_DAY),
+            ProductRowPrice(300_000.0, PricingMode.PER_RENTAL, 120_000.0, PricingMode.PER_DAY, sale = 1_800_000.0),
             ProductRowLogic.price(product()),
         )
         val dayDefault = product(options = listOf(fixed.copy(isDefault = false), daily.copy(isDefault = true)))
         assertEquals(
-            ProductRowPrice(120_000.0, PricingMode.PER_DAY, 300_000.0, PricingMode.PER_RENTAL),
+            ProductRowPrice(120_000.0, PricingMode.PER_DAY, 300_000.0, PricingMode.PER_RENTAL, sale = 1_800_000.0),
             ProductRowLogic.price(dayDefault),
         )
     }
 
     @Test
     fun `row price with one option has no second and sale only has no mode`() {
-        assertEquals(ProductRowPrice(300_000.0, PricingMode.PER_RENTAL), ProductRowLogic.price(product(options = emptyList())))
-        assertEquals(ProductRowPrice(120_000.0, PricingMode.PER_DAY), ProductRowLogic.price(product(options = listOf(daily.copy(isDefault = true)))))
+        assertEquals(ProductRowPrice(300_000.0, PricingMode.PER_RENTAL, sale = 1_800_000.0), ProductRowLogic.price(product(options = emptyList())))
+        assertEquals(ProductRowPrice(120_000.0, PricingMode.PER_DAY, sale = 1_800_000.0), ProductRowLogic.price(product(options = listOf(daily.copy(isDefault = true)))))
         assertEquals(ProductRowPrice(900_000.0, null), ProductRowLogic.price(product(rentPrice = 0.0, salePrice = 900_000.0, options = emptyList())))
         assertNull(ProductRowLogic.price(product(rentPrice = 0.0, salePrice = null, options = emptyList())))
+    }
+
+    /** #887: a product that is rented and sold keeps "· bán <price>" after its rent prices (board SP-dong, iOS) */
+    @Test
+    fun `row price keeps the sale price next to rent prices`() {
+        assertEquals(1_800_000.0, ProductRowLogic.price(product())?.sale)
+        assertEquals(1_800_000.0, ProductRowLogic.price(product(options = listOf(daily.copy(isDefault = true))))?.sale)
+        assertNull(ProductRowLogic.price(product(salePrice = null))?.sale)
+        assertNull(ProductRowLogic.price(product(salePrice = 0.0))?.sale)
+        // A sale-only product keeps today's "bán <price>" as the main text, not twice
+        assertEquals(ProductRowPrice(900_000.0, null), ProductRowLogic.price(product(rentPrice = 0.0, salePrice = 900_000.0, options = emptyList())))
+    }
+
+    /** #887: the edit form fills the sale field from the product, so a save that leaves it alone sends the same price */
+    @Test
+    fun `edit form sale field round trips the product sale price`() {
+        assertEquals(1_800_000.0, MoneyInput.parse(MoneyInput.display(ProductPricing.sale(product())))!!, 0.0)
+    }
+
+    /** #887: "Giá vốn" on detail only when > 0 and the role may see prices (never OUTLET_STAFF), as iOS */
+    @Test
+    fun `cost price shown only when set and prices are visible`() {
+        val withCost = product().copy(costPrice = 700_000.0)
+        assertEquals(700_000.0, ProductCostPrice.shown(withCost, showsPrices = true))
+        assertNull(ProductCostPrice.shown(withCost, showsPrices = false))
+        assertNull(ProductCostPrice.shown(product().copy(costPrice = 0.0), showsPrices = true))
+        assertNull(ProductCostPrice.shown(product(), showsPrices = true))
+    }
+
+    private fun costLine(cost: Double?, qty: Int = 1, isSale: Boolean = false) =
+        CartLine(product().copy(costPrice = cost), qty, isSale = isSale)
+
+    /** #888: "Giá vốn" per cart line = cost × quantity, only when > 0 and the role may see prices (iOS `CartCostLogic`) */
+    @Test
+    fun `cart line cost`() {
+        assertEquals(360_000.0, CartCostLogic.lineCost(costLine(180_000.0, qty = 2), showsPrices = true))
+        assertNull("staff never", CartCostLogic.lineCost(costLine(180_000.0, qty = 2), showsPrices = false))
+        assertNull(CartCostLogic.lineCost(costLine(0.0), showsPrices = true))
+        assertNull(CartCostLogic.lineCost(costLine(null), showsPrices = true))
+    }
+
+    /** #888: "Tổng giá vốn" in both carts; the sale cart adds "Lãi dự kiến" = total − total cost */
+    @Test
+    fun `cart cost summary`() {
+        val lines = listOf(costLine(800_000.0), costLine(180_000.0, qty = 2), costLine(null))
+        assertEquals(CartCostSummary(1_160_000.0, 1_280_000.0), CartCostLogic.summary(lines, 2_440_000.0, isSale = true, showsPrices = true))
+        assertEquals(CartCostSummary(1_160_000.0, null), CartCostLogic.summary(lines, 750_000.0, isSale = false, showsPrices = true))
+        assertEquals(-400_000.0, CartCostLogic.summary(listOf(costLine(900_000.0)), 500_000.0, isSale = true, showsPrices = true)?.profit)
+        assertNull(CartCostLogic.summary(lines, 2_440_000.0, isSale = true, showsPrices = false))
+        assertNull(CartCostLogic.summary(listOf(costLine(null), costLine(0.0)), 600_000.0, isSale = true, showsPrices = true))
+    }
+
+    /** #887: an empty cost field sends 0 only when the product had a cost, so an unknown cost is never wiped */
+    @Test
+    fun `cost price sent on save never wipes an unknown cost`() {
+        assertEquals(650_000.0, ProductCostPrice.toSend(typed = 650_000.0, original = 700_000.0))
+        assertEquals(700_000.0, ProductCostPrice.toSend(typed = 700_000.0, original = null))
+        assertEquals(0.0, ProductCostPrice.toSend(typed = null, original = 700_000.0))
+        assertNull(ProductCostPrice.toSend(typed = null, original = null))
+        assertNull(ProductCostPrice.toSend(typed = null, original = 0.0))
     }
 
     // Prices and stock

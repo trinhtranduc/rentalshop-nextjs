@@ -663,7 +663,10 @@ fun CustomerDetailV2Screen(
                 }
                 error != null && list.isEmpty() -> item { Message(error!!) }
                 list.isEmpty() -> item { Message(stringResource(R.string.customers_v2_no_orders)) }
-                else -> items(list, key = { it.id }) { order -> OrderRowItem(order, onClick = { onOpenOrder(order.id) }) }
+                // #891 (owner): the order list row with the item names as line 1
+                else -> items(list, key = { it.id }) { order ->
+                    com.anyrent.pos.ui.orders.v2.CustomerOrderListRow(order, onClick = { onOpenOrder(order.id) })
+                }
             }
         }
         Column(Modifier.fillMaxWidth().background(DS.Colors.Surface)) {
@@ -708,10 +711,8 @@ private fun OrderRowItem(order: CustomerOrderRow, onClick: () -> Unit) {
 @Composable
 private fun StatusPill(status: String) {
     val colors = when (status.uppercase()) {
-        "RESERVED" -> DS.Status.HandOver
-        "PICKUPED", "PICKED_UP" -> DS.Status.Return
-        "RETURNED", "COMPLETED" -> DS.Status.Done
-        else -> DS.Status.Cancelled
+        // #888: the chosen status palette (Đậm = old app colours, default)
+        else -> com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors(status)
     }
     val label = OrderStatusStyle.labelRes(status)?.let { stringResource(it) } ?: status
     Text(

@@ -274,7 +274,8 @@ fun ProductsHomeScreen(
                                 onImage = { viewer = ProductImages.thumbnailTap(product) ?: run { onOpenProduct(product.id); null } },
                                 onAdd = {
                                     CartStore.addProduct(product)
-                                    Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
+                                    // #893 (owner): no "added to cart" toast; the + count already says it
+                                    if (HomeCartBarStyle.showsAddedToast) Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
                                 },
                             )
                         }
@@ -422,6 +423,8 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
                         if (second != null && secondMode != null) {
                             withStyle(muted) { append(" · " + formatMoneyVnd(second) + unit(secondMode)) }
                         }
+                        // #887: a product that also sells keeps its sale price last (board SP-dong, iOS)
+                        price.sale?.let { sale -> withStyle(muted) { append(" · " + saleShort.format(formatMoneyVnd(sale))) } }
                     } else if (price != null) {
                         withStyle(muted) { append(saleShort.format(formatMoneyVnd(price.main))) }
                     }
@@ -462,6 +465,13 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
     }
 }
 
+/** #893 (owner): the Home cart bar look (board SP-dong) and the add feedback (iOS HomeCartBarStyle) */
+internal object HomeCartBarStyle {
+    val fill = Color(0xFF1D4ED8)
+    val text = Color.White
+    const val showsAddedToast = false
+}
+
 @Composable
 private fun CartBar(
     count: Int,
@@ -482,10 +492,10 @@ private fun CartBar(
             .padding(12.dp)
             .fillMaxWidth()
             .height(56.dp)
-            // #681: slate, so the bar stands apart from the blue + buttons above it
-            .shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = DS.Colors.Text, spotColor = DS.Colors.Text)
+            // #893 (owner, board SP-dong): primary blue, white text, a blue shadow; one bar for rent and sale
+            .shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = HomeCartBarStyle.fill, spotColor = HomeCartBarStyle.fill)
             .clip(RoundedCornerShape(16.dp))
-            .background(DS.Colors.Text)
+            .background(HomeCartBarStyle.fill)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp)
             .semantics(mergeDescendants = true) { role = Role.Button },

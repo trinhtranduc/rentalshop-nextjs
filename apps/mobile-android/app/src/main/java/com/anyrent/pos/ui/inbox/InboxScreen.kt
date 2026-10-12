@@ -259,7 +259,7 @@ private fun notificationAccent(type: String): Color = when {
     else -> Color(0xFF2454F4)
 }
 
-private val notificationTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+private val notificationTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm") // #888
 
 private fun formatNotificationTime(value: String): String = runCatching {
     OffsetDateTime.parse(value).format(notificationTimeFormatter)

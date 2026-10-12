@@ -36,13 +36,168 @@ final class ProductsV2Tests: XCTestCase {
 
     func testRowPriceWithOneOptionHasNoSecondAndSaleOnlyHasNoMode() throws {
         let rentalOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":900000}"#)
-        XCTAssertEqual(ProductRowLogic.price(rentalOnly), ProductRowPrice(main: 300_000, mainMode: .perRental, second: nil, secondMode: nil))
+        XCTAssertEqual(ProductRowLogic.price(rentalOnly), ProductRowPrice(main: 300_000, mainMode: .perRental, second: nil, secondMode: nil, sale: 900_000))
         let dayOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"pricingOptions":[{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
         XCTAssertEqual(ProductRowLogic.price(dayOnly), ProductRowPrice(main: 120_000, mainMode: .perDay, second: nil, secondMode: nil))
         let saleOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":0,"salePrice":900000}"#)
         XCTAssertEqual(ProductRowLogic.price(saleOnly), ProductRowPrice(main: 900_000, mainMode: nil, second: nil, secondMode: nil))
         let none = try product(#"{"id":1,"name":"Áo dài","rentPrice":0}"#)
         XCTAssertNil(ProductRowLogic.price(none))
+    }
+
+    /// #887: a product that is rented and sold keeps "· bán <price>" after its rent prices (board SP-dong)
+    func testRowPriceKeepsTheSalePriceNextToRentPrices() throws {
+        let both = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":1800000,"pricingOptions":[{"id":1,"type":"FIXED","price":300000,"isDefault":true},{"id":2,"type":"DAILY","price":120000,"isDefault":false}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(both),
+                       ProductRowPrice(main: 300_000, mainMode: .perRental, second: 120_000, secondMode: .perDay, sale: 1_800_000))
+        let dayOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":120000,"salePrice":1800000,"pricingOptions":[{"id":2,"type":"DAILY","price":120000,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductRowLogic.price(dayOnly)?.sale, 1_800_000)
+        // Legacy `sale_price` (older payloads) counts too
+        let legacy = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"sale_price":1800000}"#)
+        XCTAssertEqual(ProductRowLogic.price(legacy)?.sale, 1_800_000)
+        // No sale price, or zero: nothing after the rent prices
+        let noSale = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":null}"#)
+        XCTAssertNil(ProductRowLogic.price(noSale)?.sale)
+        let zeroSale = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":0}"#)
+        XCTAssertNil(ProductRowLogic.price(zeroSale)?.sale)
+        // A sale-only product keeps today's "bán <price>" as the main text, not twice
+        let saleOnly = try product(#"{"id":1,"name":"Áo dài","rentPrice":0,"salePrice":900000}"#)
+        XCTAssertNil(ProductRowLogic.price(saleOnly)?.sale)
+    }
+
+    /// #887: the edit form fills the sale field from `salePrice` or legacy `sale_price`, so a save that leaves
+    /// the field alone sends the same price back (the update sends `salePrice: input ?? 0`)
+    func testEditFormSaleFieldIsFilledFromSalePriceOrLegacySale() throws {
+        let modern = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":1800000}"#)
+        XCTAssertEqual(MoneyInput.parse(MoneyInput.display(ProductPricing.sale(modern))), 1_800_000)
+        let legacy = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"sale_price":1800000}"#)
+        XCTAssertEqual(MoneyInput.parse(MoneyInput.display(ProductPricing.sale(legacy))), 1_800_000)
+        let nullModern = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"salePrice":null,"sale_price":1800000}"#)
+        XCTAssertEqual(MoneyInput.parse(MoneyInput.display(ProductPricing.sale(nullModern))), 1_800_000)
+    }
+
+    /// #887: "Giá vốn" on detail only when > 0 and the role may see prices (never OUTLET_STAFF)
+    func testCostPriceShownOnlyWhenSetAndPricesAreVisible() throws {
+        let withCost = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":700000}"#)
+        XCTAssertEqual(ProductCostPrice.shown(withCost, showsPrices: true), 700_000)
+        XCTAssertNil(ProductCostPrice.shown(withCost, showsPrices: false))
+        let zero = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":0}"#)
+        XCTAssertNil(ProductCostPrice.shown(zero, showsPrices: true))
+        let none = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":null}"#)
+        XCTAssertNil(ProductCostPrice.shown(none, showsPrices: true))
+    }
+
+    // MARK: - Home cart bar and add feedback (#893)
+
+    /// #893 (owner): the Home cart bar is the board's primary blue with white text; "+" shows no success toast
+    func testHomeCartBarIsBlueAndAddShowsNoToast() {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        HomeCartBarStyle.fill.getRed(&r, green: &g, blue: &b, alpha: &a)
+        XCTAssertEqual(String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255))), "1D4ED8")
+        XCTAssertEqual(HomeCartBarStyle.text, UIColor.white)
+        XCTAssertFalse(HomeCartBarStyle.showsAddedToast)
+    }
+
+    // MARK: - Cart swipe to delete (#893)
+
+    /// #893 (owner): swiping a cart line right-to-left reveals a red "Xoá"; a full swipe deletes at once
+    func testSwipeDeleteOutcome() {
+        let width: CGFloat = 375
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -10, width: width, velocity: 0), .close)
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -60, width: width, velocity: 0), .open)
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -240, width: width, velocity: 0), .delete, "past 60% of the width")
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: -100, width: width, velocity: -1600), .delete, "a fast fling deletes")
+        XCTAssertEqual(SwipeDeleteLogic.outcome(offset: 20, width: width, velocity: 0), .close, "left to right never deletes")
+        XCTAssertEqual(SwipeDeleteLogic.clamped(-500, width: width), -width)
+        XCTAssertEqual(SwipeDeleteLogic.clamped(30, width: width), 0)
+        let vi = Bundle(for: OrderRowCell.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "cart.swipe.delete", value: nil, table: nil), "Xoá")
+    }
+
+    /// #893: removing a line updates the item count and the totals
+    func testCartRemoveLineUpdatesTotals() {
+        let cart = Cart()
+        cart.addItem(CartItem(productId: 1, productName: "Áo dài", barcode: nil, quantity: 1, price: 300_000, deposit: 0,
+                              originalRentPrice: 300_000, originalSalePrice: 0))
+        cart.addItem(CartItem(productId: 2, productName: "Vest", barcode: nil, quantity: 2, price: 100_000, deposit: 0,
+                              originalRentPrice: 100_000, originalSalePrice: 0))
+        let before = cart.subtotalAmount
+        cart.removeItem(at: 0)
+        XCTAssertEqual(cart.items.map(\.productId), [2])
+        XCTAssertEqual(cart.itemCount, 2)
+        XCTAssertLessThan(cart.subtotalAmount, before)
+    }
+
+    // MARK: - Product orders × qty (#891)
+
+    func testProductQuantityInAnOrder() throws {
+        let json = #"{"id":1,"orderNumber":"9","orderType":"RENT","status":"RESERVED","createdAt":"2026-10-01T03:00:00.000Z","updatedAt":"2026-10-01T03:00:00.000Z","customerName":"Huy","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":1,"orderItems":[{"id":1,"quantity":2,"unitPrice":1,"totalPrice":2,"productId":7,"productName":"Vest"},{"id":2,"quantity":1,"unitPrice":1,"totalPrice":1,"productId":8,"productName":"Cà vạt"},{"id":3,"quantity":1,"unitPrice":1,"totalPrice":1,"productId":7,"productName":"Vest"}]}"#
+        let order = try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 7, in: order), 3)
+        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 8, in: order), 1)
+        XCTAssertEqual(ProductDetailV2Logic.quantity(of: 99, in: order), 1, "list without the item: 1")
+    }
+
+    // MARK: - Cart cost (#888)
+
+    private func costLine(_ cost: Double?, qty: Int = 1, price: Double = 300_000) -> CartItem {
+        var line = item(price: price, qty: qty)
+        line.costPrice = cost
+        return line
+    }
+
+    /// #888: a cart line carries the product's cost; a cart saved before #888 (no key) still decodes
+    func testCartLineTakesTheProductCost() throws {
+        let withCost = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000,"costPrice":800000}"#)
+        XCTAssertEqual(CartItem(from: withCost, quantity: 1, price: 300_000).costPrice, 800_000)
+        let staffView = try product(#"{"id":1,"name":"Áo dài","rentPrice":300000}"#)
+        XCTAssertNil(CartItem(from: staffView, quantity: 1, price: 300_000).costPrice)
+        let saved = try JSONEncoder().encode(item(price: 300_000))
+        var json = try JSONSerialization.jsonObject(with: saved) as! [String: Any]
+        json.removeValue(forKey: "costPrice")
+        let old = try JSONDecoder().decode(CartItem.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(old.costPrice)
+    }
+
+    /// #888: "Giá vốn" per line = cost × quantity, only when > 0 and the role may see prices
+    func testCartLineCost() {
+        XCTAssertEqual(CartCostLogic.lineCost(costLine(180_000, qty: 2), showsPrices: true), 360_000)
+        XCTAssertNil(CartCostLogic.lineCost(costLine(180_000, qty: 2), showsPrices: false), "staff never")
+        XCTAssertNil(CartCostLogic.lineCost(costLine(0), showsPrices: true))
+        XCTAssertNil(CartCostLogic.lineCost(costLine(nil), showsPrices: true))
+    }
+
+    /// #888: "Tổng giá vốn" in both carts; the sale cart adds "Lãi dự kiến" = total − total cost
+    func testCartCostSummary() {
+        let lines = [costLine(800_000), costLine(180_000, qty: 2), costLine(nil)]
+        XCTAssertEqual(CartCostLogic.summary(lines, total: 2_440_000, orderType: .sale, showsPrices: true),
+                       CartCostSummary(totalCost: 1_160_000, profit: 1_280_000))
+        XCTAssertEqual(CartCostLogic.summary(lines, total: 750_000, orderType: .rent, showsPrices: true),
+                       CartCostSummary(totalCost: 1_160_000, profit: nil))
+        XCTAssertEqual(CartCostLogic.summary([costLine(900_000)], total: 500_000, orderType: .sale, showsPrices: true)?.profit,
+                       -400_000, "a loss shows as negative")
+        XCTAssertNil(CartCostLogic.summary(lines, total: 2_440_000, orderType: .sale, showsPrices: false))
+        XCTAssertNil(CartCostLogic.summary([costLine(nil), costLine(0)], total: 600_000, orderType: .sale, showsPrices: true),
+                     "no line with a cost: no cost rows")
+    }
+
+    /// #887: the form sends the typed cost; an empty field sends 0 only when the product had a cost (the user cleared
+    /// it), so a product read without `costPrice` (list payload) never loses its cost on save
+    func testCostPriceSentOnSaveNeverWipesAnUnknownCost() {
+        XCTAssertEqual(ProductCostPrice.toSend(typed: 650_000, original: 700_000), 650_000)
+        XCTAssertEqual(ProductCostPrice.toSend(typed: 700_000, original: nil), 700_000)
+        XCTAssertEqual(ProductCostPrice.toSend(typed: nil, original: 700_000), 0)
+        XCTAssertNil(ProductCostPrice.toSend(typed: nil, original: nil))
+        XCTAssertNil(ProductCostPrice.toSend(typed: nil, original: 0))
+    }
+
+    /// #887: an update without a cost leaves `costPrice` out of the form data, so the API keeps the stored value
+    func testUpdateWithoutCostDoesNotSendCostPrice() {
+        let request = UpdateProductRequest(name: "Áo dài", description: nil, barcode: nil, rentPrice: 300_000, salePrice: 1_800_000,
+                                           costPrice: nil, deposit: 0, totalStock: nil, categoryId: nil, merchantId: nil,
+                                           outletStock: nil, images: nil, isActive: nil)
+        XCTAssertNil(request.toFormData()["costPrice"])
+        XCTAssertEqual(request.toFormData()["salePrice"] as? Double, 1_800_000)
     }
 
     // MARK: - Full-screen photos (#472)
@@ -485,7 +640,7 @@ final class ProductFormKeyboardTests: XCTestCase {
 
     func testEveryPriceFieldHasADoneBar() throws {
         let numeric = fields(try merchantForm().view).filter { $0.keyboardType == .numberPad }
-        XCTAssertEqual(numeric.count, 4, "per rental, per day, sale, deposit")
+        XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
         numeric.forEach { assertDoneBar($0) }
     }
 
@@ -791,7 +946,7 @@ extension ProductsV2Tests {
                              originalRentPrice: 300_000, originalSalePrice: 0)
         cart.addItem(vest)
         cart.addItem(aoDai)
-        // T7 03/10 → T2 05/10 in Vietnam
+        // 03/10/26 → 05/10/26 in Vietnam
         cart.pickupPlanAt = ISO8601DateFormatter().date(from: "2026-10-02T17:00:00Z")
         cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-05T16:59:59Z")
         return cart
@@ -802,7 +957,7 @@ extension ProductsV2Tests {
         let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
         XCTAssertFalse(confirm.isSale)
         XCTAssertEqual(confirm.customer, "Trần Văn Minh")
-        XCTAssertEqual(confirm.range, "03/10 → 05/10")
+        XCTAssertEqual(confirm.range, "03/10/26 → 05/10/26")
         XCTAssertEqual(confirm.days, 3)
         XCTAssertEqual(confirm.items, "Vest đen slim fit, Áo dài lụa đỏ ×2")
         XCTAssertEqual(confirm.total, cart.totalAmount)
@@ -828,7 +983,7 @@ extension ProductsV2Tests {
         let confirm = CreateOrderSheetLogic.confirm(try rentCart(), timeZone: vn)
         let created = CreateOrderSheetLogic.created(orderNumber: "ORD-17-0063", confirm: confirm)
         XCTAssertEqual(created.shortNumber, "0063")
-        XCTAssertEqual(created.subtitle, "Trần Văn Minh · 03/10 → 05/10")
+        XCTAssertEqual(created.subtitle, "Trần Văn Minh · 03/10/26 → 05/10/26")
         XCTAssertEqual(created.paid, confirm.collect)
         XCTAssertEqual(created.paidKey, "products.cart.created.paidDeposit")
 
@@ -954,7 +1109,7 @@ extension ProductsV2Tests {
         let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
         XCTAssertEqual(confirm.number, "482913")
         XCTAssertFalse(confirm.isSale)
-        XCTAssertEqual(confirm.range, "03/10 → 05/10", "same date format as the create sheet")
+        XCTAssertEqual(confirm.range, "03/10/26 → 05/10/26", "same date format as the create sheet")
         XCTAssertEqual(confirm.days, 3)
         XCTAssertEqual(confirm.itemCount, 3)
         XCTAssertEqual(confirm.total, cart.totalAmount)
@@ -968,7 +1123,7 @@ extension ProductsV2Tests {
 
     func testNewDatesTagTheDatesRowOnly() throws {
         let cart = try editCart()
-        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-06T16:59:59Z") // T3 06/10
+        cart.returnPlanAt = ISO8601DateFormatter().date(from: "2026-10-06T16:59:59Z") // 06/10/26
         let confirm = EditOrderSheetLogic.confirm(cart, timeZone: vn)
         XCTAssertTrue(confirm.datesChanged)
         XCTAssertFalse(confirm.itemsChanged)

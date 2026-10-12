@@ -206,26 +206,22 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(app.tables.cells.count > 0, "All orders lists rows")
         e2e.shot("41-orders-all")
 
-        // The sort button under the status chips opens "Lọc & sắp xếp" (board Loc).
+        // The sort bar under the status chips opens "Lọc & sắp xếp" (board Loc, #888: one date for sort and range).
         let filter = e2e.sortButton
         if filter.waitForExistence(timeout: 3) {
             filter.tap()
             sleep(1)
             e2e.shot("42-orders-filter-sheet")
-            // Exact label: the explanation under the options also begins with "Việc gần nhất:"
-            let nearest = e2e.button(["Nearest task", "Việc gần nhất"])
-            e2e.soft(nearest.waitForExistence(timeout: 3), "filter sheet lists Việc gần nhất")
-            e2e.tapIfExists(nearest)
-            // KHOẢNG NGÀY: planned hand-over day in the next 7 days (exact labels: the sort has "Hand-over date").
-            e2e.tapIfExists(e2e.button(["Handed over", "Ngày giao"]))
+            e2e.soft(!e2e.button(["Nearest task", "Việc gần nhất"]).exists, "#888: Việc gần nhất left the sheet")
+            e2e.tapIfExists(e2e.button(["Return date", "Ngày trả"]))
             e2e.tapIfExists(e2e.button(["Next 7 days", "7 ngày tới"]))
             sleep(1)
-            e2e.shot("42b-orders-filter-nearest")
+            e2e.shot("42b-orders-filter-return")
             e2e.tapIfExists(e2e.element(labelBeginsWith: ["Show", "Xem"], type: .button), timeout: 3)
             sleep(2)
-            e2e.soft(e2e.element(labelBeginsWith: ["Nearest task", "Việc gần nhất"], type: .button).exists,
-                     "list header shows the Việc gần nhất sort")
-            e2e.shot("42c-orders-nearest")
+            e2e.soft(e2e.element(labelBeginsWith: ["Sorted by return date", "Xếp theo ngày trả"], type: .button).exists,
+                     "list header says it is sorted by return date")
+            e2e.shot("42c-orders-return")
         } else {
             XCTFail("Sort/filter button on Tất cả đơn")
         }
@@ -255,6 +251,155 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.shot(shot)
         }
         e2e.tapIfExists(e2e.button(["Cancel", "Huỷ", "Hủy"]))
+    }
+
+    /// #888: Tất cả đơn rows show only "Lấy dd/mm/yy  Trả dd/mm/yy"; one "Xếp theo" date drives the order and the range;
+    /// the bar always says how the list is sorted. Screens for each date, a range by each date, and an order detail.
+    func test4bOrdersSortDates() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.start()
+        guard openAllOrders() else { return XCTFail("Tất cả đơn did not list rows") }
+        sleep(1)
+        e2e.shot("4b-00-default-pickup")
+        e2e.soft(e2e.element(labelBeginsWith: ["Sorted by pickup date · latest first", "Xếp theo ngày lấy · gần nhất trước"], type: .button).exists,
+                 "default: sorted by pickup date, nearest first")
+        let dmy = "[0-9]{2}/[0-9]{2}/[0-9]{2}"
+        let dateLine = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "(Lấy|Pickup) \(dmy).*(Trả|Return) \(dmy).*")).firstMatch
+        e2e.soft(dateLine.waitForExistence(timeout: 3), "a row reads Lấy dd/mm/yy … Trả dd/mm/yy")
+        e2e.soft(app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "#.* · (tạo|created) \(dmy) [0-9]{2}:[0-9]{2}")).firstMatch.exists,
+                 "Tất cả đơn rows keep #code · tạo dd/mm/yy HH:mm (owner)")
+
+        let steps: [(date: [String], range: [String]?, farthest: Bool, shot: String, bar: [String])] = [
+            (["Return date", "Ngày trả"], nil, false, "4b-10-return", ["Sorted by return date", "Xếp theo ngày trả"]),
+            (["Created date", "Ngày tạo"], nil, false, "4b-20-created", ["Sorted by created date · newest first", "Xếp theo ngày tạo · mới nhất trước"]),
+            (["Created date", "Ngày tạo"], nil, true, "4b-25-created-oldest", ["Sorted by created date · oldest first", "Xếp theo ngày tạo · cũ nhất trước"]),
+            (["Pickup date", "Ngày lấy"], ["This month", "Tháng này"], false, "4b-30-pickup-month", ["Sorted by pickup date", "Xếp theo ngày lấy"]),
+            (["Return date", "Ngày trả"], ["This month", "Tháng này"], false, "4b-40-return-month", ["Sorted by return date", "Xếp theo ngày trả"]),
+            (["Created date", "Ngày tạo"], ["This month", "Tháng này"], false, "4b-50-created-month", ["Sorted by created date", "Xếp theo ngày tạo"]),
+        ]
+        for step in steps {
+            guard e2e.sortButton.waitForExistence(timeout: 5) else { XCTFail("sort bar"); return }
+            e2e.sortButton.tap()
+            sleep(1)
+            e2e.tapIfExists(e2e.button(["Reset Filter", "Đặt lại"]))
+            e2e.tapIfExists(e2e.button(step.date))
+            if step.farthest { e2e.tapIfExists(e2e.button(["Oldest first", "Cũ nhất trước", "Earliest first", "Xa nhất trước"])) }
+            if let range = step.range { e2e.tapIfExists(e2e.button(range)) }
+            sleep(1)
+            e2e.shot(step.shot + "-sheet")
+            e2e.tapIfExists(e2e.element(labelBeginsWith: ["Show", "Xem"], type: .button), timeout: 3)
+            sleep(2)
+            e2e.soft(e2e.element(labelBeginsWith: step.bar, type: .button).exists, "bar after \(step.shot): \(step.bar)")
+            e2e.shot(step.shot)
+        }
+        // Order detail: dates dd/mm/yy, "Đặt" (created) step
+        if let first = app.cells.allElementsBoundByIndex.first(where: { $0.isHittable }) {
+            e2e.tapRow(first)
+            sleep(2)
+            e2e.shot("4b-60-detail")
+            e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", ".*\(dmy).*")).firstMatch.exists,
+                     "detail shows dd/mm/yy")
+            e2e.goBackOnce()
+        }
+        // Back to the default for the next flows
+        if e2e.sortButton.waitForExistence(timeout: 5) {
+            e2e.sortButton.tap()
+            sleep(1)
+            e2e.tapIfExists(e2e.button(["Reset Filter", "Đặt lại"]))
+            e2e.tapIfExists(e2e.element(labelBeginsWith: ["Show", "Xem"], type: .button), timeout: 3)
+        }
+    }
+
+    /// #891: list badge vs detail badge for one order of each status (Đã đặt, Đang thuê, Đã trả, Đã huỷ, Hoàn thành)
+    func test4cBadgeListVsDetail() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.start()
+        guard openAllOrders() else { return XCTFail("Tất cả đơn did not list rows") }
+        let chips: [([String], String)] = [(["Booked", "Đã đặt"], "reserved"), (["Renting", "Đang thuê"], "renting"),
+                                           (["Returned", "Đã trả"], "returned"), (["Cancelled", "Đã huỷ"], "cancelled")]
+        for (labels, name) in chips {
+            let chip = app.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+            guard chip.waitForExistence(timeout: 5) else { e2e.note("chip \(name) missing"); continue }
+            chip.tap()
+            sleep(2)
+            e2e.shot("4c-\(name)-list")
+            if let row = app.cells.allElementsBoundByIndex.first(where: { $0.isHittable }) {
+                e2e.tapRow(row)
+                sleep(2)
+                e2e.shot("4c-\(name)-detail")
+                e2e.goBackOnce()
+                sleep(1)
+            }
+        }
+        e2e.tapIfExists(app.buttons.matching(NSPredicate(format: "label IN %@", ["All", "Tất cả"])).firstMatch)
+        let sale = e2e.saleModeButton
+        if sale.waitForExistence(timeout: 5) {
+            sale.tap()
+            sleep(2)
+            e2e.shot("4c-completed-list")
+            if let row = app.cells.allElementsBoundByIndex.first(where: { $0.isHittable && $0.label.contains("Hoàn") || $0.staticTexts["Hoàn thành"].exists }) {
+                e2e.tapRow(row)
+                sleep(2)
+                e2e.shot("4c-completed-detail")
+                e2e.goBackOnce()
+            }
+        }
+    }
+
+    /// #893: swiping a cart line right-to-left removes it (red "Xoá" when the swipe stops halfway)
+    func test8gCartSwipeDelete() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.emptyCart()
+        guard addFromHome("Product 1 - Electronics"), addFromHome("Product 2 - Tools") else {
+            return XCTFail("could not add two products")
+        }
+        guard openCart() else { return XCTFail("cart did not open") }
+        let line = app.staticTexts["Product 1 - Electronics"]
+        XCTAssertTrue(line.waitForExistence(timeout: 5))
+        e2e.shot("8g-10-cart-before")
+        line.swipeLeft()
+        sleep(1)
+        e2e.shot("8g-11-cart-swiped")
+        let delete = app.buttons.matching(identifier: "cart.swipe.delete").firstMatch
+        e2e.note("delete button exists=\(delete.exists) hittable=\(delete.exists && delete.isHittable) frame=\(delete.frame)")
+        if app.staticTexts["Product 1 - Electronics"].exists && delete.exists { delete.tap(); sleep(1) }
+        XCTAssertFalse(app.staticTexts["Product 1 - Electronics"].waitForExistence(timeout: 2), "the swiped line is gone")
+        XCTAssertTrue(app.staticTexts["Product 2 - Tools"].exists, "the other line stays")
+        e2e.shot("8g-12-cart-after")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
+    /// #888: cart lines show "Giá vốn" and the money part "Tổng giá vốn" (rent and sale) and "Lãi dự kiến" (sale) for
+    /// roles that may see prices; staff never see them. Product 1 and Product 2 have a cost in the e2e DB.
+    func test8fCartCost() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        e2e.emptyCart()
+        guard addFromHome("Product 1 - Electronics"), addFromHome("Product 2 - Tools") else {
+            return XCTFail("could not add Product 1 and Product 2")
+        }
+        guard openCart() else { return XCTFail("cart did not open") }
+        e2e.cartRentToday() // the dates row reads dd/mm/yy → dd/mm/yy
+        sleep(1)
+        let seesCost = e2e.role != "staff"
+        let cost = e2e.element(labelBeginsWith: ["Cost", "Giá vốn"])
+        e2e.soft(cost.waitForExistence(timeout: 3) == seesCost, "Giá vốn on the line (\(e2e.role))")
+        e2e.shot("8f-10-cart-rent")
+        _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["Note", "Ghi chú"]))
+        e2e.soft(e2e.element(labelBeginsWith: ["Total cost", "Tổng giá vốn"]).exists == seesCost, "Tổng giá vốn (\(e2e.role))")
+        e2e.shot("8f-11-cart-rent-money")
+        e2e.tapIfExists(e2e.button(["Sale", "Bán"]))
+        sleep(1)
+        app.swipeDown()
+        e2e.shot("8f-20-cart-sale")
+        _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["Note", "Ghi chú"]))
+        e2e.soft(e2e.element(labelBeginsWith: ["Expected profit", "Lãi dự kiến"]).exists == seesCost, "Lãi dự kiến (\(e2e.role))")
+        e2e.shot("8f-21-cart-sale-money")
+        e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
+        e2e.goBackOnce()
+        e2e.emptyCart()
     }
 
     func test5OrderDetailActions() throws {
@@ -515,8 +660,9 @@ final class AnyRentE2ETests: XCTestCase {
 
         let todayKey = E2E.dayMonth(Date())
         let tomorrowKey = E2E.dayMonth(Date().addingTimeInterval(86_400))
-        let today = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + todayKey)).firstMatch
-        let tomorrow = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + tomorrowKey)).firstMatch
+        // #888: day cells read "12/10/26" (dd/mm/yy), older builds "T2 12/10"
+        let today = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ OR label ENDSWITH %@", todayKey + "/", " " + todayKey)).firstMatch
+        let tomorrow = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ OR label ENDSWITH %@", tomorrowKey + "/", " " + tomorrowKey)).firstMatch
         if tomorrow.exists { tomorrow.tap(); sleep(2) }
         XCTAssertTrue(today.waitForExistence(timeout: 5), "Today's cell (\(todayKey)) is on the month grid")
         today.tap()
@@ -3139,11 +3285,9 @@ private final class E2E {
         button(["Sales", "Đơn bán", "Sale"])
     }
 
-    /// Sort button on Tất cả đơn ("Newest first ⌄"); it opens the filter sheet.
+    /// Sort bar on Tất cả đơn ("Xếp theo ngày lấy · gần nhất trước ⌄", #888); it opens the filter sheet.
     var sortButton: XCUIElement {
-        element(labelBeginsWith: ["Newest first", "Nearest task", "Hand-over date", "Return date",
-                                  "Mới tạo nhất", "Việc gần nhất", "Ngày giao gần nhất", "Ngày trả gần nhất"],
-                type: .button)
+        element(labelBeginsWith: ["Sorted by", "Xếp theo"], type: .button)
     }
 
     var cartBar: XCUIElement {

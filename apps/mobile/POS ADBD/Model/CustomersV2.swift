@@ -48,16 +48,25 @@ struct CustomerOrderRow: Decodable, Equatable {
     let returnPlanAt: Date?
     let createdAt: Date?
     let itemCount: Int
+    /// #891: the items (name, quantity) of the order, from the list payload's `orderItems`; empty on an older API
+    let items: [Item]
+
+    struct Item: Decodable, Equatable {
+        let productName: String?
+        let quantity: Int?
+    }
 
     private enum CodingKeys: String, CodingKey {
         case id, orderNumber, orderType, status, totalAmount, pickupPlanAt, returnPlanAt, createdAt
         case count = "_count"
+        case orderItems, itemNames
     }
 
     private struct Count: Decodable { let orderItems: Int? }
 
     init(id: Int, orderNumber: String, orderType: OrderType, status: OrderStatus, totalAmount: Double,
-         pickupPlanAt: Date?, returnPlanAt: Date?, createdAt: Date?, itemCount: Int) {
+         pickupPlanAt: Date?, returnPlanAt: Date?, createdAt: Date?, itemCount: Int, items: [Item] = []) {
+        self.items = items
         self.id = id
         self.orderNumber = orderNumber
         self.orderType = orderType
@@ -81,7 +90,10 @@ struct CustomerOrderRow: Decodable, Equatable {
         pickupPlanAt = CustomersV2Logic.date(((try? c.decodeIfPresent(String.self, forKey: .pickupPlanAt)) ?? nil))
         returnPlanAt = CustomersV2Logic.date(((try? c.decodeIfPresent(String.self, forKey: .returnPlanAt)) ?? nil))
         createdAt = CustomersV2Logic.date(((try? c.decodeIfPresent(String.self, forKey: .createdAt)) ?? nil))
-        itemCount = (((try? c.decodeIfPresent(Count.self, forKey: .count)) ?? nil)?.orderItems) ?? 0
+        // #893: the API sends `itemNames` [{productName, quantity}]; `orderItems` kept as a fallback
+        items = ((try? c.decodeIfPresent([Item].self, forKey: .itemNames)) ?? nil)
+            ?? ((try? c.decodeIfPresent([Item].self, forKey: .orderItems)) ?? nil) ?? []
+        itemCount = (((try? c.decodeIfPresent(Count.self, forKey: .count)) ?? nil)?.orderItems) ?? items.count
     }
 }
 
@@ -229,6 +241,19 @@ enum CustomersV2Logic {
     }
 
     /// "#148148 · 2 món"
+    /// #891 (owner): line 1 of a customer's order row: the item names, "Vest đen slim fit, Cà vạt lụa +1",
+    /// "Áo dài cách tân xanh ×2"; the item count on an older API without names
+    static func itemsTitle(_ row: CustomerOrderRow, shown: Int = 2) -> String {
+        let names = row.items.compactMap { item -> String? in
+            guard let name = item.productName?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return nil }
+            let quantity = item.quantity ?? 1
+            return quantity > 1 ? "\(name) ×\(quantity)" : name
+        }
+        guard !names.isEmpty else { return String(format: "customers.v2.items".localized(), row.itemCount) }
+        let head = names.prefix(shown).joined(separator: ", ")
+        return names.count > shown ? "\(head) +\(names.count - shown)" : head
+    }
+
     static func orderTitle(_ row: CustomerOrderRow) -> String {
         "#\(row.orderNumber) · " + String(format: "customers.v2.items".localized(), row.itemCount)
     }

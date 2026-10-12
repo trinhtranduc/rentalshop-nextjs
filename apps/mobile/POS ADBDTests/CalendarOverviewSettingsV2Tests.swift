@@ -152,9 +152,9 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         let vi = Locale(identifier: "vi_VN")
         let vn = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
         let range = DayKeyRange(start: "2026-09-27", end: "2026-10-03")
-        XCTAssertEqual(OverviewLogic.shortRange(range), "27/09 – 03/10")
-        XCTAssertEqual(OverviewLogic.longRange(range, timeZone: vn, locale: vi), "CN 27/09 – T7 03/10")
-        XCTAssertEqual(OverviewLogic.shortRange(DayKeyRange(start: "2026-10-03", end: "2026-10-03")), "03/10")
+        XCTAssertEqual(OverviewLogic.shortRange(range), "27/09/26 – 03/10/26")
+        XCTAssertEqual(OverviewLogic.longRange(range, timeZone: vn, locale: vi), "27/09/26 – 03/10/26")
+        XCTAssertEqual(OverviewLogic.shortRange(DayKeyRange(start: "2026-10-03", end: "2026-10-03")), "03/10/26")
         XCTAssertEqual(OverviewLogic.groupBy(range), "day")
         XCTAssertEqual(OverviewLogic.groupBy(DayKeyRange(start: "2026-01-01", end: "2026-03-31")), "month")
         XCTAssertEqual(OverviewLogic.changeText(8), "▲ 8%")

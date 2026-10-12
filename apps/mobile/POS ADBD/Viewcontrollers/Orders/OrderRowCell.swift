@@ -14,10 +14,67 @@ import SnapKit
 enum OrderRowContext {
     case work(isLate: Bool)
     case list
+    /// #888 "Tất cả đơn": "#code", then "Lấy dd/mm/yy  Trả dd/mm/yy" with the sorted date marked
+    case rentList(sortedBy: RentOrdersFilter.SortDate)
     case sale
     case search
     /// #496 "Chưa lấy đồ": overdue rows get "Quá x ngày · nên gọi khách", the right side "còn thu" in orange
     case notPickedUp
+    /// #891 (owner): product detail → its orders: the same row plus "× qty" of this product before the total
+    case productOrders(quantity: Int)
+}
+
+/// #891 (option C): the "Lấy dd/mm/yy" (blue) and "Trả dd/mm/yy" (purple) chips; order rows and the calendar day rows
+final class DateChipStack: UIStackView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        spacing = DS.Spacing.sm
+        alignment = .center
+        setContentHuggingPriority(.required, for: .horizontal)
+    }
+
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Fills the chips; an empty list hides the stack
+    func show(_ chips: [DateChip]) {
+        arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for chip in chips {
+            let label = InsetLabel()
+            label.layer.cornerRadius = 8
+            label.layer.masksToBounds = true
+            label.backgroundColor = chip.kind.colors.fill
+            // #893 (owner on device): medium vs bold read the same; the sorted chip is bold (label and date),
+            // the other one regular
+            let text = NSMutableAttributedString(string: chip.label + " ", attributes: [
+                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary),
+                NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
+            ])
+            text.append(NSAttributedString(string: chip.date, attributes: [
+                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body),
+                NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
+            ]))
+            label.attributedText = text
+            label.setContentCompressionResistancePriority(.required, for: .horizontal)
+            addArrangedSubview(label)
+        }
+        isHidden = chips.isEmpty
+    }
+}
+
+/// A label with padding and a rounded fill (#891 date chips and the "× qty" box)
+final class InsetLabel: UILabel {
+    var insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(width: size.width + insets.left + insets.right, height: size.height + insets.top + insets.bottom)
+    }
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, insets))
+    }
 }
 
 /// Coloured tag of an order row (#468, boards Main / VL-tat-ca / VL-ban):
@@ -29,7 +86,14 @@ final class RowTagLabel: UILabel {
         case note
     }
 
-    private let insets: UIEdgeInsets
+    let insets: UIEdgeInsets
+
+    /// #891 (owner): THE status badge of an order, the same in the list rows and the order detail header
+    static func statusBadge(_ tag: RowTag) -> RowTagLabel {
+        let label = RowTagLabel(style: .status)
+        label.apply(tag.text, tag.colors)
+        return label
+    }
 
     init(style: Style) {
         switch style {
@@ -77,19 +141,30 @@ final class OrderRowCell: UITableViewCell {
 
     /// #496: the "#code · tạo …" line
     static let metaColor = UIColor(hexString: "64748B")
+    /// #888: the chip behind the date the list is sorted by
+    static let markFill = UIColor(hexString: "EFF6FF")
     /// #496: "còn thu" on the "Chưa lấy đồ" list (Còn phải thu colour)
     static let dueColor = UIColor(hexString: "B45309")
     private static let callBorder = UIColor(hexString: "CBD5E1")
     private static let chevronColor = UIColor(hexString: "94A3B8")
 
-    private let tagLabel = RowTagLabel(style: .status)
+    private let tagLabel = RowTagLabel.statusBadge(RowTag(text: "", colors: OrderStatusBadge.pill(for: .reserved)))
     private let nameLabel = UILabel()
     private let metaLabel = UILabel()
     private let taskLabel = UILabel()
+    /// #891 (option C): "Lấy 14/10/26" (blue) and "Trả 16/10/26" (purple) chips on line 3
+    private let chipStack = DateChipStack()
+    private let qtyLabel = InsetLabel()
     private let pillStack = UIStackView()
     private let totalLabel = UILabel()
     private let payLabel = UILabel()
     private let moneyStack = UIStackView()
+    private var pillLine: UIStackView?
+    private var thirdLine: UIStackView?
+    /// #893 (owner): line 2 of a lean Việc cần làm row: the task date chip, "Trễ N ngày", "Chưa soạn đồ"; wraps
+    private let workChipLines = UIStackView()
+    /// #893 (owner): "còn thu N" under the total on a Việc cần làm row
+    private let workDueLabel = UILabel()
     private let callButton = UIButton(type: .system)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
 
@@ -109,16 +184,19 @@ final class OrderRowCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
+    /// line 3 dates / task + total right; line 4 notes (late, not prepared) + pay line right. 8pt between lines.
     private func buildLayout() {
         nameLabel.font = Utils.boldFont(size: DS.TextSize.name)
         nameLabel.textColor = DS.Color.text
-        // #424: a long name wraps to a second line (the tag stays centred beside it) instead of being cut
-        nameLabel.numberOfLines = 2
+        nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
-        // #430: above the other labels' hugging (251), so free width goes to the name, not the money column
-        nameLabel.setContentCompressionResistancePriority(.defaultHigh - 1, for: .horizontal)
-        let firstLine = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
-        firstLine.spacing = 6
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        tagLabel.setContentHuggingPriority(.required, for: .horizontal)
+        tagLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let firstLine = UIStackView(arrangedSubviews: [nameLabel, tagLabel])
+        firstLine.spacing = DS.Spacing.sm
         firstLine.alignment = .center
 
         metaLabel.font = Utils.regularFont(size: 13)
@@ -126,32 +204,61 @@ final class OrderRowCell: UITableViewCell {
         metaLabel.lineBreakMode = .byTruncatingTail
         taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
         taskLabel.textColor = DS.Color.text
-        taskLabel.numberOfLines = 2
-        pillStack.spacing = 6
-        pillStack.alignment = .leading
-        let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView()])
-
-        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, taskLabel, pillLine])
-        left.axis = .vertical
-        left.spacing = DS.Gap.line
-        left.alignment = .fill
-        left.setCustomSpacing(2, after: metaLabel)
+        taskLabel.numberOfLines = 1
+        taskLabel.lineBreakMode = .byTruncatingTail
+        taskLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        taskLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
         // #468: the pay line is regular weight (colour carries the meaning); the total stays bold
         payLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
-        moneyStack.axis = .vertical
-        moneyStack.alignment = .trailing
-        moneyStack.addArrangedSubview(totalLabel)
-        moneyStack.addArrangedSubview(payLabel)
-        moneyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-        moneyStack.setContentHuggingPriority(.required, for: .horizontal)
         [totalLabel, payLabel].forEach {
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.textAlignment = .right
         }
+        qtyLabel.insets = UIEdgeInsets(top: 2, left: 7, bottom: 2, right: 7)
+        qtyLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
+        qtyLabel.textColor = UIColor(hexString: "334155")
+        qtyLabel.backgroundColor = UIColor(hexString: "F1F5F9")
+        qtyLabel.layer.cornerRadius = 6
+        qtyLabel.layer.masksToBounds = true
+        qtyLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        qtyLabel.setContentHuggingPriority(.required, for: .horizontal)
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
+        workChipLines.axis = .vertical
+        workChipLines.alignment = .leading
+        workChipLines.spacing = 6
+        workChipLines.isHidden = true
+        workDueLabel.font = Utils.mediumFont(size: DS.TextSize.secondary)
+        workDueLabel.textColor = DS.Status.waiting.text
+        workDueLabel.textAlignment = .right
+        workDueLabel.isHidden = true
+        let amountStack = UIStackView(arrangedSubviews: [totalLabel, workDueLabel])
+        amountStack.axis = .vertical
+        amountStack.alignment = .trailing
+        amountStack.spacing = 2
+        amountStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amountStack.setContentHuggingPriority(.required, for: .horizontal)
+        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, chipStack, workChipLines, spacer, qtyLabel, amountStack])
+        thirdLine.spacing = DS.Spacing.sm
+        thirdLine.alignment = .center
+        self.thirdLine = thirdLine
+        moneyStack.isHidden = true // kept for the money switch; the amounts now sit in lines 3 and 4
+
+        pillStack.spacing = 6
+        pillStack.alignment = .leading
+        let pillLine = UIStackView(arrangedSubviews: [pillStack, UIView(), payLabel])
+        pillLine.alignment = .center
+        pillLine.spacing = DS.Spacing.sm
+        self.pillLine = pillLine
+
+        let left = UIStackView(arrangedSubviews: [firstLine, metaLabel, thirdLine, pillLine])
+        left.axis = .vertical
+        left.spacing = DS.Gap.orderRowLine // #888 owner: ~8pt between lines
+        left.alignment = .fill
 
         callButton.setImage(DS.symbol("phone", DS.Icon.sm), for: .normal)
         callButton.tintColor = DS.Color.text
@@ -166,12 +273,13 @@ final class OrderRowCell: UITableViewCell {
         chevron.contentMode = .center
         chevron.snp.makeConstraints { make in make.size.equalTo(DS.Icon.sm) }
 
-        let row = UIStackView(arrangedSubviews: [left, moneyStack, callButton, chevron])
+        // #891 (owner): no ">" chevron; the whole row stays tappable and the content takes the width
+        let row = UIStackView(arrangedSubviews: [left, callButton])
         row.spacing = DS.Spacing.md
         row.alignment = .center
         contentView.addSubview(row)
         row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowVertical)
+            make.top.bottom.equalToSuperview().inset(DS.Gap.orderRowPadding) // #888 owner: 16pt
             make.leading.trailing.equalToSuperview().inset(DS.Gap.rowHorizontal)
         }
 
@@ -192,8 +300,7 @@ final class OrderRowCell: UITableViewCell {
     // MARK: - Bind
 
     func configure(_ row: OrdersRow, context: OrderRowContext, hidesMoney: Bool) {
-        pillStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        callButton.isHidden = true
+        resetForBind()
         switch row {
         case .work(let work, let kind):
             var isLate = false
@@ -202,31 +309,118 @@ final class OrderRowCell: UITableViewCell {
         case .order(let order, let lateDays):
             bindOrder(order, lateDays: lateDays, context: context, hidesMoney: hidesMoney)
         }
-        pillStack.superview?.isHidden = pillStack.arrangedSubviews.isEmpty
-        moneyStack.isHidden = hidesMoney
+        totalLabel.isHidden = hidesMoney
+        if hidesMoney { payLabel.isHidden = true; workDueLabel.isHidden = true }
+        pillStack.isHidden = pillStack.arrangedSubviews.isEmpty
+        pillLine?.isHidden = pillStack.arrangedSubviews.isEmpty && payLabel.isHidden
+    }
+
+    private func resetForBind() {
+        pillStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        callButton.isHidden = true
+        setChips([])
+        qtyLabel.isHidden = true
+        metaLabel.font = Utils.regularFont(size: 13)
+        metaLabel.textColor = Self.metaColor
+        metaLabel.isHidden = false
+        workChipLines.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        workChipLines.isHidden = true
+        thirdLine?.alignment = .center
+        totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
+        workDueLabel.isHidden = true
+    }
+
+    /// #893 (owner): lays the chips out in lines that fit `width` (wrap only when they do not fit)
+    private func setWorkChips(_ chips: [OrdersHomeLogic.WorkChip], width: CGFloat) {
+        Self.fillChipLines(workChipLines, chips: chips, width: width)
+    }
+
+    /// #893: chip lines shared by Việc cần làm and the calendar day rows
+    static func fillChipLines(_ stack: UIStackView, chips: [OrdersHomeLogic.WorkChip], width: CGFloat) {
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var line = UIStackView()
+        var used: CGFloat = 0
+        for chip in chips {
+            let label = InsetLabel()
+            label.insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            label.font = Utils.mediumFont(size: DS.TextSize.secondary)
+            label.text = chip.text
+            label.textColor = chip.colors.text
+            label.backgroundColor = chip.colors.fill
+            label.layer.cornerRadius = 8
+            label.layer.masksToBounds = true
+            let size = label.intrinsicContentSize.width
+            if used > 0 && used + 6 + size > width {
+                stack.addArrangedSubview(line)
+                line = UIStackView()
+                used = 0
+            }
+            line.spacing = 6
+            line.addArrangedSubview(label)
+            used += (used > 0 ? 6 : 0) + size
+        }
+        if !line.arrangedSubviews.isEmpty { stack.addArrangedSubview(line) }
+        stack.isHidden = chips.isEmpty
+    }
+
+    /// #891 (owner): a customer's order (customer detail): the same row with the item names in place of the name
+    func configure(customerOrder row: CustomerOrderRow, hidesMoney: Bool) {
+        resetForBind()
+        let tag = OrdersHomeLogic.statusTag(row.status)
+        tagLabel.apply(tag.text, tag.colors)
+        nameLabel.text = CustomersV2Logic.itemsTitle(row)
+        var meta = "#\(OrdersHomeLogic.shortNumber(row.orderNumber))"
+        if let created = row.createdAt {
+            meta += " · " + String(format: "orders.row.created".localized(), DayFormatter.dmyTime(created))
+        }
+        metaLabel.text = meta
+        if row.orderType == .rent {
+            setLines(OrderRowLines(meta: meta, task: ""))
+            setChips(OrdersHomeLogic.dateChips(pickupPlanAt: row.pickupPlanAt, returnPlanAt: row.returnPlanAt, sortedBy: nil))
+        } else {
+            let lines = OrdersHomeLogic.rowLines(code: OrdersHomeLogic.shortNumber(row.orderNumber), orderType: .sale,
+                                                 status: row.status, createdAt: row.createdAt, pickupPlanAt: nil,
+                                                 returnPlanAt: nil, returnedAt: nil, updatedAt: row.createdAt, isLate: false)
+            setLines(lines)
+        }
+        setTotal(row.totalAmount, struck: row.status == .cancelled)
+        setPay(nil)
+        totalLabel.isHidden = hidesMoney
+        pillStack.isHidden = true
+        pillLine?.isHidden = true
+    }
+
+    /// Fills the chip stack; an empty list hides it
+    private func setChips(_ chips: [DateChip]) {
+        chipStack.show(chips)
+        if !chips.isEmpty { taskLabel.isHidden = true }
     }
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, isLate: Bool, hidesMoney: Bool) {
+        // #893 (owner): the task tag in its light colours (a task, not an order status)
         if kind == .handOver {
             tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
         } else {
             tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
         }
         setName(work.customerName)
-        // #496: hand-overs are reserved rentals, take-backs rented out; the API sends no created day for these rows
-        setLines(OrdersHomeLogic.rowLines(code: OrdersHomeLogic.shortNumber(work.orderNumber), orderType: .rent,
-                                          status: kind == .handOver ? .reserved : .pickuped, createdAt: nil,
-                                          pickupPlanAt: work.pickupPlanAt, returnPlanAt: work.returnPlanAt,
-                                          returnedAt: nil, updatedAt: nil, isLate: isLate || work.lateDays > 0))
-        if kind == .handOver && !work.isReadyToDeliver {
-            addPill("orders.v2.notPrepared".localized(), DS.Status.waiting)
-        }
-        if work.lateDays > 0 {
-            addPill(LateText.days(work.lateDays), DS.Status.late)
-        }
-
+        // #893 (owner, lean row): no "#code · tạo", no other date, no notes line; line 2 = the task's date chip,
+        // "Trễ N ngày", "Chưa soạn đồ" (wrapping), and on the right "còn thu N" (else the total)
+        metaLabel.isHidden = true
+        taskLabel.isHidden = true
+        chipStack.show([])
+        thirdLine?.alignment = .top
+        // Right: the total (bold) always; "còn thu N" smaller under it when something is due (owner)
+        let dueText = OrdersHomeLogic.workDue(work).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
+        let totalText = MoneyFormatter.format(work.totalAmount)
+        let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
+        let dueWidth = (dueText as NSString?)?.size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary)]).width ?? 0
+        let available = UIScreen.main.bounds.width - 2 * DS.Gap.rowHorizontal - max(totalWidth, dueWidth) - DS.Spacing.sm
+        setWorkChips(OrdersHomeLogic.workChips(work, kind: kind), width: available)
         setTotal(work.totalAmount, struck: false)
-        setPay(OrdersHomeLogic.payLine(amountDue: work.amountDue, refundDue: work.refundDue))
+        workDueLabel.text = dueText
+        workDueLabel.isHidden = dueText == nil
+        setPay(nil)
 
         phone = OrdersHomeLogic.workCallPhone(work, isLate: isLate)
         callButton.isHidden = phone == nil
@@ -237,6 +431,22 @@ final class OrderRowCell: UITableViewCell {
         tagLabel.apply(tag.text, tag.colors)
         setName(order.customerName)
         setLines(OrdersHomeLogic.rowLines(order, lateDays: lateDays))
+        if order.orderType == .rent {
+            // #891 (option C): two light chips; on Tất cả đơn the sorted date is bolder, and a created-date sort
+            // makes "tạo …" bold dark text
+            var sortedBy: RentOrdersFilter.SortDate?
+            if case .rentList(let date) = context { sortedBy = date }
+            metaLabel.text = OrdersHomeLogic.rentRowMeta(order)
+            if OrdersHomeLogic.metaIsBold(sortedBy: sortedBy) {
+                metaLabel.font = Utils.boldFont(size: 13)
+                metaLabel.textColor = DS.Color.text
+            }
+            setChips(OrdersHomeLogic.dateChips(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy))
+        }
+        if case .productOrders(let quantity) = context {
+            qtyLabel.text = "× \(quantity)"
+            qtyLabel.isHidden = false
+        }
         setTotal(order.totalAmount, struck: order.status == .cancelled)
         if case .notPickedUp = context {
             if lateDays > 0 {
@@ -250,11 +460,16 @@ final class OrderRowCell: UITableViewCell {
                 setPay(nil)
             }
         } else {
-            if lateDays > 0 {
+            // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
+            let isRentList: Bool = { if case .rentList = context { return true }; return false }()
+            let isProducts: Bool = { if case .productOrders = context { return true }; return false }()
+            if lateDays > 0 && !isRentList && !isProducts {
                 addPill(LateText.days(lateDays), DS.Status.late)
             }
             // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
-            setPay(OrdersHomeLogic.listPayLine(order))
+            // #891 (owner): Tất cả đơn and product order rows show no pay line; the other lists keep it
+            let isProductList: Bool = { if case .productOrders = context { return true }; return false }()
+            setPay(isRentList || isProductList ? nil : OrdersHomeLogic.listPayLine(order))
         }
         phone = nil
     }
@@ -266,7 +481,11 @@ final class OrderRowCell: UITableViewCell {
 
     private func setLines(_ lines: OrderRowLines) {
         metaLabel.text = lines.meta
+        taskLabel.attributedText = nil
+        taskLabel.font = Utils.mediumFont(size: DS.TextSize.body)
+        taskLabel.textColor = DS.Color.text
         taskLabel.text = lines.task
+        taskLabel.accessibilityLabel = nil
         taskLabel.isHidden = lines.task.isEmpty
     }
 

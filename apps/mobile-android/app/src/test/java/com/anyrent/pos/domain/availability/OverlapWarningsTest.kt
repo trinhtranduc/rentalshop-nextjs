@@ -47,8 +47,8 @@ class OverlapWarningsTest {
         assertEquals(LocalDate.of(2026, 10, 5), c.to)
         assertEquals(1, c.missing)
         // #684: the tag shows the days only; the orders are in Lịch trống
-        assertEquals("Hết 03/10 → 05/10", OverlapWarnings.cartLine(c))
-        assertEquals("Vest đen slim fit thiếu 1 bộ ngày 03–05/10 (đã thuê ở #482113).", OverlapWarnings.confirmLine(c))
+        assertEquals("Hết 03/10/26 → 05/10/26", OverlapWarnings.cartLine(c))
+        assertEquals("Vest đen slim fit thiếu 1 bộ ngày 03/10/26–05/10/26 (đã thuê ở #482113).", OverlapWarnings.confirmLine(c))
     }
 
     @Test fun daysAreTheOverlapInVietnamDays() {
@@ -56,12 +56,12 @@ class OverlapWarningsTest {
         val endsOn04 = OverlapWarnings.conflict(
             4, "Vest", 1, availability(0, false, holder("A", "2026-09-30T00:00:00Z", "2026-10-04T16:59:59Z")), pickup, ret,
         )!!
-        assertEquals("03–04/10", OverlapWarnings.dayRange(endsOn04.from, endsOn04.to))
+        assertEquals("03/10/26–04/10/26", OverlapWarnings.dayRange(endsOn04.from, endsOn04.to))
         val startsOn05 = OverlapWarnings.conflict(
             4, "Vest", 1, availability(0, false, holder("B", "2026-10-04T17:00:00Z", "2026-10-08T05:00:00Z")), pickup, ret,
         )!!
-        assertEquals("05/10", OverlapWarnings.dayRange(startsOn05.from, startsOn05.to))
-        assertEquals("Hết 05/10", OverlapWarnings.cartLine(startsOn05))
+        assertEquals("05/10/26", OverlapWarnings.dayRange(startsOn05.from, startsOn05.to))
+        assertEquals("Hết 05/10/26", OverlapWarnings.cartLine(startsOn05))
     }
 
     @Test fun shortOfStockWithoutOtherOrdersIsNotADoubleBooking() {
@@ -80,23 +80,23 @@ class OverlapWarningsTest {
         // Unknown days fall back to the cart's range
         assertEquals(pickup, c.from)
         assertEquals(ret, c.to)
-        assertEquals("Hết 03/10 → 05/10", OverlapWarnings.cartLine(c))
+        assertEquals("Hết 03/10/26 → 05/10/26", OverlapWarnings.cartLine(c))
         val noNumber = OverlapWarnings.conflict(4, "Áo dài", 1, availability(-2, false, holder(null, null, null)), pickup, ret)!!
         assertEquals(1 + 0, noNumber.missing)
-        assertEquals("Hết 03/10 → 05/10", OverlapWarnings.cartLine(noNumber))
-        assertEquals("Áo dài thiếu 1 bộ ngày 03–05/10.", OverlapWarnings.confirmLine(noNumber))
+        assertEquals("Hết 03/10/26 → 05/10/26", OverlapWarnings.cartLine(noNumber))
+        assertEquals("Áo dài thiếu 1 bộ ngày 03/10/26–05/10/26.", OverlapWarnings.confirmLine(noNumber))
     }
 
     @Test fun rangesAcrossMonthAndYear() {
-        assertEquals("28/09–02/10", OverlapWarnings.dayRange(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 2)))
-        assertEquals("30/12–02/01", OverlapWarnings.dayRange(LocalDate.of(2026, 12, 30), LocalDate.of(2027, 1, 2)))
-        assertEquals("03/10", OverlapWarnings.dayRange(pickup, pickup))
+        assertEquals("28/09/26–02/10/26", OverlapWarnings.dayRange(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 2)))
+        assertEquals("30/12/26–02/01/27", OverlapWarnings.dayRange(LocalDate.of(2026, 12, 30), LocalDate.of(2027, 1, 2)))
+        assertEquals("03/10/26", OverlapWarnings.dayRange(pickup, pickup))
         // A year-long rental keeps the order holder's window
         val c = OverlapWarnings.conflict(
             4, "Vest", 1, availability(0, false, holder("9", "2027-02-01T00:00:00Z", "2027-02-10T00:00:00Z")),
             LocalDate.of(2026, 10, 1), LocalDate.of(2027, 9, 30),
         )!!
-        assertEquals("01–10/02", OverlapWarnings.dayRange(c.from, c.to))
+        assertEquals("01/02/27–10/02/27", OverlapWarnings.dayRange(c.from, c.to))
     }
 
     @Test fun settingDecidesButtonAndSheet() {

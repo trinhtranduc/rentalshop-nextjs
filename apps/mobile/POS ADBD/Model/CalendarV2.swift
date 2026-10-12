@@ -71,10 +71,12 @@ struct CalendarDayOrder: Decodable, Equatable {
     let createdAt: Date?
     let pickupPlanAt: Date?
     let returnPlanAt: Date?
+    /// #893: "Sẵn sàng giao" on a hand-over row; nil on an older API (treated as not prepared)
+    var isReadyToDeliver: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, status, orderType, totalAmount, orderItems, amountDue, refundDue, lateFee
-        case createdAt, pickupPlanAt, returnPlanAt
+        case createdAt, pickupPlanAt, returnPlanAt, isReadyToDeliver
     }
 
     init(id: Int, orderNumber: String, customerName: String?, status: String?, orderType: String?,
@@ -110,6 +112,7 @@ struct CalendarDayOrder: Decodable, Equatable {
         createdAt = (try? c.decodeIfPresent(Date.self, forKey: .createdAt)) ?? nil
         pickupPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .pickupPlanAt)) ?? nil
         returnPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .returnPlanAt)) ?? nil
+        isReadyToDeliver = (try? c.decodeIfPresent(Bool.self, forKey: .isReadyToDeliver)) ?? nil
     }
 }
 
@@ -257,17 +260,12 @@ enum CalendarV2Logic {
             + returns.map { CalendarDayRow(kind: .takeBack, order: $0, lateDays: late) }
     }
 
-    /// Late days first (with the fee), then what to give back, then what is still to collect; else nothing.
-    /// With money hidden only the late days show.
+    /// Owner rule (#893): only a late order gets a note ("Trễ N ngày", plus the stored fee unless money is hidden).
+    /// Never "còn thu" or a refund note; other rows show just the total.
     static func note(_ row: CalendarDayRow, hidesMoney: Bool) -> CalendarNote {
-        if row.lateDays > 0 {
-            let fee = row.order.lateFee.flatMap { $0 > 0 && !hidesMoney ? $0 : nil }
-            return .late(days: row.lateDays, fee: fee)
-        }
-        guard !hidesMoney else { return .none }
-        if let refund = row.order.refundDue, refund > 0 { return .refund(refund) }
-        if let due = row.order.amountDue, due > 0 { return .due(due) }
-        return .none
+        guard row.lateDays > 0 else { return .none }
+        let fee = row.order.lateFee.flatMap { $0 > 0 && !hidesMoney ? $0 : nil }
+        return .late(days: row.lateDays, fee: fee)
     }
 
     /// Day selected when a month opens: today in its own month, else the first day

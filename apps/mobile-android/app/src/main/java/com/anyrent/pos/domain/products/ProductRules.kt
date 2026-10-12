@@ -176,7 +176,14 @@ data class ProductRowSubtitle(val code: String?, val free: Int)
  * The Home row's price line (#681, iOS `ProductRowPrice`): the default rent option first, the other one muted after it.
  * `mainMode == null` means a sale-only product, shown as "bán <price>".
  */
-data class ProductRowPrice(val main: Double, val mainMode: PricingMode?, val second: Double? = null, val secondMode: PricingMode? = null)
+/** `sale` (#887): the sale price of a product that also rents, shown last as "· bán <price>" (board SP-dong, iOS) */
+data class ProductRowPrice(
+    val main: Double,
+    val mainMode: PricingMode?,
+    val second: Double? = null,
+    val secondMode: PricingMode? = null,
+    val sale: Double? = null,
+)
 
 object ProductRowLogic {
     /** Units of this product already in the cart */
@@ -189,15 +196,16 @@ object ProductRowLogic {
     fun price(product: Product): ProductRowPrice? {
         val rental = ProductPricing.perRental(product)
         val day = ProductPricing.perDay(product)
+        val sale = ProductPricing.sale(product)
         return when {
             rental != null && day != null ->
                 if (ProductPricing.defaultMode(product) == PricingMode.PER_DAY) {
-                    ProductRowPrice(day, PricingMode.PER_DAY, rental, PricingMode.PER_RENTAL)
+                    ProductRowPrice(day, PricingMode.PER_DAY, rental, PricingMode.PER_RENTAL, sale)
                 } else {
-                    ProductRowPrice(rental, PricingMode.PER_RENTAL, day, PricingMode.PER_DAY)
+                    ProductRowPrice(rental, PricingMode.PER_RENTAL, day, PricingMode.PER_DAY, sale)
                 }
-            rental != null -> ProductRowPrice(rental, PricingMode.PER_RENTAL)
-            day != null -> ProductRowPrice(day, PricingMode.PER_DAY)
+            rental != null -> ProductRowPrice(rental, PricingMode.PER_RENTAL, sale = sale)
+            day != null -> ProductRowPrice(day, PricingMode.PER_DAY, sale = sale)
             else -> ProductPricing.sale(product)?.let { ProductRowPrice(it, null) }
         }
     }
@@ -294,6 +302,20 @@ object ProductFormValidator {
     }
 }
 
+/** Giá vốn (#887, iOS `ProductCostPrice`): shown and saved only for roles that may see prices */
+object ProductCostPrice {
+    /** The cost on product detail: > 0 and the role may see prices */
+    fun shown(product: Product, showsPrices: Boolean): Double? =
+        product.costPrice?.takeIf { showsPrices && it > 0 }
+
+    /**
+     * The cost sent on save: the typed value; an empty field sends 0 only when the product had a cost (cleared on
+     * purpose), else nothing, so a product read without `costPrice` (list payload) keeps its cost
+     */
+    fun toSend(typed: Double?, original: Double?): Double? =
+        typed ?: if ((original ?: 0.0) > 0) 0.0 else null
+}
+
 object MoneyInput {
     /** "1.250.000" → 1250000.0; empty → null */
     fun parse(text: String?): Double? = text.orEmpty().filter { it.isDigit() }.takeIf { it.isNotEmpty() }?.toDouble()
@@ -315,6 +337,28 @@ data class CartPricingChoice(val type: String, val catalogPrice: Double?)
 
 /** Live preview of the sheet: "130.000đ × 3 ngày × 1" ([days] only for a daily rent price) and its total */
 data class CartPricePreview(val unitPrice: Double, val days: Int?, val quantity: Int, val total: Double)
+
+/** "Tổng giá vốn" and, in a sale cart, "Lãi dự kiến" (#888, iOS `CartCostSummary`) */
+data class CartCostSummary(
+    val totalCost: Double,
+    /** Sale cart only: total (after discount) − total cost; negative is a loss */
+    val profit: Double?,
+)
+
+/** Cost lines of the cart (#888, iOS `CartCostLogic`): only for roles that may see prices, only lines with a cost */
+object CartCostLogic {
+    /** "Giá vốn" of a line: cost × quantity; null when hidden or the product has no cost */
+    fun lineCost(line: CartLine, showsPrices: Boolean): Double? =
+        line.product.costPrice?.takeIf { showsPrices && it > 0 }?.let { it * line.quantity }
+
+    /** Null when hidden or no line has a cost */
+    fun summary(lines: List<CartLine>, total: Double, isSale: Boolean, showsPrices: Boolean): CartCostSummary? {
+        val costs = lines.mapNotNull { lineCost(it, showsPrices) }
+        if (costs.isEmpty()) return null
+        val totalCost = costs.sum()
+        return CartCostSummary(totalCost, if (isSale) total - totalCost else null)
+    }
+}
 
 /** What one cart line costs: "150.000đ/ngày × 3 ngày", "300.000đ/lần × 2", "Giá bán 850.000đ × 1" */
 data class CartLineCalc(

@@ -386,9 +386,7 @@ class SettingsViewController: BaseViewControler {
                             date = formatter.date(from: isoEnd)
                         }
                         if let date {
-                            let displayFormatter = DateFormatter()
-                            displayFormatter.dateFormat = "dd/MM/yyyy"
-                            self.durationLabel.text = "\("Expires on".localized()): \(displayFormatter.string(from: date))"
+                            self.durationLabel.text = "\("Expires on".localized()): \(DayFormatter.dmy(date))"
                         }
                     }
                 }

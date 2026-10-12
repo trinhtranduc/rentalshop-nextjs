@@ -115,7 +115,7 @@ class ProductCalendarLogicTest {
     @Test
     fun ordersCoveringADayInVietnamDays() {
         val orders = listOf(
-            // Giao T4 07/10 · trả T6 09/10 (Vietnam)
+            // Giao 07/10/26 · trả 09/10/26 (Vietnam)
             order(1, "2026-10-07T02:00:00.000Z", "2026-10-09T02:00:00.000Z", quantities = mapOf(5 to 2)),
             // Same-day pickup and return on 08/10 still holds the day
             order(2, "2026-10-08T01:00:00.000Z", "2026-10-08T10:00:00.000Z", status = "PICKUPED"),
@@ -132,7 +132,7 @@ class ProductCalendarLogicTest {
         assertEquals(listOf(3), ProductCalendarLogic.ordersCovering(d(10), orders, vietnam).map { it.id })
         assertEquals(emptyList<Int>(), ProductCalendarLogic.ordersCovering(d(11), orders, vietnam).map { it.id })
 
-        assertEquals("Giao T4 07/10 · trả T6 09/10", ProductCalendarLogic.orderDates(orders[0], zone = vietnam))
+        assertEquals("Lấy 07/10/26 · trả 09/10/26", ProductCalendarLogic.orderDates(orders[0], zone = vietnam))
         assertEquals(2, ProductCalendarLogic.quantity(orders[0], 5))
         assertEquals(1, ProductCalendarLogic.quantity(orders[1], 5))
     }

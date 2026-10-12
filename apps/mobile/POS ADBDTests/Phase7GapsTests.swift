@@ -59,9 +59,9 @@ final class Phase7GapsTests: XCTestCase {
         let vi = Locale(identifier: "vi")
         let rent = try order(status: "RESERVED", pickup: "2026-10-02T17:00:00.000Z", returns: "2026-10-04T17:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.meta(rent, timeZone: vietnam, locale: vi),
-                       "#0057 · " + String(format: "orders.row.returnAfter".localized(), "T2 05/10"))
+                       "#0057 · " + String(format: "orders.row.returnAfter".localized(), "05/10/26"))
         XCTAssertEqual(ProductDetailV2Logic.meta(rent, timeZone: utc, locale: vi),
-                       "#0057 · " + String(format: "orders.row.returnAfter".localized(), "CN 04/10"))
+                       "#0057 · " + String(format: "orders.row.returnAfter".localized(), "04/10/26"))
         XCTAssertFalse(ProductDetailV2Logic.meta(rent, timeZone: vietnam, locale: vi).contains("×"))
     }
 
@@ -72,7 +72,7 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.rowState(today, chip: .upcoming, now: now, timeZone: vietnam), .pickupToday)
         let later = try order(status: "RESERVED", pickup: "2026-10-05T02:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(later, chip: .upcoming, now: now, timeZone: vietnam, locale: Locale(identifier: "vi")),
-                       .pickupOn("T2 05/10"))
+                       .pickupOn("05/10/26"))
         let noShow = try order(status: "RESERVED", pickup: "2026-10-01T02:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(noShow, chip: .upcoming, now: now, timeZone: vietnam), .late(2))
         // 02/10 18:00 UTC is 03/10 in Vietnam but 02/10 in UTC
@@ -81,7 +81,7 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.rowState(edge, chip: .renting, now: now, timeZone: utc), .late(1))
         let due = try order(status: "PICKUPED", returns: "2026-10-07T02:00:00.000Z")
         XCTAssertEqual(ProductDetailV2Logic.rowState(due, chip: .renting, now: now, timeZone: vietnam, locale: Locale(identifier: "vi")),
-                       .returnOn("T4 07/10"))
+                       .returnOn("07/10/26"))
         let done = try order(status: "RETURNED")
         XCTAssertEqual(ProductDetailV2Logic.rowState(done, chip: .done, now: now, timeZone: vietnam), .status)
     }

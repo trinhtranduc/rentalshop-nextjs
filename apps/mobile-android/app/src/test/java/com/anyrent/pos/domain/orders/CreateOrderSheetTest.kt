@@ -27,7 +27,7 @@ class CreateOrderSheetTest {
         val confirm = rent()
         assertFalse(confirm.isSale)
         assertEquals("Trần Văn Minh", confirm.customer)
-        assertEquals("03/10 → 05/10", confirm.range)
+        assertEquals("03/10/26 → 05/10/26", confirm.range)
         assertEquals(3, confirm.days)
         assertEquals("Vest đen slim fit, Áo dài lụa đỏ ×2", confirm.items)
         assertEquals(750_000.0, confirm.total, 0.0)
@@ -50,7 +50,7 @@ class CreateOrderSheetTest {
     fun `created sheet uses the short order number`() {
         val created = CreateOrderSheet.created("ORD-17-0063", rent())
         assertEquals("0063", created.shortNumber)
-        assertEquals("Trần Văn Minh · 03/10 → 05/10", created.subtitle)
+        assertEquals("Trần Văn Minh · 03/10/26 → 05/10/26", created.subtitle)
         assertEquals(200_000.0, created.paid, 0.0)
         assertFalse(created.isSale)
 

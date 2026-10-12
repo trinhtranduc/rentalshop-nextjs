@@ -495,8 +495,8 @@ final class CalendarDayRowCell: UITableViewCell {
     private let tagLabel = PaddedLabel()
     private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     /// #496: "#0053 · tạo T7 03/10" and the status line, as on the order list rows
-    private let metaLabel = V2.label(size: 13, color: OrderRowCell.metaColor)
-    private let taskLabel = V2.label(size: DS.TextSize.body, weight: .medium, lines: 2)
+    /// #893 (owner, lean row): the day task's date chip and "Sẵn sàng giao" / "Chưa soạn đồ", wrapping
+    private let chipLines = UIStackView()
     private let totalLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     private let noteLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: V2.danger)
 
@@ -508,31 +508,40 @@ final class CalendarDayRowCell: UITableViewCell {
         tagLabel.setContentHuggingPriority(.required, for: .horizontal)
         tagLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         nameLabel.lineBreakMode = .byTruncatingTail
+        nameLabel.numberOfLines = 1
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         totalLabel.textAlignment = .right
         noteLabel.textAlignment = .right
         totalLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         noteLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let nameRow = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
-        nameRow.spacing = 6
+        // #891 (owner, mockup "Lịch"): line 1 name (one line, full width) + the day-task tag right;
+        // then "#code · tạo …" and the Lấy / Trả chips on the left, total and "còn thu" on the right
+        let nameRow = UIStackView(arrangedSubviews: [nameLabel, tagLabel])
+        nameRow.spacing = DS.Spacing.sm
         nameRow.alignment = .center
-        let left = UIStackView(arrangedSubviews: [nameRow, metaLabel, taskLabel])
+        chipLines.axis = .vertical
+        chipLines.alignment = .leading
+        chipLines.spacing = 6
+        let left = UIStackView(arrangedSubviews: [chipLines])
         left.axis = .vertical
-        left.spacing = DS.Gap.lineTight
+        left.spacing = DS.Gap.orderRowLine
         left.alignment = .leading
         let right = UIStackView(arrangedSubviews: [totalLabel, noteLabel])
         right.axis = .vertical
         right.alignment = .trailing
-        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
-        chevron.tintColor = UIColor(hexString: "94A3B8")
-        chevron.contentMode = .center
-        chevron.snp.makeConstraints { make in make.width.height.equalTo(DS.Icon.sm) }
-        let row = UIStackView(arrangedSubviews: [left, right, chevron])
-        row.spacing = DS.Spacing.md
-        row.alignment = .center
-        contentView.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg))
+        right.spacing = 4
+        right.setContentHuggingPriority(.required, for: .horizontal)
+        let mid = UIStackView(arrangedSubviews: [left, UIView(), right])
+        mid.spacing = DS.Spacing.md
+        mid.alignment = .top
+        let column = UIStackView(arrangedSubviews: [nameRow, mid])
+        column.axis = .vertical
+        column.spacing = DS.Gap.orderRowLine
+        contentView.addSubview(column)
+        column.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: DS.Spacing.lg, bottom: 12, right: DS.Spacing.lg))
             make.height.greaterThanOrEqualTo(DS.touchTarget)
         }
         let line = V2.divider()
@@ -546,6 +555,7 @@ final class CalendarDayRowCell: UITableViewCell {
     }
 
     func configure(_ row: CalendarDayRow, hidesMoney: Bool) {
+        // #891 (owner): the day-task tag keeps its light colours (a task, not an order status)
         let pill = row.kind == .handOver ? DS.Status.handOver : DS.Status.returning
         tagLabel.text = row.kind == .handOver ? "Hand over".localized() : "calendar.v2.tag.return".localized()
         tagLabel.textColor = pill.text
@@ -553,18 +563,14 @@ final class CalendarDayRowCell: UITableViewCell {
         let name = row.order.customerName?.trimmingCharacters(in: .whitespaces) ?? ""
         nameLabel.text = name.isEmpty ? row.order.orderNumber : name
         let order = row.order
-        let status = OrderStatus.from(apiString: order.status) ?? (row.kind == .handOver ? .reserved : .pickuped)
-        let lines = OrdersHomeLogic.rowLines(
-            code: OrdersHomeLogic.shortNumber(order.orderNumber),
-            orderType: (order.orderType ?? "").uppercased() == "SALE" ? .sale : .rent, status: status,
-            createdAt: order.createdAt, pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt,
-            returnedAt: nil, updatedAt: nil, isLate: row.lateDays > 0)
-        metaLabel.text = lines.meta
-        taskLabel.text = lines.task
-        taskLabel.isHidden = lines.task.isEmpty
+        // #893 (owner, lean row): no "#code · tạo", no other date; the day task's chip and ready / not prepared
+        let amountWidth = ((MoneyFormatter.format(order.totalAmount)) as NSString)
+            .size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
+        OrderRowCell.fillChipLines(chipLines, chips: OrdersHomeLogic.calendarChips(row),
+                                   width: UIScreen.main.bounds.width - 2 * DS.Spacing.lg - max(amountWidth, 110) - DS.Spacing.md)
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
-        // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
+        // Board Lich: late days (+ stored fee) only; no còn thu / refund note (#893)
         switch CalendarV2Logic.note(row, hidesMoney: hidesMoney) {
         case .late(let days, let fee):
             let late = LateText.days(days)

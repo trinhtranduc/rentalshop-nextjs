@@ -336,7 +336,7 @@ async function main() {
 async function dashChecks(browser, base, check) {
   const tag = F.uniqueTag();
   const acc = await F.createMerchant(tag, { withStaff: false });
-  F.deleteAllOrders(acc.merchantId); // registration adds a sample order: this merchant has none
+  F.deleteAllOrders(acc.merchantId); // this merchant has no orders (sign-up adds none since #895)
   const s = await F.openSession(browser, acc.merchant);
   const page = await s.ctx.newPage();
   const today = F.vnDateKey();

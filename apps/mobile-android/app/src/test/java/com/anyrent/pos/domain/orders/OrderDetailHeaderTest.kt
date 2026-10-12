@@ -36,6 +36,27 @@ class OrderDetailHeaderTest {
     /** 2026-10-05 10:00 in Vietnam */
     private val oct5 = Instant.parse("2026-10-05T03:00:00Z")
 
+    /** #891 (owner): order detail shows "Người tạo: <name>"; no line when the name is empty (iOS creatorName) */
+    @Test
+    fun creatorName() {
+        assertEquals("Merchant 1", OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = " Merchant 1 ")))
+        assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = "  ")))
+        assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = null)))
+    }
+
+    /** #891 (owner): the detail header hides the "lấy sau N ngày" countdown; other notes stay (iOS headerSummary) */
+    @Test
+    fun handOverCountdownIsHidden() {
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverIn(2)))
+        assertEquals(OrderDetailHeader.Due.HandOverToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.HandOverToday))
+        // #891 (owner): no "trả sau N ngày" countdown either; late states stay
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnIn(3)))
+        // #893 (owner): no overdue text or banner in the detail; Việc cần làm shows lateness
+        assertEquals(null, OrderDetailHeader.shownDue(OrderDetailHeader.Due.PastPickup(2)))
+        assertEquals(false, OrderDetailHeader.showsLateBanner)
+        assertEquals(OrderDetailHeader.Due.ReturnToday, OrderDetailHeader.shownDue(OrderDetailHeader.Due.ReturnToday))
+    }
+
     @Test
     fun pickedUpNoteCountsRentalDaysAndDaysToReturn() {
         assertEquals(Note(7, Due.ReturnIn(2)), OrderDetailHeader.note(order("PICKUPED"), oct5, vn))
@@ -74,7 +95,7 @@ class OrderDetailHeaderTest {
         val sale = order("COMPLETED", type = "SALE")
         assertTrue(OrderDetailHeader.note(sale, oct5, vn).isEmpty)
         assertTrue(OrderDetailHeader.steps(sale, zone = vn).isEmpty())
-        assertEquals("T2 14/09", OrderDetailHeader.saleDay(sale, zone = vn))
+        assertEquals("14/09/26 14:33", OrderDetailHeader.saleDay(sale, zone = vn))
     }
 
     @Test
@@ -87,9 +108,9 @@ class OrderDetailHeaderTest {
         val steps = OrderDetailHeader.steps(order("PICKUPED", pickedUpAt = "2026-09-30T18:00:00.000Z"), zone = vn)
         assertEquals(
             listOf(
-                Step(StepTitle.BOOKED, "T2 14/09", done = true, accent = false),
-                Step(StepTitle.HANDED_OVER, "T5 01/10", done = true, accent = true),
-                Step(StepTitle.RETURN, "T4 07/10", done = false, accent = false),
+                Step(StepTitle.BOOKED, "14/09/26 14:33", done = true, accent = false),
+                Step(StepTitle.HANDED_OVER, "01/10/26", done = true, accent = true),
+                Step(StepTitle.RETURN, "07/10/26", done = false, accent = false),
             ),
             steps,
         )
@@ -99,7 +120,7 @@ class OrderDetailHeaderTest {
     fun reservedStepsArePendingWithPlannedDays() {
         val steps = OrderDetailHeader.steps(order("RESERVED"), zone = vn)
         assertEquals(listOf(StepTitle.BOOKED, StepTitle.HAND_OVER, StepTitle.RETURN), steps.map { it.title })
-        assertEquals(listOf("T2 14/09", "T5 01/10", "T4 07/10"), steps.map { it.day })
+        assertEquals(listOf("14/09/26 14:33", "01/10/26", "07/10/26"), steps.map { it.day })
         assertEquals(listOf(true, false, false), steps.map { it.done })
     }
 
@@ -109,13 +130,14 @@ class OrderDetailHeaderTest {
             order("RETURNED", pickedUpAt = "2026-10-01T02:00:00.000Z", returnedAt = "2026-10-05T09:00:00.000Z"),
             zone = vn,
         )
-        assertEquals(Step(StepTitle.RETURNED, "T2 05/10", done = true, accent = true), steps[2])
+        assertEquals(Step(StepTitle.RETURNED, "05/10/26", done = true, accent = true), steps[2])
     }
 
     @Test
-    fun weekdaysComeFromTheLocale() {
+    fun stepDaysAreDayMonthYearInAnyLocale() {
+        // #888: dd/mm/yy, no weekday
         val en = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-        assertEquals("Thu 01/10", OrderDetailHeader.steps(order("RESERVED"), en, vn)[1].day)
+        assertEquals("01/10/26", OrderDetailHeader.steps(order("RESERVED"), en, vn)[1].day)
     }
 
     @Test

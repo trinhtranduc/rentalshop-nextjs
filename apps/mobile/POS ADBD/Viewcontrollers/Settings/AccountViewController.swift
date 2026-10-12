@@ -102,8 +102,8 @@ class AccountViewController: BaseViewControler {
             case .subscription:
                 if let subscription = user.merchant?.subscription {
                     let status = subscription.status.capitalized
-                    let startDateStr = CustomDateCoding.displayDateFormatter.string(from: subscription.currentPeriodStart)
-                    let endDateStr = CustomDateCoding.displayDateFormatter.string(from: subscription.currentPeriodEnd)
+                    let startDateStr = DayFormatter.dmy(subscription.currentPeriodStart) // #888
+                    let endDateStr = DayFormatter.dmy(subscription.currentPeriodEnd)
                     return "\(subscription.plan?.name ?? "Unknown") • \(status) • \(startDateStr) to \(endDateStr)"
                 }
                 return "No active subscription".localized()

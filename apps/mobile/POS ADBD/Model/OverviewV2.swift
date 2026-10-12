@@ -92,9 +92,15 @@ enum OverviewLogic {
         return String(format: "%02d/%02d", p.day, p.month)
     }
 
-    /// "27/09 – 03/10", or one day "03/10"
+    /// "03/10/26" from a key (#888 dd/mm/yy); the chart axis keeps `dayMonth`
+    static func dayMonthYear(_ key: String) -> String {
+        guard let p = CalendarV2Logic.parts(of: key) else { return key }
+        return String(format: "%02d/%02d/%02d", p.day, p.month, p.year % 100)
+    }
+
+    /// "27/09/26 – 03/10/26", or one day "03/10/26"
     static func shortRange(_ range: DayKeyRange) -> String {
-        range.start == range.end ? dayMonth(range.start) : "\(dayMonth(range.start)) – \(dayMonth(range.end))"
+        range.start == range.end ? dayMonthYear(range.start) : "\(dayMonthYear(range.start)) – \(dayMonthYear(range.end))"
     }
 
     /// Noon of a key in `timeZone`, for weekday labels
@@ -133,7 +139,7 @@ enum OverviewLogic {
             let key = CalendarV2Logic.shift(range.start, days: offset)
             let label: String
             if range.dayCount <= 7, let date = date(of: key, timeZone: timeZone) {
-                label = String(DayFormatter.short(date, timeZone: timeZone, locale: locale).split(separator: " ").first ?? "")
+                label = DayFormatter.weekday(date, timeZone: timeZone, locale: locale)
             } else {
                 label = dayMonth(key)
             }

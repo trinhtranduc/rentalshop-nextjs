@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.common
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import com.anyrent.pos.domain.DayText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -13,13 +14,24 @@ class RedesignFormatTest {
     private val tokyo = ZoneId.of("Asia/Tokyo")
     private val vi = Locale("vi")
 
+    /** #888 (owner): every single day in the app reads dd/mm/yy, no weekday, in any language (iOS `DayFormatter`) */
     @Test
-    fun `short day in Vietnamese follows the device zone`() {
-        assertEquals("T6 02/10", formatDayShort(Instant.parse("2026-10-02T16:59:59Z"), vn, vi))
-        assertEquals("T7 03/10", formatDayShort(Instant.parse("2026-10-02T17:00:00Z"), vn, vi))
-        assertEquals("CN 04/10", formatDayShort(Instant.parse("2026-10-03T16:00:00Z"), tokyo, vi))
-        assertEquals("Sat 03/10", formatDayShort(Instant.parse("2026-10-03T05:00:00Z"), vn, Locale.ENGLISH))
+    fun `short day is dd mm yy of the zone`() {
+        assertEquals("02/10/26", formatDayShort(Instant.parse("2026-10-02T16:59:59Z"), vn, vi))
+        assertEquals("03/10/26", formatDayShort(Instant.parse("2026-10-02T17:00:00Z"), vn, vi))
+        assertEquals("04/10/26", formatDayShort(Instant.parse("2026-10-03T16:00:00Z"), tokyo, vi))
+        assertEquals("03/10/26", formatDayShort(Instant.parse("2026-10-03T05:00:00Z"), vn, Locale.ENGLISH))
+        assertEquals("01/01/27", formatDayShort(Instant.parse("2026-12-31T17:00:00Z")))
+        assertEquals("01/01/27", DayText.dmy(java.time.LocalDate.of(2027, 1, 1)))
         assertEquals("2026-10-04", dayKey(Instant.parse("2026-10-03T16:00:00Z"), tokyo))
+    }
+
+    /** #888 (owner): a day with a time reads "05/10/26 14:30" (Vietnam day and clock) */
+    @Test
+    fun `day and time`() {
+        assertEquals("05/10/26 14:30", DayText.dmyTime(Instant.parse("2026-10-05T07:30:00Z"), vn))
+        assertEquals("06/10/26 00:00", DayText.dmyTime(Instant.parse("2026-10-05T17:00:00Z"), vn))
+        assertEquals("06/10/26 00:00", DayText.dmyTime(Instant.parse("2026-10-05T17:00:00Z")))
     }
 
     @Test

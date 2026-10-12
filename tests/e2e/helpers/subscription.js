@@ -4,7 +4,7 @@
  * These tests MUTATE subscription and plan rows, so they never use the shared seed merchants. Every describe makes
  * its own world: one Plan row with small limits, one Merchant (+ default outlet, category), a MERCHANT user, an
  * OUTLET_STAFF and an OUTLET_INVENTORY user. Rows are inserted with psql (E2E_DATABASE_URL, local host only) because
- * the real registration endpoint seeds demo data and needs email verification. Subscription and plan state is set
+ * the real registration endpoint needs email verification. Subscription and plan state is set
  * with psql too (there is no merchant-facing API to expire an account); everything else goes through the real API.
  *
  * Passwords are copied from a seeded account (merchant123) so no hash is computed here.

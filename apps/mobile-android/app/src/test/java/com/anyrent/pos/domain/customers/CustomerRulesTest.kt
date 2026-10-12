@@ -125,6 +125,26 @@ class CustomerRulesTest {
         assertNull(empty.phone)
     }
 
+    /** #891 (owner): a customer's order rows show the item names on line 1 (iOS itemsTitle) */
+    @Test
+    fun `customer order rows show the item names`() {
+        val data = JSONObject(
+            """{"orders":[{"id":5,"orderNumber":"0062","orderType":"RENT","status":"RESERVED","totalAmount":380000,
+            "orderItems":[{"productName":"Vest đen slim fit","quantity":1},{"productName":"Cà vạt lụa","quantity":1},{"productName":"Áo sơ mi","quantity":1}],
+            "_count":{"orderItems":3}},
+            {"id":6,"orderNumber":"0063","orderType":"RENT","status":"RESERVED","totalAmount":1,"orderItems":[{"productName":"Áo dài cách tân xanh","quantity":2}]},
+            {"id":7,"orderNumber":"0064","orderType":"RENT","status":"RESERVED","totalAmount":1,"_count":{"orderItems":2}}],"total":3}""",
+        )
+        val rows = CustomerRules.parseOrders(data).orders
+        assertEquals("Vest đen slim fit, Cà vạt lụa +1", CustomerRules.itemsTitle(rows[0]))
+        assertEquals("Áo dài cách tân xanh ×2", CustomerRules.itemsTitle(rows[1]))
+        assertNull("older API without names: the caller shows the item count", CustomerRules.itemsTitle(rows[2]))
+        assertEquals("count falls back to the items", 1, rows[1].itemCount)
+        // #893: the API field is `itemNames`
+        val named = CustomerRules.parseOrders(JSONObject("""{"orders":[{"id":8,"orderNumber":"1","itemNames":[{"productName":"Áo dài","quantity":2},{"productName":null,"quantity":1}]}]}""")).orders[0]
+        assertEquals("Áo dài ×2", CustomerRules.itemsTitle(named))
+    }
+
     @Test
     fun `row subtitle masks the phone`() {
         assertEquals("09xxxx099 · 12 đơn", CustomerRules.subtitle("0901234099", "12 đơn"))

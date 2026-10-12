@@ -78,6 +78,7 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.domain.products.FreeStripDay
 import com.anyrent.pos.domain.products.ProductAccess
+import com.anyrent.pos.domain.products.ProductCostPrice
 import com.anyrent.pos.domain.products.ProductDetailLogic
 import com.anyrent.pos.domain.products.ProductImageViewerRequest
 import com.anyrent.pos.domain.products.ProductImages
@@ -242,6 +243,10 @@ fun ProductDetailScreen(
                 val meta = listOfNotNull(
                     current.categoryName, current.barcodeText,
                     current.deposit.takeIf { it > 0 }?.let { stringResource(R.string.v2_detail_deposit, formatMoneyVnd(it)) },
+                    // #887: Giá vốn for roles that may see prices (never OUTLET_STAFF)
+                    ProductCostPrice.shown(current, ProductAccess.showsPriceFields(PermissionManager.role))
+                        // Non-breaking spaces: "Giá vốn 700.000" wraps as one piece
+                        ?.let { (stringResource(R.string.v2_form_cost_price) + " " + formatMoneyVnd(it)).replace(' ', '\u00A0') },
                 ).filter { it.isNotBlank() }
                 if (meta.isNotEmpty()) Text(meta.joinToString(" · "), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 val tiles = listOfNotNull(
@@ -315,7 +320,12 @@ fun ProductDetailScreen(
             if (orders.isEmpty()) {
                 Text(stringResource(R.string.v2_detail_no_orders), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
-            orders.forEach { order -> OrderRow(order, chip) { onOpenOrder(order.id) } }
+            // #891 (owner): the order list row plus "× qty" of this product
+            orders.forEach { order ->
+                com.anyrent.pos.ui.orders.v2.ProductOrderRow(
+                    order, com.anyrent.pos.domain.products.ProductCalendarLogic.quantity(order, productId),
+                ) { onOpenOrder(order.id) }
+            }
             Spacer(Modifier.height(24.dp))
         }
 
@@ -460,38 +470,6 @@ private fun OrdersChip(title: String, selected: Boolean, onClick: () -> Unit) {
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) Color.White else DS.Colors.Text,
         )
-    }
-}
-
-@Composable
-private fun OrderRow(order: OrderSummary, chip: ProductOrdersChip, onClick: () -> Unit) {
-    // #496: "#0057 · trả T2 05/10" left, "Giao T7 03/10" right; no quantity
-    val texts = orderRowTexts()
-    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            val state = ProductDetailLogic.rowState(order, chip, weekdays = texts.weekdays)
-            val (text, color) = when (state) {
-                ProductOrderRowState.PickupToday -> stringResource(R.string.v2_detail_state_pickup_today) to DS.Status.HandOver.text
-                is ProductOrderRowState.PickupOn -> stringResource(R.string.v2_detail_state_pickup_on, state.day) to DS.Colors.TextMuted
-                is ProductOrderRowState.Late -> pluralStringResource(R.plurals.orders_late_days, state.days, state.days) to V2Colors.Danger
-                ProductOrderRowState.ReturnToday -> stringResource(R.string.v2_detail_state_return_today) to DS.Status.HandOver.text
-                is ProductOrderRowState.ReturnOn -> stringResource(R.string.v2_detail_state_return_on, state.day) to DS.Colors.TextMuted
-                ProductOrderRowState.Status -> "" to OrderStatusStyle.badgeColor(order.status)
-            }
-            // Board: the bar takes the colour of the row's state
-            Box(Modifier.width(4.dp).height(40.dp).clip(RoundedCornerShape(4.dp)).background(color))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
-                Text(order.customerName.orEmpty(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(ProductDetailLogic.meta(order, texts = texts), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            if (state == ProductOrderRowState.Status) StatusBadge(order.status, fontSize = DS.TextSize.Pill)
-            else Text(text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
-        }
-        HorizontalDivider(color = DS.Colors.Divider)
     }
 }
 

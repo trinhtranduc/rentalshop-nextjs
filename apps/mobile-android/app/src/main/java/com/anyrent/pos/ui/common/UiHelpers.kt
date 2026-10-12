@@ -75,7 +75,7 @@ fun maskedPhoneNumber(phone: String): String {
  * - Date + time: `dd/MM/yyyy HH:mm` (order detail create date)
  */
 val DisplayDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy")
-val DisplayDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+val DisplayDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm") // #888
 
 /** Days in the shop zone (#602); date-time stamps keep the device clock */
 private val shopZone: ZoneId get() = ShopTime.zone
@@ -159,26 +159,16 @@ fun orderLinePricingText(
 // Redesign formatters (#370): days in the shop zone (#602), money in Vietnamese style
 // ---------------------------------------------------------------------------------------------
 
-/** `T7 03/10` in Vietnamese, `Sat 03/10` otherwise, for the civil day of [instant] in [zone] */
+/** `03/10/26`, the civil day of [instant] in [zone] (#888) */
 fun formatDayShort(
     instant: Instant,
     zone: ZoneId = ShopTime.zone,
     locale: Locale = Locale.getDefault(),
 ): String = formatDayShort(instant.atZone(zone).toLocalDate(), locale)
 
-/** `T7 03/10` of a picked day (no zone: the day itself) */
-fun formatDayShort(date: LocalDate, locale: Locale = Locale.getDefault()): String {
-    val dayMonth = "%02d/%02d".format(date.dayOfMonth, date.monthValue)
-    val weekday = if (locale.language == "vi") {
-        when (date.dayOfWeek) {
-            java.time.DayOfWeek.SUNDAY -> "CN"
-            else -> "T${date.dayOfWeek.value + 1}"
-        }
-    } else {
-        date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale)
-    }
-    return "$weekday $dayMonth"
-}
+/** `03/10/26` of a picked day (#888: dd/mm/yy everywhere, no weekday; [locale] kept for callers, unused) */
+@Suppress("UNUSED_PARAMETER")
+fun formatDayShort(date: LocalDate, locale: Locale = Locale.getDefault()): String = com.anyrent.pos.domain.DayText.dmy(date)
 
 /** `yyyy-MM-dd` civil day of [instant] in [zone] */
 fun dayKey(instant: Instant, zone: ZoneId = ShopTime.zone): String =

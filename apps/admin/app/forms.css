@@ -79,6 +79,11 @@
 .ar-dialog-footer button:last-child:disabled {
   opacity: 0.5;
 }
+/* #882: a destructive confirm (Cancel Plan, Pause Plan) stays red */
+.ar-dialog-footer-danger button:last-child:not(:disabled) {
+  background: rgb(var(--ar-danger));
+  color: #fff;
+}
 @media (min-width: 768px) {
   .ar-dialog-footer {
     display: flex;

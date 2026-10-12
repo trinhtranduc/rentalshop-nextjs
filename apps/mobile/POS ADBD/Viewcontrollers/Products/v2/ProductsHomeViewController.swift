@@ -223,10 +223,10 @@ final class ProductsHomeViewController: BaseViewControler {
     }
 
     private func buildCartBar() {
-        // #681: slate, so the bar stands apart from the blue + buttons above it
-        cartBar.backgroundColor = DS.Color.text
+        // #893 (owner, board SP-dong): primary blue, white text, a blue shadow; one bar for rent and sale
+        cartBar.backgroundColor = HomeCartBarStyle.fill
         cartBar.layer.cornerRadius = 16
-        cartBar.layer.shadowColor = DS.Color.text.cgColor
+        cartBar.layer.shadowColor = HomeCartBarStyle.fill.cgColor
         cartBar.layer.shadowOpacity = 0.28
         cartBar.layer.shadowRadius = 8
         cartBar.layer.shadowOffset = CGSize(width: 0, height: 6)
@@ -439,8 +439,18 @@ final class ProductsHomeViewController: BaseViewControler {
     fileprivate func addToCart(_ product: Product) {
         ProductsCartBridge.add(product)
         HapticFeedback.light()
-        showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
+        // #893 (owner): no "added to cart" toast; the + button's count already says it (errors still toast)
+        if HomeCartBarStyle.showsAddedToast {
+            showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
+        }
     }
+}
+
+/// #893 (owner): the Home cart bar look (board SP-dong) and the add feedback
+enum HomeCartBarStyle {
+    static let fill = DS.Color.primary
+    static let text = UIColor.white
+    static let showsAddedToast = false
 }
 
 /// Adds a product the same way the old Home does (price by the cart's order type)
@@ -607,6 +617,10 @@ final class ProductRowV2Cell: UITableViewCell {
                 text.append(NSAttributedString(string: unit(mode), attributes: muted))
                 if let second = price.second, let secondMode = price.secondMode {
                     text.append(NSAttributedString(string: " · " + MoneyFormatter.format(second) + unit(secondMode), attributes: muted))
+                }
+                // #887: a product that also sells keeps its sale price last (board SP-dong)
+                if let sale = price.sale {
+                    text.append(NSAttributedString(string: " · " + String(format: "products.price.saleShort".localized(), MoneyFormatter.format(sale)), attributes: muted))
                 }
             } else {
                 text.append(NSAttributedString(string: String(format: "products.price.saleShort".localized(), MoneyFormatter.format(price.main)), attributes: muted))

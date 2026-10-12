@@ -12,6 +12,12 @@ import UIKit
 import SnapKit
 
 final class CartV2ViewController: BaseViewControler {
+    /// #888: cost lines only for roles that may see prices (products.manage, never OUTLET_STAFF)
+    private var showsPrices: Bool {
+        ProductAccess.showsPriceFields(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
+    }
+    private static let costColor = UIColor(hexString: "334155")
+
     private let typeToggle = V2Segmented(titles: ["products.cart.rent".localized(), "products.cart.sale".localized()], compact: false)
     private let scroll = UIScrollView()
     private let content = UIStackView()
@@ -271,7 +277,10 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(padded(empty, vertical: 20))
         }
         for (index, item) in cart.items.enumerated() {
-            content.addArrangedSubview(itemRow(item, index: index))
+            // #893 (owner): swipe right-to-left reveals a red "Xoá"; a full swipe removes the line
+            let swipe = SwipeDeleteRow(content: itemRow(item, index: index))
+            swipe.onDelete = { CartStore.shared.removeItem(at: index) }
+            content.addArrangedSubview(swipe)
         }
 
         content.addArrangedSubview(V2.sectionHeader("products.cart.money".localized()))
@@ -298,6 +307,25 @@ final class CartV2ViewController: BaseViewControler {
         total.isUserInteractionEnabled = false
         content.addArrangedSubview(total)
         content.addArrangedSubview(V2.divider())
+
+        // #888: "Tổng giá vốn", and "Lãi dự kiến" in a sale cart; only for roles that may see prices
+        if let costs = CartCostLogic.summary(cart.items, total: cart.totalAmount, orderType: cart.orderType, showsPrices: showsPrices) {
+            let totalCost = V2ValueRow(title: "products.cart.totalCost".localized(), chevron: false)
+            totalCost.valueLabel.text = MoneyFormatter.format(costs.totalCost)
+            totalCost.valueLabel.textColor = DS.Color.text
+            totalCost.isUserInteractionEnabled = false
+            content.addArrangedSubview(totalCost)
+            content.addArrangedSubview(V2.divider())
+            if let profit = costs.profit {
+                let row = V2ValueRow(title: "products.cart.profit".localized(), chevron: false)
+                row.valueLabel.text = MoneyFormatter.format(profit)
+                row.valueLabel.font = Utils.boldFont(size: DS.TextSize.name)
+                row.valueLabel.textColor = profit < 0 ? UIColor(hexString: "B91C1C") : V2.ok
+                row.isUserInteractionEnabled = false
+                content.addArrangedSubview(row)
+                content.addArrangedSubview(V2.divider())
+            }
+        }
 
         if isRent {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized())
@@ -411,27 +439,33 @@ final class CartV2ViewController: BaseViewControler {
         let text: String
         var days: Int?
         if let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt {
-            text = DayFormatter.short(pickup) + " → " + DayFormatter.short(ret)
+            text = DayFormatter.dmy(pickup) + " → " + DayFormatter.dmy(ret) // #888 dd/mm/yy
             days = CartV2Logic.rentalDays(pickup: pickup, return: ret)
         } else {
             text = "products.cart.pickDates".localized()
         }
         let label = V2.label(text, size: DS.TextSize.name, weight: .bold, color: days == nil ? DS.Color.primary : DS.Color.text)
-        let pill = V2.label(days.map { " " + PluralText.format("products.cart.days", count: $0, $0) + " " }, size: DS.TextSize.secondary, weight: .bold,
-                            color: UIColor(hexString: "1E40AF"))
+        // #893 (owner): room inside the pill (10pt left/right, 4pt top/bottom), one line
+        let pill = InsetLabel()
+        pill.insets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
+        pill.text = days.map { PluralText.format("products.cart.days", count: $0, $0) }
+        pill.font = Utils.boldFont(size: DS.TextSize.secondary)
+        pill.textColor = UIColor(hexString: "1E40AF")
+        pill.numberOfLines = 1
         pill.backgroundColor = UIColor(hexString: "DBEAFE")
-        pill.layer.cornerRadius = 11
+        pill.layer.cornerRadius = 13
         pill.clipsToBounds = true
+        pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.isHidden = days == nil
         [label, pill].forEach(row.addSubview)
         label.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(DS.Spacing.lg)
             make.centerY.equalToSuperview()
+            make.trailing.lessThanOrEqualTo(pill.snp.leading).offset(-DS.Spacing.sm)
         }
         pill.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
             make.centerY.equalToSuperview()
-            make.height.equalTo(22)
         }
         row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
         row.isAccessibilityElement = true
@@ -478,8 +512,6 @@ final class CartV2ViewController: BaseViewControler {
         column.spacing = 6
         column.alignment = .fill
 
-        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet
-        column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
 
         if isRent, let conflict = conflicts[item.productId] {
             let tag = UIButton(type: .system)
@@ -515,11 +547,26 @@ final class CartV2ViewController: BaseViewControler {
             column.addArrangedSubview(V2.label(String(format: "products.cart.inStock".localized(), available),
                                                size: DS.TextSize.secondary, color: DS.Color.textMuted))
         }
+        // #888: "Giá vốn <cost × qty>" when the product has a cost and the role may see prices (never staff)
+        if let cost = CartCostLogic.lineCost(item, showsPrices: showsPrices) {
+            let title = V2.label("products.cart.cost".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            let value = V2.label(MoneyFormatter.format(cost), size: DS.TextSize.secondary, weight: .bold, color: Self.costColor)
+            value.setContentCompressionResistancePriority(.required, for: .horizontal)
+            let costRow = UIStackView(arrangedSubviews: [title, UIView(), value])
+            costRow.alignment = .center
+            costRow.isAccessibilityElement = true
+            costRow.accessibilityLabel = "\(title.text ?? "") \(value.text ?? "")"
+            column.addArrangedSubview(costRow)
+        }
         let bottom = UIStackView(arrangedSubviews: [total, UIView(), stepper])
         bottom.alignment = .center
         bottom.spacing = 8
         column.setCustomSpacing(10, after: column.arrangedSubviews.last ?? link)
         column.addArrangedSubview(bottom)
+        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet.
+        // #891 (owner): the note is the last line of the item
+        column.setCustomSpacing(8, after: bottom)
+        column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
 
         row.addSubview(thumb)
         row.addSubview(column)
@@ -1403,3 +1450,108 @@ extension CartItemNoteSheet: UITextViewDelegate {
     }
 }
 
+
+// MARK: - Swipe to delete (#893)
+
+/// #893 (owner): what a right-to-left swipe on a cart line does when the finger lifts
+enum SwipeDeleteLogic {
+    enum Outcome: Equatable { case close, open, delete }
+
+    /// Width of the red "Xoá" action
+    static let actionWidth: CGFloat = 88
+
+    static func outcome(offset: CGFloat, width: CGFloat, velocity: CGFloat) -> Outcome {
+        guard offset < 0 else { return .close }
+        if -offset > width * 0.6 || (velocity < -1200 && -offset > actionWidth / 2) { return .delete }
+        if -offset > actionWidth / 2 { return .open }
+        return .close
+    }
+
+    /// The content never moves right, nor further than the row
+    static func clamped(_ offset: CGFloat, width: CGFloat) -> CGFloat {
+        min(0, max(offset, -width))
+    }
+}
+
+/// A row that slides left to reveal a red "Xoá"; a full swipe or a tap on "Xoá" calls `onDelete` (#893)
+final class SwipeDeleteRow: UIView, UIGestureRecognizerDelegate {
+    let content: UIView
+    var onDelete: (() -> Void)?
+    private let action = UIButton(type: .system)
+    private var start: CGFloat = 0
+
+    init(content: UIView) {
+        self.content = content
+        super.init(frame: .zero)
+        clipsToBounds = true
+        backgroundColor = UIColor(hexString: "DC2626")
+        action.setTitle("cart.swipe.delete".localized(), for: .normal)
+        action.setTitleColor(.white, for: .normal)
+        action.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        action.accessibilityIdentifier = "cart.swipe.delete"
+        action.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
+        addSubview(action)
+        addSubview(content)
+        content.backgroundColor = content.backgroundColor ?? DS.Color.surface
+        content.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        action.snp.makeConstraints { make in
+            make.top.bottom.trailing.equalToSuperview()
+            make.width.equalTo(SwipeDeleteLogic.actionWidth)
+        }
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(panned(_:)))
+        pan.delegate = self
+        addGestureRecognizer(pan)
+        // VoiceOver: the same as a full swipe
+        accessibilityCustomActions = [UIAccessibilityCustomAction(name: "cart.swipe.delete".localized(), target: self,
+                                                                 selector: #selector(accessibilityDelete))]
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Only a mostly horizontal drag starts the swipe, so the cart still scrolls vertically
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+        let velocity = pan.velocity(in: self)
+        return abs(velocity.x) > abs(velocity.y)
+    }
+
+    @objc private func panned(_ pan: UIPanGestureRecognizer) {
+        let width = bounds.width
+        switch pan.state {
+        case .began:
+            start = content.transform.tx
+        case .changed:
+            content.transform = CGAffineTransform(translationX: SwipeDeleteLogic.clamped(start + pan.translation(in: self).x, width: width), y: 0)
+        case .ended, .cancelled:
+            let offset = content.transform.tx
+            switch SwipeDeleteLogic.outcome(offset: offset, width: width, velocity: pan.velocity(in: self).x) {
+            case .delete: slideOutAndDelete()
+            case .open: settle(-SwipeDeleteLogic.actionWidth)
+            case .close: settle(0)
+            }
+        default:
+            break
+        }
+    }
+
+    private func settle(_ x: CGFloat) {
+        UIView.animate(withDuration: 0.2) { self.content.transform = CGAffineTransform(translationX: x, y: 0) }
+    }
+
+    private func slideOutAndDelete() {
+        UIView.animate(withDuration: 0.2, animations: {
+            self.content.transform = CGAffineTransform(translationX: -self.bounds.width, y: 0)
+        }, completion: { _ in self.onDelete?() })
+    }
+
+    @objc private func deleteTapped() {
+        slideOutAndDelete()
+    }
+
+    @objc private func accessibilityDelete() -> Bool {
+        onDelete?()
+        return true
+    }
+}

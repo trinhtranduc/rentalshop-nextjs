@@ -10,15 +10,13 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 /**
- * Rent list sort of the "Lọc & sắp xếp" sheet (board Loc). `nearestTask` (#389): late tasks first, then the nearest
- * planned hand-over or return, then closed orders.
+ * #888: the one date of the "Lọc & sắp xếp" sheet (board Loc): the list order and the range both use it.
+ * "Việc gần nhất" left the sheet; the "Việc cần làm" tab keeps that order. Same as iOS `RentOrdersFilter.SortDate`.
  */
-enum class OrdersSort(val apiField: String) {
-    NEAREST_TASK("nearestTask"), CREATED("createdAt"), PICKUP("pickupPlanAt"), RETURN("returnPlanAt")
-}
+enum class SortDate(val apiField: String) { PICKUP("pickupPlanAt"), RETURN("returnPlanAt"), CREATED("createdAt") }
 
-/** Which date the range applies to: created, or the planned hand-over / return day (#389, Vietnam days in the API) */
-enum class DateBasis(val apiField: String) { CREATED("createdAt"), PICKUP_PLAN("pickupPlanAt"), RETURN_PLAN("returnPlanAt") }
+/** `NEAREST_FIRST` = latest date first (`desc`), the meaning "Ngày giao gần nhất" had before #888 */
+enum class SortDirection(val apiOrder: String) { NEAREST_FIRST("desc"), FARTHEST_FIRST("asc") }
 
 sealed interface DateRangeChoice {
     data object Any : DateRangeChoice
@@ -31,12 +29,12 @@ sealed interface DateRangeChoice {
 /** Rent list query: the status chips plus the sheet */
 data class RentOrdersFilter(
     val status: String? = null,
-    val sort: OrdersSort = OrdersSort.CREATED,
-    val basis: DateBasis = DateBasis.CREATED,
+    val sortDate: SortDate = SortDate.PICKUP,
+    val direction: SortDirection = SortDirection.NEAREST_FIRST,
     val range: DateRangeChoice = DateRangeChoice.Any,
 ) {
     /** The sheet part (sort and dates) is untouched */
-    val isDefault get() = sort == OrdersSort.CREATED && range == DateRangeChoice.Any
+    val isDefault get() = sortDate == SortDate.PICKUP && direction == SortDirection.NEAREST_FIRST && range == DateRangeChoice.Any
 }
 
 /** One `GET /api/orders` request of the tab */
@@ -45,6 +43,7 @@ data class OrdersQuery(
     val orderType: String? = null,
     val status: String? = null,
     val sortBy: String = "createdAt",
+    val sortOrder: String = "desc",
     val startDate: String? = null,
     val endDate: String? = null,
     val dateField: String? = null,
@@ -91,6 +90,9 @@ object OrdersBoardLogic {
         return payLine(order.amountDue ?: 0.0, order.refundDue ?: 0.0)
     }
 
+    /** #891 (owner): the pay line of a list row; none on Tất cả đơn rows ([rentList]) */
+    fun rowPayLine(order: OrderSummary, rentList: Boolean): PayLine? = if (rentList) null else listPayLine(order)
+
     /** "giao N · trả M" of a band: hand-over count to take-back count */
     fun bandCounts(rows: List<OrdersRow>): Pair<Int, Int> {
         val work = rows.filterIsInstance<OrdersRow.Work>()
@@ -125,6 +127,60 @@ object OrdersBoardLogic {
         updatedAt = OrdersHomeLogic.parseInstant(order.updatedAt),
         late = lateDays > 0,
     )
+
+    /** #893 (owner): kinds of the chips on line 2 of a lean Việc cần làm row */
+    enum class WorkChipKind { PICKUP, RETURN, LATE, NOT_PREPARED }
+
+    /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE */
+    data class WorkChip(val kind: WorkChipKind, val date: String? = null, val days: Int = 0)
+
+
+    /** #893 (owner): the task's own date (Lấy for a hand-over, Trả for a take-back), "Trễ N ngày", "Chưa soạn đồ" */
+    fun workChips(work: TodayWorkRow, kind: WorkKind, zone: java.time.ZoneId = ShopTime.zone): List<WorkChip> = buildList {
+        val handOver = kind == WorkKind.HAND_OVER
+        (if (handOver) work.pickupPlanAt else work.returnPlanAt)?.let {
+            add(WorkChip(if (handOver) WorkChipKind.PICKUP else WorkChipKind.RETURN, date = OrderRowDates.dmy(it, zone)))
+        }
+        if (work.lateDays > 0) add(WorkChip(WorkChipKind.LATE, days = work.lateDays))
+        if (notPreparedApplies(kind, work.isReadyToDeliver)) add(WorkChip(WorkChipKind.NOT_PREPARED))
+    }
+
+    /** #893 (owner): "Chưa soạn đồ" only on a hand-over (RESERVED, waiting to be picked up) not prepared */
+    fun notPreparedApplies(kind: WorkKind, isReadyToDeliver: Boolean): Boolean = kind == WorkKind.HAND_OVER && !isReadyToDeliver
+
+    /** #893 (owner): "còn thu N" under the total of a Việc cần làm row; null when nothing is due */
+    fun workDue(work: TodayWorkRow): Double? = work.amountDue.takeIf { it > 0 }
+
+    /** #891 (option C): the chips of a rent row; [sortedBy] (Tất cả đơn only) makes that date bold */
+    fun dateChips(order: OrderSummary, sortedBy: SortDate?, pickupLabel: String = "Lấy", returnLabel: String = "Trả"): List<OrderRowDates.DateChip> =
+        OrderRowDates.chips(
+            OrdersHomeLogic.parseInstant(order.pickupPlanAt), OrdersHomeLogic.parseInstant(order.returnPlanAt),
+            boldPickup = sortedBy == SortDate.PICKUP, boldReturn = sortedBy == SortDate.RETURN,
+            pickupLabel = pickupLabel, returnLabel = returnLabel,
+        )
+
+    /** #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" is bold dark text (no background) */
+    fun metaIsBold(sortedBy: SortDate?): Boolean = sortedBy == SortDate.CREATED
+
+    /** #891 (option C): light blue "Lấy", light purple "Trả" (iOS DateChip.Kind.colors) */
+    fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill = when (kind) {
+        OrderRowDates.ChipKind.PICKUP -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEFF6FF))
+        OrderRowDates.ChipKind.RETURN -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF5B21B6), androidx.compose.ui.graphics.Color(0xFFF5F3FF))
+    }
+
+    /** #888 line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was) */
+    fun rentRowMeta(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String =
+        OrderRowDates.lines(rowDates(order, 0), texts).meta
+
+    /** #888 "Tất cả đơn" row: "Lấy 14/10/26", "Trả 16/10/26" (planned days, any status); the sorted date marked */
+    fun rentRowDates(order: OrderSummary, sortedBy: SortDate, texts: OrderRowDates.Texts = OrderRowDates.Texts()): List<OrderRowDates.Part> =
+        OrderRowDates.rentPlan(
+            OrdersHomeLogic.parseInstant(order.pickupPlanAt),
+            OrdersHomeLogic.parseInstant(order.returnPlanAt),
+            markPickup = sortedBy == SortDate.PICKUP,
+            markReturn = sortedBy == SortDate.RETURN,
+            texts = texts,
+        )
 
     /**
      * #496 the date lines of a "Việc cần làm" row: a hand-over is a RESERVED rent, a take-back a rented-out one.
@@ -176,10 +232,12 @@ object OrdersBoardLogic {
         return OrdersQuery(
             orderType = "RENT",
             status = filter.status,
-            sortBy = filter.sort.apiField,
+            sortBy = filter.sortDate.apiField,
+            sortOrder = filter.direction.apiOrder,
             startDate = bounds?.first?.toString(),
             endDate = bounds?.second?.toString(),
-            dateField = bounds?.let { filter.basis.apiField },
+            // #888: the range uses the sort date
+            dateField = bounds?.let { filter.sortDate.apiField },
             page = page,
         )
     }
