@@ -13,8 +13,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { useToast } from '@rentalshop/ui';
-import { outletsApi } from '@rentalshop/utils';
-import type { OutletFilters } from '@rentalshop/types';
+import { attendanceApi, outletsApi } from '@rentalshop/utils';
+import type { AttendanceOutletSummary, OutletFilters } from '@rentalshop/types';
+import { canUseAttendanceWeb, hasAttendance, listOf } from '../attendance/attendance-model';
+import { useMerchantModules } from '../attendance/useMerchantModules';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { isAddOutletEnabled } from '../../lib/outlets';
@@ -92,6 +94,37 @@ export default function OutletsPage() {
   // #745: "Thêm chi nhánh" also needs NEXT_PUBLIC_ENABLE_ADD_OUTLET
   const canAdd = isAddOutletEnabled() && isOwner;
   const { toastSuccess } = useToast();
+  // #908: "Chấm công" column and the outlet's attendance page while the module is on
+  const ta = useTranslations('attendance') as unknown as T;
+  const modules = useMerchantModules(user);
+  const attendanceOn = hasAttendance(modules) && canUseAttendanceWeb(user?.role);
+  const [attendance, setAttendance] = useState<Record<number, AttendanceOutletSummary>>({});
+  useEffect(() => {
+    if (!attendanceOn) return;
+    let alive = true;
+    attendanceApi
+      .listSettings()
+      .then((res) => {
+        if (!alive || !res?.success) return;
+        const map: Record<number, AttendanceOutletSummary> = {};
+        for (const row of listOf<AttendanceOutletSummary>(res.data, 'outlets')) map[Number(row.outletId)] = row;
+        setAttendance(map);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [attendanceOn]);
+  const attendanceTag = (row: OutletLike) => {
+    const a = attendance[Number(row.id)];
+    return a?.generated ? (
+      <span className="inline-block whitespace-nowrap rounded-full bg-[#D1FAE5] px-2 py-[2px] text-xs font-semibold text-[#047857]">
+        {a.qrMode === 'FIXED' ? ta('outlets.qrFixed') : ta('outlets.qrDaily')}
+      </span>
+    ) : (
+      <span className="inline-block whitespace-nowrap rounded-full bg-[#F1F5F9] px-2 py-[2px] text-xs font-semibold text-[#475569]">{ta('outlets.noQr')}</span>
+    );
+  };
 
   const { q, page, limit, sortBy, sortOrder } = parseOutletParams(searchParams);
   const merchantId = user?.merchant?.id || user?.merchantId;
@@ -214,6 +247,11 @@ export default function OutletsPage() {
     const allowed = outletActions(row, canManageOutlets, isOwner);
     return (
       <span className="flex items-center justify-end gap-1">
+        {attendanceOn && (
+          <Link href={`/outlets/${row.id}/attendance`} className={smallBtn}>
+            {ta('outlets.open')}
+          </Link>
+        )}
         {allowed.includes('edit') && (
           <button type="button" onClick={() => setDialog({ kind: 'edit', row })} className={smallBtn}>
             {t('edit')}
@@ -329,8 +367,13 @@ export default function OutletsPage() {
                   <th scope="col" className={`${th} w-[120px]`}>
                     {t('cols.status')}
                   </th>
+                  {attendanceOn && (
+                    <th scope="col" className={`${th} w-[190px]`}>
+                      {ta('outlets.col')}
+                    </th>
+                  )}
                   {sortHeader('createdAt', t('cols.createdAt'), 'w-[120px]')}
-                  <th scope="col" className={`${th} w-[120px] pr-4`}>
+                  <th scope="col" className={`${th} ${attendanceOn ? 'w-[180px]' : 'w-[120px]'} pr-4`}>
                     <span className="sr-only">{t('cols.actions')}</span>
                   </th>
                 </tr>
@@ -344,6 +387,7 @@ export default function OutletsPage() {
                     </td>
                     <td className="truncate px-2 py-2.5 align-middle tabular-nums text-ar-ink-2">{row.phone || <span className="text-ar-faint">—</span>}</td>
                     <td className="px-2 py-2.5 align-middle">{statusTag(row)}</td>
+                    {attendanceOn && <td className="px-2 py-2.5 align-middle">{attendanceTag(row)}</td>}
                     <td className="px-2 py-2.5 align-middle text-sm tabular-nums text-ar-muted">{formatOutletDate(row.createdAt)}</td>
                     <td className="py-2.5 pl-2 pr-4 text-right align-middle">{actions(row)}</td>
                   </tr>
@@ -359,6 +403,7 @@ export default function OutletsPage() {
                     {outletAddress(row) && <span className="text-sm text-ar-ink-2">{outletAddress(row)}</span>}
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums text-ar-muted">
                       {statusTag(row)}
+                      {attendanceOn && attendanceTag(row)}
                       {row.phone && <span>{row.phone}</span>}
                     </span>
                   </span>
