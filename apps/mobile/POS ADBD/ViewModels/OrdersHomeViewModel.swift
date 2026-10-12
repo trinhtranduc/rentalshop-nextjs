@@ -362,8 +362,6 @@ enum OrdersHomeLogic {
         static func == (lhs: WorkChip, rhs: WorkChip) -> Bool { lhs.text == rhs.text }
     }
 
-    /// #893 (owner): the right side of a lean Việc cần làm row
-    enum WorkAmount: Equatable { case due(Double), total(Double) }
 
     /// #893 (owner): Việc cần làm line 2: the task's own date (Lấy for a hand-over, Trả for a take-back), then
     /// "Trễ N ngày", then "Chưa soạn đồ" (hand-over rows only, never a return)
@@ -387,8 +385,9 @@ enum OrdersHomeLogic {
         kind == .handOver && !isReadyToDeliver
     }
 
-    static func workAmount(_ work: TodayWorkRow) -> WorkAmount {
-        work.amountDue > 0 ? .due(work.amountDue) : .total(work.totalAmount)
+    /// #893 (owner): "còn thu N" under the total of a Việc cần làm row; nil when nothing is due
+    static func workDue(_ work: TodayWorkRow) -> Double? {
+        work.amountDue > 0 ? work.amountDue : nil
     }
 
     /// #891 (option C): the date chips of a rent row; `sortedBy` (Tất cả đơn only) makes that date bold

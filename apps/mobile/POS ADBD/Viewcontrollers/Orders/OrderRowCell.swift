@@ -163,6 +163,8 @@ final class OrderRowCell: UITableViewCell {
     private var thirdLine: UIStackView?
     /// #893 (owner): line 2 of a lean Việc cần làm row: the task date chip, "Trễ N ngày", "Chưa soạn đồ"; wraps
     private let workChipLines = UIStackView()
+    /// #893 (owner): "còn thu N" under the total on a Việc cần làm row
+    private let workDueLabel = UILabel()
     private let callButton = UIButton(type: .system)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
 
@@ -230,7 +232,17 @@ final class OrderRowCell: UITableViewCell {
         workChipLines.alignment = .leading
         workChipLines.spacing = 6
         workChipLines.isHidden = true
-        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, chipStack, workChipLines, spacer, qtyLabel, totalLabel])
+        workDueLabel.font = Utils.mediumFont(size: DS.TextSize.secondary)
+        workDueLabel.textColor = DS.Status.waiting.text
+        workDueLabel.textAlignment = .right
+        workDueLabel.isHidden = true
+        let amountStack = UIStackView(arrangedSubviews: [totalLabel, workDueLabel])
+        amountStack.axis = .vertical
+        amountStack.alignment = .trailing
+        amountStack.spacing = 2
+        amountStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amountStack.setContentHuggingPriority(.required, for: .horizontal)
+        let thirdLine = UIStackView(arrangedSubviews: [taskLabel, chipStack, workChipLines, spacer, qtyLabel, amountStack])
         thirdLine.spacing = DS.Spacing.sm
         thirdLine.alignment = .center
         self.thirdLine = thirdLine
@@ -298,7 +310,7 @@ final class OrderRowCell: UITableViewCell {
             bindOrder(order, lateDays: lateDays, context: context, hidesMoney: hidesMoney)
         }
         totalLabel.isHidden = hidesMoney
-        if hidesMoney { payLabel.isHidden = true }
+        if hidesMoney { payLabel.isHidden = true; workDueLabel.isHidden = true }
         pillStack.isHidden = pillStack.arrangedSubviews.isEmpty
         pillLine?.isHidden = pillStack.arrangedSubviews.isEmpty && payLabel.isHidden
     }
@@ -315,6 +327,7 @@ final class OrderRowCell: UITableViewCell {
         workChipLines.isHidden = true
         thirdLine?.alignment = .center
         totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
+        workDueLabel.isHidden = true
     }
 
     /// #893 (owner): lays the chips out in lines that fit `width` (wrap only when they do not fit)
@@ -392,20 +405,16 @@ final class OrderRowCell: UITableViewCell {
         taskLabel.isHidden = true
         chipStack.show([])
         thirdLine?.alignment = .top
-        let amount = OrdersHomeLogic.workAmount(work)
-        var amountText = ""
-        switch amount {
-        case .due(let due): amountText = String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(due))
-        case .total(let total): amountText = MoneyFormatter.format(total)
-        }
-        let amountFont: UIFont = { if case .due = amount { return Utils.boldFont(size: DS.TextSize.body) }; return Utils.boldFont(size: DS.TextSize.name) }()
-        let amountWidth = (amountText as NSString).size(withAttributes: [NSAttributedString.Key.font: amountFont]).width
-        let available = UIScreen.main.bounds.width - 2 * DS.Gap.rowHorizontal - amountWidth - DS.Spacing.sm
+        // Right: the total (bold) always; "còn thu N" smaller under it when something is due (owner)
+        let dueText = OrdersHomeLogic.workDue(work).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
+        let totalText = MoneyFormatter.format(work.totalAmount)
+        let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
+        let dueWidth = (dueText as NSString?)?.size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary)]).width ?? 0
+        let available = UIScreen.main.bounds.width - 2 * DS.Gap.rowHorizontal - max(totalWidth, dueWidth) - DS.Spacing.sm
         setWorkChips(OrdersHomeLogic.workChips(work, kind: kind), width: available)
         setTotal(work.totalAmount, struck: false)
-        totalLabel.text = amountText
-        totalLabel.font = amountFont
-        if case .due = amount { totalLabel.textColor = DS.Status.waiting.text }
+        workDueLabel.text = dueText
+        workDueLabel.isHidden = dueText == nil
         setPay(nil)
 
         phone = OrdersHomeLogic.workCallPhone(work, isLate: isLate)
