@@ -165,7 +165,7 @@ final class ShopTimeZoneTests: XCTestCase {
             XCTAssertEqual(OrderDetailLogic.rentalDays(pickup: pickup, return: sameDay), 1, zone)
             XCTAssertEqual(CartV2Logic.rentalDays(pickup: pickup, return: at("2026-10-12T16:59:59Z")), 3, zone)
             XCTAssertEqual(CreateOrderSheetLogic.dayMonth(pickup), "10/10", zone)
-            XCTAssertEqual(OrderDetailLogic.dayMonth(sameDay), "10/10", zone)
+            XCTAssertEqual(OrderDetailLogic.dayMonth(sameDay), "10/10/26", zone)
         }
     }
 

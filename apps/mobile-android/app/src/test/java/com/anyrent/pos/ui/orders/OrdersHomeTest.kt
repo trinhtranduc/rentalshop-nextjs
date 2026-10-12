@@ -9,13 +9,13 @@ import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRepository
 import com.anyrent.pos.domain.orders.TodayWorkRow
 import com.anyrent.pos.ui.orders.v2.OrdersHomeLogic
-import com.anyrent.pos.ui.orders.v2.DateBasis
 import com.anyrent.pos.ui.orders.v2.DateRangeChoice
 import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
 import com.anyrent.pos.ui.orders.v2.OrdersHomeViewModel
 import com.anyrent.pos.ui.orders.v2.OrdersQuery
 import com.anyrent.pos.ui.orders.v2.OrdersSection
-import com.anyrent.pos.ui.orders.v2.OrdersSort
+import com.anyrent.pos.ui.orders.v2.SortDate
+import com.anyrent.pos.ui.orders.v2.SortDirection
 import com.anyrent.pos.ui.orders.v2.PayLine
 import com.anyrent.pos.ui.orders.v2.RentOrdersFilter
 import com.anyrent.pos.ui.orders.v2.RowTag
@@ -305,15 +305,15 @@ class OrdersHomeTest {
             returnPlanAt = Instant.parse("2026-10-05T02:00:00Z"),
         )
         assertEquals(
-            OrderRowDates.Lines("#0057", "Giao T7 03/10 · trả T2 05/10"),
+            OrderRowDates.Lines("#0057", "Lấy 03/10/26 · trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(row, WorkKind.HAND_OVER, isLate = true)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0057", "Trả T2 05/10"),
+            OrderRowDates.Lines("#0057", "Trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(row, WorkKind.TAKE_BACK, isLate = false)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0057", "Hạn trả T2 05/10"),
+            OrderRowDates.Lines("#0057", "Hạn trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(row, WorkKind.TAKE_BACK, isLate = true)),
         )
     }
@@ -353,19 +353,19 @@ class OrdersHomeTest {
     @Test
     fun `list row date lines`() {
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Giao CN 04/10 · trả T2 05/10"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Lấy 04/10/26 · trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("RESERVED"), 0)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Hạn trả T2 05/10"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Hạn trả 05/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("PICKUPED"), 2)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Bán T6 02/10"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Bán 02/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("COMPLETED", type = "SALE"), 0)),
         )
         assertEquals(
-            OrderRowDates.Lines("#0062 · tạo T6 02/10", "Huỷ T7 03/10"),
+            OrderRowDates.Lines("#0062 · tạo 02/10/26", "Huỷ 03/10/26"),
             OrderRowDates.lines(OrdersBoardLogic.rowDates(listOrder("CANCELLED", updated = "2026-10-03T03:00:00Z"), 0)),
         )
         assertEquals(RowTag.RENTING, OrdersBoardLogic.statusTag("PICKUPED"))
@@ -388,15 +388,44 @@ class OrdersHomeTest {
         assertEquals("2026-10-04" to "2026-10-04", OrdersBoardLogic.dayBounds(DateRangeChoice.Today, now, vietnam)?.let { it.first.toString() to it.second.toString() })
         assertEquals("2026-10-04" to "2026-10-10", OrdersBoardLogic.dayBounds(DateRangeChoice.Next7Days, now, vietnam)?.let { it.first.toString() to it.second.toString() })
         assertEquals("2026-10-01" to "2026-10-31", OrdersBoardLogic.dayBounds(DateRangeChoice.ThisMonth, now, vietnam)?.let { it.first.toString() to it.second.toString() })
-        assertEquals(OrdersQuery(orderType = "RENT"), OrdersBoardLogic.rentQuery(RentOrdersFilter(), 1, now, vietnam))
+        // #888: default Ngày lấy, gần nhất trước
+        assertEquals(OrdersQuery(orderType = "RENT", sortBy = "pickupPlanAt", sortOrder = "desc"), OrdersBoardLogic.rentQuery(RentOrdersFilter(), 1, now, vietnam))
         val query = OrdersBoardLogic.rentQuery(
-            RentOrdersFilter(status = "PICKUPED", sort = OrdersSort.RETURN, basis = DateBasis.PICKUP_PLAN, range = DateRangeChoice.Today),
+            RentOrdersFilter(status = "PICKUPED", sortDate = SortDate.RETURN, direction = SortDirection.FARTHEST_FIRST, range = DateRangeChoice.Today),
             2, now, vietnam,
         )
+        // #888: the range uses the sort date
         assertEquals(
-            OrdersQuery(orderType = "RENT", status = "PICKUPED", sortBy = "returnPlanAt", startDate = "2026-10-04", endDate = "2026-10-04", dateField = "pickupPlanAt", page = 2),
+            OrdersQuery(orderType = "RENT", status = "PICKUPED", sortBy = "returnPlanAt", sortOrder = "asc", startDate = "2026-10-04", endDate = "2026-10-04", dateField = "returnPlanAt", page = 2),
             query,
         )
+    }
+
+    /** #888: dd/mm/yy in the Vietnam day, whatever the device zone */
+    @Test
+    fun `day month year is the vietnam day`() {
+        assertEquals("02/10/26", OrderRowDates.dmy(Instant.parse("2026-10-02T16:59:59Z"), vietnam))
+        assertEquals("03/10/26", OrderRowDates.dmy(Instant.parse("2026-10-02T17:00:00Z"), vietnam))
+        assertEquals("02/10/26", OrderRowDates.dmy(Instant.parse("2026-10-02T17:00:00Z"), utc))
+        assertEquals("01/01/27", OrderRowDates.dmy(Instant.parse("2026-12-31T17:00:00Z")))
+    }
+
+    /** #888: a "Tất cả đơn" row shows only Lấy · Trả; the sorted date is marked */
+    @Test
+    fun `rent row shows pickup and return with the sorted date marked`() {
+        val pickup = Instant.parse("2026-10-13T17:30:00Z") // 14/10 in Vietnam
+        val back = Instant.parse("2026-10-16T02:00:00Z")
+        assertEquals(
+            listOf(OrderRowDates.Part("Lấy 14/10/26", marked = true), OrderRowDates.Part("Trả 16/10/26", marked = false)),
+            OrderRowDates.rentPlan(pickup, back, markPickup = true, markReturn = false),
+        )
+        assertEquals(
+            listOf(OrderRowDates.Part("Lấy 14/10/26", marked = false), OrderRowDates.Part("Trả 16/10/26", marked = true)),
+            OrdersBoardLogic.rentRowDates(listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z"), SortDate.RETURN),
+        )
+        assertEquals(listOf(false, false),
+            OrdersBoardLogic.rentRowDates(listOrder("RETURNED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z"), SortDate.CREATED).map { it.marked })
+        assertEquals(listOf(OrderRowDates.Part("Trả 16/10/26", marked = false)), OrderRowDates.rentPlan(null, back, markPickup = true, markReturn = false))
     }
 
     @Test

@@ -12,10 +12,10 @@ import com.anyrent.pos.domain.calendar.CalendarRowKind
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.orders.RentalExtension
 import com.anyrent.pos.domain.products.ProductAccess
-import com.anyrent.pos.ui.orders.v2.DateBasis
 import com.anyrent.pos.ui.orders.v2.DateRangeChoice
 import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
-import com.anyrent.pos.ui.orders.v2.OrdersSort
+import com.anyrent.pos.ui.orders.v2.SortDate
+import com.anyrent.pos.ui.orders.v2.SortDirection
 import com.anyrent.pos.ui.orders.v2.PayLine
 import com.anyrent.pos.ui.orders.v2.RentOrdersFilter
 import org.json.JSONObject
@@ -70,29 +70,28 @@ class Phase8LogicTest {
 
     // --- 2. Filter sheet ---
 
+    /** #888: one date for sort and range; default Ngày lấy, gần nhất trước; "Việc gần nhất" left the sheet */
     @Test
-    fun `nearest task is the first sort and planned days are the range basis`() {
-        assertEquals(OrdersSort.NEAREST_TASK, OrdersSort.entries.first())
-        assertEquals("nearestTask", OrdersSort.NEAREST_TASK.apiField)
-        assertEquals(listOf("createdAt", "pickupPlanAt", "returnPlanAt"), DateBasis.entries.map { it.apiField })
-        // Default stays "Mới tạo nhất"
-        assertEquals(OrdersSort.CREATED, RentOrdersFilter().sort)
+    fun `one date for sort and range`() {
+        assertEquals(listOf(SortDate.PICKUP, SortDate.RETURN, SortDate.CREATED), SortDate.entries)
+        assertEquals(listOf("pickupPlanAt", "returnPlanAt", "createdAt"), SortDate.entries.map { it.apiField })
+        assertEquals(listOf("desc", "asc"), SortDirection.entries.map { it.apiOrder })
+        assertEquals(SortDate.PICKUP, RentOrdersFilter().sortDate)
+        assertEquals(SortDirection.NEAREST_FIRST, RentOrdersFilter().direction)
         assertTrue(RentOrdersFilter().isDefault)
-        assertFalse(RentOrdersFilter(sort = OrdersSort.NEAREST_TASK).isDefault)
+        assertFalse(RentOrdersFilter(direction = SortDirection.FARTHEST_FIRST).isDefault)
+        assertFalse(RentOrdersFilter(sortDate = SortDate.CREATED).isDefault)
     }
 
     @Test
     fun `planned range query uses vietnam days`() {
         val now = Instant.parse("2026-10-03T18:30:00Z") // 04/10 01:30 in Vietnam
-        val query = OrdersBoardLogic.rentQuery(
-            RentOrdersFilter(sort = OrdersSort.NEAREST_TASK, basis = DateBasis.PICKUP_PLAN, range = DateRangeChoice.Next7Days),
-            1, now, vietnam,
-        )
-        assertEquals("nearestTask", query.sortBy)
+        val query = OrdersBoardLogic.rentQuery(RentOrdersFilter(range = DateRangeChoice.Next7Days), 1, now, vietnam)
+        assertEquals("pickupPlanAt", query.sortBy)
         assertEquals("pickupPlanAt", query.dateField)
         assertEquals("2026-10-04", query.startDate)
         assertEquals("2026-10-10", query.endDate)
-        val utcQuery = OrdersBoardLogic.rentQuery(RentOrdersFilter(basis = DateBasis.RETURN_PLAN, range = DateRangeChoice.Today), 1, now, utc)
+        val utcQuery = OrdersBoardLogic.rentQuery(RentOrdersFilter(sortDate = SortDate.RETURN, range = DateRangeChoice.Today), 1, now, utc)
         assertEquals("returnPlanAt", utcQuery.dateField)
         assertEquals("2026-10-03", utcQuery.startDate)
     }
