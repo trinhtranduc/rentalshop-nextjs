@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 import Alamofire
 
 enum OrdersSegment: Int, CaseIterable {
@@ -79,6 +80,30 @@ struct RentOrdersFilter: Equatable {
 struct RowDatePart: Equatable {
     let text: String
     let marked: Bool
+}
+
+/// #891 (owner, option C): a light date chip of an order row, "Lấy 14/10/26" (blue) / "Trả 16/10/26" (purple).
+/// The date the list is sorted by is only bolder text; the chip keeps its light background.
+struct DateChip: Equatable {
+    enum Kind: Equatable {
+        case pickup, `return`
+
+        var colors: DS.Pill {
+            switch self {
+            case .pickup: return DS.Pill(text: UIColor(hexString: "1E40AF"), fill: UIColor(hexString: "EFF6FF"))
+            case .return: return DS.Pill(text: UIColor(hexString: "5B21B6"), fill: UIColor(hexString: "F5F3FF"))
+            }
+        }
+    }
+
+    let kind: Kind
+    let label: String
+    let date: String
+    let bold: Bool
+
+    static func == (lhs: DateChip, rhs: DateChip) -> Bool {
+        lhs.kind == rhs.kind && lhs.label == rhs.label && lhs.date == rhs.date && lhs.bold == rhs.bold
+    }
 }
 
 /// One `GET /api/orders` request of the tab
@@ -328,6 +353,21 @@ enum OrdersHomeLogic {
     static func rentRowDates(_ order: Order, sortedBy: RentOrdersFilter.SortDate,
                              timeZone: TimeZone = Date.shopTimeZone) -> [RowDatePart] {
         rentRowDates(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy, timeZone: timeZone)
+    }
+
+    /// #891 (option C): the date chips of a rent row; `sortedBy` (Tất cả đơn only) makes that date bold
+    static func dateChips(pickupPlanAt: Date?, returnPlanAt: Date?, sortedBy: RentOrdersFilter.SortDate?,
+                          timeZone: TimeZone = Date.shopTimeZone) -> [DateChip] {
+        [pickupPlanAt.map { DateChip(kind: .pickup, label: "orders.chip.pickup".localized(),
+                                     date: DayFormatter.dmy($0, timeZone: timeZone), bold: sortedBy == .pickup) },
+         returnPlanAt.map { DateChip(kind: .return, label: "orders.chip.return".localized(),
+                                     date: DayFormatter.dmy($0, timeZone: timeZone), bold: sortedBy == .returnDate) }]
+            .compactMap { $0 }
+    }
+
+    /// #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" on line 2 is bold dark text (no background)
+    static func metaIsBold(sortedBy: RentOrdersFilter.SortDate?) -> Bool {
+        sortedBy == .created
     }
 
     /// Line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was)

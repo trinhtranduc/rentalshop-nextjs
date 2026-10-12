@@ -497,6 +497,8 @@ final class CalendarDayRowCell: UITableViewCell {
     /// #496: "#0053 · tạo T7 03/10" and the status line, as on the order list rows
     private let metaLabel = V2.label(size: 13, color: OrderRowCell.metaColor)
     private let taskLabel = V2.label(size: DS.TextSize.body, weight: .medium, lines: 2)
+    /// #891 (owner): pickup and return as the light chips of Tất cả đơn (no emphasis)
+    private let chipStack = DateChipStack()
     private let totalLabel = V2.label(size: DS.TextSize.name, weight: .bold)
     private let noteLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: V2.danger)
 
@@ -516,7 +518,7 @@ final class CalendarDayRowCell: UITableViewCell {
         let nameRow = UIStackView(arrangedSubviews: [tagLabel, nameLabel])
         nameRow.spacing = 6
         nameRow.alignment = .center
-        let left = UIStackView(arrangedSubviews: [nameRow, metaLabel, taskLabel])
+        let left = UIStackView(arrangedSubviews: [nameRow, metaLabel, taskLabel, chipStack])
         left.axis = .vertical
         left.spacing = DS.Gap.lineTight
         left.alignment = .leading
@@ -563,6 +565,13 @@ final class CalendarDayRowCell: UITableViewCell {
         metaLabel.text = lines.meta
         taskLabel.text = lines.task
         taskLabel.isHidden = lines.task.isEmpty
+        if (order.orderType ?? "").uppercased() != "SALE" {
+            let chips = OrdersHomeLogic.dateChips(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: nil)
+            chipStack.show(chips)
+            if !chips.isEmpty { taskLabel.isHidden = true }
+        } else {
+            chipStack.show([])
+        }
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
         // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)

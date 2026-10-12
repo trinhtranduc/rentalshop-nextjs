@@ -2494,3 +2494,5 @@
 "products.cart.totalCost" = "Tổng giá vốn";
 "products.cart.profit" = "Lãi dự kiến";
 "order.detail.createdBy" = "Người tạo: %@";
+"orders.chip.pickup" = "Lấy";
+"orders.chip.return" = "Trả";

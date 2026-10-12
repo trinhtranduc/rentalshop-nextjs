@@ -875,6 +875,18 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertTrue(texts.contains(OrdersHomeLogic.statusTag(.reserved).text))
     }
 
+    /// #891 (owner): the calendar day rows show both dates as the light chips (no emphasis); the rest stays
+    func testCalendarRowShowsPickupAndReturnChips() throws {
+        let json = #"{"id":3,"orderNumber":"ORD-1-0063","customerName":"Huy","status":"RESERVED","orderType":"RENT","totalAmount":300000,"orderItems":[],"createdAt":"2026-10-05T07:30:00.000Z","pickupPlanAt":"2026-10-14T02:00:00.000Z","returnPlanAt":"2026-10-16T02:00:00.000Z"}"#
+        let order = try JSONDecoder.shared.decode(CalendarDayOrder.self, from: Data(json.utf8))
+        let cell = CalendarDayRowCell(style: .default, reuseIdentifier: nil)
+        cell.configure(CalendarDayRow(kind: .handOver, order: order, lateDays: 0), hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"), "\(texts)")
+        XCTAssertTrue(texts.contains("orders.chip.return".localized() + " 16/10/26"), "\(texts)")
+        XCTAssertFalse(texts.contains { $0.contains(" · ") && $0.contains("16/10/26") }, "no single text line any more")
+    }
+
     /// #891 (owner): order rows have no ">" chevron
     func testOrderRowHasNoChevron() throws {
         func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
