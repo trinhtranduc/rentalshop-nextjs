@@ -12,6 +12,8 @@ import IQKeyboardManagerSwift
 
 final class SettingsV2ViewController: BaseViewControler {
     private enum Row {
+        /// #909 "⏱ Chấm công", first row when the shop has the attendance module
+        case attendance
         case profile
         case item(SettingsV2Item)
         /// #518 "Cho tạo đơn khi trùng lịch" (board CD-trung-lich), shop owner only
@@ -26,6 +28,8 @@ final class SettingsV2ViewController: BaseViewControler {
     private var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
     private var lastFetchedAt: Date?
+    /// #909 today's shift and status under "⏱ Chấm công"
+    private var attendanceMe: AttendanceMe?
 
     private var user: User? { User.account() }
 
@@ -38,6 +42,7 @@ final class SettingsV2ViewController: BaseViewControler {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         rebuild()
+        refreshAttendance()
         guard RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: lastFetchedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
         lastFetchedAt = Date()
         loadPlan()
@@ -65,6 +70,7 @@ final class SettingsV2ViewController: BaseViewControler {
         listView.delegate = self
         listView.register(SettingsV2Cell.self, forCellReuseIdentifier: SettingsV2Cell.reuseId)
         listView.register(SettingsV2SwitchCell.self, forCellReuseIdentifier: SettingsV2SwitchCell.reuseId)
+        listView.register(SettingsAttendanceCell.self, forCellReuseIdentifier: SettingsAttendanceCell.reuseId)
         view.addSubview(listView)
         listView.snp.makeConstraints { make in
             make.top.equalTo(title.snp.bottom).offset(DS.Spacing.md)
@@ -102,6 +108,25 @@ final class SettingsV2ViewController: BaseViewControler {
                     self.counts[item] = total
                     self.listView.reloadData()
                 }
+            }
+        }
+    }
+
+    // MARK: - Chấm công (#909)
+
+    private var showsAttendance: Bool { AttendanceModule.isOn(user?.merchant) }
+
+    /// `merchant.modules` from the profile (a module turned on after sign-in), then today's shift and status
+    private func refreshAttendance() {
+        let wasOn = showsAttendance
+        AttendanceService.refreshModules { [weak self] isOn in
+            guard let self else { return }
+            if isOn != wasOn { self.listView.reloadData() }
+            guard isOn else { return }
+            AttendanceService.shared.me { [weak self] result in
+                guard let self, case .success(let me) = result else { return }
+                self.attendanceMe = me
+                self.listView.reloadData()
             }
         }
     }
@@ -149,6 +174,7 @@ final class SettingsV2ViewController: BaseViewControler {
     // MARK: - Rows
 
     private enum Section {
+        case attendance
         case profile
         case group(Int)
         case orders
@@ -157,7 +183,7 @@ final class SettingsV2ViewController: BaseViewControler {
 
     /// Profile, the groups, ĐƠN HÀNG (shop owner), then Đăng xuất
     private var sections: [Section] {
-        var list: [Section] = [.profile]
+        var list: [Section] = showsAttendance ? [.attendance, .profile] : [.profile]
         list += groups.indices.map { Section.group($0) }
         if showsOverlapSetting { list.append(.orders) }
         list.append(.logout)
@@ -170,6 +196,7 @@ final class SettingsV2ViewController: BaseViewControler {
         let all = sections
         guard section < all.count else { return [] }
         switch all[section] {
+        case .attendance: return [.attendance]
         case .profile: return [.profile]
         case .group(let index): return groups[index].items.map { Row.item($0) }
         case .orders: return [.overlapSwitch]
@@ -337,6 +364,8 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             return V2.sectionHeader(groups[index].title)
         case .orders:
             return V2.sectionHeader("settings.v2.group.orders".localized())
+        case .attendance:
+            return nil
         case .profile, .logout:
             let band = UIView()
             band.backgroundColor = DS.Color.background
@@ -347,6 +376,11 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let row = rows(in: indexPath.section)[indexPath.row]
+        if case .attendance = row {
+            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsAttendanceCell.reuseId, for: indexPath) as! SettingsAttendanceCell
+            cell.configure(subtitle: attendanceMe.map { AttendanceLogic.settingsSubtitle($0) })
+            return cell
+        }
         if case .overlapSwitch = row {
             let cell = tableView.dequeueReusableCell(withIdentifier: SettingsV2SwitchCell.reuseId, for: indexPath) as! SettingsV2SwitchCell
             cell.configure(title: "settings.v2.overlap.title".localized(), subtitle: "settings.v2.overlap.subtitle".localized(),
@@ -365,7 +399,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan)
         case .logout:
             cell.configureLogout("Logout".localized())
-        case .overlapSwitch:
+        case .overlapSwitch, .attendance:
             break
         }
         return cell
@@ -374,6 +408,8 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         switch rows(in: indexPath.section)[indexPath.row] {
+        case .attendance:
+            navigationController?.pushViewController(AttendanceViewController(), animated: true)
         case .profile: break
         case .item(let item): open(item)
         case .overlapSwitch: break
@@ -431,6 +467,51 @@ final class SettingsV2SwitchCell: UITableViewCell {
 
     @objc private func changed() {
         onChange?(toggle.isOn, toggle)
+    }
+}
+
+/// #909 "⏱ Chấm công" card: light blue, bold title, today's shift and status, blue chevron (mockup App 1)
+final class SettingsAttendanceCell: UITableViewCell {
+    static let reuseId = "SettingsAttendanceCell"
+    private let titleLabel = V2.label("⏱ " + "attendance.title".localized(), size: DS.TextSize.name, weight: .bold)
+    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        let card = UIView()
+        card.backgroundColor = UIColor(hexString: "EFF6FF")
+        card.layer.borderColor = UIColor(hexString: "BFDBFE").cgColor
+        card.layer.borderWidth = 1
+        card.layer.cornerRadius = 16
+        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.lg, weight: .semibold))
+        chevron.tintColor = DS.Color.primary
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let row = UIStackView(arrangedSubviews: [texts, chevron])
+        row.alignment = .center
+        row.spacing = DS.Spacing.md
+        card.addSubview(row)
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(14) }
+        contentView.addSubview(card)
+        card.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: DS.Spacing.lg, bottom: 12, right: DS.Spacing.lg))
+        }
+        isAccessibilityElement = true
+        accessibilityTraits = UIAccessibilityTraitButton
+        accessibilityIdentifier = "settings.attendance"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func configure(subtitle: String?) {
+        subtitleLabel.text = subtitle
+        subtitleLabel.isHidden = (subtitle ?? "").isEmpty
+        accessibilityLabel = ["attendance.title".localized(), subtitle].compactMap { $0 }.joined(separator: ", ")
     }
 }
 
