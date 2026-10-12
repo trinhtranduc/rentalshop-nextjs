@@ -36,23 +36,31 @@ export async function recentAttendancePunches(outletId: number, since: Date, lim
 
 /**
  * Lazy auto-close (no cron): every OPEN record whose close time has passed becomes MISSING_OUT,
- * checkOutAt stays null and autoClosedAt is its close time. One UPDATE statement.
+ * checkOutAt stays null and autoClosedAt is its close time. One updateMany (+ a column copy).
  */
 export async function autoCloseOverdueAttendance(
   scope: { userId?: number; outletId?: number },
   now: Date,
-  client: Pick<Prisma.TransactionClient, '$executeRaw'> = prisma
+  client: Pick<Prisma.TransactionClient, '$executeRaw' | 'attendanceRecord'> = prisma
 ) {
-  const filter =
-    scope.userId != null
-      ? Prisma.sql`AND "userId" = ${scope.userId}`
-      : scope.outletId != null
-        ? Prisma.sql`AND "outletId" = ${scope.outletId}`
-        : Prisma.empty;
-  // autoClosedAt = the record's own close time; checkOutAt stays null (0 h)
-  return client.$executeRaw`UPDATE "AttendanceRecord"
-    SET "status" = 'MISSING_OUT', "autoClosedAt" = "closeAt", "updatedAt" = ${now}
-    WHERE "status" = 'OPEN' AND "closeAt" <= ${now} ${filter}`;
+  // The instant comparison goes through Prisma (closeAt is `timestamp without time zone` in UTC; a raw
+  // timestamptz parameter would be read in the database session's time zone and shift by hours).
+  const res = await client.attendanceRecord.updateMany({
+    where: { ...scope, status: 'OPEN', closeAt: { lte: now } },
+    data: { status: 'MISSING_OUT' },
+  });
+  if (res.count > 0) {
+    const filter =
+      scope.userId != null
+        ? Prisma.sql`AND "userId" = ${scope.userId}`
+        : scope.outletId != null
+          ? Prisma.sql`AND "outletId" = ${scope.outletId}`
+          : Prisma.empty;
+    // autoClosedAt = the record's own close time (column copy, no time parameter); checkOutAt stays null (0 h)
+    await client.$executeRaw`UPDATE "AttendanceRecord" SET "autoClosedAt" = "closeAt"
+      WHERE "status" = 'MISSING_OUT' AND "autoClosedAt" IS NULL AND "closeAt" IS NOT NULL ${filter}`;
+  }
+  return res.count;
 }
 
 export async function findOpenAttendanceRecord(userId: number) {
