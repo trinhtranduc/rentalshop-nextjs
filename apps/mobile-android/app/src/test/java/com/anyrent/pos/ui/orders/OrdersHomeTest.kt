@@ -454,8 +454,9 @@ class OrdersHomeTest {
         val returnChips = OrdersBoardLogic.workChips(takeBack, WorkKind.TAKE_BACK)
         assertEquals("only the return date; never not-prepared on a return", listOf(OrdersBoardLogic.WorkChipKind.RETURN), returnChips.map { it.kind })
         assertEquals("16/10/26", returnChips[0].date)
-        assertEquals(OrdersBoardLogic.WorkAmount.Due(200_000.0), OrdersBoardLogic.workAmount(handOver))
-        assertEquals(OrdersBoardLogic.WorkAmount.Total(300_000.0), OrdersBoardLogic.workAmount(takeBack))
+        // Owner: the total always shows; "còn thu N" under it only when something is due
+        assertEquals(200_000.0, OrdersBoardLogic.workDue(handOver))
+        assertNull(OrdersBoardLogic.workDue(takeBack))
         assertEquals(true, OrdersBoardLogic.notPreparedApplies(WorkKind.HAND_OVER, isReadyToDeliver = false))
         assertEquals(false, OrdersBoardLogic.notPreparedApplies(WorkKind.TAKE_BACK, isReadyToDeliver = false))
         assertEquals(false, OrdersBoardLogic.notPreparedApplies(WorkKind.HAND_OVER, isReadyToDeliver = true))
