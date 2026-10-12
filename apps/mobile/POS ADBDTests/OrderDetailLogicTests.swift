@@ -331,5 +331,20 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         let order = Order.from(detail: detail)
         XCTAssertEqual(order.createdById, 0, "list model keeps 0 for no creator, as its own decoder does")
         XCTAssertEqual(order.createdByName, "")
+        XCTAssertNil(OrderDetailLogic.creatorName(detail), "#891: no creator → no Người tạo line")
+    }
+
+    /// #891 (owner): order detail shows "Người tạo: <name>" from the nested `createdBy` or the flat `createdByName`
+    func testCreatorName() throws {
+        func detail(_ creator: String) throws -> OrderDetail {
+            let json = payload.replacingOccurrences(of: #""createdBy":null"#, with: creator)
+            return try XCTUnwrap(JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(json.utf8)).data)
+        }
+        XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":"Merchant","lastName":"1"}"#)), "Merchant 1")
+        XCTAssertEqual(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"Lan Nguyễn""#)), "Lan Nguyễn")
+        XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":{"id":3,"firstName":" ","lastName":""}"#)))
+        XCTAssertNil(OrderDetailLogic.creatorName(try detail(#""createdBy":null,"createdByName":"  ""#)))
+        let vi = Bundle(for: Self.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "order.detail.createdBy", value: nil, table: nil), "Người tạo: %@")
     }
 }

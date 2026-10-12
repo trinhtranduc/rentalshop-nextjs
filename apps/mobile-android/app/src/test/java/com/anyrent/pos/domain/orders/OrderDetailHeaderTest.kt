@@ -36,6 +36,14 @@ class OrderDetailHeaderTest {
     /** 2026-10-05 10:00 in Vietnam */
     private val oct5 = Instant.parse("2026-10-05T03:00:00Z")
 
+    /** #891 (owner): order detail shows "Người tạo: <name>"; no line when the name is empty (iOS creatorName) */
+    @Test
+    fun creatorName() {
+        assertEquals("Merchant 1", OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = " Merchant 1 ")))
+        assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = "  ")))
+        assertEquals(null, OrderDetailHeader.creatorName(order("RESERVED").copy(createdByName = null)))
+    }
+
     /** #891 (owner): the detail header hides the "lấy sau N ngày" countdown; other notes stay (iOS headerSummary) */
     @Test
     fun handOverCountdownIsHidden() {
