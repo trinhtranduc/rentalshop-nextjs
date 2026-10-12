@@ -905,9 +905,9 @@ final class OrdersHomeTests: XCTestCase {
         let notReadyReturn = TodayWorkRow(id: 3, orderNumber: "3", pickupPlanAt: pickup, returnPlanAt: back, isReadyToDeliver: false)
         XCTAssertFalse(OrdersHomeLogic.workChips(notReadyReturn, kind: .takeBack, timeZone: vietnam).map(\.text)
             .contains("orders.v2.notPrepared".localized()))
-        // Right side: "còn thu N" when something is due, else the total
-        XCTAssertEqual(OrdersHomeLogic.workAmount(handOver), .due(200_000))
-        XCTAssertEqual(OrdersHomeLogic.workAmount(takeBack), .total(300_000))
+        // Right side: always the total; "còn thu N" under it only when something is due
+        XCTAssertEqual(OrdersHomeLogic.workDue(handOver), 200_000)
+        XCTAssertNil(OrdersHomeLogic.workDue(takeBack))
     }
 
     func testWorkRowIsLean() {
@@ -921,7 +921,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
         XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"))
         XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200_000))))
-        XCTAssertFalse(texts.contains(MoneyFormatter.format(300_000)), "no separate total when còn thu shows")
+        XCTAssertTrue(texts.contains(MoneyFormatter.format(300_000)), "the total always shows (owner)")
     }
 
     func testCustomerOrderRowShowsItemNamesAsTitle() {
@@ -1025,7 +1025,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(status.layer.cornerRadius, 7)
         XCTAssertEqual(status.intrinsicContentSize.width,
                        (status.text! as NSString).size(withAttributes: [.font: status.font!]).width + 16, accuracy: 1)
-        // #893 (lean Việc cần làm row): "còn thu N" bold in place of the total; the notes are chips on line 2
+        // #893 (lean Việc cần làm row): the total bold, "còn thu N" smaller under it; the notes are chips on line 2
         func labels(_ view: UIView) -> [UILabel] {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
@@ -1033,8 +1033,9 @@ final class OrdersHomeTests: XCTestCase {
         cell.configure(.work(due, kind: .takeBack), context: .work(isLate: false), hidesMoney: false)
         let money = labels(cell.contentView)
         let pay = try XCTUnwrap(money.first { $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000)) })
-        XCTAssertEqual(pay.font, Utils.boldFont(size: DS.TextSize.body))
-        XCTAssertNil(money.first { $0.text == MoneyFormatter.format(300000) && !$0.isHidden })
+        XCTAssertEqual(pay.font, Utils.mediumFont(size: DS.TextSize.secondary))
+        let total = try XCTUnwrap(money.first { $0.text == MoneyFormatter.format(300000) })
+        XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
         cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
         let chips = labels(cell.contentView).compactMap { $0 as? InsetLabel }.filter { !($0.superview?.isHidden ?? true) }
             .compactMap(\.text)
