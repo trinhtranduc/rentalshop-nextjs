@@ -11,7 +11,7 @@ import Foundation
 enum SettingsV2Item: Equatable {
     case storeInfo, receiptNote, printer, bankAccounts
     case categories, customers, users, export
-    case plan, language, password, appInfo, deleteAccount
+    case plan, language, statusColors, password, appInfo, deleteAccount
 }
 
 struct SettingsV2Section: Equatable {
@@ -56,7 +56,7 @@ enum SettingsV2Logic {
 
         var account: [SettingsV2Item] = []
         if hasPlan { account.append(.plan) }
-        account += [.language, .password, .appInfo, .deleteAccount]
+        account += [.language, .statusColors, .password, .appInfo, .deleteAccount]
 
         return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]

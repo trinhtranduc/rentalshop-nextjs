@@ -8,7 +8,7 @@ import org.json.JSONObject
 enum class SettingsItem {
     STORE_INFO, RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
-    PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
+    PLAN, LANGUAGE, STATUS_COLORS, PASSWORD, APP_INFO, DELETE_ACCOUNT,
 }
 
 enum class SettingsGroup { STORE, MANAGEMENT, ACCOUNT }
@@ -41,7 +41,7 @@ object SettingsRows {
         }
         val account = buildList {
             if (hasPlan && role != "ADMIN") add(SettingsItem.PLAN)
-            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT))
+            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.STATUS_COLORS, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT))
         }
         return listOf(
             SettingsSection(

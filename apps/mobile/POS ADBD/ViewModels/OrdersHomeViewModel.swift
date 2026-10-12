@@ -369,14 +369,16 @@ enum OrdersHomeLogic {
     }
 
     /// Status text and colours of a status: the list row tag and the order detail header tag (#482)
-    static func statusTag(_ status: OrderStatus) -> RowTag {
+    static func statusTag(_ status: OrderStatus, palette: OrderStatusPalette = .current) -> RowTag {
+        // #888: colours from the chosen palette (Đậm = old app, default)
+        let colors = palette.pill(for: status)
         switch status {
-        case .reserved: return RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver)
-        case .pickuped: return RowTag(text: "orders.v2.status.renting".localized(), colors: DS.Status.returning)
-        case .returned: return RowTag(text: "orders.v2.status.returned".localized(), colors: DS.Status.done)
-        case .completed: return RowTag(text: "orders.v2.status.completed".localized(), colors: DS.Status.done)
-        case .cancelled: return RowTag(text: "orders.v2.status.cancelled".localized(), colors: DS.Status.cancelled)
-        default: return RowTag(text: status.localizedDisplayName(), colors: DS.Status.cancelled)
+        case .reserved: return RowTag(text: "orders.v2.status.reserved".localized(), colors: colors)
+        case .pickuped: return RowTag(text: "orders.v2.status.renting".localized(), colors: colors)
+        case .returned: return RowTag(text: "orders.v2.status.returned".localized(), colors: colors)
+        case .completed: return RowTag(text: "orders.v2.status.completed".localized(), colors: colors)
+        case .cancelled: return RowTag(text: "orders.v2.status.cancelled".localized(), colors: colors)
+        default: return RowTag(text: status.localizedDisplayName(), colors: colors)
         }
     }
 

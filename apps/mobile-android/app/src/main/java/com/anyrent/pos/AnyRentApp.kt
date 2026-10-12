@@ -22,6 +22,7 @@ class AnyRentApp : Application() {
         SessionStore.init(this)
         CurrentOutlet.init(this)
         CartStore.init(this)
+        com.anyrent.pos.ui.orders.v2.OrderStatusColors.init(this)
         CartStore.restoreFromDisk()
         createNotificationChannels()
         runCatching { FirebaseApp.initializeApp(this) }

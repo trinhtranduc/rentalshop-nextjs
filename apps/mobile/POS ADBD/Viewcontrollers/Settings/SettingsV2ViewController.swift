@@ -189,6 +189,7 @@ final class SettingsV2ViewController: BaseViewControler {
         case .export: return "Export Data".localized()
         case .plan: return "settings.v2.plan".localized()
         case .language: return "settings.v2.language".localized()
+        case .statusColors: return "settings.v2.statusColors".localized()
         case .password: return "Change Password".localized()
         case .appInfo: return "App Information".localized()
         case .deleteAccount: return "Delete Account".localized()
@@ -205,6 +206,8 @@ final class SettingsV2ViewController: BaseViewControler {
             return counts[item].map(String.init)
         case .plan:
             return plan.map(SettingsV2Logic.planText)
+        case .statusColors:
+            return (OrderStatusPalette.current == .bold ? "settings.v2.statusColors.bold" : "settings.v2.statusColors.light").localized()
         case .language:
             let code = Bundle.main.preferredLocalizations.first ?? "vi"
             let locale = Locale(identifier: code)
@@ -253,6 +256,8 @@ final class SettingsV2ViewController: BaseViewControler {
             if let url = URL(string: UIApplicationOpenSettingsURLString) {
                 UIApplication.shared.open(url)
             }
+        case .statusColors:
+            chooseStatusColors()
         case .password:
             askPassword()
         case .appInfo:
@@ -268,6 +273,23 @@ final class SettingsV2ViewController: BaseViewControler {
             alert.addAction(UIAlertAction(title: "Delete".localized(), style: .destructive))
             present(alert, animated: true)
         }
+    }
+
+    /// #888 "Màu trạng thái đơn": Đậm (như app cũ, default) / Nhạt, stored on this device
+    private func chooseStatusColors() {
+        let sheet = UIAlertController(title: "settings.v2.statusColors".localized(), message: nil, preferredStyle: .actionSheet)
+        for palette in OrderStatusPalette.allCases {
+            let key = palette == .bold ? "settings.v2.statusColors.bold" : "settings.v2.statusColors.light"
+            let mark = palette == OrderStatusPalette.current ? "✓ " : ""
+            sheet.addAction(UIAlertAction(title: mark + key.localized(), style: .default) { [weak self] _ in
+                palette.save()
+                NotificationCenter.default.post(name: OrderStatusPalette.changed, object: nil)
+                self?.listView.reloadData()
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        sheet.popoverPresentationController?.sourceView = view
+        present(sheet, animated: true)
     }
 
     private func confirmLogout() {

@@ -273,7 +273,8 @@ final class OrdersHomeTests: XCTestCase {
 
     func testStatusTags() throws {
         let booked = try order(status: "RESERVED")
-        XCTAssertEqual(OrdersHomeLogic.statusTag(booked), RowTag(text: "orders.v2.status.reserved".localized(), colors: DS.Status.handOver))
+        XCTAssertEqual(OrdersHomeLogic.statusTag(booked), RowTag(text: "orders.v2.status.reserved".localized(),
+                                                             colors: OrderStatusPalette.current.pill(for: .reserved)))
         let sale = try order(status: "COMPLETED", type: "SALE")
         XCTAssertEqual(OrdersHomeLogic.statusTag(sale, inSearch: true).text,
                        String(format: "orders.v2.tag.sale".localized(), "orders.v2.status.completed".localized()))

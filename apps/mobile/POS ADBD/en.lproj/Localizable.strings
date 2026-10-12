@@ -2495,3 +2495,6 @@
 "products.cart.cost" = "Cost";
 "products.cart.totalCost" = "Total cost";
 "products.cart.profit" = "Expected profit";
+"settings.v2.statusColors" = "Order status colours";
+"settings.v2.statusColors.bold" = "Bold (like the old app)";
+"settings.v2.statusColors.light" = "Light";
