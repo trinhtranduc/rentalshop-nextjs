@@ -188,6 +188,8 @@ export interface AttendancePersonRow {
   /** EDIT rows: the record before / after the edit (ISO instants). */
   before?: AttendanceRecordAudit | null;
   after?: AttendanceRecordAudit | null;
+  /** #924 EDIT rows: who edited (the shop owner too); null when the user no longer exists. */
+  editorName?: string | null;
 }
 
 export interface AttendanceRecordAudit {

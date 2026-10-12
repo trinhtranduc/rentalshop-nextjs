@@ -147,7 +147,10 @@
       "QR_WRONG_OUTLET": "別の店舗のQRコード",
       "ATTENDANCE_NOT_CONFIGURED": "店舗の位置が未設定",
       "other": "拒否"
-    }
+    },
+    "editIn": "出勤 {time}",
+    "editOut": "退勤 {time}",
+    "nextDay": "(翌日)"
   },
   "edit": {
     "title": "勤怠を修正 · {name} · {date}",

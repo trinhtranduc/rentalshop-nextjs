@@ -13,6 +13,7 @@ import { getUtcRangeForDateKeys, monthRange, vnDateKey } from '../../../../../..
 import { monthSchema, paramId, queryIdSchema, queryOf } from '../../../../../../lib/attendance/schemas';
 import { daysOfUser, fullName, recordStats, round2 } from '../../../../../../lib/attendance/timesheet';
 import { shiftOfRecord, type RecordRow } from '../../../../../../lib/attendance/views';
+import { editorNames } from '../../../../../../lib/attendance/editors';
 
 type Params = { params: Promise<{ userId: string }> | { userId: string } };
 
@@ -22,6 +23,7 @@ type Params = { params: Promise<{ userId: string }> | { userId: string } };
  * coordinates included), auto-closes and edits. Indexed: AttendanceScan(userId, at).
  * #918: every row has `dateKey` (YYYY-MM-DD), the work day it belongs to: the record's day for its scans, its
  * auto-close and its edits (an edit's `at` stays the edit time); other scans use the VN day of `at`.
+ * #924: EDIT rows add `editorName` (who edited, the shop owner too; null when the user no longer exists).
  */
 export async function GET(request: NextRequest, { params }: Params) {
   return attendanceRoute(ATTENDANCE_ROLES, async (req, { user }) => {
@@ -43,6 +45,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     ]);
     const edits = await db.attendance.listEdits(records.map((r: RecordRow) => r.id));
     const byId = new Map<number, RecordRow>(records.map((r: RecordRow) => [r.id, r]));
+    const editors = await editorNames(edits, new Map([[target.id, fullName(target)]]));
 
     const rows: Array<Record<string, unknown> & { at: Date }> = [];
     for (const s of scans) {
@@ -88,6 +91,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         recordId: e.recordId,
         before: e.before,
         after: e.after,
+        editorName: editors.get(e.editedById) ?? null,
       });
     }
     rows.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());

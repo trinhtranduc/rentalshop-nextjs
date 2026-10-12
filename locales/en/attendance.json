@@ -147,7 +147,10 @@
       "QR_WRONG_OUTLET": "QR code of another outlet",
       "ATTENDANCE_NOT_CONFIGURED": "Outlet location not set",
       "other": "Rejected"
-    }
+    },
+    "editIn": "in {time}",
+    "editOut": "out {time}",
+    "nextDay": "(next day)"
   },
   "edit": {
     "title": "Edit attendance · {name} · {date}",
