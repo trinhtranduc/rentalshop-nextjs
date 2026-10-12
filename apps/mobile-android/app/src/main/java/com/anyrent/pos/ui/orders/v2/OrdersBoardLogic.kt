@@ -128,6 +128,34 @@ object OrdersBoardLogic {
         late = lateDays > 0,
     )
 
+    /** #893 (owner): kinds of the chips on line 2 of a lean Việc cần làm row */
+    enum class WorkChipKind { PICKUP, RETURN, LATE, NOT_PREPARED }
+
+    /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE */
+    data class WorkChip(val kind: WorkChipKind, val date: String? = null, val days: Int = 0)
+
+    /** #893: the right side of a lean Việc cần làm row */
+    sealed interface WorkAmount {
+        data class Due(val amount: Double) : WorkAmount
+        data class Total(val amount: Double) : WorkAmount
+    }
+
+    /** #893 (owner): the task's own date (Lấy for a hand-over, Trả for a take-back), "Trễ N ngày", "Chưa soạn đồ" */
+    fun workChips(work: TodayWorkRow, kind: WorkKind, zone: java.time.ZoneId = ShopTime.zone): List<WorkChip> = buildList {
+        val handOver = kind == WorkKind.HAND_OVER
+        (if (handOver) work.pickupPlanAt else work.returnPlanAt)?.let {
+            add(WorkChip(if (handOver) WorkChipKind.PICKUP else WorkChipKind.RETURN, date = OrderRowDates.dmy(it, zone)))
+        }
+        if (work.lateDays > 0) add(WorkChip(WorkChipKind.LATE, days = work.lateDays))
+        if (notPreparedApplies(kind, work.isReadyToDeliver)) add(WorkChip(WorkChipKind.NOT_PREPARED))
+    }
+
+    /** #893 (owner): "Chưa soạn đồ" only on a hand-over (RESERVED, waiting to be picked up) not prepared */
+    fun notPreparedApplies(kind: WorkKind, isReadyToDeliver: Boolean): Boolean = kind == WorkKind.HAND_OVER && !isReadyToDeliver
+
+    fun workAmount(work: TodayWorkRow): WorkAmount =
+        if (work.amountDue > 0) WorkAmount.Due(work.amountDue) else WorkAmount.Total(work.totalAmount)
+
     /** #891 (option C): the chips of a rent row; [sortedBy] (Tất cả đơn only) makes that date bold */
     fun dateChips(order: OrderSummary, sortedBy: SortDate?, pickupLabel: String = "Lấy", returnLabel: String = "Trả"): List<OrderRowDates.DateChip> =
         OrderRowDates.chips(

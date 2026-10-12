@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -636,6 +637,7 @@ private fun SectionBand(section: OrdersSection) {
 
 private enum class RowContext { LIST, SALE, SEARCH, PRODUCT }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WorkRow(
     work: TodayWorkRow,
@@ -645,33 +647,66 @@ private fun WorkRow(
     onClick: () -> Unit,
     onCall: (String) -> Unit,
 ) {
+    // #893 (owner, lean row): line 1 name + the light task tag; line 2 the task's date chip, "Trễ N ngày",
+    // "Chưa soạn đồ" (wrap only when they do not fit), right "còn thu N" (bold) or the total
     val handOver = kind == WorkKind.HAND_OVER
-    val pills = buildList {
-        if (handOver && !work.isReadyToDeliver) add(stringResource(R.string.orders_v2_not_prepared) to DS.Status.Waiting)
-        if (work.lateDays > 0) add(pluralStringResource(R.plurals.orders_late_days, work.lateDays, work.lateDays) to DS.Status.Late)
+    val tagColors = if (handOver) DS.Status.HandOver else DS.Status.Return
+    val (pickupLabel, returnLabel) = chipLabels()
+    val notPrepared = stringResource(R.string.orders_v2_not_prepared)
+    val amount = OrdersBoardLogic.workAmount(work)
+    val phone = OrdersBoardLogic.workCallPhone(work, isLate)
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = DS.Gap.RowHorizontal, vertical = DS.Gap.OrderRowPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.OrderRowLine)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        work.customerName?.takeIf { it.isNotBlank() } ?: "N/A",
+                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                    )
+                    Tag(stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back), tagColors, RowTagStyle.STATUS)
+                }
+                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        OrdersBoardLogic.workChips(work, kind).forEach { chip ->
+                            val (text, colors) = when (chip.kind) {
+                                OrdersBoardLogic.WorkChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
+                                OrdersBoardLogic.WorkChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                                OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to DS.Status.Late
+                                OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
+                            }
+                            Text(
+                                text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                    when (amount) {
+                        is OrdersBoardLogic.WorkAmount.Due -> Text(
+                            stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(amount.amount)),
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Status.Waiting.text, maxLines = 1,
+                        )
+                        is OrdersBoardLogic.WorkAmount.Total -> Text(
+                            formatMoneyVnd(amount.amount), fontSize = DS.TextSize.Name, fontWeight = RowMoneyText.totalWeight,
+                            color = DS.Colors.Text, maxLines = 1,
+                        )
+                    }
+                }
+            }
+            if (phone != null) {
+                IconButton(onClick = { onCall(phone) }) { Icon(Icons.Outlined.Phone, contentDescription = stringResource(R.string.call_customer)) }
+            }
+        }
+        HorizontalDivider(color = DS.Colors.Divider)
     }
-    val pay = when (val line = OrdersBoardLogic.payLine(work.amountDue, work.refundDue)) {
-        is PayLine.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(line.amount)) to DS.Status.Return.text
-        is PayLine.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(line.amount)) to DS.Status.Waiting.text
-        // #458: fully paid → the total only
-        null -> null
-    }
-    BoardRow(
-        tag = stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back) to
-            // #888: the same solid colours as the status badges (hand-over = booked, take-back = renting)
-            OrderStatusTag.colors(if (handOver) "RESERVED" else "PICKUPED"),
-        name = work.customerName,
-        lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(work, kind, isLate), texts),
-        // #891 (option C): rent dates as chips, no emphasis
-        chips = chipLabels().let { (p, r) -> OrderRowDates.chips(work.pickupPlanAt, work.returnPlanAt, false, false, p, r) },
-        pills = pills,
-        total = formatMoneyVnd(work.totalAmount),
-        struck = false,
-        pay = pay,
-        phone = OrdersBoardLogic.workCallPhone(work, isLate),
-        onClick = onClick,
-        onCall = onCall,
-    )
 }
 
 /**
