@@ -115,6 +115,7 @@ fun SettingsScreen(
     onOpenNotifications: () -> Unit = {},
     onLoggedOut: () -> Unit,
     onOpenBankAccounts: () -> Unit = {},
+    onOpenAttendance: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -152,6 +153,11 @@ fun SettingsScreen(
                     )
                 }
             }
+        }
+        // #910: "⏱ Chấm công" first, only when the shop has the attendance module
+        item {
+            com.anyrent.pos.ui.attendance.RefreshModulesOnShow()
+            com.anyrent.pos.ui.attendance.AttendanceSettingsRow(onClick = onOpenAttendance, horizontalPadding = 0.dp)
         }
         item {
             SectionLabel(stringResource(R.string.account))

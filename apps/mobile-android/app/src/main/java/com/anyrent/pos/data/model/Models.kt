@@ -28,6 +28,8 @@ data class UserProfile(
     val outletAddress: String? = null,
     /** #518 shop setting "Cho tạo đơn khi trùng lịch"; ON when the payload has no merchant or no field */
     val allowOverlappingOrders: Boolean = true,
+    /** #910 active module keys (`merchant.modules`); empty when the API sends none */
+    val modules: Set<String> = emptySet(),
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)
