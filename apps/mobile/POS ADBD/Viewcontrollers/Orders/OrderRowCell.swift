@@ -332,7 +332,12 @@ final class OrderRowCell: UITableViewCell {
 
     /// #893 (owner): lays the chips out in lines that fit `width` (wrap only when they do not fit)
     private func setWorkChips(_ chips: [OrdersHomeLogic.WorkChip], width: CGFloat) {
-        workChipLines.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        Self.fillChipLines(workChipLines, chips: chips, width: width)
+    }
+
+    /// #893: chip lines shared by Việc cần làm and the calendar day rows
+    static func fillChipLines(_ stack: UIStackView, chips: [OrdersHomeLogic.WorkChip], width: CGFloat) {
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         var line = UIStackView()
         var used: CGFloat = 0
         for chip in chips {
@@ -346,7 +351,7 @@ final class OrderRowCell: UITableViewCell {
             label.layer.masksToBounds = true
             let size = label.intrinsicContentSize.width
             if used > 0 && used + 6 + size > width {
-                workChipLines.addArrangedSubview(line)
+                stack.addArrangedSubview(line)
                 line = UIStackView()
                 used = 0
             }
@@ -354,8 +359,8 @@ final class OrderRowCell: UITableViewCell {
             line.addArrangedSubview(label)
             used += (used > 0 ? 6 : 0) + size
         }
-        if !line.arrangedSubviews.isEmpty { workChipLines.addArrangedSubview(line) }
-        workChipLines.isHidden = chips.isEmpty
+        if !line.arrangedSubviews.isEmpty { stack.addArrangedSubview(line) }
+        stack.isHidden = chips.isEmpty
     }
 
     /// #891 (owner): a customer's order (customer detail): the same row with the item names in place of the name

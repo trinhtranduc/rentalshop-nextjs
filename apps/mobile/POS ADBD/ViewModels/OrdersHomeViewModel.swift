@@ -380,6 +380,26 @@ enum OrdersHomeLogic {
         return chips
     }
 
+    /// #893 (owner, calendar lean row): the day task's date chip; a hand-over adds "Sẵn sàng giao" (ready) or
+    /// "Chưa soạn đồ"; a return row has only its date
+    static func calendarChips(_ row: CalendarDayRow, timeZone: TimeZone = Date.shopTimeZone) -> [WorkChip] {
+        var chips: [WorkChip] = []
+        let handOver = row.kind == .handOver
+        if let date = handOver ? row.order.pickupPlanAt : row.order.returnPlanAt {
+            let label = (handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
+            chips.append(WorkChip(text: label + " " + DayFormatter.dmy(date, timeZone: timeZone),
+                                  colors: (handOver ? DateChip.Kind.pickup : DateChip.Kind.return).colors))
+        }
+        if handOver {
+            if row.order.isReadyToDeliver == true {
+                chips.append(WorkChip(text: "calendar.v2.ready".localized(), colors: DS.Status.done))
+            } else {
+                chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: DS.Status.waiting))
+            }
+        }
+        return chips
+    }
+
     /// #893 (owner): "Chưa soạn đồ" only on a hand-over (a RESERVED order waiting to be picked up) not prepared
     static func notPreparedApplies(kind: WorkKind, isReadyToDeliver: Bool) -> Bool {
         kind == .handOver && !isReadyToDeliver
