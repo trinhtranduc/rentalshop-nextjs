@@ -1,12 +1,5 @@
 {
   "title": "Attendance",
-  "tabs": {
-    "timesheet": "Timesheet",
-    "person": "By person",
-    "shifts": "Shifts",
-    "templates": "Shift templates",
-    "locations": "QR & location"
-  },
   "weekday": {
     "1": "Mon",
     "2": "Tue",

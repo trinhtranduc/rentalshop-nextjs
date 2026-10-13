@@ -52,6 +52,7 @@ import {
   inputClass,
   must,
   outlineBtn,
+  Select,
   primaryBtn,
   smallBtn,
   tdClass,
@@ -66,6 +67,7 @@ import {
 } from '../parts';
 import { ExportDialog } from '../timesheet-parts';
 import OutletMap from '../OutletMap';
+import { useBreadcrumbTail } from '../../components/shell/breadcrumb-tail';
 
 type DialogState =
   | { kind: 'map'; row: AttendancePersonRow }
@@ -219,6 +221,8 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
   const people = useMemo(() => (sheet.data?.users || []).map((u) => ({ id: personId(u), name: personName(u), days: normalizeDays(u.days) })), [sheet.data]);
   const userId = Number(params.get('userId')) || people[0]?.id || 0;
   const person = people.find((p) => p.id === userId) || null;
+  // #960 top bar: "Chấm công › Bảng công › <name>"
+  useBreadcrumbTail(person?.name);
   const detail = useLoad<AttendancePersonMonth>(userId ? () => must(attendanceApi.personMonth(userId, outlet.id, month)) : null, [userId, outlet.id, month]);
   const settings = useLoad<AttendanceSettings>(() => must(attendanceApi.getSettings(outlet.id)), [outlet.id]);
 
@@ -290,26 +294,26 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
         {t('person.back', { month: monthLabel(month) })}
       </Link>
       <PageHead title={t('person.title')} sub={outlet.name}>
-        <select
+        <Select
           aria-label={t('person.pick')}
           value={userId || ''}
           onChange={(e) => set({ userId: Number(e.target.value), day: null })}
-          className={`${outlineBtn} border-ar-primary text-ar-primary`}
+          className="border-ar-primary font-semibold text-ar-primary"
         >
           {people.map((p) => (
             <option key={p.id} value={p.id}>
               👤 {p.name}
             </option>
           ))}
-        </select>
+        </Select>
         <MonthNav month={month} onChange={(d) => set({ month: addMonths(month, d), day: null })} />
-        <select aria-label={t('person.filter.label')} value={filter} onChange={(e) => setFilter(e.target.value as RowFilter)} className={`${outlineBtn} font-normal`}>
+        <Select aria-label={t('person.filter.label')} value={filter} onChange={(e) => setFilter(e.target.value as RowFilter)} className="border-ar-line">
           {(['all', 'rejected', 'suspected'] as RowFilter[]).map((f) => (
             <option key={f} value={f}>
               {t(`person.filter.${f}`)}
             </option>
           ))}
-        </select>
+        </Select>
         {canEdit && userId > 0 && (
           <button type="button" className={outlineBtn} onClick={() => setDialog({ kind: 'add' })}>
             {t('person.add')}

@@ -1,18 +1,17 @@
 'use client';
 
 /**
- * Attendance web (#908): shared frame (tabs, access, outlet), small UI pieces and data hooks.
+ * Attendance web (#908): shared frame (access, outlet), small UI pieces and data hooks.
  * Look follows the approved mockup (`.agent/changes/907-attendance-api/mockup.html`, part "Web").
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import { Modal } from '../orders/create/parts';
 import { cardClass, outlineBtn, primaryBtn } from '../orders/list/parts';
-import { attendanceTabs, canUseAttendanceWeb, defaultOutlet, hasAttendance, isAttendanceTabActive, isOwnerRole, monthLabel } from './attendance-model';
+import { canUseAttendanceWeb, defaultOutlet, hasAttendance, isOwnerRole, monthLabel } from './attendance-model';
 import { useMerchantModules } from './useMerchantModules';
 
 export type AttT = (key: string, values?: Record<string, string | number>) => string;
@@ -25,6 +24,43 @@ export const dangerBtn =
   'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-ar-danger px-3.5 text-[15px] font-semibold text-white hover:opacity-95 disabled:opacity-50';
 export const inputClass =
   'h-10 w-full rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-[15px] text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none disabled:opacity-60';
+/** Native select look shared by every attendance dropdown (#960): own chevron with room for it. */
+export const selectClass =
+  'h-10 w-full cursor-pointer appearance-none rounded-[10px] border border-ar-line-strong bg-ar-surface pl-3 pr-9 text-[15px] text-ar-ink focus:border-ar-primary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+
+/**
+ * `<select>` with its own chevron (#960: the native arrow sat on the border when a select used the button class).
+ * `className` styles the select (border, colour, weight); `wrapClassName` sizes the box.
+ */
+export function Select({
+  className = '',
+  wrapClassName = '',
+  children,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement> & { wrapClassName?: string }) {
+  return (
+    <span className={`relative inline-flex min-w-0 ${wrapClassName}`}>
+      <select {...props} className={`${selectClass} ${className}`}>
+        {children}
+      </select>
+      <svg
+        aria-hidden="true"
+        width={16}
+        height={16}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ar-muted"
+      >
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </span>
+  );
+}
+
 export const labelClass = 'flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
 export const thClass = 'whitespace-nowrap border-b border-ar-line bg-ar-surface-muted px-2 py-2 text-left text-[13px] font-semibold text-ar-muted';
 export const tdClass = 'border-b border-ar-line-soft px-2 py-2 align-top tabular-nums';
@@ -284,45 +320,8 @@ export function useSelectedOutlet(outlets: OutletOption[]) {
 // Frame
 // ---------------------------------------------------------------------------
 
-/** Chấm công tab strip (#945: + Mã QR & vị trí); keeps `?outletId` / `?month` across tabs. */
-export function AttendanceTabs({ access }: { access: AttendanceAccess }) {
-  const t = useTranslations('attendance') as unknown as AttT;
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const keep = useMemo(() => {
-    const q = new URLSearchParams();
-    for (const k of ['outletId', 'month']) {
-      const v = params.get(k);
-      if (v) q.set(k, v);
-    }
-    const s = q.toString();
-    return s ? `?${s}` : '';
-  }, [params]);
-  const tabs = attendanceTabs(access.role, access.modules);
-  if (tabs.length === 0) return null;
-  return (
-    <nav aria-label={t('title')} className="flex flex-wrap gap-2">
-      {tabs.map((tab) => {
-        const active = isAttendanceTabActive(pathname, tab.href);
-        return (
-          <Link
-            key={tab.key}
-            href={`${tab.href}${keep}`}
-            aria-current={active ? 'page' : undefined}
-            className={`rounded-full border px-3.5 py-1.5 text-sm no-underline ${
-              active ? 'border-ar-primary bg-ar-primary font-semibold text-ar-on-primary' : 'border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'
-            }`}
-          >
-            {t(`tabs.${tab.key}`)}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
 /**
- * Container, tab strip and the access gate. Children render once the caller may use the screens and an outlet
+ * Container and the access gate (the screens are picked in the sidebar sub-menu, #960). Children render once the caller may use the screens and an outlet
  * is known.
  */
 export function AttendanceFrame({
@@ -345,7 +344,6 @@ export function AttendanceFrame({
 
   return (
     <div className={container}>
-      {access.allowed && <AttendanceTabs access={access} />}
       {body}
     </div>
   );
@@ -356,13 +354,13 @@ export function OutletPicker({ outlets, outlet }: { outlets: OutletOption[]; out
   const { set } = useQueryState();
   if (outlets.length < 2) return <span className={`${outlineBtn} cursor-default font-normal`}>🏬 {outlet.name}</span>;
   return (
-    <select aria-label={t('common.outlet')} value={outlet.id} onChange={(e) => set({ outletId: Number(e.target.value) })} className={`${outlineBtn} font-normal`}>
+    <Select aria-label={t('common.outlet')} value={outlet.id} onChange={(e) => set({ outletId: Number(e.target.value) })} className="border-ar-line">
       {outlets.map((o) => (
         <option key={o.id} value={o.id}>
           🏬 {o.name}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 

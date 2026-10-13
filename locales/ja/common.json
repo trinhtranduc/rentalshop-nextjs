@@ -201,9 +201,14 @@
       "outlets": "店舗",
       "categories": "カテゴリ",
       "loyalty": "ロイヤルティ",
-      "settings": "ストア設定"
+      "settings": "ストア設定",
+      "attendanceSub": {
+        "timesheet": "勤務表",
+        "shifts": "シフト",
+        "templates": "シフトテンプレート",
+        "locations": "QRと位置"
+      }
     },
-    "manage": "管理",
     "createOrder": "注文を作成",
     "allOutlets": "全店舗",
     "mainMenu": "メインメニュー",
@@ -236,6 +241,32 @@
       "unreadCount": "未読 {count} 件"
     },
     "allOutletsCount": "全店舗 ({count})",
-    "someOutlets": "{count} 店舗"
+    "someOutlets": "{count} 店舗",
+    "groups": {
+      "sales": "販売・レンタル",
+      "goods": "商品",
+      "customers": "顧客",
+      "people": "人事",
+      "shop": "店舗"
+    },
+    "crumbs": {
+      "create": "新規作成",
+      "add": "追加",
+      "edit": "編集",
+      "import": "インポート",
+      "labels": "ラベル印刷",
+      "orders": "注文",
+      "permissions": "権限",
+      "rolePermissions": "役割別の権限",
+      "related": "関連する注文",
+      "bankAccounts": "銀行口座",
+      "attendance": "勤怠",
+      "notifications": "通知",
+      "subscription": "サブスクリプション",
+      "plans": "料金プラン",
+      "person": "スタッフ別"
+    },
+    "breadcrumb": "現在の場所",
+    "searchOpen": "検索を開く"
   }
 }
