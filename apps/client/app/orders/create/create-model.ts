@@ -208,10 +208,11 @@ export function hydrateLines(lines: CartLine[], products: ProductLike[]): CartLi
   return changed ? next : lines;
 }
 
+/**
+ * #952: every add is a new line, like the mobile apps (#951): one product may sit on several lines (e.g. one paid,
+ * one free), each edited on its own by its key. Stock and overlap checks add the lines up (`productQuantity`).
+ */
 export function addProduct(lines: CartLine[], p: ProductLike, orderType: OrderType): CartLine[] {
-  if (lines.some((l) => l.productId === p.id)) {
-    return lines.map((l) => (l.productId === p.id ? { ...l, quantity: l.quantity + 1 } : l));
-  }
   return [...lines, lineFromProduct(p, orderType)];
 }
 
