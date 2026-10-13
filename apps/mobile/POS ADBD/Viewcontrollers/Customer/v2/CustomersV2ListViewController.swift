@@ -207,7 +207,11 @@ final class CustomersV2ListViewController: BaseViewControler {
             guard let self else { return }
             self.viewModel.reload()
             self.onEdited?(id, form)
-            self.showToast(message: "customers.v2.saved".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
+            // After the sheet has slid away, so the toast is seen on the list
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.showToast(message: "customers.v2.saved".localized(), duration: 2.5,
+                                icon: UIImage(systemName: "checkmark.circle.fill"))
+            }
         }
         present(edit, animated: true)
     }
