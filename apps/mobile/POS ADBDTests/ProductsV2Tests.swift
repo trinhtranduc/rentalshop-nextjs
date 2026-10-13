@@ -602,6 +602,30 @@ final class ProductsV2Tests: XCTestCase {
         let stock = try XCTUnwrap(labels(cell.contentView).first { $0.text?.hasPrefix("● ") == true })
         XCTAssertEqual(stock.font, V2.label(size: 13, weight: .semibold).font)
     }
+
+    /// #937: a long name wraps to two lines on Home, then "…"
+    func testHomeRowNameShowsTwoLines() throws {
+        let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
+        let name = "Váy cưới đuôi cá ren Pháp tay dài đính ngọc trai cao cấp"
+        cell.bind(try product(#"{"id":1,"name":"\#(name)"}"#), inCart: 0)
+        func labels(_ view: UIView) -> [UILabel] {
+            ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
+        }
+        let label = try XCTUnwrap(labels(cell.contentView).first { $0.text == name })
+        XCTAssertEqual(label.numberOfLines, 2)
+        XCTAssertEqual(label.lineBreakMode, .byTruncatingTail)
+    }
+
+    // MARK: - Home cart button (#937)
+
+    /// #937: the Home top-right button counts the cart's items (same number as the cart bar), hidden when empty
+    func testHomeCartButtonBadge() {
+        XCTAssertNil(HomeCartButton.badge(itemCount: 0))
+        XCTAssertEqual(HomeCartButton.badge(itemCount: 3), "3")
+        XCTAssertEqual(HomeCartButton.badge(itemCount: 99), "99")
+        XCTAssertEqual(HomeCartButton.badge(itemCount: 140), "99")
+        XCTAssertEqual(HomeCartButton.symbol, "cart")
+    }
 }
 
 /// #461 — the number pad covered "Lưu sản phẩm" and had no Done key

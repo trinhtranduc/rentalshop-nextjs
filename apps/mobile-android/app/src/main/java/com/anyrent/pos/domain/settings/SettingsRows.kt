@@ -6,6 +6,8 @@ import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
+    /** #937: the inbox, moved here from the Home bell */
+    NOTIFICATIONS,
     STORE_INFO, RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
     PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
@@ -31,6 +33,7 @@ object SettingsRows {
      * - plan: once `subscriptions/status` answered, not for ADMIN
      * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
+     * - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
@@ -46,13 +49,16 @@ object SettingsRows {
         return listOf(
             SettingsSection(
                 SettingsGroup.STORE,
-                listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
+                listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
                     listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }),
             ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),
         ).filter { it.items.isNotEmpty() }
     }
+
+    /** #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0 */
+    fun unreadBadge(count: Int): String? = if (count > 0) count.coerceAtMost(99).toString() else null
 
     /** The list whose `total` (with `limit=1`) shows next to a row (#388) */
     fun countPath(item: SettingsItem): String? = when (item) {

@@ -14,8 +14,6 @@ import AudioToolbox
 
 final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
-    /// Last time the unread badge came from the server or the inbox signal (#674)
-    private var badgeLoadedAt: Date?
     /// #677: an order changed (`OrdersChangeSignal`) while the list was off screen
     private var stockStale = false
     private let searchDebouncer = DebounceManager(delay: 0.3)
@@ -45,7 +43,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
     /// "Tạo đơn ›", or "Sửa đơn #482913 ›" while the cart edits an order (#677)
     private let cartActionLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
-    private let notificationButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+    /// #937: the cart (the bell moved to Cài đặt → Thông báo)
+    private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -64,7 +63,6 @@ final class ProductsHomeViewController: BaseViewControler {
         buildCartBar()
         bindViewModel()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
         viewModel.reload()
@@ -85,10 +83,6 @@ final class ProductsHomeViewController: BaseViewControler {
         if stockStale {
             stockStale = false
             viewModel.refreshQuietly()
-        }
-        // #674: the badge follows `.inboxUnreadCountDidChange`; the server is asked on first show and when 10 min old
-        if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: badgeLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
-            refreshNotificationBadge()
         }
     }
 
@@ -114,14 +108,14 @@ final class ProductsHomeViewController: BaseViewControler {
     private func buildHeader() {
         outletButton.presenter = self
 
-        notificationButton.setImage(DS.symbol("bell", DS.Icon.lg), for: .normal)
-        notificationButton.tintColor = DS.Color.text
-        notificationButton.badgeBackgroundColor = DS.Color.primary
-        notificationButton.badgeTextColor = .white
-        notificationButton.badgeFont = Utils.mediumFont(size: DS.TextSize.pill)
-        notificationButton.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
-        notificationButton.accessibilityLabel = "Notifications".localized()
-        notificationButton.addTarget(self, action: #selector(openInbox), for: .touchUpInside)
+        cartButton.setImage(DS.symbol(HomeCartButton.symbol, DS.Icon.lg), for: .normal)
+        cartButton.tintColor = DS.Color.text
+        cartButton.badgeBackgroundColor = DS.Color.primary
+        cartButton.badgeTextColor = .white
+        cartButton.badgeFont = Utils.mediumFont(size: DS.TextSize.pill)
+        cartButton.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
+        cartButton.accessibilityLabel = "Cart".localized()
+        cartButton.addTarget(self, action: #selector(openCart), for: .touchUpInside)
 
         let addButton = iconButton("plus", size: DS.Icon.lg, label: "product.action.add.accessibility".localized(), action: #selector(addProduct))
         addButton.isHidden = !ProductAccess.canCreate(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
@@ -131,10 +125,10 @@ final class ProductsHomeViewController: BaseViewControler {
         titles.alignment = .leading
         // The button is 44 pt tall for touch; its pill is 32 pt, so the title sits right under it (board SP-dong)
         titles.setCustomSpacing(-4, after: outletButton)
-        let topRow = UIStackView(arrangedSubviews: [titles, UIView(), addButton, notificationButton])
+        let topRow = UIStackView(arrangedSubviews: [titles, UIView(), addButton, cartButton])
         topRow.alignment = .center
         topRow.spacing = 4
-        notificationButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
+        cartButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
 
         let searchBox = UIView()
         searchBox.backgroundColor = V2.chipFill
@@ -320,32 +314,11 @@ final class ProductsHomeViewController: BaseViewControler {
         cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, action]
             .compactMap { $0 }.joined(separator: ", ")
         list.contentInset.bottom = cart.items.isEmpty ? 16 : 96
-    }
-
-    private func refreshNotificationBadge() {
-        guard User.account() != nil else { return }
-        NotificationService.shared.getUnreadCount { [weak self] count, _ in
-            guard let self else { return }
-            if count != nil { self.badgeLoadedAt = Date() }
-            self.applyBadge(count ?? 0)
-        }
-    }
-
-    private func applyBadge(_ count: Int) {
-        notificationButton.badge = count > 0 ? "\(min(count, 99))" : nil
-        notificationButton.setImage(DS.symbol(count > 0 ? "bell.badge" : "bell", DS.Icon.lg), for: .normal)
+        cartButton.badge = HomeCartButton.badge(itemCount: cart.itemCount)
+        cartButton.accessibilityValue = cartCountLabel.text.flatMap { cart.items.isEmpty ? nil : $0 }
     }
 
     // MARK: - Actions
-
-    @objc private func inboxCountChanged(_ note: Notification) {
-        if let count = note.userInfo?["count"] as? Int {
-            badgeLoadedAt = Date()
-            applyBadge(count)
-        } else {
-            refreshNotificationBadge()
-        }
-    }
 
     @objc private func cartChanged() {
         updateCartBar()
@@ -357,12 +330,6 @@ final class ProductsHomeViewController: BaseViewControler {
         searchDebouncer.debounce { [weak self] in
             self?.viewModel.setQuery(text)
         }
-    }
-
-    @objc private func openInbox() {
-        let inbox = NotificationsViewController()
-        inbox.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(inbox, animated: true)
     }
 
     @objc private func addProduct() {
@@ -443,6 +410,15 @@ final class ProductsHomeViewController: BaseViewControler {
         if HomeCartBarStyle.showsAddedToast {
             showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
         }
+    }
+}
+
+/// #937 (owner): the Home top-right cart button; the badge counts the cart's items like the cart bar
+enum HomeCartButton {
+    static let symbol = "cart"
+
+    static func badge(itemCount: Int) -> String? {
+        itemCount > 0 ? "\(min(itemCount, 99))" : nil
     }
 }
 
@@ -530,7 +506,12 @@ extension ProductsHomeViewController: QRCodeReaderViewControllerDelegate {
 final class ProductRowV2Cell: UITableViewCell {
     static let reuseId = "ProductRowV2Cell"
     private let photo = V2.thumbnail(size: 68, radius: 12)
-    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    /// #937: up to two lines, then "…" (Home only)
+    private let nameLabel: UILabel = {
+        let label = V2.label(size: DS.TextSize.name, weight: .bold, lines: 2)
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
     /// "● Còn N hôm nay" / "● Hết hôm nay": the colour carries the state (#468); 13pt semibold (#681)
     private let stockLabel = V2.label(size: 13, weight: .semibold)
     private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)

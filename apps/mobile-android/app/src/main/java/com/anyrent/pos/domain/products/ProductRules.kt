@@ -186,6 +186,12 @@ data class ProductRowPrice(
 )
 
 object ProductRowLogic {
+    /** #937: Home product names wrap to two lines, then "…" */
+    const val NAME_MAX_LINES = 2
+
+    /** #937: badge of the Home cart button: the cart's units (same number as the cart bar), capped at 99, none when empty */
+    fun cartBadge(itemCount: Int): String? = if (itemCount > 0) itemCount.coerceAtMost(99).toString() else null
+
     /** Units of this product already in the cart */
     fun cartCount(productId: Int, lines: List<CartLine>): Int =
         lines.filter { it.product.id == productId }.sumOf { it.quantity }

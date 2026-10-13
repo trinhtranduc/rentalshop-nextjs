@@ -925,7 +925,6 @@ private fun MainTabs(
                     ProductsHomeScreen(
                         onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
                         onOpenCart = { rootNavController.navigate(Routes.CartV2) },
-                        onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                     )
                 } else {
                     HomeScreen(
@@ -997,6 +996,7 @@ private fun MainTabs(
                         onOpenUsers = { rootNavController.navigate(Routes.Users) },
                         onOpenExport = { rootNavController.navigate(Routes.Export) },
                         onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
+                        onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
                         onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
                         onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },

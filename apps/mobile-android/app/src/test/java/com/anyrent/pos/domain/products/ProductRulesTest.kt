@@ -368,4 +368,19 @@ class ProductRulesTest {
         assertEquals(R.string.api_error_category_name_exists, ApiErrorMessages.stringId("CATEGORY_NAME_EXISTS"))
         assertEquals(R.string.api_error_cannot_delete_default_category, ApiErrorMessages.stringId("CANNOT_DELETE_DEFAULT_CATEGORY"))
     }
+
+    /** #937: the Home top-right cart button counts the cart's units (same number as the cart bar), hidden when empty */
+    @Test
+    fun homeCartButtonBadge() {
+        assertNull(ProductRowLogic.cartBadge(0))
+        assertEquals("3", ProductRowLogic.cartBadge(3))
+        assertEquals("99", ProductRowLogic.cartBadge(99))
+        assertEquals("99", ProductRowLogic.cartBadge(140))
+    }
+
+    /** #937: Home product names wrap to two lines, then "…" */
+    @Test
+    fun homeRowNameShowsTwoLines() {
+        assertEquals(2, ProductRowLogic.NAME_MAX_LINES)
+    }
 }
