@@ -15,10 +15,25 @@ class OrderActionSheetTest {
             canExtend = canExtend,
         )
 
+    private fun bar(type: String, status: String, manage: Boolean = true, canExtend: Boolean = false) =
+        OrderActionSheet.onScreen(OrderDetailLogic.actions(type, status, manage, true), isSale = type == "SALE", canExtend = canExtend)
+
+    @Test fun secondaryBottomButtonIsAlwaysPrint() {
+        // #930: In + Giao đồ / In + Nhận trả; Sửa đơn and Gia hạn move into the sheet
+        assertEquals(setOf(Action.PRINT), bar("RENT", "RESERVED"))
+        assertEquals(setOf(Action.PRINT), bar("RENT", "RESERVED", manage = false))
+        assertEquals(setOf(Action.PRINT), bar("RENT", "PICKUPED", canExtend = true))
+        assertEquals(setOf(Action.PRINT), bar("RENT", "PICKUPED"))
+        assertEquals(setOf(Action.PRINT), bar("RENT", "RETURNED"))
+        assertEquals(setOf(Action.PRINT), bar("RENT", "CANCELLED"))
+        assertEquals(setOf(Action.CANCEL, Action.PRINT), bar("SALE", "COMPLETED"))
+        assertEquals(setOf(Action.PRINT), bar("SALE", "COMPLETED", manage = false))
+    }
+
     @Test fun reservedRentalBoard() {
-        // Bottom bar: Sửa đơn + Giao đồ → the sheet has Print, Notes, History (+ Share), red Huỷ đơn
+        // Bottom bar: In + Giao đồ → the sheet (iOS order): Share, Notes, Edit, History, red Huỷ đơn
         val r = rows("RENT", "RESERVED")
-        assertEquals(listOf(Action.PRINT, Action.NOTES, Action.HISTORY, Action.SHARE), r.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.EDIT, Action.HISTORY), r.main)
         assertEquals(listOf(Action.CANCEL), r.danger)
     }
 
@@ -29,18 +44,18 @@ class OrderActionSheetTest {
             assertTrue("$type $status", Action.HISTORY !in r.main)
         }
         val r = OrderActionSheet.rows(OrderDetailLogic.actions("RENT", "RESERVED", false, false), isSale = false, canExtend = false, canViewHistory = false)
-        assertEquals(listOf(Action.PRINT, Action.NOTES, Action.SHARE), r.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES), r.main)
     }
 
     @Test fun reservedRentalWithoutEditRightGetsNoEditAnywhere() {
         val r = rows("RENT", "RESERVED", manage = false)
-        assertEquals(listOf(Action.PRINT, Action.NOTES, Action.HISTORY, Action.SHARE), r.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), r.main)
         assertTrue(r.danger.isEmpty())
     }
 
-    @Test fun pickedUpRentalWithExtendOnScreen() {
+    @Test fun pickedUpRentalWithExtendInTheSheet() {
         val r = rows("RENT", "PICKUPED", canExtend = true)
-        assertEquals(listOf(Action.PRINT, Action.NOTES, Action.HISTORY, Action.SHARE), r.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.EXTEND, Action.HISTORY), r.main)
         assertEquals(listOf(Action.CANCEL), r.danger)
     }
 
@@ -51,10 +66,10 @@ class OrderActionSheetTest {
 
     @Test fun finishedOrdersPrintAtTheBottom() {
         val returned = rows("RENT", "RETURNED")
-        assertEquals(listOf(Action.NOTES, Action.HISTORY, Action.SHARE), returned.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), returned.main)
         assertTrue(returned.danger.isEmpty())
         val cancelled = rows("RENT", "CANCELLED")
-        assertEquals(listOf(Action.NOTES, Action.HISTORY, Action.SHARE), cancelled.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), cancelled.main)
         assertEquals(listOf(Action.DELETE), cancelled.danger)
         assertTrue(rows("RENT", "CANCELLED", deleteCancelled = false).danger.isEmpty())
     }
@@ -62,13 +77,13 @@ class OrderActionSheetTest {
     @Test fun completedSaleHasCancelAndPrintOnScreen() {
         // Bar: Huỷ đơn + In hoá đơn; Sửa đơn is not on the bar, so the sheet offers it
         val r = rows("SALE", "COMPLETED")
-        assertEquals(listOf(Action.NOTES, Action.HISTORY, Action.EDIT, Action.SHARE), r.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.EDIT, Action.HISTORY), r.main)
         assertTrue(r.danger.isEmpty())
     }
 
     @Test fun saleWithoutManageRightPrintsAtTheBottom() {
         val r = rows("SALE", "COMPLETED", manage = false)
-        assertEquals(listOf(Action.NOTES, Action.HISTORY, Action.SHARE), r.main)
+        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), r.main)
         assertTrue(r.danger.isEmpty())
     }
 
