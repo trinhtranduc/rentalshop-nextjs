@@ -2559,3 +2559,8 @@
 
 /* #930 share image: kind and created time */
 "share.kind.created" = "%@ · tạo %@";
+"attendance.card.inShift" = "Đang trong ca · vào %@";
+"attendance.card.shiftUntil" = "%@ đến %@";
+"attendance.card.distance" = "Cách %@ m";
+"attendance.error.notRequired.title" = "Bạn không cần chấm công";
+"attendance.error.notRequired.message" = "Shop chưa chọn bạn chấm công ở chi nhánh này. Hỏi chủ shop nếu cần.";

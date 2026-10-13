@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		A909B0000000000000000002 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000001 /* Attendance.swift */; };
 		A909B0000000000000000004 /* AttendanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000003 /* AttendanceService.swift */; };
-		A909B0000000000000000006 /* AttendanceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000005 /* AttendanceViewController.swift */; };
+		A909B0000000000000000006 /* AttendanceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000005 /* AttendanceCard.swift */; };
 		A909B0000000000000000008 /* AttendanceScanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000007 /* AttendanceScanViewController.swift */; };
 		A909B000000000000000000A /* MyShiftsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000009 /* MyShiftsViewController.swift */; };
 		A909B000000000000000000C /* AttendanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F000000000000000000B /* AttendanceTests.swift */; };
@@ -401,7 +401,7 @@
 /* Begin PBXFileReference section */
 		A909F0000000000000000001 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
 		A909F0000000000000000003 /* AttendanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceService.swift; sourceTree = "<group>"; };
-		A909F0000000000000000005 /* AttendanceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceViewController.swift; sourceTree = "<group>"; };
+		A909F0000000000000000005 /* AttendanceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceCard.swift; sourceTree = "<group>"; };
 		A909F0000000000000000007 /* AttendanceScanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceScanViewController.swift; sourceTree = "<group>"; };
 		A909F0000000000000000009 /* MyShiftsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyShiftsViewController.swift; sourceTree = "<group>"; };
 		A909F000000000000000000B /* AttendanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceTests.swift; sourceTree = "<group>"; };
@@ -802,7 +802,7 @@
 		A909G000000000000000000D /* Attendance */ = {
 			isa = PBXGroup;
 			children = (
-				A909F0000000000000000005 /* AttendanceViewController.swift */,
+				A909F0000000000000000005 /* AttendanceCard.swift */,
 				A909F0000000000000000007 /* AttendanceScanViewController.swift */,
 				A909F0000000000000000009 /* MyShiftsViewController.swift */,
 			);
@@ -2059,7 +2059,7 @@
 				C94E9CD9233DEB5500D63CC0 /* Merchant.swift in Sources */,
 				A909B000000000000000000A /* MyShiftsViewController.swift in Sources */,
 				A909B0000000000000000008 /* AttendanceScanViewController.swift in Sources */,
-				A909B0000000000000000006 /* AttendanceViewController.swift in Sources */,
+				A909B0000000000000000006 /* AttendanceCard.swift in Sources */,
 				A909B0000000000000000004 /* AttendanceService.swift in Sources */,
 				A909B0000000000000000002 /* Attendance.swift in Sources */,
 				C914E01B23A4907A008B3EDF /* UITableView+Additions.swift in Sources */,

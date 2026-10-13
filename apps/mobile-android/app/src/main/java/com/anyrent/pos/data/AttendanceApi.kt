@@ -1,6 +1,7 @@
 package com.anyrent.pos.data
 
 import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.domain.attendance.AttendanceCard
 import com.anyrent.pos.domain.attendance.AttendanceLogic
 import com.anyrent.pos.domain.attendance.AttendanceMe
 import com.anyrent.pos.domain.attendance.AttendanceShift
@@ -51,6 +52,16 @@ object AttendanceApi {
                 PunchOutcome.Rejected(AttendanceLogic.rejection(error.code, data, error.message))
             },
         )
+    }
+
+    /** #927: the signed-in user's records of the VN day [today] (Cài đặt card, "Đã xong" face) */
+    fun todayPairs(today: LocalDate = ShopTime.today()): Result<List<WorkedPair>> = runCatching {
+        val userId = SessionStore.userId ?: return@runCatching emptyList()
+        val outletId = SessionStore.outletId ?: CurrentOutlet.id
+        val outletParam = outletId?.let { "outletId=$it&" }.orEmpty()
+        val month = AttendanceLogic.monthKey(YearMonth.from(today))
+        val res = ApiClient.get().authedGet("/api/attendance/people/$userId/month?${outletParam}month=$month")
+        AttendanceCard.todayPairs(AttendanceLogic.pairs(res.optJSONObject("data")?.optJSONArray("rows")), today)
     }
 
     /** This VN week (shifts + worked pairs) and the current month's totals of the signed-in user */

@@ -928,8 +928,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
-    /// #909 Chấm công: Cài đặt → "⏱ Chấm công" → Vào ca (Debug "Nhập mã" with E2E_ATTENDANCE_CODE) → Ra ca, a
-    /// refused code (E2E_ATTENDANCE_BAD_CODE, default an expired one) → Ca và công của tôi. Needs the #907 API with the
+    /// #909 / #927 Chấm công: card L at the top of Cài đặt → Vào ca (Debug "Nhập mã" with E2E_ATTENDANCE_CODE) → Ra ca,
+    /// a refused code (E2E_ATTENDANCE_BAD_CODE, default an expired one) → Ca và công của tôi. Needs the #907 API with the
     /// module on for this merchant and an outlet whose coordinates match the Simulator location. Grant location first
     /// (`xcrun simctl privacy <udid> grant location <bundle id>`): the shared alert helper taps "Don't Allow".
     func test9AttendanceClockInOut() throws {
@@ -938,16 +938,10 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newSettings")
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        let row = app.descendants(matching: .any)["settings.attendance"]
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "Settings shows ⏱ Chấm công when the module is on")
-        sleep(2)
-        e2e.shot("9a-attendance-settings")
-        row.tap()
-
         let punch = app.buttons["attendance.punch"]
-        XCTAssertTrue(punch.waitForExistence(timeout: 10), "Chấm công opens with one button")
+        XCTAssertTrue(punch.waitForExistence(timeout: 15), "Settings shows the clock card when the module is on and the user must clock in")
         sleep(2)
-        e2e.shot("9b-attendance-before")
+        e2e.shot("9a-attendance-card")
 
         var scannerShot = false
         func scan(_ value: String) {
@@ -967,7 +961,8 @@ final class AnyRentE2ETests: XCTestCase {
             app.alerts.buttons["OK"].tap()
         }
 
-        let result = app.descendants(matching: .any)["attendance.result"]
+        // ✓ line inside the card, or the red box under it
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier IN {'attendance.result', 'attendance.error'}")).firstMatch
         let wasIn = punch.label.contains("Ra ca") || punch.label.contains("Clock out")
         scan(code)
         XCTAssertTrue(result.waitForExistence(timeout: 25), "A result box after the punch")

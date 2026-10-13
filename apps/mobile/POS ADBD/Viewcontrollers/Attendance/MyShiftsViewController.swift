@@ -178,8 +178,9 @@ final class MyShiftsViewController: BaseViewControler {
             left.axis = .vertical
             left.spacing = 2
             shift.isHidden = row.shift.isEmpty
-            let worked = V2.label(row.worked, size: DS.TextSize.body, color: row.isLate ? UIColor(hexString: "92400E") : DS.Color.text, lines: 0)
+            let worked = V2.label(row.worked, size: DS.TextSize.body, color: DS.Color.text, lines: 0)
             worked.textAlignment = .right
+            worked.attributedText = workedText(row, font: worked.font)
             // e2e #909: the day and its shift ("Tối 21–23:30") stay on one line each; the times wrap instead
             [day, shift].forEach { $0.setContentCompressionResistancePriority(.required, for: .horizontal) }
             left.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -191,6 +192,26 @@ final class MyShiftsViewController: BaseViewControler {
             view.accessibilityIdentifier = "attendance.week.\(row.dayKey)"
             weekStack.addArrangedSubview(view)
         }
+    }
+
+    /// #935 Times and hours in the normal colour, only "muộn N′" in amber
+    private func workedText(_ row: AttendanceWeekRow, font: UIFont) -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .right
+        let base: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: DS.Color.text, .paragraphStyle: paragraph]
+        guard !row.lines.isEmpty else { return NSAttributedString(string: row.worked, attributes: base) }
+        let text = NSMutableAttributedString()
+        for (index, line) in row.lines.enumerated() {
+            if index > 0 { text.append(NSAttributedString(string: "\n", attributes: base)) }
+            text.append(NSAttributedString(string: line.main, attributes: base))
+            if let late = line.late {
+                text.append(NSAttributedString(string: " · ", attributes: base))
+                var amber = base
+                amber[.foregroundColor] = UIColor(hexString: "92400E")
+                text.append(NSAttributedString(string: late, attributes: amber))
+            }
+        }
+        return text
     }
 
     @objc private func backTapped() {

@@ -89,12 +89,6 @@ final class AttendanceTests: XCTestCase {
         XCTAssertEqual(AttendanceLogic.state(outYesterday, now: at("2026-10-11T17:30:00Z")), .notIn)
     }
 
-    func testSettingsSubtitle() {
-        let me = AttendanceMe(todayShifts: [AttendanceShift(name: "Ca sáng", start: "08:00", end: "12:00")])
-        XCTAssertEqual(AttendanceLogic.settingsSubtitle(me), "Ca sáng 08:00–12:00 · " + "attendance.status.notIn".localized())
-        XCTAssertEqual(AttendanceLogic.settingsSubtitle(AttendanceMe()).lowercased(), "attendance.status.notIn".localized().lowercased())
-    }
-
     // MARK: Errors (one at a time, mockup copy)
 
     func testErrorCopyCarriesNumbers() {
@@ -223,5 +217,137 @@ final class AttendanceTests: XCTestCase {
         // 8 h 55′ − 60′ of "Sáng" (manual) = 7,9; 6 h 25′ − its own 30′ snapshot (scans) = 5,9
         XCTAssertEqual(result[0].worked, "08:03–16:58 · \(short(7 + 55.0 / 60))\n17:05–23:30 · \(short(5 + 55.0 / 60))")
         XCTAssertEqual(result[1].worked, "08:00–16:00 · \(short(7.5))")
+    }
+
+    /// #935 A late record keeps its hours: "09:57–16:03 · 6,1 g · muộn 117′"; an open late record "08:10–… · muộn 10′"
+    func testLateRecordShowsHoursThenLateMinutes() {
+        let rows = [
+            AttendanceMonthRow(at: at("2026-10-13T02:57:00Z"), kind: "IN", result: "ACCEPTED", recordId: 1, lateMinutes: 117),
+            AttendanceMonthRow(at: at("2026-10-13T09:03:00Z"), kind: "OUT", result: "ACCEPTED", recordId: 1),
+            AttendanceMonthRow(at: at("2026-10-14T01:10:00Z"), kind: "IN", result: "ACCEPTED", recordId: 2, lateMinutes: 10),
+        ]
+        let pairs = AttendanceLogic.pairs(rows)
+        let week = AttendanceLogic.weekDayKeys(containing: at("2026-10-14T03:00:00Z"), timeZone: vn)
+        let result = AttendanceLogic.weekRows(dayKeys: week, schedule: [:], pairs: pairs)
+        guard result.count == 2 else { return XCTFail("\(result)") }
+        let short = String(format: "attendance.mine.hoursShort".localized(), AttendanceLogic.hours(6.1))
+        func late(_ minutes: Int) -> String { String(format: "attendance.mine.late".localized(), minutes) }
+        XCTAssertEqual(result[0].worked, "09:57–16:03 · \(short) · \(late(117))")
+        XCTAssertTrue(result[0].isLate)
+        XCTAssertEqual(result[1].worked, "08:10–… · \(late(10))")
+        XCTAssertTrue(result[1].isLate)
+    }
+
+    // MARK: #927 Card L in Settings
+
+    func testRequiredDefaultsToTrue() throws {
+        XCTAssertTrue(try decode(AttendanceMe.self, "{}").required)
+        XCTAssertTrue(try decode(AttendanceMe.self, #"{"required":"no"}"#).required)
+        XCTAssertTrue(try decode(AttendanceMe.self, #"{"required":true}"#).required)
+        XCTAssertFalse(try decode(AttendanceMe.self, #"{"required":false}"#).required)
+    }
+
+    func testCardShowsOnlyWithModuleAndRequired() throws {
+        let on = try decode(Merchant.self, #"{"id":1,"name":"Shop","modules":["attendance"]}"#)
+        let off = try decode(Merchant.self, #"{"id":1,"name":"Shop"}"#)
+        XCTAssertTrue(AttendanceCardLogic.shows(merchant: on, me: AttendanceMe()))
+        XCTAssertFalse(AttendanceCardLogic.shows(merchant: on, me: AttendanceMe(required: false)))
+        XCTAssertFalse(AttendanceCardLogic.shows(merchant: on, me: nil), "nothing until /me answered")
+        XCTAssertFalse(AttendanceCardLogic.shows(merchant: off, me: AttendanceMe()))
+    }
+
+    func testElapsedIsHoursAndMinutes() {
+        XCTAssertEqual(AttendanceCardLogic.elapsed(2 * 3600 + 44 * 60 + 59), "2:44")
+        XCTAssertEqual(AttendanceCardLogic.elapsed(5 * 60), "0:05")
+        XCTAssertEqual(AttendanceCardLogic.elapsed(-30), "0:00")
+        XCTAssertEqual(AttendanceCardLogic.elapsed(11 * 3600), "11:00")
+    }
+
+    func testCardNotInShowsClockAllShiftsAndBranch() {
+        let now = at("2026-10-13T00:57:00Z") // 07:57 VN, Tuesday
+        let me = AttendanceMe(todayShifts: [AttendanceShift(name: "Ca sáng", start: "08:00", end: "12:00"),
+                                            AttendanceShift(name: "Ca tối", start: "18:00", end: "22:00")],
+                              todayStatus: "NOT_STARTED")
+        let card = AttendanceCardLogic.model(me: me, todayPairs: [], outletName: "Chi nhánh chính", now: now)
+        XCTAssertEqual(card.state, .notIn)
+        XCTAssertEqual(card.big, "07:57")
+        XCTAssertEqual(card.line, AttendanceLogic.dayLabel("2026-10-13") + " · Ca sáng 08:00–12:00, Ca tối 18:00–22:00 · Chi nhánh chính · "
+                       + "attendance.status.notIn".localized())
+        XCTAssertEqual(card.button, "attendance.clockIn".localized())
+        XCTAssertFalse(card.isGreen)
+        // No shift, no branch: day and status only
+        let bare = AttendanceCardLogic.model(me: AttendanceMe(), todayPairs: [], outletName: nil, now: now)
+        XCTAssertEqual(bare.line, AttendanceLogic.dayLabel("2026-10-13") + " · " + "attendance.status.notIn".localized())
+    }
+
+    func testCardOnShiftCountsFromCheckIn() {
+        let now = at("2026-10-13T03:42:30Z") // 10:42 VN
+        let open = AttendanceRecord(id: 9, checkInAt: at("2026-10-13T00:58:00Z"), checkOutAt: nil, status: "OPEN",
+                                    shift: AttendanceShift(name: "Ca sáng", start: "08:00", end: "17:00"))
+        let card = AttendanceCardLogic.model(me: AttendanceMe(openRecord: open, todayStatus: "IN_SHIFT"), todayPairs: [],
+                                             outletName: "Chi nhánh chính", now: now)
+        XCTAssertEqual(card.state, .inShift)
+        XCTAssertEqual(card.big, "2:44")
+        XCTAssertEqual(card.line, String(format: "attendance.card.inShift".localized(), "07:58") + " · "
+                       + String(format: "attendance.card.shiftUntil".localized(), "Ca sáng", "17:00"))
+        XCTAssertEqual(card.button, "attendance.clockOut".localized())
+        XCTAssertTrue(card.isGreen)
+        // No snapshot on the record: the day's shift the check-in falls in
+        let bare = AttendanceRecord(checkInAt: at("2026-10-13T00:58:00Z"), checkOutAt: nil, status: "OPEN")
+        let linked = AttendanceCardLogic.model(me: AttendanceMe(openRecord: bare, todayShifts: [AttendanceShift(name: "Ca sáng", start: "08:00", end: "17:00")]),
+                                               todayPairs: [], outletName: nil, now: now)
+        XCTAssertTrue(linked.line.hasSuffix(String(format: "attendance.card.shiftUntil".localized(), "Ca sáng", "17:00")), linked.line)
+        let noShift = AttendanceCardLogic.model(me: AttendanceMe(openRecord: bare), todayPairs: [], outletName: nil, now: now)
+        XCTAssertEqual(noShift.line, String(format: "attendance.card.inShift".localized(), "07:58"))
+    }
+
+    func testCardDoneShowsDayTotalAndPairs() {
+        let now = at("2026-10-13T10:30:00Z") // 17:30 VN
+        let rows = [
+            // yesterday: not today's
+            AttendanceMonthRow(at: at("2026-10-12T01:00:00Z"), kind: "IN", result: "ACCEPTED", recordId: 1, dateKey: "2026-10-12"),
+            AttendanceMonthRow(at: at("2026-10-12T05:00:00Z"), kind: "OUT", result: "ACCEPTED", recordId: 1, dateKey: "2026-10-12"),
+            AttendanceMonthRow(at: at("2026-10-13T00:58:00Z"), kind: "IN", result: "ACCEPTED", recordId: 2, dateKey: "2026-10-13"),
+            AttendanceMonthRow(at: at("2026-10-13T05:01:00Z"), kind: "OUT", result: "ACCEPTED", recordId: 2, dateKey: "2026-10-13"),
+            AttendanceMonthRow(at: at("2026-10-13T06:00:00Z"), kind: "IN", result: "ACCEPTED", recordId: 3, dateKey: "2026-10-13"),
+            AttendanceMonthRow(at: at("2026-10-13T10:05:00Z"), kind: "OUT", result: "ACCEPTED", recordId: 3, dateKey: "2026-10-13"),
+        ]
+        let today = AttendanceCardLogic.todayPairs(rows, now: now)
+        XCTAssertEqual(today.count, 2)
+        let me = AttendanceMe(todayStatus: "DONE", lastAction: "OUT", lastActionAt: at("2026-10-13T10:05:00Z"))
+        let card = AttendanceCardLogic.model(me: me, todayPairs: today, outletName: nil, now: now)
+        XCTAssertEqual(card.state, .done)
+        // 4 h 03′ + 4 h 05′ = 8,1
+        XCTAssertEqual(card.big, String(format: "attendance.mine.hoursValue".localized(), AttendanceLogic.hours(8 + 8.0 / 60)))
+        XCTAssertEqual(card.line, String(format: "attendance.today".localized(), "07:58–12:01, 13:00–17:05"))
+        XCTAssertEqual(card.button, "attendance.clockIn".localized())
+        XCTAssertFalse(card.isGreen)
+        // Pairs not loaded yet: the last punch's day hours, no times
+        let early = AttendanceCardLogic.model(me: me, todayPairs: [], outletName: nil, now: now, fallbackHours: 8.1)
+        XCTAssertEqual(early.big, String(format: "attendance.mine.hoursValue".localized(), AttendanceLogic.hours(8.1)))
+        XCTAssertEqual(early.line, String(format: "attendance.today".localized(), AttendanceLogic.dayLabel("2026-10-13")))
+        // Nothing at all: the status word
+        let none = AttendanceCardLogic.model(me: me, todayPairs: [], outletName: nil, now: now)
+        XCTAssertFalse(none.big.isEmpty)
+    }
+
+    func testPunchSuccessLine() {
+        let inResult = AttendancePunchResult(action: "IN", record: AttendanceRecord(checkInAt: at("2026-10-13T00:58:00Z"), checkOutAt: nil),
+                                             distanceM: 11.4)
+        XCTAssertEqual(AttendanceCardLogic.successLine(inResult),
+                       "✓ " + String(format: "attendance.done.in".localized(), "07:58") + " · " + String(format: "attendance.card.distance".localized(), "11"))
+        let outResult = AttendancePunchResult(action: "OUT", record: AttendanceRecord(checkInAt: at("2026-10-13T06:00:00Z"),
+                                                                                      checkOutAt: at("2026-10-13T10:05:00Z")),
+                                              todayHours: 8.1)
+        XCTAssertEqual(AttendanceCardLogic.successLine(outResult),
+                       "✓ " + String(format: "attendance.done.out".localized(), "17:05") + " · "
+                       + String(format: "attendance.mine.hoursValue".localized(), AttendanceLogic.hours(8.1)))
+    }
+
+    func testNotRequiredHasItsOwnCopy() {
+        let copy = AttendanceLogic.errorCopy(AttendanceFailure(code: "ATTENDANCE_NOT_REQUIRED"), outletName: nil)
+        XCTAssertEqual(copy.title, "attendance.error.notRequired.title".localized())
+        XCTAssertFalse(copy.title.hasPrefix("attendance."))
+        XCTAssertFalse(copy.message.hasPrefix("attendance."))
     }
 }

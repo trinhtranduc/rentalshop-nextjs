@@ -27,6 +27,8 @@ data class AttendanceRecord(
     val status: String?,
     val hours: Double?,
     val breakMinutes: Int?,
+    /** The record's shift snapshot (`record.shift`), #927 */
+    val shift: AttendanceShift? = null,
 )
 
 enum class AttendanceStatus { NOT_IN, IN_SHIFT, DONE }
@@ -39,6 +41,8 @@ data class AttendanceMe(
     val lastActionAt: Instant?,
     /** `today.status` of the API: IN_SHIFT | DONE | NOT_STARTED */
     val apiStatus: String? = null,
+    /** #927: the shop picked this person to clock in; an API without the field = true */
+    val required: Boolean = true,
 ) {
     /** The API's `today.status`; without it: open record = in shift, an OUT today = done, else not in */
     fun status(now: Instant = Instant.now(), zone: ZoneId = ShopTime.zone): AttendanceStatus = when {
@@ -66,7 +70,9 @@ data class PunchResult(
 /** Why a punch was refused; one shows at a time (mockup screen 6) */
 enum class PunchRejectionKind {
     OUT_OF_RANGE, MOCK_LOCATION, QR_EXPIRED, QR_WRONG_OUTLET, GPS_INACCURATE,
-    NOT_CONFIGURED, MODULE_OFF, NO_LOCATION, OTHER,
+    NOT_CONFIGURED, MODULE_OFF, NO_LOCATION,
+    /** #927: the shop did not pick this person to clock in */
+    NOT_REQUIRED, OTHER,
 }
 
 data class PunchRejection(
@@ -89,6 +95,9 @@ data class WorkedPair(
 
 /** One line of a week row, one per record as on iOS: "08:03–16:58" + hours (closed) or late minutes */
 data class WorkedLine(val times: String, val hours: Double?, val lateMinutes: Int)
+
+/** #932 Main text of a record, and its amber late part (null when on time) */
+data class WeekLineText(val main: String, val late: String?)
 
 data class MyShiftDay(val date: LocalDate, val shifts: List<AttendanceShift>, val pairs: List<WorkedPair>) {
     val lateMinutes: Int get() = pairs.sumOf { it.lateMinutes ?: 0 }
@@ -144,6 +153,7 @@ object AttendanceLogic {
             status = o.str("status"),
             hours = o.dbl("hours"),
             breakMinutes = o.int("shiftBreakMinutes", "breakMinutes") ?: snapshot?.int("breakMinutes"),
+            shift = shift(snapshot),
         )
     }
 
@@ -156,6 +166,7 @@ object AttendanceLogic {
             lastAction = last?.str("action", "kind") ?: (data?.opt("lastAction") as? String),
             lastActionAt = instant(last?.opt("at")) ?: instant(last?.opt("createdAt")),
             apiStatus = today?.str("status"),
+            required = (data?.opt("required") as? Boolean) ?: true,
         )
     }
 
@@ -175,6 +186,7 @@ object AttendanceLogic {
         "GPS_INACCURATE" -> PunchRejection(PunchRejectionKind.GPS_INACCURATE, accuracyM = data?.int("accuracyM"))
         "ATTENDANCE_NOT_CONFIGURED" -> PunchRejection(PunchRejectionKind.NOT_CONFIGURED)
         "MODULE_NOT_ENABLED" -> PunchRejection(PunchRejectionKind.MODULE_OFF)
+        "ATTENDANCE_NOT_REQUIRED" -> PunchRejection(PunchRejectionKind.NOT_REQUIRED)
         else -> PunchRejection(PunchRejectionKind.OTHER, message = message)
     }
 
@@ -372,6 +384,16 @@ object AttendanceLogic {
     fun weekLines(day: MyShiftDay, zone: ZoneId = ShopTime.zone): List<WorkedLine> = day.pairs.map { p ->
         WorkedLine(pairTimes(listOf(p), zone), if (p.outAt != null) pairHours(listOf(p)) else null, p.lateMinutes ?: 0)
     }
+
+    /**
+     * #932 Text of one record: "08:07–12:00 · 3,9 g" and, when late, the amber extra "muộn 7′".
+     * Late never replaces the hours; an open record keeps "08:07–…".
+     */
+    fun weekLineText(line: WorkedLine, hoursText: (Double) -> String, lateText: (Int) -> String): WeekLineText =
+        WeekLineText(
+            main = listOfNotNull(line.times, line.hours?.let(hoursText)).joinToString(" · "),
+            late = line.lateMinutes.takeIf { it > 0 }?.let(lateText),
+        )
 
     /** Second line of the Cài đặt row as on iOS: "Ca sáng 08:00–12:00 · chưa vào ca", or "Chưa vào ca" alone */
     fun settingsLine(shift: AttendanceShift?, status: String): String =

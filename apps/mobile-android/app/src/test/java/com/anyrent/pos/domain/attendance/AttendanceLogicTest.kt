@@ -198,6 +198,22 @@ class AttendanceLogicTest {
         assertEquals(7.5, AttendanceLogic.weekLines(rows[1]).single().hours!!, 0.0)
     }
 
+    /** #932 A late record keeps its times and hours; "muộn N′" is extra, never in place of the hours */
+    @Test
+    fun late_record_shows_hours_and_late_minutes() {
+        val hours = { h: Double -> "${AttendanceLogic.oneDecimal(h, Locale("vi"))} g" }
+        val late = { m: Int -> "muộn $m′" }
+        val lateClosed = AttendanceLogic.weekLineText(WorkedLine("09:57–16:00", 6.05, 117), hours, late)
+        assertEquals("09:57–16:00 · 6,1 g", lateClosed.main)
+        assertEquals("muộn 117′", lateClosed.late)
+        val onTime = AttendanceLogic.weekLineText(WorkedLine("07:58–12:01", 4.0, 0), hours, late)
+        assertEquals("07:58–12:01 · 4,0 g", onTime.main)
+        assertNull(onTime.late)
+        val lateOpen = AttendanceLogic.weekLineText(WorkedLine("08:07–…", null, 7), hours, late)
+        assertEquals("08:07–…", lateOpen.main)
+        assertEquals("muộn 7′", lateOpen.late)
+    }
+
     /** #923 Settings row as on iOS: "Ca sáng 08:00–12:00 · chưa vào ca", and "Chưa vào ca" when there is no shift */
     @Test
     fun settings_line_capitalises_the_status_alone() {

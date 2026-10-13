@@ -94,6 +94,7 @@ fun SettingsV2Screen(
     onLoggedOut: () -> Unit,
     onOpenBankAccounts: () -> Unit = {},
     onOpenAttendance: () -> Unit = {},
+    onOpenMyShifts: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -158,10 +159,10 @@ fun SettingsV2Screen(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
             )
         }
-        // #910: "⏱ Chấm công" first, only when the shop has the attendance module
+        // #927: the big clock card first, only with the attendance module and when the shop picked this person
         item(key = "attendance") {
             com.anyrent.pos.ui.attendance.RefreshModulesOnShow()
-            com.anyrent.pos.ui.attendance.AttendanceSettingsRow(onClick = onOpenAttendance)
+            com.anyrent.pos.ui.attendance.AttendanceClockCard(onScan = onOpenAttendance, onOpenMyShifts = onOpenMyShifts)
         }
         item(key = "profile") {
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
