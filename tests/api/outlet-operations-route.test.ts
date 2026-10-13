@@ -103,4 +103,22 @@ describe('GET /api/analytics/outlet-operations (#350)', () => {
     const res: any = await GET(req());
     expect(res.body.data.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+  it('#938: collateralHeld=1 asks for the held list and returns it as rows; without it the field is absent', async () => {
+    ctx = { user: { id: 2, role: 'MERCHANT', merchantId: 2 }, userScope: { merchantId: 2 } };
+    mockHasPermission.mockResolvedValue(true);
+    const order = {
+      id: 6, orderNumber: '654321', outletId: 1, status: 'PICKUPED', orderType: 'RENT',
+      pickupPlanAt: null, returnPlanAt: null, totalAmount: 100, depositAmount: 0, securityDeposit: 2000,
+      isReadyToDeliver: true, payments: [], customer: { firstName: 'Lan', lastName: '', phone: '' }, orderItems: [],
+    };
+    mockDb.outletOperations.get.mockResolvedValue({ ...emptyOps, collateralHeld: { count: 1, orders: [order] } });
+    const res: any = await GET(req('?collateralHeld=1'));
+    expect(mockDb.outletOperations.get).toHaveBeenCalledWith(expect.objectContaining({ withCollateralHeld: true }));
+    expect(res.body.data.collateralHeld).toEqual({ count: 1, orders: [expect.objectContaining({ id: 6, orderNumber: '654321', securityDeposit: 2000, customerName: 'Lan' })] });
+
+    mockDb.outletOperations.get.mockResolvedValue(emptyOps);
+    const plain: any = await GET(req());
+    expect(mockDb.outletOperations.get).toHaveBeenLastCalledWith(expect.objectContaining({ withCollateralHeld: false }));
+    expect('collateralHeld' in plain.body.data).toBe(false);
+  });
 });

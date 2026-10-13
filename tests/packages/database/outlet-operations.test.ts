@@ -198,4 +198,19 @@ describe('getOutletOperations collateral (#494)', () => {
     expect(result.cash).toBeNull();
     expect(mockPrisma.order.aggregate).not.toHaveBeenCalled();
   });
+  it('#938: collateralHeld lists PICKUPED rentals with collateral (the collateralToReturn rule), only on request', async () => {
+    mockPrisma.order.findMany.mockImplementation(async ({ where }: any) => (where.securityDeposit ? [{ id: 4 }, { id: 5 }] : []));
+    mockPrisma.order.count.mockImplementation(async ({ where }: any) => (where.securityDeposit ? 2 : 0));
+    const without = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: true });
+    expect((without as any).collateralHeld).toBeUndefined();
+    const result: any = await getOutletOperations({ outletIds: [1, 3], start, end, soonEnd, includeCash: true, withCollateralHeld: true });
+    expect(result.collateralHeld).toEqual({ count: 2, orders: [{ id: 4 }, { id: 5 }] });
+    const call = mockPrisma.order.findMany.mock.calls.find(([args]: any) => args.where.securityDeposit);
+    expect(call[0].where).toEqual({ orderType: 'RENT', deletedAt: null, outletId: { in: [1, 3] }, status: 'PICKUPED', securityDeposit: { gt: 0 } });
+    expect(call[0].orderBy).toEqual({ returnPlanAt: 'asc' });
+    expect(call[0].take).toBe(500);
+    // no money right: no held list either
+    const staff: any = await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false, withCollateralHeld: true });
+    expect(staff.collateralHeld).toBeNull();
+  });
 });

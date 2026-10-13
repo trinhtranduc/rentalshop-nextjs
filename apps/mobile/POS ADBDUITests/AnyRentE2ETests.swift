@@ -2971,6 +2971,49 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 15), "Back on the login screen")
         e2e.shot("82-logged-out")
     }
+
+    /// Repro (owner report): today's calendar header counts late returns that today's list never shows;
+    /// the Thế chân tile's "đang giữ N" chip vs the 7-day related orders list.
+    func test6zLateHoldRepro() throws {
+        try e2e.start()
+        e2e.tapTab(["Calendar", "Lịch Thuê", "Lịch"], index: 2)
+        sleep(3)
+        let todayKey = E2E.dayMonth(Date())
+        let today = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ OR label ENDSWITH %@", todayKey + "/", " " + todayKey)).firstMatch
+        if today.waitForExistence(timeout: 5) { today.tap(); sleep(3) }
+        e2e.shot("01-calendar-today")
+        let texts = app.staticTexts.allElementsBoundByIndex.filter(\.exists).map(\.label)
+        e2e.note("CAL TEXTS | \(texts.prefix(40))")
+        e2e.note("CAL CELLS | \(app.tables.cells.count) cells")
+        app.swipeUp(); sleep(1)
+        e2e.shot("02-calendar-today-list-scrolled")
+
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { throw XCTSkip("No Reports tab") }
+        sleep(4)
+        let week = e2e.element(labelBeginsWith: ["7 days", "7 ngày"], type: .button)
+        XCTAssertTrue(week.waitForExistence(timeout: 8), "7 ngày chip")
+        week.tap()
+        sleep(4)
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 8), "Thế chân tile")
+        e2e.note("TILE | \(tile.label)")
+        if !tile.isHittable { app.swipeUp(); sleep(1) }
+        e2e.shot("03-overview-7days-tiles")
+        tile.tap()
+        sleep(2)
+        e2e.shot("04-collateral-sheet")
+        let link = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "related orders link")
+        link.tap()
+        let total = app.staticTexts["related.total"]
+        if total.waitForExistence(timeout: 20) {
+            let deadline = Date().addingTimeInterval(30)
+            while total.label.isEmpty && Date() < deadline { sleep(1) }
+            e2e.note("RELATED | \(total.label)")
+        }
+        sleep(2)
+        e2e.shot("05-collateral-related-orders")
+    }
 }
 
 // MARK: - Helper (self-contained; does not use POS_ADBDUITests' private helpers)
