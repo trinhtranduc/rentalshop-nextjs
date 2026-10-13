@@ -5,8 +5,8 @@ export const ProductUpdateSchema = z.object({
   description: z.string().optional(),
   barcode: z.string().optional(),
   categoryId: z.number().int().positive().optional(),
-  rentPrice: z.number().positive(),
-  salePrice: z.number().positive().optional(),
+  rentPrice: z.number().min(0), // #951: 0đ is a price
+  salePrice: z.number().min(0).optional(),
   deposit: z.number().min(0),
   totalStock: z.number().int().min(0),
   images: z.array(z.string()).optional(),

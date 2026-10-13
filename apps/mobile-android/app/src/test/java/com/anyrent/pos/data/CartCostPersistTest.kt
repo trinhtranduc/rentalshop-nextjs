@@ -38,7 +38,7 @@ class CartCostPersistTest {
     fun `removing a line updates the lines and the saved draft`() {
         CartStore.addProduct(product(1, 800_000.0))
         CartStore.addProduct(product(2, null))
-        CartStore.remove(1)
+        CartStore.remove(lineIdOf(1))
         assertEquals(listOf(2), CartStore.lines.value.map { it.product.id })
         val saved = CartStore.draftJson()
         CartStore.clear(persistToDisk = false)

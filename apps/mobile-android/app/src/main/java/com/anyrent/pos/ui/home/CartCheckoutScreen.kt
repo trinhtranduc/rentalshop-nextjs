@@ -145,7 +145,7 @@ fun CartCheckoutScreen(
     var pickupText by remember(pickup) { mutableStateOf(pickup.toString()) }
     var returnText by remember(ret) { mutableStateOf(ret.toString()) }
     var showDetails by remember { mutableStateOf(false) }
-    var pricingMenuProductId by remember { mutableStateOf<Int?>(null) }
+    var pricingMenuProductId by remember { mutableStateOf<String?>(null) } // #951: the line id
     var numericEditor by remember { mutableStateOf<String?>(null) }
     var numericText by remember { mutableStateOf("0") }
     var showDateSelection by remember { mutableStateOf(false) }
@@ -464,11 +464,11 @@ fun CartCheckoutScreen(
                 }
             } else {
                 lines.forEach { line ->
-                    key(line.product.id) {
+                    key(line.lineId) {
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { target ->
                             if (target == SwipeToDismissBoxValue.EndToStart) {
-                                CartStore.remove(line.product.id)
+                                CartStore.remove(line.lineId)
                                 true
                             } else {
                                 false
@@ -543,7 +543,7 @@ fun CartCheckoutScreen(
                                 IconButton(
                                     enabled = !previewMode,
                                     onClick = {
-                                        CartStore.updateQuantity(line.product.id, line.quantity - 1)
+                                        CartStore.updateQuantity(line.lineId, line.quantity - 1)
                                     },
                                     modifier = Modifier.size(44.dp),
                                 ) {
@@ -562,7 +562,7 @@ fun CartCheckoutScreen(
                                 IconButton(
                                     enabled = !previewMode,
                                     onClick = {
-                                        CartStore.updateQuantity(line.product.id, line.quantity + 1)
+                                        CartStore.updateQuantity(line.lineId, line.quantity + 1)
                                     },
                                     modifier = Modifier.size(44.dp),
                                 ) {
@@ -583,7 +583,7 @@ fun CartCheckoutScreen(
                                             modifier = Modifier
                                                 .align(Alignment.CenterEnd)
                                                 .clickable(enabled = !previewMode) {
-                                                    pricingMenuProductId = line.product.id
+                                                    pricingMenuProductId = line.lineId
                                                 }
                                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                                             fontSize = 14.sp,
@@ -604,7 +604,7 @@ fun CartCheckoutScreen(
                                 Column(
                                     modifier = Modifier.clickable(enabled = !previewMode) {
                                         numericText = line.unitPrice.toLong().toString()
-                                        numericEditor = "PRICE:${line.product.id}"
+                                        numericEditor = "PRICE:${line.lineId}"
                                     },
                                 ) {
                                     Text(
@@ -714,7 +714,7 @@ fun CartCheckoutScreen(
     }
 
     if (orderType == "RENT") pricingMenuProductId?.let { productId ->
-        val line = lines.firstOrNull { it.product.id == productId } ?: return@let
+        val line = lines.firstOrNull { it.lineId == productId } ?: return@let
         ModalBottomSheet(
             onDismissRequest = { pricingMenuProductId = null },
             sheetState = rememberModalBottomSheetState(
@@ -965,7 +965,7 @@ fun CartCheckoutScreen(
                 val value = numericText.toDoubleOrNull() ?: 0.0
                 when {
                     editor == "DEPOSIT" -> CartStore.setDeposit(value)
-                    editor.startsWith("PRICE:") -> editor.substringAfter(':').toIntOrNull()
+                    editor.startsWith("PRICE:") -> editor.substringAfter(':').takeIf { it.isNotBlank() }
                         ?.let { CartStore.updateUnitPrice(it, value) }
                     else -> CartStore.setDiscount(value)
                 }

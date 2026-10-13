@@ -146,6 +146,12 @@ final class CartStore {
         notifyDidChange()
     }
 
+    /// #951: remove the line with this id (swipe / confirm keep the line, not its row number)
+    func removeItem(line lineId: UUID) {
+        guard let index = storage.index(ofLine: lineId) else { return }
+        removeItem(at: index)
+    }
+
     /// #473 — lines of this product take its current prices when it has both and they do not offer both yet
     func refreshPricing(from product: Product) {
         storage.refreshPricing(from: product)
@@ -178,13 +184,30 @@ final class CartStore {
     }
 
     /// #482 "Áp dụng" of the pricing sheet: the line's pricing type (rent) and its price for this order only
-    func applyLinePricing(at index: Int, type: String?, price: Double) {
+    /// #951: `price` nil = the box left empty (the typed price is dropped); 0 is a price (a free line)
+    func applyLinePricing(at index: Int, type: String?, price: Double?) {
         if let type, storage.orderType == .rent {
             storage.selectPricingType(at: index, type: type)
             storage.syncRentalDaysFromDates()
         }
-        storage.updatePrice(at: index, price: price)
+        if let price {
+            storage.updatePrice(at: index, price: price)
+        } else {
+            storage.clearPrice(at: index)
+        }
         notifyDidChange()
+    }
+
+    /// #951: the same, for the line with this id (a sheet keeps the line, not its row number)
+    func applyLinePricing(line lineId: UUID, type: String?, price: Double?) {
+        guard let index = storage.index(ofLine: lineId) else { return }
+        applyLinePricing(at: index, type: type, price: price)
+    }
+
+    /// #951: note of the line with this id
+    func updateNote(line lineId: UUID, note: String?) {
+        guard let index = storage.index(ofLine: lineId) else { return }
+        updateNote(at: index, note: note)
     }
 
     func selectPricingType(at index: Int, type: String) {

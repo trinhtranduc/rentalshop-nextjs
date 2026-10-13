@@ -455,7 +455,8 @@ export function CartLineRow({
   status: LineStatus;
   onQuantity: (q: number) => void;
   onMode: (mode: string) => void;
-  onPrice: (price: number) => void;
+  /** #951: 0 = a free line; null = the box was emptied (back to the product's price). */
+  onPrice: (price: number | null) => void;
   /** #684: this line's note */
   onNote?: (note: string) => void;
   t: T;
@@ -479,7 +480,8 @@ export function CartLineRow({
         <span className="text-[15px] font-bold tabular-nums text-ar-ink">{money(total)}</span>
       </div>
       <div className="flex items-center gap-2">
-        {rent ? (
+        {/* #951: sale lines get the price box too (a free item in a sale) */}
+        {rent || orderType === 'SALE' ? (
           <button
             type="button"
             aria-expanded={editing}
@@ -493,9 +495,7 @@ export function CartLineRow({
             <span className="truncate">{chip}</span>
             <ShellIcon d={editing ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} size={16} />
           </button>
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-sm text-ar-muted">{t('editor.option.SALE', { price: money(line.unitPrice) })}</span>
-        )}
+        ) : null}
         <div className="flex h-9 flex-none items-center rounded-[10px] border border-ar-line-strong">
           <button
             type="button"
@@ -569,9 +569,10 @@ export function CartLineRow({
           </div>
         </div>
       )}
-      {rent && editing && (
+      {editing && (
         <div id={panelId} className="flex flex-col gap-2.5 rounded-xl bg-ar-subtle p-3">
           <span className="text-sm font-semibold text-ar-ink">{t('editor.pricing.title')}</span>
+          {rent && (
           <div role="radiogroup" aria-label={t('editor.pricing.title')} className="flex rounded-[10px] bg-ar-surface p-0.5">
             {lineModes(line).map((m) => (
               <button
@@ -588,14 +589,16 @@ export function CartLineRow({
               </button>
             ))}
           </div>
+          )}
           <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
             {t('editor.pricing.price')}
-            <MoneyInput
-              value={line.unitPrice}
+            <LinePriceInput
+              key={`${line.key}-${type}`}
+              value={missingPrice ? null : line.unitPrice}
               onChange={onPrice}
               label={t('editor.pricing.priceFor', { name: line.name })}
-              suffix={t(`editor.pricing.unit.${modeKey(type)}`)}
-              className={missingPrice ? '[&_input]:border-ar-danger' : ''}
+              suffix={rent ? t(`editor.pricing.unit.${modeKey(type)}`) : undefined}
+              invalid={missingPrice}
             />
           </label>
           <span className="text-xs text-ar-muted">{t('editor.pricing.note')}</span>
@@ -636,6 +639,43 @@ export function CartLineRow({
 // ----------------------------------------------------------------------------
 
 const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+/**
+ * #951: a cart line's price. Empty = no typed price (null); "0" is a free line and stays visible. Keeps what is
+ * typed while the line falls back to the product's price on an empty box.
+ */
+function LinePriceInput({
+  value,
+  onChange,
+  label,
+  suffix,
+  invalid,
+}: {
+  value: number | null;
+  onChange: (n: number | null) => void;
+  label: string;
+  suffix?: string;
+  invalid?: boolean;
+}) {
+  const [text, setText] = useState(value == null ? '' : group(value));
+  return (
+    <span className={`relative block ${invalid ? '[&_input]:border-ar-danger' : ''}`}>
+      <input
+        inputMode="numeric"
+        aria-label={label}
+        value={text}
+        placeholder={value == null ? '' : group(value)}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, '');
+          setText(digits ? group(Number(digits)) : '');
+          onChange(digits ? Number(digits) : null);
+        }}
+        className={`${fieldClass} tabular-nums ${suffix ? (suffix.length > 2 ? 'pr-20' : 'pr-9') : ''}`}
+      />
+      {suffix && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ar-muted">{suffix}</span>}
+    </span>
+  );
+}
 
 export function MoneyInput({
   value,

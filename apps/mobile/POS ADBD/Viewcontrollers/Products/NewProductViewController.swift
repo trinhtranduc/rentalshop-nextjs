@@ -738,13 +738,14 @@ class NewProductViewController: BaseViewControler {
                 return false
             }
         case rentField:
-            guard let price = Double(text.formatStringRemoveCommon()), price > 0 else {
-                field.showError("Rent price must be greater than 0".localized())
+            // #951: 0đ is a price; only a negative one is refused
+            guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
+                field.showError("Rent price must be greater than or equal to 0".localized())
                 return false
             }
         case dailyPriceField:
-            guard let price = Double(text.formatStringRemoveCommon()), price > 0 else {
-                field.showError("Daily price must be greater than 0".localized())
+            guard let price = Double(text.formatStringRemoveCommon()), price >= 0 else {
+                field.showError("Daily price must be greater than or equal to 0".localized())
                 return false
             }
         case saleField:
@@ -980,16 +981,16 @@ class NewProductViewController: BaseViewControler {
     /// Build pricing options from the price fields.
     /// Per-rental is always the default. Per-day is added only when provided.
     private func buildPricingOptions() -> [PricingOptionRequest] {
-        let rentVal = Double((rentField.textField.text ?? "").formatStringRemoveCommon()) ?? 0
-
+        // #951: an empty box is no price; "0" is a 0đ price
+        let rentText = (rentField.textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         var options: [PricingOptionRequest] = []
-        if rentVal > 0 {
+        if let rentVal = Double(rentText.formatStringRemoveCommon()), !rentText.isEmpty, rentVal >= 0 {
             options.append(PricingOptionRequest(type: "FIXED", price: rentVal, isDefault: true))
         }
 
         for definition in additionalPricingFields {
-            let price = Double((definition.field.textField.text ?? "").formatStringRemoveCommon()) ?? 0
-            if price > 0 {
+            let text = (definition.field.textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if let price = Double(text.formatStringRemoveCommon()), !text.isEmpty, price >= 0 {
                 options.append(PricingOptionRequest(
                     type: definition.type,
                     price: price,

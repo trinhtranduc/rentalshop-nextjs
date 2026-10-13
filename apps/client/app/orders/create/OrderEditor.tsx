@@ -36,6 +36,8 @@ import {
   repriceLines,
   selectMode,
   setLinePrice,
+  needsPrice,
+  productQuantity,
   setQuantity,
   stockOf,
   type CartLine,
@@ -354,7 +356,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       const c = conflictFromResult(resultOf(l.productId), {
         outletId,
         productName: l.name,
-        requested: l.quantity,
+        requested: productQuantity(lines, l.productId), // #951: one product may sit on several lines
         pickupKey: pickup,
         returnKey: ret,
       });
@@ -378,7 +380,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     const s = stockView(l.productId);
     if (s.kind !== 'stock') return null;
     const free = s.stock.free;
-    if (l.quantity > free) return { kind: 'short', text: free > 0 ? t('editor.cart.onlyLeft', { free }) : t('editor.cart.noneLeft') };
+    if (productQuantity(lines, l.productId) > free) return { kind: 'short', text: free > 0 ? t('editor.cart.onlyLeft', { free }) : t('editor.cart.noneLeft') };
     return { kind: 'ok', text: orderType === 'RENT' ? t('editor.cart.fits', { free }) : t('editor.cart.inStock', { free }) };
   };
 
@@ -757,16 +759,16 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
             ) : (
               lines.map((l) => (
                 <CartLineRow
-                  key={l.productId}
+                  key={l.key}
                   line={l}
                   orderType={orderType}
                   total={lineTotal(l, orderType, days)}
                   days={days}
                   status={statusOf(l)}
-                  onQuantity={(n) => setLines((cur) => setQuantity(cur, l.productId, n))}
-                  onMode={(mode) => setLines((cur) => selectMode(cur, l.productId, mode))}
-                  onPrice={(price) => setLines((cur) => setLinePrice(cur, l.productId, price))}
-                  onNote={(note) => setLines((cur) => setLineNote(cur, l.productId, note))}
+                  onQuantity={(n) => setLines((cur) => setQuantity(cur, l.key, n))}
+                  onMode={(mode) => setLines((cur) => selectMode(cur, l.key, mode))}
+                  onPrice={(price) => setLines((cur) => setLinePrice(cur, l.key, price, orderType))}
+                  onNote={(note) => setLines((cur) => setLineNote(cur, l.key, note))}
                   t={t}
                   money={money}
                 />
@@ -920,7 +922,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           {missing && lines.length > 0 && (
             <p className="m-0 text-sm text-ar-muted" role="status">
               {missing === 'price'
-                ? t('editor.missing.price', { name: lines.find((l) => l.unitPrice <= 0)?.name ?? '' })
+                ? t('editor.missing.price', { name: lines.find((l) => needsPrice(l, orderType))?.name ?? '' })
                 : t(`editor.missing.${missing}`)}
             </p>
           )}

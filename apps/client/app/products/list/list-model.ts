@@ -147,7 +147,8 @@ export function productPrices(p: ProductLike): ProductPrices {
   const options = (p.pricingOptions || []).filter((o) => o && o.isActive !== false);
   if (options.length > 0) {
     for (const o of options) {
-      const price = pos(toNum(o.price));
+      // #951: an option priced 0 is a 0đ price (shown "0 ₫"); a missing or negative price is skipped
+      const price = o.price == null || (o.price as unknown) === '' || toNum(o.price) < 0 ? null : toNum(o.price);
       if (price == null) continue;
       const type = String(o.type || '').toUpperCase();
       const unit = String(o.unit || '').toUpperCase();

@@ -7,6 +7,7 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
+import { normalizePricingOptions } from './product-pricing-normalize';
 import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
@@ -541,33 +542,7 @@ async function getOrCreateDefaultCategory(merchantId: number): Promise<any> {
  * Create new product - follows dual ID system
  * Input: ids (numbers), Output: id (number)
  */
-/**
- * Normalize pricing options for persistence:
- * - keep only Phase 1 types (FIXED/DAILY) with price > 0
- * - ensure exactly one isDefault (first one if none/many)
- */
-function normalizePricingOptions(options: any[] | undefined): any[] {
-  const allowed = (options || []).filter(
-    (o) => o && (o.type === 'FIXED' || o.type === 'DAILY') && Number(o.price) > 0
-  );
-  if (allowed.length === 0) return [];
-  let defaultAssigned = false;
-  const normalized = allowed.map((o, i) => {
-    const isDefault = !!o.isDefault && !defaultAssigned;
-    if (isDefault) defaultAssigned = true;
-    return {
-      type: o.type,
-      price: Number(o.price),
-      unit: o.unit ?? null,
-      blockSize: o.blockSize ?? null,
-      isDefault,
-      isActive: o.isActive ?? true,
-      sortOrder: o.sortOrder ?? i,
-    };
-  });
-  if (!defaultAssigned) normalized[0].isDefault = true;
-  return normalized;
-}
+// normalizePricingOptions: ./product-pricing-normalize (#951: a 0đ option is kept)
 
 export async function createProduct(input: any): Promise<any> {
   // Find merchant by id

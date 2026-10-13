@@ -49,7 +49,7 @@ class CartPricingSheetTest {
         CartStore.addProduct(product(threeOptions))
         val line = CartStore.lines.value.single()
         assertEquals(
-            listOf(CartPricingChoice("FIXED", 350_000.0), CartPricingChoice("DAILY", 150_000.0), CartPricingChoice("BLOCK", null)),
+            listOf(CartPricingChoice("FIXED", 350_000.0), CartPricingChoice("DAILY", 150_000.0), CartPricingChoice("BLOCK", 0.0)),
             CartV2Logic.pricingChoices(line),
         )
         CartStore.clear(persistToDisk = false)
@@ -62,7 +62,7 @@ class CartPricingSheetTest {
     @Test
     fun `field starts at the line price then the catalog price`() {
         CartStore.addProduct(product(threeOptions))
-        val id = CartStore.lines.value.single().product.id
+        val id = CartStore.lines.value.single().lineId
         CartStore.applyLinePricing(id, "FIXED", 320_000.0)
         val line = CartStore.lines.value.single()
         assertEquals(320_000.0, CartV2Logic.startPrice(line, "FIXED"), 0.1)
@@ -84,7 +84,7 @@ class CartPricingSheetTest {
     @Test
     fun `apply changes only the line, and the catalog price clears the override`() {
         CartStore.addProduct(product(threeOptions))
-        val id = CartStore.lines.value.single().product.id
+        val id = CartStore.lines.value.single().lineId
         CartStore.applyLinePricing(id, "DAILY", 130_000.0)
         var line = CartStore.lines.value.single()
         assertEquals("DAILY", line.pricingType)
