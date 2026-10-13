@@ -941,6 +941,7 @@
     </plurals>
     <string name="customers_v2_cancel">Cancel</string>
     <string name="customers_v2_edit_title">Edit customer</string>
+    <string name="customers_v2_saved">Customer saved</string>
     <string name="customers_v2_email_placeholder">name@email.com</string>
     <string name="customers_v2_more_info">More details</string>
     <string name="customers_v2_id_number">ID / document</string>

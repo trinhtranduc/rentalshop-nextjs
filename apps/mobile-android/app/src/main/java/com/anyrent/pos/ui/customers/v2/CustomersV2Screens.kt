@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.customers.v2
 
+import android.widget.Toast
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -68,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -92,7 +95,9 @@ import com.anyrent.pos.data.CustomersV2Api
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.UserRole
 import com.anyrent.pos.data.model.Customer
+import com.anyrent.pos.domain.customers.CustomerEditForm
 import com.anyrent.pos.domain.customers.CustomerOrderRow
+import com.anyrent.pos.domain.customers.CustomerPickerEdit
 import com.anyrent.pos.domain.customers.CustomerOrders
 import com.anyrent.pos.domain.customers.CustomerRow
 import com.anyrent.pos.domain.customers.CustomerRules
@@ -124,8 +129,16 @@ object CustomersV2Selection {
 
 /** Sheet content of the new cart's customer picker (#387). [onPicked] gets the model the cart uses. */
 @Composable
-fun CustomerPickerSheet(onPicked: (Customer) -> Unit, onClose: () -> Unit) {
+fun CustomerPickerSheet(
+    onPicked: (Customer) -> Unit,
+    onClose: () -> Unit,
+    /** #952: a customer was edited from the row's pencil (the cart refreshes its customer) */
+    onEdited: (customerId: Int, form: CustomerEditForm) -> Unit = { _, _ -> },
+) {
     var newCustomer by remember { mutableStateOf<String?>(null) }
+    var editing by remember { mutableStateOf<CustomerRow?>(null) }
+    val context = LocalContext.current
+    val saved = stringResource(R.string.customers_v2_saved)
     val prefill = newCustomer
     if (prefill != null) {
         NewCustomerContent(
@@ -138,13 +151,31 @@ fun CustomerPickerSheet(onPicked: (Customer) -> Unit, onClose: () -> Unit) {
     }
     // A fresh list each time the sheet opens (a customer added elsewhere shows up)
     val key = remember { "customers-picker-" + System.nanoTime() }
+    val vm: CustomersListViewModel = viewModel(key = key, factory = CustomersListViewModel.Factory())
     CustomersListContent(
         pickMode = true,
-        vm = viewModel(key = key, factory = CustomersListViewModel.Factory()),
+        vm = vm,
         onClose = onClose,
         onNew = { typed -> newCustomer = typed },
         onOpen = { onPicked(it.toCustomer()) },
+        // #952: the pencil follows the rule the customer detail uses
+        onEdit = if (CustomerPickerEdit.showsEdit(isPicker = true, role = PermissionManager.role)) { row -> editing = row } else null,
     )
+    editing?.let { row ->
+        AppFormSheet(onDismiss = { editing = null }, nested = true) {
+            EditCustomerV2Screen(
+                customerId = row.id,
+                compact = true,
+                onBack = { editing = null },
+                onSavedForm = { form -> onEdited(row.id, form) },
+                onSaved = {
+                    editing = null
+                    vm.reload()
+                    Toast.makeText(context, saved, Toast.LENGTH_SHORT).show()
+                },
+            )
+        }
+    }
 }
 
 // ------------------------------------------------------------------ List (board KH-ds)
@@ -181,6 +212,8 @@ private fun CustomersListContent(
     onNew: (String) -> Unit,
     onOpen: (CustomerRow) -> Unit,
     vm: CustomersListViewModel,
+    /** #952: a pencil on each row (picker only, for a user who may edit customers) */
+    onEdit: ((CustomerRow) -> Unit)? = null,
 ) {
     val state by vm.state.collectAsState()
     var draft by remember { mutableStateOf(state.query) }
@@ -273,7 +306,7 @@ private fun CustomersListContent(
                         CustomerRowItem(row, showsChevron = !pickMode, onClick = {
                             CustomersV2Selection.row = row
                             onOpen(row)
-                        })
+                        }, onEdit = onEdit?.let { edit -> { edit(row) } })
                     }
                 }
             }
@@ -347,7 +380,7 @@ private fun TierPill(tier: String?) {
 }
 
 @Composable
-private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: () -> Unit) {
+private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: () -> Unit, onEdit: (() -> Unit)? = null) {
     val subtitle = CustomerRules.subtitle(row.phone, pluralStringResource(R.plurals.customers_v2_orders, row.orderCount, row.orderCount))
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -365,6 +398,18 @@ private fun CustomerRowItem(row: CustomerRow, showsChevron: Boolean, onClick: ()
                     TierPill(row.tier)
                 }
                 Text(subtitle, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+            }
+            if (onEdit != null) {
+                // #952: small pencil; a row tap still picks
+                val label = stringResource(R.string.customers_v2_edit_title)
+                Box(
+                    Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
+                        .clickable(onClickLabel = label, role = Role.Button, onClick = onEdit)
+                        .semantics { contentDescription = label }.testTag("customers.picker.edit"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AppIcon(Icons.Outlined.Edit, contentDescription = null, size = 16.dp, tint = Color(0xFF475569))
+                }
             }
             if (showsChevron) AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, size = 16.dp, tint = Chevron)
         }

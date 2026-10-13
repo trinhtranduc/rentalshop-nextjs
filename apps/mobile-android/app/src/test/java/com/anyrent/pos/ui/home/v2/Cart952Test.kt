@@ -60,7 +60,7 @@ class Cart952Test {
     @Test
     fun `toast after a save reads like iOS`() {
         fun strings(folder: String): Map<String, String> {
-            val file = listOf("src/main/res/$folder/strings.xml", "app/src/main/res/$folder/strings.xml").map(::java.io.File).first { it.exists() }
+            val file = listOf("src/main/res/$folder/strings.xml", "app/src/main/res/$folder/strings.xml").map { java.io.File(it) }.first { it.exists() }
             val root = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).documentElement
             val nodes = root.getElementsByTagName("string")
             return (0 until nodes.length).map { nodes.item(it) as org.w3c.dom.Element }.associate { it.getAttribute("name") to it.textContent }
