@@ -89,13 +89,11 @@ final class ProductsV2Tests: XCTestCase {
 
     // MARK: - Home cart bar and add feedback (#893)
 
-    /// #893 (owner): the Home cart bar is the board's primary blue with white text; "+" shows no success toast
-    func testHomeCartBarIsBlueAndAddShowsNoToast() {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        HomeCartBarStyle.fill.getRed(&r, green: &g, blue: &b, alpha: &a)
-        XCTAssertEqual(String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255))), "1D4ED8")
-        XCTAssertEqual(HomeCartBarStyle.text, UIColor.white)
-        XCTAssertFalse(HomeCartBarStyle.showsAddedToast)
+    /// #893 (owner): "+" shows no success toast. #952: the floating cart bar is gone; the top-right button says the count
+    func testHomeAddShowsNoToastAndCartButtonSaysTheCount() {
+        XCTAssertFalse(HomeCartButton.showsAddedToast)
+        XCTAssertNil(HomeCartButton.accessibilityValue(itemCount: 0))
+        XCTAssertEqual(HomeCartButton.accessibilityValue(itemCount: 2), PluralText.format("products.cart.bar", count: 2, 2))
     }
 
     // MARK: - Cart swipe to delete (#893)
@@ -1518,5 +1516,29 @@ extension ProductsV2Tests {
         // round trip keeps the id
         let again = try JSONDecoder().decode(CartItem.self, from: JSONEncoder().encode(a))
         XCTAssertEqual(again.lineId, a.lineId)
+    }
+
+    // MARK: - #952 cart date row
+
+    private func shopDay(_ y: Int, _ m: Int, _ d: Int, hour: Int = 0) -> Date {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = Date.shopTimeZone
+        return cal.date(from: DateComponents(year: y, month: m, day: d, hour: hour))!
+    }
+
+    /// #952 (owner): no dates → "Chọn ngày thuê" (blue, no pill); dates → "12/10/26 → 15/10/26" + 4 days; calendar icon
+    func testCartDateRowStates() {
+        let empty = CartDateRowLogic.state(pickup: nil, return: nil)
+        XCTAssertEqual(empty.text, "products.cart.pickDates".localized())
+        XCTAssertNil(empty.days)
+        XCTAssertTrue(empty.isEmpty)
+        XCTAssertTrue(CartDateRowLogic.state(pickup: shopDay(2026, 10, 12), return: nil).isEmpty, "half a range is still empty")
+
+        let chosen = CartDateRowLogic.state(pickup: shopDay(2026, 10, 12), return: shopDay(2026, 10, 15, hour: 23))
+        XCTAssertEqual(chosen.text, "12/10/26 → 15/10/26")
+        XCTAssertEqual(chosen.days, 4)
+        XCTAssertFalse(chosen.isEmpty)
+        XCTAssertEqual(CartDateRowLogic.iconSymbol, "calendar")
+        XCTAssertEqual(CartDateRowLogic.iconSize, 40, "same circle as the customer row avatar")
     }
 }

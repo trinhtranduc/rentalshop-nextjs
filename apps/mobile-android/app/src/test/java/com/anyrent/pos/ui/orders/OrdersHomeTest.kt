@@ -434,9 +434,9 @@ class OrdersHomeTest {
     fun `sorted chip weight, home cart bar and add toast`() {
         assertEquals(FontWeight.Bold, com.anyrent.pos.ui.orders.v2.DateChipText.sortedWeight)
         assertEquals(FontWeight.Normal, com.anyrent.pos.ui.orders.v2.DateChipText.otherWeight)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFF1D4ED8), com.anyrent.pos.ui.home.v2.HomeCartBarStyle.fill)
-        assertEquals(androidx.compose.ui.graphics.Color.White, com.anyrent.pos.ui.home.v2.HomeCartBarStyle.text)
-        assertEquals(false, com.anyrent.pos.ui.home.v2.HomeCartBarStyle.showsAddedToast)
+        // #952: the floating cart bar is gone (the top-right cart button stays)
+        assertEquals(false, com.anyrent.pos.ui.home.v2.HomeCart.showsFloatingBar)
+        assertEquals(false, com.anyrent.pos.ui.home.v2.HomeCart.showsAddedToast)
     }
 
     /** #893 (owner): lean Việc cần làm rows: the task's own date chip, "Trễ N ngày", "Chưa soạn đồ" (hand-overs only) */
