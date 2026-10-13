@@ -176,7 +176,7 @@ struct OrderShareModel: Equatable {
         }
         // "3 món" counts lines, as the mockups (2 crowns are one line)
         let count = source.items.count
-        let subtotal = source.items.reduce(0) { $0 + $1.total }
+        let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: source.items.map(\.total))
 
         var rows: [Row] = []
         let highlightLabel: String

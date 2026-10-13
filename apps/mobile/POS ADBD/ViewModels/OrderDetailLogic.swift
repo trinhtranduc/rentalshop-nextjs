@@ -120,6 +120,12 @@ struct OrderHeaderCustomer: Equatable {
 enum OrderDetailLogic {
     static let maxNotePhotos = 5
 
+    /// "Tạm tính" / "Tiền hàng" of a sale (#939): the item lines, as Android, the web and the printed bill. The total
+    /// is the server's `totalAmount`; old data where lines − discount ≠ total still shows each number as stored.
+    static func saleSubtotal(itemTotals: [Double]) -> Double {
+        itemTotals.reduce(0, +)
+    }
+
     /// "Sẵn sàng giao" (#470): a rental not handed over yet, for users who may update orders
     static func showsReadyToDeliver(orderType: OrderType, status: OrderStatus, canUpdateOrders: Bool) -> Bool {
         canUpdateOrders && orderType == .rent && status == .reserved
