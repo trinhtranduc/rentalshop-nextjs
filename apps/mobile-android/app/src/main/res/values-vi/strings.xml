@@ -1450,6 +1450,7 @@
     <string name="share_kind_rent">Đơn thuê</string>
     <string name="share_kind_sale">Đơn bán</string>
     <string name="share_kind_draft">%1$s · lập %2$s</string>
+    <string name="share_kind_created">%1$s · tạo %2$s</string>
     <string name="share_draft_title">Đơn nháp</string>
     <string name="share_status_reserved">Chờ giao đồ</string>
     <string name="share_status_pickuped">Đang thuê</string>

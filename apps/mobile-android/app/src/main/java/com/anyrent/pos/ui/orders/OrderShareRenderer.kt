@@ -94,6 +94,7 @@ internal class OrderShareRenderer(private val context: Context, private val mode
     private val bold = Typeface.create("sans-serif", Typeface.BOLD)
     private val medium = Typeface.create("sans-serif-medium", Typeface.NORMAL)
     private val regular = Typeface.create("sans-serif", Typeface.NORMAL)
+    private val italic = Typeface.create("sans-serif", Typeface.ITALIC)
 
     private val left = 48f
     private val right = 492f
@@ -145,8 +146,8 @@ internal class OrderShareRenderer(private val context: Context, private val mode
         canvas?.drawColor(ground)
         val upper = context.resources.configuration.locales[0]
 
-        // 1. Header band
-        val bandHeight = 225f
+        // 1. Header band (#930: an order's number is smaller, so its band is shorter)
+        val bandHeight = if (model.isDraft) 225f else 205f
         canvas?.drawRect(0f, 0f, width, bandHeight, fill(accent))
         canvas?.drawRoundRect(RectF(32f, 28f, 76f, 72f), 11f, 11f, fill(Color.WHITE))
         canvas.text(model.initials, paint(19f, black, accent), 54f, 57f, Paint.Align.CENTER)
@@ -154,16 +155,25 @@ internal class OrderShareRenderer(private val context: Context, private val mode
         model.outletLine?.let { canvas.text(it, paint(13f, regular, Color.argb(235, 255, 255, 255)), 88f, 67f, maxWidth = 420f) }
         canvas.text(t(model.kind).uppercase(upper), paint(13f, medium, Color.argb(215, 255, 255, 255), 0.06f), 32f, 104f, maxWidth = 476f)
 
-        val pillPaint = paint(12.5f, bold, pillText(model.pillTone))
-        val pillLabel = t(model.pill)
-        val pillWidth = pillPaint.measureText(pillLabel) + 28f
-        val pillRect = RectF(508f - pillWidth, 131f, 508f, 161f)
-        canvas?.drawRoundRect(pillRect, 15f, 15f, fill(if (model.pillTone == ShareTone.ORANGE) Color.parseColor("#FFEDD5") else Color.WHITE))
-        canvas.text(pillLabel, pillPaint, pillRect.centerX(), 150.5f, Paint.Align.CENTER)
-        canvas.text(t(model.title), paint(42f, black, Color.WHITE), 30f, 151f, maxWidth = pillRect.left - 44f)
+        // #930: only the draft has a pill ("Chưa chốt"); "#482113" is ~26 bold (the mockup's 18 px)
+        var titleRight = 508f
+        model.pill?.let { pill ->
+            val pillPaint = paint(12.5f, bold, pillText(model.pillTone))
+            val pillLabel = t(pill)
+            val pillWidth = pillPaint.measureText(pillLabel) + 28f
+            val pillRect = RectF(508f - pillWidth, 131f, 508f, 161f)
+            canvas?.drawRoundRect(pillRect, 15f, 15f, fill(if (model.pillTone == ShareTone.ORANGE) Color.parseColor("#FFEDD5") else Color.WHITE))
+            canvas.text(pillLabel, pillPaint, pillRect.centerX(), 150.5f, Paint.Align.CENTER)
+            titleRight = pillRect.left - 12f
+        }
+        if (model.isDraft) {
+            canvas.text(t(model.title), paint(42f, black, Color.WHITE), 30f, 151f, maxWidth = titleRight - 30f)
+        } else {
+            canvas.text(t(model.title), paint(26f, bold, Color.WHITE), 32f, 140f, maxWidth = titleRight - 32f)
+        }
 
         // 2. Customer card
-        var top = 185f
+        var top = bandHeight - 40f
         val customerHeight = if (model.dayStrip != null) 166f else 78f
         card(canvas, top, customerHeight, shadow = true)
         val phonePaint = paint(16f, medium, body)
@@ -180,8 +190,13 @@ internal class OrderShareRenderer(private val context: Context, private val mode
             canvas.text(strip.pickup, day, 64f, s + 49f)
             canvas.text(t(ShareText.Res(R.string.share_return)), label, 476f, s + 26f, Paint.Align.RIGHT)
             canvas.text(strip.returnDay, day, 476f, s + 49f, Paint.Align.RIGHT)
-            canvas.text(t(ShareText.Plural(R.plurals.v2_cart_days, strip.days)), paint(13f, bold, accent), 270f, s + 34f, Paint.Align.CENTER)
-            canvas?.drawRect(RectF(204f, s + 41.5f, 336f, s + 43f), fill(accent))
+            if (strip.days != null) {
+                canvas.text(t(ShareText.Plural(R.plurals.v2_cart_days, strip.days)), paint(13f, bold, accent), 270f, s + 34f, Paint.Align.CENTER)
+                canvas?.drawRect(RectF(204f, s + 41.5f, 336f, s + 43f), fill(accent))
+            } else {
+                // #930: a light arrow instead of the day count
+                canvas.text("→", paint(20f, medium, Color.parseColor("#94A3B8")), 270f, s + 44f, Paint.Align.CENTER)
+            }
         }
         top += customerHeight + 16f
 
@@ -228,6 +243,7 @@ internal class OrderShareRenderer(private val context: Context, private val mode
         val namePaint = paint(17f, bold, ink)
         val totalPaint = paint(17f, bold, ink)
         val qtyPaint = paint(14f, regular, muted)
+        val notePaint = paint(14f, italic, Color.parseColor("#92400E"))
         model.lines.forEachIndexed { index, line ->
             if (index > 0) y += 14f
             val totalWidth = totalPaint.measureText(line.total)
@@ -235,6 +251,11 @@ internal class OrderShareRenderer(private val context: Context, private val mode
             y += canvas.block(line.name, namePaint, left, y, contentWidth - totalWidth - 16f)
             y += 2f
             y += canvas.block(line.quantity, qtyPaint, left, y, contentWidth)
+            line.note?.let {
+                // #930: the item's own note, italic brown, under its price line
+                y += 3f
+                y += canvas.block(it, notePaint, left, y, contentWidth)
+            }
         }
         y += 17f
         canvas?.drawRect(RectF(left, y, right, y + 1f), fill(divider))

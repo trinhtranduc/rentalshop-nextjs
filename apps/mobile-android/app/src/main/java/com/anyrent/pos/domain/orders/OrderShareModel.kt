@@ -32,9 +32,11 @@ data class ShareShop(
     val address: String?,
 )
 
-data class ShareDayStrip(val pickup: String, val returnDay: String, val days: Int)
+/** [days] only on a draft; an order shows a light arrow instead (#930) */
+data class ShareDayStrip(val pickup: String, val returnDay: String, val days: Int?)
 
-data class ShareLine(val name: String, val quantity: String, val total: String)
+/** [note]: the item's own note under its price line (#930); the order's general note is never on the image */
+data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null)
 
 data class ShareRow(val label: ShareText, val value: String)
 
@@ -60,7 +62,8 @@ data class OrderShareModel(
     val outletLine: String?,
     val kind: ShareText,
     val title: ShareText,
-    val pill: ShareText,
+    /** "Chưa chốt" on a draft only (#930: no status on an order) */
+    val pill: ShareText?,
     val pillTone: ShareTone,
     val customerName: ShareText,
     val customerPhone: String?,
@@ -92,29 +95,22 @@ data class OrderShareModel(
         ): OrderShareModel {
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
-            val status = summary.status.uppercase().let { if (it == "PICKED_UP") "PICKUPED" else it }
             val number = summary.orderNumber.trim().removePrefix("#")
-            val payments = order.payments.map { BalancePayment(it.amount, it.status, it.notes) }
-            val due = if (isRent) {
-                rentDue(status, summary.totalAmount, summary.depositAmount, payments)
-            } else {
-                OrderDetailLogic.balance(
-                    summary.orderType, summary.status, summary.totalAmount, summary.depositAmount,
-                    order.securityDeposit, order.lateFee, order.damageFee, payments,
-                ).amountDue
-            }
 
             val rows = mutableListOf<ShareRow>()
             val highlight: ShareHighlight
             if (isRent) {
-                rows += ShareRow(ShareText.Res(R.string.share_rent_total), money(summary.totalAmount))
+                // #930: no "Còn phải trả" (it changes with the status); the rent total is the highlight
+                if (order.discountAmount > 0) {
+                    rows += ShareRow(ShareText.Res(R.string.share_discount), minus(order.discountAmount))
+                }
                 if (summary.depositAmount > 0) {
-                    rows += ShareRow(ShareText.Res(R.string.share_deposit_paid), minus(summary.depositAmount))
+                    rows += ShareRow(ShareText.Res(R.string.share_deposit_paid), money(summary.depositAmount))
                 }
                 collateral(order.collateralDetails, order.securityDeposit)?.let {
                     rows += ShareRow(ShareText.Res(R.string.share_collateral), it)
                 }
-                highlight = ShareHighlight(ShareText.Res(R.string.share_amount_due), money(due), ShareTone.ACCENT)
+                highlight = ShareHighlight(ShareText.Res(R.string.share_rent_total), money(summary.totalAmount), ShareTone.ACCENT)
             } else {
                 rows += ShareRow(ShareText.Res(R.string.share_subtotal), money(summary.totalAmount + order.discountAmount))
                 if (order.discountAmount > 0) {
@@ -127,7 +123,7 @@ data class OrderShareModel(
                 val from = OrderPlanDays.dayOf(summary.pickupPlanAt, zone)
                 val to = OrderPlanDays.dayOf(summary.returnPlanAt, zone)
                 if (from != null && to != null) {
-                    ShareDayStrip(dayLabel(from, vi), dayLabel(to, vi), CartV2Logic.rentalDays(from, to))
+                    ShareDayStrip(dayLabel(from, vi), dayLabel(to, vi), null)
                 } else {
                     null
                 }
@@ -135,29 +131,36 @@ data class OrderShareModel(
                 null
             }
 
+            // #930: "Đơn thuê · tạo 05/10/26 14:30" (shop time)
+            val kindText = ShareText.Res(if (isRent) R.string.share_kind_rent else R.string.share_kind_sale)
+            val created = OrderDetailHeader.dayTimeLabel(summary.createdAt, zone).takeIf { it != "—" }
+            val kind = created?.let { ShareText.Res(R.string.share_kind_created, listOf(kindText, it)) } ?: kindText
+
             val name = (order.customer?.displayName ?: summary.customerName)?.trim()?.takeIf { it.isNotEmpty() }
             val phone = (summary.customerPhone ?: order.customer?.phone)?.trim()?.takeIf { it.isNotEmpty() }
-            val (pill, tone) = pill(status)
             return OrderShareModel(
                 initials = initials(shop.name),
                 shopName = shop.name,
                 outletLine = outletLine(shop),
-                kind = ShareText.Res(if (isRent) R.string.share_kind_rent else R.string.share_kind_sale),
+                kind = kind,
                 title = ShareText.Plain("#$number"),
-                pill = pill,
-                pillTone = tone,
+                pill = null,
+                pillTone = ShareTone.ACCENT,
                 customerName = name?.let { ShareText.Plain(it) } ?: ShareText.Res(R.string.share_walk_in),
                 customerPhone = phone,
                 dayStrip = strip,
                 itemsTitle = itemsTitle(isRent, order.items.size),
                 lines = order.items.map { item ->
                     val itemName = item.productName?.takeIf { it.isNotBlank() && !it.equals("null", true) } ?: "—"
-                    ShareLine(itemName, "${item.quantity} × ${money(item.unitPrice)}", money(item.totalPrice))
+                    ShareLine(
+                        itemName, "${item.quantity} × ${money(item.unitPrice)}", money(item.totalPrice),
+                        item.note?.trim()?.takeIf { it.isNotEmpty() },
+                    )
                 },
                 rows = rows,
                 highlight = highlight,
                 note = null,
-                qr = qr(printBankQr, bankAccount, due, number),
+                qr = qr(printBankQr, bankAccount, number),
                 thanks = ShareText.Res(R.string.share_thanks, listOf(shop.name)),
                 address = shop.address?.trim()?.takeIf { it.isNotEmpty() },
                 fileName = "Order_${number.replace(Regex("[^A-Za-z0-9_-]"), "_").ifBlank { "order" }}.jpg",
@@ -222,35 +225,13 @@ data class OrderShareModel(
         }
 
         /**
-         * "Còn phải trả" of a rental (owner, 2026-10-07): the rent money still owed = total − deposit paid − rent
-         * payments made at pickup, never below 0. Collateral money is NOT in it (it has its own row). Nothing is
-         * owed on a returned or cancelled order. The VietQR amount is the same figure.
+         * The QR card: the bill's switch on, an account, and a VietQR for it (the bill's string with the content
+         * `DH<number>`; #930: no amount, the customer types it).
          */
-        fun rentDue(status: String, totalAmount: Double, depositAmount: Double, payments: List<BalancePayment>): Double {
-            val st = status.uppercase()
-            if (st == "RETURNED" || st == "CANCELLED") return 0.0
-            val paid = payments.filter { it.status == "COMPLETED" && it.notes == "PICKUP" }.sumOf { it.amount }
-            return (totalAmount - depositAmount - paid).coerceAtLeast(0.0)
-        }
-
-        /** Pill text and colour by kind and status (spec 1) */
-        fun pill(status: String): Pair<ShareText, ShareTone> = when (status.uppercase()) {
-            "CANCELLED" -> ShareText.Res(R.string.share_status_cancelled) to ShareTone.RED
-            "PICKUPED", "PICKED_UP" -> ShareText.Res(R.string.share_status_pickuped) to ShareTone.ACCENT
-            "RETURNED" -> ShareText.Res(R.string.share_status_returned) to ShareTone.GREEN
-            "COMPLETED" -> ShareText.Res(R.string.share_status_completed) to ShareTone.GREEN
-            // RESERVED (an older sale still RESERVED is not paid yet either)
-            else -> ShareText.Res(R.string.share_status_reserved) to ShareTone.ACCENT
-        }
-
-        /**
-         * The QR card: the bill's switch on, an account, and a VietQR for it (the bill's string with the amount due
-         * when > 0 and the content `DH<number>`).
-         */
-        fun qr(printBankQr: Boolean, account: OutletBankAccount?, amountDue: Double, orderNumber: String): ShareQr? {
+        fun qr(printBankQr: Boolean, account: OutletBankAccount?, orderNumber: String): ShareQr? {
             if (!printBankQr || account == null) return null
             val content = "DH$orderNumber"
-            val payload = VietQr.payload(account, amountDue, content) ?: return null
+            val payload = VietQr.payload(account, 0.0, content) ?: return null
             return ShareQr(payload, account.bankName, account.accountNumber.trim(), account.accountHolderName.uppercase(), content)
         }
 
