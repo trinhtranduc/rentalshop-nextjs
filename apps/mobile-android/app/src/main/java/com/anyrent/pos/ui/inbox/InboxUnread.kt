@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 
 /**
- * #674: the unread badge of the products home (iOS: `.inboxUnreadCountDidChange`). The inbox sets the count it knows;
+ * #674: the unread badge, on Cài đặt → Thông báo since #937 (was the products home bell; iOS: `.inboxUnreadCountDidChange`). The inbox sets the count it knows;
  * a push marks it stale. The server is asked on first show, after a push, for another account, or when 10 minutes old.
  */
 object InboxUnread {

@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Badge
@@ -98,7 +98,6 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.ImageSearchScreen
-import com.anyrent.pos.ui.inbox.InboxUnread
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -118,7 +117,6 @@ import kotlinx.coroutines.withContext
 fun ProductsHomeScreen(
     onOpenProduct: (Int) -> Unit,
     onOpenCart: () -> Unit,
-    onOpenInbox: () -> Unit,
     viewModel: ProductsHomeViewModel = viewModel(factory = ProductsHomeViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -129,7 +127,6 @@ fun ProductsHomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
-    val unread by InboxUnread.count.collectAsState()
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
@@ -144,8 +141,6 @@ fun ProductsHomeScreen(
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
     }
-    // #674: the badge follows the inbox and pushes; the server is asked on first show and when 10 minutes old
-    LaunchedEffect(Unit) { InboxUnread.invalidations.collect { InboxUnread.refreshIfNeeded() } }
     // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
     // The view model keeps the version it reflects, so a change made while this screen was away counts too.
     LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
@@ -198,9 +193,11 @@ fun ProductsHomeScreen(
                             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.new_product), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
-                    IconButton(onClick = onOpenInbox) {
-                        BadgedBox(badge = { if (unread > 0) Badge { Text(unread.coerceAtMost(99).toString()) } }) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = stringResource(R.string.notifications), modifier = Modifier.size(DS.Icon.Lg))
+                    // #937: the cart (the bell moved to Cài đặt → Thông báo); badge = the cart bar's count
+                    val cartBadge = ProductRowLogic.cartBadge(lines.sumOf { it.quantity })
+                    IconButton(onClick = onOpenCart) {
+                        BadgedBox(badge = { cartBadge?.let { Badge(containerColor = DS.Colors.Primary, contentColor = Color.White) { Text(it) } } }) {
+                            Icon(Icons.Outlined.ShoppingCart, contentDescription = stringResource(R.string.cart), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
                 }
@@ -410,7 +407,8 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
             )
             // #681: name, price, stock — one fact per line, 8 dp apart
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
-                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // #937: up to two lines, then "…" (Home only)
+                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = ProductRowLogic.NAME_MAX_LINES, overflow = TextOverflow.Ellipsis)
                 val unit = { mode: PricingMode -> if (mode == PricingMode.PER_DAY) unitDay else unitRental }
                 val text = buildAnnotatedString {
                     val muted = SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
