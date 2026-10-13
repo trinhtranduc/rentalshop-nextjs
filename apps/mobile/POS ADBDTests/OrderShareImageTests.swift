@@ -212,6 +212,17 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertEqual(model(noDiscount).rows.map(\.label), ["Tạm tính"])
     }
 
+    /// #939: test data of #930 — items 792, order total 396, no discount: Tạm tính is the lines, Tổng cộng the server's
+    func testSaleSubtotalIsTheItemSumNotTheTotal() {
+        var source = Self.sale()
+        source.items = [.init(name: "A", quantity: 2, total: 396), .init(name: "B", quantity: 1, total: 396)]
+        source.discount = 0
+        source.total = 396
+        let sale = model(source)
+        XCTAssertEqual(sale.rows, [.init(label: "Tạm tính", value: "792đ")])
+        XCTAssertEqual(sale.highlightValue, "396đ")
+    }
+
     func testDraftTotalsAndNote() {
         let draft = model(Self.draft())
         XCTAssertEqual(draft.rows, [

@@ -162,12 +162,26 @@ class OrderShareModelTest {
         assertEquals(ShareText.Res(R.string.share_items_sale, listOf(3)), m.itemsTitle)
         assertEquals(
             listOf(
-                ShareRow(ShareText.Res(R.string.share_subtotal), "420.000đ"),
+                // #939: the item lines (650.000 + 350.000 + 2 × 75.000), not totalAmount + discount
+                ShareRow(ShareText.Res(R.string.share_subtotal), "1.150.000đ"),
                 ShareRow(ShareText.Res(R.string.share_discount), "− 20.000đ"),
             ),
             m.rows,
         )
         assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "400.000đ", ShareTone.GREEN), m.highlight)
+    }
+
+    @Test
+    fun saleSubtotalIsTheItemSumNotTheTotal() {
+        // #939: test data of #930 — items 792, order total 396, no discount. iOS showed 792, Android 396.
+        val base = order(type = "SALE", status = "COMPLETED", total = 396.0, deposit = 0.0, security = 0.0, papers = null)
+        val m = OrderShareModel.from(
+            base.copy(items = listOf(item("A", 2, 198.0), item("B", 1, 396.0))),
+            shop, vi = true, zone = vn,
+        )
+        assertEquals(listOf(ShareRow(ShareText.Res(R.string.share_subtotal), "792đ")), m.rows)
+        // The total is the server's, never recomputed from the lines
+        assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "396đ", ShareTone.GREEN), m.highlight)
     }
 
     @Test
