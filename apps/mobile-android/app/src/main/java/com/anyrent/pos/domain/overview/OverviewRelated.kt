@@ -45,7 +45,8 @@ data class IncomeRow(
     val revenueType: String = "",
 )
 
-enum class RelatedNote { CREATED, CANCELLED, EVENT, OWES, COLLATERAL_IN, COLLATERAL_OUT }
+/** [HELD] (#938): an order whose collateral is held now; listed on Thế chân, not part of the period total */
+enum class RelatedNote { CREATED, CANCELLED, EVENT, OWES, COLLATERAL_IN, COLLATERAL_OUT, HELD }
 
 data class RelatedRow(
     val id: Int,
@@ -145,7 +146,25 @@ object OverviewRelated {
         RelatedRow(item.id, item.orderNumber, item.customerName, note, item.description, reasons, amount)
     }
 
-    fun total(rows: List<RelatedRow>): Double = rows.sumOf { it.amount }
+    /** Σ of the period rows (= the figure); [RelatedNote.HELD] rows are listed only (#938) */
+    fun total(rows: List<RelatedRow>): Double = rows.filter { it.note != RelatedNote.HELD }.sumOf { it.amount }
+
+    /** Rows behind the total (#938: held rows left out) */
+    fun count(rows: List<RelatedRow>): Int = rows.count { it.note != RelatedNote.HELD }
+
+    /** #938: the orders holding collateral now, `data.collateralHeld.orders` of outlet-operations (`collateralHeld=1`) */
+    fun heldRows(data: JSONObject): List<RelatedRow> {
+        val orders = data.optJSONObject("collateralHeld")?.optJSONArray("orders") ?: return emptyList()
+        return (0 until orders.length()).mapNotNull { i ->
+            val o = orders.optJSONObject(i) ?: return@mapNotNull null
+            val id = o.optInt("id")
+            val amount = if (o.isNull("securityDeposit")) 0.0 else o.optDouble("securityDeposit").takeIf { !it.isNaN() } ?: 0.0
+            if (id <= 0 || amount <= 0) return@mapNotNull null
+            val number = if (o.isNull("orderNumber")) "" else o.optString("orderNumber")
+            val customer = if (o.isNull("customerName")) "" else o.optString("customerName")
+            RelatedRow(id, number.ifBlank { "#$id" }, customer, RelatedNote.HELD, "", amount = amount)
+        }
+    }
 
     /** One page of `data`: every order row of every day (an order may be on several days), and whether more follow */
     fun pageFromJson(data: JSONObject): Pair<List<IncomeRow>, Boolean> {

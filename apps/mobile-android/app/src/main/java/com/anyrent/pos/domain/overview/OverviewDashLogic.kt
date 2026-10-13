@@ -129,7 +129,10 @@ object OverviewDashLogic {
             parts.atPickup.orders > 0 -> OverviewTileChip(OverviewChipTone.INFO, OverviewChipText.WAITING, parts.atPickup.orders)
             else -> null
         }
-        val collateralChip = now?.rentedOut?.takeIf { it > 0 }?.let { OverviewTileChip(OverviewChipTone.INFO, OverviewChipText.HELD, it) }
+        // #938: orders whose collateral is held now (`collateralToReturn.orders`); an older API without that count keeps
+        // the rentals out (`depositsHeld.orders`)
+        val held = now?.collateralToReturn?.orders ?: now?.rentedOut
+        val collateralChip = held?.takeIf { it > 0 }?.let { OverviewTileChip(OverviewChipTone.INFO, OverviewChipText.HELD, it) }
         return listOf(
             OverviewTile(
                 OverviewTileKind.ORDER_VALUE, report?.totalOrderValue, false, growthChip(report?.orderValueGrowth?.growth),

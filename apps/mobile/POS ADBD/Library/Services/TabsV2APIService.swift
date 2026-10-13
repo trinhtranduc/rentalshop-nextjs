@@ -75,6 +75,14 @@ final class TabsV2APIService: BaseService {
         }
     }
 
+    /// #938: rentals still out past their return day (outlet-operations `overdueReturns`), listed under today's returns
+    @discardableResult
+    func calendarLateReturns(completion: @escaping ([CalendarDayOrder]?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.outletOperations, parameters: Self.outletOperationsParameters()) { (body: CalendarLateReturns?, error) in
+            completion(body?.orders, error)
+        }
+    }
+
     static func calendarDayParameters(_ dayKey: String, returns: Bool,
                                       outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
         var params: [String: Any] = ["date": dayKey, "timeZone": Date.shopTimeZone.identifier, "limit": 200]

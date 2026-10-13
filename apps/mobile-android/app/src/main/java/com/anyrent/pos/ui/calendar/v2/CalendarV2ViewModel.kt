@@ -12,6 +12,7 @@ import com.anyrent.pos.domain.calendar.CalendarDayOrder
 import com.anyrent.pos.domain.calendar.CalendarDayRow
 import com.anyrent.pos.domain.calendar.CalendarLogic
 import com.anyrent.pos.domain.calendar.CalendarMonthCounts
+import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -114,7 +115,16 @@ class CalendarV2ViewModel(
                         val base = CalendarLogic.dayPath(key, CurrentOutlet.merchantFilterId)
                         val pickups = async { orders(fetch("$base&status=RESERVED")) }
                         val returns = async { orders(fetch("$base&kind=return")) }
-                        CalendarLogic.rows(key, todayKey, pickups.await(), returns.await())
+                        // #938: today also lists the rentals still out past their return day (the header's "N trễ"),
+                        // as the web; a failure here leaves today's list as before
+                        val late = async {
+                            if (key != todayKey) emptyList()
+                            else runCatching {
+                                val json = fetch(OverviewLogic.outletOperationsPath(CurrentOutlet.merchantFilterId))
+                                CalendarLogic.lateReturnsFromJson(json.optJSONObject("data") ?: org.json.JSONObject())
+                            }.getOrDefault(emptyList())
+                        }
+                        CalendarLogic.rows(key, todayKey, pickups.await(), returns.await(), late.await())
                     }
                 }
             }

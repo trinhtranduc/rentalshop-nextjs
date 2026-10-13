@@ -352,7 +352,8 @@
         "event": "",
         "owes": "To collect at pickup",
         "collateralIn": "Collateral received at hand-over",
-        "collateralOut": "Collateral returned"
+        "collateralOut": "Collateral returned",
+        "held": "Collateral held now"
       },
       "event": {
         "saleCreated": "Sale created",

@@ -1546,6 +1546,7 @@
     <string name="overview_v2_related_owes">To collect at pickup</string>
     <string name="overview_v2_related_collateral_in">Collateral received at hand-over</string>
     <string name="overview_v2_related_collateral_out">Collateral returned</string>
+    <string name="overview_v2_related_collateral_held">Collateral held now</string>
     <string name="overview_v2_collected_includes_collateral">Collateral included</string>
     <!-- #725 Overview in the iOS layout (iOS overview.dash.*) -->
     <string name="overview_dash_period_today">Today</string>

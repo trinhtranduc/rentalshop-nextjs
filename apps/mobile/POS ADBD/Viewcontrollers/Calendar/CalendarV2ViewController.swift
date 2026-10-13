@@ -255,11 +255,22 @@ final class CalendarV2ViewController: BaseViewControler {
             group.leave()
         }
         dayRequests = [pickupRequest, returnRequest]
+        // #938: today also lists the rentals still out past their return day (the "N trễ" of the header), as the web;
+        // a failure here leaves today's list as before
+        var late: [CalendarDayOrder] = []
+        if dayKey == todayKey {
+            group.enter()
+            dayRequests.append(TabsV2APIService.shared.calendarLateReturns { orders, _ in
+                late = orders ?? []
+                group.leave()
+            })
+        }
         group.notify(queue: .main) { [weak self] in
             guard let self, generation == self.dayGeneration else { return }
             self.endRefresh()
             if let pickups, let returns {
-                self.rows = CalendarV2Logic.rows(dayKey: dayKey, todayKey: self.todayKey, pickups: pickups, returns: returns)
+                self.rows = CalendarV2Logic.rows(dayKey: dayKey, todayKey: self.todayKey, pickups: pickups, returns: returns,
+                                                 late: late)
                 self.dayState = .loaded
                 self.freshness.loaded(version: version, at: Date())
             } else if !keepRows {

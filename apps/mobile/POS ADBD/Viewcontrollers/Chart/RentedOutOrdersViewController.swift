@@ -491,6 +491,15 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         spinner.startAnimating()
         var collected: [OverviewRelatedRow] = []
         let group = DispatchGroup()
+        // #938: Thế chân first lists the orders holding collateral now (the "đang giữ N đơn" chip)
+        var held: [OverviewRelatedRow] = []
+        if kind == .collateral {
+            group.enter()
+            _ = AnalyticsAPIService.shared.loadOutletOperations(collateralHeld: true) { work, _ in
+                held = OverviewDashLogic.heldRows(work?.collateralHeld?.orders ?? [])
+                group.leave()
+            }
+        }
         for bucket in kind.buckets {
             group.enter()
             loadBucket(bucket, offset: 0, page: 1) { rows in
@@ -501,10 +510,10 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         group.notify(queue: .main) { [weak self] in
             guard let self else { return }
             self.spinner.stopAnimating()
-            self.rows = collected
-            self.emptyLabel.isHidden = !collected.isEmpty
-            let total = MoneyFormatter.format(OverviewDashLogic.relatedTotal(collected))
-            self.totalLabel.text = "\("overview.related.total".localized()) · \(collected.count): \(total)"
+            self.rows = held + collected
+            self.emptyLabel.isHidden = !self.rows.isEmpty
+            let total = MoneyFormatter.format(OverviewDashLogic.relatedTotal(self.rows))
+            self.totalLabel.text = "\("overview.related.total".localized()) · \(OverviewDashLogic.relatedCount(self.rows)): \(total)"
             self.table.reloadData()
         }
     }
@@ -536,7 +545,8 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         let amount = UILabel()
         amount.font = Utils.boldFont(size: DS.TextSize.body)
         amount.textColor = row.amount < 0 ? V2.danger : DS.Color.text
-        amount.text = (row.amount > 0 && kind != .orderValue && kind != .outstanding ? "+" : "") + MoneyFormatter.format(row.amount)
+        // #938: a held row is what is held now, not money moved in the period: no sign
+        amount.text = (row.amount > 0 && !row.held && kind != .orderValue && kind != .outstanding ? "+" : "") + MoneyFormatter.format(row.amount)
         amount.sizeToFit()
         cell.accessoryView = amount
         cell.accessibilityLabel = "\(row.orderNumber), \(row.detail), \(amount.text ?? "")"

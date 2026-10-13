@@ -11,6 +11,8 @@ const querySchema = z.object({
   merchantId: z.coerce.number().int().positive().optional(),
   /** IANA zone of the device (#362); the Vietnam day when missing */
   timeZone: z.string().min(1).max(64).optional(),
+  /** #938: `1` adds `collateralHeld` (rentals out with collateral) for callers who see money */
+  collateralHeld: z.enum(['0', '1', 'false', 'true']).optional(),
 });
 
 function isValidTimeZone(timeZone: string): boolean {
@@ -112,6 +114,8 @@ function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) =>
  * (each: count + up to 50 rows), handovers/returns already done today (`doneToday`), and new orders
  * per day for the last 7 days (`newOrdersByDay`, oldest first, counts only).
  * `cash` (deposits held, deposits due back today, fees on returns today, collateral to collect and to return) only with analytics.view.revenue.
+ * #938 `collateralHeld=1`: adds `collateralHeld` { count, orders (≤ 500) }: the rentals out with collateral, the orders
+ * behind `cash.collateralToReturn` (null without analytics.view.revenue; absent without the flag).
  *
  * Access: analytics.view.dashboard.
  * - OUTLET_ADMIN / OUTLET_STAFF: own outlet only (outletIds is ignored).
@@ -148,6 +152,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     }
 
     const includeCash = await hasPermission(user, 'analytics.view.revenue');
+    const withCollateralHeld = parsed.data.collateralHeld === '1' || parsed.data.collateralHeld === 'true';
     const { day, soonEnd, tomorrowStart, tomorrowEnd, trendDays, keyOf } = resolveDays(parsed.data.timeZone);
     const ops = await db.outletOperations.get({
       outletIds,
@@ -158,6 +163,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       trendDays,
       tomorrowStart,
       tomorrowEnd,
+      withCollateralHeld,
     });
 
     const list = (group: { count: number; orders: OperationsRow[] }, withOverdue = false) => ({
@@ -166,6 +172,8 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     });
     const optionalList = (group: { count: number; orders: OperationsRow[] } | null | undefined) =>
       group ? list(group) : null;
+    // #938: only when asked (`withCollateralHeld`); null without the money right
+    const collateralHeld = (ops as { collateralHeld?: unknown }).collateralHeld as Parameters<typeof optionalList>[0];
 
     return NextResponse.json(
       ResponseBuilder.success('OUTLET_OPERATIONS_SUCCESS', {
@@ -181,6 +189,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         tomorrow: ops.tomorrow,
         tomorrowPickups: optionalList((ops as any).tomorrowPickups),
         tomorrowReturns: optionalList((ops as any).tomorrowReturns),
+        ...(withCollateralHeld ? { collateralHeld: optionalList(collateralHeld) } : {}),
         cash: ops.cash,
       })
     );
