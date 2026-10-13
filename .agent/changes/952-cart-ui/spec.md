@@ -12,8 +12,12 @@
 3. **Home.** No floating cart bar. The top-right cart button with its count badge is the only entry to the cart.
 4. **iOS product form.** No "Xong" bar on the number fields. The keyboard closes by a tap outside a field or by
    dragging the form (already wired: tap recognizer + `keyboardDismissMode = .interactive`). Android has no such bar.
-5. **Web client order form.** Every add of a product makes a new line keyed by its own id; quantity, price (0đ allowed),
-   note and remove act on that line; availability hints sum a product's lines; editing an order keeps its lines.
-6. **Admin product form.** Editing a 0đ product keeps 0đ: empty box = no price, "0" = 0đ (client rule from #953).
+5. **Web client order form** (`apps/client/app/orders/create/create-model.ts`). Every "+" on a product appends a new line
+   with its own `key`; quantity, price (0đ allowed), note and remove act on that line only; stock and overlap hints add
+   up all lines of a product; editing an order loads one line per saved item; the payload sends one `orderItems[]`
+   entry per line (the API already accepts a repeated `productId`). Confirm dialog rows are keyed by index.
+6. **Admin product form** (`packages/ui` ProductForm + `@rentalshop/utils` product-pricing-options). Empty price box =
+   no price, "0" = 0đ, as the client form-model from #951. A saved 0đ option shows "0" and is saved back as 0đ; a per-day
+   default may be 0đ; the sale price is optional and only negatives are refused.
 
 API: no change.
