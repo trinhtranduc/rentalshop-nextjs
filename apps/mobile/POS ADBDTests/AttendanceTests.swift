@@ -219,6 +219,25 @@ final class AttendanceTests: XCTestCase {
         XCTAssertEqual(result[1].worked, "08:00–16:00 · \(short(7.5))")
     }
 
+    /// #935 A late record keeps its hours: "09:57–16:03 · 6,1 g · muộn 117′"; an open late record "08:10–… · muộn 10′"
+    func testLateRecordShowsHoursThenLateMinutes() {
+        let rows = [
+            AttendanceMonthRow(at: at("2026-10-13T02:57:00Z"), kind: "IN", result: "ACCEPTED", recordId: 1, lateMinutes: 117),
+            AttendanceMonthRow(at: at("2026-10-13T09:03:00Z"), kind: "OUT", result: "ACCEPTED", recordId: 1),
+            AttendanceMonthRow(at: at("2026-10-14T01:10:00Z"), kind: "IN", result: "ACCEPTED", recordId: 2, lateMinutes: 10),
+        ]
+        let pairs = AttendanceLogic.pairs(rows)
+        let week = AttendanceLogic.weekDayKeys(containing: at("2026-10-14T03:00:00Z"), timeZone: vn)
+        let result = AttendanceLogic.weekRows(dayKeys: week, schedule: [:], pairs: pairs)
+        guard result.count == 2 else { return XCTFail("\(result)") }
+        let short = String(format: "attendance.mine.hoursShort".localized(), AttendanceLogic.hours(6.1))
+        func late(_ minutes: Int) -> String { String(format: "attendance.mine.late".localized(), minutes) }
+        XCTAssertEqual(result[0].worked, "09:57–16:03 · \(short) · \(late(117))")
+        XCTAssertTrue(result[0].isLate)
+        XCTAssertEqual(result[1].worked, "08:10–… · \(late(10))")
+        XCTAssertTrue(result[1].isLate)
+    }
+
     // MARK: #927 Card L in Settings
 
     func testRequiredDefaultsToTrue() throws {
