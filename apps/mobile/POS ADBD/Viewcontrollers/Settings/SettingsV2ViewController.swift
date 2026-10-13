@@ -627,7 +627,7 @@ final class SettingsV2Cell: UITableViewCell {
     private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
     /// #937: unread count on "Thông báo" (red pill, mockup cartbell)
-    let badgeLabel: InsetLabel = {
+    private let badgeLabel: InsetLabel = {
         let label = InsetLabel()
         label.insets = UIEdgeInsets(top: 1, left: 7, bottom: 1, right: 7)
         label.font = Utils.boldFont(size: DS.TextSize.pill)
@@ -636,9 +636,9 @@ final class SettingsV2Cell: UITableViewCell {
         label.backgroundColor = UIColor(hexString: "EF4444")
         label.layer.cornerRadius = 9
         label.layer.masksToBounds = true
-        label.isHidden = true
         return label
     }()
+    private let badgeBox = UIView()
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
     private let line = V2.divider()
 
@@ -660,12 +660,20 @@ final class SettingsV2Cell: UITableViewCell {
 
         let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         texts.axis = .vertical
+        // #937: the pill sits at the trailing end of a box that takes the free width, so it keeps its size
         badgeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        badgeLabel.setContentHuggingPriority(.required, for: .horizontal)
+        badgeBox.addSubview(badgeLabel)
+        badgeBox.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        badgeBox.isHidden = true
         badgeLabel.snp.makeConstraints { make in
+            make.trailing.centerY.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview()
             make.height.equalTo(18)
             make.width.greaterThanOrEqualTo(18)
         }
-        let row = UIStackView(arrangedSubviews: [avatar, texts, valueLabel, badgeLabel, chevron])
+        badgeBox.snp.makeConstraints { make in make.height.equalTo(18) }
+        let row = UIStackView(arrangedSubviews: [avatar, texts, valueLabel, badgeBox, chevron])
         row.spacing = DS.Spacing.md
         row.alignment = .center
         contentView.addSubview(row)
@@ -693,7 +701,7 @@ final class SettingsV2Cell: UITableViewCell {
         subtitleLabel.text = subtitle
         subtitleLabel.isHidden = subtitle.isEmpty
         valueLabel.isHidden = true
-        badgeLabel.isHidden = true
+        badgeBox.isHidden = true
         accessibilityValue = nil
         chevron.isHidden = true
         line.isHidden = true
@@ -710,7 +718,7 @@ final class SettingsV2Cell: UITableViewCell {
         valueLabel.text = value
         valueLabel.isHidden = (value ?? "").isEmpty
         badgeLabel.text = badge
-        badgeLabel.isHidden = badge == nil
+        badgeBox.isHidden = badge == nil
         accessibilityValue = badge
         chevron.isHidden = !showsChevron
         line.isHidden = false
@@ -725,7 +733,7 @@ final class SettingsV2Cell: UITableViewCell {
         titleLabel.textColor = V2.danger
         subtitleLabel.isHidden = true
         valueLabel.isHidden = true
-        badgeLabel.isHidden = true
+        badgeBox.isHidden = true
         accessibilityValue = nil
         chevron.isHidden = true
         line.isHidden = true
