@@ -449,3 +449,44 @@ export function editButtonRecords(rows: AttendancePersonRow[]): Array<number | n
     return r.recordId;
   });
 }
+
+/** #924 The instant is on the VN civil day right after `dayKey` (an overnight out: "(hôm sau)"). */
+export function isNextDayOf(iso: string | null | undefined, dayKey: string): boolean {
+  const day = dayOf(iso);
+  return !!day && isDayKey(dayKey) && day === addDaysToDateKey(dayKey, 1);
+}
+
+export interface EditSummaryWords {
+  checkIn: (time: string) => string;
+  checkOut: (time: string) => string;
+  nextDay: string;
+}
+
+/**
+ * #924 Text of a "Đã sửa" row: `Lan · vào 08:05 → ra 17:20 · "lý do"` for an added record; for an edit each changed
+ * time reads before → after (`vào 08:00 → 08:05`), an unchanged one once. An out time on the day after the record
+ * day gets "(hôm sau)". No editor name → no name part. Not an EDIT row → ''.
+ */
+export function editSummaryText(row: AttendancePersonRow, words: EditSummaryWords): string {
+  if (row.kind !== 'EDIT') return '';
+  const after = row.after || {};
+  const before = row.before || null;
+  const day = row.dateKey || dayOf(after.checkInAt) || dayOf(row.at);
+  const outTime = (iso: string | null | undefined) =>
+    iso ? `${timeOf(iso)}${isNextDayOf(iso, day) ? ` ${words.nextDay}` : ''}` : '—';
+  const parts: string[] = [];
+  if (row.editorName) parts.push(row.editorName);
+  const added = !before || (!before.checkInAt && !before.checkOutAt);
+  if (added) {
+    const times = [after.checkInAt ? words.checkIn(timeOf(after.checkInAt)) : '', after.checkOutAt ? words.checkOut(outTime(after.checkOutAt)) : '']
+      .filter(Boolean)
+      .join(' → ');
+    if (times) parts.push(times);
+  } else {
+    const field = (b: string, a: string) => (b === a ? a : `${b} → ${a}`);
+    if (after.checkInAt) parts.push(words.checkIn(field(before.checkInAt ? timeOf(before.checkInAt) : '—', timeOf(after.checkInAt))));
+    if (after.checkOutAt) parts.push(words.checkOut(field(outTime(before.checkOutAt), outTime(after.checkOutAt))));
+  }
+  if (row.note) parts.push(`"${row.note}"`);
+  return parts.join(' · ');
+}

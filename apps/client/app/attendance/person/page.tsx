@@ -14,11 +14,14 @@ import {
   canEditPerson,
   dayOf,
   editButtonRecords,
+  editSummaryText,
   filterRows,
   formatHours,
   groupRowsByDay,
   isDayKey,
   isMonthKey,
+  isNextDayOf,
+  isOvernight,
   isTime,
   lockDisplay,
   monthLabel,
@@ -146,7 +149,13 @@ function RecordDialog({
           <input type="time" className={inputClass} value={inT} onChange={(e) => setIn(e.target.value)} />
         </Field>
         <Field label={t('edit.checkOut')}>
-          <input type="time" className={inputClass} value={outT} onChange={(e) => setOut(e.target.value)} />
+          <span className="flex items-center gap-2">
+            <input type="time" className={inputClass} value={outT} onChange={(e) => setOut(e.target.value)} />
+            {/* #924 an out time at or before the in time is saved on the next day */}
+            {isTime(inT) && isTime(outT) && isOvernight(inT, outT) && (
+              <span className="whitespace-nowrap text-[13px] font-semibold text-ar-primary">{t('person.nextDay')}</span>
+            )}
+          </span>
         </Field>
         <Field label={t('edit.reason')} full>
           <input
@@ -242,7 +251,16 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
       parts.push(<Pill key="fake" tone="bad">{t('person.suspected')}</Pill>);
       parts.push(r.suspectReasons.map((x) => (['ZERO_ACCURACY', 'SAME_COORDS', 'SPEED'].includes(x) ? t(`person.reason.${x}`) : x)).join(', '));
     }
-    if (r.note) parts.push(r.note);
+    // #924 who edited and the times (before → after for an edit)
+    if (r.kind === 'EDIT') {
+      parts.push(
+        editSummaryText(r, {
+          checkIn: (time) => t('person.editIn', { time }),
+          checkOut: (time) => t('person.editOut', { time }),
+          nextDay: t('person.nextDay'),
+        })
+      );
+    } else if (r.note) parts.push(r.note);
     return parts.map((p, i) => (
       <React.Fragment key={i}>
         {i > 0 && ' '}
@@ -349,7 +367,12 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
                     const editIds = editButtonRecords(g.rows);
                     return g.rows.map((r, i) => {
                       const sameDay = dayOf(r.at) === g.day;
-                      const timeLabel = sameDay ? timeOf(r.at, true) : `${shortDate(dayOf(r.at)).slice(0, 5)} ${timeOf(r.at)}`;
+                      // #924 an overnight out reads "02:00:00 (hôm sau)"
+                      const timeLabel = sameDay
+                        ? timeOf(r.at, true)
+                        : r.kind === 'OUT' && isNextDayOf(r.at, g.day)
+                          ? `${timeOf(r.at, true)} ${t('person.nextDay')}`
+                          : `${shortDate(dayOf(r.at)).slice(0, 5)} ${timeOf(r.at)}`;
                       const hasCoords = r.latitude != null && r.longitude != null;
                       const editId = canEdit ? editIds[i] : null;
                       return (

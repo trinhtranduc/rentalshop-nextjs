@@ -147,7 +147,7 @@ export function MerchantModulesCard({
                         <div className="text-xs text-gray-500">{label.hint}</div>
                       </td>
                       <td className="py-3 pr-3">
-                        <span className={`ar-pill ar-pill-${status.tone}`}>{status.label}</span>
+                        <span className={`ar-pill ar-pill-plain ar-pill-${status.tone}`}>{status.label}</span>
                       </td>
                       <td className="py-3 pr-3">{shortDay(m.endDate)}</td>
                       <td className="py-3 text-right">
@@ -167,7 +167,7 @@ export function MerchantModulesCard({
                   <div className="text-xs text-gray-500">Cần Chấm công · làm sau</div>
                 </td>
                 <td className="py-3 pr-3">
-                  <span className="ar-pill ar-pill-neutral">Chưa có</span>
+                  <span className="ar-pill ar-pill-plain ar-pill-neutral">Chưa có</span>
                 </td>
                 <td className="py-3 pr-3">—</td>
                 <td className="py-3 text-right">

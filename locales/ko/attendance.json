@@ -147,7 +147,10 @@
       "QR_WRONG_OUTLET": "다른 지점의 QR 코드",
       "ATTENDANCE_NOT_CONFIGURED": "지점 위치 미설정",
       "other": "거부됨"
-    }
+    },
+    "editIn": "출근 {time}",
+    "editOut": "퇴근 {time}",
+    "nextDay": "(다음 날)"
   },
   "edit": {
     "title": "출퇴근 수정 · {name} · {date}",

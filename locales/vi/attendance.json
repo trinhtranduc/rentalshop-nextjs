@@ -147,7 +147,10 @@
       "QR_WRONG_OUTLET": "Mã QR của chi nhánh khác",
       "ATTENDANCE_NOT_CONFIGURED": "Chi nhánh chưa cài vị trí",
       "other": "Bị từ chối"
-    }
+    },
+    "editIn": "vào {time}",
+    "editOut": "ra {time}",
+    "nextDay": "(hôm sau)"
   },
   "edit": {
     "title": "Sửa công · {name} · {date}",

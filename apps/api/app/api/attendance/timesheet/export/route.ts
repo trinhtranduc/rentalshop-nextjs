@@ -9,6 +9,7 @@ import { getUtcRangeForDateKeys } from '../../../../../lib/attendance/rules';
 import { listDateKeys } from '../../../../../lib/attendance/schedule';
 import { monthSchema, queryIdSchema, queryOf } from '../../../../../lib/attendance/schemas';
 import { fullName, loadTimesheet } from '../../../../../lib/attendance/timesheet';
+import { editorNames, isAddedRecordEdit } from '../../../../../lib/attendance/editors';
 
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
 
@@ -26,6 +27,7 @@ const PARTS = ['grid', 'scans', 'edits'] as const;
  * GET /api/attendance/timesheet/export?outletId&month&parts=grid,scans,edits — #907 rule 31.
  * MERCHANT, OUTLET_ADMIN (own outlet). `.xlsx` with "Bảng tháng" (hours per day, total hours, days),
  * "Chi tiết" (every scan with result, distance, coordinates) and "Lịch sử sửa".
+ * #924 "Lịch sử sửa": "Người sửa" is a name (the shop owner too); "Trước" is empty for an added record.
  */
 export const GET = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { user }) => {
   const parsed = z
@@ -67,16 +69,18 @@ export const GET = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { u
   if (parts.has('edits')) {
     const edits = await db.attendance.listEdits(sheet.records.map((r) => r.id));
     const recordUser = new Map(sheet.records.map((r) => [r.id, r.userId]));
+    // #924 the shop owner is not a timesheet user: look the other editors up by id
+    const editors = await editorNames(edits, names);
     const rows = edits.map((e) => {
       const before = (e.before ?? {}) as Record<string, string | null>;
       const after = (e.after ?? {}) as Record<string, string | null>;
       return [
         names.get(recordUser.get(e.recordId) ?? 0) ?? '',
         vnTime(e.createdAt),
-        `${vnTime(before.checkInAt)} – ${vnTime(before.checkOutAt)}`,
+        isAddedRecordEdit(e.before) ? '' : `${vnTime(before.checkInAt)} – ${vnTime(before.checkOutAt)}`,
         `${vnTime(after.checkInAt)} – ${vnTime(after.checkOutAt)}`,
         e.reason,
-        names.get(e.editedById) ?? String(e.editedById),
+        editors.get(e.editedById) ?? String(e.editedById),
       ];
     });
     const header = ['Nhân viên', 'Sửa lúc', 'Trước', 'Sau', 'Lý do', 'Người sửa'];

@@ -30,6 +30,8 @@ export const mockDb: any = {
     lastRecord: fn(),
     getScheduleData: fn(),
     listOutletUsers: fn(),
+    findUsersByIds: fn(),
+    listOutletScans: fn(),
     getUserInMerchant: fn(),
     workedDays: fn(),
     listTemplates: fn(),
@@ -156,6 +158,8 @@ export function resetAttendanceMocks() {
   a.getScheduleData.mockResolvedValue({ rules: [], dayChanges: [], templates: [] });
   a.workedDays.mockResolvedValue([]);
   a.isMonthLocked.mockResolvedValue(false);
+  a.findUsersByIds.mockResolvedValue([]);
+  a.listOutletScans.mockResolvedValue([]);
   a.listOutletUsers.mockResolvedValue([
     { id: 7, firstName: 'Bình', lastName: 'Tran', role: 'OUTLET_STAFF', outletId: 1 },
     { id: 8, firstName: 'Chi', lastName: 'Ng', role: 'OUTLET_ADMIN', outletId: 1 },

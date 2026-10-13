@@ -147,7 +147,10 @@
       "QR_WRONG_OUTLET": "其他门店的二维码",
       "ATTENDANCE_NOT_CONFIGURED": "门店未设置位置",
       "other": "已拒绝"
-    }
+    },
+    "editIn": "上班 {time}",
+    "editOut": "下班 {time}",
+    "nextDay": "(次日)"
   },
   "edit": {
     "title": "修改考勤 · {name} · {date}",
