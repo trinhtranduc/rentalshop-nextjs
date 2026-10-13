@@ -67,6 +67,7 @@ import {
 } from '../parts';
 import { ExportDialog } from '../timesheet-parts';
 import OutletMap from '../OutletMap';
+import { useBreadcrumbTail } from '../../components/shell/breadcrumb-tail';
 
 type DialogState =
   | { kind: 'map'; row: AttendancePersonRow }
@@ -220,6 +221,8 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
   const people = useMemo(() => (sheet.data?.users || []).map((u) => ({ id: personId(u), name: personName(u), days: normalizeDays(u.days) })), [sheet.data]);
   const userId = Number(params.get('userId')) || people[0]?.id || 0;
   const person = people.find((p) => p.id === userId) || null;
+  // #960 top bar: "Chấm công › Bảng công › <name>"
+  useBreadcrumbTail(person?.name);
   const detail = useLoad<AttendancePersonMonth>(userId ? () => must(attendanceApi.personMonth(userId, outlet.id, month)) : null, [userId, outlet.id, month]);
   const settings = useLoad<AttendanceSettings>(() => must(attendanceApi.getSettings(outlet.id)), [outlet.id]);
 

@@ -232,7 +232,6 @@
       "settings": "Store settings",
       "attendanceSub": {
         "timesheet": "Timesheet",
-        "person": "By person",
         "shifts": "Shifts",
         "templates": "Shift templates",
         "locations": "QR & location"
@@ -292,7 +291,8 @@
       "attendance": "Attendance",
       "notifications": "Notifications",
       "subscription": "Subscription",
-      "plans": "Plans"
+      "plans": "Plans",
+      "person": "By person"
     },
     "breadcrumb": "You are here",
     "searchOpen": "Open search"

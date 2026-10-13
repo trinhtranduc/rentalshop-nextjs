@@ -232,7 +232,6 @@
       "settings": "Cài đặt cửa hàng",
       "attendanceSub": {
         "timesheet": "Bảng công",
-        "person": "Chi tiết theo người",
         "shifts": "Xếp ca",
         "templates": "Mẫu ca",
         "locations": "Mã QR & vị trí"
@@ -292,7 +291,8 @@
       "attendance": "Chấm công",
       "notifications": "Thông báo",
       "subscription": "Gói dịch vụ",
-      "plans": "Bảng giá"
+      "plans": "Bảng giá",
+      "person": "Chi tiết theo người"
     },
     "breadcrumb": "Bạn đang ở",
     "searchOpen": "Mở tìm kiếm"

@@ -23,6 +23,8 @@ export interface ShellNavChild {
   href: string;
   /** Active only on `href` itself (the group's index page), not on its children. */
   exact?: boolean;
+  /** Other pages that belong to this entry without a menu row of their own (e.g. a detail reached from it). */
+  also?: string[];
 }
 
 export interface ShellNavItem {
@@ -59,8 +61,8 @@ const NAV: Record<ShellNavKey, ShellNavItem> = {
     module: 'attendance',
     keepQuery: ['outletId', 'month'],
     children: [
-      { key: 'timesheet', href: '/attendance', exact: true },
-      { key: 'person', href: '/attendance/person' },
+      // Chi tiết theo người is opened from Bảng công (a name or a cell), not from the menu.
+      { key: 'timesheet', href: '/attendance', exact: true, also: ['/attendance/person'] },
       { key: 'shifts', href: '/attendance/shifts' },
       { key: 'templates', href: '/attendance/templates' },
       { key: 'locations', href: '/attendance/locations' },
@@ -125,6 +127,7 @@ export function isNavActive(pathname: string | null | undefined, href: string): 
 /** `exact` children (Bảng công on `/attendance`) match only themselves; the rest match their children too. */
 export function isNavChildActive(pathname: string | null | undefined, child: ShellNavChild): boolean {
   if (!pathname) return false;
+  if ((child.also || []).some((href) => isNavActive(pathname, href))) return true;
   return child.exact ? pathname === child.href : isNavActive(pathname, child.href);
 }
 

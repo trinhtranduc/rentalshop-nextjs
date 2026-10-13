@@ -204,7 +204,6 @@
       "settings": "ストア設定",
       "attendanceSub": {
         "timesheet": "勤務表",
-        "person": "スタッフ別",
         "shifts": "シフト",
         "templates": "シフトテンプレート",
         "locations": "QRと位置"
@@ -264,7 +263,8 @@
       "attendance": "勤怠",
       "notifications": "通知",
       "subscription": "サブスクリプション",
-      "plans": "料金プラン"
+      "plans": "料金プラン",
+      "person": "スタッフ別"
     },
     "breadcrumb": "現在の場所",
     "searchOpen": "検索を開く"

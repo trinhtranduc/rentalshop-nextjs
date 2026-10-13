@@ -204,7 +204,6 @@
       "settings": "店铺设置",
       "attendanceSub": {
         "timesheet": "考勤表",
-        "person": "按员工",
         "shifts": "排班",
         "templates": "班次模板",
         "locations": "二维码与位置"
@@ -264,7 +263,8 @@
       "attendance": "考勤",
       "notifications": "通知",
       "subscription": "订阅",
-      "plans": "套餐"
+      "plans": "套餐",
+      "person": "按员工"
     },
     "breadcrumb": "当前位置",
     "searchOpen": "打开搜索"

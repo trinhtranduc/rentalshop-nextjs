@@ -8,11 +8,12 @@ import { ThemeSwitch } from './ThemeSwitch';
 import { NotificationBell } from './NotificationBell';
 import { ICONS, ShellIcon } from './Icon';
 import { buildBreadcrumb, isSearchShortcut } from './breadcrumb';
+import { useBreadcrumbTailValue } from './breadcrumb-tail';
 
 /** Where am I (#960): menu item › sub-item › page; every crumb but the last is a link. */
 function Breadcrumb() {
   const t = useCommonTranslations();
-  const crumbs = buildBreadcrumb(usePathname());
+  const crumbs = buildBreadcrumb(usePathname(), useBreadcrumbTailValue());
   if (crumbs.length === 0) return <span className="flex-1" />;
   const last = crumbs.length - 1;
   return (

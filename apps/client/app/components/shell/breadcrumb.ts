@@ -32,6 +32,7 @@ const WORDS: Record<string, string> = {
   related: 'related',
   'bank-accounts': 'bankAccounts',
   attendance: 'attendance',
+  person: 'person',
 };
 
 /** Parents whose `/{id}` has no page of its own (only children like `/outlets/5/bank-accounts`). */
@@ -51,7 +52,11 @@ function decode(segment: string): string {
   }
 }
 
-export function buildBreadcrumb(pathname: string | null | undefined): Crumb[] {
+/**
+ * `tail` (optional) is the current page's own name when the path cannot tell it, e.g. the person shown on
+ * Chi tiết theo người ("Chấm công › Bảng công › Nguyễn Lan"). It replaces the last crumb's label.
+ */
+export function buildBreadcrumb(pathname: string | null | undefined, tail?: string | null): Crumb[] {
   const path = cleanPath(pathname);
   if (!path) return [];
 
@@ -83,7 +88,7 @@ export function buildBreadcrumb(pathname: string | null | undefined): Crumb[] {
 
   // The current page is never a link.
   const last = crumbs[crumbs.length - 1];
-  crumbs[crumbs.length - 1] = { ...last, href: undefined };
+  crumbs[crumbs.length - 1] = tail ? { label: tail } : { ...last, href: undefined };
   return crumbs;
 }
 
