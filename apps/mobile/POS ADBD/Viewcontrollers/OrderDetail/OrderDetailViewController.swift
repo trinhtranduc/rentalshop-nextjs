@@ -689,11 +689,7 @@ final class OrderDetailViewController: BaseViewControler {
         var buttons: [UIButton] = []
         switch actions.primary {
         case .handOver:
-            if actions.canEdit {
-                let edit = makeButton(title: "Edit order".localized(), style: .outline)
-                edit.addTarget(self, action: #selector(editOrderTapped), for: .touchUpInside)
-                buttons.append(edit)
-            }
+            buttons.append(shortPrintButton())
             let due = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
                                                 securityDeposit: detail.securityDeposit, payments: payments).due
             let title = due > 0
@@ -703,11 +699,7 @@ final class OrderDetailViewController: BaseViewControler {
             primary.addTarget(self, action: #selector(handOverTapped), for: .touchUpInside)
             buttons.append(primary)
         case .takeReturn:
-            if canExtend(detail) {
-                let extend = makeButton(title: "order.extend".localized(), style: .outline)
-                extend.addTarget(self, action: #selector(extendTapped), for: .touchUpInside)
-                buttons.append(extend)
-            }
+            buttons.append(shortPrintButton())
             let primary = makeButton(title: "Take back items".localized(), style: .primary)
             primary.addTarget(self, action: #selector(takeReturnTapped), for: .touchUpInside)
             buttons.append(primary)
@@ -728,6 +720,14 @@ final class OrderDetailViewController: BaseViewControler {
         if buttons.count == 2 {
             buttons[1].snp.makeConstraints { make in make.width.equalTo(buttons[0]).multipliedBy(2) }
         }
+    }
+
+    /// #930: "In" (no icon) next to Giao đồ / Nhận trả; Edit and Extend are in the ⋯ sheet
+    private func shortPrintButton() -> UIButton {
+        let print = makeButton(title: "Print".localized(), style: .outline)
+        print.accessibilityIdentifier = "orderDetail.print"
+        print.addTarget(self, action: #selector(printTapped), for: .touchUpInside)
+        return print
     }
 
     // MARK: - ⋯ sheet (#519, board CT-thao-tac)
@@ -1218,19 +1218,6 @@ final class OrderActionSheet: V2FittingSheet {
         }
     }
 
-    private static func symbol(of action: OrderSheetAction) -> String {
-        switch action {
-        case .print: return "printer"
-        case .share: return "square.and.arrow.up"
-        case .notes: return "note.text"
-        case .edit: return "square.and.pencil"
-        case .extend: return "calendar.badge.plus"
-        case .history: return "clock.arrow.circlepath"
-        case .cancel: return "xmark"
-        case .delete: return "trash"
-        }
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         stack.spacing = 0
@@ -1267,25 +1254,13 @@ final class OrderActionSheet: V2FittingSheet {
     private func rowView(_ row: Row) -> UIView {
         let danger = row.action.isDestructive
         let control = UIControl()
-        let iconBox = UIView()
-        iconBox.backgroundColor = UIColor(hexString: danger ? "FEF2F2" : "F1F5F9")
-        iconBox.layer.cornerRadius = 10
-        iconBox.isUserInteractionEnabled = false
-        let icon = UIImageView(image: DS.symbol(OrderActionSheet.symbol(of: row.action), DS.Icon.md))
-        icon.tintColor = danger ? V2.danger : DS.Color.text
-        icon.contentMode = .center
-        iconBox.addSubview(icon)
-        icon.snp.makeConstraints { make in make.center.equalToSuperview() }
-        iconBox.snp.makeConstraints { make in make.size.equalTo(36) }
 
         let title = V2.label(row.title, size: 16, weight: .medium, color: danger ? V2.danger : DS.Color.text, lines: 2)
         let subtitle = V2.label(row.subtitle, size: DS.TextSize.secondary, color: UIColor(hexString: "475569"), lines: 2)
         subtitle.isHidden = (row.subtitle ?? "").isEmpty
-        let texts = UIStackView(arrangedSubviews: [title, subtitle])
-        texts.axis = .vertical
-        let line = UIStackView(arrangedSubviews: [iconBox, texts])
-        line.alignment = .center
-        line.spacing = 14
+        // #930: rows without icons, text only
+        let line = UIStackView(arrangedSubviews: [title, subtitle])
+        line.axis = .vertical
         line.isUserInteractionEnabled = false
         control.addSubview(line)
         line.snp.makeConstraints { make in
