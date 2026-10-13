@@ -14,45 +14,13 @@ jest.mock('@rentalshop/utils', () => ({
   ...(jest.requireActual('../packages/utils/src/core/shop-day') as object),
   SHOP_TIMEZONE: 'Asia/Ho_Chi_Minh',
 }));
-import { attendanceTabs, isAttendanceTabActive, locationRow } from '../apps/client/app/attendance/attendance-model';
+import { locationRow } from '../apps/client/app/attendance/attendance-model';
 import { LOCATIONS_HREF, attendanceLocationHref } from '../apps/client/app/attendance/locations/hrefs';
 
 const app = (p: string) => path.resolve(__dirname, '../apps/client/app', p);
 const read = (p: string) => fs.readFileSync(app(p), 'utf8');
 
-describe('attendanceTabs', () => {
-  it('owner and outlet admin with the module get the five tabs, locations last', () => {
-    for (const role of ['MERCHANT', 'OUTLET_ADMIN', ' outlet_admin ']) {
-      expect(attendanceTabs(role, ['attendance']).map((t) => t.key)).toEqual(['timesheet', 'person', 'shifts', 'templates', 'locations']);
-    }
-    expect(attendanceTabs('MERCHANT', ['attendance']).find((t) => t.key === 'locations')?.href).toBe('/attendance/locations');
-  });
-
-  it('no tabs without the module', () => {
-    expect(attendanceTabs('MERCHANT', [])).toEqual([]);
-    expect(attendanceTabs('OUTLET_ADMIN', ['loyalty'])).toEqual([]);
-  });
-
-  it('no tabs for staff, kho or no role', () => {
-    for (const role of ['OUTLET_STAFF', 'OUTLET_INVENTORY', '', null, undefined]) {
-      expect(attendanceTabs(role, ['attendance'])).toEqual([]);
-    }
-  });
-});
-
-describe('isAttendanceTabActive', () => {
-  it('Bảng công only on /attendance itself', () => {
-    expect(isAttendanceTabActive('/attendance', '/attendance')).toBe(true);
-    expect(isAttendanceTabActive('/attendance/locations', '/attendance')).toBe(false);
-  });
-
-  it('Mã QR & vị trí on the list and on a branch page', () => {
-    expect(isAttendanceTabActive('/attendance/locations', '/attendance/locations')).toBe(true);
-    expect(isAttendanceTabActive('/attendance/locations/12', '/attendance/locations')).toBe(true);
-    expect(isAttendanceTabActive('/attendance/locationsx', '/attendance/locations')).toBe(false);
-    expect(isAttendanceTabActive(null, '/attendance/locations')).toBe(false);
-  });
-});
+// #960: the five screens moved from a tab strip into the sidebar sub-menu (tests/web-shell-nav.test.ts).
 
 describe('location hrefs', () => {
   it('list and branch page', () => {
@@ -114,8 +82,12 @@ describe('pages', () => {
     expect(src).not.toMatch(/attendance/i);
   });
 
-  it('the Chấm công tab strip reads the tab model', () => {
-    expect(read('attendance/parts.tsx')).toMatch(/attendanceTabs\(/);
+  it('no attendance page renders the old top tab strip (#960); back links stay', () => {
+    for (const p of ['attendance/parts.tsx', 'attendance/page.tsx', 'attendance/person/page.tsx', 'attendance/shifts/page.tsx',
+      'attendance/templates/page.tsx', 'attendance/locations/page.tsx', 'attendance/locations/[id]/page.tsx']) {
+      expect(read(p)).not.toMatch(/AttendanceTabs|attendanceTabs/);
+    }
+    expect(read('attendance/locations/[id]/page.tsx')).toMatch(/href=\{LOCATIONS_HREF\}/);
   });
 });
 
