@@ -72,6 +72,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'SHIFT_LOCKED': 'Past days and days already worked cannot be changed.',
   'SHIFT_TEMPLATE_IN_USE': 'This shift is in use. Hide it instead of deleting it.',
   'MONTH_LOCKED': 'This month is locked. Ask the shop owner to unlock it.',
+  'ATTENDANCE_NOT_REQUIRED': 'This person is not set to clock in at this shop. Turn it on in Branches › Attendance first.',
   'CATEGORY_NAME_REQUIRED': 'Category name is required',
   'ROLE_NOT_AVAILABLE': 'This role cannot be assigned yet',
   'OUTLET_NAME_ADDRESS_REQUIRED': 'Outlet name and address are required',

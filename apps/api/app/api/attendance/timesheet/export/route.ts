@@ -40,7 +40,7 @@ export const GET = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { u
   if (parts.size === 0) PARTS.forEach((p) => parts.add(p));
 
   const outlet = await resolveOutlet(user, parsed.data.outletId);
-  const sheet = await loadTimesheet(outlet.id, parsed.data.month);
+  const sheet = await loadTimesheet(outlet.id, parsed.data.month, user.merchantId);
   const names = new Map(sheet.users.map((u) => [u.userId, u.name]));
   const workbook = XLSX.utils.book_new();
 

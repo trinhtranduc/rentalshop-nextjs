@@ -2,6 +2,7 @@
 import { db } from '@rentalshop/database';
 import { monthRange, recordHours, shiftDeltas } from './rules';
 import type { RecordRow } from './views';
+import { listedPeople, type MemberRow } from './members';
 
 export interface DayCell {
   hours: number;
@@ -60,19 +61,21 @@ export function fullName(u: { firstName?: string | null; lastName?: string | nul
   return [u?.firstName, u?.lastName].filter(Boolean).join(' ').trim();
 }
 
-/** Users of the timesheet: active users of the outlet plus anyone with records there that month. */
-export async function loadTimesheet(outletId: number, month: string, now: Date = new Date()) {
+/**
+ * Users of the timesheet: #927 chosen members of the outlet (people who must clock in, the owner too when
+ * chosen) plus anyone with records there that month.
+ */
+export async function loadTimesheet(outletId: number, month: string, merchantId: number, now: Date = new Date()) {
   const { from, to } = monthRange(month);
   await db.attendance.autoCloseOverdue({ outletId }, now);
-  const [records, outletUsers, locked] = await Promise.all([
+  const [records, members, locked] = await Promise.all([
     db.attendance.listRecords({ outletId, from, to }),
-    db.attendance.listOutletUsers(outletId),
+    db.attendance.listMembers(outletId, merchantId),
     db.attendance.isMonthLocked(outletId, month),
   ]);
-  const known = new Set<number>(outletUsers.map((u: { id: number }) => u.id));
-  const missing = [...new Set<number>(records.map((r: RecordRow) => r.userId))].filter((id) => !known.has(id));
+  const { listed, missing } = listedPeople<MemberRow>(members, records.map((r: RecordRow) => r.userId));
   const extra = missing.length > 0 ? await db.attendance.findUsersByIds(missing) : [];
-  const users = [...outletUsers, ...extra] as Array<{ id: number; firstName?: string | null; lastName?: string | null; role?: string }>;
+  const users = [...listed, ...extra] as Array<{ id: number; firstName?: string | null; lastName?: string | null; role?: string }>;
   const rows = users.map((u) => {
     const days = daysOfUser(records.filter((r: RecordRow) => r.userId === u.id));
     return { userId: u.id, name: fullName(u), role: u.role ?? null, days, totals: totalsOf(days) };

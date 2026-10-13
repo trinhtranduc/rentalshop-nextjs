@@ -501,7 +501,8 @@ const signQr = (payload) => {
     const edited = await must(oa.patch(`/api/attendance/records/${manual.id}`, { checkOutAt: `${yesterday}T11:00:00+07:00`, reason: 'Về muộn' }), 'edit');
     expect(edited.hours).toBe(3);
 
-    // OUTLET_ADMIN punches for themselves, then cannot edit or add their own record; the owner can
+    // OUTLET_ADMIN punches for themselves (#927: once the owner chose them), then cannot edit or add their own record; the owner can
+    await must(m.put('/api/attendance/members', { outletId: world.outletId, userId: ids.oa, required: true }), 'pick oa');
     const pIn = await must(punch(oa), 'oa in');
     await must(punch(oa), 'oa out');
     expect((await oa.patch(`/api/attendance/records/${pIn.record.id}`, { checkOutAt: new Date().toISOString(), reason: 'tự sửa' })).status).toBe(403);

@@ -3,6 +3,7 @@
 /**
  * Chi nhánh → Mở › → ⏱ Chấm công (#908, #907 rules 7–11): the outlet's location and radius (shop owner),
  * QR code (daily / fixed, print A5, new code) and the counter (kiosk) link. Name, address and phone are read only.
+ * #927 below: who must clock in at this outlet.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -31,6 +32,7 @@ import {
 } from '../../../attendance/parts';
 import OutletMap, { type LatLng } from '../../../attendance/OutletMap';
 import { outletAddress, type OutletLike } from '../../outlets-model';
+import MembersCard from './MembersCard';
 
 type DialogKind = 'save' | 'print' | 'kiosk' | 'newCode' | null;
 
@@ -294,6 +296,8 @@ export default function OutletAttendancePage() {
               )}
             </section>
           </div>
+
+          <MembersCard outletId={outletId} callerRole={access.role} />
 
           <Dialog
             open={dialog === 'save'}

@@ -30,6 +30,8 @@ export const mockDb: any = {
     lastRecord: fn(),
     getScheduleData: fn(),
     listOutletUsers: fn(),
+    listMembers: fn(),
+    setRequired: fn(),
     findUsersByIds: fn(),
     listOutletScans: fn(),
     getUserInMerchant: fn(),
@@ -158,15 +160,29 @@ export function resetAttendanceMocks() {
   a.getScheduleData.mockResolvedValue({ rules: [], dayChanges: [], templates: [] });
   a.workedDays.mockResolvedValue([]);
   a.isMonthLocked.mockResolvedValue(false);
+  a.listRecords.mockResolvedValue([]);
   a.findUsersByIds.mockResolvedValue([]);
   a.listOutletScans.mockResolvedValue([]);
   a.listOutletUsers.mockResolvedValue([
     { id: 7, firstName: 'Bình', lastName: 'Tran', role: 'OUTLET_STAFF', outletId: 1 },
     { id: 8, firstName: 'Chi', lastName: 'Ng', role: 'OUTLET_ADMIN', outletId: 1 },
   ]);
+  // #927 members of outlet 1: staff 7 (role default), outlet admin 8 chosen by the shop
+  a.listMembers.mockResolvedValue([
+    { id: 7, firstName: 'Bình', lastName: 'Tran', role: 'OUTLET_STAFF', outletId: 1, attendanceRequired: null },
+    { id: 8, firstName: 'Chi', lastName: 'Ng', role: 'OUTLET_ADMIN', outletId: 1, attendanceRequired: true },
+  ]);
   a.getUserInMerchant.mockImplementation(async (userId: number, merchantId: number) =>
     merchantId === 2 && [7, 8, 10].includes(userId)
-      ? { id: userId, firstName: 'U', lastName: String(userId), role: userId === 8 ? 'OUTLET_ADMIN' : 'OUTLET_STAFF', outletId: 1, merchantId: 2 }
+      ? {
+          id: userId,
+          firstName: 'U',
+          lastName: String(userId),
+          role: userId === 8 ? 'OUTLET_ADMIN' : 'OUTLET_STAFF',
+          outletId: 1,
+          merchantId: 2,
+          attendanceRequired: userId === 8 ? true : null,
+        }
       : null
   );
   mockDb.auditLogs.create.mockResolvedValue({ id: 1 });

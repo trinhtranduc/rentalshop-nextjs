@@ -359,6 +359,16 @@
     "saveLocationSub": "Toạ độ mới: {coords}",
     "saveNote": "Áp dụng ngay cho các lần quét tiếp theo."
   },
+  "members": {
+    "title": "Ai cần chấm công ở chi nhánh này",
+    "hint": "Chỉ người được chọn thấy thẻ Chấm công trên app, có trong Xếp ca và Bảng công",
+    "note": "Mặc định: nhân viên và kho được chọn; admin chi nhánh và chủ shop không. Bỏ chọn: người đó không thấy gì về chấm công, không được xếp ca mới; công cũ vẫn giữ.",
+    "toggle": "{name} cần chấm công",
+    "on": "{name}: cần chấm công",
+    "off": "{name}: không cần chấm công",
+    "ownerOnly": "Chỉ chủ shop đổi được",
+    "empty": "Chi nhánh chưa có ai."
+  },
   "newCode": {
     "title": "Tạo mã QR mới?",
     "body": "Mã đang dùng hết hiệu lực ngay. Nếu chi nhánh dùng QR cố định, phải in và dán lại mã mới. Máy quầy tự đổi.",

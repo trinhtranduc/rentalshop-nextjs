@@ -86,10 +86,13 @@ export async function resolveOutlet(user: AttendanceUser, outletId: number) {
   return outlet;
 }
 
-/** A user of the caller's merchant who works at `outletId` (else 404). */
+/**
+ * A user of the caller's merchant who works at `outletId` (else 404). #927 the shop's owners (MERCHANT) count at
+ * every outlet: they can be chosen to clock in and then scheduled anywhere.
+ */
 export async function resolveOutletUser(user: AttendanceUser, userId: number, outletId: number) {
   const target = await db.attendance.getUserInMerchant(userId, user.merchantId);
-  if (!target || (target.outletId !== outletId && !(target.role === 'MERCHANT' && target.id === user.id))) {
+  if (!target || (target.outletId !== outletId && target.role !== 'MERCHANT')) {
     throw new AttendanceHttpError('USER_NOT_FOUND', 404);
   }
   return target;
