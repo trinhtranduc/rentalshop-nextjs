@@ -89,6 +89,13 @@ describe('pages', () => {
     }
     expect(read('attendance/locations/[id]/page.tsx')).toMatch(/href=\{LOCATIONS_HREF\}/);
   });
+
+  it('every attendance dropdown uses the shared Select (own chevron, room on the right) (#960)', () => {
+    for (const p of ['attendance/parts.tsx', 'attendance/person/page.tsx', 'attendance/locations/[id]/page.tsx']) {
+      expect(read(p)).not.toMatch(/<select\s(?!\{\.\.\.props\})/);
+    }
+    expect(read('attendance/parts.tsx')).toMatch(/appearance-none[^']*pr-9/);
+  });
 });
 
 describe('Chi nhánh is owner-only again (#945)', () => {

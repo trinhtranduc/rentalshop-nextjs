@@ -24,6 +24,43 @@ export const dangerBtn =
   'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-ar-danger px-3.5 text-[15px] font-semibold text-white hover:opacity-95 disabled:opacity-50';
 export const inputClass =
   'h-10 w-full rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-[15px] text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none disabled:opacity-60';
+/** Native select look shared by every attendance dropdown (#960): own chevron with room for it. */
+export const selectClass =
+  'h-10 w-full cursor-pointer appearance-none rounded-[10px] border border-ar-line-strong bg-ar-surface pl-3 pr-9 text-[15px] text-ar-ink focus:border-ar-primary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+
+/**
+ * `<select>` with its own chevron (#960: the native arrow sat on the border when a select used the button class).
+ * `className` styles the select (border, colour, weight); `wrapClassName` sizes the box.
+ */
+export function Select({
+  className = '',
+  wrapClassName = '',
+  children,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement> & { wrapClassName?: string }) {
+  return (
+    <span className={`relative inline-flex min-w-0 ${wrapClassName}`}>
+      <select {...props} className={`${selectClass} ${className}`}>
+        {children}
+      </select>
+      <svg
+        aria-hidden="true"
+        width={16}
+        height={16}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ar-muted"
+      >
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </span>
+  );
+}
+
 export const labelClass = 'flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-ar-ink-2';
 export const thClass = 'whitespace-nowrap border-b border-ar-line bg-ar-surface-muted px-2 py-2 text-left text-[13px] font-semibold text-ar-muted';
 export const tdClass = 'border-b border-ar-line-soft px-2 py-2 align-top tabular-nums';
@@ -317,13 +354,13 @@ export function OutletPicker({ outlets, outlet }: { outlets: OutletOption[]; out
   const { set } = useQueryState();
   if (outlets.length < 2) return <span className={`${outlineBtn} cursor-default font-normal`}>🏬 {outlet.name}</span>;
   return (
-    <select aria-label={t('common.outlet')} value={outlet.id} onChange={(e) => set({ outletId: Number(e.target.value) })} className={`${outlineBtn} font-normal`}>
+    <Select aria-label={t('common.outlet')} value={outlet.id} onChange={(e) => set({ outletId: Number(e.target.value) })} className="border-ar-line">
       {outlets.map((o) => (
         <option key={o.id} value={o.id}>
           🏬 {o.name}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 
