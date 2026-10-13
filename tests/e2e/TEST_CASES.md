@@ -760,6 +760,19 @@ bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi
 | BF-ADD-20 | Tăng / giảm số gói (#870) | 1 gói +2 user; `PATCH packs: 3`; `PATCH packs: 1`; gia hạn | tăng: thu ngay round(40.000 ÷ 30 × 2 × ngày còn), cột users 6, giới hạn 9; giảm: không thu, `nextPacks` 1, giới hạn vẫn 9, xem trước gia hạn add-on 40.000; sau gia hạn packs 1, users 2, giới hạn 5 |
 | BF-ADD-21 | Kỳ dài hơn một chu kỳ (#870) | kỳ tháng đã gia hạn thêm, còn 60 ngày; mua 1 gói 40.000 | thu round(40.000 ÷ 30 × ngày còn) = 80.000 khi còn 60 ngày; Payment `PLAN_CHANGE` đúng số đó |
 
+## BF-FEAT — Chấm công bán như add-on tính năng (`feature-addon.e2e.test.js`, #943; chủ shop chốt 2026-10-13)
+
+Mỗi ca tự tạo merchant và gói 399.000 ₫/tháng; kỳ 1 tháng còn khoảng 18 ngày Việt Nam. Dòng giá "Chấm công" 99.000 ₫/tháng.
+
+| ID | Ca | Bước | Mong đợi |
+|---|---|---|---|
+| BF-FEAT-01 | Dòng "Tính năng" | ADMIN `POST /api/addon-prices` `limitKind: feature`, `featureKey: attendance`; mã lạ | 201, `packSize` 1; mã lạ 400; danh sách có `featureKey` |
+| BF-FEAT-02 | Mua giữa kỳ | hồ sơ shop trước; mua (gửi `packs: 3`, `CASH`); hồ sơ sau; mua lần 2 | trước: `modules` [], `/attendance/me` 403 `MODULE_NOT_ENABLED`; thu round(99.000 ÷ 30 × ngày còn), Payment `PLAN_CHANGE` `CASH`, packs 1, cột giới hạn 0; sau: `modules` [attendance], `/attendance/me` 200; lần 2: 422 `ADDON_FEATURE_ALREADY_ON` |
+| BF-FEAT-03 | Dùng thử | TRIAL; mua | thu 0, không có Payment; module bật |
+| BF-FEAT-04 | Gia hạn | xem trước; gia hạn 1 tháng | 399.000 + 99.000 = 498.000; module vẫn bật |
+| BF-FEAT-05 | Tắt từ kỳ sau | `PATCH removeAtPeriodEnd`; xem trước; `PATCH packs`; cho hết kỳ | `endsAt` = cuối kỳ, không thu/hoàn; vẫn bật; gia hạn chỉ 399.000; packs 400 `INVALID_INPUT`; hết kỳ: `modules` [], dòng vẫn còn |
+| BF-FEAT-06 | Bật kiểu cũ (#907) | `PUT /modules/attendance` bật; mua add-on | bật kiểu cũ vẫn tính; `legacyModules` có attendance; sau khi mua: dòng `MerchantModule` `enabled` false (không xoá), module vẫn bật |
+
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 
 Chạy: cần API cục bộ và client chạy từ thư mục `.next` RIÊNG (hai `next dev` trong cùng `apps/client` ghi đè bundle của nhau).
