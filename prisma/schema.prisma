@@ -1180,6 +1180,9 @@ model AttendanceSetting {
   /// 256-bit random token of the counter (kiosk) link; stored so the link can be copied again
   kioskToken   String?   @unique
   kioskTokenAt DateTime?
+  /// #959 when the four ready-made shift templates were created (or skipped: the outlet had templates). Set once;
+  /// deleting the templates never creates them again.
+  templatesSeededAt DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   outlet       Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
