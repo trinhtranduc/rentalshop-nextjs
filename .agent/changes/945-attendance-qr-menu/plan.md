@@ -1,6 +1,6 @@
 # #945 Plan
 
-Status: in-progress
+Status: done
 
 1. Tests first (commit): `tests/web-attendance-locations.test.ts`: tab list and visibility by role / module,
    active tab, location hrefs, row view (QR status, radius), old page redirects, `/outlets` page has no attendance.

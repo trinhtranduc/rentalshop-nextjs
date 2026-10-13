@@ -1,6 +1,6 @@
 # #945 Spec
 
-Status: in-progress
+Status: done
 
 1. Chấm công tabs: Bảng công, Chi tiết theo người, Xếp ca, Mẫu ca, **Mã QR & vị trí** (`/attendance/locations`).
    Shown only when the shop has the `attendance` module and the role is MERCHANT or OUTLET_ADMIN (same gate as

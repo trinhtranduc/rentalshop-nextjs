@@ -1,6 +1,6 @@
 # #945 Web: QR and location under the Chấm công menu
 
-Status: in-progress
+Status: done
 
 ## What
 Move the per-branch attendance page (location, radius, QR mode, print / kiosk / new code, who must clock in)
