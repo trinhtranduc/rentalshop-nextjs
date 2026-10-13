@@ -23,7 +23,7 @@ import { POST as stopRule } from '../../apps/api/app/api/attendance/shift-rules/
 import { PUT as putDay } from '../../apps/api/app/api/attendance/shifts/day/route';
 import { GET as getShifts } from '../../apps/api/app/api/attendance/shifts/route';
 import { DELETE as deleteTemplate, PATCH as patchTemplate } from '../../apps/api/app/api/attendance/shift-templates/[id]/route';
-import { POST as createTemplate } from '../../apps/api/app/api/attendance/shift-templates/route';
+import { GET as listTemplates, POST as createTemplate } from '../../apps/api/app/api/attendance/shift-templates/route';
 
 const today = formatDateKeyInTimeZone(new Date(), 'Asia/Ho_Chi_Minh');
 const yesterday = addDaysToDateKey(today, -1);
@@ -54,6 +54,33 @@ describe('shift templates (#907 rule 19)', () => {
     expect(mockDb.attendance.createTemplate).toHaveBeenCalledWith(
       expect.objectContaining({ merchantId: 2, outletId: 1, name: 'Ca đêm', startTime: '22:00', endTime: '06:00' })
     );
+  });
+
+  it('#959 GET seeds the four ready-made templates for the outlet, then lists', async () => {
+    const order: string[] = [];
+    mockDb.attendance.seedDefaultTemplates.mockImplementation(async () => { order.push('seed'); return true; });
+    mockDb.attendance.listTemplates.mockImplementation(async () => { order.push('list'); return [T1, T2]; });
+    mockDb.attendance.usedTemplateIds.mockResolvedValue(new Set([1]));
+    const res: any = await listTemplates(req('/api/attendance/shift-templates?outletId=1'));
+    expect(res.status).toBe(200);
+    expect(mockDb.attendance.seedDefaultTemplates).toHaveBeenCalledWith(1, 2);
+    expect(order).toEqual(['seed', 'list']);
+    expect(res.body.data).toHaveLength(2);
+    expect(res.body.data[0]).toMatchObject({ id: 1, name: 'Ca sáng', used: true });
+  });
+
+  it('#959 GET for another outlet (outlet admin of outlet 1) does not seed', async () => {
+    const res: any = await listTemplates(req('/api/attendance/shift-templates?outletId=2'));
+    expect(res.status).toBe(403);
+    expect(mockDb.attendance.seedDefaultTemplates).not.toHaveBeenCalled();
+  });
+
+  it('#959 only GET seeds: POST does not', async () => {
+    mockDb.attendance.createTemplate.mockImplementation(async (d: any) => ({ id: 3, ...d }));
+    await createTemplate(
+      req('/api/attendance/shift-templates', { outletId: 1, name: 'X', startTime: '08:00', endTime: '12:00', breakMinutes: 0, color: 'blue' })
+    );
+    expect(mockDb.attendance.seedDefaultTemplates).not.toHaveBeenCalled();
   });
 
   it('staff cannot manage templates', async () => {
