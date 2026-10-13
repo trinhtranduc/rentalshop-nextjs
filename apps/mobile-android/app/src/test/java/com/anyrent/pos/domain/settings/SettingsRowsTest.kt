@@ -15,7 +15,7 @@ class SettingsRowsTest {
         val merchant = SettingsRows.sections("MERCHANT", hasPlan = true)
         assertEquals(listOf(SettingsGroup.STORE, SettingsGroup.MANAGEMENT, SettingsGroup.ACCOUNT), merchant.map { it.group })
         assertEquals(
-            listOf(SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER, SettingsItem.BANK_ACCOUNTS),
+            listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER, SettingsItem.BANK_ACCOUNTS),
             merchant[0].items,
         )
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
@@ -34,6 +34,25 @@ class SettingsRowsTest {
 
         // ADMIN has no plan of its own
         assertFalse(SettingsRows.sections("ADMIN", hasPlan = true).flatMap { it.items }.contains(SettingsItem.PLAN))
+    }
+
+    /** #937: "Thông báo" is the first row of CỬA HÀNG for every role (the Home bell became the cart button) */
+    @Test
+    fun notificationsRowFirstForEveryRole() {
+        for (role in listOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", null)) {
+            val store = SettingsRows.sections(role, hasPlan = false).first()
+            assertEquals(role, SettingsGroup.STORE, store.group)
+            assertEquals(role, SettingsItem.NOTIFICATIONS, store.items.first())
+        }
+    }
+
+    /** #937: the row's badge is the unread count, capped at 99, hidden at 0 */
+    @Test
+    fun notificationsRowUnreadBadge() {
+        assertNull(SettingsRows.unreadBadge(0))
+        assertNull(SettingsRows.unreadBadge(-1))
+        assertEquals("2", SettingsRows.unreadBadge(2))
+        assertEquals("99", SettingsRows.unreadBadge(250))
     }
 
     @Test

@@ -579,7 +579,7 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
     func testSettingsRowsByRole() {
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms, hasPlan: true)
         XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
-        XCTAssertEqual(merchant[0].items, [.storeInfo, .receiptNote, .printer, .bankAccounts])
+        XCTAssertEqual(merchant[0].items, [.notifications, .storeInfo, .receiptNote, .printer, .bankAccounts])
         XCTAssertEqual(merchant[1].items, [.categories, .users, .export])
         XCTAssertEqual(merchant[2].items, [.plan, .language, .password, .appInfo, .deleteAccount])
 
@@ -593,6 +593,23 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
         XCTAssertFalse(staff.flatMap(\.items).contains(.users))
         XCTAssertFalse(staff.flatMap(\.items).contains(.export))
         XCTAssertFalse(staff.flatMap(\.items).contains(.categories), "#632: staff cannot add a category")
+    }
+
+    /// #937: "Thông báo" is the first row of CỬA HÀNG for every role (the Home bell became the cart button)
+    func testNotificationsRowFirstForEveryRole() {
+        for role: Role in [.admin, .merchant, .outletAdmin, .outletStaff, .outletInventory] {
+            let store = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).first
+            XCTAssertEqual(store?.group, .store, "\(role)")
+            XCTAssertEqual(store?.items.first, .notifications, "\(role)")
+        }
+    }
+
+    /// #937: the row's badge is the unread count, capped at 99, hidden at 0
+    func testNotificationsRowUnreadBadge() {
+        XCTAssertNil(SettingsV2Logic.unreadBadge(0))
+        XCTAssertNil(SettingsV2Logic.unreadBadge(-1))
+        XCTAssertEqual(SettingsV2Logic.unreadBadge(2), "2")
+        XCTAssertEqual(SettingsV2Logic.unreadBadge(250), "99")
     }
 
     func testPlanParsingAndText() throws {
