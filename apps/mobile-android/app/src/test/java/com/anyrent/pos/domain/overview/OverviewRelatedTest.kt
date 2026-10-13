@@ -100,4 +100,25 @@ class OverviewRelatedTest {
         assertEquals(1600.0, older.heldCash, 0.0)
         assertEquals(1000.0, OverviewLogic.reportFromJson(JSONObject("""{"revenue":{"collected":1000}}""")).heldCash, 0.0)
     }
+
+    /** #938: Thế chân also lists the orders holding collateral now (outlet-operations `collateralHeld`); total and count stay the period rows */
+    @Test
+    fun heldCollateralRowsAreListedButNotSummed() {
+        val held = OverviewRelated.heldRows(
+            JSONObject(
+                """{"collateralHeld":{"count":3,"orders":[
+                  {"id":7,"orderNumber":"100007","customerName":"Lan","securityDeposit":2000000},
+                  {"id":8,"orderNumber":"100008","customerName":null,"securityDeposit":500000},
+                  {"id":9,"orderNumber":"100009","securityDeposit":0}]}}""",
+            ),
+        )
+        assertEquals(listOf("100007", "100008"), held.map { it.orderNumber })
+        assertEquals(listOf(2_000_000.0, 500_000.0), held.map { it.amount })
+        assertEquals(listOf("Lan", ""), held.map { it.customer })
+        assertTrue(held.all { it.note == RelatedNote.HELD })
+        val period = OverviewRelated.rows(OverviewRelatedKind.COLLATERAL, listOf(row(1, status = "PICKUPED", collateral = 300.0)))
+        assertEquals(300.0, OverviewRelated.total(held + period), 0.0)
+        assertEquals(1, OverviewRelated.count(held + period))
+        assertTrue(OverviewRelated.heldRows(JSONObject("{}")).isEmpty())
+    }
 }

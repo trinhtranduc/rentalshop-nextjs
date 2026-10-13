@@ -352,7 +352,8 @@
         "event": "",
         "owes": "Sẽ thu khi khách lấy đồ",
         "collateralIn": "Nhận thế chân khi giao",
-        "collateralOut": "Trả thế chân khi nhận đồ"
+        "collateralOut": "Trả thế chân khi nhận đồ",
+        "held": "Đang giữ thế chân"
       },
       "event": {
         "saleCreated": "Đơn bán được tạo",

@@ -24,9 +24,11 @@ struct TodayWork: Codable {
     /// Missing or null on an older API: the "Ngày mai" group is hidden
     let tomorrowPickups: TodayWorkGroup?
     let tomorrowReturns: TodayWorkGroup?
+    /// #938: rentals out with collateral, only when asked (`collateralHeld=1`) and the user sees money; nil otherwise
+    var collateralHeld: TodayWorkGroup? = nil
 
     enum CodingKeys: String, CodingKey {
-        case date, pickupsToday, returnsToday, overdueReturns, noShows, tomorrowPickups, tomorrowReturns
+        case date, pickupsToday, returnsToday, overdueReturns, noShows, tomorrowPickups, tomorrowReturns, collateralHeld
     }
 
     init(from decoder: Decoder) throws {
@@ -38,6 +40,7 @@ struct TodayWork: Codable {
         noShows = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .noShows) ?? .empty
         tomorrowPickups = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .tomorrowPickups)
         tomorrowReturns = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .tomorrowReturns)
+        collateralHeld = (try? c.decodeIfPresent(TodayWorkGroup.self, forKey: .collateralHeld)) ?? nil
     }
 }
 
@@ -72,10 +75,12 @@ struct TodayWorkRow: Codable {
     let amountDue: Double
     let refundDue: Double
     let lateDays: Int
+    /// #938: the order's collateral (Thế chân "đang giữ" list); 0 when missing
+    var securityDeposit: Double = 0
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, customerPhone, pickupPlanAt, returnPlanAt
-        case isReadyToDeliver, productNames, totalAmount, amountDue, refundDue, lateDays, items
+        case isReadyToDeliver, productNames, totalAmount, amountDue, refundDue, lateDays, items, securityDeposit
     }
 
     private struct Item: Codable {
@@ -114,6 +119,7 @@ struct TodayWorkRow: Codable {
         amountDue = (try? c.decode(Double.self, forKey: .amountDue)) ?? 0
         refundDue = (try? c.decode(Double.self, forKey: .refundDue)) ?? 0
         lateDays = (try? c.decode(Int.self, forKey: .lateDays)) ?? 0
+        securityDeposit = (try? c.decode(Double.self, forKey: .securityDeposit)) ?? 0
         // Item names with quantity ("Áo dài ×2", board Main) when the API sends them; otherwise the joined names
         let items = (try? c.decode([Item].self, forKey: .items)) ?? []
         let fromItems = items.compactMap { item -> String? in
@@ -139,5 +145,6 @@ struct TodayWorkRow: Codable {
         try c.encode(amountDue, forKey: .amountDue)
         try c.encode(refundDue, forKey: .refundDue)
         try c.encode(lateDays, forKey: .lateDays)
+        try c.encode(securityDeposit, forKey: .securityDeposit)
     }
 }

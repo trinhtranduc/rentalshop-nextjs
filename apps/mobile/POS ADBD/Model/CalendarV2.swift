@@ -73,10 +73,18 @@ struct CalendarDayOrder: Decodable, Equatable {
     let returnPlanAt: Date?
     /// #893: "Sẵn sàng giao" on a hand-over row; nil on an older API (treated as not prepared)
     var isReadyToDeliver: Bool? = nil
+    /// #938: days past the return day, sent by outlet-operations `overdueReturns` (by-date leaves it out)
+    var lateDays: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, status, orderType, totalAmount, orderItems, amountDue, refundDue, lateFee
-        case createdAt, pickupPlanAt, returnPlanAt, isReadyToDeliver
+        case createdAt, pickupPlanAt, returnPlanAt, isReadyToDeliver, lateDays, items
+    }
+
+    /// outlet-operations rows name their items `items: [{ name, quantity }]` (#938)
+    private struct OperationsItem: Decodable {
+        let name: String?
+        let quantity: Int?
     }
 
     init(id: Int, orderNumber: String, customerName: String?, status: String?, orderType: String?,
@@ -105,7 +113,9 @@ struct CalendarDayOrder: Decodable, Equatable {
         status = (try? c.decodeIfPresent(String.self, forKey: .status)) ?? nil
         orderType = (try? c.decodeIfPresent(String.self, forKey: .orderType)) ?? nil
         totalAmount = ((try? c.decodeIfPresent(Double.self, forKey: .totalAmount)) ?? nil) ?? 0
-        orderItems = ((try? c.decodeIfPresent([Item].self, forKey: .orderItems)) ?? nil) ?? []
+        let operationsItems = ((try? c.decodeIfPresent([OperationsItem].self, forKey: .items)) ?? nil) ?? []
+        orderItems = ((try? c.decodeIfPresent([Item].self, forKey: .orderItems)) ?? nil)
+            ?? operationsItems.map { Item(productName: $0.name, quantity: $0.quantity) }
         amountDue = (try? c.decodeIfPresent(Double.self, forKey: .amountDue)) ?? nil
         refundDue = (try? c.decodeIfPresent(Double.self, forKey: .refundDue)) ?? nil
         lateFee = (try? c.decodeIfPresent(Double.self, forKey: .lateFee)) ?? nil
@@ -113,6 +123,21 @@ struct CalendarDayOrder: Decodable, Equatable {
         pickupPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .pickupPlanAt)) ?? nil
         returnPlanAt = (try? c.decodeIfPresent(Date.self, forKey: .returnPlanAt)) ?? nil
         isReadyToDeliver = (try? c.decodeIfPresent(Bool.self, forKey: .isReadyToDeliver)) ?? nil
+        lateDays = (try? c.decodeIfPresent(Int.self, forKey: .lateDays)) ?? nil
+    }
+}
+
+/// #938: the rentals still out past their return day, `data.overdueReturns.orders` of GET /api/analytics/outlet-operations
+/// (the web calendar's `useLateReturns`). Shown under today's returns.
+struct CalendarLateReturns: Decodable {
+    let orders: [CalendarDayOrder]
+
+    private enum CodingKeys: String, CodingKey { case overdueReturns }
+    private struct Group: Decodable { let orders: [CalendarDayOrder]? }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        orders = ((try? c.decodeIfPresent(Group.self, forKey: .overdueReturns)) ?? nil)?.orders ?? []
     }
 }
 
@@ -252,12 +277,22 @@ enum CalendarV2Logic {
         max(0, days(from: dayKey, to: todayKey))
     }
 
-    /// Hand-overs first, then returns, in the API order
+    /// Hand-overs first, then returns, in the API order. #938: on today, then the late returns (`late`, rentals still out
+    /// past their return day) not listed yet, each with its own days late, as the web calendar; other days ignore `late`.
     static func rows(dayKey: String, todayKey: String, pickups: [CalendarDayOrder],
-                     returns: [CalendarDayOrder]) -> [CalendarDayRow] {
+                     returns: [CalendarDayOrder], late lateReturns: [CalendarDayOrder] = [],
+                     timeZone: TimeZone = Date.shopTimeZone) -> [CalendarDayRow] {
         let late = lateDays(dayKey: dayKey, todayKey: todayKey)
-        return pickups.map { CalendarDayRow(kind: .handOver, order: $0, lateDays: late) }
+        var rows = pickups.map { CalendarDayRow(kind: .handOver, order: $0, lateDays: late) }
             + returns.map { CalendarDayRow(kind: .takeBack, order: $0, lateDays: late) }
+        guard dayKey == todayKey else { return rows }
+        var seen = Set(rows.map(\.order.id))
+        for order in lateReturns where seen.insert(order.id).inserted {
+            let days = order.lateDays
+                ?? order.returnPlanAt.map { lateDays(dayKey: DayFormatter.key($0, timeZone: timeZone), todayKey: todayKey) } ?? 0
+            rows.append(CalendarDayRow(kind: .takeBack, order: order, lateDays: days))
+        }
+        return rows
     }
 
     /// Owner rule (#893): only a late order gets a note ("Trễ N ngày", plus the stored fee unless money is hidden).

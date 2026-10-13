@@ -42,6 +42,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.data.CurrentOutlet
+import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.IncomeRow
 import com.anyrent.pos.domain.overview.OverviewRelated
 import com.anyrent.pos.domain.overview.OverviewRelatedKind
@@ -64,7 +66,12 @@ private const val MAX_PAGES = 50
 /** Every page of every bucket of [kind]: the total must equal the figure, so nothing is left unloaded */
 private fun loadRelated(kind: OverviewRelatedKind, startDate: String, endDate: String): Result<List<RelatedRow>> = runCatching {
     val api = ApiClient.get()
-    kind.buckets.flatMap { bucket ->
+    // #938: Thế chân first lists the orders holding collateral now (the "đang giữ N đơn" chip)
+    val held = if (kind != OverviewRelatedKind.COLLATERAL) emptyList() else {
+        val json = api.authedGet(OverviewLogic.outletOperationsPath(CurrentOutlet.merchantFilterId) + "&collateralHeld=1")
+        OverviewRelated.heldRows(json.optJSONObject("data") ?: org.json.JSONObject())
+    }
+    held + kind.buckets.flatMap { bucket ->
         val items = mutableListOf<IncomeRow>()
         for (page in 0 until MAX_PAGES) {
             val (rows, hasMore) = api.incomeRows(startDate, endDate, bucket, offset = page * PAGE_SIZE, limit = PAGE_SIZE).getOrThrow()
@@ -157,7 +164,7 @@ fun OverviewRelatedScreen(
                     }
                 }
                 val total = formatAmount(OverviewRelated.total(rows), signed)
-                val totalText = "${stringResource(R.string.overview_v2_related_total)} · ${rows.size}: $total"
+                val totalText = "${stringResource(R.string.overview_v2_related_total)} · ${OverviewRelated.count(rows)}: $total"
                 Text(
                     totalText,
                     fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
@@ -184,6 +191,7 @@ private fun RelatedRowItem(row: RelatedRow, signed: Boolean, onClick: () -> Unit
         RelatedNote.OWES -> stringResource(R.string.overview_v2_related_owes)
         RelatedNote.COLLATERAL_IN -> stringResource(R.string.overview_v2_related_collateral_in)
         RelatedNote.COLLATERAL_OUT -> stringResource(R.string.overview_v2_related_collateral_out)
+        RelatedNote.HELD -> stringResource(R.string.overview_v2_related_collateral_held)
         RelatedNote.EVENT ->
             if (row.reasons.isEmpty()) row.description
             else row.reasons.map { part -> part.reason?.let { stringResource(it.res) } ?: part.text }.joinToString(" + ")
@@ -200,7 +208,8 @@ private fun RelatedRowItem(row: RelatedRow, signed: Boolean, onClick: () -> Unit
             if (detail.isNotBlank()) Text(detail, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 2)
         }
         Text(
-            formatAmount(row.amount, signed), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold,
+            // #938: a held row is what is held now, not money moved in the period: no sign
+            formatAmount(row.amount, signed && row.note != RelatedNote.HELD), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold,
             color = if (row.amount < 0) V2Colors.Danger else DS.Colors.Text,
         )
     }

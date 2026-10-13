@@ -2566,3 +2566,5 @@
 "attendance.card.distance" = "%@ m away";
 "attendance.error.notRequired.title" = "You do not need to clock in";
 "attendance.error.notRequired.message" = "The shop has not picked you to clock in at this branch. Ask the shop owner if needed.";
+/* #938 Thế chân related list: an order whose collateral is held now */
+"overview.related.collateralHeld" = "Collateral held now";

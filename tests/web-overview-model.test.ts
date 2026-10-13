@@ -19,6 +19,8 @@ import {
   relatedBuckets,
   relatedRows,
   relatedTotal,
+  relatedCount,
+  heldRows,
   eventReasons,
 } from '../apps/client/app/dashboard/overview-model';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
@@ -248,6 +250,23 @@ describe('related orders (#708, #721)', () => {
     const value = relatedRows('orderValue', 'new', items);
     expect(value.map((r) => r.amount)).toEqual([500, 900, 250, 0]);
     expect(value[3].note).toBe('cancelled');
+  });
+
+  it('#938: Thế chân also lists the orders whose collateral is held now; total and count stay the period rows', () => {
+    const held = heldRows([
+      { id: 7, orderNumber: '100007', customerName: 'Lan', securityDeposit: 2_000_000 },
+      { id: 8, orderNumber: '100008', customerName: null, securityDeposit: 500_000 },
+      { id: 9, orderNumber: '100009', securityDeposit: 0 },
+    ]);
+    expect(held.map((r) => [r.orderNumber, r.customer, r.amount, r.note])).toEqual([
+      ['100007', 'Lan', 2_000_000, 'held'],
+      ['100008', '', 500_000, 'held'],
+    ]);
+    const period = relatedRows('collateral', 'all', [{ id: 1, orderNumber: '100001', collateral: 300 }]);
+    const rows = [...held, ...period];
+    expect(relatedTotal(rows)).toBe(300);
+    expect(relatedCount(rows)).toBe(1);
+    expect(heldRows(null)).toEqual([]);
   });
 });
 

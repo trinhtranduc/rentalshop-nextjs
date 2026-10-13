@@ -2564,3 +2564,5 @@
 "attendance.card.distance" = "Cách %@ m";
 "attendance.error.notRequired.title" = "Bạn không cần chấm công";
 "attendance.error.notRequired.message" = "Shop chưa chọn bạn chấm công ở chi nhánh này. Hỏi chủ shop nếu cần.";
+/* #938 Thế chân related list: an order whose collateral is held now */
+"overview.related.collateralHeld" = "Đang giữ thế chân";

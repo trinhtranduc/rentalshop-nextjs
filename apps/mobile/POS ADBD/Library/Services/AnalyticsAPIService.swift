@@ -905,11 +905,13 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
 extension AnalyticsAPIService {
     /// GET /api/analytics/outlet-operations for the shop day (#596). A user without the dashboard permission gets an
     /// error with code 403, so the caller can hide "Việc cần làm".
-    func loadOutletOperations(timeZone: String = Date.shopTimeZone.identifier,
+    /// #938 `collateralHeld`: also the rentals out with collateral (`TodayWork.collateralHeld`)
+    func loadOutletOperations(timeZone: String = Date.shopTimeZone.identifier, collateralHeld: Bool = false,
                               completion: @escaping (TodayWork?, NSError?) -> Void) -> DataRequest {
         let fullURL = APIEndpoint.currentBaseURL + APIEndpoint.Path.outletOperations
         var parameters = TabsV2APIService.outletOperationsParameters()
         parameters["timeZone"] = timeZone
+        if collateralHeld { parameters["collateralHeld"] = 1 }
         return AuthSession.shared.request(fullURL, method: .get, parameters: parameters, headers: BaseService.jsonHeader)
             .responseData { response in
                 let statusCode = response.response?.statusCode

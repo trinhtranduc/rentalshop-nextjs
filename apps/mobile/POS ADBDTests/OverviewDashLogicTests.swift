@@ -507,4 +507,76 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertEqual(parameters["limit"] as? Int, 50)
         XCTAssertEqual(parameters["startDate"] as? String, "2026-10-01")
     }
+
+    // MARK: - #938 calendar today lists late returns; held-collateral chip and list agree
+
+    /// Today's list = today's hand-overs and returns, then the rentals still out past their return day
+    /// (outlet-operations `overdueReturns`), each once, with its own "Trễ N ngày". Other days: unchanged.
+    func testCalendarTodayAddsLateReturns() throws {
+        try inEachZone { zone in
+            let late = try decode(CalendarLateReturns.self, """
+            {"overdueReturns":{"count":2,"orders":[
+              {"id":11,"orderNumber":"100011","customerName":"Lan","totalAmount":300,"securityDeposit":0,
+               "returnPlanAt":"2026-10-09T03:00:00.000Z","lateDays":4,"items":[{"name":"Áo dài","quantity":2}]},
+              {"id":12,"orderNumber":"100012","customerName":null,"totalAmount":100,
+               "returnPlanAt":"2026-10-12T16:30:00.000Z"},
+              {"id":5,"orderNumber":"100005","totalAmount":1,"returnPlanAt":"2026-10-12T03:00:00.000Z","lateDays":1}
+            ]}}
+            """).orders
+            XCTAssertEqual(late.map(\.id), [11, 12, 5], zone)
+            XCTAssertEqual(late[0].orderItems, [CalendarDayOrder.Item(productName: "Áo dài", quantity: 2)], zone)
+            let today = "2026-10-13"
+            let pickup = CalendarDayOrder(id: 1, orderNumber: "100001", customerName: nil, status: "RESERVED", orderType: "RENT",
+                                          totalAmount: 1, orderItems: [])
+            let back = CalendarDayOrder(id: 5, orderNumber: "100005", customerName: nil, status: "PICKUPED", orderType: "RENT",
+                                        totalAmount: 1, orderItems: [])
+            let rows = CalendarV2Logic.rows(dayKey: today, todayKey: today, pickups: [pickup], returns: [back], late: late)
+            XCTAssertEqual(rows.map(\.order.id), [1, 5, 11, 12], zone)
+            XCTAssertEqual(rows.map(\.kind), [.handOver, .takeBack, .takeBack, .takeBack], zone)
+            // API lateDays wins; without it, the Vietnam day of returnPlanAt (12/10 23:30 VN = 1 day late)
+            XCTAssertEqual(rows.map(\.lateDays), [0, 0, 4, 1], zone)
+            XCTAssertEqual(CalendarV2Logic.note(rows[2], hidesMoney: false), .late(days: 4, fee: nil), zone)
+            // Another day ignores the late list
+            XCTAssertEqual(CalendarV2Logic.rows(dayKey: "2026-10-14", todayKey: today, pickups: [pickup], returns: [], late: late)
+                .map(\.order.id), [1], zone)
+        }
+    }
+
+    /// The chip counts rentals out with collateral (`collateralToReturn.orders`), not every rental out
+    func testCollateralChipCountsOnlyHeldCollateral() {
+        inEachZone { zone in
+            let now = OverviewNow(lateReturns: 4, rentedOut: 4, collateralHeld: 6_000_000,
+                                  collateralToReturn: .init(amount: 6_000_000, orders: 3))
+            XCTAssertEqual(OverviewDashLogic.tiles(report: nil, now: now)[3].chip,
+                           OverviewTileChip(tone: .info, key: "overview.dash.chip.held", count: 3), zone)
+            let none = OverviewNow(lateReturns: 4, rentedOut: 4, collateralHeld: 0, collateralToReturn: .init(amount: 0, orders: 0))
+            XCTAssertNil(OverviewDashLogic.tiles(report: nil, now: none)[3].chip, zone)
+        }
+    }
+
+    /// "Xem các đơn liên quan" of Thế chân: the orders holding collateral now, then the period rows; the footer total and
+    /// count stay the period rows (= the tile)
+    func testHeldCollateralRows() throws {
+        let work = try decode(TodayWork.self, """
+        {"pickupsToday":{"count":0,"orders":[]},"returnsToday":{"count":0,"orders":[]},
+         "overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]},
+         "collateralHeld":{"count":3,"orders":[
+           {"id":7,"orderNumber":"100007","customerName":"Lan","securityDeposit":2000000},
+           {"id":8,"orderNumber":"100008","securityDeposit":500000},
+           {"id":9,"orderNumber":"100009","securityDeposit":0}]}}
+        """)
+        XCTAssertEqual(work.collateralHeld?.count, 3)
+        let held = OverviewDashLogic.heldRows(work.collateralHeld?.orders ?? [])
+        XCTAssertEqual(held.map(\.orderNumber), ["100007", "100008"])
+        XCTAssertEqual(held.map(\.amount), [2_000_000, 500_000])
+        XCTAssertEqual(held.map(\.customer), ["Lan", ""])
+        XCTAssertTrue(held.allSatisfy(\.held))
+        let period = OverviewDashLogic.relatedRows(.collateral, bucket: "all",
+                                                   items: try JSONDecoder().decode([DailyIncomeOrder].self,
+                                                                                   from: Data(#"[{"id":1,"orderNumber":"100001","collateral":300}]"#.utf8)))
+        XCTAssertEqual(OverviewDashLogic.relatedTotal(held + period), 300)
+        XCTAssertEqual(OverviewDashLogic.relatedCount(held + period), 1)
+        // An older API: no collateralHeld
+        XCTAssertNil(try decode(TodayWork.self, #"{"pickupsToday":{"count":0,"orders":[]},"returnsToday":{"count":0,"orders":[]},"overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]}}"#).collateralHeld)
+    }
 }
