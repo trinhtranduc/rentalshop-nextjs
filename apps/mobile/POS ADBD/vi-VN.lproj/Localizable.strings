@@ -2556,3 +2556,8 @@
 "attendance.weekday.5" = "T6";
 "attendance.weekday.6" = "T7";
 "attendance.weekday.7" = "CN";
+"attendance.card.inShift" = "Đang trong ca · vào %@";
+"attendance.card.shiftUntil" = "%@ đến %@";
+"attendance.card.distance" = "Cách %@ m";
+"attendance.error.notRequired.title" = "Bạn không cần chấm công";
+"attendance.error.notRequired.message" = "Shop chưa chọn bạn chấm công ở chi nhánh này. Hỏi chủ shop nếu cần.";

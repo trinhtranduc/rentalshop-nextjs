@@ -12,7 +12,7 @@ import IQKeyboardManagerSwift
 
 final class SettingsV2ViewController: BaseViewControler {
     private enum Row {
-        /// #909 "⏱ Chấm công", first row when the shop has the attendance module
+        /// #927 card L, first row when the shop has the attendance module and picked this person
         case attendance
         case profile
         case item(SettingsV2Item)
@@ -28,8 +28,14 @@ final class SettingsV2ViewController: BaseViewControler {
     private var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
     private var lastFetchedAt: Date?
-    /// #909 today's shift and status under "⏱ Chấm công"
+    /// #927 card L: `/me`, today's pairs (done state), the last punch's day hours, its result, the ticking timer
     private var attendanceMe: AttendanceMe?
+    private var attendancePairs: [AttendancePair] = []
+    private var attendanceHours: Double?
+    private var attendanceSuccess: String?
+    private var attendanceError: AttendanceErrorCopy?
+    private let punchFlow = AttendancePunchFlow()
+    private var attendanceTimer: Timer?
 
     private var user: User? { User.account() }
 
@@ -43,11 +49,23 @@ final class SettingsV2ViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         rebuild()
         refreshAttendance()
+        startAttendanceTimer()
         guard RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: lastFetchedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
         lastFetchedAt = Date()
         loadPlan()
         loadCounts()
         refreshOverlapSetting()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        attendanceTimer?.invalidate()
+        attendanceTimer = nil
+        // Leaving Cài đặt (not the scanner on top): the last result goes
+        if presentedViewController == nil {
+            attendanceSuccess = nil
+            attendanceError = nil
+        }
     }
 
     override func setupUI() {
@@ -70,7 +88,7 @@ final class SettingsV2ViewController: BaseViewControler {
         listView.delegate = self
         listView.register(SettingsV2Cell.self, forCellReuseIdentifier: SettingsV2Cell.reuseId)
         listView.register(SettingsV2SwitchCell.self, forCellReuseIdentifier: SettingsV2SwitchCell.reuseId)
-        listView.register(SettingsAttendanceCell.self, forCellReuseIdentifier: SettingsAttendanceCell.reuseId)
+        listView.register(SettingsAttendanceCardCell.self, forCellReuseIdentifier: SettingsAttendanceCardCell.reuseId)
         view.addSubview(listView)
         listView.snp.makeConstraints { make in
             make.top.equalTo(title.snp.bottom).offset(DS.Spacing.md)
@@ -112,23 +130,109 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
-    // MARK: - Chấm công (#909)
+    // MARK: - Chấm công (#909, card L #927)
 
-    private var showsAttendance: Bool { AttendanceModule.isOn(user?.merchant) }
+    private var showsAttendance: Bool { AttendanceCardLogic.shows(merchant: user?.merchant, me: attendanceMe) }
 
-    /// `merchant.modules` from the profile (a module turned on after sign-in), then today's shift and status
+    private var attendanceOutletName: String? { attendanceMe?.outletName ?? user?.outlet?.name }
+
+    private var attendanceModel: AttendanceCardModel {
+        AttendanceCardLogic.model(me: attendanceMe, todayPairs: attendancePairs, outletName: attendanceOutletName,
+                                  fallbackHours: attendanceHours)
+    }
+
+    /// `merchant.modules` from the profile (a module turned on after sign-in), then `/me` (today's shifts, status,
+    /// `required`), then today's pairs when the day is done
     private func refreshAttendance() {
-        let wasOn = showsAttendance
         AttendanceService.refreshModules { [weak self] isOn in
             guard let self else { return }
-            if isOn != wasOn { self.listView.reloadData() }
-            guard isOn else { return }
+            guard isOn else {
+                if self.attendanceMe != nil {
+                    self.attendanceMe = nil
+                    self.listView.reloadData()
+                }
+                return
+            }
             AttendanceService.shared.me { [weak self] result in
-                guard let self, case .success(let me) = result else { return }
-                self.attendanceMe = me
+                guard let self else { return }
+                switch result {
+                case .success(let me):
+                    self.attendanceMe = me
+                case .failure(let failure):
+                    // Module turned off meanwhile; any other failure keeps what is on screen
+                    if failure.code == "MODULE_NOT_ENABLED" { self.attendanceMe = nil }
+                }
                 self.listView.reloadData()
+                if AttendanceLogic.state(self.attendanceMe) == .done { self.loadTodayPairs() }
             }
         }
+    }
+
+    /// Today's IN / OUT pairs from the own month (hours of the done state)
+    private func loadTodayPairs() {
+        guard let user, showsAttendance else { return }
+        let now = Date()
+        let outletId = user.outletId ?? CurrentOutlet.shared.merchantFilterId
+        AttendanceService.shared.month(userId: user.id, outletId: outletId, month: AttendanceLogic.monthKey(now)) { [weak self] result in
+            guard let self, case .success(let month) = result else { return }
+            self.attendancePairs = AttendanceCardLogic.todayPairs(month.rows, now: now)
+            self.listView.reloadData()
+        }
+    }
+
+    /// The big number follows the clock (time now, or time on shift); only the label changes
+    private func startAttendanceTimer() {
+        attendanceTimer?.invalidate()
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in self?.tickAttendance() }
+        RunLoop.main.add(timer, forMode: .commonModes)
+        attendanceTimer = timer
+    }
+
+    private func tickAttendance() {
+        guard showsAttendance, case .attendance? = sections.first,
+              let cell = listView.cellForRow(at: IndexPath(row: 0, section: 0)) as? SettingsAttendanceCardCell else { return }
+        cell.setBig(attendanceModel.big)
+    }
+
+    private func punch() {
+        attendanceSuccess = nil
+        attendanceError = nil
+        listView.reloadData()
+        punchFlow.start(from: self, onCall: { [weak self] in
+            self?.listView.reloadData()
+        }, completion: { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let punch):
+                self.applyPunch(punch)
+            case .failure(let failure):
+                self.attendanceError = AttendanceLogic.errorCopy(failure, outletName: self.attendanceOutletName)
+            }
+            self.listView.reloadData()
+            if case .success = result { self.refreshAttendance() }
+        })
+    }
+
+    /// The card switches at once; `/me` and the pairs then come from the server
+    private func applyPunch(_ punch: AttendancePunchResult) {
+        attendanceSuccess = AttendanceCardLogic.successLine(punch)
+        guard var me = attendanceMe else { return }
+        if punch.isOut {
+            me.openRecord = nil
+            me.todayStatus = "DONE"
+            me.lastAction = "OUT"
+            me.lastActionAt = punch.record?.checkOutAt ?? Date()
+            attendanceHours = punch.todayHours
+        } else {
+            var record = punch.record ?? AttendanceRecord(checkInAt: Date(), checkOutAt: nil)
+            record.status = "OPEN"
+            if record.checkInAt == nil { record.checkInAt = Date() }
+            me.openRecord = record
+            me.todayStatus = "IN_SHIFT"
+            me.lastAction = "IN"
+            me.lastActionAt = record.checkInAt
+        }
+        attendanceMe = me
     }
 
     // MARK: - Order overlap setting (#518)
@@ -377,8 +481,12 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let row = rows(in: indexPath.section)[indexPath.row]
         if case .attendance = row {
-            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsAttendanceCell.reuseId, for: indexPath) as! SettingsAttendanceCell
-            cell.configure(subtitle: attendanceMe.map { AttendanceLogic.settingsSubtitle($0) })
+            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsAttendanceCardCell.reuseId, for: indexPath) as! SettingsAttendanceCardCell
+            cell.configure(attendanceModel, success: attendanceSuccess, error: attendanceError, busy: punchFlow.busy)
+            cell.onPunch = { [weak self] in self?.punch() }
+            cell.onMine = { [weak self] in
+                self?.navigationController?.pushViewController(MyShiftsViewController(), animated: true)
+            }
             return cell
         }
         if case .overlapSwitch = row {
@@ -408,8 +516,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         switch rows(in: indexPath.section)[indexPath.row] {
-        case .attendance:
-            navigationController?.pushViewController(AttendanceViewController(), animated: true)
+        case .attendance: break
         case .profile: break
         case .item(let item): open(item)
         case .overlapSwitch: break
@@ -467,51 +574,6 @@ final class SettingsV2SwitchCell: UITableViewCell {
 
     @objc private func changed() {
         onChange?(toggle.isOn, toggle)
-    }
-}
-
-/// #909 "⏱ Chấm công" card: light blue, bold title, today's shift and status, blue chevron (mockup App 1)
-final class SettingsAttendanceCell: UITableViewCell {
-    static let reuseId = "SettingsAttendanceCell"
-    private let titleLabel = V2.label("⏱ " + "attendance.title".localized(), size: DS.TextSize.name, weight: .bold)
-    private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-
-    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        let card = UIView()
-        card.backgroundColor = UIColor(hexString: "EFF6FF")
-        card.layer.borderColor = UIColor(hexString: "BFDBFE").cgColor
-        card.layer.borderWidth = 1
-        card.layer.cornerRadius = 16
-        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.lg, weight: .semibold))
-        chevron.tintColor = DS.Color.primary
-        chevron.setContentHuggingPriority(.required, for: .horizontal)
-        let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        texts.axis = .vertical
-        texts.spacing = 2
-        let row = UIStackView(arrangedSubviews: [texts, chevron])
-        row.alignment = .center
-        row.spacing = DS.Spacing.md
-        card.addSubview(row)
-        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(14) }
-        contentView.addSubview(card)
-        card.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: DS.Spacing.lg, bottom: 12, right: DS.Spacing.lg))
-        }
-        isAccessibilityElement = true
-        accessibilityTraits = UIAccessibilityTraitButton
-        accessibilityIdentifier = "settings.attendance"
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    func configure(subtitle: String?) {
-        subtitleLabel.text = subtitle
-        subtitleLabel.isHidden = (subtitle ?? "").isEmpty
-        accessibilityLabel = ["attendance.title".localized(), subtitle].compactMap { $0 }.joined(separator: ", ")
     }
 }
 
