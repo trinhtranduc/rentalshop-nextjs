@@ -232,3 +232,19 @@ export interface AttendanceRecordCreate {
 }
 
 export type AttendanceExportPart = 'grid' | 'scans' | 'edits';
+
+/** #927 GET /api/attendance/members item: one person of the outlet (the owner too) and whether they must clock in. */
+export interface AttendanceMember {
+  userId: number;
+  name: string;
+  role: string | null;
+  required: boolean;
+  /** No choice stored: follows the role (staff / kho yes, outlet admin / owner no) */
+  isDefault: boolean;
+}
+
+export interface AttendanceMemberUpdate {
+  outletId: number;
+  userId: number;
+  required: boolean;
+}

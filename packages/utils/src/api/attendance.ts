@@ -8,6 +8,8 @@ import type { ApiResponse } from '../core';
 import type {
   AttendanceExportPart,
   AttendanceKioskQr,
+  AttendanceMember,
+  AttendanceMemberUpdate,
   AttendanceOutletSummary,
   AttendancePersonMonth,
   AttendanceRecordCreate,
@@ -69,6 +71,10 @@ export const attendanceApi = {
     if (response.ok && json?.data) return { ok: true, data: json.data };
     return { ok: false, status: response.status, code: json?.code || 'UNKNOWN' };
   },
+
+  // #927 who must clock in at an outlet
+  listMembers: (outletId: number) => get<{ items: AttendanceMember[] }>(`${BASE}/members${qs({ outletId })}`),
+  setMember: (body: AttendanceMemberUpdate) => send<AttendanceMember>(`${BASE}/members`, 'PUT', body),
 
   // Shift templates (rule 19)
   listTemplates: (outletId: number) =>

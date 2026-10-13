@@ -66,6 +66,16 @@ export function canEditPerson(role: string | null | undefined, callerId: number 
   return callerId == null || Number(callerId) !== Number(personId);
 }
 
+/**
+ * #927 "Ai cần chấm công": the owner changes every row; an outlet admin every row of their outlet but the owner's
+ * (the owner's choice counts for the whole shop).
+ */
+export function canEditMember(callerRole: string | null | undefined, memberRole: string | null | undefined): boolean {
+  if (!canUseAttendanceWeb(callerRole)) return false;
+  if (isOwnerRole(callerRole)) return true;
+  return !isOwnerRole(memberRole);
+}
+
 // ---------------------------------------------------------------------------
 // Days, weeks, months
 // ---------------------------------------------------------------------------

@@ -359,6 +359,16 @@
     "saveLocationSub": "New coordinates: {coords}",
     "saveNote": "Applies to the next scans right away."
   },
+  "members": {
+    "title": "Who must clock in at this branch",
+    "hint": "Only people picked here see the Attendance card in the app and appear in Shifts and Timesheet",
+    "note": "Default: staff and stock staff are picked; branch admins and the shop owner are not. Unpicked: the person sees nothing about attendance and cannot get new shifts; past records stay.",
+    "toggle": "{name} must clock in",
+    "on": "{name}: must clock in",
+    "off": "{name}: no clock-in needed",
+    "ownerOnly": "Only the shop owner can change this",
+    "empty": "No one in this branch yet."
+  },
   "newCode": {
     "title": "Create a new QR code?",
     "body": "The current code stops working at once. If the outlet uses a fixed code, print and stick up the new one. The counter screen updates by itself.",
