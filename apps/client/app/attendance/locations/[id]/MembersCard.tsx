@@ -10,8 +10,8 @@ import { useTranslations } from 'next-intl';
 import { useToast } from '@rentalshop/ui';
 import { attendanceApi } from '@rentalshop/utils';
 import type { AttendanceMember } from '@rentalshop/types';
-import { canEditMember } from '../../../attendance/attendance-model';
-import { cardClass, must, useBusy, useLoad, type AttT } from '../../../attendance/parts';
+import { canEditMember } from '../../attendance-model';
+import { cardClass, must, useBusy, useLoad, type AttT } from '../../parts';
 
 export default function MembersCard({ outletId, callerRole }: { outletId: number; callerRole: string }) {
   const t = useTranslations('attendance') as unknown as AttT;

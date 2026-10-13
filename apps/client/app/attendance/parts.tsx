@@ -12,7 +12,7 @@ import { useAuth } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import { Modal } from '../orders/create/parts';
 import { cardClass, outlineBtn, primaryBtn } from '../orders/list/parts';
-import { canUseAttendanceWeb, defaultOutlet, hasAttendance, isOwnerRole, monthLabel } from './attendance-model';
+import { attendanceTabs, canUseAttendanceWeb, defaultOutlet, hasAttendance, isAttendanceTabActive, isOwnerRole, monthLabel } from './attendance-model';
 import { useMerchantModules } from './useMerchantModules';
 
 export type AttT = (key: string, values?: Record<string, string | number>) => string;
@@ -210,6 +210,8 @@ export interface AttendanceAccess {
   allowed: boolean;
   ready: boolean;
   callerId: number | null;
+  /** Active merchant modules (#945: the tab strip). */
+  modules: string[];
 }
 
 export function useAttendanceAccess(): AttendanceAccess {
@@ -223,6 +225,7 @@ export function useAttendanceAccess(): AttendanceAccess {
     allowed: canUseAttendanceWeb(role) && hasAttendance(modules),
     ready: !loading && !!user,
     callerId: user?.id != null ? Number(user.id) : null,
+    modules,
   };
 }
 
@@ -281,12 +284,42 @@ export function useSelectedOutlet(outlets: OutletOption[]) {
 // Frame
 // ---------------------------------------------------------------------------
 
-const TABS = [
-  { key: 'timesheet', href: '/attendance' },
-  { key: 'person', href: '/attendance/person' },
-  { key: 'shifts', href: '/attendance/shifts' },
-  { key: 'templates', href: '/attendance/templates' },
-] as const;
+/** Chấm công tab strip (#945: + Mã QR & vị trí); keeps `?outletId` / `?month` across tabs. */
+export function AttendanceTabs({ access }: { access: AttendanceAccess }) {
+  const t = useTranslations('attendance') as unknown as AttT;
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const keep = useMemo(() => {
+    const q = new URLSearchParams();
+    for (const k of ['outletId', 'month']) {
+      const v = params.get(k);
+      if (v) q.set(k, v);
+    }
+    const s = q.toString();
+    return s ? `?${s}` : '';
+  }, [params]);
+  const tabs = attendanceTabs(access.role, access.modules);
+  if (tabs.length === 0) return null;
+  return (
+    <nav aria-label={t('title')} className="flex flex-wrap gap-2">
+      {tabs.map((tab) => {
+        const active = isAttendanceTabActive(pathname, tab.href);
+        return (
+          <Link
+            key={tab.key}
+            href={`${tab.href}${keep}`}
+            aria-current={active ? 'page' : undefined}
+            className={`rounded-full border px-3.5 py-1.5 text-sm no-underline ${
+              active ? 'border-ar-primary bg-ar-primary font-semibold text-ar-on-primary' : 'border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'
+            }`}
+          >
+            {t(`tabs.${tab.key}`)}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
 /**
  * Container, tab strip and the access gate. Children render once the caller may use the screens and an outlet
@@ -298,21 +331,9 @@ export function AttendanceFrame({
   children: (ctx: { access: AttendanceAccess; outlets: OutletOption[]; outlet: OutletOption }) => React.ReactNode;
 }) {
   const t = useTranslations('attendance') as unknown as AttT;
-  const pathname = usePathname();
-  const params = useSearchParams();
   const access = useAttendanceAccess();
   const { outlets, loading } = useOutlets(access.allowed);
   const { outlet } = useSelectedOutlet(outlets);
-
-  const keep = useMemo(() => {
-    const q = new URLSearchParams();
-    for (const k of ['outletId', 'month']) {
-      const v = params.get(k);
-      if (v) q.set(k, v);
-    }
-    const s = q.toString();
-    return s ? `?${s}` : '';
-  }, [params]);
 
   let body: React.ReactNode;
   if (!access.ready) body = <p className="m-0 text-ar-muted">{t('common.loading')}</p>;
@@ -324,25 +345,7 @@ export function AttendanceFrame({
 
   return (
     <div className={container}>
-      {access.allowed && (
-        <nav aria-label={t('title')} className="flex flex-wrap gap-2">
-          {TABS.map((tab) => {
-            const active = tab.href === '/attendance' ? pathname === '/attendance' : pathname?.startsWith(tab.href);
-            return (
-              <Link
-                key={tab.key}
-                href={`${tab.href}${keep}`}
-                aria-current={active ? 'page' : undefined}
-                className={`rounded-full border px-3.5 py-1.5 text-sm no-underline ${
-                  active ? 'border-ar-primary bg-ar-primary font-semibold text-ar-on-primary' : 'border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'
-                }`}
-              >
-                {t(`tabs.${tab.key}`)}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      {access.allowed && <AttendanceTabs access={access} />}
       {body}
     </div>
   );

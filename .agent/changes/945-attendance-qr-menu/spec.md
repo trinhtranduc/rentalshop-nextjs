@@ -17,3 +17,6 @@ Status: in-progress
 ## Decision log
 - Outlet admin keeps the sidebar "Chi nhánh" entry while the module is on (#908 `alsoWithModule`): the issue
   says permissions stay the same, and the outlet admin can still edit its own branch info there (#824).
+- The list shows active branches (same `useOutlets` as the other Chấm công tabs).
+- Error hints `ATTENDANCE_NOT_REQUIRED(_NAMED)` pointed at "Chi nhánh › Chấm công › Ai cần chấm công"; the web
+  locale text now says "Chấm công › Mã QR & vị trí › Ai cần chấm công" (code unchanged; web locales only).

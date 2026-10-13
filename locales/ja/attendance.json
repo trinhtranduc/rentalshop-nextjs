@@ -4,7 +4,8 @@
     "timesheet": "勤務表",
     "person": "スタッフ別",
     "shifts": "シフト",
-    "templates": "シフトテンプレート"
+    "templates": "シフトテンプレート",
+    "locations": "QRと位置"
   },
   "weekday": {
     "1": "月",
@@ -317,14 +318,24 @@
     "saved": "テンプレートを削除しました"
   },
   "outlets": {
-    "col": "勤怠",
     "qrDaily": "QRあり · 毎日変更",
     "qrFixed": "QRあり · 固定",
     "noQr": "未作成",
     "open": "開く ›"
   },
+  "locations": {
+    "title": "勤怠のQRと位置",
+    "subtitle": "店舗ごとにQRコード、位置、打刻する人の一覧があります。",
+    "col": {
+      "outlet": "店舗",
+      "address": "住所",
+      "qr": "QRコード",
+      "radius": "半径"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QRと位置"
+  },
   "outlet": {
-    "back": "‹ 店舗",
     "notFound": "この店舗を開けませんでした。",
     "section": "⏱ 勤怠",
     "location": "勤怠の位置",

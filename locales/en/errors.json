@@ -534,8 +534,8 @@
   "SHIFT_OVERLAP": "This shift overlaps another shift of the same employee.",
   "SHIFT_LOCKED": "Past days and days already worked cannot be changed.",
   "SHIFT_LOCKED_NAMED": "{names} already clocked in today, so today's shift cannot change. Start from tomorrow.",
-  "ATTENDANCE_NOT_REQUIRED": "This person is not set to clock in. Turn it on in Branches › Attendance › Who must clock in.",
-  "ATTENDANCE_NOT_REQUIRED_NAMED": "{names}: not set to clock in. Turn it on in Branches › Attendance › Who must clock in first.",
+  "ATTENDANCE_NOT_REQUIRED": "This person is not set to clock in. Turn it on in Attendance › QR & location › Who must clock in.",
+  "ATTENDANCE_NOT_REQUIRED_NAMED": "{names}: not set to clock in. Turn it on in Attendance › QR & location › Who must clock in first.",
   "SHIFT_TEMPLATE_IN_USE": "This shift is in use. Hide it instead of deleting it.",
   "MONTH_LOCKED": "This month is locked. Ask the shop owner to unlock it."
 }

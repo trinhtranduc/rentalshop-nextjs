@@ -53,8 +53,8 @@
   "SHIFT_OVERLAP": "이 근무는 같은 직원의 다른 근무와 겹칩니다.",
   "SHIFT_LOCKED": "지난 날짜나 이미 근무한 날은 변경할 수 없습니다.",
   "SHIFT_LOCKED_NAMED": "{names} 님은 오늘 이미 출근을 기록해서 오늘 근무는 변경할 수 없습니다. 내일부터 시작하세요.",
-  "ATTENDANCE_NOT_REQUIRED": "이 사람은 출퇴근 기록 대상이 아닙니다. 지점 › 근태 › 출퇴근 기록 대상에서 켜 주세요.",
-  "ATTENDANCE_NOT_REQUIRED_NAMED": "{names} 님은 출퇴근 기록 대상이 아닙니다. 먼저 지점 › 근태 › 출퇴근 기록 대상에서 켜 주세요.",
+  "ATTENDANCE_NOT_REQUIRED": "이 사람은 출퇴근 기록 대상이 아닙니다. 출퇴근 › QR 및 위치 › 출퇴근 기록 대상에서 켜 주세요.",
+  "ATTENDANCE_NOT_REQUIRED_NAMED": "{names} 님은 출퇴근 기록 대상이 아닙니다. 먼저 출퇴근 › QR 및 위치 › 출퇴근 기록 대상에서 켜 주세요.",
   "SHIFT_TEMPLATE_IN_USE": "이 근무는 사용 중입니다. 삭제 대신 숨기세요.",
   "MONTH_LOCKED": "이 달은 잠겨 있습니다. 매장 주인에게 잠금 해제를 요청하세요."
 }

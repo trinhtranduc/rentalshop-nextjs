@@ -4,7 +4,8 @@
     "timesheet": "Bảng công",
     "person": "Chi tiết theo người",
     "shifts": "Xếp ca",
-    "templates": "Mẫu ca"
+    "templates": "Mẫu ca",
+    "locations": "Mã QR & vị trí"
   },
   "weekday": {
     "1": "T2",
@@ -317,14 +318,24 @@
     "saved": "Đã xoá mẫu ca"
   },
   "outlets": {
-    "col": "Chấm công",
     "qrDaily": "Có mã QR · đổi mỗi ngày",
     "qrFixed": "Có mã QR · cố định",
     "noQr": "Chưa tạo mã",
     "open": "Mở ›"
   },
+  "locations": {
+    "title": "Mã QR & vị trí chấm công",
+    "subtitle": "Mỗi chi nhánh một mã QR, vị trí và danh sách người cần chấm công.",
+    "col": {
+      "outlet": "Chi nhánh",
+      "address": "Địa chỉ",
+      "qr": "Mã QR",
+      "radius": "Bán kính"
+    },
+    "radius": "{radius} m",
+    "back": "‹ Mã QR & vị trí"
+  },
   "outlet": {
-    "back": "‹ Chi nhánh",
     "notFound": "Không mở được chi nhánh này.",
     "section": "⏱ Chấm công",
     "location": "Vị trí chấm công",
