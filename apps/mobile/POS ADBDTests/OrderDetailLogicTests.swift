@@ -348,4 +348,12 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         let vi = Bundle(for: OrderRowCell.self).path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
         XCTAssertEqual(vi?.localizedString(forKey: "order.detail.createdBy", value: nil, table: nil), "Người tạo: %@")
     }
+
+    // MARK: Sale subtotal (#939)
+
+    /// "Tiền hàng" of a sale = the item lines, as the web and the printed bill; never `totalAmount`
+    func testSaleSubtotalIsTheItemSum() {
+        XCTAssertEqual(OrderDetailLogic.saleSubtotal(itemTotals: [396, 396]), 792)
+        XCTAssertEqual(OrderDetailLogic.saleSubtotal(itemTotals: []), 0)
+    }
 }

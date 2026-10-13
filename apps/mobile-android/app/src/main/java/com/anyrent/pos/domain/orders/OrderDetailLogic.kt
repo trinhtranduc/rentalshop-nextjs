@@ -1,5 +1,6 @@
 package com.anyrent.pos.domain.orders
 
+import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.error.AppError
 import org.json.JSONObject
@@ -67,6 +68,12 @@ data class StatusErrorOutcome(val code: String?, val message: String, val reload
 object OrderDetailLogic {
     /** Note photos per order on the new detail (`MAX_ORDER_NOTE_IMAGES`) */
     const val MAX_NOTE_PHOTOS = 5
+
+    /**
+     * "Tạm tính" / "Tiền hàng" of a sale (#939): the item lines, as iOS, the web and the printed bill. The total is
+     * the server's `totalAmount`; old data where lines − discount ≠ total still shows each number as stored.
+     */
+    fun saleSubtotal(items: List<OrderItem>): Double = items.sumOf { it.totalPrice }
 
     /** "Sẵn sàng giao" (#470): a rental not handed over yet, for users who may update orders */
     fun showsReadyToDeliver(orderType: String, status: String, canUpdateOrders: Boolean): Boolean =

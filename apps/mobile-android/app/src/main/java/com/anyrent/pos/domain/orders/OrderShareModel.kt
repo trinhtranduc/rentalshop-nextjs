@@ -112,7 +112,7 @@ data class OrderShareModel(
                 }
                 highlight = ShareHighlight(ShareText.Res(R.string.share_rent_total), money(summary.totalAmount), ShareTone.ACCENT)
             } else {
-                rows += ShareRow(ShareText.Res(R.string.share_subtotal), money(summary.totalAmount + order.discountAmount))
+                rows += ShareRow(ShareText.Res(R.string.share_subtotal), money(OrderDetailLogic.saleSubtotal(order.items)))
                 if (order.discountAmount > 0) {
                     rows += ShareRow(ShareText.Res(R.string.share_discount), minus(order.discountAmount))
                 }

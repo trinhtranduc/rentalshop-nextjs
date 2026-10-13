@@ -708,7 +708,7 @@ private fun DetailBody(
                 }
             }
         } else {
-            MoneyRow(stringResource(R.string.detail_goods), formatMoneyVnd(summary.totalAmount + detail.discountAmount))
+            MoneyRow(stringResource(R.string.detail_goods), formatMoneyVnd(OrderDetailLogic.saleSubtotal(detail.items)))
             if (detail.discountAmount > 0) {
                 MoneyRow(stringResource(R.string.discount), formatMoneyVnd(-detail.discountAmount))
             }

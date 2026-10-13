@@ -558,7 +558,7 @@ final class OrderDetailViewController: BaseViewControler {
         stack.axis = .vertical
         let discount = detail.discountAmount
         if detail.orderType == .sale {
-            let goods = detail.orderItems.reduce(0) { $0 + $1.totalPrice }
+            let goods = OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice))
             stack.addArrangedSubview(keyValue("Goods total".localized(), MoneyFormatter.format(goods), divider: false))
             if discount > 0 {
                 stack.addArrangedSubview(keyValue("Discount".localized(), MoneyFormatter.format(-discount), divider: false))
