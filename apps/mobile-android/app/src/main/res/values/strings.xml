@@ -1711,4 +1711,11 @@
     <string name="attendance_days_worked">Days worked</string>
     <string name="attendance_week_empty">No shifts this week</string>
     <string name="attendance_load_failed">Could not load. Try again.</string>
+    <string name="attendance_card_in_since">On shift · in at %1$s</string>
+    <string name="attendance_card_until">%1$s until %2$s</string>
+    <string name="attendance_card_today">Today · %1$s</string>
+    <string name="attendance_card_distance">%1$d m away</string>
+    <string name="attendance_my_shifts_link">My shifts and hours ›</string>
+    <string name="attendance_err_not_required">You do not need to clock in</string>
+    <string name="attendance_err_not_required_msg">The shop has not picked you to clock in at this outlet.</string>
 </resources>

@@ -158,7 +158,7 @@ object Routes {
     const val Printer = "printer"
     const val BankAccounts = "bank-accounts"
     const val AppInfo = "app-info"
-    // #910 attendance: "Chấm công" and "Ca và công của tôi"
+    // #910 attendance: the QR scanner (#927: no "Chấm công" screen in between) and "Ca và công của tôi"
     const val Attendance = "attendance"
     const val MyShifts = "my-shifts"
     const val Subscription = "subscription"
@@ -748,10 +748,18 @@ fun AnyRentNavHost(
         composable(Routes.BankAccounts) {
             BankAccountsScreen(onBack = { rootNavController.popBackStack() })
         }
+        // #927: Vào ca / Ra ca of the Cài đặt card opens the scanner straight away; the result goes back to the card
         composable(Routes.Attendance) {
-            com.anyrent.pos.ui.attendance.AttendanceScreen(
-                onBack = { rootNavController.popBackStack() },
-                onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+            // Pop only this screen once (a close tapped while the result arrives must not pop Cài đặt)
+            fun close() {
+                if (rootNavController.currentDestination?.route == Routes.Attendance) rootNavController.popBackStack()
+            }
+            com.anyrent.pos.ui.attendance.AttendanceScanScreen(
+                onClose = ::close,
+                onResult = { outcome ->
+                    com.anyrent.pos.ui.attendance.AttendanceCardStore.onScanned(outcome)
+                    close()
+                },
             )
         }
         composable(Routes.MyShifts) {
@@ -775,7 +783,7 @@ private fun LaunchedOpenMyShifts(navController: NavHostController) {
     LaunchedEffect(pending, currentRoute) {
         if (!pending || !SessionStore.isLoggedIn) return@LaunchedEffect
         val dest = currentRoute ?: return@LaunchedEffect
-        if (dest != Routes.Main && dest != Routes.Inbox && dest != Routes.Attendance) return@LaunchedEffect
+        if (dest != Routes.Main && dest != Routes.Inbox) return@LaunchedEffect
         if (!com.anyrent.pos.push.AttendancePush.consume()) return@LaunchedEffect
         navController.navigate(Routes.MyShifts) { launchSingleTop = true }
     }
@@ -990,7 +998,8 @@ private fun MainTabs(
                         onOpenExport = { rootNavController.navigate(Routes.Export) },
                         onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
-                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) },
+                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
+                        onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                         onLoggedOut = {
                             rootNavController.navigate(Routes.Login) {
                                 popUpTo(Routes.Main) { inclusive = true }
@@ -1009,7 +1018,8 @@ private fun MainTabs(
                     onOpenSubscription = { rootNavController.navigate(Routes.Subscription) },
                     onOpenNotifications = { rootNavController.navigate(Routes.Inbox) },
                     onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
-                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) },
+                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
+                        onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                     onLoggedOut = {
                         rootNavController.navigate(Routes.Login) {
                             popUpTo(Routes.Main) { inclusive = true }

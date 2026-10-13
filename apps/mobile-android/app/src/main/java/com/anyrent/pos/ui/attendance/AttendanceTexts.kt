@@ -4,7 +4,6 @@ import android.content.Context
 import com.anyrent.pos.R
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.attendance.AttendanceLogic
-import com.anyrent.pos.domain.attendance.AttendanceMe
 import com.anyrent.pos.domain.attendance.AttendanceStatus
 import com.anyrent.pos.domain.attendance.PunchRejection
 import com.anyrent.pos.domain.attendance.PunchRejectionKind
@@ -20,10 +19,6 @@ object AttendanceTexts {
             AttendanceStatus.DONE -> R.string.attendance_status_done
         },
     )
-
-    /** Second line of the Cài đặt row: "Ca sáng 08:00–12:00 · chưa vào ca", "Chưa vào ca" with no shift (as iOS) */
-    fun settingsSubtitle(context: Context, me: AttendanceMe): String =
-        AttendanceLogic.settingsLine(me.todayShifts.firstOrNull(), status(context, me.status()))
 
     /** Title and message of the one red card */
     fun rejection(context: Context, r: PunchRejection): Pair<String, String> = when (r.kind) {
@@ -41,6 +36,8 @@ object AttendanceTexts {
             context.getString(R.string.attendance_err_not_configured_msg)
         PunchRejectionKind.MODULE_OFF -> context.getString(R.string.attendance_err_module_off) to context.getString(R.string.attendance_err_module_off_msg)
         PunchRejectionKind.NO_LOCATION -> context.getString(R.string.attendance_err_no_location) to context.getString(R.string.attendance_err_no_location_msg)
+        PunchRejectionKind.NOT_REQUIRED -> context.getString(R.string.attendance_err_not_required) to
+            context.getString(R.string.attendance_err_not_required_msg)
         PunchRejectionKind.OTHER -> context.getString(R.string.attendance_err_other) to
             ApiErrorMessages.resolve(context, null, r.message.orEmpty())
     }
