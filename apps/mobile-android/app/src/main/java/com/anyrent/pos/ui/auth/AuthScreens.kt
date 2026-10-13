@@ -474,10 +474,12 @@ fun OnboardingScreen(onFinished: () -> Unit) {
     val isLast = index >= pages.lastIndex
     val page = pages[index]
 
+    // #932 edge-to-edge: below the status bar / cutout so Bỏ qua can be tapped; the background stays full-bleed
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface),
+            .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding(),
     ) {
         if (!isLast) {
             TextButton(
