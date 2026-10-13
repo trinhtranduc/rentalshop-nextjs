@@ -43,3 +43,31 @@ export function resolveActiveModules(
   };
   return catalog.filter((m) => active(m.key, new Set())).map((m) => m.key);
 }
+
+/** #943 a shop's feature add-on as read for the module rule (PlanLimitAddon with a featureKey). */
+export interface FeatureAddonState {
+  featureKey: string | null;
+  isActive: boolean | null;
+  endsAt: Date | string | null;
+}
+
+/**
+ * #943: module states from both sources: the legacy #907 rows (kept working) and the shop's feature add-ons. An
+ * add-on counts as an enabled row while it is switched on and not past `endsAt`. Feed the result to
+ * `resolveActiveModules` (catalog and `requires` rules unchanged).
+ */
+export function mergeModuleSources(
+  rows: MerchantModuleState[],
+  featureAddons: FeatureAddonState[],
+  now: Date = new Date()
+): MerchantModuleState[] {
+  const fromAddons: MerchantModuleState[] = featureAddons
+    .filter(
+      (a) =>
+        !!a.featureKey &&
+        a.isActive !== false &&
+        (a.endsAt == null || new Date(a.endsAt).getTime() > now.getTime())
+    )
+    .map((a) => ({ key: a.featureKey as string, enabled: true, endsAt: a.endsAt ?? null }));
+  return [...rows, ...fromAddons];
+}

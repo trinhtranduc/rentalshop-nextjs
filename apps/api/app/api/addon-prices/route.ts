@@ -20,6 +20,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN, USER_ROLE.OPS])(async () => {
 
 /**
  * POST /api/addon-prices — new row: one limit kind + pack size + VND price per pack per month (#850). ADMIN only.
+ * #943: or a feature row (`limitKind: 'feature'` + a module `featureKey`, pack size 1).
  */
 export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest) => {
   try {

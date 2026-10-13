@@ -30,6 +30,20 @@ export function plusLabel(kind: string | null | undefined, units: number | null 
   return `+${new Intl.NumberFormat('vi-VN').format(Number(units) || 0)} ${unit}`.trim();
 }
 
+/** #943: modules sold as a feature add-on (on/off, no packs). Tính lương comes later and needs Chấm công. */
+export const FEATURE_LABEL: Record<string, { name: string; hint: string }> = {
+  attendance: { name: 'Chấm công', hint: 'QR + GPS, ca, bảng công' },
+};
+export const FEATURE_KEYS = Object.keys(FEATURE_LABEL);
+
+export const isFeatureKind = (kind: string | null | undefined) => kind === 'feature';
+
+/** "Tính năng · Chấm công" */
+export function featureLabel(featureKey: string | null | undefined): string {
+  const f = featureKey ? FEATURE_LABEL[featureKey] : undefined;
+  return `Tính năng · ${f?.name ?? featureKey ?? '—'}`;
+}
+
 export function appliesTo(kind: string): string {
   return kind === 'outlets' ? 'Chỉ gói nhiều chi nhánh (Enterprise)' : 'Mọi gói';
 }

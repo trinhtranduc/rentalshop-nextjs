@@ -4,13 +4,16 @@
 
 import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core';
 import { apiUrls } from '../config/api';
-import type { AddonQuote, LimitKind } from '../core/addon-pricing';
+import type { AddonKind, AddonQuote, LimitKind } from '../core/addon-pricing';
 import type { RenewalCalculation } from '../core/subscription-billing-calculations';
 
 export interface AddonPriceRow {
   id: number;
   name: string;
-  limitKind: LimitKind;
+  /** #943: `feature` = on/off module row (pack size 1) */
+  limitKind: AddonKind;
+  /** #943: module key of a feature row (e.g. `attendance`) */
+  featureKey?: string | null;
   packSize: number;
   monthlyPrice: number;
   currency: string;
@@ -26,7 +29,9 @@ export interface MerchantAddonItem {
   merchantId: number;
   addonPriceId: number | null;
   name: string | null;
-  limitKind: LimitKind | null;
+  limitKind: AddonKind | null;
+  /** #943: module key of a feature item */
+  featureKey?: string | null;
   packSize: number | null;
   packs: number | null;
   unitPrice: number | null;
@@ -69,11 +74,13 @@ export interface MerchantAddonsData {
   monthlyTotal: number;
   limits: null | { plan: Limits; addons: Limits; total: Limits; usage: Limits };
   renewal: null | { addonMonthlyTotal: number; addonPaidMonthlyTotal?: number; monthly: RenewalCalculation };
+  /** #943: modules still switched on the old way (#907), until the admin adds the feature add-on */
+  legacyModules?: Array<{ key: string; enabled: boolean; endDate: string | null; active: boolean }>;
 }
 
 export type AddonQuoteData = AddonQuote & {
   packs: number;
-  addonPrice: Pick<AddonPriceRow, 'id' | 'name' | 'limitKind' | 'packSize' | 'monthlyPrice'>;
+  addonPrice: Pick<AddonPriceRow, 'id' | 'name' | 'limitKind' | 'packSize' | 'monthlyPrice' | 'featureKey'>;
 };
 
 const json = (method: string, body: unknown) => ({
@@ -87,7 +94,7 @@ export const addonPricesApi = {
     return parseApiResponse(await authenticatedFetch(apiUrls.addonPrices.list));
   },
 
-  async create(data: { name: string; limitKind: LimitKind; packSize: number; monthlyPrice: number; isActive?: boolean }): Promise<ApiResponse<{ addonPrice: AddonPriceRow }>> {
+  async create(data: { name: string; limitKind: AddonKind; featureKey?: string | null; packSize?: number; monthlyPrice: number; isActive?: boolean }): Promise<ApiResponse<{ addonPrice: AddonPriceRow }>> {
     return parseApiResponse(await authenticatedFetch(apiUrls.addonPrices.create, json('POST', data)));
   },
 
@@ -106,7 +113,7 @@ export const addonPricesApi = {
 
   async addToMerchant(
     merchantId: number,
-    data: { addonPriceId: number; packs: number; method?: 'TRANSFER' | 'STRIPE'; transactionId?: string; reference?: string }
+    data: { addonPriceId: number; packs: number; method?: 'TRANSFER' | 'STRIPE' | 'CASH'; transactionId?: string; reference?: string }
   ): Promise<ApiResponse<{ addon: MerchantAddonItem; payment: unknown; quote: AddonQuote }>> {
     return parseApiResponse(await authenticatedFetch(apiUrls.addonPrices.merchantAdd(merchantId), json('POST', data)));
   },

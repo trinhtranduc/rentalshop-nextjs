@@ -7,7 +7,7 @@
 import { prisma } from './client';
 import type { AddonPrice, Payment, PlanLimitAddon } from '@prisma/client';
 import type { AddonPriceCreateInput, AddonPriceUpdateInput, AddonQuote, AddonRenewalLine, LimitKind } from '@rentalshop/utils';
-import { addonColumnsFor, LIMIT_KINDS } from '@rentalshop/utils';
+import { addonColumnsFor, isFeatureAddon, LIMIT_KINDS } from '@rentalshop/utils';
 
 const LIMIT_KIND_SET = new Set<string>(LIMIT_KINDS);
 
@@ -45,6 +45,8 @@ export const simplifiedAddonPrices = {
       data: {
         name: data.name,
         limitKind: data.limitKind,
+        // #943: a feature row carries its module key; a limit row has none
+        featureKey: data.featureKey ?? null,
         packSize: data.packSize,
         monthlyPrice: data.monthlyPrice,
         isActive: data.isActive ?? true,
@@ -68,10 +70,10 @@ export const simplifiedAddonPrices = {
 export interface AddMerchantAddonInput {
   merchantId: number;
   subscriptionId: number | null;
-  addonPrice: { id: number; name: string; limitKind: string; packSize: number; monthlyPrice: number };
+  addonPrice: { id: number; name: string; limitKind: string; packSize: number; monthlyPrice: number; featureKey?: string | null };
   packs: number;
   quote: AddonQuote;
-  method?: 'TRANSFER' | 'STRIPE';
+  method?: 'TRANSFER' | 'STRIPE' | 'CASH';
   transactionId?: string;
   reference?: string;
   createdBy?: string;
@@ -87,12 +89,19 @@ export const simplifiedMerchantAddons = {
 
   findById: async (id: number) => prisma.planLimitAddon.findUnique({ where: { id } }),
 
+  /** #943: the shop's un-ended item of a feature (one per shop), or null. */
+  findActiveFeature: async (merchantId: number, featureKey: string, now = new Date()) =>
+    prisma.planLimitAddon.findFirst({ where: { merchantId, featureKey, ...notEnded(now) } }),
+
   /**
    * Buy `packs` packs of a price-list row: one PlanLimitAddon with the price captured now, and a payment when
    * something is charged now (type PLAN_CHANGE, as an in-period change; method / status as in renew).
    */
   add: async (input: AddMerchantAddonInput) => {
     const { addonPrice, packs, quote } = input;
+    // #943: a feature (attendance…) has no limit columns and no packs; it carries its module key
+    const feature = isFeatureAddon(addonPrice);
+    const featureKey = feature ? addonPrice.featureKey ?? null : null;
     const columns = addonColumnsFor(addonPrice.limitKind as LimitKind, addonPrice.packSize, packs);
     const method = input.method || 'TRANSFER';
     return prisma.$transaction(async (tx) => {
@@ -100,16 +109,22 @@ export const simplifiedMerchantAddons = {
         data: {
           merchantId: input.merchantId,
           ...columns,
-          notes: `${addonPrice.name} × ${packs}`,
+          notes: feature ? addonPrice.name : `${addonPrice.name} × ${packs}`,
           isActive: true,
           addonPriceId: addonPrice.id,
           name: addonPrice.name,
           limitKind: addonPrice.limitKind,
-          packSize: addonPrice.packSize,
-          packs,
+          packSize: feature ? 1 : addonPrice.packSize,
+          packs: feature ? 1 : packs,
           unitPrice: addonPrice.monthlyPrice,
+          featureKey,
         },
       });
+      // #943: the add-on replaces a legacy #907 switch of the same module (row kept, switched off), so turning the
+      // add-on off later really ends the module
+      if (featureKey) {
+        await tx.merchantModule.updateMany({ where: { merchantId: input.merchantId, key: featureKey, enabled: true }, data: { enabled: false } });
+      }
       let payment: Payment | null = null;
       if (quote.amountDue > 0) {
         payment = await tx.payment.create({
@@ -123,8 +138,10 @@ export const simplifiedMerchantAddons = {
             status: (method === 'STRIPE' ? 'COMPLETED' : 'PENDING') as any,
             transactionId: input.transactionId || undefined,
             reference: input.reference || undefined,
-            description: `Add-on: ${addonPrice.name} × ${packs} (+${packs * addonPrice.packSize} ${addonPrice.limitKind}), còn ${quote.remainingDays} ngày`,
-            metadata: JSON.stringify({ addonId: addon.id, addonPriceId: addonPrice.id, packs, unitPrice: addonPrice.monthlyPrice, ...quote }),
+            description: feature
+              ? `Add-on: ${addonPrice.name} (tính năng), còn ${quote.remainingDays} ngày`
+              : `Add-on: ${addonPrice.name} × ${packs} (+${packs * addonPrice.packSize} ${addonPrice.limitKind}), còn ${quote.remainingDays} ngày`,
+            metadata: JSON.stringify({ addonId: addon.id, addonPriceId: addonPrice.id, packs: feature ? 1 : packs, unitPrice: addonPrice.monthlyPrice, ...(featureKey ? { featureKey } : {}), ...quote }),
             processedAt: method === 'STRIPE' ? new Date() : null,
             processedBy: input.createdBy,
           },

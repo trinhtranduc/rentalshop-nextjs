@@ -1,4 +1,4 @@
-import { resolveActiveModules } from '@rentalshop/constants';
+import { mergeModuleSources, resolveActiveModules } from '@rentalshop/constants';
 import { prisma } from './client';
 
 /**
@@ -13,13 +13,22 @@ export async function listMerchantModules(merchantId: number) {
   });
 }
 
-/** Active module keys of a merchant at `now` (e.g. ['attendance']). */
+/**
+ * Active module keys of a merchant at `now` (e.g. ['attendance']). #943: a module is on through an un-ended feature
+ * add-on (PlanLimitAddon with a featureKey) or, for shops switched on before #943, an active legacy row.
+ */
 export async function getActiveMerchantModuleKeys(merchantId: number, now: Date = new Date()): Promise<string[]> {
-  const rows = await prisma.merchantModule.findMany({
-    where: { merchantId },
-    select: { key: true, enabled: true, endsAt: true },
-  });
-  return resolveActiveModules(rows, now);
+  const [rows, featureAddons] = await Promise.all([
+    prisma.merchantModule.findMany({
+      where: { merchantId },
+      select: { key: true, enabled: true, endsAt: true },
+    }),
+    prisma.planLimitAddon.findMany({
+      where: { merchantId, featureKey: { not: null }, isActive: true, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+      select: { featureKey: true, isActive: true, endsAt: true },
+    }),
+  ]);
+  return resolveActiveModules(mergeModuleSources(rows, featureAddons, now), now);
 }
 
 export async function isMerchantModuleActive(merchantId: number, key: string, now: Date = new Date()): Promise<boolean> {

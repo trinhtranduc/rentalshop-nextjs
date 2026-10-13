@@ -404,6 +404,7 @@
   "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "Only a multi-branch plan (Enterprise) can take a branch add-on.",
   "ADDON_PRICE_NOT_FOUND": "Add-on price not found.",
   "ADDON_PRICE_NOT_ON_SALE": "This add-on is paused and cannot be sold.",
+  "ADDON_FEATURE_ALREADY_ON": "This shop already has this feature. Undo the turn-off instead of adding it again.",
   "ADDON_PRICE_IN_USE": "Shops use this add-on: its pack size cannot change. Add a new row instead.",
   "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "This shop still has branch add-ons. Remove the branch add-ons first, then switch to a plan without multiple branches.",
   "ADDON_ALREADY_ENDED": "This add-on has already ended.",

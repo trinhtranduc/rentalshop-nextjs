@@ -12,6 +12,7 @@ import {
 } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { checkAddonPurchase, findShop, routeId } from '../../../../../lib/merchant-addons';
+import { moduleCatalogView } from '../../../../../lib/merchant-modules';
 import type { AddonPriceRowLike, ShopAddonItem } from '../../../../../lib/merchant-addons';
 
 /**
@@ -38,6 +39,7 @@ export async function GET(
       const catalog = new Map<number, AddonPriceRowLike>(rows.map((r) => [r.id, r] as [number, AddonPriceRowLike]));
       const { lines, monthlyTotal: renewalAddonMonthly, paidMonthlyTotal } = addonRenewalLines(items, catalog, now);
       const lineById = new Map(lines.map((l) => [l.id, l]));
+      const legacyModules = await legacyModuleSwitches(merchantId, now);
 
       const addons = items.map((item) => {
         const line = lineById.get(item.id);
@@ -99,6 +101,7 @@ export async function GET(
           monthlyTotal: addons.reduce((sum, a) => sum + a.monthlyAmount, 0),
           limits,
           renewal,
+          legacyModules,
         })
       );
     } catch (error) {
@@ -109,7 +112,21 @@ export async function GET(
 }
 
 /**
+ * #943: modules switched on the old way (#907) until the admin moves the shop to the feature add-on. Informational:
+ * any error (e.g. table not migrated) → [] so the add-on page still loads.
+ */
+async function legacyModuleSwitches(merchantId: number, now: Date) {
+  try {
+    const rows = await db.merchantModules.listForMerchant(merchantId);
+    return moduleCatalogView(rows, now).filter((m) => m.enabled);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * POST /api/merchants/[id]/addons — buy `packs` packs of a price-list row for the shop (#850). ADMIN only.
+ * #943: a feature row (attendance) is bought once (packs 1); a second un-ended one → 422 ADDON_FEATURE_ALREADY_ON.
  * The price comes from the list (never from the body) and is captured on the item. The limit rises at once.
  * A payment is written when something is charged now.
  */
@@ -133,7 +150,7 @@ export async function POST(
         merchantId,
         subscriptionId: check.subscription?.id ?? null,
         addonPrice: check.addonPrice,
-        packs: parsed.data.packs,
+        packs: check.packs,
         quote: check.quote,
         method: parsed.data.method,
         transactionId: parsed.data.transactionId,
