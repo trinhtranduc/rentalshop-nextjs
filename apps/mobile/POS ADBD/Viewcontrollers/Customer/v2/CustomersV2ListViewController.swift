@@ -24,6 +24,11 @@ final class CustomersV2ListViewController: BaseViewControler {
 
     /// `.pick`: the chosen customer (the caller sets the cart and closes the sheet)
     var onPicked: ((Customer) -> Void)?
+    /// `.pick` (#952): a customer was edited from the pencil (the caller refreshes the cart's customer)
+    var onEdited: ((_ customerId: Int, _ form: CustomerEditForm) -> Void)?
+    /// #952: the pencil follows the rule the customer detail uses
+    private lazy var showsEdit = CustomerPickerEditLogic.showsEdit(isPicker: mode == .pick,
+                                                                   canManageCustomers: PermissionManager.shared.canManageCustomers())
 
     init(mode: Mode, viewModel: CustomersV2ListViewModel = CustomersV2ListViewModel()) {
         self.mode = mode
@@ -192,6 +197,24 @@ final class CustomersV2ListViewController: BaseViewControler {
     }
 
     private var showsNewRow: Bool { mode == .pick }
+
+    /// #952: the short edit sheet (name, phone, address, note); after a save the list reloads and a toast says so
+    private func openEdit(_ customer: Customer) {
+        guard let id = customer.id else { return }
+        view.endEditing(true)
+        let edit = EditCustomerViewController(customerId: id, compact: true)
+        edit.onSavedForm = { [weak self] form in
+            guard let self else { return }
+            self.viewModel.reload()
+            self.onEdited?(id, form)
+            // After the sheet has slid away, so the toast is seen on the list
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.showToast(message: "customers.v2.saved".localized(), duration: 2.5,
+                                icon: UIImage(systemName: "checkmark.circle.fill"))
+            }
+        }
+        present(edit, animated: true)
+    }
 }
 
 extension CustomersV2ListViewController: UITableViewDataSource, UITableViewDelegate {
@@ -226,7 +249,9 @@ extension CustomersV2ListViewController: UITableViewDataSource, UITableViewDeleg
             return tableView.dequeueReusableCell(withIdentifier: NewCustomerRowCell.reuseId, for: indexPath)
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: CustomerV2Cell.reuseId, for: indexPath) as! CustomerV2Cell
-        cell.configure(viewModel.customers[indexPath.row], showsChevron: mode == .browse)
+        let customer = viewModel.customers[indexPath.row]
+        cell.configure(customer, showsChevron: mode == .browse,
+                       onEdit: showsEdit ? { [weak self] in self?.openEdit(customer) } : nil)
         return cell
     }
 

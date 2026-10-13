@@ -28,13 +28,26 @@ final class EditCustomerViewController: BaseViewControler {
     private var keyboardManagerWasEnabled = true
     private let formScroll = CustomerFormScrollView()
 
+    /// #952: the short sheet of the cart's customer picker (name, phone, address, note)
+    private let compact: Bool
+
     /// Called after a successful save (the detail reloads itself)
     var onSaved: (() -> Void)?
+    /// #952: called after a successful save with what was saved (the picker updates the cart's customer)
+    var onSavedForm: ((CustomerEditForm) -> Void)?
 
-    init(customerId: Int, dataSource: CustomersV2DataSource = LiveCustomersV2DataSource()) {
+    init(customerId: Int, dataSource: CustomersV2DataSource = LiveCustomersV2DataSource(), compact: Bool = false) {
         self.customerId = customerId
         self.dataSource = dataSource
+        self.compact = compact
         super.init(nibName: nil, bundle: nil)
+        if compact {
+            modalPresentationStyle = .pageSheet
+            if let sheet = sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+            }
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -64,7 +77,8 @@ final class EditCustomerViewController: BaseViewControler {
         let back = CustomersV2UI.iconButton("chevron.left", label: "products.cart.back".localized(), size: DS.Icon.lg)
         back.addTarget(self, action: #selector(close), for: .touchUpInside)
         let title = V2.label("customers.v2.editTitle".localized(), size: 20, weight: .bold)
-        let header = UIStackView(arrangedSubviews: [back, title])
+        back.isHidden = compact // #952: the sheet closes with Huỷ or a swipe down
+        let header = UIStackView(arrangedSubviews: compact ? [title] : [back, title])
         header.alignment = .center
         header.spacing = 4
         let headerLine = V2.divider()
@@ -104,7 +118,13 @@ final class EditCustomerViewController: BaseViewControler {
         pair.distribution = .fillEqually
         pair.spacing = 12
 
-        let form = UIStackView(arrangedSubviews: [
+        // #952: the picker's sheet keeps name, phone, address and note; the other fields stay loaded and are sent back
+        let form = UIStackView(arrangedSubviews: compact ? [
+            phoneBox,
+            field("customers.v2.name".localized(), nameField),
+            field("customers.v2.address".localized(), addressField),
+            field("customers.v2.note".localized(), notesField),
+        ] : [
             phoneBox,
             field("customers.v2.name".localized(), nameField),
             extraTitle,
@@ -115,7 +135,7 @@ final class EditCustomerViewController: BaseViewControler {
         ])
         form.axis = .vertical
         form.spacing = 14
-        form.setCustomSpacing(20, after: form.arrangedSubviews[1])
+        if !compact { form.setCustomSpacing(20, after: form.arrangedSubviews[1]) }
 
         let scroll = formScroll
         scroll.keyboardDismissMode = .interactive
@@ -135,8 +155,9 @@ final class EditCustomerViewController: BaseViewControler {
 
         [header, headerLine, scroll, bottom, spinner].forEach(view.addSubview)
         header.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.leading.trailing.equalToSuperview().inset(8)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(compact ? 20 : 8)
+            make.leading.trailing.equalToSuperview().inset(compact ? DS.Spacing.lg : 8)
+            if compact { make.height.equalTo(DS.touchTarget) }
         }
         headerLine.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom)
@@ -268,6 +289,7 @@ final class EditCustomerViewController: BaseViewControler {
                     return
                 }
                 self.onSaved?()
+                self.onSavedForm?(form)
                 self.close()
             }
         }
@@ -280,7 +302,8 @@ extension EditCustomerViewController: UITextFieldDelegate {
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        let order: [UITextField] = [phoneField, nameField, emailField, addressField, idField, dobField, notesField]
+        let order: [UITextField] = compact ? [phoneField, nameField, addressField, notesField]
+            : [phoneField, nameField, emailField, addressField, idField, dobField, notesField]
         if let index = order.firstIndex(where: { $0 === textField }), index + 1 < order.count {
             order[index + 1].becomeFirstResponder()
         } else {

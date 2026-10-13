@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.home.v2
 import com.anyrent.pos.ui.common.AppMenuAction
 import com.anyrent.pos.ui.common.AppOverflowMenuAnchor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.foundation.background
@@ -76,7 +77,9 @@ import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.domain.customers.CustomerPickerEdit
 import com.anyrent.pos.domain.products.CartCostLogic
+import com.anyrent.pos.domain.products.CartDateRow
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.CartProblem
@@ -445,11 +448,17 @@ fun CartV2Screen(
             CustomerRow(name = customer?.displayName, phone = customer?.phone, onClick = { showCustomer = true })
             if (!isSale) {
                 HorizontalDivider(color = DS.Colors.Divider)
+                // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
+                val dateRow = CartDateRow.state(pickup.takeIf { datesChosen }, ret.takeIf { datesChosen })
                 Row(
-                    Modifier.fillMaxWidth().clickable { showDates = true }.heightIn(min = 56.dp).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (!datesChosen) {
+                    Box(Modifier.size(CartDateRow.ICON_DP.dp).clip(CircleShape).background(Color(0xFFDBEAFE)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = Color(0xFF1E40AF), modifier = Modifier.size(DS.Icon.Sm))
+                    }
+                    if (dateRow.isEmpty) {
                         // iOS starts with no dates: "Chọn ngày thuê" in the primary colour, no day pill (#448)
                         Text(
                             stringResource(R.string.v2_cart_pick_dates),
@@ -458,11 +467,13 @@ fun CartV2Screen(
                         )
                     } else {
                         Text(
-                            "${formatDay(pickup)} → ${formatDay(ret)}",
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
+                            dateRow.text.orEmpty(),
+                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                         )
+                        val days = dateRow.days ?: 1
                         Text(
-                            CartV2Logic.rentalDays(pickup, ret).let { pluralStringResource(R.plurals.v2_cart_days, it, it) },
+                            pluralStringResource(R.plurals.v2_cart_days, days, days),
                             fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E40AF), maxLines = 1,
                             // #893 (owner): room inside the pill (10 left/right, 4 top/bottom), one line
                             modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color(0xFFDBEAFE)).padding(horizontal = 10.dp, vertical = 4.dp),
@@ -651,6 +662,10 @@ fun CartV2Screen(
                     showCustomer = false
                 },
                 onClose = { showCustomer = false },
+                // #952: a customer edited from the picker's pencil: the cart shows the new info when it is that customer
+                onEdited = { id, form ->
+                    CustomerPickerEdit.cartCustomerAfterSave(form, id, CartStore.customer.value)?.let { CartStore.setCustomer(it) }
+                },
             )
         }
     } else if (showCustomer) {

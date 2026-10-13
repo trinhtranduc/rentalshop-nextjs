@@ -536,3 +536,22 @@ object CartV2Logic {
 /** The barcode to show; the list parser can hand back the JSON literal "null" */
 val Product.barcodeText: String?
     get() = barcode?.trim()?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
+
+/** #952 (owner, iOS `CartDateRowLogic`): the cart's date row has a calendar icon in a light-blue circle like the customer avatar */
+object CartDateRow {
+    /** Same circle as the customer row's avatar */
+    const val ICON_DP = 40
+
+    /** [text] / [days] are null until both days are chosen (the row then says "Chọn ngày thuê" in blue, no pill) */
+    data class State(val text: String?, val days: Int?) {
+        val isEmpty: Boolean get() = days == null
+    }
+
+    fun state(pickup: LocalDate?, returnDate: LocalDate?): State {
+        if (pickup == null || returnDate == null) return State(null, null)
+        return State(
+            com.anyrent.pos.domain.DayText.dmy(pickup) + " → " + com.anyrent.pos.domain.DayText.dmy(returnDate),
+            CartV2Logic.rentalDays(pickup, returnDate),
+        )
+    }
+}

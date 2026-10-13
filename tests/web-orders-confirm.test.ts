@@ -12,6 +12,7 @@ jest.mock('@rentalshop/utils', () => ({
 }));
 import {
   addProduct,
+  setQuantity,
   buildPayload,
   computeTotals,
   rentalDays,
@@ -30,7 +31,7 @@ const AO_DAI: ProductLike = { id: 5, name: 'Áo dài đỏ', rentPrice: 75_000, 
 
 function cart(orderType: OrderType): CartLine[] {
   let lines = addProduct([], VEST, orderType);
-  lines = addProduct(lines, VEST, orderType);
+  lines = setQuantity(lines, lines[0].key, 2); // #952: a second add would be a new line
   lines = addProduct(lines, AO_DAI, orderType);
   if (orderType === 'RENT') {
     lines = selectMode(lines, 5, 'DAILY');

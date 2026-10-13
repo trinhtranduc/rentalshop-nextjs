@@ -2572,3 +2572,6 @@
 /* #951: 0đ is a price */
 "Rent price must be greater than or equal to 0" = "Giá thuê phải lớn hơn hoặc bằng 0";
 "Daily price must be greater than or equal to 0" = "Giá thuê theo ngày phải lớn hơn hoặc bằng 0";
+
+/* #952 edit a customer from the cart picker */
+"customers.v2.saved" = "Đã lưu khách hàng";

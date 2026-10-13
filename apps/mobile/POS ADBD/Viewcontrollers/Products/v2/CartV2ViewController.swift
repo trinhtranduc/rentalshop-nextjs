@@ -437,14 +437,16 @@ final class CartV2ViewController: BaseViewControler {
     private func datesRow() -> UIView {
         let row = UIControl()
         row.addTarget(self, action: #selector(pickDates), for: .touchUpInside)
-        let text: String
-        var days: Int?
-        if let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt {
-            text = DayFormatter.dmy(pickup) + " → " + DayFormatter.dmy(ret) // #888 dd/mm/yy
-            days = CartV2Logic.rentalDays(pickup: pickup, return: ret)
-        } else {
-            text = "products.cart.pickDates".localized()
-        }
+        // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
+        let state = CartDateRowLogic.state(pickup: cart.pickupPlanAt, return: cart.returnPlanAt)
+        let text = state.text
+        let days = state.days
+        let icon = UIImageView(image: DS.symbol(CartDateRowLogic.iconSymbol, DS.Icon.sm))
+        icon.tintColor = UIColor(hexString: "1E40AF")
+        icon.contentMode = .center
+        icon.backgroundColor = UIColor(hexString: "DBEAFE")
+        icon.layer.cornerRadius = CartDateRowLogic.iconSize / 2
+        icon.clipsToBounds = true
         let label = V2.label(text, size: DS.TextSize.name, weight: .bold, color: days == nil ? DS.Color.primary : DS.Color.text)
         // #893 (owner): room inside the pill (10pt left/right, 4pt top/bottom), one line
         let pill = InsetLabel()
@@ -458,9 +460,17 @@ final class CartV2ViewController: BaseViewControler {
         pill.clipsToBounds = true
         pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.isHidden = days == nil
-        [label, pill].forEach(row.addSubview)
-        label.snp.makeConstraints { make in
+        label.numberOfLines = 1
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
+        [icon, label, pill].forEach(row.addSubview)
+        icon.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(DS.Spacing.lg)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(CartDateRowLogic.iconSize)
+        }
+        label.snp.makeConstraints { make in
+            make.leading.equalTo(icon.snp.trailing).offset(12)
             make.centerY.equalToSuperview()
             make.trailing.lessThanOrEqualTo(pill.snp.leading).offset(-DS.Spacing.sm)
         }
@@ -468,7 +478,7 @@ final class CartV2ViewController: BaseViewControler {
             make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
             make.centerY.equalToSuperview()
         }
-        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(60) }
         row.isAccessibilityElement = true
         row.accessibilityTraits = UIAccessibilityTraitButton
         row.accessibilityLabel = [text, pill.text].compactMap { $0 }.joined(separator: ", ")
@@ -848,6 +858,13 @@ final class CartV2ViewController: BaseViewControler {
             picker.onPicked = { [weak picker] customer in
                 CartStore.shared.setCustomer(customer)
                 picker?.dismiss(animated: true)
+            }
+            // #952: a customer edited from the picker's pencil: the cart shows the new info when it is that customer
+            picker.onEdited = { customerId, form in
+                if let updated = CustomerPickerEditLogic.cartCustomer(afterSaving: form, customerId: customerId,
+                                                                      cartCustomer: CartStore.shared.cart.customer) {
+                    CartStore.shared.setCustomer(updated)
+                }
             }
             presentWithHiddenNavigationBar(picker)
             return

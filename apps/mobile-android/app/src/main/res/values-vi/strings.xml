@@ -925,6 +925,7 @@
     </plurals>
     <string name="customers_v2_cancel">Hủy</string>
     <string name="customers_v2_edit_title">Sửa khách hàng</string>
+    <string name="customers_v2_saved">Đã lưu khách hàng</string>
     <string name="customers_v2_email_placeholder">lan@email.com</string>
     <string name="customers_v2_more_info">Thông tin thêm</string>
     <string name="customers_v2_id_number">CCCD / giấy tờ</string>

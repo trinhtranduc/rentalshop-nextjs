@@ -104,8 +104,9 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         e2e.shot("13-home-added")
         e2e.tapIfExists(e2e.button(["Back", "Quay lại"]))
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "Cart bar should show after adding a product")
-        e2e.shot("14-home-cart-bar")
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "Cart button counts the product after adding it")
+        XCTAssertFalse(e2e.floatingCartBar.exists, "#952: no floating cart bar on Home")
+        e2e.shot("14-home-cart-button")
     }
 
     func test2CartRent() throws {
@@ -1094,8 +1095,8 @@ final class AnyRentE2ETests: XCTestCase {
         let plus = row.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
         if plus.exists, !plus.label.contains("trong giỏ"), !plus.label.contains("in cart") { plus.tap() }
         sleep(1)
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar")
-        e2e.cartBar.tap()
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "cart bar")
+        e2e.homeCart.tap()
         let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
         if dates.waitForExistence(timeout: 5) {
             dates.tap()
@@ -1165,8 +1166,8 @@ final class AnyRentE2ETests: XCTestCase {
             if plus.exists, !plus.label.contains("trong giỏ") { plus.tap() }
             sleep(1)
         }
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar")
-        e2e.cartBar.tap()
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "cart bar")
+        e2e.homeCart.tap()
         // The dates row: "Chọn ngày thuê" on a new cart, "T6 09/10 → T6 09/10" when dates were kept
         let chooser = app.descendants(matching: .any).matching(NSPredicate(format:
             "label BEGINSWITH 'Chọn ngày thuê' OR label BEGINSWITH 'Choose rental dates' OR label CONTAINS '→'")).firstMatch
@@ -1479,8 +1480,8 @@ final class AnyRentE2ETests: XCTestCase {
 
         // A cart left in edit mode by an earlier run cannot be left except by saving: save it unchanged first
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        if e2e.cartBar.waitForExistence(timeout: 4) {
-            e2e.cartBar.tap()
+        if e2e.homeCart.waitForExistence(timeout: 4) {
+            e2e.homeCart.tap()
             let leftoverSave = e2e.button(["Lưu thay đổi", "Save changes"])
             if leftoverSave.waitForExistence(timeout: 5) {
                 leftoverSave.tap()
@@ -1543,9 +1544,9 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("60d2-edit-after-tap")
         // Sửa đơn loads the order into the cart and shows the product list; the cart bar opens the cart
-        if !e2e.button(["Lưu thay đổi", "Save changes"]).exists, e2e.cartBar.waitForExistence(timeout: 5) {
-            e2e.note("cart bar while editing: \(e2e.cartBar.label)")
-            e2e.cartBar.tap()
+        if !e2e.button(["Lưu thay đổi", "Save changes"]).exists, e2e.homeCart.waitForExistence(timeout: 5) {
+            e2e.note("cart bar while editing: \(e2e.homeCart.label)")
+            e2e.homeCart.tap()
         }
         let title = app.staticTexts.matching(NSPredicate(format: "label IN %@",
             ["Sửa đơn #\(number)", "Edit order #\(number)"])).firstMatch
@@ -1727,8 +1728,8 @@ final class AnyRentE2ETests: XCTestCase {
             guard add.exists else { return XCTFail("+ on \(key)") }
             add.tap()
             sleep(1)
-            guard e2e.cartBar.waitForExistence(timeout: 5) else { return XCTFail("cart bar") }
-            e2e.cartBar.tap()
+            guard e2e.homeCart.waitForExistence(timeout: 5) else { return XCTFail("cart bar") }
+            e2e.homeCart.tap()
             _ = e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
             let plus = e2e.button(["Thêm 1", "One more"])
             for _ in 1..<max(free, 1) where e2e.scrollTo(plus) { plus.tap(); usleep(400_000) }
@@ -1755,7 +1756,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("62f-out-today-added")
         let inCart = row.buttons.matching(NSPredicate(format: "label CONTAINS 'trong giỏ' OR label CONTAINS 'in cart'")).firstMatch
         e2e.note("+ after tap: \(row.buttons.allElementsBoundByIndex.map(\.label))")
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "tapping + on an out-today product adds it (cart bar shows)")
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "tapping + on an out-today product adds it (cart bar shows)")
         XCTAssertTrue(inCart.exists, "the circle shows the count in the cart (label '…: 1 trong giỏ, thêm 1')")
         e2e.emptyCart()
     }
@@ -1993,8 +1994,8 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertEqual(e2e.setOverlapAllowed(false), false, "Cho tạo đơn khi trùng lịch turns OFF")
         e2e.shot("33f-overlap-setting-off")
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "the cart is kept")
-        e2e.cartBar.tap()
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "the cart is kept")
+        e2e.homeCart.tap()
         sleep(3)
         let blocked = app.descendants(matching: .any).matching(NSPredicate(format:
             "label BEGINSWITH 'Cửa hàng không cho tạo đơn trùng lịch' OR label BEGINSWITH 'This shop does not allow overlapping'")).firstMatch
@@ -2429,12 +2430,12 @@ final class AnyRentE2ETests: XCTestCase {
         guard plus.exists else { return false }
         plus.tap()
         sleep(1)
-        return e2e.cartBar.waitForExistence(timeout: 5)
+        return e2e.homeCart.waitForExistence(timeout: 5)
     }
 
     private func openCart() -> Bool {
-        guard e2e.cartBar.waitForExistence(timeout: 5) else { return false }
-        e2e.cartBar.tap()
+        guard e2e.homeCart.waitForExistence(timeout: 5) else { return false }
+        e2e.homeCart.tap()
         return e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
     }
 
@@ -2847,7 +2848,7 @@ final class AnyRentE2ETests: XCTestCase {
         let plus = app.tables.cells.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
         if plus.waitForExistence(timeout: 5) {
             plus.tap()
-            XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar after +")
+            XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "cart bar after +")
             button.tap()
             XCTAssertTrue(use.waitForExistence(timeout: 5), "branch sheet opens again")
             rows.matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch.tap()
@@ -2857,7 +2858,7 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.shot("11d-outlet-cart-alert")
             confirm.tap()
             sleep(3)
-            e2e.soft(!e2e.cartBar.exists, "cart emptied by the switch")
+            e2e.soft(!e2e.homeCart.exists, "cart emptied by the switch")
             e2e.soft(button.label == before, "back on the first branch (\(button.label))")
             e2e.shot("11e-outlet-after-cart-switch")
         } else {
@@ -2959,6 +2960,112 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.note("LIMIT \(tag) product | no Add product button for this role")
         }
         XCTAssertTrue(seen.isEmpty, "raw API codes shown for a plan limit: \(seen)")
+    }
+
+    /// #952 (owner 13/10/26): the cart's date row has a calendar icon; a pencil in the customer picker edits the
+    /// customer (the cart follows); Home has no floating cart bar; the product form has no "Xong" keyboard bar
+    func test952CartUi() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireFlag("newCustomers")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        // A kept cart may hold a customer and dates from an earlier run: ⋯ → Xoá giỏ hàng starts clean
+        if app.buttons["cart.more"].waitForExistence(timeout: 3) {
+            app.buttons["cart.more"].tap()
+            e2e.tapIfExists(e2e.button(["Xoá giỏ hàng", "Clear cart"]), timeout: 3)
+            e2e.tapIfExists(app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Xoá", "Delete"])).firstMatch, timeout: 3)
+            sleep(1)
+            e2e.goBackOnce()
+            guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart again") }
+        }
+        e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
+        let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
+        if dates.waitForExistence(timeout: 5) { // a kept cart may already have dates
+            e2e.shot("952a-cart-date-empty")
+            dates.tap()
+            e2e.pickTodayInDateSheet()
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        } else {
+            e2e.note("cart kept its dates: no empty date row this run")
+        }
+        let chosen = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ' → '")).firstMatch
+        XCTAssertTrue(chosen.waitForExistence(timeout: 5), "dates: dd/mm/yy → dd/mm/yy")
+        e2e.shot("952b-cart-date-chosen")
+
+        // Pick a customer, then edit them from the picker's pencil
+        let pickRow = e2e.element(labelBeginsWith: ["Choose customer", "Chọn khách hàng"])
+        XCTAssertTrue(pickRow.waitForExistence(timeout: 5), "customer row in the cart")
+        pickRow.tap()
+        let pencil = app.buttons.matching(identifier: "customers.picker.edit").firstMatch
+        XCTAssertTrue(pencil.waitForExistence(timeout: 8), "rows of the picker have a pencil")
+        sleep(2)
+        e2e.shot("952c-picker-pencil")
+        let firstCell = app.cells.containing(.button, identifier: "customers.picker.edit").firstMatch
+        let picked = firstCell.staticTexts.allElementsBoundByIndex.map(\.label)
+            .first { !$0.isEmpty && !$0.contains("·") && $0.count > 2 } ?? ""
+        XCTAssertFalse(picked.isEmpty, "the first row has a name")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
+        sleep(2)
+        let customerRow = e2e.element(labelBeginsWith: [picked])
+        XCTAssertTrue(customerRow.waitForExistence(timeout: 5), "the cart shows the picked customer \(picked)")
+        customerRow.tap()
+        XCTAssertTrue(pencil.waitForExistence(timeout: 8), "picker again")
+        sleep(1)
+        app.cells.containing(NSPredicate(format: "label == %@", picked)).firstMatch
+            .buttons.matching(identifier: "customers.picker.edit").firstMatch.tap()
+        let nameField = e2e.field(["Full name", "Họ và tên"])
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "the edit sheet opens")
+        sleep(2)
+        XCTAssertFalse(e2e.field(["Email"]).exists, "the sheet keeps name, phone, address and note only")
+        e2e.shot("952d-edit-sheet")
+        let newName = picked.hasSuffix(" E2E") ? String(picked.dropLast(4)) : picked + " E2E"
+        nameField.tap()
+        nameField.clearText()
+        nameField.typeText(newName)
+        // Lưu rides on the keyboard (no hideKeyboard: its drag-down fallback would close the sheet)
+        e2e.button(["Save", "Lưu"]).tap()
+        let toast = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS 'Customer saved' OR label CONTAINS 'Đã lưu khách hàng'")).firstMatch
+        sleep(1)
+        e2e.shot("952e-list-after-save")
+        // The toast is in the screenshot; XCUITest does not always see ToastView's label: a soft check
+        e2e.soft(toast.exists, "toast Đã lưu khách hàng")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+        sleep(1)
+        XCTAssertTrue(e2e.element(labelBeginsWith: [newName]).waitForExistence(timeout: 5), "the cart shows the new name")
+        e2e.shot("952f-cart-updated-customer")
+
+        // Home: the top-right button counts the cart; no floating bar
+        e2e.goBackOnce()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "the cart button has the count")
+        XCTAssertFalse(e2e.floatingCartBar.exists, "no floating cart bar")
+        e2e.shot("952g-home-no-cart-bar")
+
+        // Product form: a number field has no "Xong" bar; a tap outside closes the keyboard
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        guard add.waitForExistence(timeout: 5) else { return XCTFail("Thêm sản phẩm") }
+        add.tap()
+        XCTAssertTrue(e2e.field(["Product name", "Tên sản phẩm"]).waitForExistence(timeout: 8), "form opens")
+        let price = app.textFields.matching(NSPredicate(format: "placeholderValue == '0'")).firstMatch
+        for _ in 0..<4 where !(price.exists && price.isHittable) { app.swipeUp() }
+        XCTAssertTrue(price.exists, "a price field")
+        price.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "number pad up")
+        XCTAssertFalse(app.toolbars.buttons.matching(NSPredicate(format: "label IN %@", ["Done", "Xong"])).firstMatch.exists,
+                       "no Xong bar on the keyboard")
+        sleep(1)
+        e2e.shot("952h-product-form-keyboard")
+        // a tap outside any field: the header title
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.1)).tap()
+        sleep(1)
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "a tap outside closes the keyboard")
+        e2e.shot("952i-product-form-keyboard-closed")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 2)
+        e2e.dismissAlerts()
+        e2e.emptyCart()
     }
 
     func test9SettingsLogout() throws {
@@ -3446,9 +3553,17 @@ private final class E2E {
         element(labelBeginsWith: ["Sorted by", "Xếp theo"], type: .button)
     }
 
-    var cartBar: XCUIElement {
+    /// #952: the Home top-right cart button while the cart has items (its value says "Giỏ hàng · N món");
+    /// it is the only entry to the cart (the floating cart bar is gone)
+    var homeCart: XCUIElement {
+        app.buttons.matching(
+            NSPredicate(format: "label IN %@ AND (value CONTAINS 'Cart ·' OR value CONTAINS 'Giỏ hàng ·')", ["Cart", "Giỏ hàng"])
+        ).firstMatch
+    }
+
+    /// #952: the old floating bar ("Giỏ hàng · N món … Tạo đơn ›"); must not exist
+    var floatingCartBar: XCUIElement {
         app.descendants(matching: .any).matching(
-            // #677: "Sửa đơn #n" while the cart edits an order
             NSPredicate(format: "(label CONTAINS 'Cart ·' OR label CONTAINS 'Giỏ hàng ·') AND (label CONTAINS 'Create order' OR label CONTAINS 'Tạo đơn' OR label CONTAINS 'Edit order' OR label CONTAINS 'Sửa đơn')")
         ).firstMatch
     }
@@ -3515,7 +3630,7 @@ private final class E2E {
     func openCartWithOneItem() -> Bool {
         tapTab(["Home", "Trang chủ"], index: 0)
         guard app.tables.cells.firstMatch.waitForExistence(timeout: 15) else { return false }
-        if !cartBar.waitForExistence(timeout: 2) {
+        if !homeCart.waitForExistence(timeout: 2) {
             let add = app.tables.buttons.matching(NSPredicate(
                 format: "(label BEGINSWITH 'Add ' AND label CONTAINS 'cart') OR (label BEGINSWITH 'Thêm ' AND label CONTAINS 'giỏ')"
             ))
@@ -3527,8 +3642,8 @@ private final class E2E {
                 }
             }
         }
-        guard cartBar.waitForExistence(timeout: 5) else { return false }
-        cartBar.tap()
+        guard homeCart.waitForExistence(timeout: 5) else { return false }
+        homeCart.tap()
         return button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
     }
 
@@ -3654,8 +3769,8 @@ private final class E2E {
     /// Removes every line from the cart (− on a 1-quantity line asks "Bỏ món này khỏi giỏ?"), then back to Home.
     func emptyCart() {
         tapTab(["Home", "Trang chủ"], index: 0)
-        guard cartBar.waitForExistence(timeout: 3) else { return }
-        cartBar.tap()
+        guard homeCart.waitForExistence(timeout: 3) else { return }
+        homeCart.tap()
         guard button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8) else { return }
         let minus = app.buttons.matching(NSPredicate(format: "label IN %@", ["One less", "Bớt 1"]))
         for _ in 0..<60 where minus.firstMatch.exists {
@@ -3672,8 +3787,8 @@ private final class E2E {
         button(["Add to cart", "Thêm vào giỏ"]).tap()
         sleep(1)
         tapIfExists(button(["Back", "Quay lại"]))
-        guard cartBar.waitForExistence(timeout: 5) else { return false }
-        cartBar.tap()
+        guard homeCart.waitForExistence(timeout: 5) else { return false }
+        homeCart.tap()
         return button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
     }
 

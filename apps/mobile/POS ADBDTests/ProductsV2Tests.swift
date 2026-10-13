@@ -89,13 +89,11 @@ final class ProductsV2Tests: XCTestCase {
 
     // MARK: - Home cart bar and add feedback (#893)
 
-    /// #893 (owner): the Home cart bar is the board's primary blue with white text; "+" shows no success toast
-    func testHomeCartBarIsBlueAndAddShowsNoToast() {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        HomeCartBarStyle.fill.getRed(&r, green: &g, blue: &b, alpha: &a)
-        XCTAssertEqual(String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255))), "1D4ED8")
-        XCTAssertEqual(HomeCartBarStyle.text, UIColor.white)
-        XCTAssertFalse(HomeCartBarStyle.showsAddedToast)
+    /// #893 (owner): "+" shows no success toast. #952: the floating cart bar is gone; the top-right button says the count
+    func testHomeAddShowsNoToastAndCartButtonSaysTheCount() {
+        XCTAssertFalse(HomeCartButton.showsAddedToast)
+        XCTAssertNil(HomeCartButton.accessibilityValue(itemCount: 0))
+        XCTAssertEqual(HomeCartButton.accessibilityValue(itemCount: 2), PluralText.format("products.cart.bar", count: 2, 2))
     }
 
     // MARK: - Cart swipe to delete (#893)
@@ -652,6 +650,7 @@ final class ProductFormKeyboardTests: XCTestCase {
         allViews(view).compactMap { $0 as? UITextField }
     }
 
+    /// Customer phone pads keep their "Xong" bar (#461); #952 removed it from the product form only
     private func assertDoneBar(_ field: UITextField?, file: StaticString = #filePath, line: UInt = #line) {
         guard let field else { return XCTFail("field not found", file: file, line: line) }
         let bar = field.inputAccessoryView as? UIToolbar
@@ -662,10 +661,16 @@ final class ProductFormKeyboardTests: XCTestCase {
         XCTAssertEqual(done?.action, #selector(UIResponder.resignFirstResponder), file: file, line: line)
     }
 
-    func testEveryPriceFieldHasADoneBar() throws {
-        let numeric = fields(try merchantForm().view).filter { $0.keyboardType == .numberPad }
+    /// #952 (owner): no "Xong" bar on the number pads; a tap outside a field or a drag of the form closes the keyboard
+    func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
+        let form = try merchantForm()
+        let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
         XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
-        numeric.forEach { assertDoneBar($0) }
+        numeric.forEach { XCTAssertNil($0.inputAccessoryView, "\($0.accessibilityLabel ?? "field") keeps no Done bar") }
+        let taps = (form.view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
+        XCTAssertTrue(taps.contains { !$0.cancelsTouchesInView }, "a tap outside a field ends editing (fields still take taps)")
+        let scrolls = allViews(form.view).compactMap { $0 as? UIScrollView }.filter { !($0 is UITextView) }
+        XCTAssertTrue(scrolls.contains { $0.keyboardDismissMode != .none }, "dragging the form closes the keyboard")
     }
 
     func testSaveButtonRidesOnTheKeyboard() throws {
@@ -1518,5 +1523,29 @@ extension ProductsV2Tests {
         // round trip keeps the id
         let again = try JSONDecoder().decode(CartItem.self, from: JSONEncoder().encode(a))
         XCTAssertEqual(again.lineId, a.lineId)
+    }
+
+    // MARK: - #952 cart date row
+
+    private func shopDay(_ y: Int, _ m: Int, _ d: Int, hour: Int = 0) -> Date {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = Date.shopTimeZone
+        return cal.date(from: DateComponents(year: y, month: m, day: d, hour: hour))!
+    }
+
+    /// #952 (owner): no dates → "Chọn ngày thuê" (blue, no pill); dates → "12/10/26 → 15/10/26" + 4 days; calendar icon
+    func testCartDateRowStates() {
+        let empty = CartDateRowLogic.state(pickup: nil, return: nil)
+        XCTAssertEqual(empty.text, "products.cart.pickDates".localized())
+        XCTAssertNil(empty.days)
+        XCTAssertTrue(empty.isEmpty)
+        XCTAssertTrue(CartDateRowLogic.state(pickup: shopDay(2026, 10, 12), return: nil).isEmpty, "half a range is still empty")
+
+        let chosen = CartDateRowLogic.state(pickup: shopDay(2026, 10, 12), return: shopDay(2026, 10, 15, hour: 23))
+        XCTAssertEqual(chosen.text, "12/10/26 → 15/10/26")
+        XCTAssertEqual(chosen.days, 4)
+        XCTAssertFalse(chosen.isEmpty)
+        XCTAssertEqual(CartDateRowLogic.iconSymbol, "calendar")
+        XCTAssertEqual(CartDateRowLogic.iconSize, 40, "same circle as the customer row avatar")
     }
 }
