@@ -28,6 +28,7 @@ import {
   isShiftTemplateUsed,
   listShiftRules,
   listShiftTemplates,
+  seedDefaultShiftTemplates,
   replaceShiftRule,
   updateShiftRule,
   updateShiftTemplate,
@@ -71,6 +72,7 @@ export const attendance = {
   findUsersByIds,
   // schedule
   listTemplates: listShiftTemplates,
+  seedDefaultTemplates: seedDefaultShiftTemplates,
   getTemplate: getShiftTemplate,
   createTemplate: createShiftTemplate,
   updateTemplate: updateShiftTemplate,

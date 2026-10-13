@@ -8,11 +8,13 @@ import { templateBodySchema, templateView } from '../../../../lib/attendance/tem
 /**
  * GET /api/attendance/shift-templates?outletId= — #907 rule 19. MERCHANT, OUTLET_ADMIN (own outlet).
  * `used` = referenced by a rule, a day change or a record. Indexed: ShiftTemplate.outletId.
+ * #959 The first load of a branch that was never seeded creates the four ready-made templates (once).
  */
 export const GET = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { user }) => {
   const parsed = z.object({ outletId: queryIdSchema }).safeParse(queryOf(request.url));
   if (!parsed.success) return validationFailed(parsed.error);
   const outlet = await resolveOutlet(user, parsed.data.outletId);
+  await db.attendance.seedDefaultTemplates(outlet.id, user.merchantId);
   const templates = await db.attendance.listTemplates(user.merchantId, outlet.id);
   const used = await db.attendance.usedTemplateIds(templates.map((t: { id: number }) => t.id));
   return attendanceOk(

@@ -37,6 +37,8 @@ export const mockDb: any = {
     getUserInMerchant: fn(),
     workedDays: fn(),
     listTemplates: fn(),
+    seedDefaultTemplates: fn(),
+    usedTemplateIds: fn(),
     getTemplate: fn(),
     createTemplate: fn(),
     updateTemplate: fn(),
@@ -159,6 +161,8 @@ export function resetAttendanceMocks() {
     merchantId === 2 ? [1, 2].filter((id) => !outletId || id === outletId).map((id) => ({ id, name: `CN ${id}` })) : []
   );
   a.autoCloseOverdue.mockResolvedValue(0);
+  a.seedDefaultTemplates.mockResolvedValue(false);
+  a.usedTemplateIds.mockResolvedValue(new Set());
   a.findOpenRecord.mockResolvedValue(null);
   a.createScan.mockResolvedValue({ id: 1 });
   a.getScheduleData.mockResolvedValue({ rules: [], dayChanges: [], templates: [] });

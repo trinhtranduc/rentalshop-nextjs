@@ -16,6 +16,44 @@ export async function listShiftTemplates(merchantId: number, outletId?: number |
   });
 }
 
+/** #959 The four ready-made templates of a branch (names are shop data, edited like any template). */
+export const DEFAULT_SHIFT_TEMPLATES = [
+  { name: 'Ca sáng', startTime: '08:00', endTime: '12:00', breakMinutes: 0, color: 'blue' },
+  { name: 'Ca chiều', startTime: '13:00', endTime: '17:00', breakMinutes: 0, color: 'orange' },
+  { name: 'Ca tối', startTime: '18:00', endTime: '22:00', breakMinutes: 0, color: 'purple' },
+  { name: 'Hành chính', startTime: '08:00', endTime: '17:00', breakMinutes: 60, color: 'green' },
+] as const;
+
+/**
+ * #959 Creates the four ready-made templates once per outlet. The mark `AttendanceSetting.templatesSeededAt` is
+ * claimed with a conditional update (row lock: a parallel request waits, then sees it set and stops), in the same
+ * transaction as the inserts. An outlet that already has templates only gets the mark. Returns true when created.
+ */
+export async function seedDefaultShiftTemplates(outletId: number, merchantId: number): Promise<boolean> {
+  const setting = await prisma.attendanceSetting.findUnique({ where: { outletId }, select: { templatesSeededAt: true } });
+  if (setting?.templatesSeededAt) return false;
+  if (!setting) {
+    try {
+      await prisma.attendanceSetting.upsert({ where: { outletId }, create: { outletId, merchantId }, update: {} });
+    } catch (error: any) {
+      // a parallel first load inserted the row first
+      if (error?.code !== 'P2002') throw error;
+    }
+  }
+  return prisma.$transaction(async (tx) => {
+    const claimed = await tx.attendanceSetting.updateMany({
+      where: { outletId, templatesSeededAt: null },
+      data: { templatesSeededAt: new Date() },
+    });
+    if (claimed.count === 0) return false;
+    if ((await tx.shiftTemplate.count({ where: { outletId } })) > 0) return false;
+    await tx.shiftTemplate.createMany({
+      data: DEFAULT_SHIFT_TEMPLATES.map((t) => ({ ...t, merchantId, outletId })),
+    });
+    return true;
+  });
+}
+
 export async function getShiftTemplate(id: number, merchantId: number) {
   return prisma.shiftTemplate.findFirst({ where: { id, merchantId } });
 }
