@@ -2574,3 +2574,6 @@
 /* #951: 0đ is a price */
 "Rent price must be greater than or equal to 0" = "Rental price must be greater than or equal to 0";
 "Daily price must be greater than or equal to 0" = "Daily price must be greater than or equal to 0";
+
+/* #952 edit a customer from the cart picker */
+"customers.v2.saved" = "Customer saved";

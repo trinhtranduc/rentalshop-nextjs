@@ -965,3 +965,23 @@ enum ProductOutletChoice {
         return (merchantOutlets.first(where: { $0.isDefault }) ?? merchantOutlets.first)?.id
     }
 }
+
+/// #952 (owner): the cart's date row has a calendar icon in a light-blue circle, like the customer row's avatar
+enum CartDateRowLogic {
+    struct State: Equatable {
+        let text: String
+        /// nil until both days are chosen (no pill, blue "Chọn ngày thuê")
+        let days: Int?
+        var isEmpty: Bool { days == nil }
+    }
+
+    static let iconSymbol = "calendar"
+    /// Same circle as the customer row's avatar
+    static let iconSize: CGFloat = 40
+
+    static func state(pickup: Date?, return returnDate: Date?, timeZone: TimeZone = Date.shopTimeZone) -> State {
+        guard let pickup, let returnDate else { return State(text: "products.cart.pickDates".localized(), days: nil) }
+        return State(text: DayFormatter.dmy(pickup, timeZone: timeZone) + " → " + DayFormatter.dmy(returnDate, timeZone: timeZone),
+                     days: CartV2Logic.rentalDays(pickup: pickup, return: returnDate, timeZone: timeZone))
+    }
+}

@@ -650,6 +650,7 @@ final class ProductFormKeyboardTests: XCTestCase {
         allViews(view).compactMap { $0 as? UITextField }
     }
 
+    /// Customer phone pads keep their "Xong" bar (#461); #952 removed it from the product form only
     private func assertDoneBar(_ field: UITextField?, file: StaticString = #filePath, line: UInt = #line) {
         guard let field else { return XCTFail("field not found", file: file, line: line) }
         let bar = field.inputAccessoryView as? UIToolbar
@@ -660,10 +661,16 @@ final class ProductFormKeyboardTests: XCTestCase {
         XCTAssertEqual(done?.action, #selector(UIResponder.resignFirstResponder), file: file, line: line)
     }
 
-    func testEveryPriceFieldHasADoneBar() throws {
-        let numeric = fields(try merchantForm().view).filter { $0.keyboardType == .numberPad }
+    /// #952 (owner): no "Xong" bar on the number pads; a tap outside a field or a drag of the form closes the keyboard
+    func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
+        let form = try merchantForm()
+        let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
         XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
-        numeric.forEach { assertDoneBar($0) }
+        numeric.forEach { XCTAssertNil($0.inputAccessoryView, "\($0.accessibilityLabel ?? "field") keeps no Done bar") }
+        let taps = (form.view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
+        XCTAssertTrue(taps.contains { !$0.cancelsTouchesInView }, "a tap outside a field ends editing (fields still take taps)")
+        let scrolls = allViews(form.view).compactMap { $0 as? UIScrollView }.filter { !($0 is UITextView) }
+        XCTAssertTrue(scrolls.contains { $0.keyboardDismissMode != .none }, "dragging the form closes the keyboard")
     }
 
     func testSaveButtonRidesOnTheKeyboard() throws {

@@ -3,7 +3,8 @@
 //  POS ADBD
 //
 //  Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search with image search and
-//  barcode scan inside the field, "+" (or the cart count) to the cart and a floating cart bar (#383).
+//  barcode scan inside the field, "+" (or the cart count) to the cart. The top-right cart button with its count is the
+//  only way into the cart (#952 removed the floating cart bar).
 //
 
 import UIKit
@@ -32,17 +33,12 @@ final class ProductsHomeViewController: BaseViewControler {
         table.estimatedRowHeight = DS.Gap.productRowMinHeight
         table.keyboardDismissMode = .onDrag
         table.register(ProductRowV2Cell.self, forCellReuseIdentifier: ProductRowV2Cell.reuseId)
-        table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 96, right: 0)
+        table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         return table
     }()
     private let emptyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     /// #753: under the reason when the list could not load
     private let retryButton = UIButton(type: .system)
-    private let cartBar = UIControl()
-    private let cartCountLabel = V2.label(size: DS.TextSize.secondary, color: UIColor.white.withAlphaComponent(0.85))
-    private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
-    /// "Tạo đơn ›", or "Sửa đơn #482913 ›" while the cart edits an order (#677)
-    private let cartActionLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
     /// #937: the cart (the bell moved to Cài đặt → Thông báo)
     private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
 
@@ -60,7 +56,6 @@ final class ProductsHomeViewController: BaseViewControler {
         view.backgroundColor = .white
         buildHeader()
         buildList()
-        buildCartBar()
         bindViewModel()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
@@ -216,41 +211,6 @@ final class ProductsHomeViewController: BaseViewControler {
         viewModel.reload()
     }
 
-    private func buildCartBar() {
-        // #893 (owner, board SP-dong): primary blue, white text, a blue shadow; one bar for rent and sale
-        cartBar.backgroundColor = HomeCartBarStyle.fill
-        cartBar.layer.cornerRadius = 16
-        cartBar.layer.shadowColor = HomeCartBarStyle.fill.cgColor
-        cartBar.layer.shadowOpacity = 0.28
-        cartBar.layer.shadowRadius = 8
-        cartBar.layer.shadowOffset = CGSize(width: 0, height: 6)
-        cartBar.addTarget(self, action: #selector(openCart), for: .touchUpInside)
-        cartBar.isAccessibilityElement = true
-        cartBar.accessibilityTraits = UIAccessibilityTraitButton
-        let texts = UIStackView(arrangedSubviews: [cartCountLabel, cartTotalLabel])
-        texts.axis = .vertical
-        texts.isUserInteractionEnabled = false
-        let go = cartActionLabel
-        go.setContentCompressionResistancePriority(.required, for: .horizontal)
-        cartBar.addSubview(texts)
-        cartBar.addSubview(go)
-        view.addSubview(cartBar)
-        cartBar.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(12)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-            make.height.equalTo(56)
-        }
-        texts.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-        }
-        go.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-        }
-        updateCartBar()
-    }
-
     /// #651: 38 pt solid accent square with a white camera; the touch area grows to 46 pt
     private func imageSearchButton() -> UIButton {
         let button = HitSlopButton(type: .system)
@@ -306,16 +266,9 @@ final class ProductsHomeViewController: BaseViewControler {
 
     private func updateCartBar() {
         let cart = CartStore.shared.cart
-        cartBar.isHidden = cart.items.isEmpty
-        cartCountLabel.text = PluralText.format("products.cart.bar", count: cart.itemCount, cart.itemCount)
-        cartTotalLabel.text = MoneyFormatter.format(cart.totalAmount)
-        let action = CartV2Logic.cartBarAction(isEditMode: cart.isEditMode, number: EditOrderSheetLogic.number(cart))
-        cartActionLabel.text = action + " ›"
-        cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, action]
-            .compactMap { $0 }.joined(separator: ", ")
-        list.contentInset.bottom = cart.items.isEmpty ? 16 : 96
+        list.contentInset.bottom = 16
         cartButton.badge = HomeCartButton.badge(itemCount: cart.itemCount)
-        cartButton.accessibilityValue = cartCountLabel.text.flatMap { cart.items.isEmpty ? nil : $0 }
+        cartButton.accessibilityValue = HomeCartButton.accessibilityValue(itemCount: cart.itemCount)
     }
 
     // MARK: - Actions
@@ -407,26 +360,27 @@ final class ProductsHomeViewController: BaseViewControler {
         ProductsCartBridge.add(product)
         HapticFeedback.light()
         // #893 (owner): no "added to cart" toast; the + button's count already says it (errors still toast)
-        if HomeCartBarStyle.showsAddedToast {
+        if HomeCartButton.showsAddedToast {
             showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
         }
     }
 }
 
-/// #937 (owner): the Home top-right cart button; the badge counts the cart's items like the cart bar
+/// #937 (owner): the Home top-right cart button; the badge counts the cart's items.
+/// #952 (owner): it is the only entry to the cart (no floating cart bar)
 enum HomeCartButton {
     static let symbol = "cart"
+    /// #893 (owner): no "added to cart" toast; the badge already says it
+    static let showsAddedToast = false
 
     static func badge(itemCount: Int) -> String? {
         itemCount > 0 ? "\(min(itemCount, 99))" : nil
     }
-}
 
-/// #893 (owner): the Home cart bar look (board SP-dong) and the add feedback
-enum HomeCartBarStyle {
-    static let fill = DS.Color.primary
-    static let text = UIColor.white
-    static let showsAddedToast = false
+    /// VoiceOver (and the UI tests): "Giỏ hàng · 3 món"; nothing when the cart is empty
+    static func accessibilityValue(itemCount: Int) -> String? {
+        itemCount > 0 ? PluralText.format("products.cart.bar", count: itemCount, itemCount) : nil
+    }
 }
 
 /// Adds a product the same way the old Home does (price by the cart's order type)

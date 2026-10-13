@@ -380,3 +380,29 @@ enum CustomerEditLogic {
         return "\(parts[2])/\(parts[1])/\(parts[0])"
     }
 }
+
+/// #952 (owner): a pencil on each row of the cart's customer picker opens a short edit sheet
+enum CustomerPickerEditLogic {
+    enum Field: Equatable { case phone, name, address, notes }
+
+    /// The sheet shows these; email, ID number and date of birth are loaded and sent back unchanged
+    static let sheetFields: [Field] = [.phone, .name, .address, .notes]
+
+    /// Only on the picker's rows, and only for a user who may edit customers (same rule as the customer detail)
+    static func showsEdit(isPicker: Bool, canManageCustomers: Bool) -> Bool {
+        isPicker && canManageCustomers
+    }
+
+    /// The cart's customer with the saved name, phone and address when it is the edited one; nil otherwise
+    static func cartCustomer(afterSaving form: CustomerEditForm, customerId: Int, cartCustomer: Customer?) -> Customer? {
+        guard var customer = cartCustomer, customer.id == customerId else { return nil }
+        func clean(_ s: String) -> String { s.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let split = CustomersV2Logic.splitName(form.name)
+        customer.firstName = split.firstName
+        customer.lastName = split.lastName
+        customer.full_name = [split.firstName, split.lastName].filter { !$0.isEmpty }.joined(separator: " ")
+        customer.phone = clean(form.phone)
+        customer.address = clean(form.address)
+        return customer
+    }
+}
