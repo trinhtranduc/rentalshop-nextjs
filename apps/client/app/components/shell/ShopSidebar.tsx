@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -220,6 +220,11 @@ function NavGroup({
     if (inside) setOpen(true);
   }, [inside, pathname]);
   const listId = `nav-sub-${item.key}`;
+  // A long menu scrolls; keep the open page's row in view (short screens, the mobile drawer).
+  const activeRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [current?.key, open]);
 
   return (
     <div className="flex flex-col">
@@ -241,6 +246,7 @@ function NavGroup({
             return (
               <li key={child.key}>
                 <Link
+                  ref={active ? activeRef : undefined}
                   href={child.href}
                   onClick={(e) => {
                     // Keep the picked outlet / month when moving between the screens (old tab strip did too).
