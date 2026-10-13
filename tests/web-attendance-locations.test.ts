@@ -118,3 +118,23 @@ describe('pages', () => {
     expect(read('attendance/parts.tsx')).toMatch(/attendanceTabs\(/);
   });
 });
+
+describe('Chi nhánh is owner-only again (#945)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { canSeeOutletsPage } = require('../apps/client/app/outlets/outlets-model');
+
+  it('only the shop owner (and platform admin) open the Chi nhánh page', () => {
+    expect(canSeeOutletsPage('MERCHANT')).toBe(true);
+    expect(canSeeOutletsPage('ADMIN')).toBe(true);
+    for (const role of ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY', '', null, undefined]) {
+      expect(canSeeOutletsPage(role)).toBe(false);
+    }
+  });
+
+  it('a direct /outlets URL shows the no-access card, like the staff page', () => {
+    const src = read('outlets/page.tsx');
+    expect(src).toMatch(/const allowed = canSeeOutletsPage\(user\?\.role\);/);
+    expect(src).toMatch(/if \(user && !allowed\)/);
+    expect(src).toMatch(/t\('noAccess'\)/);
+  });
+});

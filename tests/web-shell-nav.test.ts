@@ -46,9 +46,9 @@ describe('attendance module (#908)', () => {
     expect(withModules('OUTLET_ADMIN', [])).not.toContain('/outlets');
   });
 
-  it('module on: owner and outlet admin see Chấm công; outlet admin sees Chi nhánh', () => {
+  it('module on: owner and outlet admin see Chấm công; Chi nhánh stays owner-only (#945)', () => {
     expect(withModules('MERCHANT', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/outlets', '/categories', '/loyalty', '/settings']);
-    expect(withModules('OUTLET_ADMIN', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/outlets', '/categories', '/settings']);
+    expect(withModules('OUTLET_ADMIN', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/categories', '/settings']);
   });
 
   it('staff and kho never see Chấm công or Chi nhánh', () => {
