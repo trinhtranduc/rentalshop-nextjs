@@ -22,7 +22,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,7 +95,7 @@ private fun SectionLabel(text: String) {
 
 /**
  * "T2 12/10" + "Sáng 08–12" ……… one line per record, as on iOS (#923): "07:58–12:01 · 4,0 g", amber
- * "08:07–12:00 · muộn 7′" when late, "—" not worked. The day and its shifts stay on one line each; the times wrap.
+ * "08:07–12:00 · 3,9 g · muộn 7′" when late (only "muộn 7′" amber, #932), "—" not worked. The day and its shifts stay on one line each; the times wrap.
  */
 @Composable
 private fun WeekRow(day: MyShiftDay) {
@@ -107,14 +110,18 @@ private fun WeekRow(day: MyShiftDay) {
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             val lines = AttendanceLogic.weekLines(day)
             if (lines.isEmpty()) Text("—", fontSize = DS.TextSize.Secondary, color = DS.Colors.Text)
+            val hoursFormat = stringResource(R.string.attendance_hours_short)
+            val lateFormat = stringResource(R.string.attendance_late)
             lines.forEach { line ->
-                val text = when {
-                    line.lateMinutes > 0 -> "${line.times} · ${stringResource(R.string.attendance_late, line.lateMinutes)}"
-                    line.hours != null -> "${line.times} · ${stringResource(R.string.attendance_hours_short, AttendanceLogic.oneDecimal(line.hours))}"
-                    else -> line.times
+                val parts = AttendanceLogic.weekLineText(line, { hoursFormat.format(AttendanceLogic.oneDecimal(it)) }, { lateFormat.format(it) })
+                val text = buildAnnotatedString {
+                    append(parts.main)
+                    parts.late?.let { late ->
+                        append(" · ")
+                        withStyle(SpanStyle(color = AttendanceColors.Late)) { append(late) }
+                    }
                 }
-                Text(text, fontSize = DS.TextSize.Secondary, color = if (line.lateMinutes > 0) AttendanceColors.Late else DS.Colors.Text,
-                    textAlign = TextAlign.End)
+                Text(text, fontSize = DS.TextSize.Secondary, color = DS.Colors.Text, textAlign = TextAlign.End)
             }
         }
     }

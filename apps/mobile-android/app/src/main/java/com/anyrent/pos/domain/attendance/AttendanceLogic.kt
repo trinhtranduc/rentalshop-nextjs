@@ -96,6 +96,9 @@ data class WorkedPair(
 /** One line of a week row, one per record as on iOS: "08:03–16:58" + hours (closed) or late minutes */
 data class WorkedLine(val times: String, val hours: Double?, val lateMinutes: Int)
 
+/** #932 Main text of a record, and its amber late part (null when on time) */
+data class WeekLineText(val main: String, val late: String?)
+
 data class MyShiftDay(val date: LocalDate, val shifts: List<AttendanceShift>, val pairs: List<WorkedPair>) {
     val lateMinutes: Int get() = pairs.sumOf { it.lateMinutes ?: 0 }
 }
@@ -381,6 +384,16 @@ object AttendanceLogic {
     fun weekLines(day: MyShiftDay, zone: ZoneId = ShopTime.zone): List<WorkedLine> = day.pairs.map { p ->
         WorkedLine(pairTimes(listOf(p), zone), if (p.outAt != null) pairHours(listOf(p)) else null, p.lateMinutes ?: 0)
     }
+
+    /**
+     * #932 Text of one record: "08:07–12:00 · 3,9 g" and, when late, the amber extra "muộn 7′".
+     * Late never replaces the hours; an open record keeps "08:07–…".
+     */
+    fun weekLineText(line: WorkedLine, hoursText: (Double) -> String, lateText: (Int) -> String): WeekLineText =
+        WeekLineText(
+            main = listOfNotNull(line.times, line.hours?.let(hoursText)).joinToString(" · "),
+            late = line.lateMinutes.takeIf { it > 0 }?.let(lateText),
+        )
 
     /** Second line of the Cài đặt row as on iOS: "Ca sáng 08:00–12:00 · chưa vào ca", or "Chưa vào ca" alone */
     fun settingsLine(shift: AttendanceShift?, status: String): String =
