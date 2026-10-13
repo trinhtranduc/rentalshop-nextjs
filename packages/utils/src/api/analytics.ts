@@ -50,6 +50,8 @@ export interface OutletOperations {
   /** Tomorrow's hand-overs and returns as lists (#362) */
   tomorrowPickups?: OutletOperationsList | null;
   tomorrowReturns?: OutletOperationsList | null;
+  /** #938, with `{ collateralHeld: true }`: rentals out with collateral (the orders of `cash.collateralToReturn`); null without money */
+  collateralHeld?: OutletOperationsList | null;
   /** Managers only */
   cash: {
     depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };
@@ -371,9 +373,10 @@ export const analyticsApi = {
    * and deposits/fees for managers (`cash` is null for staff).
    * @param outletIds - merchant only: narrow to these outlets
    */
-  async getOutletOperations(outletIds?: number[]): Promise<ApiResponse<OutletOperations>> {
+  async getOutletOperations(outletIds?: number[], options?: { collateralHeld?: boolean }): Promise<ApiResponse<OutletOperations>> {
     const params = new URLSearchParams({ t: String(Date.now()) });
     if (outletIds && outletIds.length > 0) params.set('outletIds', outletIds.join(','));
+    if (options?.collateralHeld) params.set('collateralHeld', '1');
     const response = await authenticatedFetch(`${apiUrls.analytics.outletOperations}?${params}`);
     return await parseApiResponse<OutletOperations>(response);
   },

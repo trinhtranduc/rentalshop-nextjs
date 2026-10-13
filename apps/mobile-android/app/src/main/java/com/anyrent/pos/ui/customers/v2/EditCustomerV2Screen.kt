@@ -75,7 +75,15 @@ private val EditDanger = Color(0xFFB91C1C)
  * A phone that belongs to another customer (HTTP 409) is shown under the phone field.
  */
 @Composable
-fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Unit) {
+fun EditCustomerV2Screen(
+    customerId: Int,
+    onBack: () -> Unit,
+    onSaved: () -> Unit,
+    /** #952: the short sheet of the cart's customer picker (name, phone, address, note); the other fields are sent back */
+    compact: Boolean = false,
+    /** #952: what was saved (the picker updates the cart's customer) */
+    onSavedForm: (CustomerEditForm) -> Unit = {},
+) {
     var form by remember { mutableStateOf<CustomerEditForm?>(null) }
     var saving by remember { mutableStateOf(false) }
     var phoneError by remember { mutableStateOf<String?>(null) }
@@ -99,7 +107,10 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
         saving = true
         scope.launch {
             withContext(Dispatchers.IO) { CustomersV2Api.update(customerId, CustomerEditRules.updatePayload(current)) }
-                .onSuccess { onSaved() }
+                .onSuccess {
+                    onSavedForm(current)
+                    onSaved()
+                }
                 .onFailure {
                     if ((it as? AppError.Http)?.statusCode == 409) phoneError = phoneTaken else error = it.message
                 }
@@ -107,10 +118,16 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
         }
     }
 
-    Column(Modifier.fillMaxSize().background(DS.Colors.Surface).statusBarsPadding().imePadding()) {
-        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), size = DS.Icon.Lg, tint = DS.Colors.Text)
+    Column(Modifier.fillMaxSize().background(DS.Colors.Surface).then(if (compact) Modifier else Modifier.statusBarsPadding()).imePadding()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = if (compact) 16.dp else 8.dp, end = 8.dp, top = 8.dp).heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // #952: the sheet closes with Huỷ or a swipe down
+            if (!compact) {
+                IconButton(onClick = onBack) {
+                    AppIcon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.back), size = DS.Icon.Lg, tint = DS.Colors.Text)
+                }
             }
             Text(stringResource(R.string.customers_v2_edit_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
                 modifier = Modifier.semantics { heading() })
@@ -133,7 +150,7 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
                     stringResource(R.string.customers_v2_name), current.name, capitalization = KeyboardCapitalization.Words,
                     error = stringResource(R.string.customers_v2_need_name).takeIf { problem == CustomerEditRules.Problem.MISSING_NAME },
                 ) { form = current.copy(name = it); if (problem == CustomerEditRules.Problem.MISSING_NAME) problem = null }
-                Text(
+                if (!compact) Text(
                     buildAnnotatedString {
                         append(stringResource(R.string.customers_v2_more_info).uppercase())
                         withStyle(SpanStyle(fontWeight = FontWeight.Normal, letterSpacing = 0.sp)) { append(" " + stringResource(R.string.customers_v2_optional)) }
@@ -141,12 +158,12 @@ fun EditCustomerV2Screen(customerId: Int, onBack: () -> Unit, onSaved: () -> Uni
                     fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, letterSpacing = 0.5.sp,
                     modifier = Modifier.padding(top = 6.dp),
                 )
-                EditField(
+                if (!compact) EditField(
                     "Email", current.email, keyboardType = KeyboardType.Email, placeholder = stringResource(R.string.customers_v2_email_placeholder),
                     error = stringResource(R.string.customers_v2_bad_email).takeIf { problem == CustomerEditRules.Problem.BAD_EMAIL },
                 ) { form = current.copy(email = it); if (problem == CustomerEditRules.Problem.BAD_EMAIL) problem = null }
                 EditField(stringResource(R.string.customers_v2_address), current.address) { form = current.copy(address = it) }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!compact) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.weight(1f)) {
                         EditField(stringResource(R.string.customers_v2_id_number), current.idNumber) { form = current.copy(idNumber = it) }
                     }

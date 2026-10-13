@@ -25,10 +25,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Badge
@@ -52,13 +51,11 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -76,7 +73,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.R
 import com.anyrent.pos.data.CartStore
@@ -98,7 +94,6 @@ import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.home.BarcodeMode
 import com.anyrent.pos.ui.home.CameraBarcodeScreen
 import com.anyrent.pos.ui.home.ImageSearchScreen
-import com.anyrent.pos.ui.inbox.InboxUnread
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -111,25 +106,20 @@ import kotlinx.coroutines.withContext
 
 /**
  * Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search with image search and
- * barcode scan inside the field, "+" (or the cart count) to the cart and a floating cart bar (#383).
+ * barcode scan inside the field, "+" (or the cart count) to the cart; the top-right cart button opens the cart (#952 removed the floating bar).
  */
 @OptIn(FlowPreview::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ProductsHomeScreen(
     onOpenProduct: (Int) -> Unit,
     onOpenCart: () -> Unit,
-    onOpenInbox: () -> Unit,
     viewModel: ProductsHomeViewModel = viewModel(factory = ProductsHomeViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
     val lines by CartStore.lines.collectAsState()
-    val editingOrderId by CartStore.editingOrderId.collectAsState()
-    val editOriginal by CartStore.editOriginal.collectAsState()
-    val cartBarAction = EditOrderSheet.cartBarAction(editingOrderId != null, editOriginal)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
-    val unread by InboxUnread.count.collectAsState()
     var showForm by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var showImageSearch by remember { mutableStateOf(false) }
@@ -144,8 +134,6 @@ fun ProductsHomeScreen(
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
     }
-    // #674: the badge follows the inbox and pushes; the server is asked on first show and when 10 minutes old
-    LaunchedEffect(Unit) { InboxUnread.invalidations.collect { InboxUnread.refreshIfNeeded() } }
     // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
     // The view model keeps the version it reflects, so a change made while this screen was away counts too.
     LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
@@ -198,9 +186,11 @@ fun ProductsHomeScreen(
                             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.new_product), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
-                    IconButton(onClick = onOpenInbox) {
-                        BadgedBox(badge = { if (unread > 0) Badge { Text(unread.coerceAtMost(99).toString()) } }) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = stringResource(R.string.notifications), modifier = Modifier.size(DS.Icon.Lg))
+                    // #937: the cart (the bell moved to Cài đặt → Thông báo); badge = the cart bar's count
+                    val cartBadge = ProductRowLogic.cartBadge(lines.sumOf { it.quantity })
+                    IconButton(onClick = onOpenCart) {
+                        BadgedBox(badge = { cartBadge?.let { Badge(containerColor = DS.Colors.Primary, contentColor = Color.White) { Text(it) } } }) {
+                            Icon(Icons.Outlined.ShoppingCart, contentDescription = stringResource(R.string.cart), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
                 }
@@ -262,7 +252,7 @@ fun ProductsHomeScreen(
                     )
                     else -> LazyColumn(
                         state = listState,
-                        contentPadding = PaddingValues(bottom = if (lines.isEmpty()) 16.dp else 96.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
                         items(state.products, key = { it.id }) { product ->
@@ -275,7 +265,7 @@ fun ProductsHomeScreen(
                                 onAdd = {
                                     CartStore.addProduct(product)
                                     // #893 (owner): no "added to cart" toast; the + count already says it
-                                    if (HomeCartBarStyle.showsAddedToast) Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
+                                    if (HomeCart.showsAddedToast) Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
                                 },
                             )
                         }
@@ -291,15 +281,7 @@ fun ProductsHomeScreen(
             }
         }
 
-        if (lines.isNotEmpty()) {
-            CartBar(
-                count = lines.sumOf { it.quantity },
-                total = lines.sumOf { it.lineTotal },
-                action = cartBarAction,
-                onClick = onOpenCart,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
+        // #952 (owner): no floating cart bar; the top-right cart button with its count is the only entry
     }
 
     if (showForm) {
@@ -410,7 +392,8 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
             )
             // #681: name, price, stock — one fact per line, 8 dp apart
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
-                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // #937: up to two lines, then "…" (Home only)
+                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = ProductRowLogic.NAME_MAX_LINES, overflow = TextOverflow.Ellipsis)
                 val unit = { mode: PricingMode -> if (mode == PricingMode.PER_DAY) unitDay else unitRental }
                 val text = buildAnnotatedString {
                     val muted = SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -465,47 +448,8 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
     }
 }
 
-/** #893 (owner): the Home cart bar look (board SP-dong) and the add feedback (iOS HomeCartBarStyle) */
-internal object HomeCartBarStyle {
-    val fill = Color(0xFF1D4ED8)
-    val text = Color.White
+/** #893 (owner): no "added to cart" toast. #952 (owner): no floating cart bar; the top-right cart button is the only entry */
+internal object HomeCart {
+    const val showsFloatingBar = false
     const val showsAddedToast = false
-}
-
-@Composable
-private fun CartBar(
-    count: Int,
-    total: Double,
-    action: EditOrderSheet.CartBarAction,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val label = pluralStringResource(R.plurals.v2_cart_bar, count, count)
-    // #677: "Sửa đơn #482913" while the cart edits an order
-    val create = when (action) {
-        EditOrderSheet.CartBarAction.Create -> stringResource(R.string.v2_cart_create)
-        is EditOrderSheet.CartBarAction.Edit ->
-            action.number?.let { stringResource(R.string.v2_cart_edit_title_number, it) } ?: stringResource(R.string.v2_cart_edit_title)
-    }
-    Row(
-        modifier
-            .padding(12.dp)
-            .fillMaxWidth()
-            .height(56.dp)
-            // #893 (owner, board SP-dong): primary blue, white text, a blue shadow; one bar for rent and sale
-            .shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = HomeCartBarStyle.fill, spotColor = HomeCartBarStyle.fill)
-            .clip(RoundedCornerShape(16.dp))
-            .background(HomeCartBarStyle.fill)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp)
-            .semantics(mergeDescendants = true) { role = Role.Button },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(label, fontSize = DS.TextSize.Secondary, color = Color.White.copy(alpha = 0.85f))
-            Text(formatMoneyVnd(total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = Color.White)
-        }
-        Text(create, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
-        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(DS.Icon.Sm))
-    }
 }

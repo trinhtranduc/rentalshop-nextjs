@@ -1,0 +1,423 @@
+{
+  "title": "Attendance",
+  "tabs": {
+    "timesheet": "Timesheet",
+    "person": "By person",
+    "shifts": "Shifts",
+    "templates": "Shift templates",
+    "locations": "QR & location"
+  },
+  "weekday": {
+    "1": "Mon",
+    "2": "Tue",
+    "3": "Wed",
+    "4": "Thu",
+    "5": "Fri",
+    "6": "Sat",
+    "7": "Sun"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "working": "Saving…",
+    "loading": "Loading…",
+    "loadFailed": "Could not load the data.",
+    "retry": "Try again",
+    "outlet": "Outlet",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "month": "Month {month}",
+    "hours": "{hours} h",
+    "exportXlsx": "Export Excel",
+    "notAvailable": "The Attendance module is not on for this shop. Contact AnyRent to turn it on.",
+    "noAccess": "Only the shop owner and outlet admins use this screen.",
+    "noOutlet": "No outlets yet."
+  },
+  "timesheet": {
+    "title": "Timesheet · Month {month}",
+    "subtitle": "{count} staff · {lock}",
+    "unlocked": "month not locked",
+    "locked": "month locked",
+    "lock": "Lock month",
+    "unlock": "Unlock month",
+    "absent": "Absent",
+    "empty": "No staff or attendance at this outlet this month.",
+    "kpi": {
+      "totalHours": "Total hours",
+      "pairs": "In–out pairs",
+      "missingOut": "Missing clock-out",
+      "suspected": "Possible fraud"
+    },
+    "col": {
+      "staff": "Staff",
+      "hours": "Hours",
+      "days": "Days"
+    },
+    "legend": {
+      "ok": "on shift",
+      "late": "late / left early",
+      "ot": "overtime",
+      "miss": "missing clock-out",
+      "fake": "possible fraud",
+      "absent": "scheduled, did not come",
+      "sunday": "Sunday",
+      "hint": "Click a name → the whole month · click a cell → that day"
+    }
+  },
+  "export": {
+    "title": "Export timesheet to Excel",
+    "month": "Month",
+    "parts": "Include",
+    "grid": "Month grid (hours per day, total hours, days)",
+    "scans": "Every scan (time, result, distance, coordinates)",
+    "edits": "Edit history",
+    "download": "Download .xlsx",
+    "failed": "Could not export the Excel file."
+  },
+  "lock": {
+    "title": "Lock month {month}?",
+    "body": "Once locked, outlet admins can no longer edit this month. Only the shop owner can unlock it (logged). The Payroll module will use locked months later.",
+    "confirm": "Lock month",
+    "locked": "Month {month} locked",
+    "unlockTitle": "Unlock month {month}?",
+    "unlockBody": "After unlocking, this month can be edited again. The change is logged.",
+    "unlockConfirm": "Unlock",
+    "unlocked": "Month {month} unlocked"
+  },
+  "person": {
+    "back": "‹ Timesheet month {month}",
+    "title": "Attendance by person",
+    "pick": "Choose staff",
+    "add": "+ Add record",
+    "map": "Map",
+    "edit": "Edit",
+    "empty": "No scans.",
+    "noStaff": "This outlet has no staff.",
+    "forgotOut": "Forgot to clock out",
+    "suspected": "Possible fraud",
+    "late": "Late {n}′",
+    "early": "Early {n}′",
+    "overtime": "Overtime {n}′",
+    "filter": {
+      "label": "Filter scans",
+      "all": "All scans",
+      "rejected": "Rejected",
+      "suspected": "Possible fraud"
+    },
+    "kpi": {
+      "days": "Days worked",
+      "hours": "Total hours",
+      "lateEarly": "Late / early",
+      "overtime": "Overtime",
+      "missingOut": "Missing clock-out",
+      "suspected": "Possible fraud"
+    },
+    "col": {
+      "day": "Day",
+      "time": "Scan time",
+      "kind": "Type",
+      "result": "Result",
+      "distance": "From outlet",
+      "gps": "GPS",
+      "coords": "Coordinates",
+      "shift": "Shift",
+      "note": "Note"
+    },
+    "kind": {
+      "IN": "In",
+      "OUT": "Out",
+      "EDIT": "Edit"
+    },
+    "result": {
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "AUTO_CLOSED": "Auto-closed",
+      "EDITED": "Edited"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "same coordinates as last time",
+      "SPEED": "unusually fast movement"
+    },
+    "error": {
+      "OUT_OF_RANGE": "Outside the {radius} m area",
+      "GPS_INACCURATE": "GPS not accurate",
+      "MOCK_LOCATION": "Fake location",
+      "QR_EXPIRED": "QR code expired",
+      "QR_WRONG_OUTLET": "QR code of another outlet",
+      "ATTENDANCE_NOT_CONFIGURED": "Outlet location not set",
+      "other": "Rejected"
+    },
+    "editIn": "in {time}",
+    "editOut": "out {time}",
+    "nextDay": "(next day)"
+  },
+  "edit": {
+    "title": "Edit attendance · {name} · {date}",
+    "current": "Current record: in {in}, {out}",
+    "outAt": "out {time}",
+    "noOut": "no clock-out (closed at the end of the day)",
+    "checkIn": "Clock-in",
+    "checkOut": "Clock-out",
+    "reason": "Reason (required)",
+    "reasonPlaceholder": "Forgot to clock out, confirmed by the manager",
+    "note": "History is kept: who edited, what, and when. A locked month cannot be edited.",
+    "addOther": "+ Add another record",
+    "saved": "Attendance updated"
+  },
+  "add": {
+    "title": "Add attendance record · {name}",
+    "sub": "For when the staff member worked but could not scan.",
+    "date": "Day",
+    "reasonPlaceholder": "Phone battery was dead",
+    "confirm": "Add record",
+    "added": "Attendance record added"
+  },
+  "map": {
+    "title": "Scan location · {name} · {when}",
+    "label": "Map of the scan location and the attendance area",
+    "distance": "{m} m from the outlet",
+    "gps": "GPS ±{m} m",
+    "accepted": "Accepted",
+    "rejected": "Rejected: {reason}"
+  },
+  "shifts": {
+    "title": "Shifts",
+    "subtitle": "Week {from} – {to} · today {today}",
+    "prevWeek": "‹ Previous week",
+    "nextWeek": "Next week ›",
+    "assign": "Assign shift",
+    "addShift": "Add shift",
+    "legendRepeat": "↻ Repeats every week",
+    "legendLock": "🔒 started shift / past day: cannot edit",
+    "legendEdited": "✎ changed for that day only",
+    "empty": "This outlet has no staff.",
+    "rules": "Weekly schedules in use",
+    "rulesHint": "Edit / stop / delete only change days not yet worked",
+    "rulesEmpty": "No weekly schedules yet.",
+    "noEnd": "No end",
+    "edit": "Edit",
+    "stop": "Stop from…",
+    "delete": "Delete",
+    "col": {
+      "staff": "Staff",
+      "shift": "Shift",
+      "weekdays": "Weekdays",
+      "from": "From",
+      "to": "To"
+    },
+    "lockedToday": "Already clocked in today"
+  },
+  "day": {
+    "lockedBody": "🔒 This shift has started or the day is past, so it cannot be changed. To fix worked hours, use the Timesheet.",
+    "current": "Now: {shift} ({source})",
+    "sourceRule": "weekly schedule",
+    "sourceDay": "changed for this day",
+    "none": "No shift",
+    "editable": "not started, can be changed",
+    "pick": "Shift on this day",
+    "custom": "Custom hours",
+    "customStart": "Custom hours: start",
+    "customEnd": "End",
+    "note": "Changes this day only. Later weeks keep the weekly schedule. The app notifies {name}.",
+    "clear": "Remove shift on this day",
+    "saved": "Shift on {date} changed"
+  },
+  "assign": {
+    "title": "Assign shift (weekly)",
+    "sub": "Assign once; it repeats every week until changed.",
+    "shift": "1. Shift",
+    "staff": "2. Staff",
+    "weekdays": "3. Weekdays",
+    "from": "Starts on",
+    "to": "Ends on (optional)",
+    "toPlaceholder": "No end",
+    "preview": "↻ Repeats every week",
+    "previewLine": "{names} · {shift} · {days} · from {from}",
+    "previewTo": " to {to}",
+    "conflict": "{name} already has {shift} on {days}.",
+    "keep": "Worked days and one-day changes stay as they are.",
+    "confirm": "Assign · notify staff",
+    "noTemplates": "No shift templates yet. Create one in the Shift templates tab first.",
+    "saved": "Shift assigned"
+  },
+  "ruleEdit": {
+    "title": "Edit weekly schedule · {name}",
+    "shift": "Shift",
+    "weekdays": "Weekdays",
+    "from": "Applies from",
+    "note": "Worked or past days stay as they are.",
+    "saved": "Weekly schedule updated"
+  },
+  "ruleStop": {
+    "title": "Stop weekly schedule · {name}",
+    "last": "Stop after",
+    "note": "From {next}, {name} no longer has the {shift} shift. Use it when someone leaves or changes schedule.",
+    "confirm": "Stop schedule",
+    "saved": "Weekly schedule stopped"
+  },
+  "ruleDelete": {
+    "title": "Delete weekly schedule · {name}?",
+    "note": "Days not yet worked lose the {shift} shift. Worked days stay in the timesheet.",
+    "confirm": "Delete schedule",
+    "saved": "Weekly schedule deleted"
+  },
+  "templates": {
+    "title": "Shift templates",
+    "subtitle": "{outlet} · used when assigning shifts",
+    "add": "+ New template",
+    "minutes": "{n} min",
+    "used": "Yes",
+    "unused": "Not yet",
+    "hidden": "Hidden",
+    "edit": "Edit",
+    "hide": "Hide",
+    "delete": "Delete",
+    "show": "Show again",
+    "shown": "Template shown again",
+    "empty": "No shift templates yet.",
+    "hint": "A used template can only be hidden (history is kept); an unused one can be deleted. Time changes only apply to days not yet worked.",
+    "col": {
+      "shift": "Shift",
+      "time": "Hours",
+      "break": "Break",
+      "used": "In use"
+    }
+  },
+  "templateForm": {
+    "newTitle": "New shift template",
+    "editTitle": "Edit shift template",
+    "name": "Shift name",
+    "start": "Start",
+    "end": "End",
+    "break": "Break (minutes)",
+    "color": "Color",
+    "colors": {
+      "blue": "Blue",
+      "purple": "Purple",
+      "green": "Green",
+      "orange": "Orange"
+    },
+    "overnight": "An end before the start (e.g. 22:00–02:00) is an overnight shift, counted on the start day.",
+    "editNote": "Time changes only apply to days not yet worked; past days keep the old hours.",
+    "create": "Create template",
+    "saved": "Shift template saved"
+  },
+  "templateHide": {
+    "title": "Hide template \"{name}\"?",
+    "sub": "This shift has been used, so it cannot be deleted.",
+    "note": "Hidden: it can no longer be picked when assigning. Weekly schedules using it keep running; worked days stay as they are.",
+    "confirm": "Hide template",
+    "saved": "Template hidden"
+  },
+  "templateDelete": {
+    "title": "Delete template \"{name}\"?",
+    "sub": "This shift has never been used.",
+    "confirm": "Delete",
+    "saved": "Template deleted"
+  },
+  "outlets": {
+    "qrDaily": "QR code · changes daily",
+    "qrFixed": "QR code · fixed",
+    "noQr": "No code yet",
+    "open": "Open ›"
+  },
+  "locations": {
+    "title": "Attendance QR & location",
+    "subtitle": "Each branch has its own QR code, location and list of people who clock in.",
+    "col": {
+      "outlet": "Branch",
+      "address": "Address",
+      "qr": "QR code",
+      "radius": "Radius"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QR & location"
+  },
+  "outlet": {
+    "notFound": "Could not open this outlet.",
+    "section": "⏱ Attendance",
+    "location": "Attendance location",
+    "noLocation": "Location not set",
+    "current": "📍 Current location",
+    "pick": "Pick on map",
+    "picking": "Click the map to set the outlet location.",
+    "geoFailed": "Could not get the current location. Check the browser's location permission.",
+    "ownerOnly": "Only the shop owner changes the location and radius.",
+    "radius": "Allowed radius:",
+    "radiusHint": "50–500 m. Indoor GPS is often off by 10–50 m.",
+    "checks": "Checked on each scan: this outlet's code and still valid · inside the radius · GPS ≤ 100 m · fake location blocked · server time. Forgot to clock out: closed at the end of the day, 0 hours until an admin fixes it.",
+    "qrTitle": "QR code of {name}",
+    "qrMode": "Code type",
+    "daily": "Changes daily (recommended)",
+    "fixed": "Fixed",
+    "dailyHint": "New code at 00:00 Vietnam time. Show it on the counter screen or print it each morning.",
+    "fixedHint": "Print once and stick it on the wall. A photo of it keeps working; only GPS and fake-location checks protect it.",
+    "todayCaption": "Today's code · {date} · changes at 00:00",
+    "fixedCaption": "Fixed code · created {date}",
+    "noQr": "This outlet has no QR code yet.",
+    "createQr": "Create QR code",
+    "qrCreated": "QR code created",
+    "print": "Print QR",
+    "kiosk": "Counter screen link",
+    "newCode": "New code",
+    "modeSaved": "Code type changed",
+    "saved": "Attendance location saved",
+    "saveRadiusTitle": "Change the radius?",
+    "saveRadiusSub": "From {from} m to {to} m",
+    "saveLocationTitle": "Change the attendance location?",
+    "saveLocationSub": "New coordinates: {coords}",
+    "saveNote": "Applies to the next scans right away."
+  },
+  "members": {
+    "title": "Who must clock in at this branch",
+    "hint": "Only people picked here see the Attendance card in the app and appear in Shifts and Timesheet",
+    "note": "Default: staff and stock staff are picked; branch admins and the shop owner are not. Unpicked: the person sees nothing about attendance and cannot get new shifts; past records stay.",
+    "toggle": "{name} must clock in",
+    "on": "{name}: must clock in",
+    "off": "{name}: no clock-in needed",
+    "ownerOnly": "Only the shop owner can change this",
+    "empty": "No one in this branch yet."
+  },
+  "newCode": {
+    "title": "Create a new QR code?",
+    "body": "The current code stops working at once. If the outlet uses a fixed code, print and stick up the new one. The counter screen updates by itself.",
+    "confirm": "Create new code",
+    "done": "New code created; the old one no longer works"
+  },
+  "print": {
+    "title": "Print QR code · {name}",
+    "body": "A5 sheet with the outlet name and the line \"Open the AnyRent app → Settings → Attendance → scan the code\".",
+    "dailyNote": "Changes daily: the printout only works on {date}.",
+    "confirm": "Print",
+    "howTo": "Open the AnyRent app → Settings → Attendance → scan the code",
+    "validOn": "Valid on {date} only"
+  },
+  "kioskLink": {
+    "title": "Counter screen link",
+    "none": "This outlet has no counter screen link yet.",
+    "note": "Open this link on a tablet or an old phone at the counter. No login needed and no one's account is affected. The screen changes the code at 00:00.",
+    "copy": "Copy",
+    "copied": "Link copied",
+    "copyFailed": "Could not copy. Select the link and copy it.",
+    "newLink": "New link",
+    "create": "Create link",
+    "created": "New link created; the old link no longer works"
+  },
+  "kiosk": {
+    "title": "Attendance",
+    "help": "Open the AnyRent app → Settings → Attendance → scan this code",
+    "daily": "Today's code · changes at 00:00",
+    "fixed": "Fixed code",
+    "recent": "Latest",
+    "none": "No one has clocked in today.",
+    "in": "In",
+    "out": "Out",
+    "loading": "Loading…",
+    "invalid": "This counter link no longer works. Ask the shop owner for a new link.",
+    "moduleOff": "The Attendance module is not on for this shop.",
+    "notConfigured": "This outlet has no location or QR code yet.",
+    "failed": "Could not load the code. Retrying…"
+  }
+}

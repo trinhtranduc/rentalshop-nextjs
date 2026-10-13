@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { validateAddonDeletion } from '@rentalshop/utils/server';
-import { addonColumnsFor, handleApiError, isAddonEnded, merchantAddonUpdateSchema, ResponseBuilder } from '@rentalshop/utils';
+import { addonColumnsFor, handleApiError, isAddonEnded, isFeatureAddon, merchantAddonUpdateSchema, ResponseBuilder } from '@rentalshop/utils';
 import type { LimitKind } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { checkAddonPurchase, findShop, routeId } from '../../../../../../lib/merchant-addons';
@@ -18,6 +18,9 @@ import type { ShopAddonItem } from '../../../../../../lib/merchant-addons';
  * packs are charged now (the #850 quote: catalog price × extra × days left ÷ days; 0 in a trial or an ended period).
  * Fewer packs take effect at the next renewal (`nextPacks`), no refund; refused like a removal when the current usage
  * would not fit. The same number cancels a pending reduction.
+ *
+ * #943 feature add-on (attendance): `removeAtPeriodEnd` is "Tắt từ kỳ sau" (usable until the period end, no refund, data
+ * kept); `packs` → 400 INVALID_INPUT.
  */
 export async function PATCH(
   request: NextRequest,
@@ -38,6 +41,8 @@ export async function PATCH(
         return NextResponse.json(ResponseBuilder.error('PLAN_LIMIT_ADDON_NOT_FOUND'), { status: 404 });
       }
       if (parsed.data.packs !== undefined) {
+        // #943: a feature add-on is on/off, it has no packs
+        if (isFeatureAddon(item)) return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
         const user = ctx?.user;
         return changePacks(merchantId, item, parsed.data, user?.email || (user?.id ? String(user.id) : undefined));
       }

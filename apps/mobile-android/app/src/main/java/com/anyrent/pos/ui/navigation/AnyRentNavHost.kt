@@ -158,6 +158,9 @@ object Routes {
     const val Printer = "printer"
     const val BankAccounts = "bank-accounts"
     const val AppInfo = "app-info"
+    // #910 attendance: the QR scanner (#927: no "Chấm công" screen in between) and "Ca và công của tôi"
+    const val Attendance = "attendance"
+    const val MyShifts = "my-shifts"
     const val Subscription = "subscription"
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
@@ -287,11 +290,13 @@ fun AnyRentNavHost(
                 InboxV2Screen(
                     onBack = { rootNavController.popBackStack() },
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                    onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                 )
             } else {
                 InboxScreen(
                     onBack = { rootNavController.popBackStack() },
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                    onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                 )
             }
         }
@@ -743,6 +748,23 @@ fun AnyRentNavHost(
         composable(Routes.BankAccounts) {
             BankAccountsScreen(onBack = { rootNavController.popBackStack() })
         }
+        // #927: Vào ca / Ra ca of the Cài đặt card opens the scanner straight away; the result goes back to the card
+        composable(Routes.Attendance) {
+            // Pop only this screen once (a close tapped while the result arrives must not pop Cài đặt)
+            fun close() {
+                if (rootNavController.currentDestination?.route == Routes.Attendance) rootNavController.popBackStack()
+            }
+            com.anyrent.pos.ui.attendance.AttendanceScanScreen(
+                onClose = ::close,
+                onResult = { outcome ->
+                    com.anyrent.pos.ui.attendance.AttendanceCardStore.onScanned(outcome)
+                    close()
+                },
+            )
+        }
+        composable(Routes.MyShifts) {
+            com.anyrent.pos.ui.attendance.MyShiftsScreen(onBack = { rootNavController.popBackStack() })
+        }
         composable(Routes.AppInfo) {
             val features by FeatureFlags.enabled.collectAsState()
             AppInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
@@ -750,6 +772,21 @@ fun AnyRentNavHost(
     }
 
     LaunchedOpenDraftCart(rootNavController)
+    LaunchedOpenMyShifts(rootNavController)
+}
+
+/** #910: a tapped `SHIFT_CHANGED` push opens "Ca và công của tôi" once the user is signed in and past login */
+@Composable
+private fun LaunchedOpenMyShifts(navController: NavHostController) {
+    val pending by com.anyrent.pos.push.AttendancePush.pendingOpenMyShifts.collectAsState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pending, currentRoute) {
+        if (!pending || !SessionStore.isLoggedIn) return@LaunchedEffect
+        val dest = currentRoute ?: return@LaunchedEffect
+        if (dest != Routes.Main && dest != Routes.Inbox) return@LaunchedEffect
+        if (!com.anyrent.pos.push.AttendancePush.consume()) return@LaunchedEffect
+        navController.navigate(Routes.MyShifts) { launchSingleTop = true }
+    }
 }
 
 /**
@@ -888,7 +925,6 @@ private fun MainTabs(
                     ProductsHomeScreen(
                         onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
                         onOpenCart = { rootNavController.navigate(Routes.CartV2) },
-                        onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                     )
                 } else {
                     HomeScreen(
@@ -960,7 +996,10 @@ private fun MainTabs(
                         onOpenUsers = { rootNavController.navigate(Routes.Users) },
                         onOpenExport = { rootNavController.navigate(Routes.Export) },
                         onOpenAppInfo = { rootNavController.navigate(Routes.AppInfo) },
+                        onOpenInbox = { rootNavController.navigate(Routes.Inbox) },
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
+                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
+                        onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                         onLoggedOut = {
                             rootNavController.navigate(Routes.Login) {
                                 popUpTo(Routes.Main) { inclusive = true }
@@ -979,6 +1018,8 @@ private fun MainTabs(
                     onOpenSubscription = { rootNavController.navigate(Routes.Subscription) },
                     onOpenNotifications = { rootNavController.navigate(Routes.Inbox) },
                     onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
+                        onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
+                        onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
                     onLoggedOut = {
                         rootNavController.navigate(Routes.Login) {
                             popUpTo(Routes.Main) { inclusive = true }

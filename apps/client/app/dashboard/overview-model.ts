@@ -529,7 +529,8 @@ export function buildTiles(report: PeriodReportLike | null | undefined, cash?: C
   } else if (out && out.atPickup.orders > 0) {
     outstandingChip = { tone: 'info', key: 'home.tiles.waiting', values: { count: out.atPickup.orders } };
   }
-  const held = cash?.depositsHeld?.orders;
+  // #938: orders whose collateral is held now; depositsHeld counts every rental out, collateral or not (older API only)
+  const held = cash?.collateralToReturn ? cash.collateralToReturn.orders : cash?.depositsHeld?.orders;
   return [
     {
       kind: 'orderValue',
@@ -752,7 +753,8 @@ export interface IncomeOrderLike {
   collateral?: Num;
 }
 
-export type RelatedNote = 'created' | 'cancelled' | 'event' | 'owes' | 'collateralIn' | 'collateralOut';
+/** `held` (#938): an order whose collateral is held now; listed on Thế chân, not part of the period total */
+export type RelatedNote = 'created' | 'cancelled' | 'event' | 'owes' | 'collateralIn' | 'collateralOut' | 'held';
 
 export interface RelatedRow {
   id: number;
@@ -844,7 +846,31 @@ export function relatedRows(kind: RelatedKind, bucket: string, items: IncomeOrde
   return rows;
 }
 
+/** Σ of the period rows (= the tile); `held` rows are listed only */
 export function relatedTotal(rows: RelatedRow[]): number {
-  return rows.reduce((sum, r) => sum + r.amount, 0);
+  return rows.reduce((sum, r) => (r.note === 'held' ? sum : sum + r.amount), 0);
+}
+
+/** Rows behind the total (the `held` rows left out) */
+export function relatedCount(rows: RelatedRow[]): number {
+  return rows.filter((r) => r.note !== 'held').length;
+}
+
+export interface HeldOrderLike {
+  id?: number | null;
+  orderNumber?: string | null;
+  customerName?: string | null;
+  securityDeposit?: Num;
+}
+
+/** #938: the orders holding collateral now (outlet-operations `collateralHeld`), one row each with its collateral */
+export function heldRows(orders: HeldOrderLike[] | null | undefined): RelatedRow[] {
+  const rows: RelatedRow[] = [];
+  for (const o of orders || []) {
+    const amount = num(o.securityDeposit) ?? 0;
+    if (o.id == null || amount <= 0) continue;
+    rows.push({ id: o.id, orderNumber: o.orderNumber || `#${o.id}`, customer: o.customerName || '', note: 'held', description: '', reasons: [], amount });
+  }
+  return rows;
 }
 

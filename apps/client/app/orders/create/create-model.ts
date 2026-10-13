@@ -36,6 +36,8 @@ export interface ProductLike {
 }
 
 export interface CartLine {
+  /** #951: this line's own key. An order made in the apps may hold one product on two lines (one paid, one free). */
+  key: string;
   productId: number;
   name: string;
   image: string | null;
@@ -46,7 +48,8 @@ export interface CartLine {
   pricingType: string;
   selectedPricingOptionId: number | null;
   notes: string;
-  /** Prices typed for this order (#556), per mode: Theo lần and Theo ngày are kept apart, like iOS. */
+  /** Prices typed for this order (#556), per mode: Theo lần and Theo ngày are kept apart, like iOS; `SALE` for a
+   * sale line (#951). 0 is a typed price (a free line). */
   customPrices?: Partial<Record<string, number>>;
   product: {
     rentPrice: number;
@@ -102,6 +105,17 @@ export const activeOptions = (options?: PricingOptionLike[] | null): LineOption[
 // Lines
 // ----------------------------------------------------------------------------
 
+let lineSeq = 0;
+const nextLineKey = (): string => `line-${++lineSeq}`;
+
+/** #951: a line action targets one line by its key; a product id targets every line of that product. */
+export type LineRef = string | number;
+const isLine = (l: CartLine, ref: LineRef): boolean => (typeof ref === 'string' ? l.key === ref : l.productId === ref);
+
+/** #951: units of a product across all its lines (stock and overlap checks count them together). */
+export const productQuantity = (lines: CartLine[], productId: number): number =>
+  lines.reduce((sum, l) => (l.productId === productId ? sum + l.quantity : sum), 0);
+
 /** A new line, priced like the old form: rent starts on the product's default option. */
 export function lineFromProduct(p: ProductLike, orderType: OrderType): CartLine {
   const rentPrice = num(p.rentPrice);
@@ -110,6 +124,7 @@ export function lineFromProduct(p: ProductLike, orderType: OrderType): CartLine 
   const preferred = getPreferredPricingOption(options);
   const rent = orderType === 'RENT';
   return {
+    key: nextLineKey(),
     productId: p.id,
     name: p.name,
     image: imagesOf(p.images)[0] || null,
@@ -148,6 +163,7 @@ export function lineFromOrderItem(item: OrderItemLike): CartLine {
   const options = activeOptions(p.pricingOptions);
   const pricingType = (item.pricingType || p.pricingType || 'FIXED').toUpperCase();
   return {
+    key: nextLineKey(),
     productId: num(p.id ?? item.productId),
     name: p.name || item.productName || '',
     image: imagesOf(item.productImages)[0] || imagesOf(p.images)[0] || null,
@@ -192,22 +208,23 @@ export function hydrateLines(lines: CartLine[], products: ProductLike[]): CartLi
   return changed ? next : lines;
 }
 
+/**
+ * #952: every add is a new line, like the mobile apps (#951): one product may sit on several lines (e.g. one paid,
+ * one free), each edited on its own by its key. Stock and overlap checks add the lines up (`productQuantity`).
+ */
 export function addProduct(lines: CartLine[], p: ProductLike, orderType: OrderType): CartLine[] {
-  if (lines.some((l) => l.productId === p.id)) {
-    return lines.map((l) => (l.productId === p.id ? { ...l, quantity: l.quantity + 1 } : l));
-  }
   return [...lines, lineFromProduct(p, orderType)];
 }
 
 /** Quantity 0 or less removes the line. */
-export function setQuantity(lines: CartLine[], productId: number, quantity: number): CartLine[] {
-  if (quantity <= 0) return lines.filter((l) => l.productId !== productId);
-  return lines.map((l) => (l.productId === productId ? { ...l, quantity: Math.floor(quantity) } : l));
+export function setQuantity(lines: CartLine[], ref: LineRef, quantity: number): CartLine[] {
+  if (quantity <= 0) return lines.filter((l) => !isLine(l, ref));
+  return lines.map((l) => (isLine(l, ref) ? { ...l, quantity: Math.floor(quantity) } : l));
 }
 
-export function chooseOption(lines: CartLine[], productId: number, optionId: number): CartLine[] {
+export function chooseOption(lines: CartLine[], ref: LineRef, optionId: number): CartLine[] {
   return lines.map((l) => {
-    if (l.productId !== productId) return l;
+    if (!isLine(l, ref)) return l;
     const option = l.product.pricingOptions.find((o) => o.id === optionId);
     if (!option) return l;
     return {
@@ -223,7 +240,7 @@ export function chooseOption(lines: CartLine[], productId: number, optionId: num
 export function repriceLines(lines: CartLine[], orderType: OrderType): CartLine[] {
   return lines.map((l) => {
     const { unitPrice } = repriceOrderLineForOrderType(l, orderType, 1);
-    if (orderType === 'SALE') return { ...l, unitPrice };
+    if (orderType === 'SALE') return { ...l, unitPrice: l.customPrices?.SALE ?? unitPrice };
     const custom = l.customPrices?.[l.pricingType];
     if (custom != null) return { ...l, unitPrice: custom };
     const preferred = l.selectedPricingOptionId == null ? getPreferredPricingOption(l.product.pricingOptions) : null;
@@ -258,10 +275,10 @@ const optionOf = (line: CartLine, type: string): LineOption | null => line.produ
  * Switch a rent line's mode. Price: the one typed for that mode, else the product's option, else 0 ("Nhập giá").
  * Leaving a mode the product has no option for keeps its current price for the way back.
  */
-export function selectMode(lines: CartLine[], productId: number, mode: string): CartLine[] {
+export function selectMode(lines: CartLine[], ref: LineRef, mode: string): CartLine[] {
   const next = mode.toUpperCase();
   return lines.map((l) => {
-    if (l.productId !== productId || l.pricingType === next) return l;
+    if (!isLine(l, ref) || l.pricingType === next) return l;
     const custom = { ...(l.customPrices || {}) };
     if (!optionOf(l, l.pricingType) && custom[l.pricingType] == null) custom[l.pricingType] = l.unitPrice;
     const option = optionOf(l, next);
@@ -276,22 +293,50 @@ export function selectMode(lines: CartLine[], productId: number, mode: string): 
   });
 }
 
-/** A price typed for this order, kept for the line's current mode only. Never the product's price. */
-export function setLinePrice(lines: CartLine[], productId: number, price: number): CartLine[] {
-  const value = Math.max(0, Math.round(num(price)));
-  return lines.map((l) =>
-    l.productId === productId ? { ...l, unitPrice: value, customPrices: { ...(l.customPrices || {}), [l.pricingType]: value } } : l,
-  );
+/** The product's own price for a rent mode: its option (0đ included, #951), else a legacy rentPrice > 0 of that type. */
+function catalogRentPrice(line: CartLine, mode: string): number | null {
+  const option = optionOf(line, mode);
+  if (option) return num(option.price);
+  if (line.product.pricingOptions.length > 0) return null;
+  const legacyType = (line.product.pricingType || 'FIXED').toUpperCase();
+  return legacyType === mode && line.product.rentPrice > 0 ? line.product.rentPrice : null;
+}
+
+/**
+ * A price typed for this order (0 = a free line, #951), kept for the line's current mode only (`SALE` on a sale
+ * order). Never the product's price. `null` (an empty box) removes the typed price: back to the product's price,
+ * or "Nhập giá" when it has none.
+ */
+export function setLinePrice(lines: CartLine[], ref: LineRef, price: number | null, orderType: OrderType = 'RENT'): CartLine[] {
+  return lines.map((l) => {
+    if (!isLine(l, ref)) return l;
+    const mode = orderType === 'SALE' ? 'SALE' : l.pricingType;
+    const custom = { ...(l.customPrices || {}) };
+    if (price == null) {
+      delete custom[mode];
+      const unitPrice = orderType === 'SALE' ? num(l.product.salePrice) : catalogRentPrice(l, mode) ?? 0;
+      return { ...l, unitPrice, customPrices: custom };
+    }
+    const value = Math.max(0, Math.round(num(price)));
+    return { ...l, unitPrice: value, customPrices: { ...custom, [mode]: value } };
+  });
 }
 
 /** #684: a line's note (sent as `orderItems[].notes`), trimmed; blank clears it. */
-export function setLineNote(lines: CartLine[], productId: number, note: string): CartLine[] {
+export function setLineNote(lines: CartLine[], ref: LineRef, note: string): CartLine[] {
   const value = String(note ?? '').trim();
-  return lines.map((l) => (l.productId === productId ? { ...l, notes: value } : l));
+  return lines.map((l) => (isLine(l, ref) ? { ...l, notes: value } : l));
 }
 
-/** A rent line without a price yet (a mode the product has no price for). */
-export const needsPrice = (line: CartLine, orderType: OrderType): boolean => orderType === 'RENT' && !(line.unitPrice > 0);
+/**
+ * #951: a line has a price when one was typed for its mode on this order (0 included), or the product has one for
+ * that mode (a 0đ option included). A saved order line always has one. Sale lines always do (0 sells at 0đ).
+ */
+export const hasLinePrice = (line: CartLine, orderType: OrderType): boolean =>
+  orderType === 'SALE' || line.customPrices?.[line.pricingType] != null || catalogRentPrice(line, line.pricingType) != null;
+
+/** A rent line without a price yet ("Nhập giá"): a mode the product has no price for and nothing typed. */
+export const needsPrice = (line: CartLine, orderType: OrderType): boolean => !hasLinePrice(line, orderType);
 
 export const lineType = (line: CartLine, orderType: OrderType): string => (orderType === 'RENT' ? resolveOrderLinePricingType(line) : 'SALE');
 

@@ -33,6 +33,7 @@
   "ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN": "只有多分店套餐（Enterprise）才能添加分店附加包。",
   "ADDON_PRICE_NOT_FOUND": "未找到附加包价格。",
   "ADDON_PRICE_NOT_ON_SALE": "该附加包已暂停，不能再售。",
+  "ADDON_FEATURE_ALREADY_ON": "该店铺已有此功能。如已设置下期关闭，请撤销而不是重新添加。",
   "ADDON_PRICE_IN_USE": "已有店铺在使用该附加包，不能修改每包数量。请新增一行。",
   "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "该店铺仍有分店附加包。请先移除分店附加包，再切换到不含多分店的套餐。",
   "ADDON_ALREADY_ENDED": "该附加包已结束。",
@@ -41,5 +42,19 @@
   "PRODUCT_DELETE_MERCHANT_ONLY": "店员不能删除商品，请联系店主、门店管理员或仓库人员。",
   "OUTLET_HAS_OPEN_ORDERS": "该分店仍有已预订或租赁中的订单。请先完成或取消这些订单，再停用分店。",
   "OUTLET_DEACTIVATED": "该分店已停用，请联系店主。",
-  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} 仍有此商品，只有店主可以删除。如需在本门店停止销售，请将库存设为 0。"
+  "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} 仍有此商品，只有店主可以删除。如需在本门店停止销售，请将库存设为 0。",
+  "MODULE_NOT_ENABLED": "您的店铺尚未开通此功能。",
+  "QR_EXPIRED": "此二维码已失效，请扫描今天柜台展示的二维码。",
+  "QR_WRONG_OUTLET": "这是其他分店的二维码。",
+  "OUT_OF_RANGE": "您离分店太远，请靠近后重试。",
+  "GPS_INACCURATE": "定位不够精确，请到门口或窗边后重试。",
+  "MOCK_LOCATION": "检测到虚拟定位，请关闭虚拟定位应用后重试。",
+  "ATTENDANCE_NOT_CONFIGURED": "该分店尚未设置考勤（缺少位置或二维码）。",
+  "SHIFT_OVERLAP": "该班次与该员工的其他班次时间重叠。",
+  "SHIFT_LOCKED": "已过去或已打卡的日期不能修改。",
+  "SHIFT_LOCKED_NAMED": "{names} 今天已打卡，今天的班次不能修改。请从明天开始。",
+  "ATTENDANCE_NOT_REQUIRED": "此人未被设为需要打卡。请在 考勤 › 二维码与位置 › 需要打卡的人 中开启。",
+  "ATTENDANCE_NOT_REQUIRED_NAMED": "{names} 未被设为需要打卡。请先在 考勤 › 二维码与位置 › 需要打卡的人 中开启。",
+  "SHIFT_TEMPLATE_IN_USE": "该班次正在使用中，请隐藏而不是删除。",
+  "MONTH_LOCKED": "本月已锁定，请让店主解锁。"
 }

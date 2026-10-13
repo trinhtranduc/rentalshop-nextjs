@@ -406,6 +406,11 @@ object ApiParity {
             .put("totalStock", stock)
             .put("deposit", deposit)
             .apply {
+                // #951: the typed rent price as a per-rental option, so a 0đ price is kept as 0đ (the API reads a
+                // product without options and rentPrice 0 as "no price")
+                if (rentPrice >= 0) {
+                    put("pricingOptions", JSONArray().put(JSONObject().put("type", "FIXED").put("price", rentPrice).put("isDefault", true)))
+                }
                 if (salePrice != null) put("salePrice", salePrice)
                 if (!barcode.isNullOrBlank()) put("barcode", barcode)
                 if (categoryId != null) put("categoryId", categoryId)

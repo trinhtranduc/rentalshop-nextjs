@@ -99,10 +99,24 @@ final class CustomerV2Cell: UITableViewCell {
     private let tierPill = CustomersV2UI.tierPill()
     private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let chevron = UIImageView(image: DS.symbol("chevron.right", 16))
+    /// #952: small pencil on the picker's rows (a row tap still picks)
+    private let editButton = UIButton(type: .system)
+    private var onEdit: (() -> Void)?
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .default
+        editButton.setImage(DS.symbol("pencil", 16), for: .normal)
+        editButton.tintColor = UIColor(hexString: "475569")
+        editButton.layer.borderWidth = 1
+        editButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
+        editButton.layer.cornerRadius = 10
+        editButton.accessibilityLabel = "customers.v2.editTitle".localized()
+        editButton.accessibilityIdentifier = "customers.picker.edit"
+        editButton.addTarget(self, action: #selector(editTapped), for: .touchUpInside)
+        editButton.setContentHuggingPriority(.required, for: .horizontal)
+        editButton.snp.makeConstraints { make in make.width.height.equalTo(36) }
+        avatar.isAccessibilityElement = false
         chevron.tintColor = UIColor(hexString: "94A3B8")
         chevron.setContentHuggingPriority(.required, for: .horizontal)
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -113,7 +127,7 @@ final class CustomerV2Cell: UITableViewCell {
         texts.axis = .vertical
         texts.spacing = DS.Gap.lineTight
         texts.alignment = .leading
-        let row = UIStackView(arrangedSubviews: [avatar, texts, chevron])
+        let row = UIStackView(arrangedSubviews: [avatar, texts, editButton, chevron])
         row.spacing = 12
         row.alignment = .center
         contentView.addSubview(row)
@@ -131,7 +145,13 @@ final class CustomerV2Cell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(_ customer: Customer, showsChevron: Bool) {
+    @objc private func editTapped() {
+        onEdit?()
+    }
+
+    func configure(_ customer: Customer, showsChevron: Bool, onEdit: (() -> Void)? = nil) {
+        self.onEdit = onEdit
+        editButton.isHidden = onEdit == nil
         let name = CustomersV2Logic.displayName(customer)
         avatar.text = CustomersV2Logic.initials(name)
         nameLabel.text = name
@@ -140,9 +160,11 @@ final class CustomerV2Cell: UITableViewCell {
         let subtitle = CustomersV2Logic.subtitle(phone: customer.phone, orderCount: customer.orderCount)
         subtitleLabel.text = subtitle
         chevron.isHidden = !showsChevron
-        isAccessibilityElement = true
+        // #952: with a pencil the row's parts stay reachable (VoiceOver and UI tests), else the row is one element
+        isAccessibilityElement = onEdit == nil
         accessibilityTraits = UIAccessibilityTraitButton
         accessibilityLabel = [name, tier, subtitle].compactMap { $0 }.joined(separator: ", ")
+        accessibilityCustomActions = nil
     }
 }
 

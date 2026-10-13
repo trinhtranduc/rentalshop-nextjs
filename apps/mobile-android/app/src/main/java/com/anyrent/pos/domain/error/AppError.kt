@@ -14,6 +14,8 @@ sealed class AppError(
         val statusCode: Int,
         message: String,
         code: String? = null,
+        /** The error body's `data` (e.g. `distanceM`, `radiusM` of an attendance rejection, #910) */
+        val data: org.json.JSONObject? = null,
     ) : AppError(message, code)
     class InvalidResponse(
         message: String,

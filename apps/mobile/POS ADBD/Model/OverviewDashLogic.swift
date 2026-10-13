@@ -209,7 +209,9 @@ enum OverviewDashLogic {
             }
         }
         var collateralChip: OverviewTileChip?
-        if let held = now?.rentedOut, held > 0 {
+        // #938: orders whose collateral is held now (`collateralToReturn.orders`); an older API without that count keeps
+        // the rentals out (`depositsHeld.orders`)
+        if let held = now?.collateralToReturn?.orders ?? now?.rentedOut, held > 0 {
             collateralChip = OverviewTileChip(tone: .info, key: "overview.dash.chip.held", count: held)
         }
         return [
@@ -420,6 +422,8 @@ struct OverviewRelatedRow: Equatable {
     let customer: String
     let detail: String
     let amount: Double
+    /// #938: an order whose collateral is held now (Thế chân); listed, not part of the period total
+    var held = false
 }
 
 /// #757: the reason under a "Collected" row in the app's language. The API `description` is Vietnamese, so the
@@ -510,7 +514,21 @@ extension OverviewDashLogic {
         }
     }
 
+    /// Σ of the period rows (= the tile); held rows are listed only (#938)
     static func relatedTotal(_ rows: [OverviewRelatedRow]) -> Double {
-        rows.reduce(0) { $0 + $1.amount }
+        rows.reduce(0) { $0 + ($1.held ? 0 : $1.amount) }
+    }
+
+    /// Rows behind the total (#938: held rows left out)
+    static func relatedCount(_ rows: [OverviewRelatedRow]) -> Int {
+        rows.filter { !$0.held }.count
+    }
+
+    /// #938: the orders holding collateral now (outlet-operations `collateralHeld`), one row each with its collateral
+    static func heldRows(_ orders: [TodayWorkRow]) -> [OverviewRelatedRow] {
+        orders.filter { $0.securityDeposit > 0 }.map {
+            OverviewRelatedRow(orderId: $0.id, orderNumber: $0.orderNumber, customer: $0.customerName ?? "",
+                               detail: "overview.related.collateralHeld".localized(), amount: $0.securityDeposit, held: true)
+        }
     }
 }

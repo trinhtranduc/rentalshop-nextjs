@@ -15,7 +15,7 @@
  * }
  */
 
-import { lookupErrorTranslation, looksLikeErrorCode } from '@rentalshop/utils';
+import { lookupErrorTranslation, looksLikeErrorCode, translateErrorCode } from '@rentalshop/utils';
 import { useErrorTranslations } from './useTranslation';
 
 export function useApiError() {
@@ -61,7 +61,8 @@ export function useApiError() {
       // #825: some codes carry parameters for their sentence (PRODUCT_HELD_BY_OTHER_OUTLETS → { outlets })
       const params = response?.data?.messageParams;
       const values = params && typeof params === 'object' ? params : undefined;
-      return lookupErrorTranslation(t, response.code, values) ?? unknown(response.code);
+      // #918: with `names` a code may have a `<CODE>_NAMED` sentence (SHIFT_LOCKED → who already worked today)
+      return translateErrorCode(t, response.code, values) ?? unknown(response.code);
     }
 
     // ✅ PRIORITY 2: Error object with code attached (from authenticatedFetch)

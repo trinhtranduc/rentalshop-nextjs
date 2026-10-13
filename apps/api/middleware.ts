@@ -33,6 +33,7 @@ const publicRoutes = [
   '/api/posts/tags/public', // Public post tags
   '/api/mobile/auth', // Mobile auth endpoints (login, refresh) - no JWT required
   '/api/mobile/app-config', // Minimum app version and screen flags, read before login (#362)
+  '/api/attendance/kiosk', // #907 counter QR screen, authenticated by its X-Kiosk-Token in the route
   '/api/test',
   '/api/debug', // Debug endpoints for troubleshooting
   '/api/sync-proxy', // Sync proxy endpoint (no authentication required)

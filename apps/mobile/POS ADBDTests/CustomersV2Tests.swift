@@ -316,4 +316,42 @@ final class CustomersV2Tests: XCTestCase {
         XCTAssertEqual(CustomersV2Logic.itemsTitle(none), String(format: "customers.v2.items".localized(), 2),
                        "older API without item names: the item count")
     }
+
+    // MARK: - #952 edit from the picker
+
+    /// #952: the pencil shows on picker rows only, and only for a user who may edit customers
+    func testPickerPencilFollowsThePermission() {
+        XCTAssertTrue(CustomerPickerEditLogic.showsEdit(isPicker: true, canManageCustomers: true))
+        XCTAssertFalse(CustomerPickerEditLogic.showsEdit(isPicker: true, canManageCustomers: false))
+        XCTAssertFalse(CustomerPickerEditLogic.showsEdit(isPicker: false, canManageCustomers: true), "Settings list keeps its chevron")
+    }
+
+    /// #952: after a save, the cart's customer takes the new name / phone / address when it is the edited one
+    func testCartCustomerAfterSave() throws {
+        let inCart = try customer(#"{"id":7,"firstName":"Mai","lastName":"Nguyễn","full_name":"Mai Nguyễn","phone":"0912345678","email":"m@x.vn"}"#)
+        let form = CustomerEditForm(phone: " 0912000111 ", name: "Nguyễn Thị Mai (cô dâu)", email: "m@x.vn",
+                                    address: "45 Võ Văn Tần", idNumber: "", dateOfBirth: "", notes: "")
+        let updated = try XCTUnwrap(CustomerPickerEditLogic.cartCustomer(afterSaving: form, customerId: 7, cartCustomer: inCart))
+        XCTAssertEqual(updated.id, 7)
+        XCTAssertEqual(updated.firstName, "Nguyễn")
+        XCTAssertEqual(updated.lastName, "Thị Mai (cô dâu)")
+        XCTAssertEqual(updated.full_name, "Nguyễn Thị Mai (cô dâu)")
+        XCTAssertEqual(updated.phone, "0912000111")
+        XCTAssertEqual(updated.address, "45 Võ Văn Tần")
+        XCTAssertEqual(updated.email, "m@x.vn")
+        XCTAssertEqual(CustomersV2Logic.displayName(updated), "Nguyễn Thị Mai (cô dâu)")
+
+        XCTAssertNil(CustomerPickerEditLogic.cartCustomer(afterSaving: form, customerId: 8, cartCustomer: inCart), "another customer: cart unchanged")
+        XCTAssertNil(CustomerPickerEditLogic.cartCustomer(afterSaving: form, customerId: 7, cartCustomer: nil), "no customer in the cart")
+    }
+
+    /// #952: the picker's edit sheet shows name, phone, address and note; the toast after a save
+    func testPickerEditSheetFieldsAndToast() throws {
+        XCTAssertEqual(CustomerPickerEditLogic.sheetFields, [.phone, .name, .address, .notes])
+        for (language, text) in [("vi-VN", "Đã lưu khách hàng"), ("en", "Customer saved")] {
+            let path = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"), language)
+            let bundle = try XCTUnwrap(Bundle(path: path))
+            XCTAssertEqual(bundle.localizedString(forKey: "customers.v2.saved", value: "∅", table: nil), text, language)
+        }
+    }
 }

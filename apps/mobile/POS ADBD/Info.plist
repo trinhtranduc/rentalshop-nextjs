@@ -40,9 +40,9 @@
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>AnyRent uses Bluetooth to communicate with peripheral devices used by rental shop staff</string>
 	<key>NSCameraUsageDescription</key>
-	<string>AnyRent uses the camera to allow staff to take photos of rental items and documents for inventory and rental records.</string>
+	<string>AnyRent uses the camera to take photos of rental items and documents, and to scan the outlet's QR code when staff clock in or out.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>AnyRent uses location information to support operational features such as identifying the shop location and improving service reliability.</string>
+	<string>AnyRent uses your location when you clock in or out, to confirm you are at the outlet.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AnyRent does not record audio and only requests microphone access if required by the operating system for specific system features.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

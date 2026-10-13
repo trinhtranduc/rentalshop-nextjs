@@ -30,6 +30,7 @@ import {
   lineModes,
   lineTotal,
   needsPrice,
+  productQuantity,
   selectMode,
   setLinePrice,
   setLineNote,
@@ -67,14 +68,14 @@ describe('lines', () => {
     expect(lineFromProduct(VEST, 'SALE').unitPrice).toBe(300_000);
   });
 
-  it('adds, counts up, sets and removes', () => {
+  it('adds, sets and removes (#952: every add is a new line)', () => {
     let lines = addProduct([], AO_DAI, 'RENT');
     lines = addProduct(lines, AO_DAI, 'RENT');
     lines = addProduct(lines, VEST, 'RENT');
-    expect(lines.map((l) => [l.productId, l.quantity])).toEqual([[11, 2], [12, 1]]);
+    expect(lines.map((l) => [l.productId, l.quantity])).toEqual([[11, 1], [11, 1], [12, 1]]);
     lines = setQuantity(lines, 12, 0);
-    expect(lines).toHaveLength(1);
-    expect(setQuantity(lines, 11, 3)[0].quantity).toBe(3);
+    expect(lines).toHaveLength(2);
+    expect(setQuantity(lines, lines[0].key, 3).map((l) => l.quantity)).toEqual([3, 1]);
   });
 
   it('switches option and reprices on Thuê ↔ Bán', () => {
@@ -464,5 +465,219 @@ describe('outlet for a new order (owner: "phải có outlet mặc định")', ()
     expect(pickOutlet(99, null, list)).toBe(1);
     expect(pickOutlet(null, null, [{ id: 7 }, { id: 8 }])).toBe(7);
     expect(pickOutlet(null, 5, [])).toBe(5);
+  });
+});
+
+// #951: 0đ is a real price in the cart; only a missing price asks for one ("Nhập giá")
+describe('0đ products and free lines (#951)', () => {
+  const FREE: ProductLike = {
+    id: 21,
+    name: 'Túi quà',
+    rentPrice: 0,
+    salePrice: 0,
+    deposit: 0,
+    pricingType: 'FIXED',
+    pricingOptions: [{ id: 7, type: 'FIXED', price: 0, isDefault: true }],
+  };
+  const NO_PRICE: ProductLike = { id: 22, name: 'Chưa có giá', rentPrice: 0, salePrice: null, deposit: 0, pricingOptions: [] };
+  const base = { orderType: 'RENT' as const, pickup: '2026-10-07', ret: '2026-10-09', customerId: 5, outletId: 1 };
+
+  it('a 0đ product goes in the cart at 0đ without asking for a price', () => {
+    const line = lineFromProduct(FREE, 'RENT');
+    expect(line).toMatchObject({ unitPrice: 0, pricingType: 'FIXED', selectedPricingOptionId: 7 });
+    expect(needsPrice(line, 'RENT')).toBe(false);
+    expect(lineTotal(line, 'RENT', 3)).toBe(0);
+    expect(firstMissing({ ...base, lines: [line] })).toBeNull();
+    expect(lineFromProduct(FREE, 'SALE').unitPrice).toBe(0);
+  });
+
+  it('a product without a rent price still asks for one', () => {
+    const line = lineFromProduct(NO_PRICE, 'RENT');
+    expect(needsPrice(line, 'RENT')).toBe(true);
+    expect(firstMissing({ ...base, lines: [line] })).toBe('price');
+  });
+
+  it('a priced line can be given free: typed 0 is a price, not "Nhập giá"', () => {
+    let lines = setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 0);
+    expect(lines[0]).toMatchObject({ unitPrice: 0, pricingType: 'DAILY' });
+    expect(needsPrice(lines[0], 'RENT')).toBe(false);
+    expect(lineTotal(lines[0], 'RENT', 3)).toBe(0);
+    // a missing-price line typed 0 is priced too
+    lines = setLinePrice(selectMode([lineFromProduct(VEST, 'RENT')], 12, 'DAILY'), 12, 0);
+    expect(needsPrice(lines[0], 'RENT')).toBe(false);
+    expect(firstMissing({ ...base, lines })).toBeNull();
+  });
+
+  it('clearing the typed price goes back to the product price, or to "Nhập giá" when it has none', () => {
+    let lines = setLinePrice(setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 0), 11, null);
+    expect(lines[0].unitPrice).toBe(150_000);
+    expect(needsPrice(lines[0], 'RENT')).toBe(false);
+    lines = setLinePrice(setLinePrice([lineFromProduct(NO_PRICE, 'RENT')], 22, 0), 22, null);
+    expect(needsPrice(lines[0], 'RENT')).toBe(true);
+  });
+
+  it('a free line keeps 0 through Thuê → Bán → Thuê and in the saved order', () => {
+    let lines = setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 0);
+    lines = repriceLines(repriceLines(lines, 'SALE'), 'RENT');
+    expect(lines[0].unitPrice).toBe(0);
+    expect(needsPrice(lines[0], 'RENT')).toBe(false);
+    const draft = draftFromOrder(
+      { orderType: 'RENT', orderItems: [{ productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 0, pricingType: 'FIXED' }] },
+      getLocalDateKey,
+    );
+    expect(needsPrice(draft.lines[0], 'RENT')).toBe(false);
+  });
+
+  it('a sale line can be given free and back', () => {
+    let lines = setLinePrice([lineFromProduct(AO_DAI, 'SALE')], 11, 0, 'SALE');
+    expect(lines[0].unitPrice).toBe(0);
+    expect(lineTotal(lines[0], 'SALE', 1)).toBe(0);
+    lines = setLinePrice(lines, 11, null, 'SALE');
+    expect(lines[0].unitPrice).toBe(900_000);
+  });
+
+  it('the payload sends unit price 0 and total 0 for a free line', () => {
+    const lines = [lineFromProduct(AO_DAI, 'RENT'), lineFromProduct(FREE, 'RENT')];
+    const p = buildPayload({
+      ...base,
+      mode: 'create',
+      lines: setLinePrice(lines, 11, 0),
+      discountType: 'amount',
+      discountValue: 0,
+      depositAmount: null,
+      securityDeposit: 0,
+      notes: '',
+    }) as { orderItems: Array<{ unitPrice: number; totalPrice: number }>; totalAmount: number };
+    expect(p.orderItems.map((i) => [i.unitPrice, i.totalPrice])).toEqual([
+      [0, 0],
+      [0, 0],
+    ]);
+    expect(p.totalAmount).toBe(0);
+  });
+});
+
+// #951: an order made in the apps may hold the same product on two lines (one paid, one free); each line edits on its own
+describe('two lines of one product (#951)', () => {
+  const draft = () =>
+    draftFromOrder(
+      {
+        orderType: 'RENT',
+        orderItems: [
+          { productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 150_000, pricingType: 'FIXED' },
+          { productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 2, unitPrice: 0, pricingType: 'FIXED' },
+        ],
+      },
+      getLocalDateKey,
+    );
+
+  it('loads both lines with their own keys and prices', () => {
+    const lines = draft().lines;
+    expect(lines).toHaveLength(2);
+    expect(lines[0].key).not.toBe(lines[1].key);
+    expect(lines.map((l) => [l.quantity, l.unitPrice])).toEqual([
+      [1, 150_000],
+      [2, 0],
+    ]);
+  });
+
+  it('quantity, price, note and remove touch one line only', () => {
+    const lines = draft().lines;
+    const [a, b] = lines;
+    let next = setQuantity(lines, b.key, 3);
+    expect(next.map((l) => l.quantity)).toEqual([1, 3]);
+    next = setLinePrice(next, a.key, 0);
+    expect(next.map((l) => l.unitPrice)).toEqual([0, 0]);
+    next = setLineNote(next, b.key, 'Tặng');
+    expect(next.map((l) => l.notes)).toEqual(['', 'Tặng']);
+    next = setQuantity(next, a.key, 0);
+    expect(next).toHaveLength(1);
+    expect(next[0].key).toBe(b.key);
+  });
+});
+
+// #952: like the mobile apps after #951, every add of a product is a new cart line (owner: no merging)
+describe('every add makes a new line (#952)', () => {
+  it('adding the same product twice gives two lines, each with its own key, rent or sale', () => {
+    for (const type of ['RENT', 'SALE'] as const) {
+      const lines = addProduct(addProduct([], AO_DAI, type), AO_DAI, type);
+      expect(lines).toHaveLength(2);
+      expect(lines.map((l) => [l.productId, l.quantity])).toEqual([[11, 1], [11, 1]]);
+      expect(lines[0].key).not.toBe(lines[1].key);
+    }
+  });
+
+  it('a new line never changes the lines already in the cart', () => {
+    let lines = addProduct([], AO_DAI, 'RENT');
+    lines = setQuantity(lines, lines[0].key, 2);
+    lines = setLinePrice(lines, lines[0].key, 99_000);
+    const first = lines[0];
+    lines = addProduct(lines, AO_DAI, 'RENT');
+    expect(lines[0]).toEqual(first);
+    expect(lines[1]).toMatchObject({ quantity: 1, unitPrice: 150_000, pricingType: 'DAILY' });
+  });
+
+  it('quantity, price (0đ too), note and remove act on the line, not on the product', () => {
+    let lines = addProduct(addProduct([], AO_DAI, 'RENT'), AO_DAI, 'RENT');
+    const [a, b] = lines;
+    lines = setLinePrice(lines, b.key, 0);
+    expect(lines.map((l) => l.unitPrice)).toEqual([150_000, 0]);
+    expect(needsPrice(lines[1], 'RENT')).toBe(false);
+    lines = setQuantity(lines, a.key, 3);
+    expect(lines.map((l) => l.quantity)).toEqual([3, 1]);
+    lines = setLineNote(lines, b.key, 'Tặng');
+    expect(lines.map((l) => l.notes)).toEqual(['', 'Tặng']);
+    lines = setQuantity(lines, a.key, 0);
+    expect(lines.map((l) => l.key)).toEqual([b.key]);
+  });
+
+  it('stock and availability count every line of a product', () => {
+    let lines = addProduct(addProduct(addProduct([], AO_DAI, 'RENT'), AO_DAI, 'RENT'), VEST, 'RENT');
+    lines = setQuantity(lines, lines[1].key, 2);
+    expect(productQuantity(lines, 11)).toBe(3);
+    expect(productQuantity(lines, 12)).toBe(1);
+    expect(productQuantity(lines, 99)).toBe(0);
+  });
+
+  it('the payload sends one order item per line, the same product on two items', () => {
+    let lines = addProduct(addProduct([], AO_DAI, 'SALE'), AO_DAI, 'SALE');
+    lines = setLinePrice(lines, lines[1].key, 0, 'SALE');
+    const p = buildPayload({
+      mode: 'create',
+      orderType: 'SALE',
+      customerId: 7,
+      outletId: 1,
+      pickup: '',
+      ret: '',
+      lines,
+      discountType: 'amount',
+      discountValue: 0,
+      depositAmount: null,
+      securityDeposit: 0,
+      notes: '',
+    });
+    expect(p.orderItems.map((i: { productId: number; unitPrice: number }) => [i.productId, i.unitPrice])).toEqual([
+      [11, 900_000],
+      [11, 0],
+    ]);
+  });
+
+  it('editing an order keeps one line per saved item', () => {
+    const d = draftFromOrder(
+      {
+        orderType: 'RENT',
+        orderItems: [
+          { productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 150_000, pricingType: 'FIXED' },
+          { productId: 12, product: { id: 12, name: 'Vest' }, quantity: 1, unitPrice: 80_000, pricingType: 'FIXED' },
+          { productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 0, pricingType: 'FIXED' },
+        ],
+      },
+      getLocalDateKey,
+    );
+    expect(d.lines.map((l) => [l.productId, l.unitPrice])).toEqual([
+      [11, 150_000],
+      [12, 80_000],
+      [11, 0],
+    ]);
+    expect(new Set(d.lines.map((l) => l.key)).size).toBe(3);
   });
 });

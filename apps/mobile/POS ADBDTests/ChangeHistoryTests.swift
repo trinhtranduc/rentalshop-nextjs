@@ -402,13 +402,30 @@ final class ChangeHistoryTests: XCTestCase {
         return OrderDetailLogic.sheetActions(actions, orderType: type, canExtend: canExtend)
     }
 
-    func testReservedRentalSheetLeavesEditToTheBottomBar() {
-        XCTAssertEqual(sheet(.rent, .reserved), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: [.cancel]))
+    private func bar(_ type: OrderType, _ status: OrderStatus, manage: Bool = true, canExtend: Bool = false) -> [OrderSheetAction] {
+        let actions = OrderDetailLogic.actions(orderType: type, status: status, canManageOrders: manage, canDeleteCancelled: true)
+        return OrderDetailLogic.bottomButtons(actions, orderType: type, canExtend: canExtend)
     }
 
-    func testRentingSheetLeavesExtendToTheBottomBar() {
-        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: true), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: [.cancel]))
-        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: false), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: [.cancel]))
+    /// #930: the secondary bottom button is always Print; Edit / Extend live in the sheet
+    func testBottomBarSecondaryButtonIsAlwaysPrint() {
+        XCTAssertEqual(bar(.rent, .reserved), [.print])
+        XCTAssertEqual(bar(.rent, .reserved, manage: false), [.print])
+        XCTAssertEqual(bar(.rent, .pickuped, canExtend: true), [.print])
+        XCTAssertEqual(bar(.rent, .pickuped, canExtend: false), [.print])
+        XCTAssertEqual(bar(.rent, .returned), [.print])
+        XCTAssertEqual(bar(.rent, .cancelled), [.print])
+        XCTAssertEqual(bar(.sale, .completed), [.cancel, .print])
+        XCTAssertEqual(bar(.sale, .completed, manage: false), [.print])
+    }
+
+    func testReservedRentalSheetHasEditNotPrint() {
+        XCTAssertEqual(sheet(.rent, .reserved), OrderSheetActions(main: [.share, .notes, .edit, .history], destructive: [.cancel]))
+    }
+
+    func testRentingSheetHasExtendNotPrint() {
+        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: true), OrderSheetActions(main: [.share, .notes, .extend, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: false), OrderSheetActions(main: [.share, .notes, .history], destructive: [.cancel]))
     }
 
     func testCompletedSaleKeepsPrintAndCancelOnScreen() {
@@ -421,7 +438,7 @@ final class ChangeHistoryTests: XCTestCase {
     }
 
     func testStaffWithoutOrderRightsGetsNoEditOrCancel() {
-        XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.print, .share, .notes, .history], destructive: []))
+        XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.share, .notes, .history], destructive: []))
     }
 
     func testOnlyOwnersAndOutletAdminsSeeHistory() {
@@ -445,7 +462,7 @@ final class ChangeHistoryTests: XCTestCase {
         }
         XCTAssertEqual(OrderDetailLogic.sheetActions(
             OrderDetailLogic.actions(orderType: .rent, status: .reserved, canManageOrders: false, canDeleteCancelled: false),
-            orderType: .rent, canExtend: false, canViewHistory: false), OrderSheetActions(main: [.print, .share, .notes], destructive: []))
+            orderType: .rent, canExtend: false, canViewHistory: false), OrderSheetActions(main: [.share, .notes], destructive: []))
     }
 
     func testSheetNeverRepeatsABottomButton() {

@@ -89,13 +89,11 @@ final class ProductsV2Tests: XCTestCase {
 
     // MARK: - Home cart bar and add feedback (#893)
 
-    /// #893 (owner): the Home cart bar is the board's primary blue with white text; "+" shows no success toast
-    func testHomeCartBarIsBlueAndAddShowsNoToast() {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        HomeCartBarStyle.fill.getRed(&r, green: &g, blue: &b, alpha: &a)
-        XCTAssertEqual(String(format: "%02X%02X%02X", Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255))), "1D4ED8")
-        XCTAssertEqual(HomeCartBarStyle.text, UIColor.white)
-        XCTAssertFalse(HomeCartBarStyle.showsAddedToast)
+    /// #893 (owner): "+" shows no success toast. #952: the floating cart bar is gone; the top-right button says the count
+    func testHomeAddShowsNoToastAndCartButtonSaysTheCount() {
+        XCTAssertFalse(HomeCartButton.showsAddedToast)
+        XCTAssertNil(HomeCartButton.accessibilityValue(itemCount: 0))
+        XCTAssertEqual(HomeCartButton.accessibilityValue(itemCount: 2), PluralText.format("products.cart.bar", count: 2, 2))
     }
 
     // MARK: - Cart swipe to delete (#893)
@@ -352,7 +350,7 @@ final class ProductsV2Tests: XCTestCase {
         let onlyFixed = ProductPricing.options(perRental: 300_000, perDay: nil, defaultMode: .perDay)
         XCTAssertEqual(onlyFixed.map { $0.type }, ["FIXED"])
         XCTAssertTrue(onlyFixed[0].isDefault)
-        XCTAssertTrue(ProductPricing.options(perRental: 0, perDay: nil, defaultMode: .perRental).isEmpty)
+        XCTAssertTrue(ProductPricing.options(perRental: nil, perDay: nil, defaultMode: .perRental).isEmpty)
     }
 
     // MARK: - Form validation
@@ -602,6 +600,30 @@ final class ProductsV2Tests: XCTestCase {
         let stock = try XCTUnwrap(labels(cell.contentView).first { $0.text?.hasPrefix("● ") == true })
         XCTAssertEqual(stock.font, V2.label(size: 13, weight: .semibold).font)
     }
+
+    /// #937: a long name wraps to two lines on Home, then "…"
+    func testHomeRowNameShowsTwoLines() throws {
+        let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
+        let name = "Váy cưới đuôi cá ren Pháp tay dài đính ngọc trai cao cấp"
+        cell.bind(try product(#"{"id":1,"name":"\#(name)"}"#), inCart: 0)
+        func labels(_ view: UIView) -> [UILabel] {
+            ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
+        }
+        let label = try XCTUnwrap(labels(cell.contentView).first { $0.text == name })
+        XCTAssertEqual(label.numberOfLines, 2)
+        XCTAssertEqual(label.lineBreakMode, .byTruncatingTail)
+    }
+
+    // MARK: - Home cart button (#937)
+
+    /// #937: the Home top-right button counts the cart's items (same number as the cart bar), hidden when empty
+    func testHomeCartButtonBadge() {
+        XCTAssertNil(HomeCartButton.badge(itemCount: 0))
+        XCTAssertEqual(HomeCartButton.badge(itemCount: 3), "3")
+        XCTAssertEqual(HomeCartButton.badge(itemCount: 99), "99")
+        XCTAssertEqual(HomeCartButton.badge(itemCount: 140), "99")
+        XCTAssertEqual(HomeCartButton.symbol, "cart")
+    }
 }
 
 /// #461 — the number pad covered "Lưu sản phẩm" and had no Done key
@@ -628,6 +650,7 @@ final class ProductFormKeyboardTests: XCTestCase {
         allViews(view).compactMap { $0 as? UITextField }
     }
 
+    /// Customer phone pads keep their "Xong" bar (#461); #952 removed it from the product form only
     private func assertDoneBar(_ field: UITextField?, file: StaticString = #filePath, line: UInt = #line) {
         guard let field else { return XCTFail("field not found", file: file, line: line) }
         let bar = field.inputAccessoryView as? UIToolbar
@@ -638,10 +661,16 @@ final class ProductFormKeyboardTests: XCTestCase {
         XCTAssertEqual(done?.action, #selector(UIResponder.resignFirstResponder), file: file, line: line)
     }
 
-    func testEveryPriceFieldHasADoneBar() throws {
-        let numeric = fields(try merchantForm().view).filter { $0.keyboardType == .numberPad }
+    /// #952 (owner): no "Xong" bar on the number pads; a tap outside a field or a drag of the form closes the keyboard
+    func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
+        let form = try merchantForm()
+        let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
         XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
-        numeric.forEach { assertDoneBar($0) }
+        numeric.forEach { XCTAssertNil($0.inputAccessoryView, "\($0.accessibilityLabel ?? "field") keeps no Done bar") }
+        let taps = (form.view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
+        XCTAssertTrue(taps.contains { !$0.cancelsTouchesInView }, "a tap outside a field ends editing (fields still take taps)")
+        let scrolls = allViews(form.view).compactMap { $0 as? UIScrollView }.filter { !($0 is UITextView) }
+        XCTAssertTrue(scrolls.contains { $0.keyboardDismissMode != .none }, "dragging the form closes the keyboard")
     }
 
     func testSaveButtonRidesOnTheKeyboard() throws {
@@ -725,7 +754,7 @@ extension ProductsV2Tests {
         cart.addItem(CartItem(from: onePrice, quantity: 1, price: 150_000))
         cart.addItem(CartItem(from: onePrice, quantity: 1, price: 150_000))
         cart.refreshPricing(from: onePrice)
-        XCTAssertEqual(cart.items.count, 1)
+        XCTAssertEqual(cart.items.count, 2, "#951: each add is its own line")
         XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
     }
 
@@ -737,8 +766,9 @@ extension ProductsV2Tests {
         XCTAssertFalse(CartV2Logic.offersBothModes(cart.items[0]))
 
         cart.addItem(CartItem(from: try homeRow(options: bothOptions), quantity: 1, price: 150_000))
-        XCTAssertEqual(cart.items.count, 1)
-        XCTAssertEqual(cart.items[0].quantity, 2)
+        // #951: every add is a new line; the earlier line of the product still takes the fresh prices
+        XCTAssertEqual(cart.items.count, 2)
+        XCTAssertEqual(cart.items[0].quantity, 1)
         XCTAssertTrue(CartV2Logic.offersBothModes(cart.items[0]))
         XCTAssertEqual(cart.items[0].pricingType, "FIXED")
         XCTAssertEqual(cart.items[0].price, 150_000)
@@ -854,8 +884,8 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.pricingChoices(line), [
             CartPricingChoice(type: "FIXED", catalogPrice: 350_000),
             CartPricingChoice(type: "DAILY", catalogPrice: 150_000),
-            CartPricingChoice(type: "BLOCK", catalogPrice: nil),
-        ], "an inactive option is left out; a priceless one reads Nhập giá")
+            CartPricingChoice(type: "BLOCK", catalogPrice: 0),
+        ], "an inactive option is left out; #951: a 0đ option is a price")
         // A one-price product still offers both modes
         let onePrice = CartItem(from: try homeRow(options: "[]"), quantity: 1, price: 150_000)
         XCTAssertEqual(CartV2Logic.pricingChoices(onePrice).map(\.type), ["FIXED", "DAILY"])
@@ -901,7 +931,7 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).price,
                        String(format: "products.cart.pricing.perDaySuffix".localized(), "130.000đ"))
         cart.selectPricingType(at: 0, type: "BLOCK")
-        XCTAssertNil(CartV2Logic.chip(cart.items[0], orderType: .rent).price, "no price yet: Nhập giá")
+        XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .rent).price, "0đ", "#951: a 0đ option is a price")
         XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .sale).label, "products.cart.pricing.sale".localized())
 
         let daily = CartV2Logic.pricePreview(type: "DAILY", price: 130_000, days: 3, quantity: 1, orderType: .rent)
@@ -1305,5 +1335,217 @@ extension ProductsV2Tests {
         }
         XCTAssertEqual(tags(in: sheet.view), 1, "only Đồ thuê changed")
         XCTAssertEqual(sheet.saveButton.title(for: .normal), "products.cart.edit.save".localized())
+    }
+}
+
+/// #951 — products priced 0đ, a free line (price 0), one cart line per add
+extension ProductsV2Tests {
+    private var freeProduct: String {
+        #"{"id":401,"name":"Túi quà","rentPrice":0,"salePrice":0,"pricingType":"FIXED","pricingOptions":[{"id":9,"type":"FIXED","price":0,"isDefault":true,"isActive":true}]}"#
+    }
+    private var noRentPrice: String { #"{"id":402,"name":"Chưa có giá","rentPrice":0,"salePrice":0,"pricingOptions":[]}"# }
+
+    func testZeroOptionIsAPriceAndALegacyZeroIsNot() throws {
+        let free = try product(freeProduct)
+        XCTAssertEqual(ProductPricing.perRental(free), 0)
+        XCTAssertNil(ProductPricing.perDay(free))
+        XCTAssertEqual(ProductRowLogic.price(free), ProductRowPrice(main: 0, mainMode: .perRental, second: nil, secondMode: nil))
+        let daily0 = try product(#"{"id":3,"name":"A","rentPrice":0,"pricingOptions":[{"id":1,"type":"DAILY","price":0,"isDefault":true}]}"#)
+        XCTAssertEqual(ProductPricing.perDay(daily0), 0)
+        XCTAssertNil(ProductPricing.perRental(try product(noRentPrice)))
+        XCTAssertNil(ProductRowLogic.price(try product(noRentPrice)))
+        // salePrice 0 still reads "not for sale" (the apps save 0 for an empty box)
+        XCTAssertNil(ProductPricing.sale(free))
+    }
+
+    func testFormSendsAndAcceptsZeroButNotNegative() {
+        let zero = ProductPricing.options(perRental: 0, perDay: nil, defaultMode: .perRental)
+        XCTAssertEqual(zero.map { $0.type }, ["FIXED"])
+        XCTAssertEqual(zero.map { $0.price }, [0])
+        XCTAssertTrue(zero[0].isDefault)
+        let dailyZero = ProductPricing.options(perRental: nil, perDay: 0, defaultMode: .perRental)
+        XCTAssertEqual(dailyZero.map { $0.type }, ["DAILY"])
+        XCTAssertTrue(dailyZero[0].isDefault)
+        XCTAssertEqual(ProductFormValidator.validate(input(perRental: 0)), [])
+        XCTAssertEqual(ProductFormValidator.validate(input(perRental: nil, perDay: 0, mode: .perDay)), [])
+        XCTAssertEqual(ProductFormValidator.validate(input(perRental: nil, perDay: nil, mode: .perDay)), [.perDayDefaultNeedsPrice])
+        XCTAssertEqual(ProductFormValidator.validate(input(perRental: -1)), [.negativeAmount])
+        XCTAssertEqual(MoneyInput.display(ProductPricing.perRental(try! product(freeProduct))), "0", "edit shows 0, not empty")
+    }
+
+    func testZeroPriceProductGoesInTheCartAtZeroWithoutAskingForAPrice() throws {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(CartItem(from: try product(freeProduct), quantity: 2, price: 0))
+        let line = cart.items[0]
+        XCTAssertEqual(line.price, 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(line, orderType: .rent))
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+        XCTAssertEqual(CartV2Logic.link(line, orderType: .rent).amount, "0đ")
+        XCTAssertEqual(CartV2Logic.chip(line, orderType: .rent).price, "0đ")
+        XCTAssertEqual(CartV2Logic.calc(line, orderType: .rent).total, 0)
+        XCTAssertEqual(CartV2Logic.pricingChoices(line).first, CartPricingChoice(type: "FIXED", catalogPrice: 0))
+        XCTAssertEqual(CartV2Logic.startPrice(line, type: "FIXED"), 0)
+    }
+
+    func testAProductWithoutARentPriceStillAsks() throws {
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(CartItem(from: try product(noRentPrice), quantity: 1, price: 0))
+        XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertNil(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "Nhập giá")
+        XCTAssertNil(CartV2Logic.pricingChoices(cart.items[0]).first?.catalogPrice)
+        XCTAssertNil(CartV2Logic.startPrice(cart.items[0], type: "FIXED"), "the field starts empty")
+        XCTAssertFalse(CartV2Logic.missingPrices(cart).isEmpty)
+        // typing 0 gives it a price
+        cart.updatePrice(at: 0, price: 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+        // clearing the typed price asks again
+        cart.clearPrice(at: 0)
+        XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+    }
+
+    func testAPricedLineCanBeGivenFreeAndBack() throws {
+        let cart = try pricingCart()
+        cart.updatePrice(at: 0, price: 0)
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "0đ")
+        XCTAssertEqual(CartV2Logic.startPrice(cart.items[0], type: "FIXED"), 0)
+        let request = try XCTUnwrap(cart.toCreateOrderRequest().orderItems.first)
+        XCTAssertEqual(request.unitPrice, 0)
+        XCTAssertEqual(request.totalPrice, 0)
+        // Thuê → Bán → Thuê keeps the free price
+        cart.orderType = .sale
+        cart.syncPricesWithOrderType()
+        cart.orderType = .rent
+        cart.syncPricesWithOrderType()
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        // an empty box goes back to the catalog price
+        cart.clearPrice(at: 0)
+        XCTAssertEqual(cart.items[0].price, 350_000)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+    }
+
+    func testASaleLineAtZeroShowsZeroAndNeverAsks() throws {
+        let cart = Cart()
+        cart.orderType = .sale
+        cart.addItem(CartItem(from: try product(noRentPrice), quantity: 1, price: 0))
+        cart.syncPricesWithOrderType()
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .sale))
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .sale).amount, "0đ")
+        XCTAssertEqual(CartV2Logic.chip(cart.items[0], orderType: .sale).price, "0đ")
+        // a priced sale line given free, then back
+        let priced = try pricingCart()
+        priced.orderType = .sale
+        priced.syncPricesWithOrderType()
+        priced.updatePrice(at: 0, price: 0)
+        XCTAssertEqual(priced.items[0].price, 0)
+        priced.clearPrice(at: 0)
+        XCTAssertEqual(priced.items[0].price, priced.items[0].originalSalePrice)
+    }
+
+    func testASavedOrderLineAtZeroIsNotBlockedAndLinesStayApart() throws {
+        let json = #"{"id":1,"orderNumber":"9","orderType":"RENT","status":"RESERVED","createdAt":"2026-10-01T03:00:00.000Z","updatedAt":"2026-10-01T03:00:00.000Z","customerName":"Huy","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":150000,"orderItems":[{"id":1,"quantity":1,"unitPrice":150000,"totalPrice":150000,"productId":7,"productName":"Vest"},{"id":3,"quantity":2,"unitPrice":0,"totalPrice":0,"productId":7,"productName":"Vest"}]}"#
+        let order = try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+        let cart = Cart.fromOrder(order)
+        XCTAssertEqual(cart.items.map(\.quantity), [1, 2])
+        XCTAssertEqual(cart.items.map(\.price), [150_000, 0])
+        XCTAssertNotEqual(cart.items[0].lineId, cart.items[1].lineId)
+        XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
+        XCTAssertEqual(cart.toUpdateOrderRequest().orderItems?.map(\.unitPrice), [150_000, 0])
+    }
+
+    func testEveryAddIsANewLineAndLineActionsTouchOnlyThatLine() throws {
+        let row = try homeRow(options: bothOptions)
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(product: row, quantity: 1, price: 150_000)
+        cart.addItem(product: row, quantity: 1, price: 150_000)
+        XCTAssertEqual(cart.items.count, 2)
+        XCTAssertNotEqual(cart.items[0].lineId, cart.items[1].lineId)
+        XCTAssertEqual(cart.itemCount, 2)
+        XCTAssertEqual(ProductRowLogic.cartCount(productId: 301, in: cart.items), 2)
+        XCTAssertEqual(HomeCartButton.badge(itemCount: cart.itemCount), "2")
+
+        // 0đ on the second line only
+        let second = cart.items[1].lineId
+        let index = try XCTUnwrap(cart.index(ofLine: second))
+        cart.updatePrice(at: index, price: 0)
+        cart.updateQuantity(at: index, quantity: 3)
+        XCTAssertEqual(cart.items.map(\.price), [150_000, 0])
+        XCTAssertEqual(cart.items.map(\.quantity), [1, 3])
+        let request = cart.toCreateOrderRequest().orderItems
+        XCTAssertEqual(request.map(\.productId), [301, 301])
+        XCTAssertEqual(request.map(\.unitPrice), [150_000, 0])
+
+        // removing the first line leaves the free one
+        cart.removeItem(at: 0)
+        XCTAssertEqual(cart.items.count, 1)
+        XCTAssertEqual(cart.items[0].lineId, second)
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertNil(cart.index(ofLine: UUID()))
+    }
+
+    func testShortageCountsEveryLineOfTheProduct() throws {
+        let row = try homeRow(options: bothOptions)
+        let cart = Cart()
+        cart.orderType = .rent
+        cart.addItem(product: row, quantity: 1, price: 150_000)
+        cart.addItem(product: row, quantity: 1, price: 150_000)
+        cart.updateAvailabilityStatus(for: 301, status: AvailabilityStatus(isAvailable: true, available: 1))
+        XCTAssertNil(CartV2Logic.shortage(cart.items[0]), "one line alone fits")
+        XCTAssertEqual(CartV2Logic.shortage(cart.items[0], in: cart.items), 1)
+        XCTAssertEqual(CartV2Logic.shortage(cart.items[1], in: cart.items), 1)
+        cart.updateAvailabilityStatus(for: 301, status: AvailabilityStatus(isAvailable: true, available: 2))
+        XCTAssertNil(CartV2Logic.shortage(cart.items[1], in: cart.items))
+    }
+
+    func testASavedCartWithoutLineIdsGetsThemOnLoad() throws {
+        let line = CartItem(from: try homeRow(options: bothOptions), quantity: 1, price: 150_000)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(line)) as? [String: Any])
+        XCTAssertNotNil(json["lineId"])
+        json.removeValue(forKey: "lineId")
+        json.removeValue(forKey: "priceMissing")
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let a = try JSONDecoder().decode(CartItem.self, from: data)
+        let b = try JSONDecoder().decode(CartItem.self, from: data)
+        XCTAssertNotEqual(a.lineId, b.lineId)
+        XCTAssertEqual(a.price, 150_000)
+        XCTAssertFalse(CartV2Logic.needsPrice(a, orderType: .rent))
+        // a line saved at 0 before #951 still asks (as it did)
+        json["price"] = 0
+        let zero = try JSONDecoder().decode(CartItem.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertTrue(CartV2Logic.needsPrice(zero, orderType: .rent))
+        // round trip keeps the id
+        let again = try JSONDecoder().decode(CartItem.self, from: JSONEncoder().encode(a))
+        XCTAssertEqual(again.lineId, a.lineId)
+    }
+
+    // MARK: - #952 cart date row
+
+    private func shopDay(_ y: Int, _ m: Int, _ d: Int, hour: Int = 0) -> Date {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = Date.shopTimeZone
+        return cal.date(from: DateComponents(year: y, month: m, day: d, hour: hour))!
+    }
+
+    /// #952 (owner): no dates → "Chọn ngày thuê" (blue, no pill); dates → "12/10/26 → 15/10/26" + 4 days; calendar icon
+    func testCartDateRowStates() {
+        let empty = CartDateRowLogic.state(pickup: nil, return: nil)
+        XCTAssertEqual(empty.text, "products.cart.pickDates".localized())
+        XCTAssertNil(empty.days)
+        XCTAssertTrue(empty.isEmpty)
+        XCTAssertTrue(CartDateRowLogic.state(pickup: shopDay(2026, 10, 12), return: nil).isEmpty, "half a range is still empty")
+
+        let chosen = CartDateRowLogic.state(pickup: shopDay(2026, 10, 12), return: shopDay(2026, 10, 15, hour: 23))
+        XCTAssertEqual(chosen.text, "12/10/26 → 15/10/26")
+        XCTAssertEqual(chosen.days, 4)
+        XCTAssertFalse(chosen.isEmpty)
+        XCTAssertEqual(CartDateRowLogic.iconSymbol, "calendar")
+        XCTAssertEqual(CartDateRowLogic.iconSize, 40, "same circle as the customer row avatar")
     }
 }

@@ -288,22 +288,12 @@ fun OrderDetailV2Screen(
                 DetailBottomBar(
                     detail = detail,
                     primary = actions!!.primary,
-                    canEdit = actions.canEdit,
                     canCancel = actions.canCancel,
-                    canExtend = canExtend,
                     busy = state.busy || editing,
                     onHandOver = { sheet = DetailSheet.HAND_OVER },
                     onReturn = { sheet = DetailSheet.RETURN },
-                    onEdit = {
-                        editing = true
-                        scope.launch {
-                            loadOrderIntoCart(orderId).onSuccess { onEditInCart() }.onFailure { toast(it.message) }
-                            editing = false
-                        }
-                    },
                     onCancel = { confirmCancel = true },
                     onPrint = { print(detail) },
-                    onExtend = { extending = true },
                 )
             }
         }
@@ -718,7 +708,7 @@ private fun DetailBody(
                 }
             }
         } else {
-            MoneyRow(stringResource(R.string.detail_goods), formatMoneyVnd(summary.totalAmount + detail.discountAmount))
+            MoneyRow(stringResource(R.string.detail_goods), formatMoneyVnd(OrderDetailLogic.saleSubtotal(detail.items)))
             if (detail.discountAmount > 0) {
                 MoneyRow(stringResource(R.string.discount), formatMoneyVnd(-detail.discountAmount))
             }
@@ -759,16 +749,12 @@ private fun DetailBody(
 private fun DetailBottomBar(
     detail: OrderDetail,
     primary: DetailPrimary,
-    canEdit: Boolean,
     canCancel: Boolean,
-    canExtend: Boolean,
     busy: Boolean,
     onHandOver: () -> Unit,
     onReturn: () -> Unit,
-    onEdit: () -> Unit,
     onCancel: () -> Unit,
     onPrint: () -> Unit,
-    onExtend: () -> Unit,
 ) {
     val isSale = detail.summary.orderType.equals("SALE", ignoreCase = true)
     HorizontalDivider(color = DS.Colors.Border)
@@ -781,8 +767,9 @@ private fun DetailBottomBar(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         when {
+            // #930: "In" (no icon) next to Giao đồ / Nhận trả; Sửa đơn and Gia hạn are in the ⋯ sheet
             primary == DetailPrimary.HAND_OVER -> {
-                if (canEdit) SecondaryBarButton(stringResource(R.string.edit_order), Modifier.weight(1f), !busy, onClick = onEdit)
+                SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
                 val due = OrderDetailLogic.handOver(
                     detail.summary.totalAmount, detail.summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
                 ).collectNow
@@ -795,8 +782,8 @@ private fun DetailBottomBar(
                 )
             }
             primary == DetailPrimary.TAKE_RETURN -> {
-                if (canExtend) SecondaryBarButton(stringResource(R.string.extend_rental), Modifier.weight(1f), !busy, onClick = onExtend)
-                PrimaryBarButton(stringResource(R.string.detail_take_return), Modifier.weight(if (canExtend) 2f else 1f), !busy, onReturn)
+                SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
+                PrimaryBarButton(stringResource(R.string.detail_take_return), Modifier.weight(2f), !busy, onReturn)
             }
             isSale && canCancel -> {
                 SecondaryBarButton(stringResource(R.string.cancel_order), Modifier.weight(1f), !busy, destructive = true, onClick = onCancel)

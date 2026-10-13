@@ -34,6 +34,8 @@ data class CalendarDayOrder(
     val returnPlanAt: Instant? = null,
     /** #893: "Sẵn sàng giao" on a hand-over row; null on an older API (treated as not prepared) */
     val isReadyToDeliver: Boolean? = null,
+    /** #938: days past the return day, sent by outlet-operations `overdueReturns` (by-date leaves it out) */
+    val lateDays: Int? = null,
 )
 
 /** Note under a day row's total (board Lich, #390) */
@@ -97,12 +99,34 @@ object CalendarLogic {
     fun lateDays(dayKey: String, todayKey: String): Int =
         ChronoUnit.DAYS.between(LocalDate.parse(dayKey), LocalDate.parse(todayKey)).toInt().coerceAtLeast(0)
 
-    /** Hand-overs first, then returns, in the API order */
-    fun rows(dayKey: String, todayKey: String, pickups: List<CalendarDayOrder>, returns: List<CalendarDayOrder>): List<CalendarDayRow> {
+    /**
+     * Hand-overs first, then returns, in the API order. #938: on today, then the late returns ([lateReturns], rentals still
+     * out past their return day) not listed yet, each with its own days late, as the web calendar; other days ignore them.
+     */
+    fun rows(
+        dayKey: String,
+        todayKey: String,
+        pickups: List<CalendarDayOrder>,
+        returns: List<CalendarDayOrder>,
+        lateReturns: List<CalendarDayOrder> = emptyList(),
+        zone: java.time.ZoneId = ShopTime.zone,
+    ): List<CalendarDayRow> {
         val late = lateDays(dayKey, todayKey)
-        return pickups.map { CalendarDayRow(CalendarRowKind.HAND_OVER, it, late) } +
+        val rows = pickups.map { CalendarDayRow(CalendarRowKind.HAND_OVER, it, late) } +
             returns.map { CalendarDayRow(CalendarRowKind.TAKE_BACK, it, late) }
+        if (dayKey != todayKey) return rows
+        val seen = rows.map { it.order.id }.toMutableSet()
+        return rows + lateReturns.filter { seen.add(it.id) }.map { order ->
+            val days = order.lateDays
+                ?: order.returnPlanAt?.let { lateDays(it.atZone(zone).toLocalDate().toString(), todayKey) }
+                ?: 0
+            CalendarDayRow(CalendarRowKind.TAKE_BACK, order, days)
+        }
     }
+
+    /** #938: `data.overdueReturns.orders` of `GET /api/analytics/outlet-operations` (web calendar `useLateReturns`) */
+    fun lateReturnsFromJson(data: JSONObject): List<CalendarDayOrder> =
+        dayOrdersFromJson(data.optJSONObject("overdueReturns") ?: JSONObject())
 
     /** Owner rule (#893): only a late order gets a note ("Trễ N ngày", plus the stored fee unless money is hidden); never "còn thu" or a refund note */
     fun note(row: CalendarDayRow, hidesMoney: Boolean = false): CalendarNote {
@@ -148,10 +172,12 @@ object CalendarLogic {
             val o = orders.optJSONObject(index) ?: return@mapNotNull null
             if (!o.has("id") || o.isNull("id")) return@mapNotNull null
             fun text(key: String): String? = if (o.isNull(key)) null else o.optString(key).takeIf { it.isNotBlank() }
-            val items = o.optJSONArray("orderItems")
+            // outlet-operations rows (#938) name their items `items: [{ name, quantity }]`
+            val nameKey = if (o.has("orderItems")) "productName" else "name"
+            val items = o.optJSONArray("orderItems") ?: o.optJSONArray("items")
             val summary = (0 until (items?.length() ?: 0)).mapNotNull { i ->
                 val item = items?.optJSONObject(i) ?: return@mapNotNull null
-                val name = if (item.isNull("productName")) "" else item.optString("productName")
+                val name = if (item.isNull(nameKey)) "" else item.optString(nameKey)
                 if (name.isBlank()) return@mapNotNull null
                 val quantity = item.optInt("quantity", 1)
                 if (quantity > 1) "$name ×$quantity" else name
@@ -171,6 +197,7 @@ object CalendarLogic {
                 pickupPlanAt = instant(text("pickupPlanAt")),
                 returnPlanAt = instant(text("returnPlanAt")),
                 isReadyToDeliver = if (o.has("isReadyToDeliver") && !o.isNull("isReadyToDeliver")) o.optBoolean("isReadyToDeliver") else null,
+                lateDays = if (o.has("lateDays") && !o.isNull("lateDays")) o.optInt("lateDays") else null,
             )
         }
     }

@@ -93,6 +93,9 @@ fun SettingsV2Screen(
     onOpenAppInfo: () -> Unit,
     onLoggedOut: () -> Unit,
     onOpenBankAccounts: () -> Unit = {},
+    onOpenInbox: () -> Unit = {},
+    onOpenAttendance: () -> Unit = {},
+    onOpenMyShifts: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -131,6 +134,12 @@ fun SettingsV2Screen(
     }
 
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
+    // #937: unread count on "Thông báo" (moved from the Home bell). #674: follows the inbox and pushes; the server is
+    // asked on first show, after a push, and when 10 minutes old
+    val unread by com.anyrent.pos.ui.inbox.InboxUnread.count.collectAsState()
+    LaunchedEffect(Unit) {
+        com.anyrent.pos.ui.inbox.InboxUnread.invalidations.collect { com.anyrent.pos.ui.inbox.InboxUnread.refreshIfNeeded() }
+    }
     val sections = SettingsRows.sections(role, hasPlan = plan != null)
 
     // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing.
@@ -156,6 +165,11 @@ fun SettingsV2Screen(
                 stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
             )
+        }
+        // #927: the big clock card first, only with the attendance module and when the shop picked this person
+        item(key = "attendance") {
+            com.anyrent.pos.ui.attendance.RefreshModulesOnShow()
+            com.anyrent.pos.ui.attendance.AttendanceClockCard(onScan = onOpenAttendance, onOpenMyShifts = onOpenMyShifts)
         }
         item(key = "profile") {
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
@@ -198,8 +212,10 @@ fun SettingsV2Screen(
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
                     else -> null
                 }
-                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN) {
+                val badge = if (item == SettingsItem.NOTIFICATIONS) SettingsRows.unreadBadge(unread) else null
+                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN, badge = badge) {
                     when (item) {
+                        SettingsItem.NOTIFICATIONS -> onOpenInbox()
                         SettingsItem.STORE_INFO -> onOpenStore()
                         SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER -> onOpenPrinter()
                         SettingsItem.CATEGORIES -> showCategories = true
@@ -359,6 +375,7 @@ private fun planText(plan: SettingsPlan): String {
 @Composable
 private fun itemTitle(item: SettingsItem): String = stringResource(
     when (item) {
+        SettingsItem.NOTIFICATIONS -> R.string.notifications
         SettingsItem.STORE_INFO -> R.string.store_info
         SettingsItem.RECEIPT_NOTE -> R.string.settings_v2_receipt_note
         SettingsItem.PRINTER -> R.string.settings_v2_printer
@@ -376,7 +393,7 @@ private fun itemTitle(item: SettingsItem): String = stringResource(
 )
 
 @Composable
-private fun SettingRow(title: String, value: String?, chevron: Boolean, onClick: () -> Unit) {
+private fun SettingRow(title: String, value: String?, chevron: Boolean, badge: String? = null, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -390,6 +407,20 @@ private fun SettingRow(title: String, value: String?, chevron: Boolean, onClick:
         Spacer(Modifier.weight(1f))
         if (!value.isNullOrBlank()) {
             Text(value, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp))
+        }
+        // #937: unread count on "Thông báo" (red pill, mockup cartbell)
+        if (badge != null) {
+            Box(
+                Modifier
+                    .heightIn(min = 18.dp)
+                    .widthIn(min = 18.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(9.dp))
+                    .background(Color(0xFFEF4444))
+                    .padding(horizontal = 7.dp, vertical = 1.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(badge, color = Color.White, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold)
+            }
         }
         if (chevron) {
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))

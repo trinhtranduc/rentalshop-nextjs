@@ -64,6 +64,7 @@ import java.time.format.DateTimeFormatter
 fun InboxScreen(
     onBack: () -> Unit,
     onOpenOrder: (Int) -> Unit,
+    onOpenMyShifts: () -> Unit = {},
 ) {
     var items by remember { mutableStateOf<List<InboxNotification>>(emptyList()) }
     var page by remember { mutableIntStateOf(1) }
@@ -172,7 +173,9 @@ fun InboxScreen(
                                         withContext(Dispatchers.IO) {
                                             ApiClient.get().markNotificationRead(item.id)
                                         }
-                                        item.orderId?.let(onOpenOrder)
+                                        // #910: a schedule change opens "Ca và công của tôi"
+                                        if (com.anyrent.pos.push.AttendancePush.isShiftChanged(item.type)) onOpenMyShifts()
+                                        else item.orderId?.let(onOpenOrder)
                                     }
                                 },
                                 onLongClick = {

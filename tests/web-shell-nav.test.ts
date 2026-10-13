@@ -36,6 +36,29 @@ describe('filterNavForRole', () => {
   });
 });
 
+describe('attendance module (#908)', () => {
+  const withModules = (role: string | undefined, modules: string[]) =>
+    filterNavForRole([...SHELL_MAIN_NAV, ...SHELL_MANAGE_NAV], role, modules).map((i) => i.href);
+
+  it('module off: no Chấm công for anyone, outlet admin still has no Chi nhánh', () => {
+    expect(withModules('MERCHANT', [])).not.toContain('/attendance');
+    expect(withModules('OUTLET_ADMIN', [])).not.toContain('/attendance');
+    expect(withModules('OUTLET_ADMIN', [])).not.toContain('/outlets');
+  });
+
+  it('module on: owner and outlet admin see Chấm công; Chi nhánh stays owner-only (#945)', () => {
+    expect(withModules('MERCHANT', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/outlets', '/categories', '/loyalty', '/settings']);
+    expect(withModules('OUTLET_ADMIN', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/categories', '/settings']);
+  });
+
+  it('staff and kho never see Chấm công or Chi nhánh', () => {
+    for (const role of ['OUTLET_STAFF', 'OUTLET_INVENTORY']) {
+      expect(withModules(role, ['attendance'])).not.toContain('/attendance');
+      expect(withModules(role, ['attendance'])).not.toContain('/outlets');
+    }
+  });
+});
+
 describe('isNavActive', () => {
   it('matches the route and its children only', () => {
     expect(isNavActive('/orders', '/orders')).toBe(true);

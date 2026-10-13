@@ -63,8 +63,9 @@ describe('buildTiles', () => {
     expect(tiles[0]).toEqual({ kind: 'orderValue', value: 18_650_000, signed: false, chip: { tone: 'down', key: 'home.tiles.down', values: { value: 13 } }, count: null });
     expect(tiles[1].chip).toEqual({ tone: 'up', key: 'home.tiles.up', values: { value: 8 } });
     expect(tiles[2]).toMatchObject({ value: 11_590_000, chip: { tone: 'warn', key: 'home.tiles.overdue', values: { count: 1 } } });
-    // Thế chân = received − returned, signed
-    expect(tiles[3]).toEqual({ kind: 'collateral', value: 6_390_000, signed: true, chip: { tone: 'info', key: 'home.tiles.held', values: { count: 11 } } });
+    // Thế chân = received − returned, signed; #938: the chip counts orders whose collateral is held (collateralToReturn),
+    // not every rental out (depositsHeld)
+    expect(tiles[3]).toEqual({ kind: 'collateral', value: 6_390_000, signed: true, chip: { tone: 'info', key: 'home.tiles.held', values: { count: 3 } } });
   });
 
   it('counts the new orders behind the money: rent + sale, not orderCounts.new (#719)', () => {
@@ -87,6 +88,11 @@ describe('buildTiles', () => {
     expect(tiles.map((t) => t.value)).toEqual([null, null, null, null]);
     expect(tiles.map((t) => t.chip)).toEqual([null, null, null, null]);
     expect(buildTiles(report, { depositsHeld: { orders: 0 } })[3].chip).toBeNull();
+  });
+
+  it('#938: no chip when rentals are out but none holds collateral; older API without collateralToReturn keeps depositsHeld', () => {
+    expect(buildTiles(report, { depositsHeld: { orders: 4 }, collateralToReturn: { securityDeposit: 0, orders: 0 } })[3].chip).toBeNull();
+    expect(buildTiles(report, { depositsHeld: { orders: 4 } })[3].chip).toEqual({ tone: 'info', key: 'home.tiles.held', values: { count: 4 } });
   });
 
   it('can go negative on collateral when more was returned than received', () => {

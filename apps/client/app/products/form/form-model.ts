@@ -6,7 +6,7 @@
  * `@rentalshop/utils` product-pricing-options (#460, same as iOS):
  * - per-rental ("Theo lần") and per-day ("Theo ngày") prices are both optional; one is the default for new orders;
  * - prices are shown and sent only to users with products.manage who are not OUTLET_STAFF;
- * - Giá bán > 0 when prices are shown, quantity > 0, deposit / outlet stock not negative;
+ * - #951: an empty price box is no price, 0 is a 0đ price; prices, deposit and outlet stock not negative; quantity > 0;
  * - photos: at most 3, jpg / png / webp, 5 MB each.
  */
 
@@ -26,6 +26,12 @@ const num = (n: unknown): number => {
 const positive = (n: Num): number | null => {
   const v = num(n);
   return v > 0 ? v : null;
+};
+/** #951: a price box value: null / '' = no price, otherwise a number ≥ 0 (0 is a 0đ price). */
+const priced = (n: Num): number | null => {
+  if (n == null || n === '') return null;
+  const v = typeof n === 'string' ? Number(n) : n;
+  return Number.isFinite(v) && v >= 0 ? v : null;
 };
 
 // ----------------------------------------------------------------------------
@@ -68,8 +74,9 @@ export interface OutletLite {
 // ----------------------------------------------------------------------------
 
 const activeOptions = (options?: PricingOptionSource[] | null) => (options || []).filter((o) => o && o.isActive !== false);
+// #951: an option priced 0 is a 0đ price
 const optionPrice = (options: PricingOptionSource[], mode: PricingMode): number | null =>
-  positive(options.find((o) => String(o.type || '').toUpperCase() === mode)?.price);
+  priced(options.find((o) => String(o.type || '').toUpperCase() === mode)?.price);
 
 /** Saved default: the default option (isDefault, else the first), else `pricingType`. */
 export function defaultModeOf(p: Pick<ProductSource, 'pricingOptions' | 'pricingType'>): PricingMode {
@@ -78,7 +85,7 @@ export function defaultModeOf(p: Pick<ProductSource, 'pricingOptions' | 'pricing
   return String(option?.type || p.pricingType || '').toUpperCase() === 'DAILY' ? 'DAILY' : 'FIXED';
 }
 
-/** Per-rental and per-day prices; a product without options uses `rentPrice` for its `pricingType`. */
+/** Per-rental and per-day prices; a product without options uses `rentPrice` (> 0; 0 there is "no price") for its `pricingType`. */
 export function rentalPricesOf(p: Pick<ProductSource, 'pricingOptions' | 'pricingType' | 'rentPrice'>): { perRental: number | null; perDay: number | null } {
   const options = activeOptions(p.pricingOptions);
   if (options.length > 0) return { perRental: optionPrice(options, 'FIXED'), perDay: optionPrice(options, 'DAILY') };
@@ -95,8 +102,8 @@ export interface PricingOptionPayload {
 
 /** The default a set of prices can hold: a default without a price falls back to the mode that has one. */
 export function effectiveDefaultMode(perRental: Num, perDay: Num, defaultMode: PricingMode): PricingMode {
-  const fixed = positive(perRental);
-  const daily = positive(perDay);
+  const fixed = priced(perRental);
+  const daily = priced(perDay);
   if (defaultMode === 'DAILY' && daily == null) return 'FIXED';
   if (defaultMode === 'FIXED' && fixed == null && daily != null) return 'DAILY';
   return defaultMode;
@@ -104,13 +111,13 @@ export function effectiveDefaultMode(perRental: Num, perDay: Num, defaultMode: P
 
 /** "Mặc định khi tạo đơn" is only a choice when both prices are set; with one price, that one is the default. */
 export function hasDefaultChoice(perRental: Num, perDay: Num): boolean {
-  return positive(perRental) != null && positive(perDay) != null;
+  return priced(perRental) != null && priced(perDay) != null;
 }
 
 /** Priced options only, one default; a default without a price falls back to the mode that has one. */
 export function buildPricingOptions(perRental: Num, perDay: Num, defaultMode: PricingMode): PricingOptionPayload[] {
-  const fixed = positive(perRental);
-  const daily = positive(perDay);
+  const fixed = priced(perRental);
+  const daily = priced(perDay);
   const mode = effectiveDefaultMode(perRental, perDay, defaultMode);
   const out: PricingOptionPayload[] = [];
   if (fixed != null) out.push({ type: 'FIXED', price: fixed, isDefault: mode === 'FIXED' });
@@ -127,11 +134,13 @@ export interface FormState {
   description: string;
   barcode: string;
   categoryId: number;
-  perRental: number;
-  perDay: number;
+  /** #951: null = empty box (no price), 0 = 0đ. */
+  perRental: number | null;
+  perDay: number | null;
   defaultMode: PricingMode;
   deposit: number;
-  salePrice: number;
+  /** null = empty box (nothing sent), 0 = 0đ. */
+  salePrice: number | null;
   costPrice: number;
   /** Total quantity; with several outlets it is always the sum of `outletStock`. */
   totalStock: number;
@@ -170,11 +179,11 @@ export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number 
     description: '',
     barcode,
     categoryId: categories[0]?.id ?? 0,
-    perRental: 0,
-    perDay: 0,
+    perRental: null,
+    perDay: null,
     defaultMode: 'FIXED',
     deposit: 0,
-    salePrice: 0,
+    salePrice: null,
     costPrice: 0,
     totalStock: 0,
     outletStock: outlets.map((o) => ({ outletId: o.id, stock: 0 })),
@@ -196,11 +205,12 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
     description: p.description || '',
     barcode: p.barcode || '',
     categoryId: p.category?.id || p.categoryId || categories[0]?.id || 0,
-    perRental: perRental ?? 0,
-    perDay: perDay ?? 0,
+    perRental,
+    perDay,
     defaultMode: defaultModeOf(p),
     deposit: Math.max(0, num(p.deposit)),
-    salePrice: Math.max(0, num(p.salePrice)),
+    // a stored 0 sale price is "not for sale" (the apps save 0 for an empty box): shown empty
+    salePrice: positive(p.salePrice),
     costPrice: Math.max(0, num(p.costPrice)),
     totalStock: outletStock.reduce((sum, r) => sum + r.stock, 0),
     outletStock,
@@ -250,8 +260,10 @@ export function validateForm(form: FormState, opts: { canEditPricing: boolean })
   if (!form.name.trim()) errors.name = 'nameRequired';
   if (!form.categoryId) errors.categoryId = 'categoryRequired';
   if (opts.canEditPricing) {
-    if (form.perRental < 0 || form.perDay < 0) errors.perRental = 'priceNegative';
-    if (form.defaultMode === 'DAILY' && !(form.perDay > 0)) errors.defaultMode = 'dailyNeedsPrice';
+    if ((form.perRental ?? 0) < 0 || (form.perDay ?? 0) < 0) errors.perRental = 'priceNegative';
+    // #951: a per-day default needs a per-day price; 0đ is one
+    if (form.defaultMode === 'DAILY' && priced(form.perDay) == null) errors.defaultMode = 'dailyNeedsPrice';
+    if ((form.salePrice ?? 0) < 0) errors.salePrice = 'priceNegative';
     // #741: the sale price is optional (a rent-only product has 0, as the apps and the API create it)
   }
   if (form.deposit < 0) errors.deposit = 'depositNegative';
@@ -326,7 +338,8 @@ export function buildPayload(form: FormState, opts: PayloadOptions): Record<stri
   if (opts.canEditPricing) {
     const pricingOptions = buildPricingOptions(form.perRental, form.perDay, form.defaultMode);
     pricing.rentPrice = pricingOptions.find((o) => o.isDefault)?.price ?? 0;
-    if (form.salePrice > 0) pricing.salePrice = form.salePrice;
+    // #951: a typed 0 is a 0đ sale price; an empty box sends nothing
+    if (priced(form.salePrice) != null) pricing.salePrice = form.salePrice;
     pricing.pricingOptions = pricingOptions;
     if (form.costPrice > 0) pricing.costPrice = form.costPrice;
   }

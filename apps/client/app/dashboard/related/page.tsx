@@ -4,18 +4,22 @@
  * "Xem các đơn liên quan" of an Overview tile (#708): the rows behind the number, each with the money it adds to the
  * tile, and their total (it equals the tile). Rows: GET /api/analytics/income/orders (every page of the tile's buckets).
  * URL: /dashboard/related?kind=orderValue|collected|outstanding|collateral&from=YYYY-MM-DD&to=YYYY-MM-DD
+ * #938: Thế chân also lists the orders holding collateral now (outlet-operations `collateralHeld`, the "đang giữ N đơn"
+ * chip) first; they are not part of the period total.
  */
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useFormatCurrency } from '@rentalshop/ui';
 import { useAuth, useDashboardTranslations } from '@rentalshop/hooks';
-import { apiUrls, authenticatedFetch, parseApiResponse } from '@rentalshop/utils';
+import { analyticsApi, apiUrls, authenticatedFetch, parseApiResponse } from '@rentalshop/utils';
 import { TILE_LABEL } from '../overview/sections';
 import { parseOutletIds } from '../branch-model';
 import {
+  heldRows,
   isDayKey,
   parseRelated,
+  relatedCount,
   relatedBuckets,
   relatedRows,
   relatedTotal,
@@ -37,6 +41,13 @@ const MAX_PAGES = 25;
 interface IncomePage {
   days?: Array<{ orders?: IncomeOrderLike[] | null }> | null;
   pagination?: { hasMore?: boolean } | null;
+}
+
+/** #938: the orders holding collateral now, in the dashboard's branches */
+async function loadHeld(outletIds: number[] | null): Promise<RelatedRow[]> {
+  const res = await analyticsApi.getOutletOperations(outletIds ?? undefined, { collateralHeld: true });
+  if (!res.success || !res.data) throw new Error('outlet operations failed');
+  return heldRows(res.data.collateralHeld?.orders);
 }
 
 async function loadBucket(bucket: string, from: string, to: string, outlets: string | null): Promise<IncomeOrderLike[]> {
@@ -73,7 +84,8 @@ function RelatedOrders() {
     let alive = true;
     setRows(null);
     setFailed(false);
-    Promise.all(relatedBuckets(kind).map((b) => loadBucket(b, from, to, outlets).then((items) => relatedRows(kind, b, items))))
+    const held = kind === 'collateral' ? loadHeld(outlets ? outlets.split(',').map(Number) : null) : Promise.resolve([] as RelatedRow[]);
+    Promise.all([held, ...relatedBuckets(kind).map((b) => loadBucket(b, from, to, outlets).then((items) => relatedRows(kind, b, items)))])
       .then((parts) => alive && setRows(parts.flat()))
       .catch(() => alive && setFailed(true));
     return () => {
@@ -85,6 +97,8 @@ function RelatedOrders() {
     return <p className="m-0 p-8 text-ar-muted">{t('home.related.failed')}</p>;
   }
   const signed = (n: number) => (kind === 'orderValue' || kind === 'outstanding' ? money(n) : n < 0 ? `−${money(-n)}` : `+${money(n)}`);
+  // #938: a held row is what is held, not money moved in the period: no sign
+  const shown = (r: RelatedRow) => (r.note === 'held' ? money(r.amount) : signed(r.amount));
 
   return (
     <div className="mx-auto box-border flex w-full max-w-[960px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
@@ -125,14 +139,14 @@ function RelatedOrders() {
                   </td>
                   <td className="border-b border-ar-subtle px-3 py-2">{r.customer}</td>
                   <td className="border-b border-ar-subtle px-3 py-2 text-ar-ink-2">{r.note === 'event' ? eventText(r, t) : t(`home.related.note.${r.note}`)}</td>
-                  <td className={`border-b border-ar-subtle px-3 py-2 text-right tabular-nums ${r.amount < 0 ? 'text-ar-late' : ''}`}>{signed(r.amount)}</td>
+                  <td className={`border-b border-ar-subtle px-3 py-2 text-right tabular-nums ${r.amount < 0 ? 'text-ar-late' : ''}`}>{shown(r)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
                 <td colSpan={3} className="px-3 py-3 font-bold">
-                  {t('home.related.total')} · {rows.length} <span className="font-normal text-ar-muted">({t('home.related.totalHint')})</span>
+                  {t('home.related.total')} · {relatedCount(rows)} <span className="font-normal text-ar-muted">({t('home.related.totalHint')})</span>
                 </td>
                 <td data-related-total className="px-3 py-3 text-right font-bold tabular-nums">
                   {signed(relatedTotal(rows))}

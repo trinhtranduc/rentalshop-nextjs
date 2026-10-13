@@ -164,7 +164,7 @@ const productBaseSchema = z.object({
   pricingOptions: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
     type: z.enum(['FIXED', 'DAILY']),
-    price: z.number().positive('Option price must be greater than 0'),
+    price: z.number().nonnegative('Option price must be non-negative'), // #951: 0đ is a price
     unit: z.enum(['DAY', 'HOUR']).nullable().optional(),
     blockSize: z.number().int().positive().nullable().optional(),
     isDefault: z.boolean().optional(),

@@ -216,4 +216,15 @@ class OrderDetailLogicTest {
         val early = OrderDetailLogic.progressDays(rent("PICKUPED", pickedUpAt = "2026-10-01T16:00:00.000Z"))
         assertEquals("01/10/26", shortDay(early.handOver, vietnam))
     }
+
+    @Test
+    fun saleSubtotalIsTheItemSum() {
+        // #939: "Tiền hàng" of a sale = the item lines, as iOS, the web and the printed bill; not totalAmount
+        val items = listOf(
+            com.anyrent.pos.data.model.OrderItem(null, 1, "A", 2, 198.0, 396.0),
+            com.anyrent.pos.data.model.OrderItem(null, 2, "B", 1, 396.0, 396.0),
+        )
+        assertEquals(792.0, OrderDetailLogic.saleSubtotal(items), 0.0)
+        assertEquals(0.0, OrderDetailLogic.saleSubtotal(emptyList()), 0.0)
+    }
 }

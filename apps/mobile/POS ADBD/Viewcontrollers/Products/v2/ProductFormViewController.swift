@@ -248,7 +248,7 @@ final class ProductFormViewController: BaseViewControler {
         if numeric {
             field.keyboardType = .numberPad
             field.addTarget(self, action: #selector(formatMoney(_:)), for: .editingChanged)
-            KeyboardDoneBar.attach([field])
+            // #952 (owner): no "Xong" bar; a tap outside a field or a drag of the form closes the keyboard
         }
     }
 

@@ -35,7 +35,7 @@ export const useToastHandler = () => {
   const { addToast } = useToasts();
 
   const showError = useCallback((title: string, message?: string) => {
-    addToast('error', title, message, 0);
+    addToast('error', title, message); // #919: hides after 6 s
   }, [addToast]);
 
   const showSuccess = useCallback((title: string, message?: string) => {

@@ -744,15 +744,15 @@ fun CartScreen(onBack: () -> Unit, onPickCustomer: () -> Unit, onCreated: (Int) 
             )
             Button(onClick = onPickCustomer) { Text(stringResource(R.string.pick_customer)) }
             LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(lines, key = { it.product.id }) { line ->
+                items(lines, key = { it.lineId }) { line ->
                     Column(Modifier.fillMaxWidth().padding(8.dp)) {
                         Text(line.product.name)
                         Text("Qty ${formatQuantity(line.quantity)} · Days ${formatQuantity(line.rentalDays)} · ${formatMoney(line.lineTotal)}")
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { CartStore.updateQuantity(line.product.id, line.quantity - 1) }) { Text("-") }
-                            Button(onClick = { CartStore.updateQuantity(line.product.id, line.quantity + 1) }) { Text("+") }
+                            Button(onClick = { CartStore.updateQuantity(line.lineId, line.quantity - 1) }) { Text("-") }
+                            Button(onClick = { CartStore.updateQuantity(line.lineId, line.quantity + 1) }) { Text("+") }
                             if (orderType == "RENT") {
-                                Button(onClick = { CartStore.updateRentalDays(line.product.id, line.rentalDays + 1) }) { Text("+day") }
+                                Button(onClick = { CartStore.updateRentalDays(line.lineId, line.rentalDays + 1) }) { Text("+day") }
                             }
                         }
                     }

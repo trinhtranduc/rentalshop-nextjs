@@ -9,6 +9,7 @@ import { SHELL_MAIN_NAV, SHELL_MANAGE_NAV, filterNavForRole, isNavActive, type S
 import { ICONS, ShellIcon } from './Icon';
 import { settingsHref } from '../../settings/settings-model';
 import { BRANCH_SELECTION_EVENT, readStoredBranchLabel, type BranchLabel } from '../../dashboard/branch-model';
+import { useMerchantModules } from '../../attendance/useMerchantModules';
 
 export interface ShopSidebarUser {
   firstName?: string;
@@ -47,8 +48,9 @@ export function ShopSidebar({ user, pathname, settingsOpen = false, onNavigate, 
   const t = useCommonTranslations();
   const router = useRouter();
   const role = user?.role;
-  const main = filterNavForRole(SHELL_MAIN_NAV, role);
-  const manage = filterNavForRole(SHELL_MANAGE_NAV, role);
+  const modules = useMerchantModules(user);
+  const main = filterNavForRole(SHELL_MAIN_NAV, role, modules);
+  const manage = filterNavForRole(SHELL_MANAGE_NAV, role, modules);
   const displayName = fullName(user);
   const shopName = user?.merchant?.name || 'AnyRent';
   // #827: label only — the branches picked on Tổng quan ("Tất cả chi nhánh (N)", one name, or "N chi nhánh")

@@ -308,4 +308,13 @@ class OverviewDashLogicTest {
         assertEquals("2/3", OverviewDashLogic.todayTasks(now)?.first?.let(OverviewDashLogic::doneOfTotal))
         assertNull(OverviewLogic.nowFromJson(JSONObject("""{"overdueReturns":{"count":0},"tomorrow":null}""")).tomorrow)
     }
+
+    /** #938: the Thế chân chip counts rentals out with collateral (`collateralToReturn.orders`), not every rental out */
+    @Test
+    fun collateralChipCountsOnlyHeldCollateral() {
+        val now = OverviewNow(lateReturns = 4, rentedOut = 4, collateralHeld = 6_000_000.0, collateralToReturn = CollateralCount(6_000_000.0, 3))
+        assertEquals(OverviewTileChip(OverviewChipTone.INFO, OverviewChipText.HELD, 3), OverviewDashLogic.tiles(null, now)[3].chip)
+        val none = OverviewNow(lateReturns = 4, rentedOut = 4, collateralHeld = 0.0, collateralToReturn = CollateralCount(0.0, 0))
+        assertNull(OverviewDashLogic.tiles(null, none)[3].chip)
+    }
 }

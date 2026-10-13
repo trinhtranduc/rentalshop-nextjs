@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A909B0000000000000000002 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000001 /* Attendance.swift */; };
+		A909B0000000000000000004 /* AttendanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000003 /* AttendanceService.swift */; };
+		A909B0000000000000000006 /* AttendanceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000005 /* AttendanceCard.swift */; };
+		A909B0000000000000000008 /* AttendanceScanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000007 /* AttendanceScanViewController.swift */; };
+		A909B000000000000000000A /* MyShiftsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000009 /* MyShiftsViewController.swift */; };
+		A909B000000000000000000C /* AttendanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F000000000000000000B /* AttendanceTests.swift */; };
 		A828B0000000000000000001 /* CurrentOutlet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000001 /* CurrentOutlet.swift */; };
 		A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000002 /* OutletHeaderButton.swift */; };
 		A828B0000000000000000003 /* OutletPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000003 /* OutletPickerSheet.swift */; };
@@ -393,6 +399,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A909F0000000000000000001 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
+		A909F0000000000000000003 /* AttendanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceService.swift; sourceTree = "<group>"; };
+		A909F0000000000000000005 /* AttendanceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceCard.swift; sourceTree = "<group>"; };
+		A909F0000000000000000007 /* AttendanceScanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceScanViewController.swift; sourceTree = "<group>"; };
+		A909F0000000000000000009 /* MyShiftsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyShiftsViewController.swift; sourceTree = "<group>"; };
+		A909F000000000000000000B /* AttendanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceTests.swift; sourceTree = "<group>"; };
 		A828F0000000000000000001 /* CurrentOutlet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentOutlet.swift; sourceTree = "<group>"; };
 		A828F0000000000000000002 /* OutletHeaderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletHeaderButton.swift; sourceTree = "<group>"; };
 		A828F0000000000000000003 /* OutletPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletPickerSheet.swift; sourceTree = "<group>"; };
@@ -787,6 +799,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A909G000000000000000000D /* Attendance */ = {
+			isa = PBXGroup;
+			children = (
+				A909F0000000000000000005 /* AttendanceCard.swift */,
+				A909F0000000000000000007 /* AttendanceScanViewController.swift */,
+				A909F0000000000000000009 /* MyShiftsViewController.swift */,
+			);
+			path = Attendance;
+			sourceTree = "<group>";
+		};
 		040330FD2EA94734003BC33E /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -845,6 +867,7 @@
 				048838D92D77282100069256 /* APIEndpoint.swift */,
 				048838CE2D7727AF00069256 /* AuthenticationService.swift */,
 				048838CF2D7727AF00069256 /* BaseService.swift */,
+				A909F0000000000000000003 /* AttendanceService.swift */,
 				3440A0012F1E010100000001 /* AuthSession.swift */,
 				048838D02D7727AF00069256 /* CustomerService.swift */,
 				048838D12D7727AF00069256 /* OrderService.swift */,
@@ -1035,6 +1058,7 @@
 				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
 				A640F0000000000000000003 /* OrderShareImageTests.swift */,
 				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
+				A909F000000000000000000B /* AttendanceTests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				A674F0000000000000000002 /* RefreshPolicyTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
@@ -1102,6 +1126,7 @@
 				884B0A3821FAE72100DB0C52 /* BaseModel.swift */,
 				C94E9CD6233DC96E00D63CC0 /* Outlet.swift */,
 				C94E9CD8233DEB5500D63CC0 /* Merchant.swift */,
+				A909F0000000000000000001 /* Attendance.swift */,
 				C9EFF5B0237BF75E00A6CB57 /* Customer.swift */,
 				04F1B0012F1C0101000A0001 /* InboxNotification.swift */,
 				C9B0410523AC919A00DED0B3 /* DateFormatTransform.swift */,
@@ -1304,6 +1329,7 @@
 				048839842D7D851600069256 /* DatePicker */,
 				0488397E2D7D468400069256 /* Main  */,
 				048838FA2D7832AD00069256 /* Settings */,
+				A909G000000000000000000D /* Attendance */,
 				048838EA2D78006200069256 /* Auth */,
 				048838E52D78005300069256 /* Authenticate */,
 				C923D21923838D7E003E3413 /* Customer */,
@@ -1856,6 +1882,7 @@
 				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
 				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
 				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
+				A909B000000000000000000C /* AttendanceTests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
@@ -2030,6 +2057,11 @@
 				04FBE0C72EDB4E010057EDF8 /* PreviewNotesCell.swift in Sources */,
 				048838DA2D77282100069256 /* APIEndpoint.swift in Sources */,
 				C94E9CD9233DEB5500D63CC0 /* Merchant.swift in Sources */,
+				A909B000000000000000000A /* MyShiftsViewController.swift in Sources */,
+				A909B0000000000000000008 /* AttendanceScanViewController.swift in Sources */,
+				A909B0000000000000000006 /* AttendanceCard.swift in Sources */,
+				A909B0000000000000000004 /* AttendanceService.swift in Sources */,
+				A909B0000000000000000002 /* Attendance.swift in Sources */,
 				C914E01B23A4907A008B3EDF /* UITableView+Additions.swift in Sources */,
 				048838EB2D78006200069256 /* RegisterAccountViewController.swift in Sources */,
 				048838EC2D78006200069256 /* RegisterStoreViewController.swift in Sources */,
@@ -2397,7 +2429,7 @@
 					"$(PROJECT_DIR)/POS\\ ADBD/PrintSDK",
 					"\"$(PROJECT_DIR)/POS\\\\ ADBD/Library/Printer\"",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2478,7 +2510,7 @@
 					"$(PROJECT_DIR)/POS\\ ADBD/PrintSDK",
 					"$(PROJECT_DIR)/POS\\ ADBD/Library/Printer",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2528,7 +2560,7 @@
 				DEVELOPMENT_TEAM = 2K6L2KZC9A;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MACH_O_TYPE = staticlib;
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_MODULE_NAME = DraftOrderActivity;
 				PRODUCT_NAME = DraftOrderActivity;
@@ -2550,7 +2582,7 @@
 				DEVELOPMENT_TEAM = 2K6L2KZC9A;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MACH_O_TYPE = staticlib;
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_MODULE_NAME = DraftOrderActivity;
 				PRODUCT_NAME = DraftOrderActivity;
@@ -2576,7 +2608,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent.debug.liveactivity;
 				PRODUCT_BUNDLE_PACKAGE_TYPE = "XPC!";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2602,7 +2634,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.6;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyrent.liveactivity;
 				PRODUCT_BUNDLE_PACKAGE_TYPE = "XPC!";
 				PRODUCT_NAME = "$(TARGET_NAME)";

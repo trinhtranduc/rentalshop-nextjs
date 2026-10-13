@@ -2500,3 +2500,80 @@
 "orders.chip.return" = "Return";
 "cart.swipe.delete" = "Delete";
 "calendar.v2.ready" = "Ready";
+
+/* #909 Attendance */
+"attendance.title" = "Attendance";
+"attendance.status.notIn" = "not clocked in";
+"attendance.status.inShift" = "on shift";
+"attendance.status.done" = "done";
+"attendance.today" = "Today · %@";
+"attendance.noShift" = "No shift today";
+"attendance.clockIn" = "Clock in";
+"attendance.clockOut" = "Clock out";
+"attendance.hint.clockIn" = "Tap to scan the QR code at the counter. Location must be on.";
+"attendance.hint.again" = "You can clock in again today (several times).";
+"attendance.done.in" = "Clocked in %@";
+"attendance.done.inDetail" = "%@ m from the outlet · GPS ±%@ m";
+"attendance.done.out" = "Clocked out %@";
+"attendance.done.outDetail" = "Today %@ h (%@)";
+"attendance.error.outOfRange.title" = "You are far from the outlet";
+"attendance.error.outOfRange.message" = "%@ m away. Stand within %@ m.";
+"attendance.error.mock.title" = "Fake location detected";
+"attendance.error.mock.message" = "Turn off the location spoofing app and try again.";
+"attendance.error.qrExpired.title" = "This QR code is no longer valid";
+"attendance.error.qrExpired.message" = "Scan the code posted / shown at the counter today.";
+"attendance.error.wrongOutlet.title" = "QR code of another outlet";
+"attendance.error.wrongOutlet.message" = "You belong to %@.";
+"attendance.error.wrongOutlet.messageNoName" = "Scan the code of the outlet you work at.";
+"attendance.error.gps.title" = "Location not precise yet";
+"attendance.error.gps.message" = "GPS ±%@ m. Move near the door and try again.";
+"attendance.error.noLocation.message" = "Could not get your location. Move near the door and try again.";
+"attendance.error.notConfigured.title" = "Attendance is not set up for this outlet";
+"attendance.error.notConfigured.message" = "Ask the shop owner to set the outlet location and QR code.";
+"attendance.error.module.title" = "Attendance is not turned on";
+"attendance.error.module.message" = "Ask the shop owner to turn on Attendance.";
+"attendance.error.other.title" = "Could not clock in / out";
+"attendance.error.other.message" = "Something went wrong, please try again.";
+"attendance.permission.title" = "Permission needed";
+"attendance.permission.camera" = "Allow AnyRent to use the camera to scan the attendance QR code: Settings → AnyRent → Camera.";
+"attendance.permission.location" = "Allow AnyRent to use your location while using the app for attendance: Settings → AnyRent → Location.";
+"attendance.permission.openSettings" = "Open Settings";
+"attendance.scan.title" = "Fit the QR code at the counter in the frame";
+"attendance.scan.locating" = "Checking your location…";
+"attendance.scan.accuracy" = "Location ±%@ m";
+"attendance.scan.manual" = "Enter code";
+"attendance.mine.title" = "My shifts and hours";
+"attendance.mine.week" = "This week";
+"attendance.mine.month" = "Month %@";
+"attendance.mine.totalHours" = "Total hours";
+"attendance.mine.days" = "Days worked";
+"attendance.mine.hoursValue" = "%@ h";
+"attendance.mine.hoursShort" = "%@ h";
+"attendance.mine.late" = "late %d′";
+"attendance.mine.empty" = "No shifts this week";
+"attendance.weekday.1" = "Mon";
+"attendance.weekday.2" = "Tue";
+"attendance.weekday.3" = "Wed";
+"attendance.weekday.4" = "Thu";
+"attendance.weekday.5" = "Fri";
+"attendance.weekday.6" = "Sat";
+"attendance.weekday.7" = "Sun";
+
+/* #930 share image: kind and created time */
+"share.kind.created" = "%@ · created %@";
+"attendance.card.inShift" = "On shift · in at %@";
+"attendance.card.shiftUntil" = "%@ until %@";
+"attendance.card.distance" = "%@ m away";
+"attendance.error.notRequired.title" = "You do not need to clock in";
+"attendance.error.notRequired.message" = "The shop has not picked you to clock in at this branch. Ask the shop owner if needed.";
+/* #938 Thế chân related list: an order whose collateral is held now */
+"overview.related.collateralHeld" = "Collateral held now";
+/* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
+"attendance.error.wrongOutlet.messageDetail" = "This code is for %1$@. You clock in at %2$@.";
+
+/* #951: 0đ is a price */
+"Rent price must be greater than or equal to 0" = "Rental price must be greater than or equal to 0";
+"Daily price must be greater than or equal to 0" = "Daily price must be greater than or equal to 0";
+
+/* #952 edit a customer from the cart picker */
+"customers.v2.saved" = "Customer saved";

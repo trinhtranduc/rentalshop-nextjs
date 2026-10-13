@@ -7,6 +7,8 @@ import { prisma } from './client';
  */
 
 const LIST_LIMIT = 50;
+/** #938: rows of `collateralHeld`, the list behind "đang giữ N đơn" (a shop rarely holds this many at once) */
+const HELD_LIMIT = 500;
 
 const orderRowSelect = {
   id: true,
@@ -42,17 +44,19 @@ export interface OutletOperationsQuery {
   /** Tomorrow's civil-day bounds for the "tomorrow" counts and lists; omitted → `tomorrow`, lists `null` */
   tomorrowStart?: Date;
   tomorrowEnd?: Date;
+  /** #938: also list the rentals out with collateral (`collateralHeld`); only with `includeCash` */
+  withCollateralHeld?: boolean;
 }
 
-async function listWithCount(where: any, orderBy: any) {
+async function listWithCount(where: any, orderBy: any, take = LIST_LIMIT) {
   const [orders, count] = await Promise.all([
-    prisma.order.findMany({ where, select: orderRowSelect, orderBy, take: LIST_LIMIT }),
+    prisma.order.findMany({ where, select: orderRowSelect, orderBy, take }),
     prisma.order.count({ where }),
   ]);
   return { count, orders };
 }
 
-export async function getOutletOperations({ outletIds, start, end, soonEnd, includeCash, trendDays = [], tomorrowStart, tomorrowEnd }: OutletOperationsQuery) {
+export async function getOutletOperations({ outletIds, start, end, soonEnd, includeCash, trendDays = [], tomorrowStart, tomorrowEnd, withCollateralHeld = false }: OutletOperationsQuery) {
   const base = { orderType: 'RENT' as const, deletedAt: null, outletId: { in: outletIds } };
 
   const pickupsTodayWhere = { ...base, status: 'RESERVED' as const, pickupPlanAt: { gte: start, lte: end } };
@@ -98,11 +102,18 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
   const newOrdersByDay = trendDays.map((day, i) => ({ date: day.dateKey, count: newOrderCounts[i] }));
 
   if (!includeCash) {
-    return { pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, doneToday, newOrdersByDay, tomorrow, tomorrowPickups, tomorrowReturns, cash: null };
+    // #938: no money right, no held-collateral list (null when asked, so the caller can tell)
+    return {
+      pickupsToday, returnsToday, overdueReturns, noShows, returnsSoon, doneToday, newOrdersByDay, tomorrow, tomorrowPickups, tomorrowReturns,
+      ...(withCollateralHeld ? { collateralHeld: null } : {}),
+      cash: null,
+    };
   }
 
   const depositSum = { depositAmount: true, securityDeposit: true } as const;
-  const [held, dueToday, fees, toCollect, toReturn] = await Promise.all([
+  // Collateral held now, handed back at return (#494); #938 lists the same orders when asked
+  const heldCollateralWhere = { ...base, status: 'PICKUPED' as const, securityDeposit: { gt: 0 } };
+  const [held, dueToday, fees, toCollect, toReturn, collateralHeldList] = await Promise.all([
     prisma.order.aggregate({
       where: { ...base, status: 'PICKUPED' },
       _sum: depositSum,
@@ -120,12 +131,13 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
       _sum: { securityDeposit: true },
       _count: { _all: true },
     }),
-    // Collateral held now, handed back at return (#494); unlike depositsHeld, counts only orders with collateral
+    // Unlike depositsHeld, counts only orders with collateral
     prisma.order.aggregate({
-      where: { ...base, status: 'PICKUPED', securityDeposit: { gt: 0 } },
+      where: heldCollateralWhere,
       _sum: { securityDeposit: true },
       _count: { _all: true },
     }),
+    withCollateralHeld ? listWithCount(heldCollateralWhere, { returnPlanAt: 'asc' }, HELD_LIMIT) : Promise.resolve(undefined),
   ]);
 
   return {
@@ -139,6 +151,7 @@ export async function getOutletOperations({ outletIds, start, end, soonEnd, incl
     tomorrow,
     tomorrowPickups,
     tomorrowReturns,
+    ...(collateralHeldList ? { collateralHeld: collateralHeldList } : {}),
     cash: {
       depositsHeld: {
         depositAmount: held._sum.depositAmount ?? 0,

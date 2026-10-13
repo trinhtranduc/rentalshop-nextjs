@@ -18,11 +18,17 @@ struct AvailabilityStatus: Codable {
 // MARK: - CartItem Model
 /// Represents a single item in the shopping cart
 struct CartItem: Codable {
+    /// #951: each add is its own line (a product may sit on several lines, e.g. one paid and one free);
+    /// line actions find the line by this id. A cart saved before #951 gets an id on load.
+    var lineId: UUID = UUID()
     let productId: Int
     let productName: String?
     let barcode: String?
     var quantity: Int
     var price: Double
+    /// #951: 0 is a real price (a 0đ product, a free line). True only while a rent line has no price at all: the
+    /// product has none for the line's mode and none was typed. A line loaded from a saved order always has one.
+    var priceMissing: Bool = false
     var deposit: Double
     var note: String?
     var imageUrl: String?
@@ -101,6 +107,7 @@ struct CartItem: Codable {
         self.pricingType = opt.type
         self.price = opt.price
         self.customRentPrice = opt.price
+        self.priceMissing = false
     }
 
     /// Switch between the two cart pricing modes. Products created before
@@ -110,7 +117,8 @@ struct CartItem: Codable {
         let normalizedType = type.uppercased()
         let currentType = pricingType?.uppercased() ?? "FIXED"
 
-        if pricingOptions?.contains(where: { $0.type.uppercased() == currentType }) != true {
+        // #951: a mode without a price is not kept as a 0đ option for the way back
+        if !priceMissing, pricingOptions?.contains(where: { $0.type.uppercased() == currentType }) != true {
             let legacyOption = PricingOption(
                 id: selectedPricingOptionId,
                 type: currentType,
@@ -127,14 +135,17 @@ struct CartItem: Codable {
         let option = pricingOptions?.first(where: { $0.type.uppercased() == normalizedType })
         selectedPricingOptionId = option?.id
         pricingType = normalizedType
+        let typed: Double?
         if normalizedType == "DAILY" {
-            price = customDailyPrice ?? option?.price ?? 0
+            typed = customDailyPrice
         } else if normalizedType == "FIXED" {
-            price = customFixedPrice ?? option?.price ?? 0
+            typed = customFixedPrice
         } else {
             // #482: another option type (BLOCK, HOURLY) starts at its own price
-            price = option?.price ?? 0
+            typed = nil
         }
+        price = typed ?? option?.price ?? 0
+        priceMissing = typed == nil && option == nil
         customRentPrice = price
     }
 
@@ -149,6 +160,22 @@ struct CartItem: Codable {
         }
         customRentPrice = value
         price = value
+        priceMissing = false
+    }
+
+    /// #951: the price box of the line's mode left empty: forget the typed price; the line goes back to the product's
+    /// price for that mode, or asks for one ("Nhập giá") when the product has none.
+    mutating func clearCustomRentalPrice() {
+        let currentType = pricingType?.uppercased() ?? "FIXED"
+        if currentType == "DAILY" {
+            customDailyPrice = nil
+        } else if currentType == "FIXED" {
+            customFixedPrice = nil
+        }
+        let option = pricingOptions?.first(where: { $0.type.uppercased() == currentType && $0.isActive != false })
+        price = option?.price ?? 0
+        priceMissing = option == nil
+        customRentPrice = option?.price
     }
     
     // Computed properties
@@ -195,6 +222,8 @@ struct CartItem: Codable {
         self.customFixedPrice = customRentPrice
         self.customDailyPrice = nil
         self.availabilityStatus = availabilityStatus
+        // A line of a saved order (or built by hand) has its price, 0 included (#951)
+        self.priceMissing = false
     }
     
     // Convenience init from Product model
@@ -223,13 +252,18 @@ struct CartItem: Codable {
         // existing rent price as the configured mode so the cart can still
         // offer the missing FIXED/DAILY mode at price zero.
         let activeOptions = product.pricingOptions?.filter { $0.isActive != false } ?? []
-        if activeOptions.isEmpty {
+        let legacyRent = product.rentPrice ?? product.rent
+        if activeOptions.isEmpty && legacyRent <= 0 {
+            // #951: no rent price at all (a 0 rentPrice without options): the line asks for one
+            self.pricingOptions = []
+            self.priceMissing = true
+        } else if activeOptions.isEmpty {
             let legacyType = product.pricingType?.uppercased() ?? "FIXED"
             self.pricingOptions = [
                 PricingOption(
                     id: nil,
                     type: legacyType,
-                    price: product.rentPrice ?? product.rent,
+                    price: legacyRent,
                     isDefault: true,
                     isActive: true
                 )
@@ -245,7 +279,37 @@ struct CartItem: Codable {
             self.price = def.price
         } else {
             self.pricingType = product.pricingType ?? "FIXED"
+            self.price = 0
         }
     }
-    
+
+    // MARK: - Decoding (#951)
+
+    /// Saved carts from before #951 have no `lineId` / `priceMissing`: a new id, and a rent line at 0 still asks for a
+    /// price (as it did then).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        lineId = try c.decodeIfPresent(UUID.self, forKey: .lineId) ?? UUID()
+        productId = try c.decode(Int.self, forKey: .productId)
+        productName = try c.decodeIfPresent(String.self, forKey: .productName)
+        barcode = try c.decodeIfPresent(String.self, forKey: .barcode)
+        quantity = try c.decode(Int.self, forKey: .quantity)
+        price = try c.decode(Double.self, forKey: .price)
+        priceMissing = try c.decodeIfPresent(Bool.self, forKey: .priceMissing) ?? (price <= 0)
+        deposit = try c.decode(Double.self, forKey: .deposit)
+        note = try c.decodeIfPresent(String.self, forKey: .note)
+        imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
+        costPrice = try c.decodeIfPresent(Double.self, forKey: .costPrice)
+        originalRentPrice = try c.decode(Double.self, forKey: .originalRentPrice)
+        originalSalePrice = try c.decode(Double.self, forKey: .originalSalePrice)
+        customRentPrice = try c.decodeIfPresent(Double.self, forKey: .customRentPrice)
+        customSalePrice = try c.decodeIfPresent(Double.self, forKey: .customSalePrice)
+        customFixedPrice = try c.decodeIfPresent(Double.self, forKey: .customFixedPrice)
+        customDailyPrice = try c.decodeIfPresent(Double.self, forKey: .customDailyPrice)
+        availabilityStatus = try c.decodeIfPresent(AvailabilityStatus.self, forKey: .availabilityStatus)
+        pricingType = try c.decodeIfPresent(String.self, forKey: .pricingType)
+        rentalDays = try c.decodeIfPresent(Int.self, forKey: .rentalDays) ?? 1
+        pricingOptions = try c.decodeIfPresent([PricingOption].self, forKey: .pricingOptions)
+        selectedPricingOptionId = try c.decodeIfPresent(Int.self, forKey: .selectedPricingOptionId)
+    }
 }

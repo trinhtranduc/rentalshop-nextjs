@@ -423,6 +423,10 @@ final class NotificationsViewController: BaseViewControler {
             }
         }
 
+        if notification.isShiftChanged {
+            navigationController?.pushViewController(MyShiftsViewController(), animated: true)
+            return
+        }
         if let orderId = notification.orderIdValue {
             PushNotificationManager.shared.openOrderDetail(orderId: orderId)
         }

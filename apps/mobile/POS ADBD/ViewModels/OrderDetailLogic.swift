@@ -120,6 +120,12 @@ struct OrderHeaderCustomer: Equatable {
 enum OrderDetailLogic {
     static let maxNotePhotos = 5
 
+    /// "Tạm tính" / "Tiền hàng" of a sale (#939): the item lines, as Android, the web and the printed bill. The total
+    /// is the server's `totalAmount`; old data where lines − discount ≠ total still shows each number as stored.
+    static func saleSubtotal(itemTotals: [Double]) -> Double {
+        itemTotals.reduce(0, +)
+    }
+
     /// "Sẵn sàng giao" (#470): a rental not handed over yet, for users who may update orders
     static func showsReadyToDeliver(orderType: OrderType, status: OrderStatus, canUpdateOrders: Bool) -> Bool {
         canUpdateOrders && orderType == .rent && status == .reserved
@@ -151,13 +157,12 @@ enum OrderDetailLogic {
 
     // MARK: ⋯ sheet (#519, board CT-thao-tac)
 
-    /// Buttons the bottom bar shows for these actions (the same rule as the screen)
+    /// Buttons the bottom bar shows besides the primary one (the same rule as the screen). #930: the secondary
+    /// button is always Print next to Giao đồ / Nhận trả; Edit and Extend live in the ⋯ sheet.
     static func bottomButtons(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool) -> [OrderSheetAction] {
         switch actions.primary {
-        case .handOver:
-            return actions.canEdit ? [.edit] : []
-        case .takeReturn:
-            return canExtend ? [.extend] : []
+        case .handOver, .takeReturn:
+            return [.print]
         case .none:
             return (orderType == .sale && actions.canCancel) ? [.cancel, .print] : [.print]
         }

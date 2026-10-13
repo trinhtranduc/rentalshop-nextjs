@@ -169,6 +169,26 @@ function AmountInput({ id, value, onChange, invalid }: { id: string; value: numb
   );
 }
 
+/** #951: a price box. Empty = no price (null); "0" is a 0đ price and stays visible. */
+function PriceInput({ id, value, onChange, invalid }: { id: string; value: number | null; onChange: (n: number | null) => void; invalid?: boolean }) {
+  return (
+    <input
+      id={id}
+      inputMode="numeric"
+      autoComplete="off"
+      value={value == null ? '' : group(value)}
+      placeholder="—"
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${id}-error` : undefined}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/\D/g, '');
+        onChange(digits ? Number(digits) : null);
+      }}
+      className={`${inputClass} tabular-nums ${invalid ? errorBorder : ''}`}
+    />
+  );
+}
+
 function CountInput({ id, value, onChange, invalid, label, disabled }: { id: string; value: number; onChange: (n: number) => void; invalid?: boolean; label?: string; disabled?: boolean }) {
   return (
     <input
@@ -498,7 +518,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
         {t('form.defaultForOrders')}
       </label>
     ) : null;
-  const setPrice = (key: 'perRental' | 'perDay', n: number) =>
+  const setPrice = (key: 'perRental' | 'perDay', n: number | null) =>
     patch((f) => {
       const next = { ...f, [key]: n };
       return { ...next, defaultMode: effectiveDefaultMode(next.perRental, next.perDay, f.defaultMode) };
@@ -552,11 +572,11 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
-                    <AmountInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => setPrice('perRental', n)} />
+                    <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => setPrice('perRental', n)} />
                     {defaultChoice('FIXED')}
                   </Field>
                   <Field id="pf-perDay" label={t('form.perDay')}>
-                    <AmountInput id="pf-perDay" value={form.perDay} onChange={(n) => setPrice('perDay', n)} />
+                    <PriceInput id="pf-perDay" value={form.perDay} onChange={(n) => setPrice('perDay', n)} />
                     {defaultChoice('DAILY')}
                   </Field>
                 </div>
@@ -566,7 +586,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                     <AmountInput id="pf-deposit" value={form.deposit} invalid={!!errors.deposit} onChange={(n) => patch({ deposit: n }, ['deposit'])} />
                   </Field>
                   <Field id="pf-salePrice" label={t('form.salePrice')} error={err('salePrice')}>
-                    <AmountInput id="pf-salePrice" value={form.salePrice} invalid={!!errors.salePrice} onChange={(n) => patch({ salePrice: n }, ['salePrice'])} />
+                    <PriceInput id="pf-salePrice" value={form.salePrice} invalid={!!errors.salePrice} onChange={(n) => patch({ salePrice: n }, ['salePrice'])} />
                   </Field>
                   <Field id="pf-costPrice" label={t('form.costPrice')} hint={t('form.costHint')}>
                     <AmountInput id="pf-costPrice" value={form.costPrice} onChange={(n) => patch({ costPrice: n })} />

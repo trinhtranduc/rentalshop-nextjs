@@ -2,7 +2,7 @@ import CoreImage
 import XCTest
 @testable import POS_ADBD
 
-/// #640: the order share image (spec .agent/changes/640-share-image/spec.md)
+/// #640: the order share image (spec .agent/changes/640-share-image/spec.md); #930: no status, created date, item notes
 final class OrderShareImageTests: XCTestCase {
     private let vi = ShareLanguage.make(code: "vi-VN")
     private let en = ShareLanguage.make(code: "en")
@@ -29,13 +29,12 @@ final class OrderShareImageTests: XCTestCase {
             shopName: "Lan Anh Bridal", outletName: "Chi nhánh Quận 3", outletPhone: "0901234567",
             outletAddress: "45 Võ Văn Tần, Quận 3, TP.HCM", outletId: 1,
             customerName: "Nguyễn Thị Mai", customerPhone: "0912345678",
-            pickup: day("2026-10-07"), returnDate: day("2026-10-16"), rentalDays: nil, createdAt: day("2026-10-05"),
-            items: [.init(name: "Váy cưới đuôi cá trơn", quantity: 1, total: 650_000),
-                    .init(name: "Áo dài cưới đỏ", quantity: 1, total: 350_000),
+            pickup: day("2026-10-07"), returnDate: day("2026-10-16"), rentalDays: nil,
+            createdAt: day("2026-10-05", hour: 14).addingTimeInterval(30 * 60),
+            items: [.init(name: "Váy cưới đuôi cá trơn", quantity: 1, total: 650_000, note: "  Size M, bó eo 2 cm "),
+                    .init(name: "Áo dài cưới đỏ", quantity: 1, total: 350_000, note: "  "),
                     .init(name: "Vương miện ngọc trai", quantity: 2, total: 150_000)],
-            discount: 0, total: 1_150_000, deposit: 300_000, collateralPapers: "CCCD", collateralMoney: 2_000_000,
-            amountDue: OrderShareSource.amountDue(orderType: .rent, status: status, total: 1_150_000, deposit: 300_000,
-                                                  payments: []))
+            discount: 0, total: 1_150_000, deposit: 300_000, collateralPapers: "CCCD", collateralMoney: 2_000_000)
     }
 
     /// Sale #731904
@@ -48,7 +47,7 @@ final class OrderShareImageTests: XCTestCase {
             pickup: nil, returnDate: nil, rentalDays: nil, createdAt: day("2026-10-07"),
             items: [.init(name: "Khăn voan cô dâu", quantity: 1, total: 180_000),
                     .init(name: "Hoa cầm tay lụa", quantity: 2, total: 240_000)],
-            discount: 20_000, total: 400_000, deposit: 0, collateralPapers: nil, collateralMoney: 0, amountDue: 400_000)
+            discount: 20_000, total: 400_000, deposit: 0, collateralPapers: nil, collateralMoney: 0)
     }
 
     /// The rental as a cart (draft), made on 07/10
@@ -58,7 +57,6 @@ final class OrderShareImageTests: XCTestCase {
         source.status = .draft
         source.orderNumber = ""
         source.createdAt = day("2026-10-07")
-        source.amountDue = source.total
         return source
     }
 
@@ -69,28 +67,36 @@ final class OrderShareImageTests: XCTestCase {
 
     // MARK: - Header
 
-    func testPillTextPerStatus() {
-        XCTAssertEqual(model(Self.rent(status: .reserved)).pill, "Chờ giao đồ")
-        XCTAssertEqual(model(Self.rent(status: .pickuped)).pill, "Đang thuê")
-        XCTAssertEqual(model(Self.rent(status: .returned)).pill, "Đã trả đồ")
-        XCTAssertEqual(model(Self.rent(status: .cancelled)).pill, "Đã huỷ")
-        XCTAssertEqual(model(Self.rent(status: .cancelled)).pillTone, .cancelled)
-        XCTAssertEqual(model(Self.sale()).pill, "Đã thanh toán")
-        XCTAssertEqual(model(Self.sale()).pillTone, .paid)
+    func testOnlyTheDraftHasAPill() {
+        // #930: the image never shows the order status (it goes stale once forwarded)
+        for status in [OrderStatus.reserved, .pickuped, .returned, .cancelled] {
+            XCTAssertNil(model(Self.rent(status: status)).pill, "\(status)")
+        }
+        XCTAssertNil(model(Self.sale()).pill)
         XCTAssertEqual(model(Self.draft()).pill, "Chưa chốt")
-        XCTAssertEqual(model(Self.draft()).pillTone, .draft)
     }
 
     func testHeaderLines() {
         let rent = model(Self.rent())
         XCTAssertEqual(rent.shopName, "Lan Anh Bridal")
         XCTAssertEqual(rent.outletLine, "Chi nhánh Quận 3 · 0901 234 567")
-        XCTAssertEqual(rent.kindLine, "Đơn thuê")
+        // #930: created date and time in Vietnam time next to the kind
+        XCTAssertEqual(rent.kindLine, "Đơn thuê · tạo 05/10/26 14:30")
         XCTAssertEqual(rent.title, "#482113")
-        XCTAssertEqual(model(Self.sale()).kindLine, "Đơn bán · 07/10/26")
+        XCTAssertFalse(rent.isDraft)
+        XCTAssertEqual(model(Self.sale()).kindLine, "Đơn bán · tạo 07/10/26 10:00")
         let draft = model(Self.draft())
         XCTAssertEqual(draft.kindLine, "Đơn thuê · lập 07/10/26")
         XCTAssertEqual(draft.title, "Đơn nháp")
+        XCTAssertTrue(draft.isDraft)
+    }
+
+    func testCreatedTimeIsVietnamTime() {
+        // 2026-10-04 17:30 UTC is 05/10 00:30 in Vietnam
+        var late = Self.rent()
+        late.createdAt = ISO8601DateFormatter().date(from: "2026-10-04T17:30:00Z")!
+        XCTAssertEqual(model(late).kindLine, "Đơn thuê · tạo 05/10/26 00:30")
+        XCTAssertEqual(model(late, en).kindLine, "Rental order · created 05/10/26 00:30")
     }
 
     func testInitials() {
@@ -116,19 +122,21 @@ final class OrderShareImageTests: XCTestCase {
 
     func testDayStripInVietnamCivilDays() {
         let strip = model(Self.rent()).strip
-        XCTAssertEqual(strip, OrderShareModel.Strip(pickupLabel: "Nhận đồ", pickupDay: "07/10/26", days: "10 ngày",
+        // #930: no day count on an order (an arrow is drawn instead)
+        XCTAssertEqual(strip, OrderShareModel.Strip(pickupLabel: "Nhận đồ", pickupDay: "07/10/26", days: nil,
                                                     returnLabel: "Trả đồ", returnDay: "16/10/26"))
         // 00:30 on 07/10 in Vietnam is still 06/10 in UTC: the strip shows the Vietnam day
         var early = Self.rent()
         early.pickup = Self.day("2026-10-07", hour: 0).addingTimeInterval(30 * 60)
         early.returnDate = Self.day("2026-10-07", hour: 23)
         XCTAssertEqual(model(early).strip?.pickupDay, "07/10/26")
-        XCTAssertEqual(model(early).strip?.days, "1 ngày", "a same-day rental is one day")
-        XCTAssertEqual(model(early, en).strip?.days, "1 day")
-        // The order's own duration wins, as on the detail screen
-        var stored = Self.rent()
-        stored.rentalDays = 3
-        XCTAssertEqual(model(stored).strip?.days, "3 ngày")
+        // The draft keeps its day count
+        var draft = early
+        draft.isDraft = true
+        draft.status = .draft
+        XCTAssertEqual(model(draft).strip?.days, "1 ngày", "a same-day rental is one day")
+        XCTAssertEqual(model(draft, en).strip?.days, "1 day")
+        XCTAssertEqual(model(Self.draft()).strip?.days, "10 ngày")
         XCTAssertNil(model(Self.sale()).strip, "sales have no strip")
     }
 
@@ -146,7 +154,8 @@ final class OrderShareImageTests: XCTestCase {
     func testItemLinesAndMoneyFormat() {
         let rent = model(Self.rent())
         XCTAssertEqual(rent.itemsHeader, "Đồ thuê · 3 món")
-        XCTAssertEqual(rent.lines[2], OrderShareModel.Line(name: "Vương miện ngọc trai", detail: "2 × 75.000đ", amount: "150.000đ"))
+        XCTAssertEqual(rent.lines[2], OrderShareModel.Line(name: "Vương miện ngọc trai", detail: "2 × 75.000đ",
+                                                           amount: "150.000đ", note: nil))
         XCTAssertEqual(OrderShareModel.money(1_150_000), "1.150.000đ")
         XCTAssertEqual(OrderShareModel.money(0), "0đ")
         XCTAssertEqual(OrderShareModel.minus(300_000), "− 300.000đ")
@@ -155,44 +164,41 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertEqual(model(Self.rent(), en).lines[0].amount, "650.000đ")
     }
 
-    func testRentTotalsKeepCollateralOutOfAmountDue() {
+    func testItemNotesShownAndOrderNoteNot() {
+        let rent = model(Self.rent())
+        XCTAssertEqual(rent.lines.map(\.note), ["Size M, bó eo 2 cm", nil, nil], "trimmed; blank is none")
+        // The model has no place for the order's general note: OrderShareSource carries none
+        XCTAssertFalse(Mirror(reflecting: Self.rent()).children.contains { $0.label == "notes" })
+    }
+
+    func testRentTotalsHighlightTheRentTotal() {
         let rent = model(Self.rent())
         XCTAssertEqual(rent.rows, [
-            .init(label: "Tổng tiền thuê", value: "1.150.000đ"),
-            .init(label: "Đã đặt cọc", value: "− 300.000đ"),
+            .init(label: "Đã đặt cọc", value: "300.000đ"),
             .init(label: "Thế chân khi nhận đồ", value: "CCCD + 2.000.000đ"),
         ])
-        XCTAssertEqual(rent.highlightLabel, "Còn phải trả")
-        // Owner decision: total − deposit − hand-over payments; the 2.000.000đ collateral stays on its own row
-        XCTAssertEqual(rent.highlightValue, "850.000đ")
-        XCTAssertEqual(rent.highlight, .due)
+        XCTAssertEqual(rent.highlightLabel, "Tổng tiền thuê")
+        XCTAssertEqual(rent.highlightValue, "1.150.000đ")
+        XCTAssertEqual(rent.highlight, .rent)
         XCTAssertNil(rent.note)
+        // Same figures whatever the status (#930)
+        for status in [OrderStatus.pickuped, .returned, .cancelled] {
+            let other = model(Self.rent(status: status))
+            XCTAssertEqual(other.rows, rent.rows)
+            XCTAssertEqual(other.highlightValue, "1.150.000đ")
+        }
+
+        var discounted = Self.rent()
+        discounted.discount = 50_000
+        discounted.total = 1_100_000
+        XCTAssertEqual(model(discounted).rows.first, .init(label: "Giảm giá", value: "− 50.000đ"))
+        XCTAssertEqual(model(discounted).highlightValue, "1.100.000đ")
 
         var bare = Self.rent()
         bare.deposit = 0
         bare.collateralPapers = nil
         bare.collateralMoney = 0
-        XCTAssertEqual(model(bare).rows.map(\.label), ["Tổng tiền thuê"])
-    }
-
-    func testRentAmountDueRule() {
-        let pickup = OrderPaymentLine(amount: 500_000, status: "COMPLETED", notes: "PICKUP")
-        let pending = OrderPaymentLine(amount: 500_000, status: "PENDING", notes: "PICKUP")
-        let due: (OrderStatus, [OrderPaymentLine]) -> Double = {
-            OrderShareSource.amountDue(orderType: .rent, status: $0, total: 1_150_000, deposit: 300_000, payments: $1)
-        }
-        XCTAssertEqual(due(.reserved, []), 850_000)
-        XCTAssertEqual(due(.reserved, [pickup]), 350_000)
-        XCTAssertEqual(due(.reserved, [pending]), 850_000, "only completed payments count")
-        XCTAssertEqual(due(.pickuped, [OrderPaymentLine(amount: 2_850_000, status: "COMPLETED", notes: "PICKUP")]), 0,
-                       "a hand-over that also took the collateral never goes below 0")
-        XCTAssertEqual(due(.reserved, [OrderPaymentLine(amount: 100_000, status: "COMPLETED", notes: "RETURN_ADJUSTMENT")]),
-                       850_000, "return adjustments ignored")
-        XCTAssertEqual(due(.returned, []), 0)
-        XCTAssertEqual(due(.cancelled, []), 0)
-        XCTAssertEqual(OrderShareSource.amountDue(orderType: .sale, status: .completed, total: 400_000, deposit: 0,
-                                                  payments: [OrderPaymentLine(amount: 400_000, status: "COMPLETED", notes: "SALE")]),
-                       400_000, "a sale keeps its total")
+        XCTAssertEqual(model(bare).rows, [])
     }
 
     func testSaleTotals() {
@@ -204,6 +210,17 @@ final class OrderShareImageTests: XCTestCase {
         var noDiscount = Self.sale()
         noDiscount.discount = 0
         XCTAssertEqual(model(noDiscount).rows.map(\.label), ["Tạm tính"])
+    }
+
+    /// #939: test data of #930 — items 792, order total 396, no discount: Tạm tính is the lines, Tổng cộng the server's
+    func testSaleSubtotalIsTheItemSumNotTheTotal() {
+        var source = Self.sale()
+        source.items = [.init(name: "A", quantity: 2, total: 396), .init(name: "B", quantity: 1, total: 396)]
+        source.discount = 0
+        source.total = 396
+        let sale = model(source)
+        XCTAssertEqual(sale.rows, [.init(label: "Tạm tính", value: "792đ")])
+        XCTAssertEqual(sale.highlightValue, "396đ")
     }
 
     func testDraftTotalsAndNote() {
@@ -226,9 +243,12 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertEqual(qr.accountNumber, "0071001234567")
         XCTAssertEqual(qr.holder, "NGUYEN LAN ANH")
         XCTAssertEqual(qr.content, "Nội dung: DH482113")
-        // Same string as the web `generateVietQRString(info, 850000, "DH482113")` and the Android share image:
-        // 01 = 12 (dynamic), 54 = the amount due, 62/08 = DH<number>
-        XCTAssertEqual(qr.payload, "00020101021238570010A00000072701270006970436011300710012345670208QRIBFTTA530370454068500005802VN62120808DH4821136304E529")
+        // #930: no amount (tag 54); 01 = 12 (dynamic) for the content 62/08 = DH<number>, as the Android image
+        XCTAssertEqual(qr.payload, VietQR.payload(for: Self.vcb, amount: 0, content: "DH482113"))
+        XCTAssertTrue(qr.payload.hasPrefix("000201010212"))
+        XCTAssertTrue(qr.payload.contains("5303704" + "5802VN"), "no amount tag between currency and country")
+        XCTAssertTrue(qr.payload.contains("0808DH482113"))
+        XCTAssertFalse(try XCTUnwrap(model(Self.sale(), qr: true).qr).payload.contains("5406400000"), "a sale: no amount either")
 
         XCTAssertNil(OrderShareModel.make(Self.rent(), language: vi, bankAccount: Self.vcb, qrSwitchOn: false).qr, "switch off")
         XCTAssertNil(OrderShareModel.make(Self.rent(), language: vi, bankAccount: nil, qrSwitchOn: true).qr, "no account")
@@ -237,17 +257,6 @@ final class OrderShareImageTests: XCTestCase {
         unknownBank.bankName = "Ngân hàng Lạ"
         unknownBank.bankCode = "XYZ"
         XCTAssertNil(OrderShareModel.make(Self.rent(), language: vi, bankAccount: unknownBank, qrSwitchOn: true).qr)
-    }
-
-    func testQrWithoutAmountWhenNothingIsDue() throws {
-        var returned = Self.rent(status: .returned)
-        XCTAssertEqual(returned.amountDue, 0)
-        returned.collateralMoney = 0
-        let qr = try XCTUnwrap(model(returned, qr: true).qr)
-        XCTAssertFalse(qr.payload.contains("530370454"), "no amount tag when nothing is due")
-        XCTAssertTrue(qr.payload.hasPrefix("000201010212"), "dynamic: it carries a content")
-        XCTAssertEqual(model(returned).highlightValue, "0đ")
-        XCTAssertTrue(try XCTUnwrap(model(Self.sale(), qr: true).qr).payload.contains("5406400000"), "a sale: its total")
     }
 
     func testAmountPayloadKeepsTheStaticBillPayloadAndDecodes() throws {
@@ -282,16 +291,16 @@ final class OrderShareImageTests: XCTestCase {
 
     func testEnglishLabelsHaveNoVietnamese() {
         let rent = model(Self.rent(), en, qr: true)
-        XCTAssertEqual(rent.kindLine, "Rental order")
-        XCTAssertEqual(rent.pill, "Awaiting pickup")
+        XCTAssertEqual(rent.kindLine, "Rental order · created 05/10/26 14:30")
+        XCTAssertNil(rent.pill)
         XCTAssertEqual(rent.strip?.pickupDay, "07/10/26")
         XCTAssertEqual(rent.strip?.returnDay, "16/10/26")
-        XCTAssertEqual(rent.strip?.days, "10 days")
-        XCTAssertEqual(rent.highlightLabel, "Amount due")
+        XCTAssertEqual(model(Self.draft(), en).strip?.days, "10 days")
+        XCTAssertEqual(rent.highlightLabel, "Rental total")
         XCTAssertEqual(rent.customerLabel, "Customer")
         XCTAssertEqual(rent.qr?.content, "Reference: DH482113")
         XCTAssertEqual(model(Self.draft(), en).kindLine, "Rental order · made 07/10/26")
-        let labels = [rent.kindLine, rent.pill ?? "", rent.customerLabel, rent.itemsHeader, rent.highlightLabel,
+        let labels = [rent.kindLine, rent.customerLabel, rent.itemsHeader, rent.highlightLabel,
                       rent.thanks, rent.madeWith, rent.qr?.title ?? ""] + rent.rows.map(\.label)
         let vietnameseMarks = CharacterSet(charactersIn: "ăâđêôơưĂÂĐÊÔƠƯàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ")
         for label in labels {

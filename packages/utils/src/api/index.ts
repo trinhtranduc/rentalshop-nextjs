@@ -12,6 +12,7 @@ export * from './orders';
 export * from './outlets';
 export * from './bank-accounts';
 export * from './merchants';
+export * from './merchant-modules';
 export * from './analytics';
 export * from './categories';
 export * from './notifications';
@@ -42,3 +43,5 @@ export * from './response-builder';
 export * from './referrals';
 export * from './posts';
 export * from './loyalty';
+export * from './attendance';
+

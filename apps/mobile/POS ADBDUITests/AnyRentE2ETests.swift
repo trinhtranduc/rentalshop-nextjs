@@ -104,8 +104,9 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         e2e.shot("13-home-added")
         e2e.tapIfExists(e2e.button(["Back", "Quay lại"]))
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "Cart bar should show after adding a product")
-        e2e.shot("14-home-cart-bar")
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "Cart button counts the product after adding it")
+        XCTAssertFalse(e2e.floatingCartBar.exists, "#952: no floating cart bar on Home")
+        e2e.shot("14-home-cart-button")
     }
 
     func test2CartRent() throws {
@@ -585,10 +586,11 @@ final class AnyRentE2ETests: XCTestCase {
         let row = app.cells.firstMatch
         guard row.waitForExistence(timeout: 8) else { return XCTFail("No renting order to extend") }
         e2e.tapRow(row)
-        let extend = e2e.button(["Extend", "Gia hạn"])
-        XCTAssertTrue(extend.waitForExistence(timeout: 10), "A renting order offers Gia hạn")
+        // #930: the bar is In + Nhận trả; Gia hạn is in the ⋯ sheet
+        let print = e2e.button(["Print", "In"])
+        XCTAssertTrue(print.waitForExistence(timeout: 10), "A renting order shows In on the bottom bar")
         e2e.shot("58-detail-renting")
-        extend.tap()
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Extend", "Gia hạn"]), "A renting order offers Gia hạn in ⋯")
         let confirm = e2e.element(labelBeginsWith: ["Extend to", "Gia hạn đến"], type: .button)
         XCTAssertTrue(confirm.waitForExistence(timeout: 8), "Extend sheet with Gia hạn đến <day>")
         e2e.shot("59-detail-extend-sheet")
@@ -609,21 +611,14 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.dismissAlerts()
         e2e.shot("5a-detail-extended")
 
-        // Print from the ⋯ action sheet (#519: the header keeps only ⋯).
-        let more = e2e.button(["More actions", "Thêm thao tác"])
-        if more.waitForExistence(timeout: 5) {
-            more.tap()
-            sleep(1)
-            e2e.shot("5a2-detail-action-sheet")
-        }
-        let print = e2e.button(["Print receipt", "In hóa đơn", "In hoá đơn", "In biên nhận"])
+        // #930: Print is the bottom bar's "In"
         if print.waitForExistence(timeout: 5) {
             print.tap()
             sleep(3)
             e2e.shot("5b-detail-print-preview")
             e2e.dismissAlerts()
             e2e.tapIfExists(e2e.button(["Close", "Đóng", "Cancel", "Huỷ", "Hủy", "Done", "Xong"]), timeout: 2)
-            if !extend.exists { e2e.goBackOnce() }
+            if !print.exists { e2e.goBackOnce() }
         } else {
             e2e.soft(false, "print button on order detail")
         }
@@ -635,10 +630,9 @@ final class AnyRentE2ETests: XCTestCase {
         let booked = app.cells.firstMatch
         if booked.waitForExistence(timeout: 8) {
             e2e.tapRow(booked)
-            let edit = e2e.button(["Edit order", "Sửa đơn"])
-            if edit.waitForExistence(timeout: 8) {
-                e2e.shot("5c-detail-booked")
-                edit.tap()
+            e2e.shot("5c-detail-booked")
+            // #930: Sửa đơn is in the ⋯ sheet
+            if e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]) {
                 sleep(3)
                 e2e.shot("5d-detail-edit-order")
                 e2e.goBackOnce()
@@ -935,6 +929,77 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
+    /// #909 / #927 Chấm công: card L at the top of Cài đặt → Vào ca (Debug "Nhập mã" with E2E_ATTENDANCE_CODE) → Ra ca,
+    /// a refused code (E2E_ATTENDANCE_BAD_CODE, default an expired one) → Ca và công của tôi. Needs the #907 API with the
+    /// module on for this merchant and an outlet whose coordinates match the Simulator location. Grant location first
+    /// (`xcrun simctl privacy <udid> grant location <bundle id>`): the shared alert helper taps "Don't Allow".
+    func test9AttendanceClockInOut() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let code = env["E2E_ATTENDANCE_CODE"], !code.isEmpty else { throw XCTSkip("E2E_ATTENDANCE_CODE is not set") }
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let punch = app.buttons["attendance.punch"]
+        XCTAssertTrue(punch.waitForExistence(timeout: 15), "Settings shows the clock card when the module is on and the user must clock in")
+        sleep(2)
+        e2e.shot("9a-attendance-card")
+
+        var scannerShot = false
+        func scan(_ value: String) {
+            punch.tap()
+            let manual = app.buttons["attendance.manualCode"]
+            XCTAssertTrue(manual.waitForExistence(timeout: 10), "Scanner opens (Debug: Nhập mã)")
+            if !scannerShot {
+                scannerShot = true
+                sleep(2)
+                e2e.shot("9c-attendance-scanner")
+            }
+            manual.tap()
+            let field = app.alerts.textFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 5), "Manual code field")
+            field.tap()
+            field.typeText(value)
+            app.alerts.buttons["OK"].tap()
+        }
+
+        // ✓ line inside the card, or the red box under it
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier IN {'attendance.result', 'attendance.error'}")).firstMatch
+        let wasIn = punch.label.contains("Ra ca") || punch.label.contains("Clock out")
+        scan(code)
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "A result box after the punch")
+        sleep(1)
+        e2e.note("first punch: \(result.label)")
+        e2e.shot(wasIn ? "9e-attendance-out" : "9d-attendance-in")
+
+        // The scanner may wait up to 10 s for a fresh GPS fix: wait for the box to change
+        func waitForNewResult(after previous: String) {
+            let deadline = Date().addingTimeInterval(20)
+            while Date() < deadline {
+                if result.exists && result.label != previous { break }
+                sleep(1)
+            }
+        }
+        var previous = result.label
+        scan(code)
+        waitForNewResult(after: previous)
+        e2e.note("second punch: \(result.label)")
+        e2e.shot(wasIn ? "9d-attendance-in" : "9e-attendance-out")
+
+        previous = result.label
+        scan(env["E2E_ATTENDANCE_BAD_CODE"] ?? "a1.1.1.D.2020-01-01.AAAAAAAAAAAAAAAAAAAAAA")
+        waitForNewResult(after: previous)
+        e2e.note("refused: \(result.label)")
+        e2e.shot("9f-attendance-refused")
+
+        let mine = app.descendants(matching: .any)["attendance.mine"]
+        if mine.waitForExistence(timeout: 5) {
+            mine.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["attendance.mine.screen"].waitForExistence(timeout: 10), "Ca và công của tôi opens")
+            sleep(4)
+            e2e.shot("9g-attendance-mine")
+        }
+    }
+
     func test8StaffRestrictions() throws {
         try e2e.requireRole("staff")
         try e2e.requireFlag("newProducts")
@@ -1030,8 +1095,8 @@ final class AnyRentE2ETests: XCTestCase {
         let plus = row.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
         if plus.exists, !plus.label.contains("trong giỏ"), !plus.label.contains("in cart") { plus.tap() }
         sleep(1)
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar")
-        e2e.cartBar.tap()
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "cart bar")
+        e2e.homeCart.tap()
         let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
         if dates.waitForExistence(timeout: 5) {
             dates.tap()
@@ -1101,8 +1166,8 @@ final class AnyRentE2ETests: XCTestCase {
             if plus.exists, !plus.label.contains("trong giỏ") { plus.tap() }
             sleep(1)
         }
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar")
-        e2e.cartBar.tap()
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "cart bar")
+        e2e.homeCart.tap()
         // The dates row: "Chọn ngày thuê" on a new cart, "T6 09/10 → T6 09/10" when dates were kept
         let chooser = app.descendants(matching: .any).matching(NSPredicate(format:
             "label BEGINSWITH 'Chọn ngày thuê' OR label BEGINSWITH 'Choose rental dates' OR label CONTAINS '→'")).firstMatch
@@ -1159,7 +1224,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("5e-detail-items-scrolled")
     }
 
-    /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: In hoá đơn, Ghi chú, Lịch sử thay đổi,
+    /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: Chia sẻ đơn, Ghi chú, Sửa đơn / Gia hạn (#930), Lịch sử,
     /// then Huỷ đơn apart. Actions the screen already shows as buttons are not repeated in it.
     func test5cOrderActionSheet() throws {
         try e2e.requireFlag("newOrders")
@@ -1167,17 +1232,19 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireRole("merchant")
         try e2e.start()
 
-        // A booked rental: the bottom bar has Sửa đơn + Giao đồ
+        // A booked rental: the bottom bar has In + Giao đồ (#930); Sửa đơn is in the sheet
         guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
-        checkOrderSheet(onScreen: [["Edit order", "Sửa đơn"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
-                        expected: [["Print receipt", "In hoá đơn"], ["Notes", "Ghi chú"], ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
+                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Edit order", "Sửa đơn"],
+                                   ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47a-order-sheet-booked")
         e2e.goBack()
 
-        // A renting order: Gia hạn + Nhận trả on screen
+        // A renting order: In + Nhận trả on screen; Gia hạn in the sheet
         guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
-        checkOrderSheet(onScreen: [["Extend", "Gia hạn"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
-                        expected: [["Print receipt", "In hoá đơn"], ["Notes", "Ghi chú"], ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
+                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Extend", "Gia hạn"],
+                                   ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47b-order-sheet-renting")
         XCTAssertFalse(e2e.button(["Edit order", "Sửa đơn"]).exists, "A renting order is not editable: no Sửa đơn in the sheet")
         e2e.goBack()
@@ -1214,7 +1281,7 @@ final class AnyRentE2ETests: XCTestCase {
         if cancel.exists, let last = frames.last, last != .zero {
             XCTAssertGreaterThan(cancel.frame.minY - last.maxY, 4, "\(shotPrefix): Huỷ đơn sits apart from the other rows")
         }
-        XCTAssertEqual(frames.map(\.minY), frames.map(\.minY).sorted(), "\(shotPrefix): rows in the order In hoá đơn, Ghi chú, Lịch sử")
+        XCTAssertEqual(frames.map(\.minY), frames.map(\.minY).sorted(), "\(shotPrefix): rows in the expected order")
 
         // Not repeated: the count of those labels does not grow while the sheet is up. When the screen under the
         // sheet is hidden from accessibility, any match must be a sheet row.
@@ -1226,6 +1293,44 @@ final class AnyRentE2ETests: XCTestCase {
         }
         e2e.button(["Close", "Đóng"]).tap()
         XCTAssertTrue(e2e.orderSheetTitle.waitForNonExistence(timeout: 5), "\(shotPrefix): the sheet closes")
+    }
+
+    /// #930: ⋯ → Chia sẻ đơn on a booked rental, a renting order and a sale. The share sheet stays up for
+    /// `E2E_SHARE_HOLD` seconds (default 2) so a run can copy Order_<number>.jpg out of the app's tmp folder.
+    func test5hShareImage() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let hold = UInt32(ProcessInfo.processInfo.environment["E2E_SHARE_HOLD"] ?? "") ?? 2
+        let share: (String) -> Void = { prefix in
+            self.e2e.shot("\(prefix)-detail")
+            XCTAssertTrue(self.e2e.button(["Print", "In"]).exists || prefix.hasPrefix("49c"), "\(prefix): In on the bottom bar")
+            XCTAssertTrue(self.e2e.tapOrderSheetRow(["Share order", "Chia sẻ đơn"]), "\(prefix): ⋯ → Chia sẻ đơn")
+            sleep(6)
+            self.e2e.shot("\(prefix)-share-sheet")
+            sleep(hold)
+            self.e2e.tapIfExists(self.e2e.button(["Close", "Đóng"]), timeout: 3)
+            sleep(1)
+        }
+        guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
+        share("49a-share-booked")
+        e2e.goBack()
+        guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
+        share("49b-share-renting")
+        e2e.goBack()
+
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        let sale = e2e.saleModeButton
+        guard sale.waitForExistence(timeout: 5) else { return XCTFail("Đơn bán switch") }
+        sale.tap()
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return XCTFail("No sale to open") }
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "sale detail opens")
+        share("49c-share-sale")
+        e2e.goBack()
     }
 
     /// Lịch sử thay đổi of an order (board LS-don): a new order shows "Tạo đơn" under today; a note and a hand-over
@@ -1375,8 +1480,8 @@ final class AnyRentE2ETests: XCTestCase {
 
         // A cart left in edit mode by an earlier run cannot be left except by saving: save it unchanged first
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        if e2e.cartBar.waitForExistence(timeout: 4) {
-            e2e.cartBar.tap()
+        if e2e.homeCart.waitForExistence(timeout: 4) {
+            e2e.homeCart.tap()
             let leftoverSave = e2e.button(["Lưu thay đổi", "Save changes"])
             if leftoverSave.waitForExistence(timeout: 5) {
                 leftoverSave.tap()
@@ -1439,9 +1544,9 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("60d2-edit-after-tap")
         // Sửa đơn loads the order into the cart and shows the product list; the cart bar opens the cart
-        if !e2e.button(["Lưu thay đổi", "Save changes"]).exists, e2e.cartBar.waitForExistence(timeout: 5) {
-            e2e.note("cart bar while editing: \(e2e.cartBar.label)")
-            e2e.cartBar.tap()
+        if !e2e.button(["Lưu thay đổi", "Save changes"]).exists, e2e.homeCart.waitForExistence(timeout: 5) {
+            e2e.note("cart bar while editing: \(e2e.homeCart.label)")
+            e2e.homeCart.tap()
         }
         let title = app.staticTexts.matching(NSPredicate(format: "label IN %@",
             ["Sửa đơn #\(number)", "Edit order #\(number)"])).firstMatch
@@ -1623,8 +1728,8 @@ final class AnyRentE2ETests: XCTestCase {
             guard add.exists else { return XCTFail("+ on \(key)") }
             add.tap()
             sleep(1)
-            guard e2e.cartBar.waitForExistence(timeout: 5) else { return XCTFail("cart bar") }
-            e2e.cartBar.tap()
+            guard e2e.homeCart.waitForExistence(timeout: 5) else { return XCTFail("cart bar") }
+            e2e.homeCart.tap()
             _ = e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
             let plus = e2e.button(["Thêm 1", "One more"])
             for _ in 1..<max(free, 1) where e2e.scrollTo(plus) { plus.tap(); usleep(400_000) }
@@ -1651,7 +1756,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("62f-out-today-added")
         let inCart = row.buttons.matching(NSPredicate(format: "label CONTAINS 'trong giỏ' OR label CONTAINS 'in cart'")).firstMatch
         e2e.note("+ after tap: \(row.buttons.allElementsBoundByIndex.map(\.label))")
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "tapping + on an out-today product adds it (cart bar shows)")
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "tapping + on an out-today product adds it (cart bar shows)")
         XCTAssertTrue(inCart.exists, "the circle shows the count in the cart (label '…: 1 trong giỏ, thêm 1')")
         e2e.emptyCart()
     }
@@ -1889,8 +1994,8 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertEqual(e2e.setOverlapAllowed(false), false, "Cho tạo đơn khi trùng lịch turns OFF")
         e2e.shot("33f-overlap-setting-off")
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "the cart is kept")
-        e2e.cartBar.tap()
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "the cart is kept")
+        e2e.homeCart.tap()
         sleep(3)
         let blocked = app.descendants(matching: .any).matching(NSPredicate(format:
             "label BEGINSWITH 'Cửa hàng không cho tạo đơn trùng lịch' OR label BEGINSWITH 'This shop does not allow overlapping'")).firstMatch
@@ -2064,14 +2169,23 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot(shot)
     }
 
-    /// The bell on Trang chủ → Thông báo (#482): the list renders and long titles wrap instead of ending in "…"
+    /// Cài đặt → Thông báo (#482, #937: the Home bell became the cart button): the list renders and long titles wrap
     func test7iNotifications() throws {
-        try e2e.requireFlag("newProducts")
+        try e2e.requireFlag("newSettings")
         try e2e.start()
-        e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        let bell = e2e.button(["Notifications", "Thông báo"])
-        XCTAssertTrue(bell.waitForExistence(timeout: 8), "bell on Trang chủ")
-        bell.tap()
+        if e2e.features.contains("newProducts") {
+            e2e.tapTab(["Home", "Trang chủ"], index: 0)
+            let cart = e2e.button(["Cart", "Giỏ hàng"])
+            XCTAssertTrue(cart.waitForExistence(timeout: 8), "#937: cart button on Trang chủ")
+            XCTAssertFalse(e2e.button(["Notifications", "Thông báo"]).exists, "#937: no bell on Trang chủ")
+            e2e.shot("16a-home-cart-button")
+        }
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "#937: Thông báo row in Cài đặt")
+        e2e.shot("16b-settings-notifications-row")
+        row.tap()
         sleep(3)
         let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 8), "Thông báo opens")
@@ -2316,12 +2430,12 @@ final class AnyRentE2ETests: XCTestCase {
         guard plus.exists else { return false }
         plus.tap()
         sleep(1)
-        return e2e.cartBar.waitForExistence(timeout: 5)
+        return e2e.homeCart.waitForExistence(timeout: 5)
     }
 
     private func openCart() -> Bool {
-        guard e2e.cartBar.waitForExistence(timeout: 5) else { return false }
-        e2e.cartBar.tap()
+        guard e2e.homeCart.waitForExistence(timeout: 5) else { return false }
+        e2e.homeCart.tap()
         return e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
     }
 
@@ -2734,7 +2848,7 @@ final class AnyRentE2ETests: XCTestCase {
         let plus = app.tables.cells.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thêm ' OR label BEGINSWITH 'Add '")).firstMatch
         if plus.waitForExistence(timeout: 5) {
             plus.tap()
-            XCTAssertTrue(e2e.cartBar.waitForExistence(timeout: 5), "cart bar after +")
+            XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "cart bar after +")
             button.tap()
             XCTAssertTrue(use.waitForExistence(timeout: 5), "branch sheet opens again")
             rows.matching(NSPredicate(format: "NOT (label CONTAINS 'Đang chọn' OR label CONTAINS 'In use')")).firstMatch.tap()
@@ -2744,7 +2858,7 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.shot("11d-outlet-cart-alert")
             confirm.tap()
             sleep(3)
-            e2e.soft(!e2e.cartBar.exists, "cart emptied by the switch")
+            e2e.soft(!e2e.homeCart.exists, "cart emptied by the switch")
             e2e.soft(button.label == before, "back on the first branch (\(button.label))")
             e2e.shot("11e-outlet-after-cart-switch")
         } else {
@@ -2848,6 +2962,112 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(seen.isEmpty, "raw API codes shown for a plan limit: \(seen)")
     }
 
+    /// #952 (owner 13/10/26): the cart's date row has a calendar icon; a pencil in the customer picker edits the
+    /// customer (the cart follows); Home has no floating cart bar; the product form has no "Xong" keyboard bar
+    func test952CartUi() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireFlag("newCustomers")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        // A kept cart may hold a customer and dates from an earlier run: ⋯ → Xoá giỏ hàng starts clean
+        if app.buttons["cart.more"].waitForExistence(timeout: 3) {
+            app.buttons["cart.more"].tap()
+            e2e.tapIfExists(e2e.button(["Xoá giỏ hàng", "Clear cart"]), timeout: 3)
+            e2e.tapIfExists(app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Xoá", "Delete"])).firstMatch, timeout: 3)
+            sleep(1)
+            e2e.goBackOnce()
+            guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart again") }
+        }
+        e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
+        let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
+        if dates.waitForExistence(timeout: 5) { // a kept cart may already have dates
+            e2e.shot("952a-cart-date-empty")
+            dates.tap()
+            e2e.pickTodayInDateSheet()
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        } else {
+            e2e.note("cart kept its dates: no empty date row this run")
+        }
+        let chosen = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS ' → '")).firstMatch
+        XCTAssertTrue(chosen.waitForExistence(timeout: 5), "dates: dd/mm/yy → dd/mm/yy")
+        e2e.shot("952b-cart-date-chosen")
+
+        // Pick a customer, then edit them from the picker's pencil
+        let pickRow = e2e.element(labelBeginsWith: ["Choose customer", "Chọn khách hàng"])
+        XCTAssertTrue(pickRow.waitForExistence(timeout: 5), "customer row in the cart")
+        pickRow.tap()
+        let pencil = app.buttons.matching(identifier: "customers.picker.edit").firstMatch
+        XCTAssertTrue(pencil.waitForExistence(timeout: 8), "rows of the picker have a pencil")
+        sleep(2)
+        e2e.shot("952c-picker-pencil")
+        let firstCell = app.cells.containing(.button, identifier: "customers.picker.edit").firstMatch
+        let picked = firstCell.staticTexts.allElementsBoundByIndex.map(\.label)
+            .first { !$0.isEmpty && !$0.contains("·") && $0.count > 2 } ?? ""
+        XCTAssertFalse(picked.isEmpty, "the first row has a name")
+        firstCell.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
+        sleep(2)
+        let customerRow = e2e.element(labelBeginsWith: [picked])
+        XCTAssertTrue(customerRow.waitForExistence(timeout: 5), "the cart shows the picked customer \(picked)")
+        customerRow.tap()
+        XCTAssertTrue(pencil.waitForExistence(timeout: 8), "picker again")
+        sleep(1)
+        app.cells.containing(NSPredicate(format: "label == %@", picked)).firstMatch
+            .buttons.matching(identifier: "customers.picker.edit").firstMatch.tap()
+        let nameField = e2e.field(["Full name", "Họ và tên"])
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "the edit sheet opens")
+        sleep(2)
+        XCTAssertFalse(e2e.field(["Email"]).exists, "the sheet keeps name, phone, address and note only")
+        e2e.shot("952d-edit-sheet")
+        let newName = picked.hasSuffix(" E2E") ? String(picked.dropLast(4)) : picked + " E2E"
+        nameField.tap()
+        nameField.clearText()
+        nameField.typeText(newName)
+        // Lưu rides on the keyboard (no hideKeyboard: its drag-down fallback would close the sheet)
+        e2e.button(["Save", "Lưu"]).tap()
+        let toast = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS 'Customer saved' OR label CONTAINS 'Đã lưu khách hàng'")).firstMatch
+        sleep(1)
+        e2e.shot("952e-list-after-save")
+        // The toast is in the screenshot; XCUITest does not always see ToastView's label: a soft check
+        e2e.soft(toast.exists, "toast Đã lưu khách hàng")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+        sleep(1)
+        XCTAssertTrue(e2e.element(labelBeginsWith: [newName]).waitForExistence(timeout: 5), "the cart shows the new name")
+        e2e.shot("952f-cart-updated-customer")
+
+        // Home: the top-right button counts the cart; no floating bar
+        e2e.goBackOnce()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "the cart button has the count")
+        XCTAssertFalse(e2e.floatingCartBar.exists, "no floating cart bar")
+        e2e.shot("952g-home-no-cart-bar")
+
+        // Product form: a number field has no "Xong" bar; a tap outside closes the keyboard
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        guard add.waitForExistence(timeout: 5) else { return XCTFail("Thêm sản phẩm") }
+        add.tap()
+        XCTAssertTrue(e2e.field(["Product name", "Tên sản phẩm"]).waitForExistence(timeout: 8), "form opens")
+        let price = app.textFields.matching(NSPredicate(format: "placeholderValue == '0'")).firstMatch
+        for _ in 0..<4 where !(price.exists && price.isHittable) { app.swipeUp() }
+        XCTAssertTrue(price.exists, "a price field")
+        price.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "number pad up")
+        XCTAssertFalse(app.toolbars.buttons.matching(NSPredicate(format: "label IN %@", ["Done", "Xong"])).firstMatch.exists,
+                       "no Xong bar on the keyboard")
+        sleep(1)
+        e2e.shot("952h-product-form-keyboard")
+        // a tap outside any field: the header title
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.1)).tap()
+        sleep(1)
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "a tap outside closes the keyboard")
+        e2e.shot("952i-product-form-keyboard-closed")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 2)
+        e2e.dismissAlerts()
+        e2e.emptyCart()
+    }
+
     func test9SettingsLogout() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
@@ -2866,6 +3086,49 @@ final class AnyRentE2ETests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 15), "Back on the login screen")
         e2e.shot("82-logged-out")
+    }
+
+    /// Repro (owner report): today's calendar header counts late returns that today's list never shows;
+    /// the Thế chân tile's "đang giữ N" chip vs the 7-day related orders list.
+    func test6zLateHoldRepro() throws {
+        try e2e.start()
+        e2e.tapTab(["Calendar", "Lịch Thuê", "Lịch"], index: 2)
+        sleep(3)
+        let todayKey = E2E.dayMonth(Date())
+        let today = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ OR label ENDSWITH %@", todayKey + "/", " " + todayKey)).firstMatch
+        if today.waitForExistence(timeout: 5) { today.tap(); sleep(3) }
+        e2e.shot("01-calendar-today")
+        let texts = app.staticTexts.allElementsBoundByIndex.filter(\.exists).map(\.label)
+        e2e.note("CAL TEXTS | \(texts.prefix(40))")
+        e2e.note("CAL CELLS | \(app.tables.cells.count) cells")
+        app.swipeUp(); sleep(1)
+        e2e.shot("02-calendar-today-list-scrolled")
+
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { throw XCTSkip("No Reports tab") }
+        sleep(4)
+        let week = e2e.element(labelBeginsWith: ["7 days", "7 ngày"], type: .button)
+        XCTAssertTrue(week.waitForExistence(timeout: 8), "7 ngày chip")
+        week.tap()
+        sleep(4)
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 8), "Thế chân tile")
+        e2e.note("TILE | \(tile.label)")
+        if !tile.isHittable { app.swipeUp(); sleep(1) }
+        e2e.shot("03-overview-7days-tiles")
+        tile.tap()
+        sleep(2)
+        e2e.shot("04-collateral-sheet")
+        let link = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "related orders link")
+        link.tap()
+        let total = app.staticTexts["related.total"]
+        if total.waitForExistence(timeout: 20) {
+            let deadline = Date().addingTimeInterval(30)
+            while total.label.isEmpty && Date() < deadline { sleep(1) }
+            e2e.note("RELATED | \(total.label)")
+        }
+        sleep(2)
+        e2e.shot("05-collateral-related-orders")
     }
 }
 
@@ -3290,9 +3553,17 @@ private final class E2E {
         element(labelBeginsWith: ["Sorted by", "Xếp theo"], type: .button)
     }
 
-    var cartBar: XCUIElement {
+    /// #952: the Home top-right cart button while the cart has items (its value says "Giỏ hàng · N món");
+    /// it is the only entry to the cart (the floating cart bar is gone)
+    var homeCart: XCUIElement {
+        app.buttons.matching(
+            NSPredicate(format: "label IN %@ AND (value CONTAINS 'Cart ·' OR value CONTAINS 'Giỏ hàng ·')", ["Cart", "Giỏ hàng"])
+        ).firstMatch
+    }
+
+    /// #952: the old floating bar ("Giỏ hàng · N món … Tạo đơn ›"); must not exist
+    var floatingCartBar: XCUIElement {
         app.descendants(matching: .any).matching(
-            // #677: "Sửa đơn #n" while the cart edits an order
             NSPredicate(format: "(label CONTAINS 'Cart ·' OR label CONTAINS 'Giỏ hàng ·') AND (label CONTAINS 'Create order' OR label CONTAINS 'Tạo đơn' OR label CONTAINS 'Edit order' OR label CONTAINS 'Sửa đơn')")
         ).firstMatch
     }
@@ -3359,7 +3630,7 @@ private final class E2E {
     func openCartWithOneItem() -> Bool {
         tapTab(["Home", "Trang chủ"], index: 0)
         guard app.tables.cells.firstMatch.waitForExistence(timeout: 15) else { return false }
-        if !cartBar.waitForExistence(timeout: 2) {
+        if !homeCart.waitForExistence(timeout: 2) {
             let add = app.tables.buttons.matching(NSPredicate(
                 format: "(label BEGINSWITH 'Add ' AND label CONTAINS 'cart') OR (label BEGINSWITH 'Thêm ' AND label CONTAINS 'giỏ')"
             ))
@@ -3371,8 +3642,8 @@ private final class E2E {
                 }
             }
         }
-        guard cartBar.waitForExistence(timeout: 5) else { return false }
-        cartBar.tap()
+        guard homeCart.waitForExistence(timeout: 5) else { return false }
+        homeCart.tap()
         return button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
     }
 
@@ -3498,8 +3769,8 @@ private final class E2E {
     /// Removes every line from the cart (− on a 1-quantity line asks "Bỏ món này khỏi giỏ?"), then back to Home.
     func emptyCart() {
         tapTab(["Home", "Trang chủ"], index: 0)
-        guard cartBar.waitForExistence(timeout: 3) else { return }
-        cartBar.tap()
+        guard homeCart.waitForExistence(timeout: 3) else { return }
+        homeCart.tap()
         guard button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8) else { return }
         let minus = app.buttons.matching(NSPredicate(format: "label IN %@", ["One less", "Bớt 1"]))
         for _ in 0..<60 where minus.firstMatch.exists {
@@ -3516,8 +3787,8 @@ private final class E2E {
         button(["Add to cart", "Thêm vào giỏ"]).tap()
         sleep(1)
         tapIfExists(button(["Back", "Quay lại"]))
-        guard cartBar.waitForExistence(timeout: 5) else { return false }
-        cartBar.tap()
+        guard homeCart.waitForExistence(timeout: 5) else { return false }
+        homeCart.tap()
         return button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8)
     }
 

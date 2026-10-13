@@ -141,4 +141,34 @@ class CalendarLogicTest {
         assertEquals("a return row: only its date", listOf(CalendarLogic.RowChipKind.RETURN), back.map { it.kind })
         assertEquals("16/10/26", back[0].date)
     }
+
+    /** #938: today's list adds the rentals still out past their return day (outlet-operations `overdueReturns`), each once */
+    @Test
+    fun `today lists late returns after today's rows`() {
+        for (zone in listOf(java.time.ZoneId.of("Asia/Ho_Chi_Minh"), java.time.ZoneId.of("UTC"))) {
+            val late = CalendarLogic.lateReturnsFromJson(
+                JSONObject(
+                    """{"overdueReturns":{"count":3,"orders":[
+                      {"id":11,"orderNumber":"100011","customerName":"Lan","totalAmount":300,"returnPlanAt":"2026-10-09T03:00:00.000Z",
+                       "lateDays":4,"items":[{"name":"Áo dài","quantity":2}]},
+                      {"id":12,"orderNumber":"100012","customerName":null,"totalAmount":100,"returnPlanAt":"2026-10-12T16:30:00.000Z"},
+                      {"id":5,"orderNumber":"100005","totalAmount":1,"returnPlanAt":"2026-10-12T03:00:00.000Z","lateDays":1}
+                    ]}}""",
+                ),
+            )
+            assertEquals(listOf(11, 12, 5), late.map { it.id })
+            assertEquals("Áo dài ×2", late[0].itemsSummary)
+            val today = "2026-10-13"
+            val pickup = CalendarDayOrder(1, "100001", null, "RESERVED", "RENT", 1.0, "")
+            val back = CalendarDayOrder(5, "100005", null, "PICKUPED", "RENT", 1.0, "")
+            val rows = CalendarLogic.rows(today, today, listOf(pickup), listOf(back), late, zone)
+            assertEquals(listOf(1, 5, 11, 12), rows.map { it.order.id })
+            assertEquals(listOf(CalendarRowKind.HAND_OVER, CalendarRowKind.TAKE_BACK, CalendarRowKind.TAKE_BACK, CalendarRowKind.TAKE_BACK), rows.map { it.kind })
+            // API lateDays wins; without it the Vietnam day of returnPlanAt (12/10 23:30 VN = 1 day late), whatever the zone given
+            assertEquals(listOf(0, 0, 4, 1), rows.map { it.lateDays })
+            assertEquals(CalendarNote.Late(4, null), CalendarLogic.note(rows[2]))
+            assertEquals(listOf(1), CalendarLogic.rows("2026-10-14", today, listOf(pickup), emptyList(), late, zone).map { it.order.id })
+        }
+        assertTrue(CalendarLogic.lateReturnsFromJson(JSONObject("{}")).isEmpty())
+    }
 }

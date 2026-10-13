@@ -1,0 +1,423 @@
+{
+  "title": "Chấm công",
+  "tabs": {
+    "timesheet": "Bảng công",
+    "person": "Chi tiết theo người",
+    "shifts": "Xếp ca",
+    "templates": "Mẫu ca",
+    "locations": "Mã QR & vị trí"
+  },
+  "weekday": {
+    "1": "T2",
+    "2": "T3",
+    "3": "T4",
+    "4": "T5",
+    "5": "T6",
+    "6": "T7",
+    "7": "CN"
+  },
+  "common": {
+    "cancel": "Huỷ",
+    "close": "Đóng",
+    "save": "Lưu",
+    "working": "Đang lưu…",
+    "loading": "Đang tải…",
+    "loadFailed": "Không tải được dữ liệu.",
+    "retry": "Thử lại",
+    "outlet": "Chi nhánh",
+    "prevMonth": "Tháng trước",
+    "nextMonth": "Tháng sau",
+    "month": "Tháng {month}",
+    "hours": "{hours} giờ",
+    "exportXlsx": "Xuất Excel",
+    "notAvailable": "Shop chưa bật module Chấm công. Liên hệ AnyRent để bật.",
+    "noAccess": "Chỉ chủ shop và admin chi nhánh dùng màn này.",
+    "noOutlet": "Chưa có chi nhánh nào."
+  },
+  "timesheet": {
+    "title": "Bảng công · Tháng {month}",
+    "subtitle": "{count} nhân viên · {lock}",
+    "unlocked": "tháng chưa khoá",
+    "locked": "tháng đã khoá",
+    "lock": "Khoá tháng",
+    "unlock": "Mở khoá tháng",
+    "absent": "Vắng",
+    "empty": "Chi nhánh chưa có nhân viên hoặc lượt chấm công nào trong tháng này.",
+    "kpi": {
+      "totalHours": "Tổng giờ",
+      "pairs": "Lượt vào–ra",
+      "missingOut": "Thiếu giờ ra",
+      "suspected": "Có thể gian lận"
+    },
+    "col": {
+      "staff": "Nhân viên",
+      "hours": "Giờ",
+      "days": "Ngày"
+    },
+    "legend": {
+      "ok": "đúng ca",
+      "late": "muộn / về sớm",
+      "ot": "quá giờ",
+      "miss": "thiếu giờ ra",
+      "fake": "có thể gian lận",
+      "absent": "có ca, không vào",
+      "sunday": "Chủ nhật",
+      "hint": "Bấm tên → chi tiết cả tháng · bấm ô → chi tiết ngày đó"
+    }
+  },
+  "export": {
+    "title": "Xuất Excel bảng công",
+    "month": "Tháng",
+    "parts": "Gồm",
+    "grid": "Bảng tháng (giờ mỗi ngày, tổng giờ, số ngày)",
+    "scans": "Chi tiết từng lần quét (giờ, kết quả, khoảng cách, toạ độ)",
+    "edits": "Lịch sử sửa công",
+    "download": "Tải file .xlsx",
+    "failed": "Không xuất được file Excel."
+  },
+  "lock": {
+    "title": "Khoá tháng {month}?",
+    "body": "Sau khi khoá, admin chi nhánh không sửa công tháng này nữa. Chỉ chủ shop mở khoá được (có ghi lịch sử). Module Tính lương sau này sẽ dùng tháng đã khoá.",
+    "confirm": "Khoá tháng",
+    "locked": "Đã khoá tháng {month}",
+    "unlockTitle": "Mở khoá tháng {month}?",
+    "unlockBody": "Sau khi mở khoá, công tháng này sửa được trở lại. Có ghi lịch sử.",
+    "unlockConfirm": "Mở khoá",
+    "unlocked": "Đã mở khoá tháng {month}"
+  },
+  "person": {
+    "back": "‹ Bảng công tháng {month}",
+    "title": "Chi tiết chấm công theo người",
+    "pick": "Chọn nhân viên",
+    "add": "+ Thêm lượt",
+    "map": "Bản đồ",
+    "edit": "Sửa",
+    "empty": "Không có lượt quét nào.",
+    "noStaff": "Chi nhánh chưa có nhân viên.",
+    "forgotOut": "Quên quét ra",
+    "suspected": "Có thể gian lận",
+    "late": "Muộn {n}′",
+    "early": "Sớm {n}′",
+    "overtime": "Quá giờ {n}′",
+    "filter": {
+      "label": "Lọc lượt quét",
+      "all": "Mọi lượt",
+      "rejected": "Bị từ chối",
+      "suspected": "Có thể gian lận"
+    },
+    "kpi": {
+      "days": "Ngày đi làm",
+      "hours": "Tổng giờ",
+      "lateEarly": "Muộn / sớm",
+      "overtime": "Quá giờ",
+      "missingOut": "Thiếu giờ ra",
+      "suspected": "Có thể gian lận"
+    },
+    "col": {
+      "day": "Ngày",
+      "time": "Giờ quét",
+      "kind": "Loại",
+      "result": "Kết quả",
+      "distance": "Cách chi nhánh",
+      "gps": "GPS",
+      "coords": "Toạ độ",
+      "shift": "Ca",
+      "note": "Ghi chú"
+    },
+    "kind": {
+      "IN": "Vào",
+      "OUT": "Ra",
+      "EDIT": "Sửa"
+    },
+    "result": {
+      "ACCEPTED": "Ghi nhận",
+      "REJECTED": "Từ chối",
+      "AUTO_CLOSED": "Tự đóng",
+      "EDITED": "Đã sửa"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "toạ độ trùng hệt lần trước",
+      "SPEED": "di chuyển nhanh bất thường"
+    },
+    "error": {
+      "OUT_OF_RANGE": "Ngoài vùng {radius} m",
+      "GPS_INACCURATE": "GPS chưa chính xác",
+      "MOCK_LOCATION": "Vị trí giả",
+      "QR_EXPIRED": "Mã QR hết hiệu lực",
+      "QR_WRONG_OUTLET": "Mã QR của chi nhánh khác",
+      "ATTENDANCE_NOT_CONFIGURED": "Chi nhánh chưa cài vị trí",
+      "other": "Bị từ chối"
+    },
+    "editIn": "vào {time}",
+    "editOut": "ra {time}",
+    "nextDay": "(hôm sau)"
+  },
+  "edit": {
+    "title": "Sửa công · {name} · {date}",
+    "current": "Lượt hiện tại: vào {in}, {out}",
+    "outAt": "ra {time}",
+    "noOut": "chưa có giờ ra (tự đóng cuối ngày)",
+    "checkIn": "Giờ vào",
+    "checkOut": "Giờ ra",
+    "reason": "Lý do (bắt buộc)",
+    "reasonPlaceholder": "Quên quét ra, quản lý xác nhận",
+    "note": "Lưu lại lịch sử: ai sửa, sửa gì, lúc nào. Không sửa được tháng đã khoá.",
+    "addOther": "+ Thêm lượt khác",
+    "saved": "Đã sửa công"
+  },
+  "add": {
+    "title": "Thêm lượt chấm công · {name}",
+    "sub": "Dùng khi nhân viên có làm nhưng không quét được.",
+    "date": "Ngày",
+    "reasonPlaceholder": "Điện thoại hết pin",
+    "confirm": "Thêm lượt",
+    "added": "Đã thêm lượt chấm công"
+  },
+  "map": {
+    "title": "Vị trí lúc quét · {name} · {when}",
+    "label": "Bản đồ vị trí quét và vùng chấm công",
+    "distance": "cách chi nhánh {m} m",
+    "gps": "GPS ±{m} m",
+    "accepted": "Ghi nhận",
+    "rejected": "Từ chối: {reason}"
+  },
+  "shifts": {
+    "title": "Xếp ca",
+    "subtitle": "Tuần {from} – {to} · hôm nay {today}",
+    "prevWeek": "‹ Tuần trước",
+    "nextWeek": "Tuần sau ›",
+    "assign": "Gán ca",
+    "addShift": "Thêm ca",
+    "legendRepeat": "↻ Lịch tự lặp mỗi tuần",
+    "legendLock": "🔒 ca đã vào / ngày đã qua: không sửa",
+    "legendEdited": "✎ sửa riêng ngày đó",
+    "empty": "Chi nhánh chưa có nhân viên.",
+    "rules": "Lịch lặp đang áp dụng",
+    "rulesHint": "Sửa / dừng / xoá chỉ ảnh hưởng ngày chưa làm",
+    "rulesEmpty": "Chưa có lịch lặp nào.",
+    "noEnd": "Không kết thúc",
+    "edit": "Sửa",
+    "stop": "Dừng từ…",
+    "delete": "Xoá",
+    "col": {
+      "staff": "Nhân viên",
+      "shift": "Ca",
+      "weekdays": "Các thứ",
+      "from": "Từ",
+      "to": "Đến"
+    },
+    "lockedToday": "Đã vào ca hôm nay"
+  },
+  "day": {
+    "lockedBody": "🔒 Ca này đã vào ca hoặc ngày đã qua nên không sửa được. Muốn sửa giờ công thì vào Bảng công.",
+    "current": "Đang: {shift} ({source})",
+    "sourceRule": "theo lịch lặp",
+    "sourceDay": "đã sửa riêng",
+    "none": "Chưa có ca",
+    "editable": "chưa vào ca, sửa được",
+    "pick": "Ca ngày này",
+    "custom": "Giờ riêng",
+    "customStart": "Giờ riêng: bắt đầu",
+    "customEnd": "Kết thúc",
+    "note": "Chỉ đổi ngày này. Các tuần sau vẫn theo lịch lặp. App báo cho {name}.",
+    "clear": "Xoá ca ngày này",
+    "saved": "Đã đổi ca ngày {date}"
+  },
+  "assign": {
+    "title": "Gán ca (lặp hằng tuần)",
+    "sub": "Gán một lần, tự lặp mỗi tuần cho tới khi đổi.",
+    "shift": "1. Ca",
+    "staff": "2. Nhân viên",
+    "weekdays": "3. Các thứ trong tuần",
+    "from": "Bắt đầu từ",
+    "to": "Kết thúc (tuỳ chọn)",
+    "toPlaceholder": "Không kết thúc",
+    "preview": "↻ Lặp mỗi tuần",
+    "previewLine": "{names} · {shift} · {days} · từ {from}",
+    "previewTo": " đến {to}",
+    "conflict": "{name} đang có lịch {shift} {days}.",
+    "keep": "Ngày đã làm hoặc đã sửa riêng giữ nguyên.",
+    "confirm": "Gán ca · báo nhân viên",
+    "noTemplates": "Chưa có mẫu ca. Tạo ở tab Mẫu ca trước.",
+    "saved": "Đã gán ca"
+  },
+  "ruleEdit": {
+    "title": "Sửa lịch lặp · {name}",
+    "shift": "Ca",
+    "weekdays": "Các thứ",
+    "from": "Áp dụng từ",
+    "note": "Ngày đã làm hoặc đã qua giữ nguyên.",
+    "saved": "Đã sửa lịch lặp"
+  },
+  "ruleStop": {
+    "title": "Dừng lịch lặp · {name}",
+    "last": "Dừng sau ngày",
+    "note": "Từ {next} {name} không còn ca {shift}. Ví dụ dùng khi nhân viên nghỉ việc hoặc chuyển lịch.",
+    "confirm": "Dừng lịch",
+    "saved": "Đã dừng lịch lặp"
+  },
+  "ruleDelete": {
+    "title": "Xoá lịch lặp · {name}?",
+    "note": "Các ngày chưa làm sẽ không còn ca {shift}. Ngày đã làm giữ nguyên trong bảng công.",
+    "confirm": "Xoá lịch",
+    "saved": "Đã xoá lịch lặp"
+  },
+  "templates": {
+    "title": "Mẫu ca",
+    "subtitle": "{outlet} · dùng khi gán ca",
+    "add": "+ Mẫu ca mới",
+    "minutes": "{n} phút",
+    "used": "Có",
+    "unused": "Chưa",
+    "hidden": "Đã ẩn",
+    "edit": "Sửa",
+    "hide": "Ẩn",
+    "delete": "Xoá",
+    "show": "Hiện lại",
+    "shown": "Đã hiện lại mẫu ca",
+    "empty": "Chưa có mẫu ca nào.",
+    "hint": "Mẫu ca đã dùng chỉ ẩn được (giữ lịch sử); mẫu ca chưa dùng thì xoá được. Sửa giờ chỉ áp dụng cho ngày chưa làm.",
+    "col": {
+      "shift": "Ca",
+      "time": "Giờ",
+      "break": "Nghỉ",
+      "used": "Đang dùng"
+    }
+  },
+  "templateForm": {
+    "newTitle": "Mẫu ca mới",
+    "editTitle": "Sửa mẫu ca",
+    "name": "Tên ca",
+    "start": "Bắt đầu",
+    "end": "Kết thúc",
+    "break": "Nghỉ giữa ca (phút)",
+    "color": "Màu",
+    "colors": {
+      "blue": "Xanh",
+      "purple": "Tím",
+      "green": "Lục",
+      "orange": "Cam"
+    },
+    "overnight": "Kết thúc nhỏ hơn bắt đầu (ví dụ 22:00–02:00) = ca qua đêm, tính vào ngày bắt đầu.",
+    "editNote": "Sửa giờ chỉ áp dụng cho ngày chưa làm; ngày đã qua giữ giờ cũ.",
+    "create": "Tạo mẫu ca",
+    "saved": "Đã lưu mẫu ca"
+  },
+  "templateHide": {
+    "title": "Ẩn mẫu ca \"{name}\"?",
+    "sub": "Ca này đã được dùng nên không xoá được.",
+    "note": "Ẩn: không chọn được khi gán ca nữa. Lịch lặp đang dùng ca này vẫn chạy; ngày đã làm giữ nguyên.",
+    "confirm": "Ẩn mẫu ca",
+    "saved": "Đã ẩn mẫu ca"
+  },
+  "templateDelete": {
+    "title": "Xoá mẫu ca \"{name}\"?",
+    "sub": "Ca này chưa từng được dùng.",
+    "confirm": "Xoá",
+    "saved": "Đã xoá mẫu ca"
+  },
+  "outlets": {
+    "qrDaily": "Có mã QR · đổi mỗi ngày",
+    "qrFixed": "Có mã QR · cố định",
+    "noQr": "Chưa tạo mã",
+    "open": "Mở ›"
+  },
+  "locations": {
+    "title": "Mã QR & vị trí chấm công",
+    "subtitle": "Mỗi chi nhánh một mã QR, vị trí và danh sách người cần chấm công.",
+    "col": {
+      "outlet": "Chi nhánh",
+      "address": "Địa chỉ",
+      "qr": "Mã QR",
+      "radius": "Bán kính"
+    },
+    "radius": "{radius} m",
+    "back": "‹ Mã QR & vị trí"
+  },
+  "outlet": {
+    "notFound": "Không mở được chi nhánh này.",
+    "section": "⏱ Chấm công",
+    "location": "Vị trí chấm công",
+    "noLocation": "Chưa đặt vị trí",
+    "current": "📍 Vị trí hiện tại",
+    "pick": "Chọn trên bản đồ",
+    "picking": "Bấm vào bản đồ để đặt vị trí chi nhánh.",
+    "geoFailed": "Không lấy được vị trí hiện tại. Kiểm tra quyền vị trí của trình duyệt.",
+    "ownerOnly": "Chỉ chủ shop sửa vị trí và bán kính.",
+    "radius": "Bán kính cho phép:",
+    "radiusHint": "50–500 m. GPS trong nhà thường sai 10–50 m.",
+    "checks": "Kiểm tra khi quét: đúng mã chi nhánh này, còn hiệu lực · trong bán kính · GPS ≤ 100 m · chặn vị trí giả · giờ máy chủ. Quên ra ca: tự đóng cuối ngày, 0 giờ tới khi admin sửa.",
+    "qrTitle": "Mã QR của {name}",
+    "qrMode": "Kiểu mã",
+    "daily": "Đổi mỗi ngày (đề xuất)",
+    "fixed": "Cố định",
+    "dailyHint": "Mã mới lúc 00:00 giờ VN. Hiện trên máy quầy hoặc in lại mỗi sáng.",
+    "fixedHint": "In một lần, dán tường. Ảnh chụp dùng lại được; chỉ còn GPS và chặn vị trí giả bảo vệ.",
+    "todayCaption": "Mã hôm nay · {date} · tự đổi lúc 00:00",
+    "fixedCaption": "Mã cố định · tạo {date}",
+    "noQr": "Chi nhánh chưa có mã QR.",
+    "createQr": "Tạo mã QR",
+    "qrCreated": "Đã tạo mã QR",
+    "print": "In QR",
+    "kiosk": "Liên kết máy quầy",
+    "newCode": "Tạo mã mới",
+    "modeSaved": "Đã đổi kiểu mã",
+    "saved": "Đã lưu vị trí chấm công",
+    "saveRadiusTitle": "Đổi bán kính?",
+    "saveRadiusSub": "Từ {from} m thành {to} m",
+    "saveLocationTitle": "Đổi vị trí chấm công?",
+    "saveLocationSub": "Toạ độ mới: {coords}",
+    "saveNote": "Áp dụng ngay cho các lần quét tiếp theo."
+  },
+  "members": {
+    "title": "Ai cần chấm công ở chi nhánh này",
+    "hint": "Chỉ người được chọn thấy thẻ Chấm công trên app, có trong Xếp ca và Bảng công",
+    "note": "Mặc định: nhân viên và kho được chọn; admin chi nhánh và chủ shop không. Bỏ chọn: người đó không thấy gì về chấm công, không được xếp ca mới; công cũ vẫn giữ.",
+    "toggle": "{name} cần chấm công",
+    "on": "{name}: cần chấm công",
+    "off": "{name}: không cần chấm công",
+    "ownerOnly": "Chỉ chủ shop đổi được",
+    "empty": "Chi nhánh chưa có ai."
+  },
+  "newCode": {
+    "title": "Tạo mã QR mới?",
+    "body": "Mã đang dùng hết hiệu lực ngay. Nếu chi nhánh dùng QR cố định, phải in và dán lại mã mới. Máy quầy tự đổi.",
+    "confirm": "Tạo mã mới",
+    "done": "Đã tạo mã mới, mã cũ hết hiệu lực"
+  },
+  "print": {
+    "title": "In mã QR · {name}",
+    "body": "Khổ A5, tên chi nhánh và hướng dẫn \"Mở app AnyRent → Cài đặt → Chấm công → quét mã\".",
+    "dailyNote": "Kiểu Đổi mỗi ngày: bản in chỉ dùng được trong ngày {date}.",
+    "confirm": "In",
+    "howTo": "Mở app AnyRent → Cài đặt → Chấm công → quét mã",
+    "validOn": "Chỉ dùng trong ngày {date}"
+  },
+  "kioskLink": {
+    "title": "Liên kết màn QR cho máy quầy",
+    "none": "Chi nhánh chưa có liên kết máy quầy.",
+    "note": "Mở liên kết này trên máy tính bảng hoặc điện thoại cũ ở quầy. Không cần đăng nhập, không ảnh hưởng tài khoản của ai. Màn tự đổi mã lúc 00:00.",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép liên kết",
+    "copyFailed": "Không sao chép được. Hãy chọn và sao chép liên kết.",
+    "newLink": "Tạo liên kết mới",
+    "create": "Tạo liên kết",
+    "created": "Đã tạo liên kết mới; liên kết cũ hết hiệu lực"
+  },
+  "kiosk": {
+    "title": "Chấm công",
+    "help": "Mở app AnyRent → Cài đặt → Chấm công → quét mã này",
+    "daily": "Mã hôm nay · tự đổi lúc 00:00",
+    "fixed": "Mã cố định",
+    "recent": "Gần nhất",
+    "none": "Hôm nay chưa có ai chấm công.",
+    "in": "Vào",
+    "out": "Ra",
+    "loading": "Đang tải…",
+    "invalid": "Liên kết máy quầy không còn hiệu lực. Xin liên kết mới từ chủ shop.",
+    "moduleOff": "Shop chưa bật module Chấm công.",
+    "notConfigured": "Chi nhánh chưa cài vị trí hoặc chưa tạo mã QR.",
+    "failed": "Không tải được mã. Đang thử lại…"
+  }
+}

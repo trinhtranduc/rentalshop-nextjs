@@ -3,7 +3,8 @@
 //  POS ADBD
 //
 //  Redesigned Home tab (#373, flag `newProducts`, board SP-dong): products with images, search with image search and
-//  barcode scan inside the field, "+" (or the cart count) to the cart and a floating cart bar (#383).
+//  barcode scan inside the field, "+" (or the cart count) to the cart. The top-right cart button with its count is the
+//  only way into the cart (#952 removed the floating cart bar).
 //
 
 import UIKit
@@ -14,8 +15,6 @@ import AudioToolbox
 
 final class ProductsHomeViewController: BaseViewControler {
     private let viewModel = ProductsHomeViewModel()
-    /// Last time the unread badge came from the server or the inbox signal (#674)
-    private var badgeLoadedAt: Date?
     /// #677: an order changed (`OrdersChangeSignal`) while the list was off screen
     private var stockStale = false
     private let searchDebouncer = DebounceManager(delay: 0.3)
@@ -34,18 +33,14 @@ final class ProductsHomeViewController: BaseViewControler {
         table.estimatedRowHeight = DS.Gap.productRowMinHeight
         table.keyboardDismissMode = .onDrag
         table.register(ProductRowV2Cell.self, forCellReuseIdentifier: ProductRowV2Cell.reuseId)
-        table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 96, right: 0)
+        table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         return table
     }()
     private let emptyLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     /// #753: under the reason when the list could not load
     private let retryButton = UIButton(type: .system)
-    private let cartBar = UIControl()
-    private let cartCountLabel = V2.label(size: DS.TextSize.secondary, color: UIColor.white.withAlphaComponent(0.85))
-    private let cartTotalLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
-    /// "Tạo đơn ›", or "Sửa đơn #482913 ›" while the cart edits an order (#677)
-    private let cartActionLabel = V2.label(size: DS.TextSize.name, weight: .bold, color: .white)
-    private let notificationButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+    /// #937: the cart (the bell moved to Cài đặt → Thông báo)
+    private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -61,10 +56,8 @@ final class ProductsHomeViewController: BaseViewControler {
         view.backgroundColor = .white
         buildHeader()
         buildList()
-        buildCartBar()
         bindViewModel()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
         viewModel.reload()
@@ -85,10 +78,6 @@ final class ProductsHomeViewController: BaseViewControler {
         if stockStale {
             stockStale = false
             viewModel.refreshQuietly()
-        }
-        // #674: the badge follows `.inboxUnreadCountDidChange`; the server is asked on first show and when 10 min old
-        if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: badgeLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
-            refreshNotificationBadge()
         }
     }
 
@@ -114,14 +103,14 @@ final class ProductsHomeViewController: BaseViewControler {
     private func buildHeader() {
         outletButton.presenter = self
 
-        notificationButton.setImage(DS.symbol("bell", DS.Icon.lg), for: .normal)
-        notificationButton.tintColor = DS.Color.text
-        notificationButton.badgeBackgroundColor = DS.Color.primary
-        notificationButton.badgeTextColor = .white
-        notificationButton.badgeFont = Utils.mediumFont(size: DS.TextSize.pill)
-        notificationButton.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
-        notificationButton.accessibilityLabel = "Notifications".localized()
-        notificationButton.addTarget(self, action: #selector(openInbox), for: .touchUpInside)
+        cartButton.setImage(DS.symbol(HomeCartButton.symbol, DS.Icon.lg), for: .normal)
+        cartButton.tintColor = DS.Color.text
+        cartButton.badgeBackgroundColor = DS.Color.primary
+        cartButton.badgeTextColor = .white
+        cartButton.badgeFont = Utils.mediumFont(size: DS.TextSize.pill)
+        cartButton.badgeEdgeInsets = UIEdgeInsets(top: 18, left: 0, bottom: 0, right: 13)
+        cartButton.accessibilityLabel = "Cart".localized()
+        cartButton.addTarget(self, action: #selector(openCart), for: .touchUpInside)
 
         let addButton = iconButton("plus", size: DS.Icon.lg, label: "product.action.add.accessibility".localized(), action: #selector(addProduct))
         addButton.isHidden = !ProductAccess.canCreate(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
@@ -131,10 +120,10 @@ final class ProductsHomeViewController: BaseViewControler {
         titles.alignment = .leading
         // The button is 44 pt tall for touch; its pill is 32 pt, so the title sits right under it (board SP-dong)
         titles.setCustomSpacing(-4, after: outletButton)
-        let topRow = UIStackView(arrangedSubviews: [titles, UIView(), addButton, notificationButton])
+        let topRow = UIStackView(arrangedSubviews: [titles, UIView(), addButton, cartButton])
         topRow.alignment = .center
         topRow.spacing = 4
-        notificationButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
+        cartButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
 
         let searchBox = UIView()
         searchBox.backgroundColor = V2.chipFill
@@ -222,41 +211,6 @@ final class ProductsHomeViewController: BaseViewControler {
         viewModel.reload()
     }
 
-    private func buildCartBar() {
-        // #893 (owner, board SP-dong): primary blue, white text, a blue shadow; one bar for rent and sale
-        cartBar.backgroundColor = HomeCartBarStyle.fill
-        cartBar.layer.cornerRadius = 16
-        cartBar.layer.shadowColor = HomeCartBarStyle.fill.cgColor
-        cartBar.layer.shadowOpacity = 0.28
-        cartBar.layer.shadowRadius = 8
-        cartBar.layer.shadowOffset = CGSize(width: 0, height: 6)
-        cartBar.addTarget(self, action: #selector(openCart), for: .touchUpInside)
-        cartBar.isAccessibilityElement = true
-        cartBar.accessibilityTraits = UIAccessibilityTraitButton
-        let texts = UIStackView(arrangedSubviews: [cartCountLabel, cartTotalLabel])
-        texts.axis = .vertical
-        texts.isUserInteractionEnabled = false
-        let go = cartActionLabel
-        go.setContentCompressionResistancePriority(.required, for: .horizontal)
-        cartBar.addSubview(texts)
-        cartBar.addSubview(go)
-        view.addSubview(cartBar)
-        cartBar.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(12)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-            make.height.equalTo(56)
-        }
-        texts.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-        }
-        go.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-        }
-        updateCartBar()
-    }
-
     /// #651: 38 pt solid accent square with a white camera; the touch area grows to 46 pt
     private func imageSearchButton() -> UIButton {
         let button = HitSlopButton(type: .system)
@@ -312,40 +266,12 @@ final class ProductsHomeViewController: BaseViewControler {
 
     private func updateCartBar() {
         let cart = CartStore.shared.cart
-        cartBar.isHidden = cart.items.isEmpty
-        cartCountLabel.text = PluralText.format("products.cart.bar", count: cart.itemCount, cart.itemCount)
-        cartTotalLabel.text = MoneyFormatter.format(cart.totalAmount)
-        let action = CartV2Logic.cartBarAction(isEditMode: cart.isEditMode, number: EditOrderSheetLogic.number(cart))
-        cartActionLabel.text = action + " ›"
-        cartBar.accessibilityLabel = [cartCountLabel.text, cartTotalLabel.text, action]
-            .compactMap { $0 }.joined(separator: ", ")
-        list.contentInset.bottom = cart.items.isEmpty ? 16 : 96
-    }
-
-    private func refreshNotificationBadge() {
-        guard User.account() != nil else { return }
-        NotificationService.shared.getUnreadCount { [weak self] count, _ in
-            guard let self else { return }
-            if count != nil { self.badgeLoadedAt = Date() }
-            self.applyBadge(count ?? 0)
-        }
-    }
-
-    private func applyBadge(_ count: Int) {
-        notificationButton.badge = count > 0 ? "\(min(count, 99))" : nil
-        notificationButton.setImage(DS.symbol(count > 0 ? "bell.badge" : "bell", DS.Icon.lg), for: .normal)
+        list.contentInset.bottom = 16
+        cartButton.badge = HomeCartButton.badge(itemCount: cart.itemCount)
+        cartButton.accessibilityValue = HomeCartButton.accessibilityValue(itemCount: cart.itemCount)
     }
 
     // MARK: - Actions
-
-    @objc private func inboxCountChanged(_ note: Notification) {
-        if let count = note.userInfo?["count"] as? Int {
-            badgeLoadedAt = Date()
-            applyBadge(count)
-        } else {
-            refreshNotificationBadge()
-        }
-    }
 
     @objc private func cartChanged() {
         updateCartBar()
@@ -357,12 +283,6 @@ final class ProductsHomeViewController: BaseViewControler {
         searchDebouncer.debounce { [weak self] in
             self?.viewModel.setQuery(text)
         }
-    }
-
-    @objc private func openInbox() {
-        let inbox = NotificationsViewController()
-        inbox.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(inbox, animated: true)
     }
 
     @objc private func addProduct() {
@@ -440,17 +360,27 @@ final class ProductsHomeViewController: BaseViewControler {
         ProductsCartBridge.add(product)
         HapticFeedback.light()
         // #893 (owner): no "added to cart" toast; the + button's count already says it (errors still toast)
-        if HomeCartBarStyle.showsAddedToast {
+        if HomeCartButton.showsAddedToast {
             showToast(message: "Added to cart".localized(), icon: UIImage(systemName: "checkmark.circle.fill"))
         }
     }
 }
 
-/// #893 (owner): the Home cart bar look (board SP-dong) and the add feedback
-enum HomeCartBarStyle {
-    static let fill = DS.Color.primary
-    static let text = UIColor.white
+/// #937 (owner): the Home top-right cart button; the badge counts the cart's items.
+/// #952 (owner): it is the only entry to the cart (no floating cart bar)
+enum HomeCartButton {
+    static let symbol = "cart"
+    /// #893 (owner): no "added to cart" toast; the badge already says it
     static let showsAddedToast = false
+
+    static func badge(itemCount: Int) -> String? {
+        itemCount > 0 ? "\(min(itemCount, 99))" : nil
+    }
+
+    /// VoiceOver (and the UI tests): "Giỏ hàng · 3 món"; nothing when the cart is empty
+    static func accessibilityValue(itemCount: Int) -> String? {
+        itemCount > 0 ? PluralText.format("products.cart.bar", count: itemCount, itemCount) : nil
+    }
 }
 
 /// Adds a product the same way the old Home does (price by the cart's order type)
@@ -530,7 +460,12 @@ extension ProductsHomeViewController: QRCodeReaderViewControllerDelegate {
 final class ProductRowV2Cell: UITableViewCell {
     static let reuseId = "ProductRowV2Cell"
     private let photo = V2.thumbnail(size: 68, radius: 12)
-    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    /// #937: up to two lines, then "…" (Home only)
+    private let nameLabel: UILabel = {
+        let label = V2.label(size: DS.TextSize.name, weight: .bold, lines: 2)
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
     /// "● Còn N hôm nay" / "● Hết hôm nay": the colour carries the state (#468); 13pt semibold (#681)
     private let stockLabel = V2.label(size: 13, weight: .semibold)
     private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)

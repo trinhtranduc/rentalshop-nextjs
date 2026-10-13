@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { addonPriceUpdateSchema, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { addonPriceUpdateSchema, handleApiError, isFeatureAddon, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 
 /**
@@ -31,6 +31,8 @@ export async function PUT(
       const changes = { ...parsed.data };
       // #870: the pack size changes even while shops use the row; bought items keep theirs until the next renewal
       if (changes.packSize === undefined || changes.packSize === existing.packSize) delete changes.packSize;
+      // #943: a feature row (on/off module) always has pack size 1
+      if (isFeatureAddon(existing)) delete changes.packSize;
       const addonPrice = await db.addonPrices.update(id, changes);
       return NextResponse.json(ResponseBuilder.success('ADDON_PRICE_UPDATED', { addonPrice }));
     } catch (error) {

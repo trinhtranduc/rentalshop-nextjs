@@ -75,10 +75,10 @@ function storedImages(raw: unknown): string[] {
   return list.map(text).filter(Boolean);
 }
 
-/** Same filtering and default choice as the database layer (`normalizePricingOptions`). */
+/** Same filtering and default choice as the database layer (`normalizePricingOptions`; #951: a 0đ option counts). */
 function pricingKey(options: unknown): string {
   const allowed = (Array.isArray(options) ? (options as PricingOptionLike[]) : []).filter(
-    (o) => o && (o.type === 'FIXED' || o.type === 'DAILY') && Number(o.price) > 0 && o.isActive !== false
+    (o) => o && (o.type === 'FIXED' || o.type === 'DAILY') && o.price != null && o.price !== '' && Number(o.price) >= 0 && o.isActive !== false
   );
   if (allowed.length === 0) return '';
   const def = allowed.find((o) => o.isDefault) || allowed[0];

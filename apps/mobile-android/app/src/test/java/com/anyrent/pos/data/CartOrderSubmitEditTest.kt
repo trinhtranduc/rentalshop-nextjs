@@ -56,6 +56,20 @@ class CartOrderSubmitEditTest {
     }
 
     @Test
+    fun `two lines of one product are checked as one request with their units added up (#951)`() = runTest {
+        val repository = RecordingRepository(available = true)
+        CartStore.setOrderType("RENT")
+        CartStore.addProduct(product(7))
+        CartStore.addProduct(product(7), quantity = 2)
+
+        CartOrderSubmit.editAvailabilityError(
+            ValidateRentalCartAvailability(repository), 482, "expired", "failed", "Có xung đột lịch",
+        )
+
+        assertEquals(listOf(AvailabilityRequest(7, 3)), repository.requests)
+    }
+
+    @Test
     fun `a sale is not checked`() = runTest {
         val repository = RecordingRepository(available = false)
         CartStore.setOrderType("SALE")
