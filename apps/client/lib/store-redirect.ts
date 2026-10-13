@@ -42,5 +42,5 @@ export function landingStoreRedirect({ userAgent, web, webCookie }: LandingRedir
 /** iPadOS Safari "desktop site" sends a Mac UA; only touch points tell it apart (browser only). */
 export function isIpadDesktop(userAgent: string | null | undefined, maxTouchPoints: number | null | undefined): boolean {
   if (!userAgent || isBotUserAgent(userAgent)) return false;
-  return /Macintosh/.test(userAgent) && (maxTouchPoints ?? 0) > 1;
+  return /Macintosh/.test(userAgent) && (maxTouchPoints ?? 0) > 0;
 }

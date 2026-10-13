@@ -129,6 +129,7 @@ describe('?web=1 keeps the web page and is remembered', () => {
 describe('isIpadDesktop (client fallback for iPadOS desktop-mode Safari)', () => {
   it('Mac UA with touch points → iPad', () => {
     expect(isIpadDesktop(UA.ipadDesktopMode, 5)).toBe(true);
+    expect(isIpadDesktop(UA.ipadDesktopMode, 1)).toBe(true);
   });
   it('real Mac (no touch) → not iPad', () => {
     expect(isIpadDesktop(UA.desktopSafari, 0)).toBe(false);

@@ -12,10 +12,11 @@ import {
 export function middleware(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const web = searchParams.get('web');
+  // Only a browser opening the page. Next strips the RSC headers before middleware, but its in-app
+  // navigations and prefetches fetch with `Accept: */*`, while a page load asks for text/html.
   const isPageLoad =
     request.method === 'GET' &&
-    !request.headers.get('rsc') &&
-    !request.headers.get('next-router-prefetch') &&
+    (request.headers.get('accept') ?? '').includes('text/html') &&
     request.headers.get('purpose') !== 'prefetch';
 
   const target = isPageLoad
