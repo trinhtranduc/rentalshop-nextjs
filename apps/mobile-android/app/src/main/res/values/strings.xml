@@ -1475,6 +1475,7 @@
     <string name="share_kind_rent">Rental order</string>
     <string name="share_kind_sale">Sale order</string>
     <string name="share_kind_draft">%1$s · created %2$s</string>
+    <string name="share_kind_created">%1$s · created %2$s</string>
     <string name="share_draft_title">Draft order</string>
     <string name="share_status_reserved">Awaiting pickup</string>
     <string name="share_status_pickuped">On rent</string>

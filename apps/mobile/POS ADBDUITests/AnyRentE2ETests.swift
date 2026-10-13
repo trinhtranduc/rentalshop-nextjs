@@ -585,10 +585,11 @@ final class AnyRentE2ETests: XCTestCase {
         let row = app.cells.firstMatch
         guard row.waitForExistence(timeout: 8) else { return XCTFail("No renting order to extend") }
         e2e.tapRow(row)
-        let extend = e2e.button(["Extend", "Gia hạn"])
-        XCTAssertTrue(extend.waitForExistence(timeout: 10), "A renting order offers Gia hạn")
+        // #930: the bar is In + Nhận trả; Gia hạn is in the ⋯ sheet
+        let print = e2e.button(["Print", "In"])
+        XCTAssertTrue(print.waitForExistence(timeout: 10), "A renting order shows In on the bottom bar")
         e2e.shot("58-detail-renting")
-        extend.tap()
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Extend", "Gia hạn"]), "A renting order offers Gia hạn in ⋯")
         let confirm = e2e.element(labelBeginsWith: ["Extend to", "Gia hạn đến"], type: .button)
         XCTAssertTrue(confirm.waitForExistence(timeout: 8), "Extend sheet with Gia hạn đến <day>")
         e2e.shot("59-detail-extend-sheet")
@@ -609,21 +610,14 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.dismissAlerts()
         e2e.shot("5a-detail-extended")
 
-        // Print from the ⋯ action sheet (#519: the header keeps only ⋯).
-        let more = e2e.button(["More actions", "Thêm thao tác"])
-        if more.waitForExistence(timeout: 5) {
-            more.tap()
-            sleep(1)
-            e2e.shot("5a2-detail-action-sheet")
-        }
-        let print = e2e.button(["Print receipt", "In hóa đơn", "In hoá đơn", "In biên nhận"])
+        // #930: Print is the bottom bar's "In"
         if print.waitForExistence(timeout: 5) {
             print.tap()
             sleep(3)
             e2e.shot("5b-detail-print-preview")
             e2e.dismissAlerts()
             e2e.tapIfExists(e2e.button(["Close", "Đóng", "Cancel", "Huỷ", "Hủy", "Done", "Xong"]), timeout: 2)
-            if !extend.exists { e2e.goBackOnce() }
+            if !print.exists { e2e.goBackOnce() }
         } else {
             e2e.soft(false, "print button on order detail")
         }
@@ -635,10 +629,9 @@ final class AnyRentE2ETests: XCTestCase {
         let booked = app.cells.firstMatch
         if booked.waitForExistence(timeout: 8) {
             e2e.tapRow(booked)
-            let edit = e2e.button(["Edit order", "Sửa đơn"])
-            if edit.waitForExistence(timeout: 8) {
-                e2e.shot("5c-detail-booked")
-                edit.tap()
+            e2e.shot("5c-detail-booked")
+            // #930: Sửa đơn is in the ⋯ sheet
+            if e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]) {
                 sleep(3)
                 e2e.shot("5d-detail-edit-order")
                 e2e.goBackOnce()
@@ -1230,7 +1223,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("5e-detail-items-scrolled")
     }
 
-    /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: In hoá đơn, Ghi chú, Lịch sử thay đổi,
+    /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: Chia sẻ đơn, Ghi chú, Sửa đơn / Gia hạn (#930), Lịch sử,
     /// then Huỷ đơn apart. Actions the screen already shows as buttons are not repeated in it.
     func test5cOrderActionSheet() throws {
         try e2e.requireFlag("newOrders")
@@ -1238,17 +1231,19 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireRole("merchant")
         try e2e.start()
 
-        // A booked rental: the bottom bar has Sửa đơn + Giao đồ
+        // A booked rental: the bottom bar has In + Giao đồ (#930); Sửa đơn is in the sheet
         guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
-        checkOrderSheet(onScreen: [["Edit order", "Sửa đơn"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
-                        expected: [["Print receipt", "In hoá đơn"], ["Notes", "Ghi chú"], ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
+                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Edit order", "Sửa đơn"],
+                                   ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47a-order-sheet-booked")
         e2e.goBack()
 
-        // A renting order: Gia hạn + Nhận trả on screen
+        // A renting order: In + Nhận trả on screen; Gia hạn in the sheet
         guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
-        checkOrderSheet(onScreen: [["Extend", "Gia hạn"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
-                        expected: [["Print receipt", "In hoá đơn"], ["Notes", "Ghi chú"], ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
+                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Extend", "Gia hạn"],
+                                   ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47b-order-sheet-renting")
         XCTAssertFalse(e2e.button(["Edit order", "Sửa đơn"]).exists, "A renting order is not editable: no Sửa đơn in the sheet")
         e2e.goBack()
@@ -1285,7 +1280,7 @@ final class AnyRentE2ETests: XCTestCase {
         if cancel.exists, let last = frames.last, last != .zero {
             XCTAssertGreaterThan(cancel.frame.minY - last.maxY, 4, "\(shotPrefix): Huỷ đơn sits apart from the other rows")
         }
-        XCTAssertEqual(frames.map(\.minY), frames.map(\.minY).sorted(), "\(shotPrefix): rows in the order In hoá đơn, Ghi chú, Lịch sử")
+        XCTAssertEqual(frames.map(\.minY), frames.map(\.minY).sorted(), "\(shotPrefix): rows in the expected order")
 
         // Not repeated: the count of those labels does not grow while the sheet is up. When the screen under the
         // sheet is hidden from accessibility, any match must be a sheet row.
@@ -1297,6 +1292,44 @@ final class AnyRentE2ETests: XCTestCase {
         }
         e2e.button(["Close", "Đóng"]).tap()
         XCTAssertTrue(e2e.orderSheetTitle.waitForNonExistence(timeout: 5), "\(shotPrefix): the sheet closes")
+    }
+
+    /// #930: ⋯ → Chia sẻ đơn on a booked rental, a renting order and a sale. The share sheet stays up for
+    /// `E2E_SHARE_HOLD` seconds (default 2) so a run can copy Order_<number>.jpg out of the app's tmp folder.
+    func test5hShareImage() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let hold = UInt32(ProcessInfo.processInfo.environment["E2E_SHARE_HOLD"] ?? "") ?? 2
+        let share: (String) -> Void = { prefix in
+            self.e2e.shot("\(prefix)-detail")
+            XCTAssertTrue(self.e2e.button(["Print", "In"]).exists || prefix.hasPrefix("49c"), "\(prefix): In on the bottom bar")
+            XCTAssertTrue(self.e2e.tapOrderSheetRow(["Share order", "Chia sẻ đơn"]), "\(prefix): ⋯ → Chia sẻ đơn")
+            sleep(6)
+            self.e2e.shot("\(prefix)-share-sheet")
+            sleep(hold)
+            self.e2e.tapIfExists(self.e2e.button(["Close", "Đóng"]), timeout: 3)
+            sleep(1)
+        }
+        guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
+        share("49a-share-booked")
+        e2e.goBack()
+        guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
+        share("49b-share-renting")
+        e2e.goBack()
+
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        let sale = e2e.saleModeButton
+        guard sale.waitForExistence(timeout: 5) else { return XCTFail("Đơn bán switch") }
+        sale.tap()
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return XCTFail("No sale to open") }
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "sale detail opens")
+        share("49c-share-sale")
+        e2e.goBack()
     }
 
     /// Lịch sử thay đổi of an order (board LS-don): a new order shows "Tạo đơn" under today; a note and a hand-over

@@ -16,15 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.EditCalendar
-import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Print
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -36,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -52,7 +43,7 @@ import com.anyrent.pos.ui.theme.DS
 
 /**
  * #519 ⋯ sheet of the order detail (board CT-thao-tac): only actions that are not already a button on the screen,
- * then a separate red group (Huỷ đơn, Xoá đơn when allowed). [rows] comes from [OrderActionSheet.rows].
+ * then a separate red group (Huỷ đơn, Xoá đơn when allowed). [rows] comes from [OrderActionSheet.rows]. #930: no icons.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,12 +94,12 @@ internal fun OrderActionsSheet(
             }
             rows.main.forEach { action ->
                 when (action) {
-                    OrderActionSheet.Action.PRINT -> ActionRow(Icons.Outlined.Print, stringResource(R.string.order_sheet_print), printerSubtitle) { onAction(action) }
-                    OrderActionSheet.Action.NOTES -> ActionRow(Icons.Outlined.EditNote, stringResource(R.string.order_sheet_notes), notesSubtitle) { onAction(action) }
-                    OrderActionSheet.Action.HISTORY -> ActionRow(Icons.Outlined.History, stringResource(R.string.order_sheet_history), historySubtitle) { onAction(action) }
-                    OrderActionSheet.Action.EDIT -> ActionRow(Icons.Outlined.Edit, stringResource(R.string.order_sheet_edit), null) { onAction(action) }
-                    OrderActionSheet.Action.EXTEND -> ActionRow(Icons.Outlined.EditCalendar, stringResource(R.string.order_sheet_extend), null) { onAction(action) }
-                    OrderActionSheet.Action.SHARE -> ActionRow(Icons.Outlined.Share, stringResource(R.string.order_sheet_share), null) { onAction(action) }
+                    OrderActionSheet.Action.PRINT -> ActionRow(stringResource(R.string.order_sheet_print), printerSubtitle) { onAction(action) }
+                    OrderActionSheet.Action.NOTES -> ActionRow(stringResource(R.string.order_sheet_notes), notesSubtitle) { onAction(action) }
+                    OrderActionSheet.Action.HISTORY -> ActionRow(stringResource(R.string.order_sheet_history), historySubtitle) { onAction(action) }
+                    OrderActionSheet.Action.EDIT -> ActionRow(stringResource(R.string.order_sheet_edit), null) { onAction(action) }
+                    OrderActionSheet.Action.EXTEND -> ActionRow(stringResource(R.string.order_sheet_extend), null) { onAction(action) }
+                    OrderActionSheet.Action.SHARE -> ActionRow(stringResource(R.string.order_sheet_share), null) { onAction(action) }
                     else -> Unit
                 }
             }
@@ -117,10 +108,10 @@ internal fun OrderActionsSheet(
                 rows.danger.forEach { action ->
                     when (action) {
                         OrderActionSheet.Action.CANCEL -> ActionRow(
-                            Icons.Outlined.Cancel, stringResource(R.string.order_sheet_cancel), stringResource(R.string.order_sheet_cancel_hint), danger = true,
+                            stringResource(R.string.order_sheet_cancel), stringResource(R.string.order_sheet_cancel_hint), danger = true,
                         ) { onAction(action) }
                         OrderActionSheet.Action.DELETE -> ActionRow(
-                            Icons.Outlined.Delete, stringResource(R.string.order_sheet_delete), null, danger = true,
+                            stringResource(R.string.order_sheet_delete), null, danger = true,
                         ) { onAction(action) }
                         else -> Unit
                     }
@@ -131,7 +122,7 @@ internal fun OrderActionsSheet(
 }
 
 @Composable
-private fun ActionRow(icon: ImageVector, title: String, subtitle: String?, danger: Boolean = false, onClick: () -> Unit) {
+private fun ActionRow(title: String, subtitle: String?, danger: Boolean = false, onClick: () -> Unit) {
     val red = Color(0xFFB91C1C)
     Row(
         Modifier
@@ -141,14 +132,8 @@ private fun ActionRow(icon: ImageVector, title: String, subtitle: String?, dange
             .heightIn(min = 56.dp)
             .padding(horizontal = 4.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(
-            Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(if (danger) Color(0xFFFEF2F2) else Color(0xFFF1F5F9)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = if (danger) red else DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
-        }
+        // #930: rows without icons, text only
         Column(Modifier.weight(1f)) {
             Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = if (danger) red else DS.Colors.Text)
             if (!subtitle.isNullOrBlank()) {

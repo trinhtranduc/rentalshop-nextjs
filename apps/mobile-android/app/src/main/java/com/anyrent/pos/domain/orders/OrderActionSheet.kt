@@ -3,8 +3,8 @@ package com.anyrent.pos.domain.orders
 /**
  * #519 order detail ⋯ sheet (board CT-thao-tac, note actNote): the header keeps only ⋯, and the sheet lists only
  * what is NOT already a button on the screen. The bottom bar of the detail decides what is on screen:
- * - HAND_OVER: "Sửa đơn" (when allowed) + "Giao đồ"
- * - TAKE_RETURN: "Gia hạn" (when allowed) + "Nhận trả"
+ * - HAND_OVER: "In" + "Giao đồ" (#930: "Sửa đơn" moved into the sheet)
+ * - TAKE_RETURN: "In" + "Nhận trả" (#930: "Gia hạn" moved into the sheet)
  * - a sale that can be cancelled: "Huỷ đơn" + "In hoá đơn"
  * - anything else (finished orders): "In hoá đơn"
  * Pure and unit tested.
@@ -17,23 +17,21 @@ object OrderActionSheet {
 
     /** Buttons the detail's bottom bar shows (same branches as `DetailBottomBar`) */
     fun onScreen(actions: DetailActions, isSale: Boolean, canExtend: Boolean): Set<Action> = when {
-        actions.primary == DetailPrimary.HAND_OVER -> if (actions.canEdit) setOf(Action.EDIT) else emptySet()
-        actions.primary == DetailPrimary.TAKE_RETURN -> if (canExtend) setOf(Action.EXTEND) else emptySet()
+        actions.primary == DetailPrimary.HAND_OVER || actions.primary == DetailPrimary.TAKE_RETURN -> setOf(Action.PRINT)
         isSale && actions.canCancel -> setOf(Action.CANCEL, Action.PRINT)
         else -> setOf(Action.PRINT)
     }
 
-    /** #670: HISTORY only when [canViewHistory] (not OUTLET_STAFF) */
+    /** #670: HISTORY only when [canViewHistory] (not OUTLET_STAFF). #930: the iOS order (Print, Share, Notes, Edit, Extend, History) */
     fun rows(actions: DetailActions, isSale: Boolean, canExtend: Boolean, canViewHistory: Boolean = true): Rows {
         val shown = onScreen(actions, isSale, canExtend)
         val main = buildList {
             add(Action.PRINT)
+            add(Action.SHARE)
             add(Action.NOTES)
-            if (canViewHistory) add(Action.HISTORY)
             if (actions.canEdit) add(Action.EDIT)
             if (canExtend) add(Action.EXTEND)
-            // Not on the board; kept so sharing the receipt is still one tap away (it was in the old ⋯ menu)
-            add(Action.SHARE)
+            if (canViewHistory) add(Action.HISTORY)
         }.filterNot { it in shown }
         val danger = buildList {
             if (actions.canCancel) add(Action.CANCEL)

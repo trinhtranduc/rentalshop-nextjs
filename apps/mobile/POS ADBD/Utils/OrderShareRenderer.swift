@@ -27,7 +27,8 @@ enum OrderShareRenderer {
         static let draftBg = UIColor(hexString: "FFF7ED")
         static let draftPillBg = UIColor(hexString: "FFEDD5")
         static let draftText = UIColor(hexString: "9A3412")
-        static let cancelled = UIColor(hexString: "B91C1C")
+        static let itemNote = UIColor(hexString: "92400E")
+        static let arrow = UIColor(hexString: "94A3B8")
         static let qrBorder = UIColor(hexString: "CBD5E1")
     }
 
@@ -67,8 +68,9 @@ enum OrderShareRenderer {
 
     private static let side: CGFloat = 24
     private static let pad: CGFloat = 24
-    private static let bandHeight: CGFloat = 225
-    private static let customerTop: CGFloat = 185
+    /// #930: an order's number is smaller than the draft's title, so its band is shorter
+    private static func bandHeight(_ model: OrderShareModel) -> CGFloat { model.isDraft ? 225 : 205 }
+    private static func customerTop(_ model: OrderShareModel) -> CGFloat { bandHeight(model) - 40 }
 
     /// Returns the total height. With `drawing` false nothing is drawn.
     private static func layout(_ model: OrderShareModel, drawing: Bool, height: CGFloat = 0) -> CGFloat {
@@ -83,7 +85,7 @@ enum OrderShareRenderer {
             C.ground.setFill()
             UIRectFill(CGRect(x: 0, y: 0, width: width, height: height))
             C.accent.setFill()
-            UIRectFill(CGRect(x: 0, y: 0, width: width, height: bandHeight))
+            UIRectFill(CGRect(x: 0, y: 0, width: width, height: bandHeight(model)))
         }
 
         // Header
@@ -106,22 +108,16 @@ enum OrderShareRenderer {
             let pillFont = font(14, .bold)
             pillWidth = ceil(p.size(pill, font: pillFont).width) + 28
             let rect = CGRect(x: width - 24 - pillWidth, y: pillY, width: pillWidth, height: pillH)
-            let (bg, fg): (UIColor, UIColor) = {
-                switch model.pillTone {
-                case .accent: return (.white, C.accent)
-                case .paid: return (.white, C.paid)
-                case .cancelled: return (.white, C.cancelled)
-                case .draft: return (C.draftPillBg, C.draftText)
-                }
-            }()
-            p.fill(rect, radius: pillH / 2, color: bg)
-            p.text(pill, font: pillFont, color: fg, in: rect, align: .center, vCenter: true)
+            p.fill(rect, radius: pillH / 2, color: C.draftPillBg)
+            p.text(pill, font: pillFont, color: C.draftText, in: rect, align: .center, vCenter: true)
         }
-        p.text(model.title, font: font(44, .heavy), color: .white, x: 30, y: 108,
+        // #930: "#482113" ~26 pt bold (the mockup's 18 px on a 360 px image); the draft keeps its big title
+        p.text(model.title, font: model.isDraft ? font(44, .heavy) : font(26, .bold), color: .white,
+               x: model.isDraft ? 30 : 32, y: model.isDraft ? 108 : 114,
                width: width - 60 - (pillWidth > 0 ? pillWidth + 12 : 0), lines: 1, shrink: true)
 
         // Customer card (floats over the band, soft shadow); measured first so the card is drawn under the text
-        let cardTop = customerTop
+        let cardTop = customerTop(model)
         let phoneW = model.customerPhone.map { ceil(p.size($0, font: font(16, .semibold)).width) } ?? 0
         let customerBottom = drawCustomerText(model, p: Painter(drawing: false), cardTop: cardTop, innerX: innerX,
                                               innerW: innerW, phoneW: phoneW)
@@ -211,9 +207,15 @@ enum OrderShareRenderer {
             p.text(strip.returnLabel, font: font(13), color: C.muted, x: sx, y: box.minY + 12, width: sw, align: .right)
             p.text(strip.returnDay, font: font(18, .bold), color: C.ink, x: sx, y: box.minY + 29, width: sw,
                    align: .right, lines: 1)
-            p.text(strip.days, font: font(13, .bold), color: C.accent, x: box.midX - 60, y: box.minY + 13,
-                   width: 120, align: .center, lines: 1)
-            p.fill(CGRect(x: box.midX - 61, y: box.minY + 37, width: 122, height: 2), radius: 1, color: C.accent)
+            if let days = strip.days {
+                p.text(days, font: font(13, .bold), color: C.accent, x: box.midX - 60, y: box.minY + 13,
+                       width: 120, align: .center, lines: 1)
+                p.fill(CGRect(x: box.midX - 61, y: box.minY + 37, width: 122, height: 2), radius: 1, color: C.accent)
+            } else {
+                // #930: a light arrow instead of the day count
+                p.text("→", font: font(20, .medium), color: C.arrow, x: box.midX - 30, y: box.minY + 26,
+                       width: 60, align: .center, lines: 1)
+            }
             cy = box.maxY
         }
         return cy + 22
@@ -233,6 +235,12 @@ enum OrderShareRenderer {
             y += p.text(line.name, font: font(16, .semibold), color: C.ink, x: innerX, y: y,
                         width: innerW - amountW - 16, lines: 2) + 2
             y += p.text(line.detail, font: font(14), color: C.muted, x: innerX, y: y, width: innerW, lines: 1)
+            if let note = line.note {
+                // #930: the item's own note, italic brown, under its price line
+                y += 3
+                y += p.text(note, font: UIFont.italicSystemFont(ofSize: 14), color: C.itemNote, x: innerX, y: y,
+                            width: innerW, lines: 3)
+            }
         }
         y += 16
         p.fill(CGRect(x: innerX, y: y, width: innerW, height: 1), radius: 0, color: C.divider)
@@ -248,7 +256,7 @@ enum OrderShareRenderer {
         let box = CGRect(x: innerX, y: y, width: innerW, height: 60)
         let (bg, labelColor, valueColor): (UIColor, UIColor, UIColor) = {
             switch model.highlight {
-            case .due: return (C.dueBg, UIColor(hexString: "1E3A8A"), C.accent)
+            case .rent: return (C.dueBg, UIColor(hexString: "1E3A8A"), C.accent)
             case .total: return (C.paidBg, C.paid, C.paid)
             case .draft: return (C.draftBg, C.draftText, C.ink)
             }

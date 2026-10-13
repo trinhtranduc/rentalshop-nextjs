@@ -2558,6 +2558,9 @@
 "attendance.weekday.5" = "Fri";
 "attendance.weekday.6" = "Sat";
 "attendance.weekday.7" = "Sun";
+
+/* #930 share image: kind and created time */
+"share.kind.created" = "%@ · created %@";
 "attendance.card.inShift" = "On shift · in at %@";
 "attendance.card.shiftUntil" = "%@ until %@";
 "attendance.card.distance" = "%@ m away";

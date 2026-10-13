@@ -20,14 +20,14 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-/** #640 share image model: spec behaviors 1–9 without drawing */
+/** #640 share image model: spec behaviors 1–9 without drawing; #930 no status, created date, item notes */
 class OrderShareModelTest {
     private val vn = ZoneId.of("Asia/Ho_Chi_Minh")
     private val shop = ShareShop("Lan Anh Bridal", "Chi nhánh Quận 3", "0901 234 567", "45 Võ Văn Tần, Quận 3, TP.HCM")
     private val bank = OutletBankAccount(1, "Vietcombank", "0071001234567", "Nguyen Lan Anh", isDefault = true)
 
-    private fun item(name: String, qty: Int, unit: Double) =
-        OrderItem(id = null, productId = 1, productName = name, quantity = qty, unitPrice = unit, totalPrice = unit * qty)
+    private fun item(name: String, qty: Int, unit: Double, note: String? = null) =
+        OrderItem(id = null, productId = 1, productName = name, quantity = qty, unitPrice = unit, totalPrice = unit * qty, note = note)
 
     private fun order(
         type: String = "RENT",
@@ -39,15 +39,21 @@ class OrderShareModelTest {
         discount: Double = 0.0,
         customer: String? = "Nguyễn Thị Mai",
         payments: List<PaymentEntry> = emptyList(),
+        createdAt: String? = "2026-10-05T07:30:00.000Z",
+        orderNote: String? = "Khách quen, giao trước 9h",
     ) = OrderDetail(
         summary = OrderSummary(
             id = 1, orderNumber = "482113", orderType = type, status = status, totalAmount = total,
             depositAmount = deposit, customerName = customer, customerPhone = customer?.let { "0912 345 678" },
             // 07/10 and 16/10 in Vietnam: the UTC instants fall on the day before
             pickupPlanAt = "2026-10-06T17:00:00.000Z", returnPlanAt = "2026-10-16T16:59:59.000Z",
-            createdAt = "2026-10-07T03:00:00.000Z", notes = null,
+            createdAt = createdAt, notes = orderNote,
         ),
-        items = listOf(item("Váy cưới đuôi cá trơn", 1, 650_000.0), item("Áo dài cưới đỏ", 1, 350_000.0), item("Vương miện ngọc trai", 2, 75_000.0)),
+        items = listOf(
+            item("Váy cưới đuôi cá trơn", 1, 650_000.0, note = "  Size M, bó eo 2 cm "),
+            item("Áo dài cưới đỏ", 1, 350_000.0, note = " "),
+            item("Vương miện ngọc trai", 2, 75_000.0),
+        ),
         customerId = 1,
         payments = payments,
         securityDeposit = security,
@@ -58,18 +64,38 @@ class OrderShareModelTest {
     private fun res(text: ShareText) = (text as ShareText.Res).id
 
     @Test
-    fun pillTextAndToneByStatus() {
-        assertEquals(R.string.share_status_reserved, res(OrderShareModel.pill("RESERVED").first))
-        assertEquals(R.string.share_status_pickuped, res(OrderShareModel.pill("PICKUPED").first))
-        assertEquals(R.string.share_status_pickuped, res(OrderShareModel.pill("PICKED_UP").first))
-        assertEquals(R.string.share_status_returned, res(OrderShareModel.pill("RETURNED").first))
-        assertEquals(R.string.share_status_completed, res(OrderShareModel.pill("COMPLETED").first))
-        assertEquals(ShareTone.GREEN, OrderShareModel.pill("COMPLETED").second)
-        assertEquals(R.string.share_status_cancelled, res(OrderShareModel.pill("CANCELLED").first))
-        assertEquals(ShareTone.RED, OrderShareModel.pill("CANCELLED").second)
+    fun onlyTheDraftHasAPill() {
+        // #930: the image never shows the order status (it goes stale once forwarded)
+        for (status in listOf("RESERVED", "PICKUPED", "RETURNED", "CANCELLED")) {
+            assertNull(status, OrderShareModel.from(order(status = status), shop, vi = true, zone = vn).pill)
+        }
+        assertNull(OrderShareModel.from(order(type = "SALE", status = "COMPLETED"), shop, vi = true, zone = vn).pill)
         val draft = draft()
-        assertEquals(R.string.share_status_draft, res(draft.pill))
+        assertEquals(R.string.share_status_draft, res(draft.pill!!))
         assertEquals(ShareTone.ORANGE, draft.pillTone)
+    }
+
+    @Test
+    fun kindLineCarriesTheCreatedTimeInVietnamTime() {
+        val m = OrderShareModel.from(order(), shop, vi = true, zone = vn)
+        // 07:30 UTC = 14:30 in Vietnam
+        assertEquals(ShareText.Res(R.string.share_kind_created, listOf(ShareText.Res(R.string.share_kind_rent), "05/10/26 14:30")), m.kind)
+        // 17:30 UTC on 04/10 is already 05/10 00:30 in Vietnam
+        val late = OrderShareModel.from(order(createdAt = "2026-10-04T17:30:00.000Z"), shop, vi = true, zone = vn)
+        assertEquals(ShareText.Res(R.string.share_kind_created, listOf(ShareText.Res(R.string.share_kind_rent), "05/10/26 00:30")), late.kind)
+        val sale = OrderShareModel.from(order(type = "SALE", status = "COMPLETED"), shop, vi = true, zone = vn)
+        assertEquals(ShareText.Res(R.string.share_kind_created, listOf(ShareText.Res(R.string.share_kind_sale), "05/10/26 14:30")), sale.kind)
+        // No created date: the kind alone
+        assertEquals(ShareText.Res(R.string.share_kind_rent), OrderShareModel.from(order(createdAt = null), shop, vi = true, zone = vn).kind)
+    }
+
+    @Test
+    fun itemNotesShownAndTheOrderNoteNot() {
+        val m = OrderShareModel.from(order(), shop, vi = true, zone = vn)
+        assertEquals(listOf("Size M, bó eo 2 cm", null, null), m.lines.map { it.note })
+        assertEquals(ShareLine("Váy cưới đuôi cá trơn", "1 × 650.000đ", "650.000đ", "Size M, bó eo 2 cm"), m.lines[0])
+        // The order's general note is nowhere on the image
+        assertFalse(m.toString().contains("Khách quen"))
     }
 
     @Test
@@ -77,11 +103,11 @@ class OrderShareModelTest {
         val m = OrderShareModel.from(order(), shop, vi = true, zone = vn)
         assertEquals("LA", m.initials)
         assertEquals("Chi nhánh Quận 3 · 0901 234 567", m.outletLine)
-        assertEquals(R.string.share_kind_rent, res(m.kind))
         assertEquals(ShareText.Plain("#482113"), m.title)
         assertEquals(ShareText.Plain("Nguyễn Thị Mai"), m.customerName)
         assertEquals("0912 345 678", m.customerPhone)
-        assertEquals(ShareDayStrip("07/10/26", "16/10/26", 10), m.dayStrip)
+        // #930: no day count on an order
+        assertEquals(ShareDayStrip("07/10/26", "16/10/26", null), m.dayStrip)
         assertEquals(ShareText.Res(R.string.share_items_rent, listOf(3)), m.itemsTitle)
         assertEquals(ShareLine("Vương miện ngọc trai", "2 × 75.000đ", "150.000đ"), m.lines[2])
         assertEquals(ShareText.Res(R.string.share_thanks, listOf("Lan Anh Bridal")), m.thanks)
@@ -92,50 +118,38 @@ class OrderShareModelTest {
     @Test
     fun englishDaysAndWalkIn() {
         val m = OrderShareModel.from(order(customer = null), shop, vi = false, zone = vn)
-        assertEquals(ShareDayStrip("07/10/26", "16/10/26", 10), m.dayStrip)
+        assertEquals(ShareDayStrip("07/10/26", "16/10/26", null), m.dayStrip)
         assertEquals(R.string.share_walk_in, res(m.customerName))
         assertNull(m.customerPhone)
     }
 
     @Test
-    fun rentTotalsAndRentStillOwed() {
+    fun rentTotalsHighlightTheRentTotalWhateverTheStatus() {
         val m = OrderShareModel.from(order(), shop, vi = true, zone = vn)
         assertEquals(
             listOf(
-                ShareRow(ShareText.Res(R.string.share_rent_total), "1.150.000đ"),
-                ShareRow(ShareText.Res(R.string.share_deposit_paid), "− 300.000đ"),
+                ShareRow(ShareText.Res(R.string.share_deposit_paid), "300.000đ"),
                 ShareRow(ShareText.Res(R.string.share_collateral), "CCCD + 2.000.000đ"),
             ),
             m.rows,
         )
-        // Rent still owed: total − deposit, collateral money not included (owner, 2026-10-07)
-        assertEquals(ShareHighlight(ShareText.Res(R.string.share_amount_due), "850.000đ", ShareTone.ACCENT), m.highlight)
+        assertEquals(ShareHighlight(ShareText.Res(R.string.share_rent_total), "1.150.000đ", ShareTone.ACCENT), m.highlight)
         assertNull(m.note)
+        fun pay(amount: Double) = PaymentEntry(1, amount, "CASH", "COMPLETED", "PICKUP")
+        for (status in listOf("PICKUPED", "RETURNED", "CANCELLED")) {
+            val other = OrderShareModel.from(order(status = status, payments = listOf(pay(500_000.0))), shop, vi = true, zone = vn)
+            assertEquals(status, m.rows, other.rows)
+            assertEquals(status, m.highlight, other.highlight)
+        }
     }
 
     @Test
-    fun collateralMoneyDoesNotChangeTheAmountStillOwed() {
-        val with = OrderShareModel.from(order(security = 2_000_000.0), shop, vi = true, zone = vn)
-        val without = OrderShareModel.from(order(security = 0.0, papers = null), shop, vi = true, zone = vn)
-        assertEquals("850.000đ", with.highlight.value)
-        assertEquals(with.highlight, without.highlight)
-    }
-
-    @Test
-    fun rentStillOwedSubtractsPickupPaymentsAndNeverGoesBelowZero() {
-        fun pay(amount: Double, notes: String, status: String = "COMPLETED") = PaymentEntry(1, amount, "CASH", status, notes)
-        val partly = order(payments = listOf(pay(500_000.0, "PICKUP"), pay(100_000.0, "PICKUP", status = "PENDING"), pay(900_000.0, "RETURN_ADJUSTMENT")))
-        assertEquals("350.000đ", OrderShareModel.from(partly, shop, vi = true, zone = vn).highlight.value)
-        // Handed over with rent + collateral collected: nothing owed, not negative
-        val handedOver = order(status = "PICKUPED", payments = listOf(pay(2_850_000.0, "PICKUP")))
-        assertEquals("0đ", OrderShareModel.from(handedOver, shop, vi = true, zone = vn).highlight.value)
-        assertEquals("0đ", OrderShareModel.from(order(status = "CANCELLED"), shop, vi = true, zone = vn).highlight.value)
-    }
-
-    @Test
-    fun rentWithoutDepositOrCollateralHasOnlyTheTotalRow() {
-        val m = OrderShareModel.from(order(deposit = 0.0, security = 0.0, papers = null), shop, vi = true, zone = vn)
-        assertEquals(listOf(R.string.share_rent_total), m.rows.map { res(it.label) })
+    fun rentDiscountRowAndBareRent() {
+        val discounted = OrderShareModel.from(order(total = 1_100_000.0, discount = 50_000.0), shop, vi = true, zone = vn)
+        assertEquals(ShareRow(ShareText.Res(R.string.share_discount), "− 50.000đ"), discounted.rows.first())
+        assertEquals("1.100.000đ", discounted.highlight.value)
+        val bare = OrderShareModel.from(order(deposit = 0.0, security = 0.0, papers = null), shop, vi = true, zone = vn)
+        assertTrue(bare.rows.isEmpty())
     }
 
     @Test
@@ -144,7 +158,6 @@ class OrderShareModelTest {
             order(type = "SALE", status = "COMPLETED", total = 400_000.0, deposit = 0.0, security = 0.0, papers = null, discount = 20_000.0),
             shop, vi = true, zone = vn,
         )
-        assertEquals(R.string.share_kind_sale, res(m.kind))
         assertNull(m.dayStrip)
         assertEquals(ShareText.Res(R.string.share_items_sale, listOf(3)), m.itemsTitle)
         assertEquals(
@@ -155,7 +168,6 @@ class OrderShareModelTest {
             m.rows,
         )
         assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "400.000đ", ShareTone.GREEN), m.highlight)
-        assertEquals(ShareTone.GREEN, m.pillTone)
     }
 
     @Test
@@ -173,18 +185,19 @@ class OrderShareModelTest {
         assertEquals("0071001234567", qr.accountNumber)
         assertEquals("NGUYEN LAN ANH", qr.holder)
         assertEquals("DH482113", qr.content)
-        assertTrue(qr.payload.contains("5406850000"))
+        // #930: no amount (tag 54), the content stays
+        assertEquals(VietQr.payload(bank, 0.0, "DH482113"), qr.payload)
+        assertTrue(qr.payload.contains("5303704" + "5802VN"))
         assertTrue(qr.payload.contains("62120808DH482113"))
         assertTrue(qr.payload.startsWith("000201010212"))
         assertEquals(VietQr.crc16(qr.payload.dropLast(4)), qr.payload.takeLast(4))
     }
 
     @Test
-    fun qrWithoutAmountWhenNothingIsDue() {
-        val returned = OrderShareModel.from(order(status = "RETURNED"), shop, vi = true, printBankQr = true, bankAccount = bank, zone = vn)
-        assertEquals("0đ", returned.highlight.value)
-        assertFalse(returned.qr!!.payload.contains("5407"))
-        assertTrue(returned.qr!!.payload.contains("0808DH482113"))
+    fun saleQrHasNoAmountEither() {
+        val sale = OrderShareModel.from(order(type = "SALE", status = "COMPLETED", total = 400_000.0), shop, vi = true, printBankQr = true, bankAccount = bank, zone = vn)
+        assertFalse(sale.qr!!.payload.contains("5406400000"))
+        assertTrue(sale.qr!!.payload.contains("0808DH482113"))
     }
 
     private fun product(id: Int, name: String, price: Double) = Product(
@@ -220,6 +233,7 @@ class OrderShareModelTest {
         assertEquals(ShareText.Res(R.string.share_kind_draft, listOf(ShareText.Res(R.string.share_kind_rent), "07/10/26")), m.kind)
         assertEquals(R.string.share_draft_title, res(m.title))
         assertEquals(ShareText.Plain("Nguyễn Thị Mai"), m.customerName)
+        // The draft keeps its day count
         assertEquals(ShareDayStrip("07/10/26", "16/10/26", 10), m.dayStrip)
         assertEquals(
             listOf(
