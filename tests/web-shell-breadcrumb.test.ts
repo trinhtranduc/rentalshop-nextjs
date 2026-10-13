@@ -21,7 +21,12 @@ describe('buildBreadcrumb', () => {
 
   it('attendance pages: Chấm công › the active sub-item', () => {
     expect(crumbs('/attendance')).toEqual(['shell.nav.attendance → /attendance', 'shell.nav.attendanceSub.timesheet']);
-    expect(crumbs('/attendance/person')).toEqual(['shell.nav.attendance → /attendance', 'shell.nav.attendanceSub.person']);
+    // Chi tiết theo người hangs under Bảng công (opened from a name there)
+    expect(crumbs('/attendance/person')).toEqual([
+      'shell.nav.attendance → /attendance',
+      'shell.nav.attendanceSub.timesheet → /attendance',
+      'shell.crumbs.person',
+    ]);
     expect(crumbs('/attendance/shifts')).toEqual(['shell.nav.attendance → /attendance', 'shell.nav.attendanceSub.shifts']);
     expect(crumbs('/attendance/templates')).toEqual(['shell.nav.attendance → /attendance', 'shell.nav.attendanceSub.templates']);
     expect(crumbs('/attendance/locations/12')).toEqual([
@@ -29,6 +34,16 @@ describe('buildBreadcrumb', () => {
       'shell.nav.attendanceSub.locations → /attendance/locations',
       '#12',
     ]);
+  });
+
+  it('the page can name the last crumb (the person on Chi tiết theo người)', () => {
+    expect(buildBreadcrumb('/attendance/person', 'Nguyễn Lan').map((c) => c.labelKey ?? c.label)).toEqual([
+      'shell.nav.attendance',
+      'shell.nav.attendanceSub.timesheet',
+      'Nguyễn Lan',
+    ]);
+    expect(buildBreadcrumb('/attendance/person', 'Nguyễn Lan').pop()?.href).toBeUndefined();
+    expect(buildBreadcrumb('/attendance/person', null).pop()?.labelKey).toBe('shell.crumbs.person');
   });
 
   it('an id becomes #id; detail pages link back up the path', () => {

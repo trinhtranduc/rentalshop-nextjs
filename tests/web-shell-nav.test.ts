@@ -78,12 +78,11 @@ describe('sub-menu (#960)', () => {
     filterNavForRole(SHELL_NAV_ITEMS, role, modules);
   const attendance = (role: string, modules: string[]) => visible(role, modules).find((i) => i.key === 'attendance');
 
-  it('Chấm công carries the five screens, in the old tab order', () => {
+  it('Chấm công carries four screens; Chi tiết theo người is opened from Bảng công, not the menu', () => {
     for (const role of ['MERCHANT', 'OUTLET_ADMIN']) {
       const item = attendance(role, ['attendance']);
       expect(item?.children?.map((c) => [c.key, c.href])).toEqual([
         ['timesheet', '/attendance'],
-        ['person', '/attendance/person'],
         ['shifts', '/attendance/shifts'],
         ['templates', '/attendance/templates'],
         ['locations', '/attendance/locations'],
@@ -104,7 +103,7 @@ describe('sub-menu (#960)', () => {
   it('active child: Bảng công only on /attendance, the rest on their route and its children', () => {
     const item = attendance('MERCHANT', ['attendance'])!;
     expect(activeNavChild(item, '/attendance')?.key).toBe('timesheet');
-    expect(activeNavChild(item, '/attendance/person')?.key).toBe('person');
+    expect(activeNavChild(item, '/attendance/person')?.key).toBe('timesheet');
     expect(activeNavChild(item, '/attendance/shifts')?.key).toBe('shifts');
     expect(activeNavChild(item, '/attendance/templates')?.key).toBe('templates');
     expect(activeNavChild(item, '/attendance/locations')?.key).toBe('locations');
@@ -114,17 +113,19 @@ describe('sub-menu (#960)', () => {
     expect(activeNavChild(item, null)).toBeUndefined();
   });
 
-  it('isNavChildActive: exact children match only themselves', () => {
+  it('isNavChildActive: exact children match only themselves, plus their `also` pages', () => {
     expect(isNavChildActive('/attendance', { key: 'timesheet', href: '/attendance', exact: true })).toBe(true);
+    expect(isNavChildActive('/attendance/shifts', { key: 'timesheet', href: '/attendance', exact: true })).toBe(false);
     expect(isNavChildActive('/attendance/person', { key: 'timesheet', href: '/attendance', exact: true })).toBe(false);
+    expect(isNavChildActive('/attendance/person', { key: 'timesheet', href: '/attendance', exact: true, also: ['/attendance/person'] })).toBe(true);
   });
 
   it('a sub-item link keeps ?outletId and ?month, drops anything else', () => {
     const item = attendance('MERCHANT', ['attendance'])!;
-    const person = item.children!.find((c) => c.key === 'person')!;
-    expect(navChildHref(item, person, '?outletId=3&month=2026-10&q=x')).toBe('/attendance/person?outletId=3&month=2026-10');
-    expect(navChildHref(item, person, '')).toBe('/attendance/person');
-    expect(navChildHref(item, person, '?q=x')).toBe('/attendance/person');
+    const shifts = item.children!.find((c) => c.key === 'shifts')!;
+    expect(navChildHref(item, shifts, '?outletId=3&month=2026-10&q=x')).toBe('/attendance/shifts?outletId=3&month=2026-10');
+    expect(navChildHref(item, shifts, '')).toBe('/attendance/shifts');
+    expect(navChildHref(item, shifts, '?q=x')).toBe('/attendance/shifts');
   });
 });
 
