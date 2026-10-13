@@ -1,12 +1,5 @@
 {
   "title": "考勤",
-  "tabs": {
-    "timesheet": "考勤表",
-    "person": "按员工",
-    "shifts": "排班",
-    "templates": "班次模板",
-    "locations": "二维码与位置"
-  },
   "weekday": {
     "1": "周一",
     "2": "周二",

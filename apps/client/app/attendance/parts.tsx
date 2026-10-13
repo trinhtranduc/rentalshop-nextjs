@@ -1,18 +1,17 @@
 'use client';
 
 /**
- * Attendance web (#908): shared frame (tabs, access, outlet), small UI pieces and data hooks.
+ * Attendance web (#908): shared frame (access, outlet), small UI pieces and data hooks.
  * Look follows the approved mockup (`.agent/changes/907-attendance-api/mockup.html`, part "Web").
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@rentalshop/hooks';
 import { outletsApi } from '@rentalshop/utils';
 import { Modal } from '../orders/create/parts';
 import { cardClass, outlineBtn, primaryBtn } from '../orders/list/parts';
-import { attendanceTabs, canUseAttendanceWeb, defaultOutlet, hasAttendance, isAttendanceTabActive, isOwnerRole, monthLabel } from './attendance-model';
+import { canUseAttendanceWeb, defaultOutlet, hasAttendance, isOwnerRole, monthLabel } from './attendance-model';
 import { useMerchantModules } from './useMerchantModules';
 
 export type AttT = (key: string, values?: Record<string, string | number>) => string;
@@ -284,45 +283,8 @@ export function useSelectedOutlet(outlets: OutletOption[]) {
 // Frame
 // ---------------------------------------------------------------------------
 
-/** Chấm công tab strip (#945: + Mã QR & vị trí); keeps `?outletId` / `?month` across tabs. */
-export function AttendanceTabs({ access }: { access: AttendanceAccess }) {
-  const t = useTranslations('attendance') as unknown as AttT;
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const keep = useMemo(() => {
-    const q = new URLSearchParams();
-    for (const k of ['outletId', 'month']) {
-      const v = params.get(k);
-      if (v) q.set(k, v);
-    }
-    const s = q.toString();
-    return s ? `?${s}` : '';
-  }, [params]);
-  const tabs = attendanceTabs(access.role, access.modules);
-  if (tabs.length === 0) return null;
-  return (
-    <nav aria-label={t('title')} className="flex flex-wrap gap-2">
-      {tabs.map((tab) => {
-        const active = isAttendanceTabActive(pathname, tab.href);
-        return (
-          <Link
-            key={tab.key}
-            href={`${tab.href}${keep}`}
-            aria-current={active ? 'page' : undefined}
-            className={`rounded-full border px-3.5 py-1.5 text-sm no-underline ${
-              active ? 'border-ar-primary bg-ar-primary font-semibold text-ar-on-primary' : 'border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'
-            }`}
-          >
-            {t(`tabs.${tab.key}`)}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
 /**
- * Container, tab strip and the access gate. Children render once the caller may use the screens and an outlet
+ * Container and the access gate (the screens are picked in the sidebar sub-menu, #960). Children render once the caller may use the screens and an outlet
  * is known.
  */
 export function AttendanceFrame({
@@ -345,7 +307,6 @@ export function AttendanceFrame({
 
   return (
     <div className={container}>
-      {access.allowed && <AttendanceTabs access={access} />}
       {body}
     </div>
   );

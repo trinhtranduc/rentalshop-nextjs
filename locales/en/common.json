@@ -229,9 +229,15 @@
       "outlets": "Outlets",
       "categories": "Categories",
       "loyalty": "Loyalty",
-      "settings": "Store settings"
+      "settings": "Store settings",
+      "attendanceSub": {
+        "timesheet": "Timesheet",
+        "person": "By person",
+        "shifts": "Shifts",
+        "templates": "Shift templates",
+        "locations": "QR & location"
+      }
     },
-    "manage": "Manage",
     "createOrder": "New order",
     "allOutlets": "All outlets",
     "mainMenu": "Main menu",
@@ -264,7 +270,32 @@
       "unreadCount": "{count} unread"
     },
     "allOutletsCount": "All branches ({count})",
-    "someOutlets": "{count} branches"
+    "someOutlets": "{count} branches",
+    "groups": {
+      "sales": "Sales & rentals",
+      "goods": "Goods",
+      "customers": "Customers",
+      "people": "People",
+      "shop": "Shop"
+    },
+    "crumbs": {
+      "create": "New",
+      "add": "Add",
+      "edit": "Edit",
+      "import": "Import",
+      "labels": "Labels",
+      "orders": "Orders",
+      "permissions": "Permissions",
+      "rolePermissions": "Role permissions",
+      "related": "Related orders",
+      "bankAccounts": "Bank accounts",
+      "attendance": "Attendance",
+      "notifications": "Notifications",
+      "subscription": "Subscription",
+      "plans": "Plans"
+    },
+    "breadcrumb": "You are here",
+    "searchOpen": "Open search"
   },
   "dateRange": {
     "title": "Pick a date range",

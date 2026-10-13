@@ -1,12 +1,5 @@
 {
   "title": "勤怠",
-  "tabs": {
-    "timesheet": "勤務表",
-    "person": "スタッフ別",
-    "shifts": "シフト",
-    "templates": "シフトテンプレート",
-    "locations": "QRと位置"
-  },
   "weekday": {
     "1": "月",
     "2": "火",

@@ -3,9 +3,10 @@
  */
 import { describe, expect, it } from '@jest/globals';
 import {
-  SHELL_MAIN_NAV,
-  SHELL_MANAGE_NAV,
+  SHELL_NAV_ITEMS,
   activeNavChild,
+  filterNavGroups,
+  navItemTone,
   filterNavForRole,
   isNavActive,
   isNavChildActive,
@@ -13,21 +14,22 @@ import {
 } from '../apps/client/app/components/shell/nav';
 
 const hrefs = (role?: string) =>
-  filterNavForRole([...SHELL_MAIN_NAV, ...SHELL_MANAGE_NAV], role).map((i) => i.href);
+  filterNavForRole(SHELL_NAV_ITEMS, role).map((i) => i.href);
 
-const MAIN = ['/dashboard', '/orders', '/calendar', '/availability', '/products', '/customers'];
+// #960 menu order (owner option A): Tổng quan · Bán & cho thuê · Hàng hoá · Khách hàng · Nhân sự · Cửa hàng.
+const SALES = ['/dashboard', '/orders', '/calendar', '/availability', '/products', '/categories', '/customers'];
 
 describe('filterNavForRole', () => {
   it('MERCHANT sees everything, including loyalty and outlets', () => {
-    expect(hrefs('MERCHANT')).toEqual([...MAIN, '/users', '/outlets', '/categories', '/loyalty', '/settings']);
+    expect(hrefs('MERCHANT')).toEqual([...SALES, '/loyalty', '/users', '/outlets', '/settings']);
   });
 
   it('OUTLET_ADMIN sees users but not outlets or loyalty', () => {
-    expect(hrefs('OUTLET_ADMIN')).toEqual([...MAIN, '/users', '/categories', '/settings']);
+    expect(hrefs('OUTLET_ADMIN')).toEqual([...SALES, '/users', '/settings']);
   });
 
   it('OUTLET_STAFF sees neither users nor outlets', () => {
-    expect(hrefs('OUTLET_STAFF')).toEqual([...MAIN, '/categories', '/settings']);
+    expect(hrefs('OUTLET_STAFF')).toEqual([...SALES, '/settings']);
   });
 
   it('normalises role casing and spaces', () => {
@@ -41,7 +43,7 @@ describe('filterNavForRole', () => {
 
 describe('attendance module (#908)', () => {
   const withModules = (role: string | undefined, modules: string[]) =>
-    filterNavForRole([...SHELL_MAIN_NAV, ...SHELL_MANAGE_NAV], role, modules).map((i) => i.href);
+    filterNavForRole(SHELL_NAV_ITEMS, role, modules).map((i) => i.href);
 
   it('module off: no Chấm công for anyone, outlet admin still has no Chi nhánh', () => {
     expect(withModules('MERCHANT', [])).not.toContain('/attendance');
@@ -50,8 +52,8 @@ describe('attendance module (#908)', () => {
   });
 
   it('module on: owner and outlet admin see Chấm công; Chi nhánh stays owner-only (#945)', () => {
-    expect(withModules('MERCHANT', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/outlets', '/categories', '/loyalty', '/settings']);
-    expect(withModules('OUTLET_ADMIN', ['attendance'])).toEqual([...MAIN, '/users', '/attendance', '/categories', '/settings']);
+    expect(withModules('MERCHANT', ['attendance'])).toEqual([...SALES, '/loyalty', '/users', '/attendance', '/outlets', '/settings']);
+    expect(withModules('OUTLET_ADMIN', ['attendance'])).toEqual([...SALES, '/users', '/attendance', '/settings']);
   });
 
   it('staff and kho never see Chấm công or Chi nhánh', () => {
@@ -73,7 +75,7 @@ describe('isNavActive', () => {
 
 describe('sub-menu (#960)', () => {
   const visible = (role: string, modules: string[]) =>
-    filterNavForRole([...SHELL_MAIN_NAV, ...SHELL_MANAGE_NAV], role, modules);
+    filterNavForRole(SHELL_NAV_ITEMS, role, modules);
   const attendance = (role: string, modules: string[]) => visible(role, modules).find((i) => i.key === 'attendance');
 
   it('Chấm công carries the five screens, in the old tab order', () => {
@@ -136,7 +138,69 @@ describe('sidebar wiring (#960)', () => {
     expect(src).toMatch(/aria-expanded=\{open\}/);
   });
 
-  it('hover never paints an item with the active colour', () => {
-    expect(src).not.toMatch(/hover:bg-ar-primary-soft/);
+  it('rows take their tone from navItemTone (one highlighted row)', () => {
+    expect(src).toMatch(/navItemTone\(/);
+  });
+});
+
+describe('menu groups (#960, option A)', () => {
+  const groups = (role: string | undefined, modules: string[] = []) =>
+    filterNavGroups(role, modules).map((g) => `${g.key ?? '-'}: ${g.items.map((i) => i.key).join(',')}`);
+
+  it('MERCHANT with the module: every group, Chấm công under Nhân sự', () => {
+    expect(groups('MERCHANT', ['attendance'])).toEqual([
+      '-: overview',
+      'sales: orders,calendar,availability',
+      'goods: products,categories',
+      'customers: customers,loyalty',
+      'people: staff,attendance',
+      'shop: outlets,settings',
+    ]);
+  });
+
+  it('MERCHANT without the module: Nhân sự keeps Nhân viên only', () => {
+    expect(groups('MERCHANT')).toContain('people: staff');
+  });
+
+  it('OUTLET_ADMIN: no Khách thân thiết, no Chi nhánh', () => {
+    expect(groups('OUTLET_ADMIN', ['attendance'])).toEqual([
+      '-: overview',
+      'sales: orders,calendar,availability',
+      'goods: products,categories',
+      'customers: customers',
+      'people: staff,attendance',
+      'shop: settings',
+    ]);
+  });
+
+  it('staff and kho: the Nhân sự header disappears with its items', () => {
+    for (const role of ['OUTLET_STAFF', 'OUTLET_INVENTORY']) {
+      expect(groups(role, ['attendance'])).toEqual([
+        '-: overview',
+        'sales: orders,calendar,availability',
+        'goods: products,categories',
+        'customers: customers',
+        'shop: settings',
+      ]);
+    }
+  });
+
+  it('every visible item is in exactly one group', () => {
+    const flat = filterNavGroups('MERCHANT', ['attendance']).flatMap((g) => g.items.map((i) => i.key));
+    expect(new Set(flat).size).toBe(flat.length);
+    expect(flat).toEqual(filterNavForRole(SHELL_NAV_ITEMS, 'MERCHANT', ['attendance']).map((i) => i.key));
+  });
+});
+
+describe('one highlighted row (#960)', () => {
+  it('a hovered row never takes the active background', () => {
+    expect(navItemTone(false)).not.toMatch(/bg-ar-primary-soft|bg-ar-subtle/);
+    expect(navItemTone(true)).toMatch(/bg-ar-primary-soft/);
+  });
+
+  it('only one menu href matches any page', () => {
+    for (const p of ['/dashboard', '/orders/12', '/users/3', '/categories', '/attendance/person', '/outlets', '/loyalty']) {
+      expect(SHELL_NAV_ITEMS.filter((i) => isNavActive(p, i.href))).toHaveLength(1);
+    }
   });
 });

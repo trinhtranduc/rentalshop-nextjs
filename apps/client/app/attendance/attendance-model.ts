@@ -50,32 +50,6 @@ export function isOwnerRole(role: string | null | undefined): boolean {
   return (role || '').trim().toUpperCase() === 'MERCHANT';
 }
 
-// ---------------------------------------------------------------------------
-// Chấm công tabs (#945: + Mã QR & vị trí)
-// ---------------------------------------------------------------------------
-
-export type AttendanceTabKey = 'timesheet' | 'person' | 'shifts' | 'templates' | 'locations';
-
-const ATTENDANCE_TABS: ReadonlyArray<{ key: AttendanceTabKey; href: string }> = [
-  { key: 'timesheet', href: '/attendance' },
-  { key: 'person', href: '/attendance/person' },
-  { key: 'shifts', href: '/attendance/shifts' },
-  { key: 'templates', href: '/attendance/templates' },
-  { key: 'locations', href: '/attendance/locations' },
-];
-
-/** The tab strip: owner / outlet admin of a shop with the module; nobody else. */
-export function attendanceTabs(role: string | null | undefined, modules: string[] | null | undefined) {
-  return canUseAttendanceWeb(role) && hasAttendance(modules) ? ATTENDANCE_TABS.slice() : [];
-}
-
-/** Bảng công only on `/attendance`; the others on their route and its children. */
-export function isAttendanceTabActive(pathname: string | null | undefined, href: string): boolean {
-  if (!pathname) return false;
-  if (href === '/attendance') return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 /** One row of Mã QR & vị trí; null settings (not loaded / failed) = unknown. */
 export function locationRow(settings: AttendanceSettings | null | undefined): { qr: 'daily' | 'fixed' | 'none' | null; radiusM: number | null } {
   if (!settings) return { qr: null, radiusM: null };

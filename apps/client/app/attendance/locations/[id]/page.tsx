@@ -17,7 +17,6 @@ import { canUseAttendanceWeb, dayOf, shortDate, shortDayLabel, todayKey } from '
 import {
   Dialog,
   DialogFooter,
-  AttendanceTabs,
   Note,
   cardClass,
   container,
@@ -178,7 +177,6 @@ export default function OutletAttendancePage() {
 
   return (
     <div className={container}>
-      <AttendanceTabs access={access} />
       <Link href={LOCATIONS_HREF} className="text-[13px] font-semibold text-ar-primary no-underline">
         {t('locations.back')}
       </Link>

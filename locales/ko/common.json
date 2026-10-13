@@ -201,9 +201,15 @@
       "outlets": "지점",
       "categories": "카테고리",
       "loyalty": "단골 고객",
-      "settings": "매장 설정"
+      "settings": "매장 설정",
+      "attendanceSub": {
+        "timesheet": "근무표",
+        "person": "직원별",
+        "shifts": "근무 배정",
+        "templates": "근무 템플릿",
+        "locations": "QR 및 위치"
+      }
     },
-    "manage": "관리",
     "createOrder": "주문 생성",
     "allOutlets": "전체 지점",
     "mainMenu": "메인 메뉴",
@@ -236,6 +242,31 @@
       "unreadCount": "읽지 않음 {count}개"
     },
     "allOutletsCount": "전체 지점 ({count})",
-    "someOutlets": "{count}개 지점"
+    "someOutlets": "{count}개 지점",
+    "groups": {
+      "sales": "판매 및 대여",
+      "goods": "상품",
+      "customers": "고객",
+      "people": "인사",
+      "shop": "매장"
+    },
+    "crumbs": {
+      "create": "새로 만들기",
+      "add": "추가",
+      "edit": "수정",
+      "import": "가져오기",
+      "labels": "라벨 인쇄",
+      "orders": "주문",
+      "permissions": "권한",
+      "rolePermissions": "역할별 권한",
+      "related": "관련 주문",
+      "bankAccounts": "은행 계좌",
+      "attendance": "출퇴근",
+      "notifications": "알림",
+      "subscription": "구독",
+      "plans": "요금제"
+    },
+    "breadcrumb": "현재 위치",
+    "searchOpen": "검색 열기"
   }
 }
