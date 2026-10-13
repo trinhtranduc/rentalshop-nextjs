@@ -409,9 +409,19 @@ struct AttendanceWeekRow: Equatable {
     let day: String
     /// "Sáng 08–12"
     let shift: String
-    /// "07:58–12:01 · 4,0 g", "08:07–12:00 · muộn 7′", "—"
+    /// "07:58–12:01 · 4,0 g", "08:07–12:00 · 3,9 g · muộn 7′", "—" (lines joined by "\n")
     let worked: String
     let isLate: Bool
+    /// #935 One per record; the view draws `late` in amber
+    var lines: [AttendanceWeekLine] = []
+}
+
+/// #935 One record of a week row: "08:07–12:00 · 3,9 g" and its late part "muộn 7′" (nil when on time)
+struct AttendanceWeekLine: Equatable {
+    let main: String
+    let late: String?
+
+    var text: String { [main, late].compactMap { $0 }.joined(separator: " · ") }
 }
 
 /// An IN / OUT pair read from the month rows
@@ -725,20 +735,18 @@ enum AttendanceLogic {
             guard !shifts.isEmpty || !dayPairs.isEmpty else { return nil }
             let shiftText = shifts.map(shiftShort).joined(separator: ", ")
             let late = dayPairs.first?.lateMinutes ?? 0
-            let worked: String
-            if dayPairs.isEmpty {
-                worked = "—"
-            } else {
-                worked = dayPairs.map { pair -> String in
-                    let span = "\(clock(pair.checkInAt))–\(pair.checkOutAt.map { clock($0) } ?? "…")"
-                    if pair.lateMinutes > 0 {
-                        return "\(span) · \(String(format: "attendance.mine.late".localized(), pair.lateMinutes))"
-                    }
-                    guard let worked = pairHours(pair, shifts: shifts) else { return span }
-                    return "\(span) · \(String(format: "attendance.mine.hoursShort".localized(), hours(worked)))"
-                }.joined(separator: "\n")
+            // #935 late never replaces the hours: "09:57–16:00 · 6,1 g · muộn 117′"
+            let lines = dayPairs.map { pair -> AttendanceWeekLine in
+                let span = "\(clock(pair.checkInAt))–\(pair.checkOutAt.map { clock($0) } ?? "…")"
+                let main = pairHours(pair, shifts: shifts)
+                    .map { "\(span) · \(String(format: "attendance.mine.hoursShort".localized(), hours($0)))" } ?? span
+                let lateText = pair.lateMinutes > 0
+                    ? String(format: "attendance.mine.late".localized(), pair.lateMinutes) : nil
+                return AttendanceWeekLine(main: main, late: lateText)
             }
-            return AttendanceWeekRow(dayKey: key, day: dayLabel(key), shift: shiftText, worked: worked, isLate: late > 0)
+            let worked = lines.isEmpty ? "—" : lines.map(\.text).joined(separator: "\n")
+            return AttendanceWeekRow(dayKey: key, day: dayLabel(key), shift: shiftText, worked: worked, isLate: late > 0,
+                                     lines: lines)
         }
     }
 }
